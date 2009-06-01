@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://www.netbeans.org/ns/project/1">
+    <type>org.netbeans.modules.ant.freeform</type>
+    <configuration>
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
+            <name>jpf-core</name>
+        </general-data>
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/2">
+            <!-- Do not use Project Properties customizer when editing this file manually. -->
+            <name>jpf-core</name>
+            <properties/>
+            <folders>
+                <source-folder>
+                    <label>jpf-core</label>
+                    <location>.</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>src/jpf</label>
+                    <type>java</type>
+                    <location>src/jpf</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>src/mji/model</label>
+                    <type>java</type>
+                    <location>src/mji/model</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>src/mji/peer</label>
+                    <type>java</type>
+                    <location>src/mji/peer</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>src/annotation</label>
+                    <type>java</type>
+                    <location>src/annotation</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>test</label>
+                    <type>java</type>
+                    <location>test</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>examples</label>
+                    <type>java</type>
+                    <location>examples</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+            </folders>
+            <ide-actions>
+                <action name="build">
+                    <target>compile</target>
+                </action>
+                <action name="clean">
+                    <target>clean</target>
+                </action>
+                <action name="test">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>test-project</target>
+                </action>
+                <action name="rebuild">
+                    <target>clean</target>
+                    <target>compile</target>
+                </action>
+                <!--  run single file actions -->
+                <!-- run stuff in examples -->
+                <action name="run.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>run-selected-example</target>
+                    <context>
+                        <property>run.class</property>
+                        <folder>examples</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>debug-selected-example</target>
+                    <context>
+                        <property>debug.class</property>
+                        <folder>examples</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="run.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>run-selected-example-jpf</target>
+                    <context>
+                        <property>jpf.config</property>
+                        <folder>examples</folder>
+                        <pattern>\.jpf$</pattern>
+                        <format>absolute-path</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>debug-selected-example-jpf</target>
+                    <context>
+                        <property>jpf.config</property>
+                        <folder>examples</folder>
+                        <pattern>\.jpf$</pattern>
+                        <format>absolute-path</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <!-- run stuff in test -->
+                <action name="run.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>run-selected-test</target>
+                    <context>
+                        <property>run.class</property>
+                        <folder>test</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>debug-selected-test</target>
+                    <context>
+                        <property>debug.class</property>
+                        <folder>test</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="run.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>run-selected-test-jpf</target>
+                    <context>
+                        <property>jpf.config</property>
+                        <folder>test</folder>
+                        <pattern>\.jpf$</pattern>
+                        <format>absolute-path</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>debug-selected-test-jpf</target>
+                    <context>
+                        <property>jpf.config</property>
+                        <folder>test</folder>
+                        <pattern>\.jpf$</pattern>
+                        <format>absolute-path</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+            </ide-actions>
+            <export>
+                <type>folder</type>
+                <location>build/jpf</location>
+                <build-target>compile</build-target>
+            </export>
+            <export>
+                <type>folder</type>
+                <location>build/mji/peer</location>
+                <build-target>compile</build-target>
+            </export>
+            <export>
+                <type>folder</type>
+                <location>build/test</location>
+                <build-target>compile</build-target>
+            </export>
+            <export>
+                <type>folder</type>
+                <location>build/examples</location>
+                <build-target>compile</build-target>
+            </export>
+            <view>
+                <items>
+                    <source-folder style="packages">
+                        <label>src/jpf</label>
+                        <location>src/jpf</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>src/mji/model</label>
+                        <location>src/mji/model</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>src/mji/peer</label>
+                        <location>src/mji/peer</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>src/annotation</label>
+                        <location>src/annotation</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>test</label>
+                        <location>test</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>examples</label>
+                        <location>examples</location>
+                    </source-folder>
+                    <source-file>
+                        <location>build.xml</location>
+                    </source-file>
+                </items>
+                <context-menu>
+                    <ide-action name="build"/>
+                    <ide-action name="rebuild"/>
+                    <ide-action name="clean"/>
+                    <ide-action name="test"/>
+                </context-menu>
+            </view>
+            <subprojects/>
+        </general-data>
+        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
+            <compilation-unit>
+                <package-root>src/jpf</package-root>
+                <classpath mode="compile">build/annotation:lib/bcel.jar:lib/antlr-runtime-3.1.3.jar:tools/lib/junit-4.6.jar</classpath>
+                <built-to>build/jpf</built-to>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>src/mji/model</package-root>
+                <classpath mode="compile">build/jpf</classpath>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>src/mji/peer</package-root>
+                <classpath mode="compile">build/jpf:lib/bcel.jar</classpath>
+                <built-to>build/mji/peer</built-to>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>src/annotation</package-root>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>test</package-root>
+                <unit-tests/>
+                <classpath mode="compile">build/annotation:build/jpf:build/test:tools/lib/junit-4.6.jar</classpath>
+                <built-to>build/test</built-to>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>examples</package-root>
+                <unit-tests/>
+                <classpath mode="compile">build/jpf</classpath>
+                <built-to>build/examples</built-to>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+        </java-data>
+        <preferences xmlns="http://www.netbeans.org/ns/auxiliary-configuration-preferences/1">
+            <module name="org-netbeans-modules-editor-indent">
+                <node name="CodeStyle">
+                    <property name="usedProfile" value="default"/>
+                    <node name="project">
+                        <property name="tab-size" value="8"/>
+                        <property name="text-limit-width" value="80"/>
+                    </node>
+                </node>
+            </module>
+        </preferences>
+    </configuration>
+</project>

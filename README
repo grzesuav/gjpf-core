@@ -1,0 +1,103 @@
+                          Java PathFinder README
+                          ======================
+                               
+1. What is Java Java PathFinder
+-------------------------------
+Java PathFinder (JPF) is a system to verify executable Java bytecode programs.
+In it's basic form, it is a Java Virtual Machine (JVM) that is used as an
+explicit state software model checker, systematically exploring all potential
+execution paths of a program to find violations of properties like deadlocks or
+unhandled exceptions. Other than traditional debuggers, JPF reports the whole
+execution path that leads to a defect. JPF is especially suitable to find hard-to
+test concurrency defects in multithreaded programs.
+
+The system is unique in terms of its configurability, enabling adaptation to the
+needs of specific test applications with respect to the properties to check, and
+with respect to abstraction mechanisms that can be used to improve scalability.
+JPF is a pure Java application that can be run either as a standalone command line
+tool, or embedded into systems like development environments.
+
+Java PathFinder is distributed under the "NASA OPEN SOURCE AGREEMENT VERSION 1.3"
+license (NOSA-1.3-JPF).
+
+2. Where to get it
+------------------
+The system can be obtained from <http://sourceforge.net/projects/javapathfinder>.
+
+We encourage the use of Subversion to obtain the latest version, but do have
+occasional releases (source only at this point) that are available from the
+SourceForge web page. To check out from the source repository, use the following
+command:
+
+>svn checkout https://svn.sourceforge.net/svnroot/javapathfinder/trunk <your-dir>
+
+
+3. Prerequisites
+----------------
+Java PathFinder requires a Java SDK 1.5.0 or higher. The following 3rd party
+libraries are used and included with this distribution in case they are
+not available elsewhere on your system:
+
+(1) BCEL (> 5.2 (currently from repository)) - the Bytecode Engineering Library
+ from <http://jakarta.apache.org/bcel> (usually in bcel.jar)
+
+Libraries have to be in the CLASSPATH, but can reside outside the JPF directory
+tree.
+
+To build JPF, the following tools are required (included in build-tools/):
+
+(1) Ant (>= 1.7alpha) - the Java build system from <http://ant.apache.org>
+
+(2) JUnit (>= 4.1) - the Java regression test framework <http://www.junit.org>
+
+
+Please note that - as of JPF v4 - we provide binary snapshots of all required
+tools and libraries, which have not been modified.
+
+Scripts in bin/ and build-tools/bin/ require Unix-like shells (e.g. from
+Linux, Darwin, or Cygwin), but pure Java implementations are available
+from the install root as Run*.class.  For more information, run them
+with Java passing no arguments.
+
+
+3. How to Build it
+------------------
+You can either build Java PathFinder from the command line with Ant, or from
+within Eclipse.
+
+To build with Ant, switch to the directory where you installed Java
+PathFinder, and run
+
+>build-tools/bin/ant run-tests
+
+or
+
+>java RunAnt run-tests
+
+which should compile all Java PathFinder sources and run the regression tests.
+
+To build from within Eclipse, do NOT use "New Java Project" or "New Java
+Project from Existing Ant Buildfile".  If you have already checked out or
+downloaded JPF, use "Import..." "Existing Projects into Workspace" selecting
+the JPF root directory.  You can also download JPF within Eclipse using
+"Checkout Projects from SVN" assuming you have installed Subclipse
+(http://subclipse.tigris.org/).
+
+JPF comes with a .project and .classpath that links the source folders
+to their output folders, etc.  However, make sure the compiler compliance
+level and source compatibility are set to '5.0'
+
+
+4. Where to learn more
+----------------------
+Please check out the documentation on <http://javapathfinder.sourceforge.net>,
+and  use the mailing lists in case you have more questions. We currently have
+two of them:
+
+(1) javapathfinder-user@lists.sourceforge.net - usage related questions
+
+(2) javapathfinder-devel@lists.sourceforge.net - for Java PathFinder developers
+
+
+Happy Verification
+-- the Java PathFinder team

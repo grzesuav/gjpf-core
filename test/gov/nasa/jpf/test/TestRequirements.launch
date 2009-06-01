@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<stringAttribute key="bad_container_name" value="/javapathfinder-trunk/e/launch"/>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/javapathfinder-trunk/src/gov/nasa/jpf/JPF.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<booleanAttribute key="org.eclipse.debug.core.appendEnvironmentVariables" value="true"/>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="gov.nasa.jpf.JPF"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="+jpf.listener=.tools.CoverageAnalyzer&#13;+coverage.show_requirements=true&#13;+coverage.include=gov.nasa.jpf.test.*&#13;+coverage.loaded_only=true&#13;+coverage.show_methods=true&#13;&#13;gov.nasa.jpf.test.TestRequirementsCoverage"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="javapathfinder-trunk"/>
+</launchConfiguration>

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# genpeer - script to generate NativePeer class
+
+JPF_HOME=`dirname $0`/../..
+
+# this is for GenPeer itself (and the JPF infrastructure it might use)
+CP=$JPF_HOME/build
+CP=$CP:$JPF_HOME/lib/jpf.jar
+CP=$CP:$JPF_HOME/lib/bcel.jar
+
+# this is where we keep our model classes (the potential targets)
+CP=$CP:$JPF_HOME/build/env/jpf
+
+java -classpath "$CP" gov.nasa.arc.ase.jpf.tools.GenPeer $@
+

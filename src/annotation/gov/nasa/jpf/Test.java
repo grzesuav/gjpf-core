@@ -1,0 +1,38 @@
+//
+// Copyright (C) 2007 United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration
+// (NASA).  All Rights Reserved.
+// 
+// This software is distributed under the NASA Open Source Agreement
+// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
+// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
+// directory tree for the complete NOSA document.
+// 
+// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
+// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
+// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
+// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
+//
+
+package gov.nasa.jpf;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+/**
+ * annotation that describes a method test
+ * 
+ * "('foo',4[123]).(10|20|30,java.io.File('baz'|''))",     // "no exception", don't care about result
+ * "('foo',-1).(42,null) throws IllegalArgumentException", // throws
+ * "(0,java.io.File('tmp')) == 0",                         // returns '0', using default ctor
+ * "(10,java.io.File('baz') satisfies no_race"             // predefined JPF propert+driver
+ */
+
+@Retention(RetentionPolicy.RUNTIME)
+
+public @interface Test {
+  String[] value(); // the test specs
+}

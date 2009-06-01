@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# unix shell script to run jpf
+#
+
+test "$*" || exec "$0" -help
+
+JPF_HOME=`dirname "$0"`/..
+
+_cygwin=false;
+case "`uname`" in
+  CYGWIN*) _cygwin=true;;
+esac
+
+#if we have class files, they should take precedence over jars
+CP=$JPF_HOME/build/jpf
+CP=$CP:$JPF_HOME/build/env/jvm
+CP=$CP:$JPF_HOME/build/app
+CP=$CP:$JPF_HOME/build/test
+
+#add (recursively) any *.jar or *.zip that's under $JPF_HOME/lib
+#note that those take precedence over what already is in the classpath
+if test -d "$JPF_HOME/lib"; then
+  CP=$CP:`find "$JPF_HOME"/lib \( -name "*.jar" -or -name "*.zip" \) -exec echo -n {}":" \;`
+fi
+
+#likewise, add jars from extension directories
+if test -d "$JPF_HOME/extensions"; then
+  CP=$CP:`find "$JPF_HOME"/extensions \( -name "*.jar" -or -name "*.zip" \) -exec echo -n {}":" \;`
+fi
+
+#Examples
+CP=$CP:$JPF_HOME/build/examples
+
+#prepend the global CLASSPATH (so that we can override)
+if $_cygwin; then
+  CP=`cygpath --path --windows "$CP"`
+  JAVA_HOME=`cygpath --path --windows "$JAVA_HOME"`
+  CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
+  CP="$CLASSPATH;$CP"
+else
+  CP="$CLASSPATH:$CP"
+fi
+
+#now check if we find our mandatory jars
+if test ! `expr "$CP" : ".*\(bcel[^\.]*\.jar\).*"`; then
+  echo "*** you don't seem to have bcel.jar in your CLASSPATH, please fix ***"
+  exit
+fi
+
+if test -z "$JVM_FLAGS"; then
+  JVM_FLAGS="-Xmx1024m -ea"
+fi
+
+test "$VERBOSE" && echo java $JVM_FLAGS -classpath "$CP" gov.nasa.jpf.JPF +jpf.basedir="$JPF_HOME" "$@"
+java $JVM_FLAGS -classpath "$CP" gov.nasa.jpf.JPF +jpf.basedir="$JPF_HOME" "$@"

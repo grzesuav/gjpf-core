@@ -1,0 +1,92 @@
+//
+// Copyright (C) 2006 United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration
+// (NASA).  All Rights Reserved.
+// 
+// This software is distributed under the NASA Open Source Agreement
+// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
+// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
+// directory tree for the complete NOSA document.
+// 
+// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
+// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
+// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
+// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
+//
+package gov.nasa.jpf.jvm.choice;
+
+import gov.nasa.jpf.jvm.ChoiceGenerator;
+
+/**
+ * a pretty simple ChoiceGenerator that returns a boolean, customizable in
+ * terms of what it returns first
+ */
+public class CustomBooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
+
+  // do we evaluate [false, true] or [true, false]
+  final boolean falseFirst;
+
+  int count = -1;
+  
+  public CustomBooleanChoiceGenerator(boolean falseFirst, String id) {
+    super(id);
+
+    this.falseFirst = falseFirst;
+  }
+
+  public boolean hasMoreChoices () {
+    return !isDone && (count < 1);
+  }
+
+  public Boolean getNextChoice () {
+    return falseFirst ^ (count == 0) ? Boolean.TRUE : Boolean.FALSE;
+  }
+  
+  public Class<Boolean> getChoiceType() {
+    return Boolean.class;
+  }
+
+  public void advance () {
+    if (count < 1) {
+      count++;
+    }
+  }
+
+  public void reset () {
+    count = -1;
+  }
+  
+  public int getTotalNumberOfChoices () {
+    return 2;
+  }
+
+  public int getProcessedNumberOfChoices () {
+    return (count+1);
+  }
+  
+  public String toString () {
+    StringBuilder sb = new StringBuilder(getClass().getName());
+    sb.append('[');
+    boolean next = falseFirst ^ (count == 0);
+    if (count < 1) {
+      sb.append(MARKER);
+      sb.append(next);
+      sb.append(',');
+      sb.append(!next);
+    } else {
+      sb.append(!next);
+      sb.append(',');
+      sb.append(MARKER);
+      sb.append(next);
+    }
+    sb.append(']');
+    return sb.toString();
+  }
+  
+  public CustomBooleanChoiceGenerator randomize () {
+    return new CustomBooleanChoiceGenerator(random.nextBoolean(),id);
+  }
+}

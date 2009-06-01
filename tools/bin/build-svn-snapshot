@@ -1,0 +1,44 @@
+#!/bin/bash
+
+#
+### build JPF snapshot archives out of current SVN repository
+#
+
+REP=https://javapathfinder.svn.sourceforge.net/svnroot/javapathfinder/trunk
+
+# get current repository revision
+REV=`svn info $REP | awk '/Revision: ([0-9]*)/ {print $2}'`
+PN=javapathfinder-r$REV
+
+SRC_ARCH=jpf-src-r$REV.zip
+BIN_ARCH=jpf-bin-r$REV.zip
+
+if test -d "$PN"; then
+  rm -rf "$PN"
+fi
+
+if test -f "$SRC_ARCH"; then
+  rm "$SRCH_ARCH"
+fi
+
+if test -f "$BIN_ARCH"; then
+  rm "$BIN_ARCH"
+fi
+
+
+# get repository
+svn export "$REP" "$PN"
+
+# build source archive
+zip -r "$SRC_ARCH" "$PN"
+
+# build binaries
+cd $PN
+build-tools/bin/ant jar
+cp dist/*.jar lib
+cd ..
+
+zip "$BIN_ARCH" "$PN"/* "$PN"/bin/* "$PN"/lib/*
+
+rm -rf "$PN"
+
