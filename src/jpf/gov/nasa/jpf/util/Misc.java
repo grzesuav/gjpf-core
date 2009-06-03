@@ -330,6 +330,22 @@ public class Misc {
     }
   }
 
+  public static <T> T[] arrayWithoutFirst( T[] base, int nElements){
+    if (base == null){
+      return null;
+    } else if (nElements >= base.length){
+      Class<?> componentType = base.getClass().getComponentType();
+      T[] a = (T[]) Array.newInstance(componentType, 0);
+      return a;
+    } else {
+      int n = base.length - nElements;
+      Class<?> componentType = base.getClass().getComponentType();
+      T[] a = (T[]) Array.newInstance(componentType, n);
+      System.arraycopy(base, nElements, a, 0, n);
+      return a;
+    }
+  }
+
 
   /*=================== PRIVATE STUFF ===================*/
 

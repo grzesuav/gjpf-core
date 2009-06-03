@@ -73,5 +73,9 @@ public class Reflection {
       return st[idx];
     }
   }
+  public static StackTraceElement getCallerElement () {
+    StackTraceElement[] st = (new Throwable()).getStackTrace();
+    return st[1]; // '0' is this method itself
+  }
 
 }

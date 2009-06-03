@@ -147,16 +147,17 @@ public class Config extends Properties {
       // throwException("no default properties found");
     }
     
-    //--- next is the mode property file (if any)
-    if (loadFile(fileName, alternatePath, codeBase)){
-      put("config", fileName);
-      int i = fileName.lastIndexOf(File.separatorChar);
-      if (i>=0){
-        put("config_path", fileName.substring(0,i));
-      } else {
-        put("config_path", ".");
-      }
+    // maybe some of the keys depend on the mode property pathname
+    put("config", fileName);
+    int i = fileName.lastIndexOf(File.separatorChar);
+    if (i>=0){
+      put("config_path", fileName.substring(0,i));
+    } else {
+      put("config_path", ".");
     }
+
+    // now load the key/value pairs from the mode property file
+    loadFile(fileName, alternatePath, codeBase);
 
     //--- last are the command line args
     if (args != null){

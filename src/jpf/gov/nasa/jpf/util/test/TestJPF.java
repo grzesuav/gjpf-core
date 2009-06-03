@@ -22,7 +22,6 @@ import gov.nasa.jpf.jvm.*;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.JPFException;
 
 import gov.nasa.jpf.Property;
 import gov.nasa.jpf.util.Misc;
@@ -31,7 +30,9 @@ import java.util.List;
 import java.io.PrintStream;
 
 
-import java.util.Hashtable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import org.junit.*;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
@@ -64,15 +65,19 @@ import org.junit.runner.Request;
  * </li>
  * </ol>
  */
-public abstract class TestJPF extends Assert /*extends TestCase*/ {
+public abstract class TestJPF extends Assert  {
   static PrintStream out = System.out;
 
   public static final String UNNAMED_PACKAGE = "";
   public static final String SAME_PACKAGE = null;
 
-  String sutClassName;
+
+  //--- those are only used outside of JPF execution
+  private boolean runDirectly; // don't run test methods through JPF, invoke it directly
+  private String sutClassName;
 
   //------ internal methods
+
 
   protected void fail (String msg, String[] args, String cause){
     StringBuilder sb = new StringBuilder();
@@ -161,6 +166,9 @@ public abstract class TestJPF extends Assert /*extends TestCase*/ {
     sutClassName = getSutClassName(getClass().getName(), SAME_PACKAGE);
   }
 
+  protected void runDirectly(boolean runDirectly) {
+    this.runDirectly = runDirectly;
+  }
 
   //------ the API to be used by subclasses
 
@@ -171,6 +179,10 @@ public abstract class TestJPF extends Assert /*extends TestCase*/ {
    */
   protected TestJPF (String sutClassName){
     this.sutClassName = sutClassName;
+  }
+
+  public static boolean runJPF () {
+    return false;
   }
 
   public static boolean isJUnitRun() {
@@ -192,7 +204,7 @@ public abstract class TestJPF extends Assert /*extends TestCase*/ {
    * @param testClass class to test
    * @param testMethods methods to run (all @Test methods if empty or null)
    */
-  public static void runTests (Class<? extends Assert> testClass, String... testMethods){
+  public static void runTests_X (Class<? extends Assert> testClass, String... testMethods){
     if (testClass == null ){
       fail("no test class specified");
     }
@@ -208,9 +220,69 @@ public abstract class TestJPF extends Assert /*extends TestCase*/ {
     }
   }
 
+  private static void runTests (Class<? extends TestJPF> testCls, String... args){
+    Method testMethod = null;
+    TestJPF testObject = null;
+
+    boolean runDirectly = false;
+    String[] testMethods = args;
+
+    if ("-directly".equals(args[0])){
+      runDirectly = true;
+      testMethods = Misc.arrayWithoutFirst(args, 1);
+    }
+
+    try {
+      if (testMethods != null && testMethods.length > 0) {
+          for (String test : testMethods) {
+            try {
+             testMethod = testCls.getDeclaredMethod(test);
+            } catch (NoSuchMethodException x){
+                 throw new TestException("method: " + test +
+                    "() not in test class: " + testCls.getName(), x);
+            }
+
+            testObject = testCls.newInstance();
+            testObject.runDirectly(runDirectly);
+
+            System.out.println("-- running test: " + test);
+            testMethod.invoke(testObject);
+          }
+
+      } else {
+        for (Method m : testCls.getDeclaredMethods()) {
+          testMethod = m;
+          int mod = m.getModifiers();
+          if (m.getParameterTypes().length == 0 &&
+                  m.getName().startsWith("test") &&
+                  Modifier.isPublic(mod) && !Modifier.isStatic(mod)) {
+            testObject = testCls.newInstance();
+            testObject.runDirectly(runDirectly);
+
+            System.out.println("-- running test: " + m.getName());
+            testMethod.invoke(testObject);
+          }
+        }
+      }
+
+    } catch (InstantiationException x) {
+      throw new TestException("error instantiating test class: " + testCls.getName(), x);
+    } catch (IllegalAccessException x) {
+      throw new TestException("no public method: " +
+              ((testMethod != null) ? testMethod.getName() : "<init>") +
+              " of test class: " + testCls.getName(), x);
+    } catch (IllegalArgumentException x) {
+      throw new TestException("illegal argument for test method: " + testMethod.getName(), x);
+
+    } catch (InvocationTargetException x) {
+      throw new TestException("failed test method: " + testMethod.getName(), x);
+    }
+  }
+
+
   protected static void runTestsOfThisClass (String[] testMethods){
     // needs to be at the same stack level, so we can't delegate
-    Class<? extends Assert> testClass = Reflection.getCallerClass(Assert.class);
+    Class<? extends TestJPF> testClass = Reflection.getCallerClass(TestJPF.class);
     runTests(testClass, testMethods);
   }
 
@@ -262,9 +334,24 @@ public abstract class TestJPF extends Assert /*extends TestCase*/ {
       fail("JPF caught exception executing: ", args, xi.getExceptionClassname());
     }
   }
+  protected boolean verifyNoPropertyViolation (String...jpfArgs){
+    if (runDirectly) {
+      StackTraceElement caller = Reflection.getCallerElement();
+      String[] args = Misc.appendArray(jpfArgs, caller.getClassName(), caller.getMethodName());
+      noPropertyViolation(args);
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+
+
   protected void noPropertyViolationThis (String... jpfArgs){
     noPropertyViolation(getArgsForCallerMethod(jpfArgs));
   }
+
+
 
 
 
