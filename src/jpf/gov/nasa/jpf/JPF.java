@@ -609,7 +609,7 @@ public class JPF implements Runnable {
    * use JPF in an embedded context
    */
   @SuppressWarnings("serial")
-  static class ExitException extends RuntimeException {
+  public static class ExitException extends RuntimeException {
     boolean report = true;
     
     ExitException() {}

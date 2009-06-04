@@ -396,6 +396,7 @@ public abstract class TestJPF extends Assert  {
         }
       }
     } catch (Throwable x) {
+x.printStackTrace();
       fail("JPF internal exception executing: ", args, x.toString());
     }
   }

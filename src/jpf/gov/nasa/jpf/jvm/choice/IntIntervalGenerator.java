@@ -22,25 +22,17 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.IntChoiceGenerator;
 
-/* pcmehlitz,
- *  you indended to handle the randomize stuff in here?  i've fixed it
- * to use the super implementation, which is the RandomOrderIntCG.  feel
- * free to make more efficient if you want.
- *                               -peterd/pcd/pcdillinger */ 
-
 /**
  * Choice Generator that enumerates an interval of int values Pretty simplistic
  * implementation for now, but at least it can count up and down
+ *
+ * randomizing is handled through RandomOrderIntCG
  */
 public class IntIntervalGenerator extends IntChoiceGenerator {
 
-  //see comment at top!
-  //boolean randomize;
   
   int min, max;
-
   int next;
-
   int delta;
 
   public void reset () {
@@ -57,7 +49,7 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
     if (delta > 0) {
       next = min - delta;
     } else {
-      next = max + delta;
+      next = max - delta;
     }
   }
 
@@ -105,19 +97,23 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
   }
   
   public int getTotalNumberOfChoices () {
-    return ((Math.abs(max - min) / delta) + 1);
+    return Math.abs((max - min) / delta) + 1;
   }
 
   public int getProcessedNumberOfChoices () {
     if (delta > 0) {
-      if (next < min)
+      if (next < min){
         return 0;
+      } else {
+        return (Math.abs((next - min) / delta) + 1);
+      }
     } else {
-      if (next > max)
+      if (next > max){
         return 0;
+      } else {
+        return (Math.abs((max - next) / delta) + 1);
+      }
     }
-
-    return ((Math.abs(next - min) / delta) + 1);
   }
 
   public String toString () {

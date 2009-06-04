@@ -496,6 +496,10 @@ public class JVM {
         lastChoiceGenerator = cg;
         listener.choiceGeneratorSet(this);
         lastChoiceGenerator = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during choiceGeneratorSet() notification", t);
       }
@@ -508,6 +512,10 @@ public class JVM {
         lastChoiceGenerator = cg;
         listener.choiceGeneratorAdvanced(this);
         lastChoiceGenerator = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during choiceGeneratorAdvanced() notification", t);
       }
@@ -520,6 +528,10 @@ public class JVM {
         lastChoiceGenerator = cg;
         listener.choiceGeneratorProcessed(this);
         lastChoiceGenerator = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during choiceGeneratorProcessed() notification", t);
       }
@@ -537,6 +549,10 @@ public class JVM {
         //nextInstruction = null;
         //lastInstruction = null;
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during executeInstruction() notification", t);
       }
@@ -555,6 +571,10 @@ public class JVM {
         //nextInstruction = null;
         //lastInstruction = null;
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during instructionExecuted() notification", t);
       }
@@ -568,6 +588,10 @@ public class JVM {
         lastThreadInfo = ti;
         listener.threadStarted(this);
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadStarted() notification", t);
       }
@@ -583,6 +607,10 @@ public class JVM {
         lastElementInfo = ti.getLockObject();
         listener.threadBlocked(this);
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadBlocked() notification", t);
       }
@@ -595,6 +623,10 @@ public class JVM {
         lastThreadInfo = ti;
         listener.threadWaiting(this);
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadWaiting() notification", t);
       }
@@ -607,6 +639,10 @@ public class JVM {
         lastThreadInfo = ti;
         listener.threadNotified(this);
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadNotified() notification", t);
       }
@@ -619,6 +655,10 @@ public class JVM {
         lastThreadInfo = ti;
         listener.threadInterrupted(this);
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadInterrupted() notification", t);
       }
@@ -631,6 +671,10 @@ public class JVM {
         lastThreadInfo = ti;
         listener.threadTerminated(this);
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadTerminated() notification", t);
       }
@@ -643,6 +687,10 @@ public class JVM {
         lastThreadInfo = ti;
         listener.threadScheduled(this);
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadScheduled() notification", t);
       }
@@ -651,9 +699,17 @@ public class JVM {
 
   protected void notifyClassLoaded (ClassInfo ci) {
     if (listener != null) {
-      lastClassInfo = ci;
-      listener.classLoaded(this);
-      //lastClassInfo = null;
+      try {
+        lastClassInfo = ci;
+        listener.classLoaded(this);
+        //lastClassInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
+      } catch (Throwable t){
+        throw new JPFListenerException("exception during classLoaded() notification", t);
+      }
     }
   }
 
@@ -667,6 +723,10 @@ public class JVM {
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectCreated() notification", t);
       }
@@ -679,6 +739,10 @@ public class JVM {
         lastElementInfo = ei;
         listener.objectReleased(this);
         //lastElementInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectReleased() notification", t);
       }
@@ -695,6 +759,10 @@ public class JVM {
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectLocked() notification", t);
       }
@@ -711,6 +779,10 @@ public class JVM {
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectUnlocked() notification", t);
       }
@@ -727,6 +799,10 @@ public class JVM {
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectWait() notification", t);
       }
@@ -743,6 +819,10 @@ public class JVM {
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectNotifies() notification", t);
       }
@@ -759,6 +839,10 @@ public class JVM {
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectNotifiesAll() notification", t);
       }
@@ -769,6 +853,10 @@ public class JVM {
     if (listener != null) {
       try {
         listener.gcBegin(this);
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during gcBegin() notification", t);
       }
@@ -779,6 +867,10 @@ public class JVM {
     if (listener != null) {
       try {
         listener.gcEnd(this);
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during gcEnd() notification", t);
       }
@@ -795,6 +887,10 @@ public class JVM {
 
         lastElementInfo = null;
         lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
       } catch (Throwable t){
         throw new JPFListenerException("exception during exceptionThrown() notification", t);
       }
