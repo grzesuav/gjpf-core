@@ -7,7 +7,7 @@ import org.junit.Test;
  * basic test to test the test harness (how often can you say 'test' in one
  * sentence?)
  */
-public class $02_HarnessTestJPF extends TestJPF {
+public class t01_HarnessTestJPF extends TestJPF {
 
   int d;
 
