@@ -105,7 +105,7 @@
   </target>
   
   <target name="-compile-test" if="have_test">
-    <javac srcdir="test" destdir="build/test"
+    <javac srcdir="test/gov/nasa/jpf/basic" destdir="build/test"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}">
       <classpath>
         <path refid="lib.path"/>

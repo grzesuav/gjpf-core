@@ -16,12 +16,25 @@ public class t01_HarnessTestJPF extends TestJPF {
   }
 
   @Test public void test_1 () {
-    if (verifyNoPropertyViolation()){  // either if it's under JUnit, or the '-jpf' arg was present
-      // this code is only run under JPF
+    if (verifyNoPropertyViolation()){
       d += 42;
       System.out.println("** this is test_1() - it should succeed");
     }
   }
 
+  @Test public void test_2 () {
+    if (verifyAssertionError("wrong answer..")){
+      System.out.println("** this is test_2() - JPF should find an AssertionError");
+      assert d == 42 : "wrong answer..";
+    }
+  }
+
+  @Test public void test_3 () {
+    if (verifyUnhandledException("java.lang.NullPointerException")){
+      System.out.println("** this is test_3() - JPF should find an unhandled exception");
+      String s = null;
+      int l = s.length();
+    }
+  }
 
 }

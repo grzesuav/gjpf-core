@@ -104,7 +104,7 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
 
           testObjRef = MJIEnv.NULL;
           env.repeatInvocation();
-          ti.getVM().print("--- running test: " + miTest.getName() + '\n');
+          //ti.getVM().print("--- running test: " + miTest.getName() + '\n');
 
         } else {
           reset____V();
@@ -131,7 +131,18 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
     return true;
   }
 
-  public static boolean verifyAssertionError___3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef, int jpfArgsRef){
+  public static boolean verifyAssertionError__Ljava_lang_String_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
+                                  int detailsRef, int jpfArgsRef){
     return true;
   }
+  public static boolean verifyUnhandledException__Ljava_lang_String_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
+                                  int xClassNameRef, int jpfArgsRef){
+    return true;
+  }
+  public static boolean verifyUnhandledExceptionDetails__Ljava_lang_String_2Ljava_lang_String_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
+                                  int xClassNameRef, int detailsRef, int jpfArgsRef){
+    return true;
+  }
+
+
 }

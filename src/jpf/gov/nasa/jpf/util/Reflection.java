@@ -75,7 +75,11 @@ public class Reflection {
   }
   public static StackTraceElement getCallerElement () {
     StackTraceElement[] st = (new Throwable()).getStackTrace();
-    return st[1]; // '0' is this method itself
+    if (st.length > 2){
+      return st[2]; // '0' is this method itself
+    } else {
+      return null;
+    }
   }
 
 }

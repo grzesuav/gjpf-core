@@ -34,8 +34,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import org.junit.*;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Request;
 
 
 /**
@@ -95,7 +93,11 @@ public abstract class TestJPF extends Assert  {
       sb.append(cause);
     }
 
-    super.fail(sb.toString());
+    if (isJUnitRun()){
+      super.fail(sb.toString());
+    } else {
+      System.err.println(sb.toString());
+    }
   }
 
   protected void report (String[] args) {
@@ -199,54 +201,55 @@ public abstract class TestJPF extends Assert  {
     return false;
   }
 
-  /**
-   * run JUnit test methods of the provided class
-   * @param testClass class to test
-   * @param testMethods methods to run (all @Test methods if empty or null)
-   */
-  public static void runTests_X (Class<? extends Assert> testClass, String... testMethods){
-    if (testClass == null ){
-      fail("no test class specified");
-    }
-
-    if (testMethods == null || testMethods.length == 0){
-      JUnitCore.main(testClass.getName());
-    } else {
-      JUnitCore runner = new JUnitCore();
-      for (String mth : testMethods){
-        Request req = Request.method(testClass, mth);
-        runner.run(req);
-      }
-    }
-  }
-
   private static void runTests (Class<? extends TestJPF> testCls, String... args){
     Method testMethod = null;
     TestJPF testObject = null;
 
     boolean runDirectly = false;
-    String[] testMethods = args;
+    int nArgs = 0;
 
-    if ("-directly".equals(args[0])){
-      runDirectly = true;
-      testMethods = Misc.arrayWithoutFirst(args, 1);
+    if (args != null){
+      for (int i=0; i<args.length; i++){
+        if (args[i] != null && args[i].startsWith("-")){
+          if (args[i].equals("-d")){
+            runDirectly = true;
+          }
+          args[i] = null;
+        } else {
+          nArgs++;
+        }
+      }
     }
 
     try {
-      if (testMethods != null && testMethods.length > 0) {
-          for (String test : testMethods) {
-            try {
-             testMethod = testCls.getDeclaredMethod(test);
-            } catch (NoSuchMethodException x){
-                 throw new TestException("method: " + test +
-                    "() not in test class: " + testCls.getName(), x);
+      if (nArgs > 0) {
+          for (String test : args) {
+            if (test != null) {
+              if (!test.startsWith("test")){
+                throw new TestException("method name has no 'test' prefix: " + test);
+              }
+
+              try {
+                Method m = testCls.getDeclaredMethod(test);
+                if (!Modifier.isPublic(m.getModifiers())){
+                  throw new TestException("test method not public: " + test);                
+                }
+                if (Modifier.isStatic(m.getModifiers())){
+                  throw new TestException("test method is static: " + test);                
+                }
+                testMethod = m;
+
+              } catch (NoSuchMethodException x) {
+                throw new TestException("method: " + test +
+                        "() not in test class: " + testCls.getName(), x);
+              }
+
+              testObject = testCls.newInstance();
+              testObject.runDirectly(runDirectly);
+
+              System.out.println("-- running test: " + test);
+              testMethod.invoke(testObject);
             }
-
-            testObject = testCls.newInstance();
-            testObject.runDirectly(runDirectly);
-
-            System.out.println("-- running test: " + test);
-            testMethod.invoke(testObject);
           }
 
       } else {
@@ -291,12 +294,20 @@ public abstract class TestJPF extends Assert  {
    * run JPF expecting a AssertionError in the SuT
    * @param args JPF main() arguments
    */
-  public void assertionError (String... args) {
-    unhandledException("java.lang.AssertionError", args );
+  public void assertionError (String details, String... args) {
+    unhandledException("java.lang.AssertionError", details, args );
   }
-  protected void assertionErrorThis (String... jpfArgs){
-    assertionError(getArgsForCallerMethod(jpfArgs));
+  protected boolean verifyAssertionError (String details, String... args){
+    if (runDirectly) {
+      return true;
+    } else {
+      StackTraceElement caller = Reflection.getCallerElement();
+      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      unhandledException("java.lang.AssertionError", details, args);
+      return false;
+    }
   }
+
 
 
   /**
@@ -336,19 +347,13 @@ public abstract class TestJPF extends Assert  {
   }
   protected boolean verifyNoPropertyViolation (String...jpfArgs){
     if (runDirectly) {
+      return true;
+    } else {
       StackTraceElement caller = Reflection.getCallerElement();
       String[] args = Misc.appendArray(jpfArgs, caller.getClassName(), caller.getMethodName());
       noPropertyViolation(args);
       return false;
-    } else {
-      return true;
     }
-  }
-
-
-
-  protected void noPropertyViolationThis (String... jpfArgs){
-    noPropertyViolation(getArgsForCallerMethod(jpfArgs));
   }
 
 
@@ -359,7 +364,7 @@ public abstract class TestJPF extends Assert  {
    * run JPF expecting an unhandled exception to occur in the SuT
    * @param args JPF main() arguments
    */
-  public void unhandledException ( String xClassName, String... args) {
+  public void unhandledException ( String xClassName, String details, String... args) {
     ExceptionInfo xi = null;
     
     report(args);
@@ -374,10 +379,16 @@ public abstract class TestJPF extends Assert  {
       } else {
         String xn = xi.getExceptionClassname();
         if (!xn.equals(xClassName)){
-          if (xn.equals(RawTest.Exception.class.getName())){
+          if (xn.equals(TestException.class.getName())){
             xn = xi.getCauseClassname();
             if (!xn.equals(xClassName)){
               fail("JPF caught wrong exception: " + xn + ", expected: " + xClassName);            
+            }
+            if (details != null){
+              String xd = xi.getCauseDetails();
+              if (!details.equals(xd)){
+                fail("wrong exception details: " + xd + ", expected: " + details);
+              }
             }
           } else {
             fail("JPF caught wrong exception: " + xn + ", expected: " + xClassName);          
@@ -388,8 +399,25 @@ public abstract class TestJPF extends Assert  {
       fail("JPF internal exception executing: ", args, x.toString());
     }
   }
-  protected void unhandledExceptionThis (String exceptionClsName, String... jpfArgs){
-    unhandledException(exceptionClsName, getArgsForCallerMethod(jpfArgs));
+  protected boolean verifyUnhandledExceptionDetails (String xClassName, String details, String... args){
+    if (runDirectly) {
+      return true;
+    } else {
+      StackTraceElement caller = Reflection.getCallerElement();
+      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      unhandledException(xClassName, details, args);
+      return false;
+    }
+  }
+  protected boolean verifyUnhandledException (String xClassName, String... args){
+    if (runDirectly) {
+      return true;
+    } else {
+      StackTraceElement caller = Reflection.getCallerElement();
+      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      unhandledException(xClassName, null, args);
+      return false;
+    }
   }
 
 
@@ -413,9 +441,6 @@ public abstract class TestJPF extends Assert  {
         fail("JPF produced wrong exception: " + xn + ", expected: " + xClassName);
       }
     }
-  }
-  protected void jpfExceptionThis (Class<? extends Throwable> exceptionCls, String... jpfArgs){
-    jpfException(exceptionCls.getName(), getArgsForCallerMethod(jpfArgs));
   }
 
   
@@ -451,9 +476,6 @@ public abstract class TestJPF extends Assert  {
     }
     
     fail("JPF failed to detect error: " + propertyCls.getName());    
-  }
-  protected void propertyViolationThis (Class<? extends Property> propertyCls, String... jpfArgs){
-    propertyViolation(propertyCls, getArgsForCallerMethod(jpfArgs));
   }
 
 

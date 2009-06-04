@@ -63,6 +63,20 @@ public class ExceptionInfo {
     
     return null;
   }
+  public String getCauseDetails() {
+    int causeRef = ei.getReferenceField("cause");
+    if (causeRef != -1){
+      ElementInfo eiCause = DynamicArea.getHeap().get(causeRef);
+      int msgRef = eiCause.getReferenceField("detailMessage");
+      if (msgRef != -1){
+        ElementInfo eiMsg = DynamicArea.getHeap().get(msgRef);
+        return eiMsg.asString();
+      }
+    }
+
+    return null;
+  }
+
   
   public ThreadInfo getThread() {
     return ti;

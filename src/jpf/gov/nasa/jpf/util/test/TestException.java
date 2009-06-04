@@ -6,6 +6,10 @@ package gov.nasa.jpf.util.test;
  */
 public class TestException extends RuntimeException {
 
+  public TestException(String details) {
+    super(details);
+  }
+
   public TestException(String details, Throwable cause) {
     super(details, cause);
   }
