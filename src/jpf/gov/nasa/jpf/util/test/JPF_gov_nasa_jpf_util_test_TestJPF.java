@@ -11,7 +11,7 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
 import java.util.ArrayList;
 
 /**
- *
+ * native peer for our test class root
  */
 public class JPF_gov_nasa_jpf_util_test_TestJPF {
 
@@ -22,13 +22,14 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
   static int index = 0;
   static int testObjRef = MJIEnv.NULL;
 
+  static boolean done;
 
   private static void pushDirectCallFrame(MJIEnv env, MethodInfo mi, int objRef) {
     ThreadInfo ti = env.getThreadInfo();
-    Instruction insn = ti.getPC();
+    Instruction resumeInsn = ti.getPC();
 
     MethodInfo stub = mi.createDirectCallStub("[test]");
-    DirectCallStackFrame frame = new DirectCallStackFrame(stub, insn);
+    DirectCallStackFrame frame = new DirectCallStackFrame(stub, resumeInsn);
     frame.pushRef(objRef);
     ti.pushFrame(frame);
   }
@@ -64,7 +65,12 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
 
   //--- our exported native methods
 
+  public static void init() {
+    reset____V();
+  }
+
   public static void reset____V(){
+    done = false;
     index = 0;
     testObjRef = MJIEnv.NULL;
     testMethods = null;
@@ -72,65 +78,70 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
     testClassCtor = null;
   }
 
+  public static void $init____V (MJIEnv env, int objRef){
+    // nothing
+  }
+
   public static void runTestsOfThisClass___3Ljava_lang_String_2__V (MJIEnv env, int clsObjRef,
                                                                     int selectedTestsRef) {
     ThreadInfo ti = env.getThreadInfo();
 
-    if (testMethods == null) {
-      StackFrame frame = ti.getTopFrame(); // the runTestsOfThisClass() caller
+    if (!done) {
+      if (testMethods == null) {
+        StackFrame frame = ti.getTopFrame(); // the runTestsOfThisClass() caller
 
-      testClass = frame.getClassInfo();
-      testClassCtor = testClass.getMethod("<init>()V", true);
+        testClass = frame.getClassInfo();
+        testClassCtor = testClass.getMethod("<init>()V", true);
 
-      String[] selectedTests = env.getStringArrayObject(selectedTestsRef);
-      if (initializeTestMethods(env,selectedTests)){
-        env.repeatInvocation();
-      }
-
-    } else { // this is re-executed
-      if (testObjRef == MJIEnv.NULL){ // create a new test object
-        testObjRef = env.newObject(testClass);
-
-        if (testClassCtor != null) {
-          pushDirectCallFrame(env,testClassCtor,testObjRef);
+        String[] selectedTests = env.getStringArrayObject(selectedTestsRef);
+        if (initializeTestMethods(env, selectedTests)) {
           env.repeatInvocation();
         }
 
-      } else { // execute the next test
+      } else { // this is re-executed
+        if (testObjRef == MJIEnv.NULL) { // create a new test object
+          testObjRef = env.newObject(testClass);
 
-        if (index < testMethods.length) {
-          MethodInfo miTest = testMethods[index++];
-          pushDirectCallFrame(env, miTest, testObjRef);
+          if (testClassCtor != null) {
+            pushDirectCallFrame(env, testClassCtor, testObjRef);
+            env.repeatInvocation();
+          }
 
-          testObjRef = MJIEnv.NULL;
-          env.repeatInvocation();
-          //ti.getVM().print("--- running test: " + miTest.getName() + '\n');
+        } else { // execute the next test
+          if (testMethods != null && (index < testMethods.length)) {
+            MethodInfo miTest = testMethods[index++];
+            pushDirectCallFrame(env, miTest, testObjRef);
 
-        } else {
-          reset____V();
+            if (index < testMethods.length) {
+              testObjRef = MJIEnv.NULL;
+            } else {
+              done = true;
+            }
+
+            env.repeatInvocation();
+          }
         }
       }
     }
   }
 
 
-
-  public static boolean isJUnitRun____Z (MJIEnv env, int clsObjRef){
-    return false;
-  }
-
   /**
-   * if this is called, we know that we already run under JPF
+   * if any of our methods are executed, we know that we already run under JPF
    */
   public static boolean runJPF____Z (MJIEnv env, int clsObjRef){
     return false;
   }
+  public static boolean isJUnitRun____Z (MJIEnv env, int clsObjRef){
+    return false;
+  }
 
 
+  // we need to override these so that the actual test code gets executed
+  // if we fail to intercept, the bytecode will actually start JPF
   public static boolean verifyNoPropertyViolation___3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef, int jpfArgsRef){
     return true;
   }
-
   public static boolean verifyAssertionError__Ljava_lang_String_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                   int detailsRef, int jpfArgsRef){
     return true;
@@ -141,6 +152,17 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
   }
   public static boolean verifyUnhandledExceptionDetails__Ljava_lang_String_2Ljava_lang_String_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                   int xClassNameRef, int detailsRef, int jpfArgsRef){
+    return true;
+  }
+  public static boolean verifyPropertyViolation__Ljava_lang_Class_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
+                                  int propClsRef, int jpfArgsRef){
+    return true;
+  }
+  public static boolean verifyJPFException__Ljava_lang_Class_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
+                                  int xClsRef, int jpfArgsRef){
+    return true;
+  }
+  public static boolean verifyDeadlock___3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef, int jpfArgsRef){
     return true;
   }
 

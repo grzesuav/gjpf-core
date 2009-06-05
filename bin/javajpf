@@ -20,21 +20,17 @@ if test -d $JPF_HOME/lib; then
   CP=$CP:`find $JPF_HOME/lib \( -name "*.jar" -or -name "*.zip" \) -exec echo -n {}":" \;`
 fi
 
-if test -d $JPF_HOME/extensions; then
-  CP=$CP:`find $JPF_HOME/extensions \( -name "*.jar" -or -name "*.zip" \) -exec echo -n {}":" \;`
-fi
-
-#add junit*.jar from build-tools/lib
-if test -d $JPF_HOME/build-tools/lib; then
-  CP=$CP:`find $JPF_HOME/build-tools/lib -name "junit*.jar" -exec echo -n {}":" \;`
+#add junit*.jar from tools/lib
+if test -d $JPF_HOME/tools/lib; then
+  CP=$CP:`find $JPF_HOME/tools/lib -name "junit*.jar" -exec echo -n {}":" \;`
 fi
 
 
 #our standard native peer environment (just the peer, NOT the model classes)
-CP=$CP:$JPF_HOME/build/env/jvm
+CP=$CP:$JPF_HOME/build/mji/peer
 
 #classes that can be explicitly used in applications
-CP=$CP:$JPF_HOME/build/app
+CP=$CP:$JPF_HOME/build/annotations
 
 #Examples
 CP=$CP:$JPF_HOME/build/examples

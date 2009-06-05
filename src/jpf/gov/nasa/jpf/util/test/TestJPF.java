@@ -318,6 +318,7 @@ public abstract class TestJPF extends Assert  {
     ExceptionInfo xi = null;
     
     report(args);
+    JPF_gov_nasa_jpf_util_test_TestJPF.init();
 
     try {
       Config conf = JPF.createConfig(args);
@@ -368,6 +369,7 @@ public abstract class TestJPF extends Assert  {
     ExceptionInfo xi = null;
     
     report(args);
+    JPF_gov_nasa_jpf_util_test_TestJPF.init();
 
     try {
       // run JPF on our target test func
@@ -396,7 +398,6 @@ public abstract class TestJPF extends Assert  {
         }
       }
     } catch (Throwable x) {
-x.printStackTrace();
       fail("JPF internal exception executing: ", args, x.toString());
     }
   }
@@ -427,20 +428,30 @@ x.printStackTrace();
    * NOTE - xClassName needs to be the concrete exception, not a super class
    * @param args JPF main() arguments
    */
-  public void jpfException (String xClassName, String[] args) {
+  public void jpfException (Class<? extends Throwable> xCls, String... args) {
     report(args);
+    JPF_gov_nasa_jpf_util_test_TestJPF.init();
 
     try {
       // run JPF on our target test func
       gov.nasa.jpf.JPF.main(args);
       
-      fail("JPF failed to produce exception, expected: " + xClassName);
+      fail("JPF failed to produce exception, expected: " + xCls.getName());
       
     } catch (Throwable x) {
-      String xn = x.getClass().getName();
-      if (!xn.equals(xClassName)){
-        fail("JPF produced wrong exception: " + xn + ", expected: " + xClassName);
+      if (!xCls.isAssignableFrom(x.getClass())){
+        fail("JPF produced wrong exception: " + x + ", expected: " + xCls.getName());
       }
+    }
+  }
+  protected boolean verifyJPFException (Class<? extends Throwable> xCls, String... args){
+    if (runDirectly) {
+      return true;
+    } else {
+      StackTraceElement caller = Reflection.getCallerElement();
+      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      jpfException(xCls, args);
+      return false;
     }
   }
 
@@ -450,26 +461,23 @@ x.printStackTrace();
    * run JPF expecting a property violation of the SuT
    * @param args JPF main() arguments
    */
-  public void propertyViolation (Class<?> propertyCls, String[] args ){
+  public void propertyViolation (Class<? extends Property> propertyCls, String... args ){
     report(args);
+    JPF_gov_nasa_jpf_util_test_TestJPF.init();
     
     try {
-      Config conf = JPF.createConfig(args);
-      
-      if (conf.getTargetArg() != null) {
-        JPF jpf = new JPF(conf);
-        jpf.run();
-        
-        List<Error> errors = jpf.getSearchErrors();
-        
-        if (errors != null) {
-          for (Error e : errors) {          
-            if (propertyCls == e.getProperty().getClass()) {
-              System.out.println("found error: " + propertyCls.getName());
-              return; // success, we got the sucker
-            }
+      JPF jpf = new JPF(args);
+      jpf.run();
+
+      List<Error> errors = jpf.getSearchErrors();
+
+      if (errors != null) {
+        for (Error e : errors) {
+          if (propertyCls == e.getProperty().getClass()) {
+            System.out.println("found error: " + propertyCls.getName());
+            return; // success, we got the sucker
           }
-        }          
+        }
       }
     } catch (Throwable x) {
       x.printStackTrace();
@@ -477,6 +485,16 @@ x.printStackTrace();
     }
     
     fail("JPF failed to detect error: " + propertyCls.getName());    
+  }
+  protected boolean verifyPropertyViolation (Class<? extends Property> propertyCls, String... args){
+    if (runDirectly) {
+      return true;
+    } else {
+      StackTraceElement caller = Reflection.getCallerElement();
+      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      propertyViolation(propertyCls, args);
+      return false;
+    }
   }
 
 
@@ -487,8 +505,15 @@ x.printStackTrace();
   public void deadlock (String... args) {
     propertyViolation(NotDeadlockedProperty.class, args );
   }
-  protected void deadlockThis (String... jpfArgs){
-    propertyViolation(NotDeadlockedProperty.class, getArgsForCallerMethod(jpfArgs));
+  protected boolean verifyDeadlock (String... args){
+    if (runDirectly) {
+      return true;
+    } else {
+      StackTraceElement caller = Reflection.getCallerElement();
+      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      propertyViolation(NotDeadlockedProperty.class, args);
+      return false;
+    }
   }
 
 }
