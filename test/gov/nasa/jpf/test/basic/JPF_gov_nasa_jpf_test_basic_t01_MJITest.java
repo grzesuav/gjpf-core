@@ -16,7 +16,7 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.basic;
+package gov.nasa.jpf.test.basic;
 
 import gov.nasa.jpf.jvm.DirectCallStackFrame;
 import gov.nasa.jpf.jvm.MJIEnv;
@@ -28,7 +28,7 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
 /**
  * native peer class for unit testing MJI
  */
-public class JPF_gov_nasa_jpf_basic_MJITest {
+public class JPF_gov_nasa_jpf_test_basic_t01_MJITest {
 
   // intercept <clinit>
   public static void $clinit (MJIEnv env, int rcls) {

@@ -17,12 +17,12 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.basic;
+package gov.nasa.jpf.test.basic;
 
 /**
  * model class for MJI test
  */
-public class MJITest {
+public class t01_MJITest {
 
   static int sdata;
 
@@ -34,7 +34,7 @@ public class MJITest {
   int idata = 0;
 
   public static void main (String[] args){
-    MJITest test = new MJITest();
+    t01_MJITest test = new t01_MJITest();
 
     // unfortunately. String.equals() is using MJI too, so we don't want to
     // rely on this to select the test methods
@@ -60,11 +60,11 @@ public class MJITest {
   }
 
 
-  MJITest () {
+  t01_MJITest () {
     // not intercepted
   }
 
-  MJITest (int data) {
+  t01_MJITest (int data) {
     // only here to be intercepted
   }
 
@@ -74,7 +74,7 @@ public class MJITest {
   }
 
   public void testNativeInit () {
-    MJITest t = new MJITest(42);
+    t01_MJITest t = new t01_MJITest(42);
     assert (t.idata == 42)  : "native '<init>' failed";
   }
 

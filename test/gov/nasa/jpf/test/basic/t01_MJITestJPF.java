@@ -17,7 +17,7 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.basic;
+package gov.nasa.jpf.test.basic;
 
 import gov.nasa.jpf.JPFNativePeerException;
 import gov.nasa.jpf.util.test.TestJPF;
@@ -35,7 +35,7 @@ import org.junit.Test;
  */
 public class t01_MJITestJPF extends TestJPF {
 
-  static String TEST_CLASS = "gov.nasa.jpf.basic.MJITest";
+  static String TEST_CLASS = "gov.nasa.jpf.test.basic.t01_MJITest";
 
   // only used if we run this directly, i.e. outside of JUnit
   public static void main (String[] selectedMethods) {

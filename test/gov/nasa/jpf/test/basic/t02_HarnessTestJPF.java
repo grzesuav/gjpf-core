@@ -1,4 +1,4 @@
-package gov.nasa.jpf.basic;
+package gov.nasa.jpf.test.basic;
 
 import gov.nasa.jpf.jvm.NoUncaughtExceptionsProperty;
 import gov.nasa.jpf.util.test.TestJPF;
