@@ -106,7 +106,7 @@
   
   <target name="-compile-test" if="have_test">
     <javac srcdir="test" destdir="build/test"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}" includes="gov/nasa/jpf/test/basic/**">
+           debug="${debug}" source="${src_level}" deprecation="${deprecation}" includes="gov/nasa/jpf/test/**">
       <classpath>
         <path refid="lib.path"/>
         <fileset dir=".">
@@ -181,20 +181,21 @@
 
       <batchtest todir="build/test">
         <fileset dir="build/test">
-<!--
-          <include name="Test*JPF.class"/>
-          <include name="**/jvm/Test*JPF.class"/>
-          <include name="**/mc/Test*JPF.class"/>
-
-          <include name="*TestJPF.class"/>
-          <include name="**/vm/*TestJPF.class"/>
-          <include name="**/java/**/*TestJPF.class"/>
--->
-          <include name="gov/nasa/jpf/test/basic/*TestJPF.class"/>
-
-
+          <exclude name="**/JPF_*.class"/>
+          <include name="gov/nasa/jpf/test/basic/*Test.class"/>
+          <include name="gov/nasa/jpf/test/vm/basic/*Test.class"/>
+          <include name="gov/nasa/jpf/test/vm/reflection/*Test.class"/>
+          <include name="gov/nasa/jpf/test/vm/threads/*Test.class"/>
         </fileset>
       </batchtest>
+
+      <batchtest todir="build/test">
+        <fileset dir="build/test">
+          <exclude name="**/JPF_*.class"/>
+          <include name="gov/nasa/jpf/test/mc/basic/*Test.class"/>
+        </fileset>
+      </batchtest>
+
     </junit>
    
   </target>

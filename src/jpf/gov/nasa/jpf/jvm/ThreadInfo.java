@@ -1343,14 +1343,21 @@ public class ThreadInfo
    */
   public int createStackTraceElements (int[] snapshot) {
     int n = snapshot.length/2;
-    DynamicArea da = DynamicArea.getHeap();
-    int aref = da.newArray("Ljava/lang/StackTraceElement;", n, this);
-    ElementInfo aei = da.get(aref);
-
+    int nVisible=0;
+    StackTraceElement[] list = new StackTraceElement[n];
     for (int i=0, j=0; i<n; i++){
       StackTraceElement ste = new StackTraceElement( MethodInfo.getMethodInfo(snapshot[j++]),
                                                      snapshot[j++]);
-      int eref = ste.createJPFStackTraceElement();
+      if (!ste.ignore){
+        list[nVisible++] = ste;
+      }
+    }
+
+    DynamicArea da = DynamicArea.getHeap();
+    int aref = da.newArray("Ljava/lang/StackTraceElement;", nVisible, this);
+    ElementInfo aei = da.get(aref);
+    for (int i=0; i<nVisible; i++){
+      int eref = list[i].createJPFStackTraceElement();
       aei.setElement( i, eref);
     }
 
@@ -1399,8 +1406,11 @@ public class ThreadInfo
     if (aRef != MJIEnv.NULL) {
       int len = env.getArrayLength(aRef);
       for (int i=0; i<len; i++) {
-        StackTraceElement ste = new StackTraceElement(env.getReferenceArrayElement(aRef, i));
-        ste.printOn( pw);
+        int steRef = env.getReferenceArrayElement(aRef, i);
+        if (steRef != MJIEnv.NULL){  // might be ignored (e.g. direct call)
+          StackTraceElement ste = new StackTraceElement(steRef);
+          ste.printOn( pw);
+        }
       }
 
     } else { // fall back to use the snapshot stored in the exception object
@@ -1488,8 +1498,12 @@ public class ThreadInfo
         }
 
         print(pw, "\tat ");
-        print(pw, clsName);
-        print(pw, ".");
+        if (clsName != null){
+          print(pw, clsName);
+          print(pw, ".");
+        } else {  // some synthetic methods don't belong to classes
+          print(pw, "[no class] ");
+        }
         print(pw, mthName);
 
         if (fileName != null){

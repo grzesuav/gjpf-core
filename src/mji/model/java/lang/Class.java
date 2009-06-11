@@ -101,11 +101,11 @@ public final class Class<T> {
   public native Constructor<?>[] getConstructors() throws SecurityException;
   
   public InputStream getResourceAsStream (String name) {
-    throw new JPFException("Class.getResourceAsStream() not yet supported");
+    throw new UnsupportedOperationException("Class.getResourceAsStream() not yet supported in JPF");
   }
 
   public URL getResource (String name) {
-    throw new JPFException("Class.getResource() not yet supported");
+    throw new UnsupportedOperationException("Class.getResource() not yet supported in JPF");
   }
 
   public Package getPackage() {

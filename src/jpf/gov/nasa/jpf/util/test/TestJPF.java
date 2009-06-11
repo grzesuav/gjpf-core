@@ -253,6 +253,7 @@ public abstract class TestJPF extends Assert  {
           }
 
       } else {
+        int nTests = 0;
         for (Method m : testCls.getDeclaredMethods()) {
           testMethod = m;
           int mod = m.getModifiers();
@@ -262,9 +263,14 @@ public abstract class TestJPF extends Assert  {
             testObject = testCls.newInstance();
             testObject.runDirectly(runDirectly);
 
+            nTests++;
             System.out.println("-- running test: " + m.getName());
             testMethod.invoke(testObject);
           }
+        }
+
+        if (nTests == 0){
+          System.out.println("WARNING: no \"@Test public void test..()\" methods found");
         }
       }
 
@@ -297,7 +303,7 @@ public abstract class TestJPF extends Assert  {
   public void assertionError (String details, String... args) {
     unhandledException("java.lang.AssertionError", details, args );
   }
-  protected boolean verifyAssertionError (String details, String... args){
+  protected boolean verifyAssertionErrorDetails (String details, String... args){
     if (runDirectly) {
       return true;
     } else {
@@ -307,6 +313,17 @@ public abstract class TestJPF extends Assert  {
       return false;
     }
   }
+  protected boolean verifyAssertionError (String... args){
+    if (runDirectly) {
+      return true;
+    } else {
+      StackTraceElement caller = Reflection.getCallerElement();
+      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      unhandledException("java.lang.AssertionError", null, args);
+      return false;
+    }
+  }
+
 
 
 

@@ -512,23 +512,27 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    * Creates a new string.
    */
   public int newString (String str, ThreadInfo th) {
-    int         length = str.length();
-    int         index = newObject(ClassInfo.stringClassInfo,th);
-    int         value = newArray("C", length, th);
+    if (str != null) {
+      int length = str.length();
+      int index = newObject(ClassInfo.stringClassInfo, th);
+      int value = newArray("C", length, th);
 
-    ElementInfo e = get(index);
-    // <2do> pcm - this is BAD, we shouldn't depend on private impl of
-    // external classes - replace with our own java.lang.String !
-    e.setReferenceField("value", value);
-    e.setIntField("offset", 0);
-    e.setIntField("count", length);
+      ElementInfo e = get(index);
+      // <2do> pcm - this is BAD, we shouldn't depend on private impl of
+      // external classes - replace with our own java.lang.String !
+      e.setReferenceField("value", value);
+      e.setIntField("offset", 0);
+      e.setIntField("count", length);
 
-    e = get(value);
-    for (int i = 0; i < length; i++) {
-      e.setElement(i, str.charAt(i));
+      e = get(value);
+      for (int i = 0; i < length; i++) {
+        e.setElement(i, str.charAt(i));
+      }
+
+      return index;
+    } else {
+      return -1;
     }
-
-    return index;
   }
 
 
