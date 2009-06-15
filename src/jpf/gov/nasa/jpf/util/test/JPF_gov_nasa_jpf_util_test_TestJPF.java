@@ -129,8 +129,8 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
   /**
    * if any of our methods are executed, we know that we already run under JPF
    */
-  public static boolean runJPF____Z (MJIEnv env, int clsObjRef){
-    return false;
+  public static boolean isJPFRun____Z (MJIEnv env, int clsObjRef){
+    return true;
   }
   public static boolean isJUnitRun____Z (MJIEnv env, int clsObjRef){
     return false;

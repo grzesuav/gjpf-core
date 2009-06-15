@@ -183,7 +183,7 @@ public abstract class TestJPF extends Assert  {
     this.sutClassName = sutClassName;
   }
 
-  public static boolean runJPF () {
+  public static boolean isJPFRun () {
     return false;
   }
 

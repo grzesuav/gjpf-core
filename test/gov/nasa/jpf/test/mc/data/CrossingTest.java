@@ -32,135 +32,141 @@
  * from one run to the next using JPF's native peer methods -
  * see JPF_Crossing.java for the code of getTotal() and setTotal(int).
  */
-package gov.nasa.jpf.mc;
+package gov.nasa.jpf.test.mc.data;
 
 import gov.nasa.jpf.jvm.Verify;
+import gov.nasa.jpf.util.test.TestJPF;
+import org.junit.Test;
 
-class Constants {
+public class CrossingTest extends TestJPF {
 
-  public static final boolean east = true;
-  public static final boolean west = false;
-}
+  public static void main (String[] args){
+    runTestsOfThisClass(args);
+  }
 
-class Torch {
+  static class Constants {
 
-  public static boolean side = Constants.east;
+    public static final boolean east = true;
+    public static final boolean west = false;
+  }
 
-  public String toString() {
-    if (side == Constants.east) {
-      return "east";
-    } else {
-      return "west";
+  static class Torch {
+
+    public static boolean side = Constants.east;
+
+    public String toString() {
+      if (side == Constants.east) {
+        return "east";
+      } else {
+        return "west";
+      }
     }
   }
-}
 
-class Bridge {
+  static class Bridge {
 
-  static Person[] onBridge = new Person[2];
-  static int numOnBridge = 0;
+    static Person[] onBridge = new Person[2];
+    static int numOnBridge = 0;
 
-  public static boolean isFull() {
-    return numOnBridge != 0;
-  }
+    public static boolean isFull() {
+      return numOnBridge != 0;
+    }
 
-  public static int Cross() {
-    int time = 0;
-    Torch.side = !Torch.side;
+    public static int Cross() {
+      int time = 0;
+      Torch.side = !Torch.side;
 
-    if (numOnBridge == 1) {
-      onBridge[0].side = Torch.side;
-      time = onBridge[0].time;
-
-    //System.out.println("Person " + onBridge[0] +
-    //                     " moved to " + Torch.side +
-    //               " in time " + time);
-    } else {
-      assert onBridge[0] != null : "Argh, null " + numOnBridge;
-      assert onBridge[1] != null;
-
-      onBridge[0].side = Torch.side;
-      onBridge[1].side = Torch.side;
-
-      if (onBridge[0].time > onBridge[1].time) {
+      if (numOnBridge == 1) {
+        onBridge[0].side = Torch.side;
         time = onBridge[0].time;
+
+      //System.out.println("Person " + onBridge[0] +
+      //                     " moved to " + Torch.side +
+      //               " in time " + time);
       } else {
-        time = onBridge[1].time;
+        assert onBridge[0] != null : "Argh, null " + numOnBridge;
+        assert onBridge[1] != null;
+
+        onBridge[0].side = Torch.side;
+        onBridge[1].side = Torch.side;
+
+        if (onBridge[0].time > onBridge[1].time) {
+          time = onBridge[0].time;
+        } else {
+          time = onBridge[1].time;
+        }
+
+      //System.out.println("Person " + onBridge[0] +
+      //                 " and Person " + onBridge[1] +
+      //                 " moved to " + Torch.side +
+      //                 " in time " + time);
       }
 
-    //System.out.println("Person " + onBridge[0] +
-    //                 " and Person " + onBridge[1] +
-    //                 " moved to " + Torch.side +
-    //                 " in time " + time);
+      return time;
     }
 
-    return time;
-  }
+    public static void clearBridge() {
+      if (numOnBridge == 0) {
+        return;
+      } else if (numOnBridge == 1) {
+        onBridge[0] = null;
+        numOnBridge = 0;
+      } else {
+        onBridge[0] = null;
+        onBridge[1] = null;
+        numOnBridge = 0;
+      }
+    }
 
-  public static void clearBridge() {
-    if (numOnBridge == 0) {
-      return;
-    } else if (numOnBridge == 1) {
-      onBridge[0] = null;
-      numOnBridge = 0;
-    } else {
+    public static void initBridge() {
       onBridge[0] = null;
       onBridge[1] = null;
       numOnBridge = 0;
     }
-  }
 
-  public static void initBridge() {
-    onBridge[0] = null;
-    onBridge[1] = null;
-    numOnBridge = 0;
-  }
+    public static boolean tryToCross(Person th) {
+      if ((numOnBridge < 2) && (onBridge[0] != th) && (onBridge[1] != th)) {
+        onBridge[numOnBridge++] = th;
 
-  public static boolean tryToCross(Person th) {
-    if ((numOnBridge < 2) && (onBridge[0] != th) && (onBridge[1] != th)) {
-      onBridge[numOnBridge++] = th;
-
-      return true;
-    } else {
-      return false;
-    }
-  }
-}
-
-class Person {
-  // person to cross the bridge
-
-  int id;
-  public int time;
-  public boolean side;
-
-  public Person(int i, int t) {
-    time = t;
-    side = Constants.east;
-    id = i;
-  }
-
-  public void move() {
-    if (side == Torch.side) {
-      if (!Verify.randomBool()) {
-        Bridge.tryToCross(this);
+        return true;
+      } else {
+        return false;
       }
     }
   }
 
-  public String toString() {
-    return "" + id;
-  }
-}
+  static class Person {
+    // person to cross the bridge
 
-public class Crossing {
+    int id;
+    public int time;
+    public boolean side;
+
+    public Person(int i, int t) {
+      time = t;
+      side = Constants.east;
+      id = i;
+    }
+
+    public void move() {
+      if (side == Torch.side) {
+        if (!Verify.randomBool()) {
+          Bridge.tryToCross(this);
+        }
+      }
+    }
+
+    public String toString() {
+      return "" + id;
+    }
+  }
 
   public static native void setTotal(int time);
 
   // due to these natives the code only runs in JPF
   public static native int getTotal();
 
-  public static void main(String[] args) {
+  public void run() {
     //Verify.beginAtomic();
 
     // when natives are used one can record the minimal value found so
@@ -261,5 +267,18 @@ public class Crossing {
     }
 
     System.out.println();
+  }
+
+
+  @Test public void testNoHeuristic () {
+    if (verifyAssertionError()){
+      run();
+    }
+  }
+
+  @Test public void testBFSHeuristic() {
+    if (verifyAssertionError("+search.class=gov.nasa.jpf.search.heuristic.BFSHeuristic")){
+      run();
+    }
   }
 }

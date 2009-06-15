@@ -194,6 +194,7 @@
           <exclude name="**/JPF_*.class"/>
           <include name="gov/nasa/jpf/test/mc/basic/*Test.class"/>
           <include name="gov/nasa/jpf/test/mc/threads/*Test.class"/>
+          <include name="gov/nasa/jpf/test/mc/data/*Test.class"/>
         </fileset>
       </batchtest>
 

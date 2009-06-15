@@ -16,44 +16,37 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.mc;
+package gov.nasa.jpf.test.vm.basic;
 
-import org.junit.Test;
-import org.junit.runner.JUnitCore;
 import gov.nasa.jpf.util.test.TestJPF;
+import org.junit.Test;
 
 
-/**
- * JPF driver for breadth first search test
- */
-public class TestCrossingJPF extends TestJPF {
-  static final String TEST_CLASS = "gov.nasa.jpf.mc.Crossing";
-
+public class AnnotationTest extends TestJPF {
 
   public static void main (String[] args) {
-    JUnitCore.main("gov.nasa.jpf.mc.TestCrossingJPF");
+    runTestsOfThisClass(args);
   }
-
-
-  /**************************** tests **********************************/
-  /**
-   * Tests running the Crossing example with no heuristics, i.e., with the
-   * default DFS.
-   */
-  @Test
-  public void testCrossingNoHeuristic () {
-    String[] args = { TEST_CLASS };
-    assertionError(args);
+  
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+  @interface A3 {
+    long value();
   }
+  
+  @A3(value = Long.MAX_VALUE)
+  @Test public void testLongElementAnnotation () {
+    if (verifyNoPropertyViolation()) {
+      try {
+        java.lang.reflect.Method method =
+                AnnotationTest.class.getMethod("testLongElementAnnotation");
+        A3 annotation = method.getAnnotation(A3.class);
 
-  /**
-   * Tests running the Crossing example with BFS heuristic.
-   */
-  @Test
-  public void testCrossingBFSHeuristic () {
-    String[] args = { "+search.class=gov.nasa.jpf.search.heuristic.BFSHeuristic", TEST_CLASS };
-
-    assertionError(args);
+        assert (annotation.value() == Long.MAX_VALUE);
+      } catch (SecurityException e) {
+        e.printStackTrace();
+      } catch (NoSuchMethodException e) {
+        e.printStackTrace();
+      }
+    }
   }
-
 }

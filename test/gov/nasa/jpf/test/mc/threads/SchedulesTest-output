@@ -1,18 +1,15 @@
--- running test: testSleep
 main starting T
 main finished
 T started
 T sleeping
 T finished
 ~~~~~
--- running test: testSleep
 main starting T
 T started
 T sleeping
 main finished
 T finished
 ~~~~~
--- running test: testSleep
 main starting T
 T started
 T sleeping
