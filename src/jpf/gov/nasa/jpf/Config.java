@@ -1388,7 +1388,6 @@ public class Config extends Properties {
   
   public TreeMap<Object,Object> asOrderedMap() {
     TreeMap<Object,Object> map = new TreeMap<Object,Object>();
-    map.putAll(defaults);
     map.putAll(this);
     return map;
   }
