@@ -106,7 +106,7 @@
   
   <target name="-compile-test" if="have_test">
     <javac srcdir="test" destdir="build/test"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}" includes="gov/nasa/jpf/test/**">
+           debug="${debug}" source="${src_level}" deprecation="${deprecation}" includes="*,gov/nasa/jpf/test/**">
       <classpath>
         <path refid="lib.path"/>
         <fileset dir=".">
@@ -186,6 +186,14 @@
           <include name="gov/nasa/jpf/test/vm/basic/*Test.class"/>
           <include name="gov/nasa/jpf/test/vm/reflection/*Test.class"/>
           <include name="gov/nasa/jpf/test/vm/threads/*Test.class"/>
+          <include name="*Test.class"/>
+        </fileset>
+      </batchtest>
+
+      <batchtest todir="build/test">
+        <fileset dir="build/test">
+          <exclude name="**/JPF_*.class"/>
+          <include name="gov/nasa/jpf/test/lib/**/*Test.class"/>
         </fileset>
       </batchtest>
 

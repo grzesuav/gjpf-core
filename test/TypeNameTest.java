@@ -18,20 +18,20 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-
 /**
  * unfortunately this has to be in the unnamed package, since we need
  * B to be in the unnamed package (so that it has a builtin type name), and as
  * of Java 1.4 you can't import unnamed package classes into named packages
  */
-
-import gov.nasa.jpf.util.test.RawTest;
+import gov.nasa.jpf.util.test.TestJPF;
+import org.junit.Test;
 
 /*
  * just a helper class for the JavaLangObject raw test that happens to be
  * named like a builtin typecode (byte)
  */
 class B {
+
   int data;
 
   public B(int d) {
@@ -43,7 +43,7 @@ class B {
       return false;
     }
 
-    return ((B)other).data == data;
+    return ((B) other).data == data;
   }
 
   public String toString() {
@@ -51,26 +51,29 @@ class B {
   }
 }
 
+public class TypeNameTest extends TestJPF {
 
-public class ObjectTest extends RawTest {
-  public static void main (String[] selectedMethods) {
-    runTests( new ObjectTest(), selectedMethods);
+  public static void main(String[] args) {
+    runTestsOfThisClass(args);
   }
-    
-  public void testArrayCloning () {
-    // test for collisions between typecodes of builtin types
-    // and user defined classes (e.g. "B" for byte)
-    B[] b = new B[10];
-    b[3] = new B(42);
 
-    Object o = b.clone();
-    B[] bb = (B[]) o;
-    assert b[3].equals(bb[3]);
+  @Test
+  public void testArrayCloning() {
+    if (verifyNoPropertyViolation()) {
+      // test for collisions between typecodes of builtin types
+      // and user defined classes (e.g. "B" for byte)
+      B[] b = new B[10];
+      b[3] = new B(42);
 
-    byte[] a = new byte[10];
-    a[3] = 42;
-    o = a.clone();
-    byte[] aa = (byte[])o;
-    assert a[3] == aa[3];
+      Object o = b.clone();
+      B[] bb = (B[]) o;
+      assert b[3].equals(bb[3]);
+
+      byte[] a = new byte[10];
+      a[3] = 42;
+      o = a.clone();
+      byte[] aa = (byte[]) o;
+      assert a[3] == aa[3];
+    }
   }
 }

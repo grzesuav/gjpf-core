@@ -16,22 +16,35 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.java.math;
+package gov.nasa.jpf.test.lib.math;
 
 import gov.nasa.jpf.util.test.TestJPF;
+import java.math.BigInteger;
 import org.junit.Test;
 
-public class BigIntegerTestJPF extends TestJPF {
+public class BigIntegerTest extends TestJPF {
 
-  public static void main (String[] selectedMethods) {
-    runTestsOfThisClass(selectedMethods);
+  public static void main(String[] args) {
+    runTestsOfThisClass(args);
   }
 
-
-  /**************************** tests **********************************/
+  /************************** test methods ************************/
   @Test
-  public void testArithmeticOps () {
-    noPropertyViolationThis();
-  }
+  public void testArithmeticOps() {
+    if (verifyNoPropertyViolation()) {
+      System.out.println("testing arithmetic operations of BigInteger objects");
 
+      BigInteger big = new BigInteger("4200000000000000000");
+      BigInteger o = new BigInteger("100000000000000");
+      BigInteger noSoBig = new BigInteger("1");
+
+      BigInteger x = big.add(noSoBig);
+      String s = x.toString();
+      assert s.equals("4200000000000000001");
+
+      x = big.divide(o);
+      int i = x.intValue();
+      assert i == 42000;
+    }
+  }
 }
