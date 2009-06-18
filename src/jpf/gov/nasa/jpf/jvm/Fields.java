@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.untracked.UntrackedManager;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
 

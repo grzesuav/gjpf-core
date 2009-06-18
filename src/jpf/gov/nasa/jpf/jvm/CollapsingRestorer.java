@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.untracked.UntrackedManager;
 import gov.nasa.jpf.util.ObjVector;
 
 import java.util.Arrays;
