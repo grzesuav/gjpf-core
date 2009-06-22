@@ -34,22 +34,18 @@
     <fileset dir=".">
   	  <include name="lib/*.jar"/>
     </fileset>
-    <pathelement location="build/annotation"/>
     <pathelement location="build/jpf"/>
-    <pathelement location="build/mji/peer"/>
   </path>
 
   <!-- init: common initialization -->
   <target name="-init">
     <tstamp/>
 
-    <mkdir dir="build"/>
-    <mkdir dir="build/annotation"/>
-    <mkdir dir="build/jpf"/>
-    <mkdir dir="build/mji/peer"/>
-    <mkdir dir="build/mji/model"/>
-    <mkdir dir="build/test"/>
-    <mkdir dir="build/examples" />
+    <mkdir dir="build"/>             <!-- the build root -->
+    <mkdir dir="build/jpf"/>         <!-- the code that constitutes JPF -->
+    <mkdir dir="build/classes"/>     <!-- (modeled) classes executed by JPF -->
+    <mkdir dir="build/test"/>        <!-- regression test code -->
+    <mkdir dir="build/examples" />   <!-- example code -->
     
     <!-- the things that have to be in the classpath of whatever runs Ant -->
     <available property="have_javac" classname="com.sun.tools.javac.Main"/>
@@ -77,7 +73,7 @@
   </target>
 
   <target name="-compile-annotation" if="have_src_annotation">
-    <javac srcdir="src/annotation" destdir="build/annotation"
+    <javac srcdir="src/annotation" destdir="build/classes"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}" classpath=""/>
   </target>
 
@@ -95,12 +91,12 @@
   </target>
   
   <target name="-compile-mji-peer" if="have_src_mji_peer">
-    <javac srcdir="src/mji/peer" destdir="build/mji/peer"
+    <javac srcdir="src/mji/peer" destdir="build/jpf"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}" classpathref="lib.path"/>
   </target>
   
   <target name="-compile-mji-model" if="have_src_mji_model">
-    <javac srcdir="src/mji/model" destdir="build/mji/model"
+    <javac srcdir="src/mji/model" destdir="build/classes"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}" classpathref="lib.path"/>
   </target>
   
@@ -127,15 +123,20 @@
   <!-- build jars -->
   <target name="jar" depends="compile"
         description="generate the core JPF jar files" >
-    <mkdir dir="${dist.dir}"/>
-    <jar jarfile="${dist.dir}/jpf.jar">
-      <fileset dir="build/annotation"/>
+    <mkdir dir="dist"/>
+    <jar jarfile="dist/jpf.jar">
       <fileset dir="build/jpf"/>
-      <fileset dir="build/mji/peer"/>
     </jar>
 
-    <jar jarfile="${dist.dir}/jpf_annotation.jar" basedir="build/annotation"/>
-    <jar jarfile="${dist.dir}/jpf_mji_model.jar" basedir="build/mji/model"/>
+    <jar jarfile="dist/jpf-classes.jar" basedir="build/classes"/>
+
+    <!-- optional jar that contains annotations to be used in non-JPF dependent apps -->
+    <jar jarfile="dist/jpf-annotations.jar">
+      <fileset dir="build/classes">
+        <include name="gov/nasa/jpf/annotations/*"/>
+      </fileset>
+    </jar>
+
   </target>
   
   <!-- binary distribution -->

@@ -1,8 +1,9 @@
-package gov.nasa.jpf;
+package gov.nasa.jpf.annotations;
 
 /**
  * annotation that can be used to change JPF config properties
- * from within the application
+ * from within the SuT
+ * using such annotations should NOT make the SuT JPF dependent
  */
 public @interface JPFConfig {
   String[] value(); // each element is a "key[+]=val" pair
