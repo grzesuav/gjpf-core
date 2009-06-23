@@ -5,9 +5,9 @@
         <fileset dir=".">
             <include name="lib/*.jar"/>
         </fileset>
-        <pathelement location="build/annotation"/>
-        <pathelement location="build/jpf"/>
-        <pathelement location="build/mji/peer"/>
+        <pathelement location="build/annotations"/>
+        <pathelement location="build/main"/>
+        <pathelement location="build/classes"/>
     </path>
 
 
@@ -93,7 +93,7 @@
         <java classname="${run.class}" failonerror="true" fork="true">
             <classpath>
                 <path refid="base.path"/>
-                <pathelement location="build/test"/>
+                <pathelement location="build/tests"/>
                 <fileset dir=".">
                     <include name="tools/lib/junit*.jar"/>
                 </fileset>

@@ -22,45 +22,63 @@
   -->
   <property file="local.properties"/>
 
-
-
   <!-- compiler settings -->
   <property name="src_level"     value="6"/>
   <property name="debug"         value="on"/>
   <property name="deprecation"   value="on"/>
 
+
   <!-- generic classpath settings -->
   <path id="lib.path">
+    <pathelement location="build/main"/>
     <fileset dir=".">
   	  <include name="lib/*.jar"/>
     </fileset>
-    <pathelement location="build/jpf"/>
   </path>
+
+  <path id="lib-tools.path">
+    <path refid="lib.path"/>
+    <fileset dir=".">
+  	  <include name="tools/lib/*.jar"/>
+    </fileset>
+  </path>
+
+  <path id="lib-anno.path">
+    <path refid="lib.path"/>
+    <pathelement location="build/annotations"/>
+  </path>
+
 
   <!-- init: common initialization -->
   <target name="-init">
     <tstamp/>
 
-    <mkdir dir="build"/>             <!-- the build root -->
-    <mkdir dir="build/jpf"/>         <!-- the code that constitutes JPF -->
-    <mkdir dir="build/classes"/>     <!-- (modeled) classes executed by JPF -->
-    <mkdir dir="build/test"/>        <!-- regression test code -->
-    <mkdir dir="build/examples" />   <!-- example code -->
+    <mkdir dir="build"/>               <!-- the build root -->
+    <mkdir dir="build/main"/>          <!-- the code that constitutes JPF -->
+    <mkdir dir="build/annotations"/>   <!-- annotations that can be used in SUTs -->
+    <mkdir dir="build/classes"/>       <!-- (modeled) classes executed by JPF -->
+    <mkdir dir="build/tests"/>         <!-- regression test code -->
+    <mkdir dir="build/examples" />     <!-- example code -->
     
     <!-- the things that have to be in the classpath of whatever runs Ant -->
     <available property="have_javac" classname="com.sun.tools.javac.Main"/>
     <fail unless="have_javac">no javac found</fail>
     
     
-
-    <available file="src/annotation" type="dir" property="have_src_annotation"/>
-    <available file="src/jpf" type="dir" property="have_src_jpf"/>
-    <available file="src/mji/peer" type="dir" property="have_src_mji_peer"/>
-    <available file="src/mji/model" type="dir" property="have_src_mji_model"/>
-    <available file="test" type="dir" property="have_test"/>
-    <available file="examples" type="dir" property="have_examples"/>
+    <available file="src/main"        type="dir" property="have_main"/>
+    <available file="src/annotations" type="dir" property="have_annotations"/>
+    <available file="src/peers"       type="dir" property="have_peers"/>
+    <available file="src/classes"     type="dir" property="have_classes"/>
+    <available file="src/tests"       type="dir" property="have_tests"/>
+    <available file="src/examples"    type="dir" property="have_examples"/>
 
     <!-- for the core, it's a fail if any of these is missing -->
+    <fail unless="have_main">no src/main</fail>
+    <fail unless="have_annotations">no src/annotations</fail>
+    <fail unless="have_peers">no src/peers</fail>
+    <fail unless="have_classes">no src/classes</fail>
+    <fail unless="have_tests">no src/tests</fail>
+    <fail unless="have_examples">no src/examples</fail>
 
   </target>
 
@@ -68,53 +86,44 @@
   <!-- ======================= COMPILE SECTION ============================= -->
     
   <!-- public compile -->
-  <target name="compile" depends="-init,-compile-annotation,-compile-jpf,-compile-mji-peer,-compile-mji-model,-compile-test,-compile-examples"
+  <target name="compile" depends="-init,-compile-annotations,-compile-main,-compile-peers,-compile-classes,-compile-tests,-compile-examples"
           description="compile all JPF core sources" >
   </target>
 
-  <target name="-compile-annotation" if="have_src_annotation">
-    <javac srcdir="src/annotation" destdir="build/classes"
+  <target name="-compile-annotations" if="have_annotations">
+    <javac srcdir="src/annotations" destdir="build/annotations"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}" classpath=""/>
   </target>
 
-  <target name="-compile-jpf" if="have_src_jpf">
-    <javac srcdir="src/jpf" destdir="build/jpf"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}">
-      <classpath>
-        <path refid="lib.path"/>
-        <fileset dir=".">
-  	        <include name="tools/lib/junit*.jar"/>
-        </fileset>
-      </classpath>
-    </javac>
-	  <copy file="default.properties" todir="build/jpf/gov/nasa/jpf"/>
+  <target name="-compile-main" if="have_main">
+    <javac srcdir="src/main" destdir="build/main"
+           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
+           classpathref="lib-tools.path"/>
+	  <copy file="default.properties" todir="build/main/gov/nasa/jpf"/>
   </target>
   
-  <target name="-compile-mji-peer" if="have_src_mji_peer">
-    <javac srcdir="src/mji/peer" destdir="build/jpf"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}" classpathref="lib.path"/>
+  <target name="-compile-peers" if="have_peers" depends="-compile-main" >
+    <javac srcdir="src/peers" destdir="build/main"
+           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
+           classpathref="lib.path"/>
   </target>
   
-  <target name="-compile-mji-model" if="have_src_mji_model">
-    <javac srcdir="src/mji/model" destdir="build/classes"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}" classpathref="lib.path"/>
+  <target name="-compile-classes" if="have_classes" depends="-compile-annotations,-compile-main" >
+    <javac srcdir="src/classes" destdir="build/classes"
+           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
+           classpathref="lib-anno.path"/>
   </target>
   
-  <target name="-compile-test" if="have_test">
-    <javac srcdir="test" destdir="build/test"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}" includes="*,gov/nasa/jpf/test/**">
-      <classpath>
-        <path refid="lib.path"/>
-        <fileset dir=".">
-  	        <include name="tools/lib/*.jar"/>
-        </fileset>
-      </classpath>
-    </javac>
+  <target name="-compile-tests" if="have_tests" depends="-compile-annotations,-compile-main">
+    <javac srcdir="src/tests" destdir="build/tests"
+           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
+           classpathref="lib-anno.path" includes="*,gov/nasa/jpf/test/**"/>
   </target>
 
-  <target name="-compile-examples" if="have_examples">
-    <javac srcdir="examples" destdir="build/examples"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}" classpathref="lib.path"/>
+  <target name="-compile-examples" if="have_examples" depends="-compile-annotations,-compile-main">
+    <javac srcdir="src/examples" destdir="build/examples"
+           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
+           classpathref="lib.path"/>
   </target>
 
   
@@ -124,31 +133,38 @@
   <target name="jar" depends="compile"
         description="generate the core JPF jar files" >
     <mkdir dir="dist"/>
+
     <jar jarfile="dist/jpf.jar">
-      <fileset dir="build/jpf"/>
+      <fileset dir="build/main"/>
     </jar>
 
-    <jar jarfile="dist/jpf-classes.jar" basedir="build/classes"/>
-
-    <!-- optional jar that contains annotations to be used in non-JPF dependent apps -->
-    <jar jarfile="dist/jpf-annotations.jar">
-      <fileset dir="build/classes">
-        <include name="gov/nasa/jpf/annotations/*"/>
+    <jar jarfile="dist/jpf-classes.jar">
+      <fileset dir=".">
+        <include name="build/classes"/>
+        <include name="build/annotations"/>
       </fileset>
     </jar>
 
+    <!-- optional jar that contains annotations to be used in non-JPF dependent apps -->
+    <jar jarfile="dist/jpf-annotations.jar">
+      <fileset dir="build/annotations"/>
+    </jar>
+
   </target>
-  
+
+
   <!-- binary distribution -->
   <target name="dist" depends="jar"
         description="pack together all required binaries" >
-    <mkdir dir="${dist.dir}/arch"/>
+    <mkdir dir="dist/arch"/>
+    <zip destfile="dist/arch/jpf-core.zip" basedir="dist" includes="*.jar,../NOSA-1.3-JPF"/>
   </target>
-  
+
+
   <!-- public clean: cleanup from previous tasks/builds -->
   <target name="clean">
     <delete dir="build" />
-    <delete dir="${dist.dir}" />
+    <delete dir="dist" />
     <delete>
       <fileset dir="." includes="**/*~" defaultexcludes="no" />
       <fileset dir="." includes="**/*.bak" defaultexcludes="no" />
@@ -163,25 +179,27 @@
 
 
   <target name="test" depends="compile"
-          description="compile and run core regression tests" if="have_test">
+          description="compile and run core regression tests" if="have_tests">
 
     <property name="junit.usefile" value="true"/>
 
-    <junit printsummary="on" showoutput="off" haltonfailure="yes" fork="yes" forkmode="perTest" maxmemory="1024m">
+    <junit printsummary="on" showoutput="off" haltonfailure="yes"
+           fork="yes" forkmode="perTest" maxmemory="1024m">
       <formatter type="plain" usefile="${junit.usefile}"/>
 
       <classpath>
         <path refid="lib.path"/>
-        <pathelement location="build/test"/>
-        <pathelement location="build/mji/model"/>
+        <pathelement location="build/tests"/>
+        <pathelement location="build/classes"/>
+        <pathelement location="build/annotations"/>
 
         <fileset dir=".">
   	      <include name="tools/lib/junit*.jar"/>
         </fileset>
       </classpath>
 
-      <batchtest todir="build/test">
-        <fileset dir="build/test">
+      <batchtest todir="build/tests">
+        <fileset dir="build/tests">
           <exclude name="**/JPF_*.class"/>
           <include name="gov/nasa/jpf/test/basic/*Test.class"/>
           <include name="gov/nasa/jpf/test/vm/basic/*Test.class"/>
@@ -191,15 +209,15 @@
         </fileset>
       </batchtest>
 
-      <batchtest todir="build/test">
-        <fileset dir="build/test">
+      <batchtest todir="build/tests">
+        <fileset dir="build/tests">
           <exclude name="**/JPF_*.class"/>
-          <include name="gov/nasa/jpf/test/lib/**/*Test.class"/>
+          <include name="gov/nasa/jpf/test/java/**/*Test.class"/>
         </fileset>
       </batchtest>
 
-      <batchtest todir="build/test">
-        <fileset dir="build/test">
+      <batchtest todir="build/tests">
+        <fileset dir="build/tests">
           <exclude name="**/JPF_*.class"/>
           <include name="gov/nasa/jpf/test/mc/basic/*Test.class"/>
           <include name="gov/nasa/jpf/test/mc/threads/*Test.class"/>
