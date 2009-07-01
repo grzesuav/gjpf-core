@@ -487,11 +487,11 @@ public class Config extends Properties {
 
     File build = new File(dir, "build");
 
-    addJars(new File(build,"dist"), cpEntries, vmEntries,
-            addDir(cpEntries, new File(build, "main")),
-            addDir(vmEntries, new File(build, "classes")));
+    addJars(new File(build,"dist"),
+            cpEntries, new File(build, "main"),
+            vmEntries, new File(build, "classes"));
 
-    addJars(new File(dir, "lib"), cpEntries, vmEntries, false, false);
+    addJars(new File(dir, "lib"), cpEntries, null, vmEntries, null);
 
     for (File f : cpEntries.values()){
       append("classpath", f.getPath());
@@ -513,10 +513,12 @@ public class Config extends Properties {
   }
 
   protected void addJars(File dir,
-          LinkedHashMap<String, File> cpEntries,
-          LinkedHashMap<String, File> vmEntries,
-          boolean haveMain, boolean haveClasses) {
-    
+          LinkedHashMap<String, File> cpEntries, File cpDir,
+          LinkedHashMap<String, File> vmEntries, File vmDir ) {
+
+    boolean haveMain = (cpDir != null) ? addDir( cpEntries, cpDir) : false;
+    boolean haveClasses = (vmDir != null) ? addDir(vmEntries, vmDir) : false;
+
     if (!haveMain || !haveClasses) {
       if (dir.exists() && dir.isDirectory()) {
         for (File f : dir.listFiles()) {
