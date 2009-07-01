@@ -23,7 +23,7 @@ import gov.nasa.jpf.Config;
 public abstract class SerializingStateSet implements StateSet {
   protected StateSerializer serializer;
   
-  public void attach(JVM jvm) throws Config.Exception{
+  public void attach(JVM jvm) {
     serializer = jvm.getSerializer();
   }
   

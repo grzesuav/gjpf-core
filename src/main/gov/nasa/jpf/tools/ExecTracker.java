@@ -265,21 +265,5 @@ public class ExecTracker extends ListenerAdapter {
       }
     }
   }
-  
-  public static void main (String[] args) {
-    
-    Config conf = JPF.createConfig(args);
-    // do special settings here
-
-    ExecTracker listener = new ExecTracker(conf);
-    listener.filterArgs(args);  // check and remove our own args
-    
-    JPF jpf = new JPF(conf);
-        
-    jpf.addSearchListener(listener);
-    jpf.addVMListener(listener);
-
-    jpf.run();
-  }
 }
 

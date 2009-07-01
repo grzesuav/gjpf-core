@@ -24,7 +24,7 @@ import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
 
 public interface FilterConfiguration {
-  void init(Config config) throws Config.Exception;
+  void init(Config config);
   
   Iterable<FieldInfo> getMatchedInstanceFields(ClassInfo ci); 
 

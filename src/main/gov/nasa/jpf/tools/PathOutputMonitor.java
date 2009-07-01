@@ -148,11 +148,8 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
     printOutput = config.getBoolean("pom.print_output", true);
     deferOutput = config.getBoolean("pom.defer_output", true);
   
-    try {
-      psClass = config.getClass("pom.output_spec.class", PathOutputSpec.class);
-    } catch (Config.Exception cx) {
-      log.warning("error initializing pom.output_spec.class: " + cx.getMessage());
-    }
+    psClass = config.getClass("pom.output_spec.class", PathOutputSpec.class);
+
     if (psClass == null) {
       psClass = RegexOutputSpec.class;
     }

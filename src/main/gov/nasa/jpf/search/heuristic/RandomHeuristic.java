@@ -31,7 +31,7 @@ public class RandomHeuristic extends SimplePriorityHeuristic {
 
   protected Random random;
 
-  public RandomHeuristic (Config config, JVM vm) throws Config.Exception {
+  public RandomHeuristic (Config config, JVM vm) {
     super(config,vm);
     
     random = new Random( config.getInt("choice.seed", 42));

@@ -35,7 +35,7 @@ import gov.nasa.jpf.util.Debug;
 public class RandomSearch extends Search {
   int path_limit = 0;
   
-  public RandomSearch (Config config, JVM vm) throws Config.Exception {
+  public RandomSearch (Config config, JVM vm) {
     super(config, vm);
     
     path_limit = config.getInt("search.RandomSearch.path_limit", 0);

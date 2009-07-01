@@ -78,8 +78,7 @@ public class IterativeContextBounding extends Search {
   private LinkedList<WorkItem> workQueue = new LinkedList<WorkItem>();
   private LinkedList<WorkItem> nextWorkQueue = new LinkedList<WorkItem>();
 
-  public IterativeContextBounding(Config config, JVM vm)
-      throws Config.Exception {
+  public IterativeContextBounding(Config config, JVM vm) {
     super(config, vm);
     preemptionLimit = config.getInt("search.preemption_limit", -1);
   }

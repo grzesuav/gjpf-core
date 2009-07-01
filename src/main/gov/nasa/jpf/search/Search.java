@@ -80,7 +80,7 @@ public abstract class Search {
   /** storage to keep track of state depths */
   final IntVector stateDepth = new IntVector();
 
-  protected Search (Config config, JVM vm) throws Config.Exception {
+  protected Search (Config config, JVM vm) {
     this.vm = vm;
     this.config = config;
 
@@ -113,7 +113,7 @@ public abstract class Search {
    * note there is a nameclash here - JPF 'properties' have nothing to do with
    * Java properties (java.util.Properties)
    */
-  protected ArrayList<Property> getProperties (Config config) throws Config.Exception {
+  protected ArrayList<Property> getProperties (Config config) {
     Class<?>[] argTypes = { Config.class, Search.class };
     Object[] args = { config, this };
 

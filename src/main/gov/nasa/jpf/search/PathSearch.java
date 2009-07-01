@@ -30,7 +30,7 @@ import gov.nasa.jpf.jvm.JVM;
  */
 public class PathSearch extends Search {
 	
-  public PathSearch (Config config, JVM vm) throws Config.Exception {
+  public PathSearch (Config config, JVM vm) {
     super(config,vm);    
   }
   

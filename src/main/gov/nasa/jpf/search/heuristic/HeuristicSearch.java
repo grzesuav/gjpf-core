@@ -59,7 +59,7 @@ public abstract class HeuristicSearch extends Search {
   protected boolean isBeamSearch;
 
   
-  public HeuristicSearch (Config config, JVM vm) throws Config.Exception {
+  public HeuristicSearch (Config config, JVM vm) {
     super(config, vm);
     
     useAstar = config.getBoolean("search.heuristic.astar");

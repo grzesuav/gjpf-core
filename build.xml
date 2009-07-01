@@ -48,6 +48,15 @@
     <pathelement location="build/annotations"/>
   </path>
 
+  <path id="lib-test.path">
+    <path refid="lib.path"/>
+    <fileset dir=".">
+  	  <include name="tools/lib/*.jar"/>
+    </fileset>
+    <pathelement location="build/annotations"/>
+  </path>
+
+
 
   <!-- init: common initialization -->
   <target name="-init">
@@ -117,7 +126,15 @@
   <target name="-compile-tests" if="have_tests" depends="-compile-annotations,-compile-main">
     <javac srcdir="src/tests" destdir="build/tests"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}"
-           classpathref="lib-anno.path" includes="*,gov/nasa/jpf/test/**"/>
+           includes="*,gov/nasa/jpf/test/**">
+      <classpath>
+        <path refid="lib.path"/>
+        <fileset dir=".">
+          <include name="tools/lib/*.jar"/>
+        </fileset>
+        <pathelement location="build/annotations"/>
+      </classpath>       
+    </javac>
   </target>
 
   <target name="-compile-examples" if="have_examples" depends="-compile-annotations,-compile-main">

@@ -66,12 +66,7 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
     }
     
     excludes = config.getStringArray("choice.exclude");
-    
-    try {
-      cgClasses = config.getClasses("choice.class");
-    } catch (Config.Exception ex){
-      System.err.println("cannot create ChoiceTracker CG classes: " + cgClasses);
-    }
+    cgClasses = config.getClasses("choice.class");
   }
 
   public void setExcludes (String... ex) {
@@ -97,7 +92,8 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
     if (!isReportExtension) {
 
       pw.print("// application: ");
-      for (String s : config.getArgs()) {
+      pw.print(config.getTarget());
+      for (String s : config.getTargetArgs()) {
         pw.print(s);
         pw.print(' ');
       }

@@ -32,7 +32,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 public abstract class ReturnInstruction extends Instruction {
 
   // to store where we came from
-  StackFrame returnFrame;
+  protected StackFrame returnFrame;
 
   // note these are only callable from within the same execute - thread interleavings
   // would cause races

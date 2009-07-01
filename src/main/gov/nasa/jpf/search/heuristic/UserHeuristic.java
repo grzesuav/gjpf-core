@@ -34,7 +34,7 @@ import gov.nasa.jpf.jvm.StaticArea;
 public class UserHeuristic extends SimplePriorityHeuristic {
   static final int defaultValue = 1000;
 
-  public UserHeuristic (Config config, JVM vm) throws Config.Exception {
+  public UserHeuristic (Config config, JVM vm) {
     super(config, vm);
   }
 

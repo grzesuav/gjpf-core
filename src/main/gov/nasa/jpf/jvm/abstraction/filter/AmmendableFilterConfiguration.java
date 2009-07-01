@@ -71,36 +71,32 @@ public class AmmendableFilterConfiguration implements FilterConfiguration {
   
   // configuration stuff
   
-  public void init(Config config) throws Config.Exception {
+  public void init(Config config)  {
     appendConfiguredFrameAmmendments(config);
     appendConfiguredInstanceAmmendments(config);
     appendConfiguredStaticAmmendments(config);
     appendConfiguredInstanceOverrides(config);
   }
 
-  protected void appendConfiguredFrameAmmendments(Config config)
-  throws Config.Exception {
+  protected void appendConfiguredFrameAmmendments(Config config) {
     ObjArray<FrameAmmendment> fas =
       config.getInstances("filter.frame_ammendments", FrameAmmendment.class);
     if (fas != null) frameAmmendments.append(fas);
   }
   
-  protected void appendConfiguredInstanceAmmendments(Config config)
-  throws Config.Exception {
+  protected void appendConfiguredInstanceAmmendments(Config config) {
     ObjArray<InstanceAmmendment> ias =
       config.getInstances("filter.instance_ammendments", InstanceAmmendment.class);
     if (ias != null) instanceAmmendments.append(ias);
   }  
   
-  protected void appendConfiguredStaticAmmendments(Config config)
-  throws Config.Exception {
+  protected void appendConfiguredStaticAmmendments(Config config) {
     ObjArray<StaticAmmendment> sas =
       config.getInstances("filter.static_ammendments", StaticAmmendment.class);
     if (sas != null) staticAmmendments.append(sas);
   }
   
-  protected void appendConfiguredInstanceOverrides(Config config)
-  throws Config.Exception {
+  protected void appendConfiguredInstanceOverrides(Config config) {
     ObjArray<InstanceOverride> ios =
       config.getInstances("filter.instance_overrides", InstanceOverride.class);
     if (ios != null) instanceOverrides.append(ios);

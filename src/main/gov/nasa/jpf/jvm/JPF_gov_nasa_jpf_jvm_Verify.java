@@ -383,15 +383,10 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     cgArgs[0] = config;
     cgArgs[1] = id; // good thing we are not multithreaded (other fields are const)
 
-    try {
-      String key = id + ".class";
-      gen = config.getEssentialInstance(key, ChoiceGenerator.class,
-                                                  cgArgTypes, cgArgs);
-      ss.setNextChoiceGenerator(gen);
-    } catch (Config.Exception cex) {
-      // bail, nothing we can do to cover up
-      throw new JPFException(cex);
-    }
+    String key = id + ".class";
+    gen = config.getEssentialInstance(key, ChoiceGenerator.class,
+            cgArgTypes, cgArgs);
+    ss.setNextChoiceGenerator(gen);
 
     return gen;
   }

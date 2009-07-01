@@ -1302,6 +1302,10 @@ public class ThreadInfo
     return n;
   }
 
+  /****
+   * <2do> the whole snapshot business looks a bit convoluted - streamline
+   ****/
+
   /**
    * get a stack snapshot that consists of an array of {mthId,pc} pairs.
    */
@@ -1346,8 +1350,9 @@ public class ThreadInfo
     int nVisible=0;
     StackTraceElement[] list = new StackTraceElement[n];
     for (int i=0, j=0; i<n; i++){
-      StackTraceElement ste = new StackTraceElement( MethodInfo.getMethodInfo(snapshot[j++]),
-                                                     snapshot[j++]);
+      int methodId = snapshot[j++];
+      int pcOffset = snapshot[j++];
+      StackTraceElement ste = new StackTraceElement( methodId, pcOffset);
       if (!ste.ignore){
         list[nVisible++] = ste;
       }
@@ -1419,8 +1424,9 @@ public class ThreadInfo
       int len = snapshot.length/2;
 
       for (int i=0, j=0; i<len; i++){
-        StackTraceElement ste = new StackTraceElement( MethodInfo.getMethodInfo(snapshot[j++]),
-                                                snapshot[j++]);
+        int methodId = snapshot[j++];
+        int pcOffset = snapshot[j++];
+        StackTraceElement ste = new StackTraceElement( methodId, pcOffset);
         ste.printOn( pw);
       }
     }
@@ -1437,17 +1443,20 @@ public class ThreadInfo
     int line;
     boolean ignore;
 
-    StackTraceElement (MethodInfo mi, int pcOffset){
-      if (mi.isDirectCallStub()){
-        if (mi.isReflectionCallStub()){
+
+    StackTraceElement (int methodId, int pcOffset) {
+      if (methodId == MethodInfo.REFLECTION_CALL){
           clsName = "java.lang.reflect.Method";
           mthName = "invoke";
           fileName = "Native Method";
           line    = -1;
-        } else {
+
+      } else if (methodId == MethodInfo.DIRECT_CALL){
           ignore = true;
-        }
+
       } else {
+        MethodInfo mi = MethodInfo.getMethodInfo(methodId);
+        if (mi != null){
         clsName = mi.getClassName();
         mthName = mi.getName();
 
@@ -1458,7 +1467,14 @@ public class ThreadInfo
           fileName = mi.getSourceFileName();
           line = mi.getLineNumber(mi.getInstruction(pcOffset));
         }
+
+        } else { // this sounds like a bug
+          clsName = "?";
+          mthName = "?";
+          fileName = "?";
+          line = -1;
       }
+    }
     }
 
     StackTraceElement (int sRef){
@@ -1501,7 +1517,7 @@ public class ThreadInfo
         if (clsName != null){
           print(pw, clsName);
           print(pw, ".");
-        } else {  // some synthetic methods don't belong to classes
+        } else { // some synthetic methods don't belong to classes
           print(pw, "[no class] ");
         }
         print(pw, mthName);

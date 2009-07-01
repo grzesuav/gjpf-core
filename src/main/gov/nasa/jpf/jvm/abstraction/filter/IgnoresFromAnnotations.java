@@ -11,7 +11,7 @@ public class IgnoresFromAnnotations
 implements FieldAmmendment, FrameAmmendment {
   protected Config config;
   
-  public IgnoresFromAnnotations(Config config) throws Config.Exception {
+  public IgnoresFromAnnotations(Config config) {
     this.config = config;
   }
   

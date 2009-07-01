@@ -33,7 +33,7 @@ import gov.nasa.jpf.jvm.Transition;
 public class PreferThreads extends SimplePriorityHeuristic {
   String[] preferredThreads;
 
-  public PreferThreads (Config config, JVM vm) throws Config.Exception {
+  public PreferThreads (Config config, JVM vm) {
     super(config,vm);
     
     preferredThreads = config.getStringArray("search.heuristic.preferredThreads");

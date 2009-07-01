@@ -340,7 +340,7 @@ public abstract class TestJPF extends Assert  {
     try {
       Config conf = JPF.createConfig(args);
       
-      if (conf.getTargetArg() != null) {
+      if (conf.getTarget() != null) {
         JPF jpf = new JPF(conf);
         jpf.run();
         

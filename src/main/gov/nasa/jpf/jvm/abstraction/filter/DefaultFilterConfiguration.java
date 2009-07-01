@@ -1,11 +1,11 @@
 package gov.nasa.jpf.jvm.abstraction.filter;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.Config.Exception;
+
 
 public class DefaultFilterConfiguration extends AmmendableFilterConfiguration {
   @Override
-  public void init(Config config) throws Exception {
+  public void init(Config config) {
     // these built-in come first
     appendStaticAmmendment(IgnoreConstants.instance);
     appendInstanceAmmendment(IgnoreReflectiveNames.instance);

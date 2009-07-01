@@ -52,7 +52,7 @@ public class KernelState {
   /**
    * Creates a new kernel state object.
    */
-  public KernelState (Config config) throws Config.Exception {
+  public KernelState (Config config) {
     Class<?>[] argTypes = { Config.class, KernelState.class };
     Object[] args = { config, this };
 

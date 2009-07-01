@@ -392,19 +392,6 @@ public class SearchMonitor extends ListenerAdapter {
     jpf.run();
   }
   
-  public static void main (String[] args) {
-    if (args.length == 0) {
-      printUsage();
-      return;
-    }
-    
-    Config conf = JPF.createConfig(args);
-    SearchMonitor listener = new SearchMonitor(conf);
-
-    listener.filterArgs(args);    
-    listener.run(conf);    
-  }
-
   public SearchMonitor (Config config) {
     port = config.getInt("monitor.port", -1);  
     hostName = config.getString("monitor.hostname", DEF_HOSTNAME);

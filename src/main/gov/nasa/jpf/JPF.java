@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf;
 
-import gov.nasa.jpf.Config.Exception;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.VMListener;
 import gov.nasa.jpf.report.Publisher;
@@ -33,9 +32,6 @@ import gov.nasa.jpf.util.RunRegistry;
 
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -69,7 +65,7 @@ public class JPF implements Runnable {
               addListener(newListener);
               logger.info("config changed, added jpf.listener " + clsName);
 
-            } catch (Config.Exception cfx) {
+            } catch (JPFConfigException cfx) {
               logger.warning("jpf.listener change failed: " + cfx.getMessage());
             }
           }
@@ -108,9 +104,10 @@ public class JPF implements Runnable {
     return LogManager.getLogger( name);
   }
 
-  public static void main (String[] args) {
+  public static void main(String[] args) {
     String[] origArgs = (String[]) args.clone();
 
+    try {
       Config conf = createConfig(args);
 
       if (logger == null) {
@@ -131,39 +128,44 @@ public class JPF implements Runnable {
 
       // check if there is a shell class specification, in which case we just delegate
       try {
-      Class<?> shellCls = conf.getClass("jpf.shell.class");
-      if (shellCls != null) {
-        Method m = shellCls.getMethod("main", String[].class);
-        if (m != null) {
-          m.invoke(null, (Object) origArgs);
-          return;
+        Class<?> shellCls = conf.getClass("jpf.shell.class");
+        if (shellCls != null) {
+          Method m = shellCls.getMethod("main", String[].class);
+          if (m != null) {
+            m.invoke(null, (Object) origArgs);
+            return;
+          } else {
+            logger.severe("shell class has no main() method: " + shellCls.getName());
+          }
         } else {
-          logger.severe("shell class has no main() method: "
-              + shellCls.getName());
+          // no shell, we start JPF directly
+          LogManager.printStatus(logger);
+          conf.printStatus(logger);
+
+          // this has to be done after we checked&consumed all "-.." arguments
+          // this is NOT about checking properties!
+          checkUnknownArgs(args);
+
+          try {
+            JPF jpf = new JPF(conf);
+            jpf.run();
+          } catch (ExitException x) {
+            if (x.shouldReport()) {
+              x.printStackTrace();
+            }
+          }
+
         }
-      }
-      } catch (Throwable t){
+      } catch (Throwable t) {
         logger.severe("exception during shell initialization: " + t);
         t.printStackTrace();
         return;
       }
-      
-      // no shell, we start JPF directly
-      LogManager.printStatus(logger);
-      conf.printStatus(logger);
 
-      // this has to be done after we checked&consumed all "-.." arguments
-      // this is NOT about checking properties!
-      checkUnknownArgs(args);
-
-      try {
-        JPF jpf = new JPF(conf);
-        jpf.run();
-      } catch (ExitException x) {
-        if (x.shouldReport()) {
-          x.printStackTrace();
-        }
-      }      
+    } catch (JPFConfigException cx) {
+      System.err.println("configuration error: " + cx.getMessage());
+      // shall we print the stacktrace ?
+    }
   }
   
   /**
@@ -179,7 +181,7 @@ public class JPF implements Runnable {
       logger = initLogging(config);
     }
 
-    String tgt = config.getTargetArg();
+    String tgt = config.getTarget();
     if (tgt == null || (tgt.length() == 0)) {
       logger.severe("no target class specified, terminating");
     } else {
@@ -190,7 +192,7 @@ public class JPF implements Runnable {
   /**
    * convenience method if caller doesn't care about Config
    */
-  public JPF(String[] args) {
+  public JPF (String[] args) {
     this( createConfig(args));
   }
   
@@ -215,7 +217,7 @@ public class JPF implements Runnable {
       addListeners();
       config.addChangeListener(new ConfigListener());
       
-    } catch (Config.Exception cx) {
+    } catch (JPFConfigException cx) {
       logger.severe(cx.toString());
       throw new ExitException(false);
     }
@@ -303,7 +305,7 @@ public class JPF implements Runnable {
     }
   }
   
-  void addListeners () throws Config.Exception {
+  void addListeners () {
 
     // first, our system listeners
     Class<?>[] argTypes = { Config.class, JPF.class };
@@ -499,18 +501,7 @@ public class JPF implements Runnable {
    * then overlays all command line arguments that are key/value pairs
    */
   public static Config createConfig (String[] args) {
-    String pf = getConfigFileName(args);
-    String rd = getRootDirName(args);
-
-    return new Config(args, pf, rd, JPF.class);
-  }
-
-  /**
-   * this is a version for an explicitly specified property file
-   */
-  public static Config createConfig (String configFileName, String[] args)  {
-      String rd = getRootDirName(args);
-      return new Config(args, configFileName, rd, JPF.class);
+    return new Config(args, JPF.class);
   }
   
   /**

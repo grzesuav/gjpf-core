@@ -29,7 +29,7 @@ import gov.nasa.jpf.jvm.JVM;
  */
 public class MostBlocked extends SimplePriorityHeuristic {
 
-  public MostBlocked (Config config, JVM vm) throws Config.Exception {
+  public MostBlocked (Config config, JVM vm) {
     super(config,vm);
   }
 

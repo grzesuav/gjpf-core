@@ -23,7 +23,7 @@ import gov.nasa.jpf.Config;
 public interface Backtracker {
   static interface State {};
   
-  void attach(JVM jvm) throws Config.Exception;
+  void attach(JVM jvm);
   
   boolean backtrack ();
   void backtrackKernelState();

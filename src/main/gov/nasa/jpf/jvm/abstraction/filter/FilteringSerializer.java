@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.abstraction.filter;
 
-import gov.nasa.jpf.Config.Exception;
+
 import gov.nasa.jpf.jvm.ArrayFields;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.DynamicElementInfo;
@@ -53,7 +53,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
 
 
   @Override
-  public void attach(JVM jvm) throws Exception {
+  public void attach(JVM jvm) {
     super.attach(jvm);
     // more config?
   }

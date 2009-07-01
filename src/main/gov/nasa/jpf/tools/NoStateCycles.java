@@ -43,7 +43,7 @@ public class NoStateCycles extends PropertyListenerAdapter {
   private int m_cycleFound = -1;
   private int m_stackPos   = -1;
 
-  public NoStateCycles(Config config) throws Config.Exception {
+  public NoStateCycles(Config config) {
     if (!config.getString("search.class").equals("gov.nasa.jpf.search.DFSearch"))
       config.throwException("search.class must be gov.nasa.jpf.search.DFSearch");   // Or any class which does a depth first search.
   }

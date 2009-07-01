@@ -76,13 +76,7 @@ public class LogManager {
     activeFiner = conf.getStringArray("log.finer");
     activeFinest = conf.getStringArray("log.finest");
     
-    try {
-      handler = conf.getEssentialInstance("log.handler.class", Handler.class);
-    } catch (Config.Exception x){ // try fallback
-      handler = new LogHandler(conf);
-      System.err.println("error instantiating log.handler.class, fall back to gov.nasa.jpf.util.LogHandler");
-      // <2do> we should probably print a warning here, but how?
-    }
+    handler = conf.getEssentialInstance("log.handler.class", Handler.class);
   }
   
   static boolean checkInclusion (String[] actives, String name) {

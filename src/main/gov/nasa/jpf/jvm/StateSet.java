@@ -29,7 +29,7 @@ public interface StateSet {
   
   static final int UNKNOWN_ID = -1;
 
-  void attach(JVM jvm) throws Config.Exception;
+  void attach(JVM jvm);
   
   /**
    * check if a state is already in the set, and add it if not. Answer

@@ -58,7 +58,7 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
   protected boolean isReferenceField;
 
   
-  public static void init (Config config) throws Config.Exception {
+  public static void init (Config config) {
     if (config.getBoolean("vm.por") && config.getBoolean("vm.por.sync_detection")) {
       fliFactory = config.getEssentialInstance("vm.por.fli_factory.class", FieldLockInfoFactory.class);
 

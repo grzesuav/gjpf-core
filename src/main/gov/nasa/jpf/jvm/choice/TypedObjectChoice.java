@@ -42,7 +42,7 @@ public class TypedObjectChoice extends ReferenceChoiceGenerator {
   // our enumeration state
   int count;
   
-  public TypedObjectChoice (Config conf, String id) throws Config.Exception {
+  public TypedObjectChoice (Config conf, String id)  {
     DynamicArea heap = DynamicArea.getHeap();
     
     type = conf.getString(id + ".type");

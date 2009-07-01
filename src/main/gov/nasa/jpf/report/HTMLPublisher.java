@@ -379,7 +379,6 @@ public class HTMLPublisher extends Publisher {
     config.println("   <body>");
 
     writeJPFFiles(config);
-    writeJPFArguments(config);
     writeJPFProperties(config);
 
     config.println("   </body>");
@@ -419,30 +418,6 @@ public class HTMLPublisher extends Publisher {
     }
 
     output.println("      </table>");
-  }
-
-  private void writeJPFArguments(PrintWriter output) {
-    String args[];
-    int i;
-
-    output.println("      <hr/>");
-    output.println("      <p><b>Java PathFinder Arguments</b></p>");
-    output.println("      <table cellpadding=\"5\" style=\"border-collapse: collapse;\">");
-    output.println("         <tr bgcolor=\"#0080FF\"><th>#</th><th>Argument</th></tr>");
-
-    args = conf.getArgs();
-
-    for (i = 0; i < args.length; i++) {
-      output.print("         <tr><td>");
-      output.print(i + 1);
-      output.print("</td><td>");
-      output.print(args[i]);
-      output.println("</td></tr>");
-    }
-
-    output.println("      </table>");
-    output.println("      <br/>");
-    output.println("      <br/>");
   }
 
   private void writeMain() {
@@ -626,7 +601,7 @@ public class HTMLPublisher extends Publisher {
     output.println("      <table cellpadding=\"5\">");
 
     output.print("         <tr><td>Main Class:&#160;&#160;</td><td>");
-    output.print(conf.getTargetArg());
+    output.print(conf.getTarget());
     output.println("</td></tr>");
 
     mainPath = reporter.getSuT();
@@ -669,7 +644,7 @@ public class HTMLPublisher extends Publisher {
     output.println("      <hr/>");
     output.println("      <p><b>Main Class Arguments</b></p>");
 
-    args = conf.getTargetArgParameters();
+    args = conf.getTargetArgs();
     if (args.length <= 0) {
       output.println("      <i>None</i>");
       output.println("      <br/>");
@@ -2226,7 +2201,7 @@ public class HTMLPublisher extends Publisher {
     output.print("      <title>Java PathFinder ");
     output.print(title);
 
-    mainClass = conf.getTargetArg();
+    mainClass = conf.getTarget();
 
     if (mainClass != null) {
       output.print(" for ");

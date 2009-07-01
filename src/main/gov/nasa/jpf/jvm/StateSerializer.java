@@ -22,7 +22,7 @@ import gov.nasa.jpf.Config;
 
 
 public interface StateSerializer {
-  void attach(JVM jvm) throws Config.Exception;
+  void attach(JVM jvm);
   
   /**
    * serialize the current state and return as int[] 

@@ -58,7 +58,7 @@ public class NativePeer {
   HashMap<String, Method> methods;
 
 
-  public static void init (Config conf) throws Config.Exception {
+  public static void init (Config conf) {
     loader = conf.getCurrentClassLoader();
     peers = new HashMap<String, NativePeer>();
     argCache = new Object[MAX][];

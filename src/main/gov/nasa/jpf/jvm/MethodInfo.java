@@ -45,9 +45,14 @@ import gov.nasa.jpf.jvm.bytecode.*;
  * is represented by a MethodInfo object
  */
 public class MethodInfo extends InfoObject implements Cloneable {
+
   static final int INIT_MTH_SIZE = 4096;
   private static ArrayList<MethodInfo> mthTable;
   
+  // special globalIds
+  static final int DIRECT_CALL = -1;
+  static final int REFLECTION_CALL = -2;
+
   static final String[] EMPTY = new String[0];
   
   /**
@@ -104,7 +109,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   /** Instructions associated with the method */
   protected Instruction[] code;
 
-  /** Exception handlers */
+  /** JPFConfigException handlers */
   protected ExceptionHandler[] exceptions;
 
   /** Table used for line numbers */
@@ -159,7 +164,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   
   static InstructionFactory insnFactory;
   
-  static boolean init (Config config) throws Config.Exception {
+  static boolean init (Config config) {
     insnFactory = config.getEssentialInstance("vm.insn_factory.class", InstructionFactory.class);
     
     mthTable = new ArrayList<MethodInfo>(INIT_MTH_SIZE);
@@ -201,11 +206,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
     loadAnnotations(m.getAnnotationEntries());
   }
 
-  protected MethodInfo () {
-    globalId = mthTable.size();
-    mthTable.add(this);
-    
-    // for explicit construction only
+  // for explicit construction only (direct calls)
+  protected MethodInfo (int id) {
+    globalId = id;
+    // we don't want direct call methods in the mthTable (would be a memory leak)
   }
   
   public MethodInfo (ClassInfo ci, String name, int maxLocals, int maxStack, int modifiers){
@@ -315,23 +319,8 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return globalId;
   }
   
-  boolean isReflectionCallStub() {
-    return name.startsWith("[reflection]");
-  }
-  
-  public MethodInfo createReflectionCallStub() {
-    return createDirectCallStub("[reflection]");
-  }
-  
-  public boolean isDirectCallStub() {
-    return (ci == null);
-  }
-    
-  /**
-   * NOTE - this only works in conjunction with a special StackFrame
-   */
-  public MethodInfo createDirectCallStub (String originator) {
-    MethodInfo mi = new MethodInfo();
+  protected MethodInfo createCallStub (String originator, int id){
+    MethodInfo mi = new MethodInfo(id);
     String cname = ci.getName();
     Instruction insn;
 
@@ -372,6 +361,24 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return mi;
   }
   
+  /**
+   * NOTE - this only works in conjunction with a special StackFrame
+   */
+  public MethodInfo createDirectCallStub (String originator) {
+    return createCallStub(originator, DIRECT_CALL);
+  }
+  public boolean isDirectCallStub() {
+    return (globalId == DIRECT_CALL);
+  }
+
+  public MethodInfo createReflectionCallStub() {
+    return createCallStub("[reflection]", REFLECTION_CALL);
+  }
+  boolean isReflectionCallStub() {
+    return (globalId == REFLECTION_CALL);
+  }
+
+
   public boolean isSyncRelevant () {
     return (name.charAt(0) != '<');
   }

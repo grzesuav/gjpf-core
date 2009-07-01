@@ -38,7 +38,7 @@ import gov.nasa.jpf.util.Debug;
  */
 public class Simulation extends Search {
   
-  public Simulation (Config config, JVM vm) throws Config.Exception {
+  public Simulation (Config config, JVM vm) {
     super(config, vm);
 
     Debug.println(Debug.WARNING, "Simulation Search");

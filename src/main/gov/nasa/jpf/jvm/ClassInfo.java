@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListener;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
@@ -214,7 +215,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   static String[] assertionPatterns;
   boolean enableAssertions;
 
-  static boolean init (Config config) throws Config.Exception {
+  static boolean init (Config config) {
 
     ClassInfo.config = config;
 
@@ -520,7 +521,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
               }
               JVM.getVM().getJPF().addUniqueTypeListener(listener); // <2do> that's a BAD reference chain
 
-            } catch (Config.Exception cx) {
+            } catch (JPFConfigException cx) {
               logger.warning("no autoload listener class for annotation " + aName +
                              " : " + cx.getMessage());
               autoloadAnnotations.remove(aName);

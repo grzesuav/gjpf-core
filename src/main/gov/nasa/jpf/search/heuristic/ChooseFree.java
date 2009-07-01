@@ -29,7 +29,7 @@ import gov.nasa.jpf.Config;
  */
 public class ChooseFree extends SimplePriorityHeuristic {
 
-  public ChooseFree (Config config, JVM vm) throws Config.Exception {
+  public ChooseFree (Config config, JVM vm)  {
     super(config, vm);
   }
 

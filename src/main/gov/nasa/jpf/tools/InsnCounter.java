@@ -106,19 +106,5 @@ public class InsnCounter extends ListenerAdapter {
   void filterArgs (String[] args) {
     // we don't have any yet
   }
-  
-  public static void main (String[] args) {
-    InsnCounter listener = new InsnCounter();
-    listener.filterArgs(args);
-    
-    Config conf = JPF.createConfig(args);
-    // do own settings here
-    
-    JPF jpf = new JPF(conf);
-    jpf.addSearchListener(listener);
-    jpf.addVMListener(listener);
-
-    jpf.run();
-  }
 }
 

@@ -62,7 +62,7 @@ public class Reporter extends ListenerAdapter {
   protected Statistics stat; // the object that collects statistics
   protected Publisher[] publishers;
 
-  public Reporter (Config conf, JPF jpf) throws Config.Exception {
+  public Reporter (Config conf, JPF jpf) {
     this.conf = conf;
     this.jpf = jpf;
     search = jpf.getSearch();
@@ -93,7 +93,7 @@ public class Reporter extends ListenerAdapter {
     }
   }
 
-  Publisher[] createPublishers (Config conf) throws Config.Exception {
+  Publisher[] createPublishers (Config conf) {
     String[] def = { "gov.nasa.jpf.report.ConsolePublisher" };
     ArrayList<Publisher> list = new ArrayList<Publisher>();
 

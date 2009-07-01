@@ -149,7 +149,7 @@ public class SystemState {
   /**
    * Creates a new system state.
    */
-  public SystemState (Config config, JVM vm) throws Config.Exception {
+  public SystemState (Config config, JVM vm) {
     ks = new KernelState(config);
     id = StateSet.UNKNOWN_ID;
 
@@ -228,7 +228,7 @@ public class SystemState {
     return (atomicLevel > 0);
   }
 
-  void setBlockedInAtomicSection() {
+  public void setBlockedInAtomicSection() {
     isBlockedInAtomicSection = true;
   }
 

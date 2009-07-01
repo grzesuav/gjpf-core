@@ -29,7 +29,7 @@ implements StateSerializer, KernelState.ChangeListener {
   protected KernelState ks = null;
 
 
-  public void attach(JVM jvm) throws Config.Exception {
+  public void attach(JVM jvm) {
     ks = jvm.getKernelState();
   }
 

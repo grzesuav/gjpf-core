@@ -512,25 +512,4 @@ public class StateSpaceDot extends ListenerAdapter {
     }
   }
 
-  public static void main(String [] args) {
-    StateSpaceDot listener = new StateSpaceDot();
-
-    System.out.println("JPF State Space dot Graph Generator");
-    listener.filterArgs(args);
-
-    System.out.println("...graph output to " + listener.out_filename + "...");
-
-    if (helpRequested==true) {
-    	return;
-    }
-
-    Config conf = JPF.createConfig(args);
-    // do own settings here
-
-    JPF jpf = new JPF(conf);
-    jpf.addSearchListener(listener);
-
-    System.out.println("...running JPF...");
-    jpf.run();
-  }
 }

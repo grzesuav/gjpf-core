@@ -9,7 +9,7 @@ public class IncludesFromAnnotations
 implements FieldAmmendment {
   protected Config config;
   
-  public IncludesFromAnnotations(Config config) throws Config.Exception {
+  public IncludesFromAnnotations(Config config)  {
     this.config = config;
   }
   

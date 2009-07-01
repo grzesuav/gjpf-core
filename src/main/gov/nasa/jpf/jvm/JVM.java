@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
@@ -129,7 +130,7 @@ public class JVM {
    * reflection from within the safe confines of the JPF ctor - which
    * shields clients against blowups
    */
-  public JVM (JPF jpf, Config conf) throws Config.Exception {
+  public JVM (JPF jpf, Config conf) {
     this.jpf = jpf; // so that we know who instantiated us
 
     // <2do> that's really a bad hack and should be removed once we
@@ -151,9 +152,9 @@ public class JVM {
     return jpf;
   }
 
-  public void initFields (Config config) throws Config.Exception {
-    mainClassName = config.getTargetArg(); // we don't get here if it wasn't set
-    args = config.getTargetArgParameters();
+  public void initFields (Config config) {
+    mainClassName = config.getTarget(); // we don't get here if it wasn't set
+    args = config.getTargetArgs();
 
     path = new Path(mainClassName);
     out = null;
@@ -166,7 +167,7 @@ public class JVM {
     backtracker.attach(this);
   }
 
-  protected void initSubsystems (Config config) throws Config.Exception {
+  protected void initSubsystems (Config config) {
     ClassInfo.init(config);
     ThreadInfo.init(config);
     MethodInfo.init(config);
@@ -1138,7 +1139,7 @@ public class JVM {
   }
 
   @SuppressWarnings("unchecked")
-  public <T> StateRestorer<T> getRestorer() throws Config.Exception {
+  public <T> StateRestorer<T> getRestorer() {
     if (restorer == null) {
       if (serializer instanceof StateRestorer) {
         restorer = (StateRestorer<?>) serializer;
@@ -1149,7 +1150,7 @@ public class JVM {
         restorer = config.getInstance("vm.restorer.class", StateRestorer.class);
         if (serializer instanceof IncrementalChangeTracker &&
             restorer instanceof IncrementalChangeTracker) {
-          throw config.new Exception("Incompatible serializer and restorer!");
+          config.throwException("Incompatible serializer and restorer!");
         }
       }
       restorer.attach(this);
@@ -1158,7 +1159,7 @@ public class JVM {
     return (StateRestorer<T>) restorer;
   }
 
-  public StateSerializer getSerializer() throws Config.Exception {
+  public StateSerializer getSerializer() {
     if (serializer == null) {
       serializer = config.getEssentialInstance("vm.serializer.class",
                                       StateSerializer.class);

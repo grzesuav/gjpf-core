@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm.abstraction.filter;
 
-import gov.nasa.jpf.Config.Exception;
 import gov.nasa.jpf.jvm.AbstractSerializer;
 import gov.nasa.jpf.jvm.ArrayFields;
 import gov.nasa.jpf.jvm.ClassInfo;
@@ -54,7 +53,7 @@ public class SimpleFilteringSerializer extends AbstractSerializer {
   final ObjVector<FinalBitSet> staticCache   = new ObjVector<FinalBitSet>();
 
   @Override
-  public void attach(JVM jvm) throws Exception {
+  public void attach(JVM jvm) {
     super.attach(jvm);
     filter = jvm.getConfig().getInstance("filter.class", FilterConfiguration.class);
     if (filter == null) filter = new DefaultFilterConfiguration();
@@ -78,12 +77,19 @@ public class SimpleFilteringSerializer extends AbstractSerializer {
   */
 
   FramePolicy getFramePolicy(MethodInfo mi) {
+    FramePolicy p = null;
+
     int mid = mi.getGlobalId();
-    FramePolicy p = methodCache.get(mid);
+    if (mid >= 0){
+      p = methodCache.get(mid);
     if (p == null) {
       p = filter.getFramePolicy(mi);
       methodCache.set(mid, p);
     }
+    } else {
+      p = filter.getFramePolicy(mi);
+    }
+
     return p;
   }
 

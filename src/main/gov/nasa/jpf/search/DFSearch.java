@@ -29,7 +29,7 @@ import gov.nasa.jpf.jvm.JVM;
  */
 public class DFSearch extends Search {
 
-  public DFSearch (Config config, JVM vm) throws Config.Exception {
+  public DFSearch (Config config, JVM vm) {
   	super(config,vm);
   }
 

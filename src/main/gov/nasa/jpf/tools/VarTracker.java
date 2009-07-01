@@ -259,24 +259,6 @@ public class VarTracker extends ListenerAdapter {
     System.out.println("       -classFilter <string> : only report changes in classes starting with <string>");
   }
   
-  public static void main (String[] args) {
-    if (args.length == 0) {
-      printUsage();
-      return;
-    }
-    
-    VarTracker listener = new VarTracker();
-    listener.filterArgs(args);
-    
-    Config conf = JPF.createConfig(args);
-    // do own settings here
-    
-    JPF jpf = new JPF(conf);
-    jpf.addSearchListener(listener);
-    jpf.addVMListener(listener);
-
-    jpf.run();
-  }
 }
 
 // <2do> expand into types to record value ranges

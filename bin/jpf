@@ -13,10 +13,9 @@ case "`uname`" in
 esac
 
 #if we have class files, they should take precedence over jars
-CP=$JPF_HOME/build/jpf
-CP=$CP:$JPF_HOME/build/mji/peer
+CP=$JPF_HOME/build/main
 CP=$CP:$JPF_HOME/build/annotations
-CP=$CP:$JPF_HOME/build/test
+CP=$CP:$JPF_HOME/build/tests
 
 #add (recursively) any *.jar or *.zip that's under $JPF_HOME/lib
 #note that those take precedence over what already is in the classpath

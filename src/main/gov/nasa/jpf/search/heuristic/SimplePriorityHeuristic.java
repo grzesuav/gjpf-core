@@ -29,7 +29,7 @@ public abstract class SimplePriorityHeuristic extends HeuristicSearch {
 
   StaticPriorityQueue queue;
   
-  public SimplePriorityHeuristic (Config config, JVM vm) throws Config.Exception {
+  public SimplePriorityHeuristic (Config config, JVM vm) {
     super(config,vm);
 
     queue = new StaticPriorityQueue(config);    

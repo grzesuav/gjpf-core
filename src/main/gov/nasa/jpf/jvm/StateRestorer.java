@@ -22,7 +22,7 @@ import gov.nasa.jpf.Config;
 
 
 public interface StateRestorer<Saved> {
-  void attach(JVM jvm) throws Config.Exception;
+  void attach(JVM jvm);
   
   /**
    * get saved version of current KernelState. 

@@ -33,7 +33,7 @@ public class Interleaving extends SimplePriorityHeuristic {
     
   int historyLimit;
 
-  public Interleaving (Config config, JVM vm) throws Config.Exception {
+  public Interleaving (Config config, JVM vm) {
     super(config,vm);
     
     historyLimit = config.getInt("search.heuristic.thread_history_limit", -1);

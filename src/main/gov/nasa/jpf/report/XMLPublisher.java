@@ -87,13 +87,6 @@ public class XMLPublisher extends Publisher {
     }      
     out.println("  </jpf-properties>");
     
-    String[] args = conf.getArgs();
-    out.print("  <jpf-args>");
-    for (String s : args) {
-      out.print(s);
-      out.print(' ');
-    }
-    out.println("</jpf-args>");
   }
 
   protected void publishPlatform() {
@@ -115,7 +108,7 @@ public class XMLPublisher extends Publisher {
   
   protected void publishSuT() {
     out.println("  <sut>");
-    String mainCls = conf.getTargetArg();
+    String mainCls = conf.getTarget();
     if (mainCls != null) {
       String mainPath = reporter.getSuT();
       if (mainPath != null) {

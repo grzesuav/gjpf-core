@@ -155,14 +155,6 @@ public class ConsolePublisher extends Publisher {
     for (Map.Entry<Object,Object> e : eSet) {
       out.println("  " + e.getKey() + "=" + e.getValue());
     }
-
-    String[] args = conf.getArgs();
-    out.print("args: ");
-    for (String s : args) {
-      out.print(s);
-      out.print(' ');
-    }
-    out.println();
   }
 
   protected void publishPlatform() {
@@ -177,7 +169,7 @@ public class ConsolePublisher extends Publisher {
   protected void publishSuT() {
     publishTopicStart("system under test");
 
-    String mainCls = conf.getTargetArg();
+    String mainCls = conf.getTarget();
     if (mainCls != null) {
       String mainPath = reporter.getSuT();
       if (mainPath != null) {
@@ -195,7 +187,7 @@ public class ConsolePublisher extends Publisher {
       out.println("application: ?");
     }
 
-    String[] args = conf.getTargetArgParameters();
+    String[] args = conf.getTargetArgs();
     if (args.length > 0) {
       out.print("arguments:   ");
       for (String s : args) {

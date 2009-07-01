@@ -27,7 +27,7 @@ import gov.nasa.jpf.jvm.JVM;
  */
 public class DFSHeuristic extends SimplePriorityHeuristic {
   
-  public DFSHeuristic (Config conf, JVM vm) throws Config.Exception {
+  public DFSHeuristic (Config conf, JVM vm) {
     super(conf, vm);
   }
 

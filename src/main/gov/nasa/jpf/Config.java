@@ -22,6 +22,7 @@ import gov.nasa.jpf.util.ObjArray;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -34,11 +35,13 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * class that encapsulates property-based JPF configuration. This is mainly an
@@ -61,14 +64,22 @@ import java.util.logging.Logger;
  * why we have to keep the Config data model and initialization fairly simple
  * and robust.
  *
+ * Except of JPF and Config itself, all JPF classes are loaded by a
+ * Classloader that is constucted by Config (e.g. by collecting jars from
+ * known/configured locations), i.e. we SHOULD NOT rely on any 3rd party
+ * libraries within Config. Ideally, only JPF should have to be in the
+ * platform classpath (or the jpf.jar manifest)
+ *
  * <2do> need to make NumberFormatException handling consistent - should always
- * throw an Exception, not silently returning the default value
+ * throw an JPFConfigException, not silently returning the default value
  * <2do> consistent expansion handling
  * <2do> type specific separator chars for set/array specs ? (the ':' issue)
+ *
  * 
  */
 @SuppressWarnings("serial")
 public class Config extends Properties {
+
   static final String TARGET_KEY = "target";
 
   static final String TARGET_ARGS_KEY = "target_args";
@@ -83,71 +94,155 @@ public class Config extends Properties {
 
   static final String TRUE = "true";
   static final String FALSE = "false";
-  
+
+
   ClassLoader loader = Config.class.getClassLoader();
   
-  /**
-   * this class wraps the various exceptions we might encounter esp. during
-   * reflection instantiation
-   */
-  public class Exception extends java.lang.Exception {
-    public Exception(String msg) {
-      super(msg);
-    }
-
-    public Exception(String msg, Throwable cause) {
-      super(msg, cause);
-    }
-
-    public Exception(String key, Class<?> cls, String failure) {
-      super("error instantiating class " + cls.getName() + " for entry \""
-          + key + "\":" + failure);
-    }
-
-    public Exception(String key, Class<?> cls, String failure, Throwable cause) {
-      this(key, cls, failure);
-      initCause(cause);
-    }
-
-    public String toString() {
-      StringBuilder sb = new StringBuilder("JPF configuration error: ");
-      sb.append(getMessage());
-
-      return sb.toString();
-    }
-
-    public Config getConfig() {
-      return Config.this;
-    }
-  }
-
   // where did we initialize from
   ArrayList<Object> sources = new ArrayList<Object>();
   
   List<ConfigChangeListener> changeListeners;
   
-  // all arguments that are not <key>= <value>pairs
-  String[] freeArgs; 
 
   // an [optional] hashmap to keep objects we want to be singletons
   HashMap<String,Object> singletons;
   
-  final Object[] CONFIG_ARGS = { this }; 
-  
-  public Config(String[] args, String fileName, String alternatePath, Class<?> codeBase) {
+  final Object[] CONFIG_ARGS = { this };
 
-    //--- load default.properties first
-    loadFile("default.properties", alternatePath, codeBase);
-    if (isEmpty()){
-      // if we run JPF, we should throw a Config.Exception, but (1) this
-      // could be used in a standalone program (like MethodTester) that doesn't
-      // require defaults, (2) users could have complete mode property files
-      // there are also a lot of clients out there which would have to be modified
-      
-      // throwException("no default properties found");
+
+
+
+  /*                       property lookup
+   *   property type   :      spec             :  default
+   *   ----------------:-----------------------:----------
+   * |  default        :   +jpf.default        : "default.properties" via codebase
+   * |                 :                       :
+   * |  site           :   +jpf.site           : "${user.home}/.jpf/site.properties"
+   * |                 :                       :
+   * |  app            :   +jpf.app            : -
+   * |                 :                       :
+   * v  cmdline        :   +<key>=<val>        : -
+   *
+   * (1) if there is an explicit spec and the pathname does not exist, throw a
+   * Config.JPFConfigException
+   *
+   * (2) if the system properties cannot be found, throw a Config.JPFConfigException
+   *
+   */
+
+  public Config (String[] args, Class<?> codeBase)  {
+    String[] a = args.clone(); // we might nullify some of them
+
+    //--- the JPF system (default) properties
+    loadDefaultProperties( getPathArg(a,"jpf.default"), codeBase);
+
+    //--- the site properties
+    loadProperties( getPathArg(a, "jpf.site"));
+
+    //--- the application properties
+    String appProperties = getPathArg(a, "jpf.app");
+    if (appProperties == null){ // wasn't specified as a key=value arg
+      appProperties = getAppArg(a); // but maybe it's the targetArg
     }
-    
-    // maybe some of the keys depend on the mode property pathname
+    if (appProperties != null){
+      setConfigPathProperties(appProperties);
+      loadProperties( appProperties);
+    }
+
+    //--- lastly, the (rest of the) command line properties
+    loadArgs(a);
+  }
+
+  /*
+   * note that matching args are expanded and stored here, to avoid any
+   * discrepancy whith value expansions (which are order-dependent)
+   */
+  protected String getPathArg (String[] args, String key){
+    int keyLen = key.length();
+
+    for (int i=0; i<args.length; i++){
+      String a = args[i];
+      if (a != null){
+        int len = a.length();
+        if (len > keyLen + 2){
+          if (a.charAt(0) == '+' && a.charAt(keyLen+1) == '='){
+            if (a.substring(1, keyLen+1).equals(key)){
+              args[i] = null; // processed
+              String val = expandString(key, a.substring(keyLen+2));
+              setProperty(key, val);
+              return val;
+            }
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /*
+   * if the first freeArg is a JPF application property filename, use this
+   * as targetArg and set the "jpf.app" property accordingly
+   */
+  protected String getAppArg (String[] args){
+
+    for (int i=0; i<args.length; i++){
+      String a = args[i];
+      if (a != null && a.length() > 0){
+        switch (a.charAt(0)) {
+          case '+': continue;
+          case '-': continue;
+          default:
+            if (a.endsWith(".jpf")){
+              String val = expandString("jpf.app", a);
+              put("jpf.app", val);
+              args[i] = null; // processed
+              return val;
+            }
+        }
+      }
+    }
+
+    return null;
+  }
+
+
+
+  protected void loadDefaultProperties (String fileName, Class<?> codeBase) {
+    InputStream is = null;
+
+    try {
+      if (fileName == null){
+        fileName = "default.properties";
+      }
+
+      // first, try to load from a file
+      File f = new File(fileName);
+      if (f.exists()) {
+        sources.add(f);
+        is = new FileInputStream(f);
+      } else {
+        // if there is no file, try to load as a resource (jar)
+        Class<?> clazz = (codeBase != null) ? codeBase : Config.class;
+        is = clazz.getResourceAsStream(fileName);
+        if (is != null) {
+          sources.add( clazz.getResource(fileName)); // a URL
+        }
+      }
+
+      if (is != null) {
+        load(is);
+        is.close();
+      } else {
+        throw new JPFConfigException("default properties not found");
+      }
+    } catch (IOException iex) {
+      throw new JPFConfigException("error loading default properties", iex);
+    }
+
+  }
+
+  protected void setConfigPathProperties (String fileName){
     put("config", fileName);
     int i = fileName.lastIndexOf(File.separatorChar);
     if (i>=0){
@@ -155,25 +250,111 @@ public class Config extends Properties {
     } else {
       put("config_path", ".");
     }
+  }
 
-    // now load the key/value pairs from the mode property file
-    loadFile(fileName, alternatePath, codeBase);
-
-    //--- last are the command line args
-    if (args != null){
-      processArgs(args);
-    } else {
-      freeArgs = new String[0];
+  protected void loadProperties (String fileName) {
+    if (fileName != null && fileName.length() > 0) {
+      try {
+        // first, try to load from a file
+        File f = new File(fileName);
+        if (f.exists()) {
+          sources.add(f);
+          FileInputStream is = new FileInputStream(f);
+          load(is);
+          is.close();
+        }
+      } catch (IOException iex) {
+        throw new JPFConfigException("error loading properties: " + fileName, iex);
+      }
     }
   }
 
-  //-------------------------------------------------------- internal functions
+  /*
+   * argument syntax:
+   *          {'+'<key>['='<val>'] | '-'<driver-arg>} {<free-arg>}
+   *
+   * (1) null args are ignored
+   * (2) all config args start with '+'
+   * (3) if '=' is ommitted, a 'true' value is assumed
+   * (4) if <val> is ommitted, a 'null' value is assumed
+   * (5) no spaces around '='
+   * (6) all '-' driver-args are ignored
+   * (7) if 'target' is already set (from 'jpf.app' property or
+   *     "*.jpf" free-arg), all remaining <free-args> are 'target_args'
+   *     otherwise 'target' is set to the first free-arg
+   */
 
-  
+  protected void loadArgs (String[] args) {
+
+    for (int i=0; i<args.length; i++){
+      String a = args[i];
+
+      if (a != null && a.length() > 0){
+        switch (a.charAt(0)){
+          case '+': // Config arg
+            processArg(a.substring(1));
+            break;
+
+          case '-': // driver arg, ignore
+            continue;
+
+          default:  // target args to follow
+
+            if (getString(TARGET_KEY) == null){ // no 'target' yet
+              setTarget(a);
+              i++;
+            }
+
+            int n = args.length - i;
+            if (n > 0){ // we (might) have 'target_args'
+              String[] targetArgs = new String[n];
+              System.arraycopy(args, i, targetArgs, 0, n);
+              setTargetArgs(targetArgs);
+            }
+
+            return;
+        }
+      }
+    }
+  }
+
+
+  /*
+   * this does not include the '+' prefix, just the 
+   *     <key>[=[<value>]]
+   */
+  protected void processArg (String a) {
+
+    int idx = a.indexOf("=");
+
+    if (idx == 0){
+      throw new JPFConfigException("illegal option: " + a);
+    }
+
+    if (idx > 0) {
+      String key = a.substring(1, idx).trim();
+      String val = a.substring(idx + 1).trim();
+      if (val.length() == 0){
+        val = null;
+      }
+
+      setProperty(key, val);
+
+    } else {
+      setProperty(a.trim(), "true");
+    }
+
+  }
+
+
   /**
    * replace string constants with global static objects
    */
   protected String normalize (String v) {
+    if (v == null){
+      return null; // ? maybe TRUE - check default loading of "key" or "key="
+    }
+
     // trim leading and trailing blanks (at least Java 1.4.2 does not take care of trailing blanks)
     v = v.trim();
     
@@ -186,6 +367,11 @@ public class Config extends Properties {
         || "no".equalsIgnoreCase(v) || "n".equalsIgnoreCase(v)
         || "off".equalsIgnoreCase(v)) {
       v = FALSE;
+    }
+
+    // nil/null
+    if ("nil".equalsIgnoreCase(v) || "null".equalsIgnoreCase(v)){
+      v = null;
     }
     
     return v;
@@ -235,8 +421,12 @@ public class Config extends Properties {
   // we override this so that we can handle expansion
   @Override
   public Object put (Object key, Object value){
-    // <2do> as long as we derive from Properties, we should check for String args
-    
+
+    if (!(key instanceof String) || !(value instanceof String)){
+      throw new JPFConfigException("only String entries allowed, got: "
+              + key + "=" + value);
+    }
+
     String k = (String)key;
     String v = (String)value;
     
@@ -280,98 +470,77 @@ public class Config extends Properties {
     return append(key, value, LIST_SEPARATOR); // append with our standard list separator
   }
 
-  
-  /**
-   * extract all "+<key> [+]= <val>" parameters, store/overwrite them in our
-   * dictionary, collect all other parameters in a String array
-   *
-   * @param args array of String parameters to process
-   */
-  protected void processArgs(String[] args) {
-    int i;
-    ArrayList<String> list = new ArrayList<String>();
 
-    for (i = 0; i < args.length; i++) {
-      String a = args[i];
-      if (a != null) {
-        if (a.charAt(0) == '+') {
-          int idx = a.indexOf("=");
-          if (idx > 0) {
-            String key = a.substring(1, idx).trim();
-            String val = a.substring(idx+1).trim();            
-            setProperty(key, val);              
-                        
-          } else {
-            setProperty(a.substring(1), null);
-          }
-        } else {
-          list.add(a);
-        }
-      }
+  public void processExtensions () {
+    for (String dir : getStringArray("extensions")){
+      processExtensionDir(dir);
     }
-
-    freeArgs = list.toArray(new String[list.size()]);
   }
 
   /**
-   * return the index of the first free argument that does not start with an
-   * hyphen
+   * check for the standard classpath and vm.classpath locations within
+   * the provided extension dir.
    */
-  protected int getNonOptionArgIndex() {
-    if ((freeArgs == null) || (freeArgs.length == 0))
-      return -1;
+  protected void processExtensionDir (String dir) {
+    LinkedHashMap<String,File> cpEntries = new LinkedHashMap<String,File>();
+    LinkedHashMap<String,File> vmEntries = new LinkedHashMap<String,File>();
 
-    for (int i = 0; i < freeArgs.length; i++) {
-      String a = freeArgs[i];
-      if (a != null) {
-        char c = a.charAt(0);
-        if (c != '-') {
-          return i;
-        }
-      }
+    File build = new File(dir, "build");
+
+    addJars(new File(build,"dist"), cpEntries, vmEntries,
+            addDir(cpEntries, new File(build, "main")),
+            addDir(vmEntries, new File(build, "classes")));
+
+    addJars(new File(dir, "lib"), cpEntries, vmEntries, false, false);
+
+    for (File f : cpEntries.values()){
+      append("classpath", f.getPath());
     }
 
-    return -1;
+    for (File f : vmEntries.values()) {
+      append("vm.classpath", f.getPath());
+    }
+
   }
-  
-  protected boolean loadFile(String fileName, String alternatePath, Class<?> codeBase) {
-    InputStream is = null;
 
-    try {
-      // first, try to load from a file
-      File f = new File(fileName);
-      if (!f.exists()) {
-        // Ok, try alternatePath, if fileName wasn't absolute
-        if (!f.isAbsolute() && (alternatePath != null)) {
-          f = new File(alternatePath, fileName);
-        }
-      }
-
-      if (f.exists()) {
-        sources.add(f);
-        is = new FileInputStream(f);
-      } else {
-        // if there is no file, try to load as a resource (jar)
-        Class<?> clazz = (codeBase != null) ? codeBase : Config.class;
-        is = clazz.getResourceAsStream(fileName);
-        if (is != null) {
-          sources.add( clazz.getResource(fileName)); // a URL
-        }
-      }
-
-      if (is != null) {
-        load(is);
-        is.close();
-        return true;
-      }
-    } catch (IOException iex) {
-      return false;
+  protected boolean addDir (LinkedHashMap<String,File> entries, File dir){
+    if (dir.exists() && dir.isDirectory()){
+      entries.put(dir.getPath(),dir);
+      return true;
     }
 
     return false;
   }
 
-  
+  protected void addJars(File dir,
+          LinkedHashMap<String, File> cpEntries,
+          LinkedHashMap<String, File> vmEntries,
+          boolean haveMain, boolean haveClasses) {
+    
+    if (!haveMain || !haveClasses) {
+      if (dir.exists() && dir.isDirectory()) {
+        for (File f : dir.listFiles()) {
+          String name = f.getName();
+          if (name.endsWith(".jar")) {
+            if (!haveClasses && name.endsWith("-classes.jar")) {
+              if (!vmEntries.containsKey(name)) {
+                vmEntries.put(name, f);
+              }
+
+            } else if (!haveMain) {
+              if (!name.endsWith("-annotations.jar")) {
+                if (!cpEntries.containsKey(name)) {
+                  cpEntries.put(name, f);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+
   //------------------------------ public methods - the Config API
   
   public void setCurrentClassLoader (ClassLoader loader) {
@@ -382,10 +551,6 @@ public class Config extends Properties {
     return loader;
   }
   
-  public String[] getArgs() {
-    return freeArgs;
-  }
-
   public void addChangeListener (ConfigChangeListener l) {
     if (changeListeners == null) {
       changeListeners = new ArrayList<ConfigChangeListener>();
@@ -408,55 +573,46 @@ public class Config extends Properties {
   }
   
   
-  public Config.Exception exception (String msg) {
-    return new Config.Exception(msg);
+  public JPFException exception (String msg) {
+    return new JPFConfigException(msg);
   }
 
-  public void throwException(String msg) throws Exception {
-    throw new Config.Exception(msg);
+  public void throwException(String msg) {
+    throw new JPFConfigException(msg);
   }
 
-
-  /**
-   * return the first non-option freeArg, or 'null' if there is none (usually
-   * denotes the application to start)
-   */
-  public String getTargetArg() {
-    int i = getNonOptionArgIndex();
-    if (i < 0) {
-      return getString(TARGET_KEY);
-    } else {
-      return freeArgs[i];
-    }
+  //------------------------ special properties
+  public String getTarget() {
+    return getString(TARGET_KEY);
   }
 
-  /**
-   * return all args that follow the first non-option freeArgs (usually denotes
-   * the parameters to pass to the application to start)
-   */
-  public String[] getTargetArgParameters() {
-    int i = getNonOptionArgIndex();
-        
-    if (i < 0) {  // there are none in the command line, check 'target_args'
-      String[] a = getStringArray(TARGET_ARGS_KEY);
+  public void setTarget (String target){
+    setProperty(TARGET_KEY,target);
+  }
+
+  public String[] getTargetArgs() {
+    return getStringArray(TARGET_ARGS_KEY);
+  }
+
+  public void setTargetArgs (String... args) {
+    StringBuilder sb = new StringBuilder();
+    for (int i=0, n = 0; i < args.length; i++) {
+      String a = args[i];
       if (a != null) {
-        return a;
-      } else {
-        return new String[0];
+        if (n++ > 0) {
+          sb.append(LIST_SEPARATOR);
+        }
+        // we expand to be consistent with an explicit 'target_args' spec
+        sb.append(expandString(null, a));
       }
-      
-    } else {
-      int n = freeArgs.length - (i + 1);
-      String[] a = new String[n];
-      System.arraycopy(freeArgs, i + 1, a, 0, n);
-      return a;
+    }
+    if (sb.length() > 0) {
+      setProperty(TARGET_ARGS_KEY, sb.toString());
     }
   }
 
-  public void setArgs (String[] args) {
-    freeArgs = args;
-  }
-  
+  //----------------------- type specific accessors
+
   public boolean getBoolean(String key) {
     String v = getProperty(key);
     return (v == TRUE);
@@ -514,7 +670,7 @@ public class Config extends Properties {
   }
 
 
-  public int[] getIntArray (String key) throws Exception {
+  public int[] getIntArray (String key) throws JPFConfigException {
     String v = getProperty(key);
 
     if (v != null) {
@@ -527,7 +683,7 @@ public class Config extends Properties {
         }
         return a;
       } catch (NumberFormatException nfx) {
-        throw new Exception("illegal int[] element in '" + key + "' = \"" + sa[i] + '"');
+        throw new JPFConfigException("illegal int[] element in '" + key + "' = \"" + sa[i] + '"');
       }
     } else {
       return null;
@@ -603,7 +759,7 @@ public class Config extends Properties {
     return defValue;
   }
 
-  public long[] getLongArray (String key) throws Exception {
+  public long[] getLongArray (String key) throws JPFConfigException {
     String v = getProperty(key);
 
     if (v != null) {
@@ -616,7 +772,7 @@ public class Config extends Properties {
         }
         return a;
       } catch (NumberFormatException nfx) {
-        throw new Exception("illegal long[] element in " + key + " = " + sa[i]);
+        throw new JPFConfigException("illegal long[] element in " + key + " = " + sa[i]);
       }
     } else {
       return null;
@@ -641,7 +797,7 @@ public class Config extends Properties {
     return defValue;
   }
 
-  public double[] getDoubleArray (String key) throws Exception {
+  public double[] getDoubleArray (String key) throws JPFConfigException {
     String v = getProperty(key);
 
     if (v != null) {
@@ -654,7 +810,7 @@ public class Config extends Properties {
         }
         return a;
       } catch (NumberFormatException nfx) {
-        throw new Exception("illegal double[] element in " + key + " = " + sa[i]);
+        throw new JPFConfigException("illegal double[] element in " + key + " = " + sa[i]);
       }
     } else {
       return null;
@@ -762,16 +918,16 @@ public class Config extends Properties {
     return null;
   }
 
-  public Class<?> asClass (String v) throws Exception {
+  public Class<?> asClass (String v) throws JPFConfigException {
     if ((v != null) && (v.length() > 0)) {
       v = stripId(v);
       v = expandClassName(v);
       try {
         return loader.loadClass(v);
       } catch (ClassNotFoundException cfx) {
-        throw new Exception("class not found " + v);
+        throw new JPFConfigException("class not found " + v);
       } catch (ExceptionInInitializerError ix) {
-        throw new Exception("class initialization of " + v + " failed: " + ix,
+        throw new JPFConfigException("class initialization of " + v + " failed: " + ix,
             ix);
       }
     }
@@ -779,27 +935,27 @@ public class Config extends Properties {
     return null;    
   }
       
-  public <T> Class<? extends T> getClass(String key, Class<T> type) throws Exception {
+  public <T> Class<? extends T> getClass(String key, Class<T> type) throws JPFConfigException {
     Class<?> cls = asClass( getProperty(key));
     if (cls != null) {
       if (type.isAssignableFrom(cls)) {
         return cls.asSubclass(type);
       } else {
-        throw new Exception("classname entry for: \"" + key + "\" not of type: " + type.getName());
+        throw new JPFConfigException("classname entry for: \"" + key + "\" not of type: " + type.getName());
       }
     }
     return null;
   }
   
     
-  public Class<?> getClass(String key) throws Exception {
+  public Class<?> getClass(String key) throws JPFConfigException {
     return asClass( getProperty(key));
   }
   
-  public Class<?> getEssentialClass(String key) throws Exception {
+  public Class<?> getEssentialClass(String key) throws JPFConfigException {
     Class<?> cls = getClass(key);
     if (cls == null) {
-      throw new Exception("no classname entry for: \"" + key + "\"");
+      throw new JPFConfigException("no classname entry for: \"" + key + "\"");
     }
 
     return cls;
@@ -832,7 +988,7 @@ public class Config extends Properties {
   }
 
   
-  public Class<?>[] getClasses(String key) throws Exception {
+  public Class<?>[] getClasses(String key) throws JPFConfigException {
     String[] v = getStringArray(key);
     if (v != null) {
       int n = v.length;
@@ -843,9 +999,9 @@ public class Config extends Properties {
           clsName = stripId(clsName);
           a[i] = loader.loadClass(clsName);
         } catch (ClassNotFoundException cnfx) {
-          throw new Exception("class not found " + v[i]);
+          throw new JPFConfigException("class not found " + v[i]);
         } catch (ExceptionInInitializerError ix) {
-          throw new Exception("class initialization of " + v[i] + " failed: "
+          throw new JPFConfigException("class initialization of " + v[i] + " failed: "
               + ix, ix);
         }
       }
@@ -875,7 +1031,7 @@ public class Config extends Properties {
     return null;
   }
 
-  public <T> ObjArray<T> getInstances(String key, Class<T> type) throws Exception {
+  public <T> ObjArray<T> getInstances(String key, Class<T> type) throws JPFConfigException {
 
     Class<?>[] argTypes = { Config.class };
     Object[] args = { this };
@@ -884,7 +1040,7 @@ public class Config extends Properties {
   }
   
   public <T> ObjArray<T> getInstances(String key, Class<T> type, Class<?>[]argTypes, Object[] args)
-                                                      throws Exception {
+                                                      throws JPFConfigException {
     Class<?>[] c = getClasses(key);
 
     if (c != null) {
@@ -911,7 +1067,7 @@ public class Config extends Properties {
     return null;
   }
   
-  public <T> T getInstance(String key, Class<T> type, String defClsName) throws Exception {
+  public <T> T getInstance(String key, Class<T> type, String defClsName) throws JPFConfigException {
     Class<?>[] argTypes = CONFIG_ARGTYPES;
     Object[] args = CONFIG_ARGS;
 
@@ -922,16 +1078,16 @@ public class Config extends Properties {
       try {
         cls = loader.loadClass(defClsName);
       } catch (ClassNotFoundException cfx) {
-        throw new Exception("class not found " + defClsName);
+        throw new JPFConfigException("class not found " + defClsName);
       } catch (ExceptionInInitializerError ix) {
-        throw new Exception("class initialization of " + defClsName + " failed: " + ix, ix);
+        throw new JPFConfigException("class initialization of " + defClsName + " failed: " + ix, ix);
       }
     }
     
     return getInstance(key, cls, type, argTypes, args, id);
   }
 
-  public <T> T getInstance(String key, Class<T> type) throws Exception {
+  public <T> T getInstance(String key, Class<T> type) throws JPFConfigException {
     Class<?>[] argTypes = CONFIG_ARGTYPES;
     Object[] args = CONFIG_ARGS;
 
@@ -939,7 +1095,7 @@ public class Config extends Properties {
   }
     
   public <T> T getInstance(String key, Class<T> type, Class<?>[] argTypes,
-                            Object[] args) throws Exception {
+                            Object[] args) throws JPFConfigException {
     Class<?> cls = getClass(key);
     String id = getIdPart(key);
 
@@ -950,7 +1106,7 @@ public class Config extends Properties {
     }
   }
   
-  public <T> T getInstance(String key, Class<T> type, Object arg1, Object arg2)  throws Exception {
+  public <T> T getInstance(String key, Class<T> type, Object arg1, Object arg2)  throws JPFConfigException {
     Class<?>[] argTypes = new Class<?>[2];
     argTypes[0] = arg1.getClass();
     argTypes[1] = arg2.getClass();
@@ -963,7 +1119,7 @@ public class Config extends Properties {
   }
 
 
-  public <T> T getEssentialInstance(String key, Class<T> type) throws Exception {
+  public <T> T getEssentialInstance(String key, Class<T> type) throws JPFConfigException {
     Class<?>[] argTypes = { Config.class };
     Object[] args = { this };
     return getEssentialInstance(key, type, argTypes, args);
@@ -972,7 +1128,7 @@ public class Config extends Properties {
   /**
    * just a convenience method for ctor calls that take two arguments
    */
-  public <T> T getEssentialInstance(String key, Class<T> type, Object arg1, Object arg2)  throws Exception {
+  public <T> T getEssentialInstance(String key, Class<T> type, Object arg1, Object arg2)  throws JPFConfigException {
     Class<?>[] argTypes = new Class<?>[2];
     argTypes[0] = arg1.getClass();
     argTypes[1] = arg2.getClass();
@@ -984,7 +1140,7 @@ public class Config extends Properties {
     return getEssentialInstance(key, type, argTypes, args);
   }
 
-  public <T> T getEssentialInstance(String key, Class<T> type, Class<?>[] argTypes, Object[] args) throws Exception {
+  public <T> T getEssentialInstance(String key, Class<T> type, Class<?>[] argTypes, Object[] args) throws JPFConfigException {
     Class<?> cls = getEssentialClass(key);
     String id = getIdPart(key);
 
@@ -992,7 +1148,7 @@ public class Config extends Properties {
   }
 
   
-  public <T> T getInstance (String id, String clsName, Class<T> type) throws Exception {
+  public <T> T getInstance (String id, String clsName, Class<T> type) throws JPFConfigException {
     Class<?>[] argTypes = CONFIG_ARGTYPES;
     Object[] args = CONFIG_ARGS;
 
@@ -1012,7 +1168,7 @@ public class Config extends Properties {
    * a 'type' provided the instantiated object does not comply with, return null
    */
   <T> T getInstance(String key, Class<?> cls, Class<T> type, Class<?>[] argTypes,
-                     Object[] args, String id) throws Exception {
+                     Object[] args, String id) throws JPFConfigException {
     Object o = null;
     Constructor<?> ctor = null;
 
@@ -1046,35 +1202,35 @@ public class Config extends Properties {
 
         } else {
           // Ok, there is no suitable ctor, bail out
-          throw new Exception(key, cls, "no suitable ctor found");
+          throw new JPFConfigException(key, cls, "no suitable ctor found");
         }
       } catch (IllegalAccessException iacc) {
-        throw new Exception(key, cls, "\n> ctor not accessible: "
+        throw new JPFConfigException(key, cls, "\n> ctor not accessible: "
             + getMethodSignature(ctor));
       } catch (IllegalArgumentException iarg) {
-        throw new Exception(key, cls, "\n> illegal constructor arguments: "
+        throw new JPFConfigException(key, cls, "\n> illegal constructor arguments: "
             + getMethodSignature(ctor));
       } catch (InvocationTargetException ix) {
         Throwable tx = ix.getTargetException();
-        if (tx instanceof Config.Exception) {
-          throw new Exception(tx.getMessage() + "\n> used within \"" + key
+        if (tx instanceof JPFConfigException) {
+          throw new JPFConfigException(tx.getMessage() + "\n> used within \"" + key
               + "\" instantiation of " + cls);
         } else {
-          throw new Exception(key, cls, "\n> exception in "
+          throw new JPFConfigException(key, cls, "\n> exception in "
               + getMethodSignature(ctor) + ":\n>> " + tx, tx);
         }
       } catch (InstantiationException ivt) {
-        throw new Exception(key, cls,
+        throw new JPFConfigException(key, cls,
             "\n> abstract class cannot be instantiated");
       } catch (ExceptionInInitializerError eie) {
-        throw new Exception(key, cls, "\n> static initialization failed:\n>> "
+        throw new JPFConfigException(key, cls, "\n> static initialization failed:\n>> "
             + eie.getException(), eie.getException());
       }
     }
 
     // check type
     if (!type.isInstance(o)) {
-      throw new Exception(key, cls, "\n> instance not of type: "
+      throw new JPFConfigException(key, cls, "\n> instance not of type: "
           + type.getName());
     }
 
@@ -1097,26 +1253,6 @@ public class Config extends Properties {
     }
     sb.append(')');
     return sb.toString();
-  }
-
-  /**
-   * check if any of the freeArgs matches a regular expression
-   *
-   * @param regex regular expression to check for
-   * @return true if found, false if not found or no freeArgs
-   */
-  public boolean hasArg(String regex) {
-    if (freeArgs == null) {
-      return false;
-    }
-
-    for (int i = 0; i < freeArgs.length; i++) {
-      if (freeArgs[i].matches(regex)) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   public boolean hasValue(String key) {
@@ -1323,8 +1459,11 @@ public class Config extends Properties {
     
     return null;
   }
+
+
+
   
-  public ClassLoader getClassLoader (String classpathKey) throws Exception {
+  public ClassLoader getClassLoader (String classpathKey) throws JPFConfigException {
     ClassLoader currentLoader = Config.class.getClassLoader();
     
     File[] pathElements = getPathArray(classpathKey);
@@ -1337,7 +1476,7 @@ public class Config extends Properties {
         return new URLClassLoader(urls, currentLoader);
         
       } catch (MalformedURLException x) {
-        throw new Exception("malformed classpath for " + classpathKey + " : " +  x.getMessage());
+        throw new JPFConfigException("malformed classpath for " + classpathKey + " : " +  x.getMessage());
       }
     }
     
@@ -1393,7 +1532,7 @@ public class Config extends Properties {
   }
 
   public void print (PrintWriter pw) {
-    pw.println("----------- dictionary contents");
+    pw.println("----------- Config contents");
 
     // just how much do you have to do to get a printout with keys in alphabetical order :<
     TreeSet<String> kset = new TreeSet<String>();
@@ -1411,14 +1550,15 @@ public class Config extends Properties {
       pw.println(val);
     }
 
-    if ((freeArgs != null) && (freeArgs.length > 0)) {
-      pw.println("----------- free arguments");
-      for (int i = 0; i < freeArgs.length; i++) {
-        pw.println(freeArgs[i]);
-      }
-    }
-
     pw.flush();
+  }
+
+  /*
+   * for debugging purposes
+   */
+  public void printEntries() {
+    PrintWriter pw = new PrintWriter(System.out);
+    print(pw);
   }
 
   public String getSourceName (Object src){
@@ -1445,14 +1585,5 @@ public class Config extends Properties {
     }
   }
 
-  /** test driver
-  public static void main (String[] args){
-    Config conf = JPF.createConfig(args);
 
-    String[] a = conf.getStringEnumeration("a", 10);
-    for (int i=0; i<a.length; i++){
-      System.out.println("a." + i + "=" + a[i]);
-    }
-  }
-  **/
 }
