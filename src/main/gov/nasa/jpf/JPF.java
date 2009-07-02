@@ -126,7 +126,8 @@ public class JPF implements Runnable {
         conf.print(new PrintWriter(System.out));
       }
 
-      // check if there is a shell class specification, in which case we just delegate
+      // check if there is a shell class specification, in which case we just
+      // delegate
       try {
         Class<?> shellCls = conf.getClass("jpf.shell.class");
         if (shellCls != null) {
@@ -137,29 +138,28 @@ public class JPF implements Runnable {
           } else {
             logger.severe("shell class has no main() method: " + shellCls.getName());
           }
-        } else {
-          // no shell, we start JPF directly
-          LogManager.printStatus(logger);
-          conf.printStatus(logger);
-
-          // this has to be done after we checked&consumed all "-.." arguments
-          // this is NOT about checking properties!
-          checkUnknownArgs(args);
-
-          try {
-            JPF jpf = new JPF(conf);
-            jpf.run();
-          } catch (ExitException x) {
-            if (x.shouldReport()) {
-              x.printStackTrace();
-            }
-          }
-
         }
       } catch (Throwable t) {
         logger.severe("exception during shell initialization: " + t);
         t.printStackTrace();
         return;
+      }
+
+      // no shell, we start JPF directly
+      LogManager.printStatus(logger);
+      conf.printStatus(logger);
+
+      // this has to be done after we checked&consumed all "-.." arguments
+      // this is NOT about checking properties!
+      checkUnknownArgs(args);
+
+      try {
+        JPF jpf = new JPF(conf);
+        jpf.run();
+      } catch (ExitException x) {
+        if (x.shouldReport()) {
+          x.printStackTrace();
+        }
       }
 
     } catch (JPFConfigException cx) {

@@ -332,7 +332,7 @@ public class Config extends Properties {
     }
 
     if (idx > 0) {
-      String key = a.substring(1, idx).trim();
+      String key = a.substring(0, idx).trim();
       String val = a.substring(idx + 1).trim();
       if (val.length() == 0){
         val = null;
@@ -422,23 +422,36 @@ public class Config extends Properties {
   @Override
   public Object put (Object key, Object value){
 
-    if (!(key instanceof String) || !(value instanceof String)){
-      throw new JPFConfigException("only String entries allowed, got: "
-              + key + "=" + value);
+    if (key == null){
+      throw new JPFConfigException("no null keys allowed");
+    } else if (!(key instanceof String)){
+      throw new JPFConfigException("only String keys allowed, got: " + key);
     }
 
-    String k = (String)key;
-    String v = (String)value;
-    
-    if (k.charAt(k.length()-1) == '+'){ // the append hack
-      return append(k.substring(0, k.length()-1), v, null);
-      
+    String k = (String) key;
+
+    if (!(value == null)){
+      if (!(value instanceof String)) {
+        throw new JPFConfigException("only String values allowed, got: " + key + "=" + value);
+      }
+
+      String v = (String) value;
+
+      if (k.charAt(k.length() - 1) == '+') { // the append hack
+        return append(k.substring(0, k.length() - 1), v, null);
+
+      } else {
+        v = normalize(expandString(k, v));
+        Object oldValue = super.put(k, v);
+        notifyPropertyChangeListeners(k, (String) oldValue, v);
+        return oldValue;
+      }
+
     } else {
-      v = normalize( expandString(k, v));
-      Object oldValue = super.put(k, v);
-      notifyPropertyChangeListeners(k, (String)oldValue, v);
-      
-      return oldValue;
+        Object oldValue = super.get(k);
+        remove(k);
+        notifyPropertyChangeListeners(k, (String) oldValue, null);
+        return oldValue;
     }
   }
     
@@ -470,10 +483,40 @@ public class Config extends Properties {
     return append(key, value, LIST_SEPARATOR); // append with our standard list separator
   }
 
+  //--- collect all relevant properties for the jpf-core
 
-  public void processExtensions () {
+
+  public void setCoreProperties () {
+    String jpfPath = findJPFPath();
+    processJPFComponentDir(jpfPath);
+  }
+
+  protected String findJPFPath() {
+    String cp = System.getProperty("java.class.path");
+    String[] cpEntries = cp.split(File.pathSeparator);
+
+    String mainDir = "build" + File.separatorChar + "main";
+
+    for (String p : cpEntries) {
+      File f = new File(p);
+      if (f.getName().equals("jpf.jar")){
+        return f.getParent();
+      }
+
+      String fp = f.getPath();
+      if (fp.endsWith(mainDir)){
+        return fp.substring(0, fp.length() - mainDir.length());
+      }
+    }
+
+    return null;
+  }
+
+  //--- collect all relevant properties for our configured extensions
+
+  public void setExtensionProperties () {
     for (String dir : getStringArray("extensions")){
-      processExtensionDir(dir);
+      processJPFComponentDir(dir);
     }
   }
 
@@ -481,26 +524,72 @@ public class Config extends Properties {
    * check for the standard classpath and vm.classpath locations within
    * the provided extension dir.
    */
-  protected void processExtensionDir (String dir) {
+  protected void processJPFComponentDir (String dir) {
     LinkedHashMap<String,File> cpEntries = new LinkedHashMap<String,File>();
     LinkedHashMap<String,File> vmEntries = new LinkedHashMap<String,File>();
+    boolean haveClassDirs = false;
 
-    File build = new File(dir, "build");
+    // first, look if we have a source distrib with
+    //  - build/main, build/peers => 'classpath'
+    //  - build/classes, build/annotations => 'vm.classpath'
+    File buildDir = new File(dir, "build");
+    if (buildDir.exists() && buildDir.isDirectory()){
+      haveClassDirs |= addDir(cpEntries, new File(buildDir, "main"));
+      haveClassDirs |= addDir(cpEntries, new File(buildDir, "peers"));
 
-    addJars(new File(build,"dist"),
-            cpEntries, new File(build, "main"),
-            vmEntries, new File(build, "classes"));
+      haveClassDirs |= addDir(vmEntries, new File(buildDir, "classes"));
+      haveClassDirs |= addDir(vmEntries, new File(buildDir, "annotations"));
+    }
 
-    addJars(new File(dir, "lib"), cpEntries, null, vmEntries, null);
+    // if it's not a source distrib, collect jars from 'dist', or the dir itself
+    if (!haveClassDirs){
+      addJars( new File(dir, "dist"), cpEntries, vmEntries);
+    }
+    
+    // add jars from the 'lib' dir
+    addJars( new File(dir, "lib"), cpEntries, vmEntries);
+
+    // lastly, add all jars that are in the dir itself
+    addJars( new File(dir), cpEntries, vmEntries);
+
 
     for (File f : cpEntries.values()){
       append("classpath", f.getPath());
     }
-
     for (File f : vmEntries.values()) {
       append("vm.classpath", f.getPath());
     }
 
+  }
+
+  protected boolean addJars(File dir,
+          LinkedHashMap<String, File> cpEntries,
+          LinkedHashMap<String, File> vmEntries ) {
+    boolean foundJars = false;
+
+    if (dir.exists() && dir.isDirectory()) {
+      for (File f : dir.listFiles()) {
+        String name = f.getName();
+        if (name.endsWith(".jar")) {
+          if (name.endsWith("-classes.jar")) {
+            foundJars = true;
+            if (!vmEntries.containsKey(name)) {
+              vmEntries.put(name, f);
+            }
+
+          } else  {
+            if (!name.endsWith("-annotations.jar")) {
+              foundJars = true;
+              if (!cpEntries.containsKey(name)) {
+                cpEntries.put(name, f);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return foundJars;
   }
 
   protected boolean addDir (LinkedHashMap<String,File> entries, File dir){
@@ -510,36 +599,6 @@ public class Config extends Properties {
     }
 
     return false;
-  }
-
-  protected void addJars(File dir,
-          LinkedHashMap<String, File> cpEntries, File cpDir,
-          LinkedHashMap<String, File> vmEntries, File vmDir ) {
-
-    boolean haveMain = (cpDir != null) ? addDir( cpEntries, cpDir) : false;
-    boolean haveClasses = (vmDir != null) ? addDir(vmEntries, vmDir) : false;
-
-    if (!haveMain || !haveClasses) {
-      if (dir.exists() && dir.isDirectory()) {
-        for (File f : dir.listFiles()) {
-          String name = f.getName();
-          if (name.endsWith(".jar")) {
-            if (!haveClasses && name.endsWith("-classes.jar")) {
-              if (!vmEntries.containsKey(name)) {
-                vmEntries.put(name, f);
-              }
-
-            } else if (!haveMain) {
-              if (!name.endsWith("-annotations.jar")) {
-                if (!cpEntries.containsKey(name)) {
-                  cpEntries.put(name, f);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
   }
 
 

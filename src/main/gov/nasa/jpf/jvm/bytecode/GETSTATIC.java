@@ -28,23 +28,33 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 
 
 /**
- * Get static field from class
+ * Get static fieldInfo from class
  * ..., => ..., value 
  */
 public class GETSTATIC extends StaticFieldInstruction {
+
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    FieldInfo fi = getFieldInfo();
-    if (fi == null) {
+
+    ClassInfo clsInfo = getClassInfo();
+    if (clsInfo == null){
+      return ti.createAndThrowException("java.lang.NoClassDefFoundError", className);
+    }
+
+    FieldInfo fieldInfo = getFieldInfo();
+    if (fieldInfo == null) {
       return ti.createAndThrowException("java.lang.NoSuchFieldException",
           (className + '.' + fname));
     }
-    
-    ClassInfo ci = fi.getClassInfo();
-    if (!mi.isClinit(ci) && requiresClinitCalls(ti, ci)) {
+
+
+    // this can be actually different (can be a base)
+    clsInfo = fieldInfo.getClassInfo();
+
+    if (!mi.isClinit(clsInfo) && requiresClinitCalls(ti, clsInfo)) {
       return ti.getPC();
     }
 
-    ElementInfo ei = ks.sa.get(ci.getName());
+    ElementInfo ei = ks.sa.get(clsInfo.getName());
 
     if (isNewPorFieldBoundary(ti)) {
       if (createAndSetFieldCG(ss, ei, ti)) {
@@ -54,18 +64,18 @@ public class GETSTATIC extends StaticFieldInstruction {
    
     switch (size) {
       case 1:
-        int ival = ei.getIntField(fi);
-        ti.push(ival, fi.isReference());
+        int ival = ei.getIntField(fieldInfo);
+        ti.push(ival, fieldInfo.isReference());
         break;
       case 2:
-        long lval = ei.getLongField(fi);
+        long lval = ei.getLongField(fieldInfo);
         ti.longPush(lval);
         break;
       default:
         throw new JPFException("invalid field type");
     }
     
-    Object attr = ei.getFieldAttr(fi);
+    Object attr = ei.getFieldAttr(fieldInfo);
     if (attr != null){
       ti.setOperandAttrNoClone(attr);
     }

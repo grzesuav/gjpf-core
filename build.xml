@@ -31,31 +31,11 @@
   <!-- generic classpath settings -->
   <path id="lib.path">
     <pathelement location="build/main"/>
+    <pathelement location="build/peers"/>
     <fileset dir=".">
   	  <include name="lib/*.jar"/>
     </fileset>
   </path>
-
-  <path id="lib-tools.path">
-    <path refid="lib.path"/>
-    <fileset dir=".">
-  	  <include name="tools/lib/*.jar"/>
-    </fileset>
-  </path>
-
-  <path id="lib-anno.path">
-    <path refid="lib.path"/>
-    <pathelement location="build/annotations"/>
-  </path>
-
-  <path id="lib-test.path">
-    <path refid="lib.path"/>
-    <fileset dir=".">
-  	  <include name="tools/lib/*.jar"/>
-    </fileset>
-    <pathelement location="build/annotations"/>
-  </path>
-
 
 
   <!-- init: common initialization -->
@@ -66,6 +46,7 @@
     <mkdir dir="build/main"/>          <!-- the code that constitutes JPF -->
     <mkdir dir="build/annotations"/>   <!-- annotations that can be used in SUTs -->
     <mkdir dir="build/classes"/>       <!-- (modeled) classes executed by JPF -->
+    <mkdir dir="build/peers"/>         <!-- native peer classes -->
     <mkdir dir="build/tests"/>         <!-- regression test code -->
     <mkdir dir="build/examples" />     <!-- example code -->
     
@@ -106,21 +87,31 @@
 
   <target name="-compile-main" if="have_main">
     <javac srcdir="src/main" destdir="build/main"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
-           classpathref="lib-tools.path"/>
+           debug="${debug}" source="${src_level}" deprecation="${deprecation}">
+      <classpath>
+        <path refid="lib.path"/>
+        <fileset dir=".">
+          <include name="tools/lib/*.jar"/>
+        </fileset>
+      </classpath>
+    </javac>
 	  <copy file="default.properties" todir="build/main/gov/nasa/jpf"/>
   </target>
   
   <target name="-compile-peers" if="have_peers" depends="-compile-main" >
-    <javac srcdir="src/peers" destdir="build/main"
+    <javac srcdir="src/peers" destdir="build/peers"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}"
            classpathref="lib.path"/>
   </target>
   
   <target name="-compile-classes" if="have_classes" depends="-compile-annotations,-compile-main" >
     <javac srcdir="src/classes" destdir="build/classes"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
-           classpathref="lib-anno.path"/>
+           debug="${debug}" source="${src_level}" deprecation="${deprecation}">
+      <classpath>
+        <path refid="lib.path"/>
+        <pathelement location="build/annotations"/>
+      </classpath>
+    </javac>
   </target>
   
   <target name="-compile-tests" if="have_tests" depends="-compile-annotations,-compile-main">
@@ -151,8 +142,16 @@
         description="generate the core JPF jar files" >
     <mkdir dir="dist"/>
 
-    <jar jarfile="dist/jpf.jar">
+    <jar jarfile="dist/jpf.jar" index="true">
       <fileset dir="build/main"/>
+      <fileset dir="build/peers"/>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Implementation-Vendor" value="NASA Ames Research Center"/>
+        <attribute name="Implementation-Title" value="Java Pathfinder core system"/>
+        <attribute name="Implementation-Version" value="5.0alpha1"/>
+        <attribute name="Main-Class" value="gov.nasa.jpf.JPF"/>
+      </manifest>
     </jar>
 
     <jar jarfile="dist/jpf-classes.jar">

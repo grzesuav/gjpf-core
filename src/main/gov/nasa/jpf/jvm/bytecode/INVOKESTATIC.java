@@ -39,7 +39,7 @@ public class INVOKESTATIC extends InvokeInstruction {
   
   public INVOKESTATIC () {}
   
-  ClassInfo getClassInfo () {
+  protected ClassInfo getClassInfo () {
     if (ci == null) {
       ci = ClassInfo.getClassInfo(cname);
     }
@@ -72,21 +72,29 @@ public class INVOKESTATIC extends InvokeInstruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     
+    // need to check first if we can find the class
+    ClassInfo clsInfo = getClassInfo();
+    if (clsInfo == null){
+      return ti.createAndThrowException("java.lang.NoClassDefFoundError", cname);
+    }
+
     MethodInfo callee = getInvokedMethod(ti);
     if (callee == null) {
       return ti.createAndThrowException("java.lang.NoSuchMethodException",
                                    cname + '.' + mname);
     }
-    ClassInfo ci = callee.getClassInfo();
+
+    // this can be actually different than (can be a base)
+    clsInfo = callee.getClassInfo();
     
-    if (requiresClinitCalls(ti, ci)) {
+    if (requiresClinitCalls(ti, clsInfo)) {
       // do class initialization before continuing 
       return ti.getPC();
     }
 
     if (callee.isSynchronized()) {
       DynamicArea da = ti.getVM().getDynamicArea();
-      ElementInfo ei = da.get(ci.getClassObjectRef());
+      ElementInfo ei = da.get(clsInfo.getClassObjectRef());
 
       if (ei.getLockingThread() != ti) { // not a recursive lock
     
@@ -122,11 +130,12 @@ public class INVOKESTATIC extends InvokeInstruction {
   }
   
   public MethodInfo getInvokedMethod () {
-    ClassInfo clsInfo = getClassInfo();
     if (invokedMethod == null) {
-      invokedMethod = clsInfo.getMethod(mname, true);
+      ClassInfo clsInfo = getClassInfo();
+      if (clsInfo != null){
+        invokedMethod = clsInfo.getMethod(mname, true);
+      }
     }
-
     return invokedMethod;
   }
   

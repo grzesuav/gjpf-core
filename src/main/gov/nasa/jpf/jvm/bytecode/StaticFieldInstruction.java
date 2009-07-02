@@ -28,9 +28,18 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public abstract class StaticFieldInstruction extends FieldInstruction {
 
+  ClassInfo ci;
+
+  protected ClassInfo getClassInfo () {
+    if (ci == null) {
+      ci = ClassInfo.getClassInfo(className);
+    }
+    return ci;
+  }
+
   public FieldInfo getFieldInfo () {
     if (fi == null) {
-      ClassInfo ci = ClassInfo.getClassInfo(className);
+      ClassInfo ci = getClassInfo();
       if (ci != null) {
         fi = ci.getStaticField(fname);
       }

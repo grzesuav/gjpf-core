@@ -40,21 +40,28 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    FieldInfo fi = getFieldInfo();
-    if (fi == null) {
+
+    ClassInfo clsInfo = getClassInfo();
+    if (clsInfo == null){
+      return ti.createAndThrowException("java.lang.NoClassDefFoundError", className);
+    }
+
+    FieldInfo fieldInfo = getFieldInfo();
+    if (fieldInfo == null) {
       return ti.createAndThrowException("java.lang.NoSuchFieldException",
           (className + '.' + fname));
     }
-
-    ClassInfo ci = fi.getClassInfo();
+    
+    // this can be actually different (can be a base)
+    clsInfo = fi.getClassInfo();
 
     // this tries to avoid endless recursion, but is too restrictive, and
     // causes NPE's with the infamous, synthetic  'class$0' fields
-    if (!mi.isClinit() && requiresClinitCalls(ti, ci)) {
+    if (!mi.isClinit() && requiresClinitCalls(ti, clsInfo)) {
       return ti.getPC();
     }
 
-    ElementInfo ei = ks.sa.get(ci.getName());
+    ElementInfo ei = ks.sa.get(clsInfo.getName());
 
     if (isNewPorFieldBoundary(ti)) {
       if (createAndSetFieldCG(ss, ei, ti)) {

@@ -77,9 +77,26 @@ public class ConfigTest extends TestJPF {
                      "+jpf.app=" + dir + "configTestApp.jpf" };
 
     Config conf = new Config( args, Config.class);
-    conf.processExtensions();
+    conf.setExtensionProperties();
 
     conf.printEntries();
 
+    // add a property check
   }
+
+  @Test
+  public void testCore () {
+    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String[] args = {"+jpf.default=" + dir + "configTestDefault.properties",
+                     "+jpf.site=" + dir + "configTestSite.properties",
+                     "+jpf.app=" + dir + "configTestApp.jpf" };
+
+    Config conf = new Config( args, Config.class);
+    conf.setCoreProperties();
+
+    conf.printEntries();
+
+    // add a property check
+  }
+
 }
