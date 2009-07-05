@@ -30,8 +30,11 @@ import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.ObjArray;
 import gov.nasa.jpf.util.RunRegistry;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -126,6 +129,8 @@ public class JPF implements Runnable {
         conf.print(new PrintWriter(System.out));
       }
 
+      setConfigPaths(conf);
+
       // check if there is a shell class specification, in which case we just
       // delegate
       try {
@@ -167,7 +172,49 @@ public class JPF implements Runnable {
       // shall we print the stacktrace ?
     }
   }
-  
+
+  static void setConfigPaths(Config conf) {
+    JPFSite site = JPFSite.getSite();
+
+    //conf.printEntries();
+
+    String[] extensions = conf.getStringArray("extensions");
+    if (extensions != null){
+      for (String extDir : extensions){
+        site.addExtensionDir(extDir);
+      }
+    }
+
+    ClassLoader cl = JPF.class.getClassLoader();
+    if (cl instanceof JPFClassLoader){
+      JPFClassLoader jpfCl = (JPFClassLoader)cl;
+
+      // check if there was an explicit 'native_classpath' setting
+      String[] nativeCp = conf.getStringArray("native_classpath");
+      if (nativeCp != null){
+        for (String cpe : nativeCp){
+          File f = new File(cpe);
+          if (f.exists()){
+            try {
+              jpfCl.addURL(f.toURI().toURL());
+            } catch (MalformedURLException x){
+              // can't happen, eisting file
+            }
+          }
+        }
+      }
+
+
+      int i=0;
+      for (URL url: site.getNativeCpURLs()){
+        if (i++ > 0){ // the first one is already in there
+          jpfCl.addURL(url);
+        }
+      }
+    }
+
+  }
+
   /**
    * create new JPF object. Note this is always guaranteed to return, but the
    * Search and/or VM object instantiation might have failed (i.e. the JPF
@@ -201,9 +248,6 @@ public class JPF implements Runnable {
     memoryReserve = new byte[config.getInt("jpf.memory_reserve", 64 * 1024)]; // in bytes
     
     try {
-      // start by setting the classLoader to be used by config (sort of bootstrapping)
-      ClassLoader loader = config.getClassLoader("jpf.native_classpath");
-      config.setCurrentClassLoader(loader);
       
       Class<?>[] vmArgTypes = { JPF.class, Config.class };
       Object[] vmArgs = { this, config };
@@ -318,7 +362,7 @@ public class JPF implements Runnable {
 
     // now everything that's user configured
     ObjArray<JPFListener> listeners =
-      config.getInstances("jpf.listener", JPFListener.class, argTypes, args);
+      config.getInstances("listener", JPFListener.class, argTypes, args);
 
     if (listeners != null) {
       for (JPFListener l : listeners) {
@@ -486,13 +530,6 @@ public class JPF implements Runnable {
     }
     
     return getArg(args, "-c(onfig)?(=.+)?", "jpf.properties", true);
-  }
-
-  /**
-   * where to look for the file (if it's not in the current dir)
-   */
-  static String getRootDirName (String[] args) {
-    return getArg(args, "[+]jpf[.]basedir(=.+)?", null, false); // stupid compiler complaining about escape seq
   }
 
   /**

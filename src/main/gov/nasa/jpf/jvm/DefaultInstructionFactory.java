@@ -39,7 +39,7 @@ public class DefaultInstructionFactory implements InstructionFactory {
   protected ClassLoader loader;
   
   public DefaultInstructionFactory (Config conf) {
-    loader = conf.getCurrentClassLoader();
+    loader = conf.getClassLoader();
   }
   
   protected Class<? extends Instruction> mapBcel2Jpf(Class<?> bcelClass) throws ClassNotFoundException {

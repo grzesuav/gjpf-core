@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListener;
+import gov.nasa.jpf.JPFSite;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
@@ -1115,34 +1116,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return(classes);
   }
 
-  /**
-   * provide a default path from where to load essential model classes
-   * (associated with native peers that JPF needs)
-   */
-  static String getDefaultBootClassPath () {
-    StringBuilder sb = new StringBuilder("build");
-
-    // assuming we are in the JPF root dir, add build/mji/model for explicit classes
-    sb.append(File.separatorChar);
-    sb.append("mji");
-    sb.append(File.separatorChar);
-    sb.append("model");
-
-    // but maybe this is a binary distrib, so add dist/jpf_lib.jar
-    sb.append(File.pathSeparatorChar);
-    sb.append("dist");
-    sb.append(File.separatorChar);
-    sb.append("jpf_mji_model.jar");
-
-    return sb.toString();
-  }
-
-  /**
-   * this is for application specific classes that should not be seen by the host VM
-   */
-  static String getDefaultClassPath () {
-    return null;
-  }
 
   public static String[] getClassPathElements() {
     String cp = modelClassPath.toString();
@@ -1150,47 +1123,36 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
   protected static void buildModelClassPath (Config config) {
-    StringBuilder buf = new StringBuilder(128);
+    StringBuilder buf = new StringBuilder(256);
     char sep = File.pathSeparatorChar;
-    String  v, param;
+    String  v;
 
     // this is where we get our essential model classes from (java.lang.Thread etc)
-    param = config.getString("vm.bootclasspath");
-    if (param == null) {
-      v = getDefaultBootClassPath();
-    } else {
-      v = param;
-    }
+    v = config.getString("boot_classpath");
     buf.append(v);
 
     // that's where the application specific environment should be loaded from
-    param = config.getString("vm.classpath");
-    if (param == null) {
-      v = getDefaultClassPath();
-    } else {
-      v = param;
-    }
-
+    v = config.getString("classpath");
     if (v != null) {
       buf.append(sep);
       buf.append(v);
     }
-
-    // now we look into the system classpath (all stuff loaded from here is
-    // the same codebase that's also used by the host VM)
-    if (buf.length() > 0) {
-      String ps = config.asPlatformPath(buf.toString());
-      buf = new StringBuilder(ps);
-      buf.append(sep);
+    
+    // what classpath entries do we get from the site
+    JPFSite site = JPFSite.getSite();
+    for (File f : site.getJPFCpEntries()){
+      if (buf.length() >0) {
+        buf.append(sep);
+        buf.append(f.getPath());
+      }
     }
-
-    buf.append(System.getProperty("java.class.path"));
 
     // finally, we load from the standard Java libraries
-    if (buf.length() > 0) {
+    v = System.getProperty("sun.boot.class.path");
+    if (v != null) {
       buf.append(sep);
+      buf.append(v);
     }
-    buf.append(System.getProperty("sun.boot.class.path"));
 
     String cp = config.asPlatformPath(buf.toString());
     modelClassPath = new ClassPath(cp);

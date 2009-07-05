@@ -32,6 +32,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -95,7 +96,6 @@ public class Config extends Properties {
   static final String TRUE = "true";
   static final String FALSE = "false";
 
-
   ClassLoader loader = Config.class.getClassLoader();
   
   // where did we initialize from
@@ -115,11 +115,11 @@ public class Config extends Properties {
   /*                       property lookup
    *   property type   :      spec             :  default
    *   ----------------:-----------------------:----------
-   * |  default        :   +jpf.default        : "default.properties" via codebase
+   * |  default        :   +default            : "default.properties" via codebase
    * |                 :                       :
-   * |  site           :   +jpf.site           : "${user.home}/.jpf/site.properties"
+   * |  site           :   +site               : "${user.home}/.jpf/site.properties"
    * |                 :                       :
-   * |  app            :   +jpf.app            : -
+   * |  app            :   +app                : -
    * |                 :                       :
    * v  cmdline        :   +<key>=<val>        : -
    *
@@ -134,23 +134,54 @@ public class Config extends Properties {
     String[] a = args.clone(); // we might nullify some of them
 
     //--- the JPF system (default) properties
-    loadDefaultProperties( getPathArg(a,"jpf.default"), codeBase);
+    loadDefaultProperties( getPathArg(a,"default"), codeBase);
 
     //--- the site properties
-    loadProperties( getPathArg(a, "jpf.site"));
+    String siteProperties = getPathArg(a, "site");
+    if (siteProperties == null){ // could be configured in defaults
+      siteProperties = getString("site");
+    }
+    if (siteProperties != null){
+      loadProperties( siteProperties);
+    }
 
     //--- the application properties
-    String appProperties = getPathArg(a, "jpf.app");
+    String appProperties = getPathArg(a, "app");
     if (appProperties == null){ // wasn't specified as a key=value arg
       appProperties = getAppArg(a); // but maybe it's the targetArg
     }
     if (appProperties != null){
+      // do this before we load the app properties because they might
+      // refer to ${config_path}
       setConfigPathProperties(appProperties);
       loadProperties( appProperties);
     }
 
-    //--- lastly, the (rest of the) command line properties
+    //--- at last, the (rest of the) command line properties
     loadArgs(a);
+  }
+
+  protected void updateJPFClassLoader (String classpathKey) {
+
+    ClassLoader cl = Config.class.getClassLoader();
+
+    if (cl instanceof JPFClassLoader) {
+      JPFClassLoader jpfCl = (JPFClassLoader) cl;
+
+      File[] pathElements = getPathArray(classpathKey);
+      if (pathElements != null && pathElements.length > 0) {
+        try {
+          for (int i = 0; i < pathElements.length; i++) {
+            URL url = pathElements[i].toURI().toURL();
+            jpfCl.addURL(url);
+          }
+
+        } catch (MalformedURLException x) {
+          throw new JPFConfigException("malformed classpath for " + classpathKey + " : " + x.getMessage());
+        }
+      }
+
+    }
   }
 
   /*
@@ -251,6 +282,7 @@ public class Config extends Properties {
       put("config_path", ".");
     }
   }
+
 
   protected void loadProperties (String fileName) {
     if (fileName != null && fileName.length() > 0) {
@@ -483,133 +515,13 @@ public class Config extends Properties {
     return append(key, value, LIST_SEPARATOR); // append with our standard list separator
   }
 
-  //--- collect all relevant properties for the jpf-core
-
-
-  public void setCoreProperties () {
-    String jpfPath = findJPFPath();
-    processJPFComponentDir(jpfPath);
-  }
-
-  protected String findJPFPath() {
-    String cp = System.getProperty("java.class.path");
-    String[] cpEntries = cp.split(File.pathSeparator);
-
-    String mainDir = "build" + File.separatorChar + "main";
-
-    for (String p : cpEntries) {
-      File f = new File(p);
-      if (f.getName().equals("jpf.jar")){
-        return f.getParent();
-      }
-
-      String fp = f.getPath();
-      if (fp.endsWith(mainDir)){
-        return fp.substring(0, fp.length() - mainDir.length());
-      }
-    }
-
-    return null;
-  }
-
-  //--- collect all relevant properties for our configured extensions
-
-  public void setExtensionProperties () {
-    for (String dir : getStringArray("extensions")){
-      processJPFComponentDir(dir);
-    }
-  }
-
-  /**
-   * check for the standard classpath and vm.classpath locations within
-   * the provided extension dir.
-   */
-  protected void processJPFComponentDir (String dir) {
-    LinkedHashMap<String,File> cpEntries = new LinkedHashMap<String,File>();
-    LinkedHashMap<String,File> vmEntries = new LinkedHashMap<String,File>();
-    boolean haveClassDirs = false;
-
-    // first, look if we have a source distrib with
-    //  - build/main, build/peers => 'classpath'
-    //  - build/classes, build/annotations => 'vm.classpath'
-    File buildDir = new File(dir, "build");
-    if (buildDir.exists() && buildDir.isDirectory()){
-      haveClassDirs |= addDir(cpEntries, new File(buildDir, "main"));
-      haveClassDirs |= addDir(cpEntries, new File(buildDir, "peers"));
-
-      haveClassDirs |= addDir(vmEntries, new File(buildDir, "classes"));
-      haveClassDirs |= addDir(vmEntries, new File(buildDir, "annotations"));
-    }
-
-    // if it's not a source distrib, collect jars from 'dist', or the dir itself
-    if (!haveClassDirs){
-      addJars( new File(dir, "dist"), cpEntries, vmEntries);
-    }
-    
-    // add jars from the 'lib' dir
-    addJars( new File(dir, "lib"), cpEntries, vmEntries);
-
-    // lastly, add all jars that are in the dir itself
-    addJars( new File(dir), cpEntries, vmEntries);
-
-
-    for (File f : cpEntries.values()){
-      append("classpath", f.getPath());
-    }
-    for (File f : vmEntries.values()) {
-      append("vm.classpath", f.getPath());
-    }
-
-  }
-
-  protected boolean addJars(File dir,
-          LinkedHashMap<String, File> cpEntries,
-          LinkedHashMap<String, File> vmEntries ) {
-    boolean foundJars = false;
-
-    if (dir.exists() && dir.isDirectory()) {
-      for (File f : dir.listFiles()) {
-        String name = f.getName();
-        if (name.endsWith(".jar")) {
-          if (name.endsWith("-classes.jar")) {
-            foundJars = true;
-            if (!vmEntries.containsKey(name)) {
-              vmEntries.put(name, f);
-            }
-
-          } else  {
-            if (!name.endsWith("-annotations.jar")) {
-              foundJars = true;
-              if (!cpEntries.containsKey(name)) {
-                cpEntries.put(name, f);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return foundJars;
-  }
-
-  protected boolean addDir (LinkedHashMap<String,File> entries, File dir){
-    if (dir.exists() && dir.isDirectory()){
-      entries.put(dir.getPath(),dir);
-      return true;
-    }
-
-    return false;
-  }
 
 
   //------------------------------ public methods - the Config API
+
   
-  public void setCurrentClassLoader (ClassLoader loader) {
-    this.loader = loader;
-  }
-  
-  public ClassLoader getCurrentClassLoader () {
-    return loader;
+  public ClassLoader getClassLoader () {
+    return loader;  ////// <2do> going away!!
   }
   
   public void addChangeListener (ConfigChangeListener l) {
@@ -652,7 +564,11 @@ public class Config extends Properties {
   }
 
   public String[] getTargetArgs() {
-    return getStringArray(TARGET_ARGS_KEY);
+    String[] args = getStringArray(TARGET_ARGS_KEY);
+    if (args == null){
+      args = new String[0];
+    }
+    return args;
   }
 
   public void setTargetArgs (String... args) {
@@ -1520,30 +1436,7 @@ public class Config extends Properties {
     
     return null;
   }
-
-
-
   
-  public ClassLoader getClassLoader (String classpathKey) throws JPFConfigException {
-    ClassLoader currentLoader = Config.class.getClassLoader();
-    
-    File[] pathElements = getPathArray(classpathKey);
-    if (pathElements != null && pathElements.length > 0) {
-      try {
-        URL[] urls = new URL[pathElements.length];
-        for (int i=0; i<pathElements.length; i++) {
-          urls[i] = pathElements[i].toURI().toURL(); 
-        }
-        return new URLClassLoader(urls, currentLoader);
-        
-      } catch (MalformedURLException x) {
-        throw new JPFConfigException("malformed classpath for " + classpathKey + " : " +  x.getMessage());
-      }
-    }
-    
-    return currentLoader; // whatever did define us should know
-  }
-
   
   //--- our modification interface
   

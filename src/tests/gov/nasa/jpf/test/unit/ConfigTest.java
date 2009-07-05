@@ -42,9 +42,9 @@ public class ConfigTest extends TestJPF {
   @Test
   public void testExplicitLocations () {
     String dir = "src/tests/gov/nasa/jpf/test/unit/";
-    String[] args = {"+jpf.default=" + dir + "configTestDefault.properties",
-                     "+jpf.site=" + dir + "configTestSite.properties",
-                     "+jpf.app=" + dir + "configTestApp.jpf" };
+    String[] args = {"+default=" + dir + "configTestDefault.properties",
+                     "+site=" + dir + "configTestSite.properties",
+                     "+app=" + dir + "configTestApp.jpf" };
 
     Config conf = new Config( args, Config.class);
     conf.printEntries();
@@ -56,7 +56,7 @@ public class ConfigTest extends TestJPF {
   public void testTargetArgsOverride () {
 
     String dir = "src/tests/gov/nasa/jpf/test/unit/";
-    String[] args = {"+jpf.default=" + dir + "configTestDefault.properties",
+    String[] args = {"+default=" + dir + "configTestDefault.properties",
                       dir + "configTestApp.jpf",
                       "x", "y"};
 
@@ -70,33 +70,21 @@ public class ConfigTest extends TestJPF {
   }
 
   @Test
-  public void testExtensions () {
+  public void testClassPaths () {
     String dir = "src/tests/gov/nasa/jpf/test/unit/";
-    String[] args = {"+jpf.default=" + dir + "configTestDefault.properties",
-                     "+jpf.site=" + dir + "configTestSite.properties",
-                     "+jpf.app=" + dir + "configTestApp.jpf" };
+    String[] args = {"+default=" + dir + "configTestDefault.properties",
+                     "+site=" + dir + "configTestSite.properties",
+                     "+app=" + dir + "configTestApp.jpf" };
 
     Config conf = new Config( args, Config.class);
-    conf.setExtensionProperties();
-
     conf.printEntries();
 
-    // add a property check
-  }
+    // those properties are very weak!
+    String[] bootCpEntries = conf.asStringArray("boot_classpath");
+    assert bootCpEntries.length > 0;
 
-  @Test
-  public void testCore () {
-    String dir = "src/tests/gov/nasa/jpf/test/unit/";
-    String[] args = {"+jpf.default=" + dir + "configTestDefault.properties",
-                     "+jpf.site=" + dir + "configTestSite.properties",
-                     "+jpf.app=" + dir + "configTestApp.jpf" };
-
-    Config conf = new Config( args, Config.class);
-    conf.setCoreProperties();
-
-    conf.printEntries();
-
-    // add a property check
+    String[] nativeCpEntries = conf.asStringArray("native_classpath");
+    assert nativeCpEntries.length > 0;
   }
 
 }
