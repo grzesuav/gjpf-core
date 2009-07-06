@@ -116,7 +116,7 @@ public class InvokeListenerTest extends TestJPF {
     return d + c;
   }
   @Test public void testInstanceMethod (){
-    if (verifyNoPropertyViolation("+jpf.listener=.test.mc.basic.InvokeListenerTest$Listener")){
+    if (verifyNoPropertyViolation("+listener=.test.mc.basic.InvokeListenerTest$Listener")){
       testInstanceMethod(42.0, 1);
     }
   }
@@ -125,14 +125,14 @@ public class InvokeListenerTest extends TestJPF {
     return a + 1;
   }
   @Test public void testStaticMethod (){
-    if (verifyNoPropertyViolation("+jpf.listener=.test.mc.basic.InvokeListenerTest$Listener")){
+    if (verifyNoPropertyViolation("+listener=.test.mc.basic.InvokeListenerTest$Listener")){
       testStaticMethod(42);
     }
   }
 
   native double testNativeInstanceMethod (double d, int c);
   @Test public void testNativeInstanceMethod (){
-    if (verifyNoPropertyViolation("+jpf.listener=.test.mc.basic.InvokeListenerTest$Listener")){
+    if (verifyNoPropertyViolation("+listener=.test.mc.basic.InvokeListenerTest$Listener")){
       testNativeInstanceMethod(42.0, 1);
     }
   }

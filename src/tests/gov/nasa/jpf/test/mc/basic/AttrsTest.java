@@ -146,7 +146,7 @@ public class AttrsTest extends TestJPF {
   }
 
   @Test public void testIntPropagation () {
-    if (verifyNoPropertyViolation("+jpf.listener=.test.mc.basic.AttrsTest$IntListener")) {
+    if (verifyNoPropertyViolation("+listener=.test.mc.basic.AttrsTest$IntListener")) {
       int i = 42; // this gets attributed
       Verify.setLocalAttribute("i", 42); // this overwrites whatever the ISTORE listener did set on 'i'
 
@@ -163,7 +163,7 @@ public class AttrsTest extends TestJPF {
   }
 
   @Test public void testDoublePropagation () {
-    if (verifyNoPropertyViolation("+jpf.listener=.test.mc.basic.AttrsTest$DoubleListener")) {
+    if (verifyNoPropertyViolation("+listener=.test.mc.basic.AttrsTest$DoubleListener")) {
       double d = 42.0; // this gets attributed
       Verify.setLocalAttribute("d", 42);  // this overwrites whatever the ISTORE listener did set on 'd'
 
@@ -182,7 +182,7 @@ public class AttrsTest extends TestJPF {
   }
 
   @Test public void testInvokeListener () {
-    if (verifyNoPropertyViolation("+jpf.listener=.test.mc.basic.AttrsTest$InvokeListener")) {
+    if (verifyNoPropertyViolation("+listener=.test.mc.basic.AttrsTest$InvokeListener")) {
       Verify.setLocalAttribute("this", 1);
 
       double d = 42.0;

@@ -56,7 +56,7 @@ public class JPF implements Runnable {
     public void propertyChanged(Config config, String key, String oldValue, String newValue) {
             
       //--- check for new listeners
-      if ("jpf.listener".equals(key)) {
+      if ("listener".equals(key)) {
         String[] nv = config.asStringArray(newValue);
         String[] ov = config.asStringArray(oldValue);
         String[] newListeners = Misc.getAddedElements(ov, nv);
@@ -64,12 +64,12 @@ public class JPF implements Runnable {
         if (newListeners != null) {
           for (String clsName : newListeners) {
             try {
-              JPFListener newListener = config.getInstance("jpf.listener", clsName, JPFListener.class);
+              JPFListener newListener = config.getInstance("listener", clsName, JPFListener.class);
               addListener(newListener);
-              logger.info("config changed, added jpf.listener " + clsName);
+              logger.info("config changed, added listener " + clsName);
 
             } catch (JPFConfigException cfx) {
-              logger.warning("jpf.listener change failed: " + cfx.getMessage());
+              logger.warning("listener change failed: " + cfx.getMessage());
             }
           }
         }

@@ -237,7 +237,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     assertionPatterns = config.getStringArray("vm.enable_assertions");
 
-    autoloadAnnotations = config.getNonEmptyStringSet("jpf.listener.autoload");
+    autoloadAnnotations = config.getNonEmptyStringSet("listener.autoload");
     if (autoloadAnnotations != null) {
       autoloaded = new HashSet<String>();
 
@@ -513,7 +513,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
         if (autoloadAnnotations.contains(aName)) {
           if (!autoloaded.contains(aName)) {
             autoloaded.add(aName);
-            String key = "jpf.listener." + aName;
+            String key = "listener." + aName;
             String defClsName = aName + "Checker";
             try {
               JPFListener listener = config.getInstance(key, JPFListener.class, defClsName);

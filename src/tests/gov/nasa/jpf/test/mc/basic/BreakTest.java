@@ -28,7 +28,7 @@ import org.junit.Test;
  */
 public class BreakTest extends TestJPF {
 
-  static final String LISTENER = "+jpf.listener=.test.mc.basic.BreakTestListener";
+  static final String LISTENER = "+listener=.test.mc.basic.BreakTestListener";
 
   int data;
   

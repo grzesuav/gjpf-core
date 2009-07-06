@@ -5,6 +5,6 @@ target=oldclassic
 jpf.report.console.property_violation=error:trace:snapshot
 jpf.report.console.finished=result:statistics
 
-jpf.listener=.tools.DeadlockAnalyzer
+listener=.tools.DeadlockAnalyzer
 
 deadlock.format=essential

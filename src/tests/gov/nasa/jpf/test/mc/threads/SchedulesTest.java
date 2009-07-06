@@ -14,7 +14,7 @@ public class SchedulesTest extends TestJPF {
   @Test public void testSleep () {
 
     if (verifyNoPropertyViolation("+cg.threads.break_all=true",
-                                  "+jpf.listener=.tools.PathOutputMonitor",
+                                  "+listener=.tools.PathOutputMonitor",
                                   "+pom.all=test/gov/nasa/jpf/test/mc/threads/SchedulesTest-output")) {
       Runnable r = new Runnable() {
 

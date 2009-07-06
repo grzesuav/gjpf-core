@@ -30,7 +30,7 @@ import java.util.*;
  * the program to hang.  This property finds and outputs cycles in the states
  * so that they may be investigated.
  *
- * The following might need to be added to jpf.listener property...
+ * The following might need to be added to listener property...
  *   gov.nasa.jpf.tools.SimpleIdleFilter
  *   gov.nasa.jpf.tools.IdleFilter
  */

@@ -37,7 +37,7 @@ class SharedObject {
 public class RaceTest extends TestJPF {
 
   static final Class<? extends Property>  PROPERTY = PreciseRaceDetector.class;
-  static final String LISTENER = "+jpf.listener=" + PROPERTY.getName();
+  static final String LISTENER = "+listener=" + PROPERTY.getName();
 
   public static void main (String[] args) {
     runTestsOfThisClass(args);
