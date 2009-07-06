@@ -150,7 +150,7 @@
         <attribute name="Implementation-Vendor" value="NASA Ames Research Center"/>
         <attribute name="Implementation-Title" value="Java Pathfinder core system"/>
         <attribute name="Implementation-Version" value="5.0alpha1"/>
-        <attribute name="Main-Class" value="gov.nasa.jpf.JPF"/>
+        <attribute name="Main-Class" value="gov.nasa.jpf.Main"/>
       </manifest>
     </jar>
 
