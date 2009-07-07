@@ -69,6 +69,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   static final int  FIREWALL    = 0x40000; // firewall any unhandled exceptions
                                            // (turn into UnhandledException throws)
   static final int  IS_CLINIT   = 0x80000;
+  static final int  IS_INIT     = 0x100000;
   
 
   public class CodeBuilder {
@@ -196,6 +197,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
       attrs |= IS_CLINIT | FIREWALL;
     }
     
+    if (name.equals("<init>")) {
+      attrs |= IS_INIT;
+    }
+
     // since that's used to store the method in the ClassInfo, and to
     // identify it in tne InvokeInstruction, we can set it here
     uniqueName = getUniqueName(name, signature);
@@ -389,6 +394,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
   public boolean isClinit (ClassInfo ci) {
     return (((attrs & IS_CLINIT) != 0) && (this.ci == ci));
+  }
+
+  public boolean isInit() {
+    return ((attrs & IS_INIT) != 0);
   }
 
   /**

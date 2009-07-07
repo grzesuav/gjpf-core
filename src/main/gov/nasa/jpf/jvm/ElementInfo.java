@@ -79,6 +79,11 @@ public abstract class ElementInfo implements Cloneable {
   // don't reycle this object as long as the flag is set
   public static final int   ATTR_PINDOWN       = 0x80000;
 
+  // The constructor for the object has returned.  Final fields can no longer break POR
+  // This attribute is set in gov.nasa.jpf.jvm.bytecode.RETURN.execute().
+  // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
+  public static final int   ATTR_CONSTRUCTED   = 0x100000;
+
   // these are our state-stored object attributes
   // WATCH OUT! only include info that otherwise reflects a state change, so
   // thatwe don't introduce new changes. It's value is used to hash the state!
@@ -247,23 +252,23 @@ public abstract class ElementInfo implements Cloneable {
     // only mutable, shared objects are relevant
     return ((attributes & (ATTR_TSHARED | ATTR_IMMUTABLE)) == ATTR_TSHARED);
   }
-  
+
   /**
    * this is called before the system attempts to reclaim the object. If
-   * we return 'false', the object will *not* be removed 
+   * we return 'false', the object will *not* be removed
    */
   protected boolean recycle () {
-    
+
     // this is required to avoid loosing field lock assumptions
     // when the system sequentialized threads with conflicting assumptions,
     // but the offending object goes out of scope before the system backtracks
     if (hasVolatileFieldLockInfos()) {
       return false;
     }
-    
+
     setArea(null);
     setIndex(-1);
-    
+
     return true;
   }
 
@@ -281,12 +286,12 @@ public abstract class ElementInfo implements Cloneable {
 
     return false;
   }
-  
+
   protected void resurrect (Area<?> area, int index) {
     setArea(area);
     setIndex(index);
   }
- 
+
   /**
    * check if there are any propagated attributes in ei we don't have yet
    */
@@ -972,7 +977,7 @@ public abstract class ElementInfo implements Cloneable {
 
       ei.area = null;
       ei.index = -1;
-      
+
       return ei;
     } catch (CloneNotSupportedException e) {
       e.printStackTrace();
@@ -1306,6 +1311,14 @@ public abstract class ElementInfo implements Cloneable {
     } else {
       attributes &= ~ATTR_PINDOWN;
     }
+  }
+
+  public boolean isConstructed() {
+    return (attributes & ATTR_CONSTRUCTED) != 0;
+  }
+
+  public void setConstructed() {
+    attributes |= ATTR_CONSTRUCTED;
   }
 
   public void restoreFields(Fields f) {

@@ -120,6 +120,7 @@ public class Verify {
    * Backwards compatibility START
    * @deprecated use "assert cond : msg"
    */
+  @Deprecated
   public static void assertTrue (String s, boolean cond) {
     if (!cond) {
       System.out.println(s);
@@ -131,6 +132,7 @@ public class Verify {
    * Checks that the condition is true.
    * @deprecated use 'assert' directly
    */
+  @Deprecated
   public static void assertTrue (boolean cond) {
     if (!cond) {
       throw new AssertionError("Verify.assertTrue failed");
@@ -194,15 +196,15 @@ public class Verify {
   public static void interesting (boolean cond) {}
 
   public static void print (String s) {
-    System.out.println(s);
+    System.out.print(s);
   }
 
   public static void print (String s, int i) {
-    System.out.println(s + " : " + i);
+    System.out.print(s + " : " + i);
   }
 
   public static void print (String s, boolean b) {
-    System.out.println(s + " : " + b);
+    System.out.print(s + " : " + b);
   }
 
   public static void println() {
@@ -310,6 +312,10 @@ public class Verify {
   // Backwards compatibility START
   public static Object randomObject (String type) {
     return null;
+  }
+
+  public static boolean isRunningInJPF() {
+    return false;
   }
 
   /**

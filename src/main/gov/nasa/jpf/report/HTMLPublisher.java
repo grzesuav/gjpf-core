@@ -28,7 +28,7 @@ import java.io.*;
 import java.util.*;
 
 /*
- * Outputs the report in HTML format.  Currently only Firefox 3.0.7 and 3.0.8 has been tested.
+ * Outputs the report in HTML format.  Currently only Firefox 3.0.7 through 3.0.10 have been tested.
  */
 
 // TODO - Add support for Internet Explorer.
@@ -47,6 +47,7 @@ public class HTMLPublisher extends Publisher {
     (byte) 0x2E, (byte) 0x80, (byte) 0x29, (byte) 0x06, (byte) 0x3A, (byte) 0xDB, (byte) 0x0F, (byte) 0x86,
     (byte) 0xE2, (byte) 0x48, (byte) 0x42, (byte) 0x05, (byte) 0x00, (byte) 0x3B
   };
+
   private final static byte s_plus[] = {
     (byte) 0x47, (byte) 0x49, (byte) 0x46, (byte) 0x38, (byte) 0x39, (byte) 0x61, (byte) 0x13, (byte) 0x00,
     (byte) 0x13, (byte) 0x00, (byte) 0x91, (byte) 0x03, (byte) 0x00, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -61,6 +62,7 @@ public class HTMLPublisher extends Publisher {
     (byte) 0xD2, (byte) 0xCE, (byte) 0xF7, (byte) 0xFE, (byte) 0x3F, (byte) 0x28, (byte) 0x00, (byte) 0x00,
     (byte) 0x3B
   };
+
   private final static byte s_minus[] = {
     (byte) 0x47, (byte) 0x49, (byte) 0x46, (byte) 0x38, (byte) 0x39, (byte) 0x61, (byte) 0x13, (byte) 0x00,
     (byte) 0x13, (byte) 0x00, (byte) 0x91, (byte) 0x03, (byte) 0x00, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -74,11 +76,13 @@ public class HTMLPublisher extends Publisher {
     (byte) 0x92, (byte) 0xB9, (byte) 0x2D, (byte) 0xF8, (byte) 0x2A, (byte) 0xD6, (byte) 0x2D, (byte) 0xE5,
     (byte) 0xFA, (byte) 0xCE, (byte) 0xF7, (byte) 0x43, (byte) 0x01, (byte) 0x00, (byte) 0x3B
   };
+
   private final static String XML_VERSION = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   private final static String DOCTYPE = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml11.dtd\">";
   private final static String HTML = "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:svg=\"http://www.w3.org/2000/svg\" xml:lang=\"en\" lang=\"en\">";
   private final String m_pathName;
   private final HashMap<String, Pair<BitSet, BitSet>> m_sourceCoverage = new HashMap<String, Pair<BitSet, BitSet>>();
+  private final ArrayList<TabInfo> m_tabs = new ArrayList<TabInfo>();
   private int m_noSource;
   private int m_treeNodeMethodId;
   private int m_treeNodeLineId;
@@ -110,6 +114,18 @@ public class HTMLPublisher extends Publisher {
     }
   }
 
+  private static class TabInfo
+  {
+     public final String title;
+     public final String fileName;
+
+     private TabInfo(String title, String fileName)
+     {
+        this.title    = title;
+        this.fileName = fileName;
+     }
+  }
+
   public HTMLPublisher(Config config, Reporter reporter) {
     super(config, reporter);
 
@@ -139,18 +155,9 @@ public class HTMLPublisher extends Publisher {
   }
 
   public void publishStart() {
-    PrintWriter coverage;
-
     super.publishStart();
 
     writeIndex();
-    writeHeader();
-    writeJPFConfig();
-    writeJVMConfig();
-
-    coverage = getCoverageWriter();
-    coverage.println("<i>No Coverage Data.</i>");
-    coverage.close();
   }
 
   private void writeIndex() {
@@ -180,8 +187,9 @@ public class HTMLPublisher extends Publisher {
     index.close();
   }
 
-  private void writeHeader() {
+  private void writeHeader(int internalTabs) {
     PrintWriter header;
+    int i;
 
     try {
       header = new PrintWriter(m_pathName + "header.html");
@@ -227,15 +235,13 @@ public class HTMLPublisher extends Publisher {
     header.println("      </script>");
     header.println("   </head>");
     header.print("   <body style=\"background-color: #B0D0FF; margin: 0px;\" onload=\"doLoad();\">");
-    header.print("<a rel=\"main.html\"           onclick=\"doClick(this);\"><b>Main</b></a>");
-    header.print("<a rel=\"errors.html\"         onclick=\"doClick(this);\"><b>Errors</b></a>");
-    header.print("<a rel=\"threads.html\"        onclick=\"doClick(this);\"><b>Threads</b></a>");
-    header.print("<a rel=\"trace.html\"          onclick=\"doClick(this);\"><b>Trace</b></a>");
-    header.print("<a rel=\"output.html\"         onclick=\"doClick(this);\"><b>Output</b></a>");
-    header.print("<a rel=\"coverage.html\"       onclick=\"doClick(this);\"><b>Coverage</b></a>");
-    header.print("<a rel=\"loaded_classes.html\" onclick=\"doClick(this);\"><b>Loaded Classes</b></a>");
-    header.print("<a rel=\"JPF_config.html\"     onclick=\"doClick(this);\"><b>JPF Config</b></a>");
-    header.print("<a rel=\"JVM_config.html\"     onclick=\"doClick(this);\"><b>JVM Config</b></a>");
+
+    for (i = internalTabs; i < m_tabs.size(); i++)
+      writeHeaderTab(header, m_tabs.get(i));
+
+    for (i = 0; i < internalTabs; i++)
+      writeHeaderTab(header, m_tabs.get(i));
+
     header.println("</body>");
     header.println("</html>");
 
@@ -243,8 +249,21 @@ public class HTMLPublisher extends Publisher {
     header.close();
   }
 
+  private void writeHeaderTab(PrintWriter output, TabInfo tabInfo)
+  {
+     output.print("<a rel=\"");
+     output.print(tabInfo.fileName);
+     output.print("\"           onclick=\"doClick(this);\"><b>");
+     output.print(tabInfo.title);
+     output.print("</b></a>");
+  }
+
   public void publishFinished() {
+    int internalTabs;
+
     super.publishFinished();
+
+    internalTabs = m_tabs.size();
 
     // Hmm, this bypasses topic configuration
     writeMain();
@@ -257,87 +276,77 @@ public class HTMLPublisher extends Publisher {
     writeSnapshot();
     writeTrace();
     writeLoadedClasses();
+    writeJPFConfig();
+    writeJVMConfig();
 
-    // <todo> Publishers are not supposed to print anything outside their realm
+    writeHeader(internalTabs);            // Must be last so that all tabs will be included.
+
+      // <todo> Publishers are not supposed to print anything outside their realm
     System.out.println("Report file:  " + m_pathName + "index.html");
   }
 
   // <todo> not good - this is the standard PW access method for PublisherExtensions
   public PrintWriter getOut() {
     return (new PrintWriter(new Writer() {
-
-      public void close() {
-      }
-      ;
-
-      public void flush() {
-      }
-      ;
-
-      public void write(char cbuf[], int off, int len) {
-      }
-      ;
+      public void close() {}
+      public void flush() {}
+      public void write(char cbuf[], int off, int len) {}
     }));
   }
 
-  // <todo> this is BAD, Publishers should not have to know about specific extensions
-  public PrintWriter getCoverageWriter() {
-    PrintWriter coverage;
+   public PrintWriter getOut(String title)
+   {
+      PrintWriter output;
+      String fileName;
 
-    try {
-      coverage = new PrintWriter(m_pathName + "coverage.html") {
+      fileName  = title.replaceAll("[^A-Za-z0-9]", " ");
+      fileName  = fileName.replaceAll(" +", "_");
+      fileName += ".html";
 
-        private boolean m_closed = false;
+      try
+      {
+         output = new PrintWriter(m_pathName + fileName)
+         {
+            private boolean m_closed = false;
 
-        public void close() {
-          if (!m_closed) {
-            m_closed = true;
-            println("   </body>");
-            println("</html>");
-          }
+            public void close()
+            {
+               if (!m_closed)
+               {
+                  m_closed = true;
+                  println("   </body>");
+                  println("</html>");
+               }
 
-          flush();
-          super.close();
-        }
-      };
+               flush();
+               super.close();
+            }
+         };
+      }
+      catch (FileNotFoundException e)
+      {
+         e.printStackTrace();
+         return(new PrintWriter(System.out));
+      }
 
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-      return (new PrintWriter(System.out));
-    }
+      writeDocStart(output);
+      output.println("   <head>");
+      writeTitle(output, title);
+      output.println("   </head>");
+      output.println("   <body>");
 
-    writeDocStart(coverage);
-    coverage.println("   <head>");
-    writeTitle(coverage, "Coverage");
-    coverage.println("   </head>");
-    coverage.println("   <body>");
+      m_tabs.add(new TabInfo(title, fileName));
 
-    return (coverage);
-  }
+      return(output);
+   }
 
   private void writeJVMConfig() {
-    PrintWriter config;
+    PrintWriter output;
 
-    try {
-      config = new PrintWriter(m_pathName + "JVM_config.html");
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-      return;
-    }
-
-    writeDocStart(config);
-    config.println("   <head>");
-    writeTitle(config, "Configuration");
-    config.println("   </head>");
-    config.println("   <body>");
-
-    writeJVMProperties(config);
-
-    config.println("   </body>");
-    config.println("</html>");
-
-    config.flush();
-    config.close();
+    output = getOut("JVM Config");
+    writeJVMProperties(output);
+    output.flush();
+    output.close();
   }
 
   private void writeJVMProperties(PrintWriter output) {
@@ -363,29 +372,16 @@ public class HTMLPublisher extends Publisher {
   }
 
   private void writeJPFConfig() {
-    PrintWriter config;
+    PrintWriter output;
 
-    try {
-      config = new PrintWriter(m_pathName + "JPF_config.html");
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-      return;
-    }
+    output = getOut("JPF Config");
 
-    writeDocStart(config);
-    config.println("   <head>");
-    writeTitle(config, "Configuration");
-    config.println("   </head>");
-    config.println("   <body>");
+    writeJPFFiles(output);
+    //writeJPFArguments(output);
+    writeJPFProperties(output);
 
-    writeJPFFiles(config);
-    writeJPFProperties(config);
-
-    config.println("   </body>");
-    config.println("</html>");
-
-    config.flush();
-    config.close();
+    output.flush();
+    output.close();
   }
 
   private void writeJPFFiles(PrintWriter output) {
@@ -421,41 +417,28 @@ public class HTMLPublisher extends Publisher {
   }
 
   private void writeMain() {
-    PrintWriter main;
+    PrintWriter output;
 
-    try {
-      main = new PrintWriter(m_pathName + "main.html");
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-      return;
-    }
+    output = getOut("Main");
 
-    writeDocStart(main);
-    main.println("   <head>");
-    writeTitle(main, "Main");
-    writeTableTreeScript(main, 0);
-    main.println("   </head>");
-    main.println("   <body>");
+    writeTableTreeScript(output, 0);
 
-    writeTime(main);
-    writeStatistics(main);
-    writeConstraint(main);
-    writeSystemUnderTest(main);
-    writeMainClassArguments(main);
+    writeTime(output);
+    writeStatistics(output);
+    writeConstraint(output);
+    writeSystemUnderTest(output);
+    writeMainClassArguments(output);
 
-    main.print("         <p>Machine Name:&#160;&#160;");
-    main.print(reporter.getHostName());
-    main.println("</p>");
+    output.print("         <p>Machine Name:&#160;&#160;");
+    output.print(reporter.getHostName());
+    output.println("</p>");
 
-    main.print("      <p>");
-    main.print(reporter.getJPFBanner());
-    main.println("</p>");
+    output.print("      <p>");
+    output.print(reporter.getJPFBanner());
+    output.println("</p>");
 
-    main.println("   </body>");
-    main.println("</html>");
-
-    main.flush();
-    main.close();
+    output.flush();
+    output.close();
   }
 
   private void writeTime(PrintWriter output) {
@@ -669,30 +652,18 @@ public class HTMLPublisher extends Publisher {
   }
 
   private void writeError() {
-    PrintWriter errors;
+    PrintWriter output;
 
     super.publishError();
 
-    try {
-      errors = new PrintWriter(m_pathName + "errors.html");
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-      return;
-    }
+    output = getOut("Errors");
 
-    writeDocStart(errors);
-    errors.println("   <head>");
-    writeTitle(errors, "Errors");
-    errors.println("   </head>");
-    errors.println("   <body style=\"white-space: nowrap;\">");
+    output.println("      <div style=\"white-space: nowrap;\">");
+    writeErrors(output);
+    output.println("      </div>");
 
-    writeErrors(errors);
-
-    errors.println("   </body>");
-    errors.println("</html>");
-
-    errors.flush();
-    errors.close();
+    output.flush();
+    output.close();
   }
 
   private void writeErrors(PrintWriter output) {
@@ -736,23 +707,11 @@ public class HTMLPublisher extends Publisher {
   private void writeOutput() {
     PrintWriter output;
 
-    try {
-      output = new PrintWriter(m_pathName + "output.html");
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-      return;
-    }
+    output = getOut("Output");
 
-    writeDocStart(output);
-    output.println("   <head>");
-    writeTitle(output, "Output");
-    output.println("   </head>");
-    output.println("   <body style=\"white-space: nowrap;\">");
-
+    output.println("     <div style=\"white-space: nowrap;\">");
     writeOutput(output);
-
-    output.println("   </body>");
-    output.println("</html>");
+    output.println("     </div>");
 
     output.flush();
     output.close();
@@ -813,35 +772,39 @@ public class HTMLPublisher extends Publisher {
   }
 
   private void writeSnapshot() {
-    PrintWriter threads;
+    PrintWriter output;
+
+    output = getOut("Threads");
+    output.flush();
+    output.close();
 
     try {
-      threads = new PrintWriter(m_pathName + "threads.html");
+      output = new PrintWriter(m_pathName + "threads.html");
     } catch (FileNotFoundException e) {
       e.printStackTrace();
       return;
     }
 
-    writeDocStart(threads);
-    threads.println("   <head>");
-    writeTitle(threads, "Threads");
-    threads.println("   </head>");
+    writeDocStart(output);
+    output.println("   <head>");
+    writeTitle(output, "Threads");
+    output.println("   </head>");
 
-    threads.println("   <frameset rows=\"200,*\" style=\"overflow: hidden;\">");
-    threads.println("      <frame frameborder=\"1\" name=\"thread_list\" src=\"thread_list.html\" style=\"overflow-y: hidden; overflow-x: auto;\" />");
-    threads.println("      <frameset cols=\"50%,50%\">");
-    threads.println("         <frame frameborder=\"1\" scrolling=\"yes\" name=\"thread_stacks\" src=\"thread_stacks.html\" />");
-    threads.println("         <frame frameborder=\"0\" scrolling=\"yes\" name=\"thread_locks\"  src=\"thread_locks.html\" />");
-    threads.println("      </frameset>");
-    threads.println("   </frameset>");
-    threads.println("   <noframes>");
-    threads.println("      Please use a frame enabled browser.");
-    threads.println("   </noframes>");
+    output.println("   <frameset rows=\"200,*\" style=\"overflow: hidden;\">");
+    output.println("      <frame frameborder=\"1\" name=\"thread_list\" src=\"thread_list.html\" style=\"overflow-y: hidden; overflow-x: auto;\" />");
+    output.println("      <frameset cols=\"50%,50%\">");
+    output.println("         <frame frameborder=\"1\" scrolling=\"yes\" name=\"thread_stacks\" src=\"thread_stacks.html\" />");
+    output.println("         <frame frameborder=\"0\" scrolling=\"yes\" name=\"thread_locks\"  src=\"thread_locks.html\" />");
+    output.println("      </frameset>");
+    output.println("   </frameset>");
+    output.println("   <noframes>");
+    output.println("      Please use a frame enabled browser.");
+    output.println("   </noframes>");
 
-    threads.println("</html>");
+    output.println("</html>");
 
-    threads.flush();
-    threads.close();
+    output.flush();
+    output.close();
 
     writeThreadList();
     writeThreadStacks();
@@ -1463,16 +1426,8 @@ public class HTMLPublisher extends Publisher {
   private void writeLoadedClasses() {
     PrintWriter output;
 
-    try {
-      output = new PrintWriter(m_pathName + "loaded_classes.html");
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-      return;
-    }
+    output = getOut("Loaded Classes");
 
-    writeDocStart(output);
-    output.println("   <head>");
-    writeTitle(output, "Loaded Classes");
     output.println("      <style type=\"text/css\">");
     output.println("         table             { border-collapse: collapse; white-space: nowrap; border: 1px solid #000000; }");
     output.println("         th                { padding: 5px 5px; border: 1px solid #000000; background-color: #0080FF; }");
@@ -1481,11 +1436,8 @@ public class HTMLPublisher extends Publisher {
     output.println("         tr.treeNodeClosed { font-weight: bold; background-color: #A0D0FF; }");
     output.println("      </style>");
     writeTableTreeScript(output, 0);
-    output.println("   </head>");
-    output.println("   <body style=\"white-space: nowrap;\">");
 
-    output.println("      <style type=\"text/css\">");
-    output.println("      </style>");
+    output.println("      <div style=\"white-space: nowrap;\">");
 
     writeTableTreeBegin(output);
 
@@ -1511,8 +1463,7 @@ public class HTMLPublisher extends Publisher {
 
     writeTableTreeEnd(output);
 
-    output.println("   </body>");
-    output.println("</html>");
+    output.println("      </div>");
 
     output.flush();
     output.close();
@@ -1605,17 +1556,21 @@ public class HTMLPublisher extends Publisher {
         String item1, item2;
         int result;
 
+        if (class1 == null)
+           return(class2 == null ? 0 : -1);
+
+        if (class2 == null)
+           return(1);
+
         item1 = class1.getPackageName();
         item2 = class2.getPackageName();
 
         result = item1.compareTo(item2);
         if (result == 0) {
           result = class1.getName().compareTo(class2.getName());
-        } else if (item1.length() == 0) // Sort the classes with no package to the bottom.
-        {
+        } else if (item1.length() == 0) { // Sort the classes with no package to the bottom.
           result = 1;
-        } else if (item2.length() == 0) // Sort the classes with no package to the bottom.
-        {
+        } else if (item2.length() == 0) { // Sort the classes with no package to the bottom.
           result = -1;
         }
 
@@ -1657,31 +1612,21 @@ public class HTMLPublisher extends Publisher {
   }
 
   private void writeTrace() {
-    PrintWriter trace;
+    PrintWriter output;
 
-    try {
-      trace = new PrintWriter(m_pathName + "trace.html");
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-      return;
-    }
+    output = getOut("Trace");
 
-    writeDocStart(trace);
-    trace.println("   <head>");
-    writeTitle(trace, "Trace");
-    writeTraceStyle(trace);
-    trace.println("   </head>");
-    trace.println("   <body style=\"white-space: nowrap;\">");
-    writeTableTreeScript(trace, 1);
-    writeTraceScript(trace);
+    writeTraceStyle(output);
+    output.println("      <div style=\"white-space: nowrap;\">");
+    writeTableTreeScript(output, 1);
+    writeTraceScript(output);
 
-    writeTrace(trace);
+    writeTrace(output);
 
-    trace.println("   </body>");
-    trace.println("</html>");
+    output.println("      </div>");
 
-    trace.flush();
-    trace.close();
+    output.flush();
+    output.close();
   }
 
   private static void writeTraceStyle(PrintWriter output) {
@@ -1861,10 +1806,11 @@ public class HTMLPublisher extends Publisher {
     }
 
     writeTableTreeEnd(output);
-    writeOpenNodes(output, treeId, openNodes);
+    writeTableTreeOpenNodes(output, treeId, openNodes);
+    openNodes.clear();
   }
 
-  private static void writeOpenNodes(PrintWriter output, String treeId, HashSet<String> openNodes) {
+  public static void writeTableTreeOpenNodes(PrintWriter output, String treeId, Collection<String> openNodes) {
     if (openNodes.isEmpty()) {
       return;
     }
@@ -1887,8 +1833,32 @@ public class HTMLPublisher extends Publisher {
     output.println();
     output.println("         //]]>");
     output.println("      </script>");
+  }
 
-    openNodes.clear();
+  public static void writeTableTreeOpenNodes(PrintWriter output, Collection<String> nodeIDs)
+  {
+    if (nodeIDs.isEmpty()) {
+       return;
+    }
+
+    output.println("      <script type=\"text/javascript\">");
+    output.println("         //<![CDATA[");
+    output.println("         function openLineNodes()");
+    output.println("         {");
+
+    for (String node : nodeIDs)
+    {
+       output.print("            treeNodeShowPath(\"");
+       output.print(node);
+       output.println("\");");
+    }
+
+    output.println("         }");
+    output.println();
+    output.println("         addEvent(window, \"load\", openLineNodes);");
+    output.println();
+    output.println("         //]]>");
+    output.println("      </script>");
   }
 
   private static class WriteLine {

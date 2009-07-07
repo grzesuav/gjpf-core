@@ -57,21 +57,21 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
 
     DynamicArea da = DynamicArea.getHeap();
     ElementInfo ei = da.get(objRef);
-    
+
     // no use to break if there is no other thread, or the object is not shared
     // (but note this might change in a following execution path)
     if ( !ti.hasOtherRunnables() || !da.isSchedulingRelevantObject(objRef)) {
       return false;
     }
     // from here on, we know this is a shared object that can be accessed concurrently
-    
+
     if (ti.usePorSyncDetection()) {
 
       if (fi.breakShared()) {
-        // this one is supposed to be always treated as transition boundary  
+        // this one is supposed to be always treated as transition boundary
         return true;
       }
-      
+
       // cutting off finals might loose interesting defects where the
       // reference escapes from a ctor that has a context switch before
       // the field init. 'final' only means "can only be assigned once",
@@ -79,7 +79,11 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
       if (skipFinals && fi.isFinal()) {
         return false;
       }
-      
+
+      if (skipConstructedFinals && fi.isFinal() && ei.isConstructed()) {
+        return false;
+      }
+
       if (fname.startsWith("this$")) {
         // that one is an automatically created outer object reference in an inner class,
         // it can't be set. Unfortunately, we don't have an 'immutable' attribute for
@@ -90,7 +94,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
 
       if (isMonitorEnterPrologue()) {
         // a little optimization for getfields that are only used to
-        // push lock objects on the stack for a subsequent monitorenter 
+        // push lock objects on the stack for a subsequent monitorenter
         return false;
       }
 
@@ -100,10 +104,10 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
         // by the VM
         return false;
       }
-      
+
       // this is a potentially more expensive test to identify fields
       // that are protected by locks, for which get/putXX should not break.
-      // NOTE - here we get heuristic, and it is possible that we use 
+      // NOTE - here we get heuristic, and it is possible that we use
       // assumptions that might later-on be violated (but not detected)
       if (isLockProtected(ti, ei)) {
         return false;

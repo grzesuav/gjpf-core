@@ -2,12 +2,12 @@
 // Copyright (C) 2006 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
-// 
+//
 // This software is distributed under the NASA Open Source Agreement
 // (NOSA), version 1.3.  The NOSA has been approved by the Open Source
 // Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
 // directory tree for the complete NOSA document.
-// 
+//
 // THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
 // KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
 // LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
@@ -26,16 +26,16 @@ import sun.nio.ch.Interruptible;
 public class Thread implements Runnable {
 
   static int              threadNum;
-  
+
   public static final int MIN_PRIORITY = 1;
   public static final int NORM_PRIORITY = 5;
   public static final int MAX_PRIORITY = 10;
-  
+
   // this is for the dreaded Unsafe.park() synchronization. I hope it would vanish
   static class Permit {
     boolean isTaken = true;
   }
-  
+
   // initialized in init(), except of the main thread (which gets explicitly initialized by the VM)
   ThreadGroup         group;
   Runnable            target;
@@ -49,18 +49,18 @@ public class Thread implements Runnable {
   // this gets cleared by calling interrupted()
   boolean             interrupted;
 
-  
+
   // <2do> those two seem to be the only interfaces to the ThreadLocal
   // implementation. Replace once we have our own
   // ThreadLocal / InhertitableThreadLocal classes
   ThreadLocal.ThreadLocalMap threadLocals;
   ThreadLocal.ThreadLocalMap inheritableThreadLocals;
-  
+
   // referenced by the dreaded java.util.concurrent.locks.LockSupport via sun.misc.Unsafe
   volatile Object parkBlocker;
-  
+
   public enum State { BLOCKED, NEW, RUNNABLE, TERMINATED, TIMED_WAITING, WAITING }
-  
+
   public Thread () {
     init(group, target, name, 0L);
   }
@@ -120,9 +120,9 @@ public class Thread implements Runnable {
   public StackTraceElement[] getStackTrace() {
     return null; // not yet implemented
   }
-  
-  public native int getState0(); 
-  
+
+  public native int getState0();
+
   public Thread.State getState() {
     int i = getState0();
     switch (i) {
@@ -133,10 +133,10 @@ public class Thread implements Runnable {
     case 4: return State.TIMED_WAITING;
     case 5: return State.WAITING;
     }
-    
+
     return null; // shoudl be intercepted by a getState0 assertion
   }
-  
+
   public synchronized void setName (String name) {
     if (name == null) {
       throw new IllegalArgumentException("thread name can't be null");
@@ -204,7 +204,7 @@ public class Thread implements Runnable {
       wait();
     }
   }
-    
+
   //public native synchronized void join () throws InterruptedException;
 
   public synchronized void join (long millis) throws InterruptedException {
@@ -235,9 +235,8 @@ public class Thread implements Runnable {
     // deprecated, <NSY>
   }
 
-  public void suspend () {
-    // deprecated <NSY>
-  }
+  public native void suspend();
+  public native void resume();
 
   public String toString () {
     return ("Thread[" + name + ',' + priority + ',' + group.getName() + ']');
@@ -250,10 +249,10 @@ public class Thread implements Runnable {
   native void setName0 (String name);
 
   native void setPriority0 (int priority);
-  
+
   void init (ThreadGroup group, Runnable target, String name, long stackSize) {
     Thread cur = currentThread();
-    
+
     if (group == null) {
       this.group = cur.getThreadGroup();
     } else {
@@ -269,20 +268,20 @@ public class Thread implements Runnable {
     }
 
     this.permit = new Permit();
-    
+
     // those are always inherited from the current thread
     this.priority = cur.getPriority();
     this.isDaemon = cur.isDaemon();
 
     this.target = target;
-    
+
     // do our associated native init
     init0(this.group, target, this.name, stackSize);
   }
 
   native void init0 (ThreadGroup group, Runnable target, String name,
                      long stackSize);
-  
+
   /**
    * automatically called by system upon thread termination to clean up
    * references.
@@ -293,7 +292,7 @@ public class Thread implements Runnable {
     // apparently some older javac on Solaris chokes on this, but it's perfectly fine
     //group.remove(this);
     //group = null;
-    
+
     //threadLocals = null;
     //inheritableThreadLocals = null;
     //parkBlocker = null;

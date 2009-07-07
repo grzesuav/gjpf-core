@@ -501,6 +501,10 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     return map;
   }
 
+  public static boolean isRunningInJPF____Z(MJIEnv env, int clsObjRef) {
+    return true;
+  }
+
   public static boolean vmIsMatchingStates____Z(MJIEnv env, int clsObjRef) {
     return env.getVM().getStateSet() != null;
   }

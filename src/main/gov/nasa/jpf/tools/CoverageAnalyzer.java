@@ -840,7 +840,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
   class PublishHtml extends Publish {
     PublishHtml (HTMLPublisher p){
       // <todo> this is BAD, Publishers should not have to know about specific extensions
-      pw = p.getCoverageWriter();
+      pw = p.getOut("Coverage");
     }
 
     void publish() {

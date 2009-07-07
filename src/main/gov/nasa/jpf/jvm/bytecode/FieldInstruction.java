@@ -46,6 +46,8 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
   //--- vm.por.sync_detection related settings
   static FieldLockInfoFactory fliFactory;
   static boolean skipFinals; // do we ignore final fields for POR
+  static boolean skipStaticFinals;  // do we ignore static final fields for POR
+  static boolean skipConstructedFinals;  // do we ignore final fields for POR after the object's constructor has finished?
 
   
   protected String fname;
@@ -63,6 +65,8 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
       fliFactory = config.getEssentialInstance("vm.por.fli_factory.class", FieldLockInfoFactory.class);
 
       skipFinals = config.getBoolean("vm.por.skip_finals", true);
+      skipStaticFinals = config.getBoolean("vm.por.skip_static_finals", false);
+      skipConstructedFinals = config.getBoolean("vm.por.skip_constructed_finals", false);
     }
   }
 

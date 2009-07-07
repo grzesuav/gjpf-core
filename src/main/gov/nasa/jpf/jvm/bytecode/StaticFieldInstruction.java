@@ -60,7 +60,7 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
   }
 
   protected boolean isNewPorFieldBoundary (ThreadInfo ti) {
-    return (!ti.isFirstStepInsn()) && ti.usePorFieldBoundaries() && isSchedulingRelevant(ti);
+    return !ti.isFirstStepInsn() && ti.usePorFieldBoundaries() && isSchedulingRelevant(ti);
   }
 
   protected boolean isSchedulingRelevant (ThreadInfo ti) {
@@ -69,7 +69,7 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     if (fi.neverBreak()) {
       return false;
     }
-    
+
     if (!ti.hasOtherRunnables()) {
       return false;
     }
@@ -79,16 +79,20 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
       FieldInfo fi = getFieldInfo();
 
       if (fi.breakShared()) {
-        // this one is supposed to be always treated as transition boundary  
+        // this one is supposed to be always treated as transition boundary
         return true;
       }
-      
+
       // NOTE - we only encounter this for references, other static finals
       // will be inlined by the compiler
       if (skipFinals && fi.isFinal()) {
         return false;
       }
-      
+
+      if (skipStaticFinals && fi.isFinal()) {
+        return false;
+      }
+
       if (mi.isClinit() && (fi.getClassInfo() == mi.getClassInfo())) {
         // clinits are all synchronized, so they don't count
         return false;

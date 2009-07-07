@@ -65,5 +65,10 @@ public interface SchedulerFactory {
 
   /** used by Return from run() */
   ChoiceGenerator<ThreadInfo> createThreadTerminateCG (ThreadInfo terminatedThread);
-  
+
+  /** used by Thread.suspend() */
+  ChoiceGenerator<ThreadInfo> createThreadSuspendCG ();
+
+  /** used by Thread.resume() */
+  ChoiceGenerator<ThreadInfo> createThreadResumeCG ();
 }

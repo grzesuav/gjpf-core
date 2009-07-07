@@ -19,7 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
+import gov.nasa.jpf.jvm.choice.*;
 
 
 /**
@@ -217,7 +217,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       return null;
     }
   }
-  
+
   public ChoiceGenerator<ThreadInfo> createInterruptCG (ThreadInfo interruptedThread) {
     if (ss.isAtomic()) {
       return null;
@@ -242,7 +242,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   public ChoiceGenerator<ThreadInfo> createThreadTerminateCG (ThreadInfo terminateThread) {
     // terminateThread is already TERMINATED at this point
     ThreadList tl = vm.getThreadList();
-    
+
     // NOTE returning null does not directly define an end state - that's up to
     // a subsequent call to vm.isEndState()
     // <2do> FIXME this is redundant and error prone
@@ -251,5 +251,13 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     } else {
       return null;
     }
+  }
+
+  public ChoiceGenerator<ThreadInfo> createThreadSuspendCG () {
+    return getRunnableCG();
+  }
+
+  public ChoiceGenerator<ThreadInfo> createThreadResumeCG () {
+    return getRunnableCG();
   }
 }

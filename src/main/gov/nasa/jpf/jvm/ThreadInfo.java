@@ -240,6 +240,7 @@ public class ThreadInfo
     threadData.objref = objRef;
     threadData.target = MJIEnv.NULL;
     threadData.lockCount = 0;
+    threadData.suspendCount = 0;
     // this is nasty - 'priority', 'name', 'target' and 'group' are not taken
     // from the object, but set within the java.lang.Thread ctors
 
@@ -341,6 +342,9 @@ public class ThreadInfo
    * Returns true if this thread is either RUNNING or UNBLOCKED
    */
   public boolean isRunnable () {
+    if (threadData.suspendCount != 0)
+      return false;
+
     switch (threadData.status) {
     case RUNNING:
     case UNBLOCKED:
@@ -351,6 +355,9 @@ public class ThreadInfo
   }
 
   public boolean willBeRunnable () {
+    if (threadData.suspendCount != 0)
+      return false;
+
     switch (threadData.status) {
     case RUNNING:
     case UNBLOCKED:
@@ -369,6 +376,9 @@ public class ThreadInfo
   }
 
   public boolean isTimeoutRunnable () {
+    if (threadData.suspendCount != 0)
+      return false;
+
     switch (threadData.status) {
 
     case RUNNING:
@@ -778,6 +788,22 @@ public class ThreadInfo
    */
   public int getLockCount () {
     return threadData.lockCount;
+  }
+
+  /**
+    * Increments the suspend counter.
+    * @return true if the suspend counter was 0 before this call (e.g. the thread was just suspended)
+    */
+  public boolean suspend() {
+    return threadDataClone().suspendCount++ == 0;
+  }
+
+  /**
+    * Decrements the suspend counter if > 0.
+    * @return true if the suspend counter was 1 before the call (e.g. the thread was just resumed)
+    */
+  public boolean resume() {
+    return (threadData.suspendCount > 0) && (--threadDataClone().suspendCount == 0);
   }
 
   public LinkedList<ElementInfo> getLockedObjects () {

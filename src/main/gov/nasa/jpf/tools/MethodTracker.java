@@ -2,12 +2,12 @@
 // Copyright (C) 2007 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
-// 
+//
 // This software is distributed under the NASA Open Source Agreement
 // (NOSA), version 1.3.  The NOSA has been approved by the Open Source
 // Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
 // directory tree for the complete NOSA document.
-// 
+//
 // THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
 // KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
 // LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
@@ -34,72 +34,72 @@ import gov.nasa.jpf.search.Search;
 
 /**
  * simple tool to log method invocations
- * 
+ *
  * at this point, it doesn't do fancy things yet, but gives a more high
- * level idea of what got executed by JPF than the ExecTracker 
+ * level idea of what got executed by JPF than the ExecTracker
  */
 public class MethodTracker extends ListenerAdapter {
 
   static final String INDENT = "  ";
-  
+
   MethodInfo lastMi;
   PrintWriter out;
 
   public MethodTracker (Config conf, JPF jpf) {
-    out = new PrintWriter(System.out, true);    
+    out = new PrintWriter(System.out, true);
   }
-  
+
   void logMethodCall(ThreadInfo ti, MethodInfo mi, int stackDepth) {
     out.print(ti.getIndex());
     out.print(":");
-    
-    for (int i=0; i<stackDepth; i++) {
+
+    for (int i=0; i<stackDepth%80; i++) {
       out.print(INDENT);
     }
-    
+
     if (mi.isMJI()) {
       out.print("native ");
     }
-    
+
     out.print(mi.getCompleteName());
-    
+
     if (ti.isFirstStepInsn()) {
       out.print("...");
     }
-    
+
     out.println();
   }
-    
+
   public void executeInstruction (JVM vm) {
     Instruction insn = vm.getLastInstruction();
     MethodInfo mi = insn.getMethodInfo();
     ThreadInfo ti = vm.getLastThreadInfo();
-    
+
     if (mi != lastMi) {
       logMethodCall(ti, mi, ti.getStack().size());
       lastMi = mi;
-      
+
     } else if (insn instanceof InvokeInstruction) {
       MethodInfo callee;
 
       // that's the only little gist of it - if this is a VirtualInvocation,
       // we have to dig the callee out by ourselves (it's not known
       // before execution)
-      
+
       if (insn instanceof VirtualInvocation) {
         VirtualInvocation callInsn = (VirtualInvocation)insn;
         int objref = callInsn.getThis(ti);
         callee = callInsn.getInvokedMethod(ti, objref);
-        
+
       } else if (insn instanceof INVOKESPECIAL) {
         INVOKESPECIAL callInsn = (INVOKESPECIAL)insn;
         callee = callInsn.getInvokedMethod(ti);
-        
+
       } else {
         InvokeInstruction callInsn = (InvokeInstruction)insn;
         callee = callInsn.getInvokedMethod(ti);
       }
-      
+
       if (callee != null) {
         if (callee.isMJI()) {
           logMethodCall(ti, callee, ti.getStack().size()+1);
@@ -111,15 +111,15 @@ public class MethodTracker extends ListenerAdapter {
   }
 
   /*
-   * those are not really required, but mark the transition boundaries 
+   * those are not really required, but mark the transition boundaries
    */
-  
+
   public void stateRestored(Search search) {
     int id = search.getStateNumber();
     out.println("----------------------------------- [" +
                        search.getDepth() + "] restored: " + id);
   }
-    
+
   //--- the ones we are interested in
   public void searchStarted(Search search) {
     out.println("----------------------------------- search started");
@@ -127,7 +127,7 @@ public class MethodTracker extends ListenerAdapter {
 
   public void stateAdvanced(Search search) {
     int id = search.getStateNumber();
-    
+
     out.print("----------------------------------- [" +
                      search.getDepth() + "] forward: " + id);
     if (search.isNewState()) {
@@ -135,16 +135,16 @@ public class MethodTracker extends ListenerAdapter {
     } else {
       out.print(" visited");
     }
-    
+
     if (search.isEndState()) {
       out.print(" end");
     }
-    
+
     out.println();
-    
+
     lastMi = null;
   }
-  
+
   public void stateBacktracked(Search search) {
     int id = search.getStateNumber();
 
@@ -153,7 +153,7 @@ public class MethodTracker extends ListenerAdapter {
     out.println("----------------------------------- [" +
                        search.getDepth() + "] backtrack: " + id);
   }
-  
+
   public void searchFinished(Search search) {
     out.println("----------------------------------- search finished");
   }

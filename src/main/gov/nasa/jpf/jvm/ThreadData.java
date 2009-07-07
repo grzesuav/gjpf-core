@@ -2,12 +2,12 @@
 // Copyright (C) 2006 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
-// 
+//
 // This software is distributed under the NASA Open Source Agreement
 // (NOSA), version 1.3.  The NOSA has been approved by the Open Source
 // Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
 // directory tree for the complete NOSA document.
-// 
+//
 // THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
 // KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
 // LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
@@ -65,6 +65,8 @@ public class ThreadData {
    */
   int lockCount;
 
+  /** The suspend count of the thread */
+  int suspendCount;
 
   public ThreadData clone () {
     ThreadData t = new ThreadData();
@@ -74,6 +76,7 @@ public class ThreadData {
     t.objref = objref;
     t.target = target;
     t.lockCount = lockCount;
+    t.suspendCount = suspendCount;
 
     t.priority = priority;
     t.name = name;
@@ -88,11 +91,11 @@ public class ThreadData {
     }
 
     ThreadData t = (ThreadData) o;
-    
+
     return ((status == t.status) && (ci == t.ci) && (objref == t.objref) &&
            (target == t.target) && (priority == t.priority) &&
            (isDaemon == t.isDaemon) && (lockCount == t.lockCount) &&
-           (name.equals(t.name)));
+           (suspendCount == t.suspendCount) && (name.equals(t.name)));
   }
 
   public void hash (HashData hd) {
@@ -100,6 +103,7 @@ public class ThreadData {
     hd.add(objref);
     hd.add(target);
     hd.add(lockCount);
+    hd.add(suspendCount);
     hd.add(priority);
     hd.add(isDaemon);
     hd.add(name);
@@ -116,7 +120,7 @@ public class ThreadData {
   public String toString () {
     return ("ThreadData [" + getFieldValues() + "]");
   }
-  
+
   public String getFieldValues () {
     DynamicArea heap = DynamicArea.getHeap();
     StringBuilder sb = new StringBuilder("name=");
@@ -134,11 +138,13 @@ public class ThreadData {
     sb.append(priority);
     sb.append(",lockCount=");
     sb.append(lockCount);
+    sb.append(",suspendCount=");
+    sb.append(suspendCount);
 
     return sb.toString();
   }
-  
+
   public int getObjRef() { return objref; }
-  
+
   public int getStatus() { return status; }
 }

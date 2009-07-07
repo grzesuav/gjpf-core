@@ -18,8 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.*;
 
 import org.apache.bcel.classfile.ConstantPool;
 
@@ -30,6 +29,31 @@ import org.apache.bcel.classfile.ConstantPool;
  */
 public class RETURN extends ReturnInstruction {
   public RETURN () {}
+
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+
+    // Constructors don't return anything so this is the only instruction that can be used to return from a constructor.
+
+    MethodInfo mi = ti.getMethod();  // Get the current method being executed (e.g. returned from).
+
+    if (mi.isInit()) {  // Check to see if this method is a constructor.
+
+      int objref = ti.getThis();
+      ElementInfo ei = ks.da.get(objref); // Get the object.
+
+      if (!ei.isConstructed()) {  // Don't bother doing the following work if the object is already constructed.
+
+        ClassInfo ei_ci = ei.getClassInfo();  // Get the object's class.
+        ClassInfo mi_ci = mi.getClassInfo();  // Get the method's class.
+
+        if (ei_ci == mi_ci) { // If the object's class and the method's class are equal, then the thread is returning from the object's constructor.
+          ei.setConstructed();
+        }
+      }
+    }
+
+    return super.execute(ss, ks, ti);
+  }
 
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
   }
