@@ -43,12 +43,6 @@
     <tstamp/>
 
     <mkdir dir="build"/>               <!-- the build root -->
-    <mkdir dir="build/main"/>          <!-- the code that constitutes JPF -->
-    <mkdir dir="build/annotations"/>   <!-- annotations that can be used in SUTs -->
-    <mkdir dir="build/classes"/>       <!-- (modeled) classes executed by JPF -->
-    <mkdir dir="build/peers"/>         <!-- native peer classes -->
-    <mkdir dir="build/tests"/>         <!-- regression test code -->
-    <mkdir dir="build/examples" />     <!-- example code -->
     
     <!-- the things that have to be in the classpath of whatever runs Ant -->
     <available property="have_javac" classname="com.sun.tools.javac.Main"/>
@@ -81,11 +75,13 @@
   </target>
 
   <target name="-compile-annotations" if="have_annotations">
+    <mkdir dir="build/annotations"/>
     <javac srcdir="src/annotations" destdir="build/annotations"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}" classpath=""/>
   </target>
 
   <target name="-compile-main" if="have_main">
+    <mkdir dir="build/main"/>
     <javac srcdir="src/main" destdir="build/main"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}">
       <classpath>
@@ -99,12 +95,14 @@
   </target>
   
   <target name="-compile-peers" if="have_peers" depends="-compile-main" >
+    <mkdir dir="build/peers"/>
     <javac srcdir="src/peers" destdir="build/peers"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}"
            classpathref="lib.path"/>
   </target>
   
   <target name="-compile-classes" if="have_classes" depends="-compile-annotations,-compile-main" >
+    <mkdir dir="build/classes"/>
     <javac srcdir="src/classes" destdir="build/classes"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}">
       <classpath>
@@ -115,6 +113,7 @@
   </target>
   
   <target name="-compile-tests" if="have_tests" depends="-compile-annotations,-compile-main">
+    <mkdir dir="build/tests"/>
     <javac srcdir="src/tests" destdir="build/tests"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}"
            includes="*,gov/nasa/jpf/test/**">
@@ -129,6 +128,7 @@
   </target>
 
   <target name="-compile-examples" if="have_examples" depends="-compile-annotations,-compile-main">
+    <mkdir dir="build/examples" />
     <javac srcdir="src/examples" destdir="build/examples"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}"
            classpathref="lib.path"/>

@@ -71,13 +71,60 @@ import java.util.regex.Pattern;
  * libraries within Config. Ideally, only JPF should have to be in the
  * platform classpath (or the jpf.jar manifest)
  *
+ *
+ * PROPERTY SOURCES
+ * ----------------
+ *
+ * (1) default.properties - as the name implies, these are version/system specific
+ * defaults that come with the jpf-core installation and should not be changed
+ *
+ * (2) site.properties - this file specifies the location of the jpf-core and
+ * installed extensions, like:
+ *
+ *     jpf.core = /Users/pcmehlitz/projects/jpf-v5/jpf-core
+ *     ...
+ *     # numeric extension
+ *     ext.numeric = /Users/pcmehlitz/projects/jpf-v5/jpf-numeric
+ *     extensions+=,${ext.numeric}
+ *
+ * (3) application properties - (formerly called mode property file) specifies
+ * all the settings for a specific SUT run, esp. listener and target/target_args.
+ * app properties can be specified as the sole JPF argument, i.e. instead of
+ * a SUT classname
+ *     ..
+ *     target = x.Y.MySystemUnderTest
+ *     target_args = one,two
+ *     ..
+ *     listener = z.MyListener
+ *
+ * (4) commandline properties - all start with '+', they can override all other props
+ *
+ *
+ * LOOKUP ORDER
+ * ------------
+ *                       property lookup
+ *   property type   :      spec             :  default
+ *   ----------------:-----------------------:----------
+ * |  default        :   +default            : "default.properties" via codebase
+ * |                 :                       :
+ * |  site           :   +site               : "${user.home}/.jpf/site.properties"
+ * |                 :                       :
+ * |  app            :   +app                : -
+ * |                 :                       :
+ * v  cmdline        :   +<key>=<val>        : -
+ *
+ * (1) if there is an explicit spec and the pathname does not exist, throw a
+ * Config.JPFConfigException
+ *
+ * (2) if the system properties cannot be found, throw a Config.JPFConfigException
+ *
+ *
  * <2do> need to make NumberFormatException handling consistent - should always
  * throw an JPFConfigException, not silently returning the default value
- * <2do> consistent expansion handling
- * <2do> type specific separator chars for set/array specs ? (the ':' issue)
  *
- * 
  */
+
+
 @SuppressWarnings("serial")
 public class Config extends Properties {
 

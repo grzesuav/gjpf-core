@@ -167,12 +167,22 @@ public class JPFSite {
     String cp = System.getProperty("java.class.path");
     String[] cpEntries = cp.split(File.pathSeparator);
 
-    String mainDir = "build" + File.separatorChar + "main";
+    char sc = File.separatorChar;
+    String mainDir = "build" + sc + "main";
+    String jpfClass = "gov" + sc + "nasa" + sc + "jpf" + sc + "JPF.class";
+
 
     for (String p : cpEntries) {
       File f = new File(p);
-      if (f.getName().equals("jpf.jar") || f.getPath().endsWith(mainDir)) {
+      if (f.getName().equals("jpf.jar")){
         return f;
+
+      } else if (f.getPath().endsWith(mainDir)) {
+        // check if there is a gov/nasa/jpf/JPF class there
+        File jpfClassfile = new File(f.getPath() + sc + jpfClass);
+        if (jpfClassfile.exists()){
+          return f;
+        }
       }
     }
 
