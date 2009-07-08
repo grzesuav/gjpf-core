@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" output="build/inc" path="src/inc"/>
-	<classpathentry kind="src" output="build/lib/jpf" path="src/lib/jpf"/>
-	<classpathentry kind="src" output="build/lib/jvm" path="src/lib/jvm"/>
-	<classpathentry kind="src" output="build/rt" path="src/rt"/>
-	<classpathentry kind="src" output="build/test" path="test"/>
-	<classpathentry kind="lib" path="lib/antlr-runtime-3.1.3.jar"/>
+	<classpathentry kind="src" output="build/examples" path="src/examples"/>
+	<classpathentry kind="src" output="build/annotations" path="src/annotations"/>
+	<classpathentry kind="src" output="build/classes" path="src/classes"/>
+	<classpathentry kind="src" output="build/main" path="src/main"/>
+	<classpathentry kind="src" output="build/tests" path="src/tests"/>
+	<classpathentry kind="src" output="build/peers" path="src/peers"/>
+	<classpathentry kind="var" path="JRE_LIB" sourcepath="JRE_SRC"/>
 	<classpathentry kind="lib" path="lib/bcel.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="output" path="build"/>
+	<classpathentry kind="lib" path="tools/lib/junit-4.6.jar"/>
+	<classpathentry kind="output" path="build/main"/>
 </classpath>

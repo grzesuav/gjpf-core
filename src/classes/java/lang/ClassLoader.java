@@ -76,6 +76,18 @@ public class ClassLoader {
 	  Class<?> c= Class.forName(clsName);
 	  return c;
   }
+
+  protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    throw new UnsupportedOperationException("ClassLoader.loadClass(String,boolean) not yet supported");    
+  }
+  
+  protected Class<?> findLoadedClass(String name){
+    throw new UnsupportedOperationException("ClassLoader.findLoadClass(String) not yet supported");    
+  }
+  
+  protected void resolveClass(Class<?> cls){
+    throw new UnsupportedOperationException("ClassLoader.resolveClass(Class<?>) not yet supported");        
+  }
   
   public ClassLoader getParent(){
 	  return parent;	  

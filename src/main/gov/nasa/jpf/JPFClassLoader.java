@@ -68,7 +68,7 @@ public class JPFClassLoader extends URLClassLoader {
       return JPFSite.class;
 
     } else {
-      Class cls = findLoadedClass(name);
+      Class<?> cls = findLoadedClass(name);
 
       if (cls == null) {
         try {
