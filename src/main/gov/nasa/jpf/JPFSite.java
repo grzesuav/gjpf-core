@@ -19,11 +19,15 @@
 package gov.nasa.jpf;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * class to analyze the local installation of JPF (core and extensions), to
@@ -168,21 +172,59 @@ public class JPFSite {
     String[] cpEntries = cp.split(File.pathSeparator);
 
     char sc = File.separatorChar;
-    String mainDir = "build" + sc + "main";
     String jpfClass = "gov" + sc + "nasa" + sc + "jpf" + sc + "JPF.class";
 
 
     for (String p : cpEntries) {
       File f = new File(p);
-      if (f.getName().equals("jpf.jar")){
+      String name = f.getName();
+      if (name.equals("jpf.jar")){
         return f;
 
-      } else if (f.getPath().endsWith(mainDir)) {
-        // check if there is a gov/nasa/jpf/JPF class there
-        File jpfClassfile = new File(f.getPath() + sc + jpfClass);
-        if (jpfClassfile.exists()){
-          return f;
+      } else if (name.equals("jpf-launch.jar")){
+        return f;
+        
+      } else if (name.equals("main")){
+        if (f.getParent().equals("build")) {
+          // check if there is a gov/nasa/jpf/JPF class there
+          File jpfClassfile = new File(f.getPath() + sc + jpfClass);
+          if (jpfClassfile.exists()){
+            return f;
+          }
         }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * not terribly nice - we have to guess our site property location
+   * since Config is not yet available. We can't just pull it up, because
+   * it needs to locate defaults.properties, which we load via the CP of
+   * gov.nasa.jpf.JPF, which in turn is what we want to locate here. Note that
+   * it also means that the jpf.core value cannot use property expansion
+   * (which standard Java properties don't know about)
+   */
+  protected File getSitePropertyCoreLoc(){
+    char sc = File.separatorChar;
+    String userHome = System.getProperty("user.home");
+    File siteProp = new File(userHome + sc + ".jpf" + sc + "site.properties");
+
+    if (siteProp.exists() && siteProp.isFile()){
+      Properties sp = new Properties();
+      try {
+        sp.load(new FileInputStream(siteProp));
+        String coreProp = sp.getProperty("jpf.core");
+        if (coreProp != null && !coreProp.isEmpty()){
+          File coreLoc = new File(coreProp);
+          return coreLoc;
+        }
+
+      } catch (FileNotFoundException fnfx){
+        // can't happen, we already checked
+      } catch (IOException iox){
+        // Hmm, not readable
       }
     }
 
@@ -199,12 +241,18 @@ public class JPFSite {
       } else {
         return parent;
       }
-    } else {
-      if (parent.getName().equals("dist")) {
-        parent = parent.getParentFile();
-        return parent == null ? getCurrentDir() : parent;
-      } else {
-        return parent;
+
+    } else { // it was a jar, but which one, get core dir from site prop
+      if (coreBootEntry.getName().equals("jpf-launch.jar")){
+        return getSitePropertyCoreLoc();
+
+      } else { // must be jpf.jar, deduce core dir from path
+        if (parent.getName().equals("dist")) {
+          parent = parent.getParentFile();
+          return parent == null ? getCurrentDir() : parent;
+        } else {
+          return parent;
+        }
       }
     }
   }

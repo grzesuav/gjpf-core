@@ -27,6 +27,8 @@
   <property name="debug"         value="on"/>
   <property name="deprecation"   value="on"/>
 
+  <property name="jpf.version"   value="5.0pre2"/>
+
 
   <!-- generic classpath settings -->
   <path id="lib.path">
@@ -149,7 +151,7 @@
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Implementation-Vendor" value="NASA Ames Research Center"/>
         <attribute name="Implementation-Title" value="Java Pathfinder core system"/>
-        <attribute name="Implementation-Version" value="5.0alpha1"/>
+        <attribute name="Implementation-Version" value="${jpf.version}"/>
         <attribute name="Main-Class" value="gov.nasa.jpf.Main"/>
       </manifest>
     </jar>
@@ -164,6 +166,21 @@
     <!-- optional jar that contains annotations to be used in non-JPF dependent apps -->
     <jar jarfile="dist/jpf-annotations.jar">
       <fileset dir="build/annotations"/>
+    </jar>
+
+    <jar jarfile="dist/jpf-launch.jar">
+      <fileset dir="build/main">
+        <include name="gov/nasa/jpf/Main.class"/>
+        <include name="gov/nasa/jpf/JPFSite.class"/>
+        <include name="gov/nasa/jpf/JPFClassLoader.class"/>
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Implementation-Vendor" value="NASA Ames Research Center"/>
+        <attribute name="Implementation-Title" value="Java Pathfinder core launch system"/>
+        <attribute name="Implementation-Version" value="${jpf.version}"/>
+        <attribute name="Main-Class" value="gov.nasa.jpf.Main"/>
+      </manifest>
     </jar>
 
   </target>
