@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 /**
  * this is the class loader we use if JPF is started via  gov.nasa.jpf.Main
@@ -46,39 +47,48 @@ import java.util.HashMap;
  */
 public class JPFClassLoader extends URLClassLoader {
 
+  static Pattern libClassPattern = Pattern.compile("(javax?|sun)\\.");
+
+  HashMap<String,Class<?>> preloads = new HashMap<String,Class<?>>();
+
 
   public JPFClassLoader () {
     // JPF URLs will be added later on
     super(JPFSite.getSite().getNativeCpURLs(),
           JPFClassLoader.class.getClassLoader());
+
+    // add our known preloads
+    preloads.put("gov.nasa.jpf.JPFClassLoader", JPFClassLoader.class);
+    preloads.put("gov.nasa.jpf.JPFSite", JPFSite.class);
   }
 
+  public void addPreloadedClass (Class<?> cls){
+    preloads.put(cls.getName(), cls);
+  }
 
   //--- ClassLoader basics
 
   public Class<?> loadClass (String name, boolean resolve) throws ClassNotFoundException {
 
-    if (name.startsWith("java.")) { //<2do> should also cover javax
+    if (libClassPattern.matcher(name).matches()) {
       return super.loadClass(name, resolve);
 
-    } else if (name.equals("gov.nasa.jpf.JPFClassLoader")){
-      return JPFClassLoader.class;
-
-    } else if (name.equals("gov.nasa.jpf.JPFSite")){
-      return JPFSite.class;
-
     } else {
-      Class<?> cls = findLoadedClass(name);
+      Class<?> cls = preloads.get(name);
 
       if (cls == null) {
-        try {
-          cls = findClass(name);
-          if (resolve) {
-            resolveClass(cls);
-          }
+        cls = findLoadedClass(name);
 
-        } catch (ClassNotFoundException e) {
-          cls = super.loadClass(name, resolve);
+        if (cls == null) {
+          try {
+            cls = findClass(name);
+            if (resolve) {
+              resolveClass(cls);
+            }
+
+          } catch (ClassNotFoundException e) {
+            cls = super.loadClass(name, resolve);
+          }
         }
       }
 
