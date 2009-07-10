@@ -118,7 +118,7 @@ public class Source {
 
   public static void init (Config config) {
 
-    String[] specs = config.getStringArray("vm.sourcepath");    
+    String[] specs = config.getStringArray("sourcepath");    
     
     ArrayList<SourceRoot> roots = new ArrayList<SourceRoot>();
     for (String spec : specs) {

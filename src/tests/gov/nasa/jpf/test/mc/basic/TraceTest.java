@@ -67,7 +67,7 @@ public class TraceTest extends TestJPF {
       }
 
       // second JPF run
-      noPropertyViolation("+listener=.tools.ChoiceSelector",
+      noPropertyViolation("+listener=.listener.ChoiceSelector",
               "+choice.use_trace=" + TRACE,
               TEST_CLASS, "foo");
 
@@ -102,12 +102,12 @@ public class TraceTest extends TestJPF {
       }
 
       // first JPF run
-      assertionError("+listener=.tools.TraceStorer",
+      assertionError("+listener=.listener.TraceStorer",
                      "+trace.file=" + TRACE,
                      TEST_CLASS, "bar");
 
       // second JPF run
-      assertionError("+listener=.tools.ChoiceSelector",
+      assertionError("+listener=.listener.ChoiceSelector",
                      "+choice.use_trace=" + TRACE,
                      TEST_CLASS, "bar");
     } finally {

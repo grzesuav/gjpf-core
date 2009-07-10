@@ -22,7 +22,6 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.jvm.*;
 import gov.nasa.jpf.jvm.bytecode.*;
-import gov.nasa.jpf.tools.*;
 import gov.nasa.jpf.util.*;
 import java.io.*;
 import java.util.*;

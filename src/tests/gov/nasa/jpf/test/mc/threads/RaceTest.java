@@ -25,7 +25,7 @@ package gov.nasa.jpf.test.mc.threads;
 
 import gov.nasa.jpf.Property;
 import gov.nasa.jpf.util.test.TestJPF;
-import gov.nasa.jpf.tools.PreciseRaceDetector;
+import gov.nasa.jpf.listener.PreciseRaceDetector;
 import org.junit.Test;
 
 class SharedObject {

@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 /**
  * class to analyze the local installation of JPF (core and extensions), to
@@ -148,8 +149,8 @@ public class JPFSite {
   // for debugging purposes
   public void printSite() {
     System.out.println("JPFSite :");
-    System.out.println("  coreBootEntry: " + coreBootEntry.getAbsolutePath());
-    System.out.println("  coreDir: " + coreDir.getAbsolutePath());
+    System.out.println("  coreBootEntry: " + ((coreBootEntry != null) ? coreBootEntry.getAbsolutePath() : "null"));
+    System.out.println("  coreDir: " + ((coreDir != null) ? coreDir.getAbsolutePath() : "null"));
 
     System.out.println("  nativeCpEntries:");
     for (File f : nativeCpEntries){
@@ -185,7 +186,7 @@ public class JPFSite {
         return f;
         
       } else if (name.equals("main")){
-        if (f.getParent().equals("build")) {
+        if (f.getParentFile().getName().equals("build")) {
           // check if there is a gov/nasa/jpf/JPF class there
           File jpfClassfile = new File(f.getPath() + sc + jpfClass);
           if (jpfClassfile.exists()){
@@ -232,28 +233,34 @@ public class JPFSite {
   }
 
   protected File findCoreDir() {
-    File parent = coreBootEntry.getParentFile();
+    if (coreBootEntry != null) {
+      File parent = coreBootEntry.getParentFile();
 
-    if (coreBootEntry.isDirectory()) {
-      if (parent.getName().equals("build")) {
-        parent = parent.getParentFile();
-        return parent == null ? getCurrentDir() : parent;
-      } else {
-        return parent;
-      }
-
-    } else { // it was a jar, but which one, get core dir from site prop
-      if (coreBootEntry.getName().equals("jpf-launch.jar")){
-        return getSitePropertyCoreLoc();
-
-      } else { // must be jpf.jar, deduce core dir from path
-        if (parent.getName().equals("dist")) {
+      if (coreBootEntry.isDirectory()) {
+        if (parent.getName().equals("build")) {
           parent = parent.getParentFile();
           return parent == null ? getCurrentDir() : parent;
         } else {
           return parent;
         }
+
+      } else { // it was a jar, but which one, get core dir from site prop
+        if (coreBootEntry.getName().equals("jpf-launch.jar")) {
+          return getSitePropertyCoreLoc();
+
+        } else { // must be jpf.jar, deduce core dir from path
+          if (parent.getName().equals("dist")) {
+            parent = parent.getParentFile();
+            return parent == null ? getCurrentDir() : parent;
+          } else {
+            return parent;
+          }
+        }
       }
+      
+    } else {
+      return getSitePropertyCoreLoc();
+      // <2do> what about running within IDEs?
     }
   }
 
@@ -297,6 +304,8 @@ public class JPFSite {
     addJars(new File(dir));
   }
 
+  static Pattern ignorePattern = Pattern.compile("(.+-annotations|.+-launch).jar");
+
   protected void addJars (File dir) {
 
     if (dir.exists() && dir.isDirectory()) {
@@ -307,7 +316,7 @@ public class JPFSite {
             jpfCpEntries.add(f);
 
           } else {
-            if (!name.endsWith("-annotations.jar")) {
+            if (!ignorePattern.matcher(name).matches()) {
 
               // if this is not the first entry, we already have the core in the CP
               if (name.equals("jpf.jar") && !nativeCpEntries.isEmpty()){
