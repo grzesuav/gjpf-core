@@ -71,6 +71,9 @@ import java.util.regex.Pattern;
  */
 public class JPFSite {
 
+  static Pattern jarCmdPattern = Pattern.compile("Run.*\\.jar");
+
+
   private static JPFSite site;
 
   File coreBootEntry;
@@ -182,7 +185,7 @@ public class JPFSite {
       if (name.equals("jpf.jar")){
         return f;
 
-      } else if (name.equals("jpf-launch.jar")){
+      } else if (name.equals("RunJPF.jar")){
         return f;
         
       } else if (name.equals("main")){
@@ -232,6 +235,23 @@ public class JPFSite {
     return null;
   }
 
+  protected boolean isJarCommand (String name){
+    return jarCmdPattern.matcher(name).matches();
+  }
+
+  protected boolean haveJPFjar (File jarFile){
+    String name = jarFile.getName();
+    if ("jpf.jar".equals(name)){
+      return true;
+
+    } else if (isJarCommand(name)) {
+      File jpfJar = new File(jarFile.getParent(), "jpf.jar");
+      return jpfJar.exists();
+    }
+
+    return false;
+  }
+
   protected File findCoreDir() {
     if (coreBootEntry != null) {
       File parent = coreBootEntry.getParentFile();
@@ -244,11 +264,8 @@ public class JPFSite {
           return parent;
         }
 
-      } else { // it was a jar, but which one, get core dir from site prop
-        if (coreBootEntry.getName().equals("jpf-launch.jar")) {
-          return getSitePropertyCoreLoc();
-
-        } else { // must be jpf.jar, deduce core dir from path
+      } else { // it was a jar
+        if (haveJPFjar(coreBootEntry)){
           if (parent.getName().equals("dist")) {
             parent = parent.getParentFile();
             return parent == null ? getCurrentDir() : parent;
@@ -257,11 +274,10 @@ public class JPFSite {
           }
         }
       }
-      
-    } else {
-      return getSitePropertyCoreLoc();
-      // <2do> what about running within IDEs?
     }
+    
+    // the fallback is to get this from ~/.jpf/site.properties
+    return getSitePropertyCoreLoc();
   }
 
   File getCurrentDir() {
@@ -304,7 +320,6 @@ public class JPFSite {
     addJars(new File(dir));
   }
 
-  static Pattern ignorePattern = Pattern.compile("(.+-annotations|.+-launch).jar");
 
   protected void addJars (File dir) {
 
@@ -316,7 +331,7 @@ public class JPFSite {
             jpfCpEntries.add(f);
 
           } else {
-            if (!ignorePattern.matcher(name).matches()) {
+            if (!isJarCommand(name)) {
 
               // if this is not the first entry, we already have the core in the CP
               if (name.equals("jpf.jar") && !nativeCpEntries.isEmpty()){

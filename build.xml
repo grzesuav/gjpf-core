@@ -168,7 +168,7 @@
       <fileset dir="build/annotations"/>
     </jar>
 
-    <jar jarfile="dist/jpf-launch.jar">
+    <jar jarfile="dist/RunJPF.jar">
       <fileset dir="build/main">
         <include name="gov/nasa/jpf/Main.class"/>
         <include name="gov/nasa/jpf/JPFSite.class"/>
@@ -182,6 +182,21 @@
         <attribute name="Main-Class" value="gov.nasa.jpf.Main"/>
       </manifest>
     </jar>
+
+    <jar jarfile="dist/RunAnt.jar">
+      <fileset dir="build/main">
+        <include name="gov/nasa/jpf/tool/RunAnt.class"/>
+        <include name="gov/nasa/jpf/JPFSite.class"/>
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Implementation-Vendor" value="NASA Ames Research Center"/>
+        <attribute name="Implementation-Title" value="Java Pathfinder Ant launcher"/>
+        <attribute name="Implementation-Version" value="${jpf.version}"/>
+        <attribute name="Main-Class" value="gov.nasa.jpf.tool.RunAnt"/>
+      </manifest>
+    </jar>
+
 
   </target>
 
