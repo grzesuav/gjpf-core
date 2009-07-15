@@ -90,7 +90,7 @@ public class RunAnt {
     } else {
       // on Linux and Windows it's in ${java.home}/lib/tools.jar
       File toolsJar = new File(javaHome + sc + "lib" + sc + "tools.jar");
-      if (toolsJar.exists() && toolsJar.isFile()){
+      if (toolsJar.isFile()){
         try {
           list.add(toolsJar.toURI().toURL());
         } catch (MalformedURLException ex) {
@@ -107,7 +107,7 @@ public class RunAnt {
     char sc = File.separatorChar;
     File libDir = new File(jpfCoreDir.getPath() + sc + "tools" + sc + "lib");
 
-    if (libDir.exists() && libDir.isDirectory()){
+    if (libDir.isDirectory()){
       for (File f : libDir.listFiles()) {
         String name = f.getName();
         if (name.endsWith(".jar")) {

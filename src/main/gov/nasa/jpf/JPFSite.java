@@ -222,7 +222,7 @@ public class JPFSite {
     String userHome = System.getProperty("user.home");
     File siteProp = new File(userHome + sc + ".jpf" + sc + "site.properties");
 
-    if (siteProp.exists() && siteProp.isFile()){
+    if (siteProp.isFile()){
       Properties sp = new Properties();
       try {
         sp.load(new FileInputStream(siteProp));
@@ -305,7 +305,7 @@ public class JPFSite {
     //  - build/main, build/peers => 'classpath'
     //  - build/classes, build/annotations => 'vm.classpath'
     File buildDir = new File(dir, "build");
-    if (buildDir.exists() && buildDir.isDirectory()) {
+    if (buildDir.isDirectory()) {
       haveClassDirs |= addDir(nativeCpEntries, new File(buildDir, "main"));
       haveClassDirs |= addDir(nativeCpEntries, new File(buildDir, "peers"));
 
@@ -314,7 +314,7 @@ public class JPFSite {
     }
 
     File srcDir = new File(dir,"src");
-    if (srcDir.exists() && srcDir.isDirectory()){
+    if (srcDir.isDirectory()){
       addDir(jpfSpEntries, new File(srcDir, "classes"));
     }
 
@@ -333,7 +333,7 @@ public class JPFSite {
 
   protected void addJars (File dir) {
 
-    if (dir.exists() && dir.isDirectory()) {
+    if (dir.isDirectory()) {
       for (File f : dir.listFiles()) {
         String name = f.getName();
         if (name.endsWith(".jar")) {
@@ -364,7 +364,7 @@ public class JPFSite {
   }
 
   protected boolean addDir(List<File> entries, File dir) {
-    if (dir.exists() && dir.isDirectory()) {
+    if (dir.isDirectory()) {
       entries.add(dir);
       return true;
     }

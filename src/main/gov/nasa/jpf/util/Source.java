@@ -195,7 +195,7 @@ public class Source {
 
     } else { // is it a dir?
       File cpe = new File(cpEntry);
-      if (cpe.exists() && cpe.isDirectory()){
+      if (cpe.isDirectory()){
         // go up until you hit a dir that has a 'src' subdir
         // remember the traversed path elements
         LinkedList<String> dirStack = new LinkedList<String>();
@@ -226,17 +226,21 @@ public class Source {
 
     // first, add the explicitly set ones
     String[] specs = config.getStringArray("sourcepath");
-    for (String spec : specs) {
-      addSourceRoot(config,roots,spec);
+    if (specs != null){
+      for (String spec : specs) {
+        addSourceRoot(config,roots,spec);
+      }
     }
 
     // now we look at the classpath to see if we find any obviously
     // corresponding source roots for directory entries
     specs = config.getStringArray("classpath");
-    for (String spec : specs) {
-      String sr = findSrcRoot( spec);
-      if (sr != null){
-        addSourceRoot(config,roots,spec);
+    if (specs != null) {
+      for (String spec : specs) {
+        String sr = findSrcRoot(spec);
+        if (sr != null) {
+          addSourceRoot(config, roots, spec);
+        }
       }
     }
 
