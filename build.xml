@@ -72,7 +72,7 @@
   <!-- ======================= COMPILE SECTION ============================= -->
     
   <!-- public compile -->
-  <target name="compile" depends="-init,-compile-annotations,-compile-main,-compile-peers,-compile-classes,-compile-tests,-compile-examples"
+  <target name="compile" depends="-init,-compile-annotations,-compile-main,-compile-peers,-compile-classes,-compile-tests,-compile-examples,-gen-buildinfo"
           description="compile all JPF core sources" >
   </target>
 
@@ -94,6 +94,7 @@
       </classpath>
     </javac>
 	  <copy file="default.properties" todir="build/main/gov/nasa/jpf"/>
+	  <copy file="build.properties" todir="build/main/gov/nasa/jpf" failonerror="false"/>
   </target>
   
   <target name="-compile-peers" if="have_peers" depends="-compile-main" >
@@ -211,6 +212,7 @@
 
   <!-- public clean: cleanup from previous tasks/builds -->
   <target name="clean">
+    <delete file="build.properties"/>
     <delete dir="build" />
     <delete dir="dist" />
     <delete>
@@ -220,6 +222,40 @@
     </delete>
   </target>
   
+  <!-- gen version properties file (Mercurial) -->
+  <target name="-gen-buildinfo" description="create build info property file">
+    <exec executable="hg" outputproperty="hg.tip.id" failifexecutionfails="false">
+      <arg value="tip"/>
+      <arg value="--template"/>
+      <arg value="{rev}:{node|short}\n"/>
+    </exec>
+    <exec executable="hg" outputproperty="hg.author" failifexecutionfails="false">
+      <arg value="tip"/>
+      <arg value="--template"/>
+      <arg value="{author}\n"/>
+    </exec>
+    <exec executable="hg" outputproperty="hg.tip.date" failifexecutionfails="false">
+      <arg value="tip"/>
+      <arg value="--template"/>
+      <arg value="{date|isodate}\n"/>
+    </exec>
+    <exec executable="hg" outputproperty="hg.paths.default" failifexecutionfails="false">
+      <arg value="showconfig"/>
+      <arg value="paths.default"/>
+    </exec>
+    <exec executable="hostname" osfamily="unix" failifexecutionfails="false" outputproperty="env.COMPUTERNAME"/>
+    <property name="hostname" value="${env.COMPUTERNAME}"/>  <!-- Windows doesn't have hostname -->
+
+    <echo file="build.properties" append="false">
+# build identification info
+date=${hg.tip.date}
+author=${hg.author}
+revision=${hg.tip.id}
+host=${hostname}
+location=${basedir}
+upstream=${hg.paths.default}
+</echo>
+    </target>
 
 
   <!-- ======================= TEST SECTION ================================ -->

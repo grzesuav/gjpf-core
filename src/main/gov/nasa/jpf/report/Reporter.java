@@ -35,12 +35,15 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFListener;
+import gov.nasa.jpf.JPFSite;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.Path;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.ObjArray;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * this is our default report generator, which is heavily configurable
@@ -312,61 +315,30 @@ public class Reporter extends ListenerAdapter {
     return s;
   }
 
-  /**
-   * get SVN repository info from file system
-   */
-  String getRepositoryInfo () {
-    String dir = conf.getString("jpf.basedir");
-    if (dir != null) {
-      dir += File.separatorChar + ".svn";
-    } else {
-      dir = ".svn";
-    }
-
-    StringWriter sw = new StringWriter();
-    PrintWriter pw = new PrintWriter(sw);
+  String getRepositoryInfo() {
     try {
-      File f = new File(dir, "entries");
-      if (f.exists()) {
-        FileInputStream fis = new FileInputStream(f);
-        BufferedReader br = new BufferedReader( new InputStreamReader(fis));
-        for (String line = br.readLine(); line != null; line=br.readLine()) {
-          if (line.equals("dir")) {
-            if ((line = br.readLine()) != null) {
-              pw.println();
-              pw.print("(r");
-              pw.print(line);
-              
-              if ((line = br.readLine()) != null) {
-                String repository = line;
+      InputStream is = JPF.class.getClassLoader().getResourceAsStream("build.properties");
+      if (is != null){
+        Properties revInfo = new Properties();
+        revInfo.load(is);
 
-                // repository root & blank lines
-                br.readLine();
-                while ((line = br.readLine()) != null && line.equals(""));
+        StringBuffer sb = new StringBuffer();
+        String date = revInfo.getProperty("date");
+        String author = revInfo.getProperty("author");
+        String rev = revInfo.getProperty("rev");
+        String machine = revInfo.getProperty("hostname");
+        String loc = revInfo.getProperty("location");
+        String upstream = revInfo.getProperty("upstream");
 
-                if (line.matches("\\d\\d\\d\\d-\\d\\d-\\d\\dT.*")) {
-                  String dtg = line.substring(0,19);
-                  pw.print(" ");
-                  pw.print(dtg);
-                  pw.println(')');
-                  pw.print(repository);
-                }
-              } else {
-                pw.print(')');
-              }
-              break;
-            }
-          }
-        }
-        
-        return sw.toString();
-      }  
+        return String.format("%s %s %s %s %s", date,author,rev,machine,loc);
+      }
     } catch (IOException iox) {
-      // nothing - we just don't know
+      return null;
     }
-    
+
     return null;
   }
+
   
   public String getHostName () {
     try {

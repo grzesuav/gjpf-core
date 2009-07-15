@@ -39,4 +39,4 @@ set CP=%CP%;%JPF_HOME%\build\examples
 
 set JVM_FLAGS=-agentlib:yjpagent=tracing -Xmx1536m
 
-java %JVM_FLAGS% -classpath "%CP%" gov.nasa.jpf.JPF +jpf.basedir="%JPF_HOME%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+java %JVM_FLAGS% -classpath "%CP%" gov.nasa.jpf.JPF  %1 %2 %3 %4 %5 %6 %7 %8 %9

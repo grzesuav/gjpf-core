@@ -208,28 +208,6 @@ public class Config extends Properties {
     loadArgs(a);
   }
 
-  protected void updateJPFClassLoader (String classpathKey) {
-
-    ClassLoader cl = Config.class.getClassLoader();
-
-    if (cl instanceof JPFClassLoader) {
-      JPFClassLoader jpfCl = (JPFClassLoader) cl;
-
-      File[] pathElements = getPathArray(classpathKey);
-      if (pathElements != null && pathElements.length > 0) {
-        try {
-          for (int i = 0; i < pathElements.length; i++) {
-            URL url = pathElements[i].toURI().toURL();
-            jpfCl.addURL(url);
-          }
-
-        } catch (MalformedURLException x) {
-          throw new JPFConfigException("malformed classpath for " + classpathKey + " : " + x.getMessage());
-        }
-      }
-
-    }
-  }
 
   /*
    * note that matching args are expanded and stored here, to avoid any
@@ -566,10 +544,6 @@ public class Config extends Properties {
 
   //------------------------------ public methods - the Config API
 
-  
-  public ClassLoader getClassLoader () {
-    return loader;  ////// <2do> going away!!
-  }
   
   public void addChangeListener (ConfigChangeListener l) {
     if (changeListeners == null) {

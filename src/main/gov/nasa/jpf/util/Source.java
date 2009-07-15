@@ -22,6 +22,7 @@ package gov.nasa.jpf.util;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 
+import gov.nasa.jpf.JPFSite;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,10 +33,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
 
 
 /**
@@ -75,6 +78,11 @@ public class Source {
       }
     }
 
+    public boolean equals (Object other){
+      return (other != null) && (other instanceof DirRoot) &&
+              path.equals(((DirRoot)other).path);
+    }
+
     public String toString() {
       return path;
     }
@@ -111,54 +119,145 @@ public class Source {
       }
     }
 
+    public boolean equals (Object other){
+      if ( (other != null) && (other instanceof JarRoot)){
+
+        // just how hard can it be to check if two JarFiles instances refer to
+        // the same file?
+        JarRoot o = (JarRoot)other;
+        File f = new File(jar.getName());
+        File fOther = new File(o.jar.getName());
+        if (f.getAbsolutePath().equals(fOther.getAbsolutePath())){
+          if (entryPrefix == null){
+            return o.entryPrefix == null;
+          } else {
+            entryPrefix.equals(o.entryPrefix);
+          }
+        }
+      }
+
+      return false;
+    }
+
     public String toString() {
       return jar.getName();
     }
   }
 
-  public static void init (Config config) {
+  static void addSourceRoot (Config config, List<SourceRoot> roots, String spec){
+    SourceRoot sr = null;
 
-    String[] specs = config.getStringArray("sourcepath");    
-    
-    ArrayList<SourceRoot> roots = new ArrayList<SourceRoot>();
-    for (String spec : specs) {
-      SourceRoot sr = null;
+    try {
+      int i = spec.indexOf(".jar");
+      if (i >= 0) {  // jar
+        String pn = config.asPlatformPath(spec.substring(0, i + 4));
+        File jar = new File(pn);
+        if (jar.exists()) {
+          int i0 = i + 5; // scrub the leading path separator
+          // JarFile assumes Unix for archive-internal paths (also on Windows)
+          String ep = (spec.length() > i0) ? config.asCanonicalUnixPath(spec.substring(i0)) : null;
+          // we should probably check here if there is such a dir in the Jar
+          sr = new JarRoot(pn, ep);
+        }
 
+      } else {       // directory
+        String pn = config.asPlatformPath(spec);
+        File dir = new File(pn);
+        if (dir.exists()) {
+          sr = new DirRoot(pn);
+        }
+      }
+    } catch (IOException iox) {
+      // we report this below
+      }
+
+    if (sr != null) {
+      if (!roots.contains(sr)){
+        roots.add(sr);
+      }
+    } else {
+      logger.info("not a valid source root: " + spec);
+    }
+  }
+
+  static String findSrcRoot (String cpEntry){
+    if (cpEntry.endsWith(".jar")){
+      // check if there is a 'src' dir in the jar
       try {
-        int i = spec.indexOf(".jar");
-        if (i >= 0) {  // jar
-          String pn = config.asPlatformPath(spec.substring(0,i+4));
-          File jar = new File(pn);
-          if (jar.exists()) {
-            int i0 = i+5; // scrub the leading path separator
-            // JarFile assumes Unix for archive-internal paths (also on Windows)
-            String ep = (spec.length() > i0) ? config.asCanonicalUnixPath(spec.substring(i0)) : null;
-            // we should probably check here if there is such a dir in the Jar
-            sr = new JarRoot(pn,ep);
-          }
+        JarFile jf = new JarFile(cpEntry);
+        JarEntry srcEntry = jf.getJarEntry("src");
+        if (srcEntry != null && srcEntry.isDirectory()) {
+          return jf.getName() + "/src"; // jar internal paths use '/' separators
+        }
+      } catch (IOException iox){
+        return null;
+      }
 
-        } else {       // directory
-          String pn = config.asPlatformPath(spec);
-          File dir = new File(pn);
-          if (dir.exists()) {
-            sr = new DirRoot(pn);
+    } else { // is it a dir?
+      File cpe = new File(cpEntry);
+      if (cpe.exists() && cpe.isDirectory()){
+        // go up until you hit a dir that has a 'src' subdir
+        // remember the traversed path elements
+        LinkedList<String> dirStack = new LinkedList<String>();
+        dirStack.addFirst(cpe.getName());
+        for (File pd = cpe.getParentFile(); pd != null; pd = pd.getParentFile()){
+          File sd = new File(pd,"src");
+          if (sd.isDirectory()){
+            String srcRoot = sd.getPath();
+            for (String e : dirStack) {
+              srcRoot = srcRoot + File.separatorChar + e;
+            }
+            sd = new File(srcRoot);
+            if (sd.isDirectory()){
+              return srcRoot;
+            }
+          } else {
+            dirStack.addFirst(pd.getName());
           }
         }
-      } catch (IOException iox) {
-        // we report this below
       }
+    }
 
-      if (sr != null) {
-        roots.add(sr);
-      } else {
-        logger.info("not a valid source root: " + spec);
+    return null;
+  }
+
+  public static void init (Config config) {
+    ArrayList<SourceRoot> roots = new ArrayList<SourceRoot>();
+
+    // first, add the explicitly set ones
+    String[] specs = config.getStringArray("sourcepath");
+    for (String spec : specs) {
+      addSourceRoot(config,roots,spec);
+    }
+
+    // now we look at the classpath to see if we find any obviously
+    // corresponding source roots for directory entries
+    specs = config.getStringArray("classpath");
+    for (String spec : specs) {
+      String sr = findSrcRoot( spec);
+      if (sr != null){
+        addSourceRoot(config,roots,spec);
       }
+    }
+
+    // finally, process the classpath components that aren't in yet
+    // (note these are guesses based on a standard build / src dir structure)
+    JPFSite site = JPFSite.getSite();
+    for (File f : site.getJPFSpEntries()){
+      addSourceRoot(config,roots,f.getPath());
     }
 
     sourceRoots = roots;
     sources.clear();
   }
 
+  // for debugging purposes
+  static void printRoots() {
+    System.out.println("source roots:");
+    for (SourceRoot sr : sourceRoots){
+      System.out.println("  " + sr);
+    }
+  }
 
   public static Source getSource (String fname) {
     Source s = sources.get(fname);

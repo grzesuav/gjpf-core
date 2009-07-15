@@ -1,5 +1,6 @@
 syntax: glob
 
+rev.properties
 nbproject/private/*
 build/*
 dist/*

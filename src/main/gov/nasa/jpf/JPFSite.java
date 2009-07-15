@@ -171,6 +171,13 @@ public class JPFSite {
     }
   }
 
+  /**
+   * find the classpath component that loads JPF, which could be either
+   *
+   *  - the build/main dir that holds gov.nasa.jpf.JPF
+   *  - jpf.jar
+   *  - RunJPF.jar
+   */
   protected File findJPFCoreLib() {
     String cp = System.getProperty("java.class.path");
     String[] cpEntries = cp.split(File.pathSeparator);

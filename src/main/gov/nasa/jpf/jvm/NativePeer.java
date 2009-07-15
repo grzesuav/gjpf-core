@@ -59,7 +59,7 @@ public class NativePeer {
 
 
   public static void init (Config conf) {
-    loader = conf.getClassLoader();
+    loader = conf.getClass().getClassLoader();
     peers = new HashMap<String, NativePeer>();
     argCache = new Object[MAX][];
 
