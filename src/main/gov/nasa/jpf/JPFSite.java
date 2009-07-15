@@ -262,6 +262,9 @@ public class JPFSite {
   protected File findCoreDir() {
     if (coreBootEntry != null) {
       File parent = coreBootEntry.getParentFile();
+      if (parent == null){
+        parent = new File(System.getProperty("user.dir"));
+      }
 
       if (coreBootEntry.isDirectory()) {
         if (parent.getName().equals("build")) {
