@@ -1260,7 +1260,7 @@ public abstract class ElementInfo implements Cloneable {
 
   /**
    * re-acquire lock after being notified. This is the notified thread, i.e. the one
-   * that will come out of an wait()
+   * that will come out of a wait()
    */
   public void lockNotified (ThreadInfo ti) {
     assert ti.isUnblocked() : "resume waiting thread " + ti.getName() + " which is not unblocked";

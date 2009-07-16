@@ -54,6 +54,7 @@ public class ThreadInfo
   static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.ThreadInfo");
 
   //--- our internal thread states
+  // <2do> turn into Enum
   public static final int NEW             = 0;  // means created but not yet started
   public static final int RUNNING         = 1;
   public static final int BLOCKED         = 2;  // waiting to acquire a lock
@@ -1680,7 +1681,7 @@ public class ThreadInfo
     skipInstruction = false;
     nextPc = null;
 
-    if (log.isLoggable(Level.FINE)) {
+    if (log.isLoggable(Level.FINER)) {
       log.fine( pc.getMethodInfo().getCompleteName() + " " + pc.getPosition() + " : " + pc);
     }
 

@@ -106,9 +106,14 @@ public class JPF_sun_misc_Unsafe {
     int permitRef = env.getReferenceField( objRef, "permit");
     ElementInfo ei = env.getElementInfo(permitRef);
 
+    // NOTE - this means the native Object.wait() bottom half has to handle
+    // being called in a RUNNING state (which otherwise won't happen), or we
+    // get invalid thread state exceptions
+
     if (ei.getBooleanField("isTaken")) { // we have to block
       ei.lock(ti); // otherwise a subsequent wait will blow up
       JPF_java_lang_Object.wait__J__V(env,permitRef,timeout);
+
     } else {
       if (ti.isFirstStepInsn()) {  // somebody might have notified us
         JPF_java_lang_Object.wait__J__V(env,permitRef,timeout);

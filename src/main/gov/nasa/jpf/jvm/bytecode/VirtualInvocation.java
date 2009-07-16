@@ -38,17 +38,6 @@ public abstract class VirtualInvocation extends InvokeInstruction {
 
   protected VirtualInvocation () {}
 
-  public MethodInfo getInvokedMethod(ThreadInfo ti){
-    int objRef;
-
-    if (ti.getNextPC() == null){ // this is pre-exec
-      objRef = ti.getCalleeThis(getArgSize());
-    } else {                     // this is post-exec
-      objRef = lastObj;
-    }
-
-    return getInvokedMethod(ti, objRef);
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int objRef = ti.getCalleeThis( getArgSize());
@@ -96,6 +85,18 @@ public abstract class VirtualInvocation extends InvokeInstruction {
     } else {
       return null;
     }
+  }
+
+  public MethodInfo getInvokedMethod(ThreadInfo ti){
+    int objRef;
+
+    if (ti.getNextPC() == null){ // this is pre-exec
+      objRef = ti.getCalleeThis(getArgSize());
+    } else {                     // this is post-exec
+      objRef = lastObj;
+    }
+
+    return getInvokedMethod(ti, objRef);
   }
 
   public MethodInfo getInvokedMethod (ThreadInfo ti, int objRef) {

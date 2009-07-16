@@ -1729,8 +1729,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return null;
     } else {
       String superName = jc.getSuperclassName();
+      ClassInfo sci = getClassInfo(superName);
+      if (sci == null){
+        // <2do> this shouldn't be a JPFException, but how can we turn it over to the app?
+        throw new NoClassInfoException(superName);
+      }
 
-      return getClassInfo(superName);
+      return sci;
     }
   }
 

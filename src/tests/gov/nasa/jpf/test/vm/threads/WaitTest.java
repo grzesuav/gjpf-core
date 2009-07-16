@@ -34,6 +34,22 @@ public class WaitTest extends TestJPF
     runTestsOfThisClass(args);
   }
 
+  @Test public void testVerySimpleWait () {
+    if (verifyNoPropertyViolation()) {
+      System.out.println("running testVerySimpleWait()");
+      synchronized (this) {
+        try {
+          System.out.println("waiting");
+          wait(100L);
+          System.out.println("timed out");
+
+        } catch (InterruptedException ix) {
+          throw new RuntimeException("got interrupted");
+        }
+      }
+    }
+  }
+
   @Test public void testSimpleWait () {
     if (verifyNoPropertyViolation()) {
       System.out.println("running testSimpleWait()");
@@ -70,7 +86,35 @@ public class WaitTest extends TestJPF
     }
   }
   
-  
+  @Test public void testSyncRunWait () {
+    if (verifyNoPropertyViolation()) {
+      System.out.println("running testSyncRunWait()");
+
+      Runnable waiter = new Runnable() {
+
+        public synchronized void run() {
+          try {
+            wait(); // needs to be first insn
+            System.out.println("notified");
+          } catch (InterruptedException ix) {
+            throw new RuntimeException("got interrupted");
+          }
+        }
+      };
+
+      Thread t = new Thread(waiter);
+      t.setDaemon(true); // to make sure we don't get a deadlock
+      t.start();
+
+      synchronized (waiter) {
+        System.out.println("notifying");
+        waiter.notify();
+      }
+    }
+  }
+
+
+
   @Test public void testTimeoutWait () {
     if (verifyNoPropertyViolation()) {
       System.out.println("running testTimeoutWait()");

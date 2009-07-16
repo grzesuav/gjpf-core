@@ -64,30 +64,36 @@ public class JPF_java_lang_Object {
     // let go un-noticed
   }
 
-  static void wait0 (MJIEnv env, int objref, long timeout){
+  static void wait0(MJIEnv env, int objref, long timeout) {
     // IllegalMonitorStateExceptions are checked in the MJIEnv methods
-    ThreadInfo ti = env.getThreadInfo();    
+    ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
     ElementInfo ei = env.getElementInfo(objref);
-    
+
+
     if (ti.isFirstStepInsn()) { // we already have a CG
 
       switch (ti.getStatus()) {
-      // note that we can't get here if we are in NOTIFIED or INTERRUPTED state,
-      // since we still have to reacquire the lock
-      case ThreadInfo.UNBLOCKED:
-      case ThreadInfo.TIMEDOUT: // nobody else acquired the lock
-        // thread status set by explicit notify() call
-        env.lockNotified(objref);
 
-        if (ti.isInterrupted(true)) {
-          env.throwException("java.lang.InterruptedException");
-        }
-        break;
+        // we can get here by direct call from ...Unsafe.park__ZJ__V()
+        // which aquires the park lock and waits natively
+        case ThreadInfo.RUNNING:
 
-      default:
-        throw new JPFException("invalid thread state: " + ti.getStatus() +
-                               " waiting on " + ei);
+        // note that we can't get here if we are in NOTIFIED or INTERRUPTED state,
+        // since we still have to reacquire the lock
+        case ThreadInfo.UNBLOCKED:
+        case ThreadInfo.TIMEDOUT: // nobody else acquired the lock
+          // thread status set by explicit notify() call
+          env.lockNotified(objref);
+
+          if (ti.isInterrupted(true)) {
+            env.throwException("java.lang.InterruptedException");
+          }
+          break;
+
+        default:
+          throw new JPFException("invalid thread state of: " + ti.getName() + " is " + ti.getStatusName() +
+                  " while waiting on " + ei);
       }
     } else { // first time, break the transition (if we don't have a pending interrupt)
 
@@ -99,7 +105,7 @@ public class JPF_java_lang_Object {
         // note we pass in the timeout value, since this might determine the type of CG that is created
         env.wait(objref, timeout); // releases all locks and sets BLOCKED threads to UNBLOCKED
 
-        ChoiceGenerator cg = ss.getSchedulerFactory().createWaitCG( ei, ti, timeout);
+        ChoiceGenerator cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
         assert (cg != null) : "wait of " + ti.getName() + " on: " + ei + " created no choice generator";
         ss.setNextChoiceGenerator(cg);
 
