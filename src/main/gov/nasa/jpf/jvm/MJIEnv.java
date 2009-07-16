@@ -1020,7 +1020,7 @@ public class MJIEnv {
     return JVM.getVM().getDynamicArea();
   }
 
-  ElementInfo getElementInfo (int objref) {
+  public ElementInfo getElementInfo (int objref) {
     return da.get(objref);
   }
 
@@ -1037,7 +1037,7 @@ public class MJIEnv {
   }
 
   //--- those are not public since they refer to JPF internals
-  KernelState getKernelState () {
+  public KernelState getKernelState () {
     return JVM.getVM().getKernelState();
   }
 
@@ -1057,7 +1057,7 @@ public class MJIEnv {
     return ti.getVM().getStaticArea();
   }
 
-  SystemState getSystemState () {
+  public SystemState getSystemState () {
     return ti.getVM().getSystemState();
   }
 
