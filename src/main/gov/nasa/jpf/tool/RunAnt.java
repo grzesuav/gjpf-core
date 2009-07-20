@@ -38,17 +38,10 @@ public class RunAnt {
 
   public static void main (String[] args){
 
-    JPFSite site = JPFSite.getSite();
-    File coreDir = site.getCoreDir();
-
-    if (coreDir == null){
-      abort("no JPF core dir found - do you have a (valid) ~/.jpf/site.properties file?");
-    }
-
     ArrayList<URL> urlList = new ArrayList<URL>();
 
     addJavac(urlList);
-    addJPFToolJars(urlList,coreDir);
+    addJPFToolJars(urlList,JPFSite.getSite());  // <2do> - Hmm, what if we boot with jpf.jar?
 
     URL[] urls = urlList.toArray(new URL[urlList.size()]);
     URLClassLoader cl = new URLClassLoader(urls, RunAnt.class.getClassLoader());
@@ -102,29 +95,74 @@ public class RunAnt {
     }
   }
 
-  static void addJPFToolJars (List<URL> list, File jpfCoreDir) {
-    boolean foundAnt = false;
-    char sc = File.separatorChar;
-    File libDir = new File(jpfCoreDir.getPath() + sc + "tools" + sc + "lib");
+  static void addJPFToolJars (List<URL> list, JPFSite site) {
 
-    if (libDir.isDirectory()){
-      for (File f : libDir.listFiles()) {
-        String name = f.getName();
-        if (name.endsWith(".jar")) {
-          try {
-            list.add(f.toURI().toURL());
-          } catch (MalformedURLException ex) {
-            abort("malformed URL: " + f.getAbsolutePath());
-          }
-          if (f.getName().equals("ant.jar")){
-            foundAnt = true;
-          }
-        }
+    File bootEntry = site.getBootEntry();
+    File toolsDir = findToolsDir(getParentFile(bootEntry));
+    if (toolsDir == null) { // look for tools in the site jpf-core
+    }
+
+    if (toolsDir != null && hasAntJar(toolsDir)) {
+      addToolsJars(list, toolsDir);
+      return;
+
+    } else {
+      toolsDir = findToolsDir(site.getJPFCore());
+      if (toolsDir != null && hasAntJar(toolsDir)) {
+        addToolsJars(list, toolsDir);
+        return;
       }
     }
 
-    if (!foundAnt){
-      abort("no ant.jar found in " + libDir.getAbsolutePath());
+    abort("no ant.jar found in known tools dirs");
+  }
+
+  static boolean hasAntJar (File toolsDir){
+    for (File f : toolsDir.listFiles()) {
+      if (f.getName().equals("ant.jar")) {
+        return true;
+      }
     }
+    return false;
+  }
+
+  static void addToolsJars (List<URL> list, File toolsDir){
+    for (File f : toolsDir.listFiles()) {
+      String name = f.getName();
+      if (name.endsWith(".jar")) {
+        try {
+          list.add(f.toURI().toURL());
+        } catch (MalformedURLException ex) {
+          abort("malformed URL: " + f.getAbsolutePath());
+        }
+      }
+    }
+  }
+
+  static protected File getParentFile(File f){
+    File parent = f.getParentFile();
+    if (parent == null){
+      parent = new File(System.getProperty("user.dir"));
+    }
+    return parent;
+  }
+
+  // look for a tools/lib or a tools dir up to two levels up from bootEntry
+  static protected File findToolsDir (File dir){
+
+    File toolsDir = new File(dir, "tools");
+    if (toolsDir.isDirectory()){
+      File libDir = new File(toolsDir, "lib");
+      return (libDir.isDirectory() ? libDir : toolsDir);
+    }
+
+    dir = getParentFile(dir);
+    toolsDir = new File(dir, "tools");
+    if (toolsDir.isDirectory()){
+      File libDir = new File(toolsDir, "lib");
+      return (libDir.isDirectory() ? libDir : toolsDir);
+    }
+
+    return null;
   }
 }

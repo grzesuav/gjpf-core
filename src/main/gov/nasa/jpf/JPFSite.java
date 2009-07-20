@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -76,8 +75,8 @@ public class JPFSite {
 
   private static JPFSite site;
 
-  File coreBootEntry;
-  File coreDir;
+  File bootEntry;
+  File jpfCore;
 
   List<File> extensionRoots = new ArrayList<File>();
 
@@ -98,10 +97,8 @@ public class JPFSite {
   }
 
   private JPFSite() {
-    coreBootEntry = findJPFCoreLib();
-    coreDir = findCoreDir();
-
-    processJPFComponentDir(coreDir.getAbsolutePath());
+    analyzeClasspath();
+//printSite();
   }
 
   public void addExtensionDir (String extension){
@@ -111,12 +108,12 @@ public class JPFSite {
 
   //--- the getters
 
-  public File getCoreBootEntry() {
-    return coreBootEntry;
+  public File getBootEntry() {
+    return bootEntry;
   }
 
-  public File getCoreDir() {
-    return coreDir;
+  public File getJPFCore () {
+    return jpfCore;
   }
 
   public File[] getNativeCpEntries() {
@@ -152,8 +149,9 @@ public class JPFSite {
   // for debugging purposes
   public void printSite() {
     System.out.println("JPFSite :");
-    System.out.println("  coreBootEntry: " + ((coreBootEntry != null) ? coreBootEntry.getAbsolutePath() : "null"));
-    System.out.println("  coreDir: " + ((coreDir != null) ? coreDir.getAbsolutePath() : "null"));
+    System.out.println("  coreBootEntry: " + ((bootEntry != null) ? bootEntry.getAbsolutePath() : "null"));
+
+    System.out.println("  jpfCore: " + ((jpfCore != null) ? jpfCore.getAbsolutePath() : "null"));
 
     System.out.println("  nativeCpEntries:");
     for (File f : nativeCpEntries){
@@ -175,39 +173,187 @@ public class JPFSite {
    * find the classpath component that loads JPF, which could be either
    *
    *  - the build/main dir that holds gov.nasa.jpf.JPF
-   *  - jpf.jar
-   *  - RunJPF.jar
+   *  - jpf.jar - which is self contained, i.e. it doesn't matter where it is
+   *  - Run*.jar - which can be either in the core dir or an extension dir
+   *
+   * based on the bootEntry, find the corresponding core dir (if any)
    */
-  protected File findJPFCoreLib() {
+  protected void analyzeClasspath() {
     String cp = System.getProperty("java.class.path");
     String[] cpEntries = cp.split(File.pathSeparator);
-
-    char sc = File.separatorChar;
-    String jpfClass = "gov" + sc + "nasa" + sc + "jpf" + sc + "JPF.class";
-
 
     for (String p : cpEntries) {
       File f = new File(p);
       String name = f.getName();
-      if (name.equals("jpf.jar")){
-        return f;
 
-      } else if (name.equals("RunJPF.jar")){
-        return f;
+      if (name.endsWith(".jar")){
+
+        if (name.equals("jpf.jar")){
+          // that's easy - core dir in this case is the dir holding jpf.jar
+          // we add all the jars we find in the same location, but we
+          // DO NOT use anything outside this dir - using jpf.jar means
+          // imperatively setting the core libs w/o external dependencies
+          bootEntry = f;
+          jpfCore = f;
+          addJars(getParentFile(f));
+
+
+        } else if (name.startsWith("Run")){
+          // RunJPF, RunTest, RunExample,.. - our minimal command jars that
+          // are distributed with extensions
+          bootEntry = f;
+
+          // this might be outside the core (in an extension) - we collect what
+          // is in the containing dir (might override jpf-core classes)
+          File jpfRoot = findJPFRootFromJar(f);
+          if (jpfRoot != null){
+            processJPFComponentDir(jpfRoot.getPath());
+
+            if (isJPFCoreDir(jpfRoot)){
+              jpfCore = jpfRoot;
+            }
+          }
+        }
         
-      } else if (name.equals("main")){
-        if (f.getParentFile().getName().equals("build")) {
-          // check if there is a gov/nasa/jpf/JPF class there
-          File jpfClassfile = new File(f.getPath() + sc + jpfClass);
-          if (jpfClassfile.exists()){
-            return f;
+      } else if (f.isDirectory()){
+                
+        if (name.equals("main") || name.equals("peers")) {
+          File parent = getParentFile(f);
+          if (parent.getName().equals("build")){
+            // .../build/main or .../build/peers dir, but we still have to check
+            // if it's the one from jpf-core
+
+            File jpfRoot = getParentFile(parent);
+            if (isJPFCoreDir(jpfRoot)) {
+              bootEntry = f;
+
+              processJPFComponentDir(jpfRoot.getPath());
+              jpfCore = jpfRoot;
+
+            } else {
+              // an extension, so we add this, but we still need the core
+              processJPFComponentDir(jpfRoot.getPath());
+            }
           }
         }
       }
     }
 
+    if (jpfCore == null){
+      File jpfRoot = getSitePropertyCoreLoc();
+      if (jpfRoot != null){
+        processJPFComponentDir(jpfRoot.getPath());
+        jpfCore = jpfRoot;
+      } else {
+        // we are in trouble
+      }
+    }
+  }
+
+
+  // find out if a given jar resides in a JPF component project
+  // return the root dir of this project or 'null' if this is not within
+  // a JPF core or extension
+  protected File findJPFRootFromJar (File cpEntry){
+    File parent = getParentFile(cpEntry); // could be the root or dist/lib/tools/bin
+
+    // first check if parent is already the root
+    if (isJPFComponentDir(parent)){
+      return parent;
+    }
+
+    // if not, look at our parent's parent, but no further
+    parent = getParentFile(parent);
+    if (isJPFComponentDir(parent)){
+      return parent;
+    }
+
     return null;
   }
+
+  // look for any of the build/main, build/classes, build/peers, which are
+  // the artifacts of JPF components (core or extension)
+  protected boolean isJPFComponentDir (File dir){
+
+    File buildDir = new File(dir,"build");
+    if (buildDir.isDirectory()){
+      File d = new File(buildDir, "main");
+      if (d.isDirectory()){
+        return true;
+      }
+
+      d = new File(buildDir, "classes");
+      if (d.isDirectory()){
+        return true;
+      }
+
+      d = new File(buildDir, "peers");
+      if (d.isDirectory()){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  static final char sc = File.separatorChar;
+  static final String jpfClass = "build" + sc + "main" + sc + "gov" + sc +
+            "nasa" + sc + "jpf" + sc + "JPF.class";
+
+  // we consider this the core dir if we find the JPF class itself in
+  // the build/main subdir
+  protected boolean isJPFCoreDir (File dir){
+    char sc = File.separatorChar;
+    File jpfCls = new File( dir, jpfClass);
+
+    return jpfCls.isFile();
+  }
+
+  /**
+   * locate the jpf-core in use, which could be either
+   *
+   * - the current dir
+   */
+  protected File findCoreDir() {
+    if (bootEntry != null) {
+      File parent = bootEntry.getParentFile();
+      if (parent == null){ // must be the current dir
+        parent = new File(System.getProperty("user.dir"));
+      }
+
+      if (bootEntry.isDirectory()) {
+        if (parent.getName().equals("build")) {
+          parent = parent.getParentFile();
+          return parent == null ? getCurrentDir() : parent;
+        } else {
+          return parent;
+        }
+
+      } else { // it was a jar
+        if (haveJPFjar(bootEntry)){
+          if (parent.getName().equals("dist")) {
+            parent = parent.getParentFile();
+            return parent == null ? getCurrentDir() : parent;
+          } else {
+            return parent;
+          }
+        }
+      }
+    }
+
+    // the fallback is to get this from ~/.jpf/site.properties
+    return getSitePropertyCoreLoc();
+  }
+
+
+  protected File getParentFile(File f){
+    File parent = f.getParentFile();
+    if (parent == null){
+      parent = new File(System.getProperty("user.dir"));
+    }
+    return parent;
+  }
+
 
   /**
    * not terribly nice - we have to guess our site property location
@@ -259,36 +405,6 @@ public class JPFSite {
     return false;
   }
 
-  protected File findCoreDir() {
-    if (coreBootEntry != null) {
-      File parent = coreBootEntry.getParentFile();
-      if (parent == null){
-        parent = new File(System.getProperty("user.dir"));
-      }
-
-      if (coreBootEntry.isDirectory()) {
-        if (parent.getName().equals("build")) {
-          parent = parent.getParentFile();
-          return parent == null ? getCurrentDir() : parent;
-        } else {
-          return parent;
-        }
-
-      } else { // it was a jar
-        if (haveJPFjar(coreBootEntry)){
-          if (parent.getName().equals("dist")) {
-            parent = parent.getParentFile();
-            return parent == null ? getCurrentDir() : parent;
-          } else {
-            return parent;
-          }
-        }
-      }
-    }
-    
-    // the fallback is to get this from ~/.jpf/site.properties
-    return getSitePropertyCoreLoc();
-  }
 
   File getCurrentDir() {
     return new File(System.getProperty("user.dir"));
@@ -299,27 +415,28 @@ public class JPFSite {
    * the provided extension dir.
    */
   protected void processJPFComponentDir(String dir) {
-    boolean haveClassDirs = false;
+    boolean haveClassfileDirs = false;
 
     // first, look if we have a source distrib with
-    //  - build/main, build/peers => 'classpath'
-    //  - build/classes, build/annotations => 'vm.classpath'
+    //  - build/main, build/peers => native classpath
+    //  - build/classes, build/annotations => classpath
     File buildDir = new File(dir, "build");
     if (buildDir.isDirectory()) {
-      haveClassDirs |= addDir(nativeCpEntries, new File(buildDir, "main"));
-      haveClassDirs |= addDir(nativeCpEntries, new File(buildDir, "peers"));
+      haveClassfileDirs |= addDir(nativeCpEntries, new File(buildDir, "main"));
+      haveClassfileDirs |= addDir(nativeCpEntries, new File(buildDir, "peers"));
 
-      haveClassDirs |= addDir(jpfCpEntries, new File(buildDir, "classes"));
-      haveClassDirs |= addDir(jpfCpEntries, new File(buildDir, "annotations"));
+      haveClassfileDirs |= addDir(jpfCpEntries, new File(buildDir, "classes"));
+      haveClassfileDirs |= addDir(jpfCpEntries, new File(buildDir, "annotations"));
     }
 
+    // if we have a src dir, add it to sourcpath
     File srcDir = new File(dir,"src");
     if (srcDir.isDirectory()){
       addDir(jpfSpEntries, new File(srcDir, "classes"));
     }
 
-    // if it's not a source distrib, collect jars from 'dist', or the dir itself
-    if (!haveClassDirs) {
+    // if it's not a source distrib, collect jars from 'dist' (if exists)
+    if (!haveClassfileDirs) {
       addJars(new File(dir, "dist"));
     }
 
@@ -331,6 +448,8 @@ public class JPFSite {
   }
 
 
+  // add all the jars in this dir to the nativeCp, except of *-classes.jar,
+  // which should be added to the jpfCp, and *-src.jar, which goes into jpfSp
   protected void addJars (File dir) {
 
     if (dir.isDirectory()) {
@@ -338,24 +457,17 @@ public class JPFSite {
         String name = f.getName();
         if (name.endsWith(".jar")) {
           if (name.endsWith("-classes.jar")) {
-            jpfCpEntries.add(f);
+            addIfAbsent(jpfCpEntries,f);
+
+          } else if (name.endsWith("-src.jar")) {
+            addIfAbsent(jpfSpEntries,f);
+
+          } else if (name.endsWith("-annotations.jar")){
+            // we assume these are also in ..-classes.jar
 
           } else {
-            if (!isJarCommand(name)) {
-
-              // if this is not the first entry, we already have the core in the CP
-              if (name.equals("jpf.jar") && !nativeCpEntries.isEmpty()){
-                return;
-              }
-
-              // don't add the same jar twice
-              for (File e : nativeCpEntries){
-                if (name.equals(e.getName())){
-                  return;
-                }
-              }
-
-              nativeCpEntries.add(f);
+            if (!isJarCommand(name)) { // don't add the RunX command jars
+              addIfAbsent(nativeCpEntries,f);
             }
           }
         }
@@ -365,10 +477,21 @@ public class JPFSite {
 
   protected boolean addDir(List<File> entries, File dir) {
     if (dir.isDirectory()) {
-      entries.add(dir);
+      addIfAbsent(entries,dir);
       return true;
     }
 
     return false;
+  }
+
+  protected void addIfAbsent (List<File> list, File element) {
+    String absPath = element.getAbsolutePath();
+    for (File f : list){
+      if (f.getAbsolutePath().equals(absPath)){
+        return;
+      }
+    }
+
+    list.add(element);
   }
 }

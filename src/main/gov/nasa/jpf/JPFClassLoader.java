@@ -98,6 +98,8 @@ public class JPFClassLoader extends URLClassLoader {
 
   // we need to call this later-on, so it needs to be public
   public void addURL (URL url) {
+    // we could check if it's already in there, but there is probably not
+    // much runtime incentive
     super.addURL(url);
   }
 

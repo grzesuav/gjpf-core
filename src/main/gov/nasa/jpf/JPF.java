@@ -35,6 +35,8 @@ import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -173,8 +175,31 @@ public class JPF implements Runnable {
     }
   }
 
+  static URL[] getURLs (String[] paths){
+    ArrayList<URL> urls = new ArrayList<URL>();
+
+    for (String p : paths) {
+      File f = new File(p);
+      if (f.exists()) {
+        try {
+          urls.add(f.toURI().toURL());
+        } catch (MalformedURLException x) {
+          throw new JPFConfigException("illegal native_classpath element: " + p);
+        }
+      }
+    }
+
+    return urls.toArray(new URL[urls.size()]);
+  }
+
   static void setConfigPaths(Config conf) {
     JPFSite site = JPFSite.getSite();
+
+    if (site.getJPFCore() == null){
+      // obviously we have a CP bootEntry or we wouldn't have found JPF.
+      // but what about the rest of jpfCore
+      throw new JPFConfigException("no JPF core found");
+    }
 
     //conf.printEntries();
 
@@ -185,31 +210,35 @@ public class JPF implements Runnable {
       }
     }
 
+    //site.printSite();
+
     ClassLoader cl = JPF.class.getClassLoader();
     if (cl instanceof JPFClassLoader){
-      JPFClassLoader jpfCl = (JPFClassLoader)cl;
+      // since this is a JPFClassLoader, we can add all the known locations
+      // to the current classpath
 
-      // check if there was an explicit 'native_classpath' setting
+      JPFClassLoader jpfCl = (JPFClassLoader)cl;
       String[] nativeCp = conf.getStringArray("native_classpath");
       if (nativeCp != null){
-        for (String cpe : nativeCp){
-          File f = new File(cpe);
-          if (f.exists()){
-            try {
-              jpfCl.addURL(f.toURI().toURL());
-            } catch (MalformedURLException x){
-              // can't happen, eisting file
-            }
-          }
+        for (URL url : getURLs(nativeCp)){
+          jpfCl.addURL(url);
         }
       }
-
 
       int i=0;
       for (URL url: site.getNativeCpURLs()){
         if (i++ > 0){ // the first one is already in there
           jpfCl.addURL(url);
         }
+      }
+
+    } else {
+      // if this is not a JPFClassLoader, we have to rely on a correctly set native
+      // CLASSPATH, but we can still use our own loader for peers and listeners
+
+      String[] nativeCp = conf.getStringArray("native_classpath");
+      if (nativeCp != null){
+        conf.setClassLoader(URLClassLoader.newInstance(getURLs(nativeCp)));
       }
     }
 

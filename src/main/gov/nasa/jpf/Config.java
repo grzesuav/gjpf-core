@@ -541,6 +541,13 @@ public class Config extends Properties {
   }
 
 
+  void setClassLoader (ClassLoader newLoader){
+    loader = newLoader;
+  }
+
+  public ClassLoader getClassLoader (){
+    return loader;
+  }
 
   //------------------------------ public methods - the Config API
 
