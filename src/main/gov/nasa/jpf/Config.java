@@ -166,6 +166,8 @@ public class Config extends Properties {
    * |                 :                       :
    * |  site           :   +site               : "${user.home}/.jpf/site.properties"
    * |                 :                       :
+   * |  project*       :      -                : <ext-dir>|<cur-dir>/jpf.properties
+   * |                 :                       :
    * |  app            :   +app                : -
    * |                 :                       :
    * v  cmdline        :   +<key>=<val>        : -
@@ -192,15 +194,15 @@ public class Config extends Properties {
       loadProperties( siteProperties);
     }
 
+    //--- get the project properties from the configured extensions / current dir
+    loadProjectProperties();
+
     //--- the application properties
     String appProperties = getPathArg(a, "app");
     if (appProperties == null){ // wasn't specified as a key=value arg
       appProperties = getAppArg(a); // but maybe it's the targetArg
     }
     if (appProperties != null){
-      // do this before we load the app properties because they might
-      // refer to ${config_path}
-      setConfigPathProperties(appProperties);
       loadProperties( appProperties);
     }
 
@@ -309,19 +311,60 @@ public class Config extends Properties {
   }
 
 
-  protected void loadProperties (String fileName) {
+  protected boolean loadProperties (String fileName) {
     if (fileName != null && fileName.length() > 0) {
       try {
-        // first, try to load from a file
+        // try to load from a file
         File f = new File(fileName);
-        if (f.exists()) {
+        if (f.isFile()) {
+          setConfigPathProperties(f.getAbsolutePath());
           sources.add(f);
           FileInputStream is = new FileInputStream(f);
           load(is);
           is.close();
+          return true;
         }
       } catch (IOException iex) {
         throw new JPFConfigException("error loading properties: " + fileName, iex);
+      }
+    }
+
+    return false;
+  }
+
+  protected void loadProjectProperties () {
+
+    HashSet<String> dirSet = new HashSet<String>();
+    String jpfProps = File.separator + "jpf.properties";
+
+    // from current dir
+    File parent = new File(System.getProperty("user.dir"));
+    while (parent != null){
+      String pn = parent.getAbsolutePath();
+      if (loadProperties( pn + jpfProps)){
+        dirSet.add(pn);
+        break;
+      }
+      parent = parent.getParentFile();
+    }
+
+    // jpf core
+    String coreDir = getString("jpf.core");
+    if ((coreDir != null) && !dirSet.contains(coreDir)){
+      if (loadProperties(coreDir + jpfProps)){
+        dirSet.add(coreDir);
+      }
+    }
+
+    // from site properties
+    String[] extensions = getCompactStringArray("extensions");
+    if (extensions != null){
+      for (String pn : extensions){
+        if (!dirSet.contains(pn)){
+          if (loadProperties(pn + jpfProps)){
+            dirSet.add(pn);
+          }
+        }
       }
     }
   }
@@ -475,7 +518,8 @@ public class Config extends Properties {
   }
 
   
-  // we override this so that we can handle expansion
+  // we override this so that we can handle expansion for both key and value
+  // (value expansion can be recursive, i.e. refer to itself)
   @Override
   public Object put (Object key, Object value){
 
@@ -485,7 +529,7 @@ public class Config extends Properties {
       throw new JPFConfigException("only String keys allowed, got: " + key);
     }
 
-    String k = (String) key;
+    String k = expandString( null, (String) key);
 
     if (!(value == null)){
       if (!(value instanceof String)) {
@@ -495,7 +539,8 @@ public class Config extends Properties {
       String v = (String) value;
 
       if (k.charAt(k.length() - 1) == '+') { // the append hack
-        return append(k.substring(0, k.length() - 1), v, null);
+        k = k.substring( 0, k.length() - 1);
+        return append( k, v, null);
 
       } else {
         v = normalize(expandString(k, v));
@@ -893,6 +938,39 @@ public class Config extends Properties {
     String v = getProperty(key);
     if (v != null && (v.length() > 0)) {
       return v.split(DELIMS);
+    }
+
+    return null;
+  }
+
+  public String[] getCompactStringArray(String key){
+    return removeEmptyStrings(getStringArray(key));
+  }
+
+  public static String[] removeEmptyStrings (String[] a){
+    if (a != null) {
+      int n = 0;
+      for (int i=0; i<a.length; i++){
+        if (a[i].length() > 0){
+          n++;
+        }
+      }
+
+      if (n < a.length){ // we have empty strings in the split
+        String[] r = new String[n];
+        for (int i=0, j=0; i<a.length; i++){
+          if (a[i].length() > 0){
+            r[j++] = a[i];
+            if (j == n){
+              break;
+            }
+          }
+        }
+        return r;
+
+      } else {
+        return a;
+      }
     }
 
     return null;
@@ -1441,7 +1519,7 @@ public class Config extends Properties {
   public File[] getPathArray (String key) {    
     String v = getProperty(key);
     if (v != null) {
-      String[] pe =  v.split(PATH_SEPARATORS);
+      String[] pe = removeEmptyStrings(v.split(PATH_SEPARATORS));
       
       if (pe != null && pe.length > 0) {
         File[] files = new File[pe.length];
@@ -1453,7 +1531,7 @@ public class Config extends Properties {
       }      
     }
 
-    return null;
+    return new File[0];
   }
 
   public File getPath (String key) {

@@ -29,6 +29,11 @@ public class ConfigTest extends TestJPF {
 
     val = conf.getTarget(); // from configTest.jpf
     assert "urgh.org.MySystemUnderTest".equals(val);
+
+    // that's testing key expansion and the builtin "config_path"
+    val = conf.getString("mySUT.location");
+    assert (val != null && val.endsWith("unit"));
+
   }
 
   @Test

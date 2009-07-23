@@ -224,35 +224,14 @@ public class Source {
   public static void init (Config config) {
     ArrayList<SourceRoot> roots = new ArrayList<SourceRoot>();
 
-    // first, add the explicitly set ones
-    String[] specs = config.getStringArray("sourcepath");
-    if (specs != null){
-      for (String spec : specs) {
-        addSourceRoot(config,roots,spec);
-      }
-    }
-
-    // now we look at the classpath to see if we find any obviously
-    // corresponding source roots for directory entries
-    specs = config.getStringArray("classpath");
-    if (specs != null) {
-      for (String spec : specs) {
-        String sr = findSrcRoot(spec);
-        if (sr != null) {
-          addSourceRoot(config, roots, spec);
-        }
-      }
-    }
-
-    // finally, process the classpath components that aren't in yet
-    // (note these are guesses based on a standard build / src dir structure)
-    JPFSite site = JPFSite.getSite();
-    for (File f : site.getJPFSpEntries()){
-      addSourceRoot(config,roots,f.getPath());
+    for (String e : config.getCompactStringArray("sourcepath")){
+      addSourceRoot(config, roots, e);
     }
 
     sourceRoots = roots;
     sources.clear();
+    
+    //printRoots();
   }
 
   // for debugging purposes

@@ -1122,33 +1122,22 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
   protected static void buildModelClassPath (Config config) {
     StringBuilder buf = new StringBuilder(256);
-    char sep = File.pathSeparatorChar;
+    char ps = File.pathSeparatorChar;
     String  v;
 
-    // this is where we get our essential model classes from (java.lang.Thread etc)
-    v = config.getString("boot_classpath");
-    buf.append(v);
-
-    // that's where the application specific environment should be loaded from
-    v = config.getString("classpath");
-    if (v != null) {
-      buf.append(sep);
-      buf.append(v);
+    for (File f : config.getPathArray("boot_classpath")){
+      buf.append(f.getAbsolutePath());
+      buf.append(ps);
     }
-    
-    // what classpath entries do we get from the site
-    JPFSite site = JPFSite.getSite();
-    for (File f : site.getJPFCpEntries()){
-      if (buf.length() >0) {
-        buf.append(sep);
-        buf.append(f.getPath());
-      }
+
+    for (File f : config.getPathArray("classpath")){
+      buf.append(f.getAbsolutePath());
+      buf.append(ps);
     }
 
     // finally, we load from the standard Java libraries
     v = System.getProperty("sun.boot.class.path");
     if (v != null) {
-      buf.append(sep);
       buf.append(v);
     }
 

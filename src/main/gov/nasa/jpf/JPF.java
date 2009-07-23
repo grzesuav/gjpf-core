@@ -39,6 +39,7 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 
 /**
@@ -203,46 +204,33 @@ public class JPF implements Runnable {
 
     //conf.printEntries();
 
-    String[] extensions = conf.getStringArray("extensions");
-    if (extensions != null){
-      for (String extDir : extensions){
-        site.addExtensionDir(extDir);
-      }
-    }
-
-    //site.printSite();
-
     ClassLoader cl = JPF.class.getClassLoader();
     if (cl instanceof JPFClassLoader){
       // since this is a JPFClassLoader, we can add all the known locations
       // to the current classpath
 
       JPFClassLoader jpfCl = (JPFClassLoader)cl;
-      String[] nativeCp = conf.getStringArray("native_classpath");
+      String[] nativeCp = conf.getCompactStringArray("native_classpath");
       if (nativeCp != null){
         for (URL url : getURLs(nativeCp)){
           jpfCl.addURL(url);
         }
       }
 
-      int i=0;
-      for (URL url: site.getNativeCpURLs()){
-        if (i++ > 0){ // the first one is already in there
-          jpfCl.addURL(url);
-        }
-      }
+      //jpfCl.printEntries();
 
     } else {
       // if this is not a JPFClassLoader, we have to rely on a correctly set native
       // CLASSPATH, but we can still use our own loader for peers and listeners
 
-      String[] nativeCp = conf.getStringArray("native_classpath");
+      String[] nativeCp = conf.getCompactStringArray("native_classpath");
       if (nativeCp != null){
         conf.setClassLoader(URLClassLoader.newInstance(getURLs(nativeCp)));
       }
     }
-
   }
+
+
 
   /**
    * create new JPF object. Note this is always guaranteed to return, but the
@@ -292,6 +280,7 @@ public class JPF implements Runnable {
       
     } catch (JPFConfigException cx) {
       logger.severe(cx.toString());
+      //cx.getCause().printStackTrace();
       throw new ExitException(false);
     }
   }  
