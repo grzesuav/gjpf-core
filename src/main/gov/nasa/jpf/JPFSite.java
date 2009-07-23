@@ -195,7 +195,7 @@ public class JPFSite {
           // imperatively setting the core libs w/o external dependencies
           bootEntry = f;
           jpfCore = f;
-//          addJars(getParentFile(f));
+          addJars(getParentFile(f));
 
 
         } else if (name.startsWith("Run")){
@@ -207,7 +207,7 @@ public class JPFSite {
           // is in the containing dir (might override jpf-core classes)
           File jpfRoot = findJPFRootFromJar(f);
           if (jpfRoot != null){
-//            processJPFComponentDir(jpfRoot.getPath());
+            processJPFComponentDir(jpfRoot.getPath());
 
             if (isJPFCoreDir(jpfRoot)){
               jpfCore = jpfRoot;
@@ -227,12 +227,12 @@ public class JPFSite {
             if (isJPFCoreDir(jpfRoot)) {
               bootEntry = f;
 
-//              processJPFComponentDir(jpfRoot.getPath());
+              processJPFComponentDir(jpfRoot.getPath());
               jpfCore = jpfRoot;
 
             } else {
               // an extension, so we add this, but we still need the core
-//              processJPFComponentDir(jpfRoot.getPath());
+              processJPFComponentDir(jpfRoot.getPath());
             }
           }
         }

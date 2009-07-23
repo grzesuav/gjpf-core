@@ -28,6 +28,10 @@ import gov.nasa.jpf.util.Printable;
  * properties have been violated (e.g. NoUncaughtExceptions)
  */
 public interface Property extends Printable {
+
+  /**
+   * return true if property is NOT violated
+   */
   boolean check (Search search, JVM vm);
 
   String getErrorMessage ();

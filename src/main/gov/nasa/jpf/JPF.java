@@ -137,7 +137,7 @@ public class JPF implements Runnable {
       // check if there is a shell class specification, in which case we just
       // delegate
       try {
-        Class<?> shellCls = conf.getClass("jpf.shell.class");
+        Class<?> shellCls = conf.getClass("shell");
         if (shellCls != null) {
           Method m = shellCls.getMethod("main", String[].class);
           if (m != null) {
@@ -373,7 +373,7 @@ public class JPF implements Runnable {
     Class<?>[] argTypes = { Config.class, JPF.class };
     Object[] args = { config, this };
 
-    reporter = config.getInstance("jpf.report.class", Reporter.class, argTypes, args);
+    reporter = config.getInstance("report.class", Reporter.class, argTypes, args);
     if (reporter != null){
       addListener(reporter);
     }

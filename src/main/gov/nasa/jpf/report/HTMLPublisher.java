@@ -138,7 +138,7 @@ public class HTMLPublisher extends Publisher {
   private String getPathName() {
     String pathName;
 
-    pathName = conf.getString("jpf.report.html.path");
+    pathName = conf.getString("report.html.path");
 
     if (pathName == null) {
       pathName = ".";

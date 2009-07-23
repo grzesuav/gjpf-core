@@ -87,7 +87,7 @@ public class Reporter extends ListenerAdapter {
     }
 
     if (reportStats){
-      stat = conf.getInstance("jpf.report.statistics.class", Statistics.class);
+      stat = conf.getInstance("report.statistics.class", Statistics.class);
       if (stat == null){
         stat = new Statistics();
       }
@@ -103,8 +103,8 @@ public class Reporter extends ListenerAdapter {
     Class<?>[] argTypes = { Config.class, Reporter.class };
     Object[] args = { conf, this };
 
-    for (String id : conf.getStringArray("jpf.report.publisher", def)){
-      Publisher p = conf.getInstance("jpf.report." + id + ".class",
+    for (String id : conf.getStringArray("report.publisher", def)){
+      Publisher p = conf.getInstance("report." + id + ".class",
                                      Publisher.class, argTypes, args);
       if (p != null){
         list.add(p);
@@ -305,7 +305,7 @@ public class Reporter extends ListenerAdapter {
   public String getJPFBanner () {
     String s = "JavaPathfinder v" + JPF.VERSION + " - (C) 1999-2007 RIACS/NASA Ames Research Center";
     
-    if (conf.getBoolean("jpf.report.show_repository", false)) {
+    if (conf.getBoolean("report.show_repository", false)) {
       String repInfo =  getRepositoryInfo();
       if (repInfo != null) {
         s += repInfo;

@@ -2,8 +2,8 @@
 
 target=oldclassic
 
-jpf.report.console.property_violation=error,trace,snapshot
-jpf.report.console.finished=result,statistics
+report.console.property_violation=error,trace,snapshot
+report.console.finished=result,statistics
 
 listener=.listener.DeadlockAnalyzer
 

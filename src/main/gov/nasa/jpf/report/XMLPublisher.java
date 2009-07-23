@@ -34,7 +34,7 @@ public class XMLPublisher extends Publisher {
   
   protected void openChannel(){
     if (out == null) {
-      String fname = getReportFileName("jpf.report.xml.file") + ".xml";
+      String fname = getReportFileName("report.xml.file") + ".xml";
       try {
         out = new PrintWriter(fname);
       } catch (FileNotFoundException fnfx) {

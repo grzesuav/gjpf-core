@@ -91,7 +91,7 @@ public abstract class Publisher {
   }
   
   protected void setTopics (String name) {
-    String prefix = "jpf.report." + name;
+    String prefix = "report." + name;
     startTopics = conf.getStringArray(prefix + ".start", startTopics);
     transitionTopics = conf.getStringArray(prefix + ".transition", transitionTopics);
     propertyViolationTopics = conf.getStringArray(prefix + ".property_violation", propertyViolationTopics);
@@ -165,7 +165,7 @@ public abstract class Publisher {
   public String getReportFileName (String key) {
     String fname = conf.getString(key);
     if (fname == null){
-      fname = conf.getString("jpf.report.file");
+      fname = conf.getString("report.file");
       if (fname == null) {
         fname = "report";
       }

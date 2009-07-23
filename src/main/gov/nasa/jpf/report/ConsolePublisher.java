@@ -61,16 +61,16 @@ public class ConsolePublisher extends Publisher {
     super(conf, reporter);
 
     // options controlling the output destination
-    fileName = conf.getString("jpf.report.console.file");
-    port = conf.getString("jpf.report.console.port");
+    fileName = conf.getString("report.console.file");
+    port = conf.getString("report.console.port");
 
     // options controlling what info should be included in a trace
-    showCG = conf.getBoolean("jpf.report.console.show_cg", true);
-    showSteps = conf.getBoolean("jpf.report.console.show_steps", true);
-    showLocation = conf.getBoolean("jpf.report.console.show_location", true);
-    showSource = conf.getBoolean("jpf.report.console.show_source", true);
-    showMethod = conf.getBoolean("jpf.report.console.show_method", false);
-    showCode = conf.getBoolean("jpf.report.console.show_code", false);
+    showCG = conf.getBoolean("report.console.show_cg", true);
+    showSteps = conf.getBoolean("report.console.show_steps", true);
+    showLocation = conf.getBoolean("report.console.show_location", true);
+    showSource = conf.getBoolean("report.console.show_source", true);
+    showMethod = conf.getBoolean("report.console.show_method", false);
+    showCode = conf.getBoolean("report.console.show_code", false);
   }
 
   public String getName() {
