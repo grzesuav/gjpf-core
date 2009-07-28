@@ -41,7 +41,7 @@ public class RunAnt {
     ArrayList<URL> urlList = new ArrayList<URL>();
 
     addJavac(urlList);
-    addJPFToolJars(urlList,JPFSite.getSite());  // <2do> - Hmm, what if we boot with jpf.jar?
+    addJPFToolJars(urlList);  // <2do> - Hmm, what if we boot with jpf.jar?
 
     URL[] urls = urlList.toArray(new URL[urlList.size()]);
     URLClassLoader cl = new URLClassLoader(urls, RunAnt.class.getClassLoader());
@@ -95,35 +95,45 @@ public class RunAnt {
     }
   }
 
-  static void addJPFToolJars (List<URL> list, JPFSite site) {
+  static void addJPFToolJars (List<URL> list) {
+    File toolsDir = null;
 
-    File bootEntry = site.getBootEntry();
-    File toolsDir = findToolsDir(getParentFile(bootEntry));
-    if (toolsDir == null) { // look for tools in the site jpf-core
+    // find the current project root dir
+    File dir = new File(System.getProperty("user.dir"));
+    while (dir != null && !(new File(dir,"jpf.properties").isFile())){
+      dir = dir.getParentFile();
     }
 
-    if (toolsDir != null && hasAntJar(toolsDir)) {
-      addToolsJars(list, toolsDir);
-      return;
-
-    } else {
-      toolsDir = findToolsDir(site.getJPFCore());
-      if (toolsDir != null && hasAntJar(toolsDir)) {
-        addToolsJars(list, toolsDir);
-        return;
+    // check if the current project has an ant.jar
+    for (File d : new File[] {dir, new File(dir, "lib")} ){
+      if (hasAntJar(d)){
+        toolsDir = d;
+        break;
       }
     }
 
-    abort("no ant.jar found in known tools dirs");
+    // if we didn't find any, look for the tools in the site configured jpf-core
+    if (toolsDir == null){
+      JPFSite site = JPFSite.getSite();
+      dir = site.getSiteCoreDir();
+
+      for (File d : new File[]{dir, new File(dir, "lib")}) {
+        if (hasAntJar(d)) {
+          toolsDir = d;
+          break;
+        }
+      }
+    }
+
+    if (toolsDir != null){
+      addToolsJars(list, toolsDir);
+    } else {
+      abort("no ant.jar found in known tools dirs");
+    }
   }
 
   static boolean hasAntJar (File toolsDir){
-    for (File f : toolsDir.listFiles()) {
-      if (f.getName().equals("ant.jar")) {
-        return true;
-      }
-    }
-    return false;
+    return (new File(toolsDir, "ant.jar").isFile());
   }
 
   static void addToolsJars (List<URL> list, File toolsDir){
@@ -139,30 +149,4 @@ public class RunAnt {
     }
   }
 
-  static protected File getParentFile(File f){
-    File parent = f.getParentFile();
-    if (parent == null){
-      parent = new File(System.getProperty("user.dir"));
-    }
-    return parent;
-  }
-
-  // look for a tools/lib or a tools dir up to two levels up from bootEntry
-  static protected File findToolsDir (File dir){
-
-    File toolsDir = new File(dir, "tools");
-    if (toolsDir.isDirectory()){
-      File libDir = new File(toolsDir, "lib");
-      return (libDir.isDirectory() ? libDir : toolsDir);
-    }
-
-    dir = getParentFile(dir);
-    toolsDir = new File(dir, "tools");
-    if (toolsDir.isDirectory()){
-      File libDir = new File(toolsDir, "lib");
-      return (libDir.isDirectory() ? libDir : toolsDir);
-    }
-
-    return null;
-  }
 }

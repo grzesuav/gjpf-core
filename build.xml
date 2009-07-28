@@ -35,7 +35,8 @@
     <pathelement location="build/main"/>
     <pathelement location="build/peers"/>
     <fileset dir=".">
-  	  <include name="lib/*.jar"/>
+  	  <include name="lib/bcel.jar"/>
+      <include name="lib/junit-4.6.jar"/>
     </fileset>
   </path>
 
@@ -72,7 +73,7 @@
   <!-- ======================= COMPILE SECTION ============================= -->
     
   <!-- public compile -->
-  <target name="compile" depends="-init,-compile-annotations,-compile-main,-compile-peers,-compile-classes,-compile-tests,-compile-examples,-gen-buildinfo"
+  <target name="compile" depends="-init,-gen-buildinfo,-compile-annotations,-compile-main,-compile-peers,-compile-classes,-compile-tests,-compile-examples"
           description="compile all JPF core sources" >
   </target>
 
@@ -85,14 +86,8 @@
   <target name="-compile-main" if="have_main">
     <mkdir dir="build/main"/>
     <javac srcdir="src/main" destdir="build/main"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}">
-      <classpath>
-        <path refid="lib.path"/>
-        <fileset dir=".">
-          <include name="tools/lib/*.jar"/>
-        </fileset>
-      </classpath>
-    </javac>
+           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
+           classpathref="lib.path"/>
 	  <copy file="default.properties" todir="build/main/gov/nasa/jpf"/>
 	  <copy file="build.properties" todir="build/main/gov/nasa/jpf" failonerror="false"/>
   </target>
@@ -122,9 +117,6 @@
            includes="*,gov/nasa/jpf/test/**">
       <classpath>
         <path refid="lib.path"/>
-        <fileset dir=".">
-          <include name="tools/lib/*.jar"/>
-        </fileset>
         <pathelement location="build/annotations"/>
       </classpath>       
     </javac>
@@ -158,10 +150,8 @@
     </jar>
 
     <jar jarfile="dist/jpf-classes.jar">
-      <fileset dir=".">
-        <include name="build/classes"/>
-        <include name="build/annotations"/>
-      </fileset>
+      <fileset dir="build/classes"/>
+      <fileset dir="build/annotations"/>
     </jar>
 
     <!-- optional jar that contains annotations to be used in non-JPF dependent apps -->
@@ -174,6 +164,7 @@
         <include name="gov/nasa/jpf/Main.class"/>
         <include name="gov/nasa/jpf/JPFSite.class"/>
         <include name="gov/nasa/jpf/JPFClassLoader.class"/>
+        <include name="gov/nasa/jpf/JPFClassLoaderException.class"/>
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
@@ -204,9 +195,17 @@
 
   <!-- binary distribution -->
   <target name="dist" depends="jar"
-        description="pack together all required binaries" >
-    <mkdir dir="dist/arch"/>
-    <zip destfile="dist/arch/jpf-core.zip" basedir="dist" includes="*.jar,../NOSA-1.3-JPF"/>
+        description="collect all required files of a binary distrib" >
+
+    <copy file="jpf-rt.properties" toFile="dist/jpf.properties"/>
+    <copy file="NOSA-1.3-JPF" toDir="dist"/>
+    <copy file="README" toDir="dist"/>
+
+    <copy todir="dist">
+      <fileset dir="lib">
+        <include name="*.jar"/>
+      </fileset>
+    </copy>
   </target>
 
 
@@ -221,7 +220,8 @@
       <fileset dir="." includes="**/error.xml" />
     </delete>
   </target>
-  
+
+
   <!-- gen version properties file (Mercurial) -->
   <target name="-gen-buildinfo" description="create build info property file">
     <exec executable="hg" outputproperty="hg.tip.id" failifexecutionfails="false">
@@ -278,7 +278,7 @@ upstream=${hg.paths.default}
         <pathelement location="build/annotations"/>
 
         <fileset dir=".">
-  	      <include name="tools/lib/junit*.jar"/>
+  	      <include name="lib/junit*.jar"/>
         </fileset>
       </classpath>
 

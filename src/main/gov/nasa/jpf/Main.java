@@ -30,9 +30,8 @@ public class Main {
 
   public static void main (String[] args) {
 
-    JPFClassLoader cl = new JPFClassLoader();
-
     try {
+      JPFClassLoader cl = new JPFClassLoader();
       Class<?> jpfCls = cl.loadClass("gov.nasa.jpf.JPF");
 
       Class<?>[] argTypes = { String[].class };
@@ -56,6 +55,8 @@ public class Main {
     } catch (InvocationTargetException ix) {
       // should already be reported by JPF
       //ix.getCause().printStackTrace();
+    } catch (JPFClassLoaderException ex){
+      System.err.println(ex);
     }
   }
 }

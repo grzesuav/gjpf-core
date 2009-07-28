@@ -111,62 +111,48 @@ public class JPF implements Runnable {
   }
 
   public static void main(String[] args) {
-    String[] origArgs = (String[]) args.clone();
+
+    if (isHelpRequest(args)) {
+      showUsage();
+      return;
+    }
 
     try {
       Config conf = createConfig(args);
+
+      // this is redundant to jpf.report.<publisher>.start=..config..
+      // but nobody can remember this (it's only used to produce complete reports)
+      if (isPrintConfigRequest(args)) {
+        conf.print(new PrintWriter(System.out));
+      }
 
       if (logger == null) {
         logger = initLogging(conf);
       }
 
-      if (isHelpRequest(args)) {
-        showUsage();
-        return;
-      }
-
-      // this is redundant to jpf.report.<publisher>.start=..config..
-      // but nobody can remember this (it's only used to produce complete
-      // reports)
-      if (isPrintConfigRequest(args)) {
-        conf.print(new PrintWriter(System.out));
-      }
-
       setConfigPaths(conf);
 
-      // check if there is a shell class specification, in which case we just
-      // delegate
-      try {
-        Class<?> shellCls = conf.getClass("shell");
-        if (shellCls != null) {
-          Method m = shellCls.getMethod("main", String[].class);
-          if (m != null) {
-            m.invoke(null, (Object) origArgs);
-            return;
-          } else {
-            logger.severe("shell class has no main() method: " + shellCls.getName());
+      // check if there is a shell class specification, in which case we just delegate
+      JPFShell shell = conf.getInstance("shell", JPFShell.class);
+      if (shell != null){
+        shell.start(args); // responsible for exception handling itself
+
+      } else {
+        // no shell, we start JPF directly
+        LogManager.printStatus(logger);
+        conf.printStatus(logger);
+
+        // this has to be done after we checked&consumed all "-.." arguments
+        // this is NOT about checking properties!
+        checkUnknownArgs(args);
+
+        try {
+          JPF jpf = new JPF(conf);
+          jpf.run();
+        } catch (ExitException x) {
+          if (x.shouldReport()) {
+            x.printStackTrace();
           }
-        }
-      } catch (Throwable t) {
-        logger.severe("exception during shell initialization: " + t);
-        t.printStackTrace();
-        return;
-      }
-
-      // no shell, we start JPF directly
-      LogManager.printStatus(logger);
-      conf.printStatus(logger);
-
-      // this has to be done after we checked&consumed all "-.." arguments
-      // this is NOT about checking properties!
-      checkUnknownArgs(args);
-
-      try {
-        JPF jpf = new JPF(conf);
-        jpf.run();
-      } catch (ExitException x) {
-        if (x.shouldReport()) {
-          x.printStackTrace();
         }
       }
 
@@ -194,13 +180,6 @@ public class JPF implements Runnable {
   }
 
   static void setConfigPaths(Config conf) {
-    JPFSite site = JPFSite.getSite();
-
-    if (site.getJPFCore() == null){
-      // obviously we have a CP bootEntry or we wouldn't have found JPF.
-      // but what about the rest of jpfCore
-      throw new JPFConfigException("no JPF core found");
-    }
 
     //conf.printEntries();
 
@@ -379,7 +358,7 @@ public class JPF implements Runnable {
     }
 
     // now everything that's user configured
-    ObjArray<JPFListener> listeners =
+    List<JPFListener> listeners =
       config.getInstances("listener", JPFListener.class, argTypes, args);
 
     if (listeners != null) {

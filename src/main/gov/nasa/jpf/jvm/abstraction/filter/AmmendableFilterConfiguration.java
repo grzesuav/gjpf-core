@@ -24,6 +24,7 @@ import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.util.ObjArray;
 import gov.nasa.jpf.util.ObjVector;
+import java.util.ArrayList;
 
 public class AmmendableFilterConfiguration implements FilterConfiguration {
   public interface Ammendment {
@@ -79,25 +80,25 @@ public class AmmendableFilterConfiguration implements FilterConfiguration {
   }
 
   protected void appendConfiguredFrameAmmendments(Config config) {
-    ObjArray<FrameAmmendment> fas =
+    ArrayList<FrameAmmendment> fas =
       config.getInstances("filter.frame_ammendments", FrameAmmendment.class);
     if (fas != null) frameAmmendments.append(fas);
   }
   
   protected void appendConfiguredInstanceAmmendments(Config config) {
-    ObjArray<InstanceAmmendment> ias =
+    ArrayList<InstanceAmmendment> ias =
       config.getInstances("filter.instance_ammendments", InstanceAmmendment.class);
     if (ias != null) instanceAmmendments.append(ias);
   }  
   
   protected void appendConfiguredStaticAmmendments(Config config) {
-    ObjArray<StaticAmmendment> sas =
+    ArrayList<StaticAmmendment> sas =
       config.getInstances("filter.static_ammendments", StaticAmmendment.class);
     if (sas != null) staticAmmendments.append(sas);
   }
   
   protected void appendConfiguredInstanceOverrides(Config config) {
-    ObjArray<InstanceOverride> ios =
+    ArrayList<InstanceOverride> ios =
       config.getInstances("filter.instance_overrides", InstanceOverride.class);
     if (ios != null) instanceOverrides.append(ios);
   }

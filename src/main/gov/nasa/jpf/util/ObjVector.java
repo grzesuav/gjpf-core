@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.ArrayList;
 
 /**
  * more customizable alternative to java.util.Vector.  also, set(x,v) automatically
@@ -122,7 +123,19 @@ public final class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
   public <F extends E> void append(ObjArray<F> x) {
     append((F[])(x.data));
   }
-  
+
+  public <F extends E> void append(ArrayList<F> x){
+    int n = x.size();
+    int newSize = size + n;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
+    }
+    for (int i = size, j=0; i < newSize; i++,j++) {
+      data[i] = x.get(j);
+    }
+    size = newSize;
+  }
+
   public <F extends E> void addAll(Iterable<F> x) {
     if (x instanceof ObjVector) {
       append((ObjVector<F>) x);

@@ -16,7 +16,6 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-
 package gov.nasa.jpf.listener;
 
 import java.io.*;
@@ -48,935 +47,925 @@ import gov.nasa.jpf.search.*;
  *  - what CGs do we have
  *  - what creates those CGs (thread,insn,source) = last step insn
  */
+public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExtension {
+  // Search termination conditions
 
-public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExtension
-{
-   // Search termination conditions
-   private final long m_maxTime;
-   private final long m_maxMemory;
-   private final int  m_maxStates;
-   private final int  m_maxChoices;
+  private final long m_maxTime;
+  private final long m_maxMemory;
+  private final int m_maxStates;
+  private final int m_maxChoices;
+  private final ArrayList<ChoiceGenerator> m_generators = new ArrayList<ChoiceGenerator>(); // Keep ChoiceGenerators so we don't lose any in backtracking
+  private final ArrayList<CGGrouper> m_groupers = new ArrayList<CGGrouper>();
+  private final int m_maxOutputLines; // how many detail lines do we display in the report
+  private long m_terminateTime;
+  private int m_choiceCount;
 
-   private final ArrayList<ChoiceGenerator> m_generators = new ArrayList<ChoiceGenerator>(); // Keep ChoiceGenerators so we don't lose any in backtracking
+  public StateSpaceAnalyzer(Config config, JPF jpf) {
+    m_maxStates = config.getInt("ssa.max_states", -1);
+    m_maxTime = config.getDuration("ssa.max_time", -1);
+    m_maxMemory = config.getMemorySize("ssa.max_memory", -1);
+    m_maxChoices = config.getInt("ssa.max_choices", -1);
+    m_maxOutputLines = config.getInt("ssa.max_output_lines", 10);
 
-   private final ArrayList<CGGrouper> m_groupers = new ArrayList<CGGrouper>();
-   private final int m_maxOutputLines; // how many detail lines do we display in the report
+    initGroupers(config);
 
-   private long m_terminateTime;
-   private int  m_choiceCount;
+    jpf.addPublisherExtension(ConsolePublisher.class, this);
+    jpf.addPublisherExtension(HTMLPublisher.class, this);
+  }
 
-   public StateSpaceAnalyzer(Config config, JPF jpf)
-   {
-      m_maxStates      = config.getInt("ssa.max_states", -1);
-      m_maxTime        = config.getDuration("ssa.max_time", -1);
-      m_maxMemory      = config.getMemorySize("ssa.max_memory", -1);
-      m_maxChoices     = config.getInt("ssa.max_choices", -1);
-      m_maxOutputLines = config.getInt("ssa.max_output_lines", 10);
+  private void initGroupers(Config config) {
+    HashMap<String, CGAccessor> accessors;
+    CGGrouper grouper;
+    int i;
 
-      initGroupers(config);
+    if (config.getStringArray("ssa.sort_order", null) == null) {
+      config.setProperty("ssa.sort_order", "type");
+      config.setProperty("ssa.sort_order2", "package,class,method,instruction,type");
+    }
 
-      jpf.addPublisherExtension(ConsolePublisher.class, this);
-      jpf.addPublisherExtension(HTMLPublisher.class, this);
-   }
+    accessors = new HashMap<String, CGAccessor>(5);
+    accessors.put("package", new CGPackageAccessor());
+    accessors.put("class", new CGClassAccessor());
+    accessors.put("method", new CGMethodAccessor());
+    accessors.put("instruction", new CGInstructionAccessor());
+    accessors.put("type", new CGTypeAccessor());
 
-   private void initGroupers(Config config)
-   {
-      HashMap<String, CGAccessor> accessors;
-      CGGrouper grouper;
-      int i;
+    m_groupers.add(initGrouper(config, "ssa.sort_order", accessors));
 
-      if (config.getStringArray("ssa.sort_order", null) == null)
-      {
-         config.setProperty("ssa.sort_order", "type");
-         config.setProperty("ssa.sort_order2", "package,class,method,instruction,type");
+    for (i = 2; true; i++) {
+      grouper = initGrouper(config, "ssa.sort_order" + i, accessors);
+      if (grouper == null) {
+        break;
       }
 
-      accessors = new HashMap<String, CGAccessor>(5);
-      accessors.put("package",     new CGPackageAccessor());
-      accessors.put("class",       new CGClassAccessor());
-      accessors.put("method",      new CGMethodAccessor());
-      accessors.put("instruction", new CGInstructionAccessor());
-      accessors.put("type",        new CGTypeAccessor());
+      m_groupers.add(grouper);
+    }
+  }
 
-      m_groupers.add(initGrouper(config, "ssa.sort_order", accessors));
+  private CGGrouper initGrouper(Config config, String parameter, Map<String, CGAccessor> accessors) {
+    CGGrouper grouper;
+    CGAccessor list[];
+    StringBuilder name;
+    String key, sortOrder[];
+    int i;
 
-      for (i = 2; true; i++)
-      {
-         grouper = initGrouper(config, "ssa.sort_order" + i, accessors);
-         if (grouper == null)
-            break;
+    sortOrder = config.getStringArray(parameter, null);
+    if ((sortOrder == null) || (sortOrder.length <= 0)) {
+      return (null);
+    }
 
-         m_groupers.add(grouper);
+    name = new StringBuilder();
+    list = new CGAccessor[sortOrder.length];
+
+    for (i = 0; i < sortOrder.length; i++) {
+      key = sortOrder[i].toLowerCase();
+      name.append(key);
+      name.append(", ");
+
+      list[i] = accessors.get(key);
+
+      if (list[i] == null) {
+        config.exception("Unknown sort key: " + sortOrder[i] + ".  Found in parameter: " + parameter);
       }
-   }
+    }
 
-   private CGGrouper initGrouper(Config config, String parameter, Map<String, CGAccessor> accessors)
-   {
-      CGGrouper grouper;
-      CGAccessor list[];
-      StringBuilder name;
-      String key, sortOrder[];
-      int i;
+    name.setLength(name.length() - 2);
+    grouper = new CGGrouper(list, name.toString());
 
-      sortOrder = config.getStringArray(parameter, null);
-      if ((sortOrder == null) || (sortOrder.length <= 0))
-         return(null);
+    return (grouper);
+  }
 
-      name = new StringBuilder();
-      list = new CGAccessor[sortOrder.length];
+  public void choiceGeneratorSet(JVM vm) {
+    ChoiceGenerator generator;
 
-      for (i = 0; i < sortOrder.length; i++)
-      {
-         key = sortOrder[i].toLowerCase();
-         name.append(key);
-         name.append(", ");
+    // NOTE: we get this from SystemState.nextSuccessor, i.e. when the CG
+    // is actually used (which doesn't necessarily mean it produces a new state,
+    // but it got created from a new state)
 
-         list[i] = accessors.get(key);
+    generator = vm.getLastChoiceGenerator();
+    m_choiceCount += generator.getTotalNumberOfChoices();
+    m_generators.add(generator);
+  }
 
-         if (list[i] == null)
-            config.exception("Unknown sort key: " + sortOrder[i] + ".  Found in parameter: " + parameter);
+  public void searchStarted(Search search) {
+    m_choiceCount = 0;
+    m_generators.clear();
+    m_terminateTime = m_maxTime + System.currentTimeMillis();
+  }
+
+  public void stateAdvanced(Search search) {
+    if (shouldTerminate(search)) {
+      search.terminate();
+    }
+  }
+
+  private boolean shouldTerminate(Search search) {
+    if ((m_maxStates >= 0) && (search.getVM().getStateCount() >= m_maxStates)) {
+      return (true);
+    }
+
+    if ((m_maxTime >= 0) && (System.currentTimeMillis() >= m_terminateTime)) {
+      return (true);
+    }
+
+    if ((m_maxMemory >= 0) && (Runtime.getRuntime().totalMemory() >= m_maxMemory)) {
+      return (true);
+    }
+
+    if ((m_maxChoices >= 0) && (m_choiceCount >= m_maxChoices)) {
+      return (true);
+    }
+
+    return (false);
+  }
+
+  public void publishFinished(Publisher publisher) {
+    ChoiceGenerator generators[];
+    CGGrouper groupers[];
+
+    generators = new ChoiceGenerator[m_generators.size()];
+    m_generators.toArray(generators);
+
+    groupers = new CGGrouper[m_groupers.size()];
+    m_groupers.toArray(groupers);
+
+    if (publisher instanceof ConsolePublisher) {
+      new PublishConsole((ConsolePublisher) publisher, generators, groupers, m_maxOutputLines).publish();
+    } else if (publisher instanceof HTMLPublisher) {
+      new PublishHtml((HTMLPublisher) publisher, generators, groupers, m_maxOutputLines).publish();
+    }
+  }
+
+  private enum CGType {
+
+    FieldAccess,
+    ObjectWait,
+    ObjectNotify,
+    SyncEnter,
+    SyncExit,
+    ThreadStart,
+    ThreadTerminate,
+    ThreadSuspend,
+    ThreadResume,
+    SyncCall,
+    SyncReturn,
+    AtomicOp,
+    DataChoice
+  }
+
+  private interface CGAccessor {
+
+    public Object getValue(ChoiceGenerator generator);
+  }
+
+  private static class CGPackageAccessor implements CGAccessor {
+
+    public Object getValue(ChoiceGenerator generator) {
+      ClassInfo ci;
+      MethodInfo mi;
+      Instruction instruction;
+
+      instruction = generator.getInsn();
+      if (instruction == null) {
+        return (null);
       }
 
-      name.setLength(name.length() - 2);
-      grouper = new CGGrouper(list, name.toString());
+      mi = instruction.getMethodInfo();
+      if (mi == null) {
+        return (null);
+      }
 
-      return(grouper);
-   }
+      ci = mi.getClassInfo();
+      if (ci == null) {
+        return (null);
+      }
 
-   public void choiceGeneratorSet(JVM vm)
-   {
-      ChoiceGenerator generator;
+      return (ci.getPackageName());
+    }
+  }
 
-      // NOTE: we get this from SystemState.nextSuccessor, i.e. when the CG
-      // is actually used (which doesn't necessarily mean it produces a new state,
-      // but it got created from a new state)
+  private static class CGClassAccessor implements CGAccessor {
 
-      generator      = vm.getLastChoiceGenerator();
+    public Object getValue(ChoiceGenerator generator) {
+      ClassInfo ci;
+      MethodInfo mi;
+      Instruction instruction;
+
+      instruction = generator.getInsn();
+      if (instruction == null) {
+        return (null);
+      }
+
+      mi = instruction.getMethodInfo();
+      if (mi == null) {
+        return (null);
+      }
+
+      ci = mi.getClassInfo();
+      if (ci == null) {
+        return (null);
+      }
+
+      return (ci.getName());
+    }
+  }
+
+  private static class CGMethodAccessor implements CGAccessor {
+
+    public Object getValue(ChoiceGenerator generator) {
+      MethodInfo mi;
+      Instruction instruction;
+
+      instruction = generator.getInsn();
+      if (instruction == null) {
+        return (null);
+      }
+
+      mi = instruction.getMethodInfo();
+      if (mi == null) {
+        return (null);
+      }
+
+      return (mi.getFullName());
+    }
+  }
+
+  private static class CGInstructionAccessor implements CGAccessor {
+
+    public Object getValue(ChoiceGenerator generator) {
+      return (generator.getInsn());
+    }
+  }
+
+  private static class CGTypeAccessor implements CGAccessor {
+
+    private static final String OBJECT_CLASS_NAME = Object.class.getName();
+    private static final String THREAD_CLASS_NAME = Thread.class.getName();
+
+    public Object getValue(ChoiceGenerator generator) {
+      if (generator instanceof ThreadChoiceGenerator) {
+        return (getType((ThreadChoiceGenerator) generator));
+      }
+
+      if (generator instanceof BooleanChoiceGenerator) {
+        return (CGType.DataChoice);
+      }
+
+      if (generator instanceof DoubleChoiceGenerator) {
+        return (CGType.DataChoice);
+      }
+
+      if (generator instanceof IntChoiceGenerator) {
+        return (CGType.DataChoice);
+      }
+
+      if (generator instanceof CustomBooleanChoiceGenerator) {
+        return (CGType.DataChoice);
+      }
+
+      return (null);
+    }
+
+    private static CGType getType(ThreadChoiceGenerator generator) {
+      Instruction instruction;
+
+      instruction = generator.getInsn();
+      if (instruction == null) {
+        return (null);
+      }
+
+      if (instruction instanceof FieldInstruction) {
+        return (CGType.FieldAccess);
+      }
+
+      if (instruction instanceof InvokeInstruction) {
+        return (getType((InvokeInstruction) instruction));
+      }
+
+      if (instruction instanceof ReturnInstruction) {
+        return (getType(generator, (ReturnInstruction) instruction));
+      }
+
+      if (instruction instanceof MONITORENTER) {
+        return (CGType.SyncEnter);
+      }
+
+      if (instruction instanceof MONITOREXIT) {
+        return (CGType.SyncExit);
+      }
+
+      return (null);
+    }
+
+    private static CGType getType(InvokeInstruction instruction) {
+      MethodInfo mi;
+
+      if (is(instruction, OBJECT_CLASS_NAME, "wait")) {
+        return (CGType.ObjectWait);
+      }
+
+      if (is(instruction, OBJECT_CLASS_NAME, "notify")) {
+        return (CGType.ObjectNotify);
+      }
+
+      if (is(instruction, OBJECT_CLASS_NAME, "notifyAll")) {
+        return (CGType.ObjectNotify);
+      }
+
+      if (is(instruction, THREAD_CLASS_NAME, "start")) {
+        return (CGType.ThreadStart);
+      }
+
+      if (is(instruction, THREAD_CLASS_NAME, "suspend")) {
+        return (CGType.ThreadSuspend);
+      }
+
+      if (is(instruction, THREAD_CLASS_NAME, "resume")) {
+        return (CGType.ThreadResume);
+      }
+
+      mi = instruction.getInvokedMethod();
+      if (mi.getClassName().startsWith("java.util.concurrent.atomic.")) {
+        return (CGType.AtomicOp);
+      }
+
+      if (mi.isSynchronized()) {
+        return (CGType.SyncCall);
+      }
+
+      return (null);
+    }
+
+    private static boolean is(InvokeInstruction instruction, String className, String methodName) {
+      MethodInfo mi;
+      ClassInfo ci;
+
+      mi = instruction.getInvokedMethod();
+      if (!methodName.equals(mi.getName())) {
+        return (false);
+      }
+
+      ci = mi.getClassInfo();
+
+      if (!className.equals(ci.getName())) {
+        return (false);
+      }
+
+      return (true);
+    }
+
+    private static CGType getType(ThreadChoiceGenerator generator, ReturnInstruction instruction) {
+      MethodInfo mi;
+
+      if (generator.getThreadInfo().countStackFrames() <= 1) // The main thread has 0 frames.  Other threads have 1 frame.
+      {
+        return (CGType.ThreadTerminate);
+      }
+
+      mi = instruction.getMethodInfo();
+      if (mi.isSynchronized()) {
+        return (CGType.SyncReturn);
+      }
+
+      return (null);
+    }
+  }
+
+  private static class TreeNode {
+
+    private final HashMap<Object, TreeNode> m_childNodes;
+    private final ArrayList<Object> m_sortedValues;
+    private final CGAccessor m_accessors[];
+    private final Object m_value;
+    private final int m_level;
+    private ChoiceGenerator m_sample;
+    private int m_choiceCount;
+    private int m_generatorCount;
+
+    TreeNode(CGAccessor accessors[], int level, Object value) {
+      m_accessors = accessors;
+      m_level = level;
+      m_value = value;
+
+      if (level >= accessors.length) {
+        m_childNodes = null;
+        m_sortedValues = null;
+      } else {
+        m_sortedValues = new ArrayList<Object>();
+        m_childNodes = new HashMap<Object, TreeNode>();
+      }
+    }
+
+    public void add(ChoiceGenerator generator) {
+      TreeNode child;
+      Object value;
+
+      m_generatorCount++;
       m_choiceCount += generator.getTotalNumberOfChoices();
-      m_generators.add(generator);
-   }
 
-   public void searchStarted(Search search)
-   {
-      m_choiceCount = 0;
-      m_generators.clear();
-      m_terminateTime = m_maxTime + System.currentTimeMillis();
-   }
+      if (isLeaf()) {
+        if (m_sample == null) {
+          m_sample = generator;
+        }
 
-   public void stateAdvanced(Search search)
-   {
-      if (shouldTerminate(search))
-         search.terminate();
-   }
-
-   private boolean shouldTerminate(Search search)
-   {
-      if ((m_maxStates >= 0) && (search.getVM().getStateCount() >= m_maxStates))
-         return(true);
-
-      if ((m_maxTime >= 0) && (System.currentTimeMillis() >= m_terminateTime))
-         return(true);
-
-      if ((m_maxMemory >= 0) && (Runtime.getRuntime().totalMemory() >= m_maxMemory))
-         return(true);
-
-      if ((m_maxChoices >= 0) && (m_choiceCount >= m_maxChoices))
-         return(true);
-
-      return(false);
-   }
-
-   public void publishFinished(Publisher publisher)
-   {
-      ChoiceGenerator generators[];
-      CGGrouper groupers[];
-
-      generators = new ChoiceGenerator[m_generators.size()];
-      m_generators.toArray(generators);
-
-      groupers = new CGGrouper[m_groupers.size()];
-      m_groupers.toArray(groupers);
-
-      if (publisher instanceof ConsolePublisher)
-         new PublishConsole((ConsolePublisher) publisher, generators, groupers, m_maxOutputLines).publish();
-      else if (publisher instanceof HTMLPublisher)
-         new PublishHtml((HTMLPublisher) publisher, generators, groupers, m_maxOutputLines).publish();
-   }
-
-   private enum CGType
-   {
-      FieldAccess,
-      ObjectWait,
-      ObjectNotify,
-      SyncEnter,
-      SyncExit,
-      ThreadStart,
-      ThreadTerminate,
-      ThreadSuspend,
-      ThreadResume,
-      SyncCall,
-      SyncReturn,
-      AtomicOp,
-      DataChoice
-   }
-
-   private interface CGAccessor
-   {
-      public Object getValue(ChoiceGenerator generator);
-   }
-
-   private static class CGPackageAccessor implements CGAccessor
-   {
-      public Object getValue(ChoiceGenerator generator)
-      {
-         ClassInfo ci;
-         MethodInfo mi;
-         Instruction instruction;
-
-         instruction = generator.getInsn();
-         if (instruction == null)
-            return(null);
-
-         mi = instruction.getMethodInfo();
-         if (mi == null)
-            return(null);
-
-         ci = mi.getClassInfo();
-         if (ci == null)
-            return(null);
-
-         return(ci.getPackageName());
-      }
-   }
-
-   private static class CGClassAccessor implements CGAccessor
-   {
-      public Object getValue(ChoiceGenerator generator)
-      {
-         ClassInfo ci;
-         MethodInfo mi;
-         Instruction instruction;
-
-         instruction = generator.getInsn();
-         if (instruction == null)
-            return(null);
-
-         mi = instruction.getMethodInfo();
-         if (mi == null)
-            return(null);
-
-         ci = mi.getClassInfo();
-         if (ci == null)
-            return(null);
-
-         return(ci.getName());
-      }
-   }
-
-   private static class CGMethodAccessor implements CGAccessor
-   {
-      public Object getValue(ChoiceGenerator generator)
-      {
-         MethodInfo mi;
-         Instruction instruction;
-
-         instruction = generator.getInsn();
-         if (instruction == null)
-            return(null);
-
-         mi = instruction.getMethodInfo();
-         if (mi == null)
-            return(null);
-
-         return(mi.getFullName());
-      }
-   }
-
-   private static class CGInstructionAccessor implements CGAccessor
-   {
-      public Object getValue(ChoiceGenerator generator)
-      {
-         return(generator.getInsn());
-      }
-   }
-
-   private static class CGTypeAccessor implements CGAccessor
-   {
-      private static final String OBJECT_CLASS_NAME = Object.class.getName();
-      private static final String THREAD_CLASS_NAME = Thread.class.getName();
-
-      public Object getValue(ChoiceGenerator generator)
-      {
-         if (generator instanceof ThreadChoiceGenerator)
-            return(getType((ThreadChoiceGenerator) generator));
-
-         if (generator instanceof BooleanChoiceGenerator)
-            return(CGType.DataChoice);
-
-         if (generator instanceof DoubleChoiceGenerator)
-            return(CGType.DataChoice);
-
-         if (generator instanceof IntChoiceGenerator)
-            return(CGType.DataChoice);
-
-         if (generator instanceof CustomBooleanChoiceGenerator)
-            return(CGType.DataChoice);
-
-         return(null);
+        return;
       }
 
-      private static CGType getType(ThreadChoiceGenerator generator)
-      {
-         Instruction instruction;
-
-         instruction = generator.getInsn();
-         if (instruction == null)
-            return(null);
-
-         if (instruction instanceof FieldInstruction)
-            return(CGType.FieldAccess);
-
-         if (instruction instanceof InvokeInstruction)
-            return(getType((InvokeInstruction) instruction));
-
-         if (instruction instanceof ReturnInstruction)
-            return(getType(generator, (ReturnInstruction) instruction));
-
-         if (instruction instanceof MONITORENTER)
-            return(CGType.SyncEnter);
-
-         if (instruction instanceof MONITOREXIT)
-            return(CGType.SyncExit);
-
-         return(null);
+      value = m_accessors[m_level].getValue(generator);
+      child = m_childNodes.get(value);
+      if (child == null) {
+        child = new TreeNode(m_accessors, m_level + 1, value);
+        m_childNodes.put(value, child);
       }
 
-      private static CGType getType(InvokeInstruction instruction)
-      {
-         MethodInfo mi;
+      child.add(generator);
+    }
 
-         if (is(instruction, OBJECT_CLASS_NAME, "wait"))
-            return(CGType.ObjectWait);
+    public int getLevel() {
+      return (m_level);
+    }
 
-         if (is(instruction, OBJECT_CLASS_NAME, "notify"))
-            return(CGType.ObjectNotify);
+    public Object getValue() {
+      return (m_value);
+    }
 
-         if (is(instruction, OBJECT_CLASS_NAME, "notifyAll"))
-            return(CGType.ObjectNotify);
+    public int getChoiceCount() {
+      return (m_choiceCount);
+    }
 
-         if (is(instruction, THREAD_CLASS_NAME, "start"))
-            return(CGType.ThreadStart);
+    public int getGeneratorCount() {
+      return (m_generatorCount);
+    }
 
-         if (is(instruction, THREAD_CLASS_NAME, "suspend"))
-            return(CGType.ThreadSuspend);
+    public ChoiceGenerator getSampleGenerator() {
+      return (m_sample);
+    }
 
-         if (is(instruction, THREAD_CLASS_NAME, "resume"))
-            return (CGType.ThreadResume);
+    public boolean isLeaf() {
+      return (m_childNodes == null);
+    }
 
-         mi = instruction.getInvokedMethod();
-         if (mi.getClassName().startsWith("java.util.concurrent.atomic."))
-            return(CGType.AtomicOp);
+    public void sort() {
+      Comparator<Object> comparator;
 
-         if (mi.isSynchronized())
-            return(CGType.SyncCall);
-
-         return(null);
+      if (isLeaf()) {
+        return;
       }
 
-      private static boolean is(InvokeInstruction instruction, String className, String methodName)
-      {
-         MethodInfo mi;
-         ClassInfo ci;
+      m_sortedValues.clear();
+      m_sortedValues.addAll(m_childNodes.keySet());
 
-         mi = instruction.getInvokedMethod();
-         if (!methodName.equals(mi.getName()))
-            return(false);
+      comparator = new Comparator<Object>() {
 
-         ci = mi.getClassInfo();
+        public int compare(Object value1, Object value2) {
+          TreeNode node1, node2;
 
-         if (!className.equals(ci.getName()))
-            return(false);
+          node1 = m_childNodes.get(value1);
+          node2 = m_childNodes.get(value2);
 
-         return(true);
+          return (node2.getChoiceCount() - node1.getChoiceCount());  // Sort descending
+        }
+      };
+
+      Collections.sort(m_sortedValues, comparator);
+
+      for (TreeNode child : m_childNodes.values()) {
+        child.sort();
+      }
+    }
+
+    public List<TreeNode> tour() {
+      List<TreeNode> result;
+
+      result = new ArrayList<TreeNode>();
+      tour(result);
+
+      return (result);
+    }
+
+    public void tour(List<TreeNode> list) {
+      TreeNode child;
+      Object value;
+      int i;
+
+      list.add(this);
+
+      if (isLeaf()) {
+        return;
       }
 
-      private static CGType getType(ThreadChoiceGenerator generator, ReturnInstruction instruction)
-      {
-         MethodInfo mi;
-
-         if (generator.getThreadInfo().countStackFrames() <= 1)  // The main thread has 0 frames.  Other threads have 1 frame.
-            return(CGType.ThreadTerminate);
-
-         mi = instruction.getMethodInfo();
-         if (mi.isSynchronized())
-            return(CGType.SyncReturn);
-
-         return(null);
+      for (i = 0; i < m_sortedValues.size(); i++) {
+        value = m_sortedValues.get(i);
+        child = m_childNodes.get(value);
+        child.tour(list);
       }
-   }
+    }
 
-   private static class TreeNode
-   {
-   	private final HashMap<Object, TreeNode> m_childNodes;
-   	private final ArrayList<Object>         m_sortedValues;
-   	private final CGAccessor                m_accessors[];
-      private final Object                    m_value;
-   	private final int                       m_level;
-      private       ChoiceGenerator           m_sample;
-      private       int                       m_choiceCount;
-   	private       int                       m_generatorCount;
+    public String toString() {
+      StringBuilder result;
 
-   	TreeNode(CGAccessor accessors[], int level, Object value)
-   	{
-   		m_accessors = accessors;
-   		m_level     = level;
-         m_value     = value;
+      result = new StringBuilder();
 
-         if (level >= accessors.length)
-   		{
-   			m_childNodes   = null;
-   			m_sortedValues = null;
-   		}
-   		else
-   		{
-  	   		m_sortedValues = new ArrayList<Object>();
-   			m_childNodes   = new HashMap<Object, TreeNode>();
-   		}
-   	}
-
-   	public void add(ChoiceGenerator generator)
-   	{
-   		TreeNode child;
-   		Object value;
-
-   		m_generatorCount++;
-   		m_choiceCount += generator.getTotalNumberOfChoices();
-
-   		if (isLeaf())
-   		{
-            if (m_sample == null)
-               m_sample = generator;
-
-   			return;
-   		}
-
-   		value = m_accessors[m_level].getValue(generator);
-   		child = m_childNodes.get(value);
-   		if (child == null)
-   		{
-   			child = new TreeNode(m_accessors, m_level + 1, value);
-   			m_childNodes.put(value, child);
-   		}
-
-   		child.add(generator);
-   	}
-
-      public int getLevel()
-      {
-         return(m_level);
+      if (m_value == null) {
+        result.append("(null)");
+      } else {
+        result.append(m_value);
       }
 
-      public Object getValue()
-      {
-         return(m_value);
+      result.append(" - L");
+      result.append(m_level);
+      result.append(" / C");
+      result.append(m_choiceCount);
+      result.append(" / G");
+      result.append(m_generatorCount);
+      result.append(" / N");
+      result.append(m_childNodes.size());
+
+      return (result.toString());
+    }
+  }
+
+  private static class CGGrouper {
+
+    private final CGAccessor m_accessors[];
+    private final String m_name;
+
+    CGGrouper(CGAccessor accessors[], String name) {
+      if (accessors.length <= 0) {
+        throw new IllegalArgumentException("accessors.length <= 0");
       }
 
-   	public int getChoiceCount()
-   	{
-   		return(m_choiceCount);
-   	}
-
-   	public int getGeneratorCount()
-   	{
-   		return(m_generatorCount);
-   	}
-
-      public ChoiceGenerator getSampleGenerator()
-      {
-         return(m_sample);
+      if (name == null) {
+        throw new NullPointerException("name == null");
       }
 
-      public boolean isLeaf()
+      m_accessors = accessors;
+      m_name = name;
+    }
+
+    public String getName() {
+      return (m_name);
+    }
+
+    public int getLevelCount() {
+      return (m_accessors.length);
+    }
+
+    public TreeNode makeTree(ChoiceGenerator generators[]) {
+      TreeNode root;
+      int i;
+
+      root = new TreeNode(m_accessors, 0, "All");
+
+      for (i = 0; i < generators.length; i++) // Go up so that the order is preserved in the tree.
       {
-         return(m_childNodes == null);
+        root.add(generators[i]);
       }
 
-   	public void sort()
-   	{
-         Comparator<Object> comparator;
+      root.sort();
 
-   		if (isLeaf())
-   			return;
+      return (root);
+    }
+  }
 
-   		m_sortedValues.clear();
-   		m_sortedValues.addAll(m_childNodes.keySet());
+  private static abstract class Publish {
 
-         comparator = new Comparator<Object>()
-         {
-            public int compare(Object value1, Object value2)
-            {
-               TreeNode node1, node2;
+    protected final Publisher m_publisher;
+    protected final ChoiceGenerator m_generators[];
+    protected final CGGrouper m_groupers[];
+    protected final int m_maxOutputLines;
+    protected PrintWriter m_output;
 
-               node1 = m_childNodes.get(value1);
-               node2 = m_childNodes.get(value2);
+    Publish(Publisher publisher, ChoiceGenerator generators[], CGGrouper groupers[], int maxOutputLines) {
+      m_publisher = publisher;
+      m_generators = generators;
+      m_groupers = groupers;
+      m_maxOutputLines = maxOutputLines;
+    }
 
-               return(node2.getChoiceCount() - node1.getChoiceCount());  // Sort descending
-            }
-         };
+    public abstract void publish();
+  }
 
-         Collections.sort(m_sortedValues, comparator);
+  private static class PublishConsole extends Publish {
 
-   		for (TreeNode child : m_childNodes.values())
-   			child.sort();
-   	}
+    PublishConsole(ConsolePublisher publisher, ChoiceGenerator[] generators, CGGrouper[] groupers, int maxOutputLines) {
+      super(publisher, generators, groupers, maxOutputLines);
+      m_output = publisher.getOut();
+    }
 
-      public List<TreeNode> tour()
-      {
-         List<TreeNode> result;
+    public void publish() {
+      int i;
 
-         result = new ArrayList<TreeNode>();
-         tour(result);
+      for (i = 0; i < m_groupers.length; i++) {
+        publishSortedData(m_groupers[i]);
+      }
+    }
 
-         return(result);
+    private void publishSortedData(CGGrouper grouper) {
+      List<TreeNode> tour;
+      TreeNode node;
+      int i, lines, levelCount;
+
+      lines = 0;
+      levelCount = grouper.getLevelCount();
+      node = grouper.makeTree(m_generators);
+      tour = node.tour();
+
+      m_publisher.publishTopicStart("Grouped By: " + grouper.getName());
+
+      for (i = 0; (i < tour.size()) && (lines < m_maxOutputLines); i++) {
+        node = tour.get(i);
+
+        publishTreeNode(node);
+
+        if (node.isLeaf()) {
+          publishDetails(node, levelCount + 1);
+          lines++;
+        }
       }
 
-      public void tour(List<TreeNode> list)
-      {
-         TreeNode child;
-         Object value;
-         int i;
+      if (lines >= m_maxOutputLines) {
+        m_output.println("...");
+      }
+    }
 
-         list.add(this);
+    private void publishTreeNode(TreeNode node) {
+      Object value;
 
-         if (isLeaf())
-            return;
+      // Tree
+      publishPadding(node.getLevel());
 
-         for (i = 0; i < m_sortedValues.size(); i++)
-         {
-            value = m_sortedValues.get(i);
-            child = m_childNodes.get(value);
-            child.tour(list);
-         }
+      value = node.getValue();
+      if (value == null) {
+        m_output.print("(null)");
+      } else {
+        m_output.print(value);
       }
 
-      public String toString()
-      {
-         StringBuilder result;
+      // Choices
+      m_output.print("  (choices: ");
+      m_output.print(node.getChoiceCount());
 
-         result = new StringBuilder();
+      // Generators
+      m_output.print(", generators: ");
+      m_output.print(node.getGeneratorCount());
 
-         if (m_value == null)
-            result.append("(null)");
-         else
-            result.append(m_value);
+      m_output.println(')');
+    }
 
-         result.append(" - L");
-         result.append(m_level);
-         result.append(" / C");
-         result.append(m_choiceCount);
-         result.append(" / G");
-         result.append(m_generatorCount);
-         result.append(" / N");
-         result.append(m_childNodes.size());
+    private void publishDetails(TreeNode node, int levelCount) {
+      ChoiceGenerator generator;
+      Instruction instruction;
 
-         return(result.toString());
+      generator = node.getSampleGenerator();
+      instruction = generator.getInsn();
+
+      // Location
+      publishPadding(levelCount);
+      m_output.print("Location:  ");
+      m_output.println(instruction.getFileLocation());
+
+      // Code
+      publishPadding(levelCount);
+      m_output.print("Code:  ");
+      m_output.println(instruction.getSourceLine().trim());
+
+      // Instruction
+      publishPadding(levelCount);
+      m_output.print("Instruction:  ");
+      m_output.println(instruction.getMnemonic());
+
+      // Position
+      publishPadding(levelCount);
+      m_output.print("Position:  ");
+      m_output.println(instruction.getPosition());
+
+      // Generator Class
+      publishPadding(levelCount);
+      m_output.print("Generator Class:  ");
+      m_output.println(generator.getClass().getName());
+    }
+
+    private void publishPadding(int levelCount) {
+      int i;
+
+      for (i = levelCount; i > 0; i--) {
+        m_output.print("   ");
       }
-   }
+    }
+  }
 
-   private static class CGGrouper
-   {
-      private final CGAccessor m_accessors[];
-      private final String     m_name;
+  private static class PublishHtml extends Publish {
 
-      CGGrouper(CGAccessor accessors[], String name)
-      {
-         if (accessors.length <= 0)
-            throw new IllegalArgumentException("accessors.length <= 0");
+    PublishHtml(HTMLPublisher publisher, ChoiceGenerator[] generators, CGGrouper[] groupers, int maxOutputLines) {
+      super(publisher, generators, groupers, maxOutputLines);
+      m_output = publisher.getOut("State Space");
+    }
 
-         if (name == null)
-            throw new NullPointerException("name == null");
+    public void publish() {
+      int i;
 
-         m_accessors = accessors;
-         m_name      = name;
-      }
+      m_output.println("      <style type=\"text/css\">");
+      m_output.println("         table             { border-collapse: collapse; white-space: nowrap; border: 1px solid #000000; }");
+      m_output.println("         th                { padding: 5px 5px; border: 1px solid #000000; background-color: #0080FF; }");
+      m_output.println("         td                { padding: 0px 5px; border: none; }");
+      m_output.println("         tr.treeNodeOpened { font-weight: bold; background-color: #A0D0FF; }");
+      m_output.println("         tr.treeNodeClosed { font-weight: bold; background-color: #A0D0FF; }");
+      m_output.println("      </style>");
 
-      public String getName()
-      {
-         return(m_name);
-      }
+      ((HTMLPublisher) m_publisher).writeTableTreeScript(m_output, 0);
 
-      public int getLevelCount()
-      {
-         return(m_accessors.length);
-      }
+      m_output.println("      <div style=\"white-space: nowrap;\">");
 
-      public TreeNode makeTree(ChoiceGenerator generators[])
-      {
-			TreeNode root;
-         int i;
-
-			root = new TreeNode(m_accessors, 0, "All");
-
-			for (i = 0; i < generators.length; i++)   // Go up so that the order is preserved in the tree.
-				root.add(generators[i]);
-
-         root.sort();
-
-			return(root);
-      }
-   }
-
-   private static abstract class Publish
-   {
-      protected final Publisher       m_publisher;
-      protected final ChoiceGenerator m_generators[];
-      protected final CGGrouper       m_groupers[];
-      protected final int             m_maxOutputLines;
-      protected       PrintWriter     m_output;
-
-      Publish(Publisher publisher, ChoiceGenerator generators[], CGGrouper groupers[], int maxOutputLines)
-      {
-         m_publisher      = publisher;
-         m_generators     = generators;
-         m_groupers       = groupers;
-         m_maxOutputLines = maxOutputLines;
+      for (i = 0; i < m_groupers.length; i++) {
+        publishSortedData(i, m_groupers[i]);
       }
 
-      public abstract void publish();
-   }
+      m_output.println("      </div>");
 
-   private static class PublishConsole extends Publish
-   {
-      PublishConsole(ConsolePublisher publisher, ChoiceGenerator[] generators, CGGrouper[] groupers, int maxOutputLines)
-      {
-         super(publisher, generators, groupers, maxOutputLines);
-         m_output = publisher.getOut();
+      m_output.flush();
+      m_output.close();
+    }
+
+    private void publishSortedData(int treeID, CGGrouper grouper) {
+      HTMLPublisher publisher;
+      TreeNode node;
+      List<TreeNode> tour;
+      List<String> nodeIDs;
+      StringBuilder nodeID;
+      int i, lines, lastLevel;
+
+      lines = 0;
+      lastLevel = -1;
+      publisher = (HTMLPublisher) m_publisher;
+      nodeID = new StringBuilder(Integer.toString(treeID));
+      node = grouper.makeTree(m_generators);
+      tour = node.tour();
+      nodeIDs = new ArrayList<String>();
+
+      m_output.println("<hr/>");
+
+      m_output.print("         <h2>Grouped By: ");
+      m_output.print(HTMLPublisher.escape(grouper.getName()));
+      m_output.println("</h2>");
+
+      publisher.writeTableTreeBegin(m_output);
+
+      // Write header row
+      m_output.println("         <thead>");
+      m_output.println("            <tr>");
+
+      m_output.print("               <th>");
+      m_output.print("");
+      m_output.println("</th>");
+
+      m_output.println("               <th>Choices</th>");
+      m_output.println("               <th>Generators</th>");
+      m_output.println("               <th>File</th>");
+      m_output.println("               <th>Line</th>");
+      m_output.println("               <th>Instruction</th>");
+      m_output.println("               <th>Position</th>");
+      m_output.println("               <th>Code</th>");
+      m_output.println("               <th>Generator Class</th>");
+      m_output.println("            </tr>");
+      m_output.println("         </thead>");
+      m_output.println("         <tbody>");
+
+      for (i = 0; (i < tour.size()) && (lines < m_maxOutputLines); i++) {
+        node = tour.get(i);
+
+        updateNodeID(nodeID, node.getLevel(), lastLevel, i);
+        lastLevel = node.getLevel();
+
+        publisher.writeTableTreeNodeBegin(m_output, nodeID.toString());
+        publishTreeNode(node);
+
+        if (node.isLeaf()) {
+          publishDetails(node);
+          nodeIDs.add(nodeID.toString());
+          lines++;
+        }
+
+        publisher.writeTableTreeNodeEnd(m_output);
       }
 
-      public void publish()
-      {
-         int i;
+      if (lines >= m_maxOutputLines) {
+        publisher.writeTableTreeNodeBegin(m_output, "...");
 
-         for (i = 0; i < m_groupers.length; i++)
-            publishSortedData(m_groupers[i]);
+        m_output.print("<td>...</td>");
+        m_output.print("<td></td>"); // Choices
+        m_output.print("<td></td>"); // Generators
+        m_output.print("<td></td>"); // File
+        m_output.print("<td></td>"); // Line
+        m_output.print("<td></td>"); // Instruction
+        m_output.print("<td></td>"); // Position
+        m_output.print("<td></td>"); // Code
+        m_output.print("<td></td>"); // Generator Class
+
+        publisher.writeTableTreeNodeEnd(m_output);
       }
 
-      private void publishSortedData(CGGrouper grouper)
-      {
-         List<TreeNode> tour;
-         TreeNode node;
-         int i, lines, levelCount;
+      m_output.println("         </tbody>");
+      publisher.writeTableTreeEnd(m_output);
 
-         lines      = 0;
-         levelCount = grouper.getLevelCount();
-         node       = grouper.makeTree(m_generators);
-         tour       = node.tour();
+      publisher.writeTableTreeOpenNodes(m_output, nodeIDs);
+    }
 
-         m_publisher.publishTopicStart("Grouped By: " + grouper.getName());
+    private static void updateNodeID(StringBuilder nodeID, int level, int lastLevel, int ID) {
+      int pos;
 
-         for (i = 0; (i < tour.size()) && (lines < m_maxOutputLines); i++)
-         {
-            node = tour.get(i);
-
-            publishTreeNode(node);
-
-            if (node.isLeaf())
-            {
-               publishDetails(node, levelCount + 1);
-               lines++;
-            }
-         }
-
-         if (lines >= m_maxOutputLines)
-            m_output.println("...");
+      for (; lastLevel >= level; lastLevel--) {
+        pos = nodeID.lastIndexOf("-");
+        nodeID.setLength(pos);
       }
 
-      private void publishTreeNode(TreeNode node)
-      {
-         Object value;
+      nodeID.append('-');
+      nodeID.append(ID);
+    }
 
-         // Tree
-         publishPadding(node.getLevel());
+    private void publishTreeNode(TreeNode node) {
+      Object value;
 
-         value = node.getValue();
-         if (value == null)
-            m_output.print("(null)");
-         else
-            m_output.print(value);
+      // Tree
+      m_output.print("<td>");
 
-         // Choices
-         m_output.print("  (C");
-         m_output.print(node.getChoiceCount());
-
-         // Generators
-         m_output.print("  G");
-         m_output.print(node.getGeneratorCount());
-
-         m_output.println(')');
+      value = node.getValue();
+      if (value == null) {
+        m_output.print("<i>null</i>");
+      } else {
+        m_output.print(HTMLPublisher.escape(value.toString()));
       }
 
-      private void publishDetails(TreeNode node, int levelCount)
-      {
-         ChoiceGenerator generator;
-         Instruction     instruction;
+      m_output.print("</td>");
 
-         generator   = node.getSampleGenerator();
-         instruction = generator.getInsn();
+      // Choices
+      m_output.print("<td align=\"right\">");
+      m_output.print(node.getChoiceCount());
+      m_output.print("</td>");
 
-         // Location
-         publishPadding(levelCount);
-         m_output.print("Location:  ");
-         m_output.println(instruction.getFileLocation());
+      // Generators
+      m_output.print("<td align=\"right\">");
+      m_output.print(node.getGeneratorCount());
+      m_output.print("</td>");
 
-         // Code
-         publishPadding(levelCount);
-         m_output.print("Code:  ");
-         m_output.println(instruction.getSourceLine().trim());
+      if (!node.isLeaf()) {
+        m_output.print("<td></td>"); // File
+        m_output.print("<td></td>"); // Line
+        m_output.print("<td></td>"); // Instruction
+        m_output.print("<td></td>"); // Position
+        m_output.print("<td></td>"); // Code
+        m_output.print("<td></td>"); // Generator Class
+      }
+    }
 
-         // Instruction
-         publishPadding(levelCount);
-         m_output.print("Instruction:  ");
-         m_output.println(instruction.getMnemonic());
+    private void publishDetails(TreeNode node) {
+      ChoiceGenerator generator;
+      ClassInfo ci;
+      MethodInfo mi;
+      Instruction instruction;
+      String fileName;
+      int line;
 
-         // Position
-         publishPadding(levelCount);
-         m_output.print("Position:  ");
-         m_output.println(instruction.getPosition());
+      generator = node.getSampleGenerator();
+      instruction = generator.getInsn();
+      mi = instruction.getMethodInfo();
+      ci = mi.getClassInfo();
 
-         // Generator Class
-         publishPadding(levelCount);
-         m_output.print("Generator Class:  ");
-         m_output.println(generator.getClass().getName());
+      // File
+      if (ci == null) {
+        fileName = "[synthetic]";
+      } else {
+        fileName = ci.getSourceFileName();
       }
 
-      private void publishPadding(int levelCount)
-      {
-         int i;
+      m_output.print("<td>");
+      m_output.print(HTMLPublisher.escape(fileName));
+      m_output.print("</td>");
 
-         for (i = levelCount; i > 0; i--)
-            m_output.print("   ");
-      }
-   }
+      // Line
+      m_output.print("<td align=\"right\">");
+      line = mi.getLineNumber(instruction);
+      m_output.print(line > 0 ? line : "");
 
-   private static class PublishHtml extends Publish
-   {
-      PublishHtml(HTMLPublisher publisher, ChoiceGenerator[] generators, CGGrouper[] groupers, int maxOutputLines)
-      {
-         super(publisher, generators, groupers, maxOutputLines);
-         m_output = publisher.getOut("State Space");
-      }
+      // Instruction
+      m_output.print("<td>");
+      m_output.print(HTMLPublisher.escape(instruction.getMnemonic()));
+      m_output.print("</td>");
 
-      public void publish()
-      {
-         int i;
+      // Position
+      m_output.print("<td align=\"\">");
+      m_output.print(instruction.getPosition());
+      m_output.print("</td>");
 
-         m_output.println("      <style type=\"text/css\">");
-         m_output.println("         table             { border-collapse: collapse; white-space: nowrap; border: 1px solid #000000; }");
-         m_output.println("         th                { padding: 5px 5px; border: 1px solid #000000; background-color: #0080FF; }");
-         m_output.println("         td                { padding: 0px 5px; border: none; }");
-         m_output.println("         tr.treeNodeOpened { font-weight: bold; background-color: #A0D0FF; }");
-         m_output.println("         tr.treeNodeClosed { font-weight: bold; background-color: #A0D0FF; }");
-         m_output.println("      </style>");
+      // Code
+      m_output.print("<td>");
+      m_output.print(HTMLPublisher.escape(instruction.getSourceLine().trim()));
+      m_output.print("</td>");
 
-         ((HTMLPublisher) m_publisher).writeTableTreeScript(m_output, 0);
-
-         m_output.println("      <div style=\"white-space: nowrap;\">");
-
-         for (i = 0; i < m_groupers.length; i++)
-            publishSortedData(i, m_groupers[i]);
-
-         m_output.println("      </div>");
-
-         m_output.flush();
-         m_output.close();
-      }
-
-      private void publishSortedData(int treeID, CGGrouper grouper)
-      {
-         HTMLPublisher publisher;
-         TreeNode node;
-         List<TreeNode> tour;
-         List<String> nodeIDs;
-         StringBuilder nodeID;
-         int i, lines, lastLevel;
-
-         lines     = 0;
-         lastLevel = -1;
-         publisher = (HTMLPublisher) m_publisher;
-         nodeID    = new StringBuilder(Integer.toString(treeID));
-         node      = grouper.makeTree(m_generators);
-         tour      = node.tour();
-         nodeIDs   = new ArrayList<String>();
-
-         m_output.println("<hr/>");
-
-         m_output.print("         <h2>Grouped By: ");
-         m_output.print(HTMLPublisher.escape(grouper.getName()));
-         m_output.println("</h2>");
-
-         publisher.writeTableTreeBegin(m_output);
-
-         // Write header row
-         m_output.println("         <thead>");
-         m_output.println("            <tr>");
-
-         m_output.print("               <th>");
-         m_output.print("");
-         m_output.println("</th>");
-
-         m_output.println("               <th>Choices</th>");
-         m_output.println("               <th>Generators</th>");
-         m_output.println("               <th>File</th>");
-         m_output.println("               <th>Line</th>");
-         m_output.println("               <th>Instruction</th>");
-         m_output.println("               <th>Position</th>");
-         m_output.println("               <th>Code</th>");
-         m_output.println("               <th>Generator Class</th>");
-         m_output.println("            </tr>");
-         m_output.println("         </thead>");
-         m_output.println("         <tbody>");
-
-         for (i = 0; (i < tour.size()) && (lines < m_maxOutputLines); i++)
-         {
-            node = tour.get(i);
-
-            updateNodeID(nodeID, node.getLevel(), lastLevel, i);
-            lastLevel = node.getLevel();
-
-            publisher.writeTableTreeNodeBegin(m_output, nodeID.toString());
-            publishTreeNode(node);
-
-            if (node.isLeaf())
-            {
-               publishDetails(node);
-               nodeIDs.add(nodeID.toString());
-               lines++;
-            }
-
-            publisher.writeTableTreeNodeEnd(m_output);
-         }
-
-         if (lines >= m_maxOutputLines)
-         {
-            publisher.writeTableTreeNodeBegin(m_output, "...");
-
-            m_output.print("<td>...</td>");
-            m_output.print("<td></td>"); // Choices
-            m_output.print("<td></td>"); // Generators
-            m_output.print("<td></td>"); // File
-            m_output.print("<td></td>"); // Line
-            m_output.print("<td></td>"); // Instruction
-            m_output.print("<td></td>"); // Position
-            m_output.print("<td></td>"); // Code
-            m_output.print("<td></td>"); // Generator Class
-
-            publisher.writeTableTreeNodeEnd(m_output);
-         }
-
-         m_output.println("         </tbody>");
-         publisher.writeTableTreeEnd(m_output);
-
-         publisher.writeTableTreeOpenNodes(m_output, nodeIDs);
-      }
-
-      private static void updateNodeID(StringBuilder nodeID, int level, int lastLevel, int ID)
-      {
-         int pos;
-
-         for (; lastLevel >= level; lastLevel--)
-         {
-            pos = nodeID.lastIndexOf("-");
-            nodeID.setLength(pos);
-         }
-
-         nodeID.append('-');
-         nodeID.append(ID);
-      }
-
-      private void publishTreeNode(TreeNode node)
-      {
-         Object value;
-
-         // Tree
-         m_output.print("<td>");
-
-         value = node.getValue();
-         if (value == null)
-            m_output.print("<i>null</i>");
-         else
-            m_output.print(HTMLPublisher.escape(value.toString()));
-
-         m_output.print("</td>");
-
-         // Choices
-         m_output.print("<td align=\"right\">");
-         m_output.print(node.getChoiceCount());
-         m_output.print("</td>");
-
-         // Generators
-         m_output.print("<td align=\"right\">");
-         m_output.print(node.getGeneratorCount());
-         m_output.print("</td>");
-
-         if (!node.isLeaf())
-         {
-            m_output.print("<td></td>"); // File
-            m_output.print("<td></td>"); // Line
-            m_output.print("<td></td>"); // Instruction
-            m_output.print("<td></td>"); // Position
-            m_output.print("<td></td>"); // Code
-            m_output.print("<td></td>"); // Generator Class
-         }
-      }
-
-      private void publishDetails(TreeNode node)
-      {
-         ChoiceGenerator generator;
-         ClassInfo ci;
-         MethodInfo mi;
-         Instruction instruction;
-         String fileName;
-         int line;
-
-         generator   = node.getSampleGenerator();
-         instruction = generator.getInsn();
-         mi          = instruction.getMethodInfo();
-         ci          = mi.getClassInfo();
-
-         // File
-         if (ci == null)
-            fileName = "[synthetic]";
-         else
-            fileName = ci.getSourceFileName();
-
-         m_output.print("<td>");
-         m_output.print(HTMLPublisher.escape(fileName));
-         m_output.print("</td>");
-
-         // Line
-         m_output.print("<td align=\"right\">");
-         line = mi.getLineNumber(instruction);
-         m_output.print(line > 0 ? line : "");
-
-         // Instruction
-         m_output.print("<td>");
-         m_output.print(HTMLPublisher.escape(instruction.getMnemonic()));
-         m_output.print("</td>");
-
-         // Position
-         m_output.print("<td align=\"\">");
-         m_output.print(instruction.getPosition());
-         m_output.print("</td>");
-
-         // Code
-         m_output.print("<td>");
-         m_output.print(HTMLPublisher.escape(instruction.getSourceLine().trim()));
-         m_output.print("</td>");
-
-         // Generator Class
-         m_output.print("<td>");
-         m_output.print(HTMLPublisher.escape(generator.getClass().getName()));
-         m_output.print("</td>");
-      }
-   }
+      // Generator Class
+      m_output.print("<td>");
+      m_output.print(HTMLPublisher.escape(generator.getClass().getName()));
+      m_output.print("</td>");
+    }
+  }
 }

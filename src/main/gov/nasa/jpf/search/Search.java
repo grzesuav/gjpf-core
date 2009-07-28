@@ -117,15 +117,8 @@ public abstract class Search {
     Class<?>[] argTypes = { Config.class, Search.class };
     Object[] args = { config, this };
 
-    ArrayList<Property> list = new ArrayList<Property>();
-    ObjArray<Property> a = config.getInstances("search.properties", Property.class,
-        argTypes, args);
-
-    if (a != null) {  // how overly braindead
-      for (Property p : a) {
-        list.add(p);
-      }
-    }
+    ArrayList<Property> list = config.getInstances("search.properties", Property.class,
+                                                   argTypes, args);
 
     return list;
   }

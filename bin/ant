@@ -1,27 +1,27 @@
 #!/bin/bash
 #
-# run ant with libs from the JPF tools directory
+# run ant with jars from the JPF lib directory
 #
 
 # if JPF_TOOLS is unset or invalid (e.g. pointing to JPF root dir)
-if [ ! -d "$JPF_TOOLS" ] || [ ! -f "$JPF_TOOLS"/lib/ant.jar ]; then
+if [ ! -d "$JPF_TOOLS" ] || [ ! -f "$JPF_TOOLS"/ant.jar ]; then
   # check to see if we have a powerful version of readlink, so we can follow
   # a symlink to this script in determining the JPF_TOOLS
   if [ -x "`which readlink`" ] && readlink -f /bin/true > /dev/null 2>&1; then
-    JPF_TOOLS="$(dirname "$(readlink -f $0)" )"/..
+    JPF_TOOLS="$(dirname "$(readlink -f $0)" )"/../lib
   else
-    JPF_TOOLS="`dirname $0`"/..
+    JPF_TOOLS="`dirname $0`"/../lib
   fi
 fi
 
-if [ ! -f "$JPF_TOOLS"/lib/ant.jar ]; then
+if [ ! -f "$JPF_TOOLS"/ant.jar ]; then
   cat << EOF
 JPF_BUILD_TOOLS variable determined incorrectly.
 Likely causes:
  - you moved this script from its original location
  - you are accessing this script through a symlink
 Fixes:
- - move it back to or access through build-tools/bin
+ - move it back to or access through bin/ant
  - edit this script to manually set JPF_TOOLS
 EOF
   exit 1
@@ -29,7 +29,7 @@ fi
 
 
 # add all jars and zips we find in the tools/lib dir
-CP=`find "$JPF_TOOLS"/lib \( -name "*.jar" -or -name "*.zip" \) -exec echo -n {}":" \;`
+CP=`find "$JPF_TOOLS" \( -name "*.jar" -or -name "*.zip" \) -exec echo -n {}":" \;`
 
 
 # handle the icky differences of *nix-ish Java installations

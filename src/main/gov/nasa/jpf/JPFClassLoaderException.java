@@ -1,21 +1,13 @@
-#! /bin/bash
-
-TMP=/tmp/fix-LKJ239847NSDF-$$
-
-for FILE in "$@"; do
-  if [ -e "$FILE" ]; then
-(
-echo "//"
-echo "// Copyright (C) $(date '+%Y') United States Government as represented by the"
-cat << EOF
+//
+// Copyright (C) 2009 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
-// 
+//
 // This software is distributed under the NASA Open Source Agreement
 // (NOSA), version 1.3.  The NOSA has been approved by the Open Source
 // Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
 // directory tree for the complete NOSA document.
-// 
+//
 // THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
 // KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
 // LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
@@ -24,17 +16,15 @@ cat << EOF
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-EOF
-exec awk '{ if (!pkghit) { if ($1 == "package" || $1 == "import" || $1 == "/*" || $1 == "/**" || $1 == "class" || $1 == "public") { pkghit = 1; print; } } else print; }' "$FILE" ) > $TMP
-    if diff -q $TMP "$FILE" > /dev/null; then
-      # no change needed
-      echo "($FILE does not need fixing)"
-    else
-      cat $TMP > "$FILE" && echo "$FILE fixed." || break
-    fi
-  else
-    echo "$FILE does not exist." >&2
-  fi
-done
+package gov.nasa.jpf;
 
-rm -f $TMP
+/**
+ * runtime exception indicating a problem during JPFClassLoader construction
+ *
+ * <2do> maybe we should CL hoist the whole JPFException and use this as base
+ */
+public class JPFClassLoaderException extends RuntimeException {
+  public JPFClassLoaderException (String details){
+    super(details);
+  }
+}

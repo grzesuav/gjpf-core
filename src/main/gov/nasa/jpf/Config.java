@@ -18,31 +18,24 @@
 //
 package gov.nasa.jpf;
 
-import gov.nasa.jpf.util.ObjArray;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * class that encapsulates property-based JPF configuration. This is mainly an
@@ -114,9 +107,9 @@ import java.util.regex.Pattern;
  * v  cmdline        :   +<key>=<val>        : -
  *
  * (1) if there is an explicit spec and the pathname does not exist, throw a
- * Config.JPFConfigException
+ * JPFConfigException
  *
- * (2) if the system properties cannot be found, throw a Config.JPFConfigException
+ * (2) if the system properties cannot be found, throw a JPFConfigException
  *
  *
  * <2do> need to make NumberFormatException handling consistent - should always
@@ -183,6 +176,9 @@ public class Config extends Properties {
     String[] a = args.clone(); // we might nullify some of them
 
     //--- the JPF system (default) properties
+    // we need the codeBase to find default.properties, which is the reason why
+    // the Config object cannot be created before we know where to get the core
+    // classes from
     loadDefaultProperties( getPathArg(a,"default"), codeBase);
 
     //--- the site properties
@@ -334,40 +330,99 @@ public class Config extends Properties {
 
   protected void loadProjectProperties () {
 
-    HashSet<String> dirSet = new HashSet<String>();
-    String jpfProps = File.separator + "jpf.properties";
+    ArrayList<File> jpfDirs = new ArrayList<File>();
 
-    // from current dir
-    File parent = new File(System.getProperty("user.dir"));
-    while (parent != null){
-      String pn = parent.getAbsolutePath();
-      if (loadProperties( pn + jpfProps)){
-        dirSet.add(pn);
-        break;
+    // first, we check the current dir
+    addJPFdirs(jpfDirs,new File(System.getProperty("user.dir")));
+
+    // now we add everything we get from the current classpath
+    // note that this contains the jpf-core in use
+    addJPFdirsFromClasspath(jpfDirs);
+
+    // and finally all the site configured extension dirs
+    addJPFdirsFromSiteExtensions(jpfDirs);
+
+    // now load all the jpf.property files we find in these dies
+    for (File dir : jpfDirs){
+      loadProperties(new File(dir,"jpf.properties").getAbsolutePath());
+    }
+  }
+
+  protected void addJPFdirs (ArrayList<File> jpfDirs, File dir){
+    while (dir != null) {
+      File jpfProp = new File(dir, "jpf.properties");
+      if (jpfProp.isFile()) {
+        addIfAbsent(jpfDirs, dir);
+        return;       // we probably don't want recursion here
       }
-      parent = parent.getParentFile();
+      dir = getParentFile(dir);
+    }
+  }
+
+  protected void addJPFdirsFromClasspath(ArrayList<File> jpfDirs) {
+    String[] cpEntries = null;
+
+    ClassLoader cl = Config.class.getClassLoader();
+    if (cl instanceof JPFClassLoader){
+      // in case it wasn't in the system classpath, this should now
+      // contain the config classpath as the single element
+      cpEntries = ((JPFClassLoader)cl).getClasspathEntries();
     }
 
-    // jpf core
-    String coreDir = getString("jpf.core");
-    if ((coreDir != null) && !dirSet.contains(coreDir)){
-      if (loadProperties(coreDir + jpfProps)){
-        dirSet.add(coreDir);
-      }
+    if (cpEntries == null || cpEntries.length == 0){ 
+      String cp = System.getProperty("java.class.path");
+      cpEntries = cp.split(File.pathSeparator);
     }
 
-    // from site properties
+    for (String p : cpEntries) {
+      File f = new File(p);
+      File dir = f.isFile() ? getParentFile(f) : f;
+
+      addJPFdirs(jpfDirs, dir);
+    }
+  }
+
+  protected void addJPFdirsFromSiteExtensions (ArrayList<File> jpfDirs){
     String[] extensions = getCompactStringArray("extensions");
     if (extensions != null){
       for (String pn : extensions){
-        if (!dirSet.contains(pn)){
-          if (loadProperties(pn + jpfProps)){
-            dirSet.add(pn);
-          }
-        }
+        addJPFdirs( jpfDirs, new File(pn));
       }
     }
   }
+
+  protected boolean addIfAbsent(ArrayList<File> list, File f){
+    String absPath = f.getAbsolutePath();
+    for (File e : list){
+      if (e.getAbsolutePath().equals(absPath)){
+        return false;
+      }
+    }
+
+    list.add(f);
+    return true;
+  }
+
+  static File root = new File(File.separator);
+
+  protected File getParentFile(File f){
+    if (f == root){
+      return null;
+    } else {
+      File parent = f.getParentFile();
+      if (parent == null){
+        parent = new File(f.getAbsolutePath());
+        if (parent.getName().equals(root.getName())){
+          return root;
+        } else {
+          return parent;
+        }
+      } else {
+        return parent;
+      }
+    }
+  }
+
 
   /*
    * argument syntax:
@@ -1114,7 +1169,7 @@ public class Config extends Properties {
     return null;
   }
 
-  public <T> ObjArray<T> getInstances(String key, Class<T> type) throws JPFConfigException {
+  public <T> ArrayList<T> getInstances(String key, Class<T> type) throws JPFConfigException {
 
     Class<?>[] argTypes = { Config.class };
     Object[] args = { this };
@@ -1122,20 +1177,20 @@ public class Config extends Properties {
     return getInstances(key,type,argTypes,args);
   }
   
-  public <T> ObjArray<T> getInstances(String key, Class<T> type, Class<?>[]argTypes, Object[] args)
+  public <T> ArrayList<T> getInstances(String key, Class<T> type, Class<?>[]argTypes, Object[] args)
                                                       throws JPFConfigException {
     Class<?>[] c = getClasses(key);
 
     if (c != null) {
       String[] ids = getIds(key);
 
-      ObjArray<T> a = new ObjArray<T>(c.length);
+      ArrayList<T> a = new ArrayList<T>(c.length);
 
       for (int i = 0; i < c.length; i++) {
         String id = (ids != null) ? ids[i] : null;
         T listener = getInstance(key, c[i], type, argTypes, args, id);
         if (listener != null) {
-          a.set(i, listener);
+          a.add( listener);
         } else {
           // should report here
         }
@@ -1245,7 +1300,7 @@ public class Config extends Properties {
   }
   
   /**
-   * this is our private instantiation workhorse try to instantiate an object of
+   * this is our private instantiation workhorse - try to instantiate an object of
    * class 'cls' by using the following ordered set of ctors 1. <cls>(
    * <argTypes>) 2. <cls>(Config) 3. <cls>() if all of that fails, or there was
    * a 'type' provided the instantiated object does not comply with, return null
