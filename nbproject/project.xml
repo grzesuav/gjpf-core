@@ -11,11 +11,6 @@
             <properties/>
             <folders>
                 <source-folder>
-                    <label>jpf-core</label>
-                    <location>.</location>
-                    <encoding>UTF-8</encoding>
-                </source-folder>
-                <source-folder>
                     <label>src/main</label>
                     <type>java</type>
                     <location>src/main</location>
@@ -217,7 +212,7 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>src/main</package-root>
-                <classpath mode="compile">lib/bcel.jar:tools/lib/junit-4.6.jar</classpath>
+                <classpath mode="compile">lib/bcel.jar:lib/junit-4.6.jar</classpath>
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>
@@ -243,7 +238,7 @@
             <compilation-unit>
                 <package-root>src/tests</package-root>
                 <unit-tests/>
-                <classpath mode="compile">build/main:build/annotations:tools/lib/junit-4.6.jar</classpath>
+                <classpath mode="compile">build/main:build/annotations:lib/junit-4.6.jar</classpath>
                 <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>

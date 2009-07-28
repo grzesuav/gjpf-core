@@ -11,6 +11,11 @@
         <pathelement location="build/classes"/>
     </path>
 
+    <sourcepath id="source.path">
+      <pathelement location="src/main"/>
+      <pathelement location="src/peers"/>
+    </sourcepath>
+
 
     <!-- TODO: do we really have to duplicate this for each container dir? -->
     <!-- TODO: !!! automatic recompile doesn't work, this is a NetBeans/Ant problem !!! -->
@@ -48,6 +53,10 @@
         </path>
         <nbjpdastart addressproperty="jpda.address" name="${debug.class}" transport="dt_socket">
             <classpath refid="cp.examples"/>
+            <sourcepath>
+              <pathelement location="src/examples"/>
+              <path refid="source.path"/>
+            </sourcepath>
         </nbjpdastart>
         <input message="please enter arguments" addproperty="arg.input"/>
         <java classname="${debug.class}" fork="true">
@@ -75,11 +84,16 @@
     <target name="debug-selected-example-jpf">
         <fail unless="jpf.config">Must set property 'jpf.config'</fail>
         <ant antfile="build.xml" inheritall="false" target="compile"/>
+        <path id="cp.examples">
+            <path refid="base.path"/>
+             <pathelement location="build/examples"/>
+        </path>
         <nbjpdastart addressproperty="jpda.address" name="${jpf.config}" transport="dt_socket">
-            <classpath refid="base.path"/>
+            <classpath refid="cp.examples"/>
+            <sourcepath refid="source.path"/>
         </nbjpdastart>
         <java classname="gov.nasa.jpf.JPF" fork="true">
-            <classpath refid="base.path"/>
+            <classpath refid="cp.examples"/>
             <jvmarg value="-ea"/>
             <jvmarg value="-Xdebug"/>
             <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
@@ -119,6 +133,10 @@
         </path>
         <nbjpdastart addressproperty="jpda.address" name="${debug.class}" transport="dt_socket">
             <classpath refid="cp.test"/>
+            <sourcepath>
+              <pathelement location="src/tests"/>
+              <path refid="source.path"/>
+            </sourcepath>
         </nbjpdastart>
         <input message="please enter arguments" addproperty="arg.input"/>
         <java classname="${debug.class}" fork="true">
@@ -147,6 +165,7 @@
         <ant antfile="build.xml" inheritall="false" target="compile"/>
         <nbjpdastart addressproperty="jpda.address" name="${jpf.config}" transport="dt_socket">
             <classpath refid="base.path"/>
+            <sourcepath refid="source.path"/>
         </nbjpdastart>
         <java classname="gov.nasa.jpf.JPF" fork="true">
             <classpath refid="base.path"/>
