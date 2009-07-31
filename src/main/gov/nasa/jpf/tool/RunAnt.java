@@ -105,7 +105,7 @@ public class RunAnt {
     }
 
     // check if the current project has an ant.jar
-    for (File d : new File[] {dir, new File(dir, "lib")} ){
+    for (File d : new File[] {dir, new File(dir, "tools"), new File(dir, "lib")}){
       if (hasAntJar(d)){
         toolsDir = d;
         break;
@@ -117,7 +117,7 @@ public class RunAnt {
       JPFSite site = JPFSite.getSite();
       dir = site.getSiteCoreDir();
 
-      for (File d : new File[]{dir, new File(dir, "lib")}) {
+      for (File d : new File[] {dir, new File(dir, "tools"), new File(dir, "lib")}) {
         if (hasAntJar(d)) {
           toolsDir = d;
           break;

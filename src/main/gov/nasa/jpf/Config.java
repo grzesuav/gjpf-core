@@ -37,6 +37,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+
 /**
  * class that encapsulates property-based JPF configuration. This is mainly an
  * associative array with various typed accessors, and a structured
@@ -342,7 +343,7 @@ public class Config extends Properties {
     // and finally all the site configured extension dirs
     addJPFdirsFromSiteExtensions(jpfDirs);
 
-    // now load all the jpf.property files we find in these dies
+    // now load all the jpf.property files we find in these dirs
     for (File dir : jpfDirs){
       loadProperties(new File(dir,"jpf.properties").getAbsolutePath());
     }
@@ -572,7 +573,7 @@ public class Config extends Properties {
     return s;    
   }
 
-  
+
   // we override this so that we can handle expansion for both key and value
   // (value expansion can be recursive, i.e. refer to itself)
   @Override

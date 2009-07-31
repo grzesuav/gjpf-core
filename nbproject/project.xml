@@ -5,6 +5,7 @@
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
             <name>jpf-core</name>
         </general-data>
+
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/2">
             <!-- Do not use Project Properties customizer when editing this file manually. -->
             <name>jpf-core</name>
@@ -209,6 +210,7 @@
             </view>
             <subprojects/>
         </general-data>
+
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>src/main</package-root>
@@ -242,6 +244,7 @@
                 <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>
+
         <preferences xmlns="http://www.netbeans.org/ns/auxiliary-configuration-preferences/1">
             <module name="org-netbeans-modules-editor-indent">
                 <node name="CodeStyle">
