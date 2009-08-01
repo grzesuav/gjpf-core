@@ -144,8 +144,12 @@ public class JVM {
     // we have to defer setting pathOutput until we have a reporter registered
     indentOutput = config.getBoolean("vm.indent_output",false);
 
+try {
     initSubsystems(config);
     initFields(config);
+} catch (Throwable t){
+  t.printStackTrace(System.err);
+}
   }
 
   public JPF getJPF() {

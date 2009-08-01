@@ -61,21 +61,22 @@ public class JPFClassLoader extends URLClassLoader {
     // JPF URLs will be added later on, mostly by JPF after we have a Config
     super(new URL[0]);
 
-    // check if we need to look at the JPFSite for loading JPF and Config
-    // (which have to be in the CP before we use this JPFClassLoader)
-    if (!haveCoreClasspathEntry()){
-      File configCpe = getConfigCpElement();
-      if (configCpe != null){
-        try {
-          URL url = configCpe.toURI().toURL();
-          addURL(url);  // now we can load JPF and Config
-        } catch (MalformedURLException x){
-          throw new JPFClassLoaderException("illegal init classpath: " + configCpe);
-        }
-
-      } else { // trouble, no use to continue with the JPF bootstrapping
+    // we need to get a CP entry to load JPF and Config from. If we have a
+    // jpf.jar in the class.path, copy that. Otherwise use the jpf-core setting
+    // from the site
+    File core = getCoreFromClasspath();
+    if (core == null){
+      core = getCoreFromSite();
+      if (core == null){ // out of luck
         throw new JPFClassLoaderException("no classpath entry for gov.nasa.jpf.JPF found (check site.properties)");
       }
+    }
+
+    try {
+      URL url = core.toURI().toURL();
+      addURL(url);  // now we can load JPF and Config
+    } catch (MalformedURLException x){
+      throw new JPFClassLoaderException("illegal init classpath: " + core);
     }
 
     // add our known preloads
@@ -137,6 +138,7 @@ public class JPFClassLoader extends URLClassLoader {
 
   //--- internals
 
+
   /**
    * return the classpath element for our init classes (JPF, Config) that is
    * configured in the site.properties.
@@ -144,20 +146,15 @@ public class JPFClassLoader extends URLClassLoader {
    * Note that we can't use Config for this since we still have to locate the
    * Config class to use from this cpe
    */
-  protected File getConfigCpElement () {
+  protected File getCoreFromSite () {
     JPFSite site = JPFSite.getSite();
     File coreDir = site.getSiteCoreDir();
 
-    if (coreDir.isDirectory()){
-      // do we have a build dir - explicit class dirs take precedence
-      File mainDir = new File( new File(coreDir, "build"), "main");
-      if (mainDir.isDirectory()){
-        return mainDir;
-
-      } else {
-        // do we have a jpf.jar in the core dir? this would be a binary distrib
-        File jpfJar = new File(coreDir, "jpf.jar");
-        if (jpfJar.isFile()){
+    if (coreDir != null && coreDir.isDirectory()){
+      File buildDir = new File(coreDir, "build");
+      if (buildDir.isDirectory()) {
+        File jpfJar = new File(buildDir, "jpf.jar");
+        if (jpfJar.isFile()) {
           return jpfJar;
         }
       }
@@ -166,14 +163,33 @@ public class JPFClassLoader extends URLClassLoader {
     return null;
   }
 
-
-
-  protected boolean haveCoreClasspathEntry () {
+  protected File getCoreFromClasspath () {
     try {
       Class<?> tag = Class.forName("gov.nasa.jpf.$coreTag");
-      return true;
+
+      URL url = tag.getResource("$coreTag.class"); // we know it's there if we can load the class
+      String s = url.toString();
+
+      String path = null;
+      if (s.startsWith("jar:file:")){
+        // strip leading "jar:file:" amd trailing "!.." jar path
+        path = s.substring(9,s.indexOf('!'));
+      } else if (s.startsWith("file:")) {
+        // strip leading "file:" and trailing "/gov/nasa/jpf/$coreTag.class"
+        path = s.substring(5,s.length()-28);
+      } else {
+        return null; // don't know what that is
+      }
+      
+      File f = new File(path);
+      if (f.exists()){
+        return f;
+      } else {
+        return null; // maybe we should throw here
+      }
+
     } catch (ClassNotFoundException cnfx){
-      return false;
+      return null;
     }
   }
 

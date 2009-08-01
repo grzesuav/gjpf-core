@@ -10,14 +10,10 @@ REM where to find javac
 set CP=%JAVA_HOME%\lib\tools.jar
 
 REM this is the common ant stuff
-set CP=%CP%;%JPF_HOME%\lib\ant.jar
-set CP=%CP%;%JPF_HOME%\lib\ant-launcher.jar
-set CP=%CP%;%JPF_HOME%\lib\ant-junit.jar
-set CP=%CP%;%JPF_HOME%\lib\xml-apis.jar
+set CP=%CP%;%JPF_HOME%\tools\*.jar
 
 REM other libraries
-set CP=%CP%;%JPF_HOME%\lib\junit-4.6.jar
-set CP=%CP%;%JPF_HOME%\lib\bcel.jar
+set CP=%CP%;%JPF_HOME%\lib\junit*.jar
 
 REM JPF class dirs
 REM want to use those first

@@ -130,8 +130,6 @@ public class JPF implements Runnable {
         logger = initLogging(conf);
       }
 
-      setConfigPaths(conf);
-
       // check if there is a shell class specification, in which case we just delegate
       JPFShell shell = conf.getInstance("shell", JPFShell.class);
       if (shell != null){
@@ -179,7 +177,42 @@ public class JPF implements Runnable {
     return urls.toArray(new URL[urls.size()]);
   }
 
+
+  static void appendPath (Config conf, String pathKey, String key){
+    String projName = key.substring(0, key.length() - pathKey.length() -1);
+    String projPath = conf.getString(projName);
+
+    if (projPath != null){
+      projPath += '/';
+
+      String[] elements = conf.getStringArray(key);
+      if (elements != null){
+        for (String e : elements) {
+          if (!e.startsWith(projPath)) {
+            e = projPath + e;
+          }
+
+          conf.append(pathKey, e);
+        }
+      }
+
+    } else {
+      throw new JPFConfigException("no project path for " + projName);
+    }
+  }
+
   static void setConfigPaths(Config conf) {
+
+    // note - this is in the order of entry, i.e. reflects priorities
+    for (String k : conf.getEntrySequence()){
+      if (k.endsWith(".native_classpath")){
+        appendPath(conf,"native_classpath", k);
+      } else if (k.endsWith(".classpath")){
+        appendPath(conf,"classpath", k);
+      } else if (k.endsWith(".sourcepath")){
+        appendPath(conf,"sourcepath", k);
+      }
+    }
 
     //conf.printEntries();
 
@@ -535,7 +568,9 @@ public class JPF implements Runnable {
    * then overlays all command line arguments that are key/value pairs
    */
   public static Config createConfig (String[] args) {
-    return new Config(args, JPF.class);
+    Config conf = new Config(args, JPF.class);
+    setConfigPaths(conf);
+    return conf;
   }
   
   /**

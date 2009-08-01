@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -144,6 +145,9 @@ public class Config extends Properties {
   
   List<ConfigChangeListener> changeListeners;
   
+  // Properties are simple Hashmaps, but we want to maintain the order of entries
+  LinkedList<String> entrySequence = new LinkedList<String>();
+
 
   // an [optional] hashmap to keep objects we want to be singletons
   HashMap<String,Object> singletons;
@@ -205,6 +209,7 @@ public class Config extends Properties {
 
     //--- at last, the (rest of the) command line properties
     loadArgs(a);
+//printEntries();
   }
 
 
@@ -311,7 +316,6 @@ public class Config extends Properties {
   protected boolean loadProperties (String fileName) {
     if (fileName != null && fileName.length() > 0) {
       try {
-        // try to load from a file
         File f = new File(fileName);
         if (f.isFile()) {
           setConfigPathProperties(f.getAbsolutePath());
@@ -340,12 +344,24 @@ public class Config extends Properties {
     // note that this contains the jpf-core in use
     addJPFdirsFromClasspath(jpfDirs);
 
-    // and finally all the site configured extension dirs
+    // and finally all the site configured extension dirs (but NOT jpf-core)
     addJPFdirsFromSiteExtensions(jpfDirs);
 
     // now load all the jpf.property files we find in these dirs
     for (File dir : jpfDirs){
       loadProperties(new File(dir,"jpf.properties").getAbsolutePath());
+    }
+  }
+
+  protected void appendPath (String pathKey, String key, String configPath){
+    String[] paths = getStringArray(key);
+    if (paths != null){
+      for (String e : paths) {
+        if (!e.startsWith("${") || !e.startsWith(File.separator)) {
+          e = configPath + File.separatorChar + e;
+        }
+        append(pathKey, e, PATH_SEPARATOR);
+      }
     }
   }
 
@@ -598,21 +614,31 @@ public class Config extends Properties {
         k = k.substring( 0, k.length() - 1);
         return append( k, v, null);
 
-      } else {
+      } else { // normal value set
         v = normalize(expandString(k, v));
-        Object oldValue = super.put(k, v);
+        Object oldValue = put0(k, v);
         notifyPropertyChangeListeners(k, (String) oldValue, v);
         return oldValue;
       }
 
-    } else {
+    } else { // setting a null value removes the property
         Object oldValue = super.get(k);
-        remove(k);
+        remove0(k);
         notifyPropertyChangeListeners(k, (String) oldValue, null);
         return oldValue;
     }
   }
-    
+
+  private Object put0 (String k, Object v){
+    entrySequence.add(k);
+    return super.put(k, v);
+  }
+
+  private Object remove0 (String k){
+    entrySequence.add(k);
+    return super.remove(k);
+  }
+
   protected String append (String key, String value, String separator) {
     String oldValue = getProperty(key);
     String newValue;
@@ -631,7 +657,7 @@ public class Config extends Properties {
       newValue = value;
     }
     
-    super.put(key,newValue);
+    put0(key,newValue);
     notifyPropertyChangeListeners(key, oldValue, newValue);
     
     return oldValue;
@@ -652,7 +678,13 @@ public class Config extends Properties {
 
   //------------------------------ public methods - the Config API
 
-  
+
+  public List<String> getEntrySequence () {
+    // whoever gets this might add/append/remove items, so we have to
+    // avoid ConcurrentModificationExceptions
+    return (List<String>)entrySequence.clone();
+  }
+
   public void addChangeListener (ConfigChangeListener l) {
     if (changeListeners == null) {
       changeListeners = new ArrayList<ConfigChangeListener>();
@@ -1422,7 +1454,8 @@ public class Config extends Properties {
     return -1;
   }
 
-  static final String PATH_SEPARATORS = "[,;]+"; // ' ', ':' can be part of path names
+  static final String PATH_SEPARATORS = "[,;]+"; // valid path separators - ' ', ':' can be part of path names
+  static final String PATH_SEPARATOR = ","; // the default for automatic appends
 
   /**
    * turn a mixed path list into a valid Windows path set with drive letters, 

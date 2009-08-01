@@ -8,9 +8,9 @@ if [ ! -d "$JPF_TOOLS" ] || [ ! -f "$JPF_TOOLS"/ant.jar ]; then
   # check to see if we have a powerful version of readlink, so we can follow
   # a symlink to this script in determining the JPF_TOOLS
   if [ -x "`which readlink`" ] && readlink -f /bin/true > /dev/null 2>&1; then
-    JPF_TOOLS="$(dirname "$(readlink -f $0)" )"/../lib
+    JPF_TOOLS="$(dirname "$(readlink -f $0)" )"/../tools
   else
-    JPF_TOOLS="`dirname $0`"/../lib
+    JPF_TOOLS="`dirname $0`"/../tools
   fi
 fi
 
@@ -28,7 +28,7 @@ EOF
 fi
 
 
-# add all jars and zips we find in the tools/lib dir
+# add all jars and zips we find in the tools dir
 CP=`find "$JPF_TOOLS" \( -name "*.jar" -or -name "*.zip" \) -exec echo -n {}":" \;`
 
 

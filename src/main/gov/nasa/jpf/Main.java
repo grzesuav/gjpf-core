@@ -53,6 +53,7 @@ public class Main {
       // we already checked for that, but anyways
       System.err.println("no \"public static void main(String[])\" method in gov.nasa.jpf.JPF");
     } catch (InvocationTargetException ix) {
+      ix.getCause().printStackTrace();
       // should already be reported by JPF
       //ix.getCause().printStackTrace();
     } catch (JPFClassLoaderException ex){

@@ -224,8 +224,11 @@ public class Source {
   public static void init (Config config) {
     ArrayList<SourceRoot> roots = new ArrayList<SourceRoot>();
 
-    for (String e : config.getCompactStringArray("sourcepath")){
-      addSourceRoot(config, roots, e);
+    String[] srcPaths = config.getCompactStringArray("sourcepath");
+    if (srcPaths != null){
+      for (String e : srcPaths){
+        addSourceRoot(config, roots, e);
+      }
     }
 
     sourceRoots = roots;
