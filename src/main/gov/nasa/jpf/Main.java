@@ -30,34 +30,58 @@ public class Main {
 
   public static void main (String[] args) {
 
+    String appClass = "gov.nasa.jpf.JPF";
+
+    if (args.length > 1 && args[0].equals("-a")){
+      appClass = checkClassName(args[1]);
+      if (appClass == null){
+        System.err.println("error: not a valid class name: " + args[1]);
+      }
+
+      String[] a = new String[args.length - 2];
+      System.arraycopy(args, 2, a, 0, a.length);
+      args = a;
+    }
+
     try {
       JPFClassLoader cl = new JPFClassLoader();
-      Class<?> jpfCls = cl.loadClass("gov.nasa.jpf.JPF");
+      Class<?> jpfCls = cl.loadClass( appClass);
 
       Class<?>[] argTypes = { String[].class };
 		  Method mainMth = jpfCls.getMethod("main", argTypes);
 
       int modifiers = mainMth.getModifiers();
       if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)){
-        System.err.println("no \"public static void main(String[])\" method in gov.nasa.jpf.JPF");
+        System.err.println("no \"public static void main(String[])\" method in" + appClass);
         return;
       }
 
       mainMth.invoke(null, new Object[] { args });
 
     } catch (ClassNotFoundException cnfx){
-      System.err.println("error: cannot find gov.nasa.jpf.JPF");
+      System.err.println("error: cannot find " + appClass);
     } catch (NoSuchMethodException nsmx){
-      System.err.println("error: no gov.nasa.jpf.JPF.main(String[]) method found");
+      System.err.println("error: no main(String[]) method found in " + appClass);
     } catch (IllegalAccessException iax){
       // we already checked for that, but anyways
-      System.err.println("no \"public static void main(String[])\" method in gov.nasa.jpf.JPF");
+      System.err.println("no \"public static void main(String[])\" method in " + appClass);
     } catch (InvocationTargetException ix) {
       ix.getCause().printStackTrace();
       // should already be reported by JPF
-      //ix.getCause().printStackTrace();
     } catch (JPFClassLoaderException ex){
       System.err.println(ex);
     }
+  }
+
+  private static String checkClassName (String cls){
+    if (cls == null || cls.isEmpty()){
+      return null;
+    }
+
+    if (cls.charAt(0) == '.'){
+      cls = "gov.nasa.jpf" + cls;
+    }
+    
+    return cls;
   }
 }
