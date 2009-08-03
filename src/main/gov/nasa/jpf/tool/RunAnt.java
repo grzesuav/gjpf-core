@@ -73,16 +73,23 @@ public class RunAnt {
   }
   
   static void addJavac(List<URL> list) {
-    File jar = null;
     char sc = File.separatorChar;
     String javaHome = System.getProperty("java.home");
     String os = System.getProperty("os.name");
+    String toolsJarPath;
 
     if ("Mac OS X".equals(os)){
       // nothing to do, it's in classes.jar
     } else {
       // on Linux and Windows it's in ${java.home}/lib/tools.jar
-      File toolsJar = new File(javaHome + sc + "lib" + sc + "tools.jar");
+
+      if (javaHome.endsWith(sc + "jre")){
+        toolsJarPath = javaHome.substring(0, javaHome.length()-4) + sc + "lib" + sc + "tools.jar";
+      } else {
+        toolsJarPath = javaHome + sc + "lib" + sc + "tools.jar";
+      }
+
+      File toolsJar = new File(toolsJarPath);
       if (toolsJar.isFile()){
         try {
           list.add(toolsJar.toURI().toURL());
@@ -128,7 +135,7 @@ public class RunAnt {
     if (toolsDir != null){
       addToolsJars(list, toolsDir);
     } else {
-      abort("no ant.jar found in known tools dirs");
+      abort("no ant.jar found in known tools dirs (check your ~/.jpf/site.properties)");
     }
   }
 
