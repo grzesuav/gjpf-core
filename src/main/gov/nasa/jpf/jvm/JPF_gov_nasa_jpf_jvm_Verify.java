@@ -139,6 +139,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     env.getSystemState().setInteresting(cond);
   }
 
+  public static void breakTransition____V (MJIEnv env, int clsObjRef){
+    ThreadInfo ti = env.getThreadInfo();
+    ti.breakTransition();
+  }
+
   public static boolean isCalledFromClass__Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                            int clsNameRef) {
     String refClassName = env.getStringObject(clsNameRef);

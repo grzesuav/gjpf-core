@@ -195,6 +195,8 @@ public class Verify {
 
   public static void interesting (boolean cond) {}
 
+  public static void breakTransition () {}
+
   public static void print (String s) {
     System.out.print(s);
   }

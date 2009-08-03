@@ -1574,6 +1574,14 @@ try {
   }
 
   /**
+   * imperatively break the transition to enable state matching
+   */
+  public void breakTransition () {
+    ThreadInfo ti = ThreadInfo.getCurrentThread();
+    ti.breakTransition();
+  }
+
+  /**
    * answers if the current state already has been visited. This is mainly
    * used by the searches (to control backtracking), but could also be useful
    * for observers to build up search graphs (based on the state ids)

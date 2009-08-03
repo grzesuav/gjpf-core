@@ -20,6 +20,7 @@ package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ClassInfo;
@@ -73,20 +74,35 @@ public class IdleFilter extends ListenerAdapter {
     }
   }
 
+  static enum Action { JUMP, PRUNE, BREAK, WARN }
+
   DynamicObjectArray<ThreadStat> threadStats = new DynamicObjectArray<ThreadStat>(4,16);
 
   ThreadStat ts;
 
   int maxBackJumps;
+  Action action;
 
-  boolean jumpPast;
 
   // ----------------------------------------------------- SearchListener
   // interface
 
   public IdleFilter(Config config) {
     maxBackJumps = config.getInt("idle.max_backjumps", 500);
-    jumpPast = config.getBoolean("idle.jump", false);
+
+    String act = config.getString("idle.action", "break");
+    if ("warn".equalsIgnoreCase(act)){
+      action = Action.WARN;
+    } else if ("break".equalsIgnoreCase(act)){
+      action = Action.BREAK;
+    } else if ("prune".equalsIgnoreCase(act)){
+      action = Action.PRUNE;
+    } else if ("jump".equalsIgnoreCase(act)){
+      action = Action.JUMP;
+    } else {
+      throw new JPFConfigException("unknown IdleFilter action: " +act);
+    }
+
   }
 
   public void stateAdvanced(Search search) {
@@ -138,22 +154,38 @@ public class IdleFilter extends ListenerAdapter {
             int line = mi.getLineNumber(insn);
             String file = ci.getSourceFileName();
 
-            if (jumpPast) {
-              // pretty bold, we jump past the loop end and go on from there
-              
-              Instruction next = insn.getNext();
-              ti.setPC(next);
+            switch (action) {
+              case JUMP:
+                // pretty bold, we jump past the loop end and go on from there
 
-              log.warning("IdleFilter jumped past loop in: "
-                  + ti.getName() + "\n\tat " + ci.getName() + "."
-                  + mi.getName() + "(" + file + ":" + line + ")");
-            } else {
-              // cut this sucker off - we declare this a visited state
-              jvm.ignoreState();
-              
-              log.warning("IdleFilter pruned thread: " + ti.getName()
-                  + "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file
-                  + ":" + line + ")");
+                Instruction next = insn.getNext();
+                ti.setPC(next);
+
+                log.warning("IdleFilter jumped past loop in: " + ti.getName() +
+                        "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
+                break;
+
+              case PRUNE:
+                // cut this sucker off - we declare this a visited state
+                jvm.ignoreState();
+                log.warning("IdleFilter pruned thread: " + ti.getName() +
+                        "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
+                break;
+
+              case BREAK:
+                // just break the transition and let the state matching take over
+                ti.breakTransition();
+
+                log.warning("IdleFilter breaks transition on suspicious loop in thread: " + ti.getName() +
+                        "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
+
+                break;
+
+              case WARN:
+                log.warning("IdleFilter detected suspicious loop in thread: " + ti.getName() +
+                        "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
+                break;
+
             }
           }
         }
