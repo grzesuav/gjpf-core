@@ -124,14 +124,12 @@ import java.util.logging.Logger;
 public class Config extends Properties {
 
   static final String TARGET_KEY = "target";
-
   static final String TARGET_ARGS_KEY = "target_args";
+
   public static final String LIST_SEPARATOR = ",";
-  
-  static final String DELIMS = "[,]+";  // for String arrays
-  
-  static final Class<?>[] CONFIG_ARGTYPES = { Config.class };
-  
+  static final String PATH_SEPARATOR = ","; // the default for automatic appends
+
+  static final Class<?>[] CONFIG_ARGTYPES = { Config.class };  
   static final Class<?>[] NO_ARGTYPES = new Class<?>[0];
   static final Object[] NO_ARGS = new Object[0];
 
@@ -812,7 +810,7 @@ public class Config extends Properties {
     String v = getProperty(key);
 
     if (v != null) {
-      String[] sa = v.split(DELIMS);
+      String[] sa = split(v);
       int[] a = new int[sa.length];
       int i = 0;
       try {
@@ -901,7 +899,7 @@ public class Config extends Properties {
     String v = getProperty(key);
 
     if (v != null) {
-      String[] sa = v.split(DELIMS);
+      String[] sa = split(v);
       long[] a = new long[sa.length];
       int i = 0;
       try {
@@ -939,7 +937,7 @@ public class Config extends Properties {
     String v = getProperty(key);
 
     if (v != null) {
-      String[] sa = v.split(DELIMS);
+      String[] sa = split(v);
       double[] a = new double[sa.length];
       int i = 0;
       try {
@@ -1003,7 +1001,7 @@ public class Config extends Properties {
     String v = getProperty(key);
     if (v != null && (v.length() > 0)) {
       HashSet<String> hs = new HashSet<String>();
-      for (String s : v.split(DELIMS)) {
+      for (String s : split(v)) {
         hs.add(s);
       }
       return hs;
@@ -1025,7 +1023,7 @@ public class Config extends Properties {
   public String[] getStringArray(String key) {
     String v = getProperty(key);
     if (v != null && (v.length() > 0)) {
-      return v.split(DELIMS);
+      return split(v);
     }
 
     return null;
@@ -1067,7 +1065,7 @@ public class Config extends Properties {
   public String[] getStringArray(String key, String[] def){
     String v = getProperty(key);
     if (v != null && (v.length() > 0)) {
-      return v.split(DELIMS);
+      return split(v);
     } else {
       return def;
     }
@@ -1190,7 +1188,7 @@ public class Config extends Properties {
     if (v != null) {
       int i = v.indexOf('@');
       if (i >= 0) { // Ok, we have ids
-        String[] a = v.split(DELIMS);
+        String[] a = split(v);
         String[] ids = new String[a.length];
         for (i = 0; i<a.length; i++) {
           ids[i] = getId(a[i]);
@@ -1454,8 +1452,6 @@ public class Config extends Properties {
     return -1;
   }
 
-  static final String PATH_SEPARATORS = "[,;]+"; // valid path separators - ' ', ':' can be part of path names
-  static final String PATH_SEPARATOR = ","; // the default for automatic appends
 
   /**
    * turn a mixed path list into a valid Windows path set with drive letters, 
@@ -1608,7 +1604,7 @@ public class Config extends Properties {
   public File[] getPathArray (String key) {    
     String v = getProperty(key);
     if (v != null) {
-      String[] pe = removeEmptyStrings(v.split(PATH_SEPARATORS));
+      String[] pe = removeEmptyStrings(split(v));
       
       if (pe != null && pe.length > 0) {
         File[] files = new File[pe.length];
@@ -1631,7 +1627,53 @@ public class Config extends Properties {
     
     return null;
   }
-  
+
+  /**
+   * our own version of split, which handles "`" quoting, and breaks on non-quoted
+   * ',' and ';' chars. We need this so that we can use ';' separated lists in
+   * JPF property files, but still can use quoted ';' if we absolutely have to
+   * specify Java signatures. On the other hand, we can't quote with '\' because
+   * that would make Windows paths even more terrible.
+   * regexes are bad at quoting, and this is more efficient anyways
+   */
+  protected String[] split (String input){
+    int n = input.length();
+    ArrayList<String> elements = new ArrayList<String>();
+    boolean quote = false;
+
+    char[] buf = new char[128];
+    int k=0;
+
+    for (int i=0; i<n; i++){
+      char c = input.charAt(i);
+
+      if (!quote) {
+        if (c==';' || c==','){ // element separator
+          elements.add( new String(buf, 0, k));
+          k = 0;
+          continue;
+        } else if (c=='`') {
+          quote = true;
+          continue;
+        }
+      }
+
+      if (k >= buf.length){
+        char[] newBuf = new char[buf.length+128];
+        System.arraycopy(buf, 0, newBuf, 0, k);
+        buf = newBuf;
+      }
+      buf[k++] = c;
+      quote = false;
+    }
+
+    if (k>0){
+      elements.add( new String(buf, 0, k));
+    }
+
+    return elements.toArray(new String[elements.size()]);
+  }
+
   
   //--- our modification interface
   
@@ -1671,7 +1713,7 @@ public class Config extends Properties {
   }
   
   public String[] asStringArray (String s){
-    return s.split(DELIMS);
+    return split(s);
   }
   
   public TreeMap<Object,Object> asOrderedMap() {

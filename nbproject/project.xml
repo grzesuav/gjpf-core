@@ -50,7 +50,7 @@
             </folders>
             <ide-actions>
                 <action name="build">
-                    <target>compile</target>
+                    <target>build</target>
                 </action>
                 <action name="clean">
                     <target>clean</target>
@@ -61,7 +61,7 @@
                 </action>
                 <action name="rebuild">
                     <target>clean</target>
-                    <target>compile</target>
+                    <target>build</target>
                 </action>
                 <!--  run single file actions -->
                 <!-- run stuff in examples -->
