@@ -1149,7 +1149,7 @@ public class Config extends Properties {
   }
 
   String expandClassName (String clsName) {
-    if (clsName.charAt(0) == '.') {
+    if (clsName != null && clsName.length() > 0 && clsName.charAt(0) == '.') {
       return "gov.nasa.jpf" + clsName;
     } else {
       return clsName;
@@ -1164,14 +1164,15 @@ public class Config extends Properties {
       Class<?>[] a = new Class[n];
       for (int i = 0; i < n; i++) {
         String clsName = expandClassName(v[i]);
-        try {
-          clsName = stripId(clsName);
-          a[i] = loader.loadClass(clsName);
-        } catch (ClassNotFoundException cnfx) {
-          throw new JPFConfigException("class not found " + v[i]);
-        } catch (ExceptionInInitializerError ix) {
-          throw new JPFConfigException("class initialization of " + v[i] + " failed: "
-              + ix, ix);
+        if (clsName != null && clsName.length() > 0){
+          try {
+            clsName = stripId(clsName);
+            a[i] = loader.loadClass(clsName);
+          } catch (ClassNotFoundException cnfx) {
+            throw new JPFConfigException("class not found " + v[i]);
+          } catch (ExceptionInInitializerError ix) {
+            throw new JPFConfigException("class initialization of " + v[i] + " failed: " + ix, ix);
+          }
         }
       }
 
