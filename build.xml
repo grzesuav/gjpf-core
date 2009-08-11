@@ -128,6 +128,26 @@
            classpathref="lib.path"/>
   </target>
 
+  <!-- ======================= CHECK SECTION =============================== -->
+
+  <target name="check" depends="build"
+          description="run analyzers on jpf-core">
+    <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
+
+    <findbugs home="tools"
+              debug="false"
+              output="xml"
+              jvmargs="-Xmx1024m"
+              outputFile="jpf-fb-report.xml" >
+      <auxClasspath path="lib/bcel.jar" />
+      <sourcePath path="src/main;src/peers" />
+      <class location="build/jpf.jar" />
+    </findbugs>
+
+    <java jar="tools/findbugs.jar" fork="true">
+      <arg value="jpf-fb-report.xml"/>
+    </java>
+  </target>
   
   <!-- ======================= MISC SECTION ================================ -->
   
@@ -196,6 +216,7 @@
     <delete file="build.properties"/>
     <delete dir="build" />
     <delete>
+      <fileset dir="." includes="jpf-fb-report.*"/>
       <fileset dir="." includes="**/*~" defaultexcludes="no" />
       <fileset dir="." includes="**/*.bak" defaultexcludes="no" />
       <fileset dir="." includes="**/error.xml" />
