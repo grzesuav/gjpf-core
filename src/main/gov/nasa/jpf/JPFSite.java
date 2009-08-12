@@ -103,7 +103,7 @@ public class JPFSite {
 
   /**
    * this should be more efficient than using Properties.load(), and it's
-   * restricted parsing anyways (we can't do expansion)
+   * restricted parsing anyways (we only do system property expansion)
    */
   public File getSiteCoreDir (){
 
@@ -122,7 +122,7 @@ public class JPFSite {
         for (String line = br.readLine(); line != null; line = br.readLine()) {
           Matcher m = corePattern.matcher(line);
           if (m.matches()) {
-            coreDirPath = m.group(1);
+            coreDirPath = expand(m.group(1));
             break;
           }
         }
@@ -141,4 +141,31 @@ public class JPFSite {
   }
 
 
+  /**
+   * simple non-recursive global system property expander
+   */
+  protected String expand (String s) {
+    int i, j = 0;
+    if (s == null || s.length() == 0) {
+      return s;
+    }
+
+    while ((i = s.indexOf("${", j)) >= 0) {
+      if ((j = s.indexOf('}', i)) > 0) {
+        String k = s.substring(i + 2, j);
+        String v = System.getProperty(k);
+
+        if (v != null) {
+          s = s.substring(0, i) + v + s.substring(j + 1, s.length());
+          j = i + v.length();
+        } else {
+          s = s.substring(0, i) + s.substring(j + 1, s.length());
+          j = i;
+        }
+      }
+    }
+
+    return s;
+
+  }
 }

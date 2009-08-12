@@ -612,6 +612,10 @@ public class Config extends Properties {
         k = k.substring( 0, k.length() - 1);
         return append( k, v, null);
 
+      } else if (k.charAt(0) == '+') { // the prepend hack
+        k = k.substring(1);
+        return prepend( k, v, null);
+
       } else { // normal value set
         v = normalize(expandString(k, v));
         Object oldValue = put0(k, v);
@@ -637,28 +641,56 @@ public class Config extends Properties {
     return super.remove(k);
   }
 
+  protected String prepend (String key, String value, String separator) {
+    String oldValue = getProperty(key);
+    value = normalize( expandString(key, value));
+
+    append0(key, oldValue, value, oldValue, separator);
+
+    return oldValue;
+  }
+
   protected String append (String key, String value, String separator) {
     String oldValue = getProperty(key);
-    String newValue;
-    
     value = normalize( expandString(key, value));
-    
-    if (oldValue != null) { // append
-      StringBuilder sb = new StringBuilder(oldValue);      
-      if (separator != null) {
-        sb.append(separator);
-      }
-      sb.append(value);
-      newValue = sb.toString();
-      
-    } else { // nothing there yet
-      newValue = value;
-    }
-    
-    put0(key,newValue);
-    notifyPropertyChangeListeners(key, oldValue, newValue);
-    
+
+    append0(key, oldValue, oldValue, value, separator);
+
     return oldValue;
+  }
+
+
+  private void append0 (String key, String oldValue, String a, String b, String separator){
+    String newValue;
+
+    if (a != null){
+      if (b != null) {
+        StringBuilder sb = new StringBuilder(a);
+        if (separator != null) {
+          sb.append(separator);
+        }
+        sb.append(b);
+        newValue = sb.toString();
+
+      } else { // b==null : nothing to append
+        if (oldValue == a){ // using reference compare is intentional here
+          return; // no change
+        } else {
+          newValue = a;
+        }
+      }
+
+    } else { // a==null : nothing to append to
+      if (oldValue == b || b == null){  // using reference compare is intentional here
+        return; // no change
+      } else {
+        newValue = b;
+      }
+    }
+
+    // if we get here, we have a newValue that differs from oldValue
+    put0(key, newValue);
+    notifyPropertyChangeListeners(key, oldValue, newValue);
   }
 
   protected String append (String key, String value) {

@@ -66,6 +66,12 @@
     <fail unless="have_tests">no src/tests</fail>
     <fail unless="have_examples">no src/examples</fail>
 
+    <dependset>
+      <srcfilelist dir="." files="build/jpf.jar"/>
+      <targetfilelist dir="." files="jpf-fb-report.xml"/>
+    </dependset>
+    <available file="jpf-fb-report.xml" type="file" property="have_fb_report"/>
+
   </target>
 
 
@@ -130,7 +136,7 @@
 
   <!-- ======================= CHECK SECTION =============================== -->
 
-  <target name="check" depends="build"
+  <target name="check" depends="build" unless="have_fb_report"
           description="run analyzers on jpf-core">
     <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
 
@@ -144,7 +150,11 @@
       <class location="build/jpf.jar" />
     </findbugs>
 
-    <java jar="tools/findbugs.jar" fork="true">
+  </target>
+
+  <target name="show-check" depends="check"
+            description="interactively browse check report">
+    <java jar="tools/findbugs.jar" fork="true" spawn="true">
       <arg value="jpf-fb-report.xml"/>
     </java>
   </target>
