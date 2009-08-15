@@ -106,6 +106,10 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     return insn;
   }
 
+  public String getSourceLocation() {
+    return insn.getSourceLocation();
+  }
+
   public void setPreviousChoiceGenerator (ChoiceGenerator<?> cg) {
     prev = cg;
   }

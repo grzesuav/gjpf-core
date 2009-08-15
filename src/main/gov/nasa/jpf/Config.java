@@ -985,6 +985,19 @@ public class Config extends Properties {
     }
   }
 
+  public <T extends Enum<T>> T getEnum( String key, T[] values, T defValue){
+    String v = getProperty(key);
+
+    if (v != null){
+      for (T t : values){
+        if (v.equalsIgnoreCase(t.name())){
+          return t;
+        }
+      }
+    }
+
+    return defValue;
+  }
 
   public String getString(String key) {
     return getProperty(key);

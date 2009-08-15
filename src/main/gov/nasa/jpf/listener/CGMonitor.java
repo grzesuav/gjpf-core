@@ -57,7 +57,7 @@ public class CGMonitor extends ListenerAdapter {
     ChoiceGenerator<?> cg = vm.getChoiceGenerator();
     
     printPrefix('.');
-    System.out.print(cg);
+    System.out.print(cg.getNextChoice());
     
     if (!showInsn) {
       System.out.println();

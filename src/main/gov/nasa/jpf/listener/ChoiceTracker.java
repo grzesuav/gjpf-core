@@ -20,14 +20,18 @@ import gov.nasa.jpf.search.Search;
  */
 public class ChoiceTracker extends ListenerAdapter implements PublisherExtension {
 
+  enum Format { CG, CHOICE };
+
   Config config;
   JVM vm;
   Search search;
   
   protected PrintWriter pw;
   Class<?>[] cgClasses;
-  boolean isReportExtension; 
-  
+  boolean isReportExtension;
+
+  boolean showLocation;
+  Format format;
   String[] excludes;
   
   public ChoiceTracker (JPF jpf, String traceFileName, Class<?> cgClass){
@@ -67,6 +71,9 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
     
     excludes = config.getStringArray("choice.exclude");
     cgClasses = config.getClasses("choice.class");
+
+    format = config.getEnum("choice.format", Format.values(), Format.CG);
+    showLocation = config.getBoolean("choice.show_location", true);
   }
 
   public void setExcludes (String... ex) {
@@ -119,23 +126,57 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
   }
 
   void printChoices () {
+    int i = 0;
     SystemState ss = vm.getSystemState();
-    ChoiceGenerator[] cgStack = ss.getChoiceGenerators();
+    ChoiceGenerator<?>[] cgStack = ss.getChoiceGenerators();
 
     nextChoice:
-    for (ChoiceGenerator cg : cgStack) {
+    for (ChoiceGenerator<?> cg : cgStack) {
       if (isRelevantCG(cg) && !cg.isDone()){
-        Object o = cg.getNextChoice();
-        if (o != null) {
-          Object choice = cg.getNextChoice();
-          
-          if (excludes != null){
+
+        Object choice = cg.getNextChoice();
+        if (choice == null) {
+          continue;
+        } else {
+          if (excludes != null) {
             for (String e : excludes) {
-              if (choice.toString().startsWith(e)) continue nextChoice;
+              if (choice.toString().startsWith(e)) {
+                continue nextChoice;
+              }
             }
           }
-          
-          pw.println(choice);
+        }
+
+        String line = null;
+
+        switch (format){
+          case CHOICE:
+            line = choice.toString();
+            if (line.startsWith("gov.nasa.jpf.jvm.")){
+              line = line.substring(17);
+            }
+            break;
+          case CG:
+            line = cg.toString();
+            if (line.startsWith("gov.nasa.jpf.jvm.choice.")){
+              line = line.substring(24);
+            }
+            break;
+        }
+
+        if (line != null){
+          pw.print(String.format("%4d: ", i++));
+
+          pw.print(line);
+
+          if (showLocation) {
+            String loc = cg.getSourceLocation();
+            if (loc != null) {
+              pw.print(" \tat ");
+              pw.print(loc);
+            }
+          }
+          pw.println();
         }
       }
     }

@@ -237,11 +237,15 @@ public abstract class Instruction {
   
   public String getSourceLocation () {
     ClassInfo ci = mi.getClassInfo();
-        
-    String s = ci.getName() + '.' + mi.getName() +
-      '(' + getFilePos() + ')';
-        
-    return s;
+
+    if (ci != null) {
+      String s = ci.getName() + '.' + mi.getName() +
+              '(' + getFilePos() + ')';
+      return s;
+      
+    } else {
+      return null;
+    }
   }
     
   protected abstract void setPeer (org.apache.bcel.generic.Instruction i,
