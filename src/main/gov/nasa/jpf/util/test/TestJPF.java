@@ -30,6 +30,7 @@ import java.util.List;
 import java.io.PrintStream;
 
 
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -69,6 +70,7 @@ public abstract class TestJPF extends Assert  {
   public static final String UNNAMED_PACKAGE = "";
   public static final String SAME_PACKAGE = null;
 
+  static  boolean showConfig; // for debugging purposes
 
   //--- those are only used outside of JPF execution
   private boolean runDirectly; // don't run test methods through JPF, invoke it directly
@@ -213,6 +215,8 @@ public abstract class TestJPF extends Assert  {
         if (args[i] != null && args[i].startsWith("-")){
           if (args[i].equals("-d")){
             runDirectly = true;
+          } else if (args[i].equals("-s")){
+            showConfig = true;
           }
           args[i] = null;
         } else {
@@ -342,6 +346,11 @@ public abstract class TestJPF extends Assert  {
       
       if (conf.getTarget() != null) {
         JPF jpf = new JPF(conf);
+
+        if (showConfig){
+          conf.print(new PrintWriter(System.out));
+        }
+
         jpf.run();
         
         List<Error> errors = jpf.getSearchErrors();      

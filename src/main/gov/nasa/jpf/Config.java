@@ -207,7 +207,8 @@ public class Config extends Properties {
 
     //--- at last, the (rest of the) command line properties
     loadArgs(a);
-//printEntries();
+    
+    //printEntries();
   }
 
 
@@ -407,13 +408,18 @@ public class Config extends Properties {
   }
 
   protected boolean addIfAbsent(ArrayList<File> list, File f){
-    String absPath = f.getAbsolutePath();
-    for (File e : list){
-      if (e.getAbsolutePath().equals(absPath)){
-        return false;
-      }
-    }
 
+    try {
+      String absPath = f.getCanonicalPath();
+      for (File e : list) {
+        if (e.getCanonicalPath().equals(absPath)) {
+          return false;
+        }
+      }
+    } catch (IOException iox) {
+      throw new JPFConfigException("illegal path spec: " + f);
+    }
+    
     list.add(f);
     return true;
   }
@@ -709,10 +715,10 @@ public class Config extends Properties {
   //------------------------------ public methods - the Config API
 
 
-  public List<String> getEntrySequence () {
+  public String[] getEntrySequence () {
     // whoever gets this might add/append/remove items, so we have to
     // avoid ConcurrentModificationExceptions
-    return (List<String>)entrySequence.clone();
+    return entrySequence.toArray(new String[entrySequence.size()]);
   }
 
   public void addChangeListener (ConfigChangeListener l) {

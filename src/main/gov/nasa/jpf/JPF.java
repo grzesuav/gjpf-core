@@ -204,7 +204,10 @@ public class JPF implements Runnable {
   static void setConfigPaths(Config conf) {
 
     // note - this is in the order of entry, i.e. reflects priorities
-    for (String k : conf.getEntrySequence()){
+    // we have to process this in reverse order so that later entries are prioritized
+    String[] keys = conf.getEntrySequence();
+    for (int i = keys.length-1; i>=0; i--){
+      String k = keys[i];
       if (k.endsWith(".native_classpath")){
         appendPath(conf,"native_classpath", k);
       } else if (k.endsWith(".classpath")){
