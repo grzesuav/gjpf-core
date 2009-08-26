@@ -206,6 +206,7 @@ public class JPF implements Runnable {
     // note - this is in the order of entry, i.e. reflects priorities
     // we have to process this in reverse order so that later entries are prioritized
     String[] keys = conf.getEntrySequence();
+
     for (int i = keys.length-1; i>=0; i--){
       String k = keys[i];
       if (k.endsWith(".native_classpath")){
@@ -225,12 +226,8 @@ public class JPF implements Runnable {
       // to the current classpath
 
       JPFClassLoader jpfCl = (JPFClassLoader)cl;
-      String[] nativeCp = conf.getCompactStringArray("native_classpath");
-      if (nativeCp != null){
-        for (URL url : getURLs(nativeCp)){
-          jpfCl.addURL(url);
-        }
-      }
+      String[] nativeCps = conf.getCompactStringArray("native_classpath");
+      jpfCl.setPathElements(nativeCps);
 
       //jpfCl.printEntries();
 

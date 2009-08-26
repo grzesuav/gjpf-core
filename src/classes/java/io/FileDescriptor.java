@@ -18,7 +18,7 @@
 //
 package java.io;
 
-import gov.nasa.jpf.annotations.FilterField;
+import gov.nasa.jpf.annotation.FilterField;
 
 
 

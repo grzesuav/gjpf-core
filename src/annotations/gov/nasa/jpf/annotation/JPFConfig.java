@@ -1,4 +1,4 @@
-package gov.nasa.jpf.annotations;
+package gov.nasa.jpf.annotation;
 
 /**
  * annotation that can be used to change JPF config properties

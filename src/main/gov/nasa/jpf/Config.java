@@ -283,9 +283,10 @@ public class Config extends Properties {
       } else {
         // if there is no file, try to load as a resource (jar)
         Class<?> clazz = (codeBase != null) ? codeBase : Config.class;
-        is = clazz.getResourceAsStream(fileName);
-        if (is != null) {
-          sources.add( clazz.getResource(fileName)); // a URL
+        URL url = clazz.getResource(fileName);
+        if (url != null){
+          is = url.openStream();
+          sources.add(url);
         }
       }
 
@@ -332,21 +333,29 @@ public class Config extends Properties {
     return false;
   }
 
+
+  /**
+   * this holds the policy defining in which order we process directories
+   * containing JPF projects (i.e. jpf.properties files)
+   */
   protected void loadProjectProperties () {
+    // this is the list of directories holding jpf.properties files that
+    // have to be processed in order of entry (increasing priority)
+    LinkedList<File> jpfDirs = new LinkedList<File>();
 
-    ArrayList<File> jpfDirs = new ArrayList<File>();
-
-    // first, we check the current dir
-    addJPFdirs(jpfDirs,new File(System.getProperty("user.dir")));
-
-    // now we add everything we get from the current classpath
-    // note that this contains the jpf-core in use
+    // deduce the JPF projects in use (at least jpf-core) from the CL which
+    // defined this class
     addJPFdirsFromClasspath(jpfDirs);
 
-    // and finally all the site configured extension dirs (but NOT jpf-core)
+    // add all the site configured extension dirs (but NOT jpf-core)
     addJPFdirsFromSiteExtensions(jpfDirs);
 
-    // now load all the jpf.property files we find in these dirs
+    // add the current dir, which has highest priority (this might bump up
+    // a previous entry by reodering it - which includes jpf-core)
+    addCurrentJPFdir(jpfDirs);
+
+    // now load all the jpf.property files we found in these dirs
+    // (later loads can override previous settings)
     for (File dir : jpfDirs){
       loadProperties(new File(dir,"jpf.properties").getAbsolutePath());
     }
@@ -364,25 +373,44 @@ public class Config extends Properties {
     }
   }
 
-  protected void addJPFdirs (ArrayList<File> jpfDirs, File dir){
+  protected void addJPFdirs (List<File> jpfDirs, File dir){
     while (dir != null) {
       File jpfProp = new File(dir, "jpf.properties");
       if (jpfProp.isFile()) {
-        addIfAbsent(jpfDirs, dir);
+        registerJPFdir(jpfDirs, dir);
         return;       // we probably don't want recursion here
       }
       dir = getParentFile(dir);
     }
   }
 
-  protected void addJPFdirsFromClasspath(ArrayList<File> jpfDirs) {
+  /**
+   * add the current dir to the list of JPF components.
+   * Note: this includes the core, so that we maintain the general
+   * principle that the enclosing project takes precedence (imagine the opposite:
+   * if we want to test a certain feature that is overridden by another extension
+   * we don't know about)
+   */
+  protected void addCurrentJPFdir(List<File> jpfDirs){
+    File dir = new File(System.getProperty("user.dir"));
+    while (dir != null) {
+      File jpfProp = new File(dir, "jpf.properties");
+      if (jpfProp.isFile()) {
+        registerJPFdir(jpfDirs, dir);
+        return;
+      }
+      dir = getParentFile(dir);
+    }
+  }
+
+  protected void addJPFdirsFromClasspath(List<File> jpfDirs) {
     String[] cpEntries = null;
 
     ClassLoader cl = Config.class.getClassLoader();
     if (cl instanceof JPFClassLoader){
       // in case it wasn't in the system classpath, this should now
       // contain the config classpath as the single element
-      cpEntries = ((JPFClassLoader)cl).getClasspathEntries();
+      cpEntries = ((JPFClassLoader)cl).getClasspathElements();
     }
 
     if (cpEntries == null || cpEntries.length == 0){ 
@@ -398,7 +426,7 @@ public class Config extends Properties {
     }
   }
 
-  protected void addJPFdirsFromSiteExtensions (ArrayList<File> jpfDirs){
+  protected void addJPFdirsFromSiteExtensions (List<File> jpfDirs){
     String[] extensions = getCompactStringArray("extensions");
     if (extensions != null){
       for (String pn : extensions){
@@ -407,20 +435,26 @@ public class Config extends Properties {
     }
   }
 
-  protected boolean addIfAbsent(ArrayList<File> list, File f){
-
+  /**
+   * the obvious part is that it only adds to the list if the file is absent
+   * the not-so-obvious part is that it re-orders already present files
+   * to maintain the priority
+   */
+  protected boolean registerJPFdir(List<File> list, File dir){
     try {
-      String absPath = f.getCanonicalPath();
+      String absPath = dir.getCanonicalPath();
       for (File e : list) {
         if (e.getCanonicalPath().equals(absPath)) {
+          list.remove(e);
+          list.add(e);
           return false;
         }
       }
     } catch (IOException iox) {
-      throw new JPFConfigException("illegal path spec: " + f);
+      throw new JPFConfigException("illegal path spec: " + dir);
     }
     
-    list.add(f);
+    list.add(dir);
     return true;
   }
 

@@ -14,7 +14,7 @@ implements FieldAmmendment {
   }
   
   public boolean ammendFieldInclusion(FieldInfo fi, boolean sofar) {
-    AnnotationInfo ann = fi.getAnnotation("gov.nasa.jpf.annotations.UnfilterField");
+    AnnotationInfo ann = fi.getAnnotation("gov.nasa.jpf.annotation.UnfilterField");
     if (ann != null) {
       return POLICY_INCLUDE;
     }

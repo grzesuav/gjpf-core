@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.test.vm.threads;
 
-import gov.nasa.jpf.annotations.FilterField;
+import gov.nasa.jpf.annotation.FilterField;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 

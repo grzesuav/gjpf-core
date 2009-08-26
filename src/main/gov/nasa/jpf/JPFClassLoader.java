@@ -22,13 +22,19 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.jar.JarFile;
+import java.util.jar.JarEntry;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * this is the class loader we use if JPF is started via  gov.nasa.jpf.Main
@@ -40,26 +46,148 @@ import java.util.regex.Pattern;
  * classpath of whatever loaded Main *and* this JPFClassLoader, hence we can't
  * go with the standard parent-first delegation model. If we do, all core
  * classes will be loaded by the current CL, which then is not able to resolve
- * references that require core libs (which were not in the CP).
+ * references that require components we picked up during our project dir
+ * configuration (by processing the jpf.properties)
  *
  * The solution is to reverse the lookup order, but filter out all JPF classes we
- * know have been already loaded (including JPFClassLoader itself).
+ * know have been already loaded (including the JPFClassLoader itself).
  *
- * The second trick is that we base this on an extended URLClassLoader, so that
- * JPF at runtime can determine if it should automatically extend the set
- * of CP URLS. Initially, we only have the JPF core in there (deduced from
- * the JPF CP element of the current CL)
+ * We have to implement our own class loading here (i.e. can't use URLClassLoader)
+ * because we need to start with a path entry that covers at least gov.nasa.jpf.JPF
+ * and gov.nasa.jpf.Config (most likely from jpf.jar), but later on want to be
+ * able to override the jpf-core entries with extension entries. URLClassLoader
+ * supports adding URLs, but not re-ordering them.
+ *
+ * NOTE: this means we *might* dynamically re-arrange path entries! This can
+ * be confusing if you try to overload JPF or Config (which DOES NOT WORK), or
+ * if you explicitly specify a startup class for Main ("-a <app-class>") that
+ * refers to overridden jpf-core classes. The reason we accept this otherwise
+ * bad behavior is that we consider it more important to stay with the
+ * principle of uniform project priorities in order of jpf.properties processing.
+ * While it is arguable that jpf-core main classes should not be overridden
+ * (a good practice!), we need to support overriding of core model classes
+ * (e.g. java.util.concurrent) by extensions, which usually come with their
+ * own peer classes (i.e. we have to keep the classpath consistent with the
+ * native_classpath)
  */
-public class JPFClassLoader extends URLClassLoader {
+public class JPFClassLoader extends ClassLoader {
+
+  abstract static class CpEntry {
+    abstract byte[] getClassData (String clsName);
+    abstract URL getResourceURL (String name);
+    abstract String getPath();
+  }
+
+  static class JarCpEntry extends CpEntry {
+    JarFile jar;
+    String urlBase;
+
+    JarCpEntry (JarFile f){
+      jar = f;
+      urlBase =  "jar:file://localhost" + f.getName() + "!/";
+    }
+
+    byte[] getClassData (String clsName) {
+      String pn = clsName.replace('.', '/') + ".class";
+      JarEntry je = jar.getJarEntry(pn);
+      if (je != null) {
+        try {
+          int len = (int)je.getSize();
+          byte data[] = new byte[len];
+          InputStream is = jar.getInputStream(je);
+          DataInputStream dis = new DataInputStream(is);
+          dis.readFully(data);
+          dis.close();
+          return data;
+
+        } catch (IOException iox) {
+          return null;
+        }
+      }
+
+      return null;
+    }
+
+    URL getResourceURL (String name) {
+      JarEntry je = jar.getJarEntry(name);
+      if (je != null) {
+        try {
+          return new URL(urlBase + name);
+        } catch (MalformedURLException mfux) {
+          return null;
+        }
+      }
+
+      return null;
+    }
+
+    String getPath() {
+      return jar.getName();
+    }
+  }
+
+  static class DirCpEntry extends CpEntry {
+    File dir;
+
+    DirCpEntry (File f) {
+      dir = f;
+    }
+
+    byte[] getClassData (String clsName) {
+      String pn = clsName.replace('.', File.separatorChar) + ".class";
+
+      File classFile = new File(dir, pn);
+      if (classFile.isFile()){
+        try {
+          int len = (int)classFile.length();
+          byte data[] = new byte[len];
+          FileInputStream fis = new FileInputStream(classFile);
+          DataInputStream dis = new DataInputStream(fis);
+          dis.readFully(data);
+          dis.close();
+          return data;
+        } catch (IOException iox) {
+          return null;
+        }
+      }
+
+      return null;
+    }
+
+    URL getResourceURL (String name) {
+      if (File.separatorChar == '/'){
+        name = name.replace('\\', '/');
+      } else {
+        name = name.replace('/', '\\');
+      }
+
+      File f = new File(dir, name);
+      if (f.isFile()){
+        try {
+          return f.toURI().toURL();
+        } catch (MalformedURLException mfux) {
+          return null;
+        }
+      }
+
+      return null;
+    }
+
+    String getPath() {
+      return dir.getPath();
+    }
+  }
 
   static Pattern libClassPattern = Pattern.compile("(javax?|sun)\\.");
 
   HashMap<String,Class<?>> preloads = new HashMap<String,Class<?>>();
+  List<CpEntry> cpEntries = new LinkedList<CpEntry>();
+
 
 
   public JPFClassLoader () {
     // JPF URLs will be added later on, mostly by JPF after we have a Config
-    super(new URL[0]);
+    super(JPFClassLoader.class.getClassLoader());
 
     // we need to get a CP entry to load JPF and Config from. If we have a
     // jpf.jar in the class.path, copy that. Otherwise use the jpf-core setting
@@ -72,12 +200,7 @@ public class JPFClassLoader extends URLClassLoader {
       }
     }
 
-    try {
-      URL url = core.toURI().toURL();
-      addURL(url);  // now we can load JPF and Config
-    } catch (MalformedURLException x){
-      throw new JPFClassLoaderException("illegal init classpath: " + core);
-    }
+    addPathElement(core.getPath());
 
     // add our known preloads
     addPreloadedClass(JPFClassLoader.class);
@@ -88,55 +211,139 @@ public class JPFClassLoader extends URLClassLoader {
     preloads.put(cls.getName(), cls);
   }
 
+  public void setPathElements (String[] pathElements){
+    cpEntries.clear();
+
+    for (String e : pathElements){
+      CpEntry ce = getCpEntry(e);
+      if (ce != null) {
+        cpEntries.add(ce);
+     }
+    }
+  }
+
+  public void addPathElement (String cpElement){
+    CpEntry ce = getCpEntry(cpElement);
+    if (ce != null) {
+      cpEntries.add(ce);
+    }
+  }
+
+  public void addFirstPathElement (String cpElement){
+    CpEntry ce = getCpEntry(cpElement);
+    if (ce != null) {
+      cpEntries.add(0, ce);
+    }
+  }
+
   //--- ClassLoader basics
 
-  public Class<?> loadClass (String name, boolean resolve) throws ClassNotFoundException {
 
-    if (libClassPattern.matcher(name).matches()) {
-      return super.loadClass(name, resolve);
+  protected Class<?> loadClass (String name, boolean resolve) throws ClassNotFoundException {
 
-    } else {
-      Class<?> cls = preloads.get(name);
+ //   synchronized (getClassLoadingLock(name)) {
+    Class<?> cls = findLoadedClass(name);
+    if (cls == null) {
 
+      cls = preloads.get(name);
       if (cls == null) {
-        cls = findLoadedClass(name);
+        if (libClassPattern.matcher(name).matches()) {
+          cls = findSystemClass(name);
 
-        if (cls == null) {
+        } else {
+
           try {
             cls = findClass(name);
-            if (resolve) {
-              resolveClass(cls);
-            }
 
           } catch (ClassNotFoundException e) {
-            cls = super.loadClass(name, resolve);
+            ClassLoader parent = getParent();
+            if (parent != null) {
+              cls = parent.loadClass(name);
+            } else {
+              cls = findSystemClass(name);
+            }
           }
         }
+
+        if (resolve) {
+          resolveClass(cls);
+        }
       }
-
-      return cls;
-    }
-  }
-
-  // we need to call this later-on, so it needs to be public
-  public void addURL (URL url) {
-    // we could check if it's already in there, but there is probably not
-    // much runtime incentive
-    super.addURL(url);
-  }
-
-  public String[] getClasspathEntries() {
-    URL[] urls = getURLs();
-    String[] cpEntries = new String[urls.length];
-
-    for (int i=0; i<urls.length; i++){
-      cpEntries[i] = urls[i].getPath();
     }
 
-    return cpEntries;
+    return cls;
+ //   }
   }
+
+  protected Class<?> findClass (String name) throws ClassNotFoundException {
+    for (CpEntry e : cpEntries) {
+      byte[] data = e.getClassData(name);
+      if (data != null) {
+        Class<?> cls = defineClass(name, data, 0, data.length, null);
+        return cls;
+      }
+    }
+
+    throw new ClassNotFoundException(name);
+  }
+
+  public URL getResource (String name) {
+    URL url = findResource(name);
+
+    if (url == null) {
+      ClassLoader parent = getParent();
+      if (parent != null) {
+        return parent.getResource(name);
+      } else {
+        return getSystemResource(name);
+      }
+    }
+
+    return url;
+  }
+
+  protected URL findResource (String name) {
+    for (CpEntry e : cpEntries) {
+      URL url = e.getResourceURL(name);
+      if (url != null){
+        return url;
+      }
+    }
+
+    return null;
+  }
+
+  public String[] getClasspathElements() {
+    String[] list = new String[cpEntries.size()];
+
+    int i=0;
+    for (CpEntry e : cpEntries){
+      list[i++] = e.getPath();
+    }
+
+    return list;
+  }
+
 
   //--- internals
+
+  private CpEntry getCpEntry(String e) {
+    File f = new File(e);
+
+    if (f.isFile()){
+      if (e.endsWith(".jar")){
+        try {
+          return new JarCpEntry( new JarFile(f));
+        } catch (IOException iox) {
+          return null;
+        }
+      }
+    } else if (f.isDirectory()){
+      return new DirCpEntry(f);
+    }
+
+    return null;
+  }
 
 
   /**
@@ -195,10 +402,10 @@ public class JPFClassLoader extends URLClassLoader {
 
   // for debugging purposes
   public void printEntries() {
-    System.out.println("JPFClassLoader.getURLs() :");
-    for (URL url : this.getURLs()){
+    System.out.println("JPFClassLoader.getClasspathElements() :");
+    for (String pe : getClasspathElements()){
       System.out.print("  ");
-      System.out.println(url);
+      System.out.println(pe);
     }
   }
 

@@ -31,9 +31,11 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
   boolean isReportExtension;
 
   boolean showLocation;
-  Format format;
+  Format format = Format.CHOICE;
   String[] excludes;
-  
+
+  // <2do> hardwired type specific tracker for use with some shells - check if
+  // we can get rid of it
   public ChoiceTracker (JPF jpf, String traceFileName, Class<?> cgClass){
     config = jpf.getConfig();
     vm = jpf.getVM();
@@ -172,6 +174,7 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
           if (showLocation) {
             String loc = cg.getSourceLocation();
             if (loc != null) {
+              pw.println();
               pw.print(" \tat ");
               pw.print(loc);
             }

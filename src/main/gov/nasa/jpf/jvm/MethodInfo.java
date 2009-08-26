@@ -38,6 +38,11 @@ import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.InstructionList;
 
 import gov.nasa.jpf.jvm.bytecode.*;
+import org.apache.bcel.classfile.AnnotationEntry;
+import org.apache.bcel.classfile.Attribute;
+import org.apache.bcel.classfile.ParameterAnnotationEntry;
+import org.apache.bcel.classfile.ParameterAnnotations;
+import org.apache.bcel.classfile.RuntimeVisibleParameterAnnotations;
 
 
 /**
@@ -128,7 +133,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
   /** Maximum number of elements on the stack */
   protected int maxStack;
 
-  
+  /** null if we don't have any */
+  AnnotationInfo[][] parameterAnnotations;
+
+
   //--- a batch of attributes
   
   /** the standard Java modifier attributes */
@@ -209,6 +217,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     mthTable.add(this);
     
     loadAnnotations(m.getAnnotationEntries());
+    loadParameterAnnotations(m);
   }
 
   // for explicit construction only (direct calls)
@@ -249,6 +258,57 @@ public class MethodInfo extends InfoObject implements Cloneable {
   
   public static void setInstructionFactory (InstructionFactory newFactory){
     insnFactory = newFactory;
+  }
+
+  protected void loadParameterAnnotations (Method m){
+
+    for (Attribute a : m.getAttributes()){
+      if (a instanceof ParameterAnnotations) {
+        ParameterAnnotationEntry[] paEntries = ((ParameterAnnotations) a).getParameterAnnotationEntries();
+
+        AnnotationInfo[][] paramAnnos = new AnnotationInfo[paEntries.length][];
+
+        for (int i=0; i<paEntries.length; i++) {
+          AnnotationEntry[] ae = paEntries[i].getAnnotationEntries();
+
+          if (ae.length > 0){
+            AnnotationInfo[] annos = new AnnotationInfo[ae.length];
+            for (int j=0; j<ae.length; j++){
+              annos[j] = new AnnotationInfo(ae[j]);
+            }
+            paramAnnos[i] = annos;
+
+          } else {
+            // this paramter doesn't have an AnnotationInfo
+          }
+        }
+
+        parameterAnnotations = paramAnnos;
+      }
+    }
+  }
+
+  public boolean hasParameterAnnotations() {
+    return (parameterAnnotations != null);
+  }
+
+  public AnnotationInfo[][] getParameterAnnotations() {
+    return parameterAnnotations;
+  }
+
+  /**
+   * return annotations for parameterIndex
+   */
+  public AnnotationInfo[] getParameterAnnotations(int parameterIndex){
+    if (parameterAnnotations == null){
+      return null;
+    } else {
+      if (parameterIndex >= getNumberOfArguments()){
+        return null;
+      } else {
+        return parameterAnnotations[parameterIndex];
+      }
+    }
   }
 
   public CodeBuilder getCodeBuilder() {

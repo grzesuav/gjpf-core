@@ -191,8 +191,7 @@
       <fileset dir="build/main">
         <include name="gov/nasa/jpf/Main.class"/>
         <include name="gov/nasa/jpf/JPFSite.class"/>
-        <include name="gov/nasa/jpf/JPFClassLoader.class"/>
-        <include name="gov/nasa/jpf/JPFClassLoaderException.class"/>
+        <include name="gov/nasa/jpf/JPFClassLoader*.class"/>
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>

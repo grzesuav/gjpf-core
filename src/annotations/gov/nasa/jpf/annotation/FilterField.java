@@ -16,7 +16,7 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.annotations;
+package gov.nasa.jpf.annotation;
 
 
 import java.lang.annotation.ElementType;
