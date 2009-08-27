@@ -136,6 +136,16 @@ public class Config extends Properties {
   static final String TRUE = "true";
   static final String FALSE = "false";
 
+  // do we want to log the config init
+  public static boolean log = false;
+
+  // bad - a control exception
+  static class MissingRequiredKeyException extends RuntimeException {
+    MissingRequiredKeyException(String details){
+      super(details);
+    }
+  }
+
   ClassLoader loader = Config.class.getClassLoader();
   
   // where did we initialize from
@@ -211,6 +221,9 @@ public class Config extends Properties {
     //printEntries();
   }
 
+  public static void enableLogging (boolean enableLogging){
+    log = enableLogging;
+  }
 
   /*
    * note that matching args are expanded and stored here, to avoid any
@@ -318,12 +331,21 @@ public class Config extends Properties {
       try {
         File f = new File(fileName);
         if (f.isFile()) {
+          if (log){
+            System.out.println("loading property file: " + fileName);
+          }
+
           setConfigPathProperties(f.getAbsolutePath());
           sources.add(f);
           FileInputStream is = new FileInputStream(f);
           load(is);
           is.close();
           return true;
+        }
+      } catch (MissingRequiredKeyException rkx){
+        // Hmpff - control exception
+        if (log){
+          System.out.println("missing required key: " + rkx.getMessage() + ", skipping: " + fileName);
         }
       } catch (IOException iex) {
         throw new JPFConfigException("error loading properties: " + fileName, iex);
@@ -637,6 +659,20 @@ public class Config extends Properties {
       throw new JPFConfigException("no null keys allowed");
     } else if (!(key instanceof String)){
       throw new JPFConfigException("only String keys allowed, got: " + key);
+    }
+    if (value != null && !(value instanceof String)){
+      throw new JPFConfigException("only String or null values allowed, got: " + value);
+    }
+
+    // <2do> this is a hack to shortcircuit loading of property files
+    if ("requires".equals(key)){
+      if (value != null) {
+        for (String reqKey : split((String) value)){
+          if (!containsKey(reqKey)){
+            throw new MissingRequiredKeyException(reqKey);
+          }
+        }
+      }
     }
 
     String k = expandString( null, (String) key);

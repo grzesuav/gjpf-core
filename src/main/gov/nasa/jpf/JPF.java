@@ -112,9 +112,15 @@ public class JPF implements Runnable {
 
   public static void main(String[] args) {
 
-    if (isHelpRequest(args)) {
+    int options = getOptions(args);
+
+    if (isOptionEnabled(HELP,options)) {
       showUsage();
       return;
+    }
+
+    if (isOptionEnabled(LOG, options)){
+      Config.enableLogging(true);
     }
 
     try {
@@ -122,7 +128,7 @@ public class JPF implements Runnable {
 
       // this is redundant to jpf.report.<publisher>.start=..config..
       // but nobody can remember this (it's only used to produce complete reports)
-      if (isPrintConfigRequest(args)) {
+      if (isOptionEnabled(SHOW,options)) {
         conf.print(new PrintWriter(System.out));
       }
 
@@ -215,6 +221,8 @@ public class JPF implements Runnable {
         appendPath(conf,"classpath", k);
       } else if (k.endsWith(".sourcepath")){
         appendPath(conf,"sourcepath", k);
+      } else if (k.endsWith("peer_packages")){
+        conf.append("peer_packages", conf.getString(k), ",");
       }
     }
 
@@ -449,30 +457,37 @@ public class JPF implements Runnable {
   }
 
 
-  public static boolean isHelpRequest (String[] args) {
-    if (args == null) return true;
-    if (args.length == 0) return true;
+  static final int HELP = 1;
+  static final int SHOW = 2;
+  static final int LOG = 4;
 
-    for (int i=0; i<args.length; i++) {
-      if ("-help".equals(args[i])) {
-        args[i] = null;
-        return true;
+  public static int getOptions (String[] args){
+    int mask = 0;
+    
+    if (args != null){
+
+      for (int i = 0; i < args.length; i++) {
+        String a = args[i];
+        if ("-help".equals(a)){
+          args[i] = null;
+          mask |= HELP;
+          
+        } else if ("-show".equals(a)) {
+          args[i] = null;
+          mask |= SHOW;
+          
+        } else if ("-log".equals(a)){
+          args[i] = null;
+          mask |= LOG;          
+        }
       }
     }
-
-    return false;
+    
+    return mask;
   }
-
-  public static boolean isPrintConfigRequest(String[] args) {
-    if (args == null) return false;
-
-    for (int i=0; i<args.length; i++) {
-      if ("-show".equals(args[i])) {
-        args[i] = null;
-        return true;
-      }
-    }
-    return false;
+  
+  public static boolean isOptionEnabled (int option, int mask){
+    return ((mask & option) != 0);
   }
 
   /**
