@@ -2162,9 +2162,18 @@ public class ThreadInfo
     }
   }
 
+
   //--- those are the transfer operations between operand stack and locals
   public void push (int v, boolean ref) {
     topClone().push(v, ref);
+  }
+
+  public void pushRef (int ref) {
+    topClone().pushRef(ref);
+  }
+
+  public void push (int v) {
+    topClone().push(v);
   }
 
   public void pushLocal (int localIndex){
