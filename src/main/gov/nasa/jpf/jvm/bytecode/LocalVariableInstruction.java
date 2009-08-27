@@ -26,8 +26,9 @@ import org.apache.bcel.classfile.ConstantPool;
  */
 public abstract class LocalVariableInstruction extends Instruction
   implements VariableAccessor {
-  int index;
-  String varId;
+
+  protected int index;
+  protected String varId;
   
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     index = ((org.apache.bcel.generic.LocalVariableInstruction) i).getIndex();
