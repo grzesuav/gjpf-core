@@ -253,6 +253,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return modelClassPath;
   }
 
+  public static boolean isObjectClassInfo (ClassInfo ci){
+    return ci == objectClassInfo;
+  }
+
   private ClassInfo () {
     // for explicit construction only
   }

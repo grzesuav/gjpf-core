@@ -66,9 +66,9 @@ public abstract class VirtualInvocation extends InvokeInstruction {
   }
 
   /**
-   * return the 'this' reference for this call
+   * return the reference value of the callee object
    */
-  public int getThis (ThreadInfo ti) {
+  public int getCalleeThis (ThreadInfo ti) {
     if (!ti.isPostExec()){
       // we have to dig out the 'this' reference from the callers stack
       return ti.getCalleeThis( getArgSize());
@@ -79,7 +79,7 @@ public abstract class VirtualInvocation extends InvokeInstruction {
   }
 
   public ElementInfo getThisElementInfo (ThreadInfo ti) {
-    int thisRef = getThis(ti);
+    int thisRef = getCalleeThis(ti);
     if (thisRef != -1) {
       return ti.getElementInfo(thisRef);
     } else {
@@ -125,7 +125,7 @@ public abstract class VirtualInvocation extends InvokeInstruction {
   }
 
   public Object getFieldValue (String id, ThreadInfo ti){
-    int objRef = getThis(ti);
+    int objRef = getCalleeThis(ti);
     ElementInfo ei = ti.getVM().getDynamicArea().get(objRef);
 
     Object v = ei.getFieldValueObject(id);

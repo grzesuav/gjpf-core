@@ -898,6 +898,29 @@ public class ThreadInfo
     }
   }
 
+  public boolean isCtorOnStack (int objRef){
+    for (int i = topIdx; i>= 0; i--){
+      StackFrame f = stack.get(i);
+      if (f.getThis() == objRef && f.getMethodInfo().isCtor()){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public boolean isClinitOnStack (ClassInfo ci){
+    for (int i = topIdx; i>= 0; i--){
+      StackFrame f = stack.get(i);
+      MethodInfo mi = f.getMethodInfo();
+      if (mi.isClinit(ci)){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Returns the method info of a specific stack frame.
    */

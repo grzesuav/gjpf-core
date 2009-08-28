@@ -31,6 +31,8 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Invoke instance method; special handling for superclass, private,
  * and instance initialization method invocations
  * ..., objectref, [arg1, [arg2 ...]] => ...
+ *
+ * invokedMethod is supposed to be constant (ClassInfo can't change)
  */
 public class INVOKESPECIAL extends InvokeInstruction {
   public INVOKESPECIAL () {}
@@ -41,6 +43,7 @@ public class INVOKESPECIAL extends InvokeInstruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int objRef = ti.getCalleeThis( getArgSize());
+    lastObj = objRef;
 
     // we don't have to check for NULL objects since this is either a ctor or
     // a private method
@@ -62,9 +65,19 @@ public class INVOKESPECIAL extends InvokeInstruction {
     return mi.execute(ti);
   }
 
-  int getCalleeThis (ThreadInfo ti) {
-    return ti.getCalleeThis( getArgSize());
+  /**
+   * return the reference value of the callee object
+   */
+  public int getCalleeThis (ThreadInfo ti) {
+    if (!ti.isPostExec()){
+      // we have to dig out the 'this' reference from the callers stack
+      return ti.getCalleeThis( getArgSize());
+    } else {
+      // execute() cached it
+      return lastObj;
+    }
   }
+
 
   /**
    * we can do some more caching here - the MethodInfo should be const

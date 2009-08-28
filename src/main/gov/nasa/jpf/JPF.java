@@ -110,7 +110,7 @@ public class JPF implements Runnable {
     return LogManager.getLogger( name);
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Throwable {
 
     int options = getOptions(args);
 
@@ -119,50 +119,52 @@ public class JPF implements Runnable {
       return;
     }
 
-    if (isOptionEnabled(LOG, options)){
+    if (isOptionEnabled(LOG, options)){ // mostly for debugging purposes
       Config.enableLogging(true);
     }
 
-    try {
-      Config conf = createConfig(args);
+    Config conf = createConfig(args);
 
-      // this is redundant to jpf.report.<publisher>.start=..config..
-      // but nobody can remember this (it's only used to produce complete reports)
-      if (isOptionEnabled(SHOW,options)) {
-        conf.print(new PrintWriter(System.out));
-      }
+    // this is redundant to jpf.report.<publisher>.start=..config..
+    // but nobody can remember this (it's only used to produce complete reports)
+    if (isOptionEnabled(SHOW, options)) {
+      conf.print(new PrintWriter(System.out));
+    }
 
-      if (logger == null) {
-        logger = initLogging(conf);
-      }
+    if (logger == null) {
+      logger = initLogging(conf);
+    }
 
-      // check if there is a shell class specification, in which case we just delegate
-      JPFShell shell = conf.getInstance("shell", JPFShell.class);
-      if (shell != null){
-        shell.start(args); // responsible for exception handling itself
+    // check if there is a shell class specification, in which case we just delegate
+    JPFShell shell = conf.getInstance("shell", JPFShell.class);
+    if (shell != null) {
+      shell.start(args); // responsible for exception handling itself
 
-      } else {
-        // no shell, we start JPF directly
-        LogManager.printStatus(logger);
-        conf.printStatus(logger);
+    } else {
+      // no shell, we start JPF directly
+      LogManager.printStatus(logger);
+      conf.printStatus(logger);
 
-        // this has to be done after we checked&consumed all "-.." arguments
-        // this is NOT about checking properties!
-        checkUnknownArgs(args);
+      // this has to be done after we checked&consumed all "-.." arguments
+      // this is NOT about checking properties!
+      checkUnknownArgs(args);
 
-        try {
-          JPF jpf = new JPF(conf);
-          jpf.run();
-        } catch (ExitException x) {
-          if (x.shouldReport()) {
-            x.printStackTrace();
-          }
+      try {
+        JPF jpf = new JPF(conf);
+        jpf.run();
+
+      } catch (ExitException x) {
+        // this is how we get most runtime config exceptions
+        if (x.shouldReport()) {
+          x.printStackTrace();
+        }
+
+        Throwable cause = x.getCause();
+        if ((cause != null) && conf.getBoolean("pass_exceptions", false)) {
+          cause.fillInStackTrace();
+          throw cause;
         }
       }
-
-    } catch (JPFConfigException cx) {
-      System.err.println("configuration error: " + cx.getMessage());
-      // shall we print the stacktrace ?
     }
   }
 
@@ -300,8 +302,8 @@ public class JPF implements Runnable {
       
     } catch (JPFConfigException cx) {
       logger.severe(cx.toString());
-      //cx.getCause().printStackTrace();
-      throw new ExitException(false);
+      //cx.getCause().printStackTrace();      
+      throw new ExitException(false, cx);
     }
   }  
 
@@ -689,7 +691,9 @@ public class JPF implements Runnable {
     
     ExitException() {}
     
-    ExitException (boolean report){
+    ExitException (boolean report, Throwable cause){
+      super(cause);
+      
       this.report = report;
     }
     

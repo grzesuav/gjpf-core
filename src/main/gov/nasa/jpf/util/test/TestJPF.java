@@ -336,7 +336,7 @@ public abstract class TestJPF extends Assert  {
    * @param args JPF main() arguments
    */
   public void noPropertyViolation (String... args) {
-    ExceptionInfo xi = null;
+    JPF jpf = null;
     
     report(args);
     JPF_gov_nasa_jpf_util_test_TestJPF.init();
@@ -345,31 +345,30 @@ public abstract class TestJPF extends Assert  {
       Config conf = JPF.createConfig(args);
       
       if (conf.getTarget() != null) {
-        JPF jpf = new JPF(conf);
+        jpf = new JPF(conf);
 
         if (showConfig){
           conf.print(new PrintWriter(System.out));
         }
 
-        jpf.run();
-        
-        List<Error> errors = jpf.getSearchErrors();      
-        if ((errors != null) && (errors.size() > 0)) {
-          fail("JPF found unexpected errors: " + (errors.get(0)).getDescription());
-        }
-
-        JVM vm = jpf.getVM();
-        if (vm != null) {
-          xi = vm.getPendingException();
-        }
+        jpf.run();        
       }
     } catch (Throwable t) {
       // we get as much as one little hickup and we declare it failed
       fail("JPF internal exception executing: ", args, t.toString());
     }
 
-    if (xi != null) {
-      fail("JPF caught exception executing: ", args, xi.getExceptionClassname());
+    List<Error> errors = jpf.getSearchErrors();
+    if ((errors != null) && (errors.size() > 0)) {
+      fail("JPF found unexpected errors: " + (errors.get(0)).getDescription());
+    }
+
+    JVM vm = jpf.getVM();
+    if (vm != null) {
+      ExceptionInfo xi = vm.getPendingException();
+      if (xi != null) {
+        fail("JPF caught exception executing: ", args, xi.getExceptionClassname());
+      }
     }
   }
   protected boolean verifyNoPropertyViolation (String...jpfArgs){
@@ -392,39 +391,40 @@ public abstract class TestJPF extends Assert  {
    * @param args JPF main() arguments
    */
   public void unhandledException ( String xClassName, String details, String... args) {
-    ExceptionInfo xi = null;
     
     report(args);
-    JPF_gov_nasa_jpf_util_test_TestJPF.init();
 
     try {
+      JPF_gov_nasa_jpf_util_test_TestJPF.init();
+
       // run JPF on our target test func
       gov.nasa.jpf.JPF.main(args);
 
-      xi = JVM.getVM().getPendingException();
-      if (xi == null){
-        fail("JPF failed to catch exception executing: ", args, ("expected " + xClassName));
-      } else {
-        String xn = xi.getExceptionClassname();
-        if (!xn.equals(xClassName)){
-          if (xn.equals(TestException.class.getName())){
-            xn = xi.getCauseClassname();
-            if (!xn.equals(xClassName)){
-              fail("JPF caught wrong exception: " + xn + ", expected: " + xClassName);            
-            }
-            if (details != null){
-              String xd = xi.getCauseDetails();
-              if (!details.equals(xd)){
-                fail("wrong exception details: " + xd + ", expected: " + details);
-              }
-            }
-          } else {
-            fail("JPF caught wrong exception: " + xn + ", expected: " + xClassName);          
-          }
-        }
-      }
     } catch (Throwable x) {
       fail("JPF internal exception executing: ", args, x.toString());
+    }
+
+    ExceptionInfo xi = JVM.getVM().getPendingException();
+    if (xi == null) {
+      fail("JPF failed to catch exception executing: ", args, ("expected " + xClassName));
+    } else {
+      String xn = xi.getExceptionClassname();
+      if (!xn.equals(xClassName)) {
+        if (xn.equals(TestException.class.getName())) {
+          xn = xi.getCauseClassname();
+          if (!xn.equals(xClassName)) {
+            fail("JPF caught wrong exception: " + xn + ", expected: " + xClassName);
+          }
+          if (details != null) {
+            String xd = xi.getCauseDetails();
+            if (!details.equals(xd)) {
+              fail("wrong exception details: " + xd + ", expected: " + details);
+            }
+          }
+        } else {
+          fail("JPF caught wrong exception: " + xn + ", expected: " + xClassName);
+        }
+      }
     }
   }
   protected boolean verifyUnhandledExceptionDetails (String xClassName, String details, String... args){
@@ -456,19 +456,21 @@ public abstract class TestJPF extends Assert  {
    */
   public void jpfException (Class<? extends Throwable> xCls, String... args) {
     report(args);
-    JPF_gov_nasa_jpf_util_test_TestJPF.init();
 
     try {
+      JPF_gov_nasa_jpf_util_test_TestJPF.init();
       // run JPF on our target test func
+
       gov.nasa.jpf.JPF.main(args);
-      
-      fail("JPF failed to produce exception, expected: " + xCls.getName());
-      
+
     } catch (Throwable x) {
       if (!xCls.isAssignableFrom(x.getClass())){
         fail("JPF produced wrong exception: " + x + ", expected: " + xCls.getName());
       }
+      return; // Ok, got the right one
     }
+      
+    fail("JPF failed to produce exception, expected: " + xCls.getName());  
   }
   protected boolean verifyJPFException (Class<? extends Throwable> xCls, String... args){
     if (runDirectly) {
@@ -488,26 +490,31 @@ public abstract class TestJPF extends Assert  {
    * @param args JPF main() arguments
    */
   public void propertyViolation (Class<? extends Property> propertyCls, String... args ){
+    JPF jpf = null;
+
     report(args);
-    JPF_gov_nasa_jpf_util_test_TestJPF.init();
+
     
     try {
-      JPF jpf = new JPF(args);
+      JPF_gov_nasa_jpf_util_test_TestJPF.init();
+      jpf = new JPF(args);
       jpf.run();
 
-      List<Error> errors = jpf.getSearchErrors();
-
-      if (errors != null) {
-        for (Error e : errors) {
-          if (propertyCls == e.getProperty().getClass()) {
-            System.out.println("found error: " + propertyCls.getName());
-            return; // success, we got the sucker
-          }
-        }
-      }
     } catch (Throwable x) {
       x.printStackTrace();
       fail("JPF internal exception executing: ", args, x.toString());
+    }
+
+
+    List<Error> errors = jpf.getSearchErrors();
+
+    if (errors != null) {
+      for (Error e : errors) {
+        if (propertyCls == e.getProperty().getClass()) {
+          System.out.println("found error: " + propertyCls.getName());
+          return; // success, we got the sucker
+        }
+      }
     }
     
     fail("JPF failed to detect error: " + propertyCls.getName());    

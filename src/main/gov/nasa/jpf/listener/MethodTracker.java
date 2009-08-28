@@ -88,7 +88,7 @@ public class MethodTracker extends ListenerAdapter {
 
       if (insn instanceof VirtualInvocation) {
         VirtualInvocation callInsn = (VirtualInvocation)insn;
-        int objref = callInsn.getThis(ti);
+        int objref = callInsn.getCalleeThis(ti);
         callee = callInsn.getInvokedMethod(ti, objref);
 
       } else if (insn instanceof INVOKESPECIAL) {

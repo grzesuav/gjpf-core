@@ -1,5 +1,6 @@
 package gov.nasa.jpf.test.basic;
 
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.jvm.NoUncaughtExceptionsProperty;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
@@ -50,7 +51,7 @@ public class HarnessTest extends TestJPF {
   }
 
   @Test public void test_5 () {
-    if (verifyJPFException(Throwable.class, "+vm.class=InvalidVMClass")){
+    if (verifyJPFException(JPFConfigException.class, "+vm.class=InvalidVMClass", "+pass_exceptions")){
       System.out.println("** JPF should not run, so this should only show when directly executed");
     }
   }
