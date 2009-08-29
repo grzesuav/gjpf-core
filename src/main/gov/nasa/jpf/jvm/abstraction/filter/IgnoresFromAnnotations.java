@@ -20,7 +20,7 @@ implements FieldAmmendment, FrameAmmendment {
     if (ann != null){
       String condition = ann.getValueAsString("condition");
       boolean invert = ann.getValueAsBoolean("invert");
-      if ((condition == null) || (config.getBoolean(condition)) == !invert ) {
+      if ((condition == null) || condition.isEmpty() || (config.getBoolean(condition)) == !invert ) {
         return POLICY_IGNORE;
       }
     }

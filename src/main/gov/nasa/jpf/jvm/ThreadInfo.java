@@ -72,6 +72,8 @@ public class ThreadInfo
     "INTERRUPTED", "TIMEDOUT", "TERMINATED"
   };
 
+  static final int[] emptyRefArray = new int[0];
+
   static ThreadInfo currentThread;
   static ThreadInfo mainThread;
 
@@ -812,13 +814,18 @@ public class ThreadInfo
   }
 
   public int[] getLockedObjectReferences () {
-    int[] a = new int[lockedObjects.size()];
-    int i=0;
-    for (ElementInfo e : lockedObjects) {
-      a[i++] = e.getIndex();
-    }
+    int nLocks = lockedObjects.size();
+    if (nLocks > 0) {
+      int[] a = new int[lockedObjects.size()];
+      int i = 0;
+      for (ElementInfo e : lockedObjects) {
+        a[i++] = e.getIndex();
+      }
+      return a;
 
-    return a;
+    } else {
+      return emptyRefArray;
+    }
   }
 
   public long getLongLocal (String lname) {

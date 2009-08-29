@@ -18,12 +18,18 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import org.apache.bcel.classfile.AnnotationDefault;
 import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.ArrayElementValue;
+import org.apache.bcel.classfile.Attribute;
 import org.apache.bcel.classfile.ClassElementValue;
 import org.apache.bcel.classfile.ElementValue;
 import org.apache.bcel.classfile.ElementValuePair;
 import org.apache.bcel.classfile.EnumElementValue;
+import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.classfile.Method;
 import org.apache.bcel.classfile.SimpleElementValue;
 
 /**
@@ -34,6 +40,56 @@ import org.apache.bcel.classfile.SimpleElementValue;
  */
 public class AnnotationInfo {
 
+  static final Entry[] NONE = new Entry[0];
+  
+  // we have to jump through a lot of hoops to handle default annotation parameter values
+  // this is not ideal, since it causes the classfile to be re-read if the SUT
+  // uses annotation reflection (which creates a ClassInfo), but this is rather
+  // exotic, so we save some time by not creating a ClassInfo (which would hold
+  // the default vals as method annotations) and directly store the default values here
+  static HashMap<String,Entry[]> defaultEntries = new HashMap<String,Entry[]>();
+
+  static Entry[] getDefaultEntries (String annotationType){
+
+    Entry[] def = defaultEntries.get(annotationType);
+
+    if (def == null){ // Annotation not seen yet - we have to dig it out from the classfile
+      JavaClass acls = ClassInfo.getJavaClass(annotationType);
+      if (acls != null){
+        ArrayList<Entry> list = null;
+        for (Method m : acls.getMethods()) {
+          for (Attribute a : m.getAttributes()) {
+            if ("AnnotationDefault".equals(a.getName())) {
+              if (list == null) {
+                list = new ArrayList<Entry>();
+              }
+
+              AnnotationDefault ad = (AnnotationDefault) a;
+              ElementValue val = (ElementValue) ad.getDefaultValue();
+
+              list.add(new Entry(m.getName(), getValueObject(val)));
+            }
+          }
+        }
+        if (list != null && !list.isEmpty()) {
+          def = list.toArray(new Entry[list.size()]);
+        } else {
+          def = NONE;
+        }
+        defaultEntries.put(annotationType, def);
+
+      } else {
+        // <2do> maybe we should raise an exception, but apparently simple
+        // occurrence of an annotation doesn't load the class in a normal VM
+        ClassInfo.logger.warning("annotation type not found: " + annotationType);
+        def = NONE;
+      }
+    }
+
+    return def;
+  }
+
+
   public static class Enum {
     String type, field;
     
@@ -42,8 +98,9 @@ public class AnnotationInfo {
       field = f;
     }
   }
-    
-  class Entry {
+
+  
+  static class Entry {
     String key;
     Object value;
     
@@ -63,7 +120,8 @@ public class AnnotationInfo {
   
   String name;
   Entry[] entries;
-    
+
+
   public AnnotationInfo (String name, Entry[] entries){
     this.name = name;
     this.entries = entries;
@@ -71,14 +129,37 @@ public class AnnotationInfo {
   
   public AnnotationInfo (AnnotationEntry ae){
     name = Types.getCanonicalTypeName(ae.getAnnotationType()); // it's in slash-notation
-    
+    ArrayList<Entry> list = new ArrayList<Entry>();
+
+    // those are only the explicitly provided parameters
     ElementValuePair[] evp = ae.getElementValuePairs();
-    entries = new Entry[evp.length];
     
-    for (int i=0; i<evp.length; i++){
-      entries[i] = new Entry(evp[i].getNameString(),
-                             getValueObject(evp[i].getValue()));
+    for (int i = 0; i < evp.length; i++) {
+      String key = evp[i].getNameString();
+      ElementValue eval = evp[i].getValue();
+      Object val = getValueObject(eval);
+
+      list.add(new Entry(key, val));
     }
+
+    // now we have to check if there are any default parameters that are not overridden
+    for (Entry d : getDefaultEntries(name)){
+      boolean overridden = false;
+      int n = list.size();
+      for (int j=0; j<n; j++){
+        Entry e = list.get(j);
+        if (e.key.equals(d.key)){
+          overridden = true;
+          break;
+        }
+      }
+      if (!overridden){
+        list.add(d);
+      }
+    }
+    
+    entries = list.toArray(new Entry[list.size()]);
+
   }
   
   /**
