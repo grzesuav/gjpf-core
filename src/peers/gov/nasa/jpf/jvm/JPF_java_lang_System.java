@@ -153,7 +153,7 @@ public class JPF_java_lang_System {
       }
     }
     
-    if (env.hasAttrs(srcArrayRef)){
+    if (env.hasFieldAttrs(srcArrayRef)){
       if (srcArrayRef == dstArrayRef && srcIdx < dstIdx) { // self copy
         for (i = length - 1; i >= 0; i--) {
           Object a = env.getElementAttr(srcArrayRef, srcIdx+i);

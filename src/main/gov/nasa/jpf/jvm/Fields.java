@@ -66,6 +66,19 @@ public abstract class Fields implements Cloneable {
     return fieldAttrs != null;
   }
 
+  public boolean hasFieldAttrs (Class<?> attrType){
+    Object[] fa = fieldAttrs;
+    if (fa != null){
+      for (int i=0; i<fa.length; i++){
+        Object a = fa[i];
+        if (a != null && attrType.isAssignableFrom(a.getClass())){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   /**
    * set the (optional) attribute for a field
    *
@@ -82,22 +95,45 @@ public abstract class Fields implements Cloneable {
     fieldAttrs[fieldOrElementIndex] = attr;
   }
 
+  public <T> T getFieldAttr (Class<T> attrType, int fieldOrElementIndex){
+    if (fieldAttrs != null){
+      Object a = fieldAttrs[fieldOrElementIndex];
+      if (a != null && attrType.isAssignableFrom(a.getClass())){
+        return (T) a;
+      }
+    }
+
+    return null;
+  }
+
+  // supposed to return all
   public Object getFieldAttr (int fieldOrElementIndex){
     if (fieldAttrs != null){
       return fieldAttrs[fieldOrElementIndex];
-    } else {
-      return null;
     }
+    return null;
   }
 
   public boolean hasObjectAttr () {
     return (objectAttr != null);
   }
 
+  public boolean hasObjectAttr (Class<?> attrType){
+    return objectAttr != null && attrType.isAssignableFrom(objectAttr.getClass());
+  }
+
   public void setObjectAttr (Object attr){
     objectAttr = attr;
   }
 
+  public <T> T getObjectAttr (Class<T> attrType) {
+    if (objectAttr != null && attrType.isAssignableFrom(objectAttr.getClass())){
+      return (T)objectAttr;
+    }
+    return null;
+  }
+
+  // supposed to return all
   public Object getObjectAttr () {
     return objectAttr;
   }

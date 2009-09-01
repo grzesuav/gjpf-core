@@ -318,8 +318,12 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   // we store long attrs at the local var index, which is the lower one
+  // this returns all
   public Object getLongOperandAttr () {
     return getOperandAttr(1);
+  }
+  public <T> T getLongOperandAttr (Class<T> attrType) {
+    return getOperandAttr(attrType,1);
   }
 
   public boolean hasOperandAttrs () {
@@ -330,21 +334,46 @@ public class StackFrame implements Constants, Cloneable {
     return localAttr != null;
   }
 
+  // returns all
   public Object getOperandAttr () {
+    // <2do> needs to handle composite
     if ((top >=0) && (operandAttr != null)){
       return operandAttr[top];
     } else {
       return null;
     }
   }
+  public <T> T getOperandAttr (Class<T> attrType){
+    if ((top >=0) && (operandAttr != null)){
+      Object a = operandAttr[top];
+      if (a != null && attrType.isAssignableFrom(a.getClass())){
+        return (T) a;
+      }
+    }
+
+    return null;
+  }
 
   public Object getOperandAttr (int offset) {
+    // <2do> needs to handle composite
     if ((top >= offset) && (operandAttr != null)) {
       return operandAttr[top-offset];
     } else {
       return null;
     }
   }
+  public <T> T getOperandAttr (Class<T> attrType, int offset){
+    if ((top >= offset) && (operandAttr != null)){
+      Object a = operandAttr[top-offset];
+      if (a != null && attrType.isAssignableFrom(a.getClass())){
+        return (T) a;
+      }      
+    }
+
+    return null;
+  }
+
+
 
   public void setOperand (int offset, int v, boolean ref){
     int i = top-offset;
@@ -352,12 +381,23 @@ public class StackFrame implements Constants, Cloneable {
     isOperandRef[i] = ref;
   }
 
+  // returns all
   public Object getLocalAttr (int index){
+    // <2do> needs to handle composite
     if ((index < locals.length) && (localAttr != null)){
       return localAttr[index];
     } else {
       return null;
     }
+  }
+  public <T> T getLocalAttr (Class<T> attrType, int index){
+    if ((index < locals.length) && (localAttr != null)){
+      Object a = localAttr[index];
+      if (a != null && attrType.isAssignableFrom(a.getClass())){
+        return (T) a;
+      }
+    }
+    return null;
   }
 
 

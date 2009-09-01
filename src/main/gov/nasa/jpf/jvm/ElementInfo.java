@@ -346,10 +346,17 @@ public abstract class ElementInfo implements Cloneable {
   abstract protected FieldInfo getFieldInfo(String fname);
 
 
-  public boolean hasObjectAttr() {
-    return fields.hasObjectAttr();
+  //--- attribute accessors
+
+  public boolean hasObjectAttr(Class<?> attrType) {
+    return fields.hasObjectAttr(attrType);
   }
 
+  public <T> T getObjectAttr (Class<T> attrType) {
+    return fields.getObjectAttr(attrType);
+  }
+
+  // supposed to return all
   public Object getObjectAttr () {
     return fields.getObjectAttr();
   }
@@ -364,6 +371,10 @@ public abstract class ElementInfo implements Cloneable {
 
   public boolean hasFieldAttrs() {
     return fields.hasFieldAttrs();
+  }
+
+  public boolean hasFieldAttrs (Class<?> attrType){
+    return fields.hasFieldAttrs(attrType);
   }
 
   /**
@@ -384,6 +395,12 @@ public abstract class ElementInfo implements Cloneable {
     ei.fields.setFieldAttr(fi.getFieldIndex(), attr);
   }
 
+  public <T> T getFieldAttr (Class<T> attrType, FieldInfo fi){
+    ElementInfo ei = getElementInfo(fi.getClassInfo());
+    return ei.fields.getFieldAttr(attrType,fi.getFieldIndex());
+  }
+
+  // supposed to return all
   public Object getFieldAttr (FieldInfo fi){
     ElementInfo ei = getElementInfo(fi.getClassInfo());
     return ei.fields.getFieldAttr(fi.getFieldIndex());
@@ -398,6 +415,11 @@ public abstract class ElementInfo implements Cloneable {
     fields.setFieldAttr(idx, attr);
   }
 
+  public <T> T getElementAttr (Class<T> attrType, int idx){
+    return fields.getFieldAttr(attrType, idx);
+  }
+
+  // this is supposed to return all attrs of the element
   public Object getElementAttr (int idx){
     return fields.getFieldAttr(idx);
   }

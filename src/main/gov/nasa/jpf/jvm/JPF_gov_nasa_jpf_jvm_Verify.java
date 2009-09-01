@@ -254,16 +254,9 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   public static int getObjectAttribute__Ljava_lang_Object_2__I (MJIEnv env, int clsRef, int oRef){
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
-
-      Object val = ei.getObjectAttr();
-      if (val != null) {
-        if (val instanceof Integer) {
-          int ret = ((Integer) val).intValue();
-          return ret;
-        } else {
-          env.throwException("java.lang.RuntimeException",
-                  ei.toString() + " object attribute not an int: " + val);
-        }
+      Integer a = ei.getObjectAttr(Integer.class);
+      if (a != null){
+        return a.intValue();
       }
     }
 
@@ -274,15 +267,18 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
                                                                                     int oRef, int fnRef, int attr){
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
+      if (ei != null){
+        String fname = env.getStringObject(fnRef);
+        FieldInfo fi = ei.getFieldInfo(fname);
 
-      String fname = env.getStringObject(fnRef);
-      FieldInfo fi = ei.getFieldInfo(fname);
-
-      if (fi != null){
-        ei.setFieldAttr(fi, new Integer(attr));
+        if (fi != null) {
+          ei.setFieldAttr(fi, new Integer(attr));
+        } else {
+          env.throwException("java.lang.NoSuchFieldException",
+                  ei.getClassInfo().getName() + '.' + fname);
+        }
       } else {
-        env.throwException("java.lang.NoSuchFieldException",
-                           ei.getClassInfo().getName() + '.' + fname);
+        env.throwException("java.lang.RuntimeException", "illegal reference value: " + oRef);
       }
     }
   }
@@ -291,26 +287,21 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
                                                                                     int oRef, int fnRef){
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
+      if (ei != null){
+        String fname = env.getStringObject(fnRef);
+        FieldInfo fi = ei.getFieldInfo(fname);
 
-      String fname = env.getStringObject(fnRef);
-      FieldInfo fi = ei.getFieldInfo(fname);
-
-      if (fi != null){
-        Object val = ei.getFieldAttr(fi);
-        if (val != null){
-          if (val instanceof Integer){
-            int ret = ((Integer)val).intValue();
-            return ret;
-          } else {
-            env.throwException("java.lang.RuntimeException",
-                               ei.toString() + '.' + fname +
-                               " attribute not an int: " + val);
+        if (fi != null) {
+          Integer a = ei.getFieldAttr(Integer.class, fi);
+          if (a != null){
+            return a.intValue();
           }
+        } else {
+          env.throwException("java.lang.NoSuchFieldException",
+                  ei.toString() + '.' + fname);
         }
-
       } else {
-        env.throwException("java.lang.NoSuchFieldException",
-                           ei.toString() + '.' + fname);
+        env.throwException("java.lang.RuntimeException", "illegal reference value: " + oRef);
       }
     }
 
@@ -362,16 +353,20 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
 
-      if (ei.isArray()){
-        if (idx < ei.arrayLength()){
-          ei.setElementAttr(idx, new Integer(attr));
+      if (ei != null){
+        if (ei.isArray()) {
+          if (idx < ei.arrayLength()) {
+            ei.setElementAttr(idx, new Integer(attr));
+          } else {
+            env.throwException("java.lang.ArrayIndexOutOfBoundsException",
+                    Integer.toString(idx));
+          }
         } else {
-          env.throwException("java.lang.ArrayIndexOutOfBoundsException",
-                             Integer.toString(idx));
+          env.throwException("java.lang.RuntimeException",
+                  "not an array: " + ei);
         }
       } else {
-        env.throwException("java.lang.RuntimeException",
-                           "not an array: " + ei);
+        env.throwException("java.lang.RuntimeException", "illegal reference value: " + oRef);
       }
     }
   }
@@ -381,26 +376,23 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
 
-      if (ei.isArray()){
-        if (idx < ei.arrayLength()){
-          Object val = ei.getElementAttr(idx);
-          if (val != null){
-            if (val instanceof Integer){
-              int ret = ((Integer)val).intValue();
-              return ret;
-            } else {
-              env.throwException("java.lang.RuntimeException",
-                                 ei.toString() + '[' + idx +
-                                 "] attribute not and int: " + val);
+      if (ei != null) {
+        if (ei.isArray()) {
+          if (idx < ei.arrayLength()) {
+            Integer a = ei.getElementAttr(Integer.class, idx);
+            if (a != null){
+              return a.intValue();
             }
+          } else {
+            env.throwException("java.lang.ArrayIndexOutOfBoundsException",
+                    Integer.toString(idx));
           }
         } else {
-          env.throwException("java.lang.ArrayIndexOutOfBoundsException",
-                             Integer.toString(idx));
+          env.throwException("java.lang.RuntimeException",
+                  "not an array: " + ei);
         }
       } else {
-        env.throwException("java.lang.RuntimeException",
-                           "not an array: " + ei);
+        env.throwException("java.lang.RuntimeException", "illegal reference value: " + oRef);
       }
     }
 

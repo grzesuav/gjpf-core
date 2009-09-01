@@ -972,16 +972,30 @@ public class ThreadInfo
     return list.ks.da.get(peek());
   }
 
+  // might return composite
   public Object getOperandAttr () {
     return top.getOperandAttr();
   }
+  public <T> T getOperandAttr (Class<T> attrType){
+    return top.getOperandAttr(attrType);
+  }
 
+  // might return composite
   public Object getLongOperandAttr () {
     return top.getLongOperandAttr();
   }
+  public <T> T getLongOperandAttr (Class<T> attrType){
+    return top.getLongOperandAttr(attrType);
+  }
 
+
+
+  // might return composite
   public Object getOperandAttr (int opStackOffset) {
     return top.getOperandAttr(opStackOffset);
+  }
+  public <T> T getOperandAttr( Class<T> attrType, int opStackOffset){
+    return top.getOperandAttr(attrType,opStackOffset);
   }
 
   // setting operand attributes assumes the operand is already on the stack
@@ -1020,8 +1034,12 @@ public class ThreadInfo
     top.setLocalAttr(localIndex, attr);
   }
 
+  // might return composite
   public Object getLocalAttr (int localIndex){
     return top.getLocalAttr(localIndex);
+  }
+  public <T> T getLocalAttr (Class<T> attrType, int localIndex){
+    return top.getLocalAttr(attrType, localIndex);
   }
 
   /**

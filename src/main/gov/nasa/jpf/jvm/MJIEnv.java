@@ -129,7 +129,7 @@ public class MJIEnv {
     return Types.getTypeSize(getArrayType(objref));
   }
 
-  public boolean hasAttrs (int objref){
+  public boolean hasFieldAttrs (int objref){
     if (objref != NULL){
       ElementInfo ei = da.get(objref);
       return ei.hasFieldAttrs();
@@ -138,23 +138,74 @@ public class MJIEnv {
     return false;
   }
 
+
+  // this returns all attrs, i.e. can be composite
+  // (use to copy all)
   public Object getFieldAttr (int objref, String fname){
     ElementInfo ei = da.get(objref);
-    FieldInfo fi = ei.getFieldInfo(fname);
-
-    return ei.getFieldAttr(fi);
+    if (ei != null){
+      FieldInfo fi = ei.getFieldInfo(fname);
+      if (fi != null){
+        return ei.getFieldAttr(fi);
+      } else {
+        throw new JPFException("no such field: " + fname);
+      }
+    }
+    return null;
+  }
+  public <T> T getFieldAttr (int objref, String fname, Class<T> attrType){
+    ElementInfo ei = da.get(objref);
+    if (ei != null){
+      FieldInfo fi = ei.getFieldInfo(fname);
+      if (fi != null){
+        return ei.getFieldAttr(attrType, fi);
+      } else {
+        throw new JPFException("no such field: " + fname);
+      }
+    }
+    return null;
   }
 
+  // this returns all attrs, i.e. can be composite
+  // (use to copy all)
   public Object getElementAttr (int objref, int idx){
     ElementInfo ei = da.get(objref);
-    return ei.getElementAttr(idx);
+    if (ei != null){
+      return ei.getElementAttr(idx);
+    }
+    return null;
   }
+  public <T> T getElementAttr (int objref, int idx, Class<T> attrType){
+    ElementInfo ei = da.get(objref);
+    if (ei != null){
+      return ei.getElementAttr(attrType, idx);
+    }
+
+    return null;
+  }
+
 
   public void setElementAttr (int objref, int idx, Object a){
     ElementInfo ei = da.get(objref);
-    ei.setElementAttr(idx, a);
+    if (ei != null){
+      ei.setElementAttr(idx, a);
+    }
   }
 
+  public void setObjectAttr (int objref, Object a){
+    ElementInfo ei = da.get(objref);
+    if (ei != null){
+      ei.setObjectAttr(a);
+    }
+  }
+
+  public <T> T getObjectAttr (int objref, Class<T> attrType){
+    ElementInfo ei = da.get(objref);
+    if (ei != null){
+      return ei.getObjectAttr(attrType);
+    }
+    return null;
+  }
 
   // the instance field setters
   public void setBooleanField (int objref, String fname, boolean val) {
