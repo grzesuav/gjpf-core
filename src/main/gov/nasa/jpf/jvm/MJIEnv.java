@@ -132,7 +132,7 @@ public class MJIEnv {
   public boolean hasAttrs (int objref){
     if (objref != NULL){
       ElementInfo ei = da.get(objref);
-      return ei.hasAttrs();
+      return ei.hasFieldAttrs();
     }
 
     return false;

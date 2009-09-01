@@ -244,10 +244,35 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     System.out.println();
   }
 
+  public static void setObjectAttribute__Ljava_lang_Object_2I__V (MJIEnv env, int clsRef, int oRef, int attr){
+    if (oRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(oRef);
+      ei.setObjectAttr(attr);
+    }
+  }
+
+  public static int getObjectAttribute__Ljava_lang_Object_2__I (MJIEnv env, int clsRef, int oRef){
+    if (oRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(oRef);
+
+      Object val = ei.getObjectAttr();
+      if (val != null) {
+        if (val instanceof Integer) {
+          int ret = ((Integer) val).intValue();
+          return ret;
+        } else {
+          env.throwException("java.lang.RuntimeException",
+                  ei.toString() + " object attribute not an int: " + val);
+        }
+      }
+    }
+
+    return 0;
+  }
 
   public static void setFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2I__V (MJIEnv env, int clsRef,
                                                                                     int oRef, int fnRef, int attr){
-    if (oRef != env.NULL){
+    if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
 
       String fname = env.getStringObject(fnRef);
@@ -264,7 +289,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   public static int getFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2__I (MJIEnv env, int clsRef,
                                                                                     int oRef, int fnRef){
-    if (oRef != env.NULL){
+    if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
 
       String fname = env.getStringObject(fnRef);
@@ -279,7 +304,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
           } else {
             env.throwException("java.lang.RuntimeException",
                                ei.toString() + '.' + fname +
-                               " attribute not and int: " + val);
+                               " attribute not an int: " + val);
           }
         }
 
@@ -334,7 +359,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   public static void setElementAttribute__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef,
                                                                     int oRef, int idx, int attr){
-    if (oRef != env.NULL){
+    if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
 
       if (ei.isArray()){
@@ -353,7 +378,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   public static int getElementAttribute__Ljava_lang_Object_2I__I (MJIEnv env, int clsRef,
                                                                   int oRef, int idx){
-    if (oRef != env.NULL){
+    if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
 
       if (ei.isArray()){

@@ -731,6 +731,29 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
   /**
+   * if we don't know the return type
+   * signature is in paren/dot notation
+   */
+  public MethodInfo getMethod (String name, String signature, boolean isRecursiveLookup) {
+    MethodInfo mi = null;
+    String matchName = name + signature;
+
+    for (Map.Entry<String, MethodInfo>e : methods.entrySet()) {
+      if (e.getKey().startsWith(matchName)){
+        mi = e.getValue();
+        break;
+      }
+    }
+
+    if ((mi == null) && isRecursiveLookup && (superClass != null)) {
+      mi = superClass.getMethod(name, signature, true);
+    }
+
+    return mi;
+  }
+
+
+  /**
    * almost the same as above, except of that Class.getMethod() doesn't specify
    * the return type. Not sure if that is a bug in the Java specs waiting to be
    * fixed, or if covariant return types are not allowed in reflection lookup.

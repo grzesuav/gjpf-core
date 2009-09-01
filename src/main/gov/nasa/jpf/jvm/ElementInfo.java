@@ -345,8 +345,25 @@ public abstract class ElementInfo implements Cloneable {
 
   abstract protected FieldInfo getFieldInfo(String fname);
 
-  public boolean hasAttrs() {
-    return fields.hasAttrs();
+
+  public boolean hasObjectAttr() {
+    return fields.hasObjectAttr();
+  }
+
+  public Object getObjectAttr () {
+    return fields.getObjectAttr();
+  }
+
+  public void setObjectAttr (Object attr){
+    cloneFields().setObjectAttr(attr);
+  }
+
+  public void setObjectAttrNoClone (Object attr){
+    fields.setObjectAttr(attr);
+  }
+
+  public boolean hasFieldAttrs() {
+    return fields.hasFieldAttrs();
   }
 
   /**
@@ -355,7 +372,7 @@ public abstract class ElementInfo implements Cloneable {
    */
   public void setFieldAttr (FieldInfo fi, Object attr){
     ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    ei.cloneFields().setAttr(fi.getFieldIndex(), attr);
+    ei.cloneFields().setFieldAttr(fi.getFieldIndex(), attr);
   }
 
   /**
@@ -364,25 +381,25 @@ public abstract class ElementInfo implements Cloneable {
    */
   public void setFieldAttrNoClone (FieldInfo fi, Object attr){
     ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    ei.fields.setAttr(fi.getFieldIndex(), attr);
+    ei.fields.setFieldAttr(fi.getFieldIndex(), attr);
   }
 
   public Object getFieldAttr (FieldInfo fi){
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getAttr(fi.getFieldIndex());
+    return ei.fields.getFieldAttr(fi.getFieldIndex());
   }
 
 
   public void setElementAttr (int idx, Object attr){
-    cloneFields().setAttr(idx, attr);
+    cloneFields().setFieldAttr(idx, attr);
   }
 
   public void setElementAttrNoClone (int idx, Object attr){
-    fields.setAttr(idx, attr);
+    fields.setFieldAttr(idx, attr);
   }
 
   public Object getElementAttr (int idx){
-    return fields.getAttr(idx);
+    return fields.getFieldAttr(idx);
   }
 
   public abstract void setIntField(FieldInfo fi, int value);

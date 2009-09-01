@@ -44,14 +44,16 @@ public abstract class Fields implements Cloneable {
   /** this is where we store the instance data */
   protected int[] values;
 
-  /** counts the number of incoming references marked as untracked */
-  private int untracked;
-
   /**
    * we use this to store arbitrary field attributes (like symbolic values),
    * but only initialize this on demand
    */
-  protected Object[] attrs;
+  protected Object[] fieldAttrs;
+
+  /**
+   * attribute attached to the object as a whole
+   */
+  protected Object objectAttr;
 
   protected Fields (String type, ClassInfo ci, int dataSize) {
     this.type = type;
@@ -60,8 +62,8 @@ public abstract class Fields implements Cloneable {
     values = new int[dataSize];
   }
 
-  public boolean hasAttrs() {
-    return attrs != null;
+  public boolean hasFieldAttrs() {
+    return fieldAttrs != null;
   }
 
   /**
@@ -70,22 +72,34 @@ public abstract class Fields implements Cloneable {
    * note that the provided fieldIndex is the ordinal of the field, not
    * an index into values (a long field occupies two values slots)
    */
-  public void setAttr (int fieldOrElementIndex, Object attr){
-    if (attrs == null){
+  public void setFieldAttr (int fieldOrElementIndex, Object attr){
+    if (fieldAttrs == null){
       if (attr == null){
         return; // no need to waste an array object for storing null
       }
-      attrs = new Object[getNumberOfFieldsOrElements()];
+      fieldAttrs = new Object[getNumberOfFieldsOrElements()];
     }
-    attrs[fieldOrElementIndex] = attr;
+    fieldAttrs[fieldOrElementIndex] = attr;
   }
 
-  public Object getAttr (int fieldOrElementIndex){
-    if (attrs != null){
-      return attrs[fieldOrElementIndex];
+  public Object getFieldAttr (int fieldOrElementIndex){
+    if (fieldAttrs != null){
+      return fieldAttrs[fieldOrElementIndex];
     } else {
       return null;
     }
+  }
+
+  public boolean hasObjectAttr () {
+    return (objectAttr != null);
+  }
+
+  public void setObjectAttr (Object attr){
+    objectAttr = attr;
+  }
+
+  public Object getObjectAttr () {
+    return objectAttr;
   }
 
   int getNumberOfFieldsOrElements () {
@@ -253,8 +267,15 @@ public abstract class Fields implements Cloneable {
       f = (Fields) super.clone();
       f.values = values.clone();
 
-      if (attrs != null){
-        f.attrs = attrs.clone();
+      // NOTE - attribute objects are not cloned automatically - if you
+      // change them and they need to preserve state, you have to do this explicitly
+
+      if (fieldAttrs != null){
+        f.fieldAttrs = fieldAttrs.clone();
+      }
+
+      if (objectAttr != null){
+        f.objectAttr = objectAttr; //
       }
     } catch (CloneNotSupportedException e) {
       throw new InternalError(e.getMessage());
@@ -291,8 +312,8 @@ public abstract class Fields implements Cloneable {
     }
 
     //--- check attributes (if any)
-    Object[] a = attrs;
-    Object[] a1 = f.attrs;
+    Object[] a = fieldAttrs;
+    Object[] a1 = f.fieldAttrs;
     if ((a == null) != (a1 == null)) {
       return false;
     }
@@ -316,6 +337,14 @@ public abstract class Fields implements Cloneable {
       }
     }
 
+    if (objectAttr != null){
+      if (!objectAttr.equals(f.objectAttr)){
+        return false;
+      }
+    } else if (f.objectAttr != null){
+      return false;
+    }
+
     return true;
   }
 
@@ -323,24 +352,7 @@ public abstract class Fields implements Cloneable {
     v.append(values);
   }
 
-  /**
-   * Adds some data to the computation of an hashcode.
-   */
-  public void hash (HashData hd) {
-    int[] v = values;
-    for (int i=0, l=v.length; i < l; i++) {
-      hd.add(v[i]);
-    }
 
-    // it's debatable if we add the attributes to the state, but whatever it
-    // is, it should be kept consistent with the StackFrame.hash()
-    Object[] a = attrs;
-    if (a != null) {
-      for (int i=0, l=a.length; i < l; i++) {
-        hd.add(a[i]);
-      }
-    }
-  }
 
   public int arrayLength () {
     // re-implemented by ArrayFields
@@ -381,6 +393,29 @@ public abstract class Fields implements Cloneable {
     hash(hd);
 
     return hd.getValue();
+  }
+
+  /**
+   * Adds some data to the computation of an hashcode.
+   */
+  public void hash (HashData hd) {
+    int[] v = values;
+    for (int i=0, l=v.length; i < l; i++) {
+      hd.add(v[i]);
+    }
+
+    // it's debatable if we add the attributes to the state, but whatever it
+    // is, it should be kept consistent with the StackFrame.hash()
+    Object[] a = fieldAttrs;
+    if (a != null) {
+      for (int i=0, l=a.length; i < l; i++) {
+        hd.add(a[i]);
+      }
+    }
+
+    if (objectAttr != null){
+      hd.add(objectAttr);
+    }
   }
 
   /**
@@ -431,38 +466,15 @@ public abstract class Fields implements Cloneable {
     assert (other.ci == this.ci);
     System.arraycopy(other.values, 0, this.values, 0, values.length);
 
-    if (other.attrs != null){
-      if (attrs == null){
-        attrs = other.attrs.clone();
+    if (other.fieldAttrs != null){
+      if (fieldAttrs == null){
+        fieldAttrs = other.fieldAttrs.clone();
       } else {
-        System.arraycopy(other.attrs, 0, attrs, 0, attrs.length);
+        System.arraycopy(other.fieldAttrs, 0, fieldAttrs, 0, fieldAttrs.length);
       }
     }
-  }
 
-  public void setUntracked (int untracked) {
-    this.untracked = untracked;
-  }
-
-  public int getUntracked () {
-    return untracked;
-  }
-
-  public boolean isUntracked () {
-    return untracked > 0;
-  }
-
-  public void incUntracked () {
-    untracked++;
-  }
-
-  public void decUntracked () {
-    untracked--;
-  }
-
-  private boolean isFieldUntracked (int storageOffset) {
-    FieldInfo fi = findFieldInfo(storageOffset);
-    return fi != null ? fi.isUntracked() : false;
+    objectAttr = other.objectAttr;
   }
 
   // Method that finds the FieldInfo for the given storrageOffset

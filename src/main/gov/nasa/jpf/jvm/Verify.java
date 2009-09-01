@@ -237,6 +237,9 @@ public class Verify {
   public static void setElementAttribute (Object arr, int idx, int val){}
   public static int getElementAttribute (Object arr, int idx) { return 0; }
 
+  public static void setObjectAttribute (Object o, int val) {}
+  public static int getObjectAttribute (Object o) { return 0; }
+
   /**
    * this is the new boolean choice generator. Since there's no real
    * heuristic involved with boolean values, we skip the id (it's a

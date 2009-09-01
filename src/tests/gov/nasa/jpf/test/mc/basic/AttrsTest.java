@@ -256,7 +256,7 @@ public class AttrsTest extends TestJPF {
     }
   }
 
-  public void testExplicitArrayRef () {
+  @Test public void testExplicitArrayRef () {
     if (verifyNoPropertyViolation()) {
       int attr;
       double[] myArray = new double[10];
@@ -275,7 +275,7 @@ public class AttrsTest extends TestJPF {
     }
   }
 
-  public void testArraycopy () {
+  @Test public void testArraycopy () {
     if (verifyNoPropertyViolation()) {
       int attr;
       double[] a1 = new double[10];
@@ -291,7 +291,7 @@ public class AttrsTest extends TestJPF {
 
   double ddd;
 
-  public void testArrayPropagation() {
+  @Test public void testArrayPropagation() {
     if (verifyNoPropertyViolation()) {
 
       int attr;
@@ -322,7 +322,7 @@ public class AttrsTest extends TestJPF {
     }
   }
 
-  public void testBacktrack() {
+  @Test public void testBacktrack() {
     if (verifyNoPropertyViolation()) {
       int v = 42; // need to init or the compiler does not add it to the name table
       Verify.setLocalAttribute("v", 42);
@@ -339,7 +339,7 @@ public class AttrsTest extends TestJPF {
     }
   }
   
-  public void testInteger() {
+  @Test public void testInteger() {
     if (verifyNoPropertyViolation()) {
       int v = 42;
       Verify.setLocalAttribute("v", 4200);
@@ -363,6 +363,20 @@ public class AttrsTest extends TestJPF {
     attr = Verify.getLocalAttribute("j");
     assert attr == 4200;
      **/
+    }
+  }
+  
+  @Test public void testObjectAttr(){
+
+    if (verifyNoPropertyViolation()){
+      Integer o = new Integer(41);
+      Verify.setObjectAttribute(o, 42);
+
+      boolean b = Verify.getBoolean();
+
+      int attr = Verify.getObjectAttribute(o);
+      System.out.println("object attr = " + attr);
+      assert attr == 42;
     }
   }
 }
