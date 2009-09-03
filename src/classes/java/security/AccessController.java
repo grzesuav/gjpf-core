@@ -44,8 +44,12 @@ public class AccessController {
   public static <T> T doPrivileged (PrivilegedExceptionAction<T> action,
                                      AccessControlContext context)
     throws PrivilegedActionException {
+
     try {
       return action.run();
+      
+    } catch (RuntimeException rx){
+      throw rx; // we have to let unchecked exceptions pass
     } catch (Exception x) {
       throw new PrivilegedActionException(x);
     }
@@ -53,8 +57,12 @@ public class AccessController {
   
   public static <T> T doPrivileged (PrivilegedExceptionAction<T> action)
     throws PrivilegedActionException {
+
     try {
       return action.run();
+
+    } catch (RuntimeException rx){
+      throw rx; // we have to let unchecked exceptions pass
     } catch (Exception x) {
       throw new PrivilegedActionException(x);
     }

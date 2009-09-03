@@ -49,7 +49,7 @@ public abstract class VirtualInvocation extends InvokeInstruction {
 
     MethodInfo mi = getInvokedMethod(ti, objRef);
     if (mi == null) {
-      return ti.createAndThrowException("java.lang.NoSuchMethodException",
+      return ti.createAndThrowException("java.lang.NoSuchMethodError",
                                         ti.getClassInfo(objRef).getName() + "." + mname);
     }
 

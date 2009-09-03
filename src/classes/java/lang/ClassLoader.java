@@ -21,6 +21,9 @@ package java.lang;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  * very very rudimentary beginning of a ClassLoader model. We skip
@@ -55,7 +58,22 @@ public class ClassLoader {
       return null;
     }
   }
-    
+
+  public Enumeration<URL> getResources (String name){
+    Vector<URL> list = new Vector<URL>(); // we need an enumeration  
+    getResources0(list, name);
+    return list.elements();
+  }
+  private void getResources0(Vector list, String name){
+    if (parent != null){
+      parent.getResources0(list, name);
+    }
+    URL url = getResource(name);
+    if (url != null){
+      list.add(url);
+    }
+  }
+
   public InputStream getResourceAsStream (String rname){
     return null;
   }

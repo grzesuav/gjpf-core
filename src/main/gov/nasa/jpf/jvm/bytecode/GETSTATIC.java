@@ -42,7 +42,7 @@ public class GETSTATIC extends StaticFieldInstruction {
 
     FieldInfo fieldInfo = getFieldInfo();
     if (fieldInfo == null) {
-      return ti.createAndThrowException("java.lang.NoSuchFieldException",
+      return ti.createAndThrowException("java.lang.NoSuchFieldError",
           (className + '.' + fname));
     }
 

@@ -47,6 +47,11 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
 
     FieldInfo fi = getFieldInfo();
+    if (fi == null) {
+      // Hmm, we should do the NPE check first, but need the fi to get the object ref
+      return ti.createAndThrowException("java.lang.NoSuchFieldError", fname);
+    }
+
     int storageSize = fi.getStorageSize();
     int objRef = ti.peek( (storageSize == 1) ? 1 : 2);
     lastThis = objRef;
