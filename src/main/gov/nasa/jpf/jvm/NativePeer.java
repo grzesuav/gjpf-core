@@ -73,7 +73,7 @@ public class NativePeer {
   }
 
   static String[] getPeerPackages (Config conf) {
-    String[] defPeerPackages = { MODEL_PACKAGE, "gov.nasa.jpf.jvm.", DEFAULT_PACKAGE };
+    String[] defPeerPackages = { MODEL_PACKAGE, "gov.nasa.jpf.jvm", DEFAULT_PACKAGE };
     String[] packages = conf.getStringArray("peer_packages", defPeerPackages);
 
     // internalize

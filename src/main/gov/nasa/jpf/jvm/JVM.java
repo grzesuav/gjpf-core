@@ -945,7 +945,13 @@ try {
   }
 
   public ExceptionInfo getPendingException () {
-    return ThreadInfo.currentThread.getPendingException();
+    ThreadInfo ti = ThreadInfo.getCurrentThread();
+
+    if (ti != null){
+      return ti.getPendingException();
+    } else {
+      return null;
+    }
   }
 
   public boolean isBoringState () {
