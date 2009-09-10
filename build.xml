@@ -263,7 +263,7 @@
     <!-- it seems the 'propertyfile' task just appends -->
     <delete file="build.properties"/>
 
-    <propertyfile file="build.properties" comment="JPF core version info">
+    <propertyfile file="build.properties" depends="build" comment="JPF core version info">
       <entry key="date.build" type="date" value="now"/>
       <entry key="date.tip" value="${hg.tip.date}"/>
       <entry key="author" value="${hg.author}"/>
@@ -275,6 +275,16 @@
 
   </target>
 
+  <target name="dist" description="build binary distribution">
+    <delete file="build/${ant.project.name}.zip"/>
+    <!-- 2do this seems stupid - there needs to be a better way to re-base (zip basedir fails miserably) -->
+    <zip destfile="build/${ant.project.name}.zip" update="false" excludes="*">
+      <zipfileset file="jpf.properties"  prefix="${ant.project.name}"/>
+      <zipfileset dir="lib"  prefix="${ant.project.name}/lib"/>
+      <zipfileset dir="bin"  prefix="${ant.project.name}/bin"/>
+      <zipfileset dir="build" includes="*.jar" prefix="${ant.project.name}/build"/>
+    </zip>
+  </target>
 
   <!-- ======================= TEST SECTION ================================ -->
 

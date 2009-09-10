@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
 public class JPF implements Runnable {
   
   /** JPF version, we read this in later from default.properties */
-  public static String VERSION    = "4.?";
+  public static String VERSION    = "5.?";
 
   static Logger logger     = null; // initially
 
@@ -661,13 +661,12 @@ public class JPF implements Runnable {
   }
 
   static void showUsage() {
-    System.out
-        .println("Usage: \"java [<vm-option>..] gov.nasa.jpf.JPF [<jpf-option>..] [<app> [<app-arg>..]]");
-    System.out.println("  <jpf-option> : -c <config-file>  : name of config properties file (default \"jpf.properties\")");
-    System.out.println("               | -help  : print usage information");
+    System.out.println("Usage: \"java [<vm-option>..] gov.nasa.jpf.JPF [<jpf-option>..] [<app> [<app-arg>..]]");
+    System.out.println("  <jpf-option> : -help  : print usage information");
+    System.out.println("               | -log   : print configuration initialization steps");
     System.out.println("               | -show  : print configuration dictionary contents");
     System.out.println("               | +<key>=<value>  : add or override key/value pair to config dictionary");
-    System.out.println("  <app>        : application class or *.xml error trace file");
+    System.out.println("  <app>        : *.jpf application properties | main class | *.xml error trace file");
     System.out.println("  <app-arg>    : arguments passed into main(String[]) if application class");
   }
 

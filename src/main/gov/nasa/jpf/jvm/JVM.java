@@ -239,12 +239,12 @@ try {
     List<ClassInfo> clinitQueue = registerStartupClasses();
 
     if (clinitQueue== null) {
-      log.severe("error initializing startup classes (check vm.[boot]classpath)");
+      log.severe("error initializing startup classes (check 'classpath')");
       return false;
     }
 
     if (!checkModelClassAccess()) {
-      log.severe( "error during VM runtime initialization: wrong model classes (check vm.[boot]classpath)");
+      log.severe( "error during VM runtime initialization: wrong model classes (check 'classpath')");
       return false;
     }
 
