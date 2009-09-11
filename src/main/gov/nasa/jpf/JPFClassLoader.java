@@ -84,7 +84,7 @@ public class JPFClassLoader extends ClassLoader {
 
     JarCpEntry (JarFile f){
       jar = f;
-      urlBase =  "jar:file://localhost" + f.getName() + "!/";
+      urlBase =  "jar:file:" + f.getName() + "!/";
     }
 
     byte[] getClassData (String clsName) {
