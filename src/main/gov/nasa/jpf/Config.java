@@ -292,12 +292,18 @@ public class Config extends Properties {
       File f = new File(fileName);
       if (f.exists()) {
         sources.add(f);
+        if (log) {
+          System.out.println("loading defaults from: " + f);
+        }
         is = new FileInputStream(f);
       } else {
         // if there is no file, try to load as a resource (jar)
         Class<?> clazz = (codeBase != null) ? codeBase : Config.class;
         URL url = clazz.getResource(fileName);
         if (url != null){
+          if (log){
+            System.out.println("loading defaults from: " + url);
+          }
           is = url.openStream();
           sources.add(url);
         }
