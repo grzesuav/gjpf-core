@@ -157,6 +157,7 @@ implements IncrementalChangeTracker {
           int s = ei.getStatus();
           sCaches.set(i, new SEIState(f,m,a,c,s));
           ei.markUnchanged();
+
         } else {
           sCaches.set(i, null);
         }
@@ -260,6 +261,7 @@ implements IncrementalChangeTracker {
 
         ei.markUnchanged();
         ei.updateLockingInfo(); // monitor needs to be set before we call this
+
       } else {
         area.remove(i, true);
       }

@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.HashData;
 
 /**
  * A specialized version of ElementInfo for use in the StaticArea.  The
@@ -38,6 +39,13 @@ public final class StaticElementInfo extends ElementInfo {
   public StaticElementInfo (Fields f, Monitor m, int classObjRef) {
     super(f, m);
     classObjectRef = classObjRef;
+  }
+
+  @Override
+  public void hash(HashData hd) {
+    super.hash(hd);
+    hd.add(classObjectRef);
+    hd.add(status);
   }
 
   public void setIntField(FieldInfo fi, int value) {

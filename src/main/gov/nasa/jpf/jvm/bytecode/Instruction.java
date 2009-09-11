@@ -269,14 +269,18 @@ public abstract class Instruction {
 
   public boolean requiresClinitCalls (ThreadInfo ti, ClassInfo ci) {
     
-    if (!ti.isResumedInstruction(this)) {
-      if (!ci.isInitialized()) {
-        if (ci.loadAndInitialize(ti, this) > 0) {
-          //ti.skipInstructionLogging();
-          return true; // there are new <clinit> frames on the stack, execute them
-        }
+    //if (!ti.isResumedInstruction(this)) {
+
+    // <2do> why would a resumed insn not require class init? it might be resumed
+    // for other reasons than having previously forced a <clinit>
+
+    if (!ci.isInitialized()) {
+      if (ci.loadAndInitialize(ti, this) > 0) {
+        //ti.skipInstructionLogging();
+        return true; // there are new <clinit> frames on the stack, execute them
       }
     }
+    //}
     
     return false;
   }

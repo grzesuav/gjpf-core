@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StaticElementInfo;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -46,7 +47,6 @@ public class GETSTATIC extends StaticFieldInstruction {
           (className + '.' + fname));
     }
 
-
     // this can be actually different (can be a base)
     clsInfo = fieldInfo.getClassInfo();
 
@@ -54,7 +54,11 @@ public class GETSTATIC extends StaticFieldInstruction {
       return ti.getPC();
     }
 
-    ElementInfo ei = ks.sa.get(clsInfo.getName());
+    StaticElementInfo ei = clsInfo.getStaticElementInfo();
+
+    if (ei == null){
+      throw new JPFException("attempt to access field: " + fname + " of uninitialized class: " + clsInfo.getName());
+    }
 
     if (isNewPorFieldBoundary(ti)) {
       if (createAndSetFieldCG(ss, ei, ti)) {
