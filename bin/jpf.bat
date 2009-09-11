@@ -9,5 +9,5 @@ set JPF_HOME=%~dp0..
 
 set JVM_FLAGS=-Xmx1024m -ea
 
-java %JVM_FLAGS% -jar %JPF_HOME%\build\jpf.jar %*
+java %JVM_FLAGS% -jar "%JPF_HOME%\build\jpf.jar" %*
 
