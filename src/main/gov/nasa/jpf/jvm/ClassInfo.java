@@ -483,7 +483,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
   void processJPFConfigAnnotation() {
-    AnnotationInfo ai = getAnnotation("gov.nasa.jpf.JPFConfig");
+    AnnotationInfo ai = getAnnotation("gov.nasa.jpf.annotation.JPFConfig");
     if (ai != null) {
       for (String s : ai.getValueAsStringArray()) {
         config.parse(s);
@@ -519,10 +519,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
             String defClsName = aName + "Checker";
             try {
               JPFListener listener = config.getInstance(key, JPFListener.class, defClsName);
-              if (logger.isLoggable(Level.INFO)) {
+              
+              JPF jpf = JVM.getVM().getJPF(); // <2do> that's a BAD access path
+              jpf.addUniqueTypeListener(listener);
+
+              if (logger.isLoggable(Level.INFO)){
                 logger.info("autoload annotation listener: @" + aName + " => " + listener.getClass().getName());
               }
-              JVM.getVM().getJPF().addUniqueTypeListener(listener); // <2do> that's a BAD reference chain
 
             } catch (JPFConfigException cx) {
               logger.warning("no autoload listener class for annotation " + aName +
