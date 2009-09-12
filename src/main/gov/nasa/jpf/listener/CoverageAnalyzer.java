@@ -566,7 +566,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
     showMethodBodies = conf.getBoolean("coverage.show_bodies", false);
     excludeHandlers = conf.getBoolean("coverage.exclude_handlers", false);
     showBranchCoverage = conf.getBoolean("coverage.show_branches", true);
-    loadedOnly = conf.getBoolean("coverage.loaded_only", false);
+    loadedOnly = conf.getBoolean("coverage.loaded_only", true);
     showRequirements = conf.getBoolean("coverage.show_requirements", false);
 
     if (!loadedOnly) {

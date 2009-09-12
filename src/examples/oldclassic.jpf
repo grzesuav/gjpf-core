@@ -2,9 +2,5 @@
 
 target=oldclassic
 
-report.console.property_violation=error,trace,snapshot
-report.console.finished=result,statistics
+report.console.property_violation=error,snapshot,trace
 
-listener=.listener.DeadlockAnalyzer
-
-deadlock.format=essential
