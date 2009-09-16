@@ -146,14 +146,16 @@ public class Reporter extends ListenerAdapter {
 
 
   public <T extends Publisher> boolean addPublisherExtension (Class<T> publisherCls, PublisherExtension e) {
+    boolean added = false;
     for (Publisher p : publishers) {
-      if (publisherCls.isInstance(p)) {
+      Class<?> pCls = p.getClass();
+      if (publisherCls.isAssignableFrom(pCls)) {
         p.addExtension(e);
-        return true;
+        added = true;
       }
     }
 
-    return false;
+    return added;
   }
 
   public <T extends Publisher> void setPublisherTopics (Class<T> publisherCls,

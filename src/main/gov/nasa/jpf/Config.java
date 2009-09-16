@@ -156,13 +156,12 @@ public class Config extends Properties {
   // Properties are simple Hashmaps, but we want to maintain the order of entries
   LinkedList<String> entrySequence = new LinkedList<String>();
 
-
   // an [optional] hashmap to keep objects we want to be singletons
   HashMap<String,Object> singletons;
   
   final Object[] CONFIG_ARGS = { this };
 
-
+  String[] args;
 
 
   /*                       property lookup
@@ -184,8 +183,8 @@ public class Config extends Properties {
    * (2) if the system properties cannot be found, throw a Config.JPFConfigException
    *
    */
-
   public Config (String[] args, Class<?> codeBase)  {
+    this.args = args;
     String[] a = args.clone(); // we might nullify some of them
 
     //--- the JPF system (default) properties
@@ -221,8 +220,43 @@ public class Config extends Properties {
     //printEntries();
   }
 
+  private Config() {
+    // just interal, for reloading
+  }
+
   public static void enableLogging (boolean enableLogging){
     log = enableLogging;
+  }
+
+  // watch out - this does not reset the computed paths!
+  public Config reload() {
+    if (log){
+      System.out.println("reloading config");
+    }
+
+    // just reload all our sources
+    Config newConfig = new Config();
+    for (Object src : sources){
+      if (src instanceof File) {
+        newConfig.loadProperties(((File)src).getPath());
+      } else if (src instanceof URL) {
+        newConfig.loadProperties((URL)src);
+      } else {
+        if (log) {
+          System.out.println("don't know how to reload: " + src);
+        }
+      }
+    }
+
+    // now reload command line args on top of that
+    newConfig.loadArgs(args);
+    newConfig.args = args;
+    
+    return newConfig;
+  }
+
+  public String[] getArgs() {
+    return args;
   }
 
   /*
@@ -279,44 +313,57 @@ public class Config extends Properties {
   }
 
 
+  protected void loadProperties (URL url){
+    if (log) {
+      System.out.println("loading defaults from: " + url);
+    }
+
+    InputStream is = null;
+    try {
+      is = url.openStream();
+      load(is);
+      sources.add(url);
+    } catch (IOException iox){
+      if (log) {
+        System.out.println("error in input stream for: " + url + " : " + iox.getMessage());
+      }
+    } finally {
+      if (is != null){
+        try {
+          is.close();
+        } catch (IOException iox1){
+          if (log){
+            System.out.println("error closing input stream for: " + url + " : " + iox1.getMessage());
+          }
+        }
+      }
+    }
+  }
 
   protected void loadDefaultProperties (String fileName, Class<?> codeBase) {
-    InputStream is = null;
+    boolean found = false;
 
-    try {
-      if (fileName == null){
-        fileName = "default.properties";
-      }
+    if (fileName == null) {
+      fileName = "default.properties";
+    }
 
-      // first, try to load from a file
-      File f = new File(fileName);
-      if (f.exists()) {
-        sources.add(f);
-        if (log) {
-          System.out.println("loading defaults from: " + f);
-        }
-        is = new FileInputStream(f);
-      } else {
-        // if there is no file, try to load as a resource (jar)
-        Class<?> clazz = (codeBase != null) ? codeBase : Config.class;
-        URL url = clazz.getResource(fileName);
-        if (url != null){
-          if (log){
-            System.out.println("loading defaults from: " + url);
-          }
-          is = url.openStream();
-          sources.add(url);
-        }
+    // first, try to load from a file
+    File f = new File(fileName);
+    if (f.exists()) {
+      loadProperties(f.getPath());
+      found = true;
+      
+    } else {  // if there is no file, try to load as a resource 
+      Class<?> clazz = (codeBase != null) ? codeBase : Config.class;
+      URL url = clazz.getResource(fileName);
+      if (url != null) {
+        loadProperties(url);
+        found = true;
       }
+    }
 
-      if (is != null) {
-        load(is);
-        is.close();
-      } else {
-        throw new JPFConfigException("default properties not found");
-      }
-    } catch (IOException iex) {
-      throw new JPFConfigException("error loading default properties", iex);
+    if (!found) {
+      throw new JPFConfigException("no default properties");
     }
 
   }
@@ -334,6 +381,7 @@ public class Config extends Properties {
 
   protected boolean loadProperties (String fileName) {
     if (fileName != null && fileName.length() > 0) {
+      FileInputStream is = null;
       try {
         File f = new File(fileName);
         if (f.isFile()) {
@@ -343,9 +391,8 @@ public class Config extends Properties {
 
           setConfigPathProperties(f.getAbsolutePath());
           sources.add(f);
-          FileInputStream is = new FileInputStream(f);
+          is = new FileInputStream(f);
           load(is);
-          is.close();
           return true;
         }
       } catch (MissingRequiredKeyException rkx){
@@ -355,6 +402,16 @@ public class Config extends Properties {
         }
       } catch (IOException iex) {
         throw new JPFConfigException("error loading properties: " + fileName, iex);
+      } finally {
+        if (is != null){
+          try {
+            is.close();
+          } catch (IOException iox1){
+            if (log){
+              System.out.println("error closing input stream for file: " + fileName);
+            }
+          }
+        }
       }
     }
 

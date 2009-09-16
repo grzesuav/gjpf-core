@@ -185,7 +185,6 @@ public class JPF implements Runnable {
     return urls.toArray(new URL[urls.size()]);
   }
 
-
   static void appendPath (Config conf, String pathKey, String key){
     String projName = key.substring(0, key.length() - pathKey.length() -1);
     String projPath = conf.getString(projName);
