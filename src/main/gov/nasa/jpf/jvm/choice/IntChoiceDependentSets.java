@@ -27,6 +27,8 @@ import java.util.Map;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.JPFException;
 /**
+ * <2do> this needs docu and testing! consider it experimental at this point
+ *
  * @author jpenix
  *
  * choose from a set of values provided in configuration as
@@ -107,7 +109,7 @@ public class IntChoiceDependentSets extends IntChoiceFromSet {
 		}
 
 		int ret;
-		ret = IntSpec.eval(values[count]);
+		ret = IntSpec.eval((String)values[count]);
 
 		// print "Choice: bob = MyClass.ONE(1)"
 		vm.println("Choice: "+id + " = " + values[count] + "("+ret+")");
