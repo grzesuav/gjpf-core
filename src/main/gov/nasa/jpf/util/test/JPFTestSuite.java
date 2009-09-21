@@ -1,3 +1,22 @@
+//
+// Copyright (C) 2009 United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration
+// (NASA).  All Rights Reserved.
+//
+// This software is distributed under the NASA Open Source Agreement
+// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
+// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
+// directory tree for the complete NOSA document.
+//
+// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
+// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
+// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
+// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
+//
+
 package gov.nasa.jpf.util.test;
 
 import gov.nasa.jpf.JPFClassLoader;
@@ -5,20 +24,48 @@ import gov.nasa.jpf.JPFClassLoaderException;
 import gov.nasa.jpf.Property;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
-public class JPFTestCase extends TestJPF {
+/**
+ * JPFTestSuite is the base class for (JUnit) tests using JPF outside of
+ * JPF projects. Just derive your xxTest classes from JPFTestSuite, copy
+ * the standard main method and use
 
-  static boolean runClean; // new classes for each test method
-  static String JPF_RUN = "gov.nasa.jpf.util.test.JPFTestRun";
+ *  - verifyNoPropertyViolation
+ *  - verifyUnhandledException
+ *  - verifyAssertionError
+ *  - verifyPropertyViolation
+ *
+ * or whatever JPF run method is appropriate from within your @Test methods
+ *
+ *
+ * <pre>
+ *   public static void main (String[] args){
+ *     runTestsOfThisClass(args);
+ *   }
+ *
+ *   @Test public void test_1 () {
+ *     if (verifyNoPropertyViolation("+cg.enumerate_random", ..){
+ *       //... code to be verified by JPF goes here
+ *     }
+ *   }
+ * </pre>
+ *
+ * Only jpf.jar needs to be added to the external jars of the target project,
+ * JPF automatically finds all other JPF related jars from its site configuration
+ */
+public class JPFTestSuite extends TestJPF {
 
-  JPFClassLoader jpfLoader = null;
+  static private boolean runClean = false; // new JPF classes for each test method
+  private JPFClassLoader jpfLoader = null;
+
+  static final String JPF_RUN = "gov.nasa.jpf.util.test.JPFTestRun";
+
 
   JPFClassLoader getLoader() {
     if (jpfLoader == null || runClean) {
       JPFClassLoader cl = new JPFClassLoader();
 
-      cl.addPreloadedClass(JPFTestCase.class);
+      cl.addPreloadedClass(JPFTestSuite.class);
       cl.addPreloadedClass(TestJPF.class);
 
       jpfLoader = cl;
@@ -126,7 +173,7 @@ public class JPFTestCase extends TestJPF {
     } catch (NoSuchMethodException nsmx) {
       fail("no \"public static void jpfException(TestJPF,Class<? extends Throwable>,String[])\" method in " + JPF_RUN);
     } catch (IllegalAccessException iax) {
-      fail("no \"public static void jpfException(TestJPF,String[])\" method in " + JPF_RUN);
+      fail("no \"public static void jpfException(TestJPF,Class<? extends Throwable>,String[])\" method in " + JPF_RUN);
     } catch (InvocationTargetException ix) {
       ix.getCause().printStackTrace();
       fail(ix.getCause().toString());
