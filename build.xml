@@ -93,6 +93,7 @@
     <javac srcdir="src/main" destdir="build/main"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}"
            classpathref="lib.path"/>
+
 	  <copy file="default.properties" todir="build/main/gov/nasa/jpf" failonerror="true"/>
 	  <copy file="build.properties" todir="build/main/gov/nasa/jpf" failonerror="false"/>
   </target>

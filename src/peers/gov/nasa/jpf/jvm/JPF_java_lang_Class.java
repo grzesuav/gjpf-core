@@ -23,6 +23,8 @@ import java.util.Set;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import java.io.IOException;
+import java.io.InputStream;
 
 
 /**
@@ -471,7 +473,7 @@ public class JPF_java_lang_Class {
     }
     
     if (fi == null) {      
-      env.throwException("java.lang.NoSuchFieldException", ci.getName() + '.' + fname);
+      env.throwException("java.lang.NoSuchFieldException", fname);
       return MJIEnv.NULL;
       
     } else {
@@ -561,5 +563,33 @@ public class JPF_java_lang_Class {
     
     return aref;
   }
-  
+
+
+  /**
+   * <2do> needs to load from the classfile location, NOT the MJIEnv (native) class
+   *
+   * @author Sebastian Gfeller (sebastian.gfeller@gmail.com)
+   * @author Tihomir Gvero (tihomir.gvero@gmail.com)
+   */
+  public static int getByteArrayFromResourceStream(MJIEnv env, int clsRef, int nameRef) {
+    String name = env.getStringObject(nameRef);
+
+    // <2do> this is not loading from the classfile location! fix it
+    InputStream is = env.getClass().getResourceAsStream(name);
+    if (is == null){
+      return MJIEnv.NULL;
+    }
+    // We assume that the entire input stream can be read at the moment,
+    // although this could break.
+    byte[] content = null;
+    try {
+      content = new byte[is.available()];
+      is.read(content);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    // Now if everything worked, the content should be in the byte buffer.
+    // We put this buffer into the JPF JVM.
+    return env.newByteArray(content);
+  }
 }

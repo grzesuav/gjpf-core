@@ -18,6 +18,7 @@
 //
 package java.lang;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -97,12 +98,17 @@ public final class Class<T> {
   public native Constructor<?>[] getDeclaredConstructors() throws SecurityException;
 
   public native Constructor<?>[] getConstructors() throws SecurityException;
-  
+
+  private native byte[] getByteArrayFromResourceStream(String name);
+
   public InputStream getResourceAsStream (String name) {
-    throw new UnsupportedOperationException("Class.getResourceAsStream() not yet supported in JPF");
+    byte[] byteArray = getByteArrayFromResourceStream(name);
+    if (byteArray == null) return null;
+    return new ByteArrayInputStream(byteArray);
   }
 
   public URL getResource (String name) {
+    // <2do> if we support getResourceAsStream, we need to support this as well
     throw new UnsupportedOperationException("Class.getResource() not yet supported in JPF");
   }
 
@@ -208,7 +214,7 @@ public final class Class<T> {
                                       IllegalAccessException;
 
   public String toString () {
-    return ("class " + name);
+    return (isInterface() ? "interface " : "class") + name;
   }
 
   @SuppressWarnings("unchecked")
