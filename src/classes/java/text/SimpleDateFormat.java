@@ -42,6 +42,11 @@ public class SimpleDateFormat extends DateFormat {
     init0(pattern);
   }
 
+  public SimpleDateFormat (String pattern, Locale locale) {
+    // <2do> bluntly ignoring locale for now
+	  init0(pattern);
+  }
+
   SimpleDateFormat (int timeStyle, int dateStyle, Locale locale){
     init0(timeStyle, dateStyle);
   }

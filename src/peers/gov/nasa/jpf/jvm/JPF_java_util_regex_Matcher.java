@@ -97,4 +97,19 @@ public class JPF_java_util_regex_Matcher {
     
     return env.newString(grp);
   }
+
+  public static int quoteReplacement__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int clsObjref, int string) {
+    String parm = env.getStringObject(string);
+    String result = Matcher.quoteReplacement(parm);
+    return env.newString(result);
+  }
+
+  public static int replaceAll__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objref, int string) {
+    Matcher matcher = getInstance(env, objref);
+    String replacement = env.getStringObject(string);
+    String result = matcher.replaceAll(replacement);
+
+    int resultref = env.newString(result);
+    return resultref;
+  }
 }

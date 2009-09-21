@@ -57,4 +57,8 @@ public class Matcher {
   public native boolean find();
   
   public native int end();
+
+  public static native String quoteReplacement(String abc);
+
+  public native String replaceAll(String replacement);
 }
