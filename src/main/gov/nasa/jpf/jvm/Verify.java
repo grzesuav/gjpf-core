@@ -268,6 +268,15 @@ public class Verify {
     return getRandom().nextInt((max-min+1)) + min;
   }
 
+  public static int getIntFromSet (int... values){
+    if (values != null && values.length > 0) {
+      int i = getRandom().nextInt(values.length);
+      return values[i];
+    } else {
+      return getRandom().nextInt();
+    }
+  }
+
   public static Object getObject (String key) {
     return "?";
   }
@@ -290,6 +299,15 @@ public class Verify {
   public static double getDouble (String key){
     // this is only executed when not running JPF, native otherwise
     return getRandom().nextDouble();
+  }
+
+  public static double getDoubleFromSet (double... values){
+    if (values != null && values.length > 0) {
+      int i = getRandom().nextInt(values.length);
+      return values[i];
+    } else {
+      return getRandom().nextDouble();
+    }
   }
 
   /**

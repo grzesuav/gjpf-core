@@ -22,6 +22,8 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.choice.CustomBooleanChoiceGenerator;
+import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
+import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
@@ -220,6 +222,27 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return ((IntChoiceGenerator)cg).getNextChoice().intValue();
     }
   }
+
+  public static int getIntFromSet___3I__I (MJIEnv env, int clsObjRef, int valArrayRef){
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+    ChoiceGenerator<?> cg;
+
+    if (!ti.isFirstStepInsn()) { // first time around
+      int[] values = env.getIntArrayObject(valArrayRef);
+      cg = new IntChoiceFromSet(values);
+      ss.setNextChoiceGenerator(cg);
+      //ti.skipInstructionLogging();
+      env.repeatInvocation();
+      return 0;  // not used anyways
+
+    } else {
+      cg = ss.getChoiceGenerator();
+      assert (cg != null) && (cg instanceof IntChoiceGenerator) : "expected IntChoiceGenerator, got: " + cg;
+      return ((IntChoiceGenerator)cg).getNextChoice().intValue();
+    }
+  }
+
 
   public static void print__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int sRef, int val){
     String s = env.getStringObject(sRef);
@@ -476,6 +499,27 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return ((DoubleChoiceGenerator)cg).getNextChoice().doubleValue();
     }
   }
+
+  public static double getDoubleFromSet___3D__D (MJIEnv env, int clsObjRef, int valArrayRef){
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+    ChoiceGenerator<?> cg;
+
+    if (!ti.isFirstStepInsn()) { // first time around
+      double[] values = env.getDoubleArrayObject(valArrayRef);
+      cg = new DoubleChoiceFromSet(values);
+      ss.setNextChoiceGenerator(cg);
+      //ti.skipInstructionLogging();
+      env.repeatInvocation();
+      return 0.0;  // not used anyways
+
+    } else {
+      cg = ss.getChoiceGenerator();
+      assert (cg != null) && (cg instanceof DoubleChoiceGenerator) : "expected DoubleChoiceGenerator, got: " + cg;
+      return ((DoubleChoiceGenerator)cg).getNextChoice().doubleValue();
+    }
+  }
+
 
 
   /**

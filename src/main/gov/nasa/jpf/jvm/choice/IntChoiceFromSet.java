@@ -33,8 +33,8 @@ import gov.nasa.jpf.jvm.IntChoiceGenerator;
  */
 public class IntChoiceFromSet extends IntChoiceGenerator {
 
-	// int values to choose from stored as strings
-	String[] values;
+	// int values to choose from stored as Strings or Integers
+	Object[] values;
 	
 	int count = -1;
 	
@@ -49,6 +49,22 @@ public class IntChoiceFromSet extends IntChoiceGenerator {
 			throw new JPFException("value set for <" + id + "> choice did not load");
 		}
 	}
+
+  public IntChoiceFromSet(int[] val){
+    super(null);
+
+    if (val != null){
+      values = new Integer[val.length];
+      for (int i=0; i<val.length; i++){
+        values[i] = new Integer(val[i]);
+      }
+    } else {
+      throw new JPFException("empty set for IntChoiceFromSet");
+    }
+
+    count = -1;
+  }
+
 
 	/** super constructor for subclasses that want to configure themselves
 	 * 
@@ -66,12 +82,20 @@ public class IntChoiceFromSet extends IntChoiceGenerator {
 	 * @see gov.nasa.jpf.jvm.IntChoiceGenerator#getNextChoice()
 	 **/
 	public Integer getNextChoice() {
-		
-		int ret;
-		ret = IntSpec.eval(values[count]);
 
-		//vm.println("Choice: "+id + " = " + values[count] + "("+ret+")");
-		return new Integer(ret);
+    if ((count >= 0) && (count < values.length)) {
+      Object val = values[count];
+
+      if (val instanceof String){
+        return new Integer( IntSpec.eval((String) val));
+      } else if (val instanceof Integer){
+        return (Integer)val;
+      } else {
+        throw new JPFException("unknown IntChoiceFromSet value spec: " + val);
+      }
+    }
+
+    return 0;
 	}
 
 	/**
@@ -95,7 +119,7 @@ public class IntChoiceFromSet extends IntChoiceGenerator {
 	 * get String label of current value, as specified in config file
 	 **/
 	public String getValueLabel(){
-		return values[count];
+		return values[count].toString();
 	}
 
   public int getTotalNumberOfChoices () {
@@ -127,7 +151,7 @@ public class IntChoiceFromSet extends IntChoiceGenerator {
   public IntChoiceFromSet randomize () {
     for (int i = values.length - 1; i > 0; i--) {
       int j = random.nextInt(i + 1);
-      String tmp = values[i];
+      Object tmp = values[i];
       values[i] = values[j];
       values[j] = tmp;
     }

@@ -72,6 +72,30 @@ public class DataChoiceTest extends TestJPF {
   }
 
   @Test
+  public void testIntFromArray () {
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+    }
+
+    if (verifyNoPropertyViolation()){
+      int i = Verify.getIntFromSet(1,2,3,4,5); // ..and change the combination on my luggage
+      System.out.println(i);
+      if (i>0 && i < 6){
+        Verify.incrementCounter(0);
+      } else {
+        assert false : "wrong int choice value: " + i;
+      }
+    }
+
+    if (!isJPFRun()) { // this is only executed outside JPF
+      if (Verify.getCounter(0) != 5) {
+        fail("wrong number of backtracks");
+      }
+    }
+  }
+
+
+  @Test
   public void testDoubleFromSet() {
 
     if (!isJPFRun()) {
@@ -93,8 +117,33 @@ public class DataChoiceTest extends TestJPF {
         fail("wrong number of backtracks");
       }
     }
-
   }
+
+  @Test
+  public void testDoubleFromArray () {
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+    }
+
+    if (verifyNoPropertyViolation()){
+      double d = Verify.getDoubleFromSet(-42.0,0,42.0);
+      System.out.println(d);
+
+      if (d == -42.0 || d == 0.0 || d == 42.0){
+        Verify.incrementCounter(0);
+      } else {
+        assert false : "wrong double choice value: " + d;
+      }
+    }
+
+    if (!isJPFRun()) { // this is only executed outside JPF
+      if (Verify.getCounter(0) != 3) {
+        fail("wrong number of backtracks");
+      }
+    }
+  }
+
+
 
   @Test
   public void testTypedObjectChoice() {

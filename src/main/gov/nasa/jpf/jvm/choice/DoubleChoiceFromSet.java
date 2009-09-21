@@ -33,7 +33,7 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
   
   static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.choice");
   
-  String[] values;
+  Object[] values;
   int count;
   
   public DoubleChoiceFromSet (Config conf, String id) {
@@ -46,14 +46,37 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
       
     count = -1;
   }
-  
+
+  public DoubleChoiceFromSet (double[] val){
+    super(null);
+
+    if (val != null){
+      values = new Double[val.length];
+      for (int i=0; i<val.length; i++){
+        values[i] = new Double(val[i]);
+      }
+    } else {
+      throw new JPFException("empty set for DoubleChoiceFromSet");
+    }
+
+    count = -1;
+  }
+
   public void reset () {
     count = -1;
   }
   
   public Double getNextChoice () {
     if ((count >= 0) && (count < values.length)) {
-      return new Double( DoubleSpec.eval(values[count]));
+      Object val = values[count];
+
+      if (val instanceof String){
+        return new Double( DoubleSpec.eval((String) val));
+      } else if (val instanceof Double){
+        return (Double)val;
+      } else {
+      throw new JPFException("unknown DoubleChoiceFromSet value spec: " + val);
+      }
     }
     
     return Double.NaN;  // Hmm, maybe we should return the last value
@@ -99,7 +122,7 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
   public DoubleChoiceFromSet randomize () {
     for (int i = values.length - 1; i > 0; i--) {
       int j = random.nextInt(i + 1);
-      String tmp = values[i];
+      Object tmp = values[i];
       values[i] = values[j];
       values[j] = tmp;
     }
