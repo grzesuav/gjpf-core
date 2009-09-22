@@ -45,7 +45,14 @@ public class JPF_java_lang_Object {
       int newref;
       if (ci.isArray()) {
         ClassInfo cci = ci.getComponentClassInfo();
-        String componentType = cci.isPrimitive() ? cci.getType() : Types.getTypeCode(cci.getName(),false);
+        
+        String componentType;
+        if (cci.isPrimitive()){
+          componentType = Types.getTypeCode(cci.getName(),false);
+        } else {
+          componentType = cci.getType();
+        }
+
         newref = da.newArray(componentType, objinfo.arrayLength(), env.getThreadInfo());
       } else {
         newref = da.newObject(ci, env.getThreadInfo());
