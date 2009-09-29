@@ -79,7 +79,7 @@ public abstract class TestJPF extends Assert  {
   //------ internal methods
 
 
-  protected void fail (String msg, String[] args, String cause){
+  public void fail (String msg, String[] args, String cause){
     StringBuilder sb = new StringBuilder();
 
     sb.append(msg);
@@ -233,12 +233,14 @@ public abstract class TestJPF extends Assert  {
       if (nArgs > 0) {
           for (String test : args) {
             if (test != null) {
-              if (!test.startsWith("test")){
-                throw new TestException("method name has no 'test' prefix: " + test);
-              }
 
               try {
                 Method m = testCls.getDeclaredMethod(test);
+
+                if (!m.isAnnotationPresent(org.junit.Test.class)){
+                  throw new TestException("test method does not have @Test annotation: " + test);
+                }
+
                 if (!Modifier.isPublic(m.getModifiers())){
                   throw new TestException("test method not public: " + test);                
                 }
@@ -266,7 +268,7 @@ public abstract class TestJPF extends Assert  {
           testMethod = m;
           int mod = m.getModifiers();
           if (m.getParameterTypes().length == 0 &&
-                  m.getName().startsWith("test") &&
+                  m.isAnnotationPresent(org.junit.Test.class) &&
                   Modifier.isPublic(mod) && !Modifier.isStatic(mod)) {
             testObject = testCls.newInstance();
             testObject.runDirectly(runDirectly);

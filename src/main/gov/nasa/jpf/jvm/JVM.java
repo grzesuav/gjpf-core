@@ -282,6 +282,9 @@ try {
   /**
    * be careful - everything that's executed from within here is not allowed
    * to depend on static class init having been done yet
+   *
+   * we have to do the initialization excplicitly here since we can't execute
+   * bytecode yet (which would need a ThreadInfo context)
    */
   protected ThreadInfo createMainThread () {
     DynamicArea da = getDynamicArea();
@@ -297,6 +300,8 @@ try {
     ei.setIntField("priority", Thread.NORM_PRIORITY);
 
     int permitRef = da.newObject(ClassInfo.getClassInfo("java.lang.Thread$Permit"),null);
+    ElementInfo eiPermitRef = da.get(permitRef);
+    eiPermitRef.setBooleanField("isTaken", true);
     ei.setReferenceField("permit", permitRef);
 
     // we need to keep the attributes on the JPF side in sync here
