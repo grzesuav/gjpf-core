@@ -1101,7 +1101,7 @@ public abstract class ElementInfo implements Cloneable {
     ThreadInfo[] lockedThreads = monitor.getLockedThreads();
     for (int i=0; i<lockedThreads.length; i++) {
       if (lockedThreads[i].isRunnable()) {
-        lockedThreads[i].setStatus(ThreadInfo.BLOCKED);
+        lockedThreads[i].setState(ThreadInfo.State.BLOCKED);
         //lockedThreads[i].setLockRef(index);
       }
     }
@@ -1117,7 +1117,7 @@ public abstract class ElementInfo implements Cloneable {
     setMonitorWithLocked(ti);
 
     ti.setLockRef(index);
-    ti.setStatus(ThreadInfo.BLOCKED);
+    ti.setState(ThreadInfo.State.BLOCKED);
   }
 
   /**
@@ -1137,11 +1137,9 @@ public abstract class ElementInfo implements Cloneable {
     // before we execute anything else, mark this thread as not being blocked anymore
     ti.resetLockRef();
 
-    if (ti.getStatus() == ThreadInfo.UNBLOCKED) {
-      ti.setStatus(ThreadInfo.RUNNING);
+    if (ti.getState() == ThreadInfo.State.UNBLOCKED) {
+      ti.setState(ThreadInfo.State.RUNNING);
     }
-
-    //blockLockContenders();
 
     // don't re-add if we are recursive - the lock count is avaliable in the monitor
     if (monitor.getLockCount() == 1) {
@@ -1167,27 +1165,27 @@ public abstract class ElementInfo implements Cloneable {
 
       ThreadInfo[] lockedThreads = monitor.getLockedThreads();
       for (int i = 0; i < lockedThreads.length; i++) {
-        switch (lockedThreads[i].getStatus()) {
+        switch (lockedThreads[i].getState()) {
 
-        case ThreadInfo.NOTIFIED:
-        case ThreadInfo.INTERRUPTED:
-        case ThreadInfo.BLOCKED:
-        case ThreadInfo.TIMEDOUT:
+        case NOTIFIED:
+        case INTERRUPTED:
+        case BLOCKED:
+        case TIMEDOUT:
           // Ok, this thread becomes runnable again
-          lockedThreads[i].setStatus(ThreadInfo.UNBLOCKED);
+          lockedThreads[i].setState(ThreadInfo.State.UNBLOCKED);
 
           // this used to break invariant implied by updateLockingInfo() -peterd
           //lockedThreads[i].resetLockRef();
 
           break;
 
-        case ThreadInfo.WAITING:
-        case ThreadInfo.TIMEOUT_WAITING:
+        case WAITING:
+        case TIMEOUT_WAITING:
           // nothing to do yet, thread has to timeout, get notified, or interrupted
           break;
 
         default:
-          assert false : "Monitor.lockedThreads<->ThreadData.status inconsistency! " + lockedThreads[i].getStatusName();
+          assert false : "Monitor.lockedThreads<->ThreadData.status inconsistency! " + lockedThreads[i].getStateName();
           // why is it in the list - when someone unlocks, all others should have been blocked
         }
       }
@@ -1227,7 +1225,7 @@ public abstract class ElementInfo implements Cloneable {
       // no waiters, nothing to do
     } else if (nWaiters == 1) {
       // very deterministic, just a little optimization
-      locked[iWaiter].setStatus(ThreadInfo.NOTIFIED);
+      locked[iWaiter].setState(ThreadInfo.State.NOTIFIED);
     } else {
       // Ok, this is the non-deterministic case
       ChoiceGenerator cg = ss.getChoiceGenerator();
@@ -1236,7 +1234,7 @@ public abstract class ElementInfo implements Cloneable {
         "notify " + this + " without ThreadChoiceGenerator: " + cg;
 
       ThreadInfo tiNotify = ((ThreadChoiceGenerator)cg).getNextChoice();
-      tiNotify.setStatus(ThreadInfo.NOTIFIED);
+      tiNotify.setState(ThreadInfo.State.NOTIFIED);
     }
 
     ti.getVM().notifyObjectNotifies(ti, this);
@@ -1251,7 +1249,7 @@ public abstract class ElementInfo implements Cloneable {
 
     ThreadInfo[] locked = monitor.getLockedThreads();
     for (int i=0; i<locked.length; i++) {
-      locked[i].setStatus(ThreadInfo.NOTIFIED);
+      locked[i].setState(ThreadInfo.State.NOTIFIED);
     }
 
     JVM.getVM().notifyObjectNotifiesAll(ThreadInfo.currentThread, this);
@@ -1278,18 +1276,18 @@ public abstract class ElementInfo implements Cloneable {
     ti.setLockRef(index);
 
     if (timeout == 0) {
-      ti.setStatus(ThreadInfo.WAITING);
+      ti.setState(ThreadInfo.State.WAITING);
     } else {
-      ti.setStatus(ThreadInfo.TIMEOUT_WAITING);
+      ti.setState(ThreadInfo.State.TIMEOUT_WAITING);
     }
 
     ThreadInfo[] lockedThreads = monitor.getLockedThreads();
     for (int i=0; i<lockedThreads.length; i++) {
-      switch (lockedThreads[i].getStatus()) {
-      case ThreadInfo.BLOCKED:
-      case ThreadInfo.NOTIFIED:
-      case ThreadInfo.INTERRUPTED:
-        lockedThreads[i].setStatus(ThreadInfo.UNBLOCKED);
+      switch (lockedThreads[i].getState()) {
+      case BLOCKED:
+      case NOTIFIED:
+      case INTERRUPTED:
+        lockedThreads[i].setState(ThreadInfo.State.UNBLOCKED);
         break;
       }
     }
@@ -1311,7 +1309,7 @@ public abstract class ElementInfo implements Cloneable {
     monitor.setLockingThread( ti);
     monitor.setLockCount( ti.getLockCount());
 
-    ti.setStatus( ThreadInfo.RUNNING);
+    ti.setState( ThreadInfo.State.RUNNING);
     ti.setLockCount(0);
     ti.resetLockRef();
 

@@ -131,7 +131,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
     buf.add(ks.tl.length());
     for (ThreadInfo t : ks.tl.getThreads()) {
       addObjRef(t.getThreadObjectRef());
-      buf.add(t.getStatus());
+      buf.add(t.getState().ordinal());
       StackFrame[] frames = t.dumpStack();
 
       int frameCountPos = buf.size();

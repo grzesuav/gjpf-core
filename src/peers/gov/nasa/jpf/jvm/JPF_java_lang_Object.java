@@ -80,16 +80,16 @@ public class JPF_java_lang_Object {
 
     if (ti.isFirstStepInsn()) { // we already have a CG
 
-      switch (ti.getStatus()) {
+      switch (ti.getState()) {
 
         // we can get here by direct call from ...Unsafe.park__ZJ__V()
         // which aquires the park lock and waits natively
-        case ThreadInfo.RUNNING:
+        case RUNNING:
 
         // note that we can't get here if we are in NOTIFIED or INTERRUPTED state,
         // since we still have to reacquire the lock
-        case ThreadInfo.UNBLOCKED:
-        case ThreadInfo.TIMEDOUT: // nobody else acquired the lock
+        case UNBLOCKED:
+        case TIMEDOUT: // nobody else acquired the lock
           // thread status set by explicit notify() call
           env.lockNotified(objref);
 
@@ -99,7 +99,7 @@ public class JPF_java_lang_Object {
           break;
 
         default:
-          throw new JPFException("invalid thread state of: " + ti.getName() + " is " + ti.getStatusName() +
+          throw new JPFException("invalid thread state of: " + ti.getName() + " is " + ti.getStateName() +
                   " while waiting on " + ei);
       }
     } else { // first time, break the transition (if we don't have a pending interrupt)

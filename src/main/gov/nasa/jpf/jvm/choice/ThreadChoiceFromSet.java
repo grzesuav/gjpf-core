@@ -50,32 +50,68 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
   }
 
   public boolean hasMoreChoices () {
-    return !isDone && (count < values.length-1);
+    if (!isDone && (count < values.length-1)){
+      return true;
+
+    } else {
+
+      // <2do> this is weak - see advance()
+      resetTransientThreadStates();
+      return false;
+    }
+  }
+
+  private void resetTransientThreadStates() {
+    for (int i=0; i<values.length; i++){
+      ThreadInfo ti = values[i];
+      if (ti.isSleeping()){
+        ti.setRunning();
+      }
+    }
   }
 
   /**
    * this has to handle timeouts, which we do with temporary thread status
    * changes (i.e. the TIMEOUT_WAITING threads are in our list of choices, but
    * only change their status to TIMEDOUT when they are picked as the next choice)
+   *
+   * <2do> this should be in SystemState.nextSuccessor - there might be
+   * other ThreadChoiceGenerators, and we should handle this consistently
    */
   public void advance () {
     
     if (count >= 0) {
-      if (values[count].isTimedOut()) {
+      ThreadInfo ti = values[count]; // this was the previous choice
+
+      if (ti.isTimedOut()) {
         // we've temporarily set this to TIMEDOUT in the previous choice, now
-        // set it to TIMEOUT_WAITING again before we run the next choice
-        values[count].resetTimedOut();
+        // set it to TIMEOUT_WAITING again before we run the next choice, i.e.
+        // all subsequent transitions will see this as TIMEOUT_WAITING (until
+        // it gets notified)
+        ti.resetTimedOut();
+
+      } else if (ti.isWokeUp()){
+        // same drill, only this time there is no explicit action that
+        // would reset to RUNNING - we have to do ourselves, which is weak
+        ti.resetWokeUp();
       }
     }
     
-    if (count < values.length-1) {
+    if (count < values.length-1) { // at least one choice left
       count++;
-      
-      if (values[count].isTimeoutWaiting()) {
-        // first time we see a TIMEOUT_WAITING thread, we change it's status
-        // to TIMEDOUT and run it
-        values[count].setTimedOut();
+
+      ThreadInfo ti = values[count];
+      if (ti.isTimeoutWaiting()) {
+        // first time we see a TIMEOUT_WAITING thread, we change its status
+        // to TIMEDOUT and run it.
+        ti.setTimedOut();
+
+      } else if (ti.isSleeping()){
+        ti.setWokeUp();
       }
+
+      // we can't reset the sleeping threads here because the last one
+      // should see the sleepers the same way like all others
     }
   }
 

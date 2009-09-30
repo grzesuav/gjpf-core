@@ -54,23 +54,21 @@ public class ThreadInfo
   static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.ThreadInfo");
 
   //--- our internal thread states
-  // <2do> turn into Enum
-  public static final int NEW             = 0;  // means created but not yet started
-  public static final int RUNNING         = 1;
-  public static final int BLOCKED         = 2;  // waiting to acquire a lock
-  public static final int UNBLOCKED       = 3;  // was BLOCKED but can acquire the lock now
-  public static final int WAITING         = 4;  // waiting to be notified
-  public static final int TIMEOUT_WAITING = 5;
-  public static final int NOTIFIED        = 6;  // was WAITING and got notified
-  public static final int INTERRUPTED     = 7;  // was WAITING and got interrupted
-  public static final int TIMEDOUT        = 8;  // was TIMEOUT_WAITING and timed out
-  public static final int TERMINATED      = 9;
-
-  public static final String[] statusName = {
-    "NEW", "RUNNING", "BLOCKED", "UNBLOCKED",
-    "WAITING", "TIMEOUT_WAITING", "NOTIFIED",
-    "INTERRUPTED", "TIMEDOUT", "TERMINATED"
+  public enum State {
+    NEW,  // means created but not yet started
+    RUNNING,
+    BLOCKED,  // waiting to acquire a lock
+    UNBLOCKED,  // was BLOCKED but can acquire the lock now
+    WAITING,  // waiting to be notified
+    TIMEOUT_WAITING,
+    NOTIFIED,  // was WAITING and got notified
+    INTERRUPTED,  // was WAITING and got interrupted
+    TIMEDOUT,  // was TIMEOUT_WAITING and timed out
+    TERMINATED,
+    SLEEPING,
+    WOKEUP  // was sleeping
   };
+
 
   static final int[] emptyRefArray = new int[0];
 
@@ -238,7 +236,7 @@ public class ThreadInfo
     this.vm = vm;
 
     threadData = new ThreadData();
-    threadData.status = NEW;
+    threadData.state = State.NEW;
     threadData.ci = ei.getClassInfo();
     threadData.objref = objRef;
     threadData.target = MJIEnv.NULL;
@@ -341,6 +339,60 @@ public class ThreadInfo
     return getPC().examineAbstraction(vm.getSystemState(), vm.getKernelState(), this);
   }
 
+  //--- various thread state related methods
+
+  /**
+   * Updates the status of the thread.
+   */
+  public void setState (State newStatus) {
+    State oldStatus = threadData.state;
+
+    if (oldStatus != newStatus) {
+
+      assert (oldStatus != State.TERMINATED) : "can't resurrect threads";
+
+      threadDataClone().state = newStatus;
+
+      switch (newStatus) {
+      case NEW:
+        break; // Hmm, shall we report a thread object creation?
+      case RUNNING:
+        // nothing. the notifyThreadStarted has to happen from
+        // Thread.start(), since the thread could have been blocked
+        // at the time with a sync run() method
+        break;
+      case TERMINATED:
+        vm.notifyThreadTerminated(this);
+        break;
+      case BLOCKED:
+        vm.notifyThreadBlocked(this);
+        break;
+      case WAITING:
+        vm.notifyThreadWaiting(this);
+        break;
+      case INTERRUPTED:
+        vm.notifyThreadInterrupted(this);
+        break;
+      case NOTIFIED:
+        vm.notifyThreadNotified(this);
+        break;
+      }
+
+      if (log.isLoggable(Level.FINE)){
+        log.fine("setStatus of " + getName() + " from "
+                 + oldStatus.name() + " to " + newStatus.name());
+      }
+    }
+  }
+
+  /**
+   * Returns the current status of the thread.
+   */
+  public State getState () {
+    return threadData.state;
+  }
+
+
   /**
    * Returns true if this thread is either RUNNING or UNBLOCKED
    */
@@ -348,10 +400,13 @@ public class ThreadInfo
     if (threadData.suspendCount != 0)
       return false;
 
-    switch (threadData.status) {
+    switch (threadData.state) {
     case RUNNING:
     case UNBLOCKED:
+    case WOKEUP:
       return true;
+    case SLEEPING:
+      return true;    // that's arguable, but since we don't model time we treat it like runnable
     default:
       return false;
     }
@@ -361,13 +416,15 @@ public class ThreadInfo
     if (threadData.suspendCount != 0)
       return false;
 
-    switch (threadData.status) {
+    switch (threadData.state) {
     case RUNNING:
     case UNBLOCKED:
+    case WOKEUP:
       // that also takes care of NOTIFIED threads, since they
       // won't run again until they can re-acquire the lock
       return true;
     case TIMEOUT_WAITING: // it's not yet, but it will be at the time it gets scheduled
+    case SLEEPING:
       return true;
     default:
       return false;
@@ -375,17 +432,19 @@ public class ThreadInfo
   }
 
   public boolean isNew () {
-    return (threadData.status == NEW);
+    return (threadData.state == State.NEW);
   }
 
   public boolean isTimeoutRunnable () {
     if (threadData.suspendCount != 0)
       return false;
 
-    switch (threadData.status) {
+    switch (threadData.state) {
 
     case RUNNING:
     case UNBLOCKED:
+    case SLEEPING:
+    case WOKEUP:
       return true;
 
     case TIMEOUT_WAITING:
@@ -400,57 +459,83 @@ public class ThreadInfo
   }
 
   public boolean isTimedOut() {
-    return (threadData.status == TIMEDOUT);
+    return (threadData.state == State.TIMEDOUT);
   }
 
   public boolean isTimeoutWaiting() {
-    return (threadData.status == TIMEOUT_WAITING);
+    return (threadData.state == State.TIMEOUT_WAITING);
   }
 
   public void setTimedOut() {
-    setStatus(TIMEDOUT);
+    setState(State.TIMEDOUT);
   }
 
   public void setTerminated() {
-    setStatus(TERMINATED);
+    setState(State.TERMINATED);
   }
 
   public void resetTimedOut() {
     // should probably check for TIMEDOUT
-    setStatus(TIMEOUT_WAITING);
+    setState(State.TIMEOUT_WAITING);
+  }
+
+  public void setSleeping() {
+    setState(State.SLEEPING);
+  }
+
+  public boolean isSleeping(){
+    return (threadData.state == State.SLEEPING);
+  }
+
+  public void resetWokeUp() {
+    // should probably check for WOKEUP
+    setState(State.SLEEPING);
+  }
+
+  public boolean isWokeUp(){
+    return (threadData.state == State.WOKEUP);
+  }
+
+  public void setWokeUp() {
+    setState(State.WOKEUP);
+  }
+
+  public void setRunning() {
+    setState(State.RUNNING);
   }
 
   /**
    * An alive thread is anything but TERMINATED or NEW
    */
   public boolean isAlive () {
-    return (threadData.status != TERMINATED && threadData.status != NEW);
+    State state = threadData.state;
+    return (state != State.TERMINATED && state != State.NEW);
   }
 
   public boolean isWaiting () {
-    int state = threadData.status;
-    return (state == WAITING) || (state == TIMEOUT_WAITING);
+    State state = threadData.state;
+    return (state == State.WAITING) || (state == State.TIMEOUT_WAITING);
   }
 
   public boolean isNotified () {
-    return (threadData.status == NOTIFIED);
+    return (threadData.state == State.NOTIFIED);
   }
 
   public boolean isTimedout () {
-    return (threadData.status == TIMEDOUT);
+    return (threadData.state == State.TIMEDOUT);
   }
 
   public boolean isUnblocked () {
-    int state = threadData.status;
-    return (state == UNBLOCKED) || (state == TIMEDOUT);
+    State state = threadData.state;
+    return (state == State.UNBLOCKED) || (state == State.TIMEDOUT);
   }
 
   public boolean isBlocked () {
-    return (threadData.status == BLOCKED);
+    return (threadData.state == State.BLOCKED);
   }
 
   public boolean isTerminated () {
-    return (threadData.status == TERMINATED);
+    return (threadData.state == State.TERMINATED);
   }
 
   MethodInfo getExitMethod() {
@@ -459,9 +544,14 @@ public class ThreadInfo
   }
 
   public boolean isBlockedOrNotified() {
-    int state = threadData.status;
-    return (state == BLOCKED) || (state == NOTIFIED);
+    State state = threadData.state;
+    return (state == State.BLOCKED) || (state == State.NOTIFIED);
   }
+
+  public String getStateName () {
+    return threadData.getState().name();
+  }
+
 
   public boolean getBooleanLocal (String lname) {
     return Types.intToBoolean(getLocalVariable(lname));
@@ -1138,56 +1228,6 @@ public class ThreadInfo
     return sb.toString();
   }
 
-  /**
-   * Updates the status of the thread.
-   */
-  public void setStatus (int newStatus) {
-    int oldStatus = threadData.status;
-
-    if (oldStatus != newStatus) {
-
-      assert (oldStatus != TERMINATED) : "can't resurrect threads";
-
-      threadDataClone().status = newStatus;
-
-      switch (newStatus) {
-      case NEW:
-        break; // Hmm, shall we report a thread object creation?
-      case RUNNING:
-        // nothing. the notifyThreadStarted has to happen from
-        // Thread.start(), since the thread could have been blocked
-        // at the time with a sync run() method
-        break;
-      case TERMINATED:
-        vm.notifyThreadTerminated(this);
-        break;
-      case BLOCKED:
-        vm.notifyThreadBlocked(this);
-        break;
-      case WAITING:
-        vm.notifyThreadWaiting(this);
-        break;
-      case INTERRUPTED:
-        vm.notifyThreadInterrupted(this);
-        break;
-      case NOTIFIED:
-        vm.notifyThreadNotified(this);
-        break;
-      }
-
-      if (log.isLoggable(Level.FINE)){
-        log.fine("setStatus of " + getName() + " from "
-                 + statusName[oldStatus] + " to " + statusName[newStatus]);
-      }
-    }
-  }
-
-  /**
-   * Returns the current status of the thread.
-   */
-  public int getStatus () {
-    return threadData.status;
-  }
 
   /**
    * Returns the information necessary to store.
@@ -1907,7 +1947,7 @@ public class ThreadInfo
   // we get our last stackframe popped, so it's time to close down
   // NOTE: it's the callers responsibility to do the notification on the thread object
   public void finish () {
-    setStatus(TERMINATED);
+    setState(State.TERMINATED);
 
     int     objref = getThreadObjectRef();
     ElementInfo ei = getElementInfo(objref);
@@ -1980,7 +2020,7 @@ public class ThreadInfo
 
     ElementInfo eiThread = getElementInfo(getThreadObjectRef());
 
-    int status = getStatus();
+    State status = getState();
 
     switch (status) {
     case RUNNING:
@@ -1995,13 +2035,13 @@ public class ThreadInfo
     case WAITING:
     case TIMEOUT_WAITING:
       eiThread.setBooleanField("interrupted", true);
-      setStatus(INTERRUPTED);
+      setState(State.INTERRUPTED);
 
       // since this is potentially called w/o owning the wait lock, we
       // have to check if the waiter goes directly to UNBLOCKED
       ElementInfo eiLock = list.ks.da.get(lockRef);
       if (eiLock.canLock(this)) {
-        setStatus(UNBLOCKED);
+        setState(State.UNBLOCKED);
       }
       break;
 
@@ -2186,10 +2226,6 @@ public class ThreadInfo
     sb.append(threadData.getFieldValues());
 
     return sb.toString();
-  }
-
-  public String getStatusName () {
-    return statusName[getStatus()];
   }
 
   /**

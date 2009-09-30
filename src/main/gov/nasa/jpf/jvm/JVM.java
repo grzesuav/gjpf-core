@@ -310,7 +310,7 @@ try {
     ThreadInfo ti = ThreadInfo.createThreadInfo(this, tObjRef);
     ti.setPriority(java.lang.Thread.NORM_PRIORITY);
     ti.setName("main");
-    ti.setStatus(ThreadInfo.RUNNING);
+    ti.setState(ThreadInfo.State.RUNNING);
 
     return ti;
   }
@@ -457,7 +457,6 @@ try {
     }
 
     ti.pushFrame(new StackFrame(mi, null));
-    ti.setStatus(ThreadInfo.RUNNING);
 
     int argsObjref = da.newArray("Ljava/lang/String;", args.length, null);
     ElementInfo argsElement = ss.ks.da.get(argsObjref);
@@ -1379,7 +1378,7 @@ try {
 
         ElementInfo ei = ti.getLockObject();
         if (ei != null) {
-          if (ti.getStatus() == ThreadInfo.WAITING) {
+          if (ti.getState() == ThreadInfo.State.WAITING) {
             pw.print( "  waiting on: ");
           } else {
             pw.print( "  blocked on: ");

@@ -908,7 +908,7 @@ public class HTMLPublisher extends Publisher {
     output.println("</a></td>");
 
     output.print("              <td align=\"center\">");
-    status = thread.getStatusName();
+    status = thread.getStateName();
     status = status.charAt(0) + status.substring(1).toLowerCase();
     output.print(status);
     output.println("</td>");

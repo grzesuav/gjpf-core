@@ -243,9 +243,9 @@ public class IterativeContextBounding extends Search {
   }
 
   private boolean isThreadEnabled(ThreadInfo t) {
-    boolean isEnabled = (t.getStatusName().equals("RUNNING"))
-        || (t.getStatusName().equals("INTERRUPTED"))
-        || (t.getStatusName().equals("NOTIFIED"));
+    boolean isEnabled = (t.getStateName().equals("RUNNING"))
+        || (t.getStateName().equals("INTERRUPTED"))
+        || (t.getStateName().equals("NOTIFIED"));
     return isEnabled;
   }
 

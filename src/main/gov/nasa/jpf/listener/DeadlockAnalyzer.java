@@ -303,19 +303,7 @@ public class DeadlockAnalyzer extends ListenerAdapter {
       }
     }
   }
-  
-  ElementInfo[] getLocks (ThreadInfo[] tlist, int status){
-    ElementInfo[] elist = new ElementInfo[tlist.length];
     
-    for (int i=0; i<elist.length; i++){
-      if (tlist[i].getStatus() == status) {
-        elist[i] = tlist[i].getLockObject();
-      }
-    }
-    
-    return elist;
-  }
-  
   /**
    * this is the workhorse - filter which ops should be shown, and which
    * are irrelevant for the deadlock

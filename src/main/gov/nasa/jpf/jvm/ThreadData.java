@@ -28,7 +28,7 @@ public class ThreadData {
   /**
    * Current state of the thread.
    */
-  int status;
+  ThreadInfo.State state;
 
   /** the scheduler priority of this thread */
   int priority = java.lang.Thread.NORM_PRIORITY;
@@ -71,7 +71,7 @@ public class ThreadData {
   public ThreadData clone () {
     ThreadData t = new ThreadData();
 
-    t.status = status;
+    t.state = state;
     t.ci = ci;
     t.objref = objref;
     t.target = target;
@@ -92,14 +92,14 @@ public class ThreadData {
 
     ThreadData t = (ThreadData) o;
 
-    return ((status == t.status) && (ci == t.ci) && (objref == t.objref) &&
+    return ((state == t.state) && (ci == t.ci) && (objref == t.objref) &&
            (target == t.target) && (priority == t.priority) &&
            (isDaemon == t.isDaemon) && (lockCount == t.lockCount) &&
            (suspendCount == t.suspendCount) && (name.equals(t.name)));
   }
 
   public void hash (HashData hd) {
-    hd.add(status);
+    hd.add(state);
     hd.add(objref);
     hd.add(target);
     hd.add(lockCount);
@@ -127,7 +127,7 @@ public class ThreadData {
 
     sb.append(name);
     sb.append(",status=");
-    sb.append(ThreadInfo.statusName[status]);
+    sb.append(state.name());
     sb.append(",this=");
     sb.append(heap.get(objref));
     if (target != objref) {
@@ -146,5 +146,5 @@ public class ThreadData {
 
   public int getObjRef() { return objref; }
 
-  public int getStatus() { return status; }
+  public ThreadInfo.State getState() { return state; }
 }

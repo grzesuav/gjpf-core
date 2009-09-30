@@ -140,7 +140,7 @@ public class JPF_java_lang_Thread {
       // is a IllegalThreadStateException. If it already terminated, it just gets
       // silently ignored in Java 1.4, but the 1.5 spec explicitly marks this
       // as illegal, so we adopt this by throwing an IllegalThreadState, too
-      if (newThread.getStatus() != ThreadInfo.NEW) {
+      if (newThread.getState() != ThreadInfo.State.NEW) {
         env.throwException("java.lang.IllegalThreadStateException");
         return;
       }
@@ -184,7 +184,7 @@ public class JPF_java_lang_Thread {
       }
 
       if (!newThread.isBlocked()){
-        newThread.setStatus( ThreadInfo.RUNNING);
+        newThread.setState( ThreadInfo.State.RUNNING);
       }
 
       // <2do> now that we have another runnable, we should re-compute
@@ -229,9 +229,13 @@ public class JPF_java_lang_Thread {
       if (cg != null) {
         ss.setNextChoiceGenerator(cg);
         env.repeatInvocation();
+
+        ti.setSleeping();
       }
     } else {
-      // nothing to do, we are good to go
+      // we don't set it RUNNING again here because we want all other scheduling
+      // choices in this CG to see this thread as sleeping - not just the ones
+      // that are scheduled before this one
     }
   }
 
@@ -306,19 +310,20 @@ public class JPF_java_lang_Thread {
     // return the state index with respect to one of the public Thread.States
     ThreadInfo ti = getThreadInfo(env, objref);
 
-    switch (ti.getStatus()) {
-    case ThreadInfo.NEW:             return 1;
-    case ThreadInfo.RUNNING:         return 2;
-    case ThreadInfo.BLOCKED:         return 0;
-    case ThreadInfo.UNBLOCKED:       return 2;
-    case ThreadInfo.WAITING:         return 5;
-    case ThreadInfo.TIMEOUT_WAITING: return 4;
-    case ThreadInfo.NOTIFIED:        return 2;
-    case ThreadInfo.INTERRUPTED:     return 2;
-    case ThreadInfo.TIMEDOUT:        return 2;
-    case ThreadInfo.TERMINATED:      return 3;
+    switch (ti.getState()) {
+    case NEW:             return 1;
+    case RUNNING:         return 2;
+    case BLOCKED:         return 0;
+    case UNBLOCKED:       return 2;
+    case WAITING:         return 5;
+    case TIMEOUT_WAITING: return 4;
+    case SLEEPING:        return 4;
+    case NOTIFIED:        return 2;
+    case INTERRUPTED:     return 2;
+    case TIMEDOUT:        return 2;
+    case TERMINATED:      return 3;
     default:
-      throw new JPFException("illegal thread state: " + ti.getStatus());
+      throw new JPFException("illegal thread state: " + ti.getState());
     }
   }
 

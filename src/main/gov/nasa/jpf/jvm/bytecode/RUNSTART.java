@@ -48,7 +48,7 @@ public class RUNSTART extends Instruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
 
-    ti.setStatus(ThreadInfo.RUNNING);  // The thread is now running.  Need to update the thread state accordingly.
+    ti.setState(ThreadInfo.State.RUNNING);  // The thread is now running.  Need to update the thread state accordingly.
 
     // if this is the first insn in a synchronized run(), we also have to
     // grab the lock

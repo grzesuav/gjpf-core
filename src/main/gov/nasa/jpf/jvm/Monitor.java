@@ -77,7 +77,7 @@ public class Monitor {
       if (i > 0) pw.print(',');
       pw.print(lockedThreads[i].getName());
       pw.print(':');
-      pw.print(lockedThreads[i].getStatusName());
+      pw.print(lockedThreads[i].getStateName());
     }
     pw.println("}]");
   }
