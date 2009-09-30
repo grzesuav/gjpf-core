@@ -50,15 +50,7 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
   }
 
   public boolean hasMoreChoices () {
-    if (!isDone && (count < values.length-1)){
-      return true;
-
-    } else {
-
-      // <2do> this is weak - see advance()
-      resetTransientThreadStates();
-      return false;
-    }
+    return (!isDone && (count < values.length-1));
   }
 
   private void resetTransientThreadStates() {

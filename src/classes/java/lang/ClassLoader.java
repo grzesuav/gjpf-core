@@ -21,6 +21,7 @@ package java.lang;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Vector;
@@ -106,7 +107,19 @@ public class ClassLoader {
   protected void resolveClass(Class<?> cls){
     throw new UnsupportedOperationException("ClassLoader.resolveClass(Class<?>) not yet supported");        
   }
-  
+
+  protected final Class<?> findSystemClass (String name){
+    throw new UnsupportedOperationException("ClassLoader.findSystemClass() not yet supported");
+  }
+
+  protected final Class<?> defineClass(String name,byte[] b,int off,int len,ProtectionDomain protectionDomain){
+    throw new UnsupportedOperationException("ClassLoader.defineClass() not yet supported");
+  }
+
+  public static URL getSystemResource(String name){
+    throw new UnsupportedOperationException("ClassLoader.getSystemResource() not yet supported");
+  }
+
   public ClassLoader getParent(){
 	  return parent;	  
   }
