@@ -53,14 +53,6 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
     return (!isDone && (count < values.length-1));
   }
 
-  private void resetTransientThreadStates() {
-    for (int i=0; i<values.length; i++){
-      ThreadInfo ti = values[i];
-      if (ti.isSleeping()){
-        ti.setRunning();
-      }
-    }
-  }
 
   /**
    * this has to handle timeouts, which we do with temporary thread status
@@ -81,11 +73,6 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
         // all subsequent transitions will see this as TIMEOUT_WAITING (until
         // it gets notified)
         ti.resetTimedOut();
-
-      } else if (ti.isWokeUp()){
-        // same drill, only this time there is no explicit action that
-        // would reset to RUNNING - we have to do ourselves, which is weak
-        ti.resetWokeUp();
       }
     }
     
@@ -97,13 +84,7 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
         // first time we see a TIMEOUT_WAITING thread, we change its status
         // to TIMEDOUT and run it.
         ti.setTimedOut();
-
-      } else if (ti.isSleeping()){
-        ti.setWokeUp();
       }
-
-      // we can't reset the sleeping threads here because the last one
-      // should see the sleepers the same way like all others
     }
   }
 

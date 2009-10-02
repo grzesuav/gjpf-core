@@ -65,8 +65,7 @@ public class ThreadInfo
     INTERRUPTED,  // was WAITING and got interrupted
     TIMEDOUT,  // was TIMEOUT_WAITING and timed out
     TERMINATED,
-    SLEEPING,
-    WOKEUP  // was sleeping
+    SLEEPING
   };
 
 
@@ -403,7 +402,6 @@ public class ThreadInfo
     switch (threadData.state) {
     case RUNNING:
     case UNBLOCKED:
-    case WOKEUP:
       return true;
     case SLEEPING:
       return true;    // that's arguable, but since we don't model time we treat it like runnable
@@ -419,7 +417,6 @@ public class ThreadInfo
     switch (threadData.state) {
     case RUNNING:
     case UNBLOCKED:
-    case WOKEUP:
       // that also takes care of NOTIFIED threads, since they
       // won't run again until they can re-acquire the lock
       return true;
@@ -444,7 +441,6 @@ public class ThreadInfo
     case RUNNING:
     case UNBLOCKED:
     case SLEEPING:
-    case WOKEUP:
       return true;
 
     case TIMEOUT_WAITING:
@@ -485,19 +481,6 @@ public class ThreadInfo
 
   public boolean isSleeping(){
     return (threadData.state == State.SLEEPING);
-  }
-
-  public void resetWokeUp() {
-    // should probably check for WOKEUP
-    setState(State.SLEEPING);
-  }
-
-  public boolean isWokeUp(){
-    return (threadData.state == State.WOKEUP);
-  }
-
-  public void setWokeUp() {
-    setState(State.WOKEUP);
   }
 
   public void setRunning() {

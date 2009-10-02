@@ -233,9 +233,9 @@ public class JPF_java_lang_Thread {
         ti.setSleeping();
       }
     } else {
-      // we don't set it RUNNING again here because we want all other scheduling
-      // choices in this CG to see this thread as sleeping - not just the ones
-      // that are scheduled before this one
+      // this seems asymmetric (since we only set it to sleeping when we register
+      // a CG) but it isn't. This is only the firstStepInsn if we had a CG
+      ti.setRunning();
     }
   }
 
@@ -318,7 +318,6 @@ public class JPF_java_lang_Thread {
     case WAITING:         return 5;
     case TIMEOUT_WAITING: return 4;
     case SLEEPING:        return 4;
-    case WOKEUP:          return 2;
     case NOTIFIED:        return 2;
     case INTERRUPTED:     return 2;
     case TIMEDOUT:        return 2;

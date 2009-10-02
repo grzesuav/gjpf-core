@@ -400,6 +400,7 @@ try {
         "java.lang.String",
         "java.lang.ThreadGroup",
         "java.lang.Thread",
+        "java.lang.Thread$State",
         "java.io.PrintStream",
         "java.io.InputStream",
         "java.lang.System",
