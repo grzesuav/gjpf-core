@@ -52,5 +52,19 @@ public class VerifyTest extends TestJPF {
     }
   }
 
+  @Test public void testProperties () {
+
+    if (verifyNoPropertyViolation()) {
+      String target = Verify.getProperty("target");
+      System.out.println("got target=" + target);
+      assert "gov.nasa.jpf.test.mc.basic.VerifyTest".equals( target);
+
+      Verify.setProperties("foo=bar");
+      String p = Verify.getProperty("foo");
+      System.out.println("got foo=" + p);
+      assert "bar".equals(p);
+    }
+  }
+
   //... and many more to come
 }

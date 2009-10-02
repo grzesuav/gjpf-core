@@ -400,4 +400,9 @@ public class Verify {
   public static void setProperties (String... p) {
     // native
   }
+
+  public static String getProperty (String key) {
+    // native
+    return null;
+  }
 }

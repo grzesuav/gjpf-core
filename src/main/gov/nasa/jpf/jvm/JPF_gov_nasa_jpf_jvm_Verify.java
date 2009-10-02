@@ -605,4 +605,22 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       }
     }
   }
+
+  public static int getProperty__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef, int keyRef) {
+    if (keyRef != MJIEnv.NULL){
+      Config conf = env.getConfig();
+
+      String key = env.getStringObject(keyRef);
+      String val = config.getString(key);
+
+      if (val != null){
+        return env.newString(val);
+      } else {
+        return MJIEnv.NULL;
+      }
+
+    } else {
+      return MJIEnv.NULL;
+    }
+  }
 }
