@@ -64,6 +64,33 @@
                     <target>build</target>
                 </action>
                 <!--  run single file actions -->
+                <!-- run stuff in main -->
+                <action name="run.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>run-selected-main</target>
+                    <context>
+                        <property>run.class</property>
+                        <folder>src/main</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>debug-selected-main</target>
+                    <context>
+                        <property>debug.class</property>
+                        <folder>src/main</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
                 <!-- run stuff in examples -->
                 <action name="run.single">
                     <script>nbproject/ide-file-targets.xml</script>
