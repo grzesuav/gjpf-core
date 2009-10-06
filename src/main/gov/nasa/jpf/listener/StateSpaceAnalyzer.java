@@ -78,7 +78,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
     CGGrouper grouper;
     int i;
 
-    if (config.getStringArray("ssa.sort_order", null) == null) {
+    if (config.getStringArray("ssa.sort_order") == null) {
       config.setProperty("ssa.sort_order", "type");
       config.setProperty("ssa.sort_order2", "package,class,method,instruction,type");
     }
@@ -109,7 +109,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
     String key, sortOrder[];
     int i;
 
-    sortOrder = config.getStringArray(parameter, null);
+    sortOrder = config.getStringArray(parameter);
     if ((sortOrder == null) || (sortOrder.length <= 0)) {
       return (null);
     }

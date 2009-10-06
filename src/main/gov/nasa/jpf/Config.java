@@ -1213,6 +1213,16 @@ public class Config extends Properties {
     return null;
   }
 
+  public String[] getStringArray(String key, char[] delims) {
+    String v = getProperty(key);
+    if (v != null && (v.length() > 0)) {
+      return split(v,delims);
+    }
+
+    return null;
+  }
+
+
   public String[] getCompactStringArray(String key){
     return removeEmptyStrings(getStringArray(key));
   }
@@ -1813,6 +1823,8 @@ public class Config extends Properties {
     return null;
   }
 
+  static final char[] DELIMS = { ',', ';' };
+
   /**
    * our own version of split, which handles "`" quoting, and breaks on non-quoted
    * ',' and ';' chars. We need this so that we can use ';' separated lists in
@@ -1822,6 +1834,19 @@ public class Config extends Properties {
    * regexes are bad at quoting, and this is more efficient anyways
    */
   protected String[] split (String input){
+    return split(input, DELIMS);
+  }
+
+  private boolean isDelim(char[] delim, char c){
+    for (int i=0; i<delim.length; i++){
+      if (c == delim[i]){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  protected String[] split (String input, char[] delim){
     int n = input.length();
     ArrayList<String> elements = new ArrayList<String>();
     boolean quote = false;
@@ -1833,7 +1858,7 @@ public class Config extends Properties {
       char c = input.charAt(i);
 
       if (!quote) {
-        if (c==';' || c==','){ // element separator
+        if (isDelim(delim,c)){ // element separator
           elements.add( new String(buf, 0, k));
           k = 0;
           continue;
@@ -1859,7 +1884,7 @@ public class Config extends Properties {
     return elements.toArray(new String[elements.size()]);
   }
 
-  
+
   //--- our modification interface
   
   @Override

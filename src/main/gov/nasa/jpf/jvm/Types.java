@@ -830,4 +830,55 @@ public class Types {
 
     throw new JPFException("invalid type signature");
   }
+
+  /**
+   * return the JPF internal representation of a method signature that is given
+   * in dot-notation (like javap),
+   *
+   *  e.g.  "int foo(int[],java.lang.String)" -> "foo([ILjava/lang/String;)I"
+   *
+   */
+  public static String getSignatureName (String methodDecl) {
+
+    StringBuffer sb = new StringBuffer(128);
+    String retType = null;
+
+    int i = methodDecl.indexOf('(');
+    if (i>0){
+
+      //--- name and return type
+      String[] a = methodDecl.substring(0, i).split(" ");
+      if (a.length > 0){
+        sb.append(a[a.length-1]);
+
+        if (a.length > 1){
+          retType = getTypeCode(a[a.length-2], false);
+        }
+      }
+
+      //--- argument types
+      int j = methodDecl.lastIndexOf(')');
+      if (j > 0){
+        sb.append('(');
+        for (String type : methodDecl.substring(i+1,j).split(",")){
+          if (!type.isEmpty()){
+            type = type.trim();
+            if (!type.isEmpty()){
+              sb.append( getTypeCode(type,false));
+            }
+          }
+        }
+        sb.append(')');
+
+        if (retType != null){
+          sb.append(retType);
+        }
+
+        return sb.toString();
+      }
+    }
+
+    throw new JPFException("invalid method declaration: " + methodDecl);
+  }
+  
 }
