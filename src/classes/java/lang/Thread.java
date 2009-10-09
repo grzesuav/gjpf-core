@@ -208,15 +208,11 @@ public class Thread implements Runnable {
   //public native synchronized void join () throws InterruptedException;
 
   public synchronized void join (long millis) throws InterruptedException {
-    while (isAlive()) {
-      wait(millis);
-    }
+    wait(millis);
   }
 
   public synchronized void join (long millis, int nanos) throws InterruptedException {
-    while (isAlive()) {
-      wait(millis);
-    }
+    wait(millis);
   }
 
   public void run () {

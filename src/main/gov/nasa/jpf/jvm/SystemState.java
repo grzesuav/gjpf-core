@@ -494,7 +494,7 @@ public class SystemState {
       if (tcg.isSchedulingPoint()) {
         execThread = tcg.getNextChoice();
 
-        assert execThread.isRunnable() : "current thread not runnable: " + execThread;
+        assert execThread.isRunnable() : "current thread not runnable: " + execThread.getStateDescription();
 
         vm.notifyThreadScheduled(execThread);
       }

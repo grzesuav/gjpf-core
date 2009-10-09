@@ -999,20 +999,6 @@ public class MJIEnv {
     throwException("java.lang.AssertionError", details);
   }
 
-  public void wait (int objref, long timeout) {
-    // objref can't be NULL since the corresponding INVOKE would have failed
-    ElementInfo ei = getElementInfo(objref);
-
-    if (!ei.isLockedBy(ti)){
-      throwException("java.lang.IllegalMonitorStateException",
-                                 "un-synchronized wait");
-      return;
-    }
-
-
-    ei.wait(ti, timeout);
-  }
-
   void setCallEnvironment (MethodInfo mi) {
     this.mi = mi;
 

@@ -405,6 +405,8 @@ public class ThreadInfo
       return true;
     case SLEEPING:
       return true;    // that's arguable, but since we don't model time we treat it like runnable
+    case TIMEDOUT:
+      return true;    // would have been set to blocked if it couldn't reacquire the lock
     default:
       return false;
     }

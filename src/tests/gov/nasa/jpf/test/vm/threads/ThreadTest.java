@@ -19,6 +19,7 @@
 package gov.nasa.jpf.test.vm.threads;
 
 import gov.nasa.jpf.annotation.FilterField;
+import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 
@@ -249,7 +250,7 @@ public class ThreadTest extends TestJPF {
     }
   }
   
-  @Test public void testSyncRunning () {
+  @Test public void testJoin () {
     if (verifyNoPropertyViolation()) {
       Runnable r = new Runnable() {
 
@@ -279,7 +280,60 @@ public class ThreadTest extends TestJPF {
       }
     }
   }
-  
+
+  @Test public void testTimeoutJoin () {
+    Verify.resetCounter(0);
+    Verify.resetCounter(1);
+
+    if (verifyNoPropertyViolation()) {
+      Runnable r = new Runnable() {
+
+        public void run() {
+          synchronized(this){
+            System.out.println("[t] started");
+          }
+          didRunThread = Thread.currentThread().getName();
+          System.out.println("[t] finished");
+        }
+      };
+
+      Thread t = new Thread(r);
+
+      synchronized (r) {
+        t.start();
+        Thread.yield();
+        if (didRunThread != null) {
+          throw new RuntimeException("sync thread did execute before lock release");
+        }
+      }
+
+      try {
+        System.out.println("[main] joining..");
+        t.join(42);
+        System.out.println("[main] joined, t state: " + t.getState());
+
+        // we should get here for both terminated and non-terminated t
+        switch (t.getState()) {
+          case TERMINATED:
+            if (didRunThread != null){
+              Verify.incrementCounter(0);
+            }
+            break;
+          case RUNNABLE:
+            Verify.incrementCounter(1);
+            break;
+          default:
+            throw new RuntimeException("infeasible thread state: " + t.getState());
+        }
+
+      } catch (InterruptedException ix) {
+        throw new RuntimeException("main thread was interrupted");
+      }
+
+    }
+  }
+
+
   @Test public void testInterrupt() {
     if (verifyNoPropertyViolation()) {
 
