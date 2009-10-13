@@ -45,7 +45,7 @@ public class AssertionProperty extends PropertyListenerAdapter {
   String msg;
   
   public AssertionProperty (Config config) {
-    goOn = config.getBoolean("search.multiple_errors",false);
+    goOn = config.getBoolean("ap.go_on",false);
   }
   
   public boolean check(Search search, JVM vm) {
@@ -55,39 +55,55 @@ public class AssertionProperty extends PropertyListenerAdapter {
   public String getErrorMessage() {
     return msg;
   }
-  
+
+  protected void warn (String details, Instruction insn){
+    // should probably use logging
+    System.err.print("WARNING - AssertionError");
+
+    if (details != null){
+      System.err.print(": ");
+      System.err.print(details);
+    }
+    System.err.println();
+
+    System.err.print("\tat ");
+    System.err.println(insn.getSourceLocation());
+  }
+
   public void executeInstruction (JVM vm){
     Instruction insn = vm.getLastInstruction();
     
     if (insn instanceof ATHROW) {
       ThreadInfo ti = vm.getLastThreadInfo();
       
-      if (!ti.isFirstStepInsn()){
-        DynamicArea da = vm.getDynamicArea();
-        int xobjref = ti.peek();
-        ElementInfo ei = da.get(xobjref);
-        ClassInfo ci = ei.getClassInfo();
-        if (ci.getName().equals("java.lang.AssertionError")){
-          int msgref = ei.getIntField("detailMessage");
-          ElementInfo eiMsg = da.get(msgref);
+      DynamicArea da = vm.getDynamicArea();
+      int xobjref = ti.peek();
+      ElementInfo ei = da.get(xobjref);
+      ClassInfo ci = ei.getClassInfo();
+      if (ci.getName().equals("java.lang.AssertionError")) {
+        int msgref = ei.getIntField("detailMessage");
+        ElementInfo eiMsg = da.get(msgref);
 
-          // Ok, arm ourselves
-          caughtAssertion = true;
-          if (eiMsg != null){
-            msg = eiMsg.asString();
-          }
+        // Ok, arm ourselves
+        caughtAssertion = true;
+        if (eiMsg != null) {
+          msg = eiMsg.asString();
+        } else {
+          msg = null;
+        }
 
+        if (goOn) {
+          warn(msg, insn);
+
+          ti.pop(); // ensure operand stack integrity (ATHROW pops)
+          ti.skipInstruction();
+          ti.setNextPC(insn.getNext());
+
+        } else {
           ti.skipInstruction();
           ti.setNextPC(insn);  // re-execute
           ti.breakTransition();
         }
-        
-      } else { // that's a re-executed one, silently go over it
-        // beware - this only works because ATHROW otherwise would never
-        // break a transition and return
-        ti.pop(); // ensure operand stack integrity (ATHROW pops)
-        ti.skipInstruction();
-        ti.setNextPC(insn.getNext());
       }
     }
   }
@@ -95,14 +111,5 @@ public class AssertionProperty extends PropertyListenerAdapter {
   public void reset() {
     caughtAssertion = false;
     msg = null;
-  }
-  
-  public void propertyViolated (Search search){
-    if (caughtAssertion) { // so that's us
-      if (goOn){
-        // whoa - this is hack'ish - we revert what we just did set implicitly
-        search.setIgnoredState(false); // don't prune
-      }
-    }
   }
 }
