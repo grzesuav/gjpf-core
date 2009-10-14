@@ -2646,7 +2646,7 @@ public class ThreadInfo
     // java.lang.Thread name is stored as a char[]
   }
 
-  void setPriority (int newPrio) {
+  public void setPriority (int newPrio) {
     if (threadData.priority != newPrio) {
       threadDataClone().priority = newPrio;
 
