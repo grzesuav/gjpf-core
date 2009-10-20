@@ -42,7 +42,8 @@ public class Trace<T> extends ListenerAdapter implements Iterable<T> {
   // for HeuristicSearches. Ok, that's braindead but at least no need for cloning
   HashMap<Integer,TraceElement<T>> storedTransition;
 
-  
+
+  // iterator that traverses the trace LIFO, i.e. starting from the last T
   class TraceIterator implements Iterator<T> {
 
     TraceElement<T> cur;
@@ -86,7 +87,13 @@ public class Trace<T> extends ListenerAdapter implements Iterable<T> {
       lastElement = op;
     }
   }
-  
+
+  public void removeLastOp() {
+    if (lastElement != null){
+      lastElement = lastElement.prevElement;
+    }
+  }
+
   public T getLastOp() {
     if (lastElement != null) {
       return lastElement.getOp();

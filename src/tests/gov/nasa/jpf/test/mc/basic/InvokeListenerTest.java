@@ -43,22 +43,23 @@ public class InvokeListenerTest extends TestJPF {
         InvokeInstruction call = (InvokeInstruction)insn;
         ThreadInfo ti = vm.getLastThreadInfo();
         MethodInfo mi = call.getInvokedMethod(ti);
+        String miSignature = mi.getUniqueName();
         String mname = mi.getName();
 
-        if (mname.equals("testInstanceMethod")){
+        if (miSignature.equals("testInstanceMethod(DI)D")){
           Object[] args = call.getArgumentValues(ti);
           ElementInfo ei = getTarget(ti,call);
           log(mname, ei, args, isPostExec);
           assert ((Double)args[0]) == 42.0;
           assert ((Integer)args[1]) == 1;
 
-        } else if (mname.equals("testStaticMethod")){
+        } else if (miSignature.equals("testStaticMethod(I)I")){
           Object[] args = call.getArgumentValues(ti);
           ElementInfo ei = getTarget(ti,call);
           log(mname, ei, args, isPostExec);
           assert ((Integer)args[0]) == 42;
 
-        } else if (mname.equals("testNativeInstanceMethod")){
+        } else if (miSignature.equals("testNativeInstanceMethod(DI)D")){
           Object[] args = call.getArgumentValues(ti);
           ElementInfo ei = getTarget(ti,call);
           log(mname, ei, args, isPostExec);

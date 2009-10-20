@@ -125,21 +125,24 @@ public abstract class Instruction {
    * this is for listeners that process instructionExecuted(), but need to
    * determine if there was a CG registration, an overlayed direct call
    * (like clinit) etc.
+   * The easy case is the instruction not having been executed yet, in
+   * which case ti.getNextPC() == null
+   * There are two cases for re-execution: either nextPC was set to the
+   * same insn (which is what CG creators usually use), or somebody just
+   * pushed another stackframe that executes something which will return to the
+   * same insn (that is what automatic <clinit> calls and the like do - we call
+   * it overlays)
    */
   public boolean isCompleted (ThreadInfo ti){
-    
-    // the simple cases
-    if (ti.getPC() == this){ // not yet executed, or rescheduled
-      return false;
-    } else if (ti.isTerminated()) { // no stackframe left
-      return true;
-    } else if (ti.getTopFrame().getMethodInfo() == mi){ // same frame
-      return true;
-      
+    Instruction nextPc = ti.getNextPC();
+
+
+    if (nextPc == null){
+      return ti.isTerminated();
+
     } else {
-      // check if we are still on one of the (lower) stackframes
-      // if not, execution was completed
-      return ti.getStackFrameExecuting(this) == null;
+
+      return (nextPc != this) && (ti.getStackFrameExecuting(this, 1) == null);
     }
   }
   

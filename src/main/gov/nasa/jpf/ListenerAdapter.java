@@ -52,6 +52,8 @@ public class ListenerAdapter implements VMListener, SearchListener, PublisherExt
   public void gcBegin(JVM vm) {}
   public void gcEnd(JVM vm) {}
   public void exceptionThrown(JVM vm) {}
+  public void exceptionBailout(JVM vm) {}
+  public void exceptionHandled(JVM vm) {}
   public void choiceGeneratorSet (JVM vm) {}
   public void choiceGeneratorAdvanced (JVM vm) {}
   public void choiceGeneratorProcessed (JVM vm) {}

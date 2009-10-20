@@ -81,15 +81,11 @@ public class ThreadInfo
 
   /**
    * The stack frames of the JVM.
+   * <2do> will be replaced by direct links in StackFrames
    */
   protected ArrayList<StackFrame> stack = new ArrayList<StackFrame>();
 
-  /**
-   * The top stack frame.
-   * INVARIANTS:
-   * topIdx == topIdx
-   *    top == (stack.isEmpty() ? null : stack.get(topIdx))
-   */
+  /** the top stack frame */
   protected StackFrame top = null;
   protected int topIdx = -1;
 
@@ -116,16 +112,16 @@ public class ThreadInfo
   protected boolean isFirstStepInsn;
 
   /** shall we skip the next insn */
-  boolean skipInstruction;
+  protected boolean skipInstruction;
 
   /** store the last executed insn in the path */
-  boolean logInstruction;
+  protected boolean logInstruction;
 
+  /** the last returned direct call frame (which contains the continuation) */
+  protected DirectCallStackFrame returnedDirectCall;
 
-  DirectCallStackFrame returnedDirectCall;
-
-  /** the next insn to execute */
-  Instruction nextPc;
+  /** the next insn to execute (null prior to execution) */
+  protected Instruction nextPc;
 
   /**
    * not so nice we cross-couple the NativePeers with ThreadInfo,
@@ -1268,6 +1264,10 @@ public class ThreadInfo
     return top.getThis();
   }
 
+  public ElementInfo getThisElementInfo(){
+    return getElementInfo(getThis());
+  }
+
   public boolean isThis (ElementInfo r) {
     if (r == null) {
       return false;
@@ -1767,24 +1767,18 @@ public class ThreadInfo
       nextPc = pc.execute(ss, ks, this);
     }
 
-    // NOTE: listeners have to check for skipped insns,
-    // overlayed direct calls and reexecution
-
     if (logInstruction) {
       ss.recordExecutionStep(pc);
     }
 
-    // we did not return from the last frame stack
+    // here we have our post exec bytecode exec observation point
+    vm.notifyInstructionExecuted(this, pc, nextPc);
+
+    // set the next insn to execute if we did not return from the last frame stack
+    // (note that nextPc might have been set by a listener)
     if (top != null) {
       setPC(nextPc);
     }
-
-    // here we have our bytecode exec observation point
-    // (note we have to do this after we have set the pc, since a listener
-    // might come back to do checks like isRunnable)
-    // it also wouldn't help to do setPC() afterwards because pc != ti.getPC()
-    // in case of an InvokeInstruction that pushed a new frame
-    vm.notifyInstructionExecuted(this, pc, nextPc);
 
     return nextPc;
   }
@@ -2204,6 +2198,7 @@ public class ThreadInfo
     return returnedDirectCall;
   }
 
+
   public String getStateDescription () {
     StringBuilder sb = new StringBuilder("thread index=");
     sb.append(index);
@@ -2361,6 +2356,9 @@ public class ThreadInfo
                 Instruction startOfHandlerBlock = mi.getInstructionAt(handlerOffset);
                 setPC(startOfHandlerBlock); // set! we might be in a isDeterministic / isRunnable
 
+                // notify before we reset the pendingException
+                vm.notifyExceptionHandled(this);
+
                 pendingException = null; // handled, no need to keep it
 
                 return startOfHandlerBlock;
@@ -2380,6 +2378,9 @@ public class ThreadInfo
         // that takes care of releasing locks
         // (which interestingly enough seem to be the compilers responsibility now)
         mi.leave(this);
+
+        // notify before we pop the frame
+        vm.notifyExceptionBailout(this);
 
         // remove a frame
         popFrame();
@@ -2612,8 +2613,8 @@ public class ThreadInfo
     return top;
   }
 
-  public StackFrame getStackFrameExecuting (Instruction insn){
-    for (int i=topIdx; i>=0; i--){
+  public StackFrame getStackFrameExecuting (Instruction insn, int offset){
+    for (int i=topIdx-offset; i>=0; i--){
       StackFrame f = stack.get(i);
       if (f.getPC() == insn){
         return f;

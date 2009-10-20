@@ -204,6 +204,16 @@ public class VMListenerMulticaster implements VMListener
     tail.exceptionThrown(vm);
   }
 
+  public void exceptionBailout (JVM vm) {
+    head.exceptionBailout(vm);
+    tail.exceptionBailout(vm);
+  }
+
+  public void exceptionHandled (JVM vm) {
+    head.exceptionHandled(vm);
+    tail.exceptionHandled(vm);
+  }
+
   public void objectLocked (JVM vm) {
     head.objectLocked(vm);
     tail.objectLocked(vm); 

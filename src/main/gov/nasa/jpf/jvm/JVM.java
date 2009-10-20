@@ -907,6 +907,40 @@ try {
     }
   }
 
+  protected void notifyExceptionBailout (ThreadInfo ti){
+    if (listener != null) {
+      try {
+        lastThreadInfo = ti;
+        listener.exceptionBailout(this);
+        lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
+      } catch (Throwable t){
+        throw new JPFListenerException("exception during exceptionBailout() notification", t);
+      }
+    }
+    
+  }
+
+  protected void notifyExceptionHandled (ThreadInfo ti){
+    if (listener != null) {
+      try {
+        lastThreadInfo = ti;
+        listener.exceptionHandled(this);
+        lastThreadInfo = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
+      } catch (Throwable t){
+        throw new JPFListenerException("exception during exceptionHandler() notification", t);
+      }
+    }
+
+  }
+
   // VMListener acquisition
   public int getThreadNumber () {
     if (lastThreadInfo != null) {

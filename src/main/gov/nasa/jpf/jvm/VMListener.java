@@ -131,7 +131,17 @@ public interface VMListener extends JPFListener {
    * exception was thrown
    */
   void exceptionThrown (JVM vm);
-  
+
+  /**
+   * exception causes top frame to be purged
+   */
+  void exceptionBailout (JVM vm);
+
+  /**
+   * exception handled by current top frame
+   */
+  void exceptionHandled (JVM vm);
+
   /**
    * a new ChoiceGenerator was registered, which means we have a transition boundary
    */

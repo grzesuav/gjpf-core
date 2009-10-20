@@ -126,7 +126,7 @@ public abstract class InvokeInstruction extends Instruction {
       // locate the caller stack and get it from there. Note this might be
       // further down the stack, since we might already have pushed the
       // callee frame (or a direct call overlay like clinit)
-      frame = ti.getStackFrameExecuting(this);
+      frame = ti.getStackFrameExecuting(this, 0);
     }
 
     return frame;
@@ -236,22 +236,6 @@ public abstract class InvokeInstruction extends Instruction {
 
   public String getReturnTypeName() {
     return Types.getReturnTypeName(signature);
-  }
-
-  public boolean isCompleted (ThreadInfo ti){
-    StackFrame topFrame = ti.getTopFrame();
-    Instruction pc = topFrame.getPC();
-
-    // the simple cases
-    if (pc == this){ // not yet executed, or rescheduled
-      return false;
-    } else if (topFrame.getMethodInfo() == mi){
-      // same frame -> this was a native method that already returned
-      return true;
-    } else {
-      // check if the top frame pc is the first insn of the invoked method
-      return (pc == getInvokedMethod().getInstruction(0));
-    }
   }
 
   public Object getFieldOrArgumentValue (String id, ThreadInfo ti){

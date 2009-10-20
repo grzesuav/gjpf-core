@@ -2,12 +2,12 @@
 // Copyright (C) 2006 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
-// 
+//
 // This software is distributed under the NASA Open Source Agreement
 // (NOSA), version 1.3.  The NOSA has been approved by the Open Source
 // Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
 // directory tree for the complete NOSA document.
-// 
+//
 // THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
 // KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
 // LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
@@ -38,13 +38,13 @@ import java.util.logging.Logger;
  * simple combined listener that checks if a thread seems to do idle loops that
  * might starve other threads. The most classical case is a "busy wait" loop
  * like
- * 
+ *
  * for (long l=0; l<1000000; l++);
- * 
+ *
  * which would give us a pretty long path. Even worse, things like
- * 
+ *
  * while (true);
- * 
+ *
  * would never return if we don't break the partial order execution loop. Once
  * IdleFilter determines a thread is not doing anything useful (no field access,
  * no array element access, no method calls, huge number of back jumps), it
@@ -159,7 +159,7 @@ public class IdleFilter extends ListenerAdapter {
                 // pretty bold, we jump past the loop end and go on from there
 
                 Instruction next = insn.getNext();
-                ti.setPC(next);
+                ti.setNextPC(next);
 
                 log.warning("IdleFilter jumped past loop in: " + ti.getName() +
                         "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
