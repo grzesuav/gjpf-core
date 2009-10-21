@@ -162,6 +162,16 @@ public class SystemState {
     // we can't yet initialize the trail until we have the start thread
 
     randomizeChoices = config.getBoolean("cg.randomize_choices", false);
+    
+    // this option represents randomized choices along a particular path, so that
+    // every trial executed with this choice produces reproducible results. 
+    // the seed is set to fixed value to generate reproducible results 
+    
+    boolean randomizeChoicesPath = config.
+    							getBoolean("cg.randomize_choices_path", false);
+    if(randomizeChoicesPath) {
+    	randomizeChoices = true;
+    }
     maxAllocPerGC = config.getInt("vm.max_alloc_gc", Integer.MAX_VALUE);
 
     // recordSteps is set later by VM, first we need a reporter (which requires the VM)
