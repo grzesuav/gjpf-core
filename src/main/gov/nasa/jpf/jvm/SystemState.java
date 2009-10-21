@@ -172,6 +172,7 @@ public class SystemState {
     if(randomizeChoicesPath) {
     	randomizeChoices = true;
     }
+
     maxAllocPerGC = config.getInt("vm.max_alloc_gc", Integer.MAX_VALUE);
 
     // recordSteps is set later by VM, first we need a reporter (which requires the VM)
