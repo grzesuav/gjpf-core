@@ -95,6 +95,8 @@ public class SystemState {
   ChoiceGenerator<?> nextCg;   // the ChoiceGenerator for the next transition
   ChoiceGenerator<?>  curCg;   // the ChoiceGenerator used in the current transition
   ThreadInfo execThread;    // currently executing thread, reset by ThreadChoiceGenerators
+  
+  static enum RANDOMIZATION {random, path, def};
 
   /** current execution state of the VM (stored separately by VM) */
   public KernelState ks;
@@ -127,6 +129,8 @@ public class SystemState {
   // number of new allocs within a single transition exceeds this value
   int maxAllocPerGC;
   int nAlloc;
+  
+  RANDOMIZATION randomization = RANDOMIZATION.def;
 
   /** NOTE: this has changed its meaning again. Now it once more is an
    * optimization that can be used by applications calling Verify.begin/endAtomic(),
@@ -141,7 +145,7 @@ public class SystemState {
   SchedulerFactory schedulerFactory;
 
   /** do we want CGs to randomize the order in which they return choices? */
-  boolean randomizeChoices;
+  boolean randomizeChoices = false;
 
   /** do we want executed insns to be recorded */
   boolean recordSteps;
@@ -161,18 +165,15 @@ public class SystemState {
 
     // we can't yet initialize the trail until we have the start thread
 
-    randomizeChoices = config.getBoolean("cg.randomize_choices", false);
-    
-    // this option represents randomized choices along a particular path, so that
-    // every trial executed with this choice produces reproducible results. 
-    // the seed is set to fixed value to generate reproducible results 
-    
-    boolean randomizeChoicesPath = config.
-    							getBoolean("cg.randomize_choices_path", false);
-    if(randomizeChoicesPath) {
+   
+    randomization = config.getEnum("cg.randomize_choices", RANDOMIZATION.values(), 
+    						RANDOMIZATION.def);
+   
+    if(randomization != RANDOMIZATION.def) {
     	randomizeChoices = true;
     }
-
+    
+    
     maxAllocPerGC = config.getInt("vm.max_alloc_gc", Integer.MAX_VALUE);
 
     // recordSteps is set later by VM, first we need a reporter (which requires the VM)
