@@ -114,6 +114,30 @@ public abstract class InvokeInstruction extends Instruction {
     return invokedMethod;
   }
 
+  public boolean isCompleted(ThreadInfo ti) {
+    Instruction nextPc = ti.getNextPC();
+
+    if (nextPc == null || nextPc == this){
+      return false;
+    }
+
+    if (invokedMethod != null){
+      MethodInfo topMethod = ti.getTopFrame().getMethodInfo();
+      if (invokedMethod.isMJI() && (topMethod == mi)) {
+        // same frame -> this was a native method that already returned
+        return true;
+      }
+
+      if (topMethod == invokedMethod){
+        return true;
+      }
+    }
+
+    // <2do> how do we account for exceptions?
+
+    return false;
+  }
+
   StackFrame getCallerFrame (ThreadInfo ti, MethodInfo callee) {
     StackFrame frame = null;
 

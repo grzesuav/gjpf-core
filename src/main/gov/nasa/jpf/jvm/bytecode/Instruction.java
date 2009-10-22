@@ -36,33 +36,32 @@ import org.apache.bcel.generic.InstructionHandle;
  * common root of all JPF bytecode instruction classes 
  */
 public abstract class Instruction {
+
   protected static final List<String> unimplemented = new ArrayList<String>();
-  
-  protected int         position; // accumulated position (prev pos + prev bc-length)
-  protected int         offset;   // consecutive index of instruction
-  protected MethodInfo  mi;        // the method this insn belongs to
-  
-  protected String      asString;  // on demand string representation
+  protected int position; // accumulated position (prev pos + prev bc-length)
+  protected int offset;   // consecutive index of instruction
+  protected MethodInfo mi;        // the method this insn belongs to
+  protected String asString;  // on demand string representation
 
   abstract public int getByteCode();
-  
+
   // to allow a classname and methodname context for each instruction
-  public void setContext (String className, String methodName, int lineNumber,
-                          int offset) {
+  public void setContext(String className, String methodName, int lineNumber,
+          int offset) {
   }
 
-  public boolean isFirstInstruction () {
+  public boolean isFirstInstruction() {
     return (offset == 0);
   }
-  
+
   /**
    * answer if this is a potential loop closing jump
    */
-  public boolean isBackJump () {
+  public boolean isBackJump() {
     return false;
   }
-  
-  public boolean isDeterministic (SystemState ss, KernelState ks, ThreadInfo ti) {
+
+  public boolean isDeterministic(SystemState ss, KernelState ks, ThreadInfo ti) {
     return true;
   }
 
@@ -72,48 +71,48 @@ public abstract class Instruction {
   public boolean isExtendedInstruction() {
     return false;
   }
-  
-  public boolean isExecutable (SystemState ss, KernelState ks, ThreadInfo th) {
+
+  public boolean isExecutable(SystemState ss, KernelState ks, ThreadInfo th) {
     return true;
   }
 
-  public MethodInfo getMethodInfo () {
+  public MethodInfo getMethodInfo() {
     return mi;
   }
 
   /**
    * that's used for explicit construction of MethodInfos (synthetic methods)
    */
-  public void setMethodInfo (MethodInfo mi){
+  public void setMethodInfo(MethodInfo mi) {
     this.mi = mi;
   }
-  
-  public Instruction getNext () {
+
+  public Instruction getNext() {
     return mi.getInstruction(offset + 1);
   }
 
-  public int getOffset () {
+  public int getOffset() {
     return offset;
   }
 
-  public int getPosition () {
+  public int getPosition() {
     return position;
   }
 
-  public void setLocation (int off, int pos){
+  public void setLocation(int off, int pos) {
     offset = off;
     position = pos;
   }
-  
+
   /**
    * return the length in bytes of this instruction.
    * override if this is not 1
    */
-  public int getLength () {
+  public int getLength() {
     return 1;
   }
-  
-  public Instruction getPrev () {
+
+  public Instruction getPrev() {
     if (offset > 0) {
       return mi.getInstruction(offset - 1);
     } else {
@@ -133,24 +132,24 @@ public abstract class Instruction {
    * same insn (that is what automatic <clinit> calls and the like do - we call
    * it overlays)
    */
-  public boolean isCompleted (ThreadInfo ti){
+  public boolean isCompleted(ThreadInfo ti) {
     Instruction nextPc = ti.getNextPC();
 
-
-    if (nextPc == null){
+    if (nextPc == null) {
       return ti.isTerminated();
 
     } else {
 
       return (nextPc != this) && (ti.getStackFrameExecuting(this, 1) == null);
     }
+
+    // <2do> how do we account for exceptions? 
   }
-  
+
   public boolean isSchedulingRelevant(SystemState ss, KernelState ks, ThreadInfo ti) {
     return false;
   }
-  
-  
+
   /**
    * this is the real workhorse
    * returns next instruction to execute in this thread
@@ -163,33 +162,33 @@ public abstract class Instruction {
    * execute() in the listener. It would be better if we factor this
    * 'prepareExecution' out of execute()
    */
-  public abstract Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti);
-  
-  public boolean examine (SystemState ss, KernelState ks, ThreadInfo th) {
+  public abstract Instruction execute(SystemState ss, KernelState ks, ThreadInfo ti);
+
+  public boolean examine(SystemState ss, KernelState ks, ThreadInfo th) {
     return false;
   }
 
-  public boolean examineAbstraction (SystemState ss, KernelState ks,
-                                     ThreadInfo th) {
+  public boolean examineAbstraction(SystemState ss, KernelState ks,
+          ThreadInfo th) {
     return false;
   }
-  
-  public String toString () {
+
+  public String toString() {
     if (asString == null) {
       asString = getMnemonic();
     }
     return asString;
   }
 
-  public String getMnemonic () {
+  public String getMnemonic() {
     String s = getClass().getSimpleName();
     return s.toLowerCase();
   }
-  
+
   public int getLineNumber() {
     return mi.getLineNumber(this);
   }
-  
+
   public String getSourceLine() {
     ClassInfo ci = mi.getClassInfo();
     if (ci != null) {
@@ -203,17 +202,17 @@ public abstract class Instruction {
           return srcLine;
         }
       }
-      
+
       return "(" + file + ":" + line + ")"; // fallback
-      
+
     } else {
       return "[synthetic] " + mi.getName();
     }
   }
-  
-  public String getFileLocation () {
+
+  public String getFileLocation() {
     ClassInfo ci = mi.getClassInfo();
-    if (ci != null){
+    if (ci != null) {
       int line = mi.getLineNumber(this);
       String fname = ci.getSourceFileName();
       return (fname + ":" + line);
@@ -221,41 +220,41 @@ public abstract class Instruction {
       return "[synthetic] " + mi.getName();
     }
   }
-  
-  public String getFilePos () {
+
+  public String getFilePos() {
     ClassInfo ci = mi.getClassInfo();
     int line = mi.getLineNumber(this);
     String file = ci.getSourceFileName();
     int i = file.lastIndexOf(File.separatorChar);
-    if (i>=0) {
-      file = file.substring(i+1);
+    if (i >= 0) {
+      file = file.substring(i + 1);
     }
 
-    if (file != null){
+    if (file != null) {
       return (file + ':' + line);
     } else {
       return ("pc " + position);
     }
   }
-  
-  public String getSourceLocation () {
+
+  public String getSourceLocation() {
     ClassInfo ci = mi.getClassInfo();
 
     if (ci != null) {
       String s = ci.getName() + '.' + mi.getName() +
               '(' + getFilePos() + ')';
       return s;
-      
+
     } else {
       return null;
     }
   }
-    
-  protected abstract void setPeer (org.apache.bcel.generic.Instruction i,
-                                   ConstantPool cp);
 
-  public void init (InstructionHandle h, int off, MethodInfo m,
-                       ConstantPool cp) {
+  protected abstract void setPeer(org.apache.bcel.generic.Instruction i,
+          ConstantPool cp);
+
+  public void init(InstructionHandle h, int off, MethodInfo m,
+          ConstantPool cp) {
     position = h.getPosition();
     offset = off;
     mi = m;
@@ -263,15 +262,14 @@ public abstract class Instruction {
     setPeer(h.getInstruction(), cp);
   }
 
-  public void init (MethodInfo mi, int offset, int position) {
+  public void init(MethodInfo mi, int offset, int position) {
     this.mi = mi;
     this.offset = offset;
     this.position = position;
   }
 
+  public boolean requiresClinitCalls(ThreadInfo ti, ClassInfo ci) {
 
-  public boolean requiresClinitCalls (ThreadInfo ti, ClassInfo ci) {
-    
     //if (!ti.isResumedInstruction(this)) {
 
     // <2do> why would a resumed insn not require class init? it might be resumed
@@ -284,10 +282,10 @@ public abstract class Instruction {
       }
     }
     //}
-    
+
     return false;
   }
-  
+
   /**
    * this is returning the next Instruction to execute, to be called after
    * we executed ourselves.
@@ -299,7 +297,7 @@ public abstract class Instruction {
    * note: the System.exit() problem should be gone, now that it is implemented
    * as ThreadInfo state (TERMINATED), rather than purged stacks
    */
-  public Instruction getNext (ThreadInfo th) {    
+  public Instruction getNext(ThreadInfo th) {
     return th.getPC().getNext();
   }
 }

@@ -303,6 +303,14 @@ public class ThreadInfo
     return isFirstStepInsn;
   }
 
+  /**
+   * to be used from methods called from listeners, to find out if we are in a
+   * pre- or post-exec notification
+   */
+  public boolean isPreExec() {
+    return (nextPc == null);
+  }
+
   public boolean usePor () {
     return porInEffect;
   }

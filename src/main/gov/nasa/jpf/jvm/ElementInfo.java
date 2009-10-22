@@ -733,7 +733,7 @@ public abstract class ElementInfo implements Cloneable {
     }
   }
 
-  private boolean isReferenceArray() {
+  public boolean isReferenceArray() {
     return getClassInfo().isReferenceArray();
   }
 

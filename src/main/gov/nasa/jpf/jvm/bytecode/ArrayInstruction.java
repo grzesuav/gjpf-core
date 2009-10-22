@@ -31,6 +31,8 @@ import org.apache.bcel.classfile.ConstantPool;
  */
 public abstract class ArrayInstruction extends Instruction {
 
+  int arrayRef;
+
   public ArrayInstruction () {
   }
 
@@ -74,4 +76,17 @@ public abstract class ArrayInstruction extends Instruction {
     return false;
     //return (!ti.checkPorFieldBoundary() && ei.isSchedulingRelevant());
   }
+
+  /**
+   * only makes sense from an executeInstruction or instructionExecuted listener
+   */
+  public int getArrayRef (ThreadInfo ti){
+    if (ti.isPreExec()){
+      return peekArrayRef(ti);
+    } else {
+      return arrayRef;
+    }
+  }
+
+  abstract protected int peekArrayRef (ThreadInfo ti);
 }

@@ -32,8 +32,9 @@ public abstract class ArrayLoadInstruction extends ArrayInstruction {
   
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int         index;
-    int         arrayRef = ti.peek(1); // ..,arrayRef,idx
     ElementInfo e;
+
+    arrayRef = ti.peek(1); // ..,arrayRef,idx
 
     if (arrayRef == -1) {
       return ti.createAndThrowException("java.lang.NullPointerException");
@@ -68,6 +69,13 @@ public abstract class ArrayLoadInstruction extends ArrayInstruction {
 
   protected boolean isReference () {
     return false;
+  }
+
+  /**
+   * only makes sense pre-exec
+   */
+  protected int peekArrayRef (ThreadInfo ti){
+    return ti.peek(1);
   }
 
   protected void push (ThreadInfo th, ElementInfo e, int index)

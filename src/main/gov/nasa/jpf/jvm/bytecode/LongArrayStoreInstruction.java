@@ -41,7 +41,7 @@ public abstract class LongArrayStoreInstruction extends ArrayStoreInstruction {
     return th.longPop();
   }
   
-  int peekArrayRef(ThreadInfo ti) {
+  protected int peekArrayRef(ThreadInfo ti) {
     return ti.peek(3);  // ..,ref,idx,long(value)
   }
 }

@@ -37,7 +37,8 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     long value;
     int  index;
-    int  arrayRef = peekArrayRef(ti);
+
+    arrayRef = peekArrayRef(ti);
 
     if (arrayRef == -1) {
       return ti.createAndThrowException("java.lang.NullPointerException");
@@ -82,7 +83,10 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction
     }
   }
 
-  int peekArrayRef(ThreadInfo ti) {
+  /**
+   * this is for pre-exec use
+   */
+  protected int peekArrayRef(ThreadInfo ti) {
     return ti.peek(2);
   }
 
