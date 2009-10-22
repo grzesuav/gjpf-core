@@ -55,11 +55,28 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
 
   // in case this is initalized from a JVM context
   public static void init (Config config) {
-    long seed = config.getLong("cg.seed", 42);
-    if (seed != 42) {
-      random = new Random(seed);
-    }
+	  long seed = config.getLong("cg.seed", 42);
+
+	  // if the user provides a value for the seed then set it
+	  if (seed != 42) {
+		  random.setSeed(seed);
+	  } else {
+
+		  // randomize_choices_path supercedes randomize_choices.
+		  // when both are true randomize_choices_path behavior will be observed. 
+
+		  //randomize_choices_path results in random choices (with a preset seed)
+		  // during program execution leading in reproducible results 
+
+		  // randomize_choices results in different results in each trial
+
+		  if(!config.getBoolean("cg.randomize_choices_path",false) &&
+				  config.getBoolean("cg.randomize_choices", false)) {
+			  random.setSeed(System.currentTimeMillis());
+		  }
+	  }
   }
+ 
 
   protected ChoiceGenerator () {
     this.id = "-";
