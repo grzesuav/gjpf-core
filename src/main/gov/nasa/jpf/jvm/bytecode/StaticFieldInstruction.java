@@ -30,7 +30,7 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
 
   ClassInfo ci;
 
-  protected ClassInfo getClassInfo () {
+  public ClassInfo getClassInfo () {
     if (ci == null) {
       ci = ClassInfo.getClassInfo(className);
     }
