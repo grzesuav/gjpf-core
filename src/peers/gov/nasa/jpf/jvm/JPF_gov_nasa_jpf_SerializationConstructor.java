@@ -20,7 +20,7 @@ public class JPF_gov_nasa_jpf_SerializationConstructor {
       ClassInfo ci = JPF_java_lang_Class.getReferredClassInfo(env, clsRef);
             
       int superCtorRef = env.getReferenceField(mthRef, "firstNonSerializableCtor");
-      MethodInfo mi = JPF_java_lang_reflect_Method.getMethodInfo(env,superCtorRef);
+      MethodInfo mi = JPF_java_lang_reflect_Constructor.getMethodInfo(env,superCtorRef);
 
       if (ci.isAbstract()){
         env.throwException("java.lang.InstantiationException");

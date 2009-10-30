@@ -318,7 +318,6 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   // we store long attrs at the local var index, which is the lower one
-  // this returns all
   public Object getLongOperandAttr () {
     return getOperandAttr(1);
   }

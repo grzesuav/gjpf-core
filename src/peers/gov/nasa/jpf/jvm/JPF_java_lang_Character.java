@@ -126,28 +126,22 @@ public class JPF_java_lang_Character {
     env.setStaticByteField("java.lang.Character", "OTHER_LETTER", (byte) 5);
     env.setStaticByteField("java.lang.Character", "NON_SPACING_MARK", (byte) 6);
     env.setStaticByteField("java.lang.Character", "ENCLOSING_MARK", (byte) 7);
-    env.setStaticByteField("java.lang.Character", "COMBINING_SPACING_MARK", 
-                           (byte) 8);
-    env.setStaticByteField("java.lang.Character", "DECIMAL_DIGIT_NUMBER", 
-                           (byte) 9);
+    env.setStaticByteField("java.lang.Character", "COMBINING_SPACING_MARK", (byte) 8);
+    env.setStaticByteField("java.lang.Character", "DECIMAL_DIGIT_NUMBER", (byte) 9);
     env.setStaticByteField("java.lang.Character", "LETTER_NUMBER", (byte) 10);
     env.setStaticByteField("java.lang.Character", "OTHER_NUMBER", (byte) 11);
     env.setStaticByteField("java.lang.Character", "SPACE_SEPARATOR", (byte) 12);
     env.setStaticByteField("java.lang.Character", "LINE_SEPARATOR", (byte) 13);
-    env.setStaticByteField("java.lang.Character", "PARAGRAPH_SEPARATOR", 
-                           (byte) 14);
+    env.setStaticByteField("java.lang.Character", "PARAGRAPH_SEPARATOR", (byte) 14);
     env.setStaticByteField("java.lang.Character", "CONTROL", (byte) 15);
     env.setStaticByteField("java.lang.Character", "FORMAT", (byte) 16);
     env.setStaticByteField("java.lang.Character", "PRIVATE_USE", (byte) 18);
     env.setStaticByteField("java.lang.Character", "SURROGATE", (byte) 19);
     env.setStaticByteField("java.lang.Character", "DASH_PUNCTUATION", (byte) 20);
-    env.setStaticByteField("java.lang.Character", "START_PUNCTUATION", 
-                           (byte) 21);
+    env.setStaticByteField("java.lang.Character", "START_PUNCTUATION", (byte) 21);
     env.setStaticByteField("java.lang.Character", "END_PUNCTUATION", (byte) 22);
-    env.setStaticByteField("java.lang.Character", "CONNECTOR_PUNCTUATION", 
-                           (byte) 23);
-    env.setStaticByteField("java.lang.Character", "OTHER_PUNCTUATION", 
-                           (byte) 24);
+    env.setStaticByteField("java.lang.Character", "CONNECTOR_PUNCTUATION", (byte) 23);
+    env.setStaticByteField("java.lang.Character", "OTHER_PUNCTUATION", (byte) 24);
     env.setStaticByteField("java.lang.Character", "MATH_SYMBOL", (byte) 25);
     env.setStaticByteField("java.lang.Character", "CURRENCY_SYMBOL", (byte) 26);
     env.setStaticByteField("java.lang.Character", "MODIFIER_SYMBOL", (byte) 27);
@@ -161,7 +155,7 @@ public class JPF_java_lang_Character {
     env.setStaticReferenceField("java.lang.Character", "TYPE", 
                              ci.getClassObjectRef());
 
-    env.setBooleanField(clsObjRef, "isPrimitive", true);
+    env.setBooleanField(ci.getClassObjectRef(), "isPrimitive", true);
   }
 
   public static int digit__CI__I (MJIEnv env, int clsObjRef, char c, int radix) {

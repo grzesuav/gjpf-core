@@ -26,11 +26,10 @@ public class JPF_sun_reflect_ReflectionFactory {
 
   public static int newConstructorForSerialization__Ljava_lang_Class_2Ljava_lang_reflect_Constructor_2__Ljava_lang_reflect_Constructor_2 (MJIEnv env, int objRef,
                                                                                                                                           int clsRef, int ctorRef){
-
     // NOPE - unnless I miss my guess, this creates an artificial
     // ctor for the concrete type that explicitly calls the default ctor of the
     // first non-serializable superclass. Oh my!
-    
+
     // <2do> we really have to model ObjectStreamClass and ObjectStreamField
     int sCtorRef = env.newObject("gov.nasa.jpf.SerializationConstructor");
     

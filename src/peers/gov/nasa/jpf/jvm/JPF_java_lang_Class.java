@@ -65,7 +65,6 @@ public class JPF_java_lang_Class {
     ElementInfo sei = env.getClassElementInfo(robj);
     ClassInfo   ci = sei.getClassInfo();
     ClassInfo   ciOther = env.getClassInfo(r1);
-
     return (ciOther.isInstanceOf(ci.getName()));
   }
 
@@ -132,7 +131,6 @@ public class JPF_java_lang_Class {
     StaticElementInfo ei = sa.get(clsName);
     int               cref = ei.getClassObjectRef();
     env.setBooleanField(cref, "isPrimitive", true);
-
     return cref;
   }
 
