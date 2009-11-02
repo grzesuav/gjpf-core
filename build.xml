@@ -34,6 +34,7 @@
   <path id="lib.path">
     <pathelement location="build/main"/>
     <pathelement location="build/peers"/>
+    <pathelement location="build/annotations"/>
     <fileset dir=".">
   	  <include name="lib/*.jar"/>
     </fileset>
@@ -310,6 +311,7 @@
       <batchtest todir="build/tests">
         <fileset dir="build/tests">
           <exclude name="**/JPF_*.class"/>
+          <include name="gov/nasa/jpf/test/unit/*Test.class"/>
           <include name="gov/nasa/jpf/test/basic/*Test.class"/>
           <include name="gov/nasa/jpf/test/vm/basic/*Test.class"/>
           <include name="gov/nasa/jpf/test/vm/reflection/*Test.class"/>

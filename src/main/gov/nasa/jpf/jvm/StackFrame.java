@@ -140,6 +140,20 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   /**
+   * creates a dummy Stackframe for testing of operand/local operations
+   * NOTE - TESTING ONLY! this does not have a MethodInfo
+   */
+  public StackFrame (int nLocals, int nOperands){
+    operands = new int[nOperands];
+    isOperandRef = new boolean[nOperands];
+    top = -1;  // index, not size!
+
+    locals = new int[nLocals];
+    isLocalRef = new boolean[nLocals];
+  }
+
+
+  /**
    * return the object reference for an instance method to be called (we are still in the
    * caller's frame). This only makes sense after all params have been pushed, before the
    * INVOKEx insn is executed
@@ -590,29 +604,40 @@ public class StackFrame implements Constants, Cloneable {
   // on the stack), so skip the GC requests associated with push()/pop()
 
   public void dup () {
-    // .. A => .. A.A
+    // .. A     =>
+    // .. A A
+    //    ^
+
     int t= top;
-    top++;
 
-    operands[top] = operands[t];
-    isOperandRef[top] = isOperandRef[t];
-
+    int td=t+1;
+    operands[td] = operands[t];
+    isOperandRef[td] = isOperandRef[t];
     if (operandAttr != null){
-      operandAttr[top] = operandAttr[t];
+      operandAttr[td] = operandAttr[t];
     }
+
+    top = td;
   }
 
   public void dup2 () {
-    // .. A B => .. A B.A B
-    int td = top+1;
-    int ts = top-1;
+    // .. A B        =>
+    // .. A B A B
+    //      ^
+
+    int ts, td;
+    int t=top;
+
+    // duplicate A
+    td = t+1; ts = t-1;
     operands[td] = operands[ts];
     isOperandRef[td] = isOperandRef[ts];
     if (operandAttr != null){
       operandAttr[td] = operandAttr[ts];
     }
 
-    td++; ts++;
+    // duplicate B
+    td++; ts=t;
     operands[td] = operands[ts];
     isOperandRef[td] = isOperandRef[ts];
     if (operandAttr != null){
@@ -623,31 +648,36 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public void dup2_x1 () {
-    // .. A B C => .. B C A.B C
+    // .. A B C       =>
+    // .. B C A B C
+    //        ^
 
     int b, c;
     boolean bRef, cRef;
     Object bAnn = null, cAnn = null;
     int ts, td;
-
-    // duplicate B
-    ts = top-1; td = top+1;
-    operands[td] = b = operands[ts];
-    isOperandRef[td] = bRef = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = bAnn = operandAttr[ts];
-    }
+    int t = top;
 
     // duplicate C
-    ts=top; td++;
+    ts=t; td = t+2;                              // ts=top, td=top+2
     operands[td] = c = operands[ts];
     isOperandRef[td] = cRef = isOperandRef[ts];
     if (operandAttr != null){
       operandAttr[td] = cAnn = operandAttr[ts];
     }
 
+
+    // duplicate B
+    ts--; td--;                                  // ts=top-1, td=top+1
+    operands[td] = b = operands[ts];
+    isOperandRef[td] = bRef = isOperandRef[ts];
+    if (operandAttr != null){
+      operandAttr[td] = bAnn = operandAttr[ts];
+    }
+
+
     // shuffle A
-    ts=top-2; td=top;
+    ts=t-2; td=t;                                // ts=top-2, td=top
     operands[td] = operands[ts];
     isOperandRef[td] = isOperandRef[ts];
     if (operandAttr != null){
@@ -655,7 +685,7 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     // shuffle B
-    td = ts;
+    td = ts;                                     // td=top-2
     operands[td] = b;
     isOperandRef[td] = bRef;
     if (operandAttr != null){
@@ -663,7 +693,7 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     // shuffle C
-    td++;
+    td++;                                        // td=top-1
     operands[td] = c;
     isOperandRef[td] = cRef;
     if (operandAttr != null){
@@ -674,15 +704,18 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public void dup2_x2 () {
-    // .. A B C D => .. C D A B.C D
+    // .. A B C D       =>
+    // .. C D A B C D
+    //          ^
 
     int c, d;
     boolean cRef, dRef;
     Object cAnn = null, dAnn = null;
     int ts, td;
+    int t = top;
 
     // duplicate C
-    ts = top-1; td = top+1;
+    ts = t-1; td = t+1;                          // ts=top-1, td=top+1
     operands[td] = c = operands[ts];
     isOperandRef[td] = cRef = isOperandRef[ts];
     if (operandAttr != null){
@@ -690,7 +723,7 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     // duplicate D
-    ts=top; td++;
+    ts=t; td++;                                  // ts=top, td=top+2
     operands[td] = d = operands[ts];
     isOperandRef[td] = dRef = isOperandRef[ts];
     if (operandAttr != null){
@@ -698,7 +731,7 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     // shuffle A
-    ts = top-3; td = top-1;
+    ts = t-3; td = t-1;                          // ts=top-3, td=top-1
     operands[td] = operands[ts];
     isOperandRef[td] = isOperandRef[ts];
     if (operandAttr != null){
@@ -706,42 +739,47 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     // shuffle B
-    ts++; td = top;
+    ts++; td = t;                                // ts = top-2
     operands[td] = operands[ts];
     isOperandRef[td] = isOperandRef[ts];
     if (operandAttr != null){
       operandAttr[td] = operandAttr[ts];
     }
 
-    // shuffle C
-    td=ts;
-    operands[td] = c;
-    isOperandRef[td] = cRef;
-    if (operandAttr != null){
-      operandAttr[td] = cAnn;
-    }
-
-    // shuffle C
-    td++;
+    // shuffle D
+    td = ts;                                     // td = top-2
     operands[td] = d;
     isOperandRef[td] = dRef;
     if (operandAttr != null){
       operandAttr[td] = dAnn;
     }
 
+
+    // shuffle C
+    td--;                                        // td = top-3
+    operands[td] = c;
+    isOperandRef[td] = cRef;
+    if (operandAttr != null){
+      operandAttr[td] = cAnn;
+    }
+
+
     top += 2;
   }
 
   public void dup_x1 () {
-    // .. A B => .. B A.B
+    // .. A B     =>
+    // .. B A B
+    //      ^
 
     int b;
     boolean bRef;
     Object bAnn = null;
     int ts, td;
+    int t = top;
 
     // duplicate B
-    ts = top; td = top+1;
+    ts = t; td = t+1;
     operands[td] = b = operands[ts];
     isOperandRef[td] = bRef = isOperandRef[ts];
     if (operandAttr != null){
@@ -749,7 +787,7 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     // shuffle A
-    ts = top-1; td = top;
+    ts--; td = t;       // ts=top-1, td = top
     operands[td] = operands[ts];
     isOperandRef[td] = isOperandRef[ts];
     if (operandAttr != null){
@@ -757,7 +795,7 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     // shuffle B
-    td = ts;
+    td = ts;            // td=top-1
     operands[td] = b;
     isOperandRef[td] = bRef;
     if (operandAttr != null){
@@ -768,15 +806,18 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public void dup_x2 () {
-    // .. A B C => .. C A B.C
+    // .. A B C     =>
+    // .. C A B C
+    //        ^
 
     int c;
     boolean cRef;
     Object cAnn = null;
     int ts, td;
+    int t = top;
 
     // duplicate C
-    ts = top; td = top+1;
+    ts = t; td = t+1;
     operands[td] = c = operands[ts];
     isOperandRef[td] = cRef = isOperandRef[ts];
     if (operandAttr != null){
@@ -784,7 +825,7 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     // shuffle B
-    ts=top-1; td=top;
+    td = ts; ts--;               // td=top, ts=top-1
     operands[td] = operands[ts];
     isOperandRef[td] = isOperandRef[ts];
     if (operandAttr != null){
@@ -792,7 +833,7 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     // shuffle A
-    td=ts; ts--;
+    td=ts; ts--;                 // td=top-1, ts=top-2
     operands[td] = operands[ts];
     isOperandRef[td] = isOperandRef[ts];
     if (operandAttr != null){
@@ -800,7 +841,7 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     // shuffle C
-    td = ts;
+    td = ts;                     // td = top-2
     operands[td] = c;
     isOperandRef[td] = cRef;
     if (operandAttr != null){
@@ -935,8 +976,30 @@ public class StackFrame implements Constants, Cloneable {
     }
   }
 
+  //--- debugging methods
+
+  public void printOperands (PrintStream pw){
+    pw.print("operands = [");
+    for (int i=0; i<top+1; i++){
+      if (i>0){
+        pw.print(',');
+      }
+      if (isOperandRef(i)){
+        pw.print('^');
+      }
+      pw.print(operands[i]);
+      Object a = getOperandAttr(top-i);
+      if (a != null){
+        pw.print(" {");
+        pw.print(a);
+        pw.print('}');
+      }
+    }
+    pw.println(']');
+  }
+
   /**
-   * this includes locals and pc. Just for debugging
+   * this includes locals and pc
    */
   public void printStackContent () {
     PrintStream pw = System.err;

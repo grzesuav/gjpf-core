@@ -27,7 +27,7 @@ import org.apache.bcel.classfile.ConstantPool;
 
 /**
  * Duplicate the top operand stack value and insert two or three values down
- * ..., value3, value2, value1 => ..., value1, value3, value2, value1
+ * ... A B C D => ... C D.A B C D
  */
 public class DUP2_X2 extends Instruction {
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
