@@ -8,6 +8,7 @@ import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
 
 import gov.nasa.jpf.annotation.FilterField;
+import gov.nasa.jpf.annotation.FilterFrame;
 
 public class IgnoresFromAnnotations
 implements FieldAmmendment, FrameAmmendment {
@@ -31,7 +32,7 @@ implements FieldAmmendment, FrameAmmendment {
   }
 
   public FramePolicy ammendFramePolicy(MethodInfo mi, FramePolicy sofar) {
-    AnnotationInfo ann = mi.getAnnotation(FilterField.class.getName());
+    AnnotationInfo ann = mi.getAnnotation(FilterFrame.class.getName());
     if (ann != null) {
       if (ann.getValueAsBoolean("filterData")) {
         sofar.includeLocals = false;
