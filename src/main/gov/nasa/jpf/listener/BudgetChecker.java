@@ -39,18 +39,7 @@ public class BudgetChecker extends ListenerAdapter {
 
   static final int CHECK_INTERVAL = 10000;
   static final int CHECK_INTERVAL1 = CHECK_INTERVAL-1;
-  
-  class ConsolePublisherExtension extends PublisherExtensionAdapter {
     
-    public void publishFinished (Publisher publisher) {
-      if (message != null) {
-        PrintWriter pw = publisher.getOut();
-        publisher.publishTopicStart("budget exceeded");
-        pw.println(message);
-      }
-    }
-  }
-  
   long tStart;
   MemoryUsage muStart;
   long mStart;
@@ -71,11 +60,11 @@ public class BudgetChecker extends ListenerAdapter {
   String message;
   
   public BudgetChecker (Config conf, JPF jpf) {
-    maxTime = conf.getDuration("jpf.budget.max_time", -1);
-    maxHeap = conf.getMemorySize("jpf.budget.max_heap", -1);
-    maxDepth = conf.getLong("jpf.budget.max_depth", -1);
-    maxInsn = conf.getLong("jpf.budget.max_insn", -1);
-    maxState = conf.getLong("jpf.budget.max_state", -1);
+    maxTime = conf.getDuration("budget.max_time", -1);
+    maxHeap = conf.getMemorySize("budget.max_heap", -1);
+    maxDepth = conf.getLong("budget.max_depth", -1);
+    maxInsn = conf.getLong("budget.max_insn", -1);
+    maxState = conf.getLong("budget.max_state", -1);
     
     tStart = System.currentTimeMillis();
     
@@ -87,8 +76,6 @@ public class BudgetChecker extends ListenerAdapter {
 
     search = jpf.getSearch();
     vm = jpf.getVM();
-    
-    jpf.addPublisherExtension(ConsolePublisher.class, new ConsolePublisherExtension());
   }
       
   public boolean timeExceeded() {
@@ -154,6 +141,7 @@ public class BudgetChecker extends ListenerAdapter {
   
   public void stateAdvanced (Search search) {    
     if (timeExceeded() || heapExceeded()) {
+      search.notifySearchConstraintHit(message);
       search.terminate();
     }    
   }
@@ -162,6 +150,8 @@ public class BudgetChecker extends ListenerAdapter {
     if ((insnCount++ % CHECK_INTERVAL) == CHECK_INTERVAL1) {
 
       if (timeExceeded() || heapExceeded() || insnExceeded()) {
+        search.notifySearchConstraintHit(message);
+
         vm.getCurrentThread().breakTransition();
         search.terminate();
       }    

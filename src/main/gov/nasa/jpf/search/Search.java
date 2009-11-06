@@ -371,7 +371,7 @@ public abstract class Search {
     }
   }
 
-  protected void notifySearchConstraintHit (String constraintId) {
+  public void notifySearchConstraintHit (String constraintId) {
     if (listener != null) {
       try {
         lastSearchConstraint = constraintId;

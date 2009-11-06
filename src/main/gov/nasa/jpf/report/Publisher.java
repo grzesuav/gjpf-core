@@ -121,6 +121,11 @@ public abstract class Publisher {
         return true;
       }
     }
+    for (String s : constraintTopics) {
+      if (s.equalsIgnoreCase(topic)){
+        return true;
+      }
+    }
     for (String s : propertyViolationTopics) {
       if (s.equalsIgnoreCase(topic)){
         return true;
@@ -245,6 +250,7 @@ public abstract class Publisher {
 
     if (extensions != null) {
       for (PublisherExtension e : extensions) {
+        e.publishConstraintHit(this);
       }
     }
   }
