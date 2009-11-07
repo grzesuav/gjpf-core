@@ -195,11 +195,13 @@ public class JPF implements Runnable {
       String[] elements = conf.getStringArray(key);
       if (elements != null){
         for (String e : elements) {
-          if (!e.startsWith(projPath)) {
-            e = projPath + e;
-          }
+          if (e != null && e.length()>0){
+            if (!(e.charAt(0) == '/') && !e.startsWith(projPath)) {
+              e = projPath + e;
+            }
 
-          conf.append(pathKey, e);
+            conf.append(pathKey, e);
+          }
         }
       }
 
