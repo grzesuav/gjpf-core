@@ -185,6 +185,8 @@ public class JPF implements Runnable {
     return urls.toArray(new URL[urls.size()]);
   }
 
+  static Pattern absPath = Pattern.compile("(?:[a-zA-Z]:)?[/\\\\].*");
+
   static void appendPath (Config conf, String pathKey, String key){
     String projName = key.substring(0, key.length() - pathKey.length() -1);
     String projPath = conf.getString(projName);
@@ -196,7 +198,7 @@ public class JPF implements Runnable {
       if (elements != null){
         for (String e : elements) {
           if (e != null && e.length()>0){
-            if (!(e.charAt(0) == '/') && !e.startsWith(projPath)) {
+            if (!(absPath.matcher(e).matches()) && !e.startsWith(projPath)) {
               e = projPath + e;
             }
 
