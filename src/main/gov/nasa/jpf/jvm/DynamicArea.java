@@ -447,8 +447,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
 
     if (!ci.isInitialized()){
       // we do this explicitly here since there are no clinits for array classes
-      StaticArea sa = StaticArea.getStaticArea();
-      sa.addClass(ci,ti); // this creates the class object
+      ci.registerClass(ti);
       ci.setInitialized();
     }
 
@@ -475,6 +474,9 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    * Creates a new object of the given class.
    * NOTE - this does not ensure if the class is already loaded and/or
    * initialized, so that has to be checked in the caller
+   *
+   * <2do> this should return a DynamicElementInfo (most callers need it anyways,
+   * and getting the ref out of the ElementInfo is more efficient than a get(ref)
    */
   public int newObject (ClassInfo ci, ThreadInfo th) {
     int index;

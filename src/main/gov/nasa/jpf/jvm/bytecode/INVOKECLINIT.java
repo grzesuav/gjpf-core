@@ -55,7 +55,7 @@ public class INVOKECLINIT extends INVOKESTATIC {
     
     DynamicArea da = ti.getVM().getDynamicArea();
     ElementInfo ei = da.get(ci.getClassObjectRef());
-    
+
     // first time around - reexecute if the scheduling policy gives us a choice point
     if (!ti.isFirstStepInsn()) {
       

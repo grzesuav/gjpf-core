@@ -79,33 +79,31 @@ public class JPF_java_lang_reflect_Method {
   }
   
   static int getParameterTypes( MJIEnv env, int objRef, MethodInfo mi) {
-    ThreadInfo ti = env.getThreadInfo();
-    
-    String[] argTypeNames = mi.getArgumentTypeNames();
-    int[] ar = new int[argTypeNames.length];
-    boolean requiresClinitCalls = false;
-    
-    for (int i=0; i<argTypeNames.length; i++){
-      ClassInfo ci = ClassInfo.getClassInfo(argTypeNames[i]);
-      if (!ci.isInitialized()) {
-        if (ci.loadAndInitialize(ti, ti.getPC()) > 0) {
-          requiresClinitCalls = true;
+    try {
+      ThreadInfo ti = env.getThreadInfo();
+      String[] argTypeNames = mi.getArgumentTypeNames();
+      int[] ar = new int[argTypeNames.length];
+
+      for (int i = 0; i < argTypeNames.length; i++) {
+        ClassInfo ci = ClassInfo.getClassInfo(argTypeNames[i]);
+        if (!ci.isRegistered()) {
+          ci.registerClass(ti);
         }
+
+        ar[i] = ci.getClassObjectRef();
       }
-      ar[i] = ci.getClassObjectRef();
-    }
-    
-    if (requiresClinitCalls) {
-      env.repeatInvocation();
-      return MJIEnv.NULL;
-      
-    } else {
-      int aRef = env.newObjectArray("Ljava/lang/Class;",argTypeNames.length);
-      for (int i=0; i<argTypeNames.length; i++){
+
+      int aRef = env.newObjectArray("Ljava/lang/Class;", argTypeNames.length);
+      for (int i = 0; i < argTypeNames.length; i++) {
         env.setReferenceArrayElement(aRef, i, ar[i]);
       }
-      return aRef;      
-    }    
+
+      return aRef;
+
+    } catch (NoClassInfoException cx){
+      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
+      return MJIEnv.NULL;
+    }
   }
   
   public static int getParameterTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef){
@@ -115,21 +113,25 @@ public class JPF_java_lang_reflect_Method {
   public static int getReturnType____Ljava_lang_Class_2 (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);
     ThreadInfo ti = env.getThreadInfo();
-    ClassInfo ci = ClassInfo.getClassInfo(mi.getReturnTypeName());
-    
-    if (!ci.isInitialized()) {
-      if (ci.loadAndInitialize(ti, ti.getPC()) > 0) {
-        env.repeatInvocation();
+
+    try {
+      ClassInfo ci = ClassInfo.getClassInfo(mi.getReturnTypeName());
+      if (!ci.isRegistered()) {
+        ci.registerClass(ti);
       }
+
+      return ci.getClassObjectRef();
+
+    } catch (NoClassInfoException cx){
+      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
+      return MJIEnv.NULL;
     }
-    
-    return ci.getClassObjectRef();
   }
   
   public static int getDeclaringClass____Ljava_lang_Class_2 (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);    
     ClassInfo ci = mi.getClassInfo();
-    // it's got to be initialized, otherwise we wouldn't be able to acquire the Method object
+    // it's got to be registered, otherwise we wouldn't be able to acquire the Method object
     return ci.getClassObjectRef();
   }
     
@@ -247,7 +249,6 @@ public class JPF_java_lang_reflect_Method {
     AnnotationInfo ai = mi.getAnnotation(aci.getName());
     if (ai != null){
       ClassInfo aciProxy = ClassInfo.getAnnotationProxy(aci);
-      aciProxy.loadAndInitialize(env.getThreadInfo());      
       try {
         return env.newAnnotationProxy(aciProxy, ai);
       } catch (ClinitRequired x){
@@ -276,8 +277,30 @@ public class JPF_java_lang_reflect_Method {
     
     MethodInfo mi = getMethodInfo(env, objRef);
 
+    if (mi.isPublic()){
+      sb.append("public ");
+    } else if (mi.isProtected()){
+      sb.append("protected ");
+    } else if (mi.isPrivate()){
+      sb.append("private ");
+    }
+
+    if (mi.isStatic()){
+      sb.append("static ");
+    }
+    if (mi.isSynchronized()){
+      sb.append("synchronized ");
+    }
+    if (mi.isNative()){
+      sb.append("native ");
+    }
+
     sb.append(mi.getReturnTypeName());
     sb.append(' ');
+
+    sb.append(mi.getClassName());
+    sb.append('.');
+
     sb.append(mi.getName());
 
     sb.append('(');

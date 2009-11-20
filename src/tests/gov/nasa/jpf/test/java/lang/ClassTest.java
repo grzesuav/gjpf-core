@@ -237,31 +237,31 @@ public class ClassTest extends TestJPF implements Cloneable, B {
   }
   
   interface TestIfc {
-    void boo();
+    void boo();                        // 4
     void foo();
   }
   
   static abstract class TestClass extends TestClassBase implements TestIfc {
+    static {
+      System.out.println("why is TestClass.<clinit>() executed?");
+    }
     public TestClass() {}
     public TestClass (int a) {}
-    public void foo() {}
-    void bar() {}
-    public static void baz () {}
+    public void foo() {}               // 1
+    void bar() {}                      // 2
+    public static void baz () {}       // 3
     
   }
   
-  @Test public void testMethods() {
+  @Test
+  public void testMethods() {
     if (verifyNoPropertyViolation()) {
 
       Class<?> cls = TestClass.class;
       Method[] methods = cls.getMethods();
 
-      if (methods.length <= 4) {
-        // the java.lang.Object methods + TestClassBase + TestClass
-        throw new RuntimeException("wrong number of getMethods() elements (>4): " + methods.length);
-      }
+      boolean fooSeen=false, bazSeen=false, booSeen=false;
 
-      // we should have two foo's() and one baz()
       for (int i = 0; i < methods.length; i++) {
         Method m = methods[i];
         Class<?> declCls = m.getDeclaringClass();
@@ -273,37 +273,38 @@ public class ClassTest extends TestJPF implements Cloneable, B {
           continue;
         }
 
-        if (declCls == TestClassBase.class) {
-          if (mname.equals("foo")) {
-            methods[i] = null;
-            continue;
-          }
-        }
+        // non-publics, <clinit> and <init> are filtered out
 
         if (declCls == TestClass.class) {
           if (mname.equals("foo")) {
             methods[i] = null;
+            fooSeen = true;
             continue;
           }
           if (mname.equals("baz")) {
             methods[i] = null;
+            bazSeen = true;
             continue;
           }
         }
 
+        // TestClass is abstract and doesn't implement TestIfc.boo()
         if (declCls == TestIfc.class) {
           if (mname.equals("boo")) {
             methods[i] = null;
+            booSeen = true;
             continue;
           }
         }
       }
 
+      assert fooSeen : "no TestClass.foo() seen";
+      assert bazSeen : "no TestClass.baz() seen";
+      assert booSeen : "no TestIfc.boo() seen";
+
       for (int i = 0; i < methods.length; i++) {
-        if (methods[i] != null) {
-          throw new RuntimeException("unexpected method in getMethods(): " +
+        assert (methods[i] == null) : ("unexpected method in getMethods(): " +
                   methods[i].getDeclaringClass().getName() + " : " + methods[i]);
-        }
       }
     }
   }

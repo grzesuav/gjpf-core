@@ -22,6 +22,7 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.NoClassInfoException;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -43,14 +44,23 @@ public class NEW extends Instruction {
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     JVM vm = ti.getVM();
     DynamicArea da = vm.getDynamicArea();
-    ClassInfo ci = ClassInfo.getClassInfo(cname);
+    ClassInfo ci;
 
-    if (ci == null){
-      return ti.createAndThrowException("java.lang.NoClassDefFoundError", cname);
+    try {
+      ci = ClassInfo.getClassInfo(cname);
+
+    } catch (NoClassInfoException cx){
+      // can be any inherited class or required interface
+      return ti.createAndThrowException("java.lang.NoClassDefFoundError", cx.getMessage());
     }
 
+    if (!ci.isRegistered()){
+      ci.registerClass(ti);
+    }
+
+    // since this is a NEW, we also have to initialize
     if (!ci.isInitialized()) {
-      if (ci.loadAndInitialize(ti, this) > 0) {
+      if (ci.pushClinits(ti, this)) {
         return ti.getPC();
       }
     }

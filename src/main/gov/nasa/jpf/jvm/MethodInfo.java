@@ -209,6 +209,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
       attrs |= IS_INIT;
     }
 
+    if (c.isInterface()){ // all interface methods are public
+      modifiers |= Modifier.PUBLIC;
+    }
+
     // since that's used to store the method in the ClassInfo, and to
     // identify it in tne InvokeInstruction, we can set it here
     uniqueName = getUniqueName(name, signature);

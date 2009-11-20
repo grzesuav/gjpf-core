@@ -256,9 +256,11 @@ try {
     // thread. Let's hope none of the init classes creates threads in their <clinit>.
     ThreadInfo main = createMainThread();
 
-    pushMain(config);
-
+    // now that we have a main thread, we can finish the startup class init
     createStartupClassObjects(clinitQueue, main);
+
+    // initialize the call stack with the clinits we've picked up, followed by main()
+    pushMain(config);
     pushClinits(clinitQueue, main);
 
     initSystemState(main);
@@ -340,24 +342,6 @@ try {
     return ref;
   }
 
-  // note this has to be in order - we don't want to init a derived class before
-  // it's parent is initialized
-  void registerStartupClass (ClassInfo ci, List<ClassInfo> queue) {
-    StaticArea sa = getStaticArea();
-
-    if (!queue.contains(ci)) {
-
-      if (ci.getSuperClass() != null) {
-        registerStartupClass( ci.getSuperClass(), queue);
-      }
-
-      queue.add(ci);
-
-      if (!sa.containsClass(ci.getName())){
-        sa.addStartupClass(ci);
-      }
-    }
-  }
 
   protected List<ClassInfo> registerStartupClasses () {
     ArrayList<ClassInfo> queue = new ArrayList<ClassInfo>(32);
@@ -421,14 +405,31 @@ try {
     return queue;
   }
 
-  protected void createStartupClassObjects (List<ClassInfo> queue, ThreadInfo ti){
+
+  // note this has to be in order - we don't want to init a derived class before
+  // it's parent is initialized
+  void registerStartupClass (ClassInfo ci, List<ClassInfo> queue) {
     StaticArea sa = getStaticArea();
 
-    for (ClassInfo ci : queue) {
-      StaticElementInfo sei = sa.get(ci.getName());
-      sei.createStartupClassObject(ci,ti);
-    }
+    if (!queue.contains(ci)) {
 
+      if (ci.getSuperClass() != null) {
+        registerStartupClass( ci.getSuperClass(), queue);
+      }
+
+      queue.add(ci);
+
+      if (!sa.containsClass(ci.getName())){
+        sa.addClass(ci);
+      }
+    }
+  }
+
+
+  protected void createStartupClassObjects (List<ClassInfo> queue, ThreadInfo ti){
+    for (ClassInfo ci : queue) {
+      ci.createClassObject(ti);
+    }
   }
 
   protected void pushClinits (List<ClassInfo> queue, ThreadInfo ti) {

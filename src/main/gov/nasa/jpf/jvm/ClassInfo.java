@@ -190,7 +190,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    */
   protected Set<String> interfaces;
 
-  /** all interfaces (parent interfaces and interface parents) - lazy eval */
+  /** cache of all interfaces (parent interfaces and interface parents) - lazy eval */
   protected Set<String> allInterfaces;
 
   /** Name of the package. */
@@ -446,6 +446,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     processJPFConfigAnnotation();
     loadAnnotationListeners();
 
+
     // be advised - we don't have fields initialized yet (that's in <clinit>)
     JVM.getVM().notifyClassLoaded(this);
   }
@@ -593,7 +594,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    * or null if null is passed in.
    * @throws JPFException if class cannot be found (by BCEL)
    */
-  public static synchronized ClassInfo getClassInfo (String className) {
+  public static ClassInfo getClassInfo (String className) throws NoClassInfoException {
     if (className == null) {
       return null;
     }
@@ -618,33 +619,44 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       if (clazz != null){
         return new ClassInfo(clazz, idx);
       } else {
-        return null;
+        throw new NoClassInfoException(className);
       }
+    }
+  }
+
+  public static ClassInfo tryGetClassInfo (String className){
+    try {
+      return getClassInfo(className);
+    } catch (NoClassInfoException cx){
+      return null;
     }
   }
 
   public static ClassInfo getAnnotationProxy (ClassInfo ciAnnotation){
     StaticArea sa = JVM.getVM().getStaticArea();
+    ThreadInfo ti = ThreadInfo.getCurrentThread();
 
     // make sure the annotationCls is initialized (no code there)
     if (!ciAnnotation.isInitialized()) {
-      ThreadInfo ti = ThreadInfo.getCurrentThread();
       if (!sa.containsClass(ciAnnotation.getName())) {
-        sa.addClass(ciAnnotation, ti);  // that creates the class object
-        ciAnnotation.setInitialized();
+        ciAnnotation.registerClass(ti);
+        ciAnnotation.setInitialized(); // no clinit
       }
     }
-
 
     String cname = ciAnnotation.getName() + "$Proxy";
     int idx = sa.indexFor(cname);
     ClassInfo ci = loadedClasses.get(idx);
 
-    if (ci != null) {
-      return ci;
-    } else {
-      return new ClassInfo(ciAnnotation, cname, idx);
+    if (ci == null){
+      ci = new ClassInfo(ciAnnotation, cname, idx);
+      if (!ci.isInitialized()){
+        ci.registerClass(ti);
+        ci.setInitialized();
+      }
     }
+
+    return ci;
   }
 
   static InputStream getClassFileStream (String className){
@@ -1189,19 +1201,38 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return Collections.unmodifiableSet(new HashSet<String>(0));
   }
 
+
+  /**
+   * Loads the ClassInfo for named class.
+   * @param set a Set to which the interface names (String) are added
+   * @param ci class to find interfaces for.
+   */
+  void loadInterfaceRec (Set<String> set, Set<String> interfaces) {
+    if (interfaces != null) {
+      for (String iname : interfaces) {
+
+        ClassInfo ci = getClassInfo(iname);
+
+        if (set != null){
+          set.add(iname);
+        }
+
+        loadInterfaceRec(set, ci.interfaces);
+      }
+    }
+  }
+
   /**
    * Loads the interfaces of a class.
    */
-  protected static Set<String> loadInterfaces (JavaClass jc) {
-    Set<String> interfaces;
-    String[]    interfaceNames;
+  protected Set<String> loadInterfaces (JavaClass jc) {
+    Set<String> interfaces = new HashSet<String>();
 
-    interfaceNames = jc.getInterfaceNames();
-    interfaces = new HashSet<String>();
-
-    for (int i = 0, l = interfaceNames.length; i < l; i++) {
-      interfaces.add(interfaceNames[i]);
+    for (String iname : jc.getInterfaceNames()){
+      interfaces.add(iname);
     }
+
+    loadInterfaceRec(null, interfaces);
 
     return Collections.unmodifiableSet(interfaces);
   }
@@ -1383,7 +1414,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       HashSet<String> set = new HashSet<String>();
 
       for (ClassInfo ci=this; ci != null; ci=ci.superClass) {
-        loadInterfaceRec(set, ci);
+        loadInterfaceRec(set, ci.interfaces);
       }
 
       allInterfaces = Collections.unmodifiableSet(set);
@@ -1453,36 +1484,48 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
 
-  public int createClassObject (ThreadInfo th, int cref) {
-    int         objref;
-    int         cnref;
-    DynamicArea da = DynamicArea.getHeap();
+  public void registerClass (ThreadInfo ti){
+    if (sei == null){
 
-    objref = da.newObject(classClassInfo, th);
-    cnref = da.newInternString(name, th);
-
-    // we can't execute methods nicely for which we don't have caller bytecode
-    // (would run into a (pc == null) assertion), so we have to bite the bullet
-    // and init the java.lang.Class object explicitly. But that's probably Ok
-    // since it is a very special beast, anyway
-    ElementInfo e = da.get(objref);
-
-    try {
-      e.setReferenceField("name", cnref);
-
-      // this is the StaticArea ElementInfo index of what we refer to
-      e.setIntField("cref", cref);
-    } catch (Exception x) {
-      // if we don't have the right (JPF specific) java.lang.Class version,
-      // we are screwed in terms of java.lang.Class usage
-      if (classClassInfo == null) { // report it just once
-        logger.severe("FATAL ERROR: wrong java.lang.Class version (wrong 'vm.classpath' property)");
+      // do this recursively for superclasses and interfaces
+      if (superClass != null) {
+        superClass.registerClass(ti);
       }
 
-      return -1;
-    }
+      for (String ifcName : interfaces) {
+        ClassInfo ici = getClassInfo(ifcName); // already resolved at this point
+        ici.registerClass(ti);
+      }
 
-    return objref;
+      // register ourself in the static area
+      StaticArea sa = StaticArea.getStaticArea();
+      sei = sa.addClass(this);
+
+      createClassObject(ti);
+    }
+  }
+
+  public boolean isRegistered () {
+    return (sei != null);
+  }
+
+  // note this requires 'sei' to be already set
+  ElementInfo createClassObject (ThreadInfo ti){
+    DynamicArea heap = DynamicArea.getHeap();
+
+    int clsObjRef = heap.newObject(classClassInfo, ti);
+    ElementInfo ei = heap.get(clsObjRef);
+
+    int clsNameRef = heap.newInternString(name, ti);
+    ei.setReferenceField("name", clsNameRef);
+
+    // link the class object to the StaticElementInfo
+    ei.setIntField("cref", sei.getIndex());
+
+    // link the StaticElementInfo to the class object
+    sei.setClassObjectRef(ei.getIndex());
+
+    return ei;
   }
 
   public static String findResource (String resourceName){
@@ -1538,73 +1581,44 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     // notifications from the <clinit> execution before the classLoaded()
   }
 
-  // this one is for classes w/o superclasses or clinits (e.g. array and builtin classes)
-  public void loadAndInitialize (ThreadInfo ti) {
-    StaticArea sa = ti.getVM().getStaticArea();
-    if (!sa.containsClass(name)) {
-      sa.addClass(this, ti);
-      setInitialized();
-    }
-  }
-
   /**
-   * return the number of clinit stack frames pushed
+   * return true if clinit stackframes were pushed
    */
-  public int loadAndInitialize (ThreadInfo ti, Instruction continuation) {
-    ClassInfo  ci = this;
-    StaticArea sa = ti.getVM().getStaticArea();
+  public boolean pushClinits (ThreadInfo ti, Instruction continuation) {
     int pushedFrames = 0;
 
-    // first do all the base classes
-    while (ci != null) {
-      if (initialize(sa, ci, ti, continuation)) {
-        continuation = null;
-        pushedFrames++;
-      }
-
-      ci = ci.getSuperClass();
-    }
-
-    // now we have to do all the interfaces (this sucks)
-    for (String ifc : getAllInterfaces()) {
-      ci = getClassInfo(ifc);
-      if (initialize(sa, ci, ti, continuation)) {
+    // push clinits of class hierarchy (upwards, since call stack is LIFO)
+    for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
+      if (ci.initialize(ti, continuation)) {
         continuation = null;
         pushedFrames++;
       }
     }
 
-    return pushedFrames;
+    return (pushedFrames > 0);
   }
 
-  protected boolean initialize (StaticArea sa, ClassInfo ci, ThreadInfo ti, Instruction continuation) {
-    StaticElementInfo ei = ci.getStaticElementInfo();
-
-    if (ei == null) {
-      sa.addClass(ci, ti);  // that creates the class object
-      ei = ci.getStaticElementInfo();
-      assert ei != null : "static init failed: " + ci.getName();
-    }
-
-    int stat = ei.getStatus();
+  // returns true if we pushed a <clinit> frame
+  protected boolean initialize (ThreadInfo ti, Instruction continuation) {
+    int stat = sei.getStatus();
 
     if (stat != INITIALIZED) {
       if (stat != ti.getIndex()) {
-        // even if it's already initializing - if it's not in the current thread
+        // even if it is already initializing - if it does not happen in the current thread
         // we have to sync, which we do by calling clinit
-        MethodInfo mi = ci.getMethod("<clinit>()V", false);
+        MethodInfo mi = getMethod("<clinit>()V", false);
         if (mi != null) {
           MethodInfo stub = mi.createDirectCallStub("[clinit]");
           StackFrame sf = new DirectCallStackFrame(stub, continuation);
           ti.pushFrame( sf);
-
           return true;
+
         } else {
           // it has no clinit, so it already is initialized
-          ci.setInitialized();
+          setInitialized();
         }
       } else {
-        // if it's initialized by our own thread (recursive request), just go on
+        // ignore if it's already being initialized  by our own thread (recursive request)
       }
     }
 
@@ -1676,21 +1690,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return new HashMap<String, MethodInfo>(0);
   }
 
-  /**
-   * Loads the ClassInfo for named class.
-   * @param set a Set to which the interface names (String) are added
-   * @param ci class to find interfaces for.
-   */
-  void loadInterfaceRec (Set<String> set, ClassInfo ci) {
-    if (ci != null) {
-      for (String iname : ci.interfaces) {
-        set.add(iname);
-
-        ci = getClassInfo(iname);
-        loadInterfaceRec(set, ci);
-      }
-    }
-  }
 
   /**
    * this is a optimization to work around the BCEL strangeness that some
@@ -1748,7 +1747,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       String superName = jc.getSuperclassName();
       ClassInfo sci = getClassInfo(superName);
       if (sci == null){
-        // <2do> this shouldn't be a JPFException, but how can we turn it over to the app?
         throw new NoClassInfoException(superName);
       }
 

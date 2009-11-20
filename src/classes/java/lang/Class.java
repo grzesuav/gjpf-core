@@ -214,7 +214,7 @@ public final class Class<T> {
                                       IllegalAccessException;
 
   public String toString () {
-    return (isInterface() ? "interface " : "class") + name;
+    return (isInterface() ? "interface " : "class ") + name;
   }
 
   @SuppressWarnings("unchecked")

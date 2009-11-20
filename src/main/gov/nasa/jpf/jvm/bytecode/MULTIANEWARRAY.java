@@ -63,14 +63,15 @@ public class MULTIANEWARRAY extends Instruction {
       dim[i] = ti.pop();
     }
 
+    // there is no clinit for array classes, but we still have  to create a class object
+    // since its a builtin class, we also don't have to bother with NoClassDefFoundErrors
     ClassInfo ci = ClassInfo.getClassInfo(type);
-    if (!ci.isInitialized()) {
-      ci.loadAndInitialize(ti);
+    if (!ci.isRegistered()) {
+      ci.registerClass(ti);
+      ci.setInitialized();
     }
-
     
     int arrayRef = allocateArray(ks.da, type, dim, ti, 0);
-
 
     // put the result (the array reference) on the stack
     ti.push(arrayRef, true);

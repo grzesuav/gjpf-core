@@ -25,6 +25,7 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.NoClassInfoException;
 import gov.nasa.jpf.jvm.Types;
 
 import org.apache.bcel.Constants;
@@ -94,15 +95,23 @@ public class LDC extends Instruction {
       ti.push(value, true);
 
     } else if (type == Type.CLASS) {
+      try {
         ClassInfo ci = ClassInfo.getClassInfo(string);
 
-        if (!ci.isInitialized()) {
-          if (ci.loadAndInitialize(ti, this) > 0) {
-            return ti.getPC();
-          }
+        // LDC doesn't cause a <clinit> - we only register all required classes
+        // to make sure we have class objects. <clinit>s are called prior to
+        // GET/PUT or INVOKE
+        if (!ci.isRegistered()){
+          ci.registerClass(ti);
         }
 
         ti.push(ci.getClassObjectRef(), true);
+
+      } catch (NoClassInfoException cx){
+        // can be any inherited class or required interface
+        return ti.createAndThrowException("java.lang.NoClassDefFoundError", cx.getMessage());
+      }
+
     } else {
       ti.push(value, false);
     }

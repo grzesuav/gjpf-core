@@ -25,6 +25,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 
 
 /**
@@ -104,7 +105,6 @@ public class JPF_java_lang_Class {
     AnnotationInfo ai = ci.getAnnotation(aci.getName());
     if (ai != null){
       ClassInfo aciProxy = ClassInfo.getAnnotationProxy(aci);
-      aciProxy.loadAndInitialize(env.getThreadInfo());
       
       try {
         return env.newAnnotationProxy(aciProxy, ai);
@@ -185,7 +185,7 @@ public class JPF_java_lang_Class {
     // .class field
     
     if (!ti.isResumedInstruction(insn)) {
-      objRef = env.getDynamicArea().newObject(ci, ti);  // create the thing
+      objRef = env.newObject(ci);  // create the thing
     
       MethodInfo mi = ci.getMethod("<init>()V", true);
       if (mi != null) { // Oops - direct call required
@@ -295,51 +295,44 @@ public class JPF_java_lang_Class {
     }
   }
 
+  private static void addDeclaredMethodsRec (HashMap<String,MethodInfo>methods, ClassInfo ci){
+    ClassInfo sci = ci.getSuperClass();
+    if (sci != null){
+      addDeclaredMethodsRec(methods,sci);
+    }
+
+    for (String ifcName : ci.getInterfaces()){
+      ClassInfo ici = ClassInfo.getClassInfo(ifcName); // has to be already defined, so no exception
+      addDeclaredMethodsRec(methods,ici);
+    }
+
+    for (MethodInfo mi : ci.getDeclaredMethodInfos()) {
+      // filter out non-public, <clinit> and <init>
+      if (mi.isPublic() && (mi.getName().charAt(0) != '<')) {
+        String mname = mi.getUniqueName();
+
+        if (!(ci.isInterface() && methods.containsKey(mname))){
+          methods.put(mname, mi);
+        }
+      }
+    }
+  }
+
   public static int getMethods_____3Ljava_lang_reflect_Method_2 (MJIEnv env, int objref) {
-    ClassInfo ciMdc = getReferredClassInfo(env,objref);
+    ClassInfo ci = getReferredClassInfo(env,objref);
 
     // collect all the public, non-ctor instance methods
-    if (!ciMdc.isPrimitive()) {
-      ArrayList<MethodInfo> methodInfos = new ArrayList<MethodInfo>();
+    if (!ci.isPrimitive()) {
+      HashMap<String,MethodInfo> methods = new HashMap<String,MethodInfo>();
+      addDeclaredMethodsRec(methods,ci);
       
-      for (ClassInfo ci = ciMdc; ci != null; ci = ci.getSuperClass()) {
-        for (MethodInfo mi : ci.getDeclaredMethodInfos()) {
-          // filter out non-public, <clinit> and <init>
-          if (mi.isPublic() && !(mi.getName().charAt(0) == '<')) {
-            methodInfos.add(mi);
-          }
-        }
-      }
-
-      // and now for the tricky part - if this is an abstract class, we might
-      // have to add un-implemented methods from all our interfaces, which is recursive
-      if (ciMdc.isAbstract()) {
-        for (String ifcName : ciMdc.getAllInterfaces()) {
-          ClassInfo ifc = ClassInfo.getClassInfo(ifcName);
-          for (MethodInfo mi : ifc.getDeclaredMethodInfos()) {
-            MethodInfo match = null;
-            String mname = mi.getUniqueName();
-            
-            for (int i=0; i<methodInfos.size(); i++) {
-              MethodInfo m = methodInfos.get(i);
-              if (m.getUniqueName().equals(mname)) {
-                match = m;
-                break;
-              }
-            }
-            
-            if (match == null) {
-              methodInfos.add(mi);
-            }
-          }
-        }
-      }
-      
-      int n = methodInfos.size();
+      int n = methods.size();
       int aref = env.newObjectArray("Ljava/lang/reflect/Method;", n);
-      for (int i=0; i<n; i++) {
-        int mref = createMethodObject(env, methodInfos.get(i));
-        env.setReferenceArrayElement(aref,i,mref);
+      int i=0;
+
+      for (MethodInfo mi : methods.values()){
+        int mref = createMethodObject(env, mi);
+        env.setReferenceArrayElement(aref,i++,mref);
       }
 
       return aref;
@@ -548,12 +541,8 @@ public class JPF_java_lang_Class {
     int i=0;
     for (String ifc : ifcNames){
       ClassInfo ici = ClassInfo.getClassInfo(ifc);
-      
-      if (!ici.isInitialized()) {
-        if (ici.loadAndInitialize(ti, ti.getPC()) > 0) {
-          env.repeatInvocation();
-          return MJIEnv.NULL; // doesn't matter
-        }
+      if (!ici.isRegistered()) {
+        ici.registerClass(ti);
       }
       
       env.setReferenceArrayElement(aref, i++, ici.getClassObjectRef());

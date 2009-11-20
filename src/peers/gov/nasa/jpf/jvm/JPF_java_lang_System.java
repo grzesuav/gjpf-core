@@ -184,26 +184,43 @@ public class JPF_java_lang_System {
   static int createPrintStream (MJIEnv env, int clsObjRef){
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
-    
+
     ClassInfo ci = ClassInfo.getClassInfo("gov.nasa.jpf.ConsoleOutputStream");
-/**/
+
     // it's not really used, but it would be hack'ish to use a class whose
     // super class hasn't been initialized yet
-    if (insn.requiresClinitCalls(ti, ci)) {
-      env.repeatInvocation();
-      return MJIEnv.NULL;
+    if (!ci.isRegistered()) {
+      ci.registerClass(ti);
     }
-/**/
-    
+
+    if (!ci.isInitialized()) {
+      if (ci.pushClinits(ti, insn)) {
+        env.repeatInvocation();
+        return MJIEnv.NULL;
+      }
+    }
+
     return env.newObject(ci);
   }
   
   public static int createSystemOut____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
-    return createPrintStream(env,clsObjRef);
+    try {
+      return createPrintStream(env,clsObjRef);
+
+    } catch (NoClassInfoException cx){
+      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
+      return MJIEnv.NULL;
+    }
   }
   
   public static int createSystemErr____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
-    return createPrintStream(env,clsObjRef);
+    try {
+      return createPrintStream(env,clsObjRef);
+
+    } catch (NoClassInfoException cx){
+      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
+      return MJIEnv.NULL;
+    }
   }
   
   static int getProperties (MJIEnv env, Properties p){

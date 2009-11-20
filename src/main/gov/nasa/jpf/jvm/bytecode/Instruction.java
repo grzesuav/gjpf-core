@@ -275,8 +275,12 @@ public abstract class Instruction {
     // <2do> why would a resumed insn not require class init? it might be resumed
     // for other reasons than having previously forced a <clinit>
 
+    if (!ci.isRegistered()){
+      ci.registerClass(ti);
+    }
+
     if (!ci.isInitialized()) {
-      if (ci.loadAndInitialize(ti, this) > 0) {
+      if (ci.pushClinits(ti, this)) {
         //ti.skipInstructionLogging();
         return true; // there are new <clinit> frames on the stack, execute them
       }

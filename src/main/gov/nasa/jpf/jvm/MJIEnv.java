@@ -1112,7 +1112,7 @@ public class MJIEnv {
     ei.lockNotified(ti);
   }
 
-  void initAnnotationProxyField (int proxyRef, FieldInfo fi, Object v){
+  void initAnnotationProxyField (int proxyRef, FieldInfo fi, Object v) throws ClinitRequired {
     String fname = fi.getName();
     String ftype = fi.getType();
 
@@ -1209,7 +1209,7 @@ public class MJIEnv {
     }
   }
 
-  int newAnnotationProxy (ClassInfo aciProxy, AnnotationInfo ai){
+  int newAnnotationProxy (ClassInfo aciProxy, AnnotationInfo ai) throws ClinitRequired {
 
     int proxyRef = newObject(aciProxy);
 
@@ -1225,14 +1225,14 @@ public class MJIEnv {
     return proxyRef;
   }
 
-  int newAnnotationProxies (AnnotationInfo[] ai){
+  int newAnnotationProxies (AnnotationInfo[] ai) throws ClinitRequired {
 
     if ((ai != null) && (ai.length > 0)){
       int aref = newObjectArray("Ljava/lang/annotation/Annotation;", ai.length);
       for (int i=0; i<ai.length; i++){
         ClassInfo aci = ClassInfo.getClassInfo(ai[i].getName());
         ClassInfo aciProxy = ClassInfo.getAnnotationProxy(aci);
-        aciProxy.loadAndInitialize(getThreadInfo());
+
         int ar = newAnnotationProxy(aciProxy, ai[i]);
         setReferenceArrayElement(aref, i, ar);
       }

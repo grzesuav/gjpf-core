@@ -1648,7 +1648,7 @@ public class ThreadInfo
   }
 
   /**
-   * <2do> pcm - this is not correct! We have to call a propper ctor
+   * <2do> pcm - this is not correct! We have to call a proper ctor
    * for the Throwable (for now, we just explicitly set the details)
    * but since this is not used with user defined exceptions (it's only
    * called from within the VM, i.e. with standard exceptions), we for
@@ -1659,10 +1659,6 @@ public class ThreadInfo
     DynamicArea da = DynamicArea.getHeap();
     int         objref = da.newObject(ci, this);
     int         msgref = -1;
-
-    if (!ci.isInitialized()) {
-      ci.loadAndInitialize(this); // we don't call clinits for throwables (yet)
-    }
 
     ElementInfo ei = da.get(objref);
 
@@ -1686,6 +1682,16 @@ public class ThreadInfo
    * thrown by the VM (or a listener)
    */
   public Instruction createAndThrowException (ClassInfo ci, String details) {
+    if (!ci.isRegistered()) {
+      ci.registerClass(this);
+    }
+
+    if (!ci.isInitialized()){
+      if (ci.pushClinits(this, getPC())) {
+        return getPC();
+      }
+    }
+
     int objref = createException(ci,details, MJIEnv.NULL);
     return throwException(objref);
   }
@@ -1694,11 +1700,23 @@ public class ThreadInfo
    * Creates an exception and throws it.
    */
   public Instruction createAndThrowException (String cname) {
-    return createAndThrowException(ClassInfo.getClassInfo(cname), null);
+    return createAndThrowException(cname, null);
   }
 
   public Instruction createAndThrowException (String cname, String details) {
-    return createAndThrowException(ClassInfo.getClassInfo(cname), details);
+    try {
+      ClassInfo ci = ClassInfo.getClassInfo(cname);
+      return createAndThrowException(ci, details);
+
+    } catch (NoClassInfoException cx){
+      try {
+        ClassInfo ci = ClassInfo.getClassInfo("java.lang.NoClassDefFoundError");
+        return createAndThrowException(ci, cx.getMessage());
+
+      } catch (NoClassInfoException cxx){
+        throw new JPFException("no java.lang.NoClassDefFoundError class");
+      }
+    }
   }
 
   /**

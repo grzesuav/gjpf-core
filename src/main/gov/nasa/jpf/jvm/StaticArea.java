@@ -135,19 +135,23 @@ public class StaticArea extends Area<StaticElementInfo> {
    * client (e.g. for blocking/ re-execution of the insn after returning
    * from the clinit (stack)
    */
-  public int addClass (ClassInfo ci, ThreadInfo ti) {
+  public StaticElementInfo addClass (ClassInfo ci, int clsObjRef) {
+    StaticElementInfo ei = null;
     int index = indexOf(ci.getName());
 
     if (index == -1) {
       index = indexFor(ci.getName());
-
-      int cref = ci.createClassObject(ti, index);
-      StaticElementInfo ei = createElementInfo(ci, cref);
-
+      ei = createElementInfo(ci, clsObjRef);
       add(index, ei);
+      return ei;
+
+    } else {
+      // startupClass (no clsObjRef set yet)
+      ei = get(index);
+      ei.setClassObjectRef(clsObjRef);
     }
 
-    return index;
+    return ei;
   }
 
 
@@ -155,11 +159,11 @@ public class StaticArea extends Area<StaticElementInfo> {
     return new StaticElementInfo();
   }
 
-  StaticElementInfo createElementInfo (ClassInfo ci, int classObjRef) {
+  StaticElementInfo createElementInfo (ClassInfo ci, int clsObjRef) {
     Fields   f = ci.createStaticFields();
     Monitor  m = new Monitor();
 
-    StaticElementInfo ei = new StaticElementInfo(f, m, classObjRef);
+    StaticElementInfo ei = new StaticElementInfo(f, m, clsObjRef);
     ci.setStaticElementInfo(ei);
 
     ci.initializeStaticData(ei);
@@ -168,17 +172,17 @@ public class StaticArea extends Area<StaticElementInfo> {
   }
 
   /**
-   * this is for the VM bootstrapping, i.e. we can't do clinit or
-   * create class objects (there is no mainThread yet), but we need
-   * to get elements entries
+   * note this has to be followed by creating, initializing and linking
+   * a class object - the StaticElementInfo needs its reference value
    */
-  public int addStartupClass (ClassInfo ci) {
+  public StaticElementInfo addClass (ClassInfo ci) {
     StaticElementInfo ei = createElementInfo(ci, -1);
     int index = indexFor(ci.getName());
 
     add(index, ei);
+    ci.setStaticElementInfo(ei);
 
-    return index;
+    return ei;
   }
 
   /**

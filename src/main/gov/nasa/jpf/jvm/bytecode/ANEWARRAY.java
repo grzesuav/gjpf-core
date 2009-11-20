@@ -44,10 +44,13 @@ public class ANEWARRAY extends Instruction {
     int size = ti.pop();
     
     // there is no clinit for array classes, but we still have  to create a class object
+    // since its a builtin class, we also don't have to bother with NoClassDefFoundErrors
     String clsName = "[" + type;
     ClassInfo ci = ClassInfo.getClassInfo(clsName);
-    if (!ci.isInitialized()) {
-      ci.loadAndInitialize(ti);
+
+    if (!ci.isRegistered()) {
+      ci.registerClass(ti);
+      ci.setInitialized();
     }
     
     if (heap.getOutOfMemory()) { // simulate OutOfMemoryError

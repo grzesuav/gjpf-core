@@ -76,10 +76,7 @@ public final class StaticElementInfo extends ElementInfo {
   public void restoreStatus(int s) {
     status = s;
   }
-  
-  void createStartupClassObject (ClassInfo ci, ThreadInfo ti) {
-    classObjectRef = ci.createClassObject(ti, index);
-  }
+
   
   protected FieldInfo getDeclaredFieldInfo (String clsBase, String fname) {
     ClassInfo ci = ClassInfo.getClassInfo(clsBase);
@@ -152,7 +149,7 @@ public final class StaticElementInfo extends ElementInfo {
     return classObjectRef;
   }
   
-  public void restoreClassObjectRef(int r) {
+  public void setClassObjectRef(int r) {
     classObjectRef = r;
   }
 
