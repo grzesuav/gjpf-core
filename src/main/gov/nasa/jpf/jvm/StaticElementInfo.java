@@ -79,7 +79,7 @@ public final class StaticElementInfo extends ElementInfo {
 
   
   protected FieldInfo getDeclaredFieldInfo (String clsBase, String fname) {
-    ClassInfo ci = ClassInfo.getClassInfo(clsBase);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsBase);
     FieldInfo fi = ci.getDeclaredStaticField(fname);
     
     if (fi == null) {

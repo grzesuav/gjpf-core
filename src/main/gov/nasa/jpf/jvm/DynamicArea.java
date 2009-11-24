@@ -443,7 +443,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     //}
 
     String type = "[" + elementType;
-    ClassInfo ci = ClassInfo.getClassInfo(type);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(type);
 
     if (!ci.isInitialized()){
       // we do this explicitly here since there are no clinits for array classes

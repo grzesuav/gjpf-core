@@ -472,7 +472,7 @@ public class MJIEnv {
   }
 
   public void setStaticIntField (String clsName, String fname, int value) {
-    ClassInfo ci = ClassInfo.getClassInfo(clsName);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     sa.get(ci.getName()).setIntField(fname, value);
   }
 
@@ -486,14 +486,14 @@ public class MJIEnv {
   }
 
   public int getStaticIntField (String clsName, String fname) {
-    ClassInfo         ci = ClassInfo.getClassInfo(clsName);    
+    ClassInfo         ci = ClassInfo.getResolvedClassInfo(clsName);
     StaticElementInfo ei = sa.get(ci.getName());
 
     return ei.getIntField(fname);
   }
 
   public void setStaticLongField (String clsName, String fname, long value) {
-    ClassInfo ci = ClassInfo.getClassInfo(clsName);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     sa.get(ci.getName()).setLongField(fname, value);
   }
 
@@ -503,7 +503,7 @@ public class MJIEnv {
   }
 
   public long getStaticLongField (String clsName, String fname) {
-    ClassInfo ci = ClassInfo.getClassInfo(clsName);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     return getStaticLongField(ci, fname);
   }
 
@@ -513,7 +513,7 @@ public class MJIEnv {
   }
 
   public void setStaticReferenceField (String clsName, String fname, int objref) {
-    ClassInfo ci = ClassInfo.getClassInfo(clsName);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
 
     // <2do> - we should REALLY check for type compatibility here
     sa.get(ci.getName()).setReferenceField(fname, objref);
@@ -788,7 +788,7 @@ public class MJIEnv {
   }
 
   public int newObject (String clsName) {
-    ClassInfo ci = ClassInfo.getClassInfo(clsName);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     if (ci != null){
       return newObject(ci);
     } else {
@@ -880,43 +880,43 @@ public class MJIEnv {
   }
 
   public int newInteger (int n){
-    int r = da.newObject(ClassInfo.getClassInfo("java.lang.Integer"), ti);
+    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Integer"), ti);
     setIntField(r,"value",n);
     return r;
   }
 
   public int newLong (long l){
-    int r = da.newObject(ClassInfo.getClassInfo("java.lang.Long"), ti);
+    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Long"), ti);
     setLongField(r,"value",l);
     return r;
   }
 
   public int newDouble (double d){
-    int r = da.newObject(ClassInfo.getClassInfo("java.lang.Double"), ti);
+    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"), ti);
     setDoubleField(r,"value",d);
     return r;
   }
 
   public int newFloat (float f){
-    int r = da.newObject(ClassInfo.getClassInfo("java.lang.Float"), ti);
+    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"), ti);
     setIntField(r,"value",Types.floatToInt(f));
     return r;
   }
 
   public int newByte (byte b){
-    int r = da.newObject(ClassInfo.getClassInfo("java.lang.Byte"), ti);
+    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Byte"), ti);
     setIntField(r,"value",b);
     return r;
   }
 
   public int newShort (short s){
-    int r = da.newObject(ClassInfo.getClassInfo("java.lang.Short"), ti);
+    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Short"), ti);
     setIntField(r,"value",s);
     return r;
   }
 
   public int newCharacter (char c){
-    int r = da.newObject(ClassInfo.getClassInfo("java.lang.Character"), ti);
+    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Character"), ti);
     setIntField(r,"value",c);
     return r;
   }
@@ -1213,7 +1213,7 @@ public class MJIEnv {
 
     int proxyRef = newObject(aciProxy);
 
-    // initialize fields of the new object from the AnnotationInfo
+    // pushClinit fields of the new object from the AnnotationInfo
     for (AnnotationInfo.Entry e : ai.getEntries()){
       Object v = e.getValue();
       String fname = e.getKey();
@@ -1230,7 +1230,7 @@ public class MJIEnv {
     if ((ai != null) && (ai.length > 0)){
       int aref = newObjectArray("Ljava/lang/annotation/Annotation;", ai.length);
       for (int i=0; i<ai.length; i++){
-        ClassInfo aci = ClassInfo.getClassInfo(ai[i].getName());
+        ClassInfo aci = ClassInfo.getResolvedClassInfo(ai[i].getName());
         ClassInfo aciProxy = ClassInfo.getAnnotationProxy(aci);
 
         int ar = newAnnotationProxy(aciProxy, ai[i]);

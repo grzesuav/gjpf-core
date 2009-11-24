@@ -40,7 +40,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
 
   public FieldInfo getFieldInfo () {
     if (fi == null) {
-      ClassInfo ci = ClassInfo.getClassInfo(className);
+      ClassInfo ci = ClassInfo.getResolvedClassInfo(className);
       if (ci != null) {
         fi = ci.getInstanceField(fname);
       }

@@ -78,7 +78,7 @@ public class DoubleSpec {
       break;
     }
     case 2: { // static variable name TODO other cases here...
-      ClassInfo ci = ClassInfo.getClassInfo(varId[0]);
+      ClassInfo ci = ClassInfo.getResolvedClassInfo(varId[0]);
       StaticElementInfo ei = vm.getStaticArea().get(ci.getName());
       ret = ei.getDoubleField(varId[1]);
       break;

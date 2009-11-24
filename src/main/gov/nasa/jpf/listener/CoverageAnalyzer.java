@@ -454,7 +454,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
 
     boolean isInterface() {
       if (ci == null) { // never loaded
-        ci = ClassInfo.getClassInfo(className);
+        ci = ClassInfo.getResolvedClassInfo(className);
       }
       return ci.isInterface();
     }
@@ -670,7 +670,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
     // middle ground, we could use BCEL
 
     for (ClassCoverage cc : classes.values()) {
-      ClassInfo ci = ClassInfo.getClassInfo(cc.className);
+      ClassInfo ci = ClassInfo.getResolvedClassInfo(cc.className);
       for (MethodInfo mi : ci.getDeclaredMethodInfos()) {
         AnnotationInfo ai = getRequirementsAnnotation(mi);
         if (ai != null) {

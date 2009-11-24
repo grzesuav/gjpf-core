@@ -33,8 +33,8 @@ public class JPF_java_util_concurrent_atomic_AtomicLongFieldUpdater extends Atom
 
     ClassInfo ci = JPF_java_lang_Class.getReferredClassInfo(env,tClsObjRef);
     String fname = env.getStringObject(fNameRef);
-
     FieldInfo fi = ci.getInstanceField(fname);
+
     ClassInfo fci = fi.getTypeClassInfo();
 
     if (!fci.isPrimitive() || !fci.getName().equals("long")) {

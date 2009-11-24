@@ -55,7 +55,7 @@ public class JPF_java_io_RandomAccessFile {
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
     
-    ClassInfo ci = ClassInfo.getClassInfo(DataRepresentation);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(DataRepresentation);
     if (insn.requiresClinitCalls(ti, ci)) {
       return null;
     }

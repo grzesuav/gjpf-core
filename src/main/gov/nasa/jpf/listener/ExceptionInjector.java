@@ -229,11 +229,11 @@ public class ExceptionInjector extends ListenerAdapter {
     }
 
     if (cls != null){
-      ClassInfo ci = ClassInfo.tryGetClassInfo(cls);
+      ClassInfo ci = ClassInfo.tryGetResolvedClassInfo(cls);
       if (ci == null){ // try java.lang if no package
         if (cls.indexOf('.')< 0){
           cls = "java.lang." + cls;
-          ci = ClassInfo.tryGetClassInfo(cls);
+          ci = ClassInfo.tryGetResolvedClassInfo(cls);
         }
       }
       if (ci != null){

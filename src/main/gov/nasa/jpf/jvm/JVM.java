@@ -192,7 +192,7 @@ try {
    * (that's a true '42')
    */
   static boolean checkModelClassAccess () {
-    ClassInfo ci = ClassInfo.getClassInfo("java.lang.Class");
+    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Class");
     return (ci.getDeclaredInstanceField("cref") != null);
   }
 
@@ -215,7 +215,7 @@ try {
   }
 
   /**
-   * load and initialize startup classes, return 'true' if successful.
+   * load and pushClinit startup classes, return 'true' if successful.
    *
    * This loads a bunch of core library classes, initializes the main thread,
    * and then all the required startup classes, but excludes the static init of
@@ -259,7 +259,7 @@ try {
     // now that we have a main thread, we can finish the startup class init
     createStartupClassObjects(clinitQueue, main);
 
-    // initialize the call stack with the clinits we've picked up, followed by main()
+    // pushClinit the call stack with the clinits we've picked up, followed by main()
     pushMain(config);
     pushClinits(clinitQueue, main);
 
@@ -293,7 +293,7 @@ try {
 
     // first we need a group for this baby (happens to be called "main")
 
-    int tObjRef = da.newObject(ClassInfo.getClassInfo("java.lang.Thread"), null);
+    int tObjRef = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread"), null);
     int grpObjref = createSystemThreadGroup(tObjRef);
 
     ElementInfo ei = da.get(tObjRef);
@@ -301,7 +301,7 @@ try {
     ei.setReferenceField("name", da.newString("main", null));
     ei.setIntField("priority", Thread.NORM_PRIORITY);
 
-    int permitRef = da.newObject(ClassInfo.getClassInfo("java.lang.Thread$Permit"),null);
+    int permitRef = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"),null);
     ElementInfo eiPermitRef = da.get(permitRef);
     eiPermitRef.setBooleanField("isTaken", true);
     ei.setReferenceField("permit", permitRef);
@@ -320,7 +320,7 @@ try {
   protected int createSystemThreadGroup (int mainThreadRef) {
     DynamicArea da = getDynamicArea();
 
-    int ref = da.newObject(ClassInfo.getClassInfo("java.lang.ThreadGroup"), null);
+    int ref = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), null);
     ElementInfo ei = da.get(ref);
 
     // since we can't call methods yet, we have to init explicitly (BAD)
@@ -393,7 +393,7 @@ try {
     };
 
     for (String clsName : startupClasses) {
-      ClassInfo ci = ClassInfo.getClassInfo(clsName);
+      ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
       if (ci != null) {
         registerStartupClass(ci, queue);
       } else {
@@ -450,7 +450,7 @@ try {
 
   protected void pushMain (Config config) {
     DynamicArea da = ss.ks.da;
-    ClassInfo ci = ClassInfo.getClassInfo(mainClassName);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(mainClassName);
     MethodInfo mi = ci.getMethod("main([Ljava/lang/String;)V", false);
     ThreadInfo ti = ss.getThreadInfo(0);
 
@@ -1113,7 +1113,7 @@ try {
   }
 
   public ClassInfo getMainClassInfo () {
-    return ClassInfo.getClassInfo(mainClassName);
+    return ClassInfo.getResolvedClassInfo(mainClassName);
   }
 
   public String[] getArgs () {
@@ -1685,7 +1685,7 @@ try {
   }
 
   /**
-   * initialize all our static fields. Called from <clinit> and reset
+   * pushClinit all our static fields. Called from <clinit> and reset
    */
   static void initStaticFields () {
     error_id = 0;

@@ -31,7 +31,7 @@ public class JPF_gov_nasa_jpf_AnnotationProxyBase {
     // we could also pull it out from the interfaces, but we know the naming scheme
     String proxyName = ciProxy.getName();
     String annotation = proxyName.substring(0, proxyName.length() - 6); // "...$Proxy"
-    ClassInfo ci = ClassInfo.getClassInfo(annotation);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(annotation);
     
     return ci.getClassObjectRef();
   }

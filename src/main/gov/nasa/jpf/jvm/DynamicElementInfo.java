@@ -62,7 +62,7 @@ public final class DynamicElementInfo extends ElementInfo {
     return getClassInfo().getInstanceField(fname);
   }
   protected FieldInfo getDeclaredFieldInfo (String clsBase, String fname) {
-    return ClassInfo.getClassInfo(clsBase).getDeclaredInstanceField(fname);
+    return ClassInfo.getResolvedClassInfo(clsBase).getDeclaredInstanceField(fname);
   }
 
   protected ElementInfo getElementInfo (ClassInfo ci) {

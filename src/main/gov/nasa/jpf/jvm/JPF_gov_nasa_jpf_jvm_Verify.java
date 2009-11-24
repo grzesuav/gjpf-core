@@ -157,7 +157,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
 
     String mthClassName = ti.getCallStackClass(1);
-    ClassInfo ci = ClassInfo.getClassInfo(mthClassName);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(mthClassName);
 
     return ci.isInstanceOf(refClassName);
   }

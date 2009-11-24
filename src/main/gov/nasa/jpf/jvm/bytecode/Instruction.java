@@ -280,7 +280,7 @@ public abstract class Instruction {
     }
 
     if (!ci.isInitialized()) {
-      if (ci.pushClinits(ti, this)) {
+      if (ci.initializeClass(ti, this)) {
         //ti.skipInstructionLogging();
         return true; // there are new <clinit> frames on the stack, execute them
       }

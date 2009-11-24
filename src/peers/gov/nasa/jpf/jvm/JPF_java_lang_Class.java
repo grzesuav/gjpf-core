@@ -146,7 +146,7 @@ public class JPF_java_lang_Class {
     Instruction insn = ti.getPC();
     String            clsName = env.getStringObject(stringRef);
     
-    ClassInfo         ci = ClassInfo.getClassInfo(clsName);    
+    ClassInfo         ci = ClassInfo.getResolvedClassInfo(clsName);
     if (ci == null){
       env.throwException("java.lang.ClassNotFoundException", clsName);
       return MJIEnv.NULL;
@@ -302,7 +302,7 @@ public class JPF_java_lang_Class {
     }
 
     for (String ifcName : ci.getInterfaces()){
-      ClassInfo ici = ClassInfo.getClassInfo(ifcName); // has to be already defined, so no exception
+      ClassInfo ici = ClassInfo.getResolvedClassInfo(ifcName); // has to be already defined, so no exception
       addDeclaredMethodsRec(methods,ici);
     }
 
@@ -408,7 +408,7 @@ public class JPF_java_lang_Class {
     
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
-    ClassInfo fci = ClassInfo.getClassInfo("java.lang.reflect.Field");
+    ClassInfo fci = ClassInfo.getResolvedClassInfo("java.lang.reflect.Field");
     
     if (insn.requiresClinitCalls(ti, fci)) {
       env.repeatInvocation();
@@ -470,7 +470,7 @@ public class JPF_java_lang_Class {
     } else {
       ThreadInfo ti = env.getThreadInfo();
       Instruction insn = ti.getPC();
-      ClassInfo fci = ClassInfo.getClassInfo("java.lang.reflect.Field");
+      ClassInfo fci = ClassInfo.getResolvedClassInfo("java.lang.reflect.Field");
       
       if (insn.requiresClinitCalls(ti, fci)) {
         env.repeatInvocation();
@@ -540,7 +540,7 @@ public class JPF_java_lang_Class {
     
     int i=0;
     for (String ifc : ifcNames){
-      ClassInfo ici = ClassInfo.getClassInfo(ifc);
+      ClassInfo ici = ClassInfo.getResolvedClassInfo(ifc);
       if (!ici.isRegistered()) {
         ici.registerClass(ti);
       }

@@ -32,7 +32,7 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
 
   public ClassInfo getClassInfo () {
     if (ci == null) {
-      ci = ClassInfo.getClassInfo(className);
+      ci = ClassInfo.getResolvedClassInfo(className);
     }
     return ci;
   }

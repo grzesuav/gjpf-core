@@ -151,7 +151,7 @@ public class JPF_java_lang_Character {
     env.setStaticCharField("java.lang.Character", "MIN_VALUE", '\u0000');
     env.setStaticCharField("java.lang.Character", "MAX_VALUE", '\uffff');
 
-    ClassInfo ci = ClassInfo.getClassInfo("char");
+    ClassInfo ci = ClassInfo.getResolvedClassInfo("char");
     env.setStaticReferenceField("java.lang.Character", "TYPE", 
                              ci.getClassObjectRef());
 

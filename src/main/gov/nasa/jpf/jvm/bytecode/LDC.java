@@ -96,7 +96,7 @@ public class LDC extends Instruction {
 
     } else if (type == Type.CLASS) {
       try {
-        ClassInfo ci = ClassInfo.getClassInfo(string);
+        ClassInfo ci = ClassInfo.getResolvedClassInfo(string);
 
         // LDC doesn't cause a <clinit> - we only register all required classes
         // to make sure we have class objects. <clinit>s are called prior to

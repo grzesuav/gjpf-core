@@ -200,7 +200,7 @@ public class AnnotationInfo {
       String etype = Types.getTypeName(eev.getEnumTypeString());
       String eval = eev.getEnumValueString();
       
-      ClassInfo eci = ClassInfo.getClassInfo(etype);
+      ClassInfo eci = ClassInfo.getResolvedClassInfo(etype);
       FieldInfo efi = eci.getStaticField(eval);
       
       return efi;
@@ -208,7 +208,7 @@ public class AnnotationInfo {
     case ElementValue.CLASS:
       ClassElementValue cev = (ClassElementValue)ev;
       String cname = Types.getTypeName(cev.getClassString());
-      ClassInfo ci = ClassInfo.getClassInfo(cname);
+      ClassInfo ci = ClassInfo.getResolvedClassInfo(cname);
       return ci;
       
     default:

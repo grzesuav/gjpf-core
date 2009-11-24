@@ -1419,7 +1419,7 @@ public abstract class ElementInfo implements Cloneable {
    *
    * this is not very nice, but for the sake of consistency (ThreadData index,
    * Fields index etc.) we keep it. The plethora of setMonitorXX methods is due to
-   * some optimization, since we don't want to first initialize, then clone,
+   * some optimization, since we don't want to first pushClinit, then clone,
    * and finally replace waiter/blocked arrays. Stupid thing is that is a Monitor
    * optimization which is just here because of the associated mIndex == -1 check
    */

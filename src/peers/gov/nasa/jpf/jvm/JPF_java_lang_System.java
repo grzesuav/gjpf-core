@@ -185,7 +185,7 @@ public class JPF_java_lang_System {
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
 
-    ClassInfo ci = ClassInfo.getClassInfo("gov.nasa.jpf.ConsoleOutputStream");
+    ClassInfo ci = ClassInfo.getResolvedClassInfo("gov.nasa.jpf.ConsoleOutputStream");
 
     // it's not really used, but it would be hack'ish to use a class whose
     // super class hasn't been initialized yet
@@ -194,7 +194,7 @@ public class JPF_java_lang_System {
     }
 
     if (!ci.isInitialized()) {
-      if (ci.pushClinits(ti, insn)) {
+      if (ci.initializeClass(ti, insn)) {
         env.repeatInvocation();
         return MJIEnv.NULL;
       }

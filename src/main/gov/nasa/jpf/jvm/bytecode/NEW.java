@@ -47,7 +47,7 @@ public class NEW extends Instruction {
     ClassInfo ci;
 
     try {
-      ci = ClassInfo.getClassInfo(cname);
+      ci = ClassInfo.getResolvedClassInfo(cname);
 
     } catch (NoClassInfoException cx){
       // can be any inherited class or required interface
@@ -58,9 +58,9 @@ public class NEW extends Instruction {
       ci.registerClass(ti);
     }
 
-    // since this is a NEW, we also have to initialize
+    // since this is a NEW, we also have to pushClinit
     if (!ci.isInitialized()) {
-      if (ci.pushClinits(ti, this)) {
+      if (ci.initializeClass(ti, this)) {
         return ti.getPC();
       }
     }

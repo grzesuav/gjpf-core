@@ -91,7 +91,7 @@ public class IntSpec {
 			break;
 		}
 		case 2: { // static variable name TODO other cases here...
-			ClassInfo ci = ClassInfo.getClassInfo(varId[0]);
+			ClassInfo ci = ClassInfo.getResolvedClassInfo(varId[0]);
 			StaticElementInfo ei = vm.getKernelState().sa.get(ci.getName());
 			ret = ei.getIntField(varId[1]);
 			break;

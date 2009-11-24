@@ -88,7 +88,7 @@ public class INVOKESPECIAL extends InvokeInstruction {
     // we don't have to deal with null object calls
 
     if (invokedMethod == null) {
-      ClassInfo ci = ClassInfo.getClassInfo(cname);
+      ClassInfo ci = ClassInfo.getResolvedClassInfo(cname);
       invokedMethod = ci.getMethod(mname, true);
     }
 

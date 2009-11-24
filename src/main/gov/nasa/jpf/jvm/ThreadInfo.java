@@ -1598,7 +1598,7 @@ public class ThreadInfo
       } else {
         DynamicArea da = DynamicArea.getHeap();
 
-        ClassInfo ci = ClassInfo.getClassInfo("java.lang.StackTraceElement");
+        ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.StackTraceElement");
         int sRef = da.newObject(ci, ThreadInfo.this);
 
         ElementInfo  sei = da.get(sRef);
@@ -1687,7 +1687,7 @@ public class ThreadInfo
     }
 
     if (!ci.isInitialized()){
-      if (ci.pushClinits(this, getPC())) {
+      if (ci.initializeClass(this, getPC())) {
         return getPC();
       }
     }
@@ -1705,12 +1705,12 @@ public class ThreadInfo
 
   public Instruction createAndThrowException (String cname, String details) {
     try {
-      ClassInfo ci = ClassInfo.getClassInfo(cname);
+      ClassInfo ci = ClassInfo.getResolvedClassInfo(cname);
       return createAndThrowException(ci, details);
 
     } catch (NoClassInfoException cx){
       try {
-        ClassInfo ci = ClassInfo.getClassInfo("java.lang.NoClassDefFoundError");
+        ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.NoClassDefFoundError");
         return createAndThrowException(ci, cx.getMessage());
 
       } catch (NoClassInfoException cxx){
@@ -2349,11 +2349,11 @@ public class ThreadInfo
         // that means we have to turn the exception into an InvocationTargetException
         if (mi.isReflectionCallStub()) {
           String details = ci.getName(); // <2do> should also include the cause details
-          ci = ClassInfo.getClassInfo("java.lang.reflect.InvocationTargetException");
+          ci = ClassInfo.getResolvedClassInfo("java.lang.reflect.InvocationTargetException");
           exceptionObjRef = createException(ci, details, exceptionObjRef);
         }
 
-//System.out.println("## unwinding to: " + mi.getClassInfo().getName() + "." + mi.getUniqueName());
+//System.out.println("## unwinding to: " + mi.getResolvedClassInfo().getName() + "." + mi.getUniqueName());
 
         ExceptionHandler[] exceptions = mi.getExceptions();
         if (exceptions != null) {

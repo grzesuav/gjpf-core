@@ -162,7 +162,7 @@ public abstract class GenericInstructionFactory extends DefaultInstructionFactor
     }
   }
 
-  // the explicit factory method (user has to initialize)
+  // the explicit factory method (user has to pushClinit)
   public Instruction create (ClassInfo ciMth, String insnClsName){
         
     try {

@@ -191,12 +191,12 @@ public abstract class FieldInfo extends InfoObject {
   }
 
   public ClassInfo getTypeClassInfo () {
-    return ClassInfo.getClassInfo(type);
+    return ClassInfo.getResolvedClassInfo(type);
   }
 
 
   /**
-   * initialize the corresponding data in the provided Fields instance
+   * pushClinit the corresponding data in the provided Fields instance
    */
   public abstract void initialize (ElementInfo ei);
 

@@ -38,7 +38,7 @@ public class JPF_java_lang_reflect_Constructor {
     // this is an example of how to handle cross-initialization between
     // native peers - this might also get explicitly called by the java.lang.Class
     // peer, since it creates Constructor objects. Here we have to make sure
-    // we only re-initialize between JPF runs
+    // we only re-pushClinit between JPF runs
     
     if (registry == null){
       registry = new MethodInfoRegistry();
@@ -53,7 +53,7 @@ public class JPF_java_lang_reflect_Constructor {
 
   static int createConstructorObject (MJIEnv env, MethodInfo mi){
     int regIdx = registry.registerMethodInfo(mi);
-    int eidx = env.newObject(ClassInfo.getClassInfo("java.lang.reflect.Constructor"));
+    int eidx = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.reflect.Constructor"));
     ElementInfo ei = env.getElementInfo(eidx);
     
     ei.setIntField("regIdx", regIdx);

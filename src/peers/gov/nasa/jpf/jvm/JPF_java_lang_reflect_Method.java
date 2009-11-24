@@ -34,7 +34,7 @@ public class JPF_java_lang_reflect_Method {
     // this is an example of how to handle cross-initialization between
     // native peers - this might also get explicitly called by the java.lang.Class
     // peer, since it creates Method objects. Here we have to make sure
-    // we only re-initialize between JPF runs
+    // we only re-pushClinit between JPF runs
 
     if (registry == null){
       registry = new MethodInfoRegistry();
@@ -49,7 +49,7 @@ public class JPF_java_lang_reflect_Method {
 
   static int createMethodObject (MJIEnv env, MethodInfo mi){
     int regIdx = registry.registerMethodInfo(mi);
-    int eidx = env.newObject(ClassInfo.getClassInfo("java.lang.reflect.Method"));
+    int eidx = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.reflect.Method"));
     ElementInfo ei = env.getElementInfo(eidx);
     
     ei.setIntField("regIdx", regIdx);
@@ -85,7 +85,7 @@ public class JPF_java_lang_reflect_Method {
       int[] ar = new int[argTypeNames.length];
 
       for (int i = 0; i < argTypeNames.length; i++) {
-        ClassInfo ci = ClassInfo.getClassInfo(argTypeNames[i]);
+        ClassInfo ci = ClassInfo.getResolvedClassInfo(argTypeNames[i]);
         if (!ci.isRegistered()) {
           ci.registerClass(ti);
         }
@@ -115,7 +115,7 @@ public class JPF_java_lang_reflect_Method {
     ThreadInfo ti = env.getThreadInfo();
 
     try {
-      ClassInfo ci = ClassInfo.getClassInfo(mi.getReturnTypeName());
+      ClassInfo ci = ClassInfo.getResolvedClassInfo(mi.getReturnTypeName());
       if (!ci.isRegistered()) {
         ci.registerClass(ti);
       }
@@ -142,37 +142,37 @@ public class JPF_java_lang_reflect_Method {
     
     if (rt == Types.T_DOUBLE) {
       double v = frame.doublePop();
-      ret = env.newObject(ClassInfo.getClassInfo("java.lang.Double"));
+      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"));
       rei = env.getElementInfo(ret);
       rei.setDoubleField("value", v);
     } else if (rt == Types.T_LONG) {
       long v = frame.longPop();
-      ret = env.newObject(ClassInfo.getClassInfo("java.lang.Long"));
+      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Long"));
       rei = env.getElementInfo(ret);
       rei.setLongField("value", v);
     } else if (rt == Types.T_BYTE) {
       int v = frame.pop(); 
-      ret = env.newObject(ClassInfo.getClassInfo("java.lang.Byte"));
+      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Byte"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_CHAR) {
       int v = frame.pop(); 
-      ret = env.newObject(ClassInfo.getClassInfo("java.lang.Character"));
+      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Character"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_SHORT) {
       int v = frame.pop(); 
-      ret = env.newObject(ClassInfo.getClassInfo("java.lang.Short"));
+      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Short"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_INT) {
       int v = frame.pop(); 
-      ret = env.newObject(ClassInfo.getClassInfo("java.lang.Integer"));
+      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Integer"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_BOOLEAN) {
       int v = frame.pop(); 
-      ret = env.newObject(ClassInfo.getClassInfo("java.lang.Boolean"));
+      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Boolean"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (mi.isReferenceReturnType()){ 

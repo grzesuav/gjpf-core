@@ -450,7 +450,7 @@ public class JPF_java_lang_reflect_Field {
         if (value != MJIEnv.NULL) {
           String type = env.getTypeName(value);
           // this is an instance so the ClassInfo has to be registered
-          ClassInfo valueCI = ClassInfo.getClassInfo(Types.getTypeName(type));
+          ClassInfo valueCI = ClassInfo.getResolvedClassInfo(Types.getTypeName(type));
           if (!valueCI.isInstanceOf(tci)) {
             return false;
           }
