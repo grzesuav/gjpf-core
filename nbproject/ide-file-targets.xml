@@ -4,6 +4,7 @@
     <path id="base.path">
         <pathelement location="build/main"/>
         <pathelement location="build/peers"/>
+        <pathelement location="build/annotations"/>
         <fileset dir=".">
             <include name="lib/*.jar"/>
         </fileset>
