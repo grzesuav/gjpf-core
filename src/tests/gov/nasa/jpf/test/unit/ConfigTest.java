@@ -92,4 +92,46 @@ public class ConfigTest extends TestJPF {
     assert nativeCpEntries.length > 0;
   }
 
+  @Test
+  public void testRequiresOk () {
+    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String[] args = { "+site=" + dir + "configTestSite.properties",
+                      dir + "configTestRequires.jpf" };
+
+    Config.enableLogging(true);
+    Config conf = new Config( args, Config.class);
+    String v = conf.getString("whoa");
+    System.out.println("got whoa = " + v);
+    
+    assert (v != null) && v.equals("boa");
+  }
+
+  @Test
+  public void testRequiresFail () {
+    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String[] args = { "+site=" + dir + "configTestSite.properties",
+                      dir + "configTestRequiresFail.jpf" };
+
+    Config.enableLogging(true);
+    Config conf = new Config( args, Config.class);
+    String v = conf.getString("whoa");
+    System.out.println("got whoa = " + v);
+
+    assert (v == null);
+  }
+
+  @Test
+  public void testIncludes () {
+    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String[] args = { "+site=" + dir + "configTestSite.properties",
+                      dir + "configTestIncludes.jpf" };
+
+    Config.enableLogging(true);
+    Config conf = new Config( args, Config.class);
+    String v = conf.getString("my.common");
+    System.out.println("got my.common = " + v);
+
+    assert (v != null) && v.equals("whatever");
+  }
+
 }

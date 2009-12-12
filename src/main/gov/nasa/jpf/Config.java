@@ -126,6 +126,9 @@ public class Config extends Properties {
   static final String TARGET_KEY = "target";
   static final String TARGET_ARGS_KEY = "target_args";
 
+  static final String REQUIRES_KEY = "@requires";
+  static final String INCLUDES_KEY = "@include";
+
   public static final String LIST_SEPARATOR = ",";
   static final String PATH_SEPARATOR = ","; // the default for automatic appends
 
@@ -228,11 +231,15 @@ public class Config extends Properties {
     log = enableLogging;
   }
 
+  public void log (String msg){
+    if (log){ // very simplisitc, but we might do more in the future
+      System.out.println(msg);
+    }
+  }
+
   // watch out - this does not reset the computed paths!
   public Config reload() {
-    if (log){
-      System.out.println("reloading config");
-    }
+    log("reloading config");
 
     // just reload all our sources
     Config newConfig = new Config();
@@ -242,9 +249,7 @@ public class Config extends Properties {
       } else if (src instanceof URL) {
         newConfig.loadProperties((URL)src);
       } else {
-        if (log) {
-          System.out.println("don't know how to reload: " + src);
-        }
+        log("don't know how to reload: " + src);
       }
     }
 
@@ -314,9 +319,7 @@ public class Config extends Properties {
 
 
   protected void loadProperties (URL url){
-    if (log) {
-      System.out.println("loading defaults from: " + url);
-    }
+    log("loading defaults from: " + url);
 
     InputStream is = null;
     try {
@@ -324,17 +327,13 @@ public class Config extends Properties {
       load(is);
       sources.add(url);
     } catch (IOException iox){
-      if (log) {
-        System.out.println("error in input stream for: " + url + " : " + iox.getMessage());
-      }
+      log("error in input stream for: " + url + " : " + iox.getMessage());
     } finally {
       if (is != null){
         try {
           is.close();
         } catch (IOException iox1){
-          if (log){
-            System.out.println("error closing input stream for: " + url + " : " + iox1.getMessage());
-          }
+          log("error closing input stream for: " + url + " : " + iox1.getMessage());
         }
       }
     }
@@ -385,9 +384,7 @@ public class Config extends Properties {
       try {
         File f = new File(fileName);
         if (f.isFile()) {
-          if (log){
-            System.out.println("loading property file: " + fileName);
-          }
+          log("loading property file: " + fileName);
 
           setConfigPathProperties(f.getAbsolutePath());
           sources.add(f);
@@ -397,9 +394,7 @@ public class Config extends Properties {
         }
       } catch (MissingRequiredKeyException rkx){
         // Hmpff - control exception
-        if (log){
-          System.out.println("missing required key: " + rkx.getMessage() + ", skipping: " + fileName);
-        }
+        log("missing required key: " + rkx.getMessage() + ", skipping: " + fileName);
       } catch (IOException iex) {
         throw new JPFConfigException("error loading properties: " + fileName, iex);
       } finally {
@@ -407,9 +402,7 @@ public class Config extends Properties {
           try {
             is.close();
           } catch (IOException iox1){
-            if (log){
-              System.out.println("error closing input stream for file: " + fileName);
-            }
+            log("error closing input stream for file: " + fileName);
           }
         }
       }
@@ -727,8 +720,9 @@ public class Config extends Properties {
       throw new JPFConfigException("only String or null values allowed, got: " + value);
     }
 
-    // <2do> this is a hack to shortcircuit loading of property files
-    if ("requires".equals(key)){
+    // shortcircuit loading of property files - used to enforce order
+    // of properties, e.g. to model dependencies
+    if (REQUIRES_KEY.equals(key)){
       if (value != null) {
         for (String reqKey : split((String) value)){
           if (!containsKey(reqKey)){
@@ -738,35 +732,41 @@ public class Config extends Properties {
       }
     }
 
-    String k = expandString( null, (String) key);
-
-    if (!(value == null)){
-      if (!(value instanceof String)) {
-        throw new JPFConfigException("only String values allowed, got: " + key + "=" + value);
+    // recursively load a property file
+    if (INCLUDES_KEY.equals(key)){
+      if (!loadProperties(expandString((String)key, (String)value))){
+        throw new JPFConfigException("include not found: " + value);
       }
+      return null;
 
-      String v = (String) value;
+    } else {
+      // finally, a real key/value pair to add (or remove) - expand and store
+      String k = expandString(null, (String) key);
 
-      if (k.charAt(k.length() - 1) == '+') { // the append hack
-        k = k.substring( 0, k.length() - 1);
-        return append( k, v, null);
+      if (!(value == null)) { // add or overwrite entry
+        String v = (String) value;
 
-      } else if (k.charAt(0) == '+') { // the prepend hack
-        k = k.substring(1);
-        return prepend( k, v, null);
+        if (k.charAt(k.length() - 1) == '+') { // the append hack
+          k = k.substring(0, k.length() - 1);
+          return append(k, v, null);
 
-      } else { // normal value set
-        v = normalize(expandString(k, v));
-        Object oldValue = put0(k, v);
-        notifyPropertyChangeListeners(k, (String) oldValue, v);
-        return oldValue;
-      }
+        } else if (k.charAt(0) == '+') { // the prepend hack
+          k = k.substring(1);
+          return prepend(k, v, null);
 
-    } else { // setting a null value removes the property
+        } else { // normal value set
+          v = normalize(expandString(k, v));
+          Object oldValue = put0(k, v);
+          notifyPropertyChangeListeners(k, (String) oldValue, v);
+          return oldValue;
+        }
+
+      } else { // setting a null value removes the entry
         Object oldValue = super.get(k);
         remove0(k);
         notifyPropertyChangeListeners(k, (String) oldValue, null);
         return oldValue;
+      }
     }
   }
 

@@ -255,6 +255,28 @@ public class StackFrame implements Constants, Cloneable {
     return mi.getLineNumber(pc);
   }
 
+  /**
+   * helper to quickly find out if any of the locals slots holds
+   * an attribute of the provided type
+   * 
+   * @param attrType type of attribute to look for
+   * @param startIdx local index to start from
+   * @return index of local slot with attribute, -1 if none found
+   */
+  public int getLocalAttrIndex (Class<?> attrType, int startIdx){
+    Object[] la = localAttr;
+    if (la != null){
+      for (int i=startIdx; i<la.length; i++){
+        Object a = la[i];
+        if (a != null && attrType.isInstance(a)){
+          return i;
+        }
+      }
+    }
+
+    return -1;
+  }
+
   public void setOperandAttr (Object attr) {
     setOperandAttr(0, attr);
   }
