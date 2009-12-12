@@ -1702,6 +1702,10 @@ try {
     return ThreadInfo.currentThread;
   }
 
+  public boolean isAtomic() {
+    return ss.isAtomic();
+  }
+
   /**
    * same for "loaded classes", but be advised it will probably go away at some point
    */

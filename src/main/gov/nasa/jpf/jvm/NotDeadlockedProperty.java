@@ -30,26 +30,49 @@ import gov.nasa.jpf.search.Search;
  */
 public class NotDeadlockedProperty extends GenericProperty {
   Search search;
+  ThreadInfo tiAtomic;
   
   public NotDeadlockedProperty (Config conf, Search search) {
     this.search = search; 
   }
   
   public String getErrorMessage () {
+    JVM vm = search.getVM();
     StringWriter sw = new StringWriter();
     PrintWriter pw = new PrintWriter(sw);
-    pw.print("deadlock encountered:\n");
+
+    if (tiAtomic != null){
+      pw.println("blocked in atomic section:");
+    } else {
+      pw.println("deadlock encountered:");
+    }
     
-    ThreadInfo[] liveThreads = search.getVM().getLiveThreads();
+    ThreadInfo[] liveThreads = vm.getLiveThreads();
     for (ThreadInfo ti : liveThreads) {
       pw.print("  ");
+      if (ti == tiAtomic){
+        pw.print("ATOMIC ");
+      }
       pw.println(ti.getStateDescription());
     }
     
     return sw.toString();
   }
 
+  @Override
   public boolean check (Search search, JVM vm) {
-    return !vm.isDeadlocked();
+    if (vm.isDeadlocked()){
+      if (vm.isAtomic()){
+        tiAtomic = vm.getCurrentThread();
+      }
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  @Override
+  public void reset() {
+    tiAtomic = null;
   }
 }

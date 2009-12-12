@@ -78,4 +78,33 @@ public class AtomicTest extends TestJPF {
       Verify.endAtomic();
     }
   }
+
+  @Test public void testBlockedInAtomic () {
+    if (verifyDeadlock()){
+      Runnable r = new Runnable() {
+
+        public synchronized void run() {
+          System.out.println("T notifying..");
+          this.notify();
+        }
+      };
+
+      Thread t = new Thread(r);
+
+      synchronized (r){
+        System.out.println("main going atomic, holding r lock");
+        Verify.beginAtomic();
+        t.start();
+
+        try {
+          System.out.println("main waiting on r");
+          r.wait();
+        } catch (InterruptedException x){
+          System.out.println("main got interrupted");
+        }
+        System.out.println("main leaving atomic");
+        Verify.endAtomic();
+      }
+    }
+  }
 }
