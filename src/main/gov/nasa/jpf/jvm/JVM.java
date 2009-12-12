@@ -393,7 +393,7 @@ try {
     };
 
     for (String clsName : startupClasses) {
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+      ClassInfo ci = ClassInfo.tryGetResolvedClassInfo(clsName);
       if (ci != null) {
         registerStartupClass(ci, queue);
       } else {
