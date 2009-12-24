@@ -61,8 +61,10 @@ public class RUNSTART extends Instruction {
   }
 
 
+  public static final int OPCODE = 257;
+
   public int getByteCode () {
-    return 257;
+    return OPCODE;
   }
 
   public boolean isExtendedInstruction() {

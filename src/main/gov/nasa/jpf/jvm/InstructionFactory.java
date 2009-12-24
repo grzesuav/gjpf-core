@@ -19,24 +19,30 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+
+import org.apache.bcel.Constants;
 import org.apache.bcel.classfile.ConstantPool;
 import org.apache.bcel.generic.InstructionHandle;
 
 /**
  * factory interface for instruction object creation
  */
-public interface InstructionFactory {
+public interface InstructionFactory extends Constants {
   
   /**
    * the BCEL specific factory method (returning fully initialized insn objects)
+   * This creates and initializes the JPF Instruction object from the
+   * corresponding BCEL instruction
    */
-  public Instruction create (InstructionHandle h,
-                                    int offset,
-                                    MethodInfo m,
-                                    ConstantPool cp);
+  public Instruction createAndInitialize (MethodInfo mi,
+                                          InstructionHandle h,int offset,
+                                          ConstantPool cp);
   
   /**
-   * the generic factory method (insn objects have to be initialized by the user)
+   * generic factory method 
+   * NOTE: insn objects have to be initialized by the user if default ctor is
+   * not sufficient for respective instruction types
    */
-  public Instruction create (ClassInfo ciMth, String insnClsName);
+  public Instruction create (ClassInfo ciMth, int opCode);
+
 }

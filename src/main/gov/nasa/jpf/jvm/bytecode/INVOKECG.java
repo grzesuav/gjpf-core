@@ -22,6 +22,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import java.util.List;
 
 import org.apache.bcel.classfile.ConstantPool;
+import org.apache.bcel.Constants;
 
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.InstructionFactory;
@@ -71,9 +72,9 @@ public class INVOKECG extends Instruction {
       InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
 
       if (callee.isStatic()){
-        realInvoke = (InvokeInstruction)insnFactory.create(null, "INVOKESTATIC");
+        realInvoke = (InvokeInstruction) insnFactory.create(null, Constants.INVOKESTATIC);
       } else {
-        realInvoke = (InvokeInstruction)insnFactory.create(null, "INVOKEVIRTUAL");
+        realInvoke = (InvokeInstruction) insnFactory.create(null, Constants.INVOKENONVIRTUAL);
       }
       realInvoke.init(mi, offset, position);
       realInvoke.setInvokedMethod( callee.getClassInfo().getName(),

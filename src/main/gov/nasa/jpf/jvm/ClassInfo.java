@@ -47,6 +47,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.bcel.Constants;
 
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.ConstantPool;
@@ -109,7 +110,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   protected static Attributor attributor;
 
   /**
-   * our abstract factory to create object and class fields
+   * our abstract factory to createAndInitialize object and class fields
    */
   protected static FieldsFactory fieldsFactory;
 
@@ -198,7 +199,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   /**
    * we only set the superClassName upon creation, it is instantiated into
    * a ClassInfo by resolveClass(), which is required to be called before
-   * we can create objects of this type
+   * we can createAndInitialize objects of this type
    */
   protected ClassInfo  superClass;
 
@@ -314,7 +315,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
   /**
-   * create a fully synthetic implementation of an Annotation proxy
+   * createAndInitialize a fully synthetic implementation of an Annotation proxy
    */
   ClassInfo (ClassInfo annotationCls, String name, int uniqueId) {
     this.name = name;
@@ -342,34 +343,31 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       String mname = mi.getName();
       String mtype = mi.getReturnTypeName();
 
-      // create an instance field for it
+      // createAndInitialize an instance field for it
       FieldInfo fi = FieldInfo.create(mname, mtype, 0, null, this, idx, off);
       iFields[idx++] = fi;
       off += fi.getStorageSize();
 
-      // now create a public accessor for this field
-
-
+      // now createAndInitialize a public accessor for this field
       InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
-
       MethodInfo pmi = new MethodInfo(this, mi.getUniqueName(), 1, 2, Modifier.PUBLIC);
       MethodInfo.CodeBuilder cb = pmi.getCodeBuilder();
 
-      ALOAD aload = (ALOAD)insnFactory.create(this,"ALOAD");
+      ALOAD aload = (ALOAD)insnFactory.create(this, Constants.ALOAD);
       aload.setIndex(0); // load this
       cb.append(aload);
 
-      GETFIELD getfield = (GETFIELD)insnFactory.create(this,"GETFIELD");
+      GETFIELD getfield = (GETFIELD)insnFactory.create(this, Constants.GETFIELD);
       getfield.setField(mname, name);
       cb.append(getfield);
 
       if (fi.isReference()){
-        cb.append(insnFactory.create(this, "ARETURN"));
+        cb.append(insnFactory.create(this, Constants.ARETURN));
       } else {
         if (fi.getStorageSize() == 1) {
-          cb.append(insnFactory.create(this, "IRETURN"));
+          cb.append(insnFactory.create(this, Constants.IRETURN));
         } else {
-          cb.append(insnFactory.create(this, "LRETURN"));
+          cb.append(insnFactory.create(this, Constants.LRETURN));
         }
       }
 
@@ -466,7 +464,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     // the 'sei' field gets initialized during registerClass(ti), since
     // it needs to be linked to a corresponding java.lang.Class object which
-    // we can't create until we have a ThreadInfo context
+    // we can't createAndInitialize until we have a ThreadInfo context
 
     // be advised - we don't have fields initialized before initializeClass(ti,insn)
     // gets called
@@ -1724,9 +1722,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   /**
    * this is a optimization to work around the BCEL strangeness that some
    * insn info (types etc.) are only accessible with modifiable ConstPools
-   * (the ConstantPoolGen, which is costly to create), and some others
+   * (the ConstantPoolGen, which is costly to createAndInitialize), and some others
    * (toString) are only provided via ConstPools. It's way to expensive
-   * to create this always on the fly, for each relevant insn, so we cache it
+   * to createAndInitialize this always on the fly, for each relevant insn, so we cache it
    * here
    */
   static ConstantPool cpCache;

@@ -99,8 +99,10 @@ public class INVOKECLINIT extends INVOKESTATIC {
   public boolean isExtendedInstruction() {
     return true;
   }
-  
+
+  public static final int OPCODE = 256;
+
   public int getByteCode () {
-    return 256;
+    return OPCODE;
   }
 }

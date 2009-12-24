@@ -403,26 +403,26 @@ public class MethodInfo extends InfoObject implements Cloneable {
     mi.exceptions = null;
     mi.uniqueName = mi.name;
 
-    // create the code
+    // createAndInitialize the code
     CodeBuilder cb = mi.getCodeBuilder();
 
     if (isStatic()){
       mi.modifiers |= Modifier.STATIC;
       
       if (isClinit()) {
-        insn = insnFactory.create(null, "INVOKECLINIT");
+        insn = insnFactory.create(null, INVOKECLINIT.OPCODE);
       } else {
-        insn = insnFactory.create(null, "INVOKESTATIC");
+        insn = insnFactory.create(null, Constants.INVOKESTATIC);
       }
     } else if (name.equals("<init>")){
-      insn = insnFactory.create(null, "INVOKESPECIAL");
+      insn = insnFactory.create(null, Constants.INVOKESPECIAL);
     } else {
-      insn = insnFactory.create(null, "INVOKEVIRTUAL");
+      insn = insnFactory.create(null, Constants.INVOKEVIRTUAL);
     }
     ((InvokeInstruction)insn).setInvokedMethod(cname, name, signature);
     cb.append(insn);
     
-    insn = insnFactory.create(null, "RETURN");
+    insn = insnFactory.create(null, Constants.RETURN);
     cb.append(insn);
 
     cb.setCode();
@@ -930,15 +930,12 @@ public class MethodInfo extends InfoObject implements Cloneable {
     }
 
     InstructionList     il = new InstructionList(c.getCode());
-
     InstructionHandle[] hs = il.getInstructionHandles();
-    
     int                 length = hs.length;
-
     Instruction[]       is = new Instruction[length];
 
     for (int i = 0; i < length; i++) {
-      is[i] = insnFactory.create(hs[i], i, this, m.getConstantPool());
+      is[i] = insnFactory.createAndInitialize(this, hs[i], i, m.getConstantPool());
 
       if (c.getLineNumberTable() != null) {
         // annoying bug when BCEL don't seem to find linenumber - pos match
