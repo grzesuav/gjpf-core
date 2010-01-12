@@ -27,8 +27,9 @@ import gov.nasa.jpf.jvm.JVM;
  */
 public class BFSHeuristic extends SimplePriorityHeuristic {
   
-  public BFSHeuristic (Config config, JVM vm) {
-    super(config,vm);
+  public BFSHeuristic (Config config, JVM vm) {    
+  	super(config,vm);
+  	System.out.println("BFS Search");
   }
   
   protected int computeHeuristicValue () {
