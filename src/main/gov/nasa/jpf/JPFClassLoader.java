@@ -69,6 +69,10 @@ import java.net.MalformedURLException;
  * (e.g. java.util.concurrent) by extensions, which usually come with their
  * own peer classes (i.e. we have to keep the classpath consistent with the
  * native_classpath)
+ *
+ * NOTE: none of the JPF classes except of Main and JPFClassLoader should be
+ * loaded at this time, since the JPFClassLoader might reload such classes
+ * from different locations.
  */
 public class JPFClassLoader extends ClassLoader {
 
@@ -185,17 +189,17 @@ public class JPFClassLoader extends ClassLoader {
 
 
 
-  public JPFClassLoader () {
+  public JPFClassLoader (String[] args) {
     // JPF URLs will be added later on, mostly by JPF after we have a Config
     super(JPFClassLoader.class.getClassLoader());
 
-    // we need to get a CP entry to load JPF and Config from. If we have a
-    // jpf.jar in the class.path, copy that. Otherwise use the jpf-core setting
-    // from the site
+    // if its already in the classpath, use this one
     File core = getCoreFromClasspath();
-    if (core == null){
-      core = getCoreFromSite();
-      if (core == null){ // out of luck
+
+    if (core == null) {
+      core = getCoreFromSite(args);
+
+      if (core == null) { // out of luck
         throw new JPFClassLoaderException("no classpath entry for gov.nasa.jpf.JPF found (check site.properties)");
       }
     }
@@ -345,18 +349,7 @@ public class JPFClassLoader extends ClassLoader {
     return null;
   }
 
-
-  /**
-   * return the classpath element for our init classes (JPF, Config) that is
-   * configured in the site.properties.
-   *
-   * Note that we can't use Config for this since we still have to locate the
-   * Config class to use from this cpe
-   */
-  protected File getCoreFromSite () {
-    JPFSite site = JPFSite.getSite();
-    File coreDir = site.getSiteCoreDir();
-
+  protected File getCoreJar (File coreDir){
     if (coreDir != null && coreDir.isDirectory()){
       File buildDir = new File(coreDir, "build");
       if (buildDir.isDirectory()) {
@@ -368,6 +361,19 @@ public class JPFClassLoader extends ClassLoader {
     }
 
     return null;
+  }
+
+  /**
+   * return the classpath element for our init classes (JPF, Config) that is
+   * configured in the site.properties.
+   *
+   * Note that we can't use Config for this since we still have to locate the
+   * Config class to use from this cpe
+   */
+  protected File getCoreFromSite (String[] args) {
+    JPFSite site = JPFSite.getSite(args);
+    File coreDir = site.getSiteCoreDir();
+    return getCoreJar(coreDir);
   }
 
   protected File getCoreFromClasspath () {
@@ -400,6 +406,7 @@ public class JPFClassLoader extends ClassLoader {
     }
   }
 
+
   // for debugging purposes
   public void printEntries() {
     System.out.println("JPFClassLoader.getClasspathElements() :");
@@ -408,6 +415,4 @@ public class JPFClassLoader extends ClassLoader {
       System.out.println(pe);
     }
   }
-
-
 }

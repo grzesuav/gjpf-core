@@ -63,7 +63,7 @@ public class JPFTestSuite extends TestJPF {
 
   JPFClassLoader getLoader() {
     if (jpfLoader == null || runClean) {
-      JPFClassLoader cl = new JPFClassLoader();
+      JPFClassLoader cl = new JPFClassLoader(null);
 
       cl.addPreloadedClass(JPFTestSuite.class);
       cl.addPreloadedClass(TestJPF.class);

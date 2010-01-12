@@ -114,7 +114,7 @@ public class JPF implements Runnable {
 
     int options = getOptions(args);
 
-    if (isOptionEnabled(HELP,options)) {
+    if (args.length == 0 || isOptionEnabled(HELP,options)) {
       showUsage();
       return;
     }
@@ -133,6 +133,10 @@ public class JPF implements Runnable {
 
     if (logger == null) {
       logger = initLogging(conf);
+    }
+
+    if (!checkArgs(args)){
+      return;
     }
 
     // check if there is a shell class specification, in which case we just delegate
@@ -667,14 +671,27 @@ public class JPF implements Runnable {
     return null;
   }
 
+  // some minimal sanity checks
+  static boolean checkArgs (String[] args){
+    String lastArg = args[args.length-1];
+    if (lastArg != null && lastArg.endsWith(".jpf")){
+      if (!new File(lastArg).isFile()){
+        logger.severe("application property file not found: " + lastArg);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   static void showUsage() {
     System.out.println("Usage: \"java [<vm-option>..] gov.nasa.jpf.JPF [<jpf-option>..] [<app> [<app-arg>..]]");
     System.out.println("  <jpf-option> : -help  : print usage information");
     System.out.println("               | -log   : print configuration initialization steps");
     System.out.println("               | -show  : print configuration dictionary contents");
     System.out.println("               | +<key>=<value>  : add or override key/value pair to config dictionary");
-    System.out.println("  <app>        : *.jpf application properties | main class | *.xml error trace file");
-    System.out.println("  <app-arg>    : arguments passed into main(String[]) if application class");
+    System.out.println("  <app>        : *.jpf application properties file pathname | fully qualified application class name");
+    System.out.println("  <app-arg>    : arguments passed into main() method of application class");
   }
 
 

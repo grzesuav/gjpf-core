@@ -77,88 +77,171 @@ public class JPFSite {
   static Pattern jarCmdPattern = Pattern.compile("Run.*\\.jar");
   static Pattern srcPattern = Pattern.compile(".*src[\\/]([^.\\/]*)[.\\/].*");
 
+  static final String[] SITE_LOCATIONS = { "jpf", ".jpf" };
+  static final String SITE_PROPERTIES = "site.properties";
+  static final String PROJECT_PROPERTIES = "jpf.properties";
+
   private static JPFSite site;
 
-
+  private File siteProps;
   private File siteCoreDir;
 
   //--- our public interface
 
-  public static JPFSite getSite() {
+  public static JPFSite getSite(String[] args) {
     if (site == null){
-      site = new JPFSite();
+      site = new JPFSite(args);
     }
 
     return site;
   }
 
-  private JPFSite() {
+  private JPFSite(String[] args) {
+    // first, check if we have an explicit +site=<file> argument
+    File props = getSiteFromArgs(args);
 
+    // if not, check if we have an application property file that sets a site property
+    if (props == null){
+      props = getSiteFromApp(args);
+    }
+
+    // if not, check if we have a project property that does
+    if (props == null){
+      props = getSiteFromProject();
+    }
+
+    // if all that fails, look at the known default locations
+    if (props == null){
+      props = getSiteFromDirs();
+    }
+
+    siteProps = props;
   }
-
-
 
   //////////////////////////////////////////////////////////////////////////////
 
-
-
-  /**
-   * this should be more efficient than using Properties.load(), and it's
-   * restricted parsing anyways (we only do system property expansion)
-   */
   public File getSiteCoreDir (){
-
     if (siteCoreDir == null){
-      char sc = File.separatorChar;
-      File userHome = new File(System.getProperty("user.home"));
-      String siteProps = userHome.getAbsolutePath() + sc + ".jpf" + sc + "site.properties";
+      if (siteProps != null){
+        siteCoreDir = getMatchFromFile(siteProps, "jpf-core");
+      }
+    }
 
-      Pattern corePattern = Pattern.compile("^[ \t]*([^# \t][^ \t]*)[ \t]*=[ \t]*(.+?)[ \t]*$");
-      String coreDirPath = null;
+    return siteCoreDir;
+  }
 
-      HashMap<String,String> map = new HashMap<String,String>();
+  File getSiteFromArgs(String[] args){
+    if (args != null && args.length > 0){
+      for (String a : args) {
+        if ((a != null) && a.startsWith("+site=")) {
+          return new File(a.substring(6));
+        }
+      }
+    }
 
-      try {
-        FileReader fr = new FileReader(siteProps);
-        BufferedReader br = new BufferedReader(fr);
+    return null;
+  }
 
-        for (String line = br.readLine(); line != null; line = br.readLine()) {
-          Matcher m = corePattern.matcher(line);
-          if (m.matches()) {
-            String key = m.group(1);
-            String val = m.group(2);
+  File getSiteFromApp(String[] args){
+    if (args != null && args.length > 0){
+      String lastArg = args[args.length-1];
+      if (lastArg != null && lastArg.endsWith(".jpf")){
+        return getMatchFromFile(lastArg, "site");
+      }
+    }
+    return null;
+  }
 
-            val = expand(val, map);
+  File getSiteFromProject() {
+    File f = new File(PROJECT_PROPERTIES);
+    if (f.isFile()){
+      return getMatchFromFile(f, "site");
+    }
 
+    return null;
+  }
+
+  File getSiteFromDirs () {
+    File userHome = new File(System.getProperty("user.home"));
+
+    for (String dir : SITE_LOCATIONS) {
+      File siteDir = new File(userHome, dir);
+      if (siteDir.isDirectory()) {
+        File siteProps = new File(siteDir, SITE_PROPERTIES);
+        if (siteProps.isFile()) {
+          return siteProps;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  static Pattern pattern = Pattern.compile("^[ \t]*([^# \t][^ \t]*)[ \t]*=[ \t]*(.+?)[ \t]*$");
+
+
+  File getMatchFromFile (String pathName, String key){
+    File f = new File(pathName);
+    if (f.isFile()){
+      return getMatchFromFile(f, key);
+    } else {
+      return null;
+    }
+  }
+
+  // minimal parsing - only local key and and config_path expansion
+  File getMatchFromFile (File propFile, String lookupKey){
+    String path = null;
+
+    HashMap<String, String> map = new HashMap<String, String>();
+    String dir = propFile.getParent();
+    if (dir == null) {
+      dir = ".";
+    }
+    map.put("config_path", dir);
+
+    try {
+      FileReader fr = new FileReader(propFile);
+      BufferedReader br = new BufferedReader(fr);
+
+      for (String line = br.readLine(); line != null; line = br.readLine()) {
+        Matcher m = pattern.matcher(line);
+        if (m.matches()) {
+          String key = m.group(1);
+          String val = m.group(2);
+
+          val = expand(val, map);
+
+          if ((key.length() > 0) && (val.length() > 0)) {
             // check for continuation lines
-            if (val.charAt(val.length()-1) == '\\'){
-              val = val.substring(0, val.length()-1).trim();
-              for (line = br.readLine(); line != null; line = br.readLine()){
+            if (val.charAt(val.length() - 1) == '\\') {
+              val = val.substring(0, val.length() - 1).trim();
+              for (line = br.readLine(); line != null; line = br.readLine()) {
                 line = line.trim();
-                if (line.charAt(line.length()-1) == '\\'){
-                  line = line.substring(0, line.length()-1).trim();
-                  val += expand(line,map);
+                if (line.charAt(line.length() - 1) == '\\') {
+                  line = line.substring(0, line.length() - 1).trim();
+                  val += expand(line, map);
                 } else {
-                  val += expand(line,map);
+                  val += expand(line, map);
                   break;
                 }
               }
             }
 
-            if ("jpf-core".equals(key)){
-              coreDirPath = val;
+            if (lookupKey.equals(key)) {
+              path = val;
               break;
             } else {
-              if (key.charAt(key.length()-1) == '+'){
-                key = key.substring(0, key.length()-1);
+              if (key.charAt(key.length() - 1) == '+') {
+                key = key.substring(0, key.length() - 1);
                 String v = map.get(key);
-                if (v != null){
+                if (v != null) {
                   val = v + val;
                 }
-              } else if (key.charAt(0) == '+'){
+              } else if (key.charAt(0) == '+') {
                 key = key.substring(1);
                 String v = map.get(key);
-                if (v != null){
+                if (v != null) {
                   val = val + v;
                 }
               }
@@ -166,25 +249,26 @@ public class JPFSite {
             }
           }
         }
-        br.close();
-
-      } catch (FileNotFoundException fnfx) {
-        return null;
-      } catch (IOException iox) {
-        return null;
       }
+      br.close();
 
-      siteCoreDir = new File(coreDirPath);
+    } catch (FileNotFoundException fnfx) {
+      return null;
+    } catch (IOException iox) {
+      return null;
     }
 
-    return siteCoreDir;
+    if (path != null){
+      return new File(path);
+    } else {
+      return null;
+    }
   }
 
-
   /**
-   * simple non-recursive global system property expander
+   * simple non-recursive, local key and system property expander
    */
-  protected String expand (String s, HashMap<String,String> map) {
+  static String expand (String s, HashMap<String,String> map) {
     int i, j = 0;
     if (s == null || s.length() == 0) {
       return s;
@@ -193,8 +277,11 @@ public class JPFSite {
     while ((i = s.indexOf("${", j)) >= 0) {
       if ((j = s.indexOf('}', i)) > 0) {
         String k = s.substring(i + 2, j);
+        String v = null;
 
-        String v = map.get(k);
+        if (map != null){
+          v = map.get(k);
+        }
         if (v == null){
           v = System.getProperty(k);
         }
@@ -210,8 +297,8 @@ public class JPFSite {
     }
 
     return s;
-
   }
+
 
   /**
   public static void main (String[] args){

@@ -41,7 +41,7 @@ public class RunAnt {
     ArrayList<URL> urlList = new ArrayList<URL>();
 
     addJavac(urlList);
-    addJPFToolJars(urlList);  // <2do> - Hmm, what if we boot with jpf.jar?
+    addJPFToolJars(args, urlList);  // <2do> - Hmm, what if we boot with jpf.jar?
 
     URL[] urls = urlList.toArray(new URL[urlList.size()]);
     URLClassLoader cl = new URLClassLoader(urls, RunAnt.class.getClassLoader());
@@ -102,7 +102,7 @@ public class RunAnt {
     }
   }
 
-  static void addJPFToolJars (List<URL> list) {
+  static void addJPFToolJars (String[] args, List<URL> list) {
     File toolsDir = null;
 
     // find the current project root dir
@@ -121,7 +121,7 @@ public class RunAnt {
 
     // if we didn't find any, look for the tools in the site configured jpf-core
     if (toolsDir == null){
-      JPFSite site = JPFSite.getSite();
+      JPFSite site = JPFSite.getSite(args);
       dir = site.getSiteCoreDir();
 
       for (File d : new File[] {dir, new File(dir, "tools"), new File(dir, "lib")}) {
@@ -135,7 +135,7 @@ public class RunAnt {
     if (toolsDir != null){
       addToolsJars(list, toolsDir);
     } else {
-      abort("no ant.jar found in known tools dirs (check your ~/.jpf/site.properties)");
+      abort("no ant.jar found in known tools dirs (check your site.properties)");
     }
   }
 

@@ -46,7 +46,7 @@ public abstract class Search {
   protected static Logger log = JPF.getLogger("gov.nasa.jpf.search");
   
   public static final String DEPTH_CONSTRAINT = "Search Depth";
-  public static final String QUEUE_CONSTRAINT = "Seqrch Queue Size";
+  public static final String QUEUE_CONSTRAINT = "Search Queue Size";
   public static final String FREE_MEMORY_CONSTRAINT = "Free Memory Limit";
 
   protected ArrayList<Error> errors = new ArrayList<Error>();

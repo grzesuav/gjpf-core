@@ -44,7 +44,7 @@ public class Main {
     }
 
     try {
-      JPFClassLoader cl = new JPFClassLoader();
+      JPFClassLoader cl = new JPFClassLoader(args);
       Class<?> jpfCls = cl.loadClass( appClass);
 
       Class<?>[] argTypes = { String[].class };
