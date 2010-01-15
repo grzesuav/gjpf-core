@@ -20,6 +20,7 @@ package gov.nasa.jpf.search.heuristic;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.search.Search;
 
 
 /**
@@ -29,7 +30,7 @@ public class BFSHeuristic extends SimplePriorityHeuristic {
   
   public BFSHeuristic (Config config, JVM vm) {    
   	super(config,vm);
-  	System.out.println("BFS Search");
+  	Search.log.info("BFS Search");
   }
   
   protected int computeHeuristicValue () {
