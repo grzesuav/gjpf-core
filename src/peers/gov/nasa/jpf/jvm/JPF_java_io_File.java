@@ -20,6 +20,9 @@ package gov.nasa.jpf.jvm;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 
 /**
  * intercept and forward some of the filesystem access methods. This is very
@@ -49,6 +52,25 @@ public class JPF_java_io_File {
     }
   }
   
+  // internal helper
+  @SuppressWarnings("deprecation")
+  public static int getURLSpec____Ljava_lang_String_2 (MJIEnv env, int objref){
+    try {
+      File f = getFile(env,objref);
+      URL url = f.toURL();
+      return env.newString(url.toString());
+    } catch (MalformedURLException mfux) {
+      env.throwException("java.net.MalformedURLException", mfux.getMessage());
+      return MJIEnv.NULL;
+    }
+  }
+
+  public static int getURISpec____Ljava_lang_String_2 (MJIEnv env, int objref){
+    File f = getFile(env, objref);
+    URI uri = f.toURI();
+    return env.newString(uri.toString());
+  }
+
   public static boolean exists____Z (MJIEnv env, int objref) {
     return getFile(env,objref).exists();
   }

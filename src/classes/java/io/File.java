@@ -19,6 +19,9 @@
 package java.io;
 
 import gov.nasa.jpf.annotation.FilterField;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 
 /**
@@ -102,13 +105,27 @@ public class File
   public boolean isAbsolute() { return false; }
   public String getAbsolutePath() { return null; }
   public File getAbsoluteFile() { return null; }
-  public String getCanonicalPath() throws java.io.IOException
-   { return null; }
-  public File getCanonicalFile() throws java.io.IOException
-   { return null; }
-  public java.net.URL toURL() throws java.net.MalformedURLException
-   { return null; }
-  public java.net.URI toURI() { return null; }
+  public String getCanonicalPath() throws java.io.IOException {
+    return null; // intercepted by native peer
+  }
+  public File getCanonicalFile() throws java.io.IOException {
+    return new File(getCanonicalPath());
+  }
+
+  private native String getURLSpec();
+  public java.net.URL toURL() throws java.net.MalformedURLException {
+    return new URL(getURLSpec());
+  }
+
+  private native String getURISpec();
+  public java.net.URI toURI() {
+    try {
+      return new URI(getURISpec());
+    } catch (URISyntaxException x){
+      return null;
+    }
+  }
+
   public boolean canRead() { return false; }
   public boolean canWrite() { return false; }
   public boolean exists() { return false; }
