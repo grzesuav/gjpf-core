@@ -656,11 +656,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return new ClassInfo(typeName, idx);
 
     } else {
-      JavaClass clazz = getJavaClass(className);
+      JavaClass clazz = getJavaClass(typeName);
       if (clazz != null){
         return new ClassInfo(clazz, idx);
       } else {
-        throw new NoClassInfoException(className);
+        throw new NoClassInfoException(typeName);
       }
     }
   }
