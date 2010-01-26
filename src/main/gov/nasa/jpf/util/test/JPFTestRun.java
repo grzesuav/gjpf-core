@@ -123,6 +123,7 @@ public class JPFTestRun {
     } catch (Throwable t) {
       // we get as much as one little hickup and we declare it failed
       test.fail("JPF internal exception executing: ", args, t.toString());
+      return;
     }
 
     List<Error> errors = jpf.getSearchErrors();

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ArrayAccess;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.SystemState;
@@ -32,6 +33,7 @@ import org.apache.bcel.classfile.ConstantPool;
 public abstract class ArrayInstruction extends Instruction {
 
   int arrayRef;
+  int index;
 
   public ArrayInstruction () {
   }
@@ -50,7 +52,8 @@ public abstract class ArrayInstruction extends Instruction {
     return 1;
   }
   
-  boolean createAndSetArrayCG ( SystemState ss, ElementInfo ei, ThreadInfo ti) {
+  protected boolean createAndSetArrayCG ( SystemState ss, ElementInfo ei, ThreadInfo ti,
+                                int aref, int idx, boolean isRead) {
     // unfortunately we can't do the field filtering here because
     // there is no field info for array instructions - the reference might
     // have been on the operand-stack for a while, and the preceeding
@@ -58,6 +61,13 @@ public abstract class ArrayInstruction extends Instruction {
     
     ChoiceGenerator cg = ss.getSchedulerFactory().createSharedArrayAccessCG(ei, ti);
     if (cg != null) {
+
+      // we need to set the array access info (ref, index) before it is
+      // lost from the insn cache (insn might get reexecuted later-on
+      // on non-shared object
+      //ArrayAccess aac = new ArrayAccess(aref,idx,isRead);
+      //cg.setAttr(aac);
+
       ss.setNextChoiceGenerator(cg);
       ti.skipInstructionLogging();
       return true;
@@ -67,14 +77,15 @@ public abstract class ArrayInstruction extends Instruction {
   }
   
   /**
-   * <2do> it is not really clear if that is going to buy us something. The
-   * thinking is that there always is a preceeding GET_STATIC/FIELD for the
-   * array itself, and at the point of the xxALOAD/STORE we don't know
-   * the field name anymore, hence we cannot filter efficiently.
+   * this depends on the SchedulerFactory in use being smart about which array
+   * element ops really can cause races, otherwise there is a high chance this
+   * is a major state exploder
    */
   boolean isNewPorBoundary (ElementInfo ei, ThreadInfo ti) {
-    return false;
-    //return (!ti.checkPorFieldBoundary() && ei.isSchedulingRelevant());
+    //return false;
+
+    // ei is the array object
+    return (!ti.checkPorFieldBoundary() && ei.isSchedulingRelevant());
   }
 
   /**
@@ -88,5 +99,18 @@ public abstract class ArrayInstruction extends Instruction {
     }
   }
 
+  public int getIndex (ThreadInfo ti){
+    if (ti.isPreExec()){
+      return peekIndex(ti);
+    } else {
+      return index;
+    }
+  }
+
   abstract protected int peekArrayRef (ThreadInfo ti);
+
+  // we need this to be abstract because of the LongArrayStore insns
+  abstract protected int peekIndex (ThreadInfo ti);
+
+  public abstract boolean isRead();
 }

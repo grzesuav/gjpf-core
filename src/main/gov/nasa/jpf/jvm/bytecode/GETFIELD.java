@@ -96,4 +96,8 @@ public class GETFIELD extends InstanceFieldInstruction {
     return 0xB4;
   }
 
+  public boolean isRead() {
+    return true;
+  }
+
 }

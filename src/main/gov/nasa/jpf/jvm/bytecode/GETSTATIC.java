@@ -94,5 +94,8 @@ public class GETSTATIC extends StaticFieldInstruction {
   public int getByteCode () {
     return 0xB2;
   }
-  
+
+  public boolean isRead() {
+    return true;
+  }
 }

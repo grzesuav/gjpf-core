@@ -25,6 +25,8 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
  * absraction for long array stores
+ *
+ * ... array, index, long-value => ...
  */
 public abstract class LongArrayStoreInstruction extends ArrayStoreInstruction {
   protected void setField (ElementInfo e, int index, long value)
@@ -43,5 +45,9 @@ public abstract class LongArrayStoreInstruction extends ArrayStoreInstruction {
   
   protected int peekArrayRef(ThreadInfo ti) {
     return ti.peek(3);  // ..,ref,idx,long(value)
+  }
+
+  protected int peekIndex(ThreadInfo ti){
+    return ti.peek(2);
   }
 }

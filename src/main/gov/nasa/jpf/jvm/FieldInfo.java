@@ -33,7 +33,7 @@ public abstract class FieldInfo extends InfoObject {
   // don't break transitions on get/putXX insns of this field, even if shared
   static final int NEVER_BREAK = 0x10000;
   
-  // always break on this field's access if object if shared
+  // always break on this field's access if object is shared
   // (ignored if NEVER_BREAK is set)
   static final int BREAK_SHARED = 0x20000;
 

@@ -48,120 +48,202 @@ import java.util.*;
 
 public class PreciseRaceDetector extends PropertyListenerAdapter {
 
-  FieldInfo raceField;
-  ThreadInfo[] racers = new ThreadInfo[2];
-  Instruction[] insns = new Instruction[2];
+  static class Race {
+    Race prev;   // linked list
 
+    ThreadInfo ti1, ti2;
+    Instruction insn1, insn2;
+    ElementInfo ei;
+
+    boolean isRace() {
+      return insn2 != null;
+    }
+
+    void printOn(PrintWriter pw){
+      pw.print("  ");
+      pw.print( ti1.getName());
+      pw.print(" at ");
+      pw.println(insn1.getSourceLocation());
+      pw.print("\t\t\"" + insn1.getSourceLine().trim());
+      pw.print("\"  : ");
+      pw.println(insn1);
+
+      if (insn2 != null){
+        pw.print("  ");
+        pw.print(ti2.getName());
+        pw.print(" at ");
+        pw.println(insn2.getSourceLocation());
+        pw.print("\t\t\"" + insn2.getSourceLine().trim());
+        pw.print("\"  : ");
+        pw.println(insn2);
+      }
+    }
+  }
+
+  static class FieldRace extends Race {
+    FieldInfo   fi;
+
+    static Race check (Race prev, ThreadInfo ti,  Instruction insn, ElementInfo ei, FieldInfo fi){
+      for (Race r = prev; r != null; r = r.prev){
+        if (r instanceof FieldRace){
+          FieldRace fr = (FieldRace)r;
+          if (fr.ei == ei && fr.fi == fi){
+            if (!((FieldInstruction)fr.insn1).isRead() || !((FieldInstruction)insn).isRead()){
+              fr.ti2 = ti;
+              fr.insn2 = insn;
+              return fr;
+            }
+          }
+        }
+      }
+
+      FieldRace fr = new FieldRace();
+      fr.ei = ei;
+      fr.ti1 = ti;
+      fr.insn1 = insn;
+      fr.fi = fi;
+      fr.prev = prev;
+      return fr;
+    }
+
+    void printOn(PrintWriter pw){
+      pw.print("race for field ");
+      pw.print(ei);
+      pw.print('.');
+      pw.println(fi.getName());
+
+      super.printOn(pw);
+    }
+  }
+
+  static class ArrayRace extends Race {
+    int idx;
+
+    static Race check (Race prev, ThreadInfo ti, Instruction insn, ElementInfo ei, int idx){
+      for (Race r = prev; r != null; r = r.prev){
+        if (r instanceof ArrayRace){
+          ArrayRace ar = (ArrayRace)r;
+          if (ar.ei == ei && ar.idx == idx){
+            if (!((ArrayInstruction)ar.insn1).isRead() || !((ArrayInstruction)insn).isRead()){
+              ar.ti2 = ti;
+              ar.insn2 = insn;
+              return ar;
+            }
+          }
+        }
+      }
+
+      ArrayRace ar = new ArrayRace();
+      ar.ei = ei;
+      ar.ti1 = ti;
+      ar.insn1 = insn;
+      ar.idx = idx;
+      ar.prev = prev;
+      return ar;
+    }
+
+    void printOn(PrintWriter pw){
+      pw.print("race for array element ");
+      pw.print(ei);
+      pw.print('[');
+      pw.print(idx);
+      pw.println(']');
+
+      super.printOn(pw);
+    }
+  }
+
+  // this is where we store if we detect one
+  Race race;
+
+
+  // our matchers to determine which code we have to check
   StringSetMatcher includes = null; //  means all
   StringSetMatcher excludes = null; //  means none
-  
+
+
   public PreciseRaceDetector (Config conf) {
     includes = StringSetMatcher.getNonEmpty(conf.getStringArray("race.include"));
     excludes = StringSetMatcher.getNonEmpty(conf.getStringArray("race.exclude"));
   }
   
   public boolean check(Search search, JVM vm) {
-    return (raceField == null);
+    return (race == null);
   }
 
   public void reset() {
-    raceField = null;
-    racers[0] = racers[1] = null;
-    insns[0] = insns[1] = null;
+    race = null;
   }
+
 
   public String getErrorMessage () {
-    StringWriter sw = new StringWriter();
-    PrintWriter pw = new PrintWriter(sw);
+    if (race != null){
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      race.printOn(pw);
+      pw.flush();
+      return sw.toString();
+    } else {
+      return null;
+    }
+  }
 
-    pw.print("race for: \"");
-    pw.print(raceField);
-    pw.println("\"");
+  boolean checkRace (ThreadInfo[] threads){
+    Race candidate = null;
 
-    for (int i=0; i<2; i++) {
-      pw.print("  ");
-      pw.print( racers[i].getName());
-      pw.print(" at ");
-      pw.println(insns[i].getSourceLocation());
-      pw.print("\t\t\"" + insns[i].getSourceLine().trim());
-      pw.print("\"  : ");
-      pw.println(insns[i]);
+    for (int i = 0; i < threads.length; i++) {
+      ThreadInfo ti = threads[i];
+      Instruction insn = ti.getPC();
+      MethodInfo mi = insn.getMethodInfo();
+
+      if (StringSetMatcher.isMatch(mi.getBaseName(), includes, excludes)) {
+        if (insn instanceof FieldInstruction) {
+          FieldInstruction finsn = (FieldInstruction) insn;
+          FieldInfo fi = finsn.getFieldInfo();
+          ElementInfo ei = finsn.peekElementInfo(ti);
+
+          candidate = FieldRace.check(candidate, ti, finsn, ei, fi);
+
+        } else if (insn instanceof ArrayInstruction) {
+          ArrayInstruction ainsn = (ArrayInstruction) insn;
+          int aref = ainsn.getArrayRef(ti);
+          int idx = ainsn.getIndex(ti);
+          ElementInfo ei = ti.getElementInfo(aref);
+
+          candidate = ArrayRace.check(candidate, ti, ainsn, ei, idx);
+        }
+      }
+
+      if (candidate != null && candidate.isRace()){
+        race = candidate;
+        return true;
+      }
     }
 
-    pw.flush();
-    return sw.toString();
+    return false;
   }
 
-  private boolean isPutInsn(Instruction insn) {
-    return (insn instanceof PUTFIELD) || (insn instanceof PUTSTATIC);
-  }
 
   //----------- our VMListener interface
 
+  // All we rely on here is that the scheduler breaks transitions at all
+  // insns that could be races. We then just have to look at all currently
+  // executed insns and don't rely on any past-exec info, PROVIDED that we only
+  // use execution parameters (index or reference values) that are retrieved
+  // from the operand stack, and not cached in the insn from a previous exec
+  // (all the insns we look at are pre-exec, i.e. don't have their caches
+  // updated yet)
   public void choiceGeneratorSet(JVM vm) {
     ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
 
     if (cg instanceof ThreadChoiceFromSet) {
       ThreadInfo[] threads = ((ThreadChoiceFromSet)cg).getAllThreadChoices();
-
-      ElementInfo[] eiCandidates = null;
-      FieldInfo[] fiCandidates = null;
-
-      for (int i=0; i<threads.length; i++) {
-        ThreadInfo ti = threads[i];
-        Instruction insn = ti.getPC();
-        
-        if (insn instanceof FieldInstruction) { // Ok, we have to check
-          FieldInstruction finsn = (FieldInstruction)insn;
-          FieldInfo fi = finsn.getFieldInfo();
-
-          if (StringSetMatcher.isMatch(fi.getFullName(), includes, excludes)) {
-          
-            if (eiCandidates == null) {
-              eiCandidates = new ElementInfo[threads.length];
-              fiCandidates = new FieldInfo[threads.length];
-            }
-
-            ElementInfo ei = finsn.peekElementInfo(ti);
-
-            // check if we have seen it before
-            int idx=-1;
-            for (int j=0; j<i; j++) {
-              if ((ei == eiCandidates[j]) && (fi == fiCandidates[j])) {
-                idx = j;
-                break;
-              }
-            }
-
-            if (idx >= 0){ // yes, we have multiple accesses on the same object/field
-              Instruction otherInsn = threads[idx].getPC();
-
-              // that's maybe a bit too strong, but chances are that if there are
-              // racing writes, a read will soon follow (at least at some point), and
-              // if they weren't synced, the read probably would forget about it too
-              // we could easily check if they are of different type though
-              if (isPutInsn(otherInsn) || isPutInsn(insn)) {
-                raceField = ((FieldInstruction)insn).getFieldInfo();
-                racers[0] = threads[idx];
-                insns[0] = otherInsn;
-                racers[1] = threads[i];
-                insns[1] = insn;
-                return;
-              }
-            } else {
-              eiCandidates[i] = ei;
-              fiCandidates[i] = fi;
-            }
-          }
-        }
-        
-        // what about AtomicFieldUpdaters?
-      }
+      checkRace(threads);
     }
   }
 
   public void executeInstruction (JVM jvm) {
-    if (raceField != null) {
+    if (race != null) {
       // we're done, report as quickly as possible
       ThreadInfo ti = jvm.getLastThreadInfo();
       //ti.skipInstruction();

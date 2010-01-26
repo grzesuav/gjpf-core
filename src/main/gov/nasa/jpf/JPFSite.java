@@ -218,7 +218,8 @@ public class JPFSite {
               val = val.substring(0, val.length() - 1).trim();
               for (line = br.readLine(); line != null; line = br.readLine()) {
                 line = line.trim();
-                if (line.charAt(line.length() - 1) == '\\') {
+                int len = line.length();
+                if ((len > 0) && (line.charAt(len - 1) == '\\')) {
                   line = line.substring(0, line.length() - 1).trim();
                   val += expand(line, map);
                 } else {

@@ -22,6 +22,8 @@ import java.util.Random;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
 * abstract root class for configurable choice generators
@@ -52,6 +54,10 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
 
   // and the thread that executed this insn
   ThreadInfo ti;
+
+  // free attributes (set on demand)
+  LinkedList<Object> attrs;
+
 
   // in case this is initalized from a JVM context
   public static void init (Config config) {
@@ -172,15 +178,83 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
 
   public abstract int getProcessedNumberOfChoices ();
 
+
+  //--- the generic attribute API (one attr per type)
+
+  public void setAttr(Object a){
+    if (a != null){
+      if (attrs == null) {
+        attrs = new LinkedList<Object>();
+        attrs.add(a);
+
+      } else {
+
+        // replace if we already have such a type
+        Class<?> aClass = a.getClass();
+        int nAttrs = attrs.size();
+        for (int i=0; i<nAttrs; i++){
+          Object aa = attrs.get(i);
+          if (aa.getClass() == aClass){
+            attrs.set(i, a);
+            return;
+          }
+        }
+
+        // add if there was none
+        attrs.add(a);
+      }
+    }
+  }
+
+  public List<?> getAttrs(){
+    return attrs;
+  }
+
+  public <T> T getAttr (Class<T> type){
+    if (attrs != null){
+      for (Object a : attrs){
+        if (a.getClass() == type) {
+          return (T) a;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  public void removeAttr (Object a){
+    if (a != null && attrs != null){
+      int nAttrs = attrs.size();
+      for (int i = 0; i < nAttrs; i++) {
+        Object aa = attrs.get(i);
+      }
+    }
+  }
+
+
   public String toString () {
     StringBuilder b = new StringBuilder( getClass().getName());
-    b.append(" [id=\"");
+    b.append(" {id:\"");
     b.append(id);
     b.append("\" ,");
     b.append(getProcessedNumberOfChoices());
     b.append('/');
     b.append(getTotalNumberOfChoices());
-    b.append(']');
+
+    if (attrs != null){
+      b.append(", attrs:[");
+      int i=0;
+      for (Object a: attrs){
+        if (i++ > 1){
+          b.append(',');
+        }
+        b.append(a);
+      }
+      b.append(']');
+    }
+
+    b.append('}');
+
     return b.toString();
   }
 

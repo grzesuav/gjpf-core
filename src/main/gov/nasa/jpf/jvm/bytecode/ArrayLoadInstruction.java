@@ -26,30 +26,32 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 
 
 /**
- *abstraction for all array load instructions
+ * abstraction for all array load instructions
+ *
+ * ..., array, index => ..., value
  */
 public abstract class ArrayLoadInstruction extends ArrayInstruction {
   
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    int         index;
-    ElementInfo e;
 
-    arrayRef = ti.peek(1); // ..,arrayRef,idx
-
-    if (arrayRef == -1) {
+    // we need to get the object first, to check if it is shared
+    int aref = ti.peek(1); // ..,arrayRef,idx
+    if (aref == -1) {
       return ti.createAndThrowException("java.lang.NullPointerException");
     }
-
-    e = ks.da.get(arrayRef);
+    ElementInfo e = ti.getElementInfo(aref);
 
     if (isNewPorBoundary(e, ti)) {
-      if (createAndSetArrayCG(ss,e,ti)) {
+      if (createAndSetArrayCG(ss,e,ti, aref,peekIndex(ti),true)) {
         return this;
       }
     }
     
     index = ti.pop();
-    ti.pop(); // we already got arrayRef
+
+    // we should not set 'arrayRef' before the CG check
+    // (this would kill the CG loop optimization)
+    arrayRef = ti.pop();
     
     try {
       push(ti, e, index);
@@ -78,10 +80,19 @@ public abstract class ArrayLoadInstruction extends ArrayInstruction {
     return ti.peek(1);
   }
 
+  // wouldn't really be required for loads, but this is a general
+  // ArrayInstruction API
+  protected int peekIndex (ThreadInfo ti){
+    return ti.peek();
+  }
+
   protected void push (ThreadInfo th, ElementInfo e, int index)
                 throws ArrayIndexOutOfBoundsExecutiveException {
     e.checkArrayBounds(index);
     th.push(e.getElement(index), isReference());
   }
 
+  public boolean isRead() {
+    return true;
+  }
 }

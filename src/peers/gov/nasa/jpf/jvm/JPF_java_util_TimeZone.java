@@ -40,7 +40,7 @@ public class JPF_java_util_TimeZone {
     int sref = env.newString(s);
     return sref;
   }
-  
+
   public static int getTimeZone__Ljava_lang_String_2__Ljava_util_TimeZone_2 (MJIEnv env, int clsRef,
                                                                               int idRef){
     String id = env.getStringObject(idRef);
@@ -65,4 +65,5 @@ public class JPF_java_util_TimeZone {
     TimeZone tz = getTimeZone(env, objRef);
     return tz.getRawOffset();
   }
+
 }

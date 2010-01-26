@@ -168,24 +168,49 @@ public class RaceTest extends TestJPF {
   }
 
   @Test public void testInstanceRaceListenerExclude () {
-    if (verifyNoPropertyViolation(LISTENER, "+race.exclude="+ SharedObject.class.getName() + ".*")){
+    if (verifyNoPropertyViolation(LISTENER, "+race.exclude="+ RaceTest.class.getName() + "*")){
       testInstanceRaceNoThrow();
     }
   }
 
   @Test public void testInstanceRaceListenerInclude () {
     if (verifyPropertyViolation(PROPERTY, LISTENER,
-                                 "+race.include=" + SharedObject.class.getName() + ".instanceField")){
+                                 "+race.include=" + RaceTest.class.getName() + "*")){
       testInstanceRaceNoThrow();
     }
   }
 
   @Test public void testStaticRaceListenerIncludeOther () {
-    if (verifyNoPropertyViolation(LISTENER, "+race.include=" + SharedObject.class.getName() + ".instanceField")){
+    if (verifyNoPropertyViolation(LISTENER, "+race.include=sho.bi.Doo*")){
       testStaticRaceNoThrow();
     }
   }
 
+  @Test public void testArrayRaceNoThrow () {
+    if (verifyPropertyViolation(PROPERTY, LISTENER)){
+      final int[] shared = new int[1];
+
+      Runnable r1 = new Runnable(){
+        int[] a = shared;
+        public void run() {
+          a[0] = 0;
+        }
+      };
+
+      Runnable r2 = new Runnable(){
+        int[] a = shared;
+        public void run() {
+          a[0] = 1;
+        }
+      };
+
+      Thread t1 = new Thread(r1);
+      Thread t2 = new Thread(r2);
+
+      t1.start();
+      t2.start();
+    }
+  }
 
   //--- these are tests to check false positives
 
@@ -350,7 +375,7 @@ public class RaceTest extends TestJPF {
       }
     }
   }
-   
+
 }
 
 

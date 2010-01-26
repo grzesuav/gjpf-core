@@ -19,6 +19,8 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.jvm.bytecode.ArrayInstruction;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.*;
 
 
@@ -46,7 +48,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
 
   /**
    * post process a list of choices. This is our primary interface towards
-   * subclasses (together with overriding the relevant insn APIs
+   * subclasses (together with overriding the relevant ainsn APIs
    */
   protected ThreadInfo[] filter ( ThreadInfo[] list) {
     // we have nothing to do, but subclasses can use it to
@@ -169,13 +171,46 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   }
 
   public ChoiceGenerator<ThreadInfo> createSharedArrayAccessCG (ElementInfo ei, ThreadInfo ti) {
+    // the array object (ei) is shared, otherwise we won't get here
+
     if (ss.isAtomic()) {
       return null;
     }
 
-    // not sure if we really want to do this, since there should always be a
-    // preceding field access - see ArrayInstruction.isNewPorBoundary()
-    return getSyncCG(ei, ti);
+/**
+    // <2do> CG sequence based POR should be optional
+    ArrayInstruction ainsn = (ArrayInstruction)ti.getPC();
+    boolean isRead = ainsn.isRead();
+    int aref = ei.getIndex();
+
+    for (ChoiceGenerator<?> cg = ss.getChoiceGenerator(); cg != null; cg = cg.getPreviousChoiceGenerator()){
+      if (cg.getThreadInfo() != ti || cg.getChoiceType() != ThreadInfo.class){
+        break; // different thread or different choice type -> we need a CG
+      }
+
+      Instruction cgInsn = cg.getInsn();
+      if (!(cgInsn instanceof ArrayInstruction)){
+        break; // not an aload/astore -> we need a CG
+      }
+      ArrayInstruction cgAinsn = (ArrayInstruction)cgInsn;
+      // this is only an approximation since the array ref stored in the insn
+      // might have changed. Note this only works if the insn arrayRef is
+      // stored AFTER this gets executed
+      if (cgAinsn.getArrayRef(ti) != aref){
+        break;
+      }
+
+      if (cgAinsn.isRead() == isRead){
+        return null; // same op on same array in same thread -> no new CG required
+      }
+
+      // if we get here, this is a complement op on the same array in the same thread
+      // -> skip over all prev. CG insns of the same type
+    }
+**/
+
+    ChoiceGenerator<ThreadInfo> cg = getSyncCG(ei, ti);
+    return cg;
   }
 
   public ChoiceGenerator<ThreadInfo> createThreadStartCG (ThreadInfo newThread) {

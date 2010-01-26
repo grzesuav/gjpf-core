@@ -130,6 +130,10 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     return 0xB5;
   }
 
+  public boolean isRead() {
+    return false;
+  }
+
 }
 
 

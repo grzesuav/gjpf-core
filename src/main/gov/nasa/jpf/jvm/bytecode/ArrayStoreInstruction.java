@@ -29,26 +29,23 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
  * abstraction for all array store instructions
+ *
+ *  ... array, index, <value> => ...
  */
 public abstract class ArrayStoreInstruction extends ArrayInstruction
   implements StoreInstruction
 {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    long value;
-    int  index;
-
-    arrayRef = peekArrayRef(ti);
-
-    if (arrayRef == -1) {
+    int aref = peekArrayRef(ti); // need to be poly, could be LongArrayStore
+    if (aref == -1) {
       return ti.createAndThrowException("java.lang.NullPointerException");
     }
 
-    DynamicArea da = DynamicArea.getHeap();
-    ElementInfo e = da.get(arrayRef);
+    ElementInfo e = ti.getElementInfo(aref);
 
     if (isNewPorBoundary(e, ti)) {
-      if (createAndSetArrayCG(ss,e,ti)) {
+      if (createAndSetArrayCG(ss,e,ti, aref, peekIndex(ti), false)) {
         return this;
       }
     }
@@ -56,15 +53,16 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction
     int esize = getElementSize();
     Object attr = esize == 1 ? ti.getOperandAttr() : ti.getLongOperandAttr();
 
-    value = getValue(ti);
+    long value = getValue(ti);
     index = ti.pop();
-    ti.pop(); // we already got arrayRef
+    // don't set 'arrayRef' before we do the CG check (would kill loop optimization)
+    arrayRef = ti.pop();
 
     // check type compatibility for reference arrays - patch from Tihomir Gvero and Milos Gligoric
     // (could be in AASTORE, but would also require duplicated code)
     ClassInfo c = e.getClassInfo();
     if (c.isReferenceArray() && (value != -1)) { // no checks for storing 'null'
-      ClassInfo elementCi = da.get((int) value).getClassInfo();
+      ClassInfo elementCi = ti.getClassInfo((int) value);
       ClassInfo arrayElementCi = c.getComponentClassInfo();
       if (!elementCi.isInstanceOf(arrayElementCi)) {
         String exception = "java.lang.ArrayStoreException";
@@ -90,6 +88,10 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction
     return ti.peek(2);
   }
 
+  protected int peekIndex(ThreadInfo ti){
+    return ti.peek(1);
+  }
+
   protected void setField (ElementInfo e, int index, long value)
                     throws ArrayIndexOutOfBoundsExecutiveException {
     e.checkArrayBounds(index);
@@ -98,6 +100,10 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction
 
   protected long getValue (ThreadInfo th) {
     return /*(long)*/ th.pop();
+  }
+
+  public boolean isRead() {
+    return false;
   }
 
 }

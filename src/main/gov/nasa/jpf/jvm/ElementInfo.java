@@ -86,7 +86,7 @@ public abstract class ElementInfo implements Cloneable {
 
   // these are our state-stored object attributes
   // WATCH OUT! only include info that otherwise reflects a state change, so
-  // thatwe don't introduce new changes. It's value is used to hash the state!
+  // that we don't introduce new changes. Its value is used to hash the state!
   // <2do> what a pity - 32 stored bits for (currently) only 2 bits of
   // information,but we might use this as a hash for more complex reference
   // info in the future.

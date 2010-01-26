@@ -88,6 +88,8 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
     size = ft.getSize();
   }
 
+  public abstract boolean isRead();
+
   public abstract FieldInfo getFieldInfo ();
 
   // that's for an instructionExecuted() context
