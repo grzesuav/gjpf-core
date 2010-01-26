@@ -36,12 +36,14 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   protected SystemState ss;
 
   boolean breakAll;
+  boolean breakArrayAccess;
 
   public DefaultSchedulerFactory (Config config, JVM vm, SystemState ss) {
     this.vm = vm;
     this.ss = ss;
 
     breakAll = config.getBoolean("cg.threads.break_all", false);
+    breakArrayAccess = config.getBoolean("cg.threads.break_arrays", false);
   }
 
   /*************************************** internal helpers *****************/
@@ -173,44 +175,48 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   public ChoiceGenerator<ThreadInfo> createSharedArrayAccessCG (ElementInfo ei, ThreadInfo ti) {
     // the array object (ei) is shared, otherwise we won't get here
 
-    if (ss.isAtomic()) {
-      return null;
-    }
+    if (breakArrayAccess) {
+      if (ss.isAtomic()) {
+        return null;
+      }
 
-/**
-    // <2do> CG sequence based POR should be optional
-    ArrayInstruction ainsn = (ArrayInstruction)ti.getPC();
-    boolean isRead = ainsn.isRead();
-    int aref = ei.getIndex();
+      /**
+      // <2do> CG sequence based POR should be optional
+      ArrayInstruction ainsn = (ArrayInstruction)ti.getPC();
+      boolean isRead = ainsn.isRead();
+      int aref = ei.getIndex();
 
-    for (ChoiceGenerator<?> cg = ss.getChoiceGenerator(); cg != null; cg = cg.getPreviousChoiceGenerator()){
+      for (ChoiceGenerator<?> cg = ss.getChoiceGenerator(); cg != null; cg = cg.getPreviousChoiceGenerator()){
       if (cg.getThreadInfo() != ti || cg.getChoiceType() != ThreadInfo.class){
-        break; // different thread or different choice type -> we need a CG
+      break; // different thread or different choice type -> we need a CG
       }
 
       Instruction cgInsn = cg.getInsn();
       if (!(cgInsn instanceof ArrayInstruction)){
-        break; // not an aload/astore -> we need a CG
+      break; // not an aload/astore -> we need a CG
       }
       ArrayInstruction cgAinsn = (ArrayInstruction)cgInsn;
       // this is only an approximation since the array ref stored in the insn
       // might have changed. Note this only works if the insn arrayRef is
       // stored AFTER this gets executed
       if (cgAinsn.getArrayRef(ti) != aref){
-        break;
+      break;
       }
 
       if (cgAinsn.isRead() == isRead){
-        return null; // same op on same array in same thread -> no new CG required
+      return null; // same op on same array in same thread -> no new CG required
       }
 
       // if we get here, this is a complement op on the same array in the same thread
       // -> skip over all prev. CG insns of the same type
-    }
-**/
+      }
+       **/
+      ChoiceGenerator<ThreadInfo> cg = getSyncCG(ei, ti);
+      return cg;
 
-    ChoiceGenerator<ThreadInfo> cg = getSyncCG(ei, ti);
-    return cg;
+    } else {
+      return null;
+    }
   }
 
   public ChoiceGenerator<ThreadInfo> createThreadStartCG (ThreadInfo newThread) {
