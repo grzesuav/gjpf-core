@@ -89,7 +89,7 @@ public class JPF_java_lang_reflect_Field {
     FieldInfo fi = getFieldInfo(env, objRef);
     ElementInfo ei;
     
-    if (fobjRef == MJIEnv.NULL){ // static field
+    if (fi.isStatic()){
       ei = fi.getClassInfo().getStaticElementInfo();      
     } else { // instance field
       ei = env.getElementInfo(fobjRef);
@@ -113,7 +113,7 @@ public class JPF_java_lang_reflect_Field {
     FieldInfo fi = getFieldInfo(env, objRef);
     ElementInfo ei;
     
-    if (fobjRef == MJIEnv.NULL){ // static field
+    if (fi.isStatic()){
       ei = fi.getClassInfo().getStaticElementInfo();      
     } else { // instance field
       ei = env.getElementInfo(fobjRef);
@@ -138,7 +138,7 @@ public class JPF_java_lang_reflect_Field {
     FieldInfo fi = getFieldInfo(env, objRef);
     ElementInfo ei;
     
-    if (fobjRef == MJIEnv.NULL){ // static field
+    if (fi.isStatic()){
       ei = fi.getClassInfo().getStaticElementInfo();      
     } else { // instance field
       ei = env.getElementInfo(fobjRef);
@@ -162,7 +162,7 @@ public class JPF_java_lang_reflect_Field {
     FieldInfo fi = getFieldInfo(env, objRef);
     ElementInfo ei;
     
-    if (fobjRef == MJIEnv.NULL){ // static field
+    if (fi.isStatic()){
       ei = fi.getClassInfo().getStaticElementInfo();      
     } else { // instance field
       ei = env.getElementInfo(fobjRef);

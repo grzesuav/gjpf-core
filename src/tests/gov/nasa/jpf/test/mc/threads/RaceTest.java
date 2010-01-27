@@ -187,7 +187,7 @@ public class RaceTest extends TestJPF {
   }
 
   @Test public void testArrayRaceNoThrow () {
-    if (verifyPropertyViolation(PROPERTY, LISTENER)){
+    if (verifyPropertyViolation(PROPERTY, LISTENER, "+cg.threads.break_arrays")){
       final int[] shared = new int[1];
 
       Runnable r1 = new Runnable(){
@@ -211,6 +211,33 @@ public class RaceTest extends TestJPF {
       t2.start();
     }
   }
+
+  @Test public void testNoArrayRaceElements () {
+    if (verifyNoPropertyViolation(LISTENER, "+cg.threads.break_arrays")){
+      final int[] shared = new int[2];
+
+      Runnable r1 = new Runnable(){
+        int[] a = shared;
+        public void run() {
+          a[0] = 0;
+        }
+      };
+
+      Runnable r2 = new Runnable(){
+        int[] a = shared;
+        public void run() {
+          a[1] = 1;
+        }
+      };
+
+      Thread t1 = new Thread(r1);
+      Thread t2 = new Thread(r2);
+
+      t1.start();
+      t2.start();
+    }
+  }
+
 
   //--- these are tests to check false positives
 

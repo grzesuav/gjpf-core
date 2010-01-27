@@ -35,6 +35,8 @@ public class FieldTest extends TestJPF {
   Object refField = new Integer(42);
   int[] arrayField = new int[]{42};
 
+  static int statInt = 43;
+
   @Test
   public void testInstanceInt() {
     if (verifyNoPropertyViolation()) {
@@ -53,6 +55,27 @@ public class FieldTest extends TestJPF {
       }
     }
   }
+
+  @Test
+  public void testStaticInt() {
+    if (verifyNoPropertyViolation()) {
+      try {
+        Class<?> cls = FieldTest.class;
+        Field f = cls.getField("statInt");
+
+        int i = f.getInt(this);
+        assert i == 43;
+        System.out.println("statInt = " + i);
+
+        f.setInt(null, 44);
+        assert statInt == 44;
+
+      } catch (Throwable t) {
+        assert false : "unexpected exception: " + t;
+      }
+    }
+  }
+
 
   @Test
   public void testInstanceDouble() {
