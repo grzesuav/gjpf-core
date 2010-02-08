@@ -22,7 +22,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 
 
 /**
- * Branch if int comparison succeeds
+ * Branch if reference comparison does not succeed
  * ..., value1, value2 => ...
  */
 public class IF_ACMPNE extends IfInstruction {
