@@ -345,6 +345,41 @@ public class StackFrame implements Constants, Cloneable {
     }
   }
 
+  /**
+   * check if there is any argument attr of the provided type on the operand stack
+   * this is far more efficient than retrieving attribute values (we don't
+   * care for argument types)
+   */
+  public boolean hasArgumentAttr (MethodInfo miCallee, Class<?> attrType){
+    if (operandAttr != null) {
+      int nArgSlots = miCallee.getArgumentsSize();
+
+      for (int i=0; i<nArgSlots; i++){
+        Object a = getOperandAttr(i);
+        if (a != null){
+          if (attrType.isAssignableFrom(a.getClass())){
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * generic visitor for reference arguments
+   */
+  public void processRefArguments (MethodInfo miCallee, ReferenceVisitor visitor){
+    int nArgSlots = miCallee.getArgumentsSize();
+
+    for (int i=top-1; i>=top-nArgSlots; i--){
+      if (isOperandRef[i]){
+        visitor.visit(operands[i]);
+      }
+    }
+  }
+
   public int getAbsOperand(int idx) {
     return operands[idx];
   }

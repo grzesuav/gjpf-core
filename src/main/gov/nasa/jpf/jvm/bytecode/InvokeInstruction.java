@@ -169,7 +169,6 @@ public abstract class InvokeInstruction extends Instruction {
     StackFrame frame = getCallerFrame(ti, callee);
 
     assert frame != null : "can't find caller stackframe for: " + this;
-
     return getArgsFromCaller(frame, callee);
   }
 
@@ -180,6 +179,43 @@ public abstract class InvokeInstruction extends Instruction {
     assert frame != null : "can't find caller stackframe for: " + this;
     return frame.getArgumentAttrs(callee);
   }
+
+  /**
+   * check if there is any argument attr of the specified type
+   * (use this before using any of the more expensive retrievers)
+   */
+  public boolean hasArgumentAttr (ThreadInfo ti, Class<?> type){
+    MethodInfo callee = getInvokedMethod(ti);
+    StackFrame frame = getCallerFrame(ti, callee);
+
+    assert frame != null : "can't find caller stackframe for: " + this;
+    return frame.hasArgumentAttr(callee,type);
+  }
+
+  /**
+   * do we have a reference argument that has an object attribute?
+   * less efficient, but still without object creation
+   */
+  public boolean hasAttrRefArgument (ThreadInfo ti, Class<?> type){
+    MethodInfo callee = getInvokedMethod(ti);
+    StackFrame frame = getCallerFrame(ti, callee);
+
+    int nArgSlots = callee.getArgumentsSize();
+    for (int i=0; i<nArgSlots; i++){
+      if (frame.isOperandRef(i)){
+        ElementInfo ei = ti.getElementInfo(frame.peek(i));
+        if (ei != null){
+          Object a = ei.getObjectAttr();
+          if (a != null && type.isAssignableFrom(a.getClass())){
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
 
   Object[] getArgsFromCaller (StackFrame frame, MethodInfo callee){
     int n = callee.getNumberOfArguments();

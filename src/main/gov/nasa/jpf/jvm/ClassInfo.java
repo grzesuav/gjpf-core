@@ -1457,7 +1457,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    * get names of all interfaceNames (transitive, i.e. incl. bases and super-interfaceNames)
    * @return a Set of String interface names
    */
-  Set<String> getAllInterfaces () {
+  public Set<String> getAllInterfaces () {
     if (allInterfaces == null) {
       HashSet<String> set = new HashSet<String>();
 
@@ -1476,6 +1476,26 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    */
   public Set<String> getInterfaces () {
     return interfaceNames;
+  }
+
+  public Set<ClassInfo> getInterfaceClassInfos() {
+    Set<ClassInfo> set = new HashSet<ClassInfo>();
+    for (String ifcName : interfaceNames) {
+      set.add(getResolvedClassInfo(ifcName));
+    }
+    return set;
+  }
+
+  /**
+   * not very efficient, but chances are we cache the allInterfaces, and then
+   * repetitive use would be faster
+   */
+  public Set<ClassInfo> getAllInterfaceClassInfos() {
+    Set<ClassInfo> set = new HashSet<ClassInfo>();
+    for (String ifcName : getAllInterfaces()) {
+      set.add(getResolvedClassInfo(ifcName));
+    }
+    return set;
   }
 
   public ClassInfo getComponentClassInfo () {

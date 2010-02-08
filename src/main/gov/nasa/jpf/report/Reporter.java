@@ -305,7 +305,7 @@ public class Reporter extends ListenerAdapter {
   }
 
   public String getJPFBanner () {
-    String s = "JavaPathfinder v" + JPF.VERSION + " - (C) 1999-2007 RIACS/NASA Ames Research Center";
+    String s = conf.getString("report.banner", "JavaPathfinder - (C) RIACS/NASA Ames Research Center");
     
     if (conf.getBoolean("report.show_repository", false)) {
       String repInfo =  getRepositoryInfo();

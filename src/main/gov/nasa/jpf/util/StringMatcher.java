@@ -77,4 +77,12 @@ public class StringMatcher {
       return matcher.matches();
     }
   }
+
+  public String toString() {
+    if (isAnyPattern){
+      return ".*";
+    } else {
+      return pattern.toString();
+    }
+  }
 }
