@@ -3,4 +3,3 @@
 target=oldclassic
 
 report.console.property_violation=error,snapshot,trace
-

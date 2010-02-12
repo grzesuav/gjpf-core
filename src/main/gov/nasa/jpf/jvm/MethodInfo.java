@@ -40,6 +40,7 @@ import org.apache.bcel.generic.InstructionList;
 import gov.nasa.jpf.jvm.bytecode.*;
 import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.Attribute;
+import org.apache.bcel.classfile.ExceptionTable;
 import org.apache.bcel.classfile.ParameterAnnotationEntry;
 import org.apache.bcel.classfile.ParameterAnnotations;
 import org.apache.bcel.classfile.RuntimeVisibleParameterAnnotations;
@@ -118,6 +119,9 @@ public class MethodInfo extends InfoObject implements Cloneable {
   /** JPFConfigException handlers */
   protected ExceptionHandler[] exceptions;
 
+  /** classnames of checked exceptions thrown by the method */
+  protected String[] thrownExceptionClassNames;
+
   /** Table used for line numbers */
   protected int[] lineNumbers;
 
@@ -190,6 +194,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
     code = loadCode(m);
     exceptions = loadExceptions(m);
+    thrownExceptionClassNames = loadThrownExceptionClassNames(m);
     lineNumbers = loadLineNumbers(m);
     maxLocals = getMaxLocals(m);
     maxStack = getMaxStack(m);
@@ -243,6 +248,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
     this.lineNumbers = null;
     this.exceptions = null;
+    this.thrownExceptionClassNames = null;
         
     this.globalId = mthTable.size();
     mthTable.add(this);
@@ -401,6 +407,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     mi.localVariableTypes = EMPTY;
     mi.lineNumbers = null;
     mi.exceptions = null;
+    mi.thrownExceptionClassNames = null;
     mi.uniqueName = mi.name;
 
     // createAndInitialize the code
@@ -704,6 +711,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return exceptions;
   }
 
+  public String[] getThrownExceptionClassNames () {
+    return thrownExceptionClassNames;
+  }
+
   public String[] getLocalVariableNames () {
     return localVariableNames;
   }
@@ -985,6 +996,18 @@ public class MethodInfo extends InfoObject implements Cloneable {
     }
 
     return eh;
+  }
+
+  /**
+   * Returns the classnames of checked exceptions thrown by the method.
+   */
+  protected String[] loadThrownExceptionClassNames(Method m) {
+    ExceptionTable et = m.getExceptionTable();
+    if (et != null){
+      return et.getExceptionNames();
+    } else {
+      return null;
+    }
   }
 
   /**
