@@ -49,7 +49,7 @@ public class Unsafe {
   public native boolean compareAndSwapLong (Object oThis, long offset, long expect, long update);
 
   // that looks like some atomic conditional wait
-  public native void park (boolean dontknow, long timeout);
+  public native void park (boolean isAbsolute, long timeout);
   public native void unpark (Object thread);
 
   // various accessors

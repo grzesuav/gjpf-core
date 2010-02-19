@@ -668,6 +668,7 @@ public class HTMLPublisher extends Publisher {
   private void writeErrors(PrintWriter output) {
     List<Error> errors;
     Error error;
+    String details;
     int i;
 
     errors = reporter.getErrors();
@@ -688,13 +689,19 @@ public class HTMLPublisher extends Publisher {
 
     for (i = 0; i < errors.size(); i++) {
       error = errors.get(i);
+      details = error.getDetails();
+      
+      if (details == null)
+        details = "";
+      else
+        details = details.trim();       
 
       output.print("         <tr><td>");
       output.print(error.getId());
       output.print("</td><td>");
       output.print(escape(error.getDescription()));
       output.println("</td><td><pre>");
-      output.print(escape(error.getDetails().trim()));
+      output.print(escape(details));
       output.println("</pre></td></tr>");
     }
 

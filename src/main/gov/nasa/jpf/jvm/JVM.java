@@ -42,6 +42,8 @@ import java.util.logging.Logger;
  */
 public class JVM {
 
+  private static enum TimeModel {ConstantZero, ConstantStartTime, ConstantConfig, SystemTime};
+
   protected static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.JVM");
 
   /**
@@ -115,6 +117,13 @@ public class JVM {
 
   /** potential execution listeners */
   protected VMListener    listener;
+  
+  /** the selected time model to use */
+  protected TimeModel timeModel;
+  
+  /** for the constant time models return these values */
+  protected long milliTime;
+  protected long nanoTime;
 
   protected Config config; // that's for the options we use only once
 
@@ -143,13 +152,48 @@ public class JVM {
     treeOutput = config.getBoolean("vm.tree_output", true);
     // we have to defer setting pathOutput until we have a reporter registered
     indentOutput = config.getBoolean("vm.indent_output",false);
+    
+    TimeModel[] timeModels = TimeModel.values();
+    String[] modelNames = new String[timeModels.length];
+    
+    for (int i = 0; i < timeModels.length; i++)
+      modelNames[i] = timeModels[i].toString();
+    
+    int timeModelIndex = config.getChoiceIndexIgnoreCase("vm.time.model", modelNames);
+  
+    if (timeModelIndex != -1)
+      timeModel = timeModels[timeModelIndex];
+    else
+      timeModel = TimeModel.SystemTime;
+    
+    switch (timeModel) {
+      case ConstantZero:
+      case SystemTime:
+        milliTime = 0;
+        nanoTime  = 0;
+        break;
+       
+      case ConstantStartTime:
+        nanoTime  = System.nanoTime();
+        milliTime = System.currentTimeMillis();
+        nanoTime  = (nanoTime + System.nanoTime()) / 2;
+        break;
+       
+      case ConstantConfig:
+        milliTime = config.getLong("vm.time.currentTimeMillis");
+        nanoTime  = config.getLong("vm.time.nanoTime");
+        break;
+       
+      default:
+        throw new JPFException("Unhandled time model: " + timeModel);
+    }
 
-try {
-    initSubsystems(config);
-    initFields(config);
-} catch (Throwable t){
-  t.printStackTrace(System.err);
-}
+    try {
+      initSubsystems(config);
+      initFields(config);
+    } catch (Throwable t) {
+      t.printStackTrace(System.err);
+    }
   }
 
   public JPF getJPF() {
@@ -1714,10 +1758,37 @@ try {
   }
 
   /**
-   * <2do> this is where we will hook in our time modeling
+   * <2do> this is where we will hook in a better time model
    */
-  public long getTime () {
-    return 1L;
+  public long currentTimeMillis () {
+    switch (timeModel) {
+       case ConstantZero:
+       case ConstantStartTime:
+       case ConstantConfig:
+         return(milliTime);
+       
+       case SystemTime:
+         return(System.currentTimeMillis());
+    }
+
+    throw new JPFException("Unhandled time model: " + timeModel);
+  }
+
+  /**
+   * <2do> this is where we will hook in a better time model
+   */
+  public long nanoTime() {
+    switch (timeModel) {
+      case ConstantZero:
+      case ConstantStartTime:
+      case ConstantConfig:
+        return(nanoTime);
+
+      case SystemTime:
+        return(System.nanoTime());
+    }
+
+    throw new JPFException("Unhandled time model: " + timeModel);
   }
 
   public void resetNextCG() {
@@ -1725,10 +1796,4 @@ try {
       ss.nextCg.reset();
     }
   }
-
-
 }
-
-
-
-

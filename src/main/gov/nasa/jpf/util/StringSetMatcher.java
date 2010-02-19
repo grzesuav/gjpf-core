@@ -159,8 +159,7 @@ public class StringSetMatcher {
         return true; // no need to check
       }
 
-      for (int i=0; i<pattern.length; i++){
-        Pattern p = pattern[i];
+      for (int i=0; i<matcher.length; i++){
         Matcher m = matcher[i];
         m.reset(s);
 
