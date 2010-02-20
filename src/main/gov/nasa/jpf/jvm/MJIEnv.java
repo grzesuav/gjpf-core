@@ -338,6 +338,11 @@ public class MJIEnv {
     return ei.getReferenceField(fi);
   }
 
+  public String getStringField (int objref, String fname){
+    int ref = getIntField(objref, fname);
+    return getStringObject(ref);
+  }
+
   // the box object accessors (should probably test for the appropriate class)
   public boolean getBooleanValue (int objref) {
     return getBooleanField(objref, "value");

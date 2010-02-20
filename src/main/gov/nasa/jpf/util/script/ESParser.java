@@ -31,6 +31,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.List;
 
+/**
+ * generic parser for event scripts
+ *
+ * <2do> this is still awfully hardwired to StringExpander
+ */
+
 public class ESParser {
 
   /**** our keywords ****/
@@ -110,10 +116,16 @@ public class ESParser {
     s.ordinaryChars('0','9');
     s.wordChars('0','9');
     //s.wordChars('"', '"');
+
+    // those are used to expand events
     s.wordChars('[','[');
     s.wordChars(']',']');
     s.wordChars('|','|');
     s.wordChars('-','-');
+    s.wordChars('<','<');
+    s.wordChars('>','>');
+
+    // those can be part of component names
     s.wordChars('_','_');
     s.wordChars('#', '#');
     s.wordChars('*','*');
@@ -229,7 +241,7 @@ public class ESParser {
   all parameters are treated as strings, but string literals preserve the double quotes
   (we need to preserve the token because of argument expansion and numeric type)
 
-  the event ID can contain '#', '.', ':', '@', '$' and '*' chars (e.g. for further
+  the event ID can contain '#', '.', ':', '@', '$' '/' and '*' chars (e.g. for further
   parsing of targets etc.)
 
 
