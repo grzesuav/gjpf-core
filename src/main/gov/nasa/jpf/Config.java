@@ -340,31 +340,25 @@ public class Config extends Properties {
   }
 
   protected void loadDefaultProperties (String fileName, Class<?> codeBase) {
-    boolean found = false;
-
-    if (fileName == null) {
+    if (fileName == null)
       fileName = "default.properties";
-    }
 
     // first, try to load from a file
     File f = new File(fileName);
     if (f.exists()) {
       loadProperties(f.getPath());
-      found = true;
-      
-    } else {  // if there is no file, try to load as a resource 
-      Class<?> clazz = (codeBase != null) ? codeBase : Config.class;
-      URL url = clazz.getResource(fileName);
-      if (url != null) {
-        loadProperties(url);
-        found = true;
-      }
+      return;
+    }
+    
+    // if there is no file, try to load as a resource 
+    Class<?> clazz = (codeBase != null) ? codeBase : Config.class;
+    URL url = clazz.getResource(fileName);
+    if (url != null) {
+      loadProperties(url);
+      return;
     }
 
-    if (!found) {
-      throw new JPFConfigException("no default properties");
-    }
-
+    throw new JPFConfigException("no default properties");
   }
 
   protected void setConfigPathProperties (String fileName){
