@@ -224,7 +224,7 @@ public class CrossingTest extends TestJPF {
       }
     } else {
       System.out.println("total time = " + total);
-      assert (total > 17);
+      assert (total > 17) : "total > 17  |  total = " + total;
     }
 
   //Verify.endAtomic();
