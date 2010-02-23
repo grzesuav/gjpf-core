@@ -114,6 +114,11 @@ public class MethodAnalyzer extends ListenerAdapter {
   MethodOp lastOp;
   MethodOp lastTransition;
   boolean isFirstTransition = true;
+
+  // this is set after we call revertAndFlatten during reporting
+  // (we can't call revertAndFlatten twice since it is destructive, but
+  // we might have to report several times in case we have several publishers)
+  MethodOp firstOp = null;
   
   // for HeuristicSearches. Ok, that's braindead but at least no need for cloning
   HashMap<Integer,MethodOp> storedTransition = new HashMap<Integer,MethodOp>();
@@ -155,7 +160,7 @@ public class MethodAnalyzer extends ListenerAdapter {
   }
   
   void printRaw (PrintWriter pw) {
-    MethodOp start = revertAndFlatten(lastTransition);
+    MethodOp start = firstOp;
     
     int lastStateId  = Integer.MIN_VALUE;
     int transition = skipInit ? 1 : 0;
@@ -183,9 +188,10 @@ public class MethodAnalyzer extends ListenerAdapter {
   
   // warning - this rotates pointers in situ, i.e. destroys the original structure
   MethodOp revertAndFlatten (MethodOp start) {
+
     MethodOp last = null;
     MethodOp prevTransition = start.prevTransition;
-    
+
     for (MethodOp op = start; op != null;) {
       MethodOp opp = op.p;
       op.p = last;
@@ -203,7 +209,7 @@ public class MethodAnalyzer extends ListenerAdapter {
         op = opp;
       }
     }
-    
+
     return null;
   }
   
@@ -309,6 +315,11 @@ public class MethodAnalyzer extends ListenerAdapter {
   //--- the PubisherExtension part
   
   public void publishPropertyViolation (Publisher publisher) {
+
+    if (firstOp == null && lastTransition != null){
+      firstOp = revertAndFlatten(lastTransition);
+    }
+
     PrintWriter pw = publisher.getOut();
     publisher.publishTopicStart("method ops " + publisher.getLastErrorId());
     printRaw(pw);

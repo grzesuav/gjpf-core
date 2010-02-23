@@ -705,6 +705,19 @@ public class Config extends Properties {
     return s;    
   }
 
+  boolean loadPropertiesRecursive (String fileName){
+    // save the current values of automatic properties
+    String curConfig = (String)get("config");
+    String curConfigPath = (String)get("config_path");
+
+    boolean ret = loadProperties(fileName);
+
+    // restore the automatic properties
+    super.put("config", curConfig);
+    super.put("config_path", curConfigPath);
+
+    return ret;
+  }
 
   // we override this so that we can handle expansion for both key and value
   // (value expansion can be recursive, i.e. refer to itself)
@@ -734,7 +747,7 @@ public class Config extends Properties {
 
     // recursively load a property file
     if (INCLUDES_KEY.equals(key)){
-      if (!loadProperties(expandString((String)key, (String)value))){
+      if (!loadPropertiesRecursive(expandString((String)key, (String)value))){
         throw new JPFConfigException("include not found: " + value);
       }
       return null;
@@ -756,18 +769,30 @@ public class Config extends Properties {
 
         } else { // normal value set
           v = normalize(expandString(k, v));
-          Object oldValue = put0(k, v);
-          notifyPropertyChangeListeners(k, (String) oldValue, v);
-          return oldValue;
+          if (v != null){
+            return setKey(k, v);
+          } else {
+            return removeKey(k);
+          }
         }
 
       } else { // setting a null value removes the entry
-        Object oldValue = super.get(k);
-        remove0(k);
-        notifyPropertyChangeListeners(k, (String) oldValue, null);
-        return oldValue;
+        return removeKey(k);
       }
     }
+  }
+
+  private Object setKey (String k, String v){
+    Object oldValue = put0(k, v);
+    notifyPropertyChangeListeners(k, (String) oldValue, v);
+    return oldValue;
+  }
+
+  private Object removeKey (String k){
+    Object oldValue = super.get(k);
+    remove0(k);
+    notifyPropertyChangeListeners(k, (String) oldValue, null);
+    return oldValue;
   }
 
   private Object put0 (String k, Object v){

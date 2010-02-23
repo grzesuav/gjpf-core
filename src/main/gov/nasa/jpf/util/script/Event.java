@@ -19,7 +19,6 @@
 
 package gov.nasa.jpf.util.script;
 
-import gov.nasa.jpf.util.StringExpander;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,8 +90,8 @@ public class Event extends ScriptElement {
   String[] expandArgument (String a) {
     ArrayList<String> list = new ArrayList<String>();
 
-    StringExpander ex = new StringExpander();
-    List<String> l = ex.expand(a);
+    StringExpander ex = new StringExpander(a);
+    List<String> l = ex.expand();
     list.addAll(l);
 
     return list.toArray(new String[list.size()]);
@@ -105,8 +104,8 @@ public class Event extends ScriptElement {
    * (I'm notoriously bad at this)
    */
   public List<Event> expand () {
-    StringExpander ex = new StringExpander();
-    List<String> ids = ex.expand(id);
+    StringExpander ex = new StringExpander(id);
+    List<String> ids = ex.expand();
     ArrayList<Event> list = new ArrayList<Event>();
 
     if (arguments != null) {
