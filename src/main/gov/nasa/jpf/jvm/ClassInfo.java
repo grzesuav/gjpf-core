@@ -636,6 +636,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    * what a non-resolvable ClassInfo would be good for anyways
    */
   public static ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {
+
     if (className == null) {
       return null;
     }
@@ -656,6 +657,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return new ClassInfo(typeName, idx);
 
     } else {
+      if (logger.isLoggable(Level.FINER)) {
+        logger.finer("resolve classinfo: " + className);
+      }
+
       JavaClass clazz = getJavaClass(typeName);
       if (clazz != null){
         return new ClassInfo(clazz, idx);
@@ -714,6 +719,17 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     try {
       ClassFile file = modelClassPath.getClassFile(slashName, ".class");
       if (file != null) {
+
+        if (logger.isLoggable(Level.FINER)) {
+          String base = file.getBase();  // could be a dir or a jar
+          String path = file.getPath();
+          if (path.startsWith(base)){ // don't report twice if base is a dir
+            logger.finer("loading classfile: " + path);
+          } else {
+            logger.finer("loading classfile: " + path + " from: " + base);
+          }
+        }
+
         is = file.getInputStream();
       }
     } catch (IOException ioe) {
@@ -732,6 +748,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
   static JavaClass getJavaClass (String className){
+
     InputStream is = getClassFileStream(className);
 
     if (is != null){
@@ -1794,6 +1811,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return null;
     } else {
       String superName = jc.getSuperclassName();
+
+      if (logger.isLoggable(Level.FINER)) {
+        logger.finer("resolving superclass: " + superName + " of " + name);
+      }
+
       ClassInfo sci = getResolvedClassInfo(superName);
       if (sci == null){
         throw new NoClassInfoException(superName);
