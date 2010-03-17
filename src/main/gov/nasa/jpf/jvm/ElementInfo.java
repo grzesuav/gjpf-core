@@ -918,6 +918,10 @@ public abstract class ElementInfo implements Cloneable {
     return fields.arrayLength();
   }
 
+  public boolean isStringObject() {
+    return ClassInfo.isStringClassInfo(fields.getClassInfo());
+  }
+
   public String asString() {
     if (!ClassInfo.isStringClassInfo(fields.getClassInfo())) {
       throw new JPFException("object is not of type java.lang.String");
