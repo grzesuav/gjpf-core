@@ -919,7 +919,7 @@ public abstract class ElementInfo implements Cloneable {
   }
 
   public String asString() {
-    if (!fields.getClassInfo().isInstanceOf("java.lang.String")) {
+    if (!ClassInfo.isStringClassInfo(fields.getClassInfo())) {
       throw new JPFException("object is not of type java.lang.String");
     }
 
@@ -942,7 +942,7 @@ public abstract class ElementInfo implements Cloneable {
    * just a helper to avoid creating objects just for the sake of comparing
    */
   public boolean equalsString (String s) {
-    if (!fields.getClassInfo().isInstanceOf("java.lang.String")) {
+    if (!ClassInfo.isStringClassInfo(fields.getClassInfo())) {
       return false;
     }
 

@@ -273,6 +273,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return ci == objectClassInfo;
   }
 
+  public static boolean isStringClassInfo (ClassInfo ci){
+    return ci == stringClassInfo;
+  }
+
   private ClassInfo () {
     // for explicit construction only
   }
