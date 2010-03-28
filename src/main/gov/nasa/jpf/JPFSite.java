@@ -133,7 +133,7 @@ public class JPFSite {
   File getSiteFromArgs(String[] args){
     if (args != null && args.length > 0){
       for (String a : args) {
-        if ((a != null) && a.startsWith("+site=")) {
+        if ((a != null) && a.startsWith("+site=") && a.length() > 6) {
           return new File(a.substring(6));
         }
       }
