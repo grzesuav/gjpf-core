@@ -497,6 +497,16 @@ try {
              || config.getBoolean("vm.store_steps");
   }
 
+  public void recordSteps( boolean cond) {
+    // <2do> not ideal - it might be already too late when this is called
+
+    config.setProperty("vm.store_steps", cond ? "true" : "false");
+
+    if (ss != null){
+      ss.recordSteps(cond);
+    }
+  }
+
   public boolean hasToRecordPathOutput() {
     return jpf.getReporter().hasToReportOutput();
   }

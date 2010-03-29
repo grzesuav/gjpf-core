@@ -22,6 +22,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.Step;
 import gov.nasa.jpf.jvm.Transition;
 import gov.nasa.jpf.search.Search;
@@ -95,7 +96,11 @@ public class StateSpaceDot extends ListenerAdapter {
 
   private StateInformation prev_state = null;
 
-  public StateSpaceDot() {}
+  public StateSpaceDot(Config conf, JPF jpf) {
+
+    JVM vm = jpf.getVM();
+    vm.recordSteps(true);
+  }
 
   public void searchStarted(Search search) {
     try {
@@ -222,6 +227,10 @@ public class StateSpaceDot extends ListenerAdapter {
     if (trans == null) {
       return "-init-";
     }
+    Step last_trans_step = trans.getLastStep();
+    if (last_trans_step == null) {
+      return "?";
+    }
 
     StringBuilder result = new StringBuilder();
 
@@ -230,14 +239,11 @@ public class StateSpaceDot extends ListenerAdapter {
       result.append("\\n");
     }
 
-    Step last_trans_step = trans.getLastStep();
-
     int thread = trans.getThreadIndex();
 
     result.append("Thd");
     result.append(thread);
     result.append(':');
-
     result.append(last_trans_step.toString());
 
     if (show_source) {
