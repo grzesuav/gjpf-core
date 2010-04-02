@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.bcel.util.ClassPath;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.BreakGenerator;
 
@@ -238,14 +239,14 @@ public class JPF_java_lang_System {
     return aref;
   }
 
-  static int getHostProperties (MJIEnv env){
+  static int getSysPropsFromHost (MJIEnv env){
     return getProperties(env, System.getProperties());
   }
   
-  static int getJPFProperties (MJIEnv env){
+  static int getSysPropsFromFile (MJIEnv env){
     Config conf = env.getConfig();
     
-    String cf = conf.getString("vm.system.properties_file");
+    String cf = conf.getString("vm.sysprop.file", "system.properties");
     if (cf != null){
       try {
         Properties p = new Properties();
@@ -264,9 +265,10 @@ public class JPF_java_lang_System {
   
   static String JAVA_CLASS_PATH = "java.class.path";
   
-  static int getSelectedHostProperties (MJIEnv env){
+  static int getSelectedSysPropsFromHost (MJIEnv env){
     Config conf = env.getConfig();
-    String keys[] = conf.getStringArray("vm.system.properties");
+    String keys[] = conf.getStringArray("vm.sysprop.keys");
+
     if (keys == null){
       String[] defKeys = {
         "path.separator",
@@ -318,8 +320,23 @@ public class JPF_java_lang_System {
     return aref;
   }
   
+  static String SYSPROP_SRC_KEY = "vm.sysprop.source";
+  static enum SYSPROP_SRC { selected, file, host };
+
   public static int getKeyValuePairs_____3Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
-    return getSelectedHostProperties(env);
+    Config conf = env.getConfig();
+    SYSPROP_SRC sysPropSrc = conf.getEnum(SYSPROP_SRC_KEY, SYSPROP_SRC.values(), SYSPROP_SRC.selected);
+
+    switch (sysPropSrc) {
+      case file:
+        return getSysPropsFromFile(env);
+      case host:
+        return getSysPropsFromHost(env);
+      case selected:
+        return getSelectedSysPropsFromHost(env);
+      default:
+        throw new JPFConfigException("unsupported system properties source: " + conf.getString(SYSPROP_SRC_KEY));
+    }
   }
   
   // <2do> - this break every app which uses time delta thresholds
