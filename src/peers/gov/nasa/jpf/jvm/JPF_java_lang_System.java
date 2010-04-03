@@ -327,14 +327,15 @@ public class JPF_java_lang_System {
     Config conf = env.getConfig();
     SYSPROP_SRC sysPropSrc = conf.getEnum(SYSPROP_SRC_KEY, SYSPROP_SRC.values(), SYSPROP_SRC.selected);
 
-    switch (sysPropSrc) {
-      case file:
-        return getSysPropsFromFile(env);
-      case host:
-        return getSysPropsFromHost(env);
-      case selected:
-        return getSelectedSysPropsFromHost(env);
-      default:
+    // <2do> temporary workaround - a switch would cause an anonymous inner class that gets
+    // erroneously associated with a different ..$1 class (anonymous JavaLangAccess) from our model
+    if (sysPropSrc == SYSPROP_SRC.file){
+      return getSysPropsFromFile(env);
+    } else if (sysPropSrc == SYSPROP_SRC.host){
+      return getSysPropsFromHost(env);
+    } else if (sysPropSrc == SYSPROP_SRC.selected){
+      return getSelectedSysPropsFromHost(env);
+    } else {
         throw new JPFConfigException("unsupported system properties source: " + conf.getString(SYSPROP_SRC_KEY));
     }
   }
