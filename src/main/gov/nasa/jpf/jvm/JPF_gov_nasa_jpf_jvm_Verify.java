@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.choice.CustomBooleanChoiceGenerator;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
@@ -38,6 +39,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   static boolean isInitialized;
   static int[] counter;
   static boolean supportIgnorePath;
+  static boolean breakSingleChoice;
 
   static Config config;  // we need to keep this around for CG creation
 
@@ -51,6 +53,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
     if (!isInitialized){
       supportIgnorePath = conf.getBoolean("vm.verify.ignore_path");
+      breakSingleChoice = conf.getBoolean("cg.break_single_choice");
+
       counter = null;
       config = conf;
 
@@ -162,6 +166,47 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     return ci.isInstanceOf(refClassName);
   }
 
+
+  static <T extends ChoiceGenerator<?>> T createChoiceGenerator (Class<T> cgClass, SystemState ss, String id) {
+    T gen = null;
+
+    cgArgs[0] = config;
+    cgArgs[1] = id; // good thing we are not multithreaded (other fields are const)
+
+    String key = id + ".class";
+    gen = config.getEssentialInstance(key, cgClass, cgArgTypes, cgArgs);
+
+    return gen;
+  }
+
+  static <T> T registerChoiceGenerator (MJIEnv env, SystemState ss, ThreadInfo ti, ChoiceGenerator<T> cg, T dummyVal){
+
+    int n = cg.getTotalNumberOfChoices();
+    if (n == 0) {
+      ss.setIgnored(true);
+      ti.breakTransition();
+
+    } else if (n == 1 && !breakSingleChoice) {
+      // no choice -> no CG optimization
+      cg.advance();
+      return cg.getNextChoice();
+
+    } else {
+      ss.setNextChoiceGenerator(cg);
+      env.repeatInvocation();
+    }
+
+    return dummyVal;
+  }
+
+  static <T,C extends ChoiceGenerator<T>> T getNextChoice (SystemState ss, Class<C> cgClass, Class<T> choiceClass){
+    ChoiceGenerator<?> cg = ss.getChoiceGenerator();
+
+    assert (cg != null) && (cgClass.isAssignableFrom(cg.getClass())) :
+          "expected ChoiceGenerator of type " + cg.getClass().getName();
+    return ((ChoiceGenerator<T>)cg).getNextChoice();
+  }
+
   public static final boolean getBoolean____Z (MJIEnv env, int clsObjRef) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
@@ -174,10 +219,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return true;  // not used anyways
 
     } else {  // this is what really returns results
-      cg = ss.getChoiceGenerator();
-
-      assert (cg != null) && (cg instanceof BooleanChoiceGenerator) : "expected BooleanChoiceGenerator, got: " + cg;
-      return ((BooleanChoiceGenerator)cg).getNextChoice().booleanValue();
+      return getNextChoice(ss,BooleanChoiceGenerator.class,Boolean.class);
     }
   }
 
@@ -193,10 +235,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return true;  // not used anyways
 
     } else {  // this is what really returns results
-      cg = ss.getChoiceGenerator();
-
-      assert (cg != null) && (cg instanceof CustomBooleanChoiceGenerator) : "expected CustomBooleanChoiceGenerator, got: " + cg;
-      return ((CustomBooleanChoiceGenerator)cg).getNextChoice().booleanValue();
+      return getNextChoice(ss,CustomBooleanChoiceGenerator.class,Boolean.class);
     }
   }
 
@@ -205,43 +244,96 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   public static int getInt__II__I (MJIEnv env, int clsObjRef, int min, int max) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
-    ChoiceGenerator<?> cg;
 
     if (!ti.isFirstStepInsn()) { // first time around
-      if (min == max) return min;
-      cg = new IntIntervalGenerator(min,max);
-      ss.setNextChoiceGenerator(cg);
-      //ti.skipInstructionLogging();
-      env.repeatInvocation();
-      return 0;  // not used anyways
+
+      if (min > max){
+        int t = max;
+        max = min;
+        min = t;
+      }
+
+      IntChoiceGenerator cg = new IntIntervalGenerator(min,max);
+      return registerChoiceGenerator(env,ss,ti,cg,0);
 
     } else {
-      cg = ss.getChoiceGenerator();
-
-      assert (cg != null) && (cg instanceof IntChoiceGenerator) : "expected IntChoiceGenerator, got: " + cg;
-      return ((IntChoiceGenerator)cg).getNextChoice().intValue();
+      return getNextChoice(ss,IntIntervalGenerator.class,Integer.class);
     }
   }
 
   public static int getIntFromSet___3I__I (MJIEnv env, int clsObjRef, int valArrayRef){
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
-    ChoiceGenerator<?> cg;
 
     if (!ti.isFirstStepInsn()) { // first time around
       int[] values = env.getIntArrayObject(valArrayRef);
-      cg = new IntChoiceFromSet(values);
-      ss.setNextChoiceGenerator(cg);
-      //ti.skipInstructionLogging();
-      env.repeatInvocation();
-      return 0;  // not used anyways
+
+      IntChoiceGenerator cg = new IntChoiceFromSet(values);
+      return registerChoiceGenerator(env,ss,ti,cg,0);
 
     } else {
-      cg = ss.getChoiceGenerator();
-      assert (cg != null) && (cg instanceof IntChoiceGenerator) : "expected IntChoiceGenerator, got: " + cg;
-      return ((IntChoiceGenerator)cg).getNextChoice().intValue();
+      return getNextChoice(ss,IntChoiceFromSet.class,Integer.class);
     }
   }
+
+
+  public static int getInt__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, int idRef) {
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+
+
+    if (!ti.isFirstStepInsn()) { // first time around
+      String id = env.getStringObject(idRef);
+      IntChoiceGenerator cg = createChoiceGenerator( IntChoiceGenerator.class, ss, id);
+      return registerChoiceGenerator(env,ss,ti,cg, 0);
+
+    } else {
+      return getNextChoice(ss,IntChoiceGenerator.class,Integer.class);
+    }
+  }
+
+  public static int getObject__Ljava_lang_String_2__Ljava_lang_Object_2 (MJIEnv env, int clsObjRef, int idRef) {
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+
+    if (!ti.isFirstStepInsn()) { // first time around
+      String id = env.getStringObject(idRef);
+      ReferenceChoiceGenerator cg = createChoiceGenerator( ReferenceChoiceGenerator.class, ss, id);
+      return registerChoiceGenerator(env,ss,ti,cg, 0);
+
+    } else {
+      return getNextChoice(ss,ReferenceChoiceGenerator.class,Integer.class);
+    }
+  }
+
+  public static double getDouble__Ljava_lang_String_2__D (MJIEnv env, int clsObjRef, int idRef) {
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+
+    if (!ti.isFirstStepInsn()) { // first time around
+      String id = env.getStringObject(idRef);
+      DoubleChoiceGenerator cg = createChoiceGenerator( DoubleChoiceGenerator.class, ss, id);
+      return registerChoiceGenerator(env,ss,ti,cg, 0.0);
+
+    } else {
+      return getNextChoice(ss,DoubleChoiceGenerator.class,Double.class);
+    }
+  }
+
+  public static double getDoubleFromSet___3D__D (MJIEnv env, int clsObjRef, int valArrayRef){
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+
+    if (!ti.isFirstStepInsn()) { // first time around
+      double[] values = env.getDoubleArrayObject(valArrayRef);
+      DoubleChoiceGenerator cg = new DoubleChoiceFromSet(values);
+      return registerChoiceGenerator(env,ss,ti,cg, 0.0);
+
+    } else {
+      return getNextChoice(ss,DoubleChoiceFromSet.class,Double.class);
+    }
+  }
+
 
 
   public static void print__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int sRef, int val){
@@ -421,105 +513,6 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
     return 0;
   }
-
-  static ChoiceGenerator<?> createChoiceGenerator (SystemState ss, String id) {
-    ChoiceGenerator<?> gen = null;
-
-    cgArgs[0] = config;
-    cgArgs[1] = id; // good thing we are not multithreaded (other fields are const)
-
-    String key = id + ".class";
-    gen = config.getEssentialInstance(key, ChoiceGenerator.class,
-            cgArgTypes, cgArgs);
-    ss.setNextChoiceGenerator(gen);
-
-    return gen;
-  }
-
-
-  public static final int getInt__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, int idRef) {
-    ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
-    ChoiceGenerator<?> cg;
-
-    if (!ti.isFirstStepInsn()) { // first time around
-      String id = env.getStringObject(idRef);
-      cg = createChoiceGenerator( ss, id);
-      ss.setNextChoiceGenerator(cg);
-      //ti.skipInstructionLogging();
-      env.repeatInvocation();
-      return 0;  // not used anyways
-
-    } else {
-      cg = ss.getChoiceGenerator();
-
-      assert (cg != null) && (cg instanceof IntChoiceGenerator) : "expected IntChoiceGenerator, got: " + cg;
-      return ((IntChoiceGenerator)cg).getNextChoice().intValue();
-    }
-  }
-
-  public static int getObject__Ljava_lang_String_2__Ljava_lang_Object_2 (MJIEnv env, int clsObjRef, int idRef) {
-    ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
-    ChoiceGenerator<?> cg;
-
-    if (!ti.isFirstStepInsn()) { // first time around
-      String id = env.getStringObject(idRef);
-      cg = createChoiceGenerator( ss, id);
-      ss.setNextChoiceGenerator(cg);
-      //ti.skipInstructionLogging();
-      env.repeatInvocation();
-      return 0;  // not used anyways
-
-    } else {
-      cg = ss.getChoiceGenerator();
-
-      assert (cg != null) && (cg instanceof ReferenceChoiceGenerator) : "expected ReferenceChoiceGenerator, got: " + cg;
-      return ((ReferenceChoiceGenerator)cg).getNextChoice().intValue();
-    }
-  }
-
-  public static final double getDouble__Ljava_lang_String_2__D (MJIEnv env, int clsObjRef, int idRef) {
-    ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
-    ChoiceGenerator<?> cg;
-
-    if (!ti.isFirstStepInsn()) { // first time around
-      String id = env.getStringObject(idRef);
-      cg = createChoiceGenerator( ss, id);
-      ss.setNextChoiceGenerator(cg);
-      //ti.skipInstructionLogging();
-      env.repeatInvocation();
-      return 0.0;  // not used anyways
-
-    } else {
-      cg = ss.getChoiceGenerator();
-
-      assert (cg != null) && (cg instanceof DoubleChoiceGenerator) : "expected DoubleChoiceGenerator, got: " + cg;
-      return ((DoubleChoiceGenerator)cg).getNextChoice().doubleValue();
-    }
-  }
-
-  public static double getDoubleFromSet___3D__D (MJIEnv env, int clsObjRef, int valArrayRef){
-    ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
-    ChoiceGenerator<?> cg;
-
-    if (!ti.isFirstStepInsn()) { // first time around
-      double[] values = env.getDoubleArrayObject(valArrayRef);
-      cg = new DoubleChoiceFromSet(values);
-      ss.setNextChoiceGenerator(cg);
-      //ti.skipInstructionLogging();
-      env.repeatInvocation();
-      return 0.0;  // not used anyways
-
-    } else {
-      cg = ss.getChoiceGenerator();
-      assert (cg != null) && (cg instanceof DoubleChoiceGenerator) : "expected DoubleChoiceGenerator, got: " + cg;
-      return ((DoubleChoiceGenerator)cg).getNextChoice().doubleValue();
-    }
-  }
-
 
 
   /**

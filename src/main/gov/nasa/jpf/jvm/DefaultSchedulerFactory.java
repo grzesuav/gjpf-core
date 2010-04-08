@@ -37,6 +37,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
 
   boolean breakAll;
   boolean breakArrayAccess;
+  boolean breakSingleChoice;
 
   public DefaultSchedulerFactory (Config config, JVM vm, SystemState ss) {
     this.vm = vm;
@@ -44,6 +45,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
 
     breakAll = config.getBoolean("cg.threads.break_all", false);
     breakArrayAccess = config.getBoolean("cg.threads.break_arrays", false);
+    breakSingleChoice = config.getBoolean("cg.break_single_choice");
   }
 
   /*************************************** internal helpers *****************/
@@ -87,8 +89,9 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
    */
   protected ThreadInfo[] getRunnablesIfChoices() {
     ThreadList tl = vm.getThreadList();
+    int n = tl.getRunnableThreadCount();
 
-    if (tl.getRunnableThreadCount() > 1) {
+    if ((n > 1) || (n == 1 && breakSingleChoice)){
       return filter(tl.getRunnableThreads());
     } else {
       return null;

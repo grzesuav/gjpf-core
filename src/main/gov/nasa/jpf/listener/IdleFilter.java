@@ -36,21 +36,30 @@ import java.util.logging.Logger;
 
 /**
  * simple combined listener that checks if a thread seems to do idle loops that
- * might starve other threads. The most classical case is a "busy wait" loop
+ * might starve other threads or JPF. The most classical case is a "busy wait" loop
  * like
  *
- * for (long l=0; l<1000000; l++);
+ *   for (long l=0; l<1000000; l++);
  *
  * which would give us a pretty long path. Even worse, things like
  *
- * while (true);
+ *   while (true);
  *
- * would never return if we don't break the partial order execution loop. Once
- * IdleFilter determines a thread is not doing anything useful (no field access,
- * no array element access, no method calls, huge number of back jumps), it
- * breaks the POR loop and increases a counter. If it encounters the same thread
- * doing this again consecutively, it marks the state as seen, which prunes the
- * whole search tree underneath it
+ * would (just like in a normal VM) never terminate in JPF, even though people
+ * familiar with model checking would expect state matching. Only that without
+ * a transition break, JPF has no reason to match states, so we have to
+ * automatically add a break on the backjump. We shouldn't add one on every
+ * backjump though because that might cause a lot of overhead in programs that
+ * do terminate.
+ *
+ * IdleFilter has two options:
+ *   idle.max_backjumps : sets the number of backjumps after which we break
+ *   idle.action : what to do if max_backjumps are exceeded in the same thread
+ *                 on the same location and stackframe
+ *     warn : only print warning for backjumps exceeding the max_backjumps
+ *     break : break the transition to allow state matching
+ *     prune : unconditionally prune the search
+ *     jump : jump past the backjump (this is dangerous if the loop has side effects)
  */
 public class IdleFilter extends ListenerAdapter {
 
