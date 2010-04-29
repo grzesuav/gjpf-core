@@ -100,8 +100,7 @@ public class Throwable {
   }
 
   public synchronized Throwable initCause (Throwable xCause) {
-    // <2do> check exact detail message
-    if (cause == this){
+    if (xCause == this){
       throw new IllegalArgumentException("self-causation not permitted");
     }
     
