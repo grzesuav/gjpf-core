@@ -37,10 +37,15 @@ import java.util.*;
  *
  * Current limitation is that it is only sound, i.e. will not miss a race, if the sync-detection is switched off
  * during model checking. This is due to the fact that the sync-detection guesses that an acess is lock-protected
- * when it in reality might not be. It does not check for races on array entries.
+ * when it in reality might not be.
+ *
+ * The listener also checks races for array elements, but in order to do so you have to set
+ * "cg.threads.break_arrays=true" (note that it is false by default because this can cause serious state
+ * explosion)
  *
  * This algorithm came out of a discussion with Franck van Breugel and Sergey Kulikov from the University of York.
  * All credits for it goes to Franck and Sergey, all the bugs are mine.
+ *
  *
  * Author: Willem Visser
  *
