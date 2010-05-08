@@ -29,6 +29,8 @@ import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
+import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
@@ -37,6 +39,7 @@ import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
+
 
 /**
  * analyzes call/execute sequences of methods
@@ -48,8 +51,15 @@ import gov.nasa.jpf.util.StringSetMatcher;
  */
 public class MethodAnalyzer extends ListenerAdapter {
   
-  enum OpType { CALL, CALL_EXECUTE, EXECUTE, RETURN };
-  static String[] opTypeMnemonic = { "C", "X", "E", "R" };
+  enum OpType { CALL (">  "),                 // invokeX breaks transition (e.g. blocked sync)
+                EXECUTE (" - "),              // method entered method after transition break
+                CALL_EXECUTE (">- "),         // call & enter within same transition
+                RETURN ("  <"),               // method returned
+                EXEC_RETURN (" -<"),          // execute & return in consecutive ops
+                CALL_EXEC_RETURN (">-<");     // call & execute & return in consecutive ops
+    String code;
+    OpType (String code){ this.code = code; }
+  };
 
   static class MethodOp {
     OpType type;
@@ -72,39 +82,72 @@ public class MethodAnalyzer extends ListenerAdapter {
       this.ei = ei;
       this.stackDepth = stackDepth;
     }
-    
-    void printRawOn(PrintWriter pw) {
+
+    MethodOp clone (OpType newType){
+      MethodOp op = new MethodOp(newType, mi, ti, ei, stackDepth);
+      op.p = p;
+      return op;
+    }
+
+    boolean isMethodEnter() {
+      return (type == OpType.CALL_EXECUTE) || (type == OpType.EXECUTE);
+    }
+
+    boolean isSameMethod(MethodOp op) {
+      return (mi == op.mi) && (ti == op.ti) && (ei == op.ei) && (stackDepth == op.stackDepth);
+    }
+
+    void printOn(PrintWriter pw, MethodAnalyzer analyzer) {
       pw.print(ti.getIndex());
       pw.print(": ");
       
-      for (int i=0; i<stackDepth; i++) {
-        pw.print('.');
-      }
-      
-      pw.print(opTypeMnemonic[type.ordinal()]);
+      pw.print(type.code);
       pw.print(' ');
-      pw.print(mi.getFullName());
-      if (ei != null) {
-        pw.print(", ");
-        pw.print(ei);
+
+      if (analyzer.showDepth){
+        for (int i = 0; i < stackDepth; i++) {
+          pw.print('.');
+        }
+        pw.print(' ');
       }
+
+      if (!mi.isStatic()){
+        if (ei.getClassInfo() != mi.getClassInfo()){ // method is in superclass
+          pw.print(mi.getClassName());
+          pw.print('<');
+          pw.print(ei);
+          pw.print('>');
+        } else { // method is in concrete object class
+          pw.print(ei);
+        }
+      } else {
+        pw.print(mi.getClassName());
+      }
+
+      pw.print('.');
+      pw.print(mi.getUniqueName());
     }
     
     public String toString() {
-      return "Op {" + ti.getName() + ',' + opTypeMnemonic[type.ordinal()] +
+      return "Op {" + ti.getName() + ',' + type.code +
                    ',' + mi.getFullName() + ',' + ei + '}';
     }
   }
-  
+
+  // report options
+
   StringSetMatcher includes = null; //  means all
   StringSetMatcher excludes = null; //  means none
-  
+
   int maxHistory;
   String format;
   boolean skipInit;
   boolean showDepth;
   boolean showTransition;
-  
+  boolean showCompleted;
+
+  // execution environment
+
   JVM vm;
   Search search;
 
@@ -131,17 +174,16 @@ public class MethodAnalyzer extends ListenerAdapter {
     format = config.getString("method.format", "raw");
     skipInit = config.getBoolean("method.skip_init", true);
     showDepth = config.getBoolean("method.show_depth", false);
-    showTransition = config.getBoolean("method.show_transition", false);
+    showTransition = config.getBoolean("method.show_transition", true);
     
     includes = StringSetMatcher.getNonEmpty(config.getStringArray("method.include"));
     excludes = StringSetMatcher.getNonEmpty(config.getStringArray("method.exclude"));
     
     vm = jpf.getVM();
     search = jpf.getSearch();
-    
-    
   }
-  
+
+
   void addOp (JVM vm, OpType opType, MethodInfo mi, ThreadInfo ti, ElementInfo ei, int stackDepth){
     if (!(skipInit && isFirstTransition)) {
       MethodOp op = new MethodOp(opType, mi, ti, ei, stackDepth);
@@ -153,20 +195,20 @@ public class MethodAnalyzer extends ListenerAdapter {
       }
     }
   }
-  
+
   boolean isAnalyzedMethod (MethodInfo mi){
     String mthName = mi.getFullName();
     return StringSetMatcher.isMatch(mthName, includes, excludes);
   }
-  
-  void printRaw (PrintWriter pw) {
+
+  void printOn (PrintWriter pw) {
     MethodOp start = firstOp;
-    
     int lastStateId  = Integer.MIN_VALUE;
     int transition = skipInit ? 1 : 0;
     int lastTid = start.ti.getIndex();
     
     for (MethodOp op = start; op != null; op = op.p) {
+
       if (showTransition) {
         if (op.stateId != lastStateId) {
           lastStateId = op.stateId;
@@ -181,11 +223,11 @@ public class MethodAnalyzer extends ListenerAdapter {
         }
       }
       
-      op.printRawOn(pw);
+      op.printOn(pw, this);
       pw.println();
     }
   }
-  
+
   // warning - this rotates pointers in situ, i.e. destroys the original structure
   MethodOp revertAndFlatten (MethodOp start) {
 
@@ -284,10 +326,8 @@ public class MethodAnalyzer extends ListenerAdapter {
           }
         }
 
-        if (!mi.isStatic()) {
-          if (call instanceof VirtualInvocation) {
-            ei = ((VirtualInvocation)call).getThisElementInfo(ti);
-          }
+        if (call instanceof InstanceInvocation) {
+          ei = ((InstanceInvocation)call).getThisElementInfo(ti);
         }
         
         addOp(vm,type,mi,ti,ei, ti.getStackDepth());
@@ -316,12 +356,14 @@ public class MethodAnalyzer extends ListenerAdapter {
   
   public void publishPropertyViolation (Publisher publisher) {
 
-    if (firstOp == null && lastTransition != null){
+    if (firstOp == null && lastTransition != null){ // do this just once
       firstOp = revertAndFlatten(lastTransition);
     }
 
     PrintWriter pw = publisher.getOut();
     publisher.publishTopicStart("method ops " + publisher.getLastErrorId());
-    printRaw(pw);
+
+
+    printOn(pw);
   }
 }

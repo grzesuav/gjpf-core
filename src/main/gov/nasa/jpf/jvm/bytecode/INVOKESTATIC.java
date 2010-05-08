@@ -49,7 +49,11 @@ public class INVOKESTATIC extends InvokeInstruction {
   public int getByteCode () {
     return 0xB8;
   }
-  
+
+  public ElementInfo getStaticElementInfo (){
+    return getClassInfo().getStaticElementInfo();
+  }
+
   public boolean isExecutable (SystemState ss, KernelState ks, ThreadInfo ti) {
     MethodInfo mi = getInvokedMethod();
     if (mi == null) {

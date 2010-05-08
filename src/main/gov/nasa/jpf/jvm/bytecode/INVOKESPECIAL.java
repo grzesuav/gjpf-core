@@ -34,7 +34,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  *
  * invokedMethod is supposed to be constant (ClassInfo can't change)
  */
-public class INVOKESPECIAL extends InvokeInstruction {
+public class INVOKESPECIAL extends InstanceInvocation {
   public INVOKESPECIAL () {}
 
   public int getByteCode () {
@@ -63,19 +63,6 @@ public class INVOKESPECIAL extends InvokeInstruction {
     }
 
     return mi.execute(ti);
-  }
-
-  /**
-   * return the reference value of the callee object
-   */
-  public int getCalleeThis (ThreadInfo ti) {
-    if (!ti.isPostExec()){
-      // we have to dig out the 'this' reference from the callers stack
-      return ti.getCalleeThis( getArgSize());
-    } else {
-      // execute() cached it
-      return lastObj;
-    }
   }
 
 

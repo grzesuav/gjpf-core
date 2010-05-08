@@ -32,7 +32,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 /**
  * a base class for virtual call instructions
  */
-public abstract class VirtualInvocation extends InvokeInstruction {
+public abstract class VirtualInvocation extends InstanceInvocation {
 
   ClassInfo lastCalleeCi; // cached for performance
 
@@ -65,27 +65,6 @@ public abstract class VirtualInvocation extends InvokeInstruction {
     return mi.execute(ti);
   }
 
-  /**
-   * return the reference value of the callee object
-   */
-  public int getCalleeThis (ThreadInfo ti) {
-    if (!ti.isPostExec()){
-      // we have to dig out the 'this' reference from the callers stack
-      return ti.getCalleeThis( getArgSize());
-    } else {
-      // execute() cached it
-      return lastObj;
-    }
-  }
-
-  public ElementInfo getThisElementInfo (ThreadInfo ti) {
-    int thisRef = getCalleeThis(ti);
-    if (thisRef != -1) {
-      return ti.getElementInfo(thisRef);
-    } else {
-      return null;
-    }
-  }
 
   public MethodInfo getInvokedMethod(ThreadInfo ti){
     int objRef;
