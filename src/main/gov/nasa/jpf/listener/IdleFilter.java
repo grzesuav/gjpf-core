@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
@@ -61,7 +62,7 @@ import java.util.logging.Logger;
  *     prune : unconditionally prune the search
  *     jump : jump past the backjump (this is dangerous if the loop has side effects)
  */
-public class IdleFilter extends ListenerAdapter {
+public class IdleFilter extends PropertyListenerAdapter {
 
   static Logger log = JPF.getLogger("gov.nasa.jpf.listener.IdleFilter");
 
@@ -88,6 +89,9 @@ public class IdleFilter extends ListenerAdapter {
   DynamicObjectArray<ThreadStat> threadStats = new DynamicObjectArray<ThreadStat>(4,16);
 
   ThreadStat ts;
+
+  // we use this to remember that we just broke the transition
+  boolean brokeTransition;
 
   int maxBackJumps;
   Action action;
@@ -119,6 +123,8 @@ public class IdleFilter extends ListenerAdapter {
     ts.isCleared = false;
     ts.loopStackDepth = 0;
     ts.loopStartPc = ts.loopEndPc = 0;
+
+    brokeTransition = false;
   }
 
   public void stateBacktracked(Search search) {
@@ -170,28 +176,29 @@ public class IdleFilter extends ListenerAdapter {
                 Instruction next = insn.getNext();
                 ti.setNextPC(next);
 
-                log.warning("IdleFilter jumped past loop in: " + ti.getName() +
+                log.warning("jumped past loop in: " + ti.getName() +
                         "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
                 break;
 
               case PRUNE:
                 // cut this sucker off - we declare this a visited state
                 jvm.ignoreState();
-                log.warning("IdleFilter pruned thread: " + ti.getName() +
+                log.warning("pruned thread: " + ti.getName() +
                         "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
                 break;
 
               case BREAK:
                 // just break the transition and let the state matching take over
+                brokeTransition = true;
                 ti.breakTransition();
 
-                log.warning("IdleFilter breaks transition on suspicious loop in thread: " + ti.getName() +
+                log.warning("breaks transition on suspicious loop in thread: " + ti.getName() +
                         "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
 
                 break;
 
               case WARN:
-                log.warning("IdleFilter detected suspicious loop in thread: " + ti.getName() +
+                log.warning("detected suspicious loop in thread: " + ti.getName() +
                         "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
                 break;
 

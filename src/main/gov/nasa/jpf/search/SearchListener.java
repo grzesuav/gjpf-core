@@ -42,6 +42,11 @@ public interface SearchListener extends JPFListener {
   void stateBacktracked (Search search);
 
   /**
+   * some state is not going to appear in any path anymore
+   */
+  void statePurged (Search search);
+
+  /**
    * somebody stored the state
    */
   void stateStored (Search search);

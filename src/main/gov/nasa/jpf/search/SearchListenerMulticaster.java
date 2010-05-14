@@ -146,6 +146,12 @@ public class SearchListenerMulticaster implements SearchListener {
     tail.stateBacktracked(search);
   }
 
+  public void statePurged (Search search) {
+    head.statePurged(search);
+    tail.statePurged(search);
+  }
+
+
   public void stateStored (Search search) {
     head.stateStored(search);
     tail.stateStored(search);

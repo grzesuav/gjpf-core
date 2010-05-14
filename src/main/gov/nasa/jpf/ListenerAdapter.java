@@ -63,6 +63,7 @@ public class ListenerAdapter implements VMListener, SearchListener, PublisherExt
   public void stateAdvanced(Search search) {}
   public void stateProcessed(Search search) {}
   public void stateBacktracked(Search search) {}
+  public void statePurged(Search search) {}
   public void stateStored(Search search) {}
   public void stateRestored(Search search) {}
   public void propertyViolated(Search search) {}

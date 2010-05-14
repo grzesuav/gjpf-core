@@ -40,7 +40,12 @@ public class PropertyListenerAdapter extends GenericProperty implements
 
   //--- Property interface
   public boolean check(Search search, JVM vm) {
+    // return false if property is violated
     return true;
+  }
+
+  public void reset () {
+    // override if the property has any local state
   }
 
   //--- the VMListener interface
@@ -75,6 +80,7 @@ public class PropertyListenerAdapter extends GenericProperty implements
   public void stateAdvanced(Search search) {}
   public void stateProcessed(Search search) {}
   public void stateBacktracked(Search search) {}
+  public void statePurged(Search search) {}
   public void stateStored(Search search) {}
   public void stateRestored(Search search) {}
   public void propertyViolated(Search search) {}
