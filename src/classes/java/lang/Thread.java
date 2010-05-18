@@ -216,6 +216,9 @@ public class Thread implements Runnable {
   }
 
   public void run () {
+    if (target != null) {
+      target.run();
+    }
   }
 
   public static void sleep (long millis) throws InterruptedException {
