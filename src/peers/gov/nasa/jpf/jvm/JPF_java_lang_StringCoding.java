@@ -48,7 +48,7 @@ public class JPF_java_lang_StringCoding {
       env.setByteArrayElement(bref, i, (byte)env.getCharArrayElement(cref,j));
     }
     
-    return cref;
+    return bref;
 
     
   }
