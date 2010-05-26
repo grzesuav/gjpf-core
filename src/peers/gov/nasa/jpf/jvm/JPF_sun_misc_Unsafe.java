@@ -32,7 +32,7 @@ package gov.nasa.jpf.jvm;
 public class JPF_sun_misc_Unsafe {
 
   public  int getUnsafe____Lsun_misc_Unsafe_2 (MJIEnv env, int clsRef) {
-    int objRef = env.getStaticReferenceField("sun.misc.Unsafe", "singleton");
+    int objRef = env.getStaticReferenceField("sun.misc.Unsafe", "theUnsafe");
     return objRef;
   }
 

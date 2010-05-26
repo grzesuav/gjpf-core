@@ -29,12 +29,12 @@ import java.lang.reflect.Field;
  */
 
 public class Unsafe {
-  private static final Unsafe singleton = new Unsafe();
+  private static final Unsafe theUnsafe = new Unsafe();
 
   public static final int INVALID_FIELD_OFFSET = -1;
 
   public static Unsafe getUnsafe() {
-    return singleton;
+    return theUnsafe;
     //return new Unsafe();
   }
 
