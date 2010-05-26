@@ -52,37 +52,31 @@ public class JPF_sun_misc_Unsafe {
   }
 
   public static boolean compareAndSwapObject__Ljava_lang_Object_2JLjava_lang_Object_2Ljava_lang_Object_2__Z (MJIEnv env, int unsafeRef,
-                                                                                                             int oRef, long fieldOffset,
+                                                                                                             int objRef, long fieldOffset,
                                                                                                              int expectRef, int updateRef) {
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
-    ElementInfo ei = env.getElementInfo(oRef);
-
-    if (ei.getReferenceField(fi) == expectRef) {
-      ei.setReferenceField(fi, updateRef);
+    int actual = getObject__Ljava_lang_Object_2J__Ljava_lang_Object_2(env, unsafeRef, objRef, fieldOffset);
+    if (actual == expectRef) {
+      putObject__Ljava_lang_Object_2JLjava_lang_Object_2__V(env, unsafeRef, objRef, fieldOffset, updateRef);
       return true;
     }
     return false;
   }
 
   public static boolean compareAndSwapInt__Ljava_lang_Object_2JII__Z (MJIEnv env, int unsafeRef,
-                                                                      int oRef, long fieldOffset, int expect, int update) {
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
-    ElementInfo ei = env.getElementInfo(oRef);
-
-    if (ei.getIntField(fi) == expect) {
-      ei.setIntField(fi, update);
+                                                                      int objRef, long fieldOffset, int expect, int update) {
+    int actual = getInt__Ljava_lang_Object_2J__I(env, unsafeRef, objRef, fieldOffset);
+    if (actual == expect) {
+      putInt__Ljava_lang_Object_2JI__V(env, unsafeRef, objRef, fieldOffset, update);
       return true;
     }
     return false;
   }
 
   public static boolean compareAndSwapLong__Ljava_lang_Object_2JJJ__Z (MJIEnv env, int unsafeRef,
-                                                                       int oRef, long fieldOffset, long expect, long update) {
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
-    ElementInfo ei = env.getElementInfo(oRef);
-
-    if (ei.getLongField(fi) == expect) {
-      ei.setLongField(fi, update);
+                                                                       int objRef, long fieldOffset, long expect, long update) {
+    long actual = getLong__Ljava_lang_Object_2J__J(env, unsafeRef, objRef, fieldOffset);
+    if (actual == expect) {
+      putLong__Ljava_lang_Object_2JJ__V(env, unsafeRef, objRef, fieldOffset, update);
       return true;
     }
     return false;
@@ -136,79 +130,184 @@ public class JPF_sun_misc_Unsafe {
     ei.unlock(ti);
   }
 
-  public static int getObject__Ljava_lang_Object_2J__Ljava_lang_Object_2 (MJIEnv env, int unsafeRef,
-                                                                          int objRef, long l) {
-    return -1; // <2do>
-  }
-
-
   public static void ensureClassInitialized__Ljava_lang_Class_2__V (MJIEnv env, int unsafeRef, int clsObjRef) {
     // <2do> not sure if we have to do anyting here - if we have a class object, the class should already
     // be initialized
   }
 
+  public static int getObject__Ljava_lang_Object_2J__Ljava_lang_Object_2 (MJIEnv env, int unsafeRef,
+                                                                          int objRef, long fieldOffset) {
+    ElementInfo ei = env.getElementInfo(objRef);
+    if (!ei.isArray()) {
+      FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
+      return ei.getReferenceField(fi);
+    } else {
+      return ei.getElement((int)fieldOffset);
+    }
+  }
 
   public static void putObject__Ljava_lang_Object_2JLjava_lang_Object_2__V (MJIEnv env, int unsafeRef,
                                                                             int objRef, long fieldOffset, int valRef) {
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
     ElementInfo ei = env.getElementInfo(objRef);
-    ei.setReferenceField(fi, valRef);
+    if (!ei.isArray()) {
+      FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
+      ei.setReferenceField(fi, valRef);
+    } else {
+      ei.setElement((int)fieldOffset, valRef);
+    }
   }
 
+  public static void putOrderedObject__Ljava_lang_Object_2JLjava_lang_Object_2__V(
+                                                                                  MJIEnv env,
+                                                                                  int unsafeRef,
+                                                                                  int objRef,
+                                                                                  long fieldOffset,
+                                                                                  int valRef) {
+    putObject__Ljava_lang_Object_2JLjava_lang_Object_2__V(env, unsafeRef, objRef, fieldOffset, valRef);
+  }
+  
+  public static boolean getBoolean__Ljava_lang_Object_2J__Z(MJIEnv env,
+                                                            int unsafeRef,
+                                                            int objRef,
+                                                            long fieldOffset) {
+    return Types.intToBoolean(getInt__Ljava_lang_Object_2J__I(env, unsafeRef, objRef, fieldOffset));
+  }
+  
   public static void putBoolean__Ljava_lang_Object_2JZ__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, boolean val){
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
-    ElementInfo ei = env.getElementInfo(objRef);
-    ei.setIntField(fi, Types.booleanToInt(val));
+    putInt__Ljava_lang_Object_2JI__V(env, unsafeRef, objRef, fieldOffset, Types.booleanToInt(val));
   }
 
+  public static byte getByte__Ljava_lang_Object_2J__B(MJIEnv env,
+                                                      int unsafeRef,
+                                                      int objRef,
+                                                      long fieldOffset) {
+    return (byte) getInt__Ljava_lang_Object_2J__I(env, unsafeRef, objRef, fieldOffset);
+  }
+  
   public static void putByte__Ljava_lang_Object_2JB__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, byte val){
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
-    ElementInfo ei = env.getElementInfo(objRef);
-    ei.setIntField(fi, val);
+    putInt__Ljava_lang_Object_2JI__V(env, unsafeRef, objRef, fieldOffset, val);
   }
 
+  public static char getChar__Ljava_lang_Object_2J__C(MJIEnv env,
+                                                      int unsafeRef,
+                                                      int objRef,
+                                                      long fieldOffset) {
+    return (char) getInt__Ljava_lang_Object_2J__I(env, unsafeRef, objRef, fieldOffset);
+  }
+  
   public static void putChar__Ljava_lang_Object_2JC__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, char val){
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
-    ElementInfo ei = env.getElementInfo(objRef);
-    ei.setIntField(fi, val);
+    putInt__Ljava_lang_Object_2JI__V(env, unsafeRef, objRef, fieldOffset, val);
+  }
+
+  public static short getShort__Ljava_lang_Object_2J__S(MJIEnv env,
+                                                        int unsafeRef,
+                                                        int objRef,
+                                                        long fieldOffset) {
+    return (short) getInt__Ljava_lang_Object_2J__I(env, unsafeRef, objRef, fieldOffset);
   }
 
   public static void putShort__Ljava_lang_Object_2JS__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, short val){
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
+    putInt__Ljava_lang_Object_2JI__V(env, unsafeRef, objRef, fieldOffset, val);
+  }
+
+  public static int getInt__Ljava_lang_Object_2J__I(MJIEnv env, int unsafeRef,
+                                                    int objRef, long fieldOffset) {
     ElementInfo ei = env.getElementInfo(objRef);
-    ei.setIntField(fi, val);
+    if (!ei.isArray()) {
+      FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
+      return ei.getIntField(fi);
+    } else {
+      return ei.getElement((int)fieldOffset);
+    }
   }
 
   public static void putInt__Ljava_lang_Object_2JI__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, int val){
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
     ElementInfo ei = env.getElementInfo(objRef);
-    ei.setIntField(fi, val);
+    if (!ei.isArray()) {
+      FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
+      ei.setIntField(fi, val);
+    } else {
+      ei.setElement((int)fieldOffset, val);
+    }
+  }
+
+  public static void putOrderedInt__Ljava_lang_Object_2JI__V(MJIEnv env,
+                                                             int unsafeRef,
+                                                             int objRef,
+                                                             long fieldOffset,
+                                                             int val) {
+    // volatile?
+    putInt__Ljava_lang_Object_2JI__V(env, unsafeRef, objRef, fieldOffset, val);
+  }
+
+  public static float getFloat__Ljava_lang_Object_2J__F(MJIEnv env,
+                                                        int unsafeRef,
+                                                        int objRef,
+                                                        long fieldOffset) {
+    return Types.intToFloat(getInt__Ljava_lang_Object_2J__I(env, unsafeRef, objRef, fieldOffset));
   }
 
   public static void putFloat__Ljava_lang_Object_2JF__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, float val){
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
+    putInt__Ljava_lang_Object_2JI__V(env, unsafeRef, objRef, fieldOffset, Types.floatToInt(val));
+  }
+
+  public static long getLong__Ljava_lang_Object_2J__J(MJIEnv env,
+                                                      int unsafeRef,
+                                                      int objRef,
+                                                      long fieldOffset) {
     ElementInfo ei = env.getElementInfo(objRef);
-    ei.setIntField(fi, Types.floatToInt(val));
+    if (!ei.isArray()) {
+      FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
+      return ei.getLongField(fi);
+    } else {
+      return ei.getLongElement((int)fieldOffset);
+    }
   }
 
   public static void putLong__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, long val){
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
     ElementInfo ei = env.getElementInfo(objRef);
-    ei.setLongField(fi, val);
+    if (!ei.isArray()) {
+      FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
+      ei.setLongField(fi, val);
+    } else {
+      ei.setLongElement((int)fieldOffset, val);
+    }
+  }
+
+  public static void putOrderedLong__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef,
+                                                        int objRef, long fieldOffset, long val) {
+    putLong__Ljava_lang_Object_2JJ__V(env, unsafeRef, objRef, fieldOffset, val);
+  }
+
+  public static double getDouble__Ljava_lang_Object_2J__D(MJIEnv env,
+                                                         int unsafeRef,
+                                                         int objRef,
+                                                         long fieldOffset) {
+    return Types.longToDouble(getLong__Ljava_lang_Object_2J__J(env, unsafeRef, objRef, fieldOffset));
   }
 
   public static void putDouble__Ljava_lang_Object_2JD__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, double val){
-    FieldInfo fi = JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
-    ElementInfo ei = env.getElementInfo(objRef);
-    ei.setLongField(fi, Types.doubleToLong(val));
+    putLong__Ljava_lang_Object_2JJ__V(env, unsafeRef, objRef, fieldOffset, Types.doubleToLong(val));
+  }
+
+  public static int arrayBaseOffset__Ljava_lang_Class_2__I (MJIEnv env, int unsafeRef, int clazz) {
+    return 0;
+  }
+
+  public static int arrayIndexScale__Ljava_lang_Class_2__I (MJIEnv env, int unsafeRef, int clazz) {
+    return 1;
+  }
+
+  private static FieldInfo getRegisteredFieldInfo(long fieldOffset) {
+    return JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
   }
 
 }

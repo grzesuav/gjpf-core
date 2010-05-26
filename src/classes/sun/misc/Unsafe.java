@@ -55,39 +55,139 @@ public class Unsafe {
   // various accessors
   public native int getInt(Object obj, long l);
 
+  @Deprecated
+  public int getInt(Object obj, int offset) {
+    return getInt(obj, (long) offset);
+  }
+
   public native void putInt(Object obj, long l, int i);
+
+  @Deprecated
+  public void putInt(Object obj, int offset, int i) {
+    putInt(obj, (long) offset, i);
+  }
+
+  public native void putOrderedInt(Object obj, long l, int i);
 
   public native Object getObject(Object obj, long l);
 
+  @Deprecated
+  public Object getObject(Object obj, int offset) {
+    return getObject(obj, (long) offset);
+  }
+
   public native void putObject(Object obj, long l, Object obj1);
+
+  @Deprecated
+  public void putObject(Object obj, int offset, Object obj1) {
+    putObject(obj, (long) offset, obj1);
+  }
+
+  public native void putOrderedObject(Object obj, long l, Object obj1);
 
   public native boolean getBoolean(Object obj, long l);
 
+  @Deprecated
+  public boolean getBoolean(Object obj, int offset) {
+    return getBoolean(obj, (long) offset);
+  }
+
   public native void putBoolean(Object obj, long l, boolean flag);
+
+  @Deprecated
+  public void putBoolean(Object obj, int offset, boolean flag) {
+    putBoolean(obj, (long) offset, flag);
+  }
 
   public native byte getByte(Object obj, long l);
 
+  @Deprecated
+  public byte getByte(Object obj, int offset) {
+    return getByte(obj, (long) offset);
+  }
+
   public native void putByte(Object obj, long l, byte byte0);
+
+  @Deprecated
+  public void putByte(Object obj, int offset, byte byte0) {
+    putByte(obj, (long) offset, byte0);
+  }
 
   public native short getShort(Object obj, long l);
 
+  @Deprecated
+  public short getShort(Object obj, int offset) {
+    return getShort(obj, (long) offset);
+  }
+
   public native void putShort(Object obj, long l, short word0);
+
+  @Deprecated
+  public void putShort(Object obj, int offset, short word0) {
+    putShort(obj, (long) offset, word0);
+  }
 
   public native char getChar(Object obj, long l);
 
+  @Deprecated
+  public char getChar(Object obj, int offset) {
+    return getChar(obj, (long) offset);
+  }
+
   public native void putChar(Object obj, long l, char c);
+
+  @Deprecated
+  public void putChar(Object obj, int offset, char c) {
+    putChar(obj, (long) offset, c);
+  }
 
   public native long getLong(Object obj, long l);
 
+  @Deprecated
+  public long getLong(Object obj, int offset) {
+    return getLong(obj, (long) offset);
+  }
+
   public native void putLong(Object obj, long l, long l1);
+
+  public native void putOrderedLong(Object obj, long l, long l1);
+
+  @Deprecated
+  public void putLong(Object obj, int offset, long l1) {
+    putLong(obj, (long) offset, l1);
+  }
 
   public native float getFloat(Object obj, long l);
 
+  @Deprecated
+  public float getFloat(Object obj, int offset) {
+    return getFloat(obj, (long) offset);
+  }
+
   public native void putFloat(Object obj, long l, float f);
+
+  @Deprecated
+  public void putFloat(Object obj, int offset, float f) {
+    putFloat(obj, (long) offset, f);
+  }
 
   public native double getDouble(Object obj, long l);
 
+  @Deprecated
+  public double getDouble(Object obj, int offset) {
+    return getDouble(obj, (long) offset);
+  }
+
   public native void putDouble(Object obj, long l, double d);
 
+  @Deprecated
+  public void putDouble(Object obj, int offset, double d) {
+    putDouble(obj, (long) offset, d);
+  }
+
   public native void ensureClassInitialized(Class<?> cls);
+
+  public native int arrayBaseOffset(Class<?> clazz);
+
+  public native int arrayIndexScale(Class<?> clazz);
 }
