@@ -238,7 +238,7 @@ public class Thread implements Runnable {
   public native void resume();
 
   public String toString () {
-    return ("Thread[" + name + ',' + priority + ',' + group.getName() + ']');
+    return ("Thread[" + name + ',' + priority + ',' + (group == null ? "" : group.getName()) + ']');
   }
 
   public static native void yield ();
