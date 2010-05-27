@@ -97,7 +97,7 @@ public class JPF_gov_nasa_jpf_ConsoleOutputStream {
   }
 
   public static void write__I__V (MJIEnv env, int objRef, int b){
-    env.getVM().print(b);
+    env.getVM().print((char)(byte)b);
   }
   
   public static void write___3BII__V (MJIEnv env, int objRef,
