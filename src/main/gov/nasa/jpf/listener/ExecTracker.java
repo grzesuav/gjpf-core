@@ -74,7 +74,7 @@ public class ExecTracker extends ListenerAdapter {
   /******************************************* SearchListener interface *****/
   
   public void stateRestored(Search search) {
-    int id = search.getStateNumber();
+    int id = search.getStateId();
     out.println("----------------------------------- [" +
                        search.getDepth() + "] restored: " + id);
   }
@@ -91,7 +91,7 @@ public class ExecTracker extends ListenerAdapter {
   }
 
   public void stateAdvanced(Search search) {
-    int id = search.getStateNumber();
+    int id = search.getStateId();
     
     out.print("----------------------------------- [" +
                      search.getDepth() + "] forward: " + id);
@@ -113,13 +113,13 @@ public class ExecTracker extends ListenerAdapter {
   }
 
   public void stateProcessed (Search search) {
-    int id = search.getStateNumber();
+    int id = search.getStateId();
     out.println("----------------------------------- [" +
                        search.getDepth() + "] done: " + id);
   }
 
   public void stateBacktracked(Search search) {
-    int id = search.getStateNumber();
+    int id = search.getStateId();
 
     lastStep = null;
     lastMi = null;

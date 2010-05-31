@@ -261,7 +261,7 @@ public class MethodAnalyzer extends ListenerAdapter {
   public void stateAdvanced (Search search){
     
     if (search.isNewState() && (lastOp != null)) {
-      int stateId = search.getStateNumber();
+      int stateId = search.getStateId();
       
       for (MethodOp op=lastOp; op != null; op=op.p) {
         op.stateId = stateId;
@@ -276,7 +276,7 @@ public class MethodAnalyzer extends ListenerAdapter {
   }
   
   public void stateBacktracked (Search search){
-    int stateId = search.getStateNumber();
+    int stateId = search.getStateId();
     while ((lastTransition != null) && (lastTransition.stateId > stateId)){
       lastTransition = lastTransition.prevTransition;
     }
@@ -286,11 +286,11 @@ public class MethodAnalyzer extends ListenerAdapter {
   
   public void stateStored (Search search) {
     // always called after stateAdvanced
-    storedTransition.put(search.getStateNumber(), lastTransition);
+    storedTransition.put(search.getStateId(), lastTransition);
   }
   
   public void stateRestored (Search search) {
-    int stateId = search.getStateNumber();
+    int stateId = search.getStateId();
     MethodOp op = storedTransition.get(stateId);
     if (op != null) {
       lastTransition = op;

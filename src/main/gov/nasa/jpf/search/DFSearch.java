@@ -55,11 +55,7 @@ public class DFSearch extends Search {
    * <2do> we could split the properties into forward and backtrack properties,
    * the latter ones being usable for liveness properties that are basically
    * condition accumulators for sub-paths of the state space, to be checked when
-   * we backtrack to the state where they were introduced. I think that could be
-   * actually much simpler (to implement) and more powerful than our currently
-   * broken LTL based scheme.
-   * But then again - at some point the properties and the searches will probably
-   * be unified into VM listeners, anyway
+   * we backtrack to the state where they were introduced.
    */
   public void search () {
     int maxDepth = getMaxSearchDepth();

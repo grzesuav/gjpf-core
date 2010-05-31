@@ -248,7 +248,7 @@ public abstract class EventGeneratorFactory extends ListenerAdapter
   }
 
   public void stateAdvanced (Search search) {
-    int idx = search.getStateNumber();
+    int idx = search.getStateId();
 
     if (idx >= 0) { // <??> why would it be notified for the init state?
       Memento m = new Memento(this);
@@ -257,13 +257,13 @@ public abstract class EventGeneratorFactory extends ListenerAdapter
   }
 
   public void stateBacktracked (Search search) {
-    Memento m = states.get(search.getStateNumber());
+    Memento m = states.get(search.getStateId());
     m.restore(this);
     // nextCg will be re-computed (->getNext), so there is no need to reset
   }
 
   public void stateRestored (Search search) {
-    Memento m = states.get(search.getStateNumber());
+    Memento m = states.get(search.getStateId());
     m.restore(this);
 
     // nextCg is restored (not re-computed), so we need to reset

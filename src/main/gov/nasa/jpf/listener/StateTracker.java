@@ -85,7 +85,7 @@ public class StateTracker extends ListenerAdapter {
   }
 
   public void stateRestored(Search search) {
-    id = search.getStateNumber();
+    id = search.getStateId();
     depth = search.getDepth();
     operation = "restored";
     detail = null;
@@ -97,7 +97,7 @@ public class StateTracker extends ListenerAdapter {
   }
 
   public void stateAdvanced(Search search) {
-    id = search.getStateNumber();
+    id = search.getStateId();
     depth = search.getDepth();
     operation = "forward";
     if (search.isNewState()) {
@@ -112,7 +112,7 @@ public class StateTracker extends ListenerAdapter {
   }
 
   public void stateBacktracked(Search search) {
-    id = search.getStateNumber();
+    id = search.getStateId();
     depth = search.getDepth();
     operation = "backtrack";
     detail = null;

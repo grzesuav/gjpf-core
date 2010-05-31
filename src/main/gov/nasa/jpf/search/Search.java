@@ -217,8 +217,12 @@ public abstract class Search {
     return vm.getLastTransition();
   }
 
-  public int getStateNumber () {
+  public int getStateId () {
     return vm.getStateId();
+  }
+
+  public int getPurgedStateId () {
+    return -1; // a lot of Searches don't purge any states
   }
 
   public boolean requestBacktrack () {
@@ -347,6 +351,16 @@ public abstract class Search {
         listener.stateBacktracked(this);
       } catch (Throwable t){
         throw new JPFListenerException("exception during stateBacktracked() notification", t);
+      }
+    }
+  }
+
+  protected void notifyStatePurged () {
+    if (listener != null) {
+      try {
+        listener.statePurged(this);
+      } catch (Throwable t){
+        throw new JPFListenerException("exception during statePurged() notification", t);
       }
     }
   }

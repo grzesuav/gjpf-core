@@ -133,7 +133,7 @@ public class Trace<T> extends ListenerAdapter implements Iterable<T> {
   
   public void stateAdvanced (Search search) {
     if (search.isNewState() && (lastElement != null)) {
-      int stateId = search.getStateNumber();
+      int stateId = search.getStateId();
       
       for (TraceElement<T> op=lastElement; op != null; op=op.prevElement) {
         assert op.stateId == 0;
@@ -149,7 +149,7 @@ public class Trace<T> extends ListenerAdapter implements Iterable<T> {
   }
   
   public void stateBacktracked (Search search){
-    int stateId = search.getStateNumber();
+    int stateId = search.getStateId();
     while ((lastTransition != null) && (lastTransition.stateId > stateId)){
       lastTransition = lastTransition.prevTransition;
     }
@@ -162,11 +162,11 @@ public class Trace<T> extends ListenerAdapter implements Iterable<T> {
     }
     
     // always called after stateAdvanced
-    storedTransition.put(search.getStateNumber(), lastTransition);
+    storedTransition.put(search.getStateId(), lastTransition);
   }
   
   public void stateRestored (Search search) {
-    int stateId = search.getStateNumber();
+    int stateId = search.getStateId();
     TraceElement<T> op = storedTransition.get(stateId);
     if (op != null) {
       lastTransition = op;

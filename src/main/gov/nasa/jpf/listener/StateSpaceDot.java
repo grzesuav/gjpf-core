@@ -115,7 +115,7 @@ public class StateSpaceDot extends ListenerAdapter {
   }
 
   public void stateAdvanced(Search search) {
-    int id = search.getStateNumber();
+    int id = search.getStateId();
     boolean has_next =search.hasNextState();
     boolean is_new = search.isNewState();
     try {
@@ -135,7 +135,7 @@ public class StateSpaceDot extends ListenerAdapter {
   }
 
   public void stateRestored (Search search) {
-    prev_state.reset(search.getStateNumber(), false, false);
+    prev_state.reset(search.getStateId(), false, false);
   }
 
   public void stateProcessed (Search search) {
@@ -145,7 +145,7 @@ public class StateSpaceDot extends ListenerAdapter {
   public void stateBacktracked(Search search) {
     try {
       addNode(prev_state);
-      prev_state.reset(search.getStateNumber(), false, false);
+      prev_state.reset(search.getStateId(), false, false);
       if (format==DOT_FORMAT) {
         graph.write("/* searchBacktracked(" + prev_state + ") */");
         graph.newLine();
@@ -156,7 +156,7 @@ public class StateSpaceDot extends ListenerAdapter {
   public void searchConstraintHit(Search search) {
     try {
       if (format==DOT_FORMAT) {
-        graph.write("/* searchConstraintHit(" + search.getStateNumber() + ") */");
+        graph.write("/* searchConstraintHit(" + search.getStateId() + ") */");
         graph.newLine();
       }
     } catch (IOException e) {}
@@ -175,7 +175,7 @@ public class StateSpaceDot extends ListenerAdapter {
 	try {
 	  prev_state.error = getErrorMsg(search);
 	  if (format==DOT_FORMAT) {
-	    graph.write("/* propertyViolated(" + search.getStateNumber() + ") */");
+	    graph.write("/* propertyViolated(" + search.getStateId() + ") */");
 	    graph.newLine();
 	  }
 	} catch (IOException e) {}

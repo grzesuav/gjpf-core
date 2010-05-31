@@ -109,7 +109,7 @@ public class VarTracker extends ListenerAdapter {
   public void stateAdvanced(Search search) {
     
     if (search.isNewState()) { // don't count twice
-      int stateId = search.getStateNumber();
+      int stateId = search.getStateId();
       nStates++;
       int depth = search.getDepth();
       if (depth > maxDepth) maxDepth = depth;

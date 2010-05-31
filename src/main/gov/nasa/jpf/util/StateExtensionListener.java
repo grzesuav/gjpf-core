@@ -40,7 +40,7 @@ public class StateExtensionListener <T> extends ListenerAdapter {
   }
 
   public void stateAdvanced (Search search) {
-    int idx = search.getStateNumber();
+    int idx = search.getStateId();
 
     if (idx >= 0) { // <??> why would it be notified for the init state?
       T se = client.getStateExtension();
@@ -49,7 +49,7 @@ public class StateExtensionListener <T> extends ListenerAdapter {
   }
 
   public void stateBacktracked (Search search) {
-    int idx = search.getStateNumber();
+    int idx = search.getStateId();
 
     if (idx >= 0) {
       T se = states.get(idx);
@@ -59,7 +59,7 @@ public class StateExtensionListener <T> extends ListenerAdapter {
   }
 
   public void stateRestored (Search search) {
-    int idx = search.getStateNumber();
+    int idx = search.getStateId();
 
     if (idx >= 0) {
       T se = states.get(idx);

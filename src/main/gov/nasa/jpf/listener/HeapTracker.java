@@ -223,7 +223,7 @@ public class HeapTracker extends PropertyListenerAdapter {
   public void stateAdvanced(Search search) {
 
     if (search.isNewState()) {
-      int id = search.getStateNumber();
+      int id = search.getStateId();
 
       if (id > maxState) maxState = id;
 

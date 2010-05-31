@@ -97,6 +97,9 @@
 
 	  <copy file="default.properties" todir="build/main/gov/nasa/jpf" failonerror="true"/>
 	  <copy file="build.properties" todir="build/main/gov/nasa/jpf" failonerror="false"/>
+    <copy todir="build/main/gov/nasa/jpf/tool/templates" failonerror="false">
+      <fileset dir="src/main/gov/nasa/jpf/tool/templates"/>
+    </copy>
   </target>
   
   <target name="-compile-peers" if="have_peers" depends="-compile-main" >

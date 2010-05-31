@@ -115,7 +115,7 @@ public class MethodTracker extends ListenerAdapter {
    */
 
   public void stateRestored(Search search) {
-    int id = search.getStateNumber();
+    int id = search.getStateId();
     out.println("----------------------------------- [" +
                        search.getDepth() + "] restored: " + id);
   }
@@ -126,7 +126,7 @@ public class MethodTracker extends ListenerAdapter {
   }
 
   public void stateAdvanced(Search search) {
-    int id = search.getStateNumber();
+    int id = search.getStateId();
 
     out.print("----------------------------------- [" +
                      search.getDepth() + "] forward: " + id);
@@ -146,7 +146,7 @@ public class MethodTracker extends ListenerAdapter {
   }
 
   public void stateBacktracked(Search search) {
-    int id = search.getStateNumber();
+    int id = search.getStateId();
 
     lastMi = null;
 
