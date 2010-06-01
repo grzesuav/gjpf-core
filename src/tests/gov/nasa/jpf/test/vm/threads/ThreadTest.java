@@ -69,7 +69,8 @@ public class ThreadTest extends TestJPF {
   }
 
   @Test public void testDaemonTermination () {
-    if (verifyNoPropertyViolation("+cg.threads.break_all=true")) {
+    if (verifyNoPropertyViolation("+cg.threads.break_start=true",
+                                  "+cg.threads.break_yield=true")) {
       final Thread mainThread = Thread.currentThread();
 
       Runnable r = new Runnable() {
@@ -184,7 +185,8 @@ public class ThreadTest extends TestJPF {
   }
   
   @Test public void testYield () {
-    if (verifyNoPropertyViolation("+cg.threads.break_all=true")) {
+    if (verifyNoPropertyViolation("+cg.threads.break_start=true",
+                                  "+cg.threads.break_yield=true")) {
       Runnable r = new Runnable() {
 
         public void run() {
