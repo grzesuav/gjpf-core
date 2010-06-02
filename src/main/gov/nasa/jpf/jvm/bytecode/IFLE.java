@@ -33,4 +33,8 @@ public class IFLE extends IfInstruction {
   public int getByteCode () {
     return 0x9E;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

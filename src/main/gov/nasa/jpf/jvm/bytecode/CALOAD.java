@@ -28,4 +28,8 @@ public class CALOAD extends ArrayLoadInstruction {
   public int getByteCode () {
     return 0x34;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

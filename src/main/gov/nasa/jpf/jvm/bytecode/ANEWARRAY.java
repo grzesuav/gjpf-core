@@ -75,4 +75,8 @@ public class ANEWARRAY extends Instruction {
   public int getByteCode () {
     return 0xBD;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

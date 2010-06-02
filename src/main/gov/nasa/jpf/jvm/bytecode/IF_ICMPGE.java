@@ -37,4 +37,8 @@ public class IF_ICMPGE extends IfInstruction {
   public int getByteCode () {
     return 0xA2;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

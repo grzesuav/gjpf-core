@@ -47,4 +47,8 @@ public class DDIV extends Instruction {
   public int getByteCode () {
     return 0x6F;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -34,4 +34,8 @@ public class INVOKEINTERFACE extends VirtualInvocation {
   public int getByteCode () {
     return 0xB9;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

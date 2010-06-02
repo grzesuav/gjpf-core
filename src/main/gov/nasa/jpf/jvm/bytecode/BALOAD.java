@@ -28,4 +28,8 @@ public class BALOAD extends ArrayLoadInstruction {
   public int getByteCode () {
     return 0x33;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

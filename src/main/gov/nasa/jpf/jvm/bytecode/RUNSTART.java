@@ -75,6 +75,8 @@ public class RUNSTART extends Instruction {
     // nothing - this is initialized explicitly, not from BCEL loaded insns
   }
 
-
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 
 }

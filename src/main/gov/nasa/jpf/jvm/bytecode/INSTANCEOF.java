@@ -67,4 +67,8 @@ public class INSTANCEOF extends Instruction {
   public int getByteCode () {
     return 0xC1;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

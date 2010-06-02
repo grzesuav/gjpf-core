@@ -115,5 +115,8 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
   public boolean isRead() {
     return false;
   }
-
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

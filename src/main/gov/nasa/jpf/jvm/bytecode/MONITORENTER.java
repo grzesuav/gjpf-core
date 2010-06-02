@@ -88,4 +88,8 @@ public class MONITORENTER extends LockInstruction {
   public int getByteCode () {
     return 0xC2;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

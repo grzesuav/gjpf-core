@@ -45,4 +45,8 @@ public class LAND extends Instruction {
   public int getByteCode () {
     return 0x7F;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

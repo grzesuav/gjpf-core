@@ -47,4 +47,8 @@ public class DMUL extends Instruction {
   public int getByteCode () {
     return 0x6B;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

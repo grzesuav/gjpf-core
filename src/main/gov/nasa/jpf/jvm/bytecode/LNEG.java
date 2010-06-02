@@ -42,4 +42,8 @@ public class LNEG extends Instruction {
   public int getByteCode () {
     return 0x75;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

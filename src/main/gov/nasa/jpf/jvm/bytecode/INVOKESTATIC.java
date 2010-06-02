@@ -159,5 +159,9 @@ public class INVOKESTATIC extends InvokeInstruction {
   public Object getFieldValue (String id, ThreadInfo ti) {
     return getClassInfo().getStaticFieldValueObject(id);
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }
 

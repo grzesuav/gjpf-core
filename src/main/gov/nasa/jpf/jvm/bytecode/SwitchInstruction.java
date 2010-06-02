@@ -111,4 +111,8 @@ public abstract class SwitchInstruction extends Instruction {
   public int getMatchConst (int idx){
     return matches[idx];
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

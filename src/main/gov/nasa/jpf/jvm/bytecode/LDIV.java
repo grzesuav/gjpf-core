@@ -50,4 +50,8 @@ public class LDIV extends Instruction {
   public int getByteCode () {
     return 0x6D;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

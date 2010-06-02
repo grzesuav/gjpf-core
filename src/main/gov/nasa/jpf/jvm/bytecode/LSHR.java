@@ -45,4 +45,8 @@ public class LSHR extends Instruction {
   public int getByteCode () {
     return 0x7B;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

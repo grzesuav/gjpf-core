@@ -45,4 +45,8 @@ public class LUSHR extends Instruction {
   public int getByteCode () {
     return 0x7D;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -70,4 +70,8 @@ public class ICONST extends Instruction {
       return s + value;
     }
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -62,4 +62,8 @@ public class FRETURN extends ReturnInstruction {
   public String toString() {
     return "freturn " + mi.getFullName();
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

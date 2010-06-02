@@ -55,4 +55,8 @@ public class LCMP extends Instruction {
   public int getByteCode () {
     return 0x94;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

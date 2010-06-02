@@ -37,4 +37,8 @@ public class IF_ACMPEQ extends IfInstruction {
   public int getByteCode () {
     return 0xA5;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -64,4 +64,8 @@ public class DLOAD extends LocalVariableInstruction {
       return mnemonic;
     }
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

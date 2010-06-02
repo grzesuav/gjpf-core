@@ -28,4 +28,8 @@ public class LASTORE extends LongArrayStoreInstruction {
   public int getByteCode () {
     return 0x50;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

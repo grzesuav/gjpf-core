@@ -58,4 +58,8 @@ public class LCONST extends Instruction {
     }    
   }
   
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
+  
 }

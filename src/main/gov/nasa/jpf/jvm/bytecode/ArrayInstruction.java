@@ -113,4 +113,8 @@ public abstract class ArrayInstruction extends Instruction {
   abstract protected int peekIndex (ThreadInfo ti);
 
   public abstract boolean isRead();
+
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -70,4 +70,7 @@ public class LRETURN extends ReturnInstruction {
     return "lreturn " + mi.getFullName();
   }
 
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

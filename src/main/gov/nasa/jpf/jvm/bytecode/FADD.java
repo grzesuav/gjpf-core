@@ -47,4 +47,8 @@ public class FADD extends Instruction {
   public int getByteCode () {
     return 0x62;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

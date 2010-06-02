@@ -44,4 +44,8 @@ public class F2I extends Instruction {
   public int getByteCode () {
     return 0x8B;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

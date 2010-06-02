@@ -28,4 +28,8 @@ public class AASTORE extends ArrayStoreInstruction
   public int getByteCode () {
     return 0x53;
   }
+
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

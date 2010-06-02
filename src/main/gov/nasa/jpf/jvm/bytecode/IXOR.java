@@ -45,4 +45,8 @@ public class IXOR extends Instruction {
   public int getByteCode () {
     return 0x82;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

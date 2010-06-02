@@ -46,4 +46,8 @@ public class I2D extends Instruction {
   public int getByteCode () {
     return 0x87;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

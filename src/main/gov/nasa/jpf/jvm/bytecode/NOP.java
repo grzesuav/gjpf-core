@@ -44,4 +44,8 @@ public class NOP extends Instruction {
   public int getByteCode () {
     return 0x00;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -58,4 +58,8 @@ public class DCMPG extends Instruction {
   public int getByteCode () {
     return 0x98;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

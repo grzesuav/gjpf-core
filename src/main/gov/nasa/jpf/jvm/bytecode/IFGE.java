@@ -34,4 +34,8 @@ public class IFGE extends IfInstruction {
   public int getByteCode () {
     return 0x9C;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

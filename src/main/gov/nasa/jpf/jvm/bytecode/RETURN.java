@@ -82,4 +82,8 @@ public class RETURN extends ReturnInstruction {
   public int getByteCode () {
     return 0xB1;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

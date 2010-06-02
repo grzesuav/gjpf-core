@@ -47,4 +47,8 @@ public class FSUB extends Instruction {
   public int getByteCode () {
     return 0x66;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

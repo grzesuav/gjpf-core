@@ -45,4 +45,8 @@ public class IAND extends Instruction {
   public int getByteCode () {
     return 0x7E;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

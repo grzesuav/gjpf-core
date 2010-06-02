@@ -87,4 +87,8 @@ public class NEW extends Instruction {
   public int getByteCode () {
     return 0xBB;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

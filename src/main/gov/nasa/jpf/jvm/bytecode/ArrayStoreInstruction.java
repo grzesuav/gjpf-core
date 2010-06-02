@@ -105,5 +105,9 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction
   public boolean isRead() {
     return false;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 
 }

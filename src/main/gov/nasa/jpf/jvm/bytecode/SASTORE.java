@@ -27,4 +27,8 @@ public class SASTORE extends ArrayStoreInstruction {
   public int getByteCode () {
     return 0x56;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

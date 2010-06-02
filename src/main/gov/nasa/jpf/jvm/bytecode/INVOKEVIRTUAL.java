@@ -36,4 +36,8 @@ public class INVOKEVIRTUAL extends VirtualInvocation {
     // methodInfo not set outside real call context (requires target object)
     return "invokevirtual " + cname + '.' + mname;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

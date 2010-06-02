@@ -51,4 +51,8 @@ public class IINC extends Instruction {
   public int getByteCode () {
     return 0x84; // ?? wide
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

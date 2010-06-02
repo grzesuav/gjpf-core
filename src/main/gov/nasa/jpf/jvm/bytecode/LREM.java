@@ -50,4 +50,8 @@ public class LREM extends Instruction {
   public int getByteCode () {
     return 0x71;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

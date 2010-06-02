@@ -70,4 +70,7 @@ public class DRETURN extends ReturnInstruction {
     return "dreturn " + mi.getFullName();
   }
 
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

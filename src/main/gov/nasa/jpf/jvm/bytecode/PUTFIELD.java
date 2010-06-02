@@ -134,6 +134,9 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     return false;
   }
 
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }
 
 

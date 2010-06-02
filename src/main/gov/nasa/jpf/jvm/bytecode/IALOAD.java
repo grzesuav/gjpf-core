@@ -27,4 +27,8 @@ public class IALOAD extends ArrayLoadInstruction {
   public int getByteCode () {
     return 0x2E;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

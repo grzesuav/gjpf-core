@@ -32,4 +32,8 @@ public class TABLESWITCH extends SwitchInstruction {
   public int getByteCode () {
     return 0xAA;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

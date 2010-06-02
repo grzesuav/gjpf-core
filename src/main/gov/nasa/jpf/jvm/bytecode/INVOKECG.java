@@ -133,4 +133,8 @@ public class INVOKECG extends Instruction {
     return 258;
   }
   
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
+  
 }

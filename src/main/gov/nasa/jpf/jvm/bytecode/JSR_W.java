@@ -49,4 +49,8 @@ public class JSR_W extends Instruction {
   public int getByteCode () {
     return 0xC9;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -47,4 +47,8 @@ public class DADD extends Instruction {
   public int getByteCode () {
     return 0x63;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

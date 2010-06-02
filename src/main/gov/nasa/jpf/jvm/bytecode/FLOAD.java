@@ -64,4 +64,8 @@ public class FLOAD extends LocalVariableInstruction {
       return mnemonic;
     }
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

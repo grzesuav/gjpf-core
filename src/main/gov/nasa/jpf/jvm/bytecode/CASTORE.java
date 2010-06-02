@@ -29,4 +29,8 @@ public class CASTORE extends ArrayStoreInstruction
   public int getByteCode () {
     return 0x55;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

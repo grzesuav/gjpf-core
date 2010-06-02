@@ -34,4 +34,8 @@ public class IFNONNULL extends IfInstruction {
   public int getByteCode () {
     return 0xC7;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

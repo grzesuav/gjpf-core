@@ -50,4 +50,8 @@ public abstract class LongArrayStoreInstruction extends ArrayStoreInstruction {
   protected int peekIndex(ThreadInfo ti){
     return ti.peek(2);
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

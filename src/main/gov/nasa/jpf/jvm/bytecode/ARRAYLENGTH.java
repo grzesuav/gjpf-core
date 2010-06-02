@@ -49,4 +49,8 @@ public class ARRAYLENGTH extends Instruction {
   public int getByteCode () {
     return 0xBE;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

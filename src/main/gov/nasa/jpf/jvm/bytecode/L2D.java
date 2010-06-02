@@ -46,4 +46,8 @@ public class L2D extends Instruction {
   public int getByteCode () {
     return 0x8A;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -32,4 +32,8 @@ public class IFNULL extends IfInstruction {
   public int getByteCode () {
     return 0xC6;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

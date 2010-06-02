@@ -45,4 +45,8 @@ public class ISHL extends Instruction {
   public int getByteCode () {
     return 0x78;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

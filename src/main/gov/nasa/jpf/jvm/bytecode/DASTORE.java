@@ -29,4 +29,8 @@ public class DASTORE extends LongArrayStoreInstruction
   public int getByteCode () {
     return 0x52;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

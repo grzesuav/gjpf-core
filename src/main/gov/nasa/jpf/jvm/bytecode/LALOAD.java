@@ -27,4 +27,8 @@ public class LALOAD extends LongArrayLoadInstruction {
   public int getByteCode () {
     return 0x2F;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

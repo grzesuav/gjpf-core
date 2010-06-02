@@ -133,4 +133,8 @@ public abstract class ReturnInstruction extends Instruction {
       return nextPC;
     }
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

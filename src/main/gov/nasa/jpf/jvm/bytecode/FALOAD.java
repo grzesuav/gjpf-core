@@ -27,4 +27,8 @@ public class FALOAD extends ArrayLoadInstruction {
   public int getByteCode () {
     return 0x30;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

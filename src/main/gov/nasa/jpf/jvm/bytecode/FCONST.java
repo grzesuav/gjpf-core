@@ -47,4 +47,8 @@ public class FCONST extends Instruction {
   public int getByteCode () {
     return 0x0B; // ?? FCONST_0, _1, _2
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -45,4 +45,8 @@ public class IMUL extends Instruction {
   public int getByteCode () {
     return 0x68;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

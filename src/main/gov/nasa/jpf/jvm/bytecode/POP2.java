@@ -42,4 +42,8 @@ public class POP2 extends Instruction {
   public int getByteCode () {
     return 0x58;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

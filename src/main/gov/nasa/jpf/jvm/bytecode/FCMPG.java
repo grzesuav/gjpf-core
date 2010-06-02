@@ -58,4 +58,8 @@ public class FCMPG extends Instruction {
   public int getByteCode () {
     return 0x96;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

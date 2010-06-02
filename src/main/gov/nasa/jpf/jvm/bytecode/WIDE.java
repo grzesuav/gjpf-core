@@ -54,4 +54,7 @@ public class WIDE extends Instruction {
     //isWide = true;
   }
 
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

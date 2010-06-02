@@ -46,4 +46,8 @@ public class ATHROW extends Instruction {
   public int getByteCode () {
     return 0xBF;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

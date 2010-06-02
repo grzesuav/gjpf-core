@@ -49,4 +49,8 @@ public class BIPUSH extends Instruction {
   public int getByteCode () {
     return 0x10;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -35,7 +35,7 @@ import org.apache.bcel.generic.InstructionHandle;
 /**
  * common root of all JPF bytecode instruction classes 
  */
-public abstract class Instruction {
+public abstract class Instruction implements InstructionVisit {
 
   protected static final List<String> unimplemented = new ArrayList<String>();
   protected int position; // accumulated position (prev pos + prev bc-length)
@@ -304,4 +304,6 @@ public abstract class Instruction {
   public Instruction getNext(ThreadInfo th) {
     return th.getPC().getNext();
   }
+  
+  public abstract void accept(InstructionVisitor insVisitor);
 }

@@ -45,4 +45,8 @@ public class LOR extends Instruction {
   public int getByteCode () {
     return 0x81;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

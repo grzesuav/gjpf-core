@@ -49,4 +49,8 @@ public class SIPUSH extends Instruction {
   public int getByteCode () {
     return 0x11;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

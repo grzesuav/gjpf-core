@@ -227,6 +227,10 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
       }
     }
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 
 }
 

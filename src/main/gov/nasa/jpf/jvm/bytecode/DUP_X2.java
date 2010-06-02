@@ -41,4 +41,8 @@ public class DUP_X2 extends Instruction {
   public int getByteCode () {
     return 0x5B;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

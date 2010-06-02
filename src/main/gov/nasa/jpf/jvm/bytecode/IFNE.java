@@ -34,4 +34,8 @@ public class IFNE extends IfInstruction {
   public int getByteCode () {
     return 0x9A;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

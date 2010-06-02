@@ -47,4 +47,8 @@ public class RET extends Instruction {
   public int getByteCode () {
     return 0xA9; // ?? wide
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

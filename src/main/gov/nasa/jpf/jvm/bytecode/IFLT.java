@@ -34,4 +34,8 @@ public class IFLT extends IfInstruction {
   public int getByteCode () {
     return 0x9B;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

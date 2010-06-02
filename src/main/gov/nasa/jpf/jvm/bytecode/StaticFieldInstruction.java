@@ -110,5 +110,8 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     return true;
   }
 
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }
 

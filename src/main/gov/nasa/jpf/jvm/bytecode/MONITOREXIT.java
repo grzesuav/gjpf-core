@@ -67,4 +67,8 @@ public class MONITOREXIT extends LockInstruction {
   public int getByteCode () {
     return 0xC3;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

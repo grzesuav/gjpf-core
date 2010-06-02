@@ -46,4 +46,8 @@ public class D2L extends Instruction {
   public int getByteCode () {
     return 0x8F;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -105,4 +105,8 @@ public class INVOKECLINIT extends INVOKESTATIC {
   public int getByteCode () {
     return OPCODE;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -65,4 +65,8 @@ public class FSTORE extends LocalVariableInstruction implements StoreInstruction
       return mnemonic;
     }
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

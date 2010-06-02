@@ -35,4 +35,8 @@ public class IFEQ extends IfInstruction {
   public int getByteCode () {
     return 0x99;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -50,4 +50,8 @@ public class IDIV extends Instruction {
   public int getByteCode () {
     return 0x6C;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -42,4 +42,8 @@ public abstract class LockInstruction extends Instruction {
     
     return null;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

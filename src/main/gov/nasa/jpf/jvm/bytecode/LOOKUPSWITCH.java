@@ -32,4 +32,8 @@ public class LOOKUPSWITCH extends SwitchInstruction {
   public int getByteCode () {
     return 0xAB;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

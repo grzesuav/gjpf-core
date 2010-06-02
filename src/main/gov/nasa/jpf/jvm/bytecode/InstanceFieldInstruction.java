@@ -153,5 +153,9 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
 
     return ei.toString() + '.' + fi.getName();
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }
 

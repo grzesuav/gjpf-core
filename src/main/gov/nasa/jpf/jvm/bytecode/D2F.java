@@ -44,4 +44,8 @@ public class D2F extends Instruction {
   public int getByteCode () {
     return 0x90;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

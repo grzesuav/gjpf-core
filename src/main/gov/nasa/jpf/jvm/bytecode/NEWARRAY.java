@@ -76,4 +76,8 @@ public class NEWARRAY extends Instruction {
   public int getByteCode () {
     return 0xBC;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

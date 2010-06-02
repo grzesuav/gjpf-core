@@ -33,4 +33,8 @@ public class GOTO_W extends GOTO {
   public int getByteCode() {
     return 0xc8;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

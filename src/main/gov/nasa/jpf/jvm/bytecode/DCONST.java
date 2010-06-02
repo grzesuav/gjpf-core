@@ -47,4 +47,8 @@ public class DCONST extends Instruction {
   public int getByteCode () {
     return 0x0E;  // ? DCONST_0 0x0E , DCONST_1 0x0F
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

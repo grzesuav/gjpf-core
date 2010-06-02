@@ -43,4 +43,8 @@ public class ACONST_NULL extends Instruction {
   public int getByteCode () {
     return 0x01;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

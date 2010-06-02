@@ -47,4 +47,8 @@ public class DSUB extends Instruction {
   public int getByteCode () {
     return 0x67;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

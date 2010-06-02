@@ -66,4 +66,8 @@ public class GOTO extends Instruction {
     }
     return asString;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

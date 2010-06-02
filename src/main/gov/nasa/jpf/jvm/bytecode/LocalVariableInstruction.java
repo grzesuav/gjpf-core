@@ -68,6 +68,10 @@ public abstract class LocalVariableInstruction extends Instruction
     
     return varId;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }
 
 

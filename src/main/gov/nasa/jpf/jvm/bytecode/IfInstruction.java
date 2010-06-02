@@ -118,4 +118,8 @@ public abstract class IfInstruction extends Instruction {
   public int getLength() {
     return 3; // usually opcode, bb1, bb2
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

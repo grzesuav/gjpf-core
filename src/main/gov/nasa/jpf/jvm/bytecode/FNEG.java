@@ -43,4 +43,8 @@ public class FNEG extends Instruction {
   public int getByteCode () {
     return 0x76;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -75,4 +75,8 @@ public class LDC2_W extends Instruction {
   public long getValue() {
     return value;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

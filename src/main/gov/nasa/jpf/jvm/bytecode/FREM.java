@@ -50,4 +50,8 @@ public class FREM extends Instruction {
   public int getByteCode () {
     return 0x72;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

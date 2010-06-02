@@ -45,4 +45,8 @@ public class LADD extends Instruction {
   public int getByteCode () {
     return 0x61;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

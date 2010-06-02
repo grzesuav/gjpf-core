@@ -37,4 +37,8 @@ public class IF_ACMPNE extends IfInstruction {
   public int getByteCode () {
     return 0xA6;
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

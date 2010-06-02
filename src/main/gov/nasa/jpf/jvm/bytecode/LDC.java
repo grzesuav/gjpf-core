@@ -146,4 +146,8 @@ public class LDC extends Instruction {
       return null;
     }
   }
+  
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }
