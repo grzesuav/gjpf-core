@@ -305,5 +305,7 @@ public abstract class Instruction implements InstructionVisit {
     return th.getPC().getNext();
   }
   
-  public abstract void accept(InstructionVisitor insVisitor);
+  public void accept(InstructionVisitor insVisitor) {
+	  insVisitor.visit(this);
+  }
 }

@@ -35,7 +35,7 @@ import gov.nasa.jpf.search.SearchListener;
  *
  * <2do> rewrite once GenericProperty is an interface
  */
-public class PropertyListenerAdapter extends GenericProperty implements
+public abstract class PropertyListenerAdapter extends GenericProperty implements
     SearchListener, VMListener, PublisherExtension {
 
   //--- Property interface

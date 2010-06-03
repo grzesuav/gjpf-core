@@ -29,7 +29,7 @@ import gov.nasa.jpf.search.SearchListener;
  * Adapter class that dummy implements both VMListener and SearchListener interfaces
  * Used to ease implementation of listeners that only process a few notifications
  */
-public class ListenerAdapter implements VMListener, SearchListener, PublisherExtension {
+public abstract class ListenerAdapter implements VMListener, SearchListener, PublisherExtension {
 
   //--- the VMListener interface
   public void instructionExecuted(JVM vm) {}
