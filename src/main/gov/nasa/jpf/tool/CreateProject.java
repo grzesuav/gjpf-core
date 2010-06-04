@@ -124,9 +124,9 @@ public class CreateProject {
   public void createProject () throws CreateProject.Exception {
 
     // does the project dir already exist
-    if (projectDir.isDirectory()){
-      throw new Exception("project directory already exists: " + projectDir.getPath());
-    }
+    //if (projectDir.isDirectory()){
+    //  throw new Exception("project directory already exists: " + projectDir.getPath());
+    //}
 
     // if we didn't set them explicitly, use the defaults
     if (srcDirs.isEmpty()){

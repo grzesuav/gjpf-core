@@ -54,7 +54,7 @@ public abstract class Search {
   protected int       depth = 0;
   protected JVM       vm;
 
-  ArrayList<Property> properties;
+  protected ArrayList<Property> properties;
 
   // the forward() attributes, e.g. used by the listeners
   protected boolean isEndState = false;
@@ -70,15 +70,13 @@ public abstract class Search {
   // these states control the search loop
   protected boolean done = false;
   protected boolean doBacktrack = false;
-  SearchListener     listener;
+  protected SearchListener     listener;
 
-  Config config; // to later-on access settings that are only used once (not ideal)
+  protected final Config config; // to later-on access settings that are only used once (not ideal)
 
-  // statistics
-  //int maxSearchDepth = 0;
 
   /** storage to keep track of state depths */
-  final IntVector stateDepth = new IntVector();
+  protected final IntVector stateDepth = new IntVector();
 
   protected Search (Config config, JVM vm) {
     this.vm = vm;
@@ -133,7 +131,7 @@ public abstract class Search {
     return false;
   }
 
-  boolean isPropertyViolated () {
+  public boolean isPropertyViolated () {
     for (Property p : properties) {
       if (!p.check(this, vm)) {
         error(p, vm.getClonedPath(), vm.getThreadList());
@@ -442,11 +440,11 @@ public abstract class Search {
     done = true;
   }
 
-  void setStateDepth (int stateId, int depth) {
+  protected void setStateDepth (int stateId, int depth) {
     stateDepth.set(stateId, depth + 1);
   }
 
-  int getStateDepth (int stateId) {
+  public int getStateDepth (int stateId) {
     int depthPlusOne = stateDepth.get(stateId);
     if (depthPlusOne <= 0) {
       throw new JPFException("Asked for depth of unvisited state");
@@ -460,7 +458,7 @@ public abstract class Search {
    * (with a threshold amount left) so that we can report something useful, and not just die silently
    * with a OutOfMemoryError (which isn't handled too gracefully by most VMs)
    */
-  boolean checkStateSpaceLimit () {
+  public boolean checkStateSpaceLimit () {
     Runtime rt = Runtime.getRuntime();
 
     long avail = rt.freeMemory();
