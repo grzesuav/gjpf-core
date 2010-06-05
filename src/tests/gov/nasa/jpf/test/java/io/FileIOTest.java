@@ -23,7 +23,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
@@ -67,6 +68,7 @@ public class FileIOTest extends TestJPF {
       }
 
       pw.close();
+      os.close(); // without this, Windows/Cygwin doesn't delete the file
 
       System.out.println("##---- checking file system attributes");
 
@@ -83,7 +85,9 @@ public class FileIOTest extends TestJPF {
       System.out.println("##---- reading: " + file.getName());
       ArrayList<String> contents = new ArrayList<String>();
       String line;
-      BufferedReader br = new BufferedReader(new FileReader(file));
+      FileInputStream is = new FileInputStream(file);
+      InputStreamReader ir = new InputStreamReader(is);
+      BufferedReader br = new BufferedReader(ir);
 
       for (int i = 0; (line = br.readLine()) != null; i++) {
         if (i == 2) {
@@ -94,6 +98,7 @@ public class FileIOTest extends TestJPF {
       }
 
       br.close();
+      is.close(); // without this, Windows/Cygwin doesn't delete the file
 
       //--- check part
       System.out.println("##---- comparing");
@@ -105,7 +110,9 @@ public class FileIOTest extends TestJPF {
 
 
       if (file.delete()) {
-        assert !file.exists() : "File.delete() failed on " + fname;
+        assert !file.exists() : "File.delete() failed (supposedly deleted but file exists) on " + fname;
+      } else {
+        assert false : "File.delete() failed to delete file (can happen on Windows/Cygwin)";
       }
 
       System.out.println("##---- done");
