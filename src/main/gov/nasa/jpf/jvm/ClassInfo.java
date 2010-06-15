@@ -1253,6 +1253,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     }
 
     String cp = config.asPlatformPath(buf.toString());
+    logger.fine("classpath set: " + cp);
     modelClassPath = new ClassPath(cp);
   }
 

@@ -158,6 +158,8 @@ public class JPF implements Runnable {
         jpf.run();
 
       } catch (ExitException x) {
+        logger.severe( "JPF terminated");
+
         // this is how we get most runtime config exceptions
         if (x.shouldReport()) {
           x.printStackTrace();
@@ -168,6 +170,20 @@ public class JPF implements Runnable {
           cause.fillInStackTrace();
           throw cause;
         }
+
+      } catch (JPFException jx) {
+        logger.severe( "JPF exception, terminating: " + jx.getMessage());
+        if (conf.getBoolean("jpf.print_exception_stack")) {
+
+          Throwable cause = jx.getCause();
+          if (cause != null && cause != jx){
+            cause.printStackTrace();
+          } else {
+            jx.printStackTrace();
+          }
+        }
+        // pass this on, caller has to handle
+        throw jx;
       }
     }
   }
@@ -616,33 +632,21 @@ public class JPF implements Runnable {
           status = Status.RUNNING;
           search.search();
         }
-      } catch (ExitException ex) {
-        logger.severe( "JPF terminated");
-        
-      } catch (JPFException jx) {
-        logger.severe( "JPF exception, terminating: " + jx.getMessage());
-        if (config.getBoolean("jpf.print_exception_stack")) {
-          
-          Throwable cause = jx.getCause();
-          if (cause != null && cause != jx){
-            cause.printStackTrace();
-          } else {
-            jx.printStackTrace();            
-          }
-        }
-        // pass this on, caller has to handle
-        throw jx;
-        
       } catch (OutOfMemoryError oom) {
         
         // try to get memory back before we do anything that makes it worse
         // (note that we even try to avoid calls here, we are on thin ice)
+
+        // NOTE - we don't try to recover at this point (that is what we do
+        // if we fall below search.min_free within search()), we only want to
+        // terminate gracefully (incl. report)
+
         memoryReserve = null; // release something
         long m0 = rt.freeMemory();
         long d = 10000;
         
-        // request GCs as long as the freeMemory increases between cycles
-        while (true) {
+        // see if we can reclaim some memory before logging or printing statistics
+        for (int i=0; i<10; i++) {
           rt.gc();
           long m1 = rt.freeMemory();
           if ((m1 <= m0) || ((m1 - m0) < d)) {
@@ -652,8 +656,15 @@ public class JPF implements Runnable {
         }
         
         logger.severe("JPF out of memory");
+
         // that's questionable, but we might want to see statistics / coverage
-        reporter.searchFinished(search);
+        // to know how far we got. We don't inform any other listeners though
+        // if it throws an exception we bail - we can't handle it w/o memory
+        try {
+          reporter.searchFinished(search);
+        } catch (Throwable t){
+          throw new JPFListenerException("exception during out-of-memory termination", t);
+        }
         
       // NOTE - this is not an exception firewall anymore
         
