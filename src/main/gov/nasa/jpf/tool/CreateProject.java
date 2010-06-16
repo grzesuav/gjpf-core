@@ -85,7 +85,7 @@ public class CreateProject {
 
   public CreateProject (String corePath, String projectPath){
     coreDir = new File(corePath);
-    projectDir = new File(coreDir, projectPath);
+    projectDir = new File(projectPath);
 
     projectName = projectDir.getName();
 
@@ -123,10 +123,17 @@ public class CreateProject {
 
   public void createProject () throws CreateProject.Exception {
 
-    // does the project dir already exist
-    //if (projectDir.isDirectory()){
-    //  throw new Exception("project directory already exists: " + projectDir.getPath());
-    //}
+    if (!coreDir.isDirectory()){
+      throw new Exception("not a valid jpf-core dir: " + coreDir.getAbsolutePath());
+    } else {
+      System.out.println("using jpf-core directory: " + coreDir.getAbsolutePath());
+    }
+
+    if (projectDir.isDirectory()){
+      System.out.println("initializing existing project directory: " + projectDir.getAbsolutePath());
+    } else {
+      System.out.println("creating project directory: " + projectDir.getAbsolutePath());
+    }
 
     // if we didn't set them explicitly, use the defaults
     if (srcDirs.isEmpty()){

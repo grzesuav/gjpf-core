@@ -1247,6 +1247,17 @@ public class Config extends Properties {
     return null;
   }
 
+  public String[] getCompactTrimmedStringArray (String key){
+    String[] a = getStringArray(key);
+    for (int i=0; i<a.length; i++){
+      String s = a[i];
+      if (s != null && s.length() > 0){
+        a[i] = s.trim();
+      }
+    }
+    
+    return removeEmptyStrings(a);
+  }
 
   public String[] getCompactStringArray(String key){
     return removeEmptyStrings(getStringArray(key));

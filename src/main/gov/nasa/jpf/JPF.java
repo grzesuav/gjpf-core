@@ -25,6 +25,7 @@ import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.report.Reporter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListener;
+import gov.nasa.jpf.util.FileFinder;
 import gov.nasa.jpf.util.LogManager;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.ObjArray;
@@ -214,15 +215,27 @@ public class JPF implements Runnable {
     if (projPath != null){
       projPath += '/';
 
-      String[] elements = conf.getStringArray(key);
+      String[] elements = conf.getCompactStringArray(key);
       if (elements != null){
         for (String e : elements) {
           if (e != null && e.length()>0){
+
+            // if this entry is not an absolute path, or doesn't start with
+            // the project path, prepend the project path
             if (!(absPath.matcher(e).matches()) && !e.startsWith(projPath)) {
               e = projPath + e;
             }
 
-            conf.append(pathKey, e);
+            // if this element is a wildcard pattern spec, append all matching files
+            if (FileFinder.containsWildcards(e)){
+              FileFinder finder = new FileFinder();
+              for (File f : finder.findMatches(e)){
+                conf.append(pathKey, f.getAbsolutePath());
+              }
+
+            } else { // not a wildcard, append just the path element itself
+              conf.append(pathKey, e);
+            }
           }
         }
       }
