@@ -193,22 +193,28 @@ public class JPFClassLoader extends ClassLoader {
     // JPF URLs will be added later on, mostly by JPF after we have a Config
     super(JPFClassLoader.class.getClassLoader());
 
-    // if its already in the classpath, use this one
-    File core = getCoreFromClasspath();
+    // add our known preloads
+    addPreloadedClass(JPFClassLoader.class);
+    addPreloadedClass(JPFClassLoaderException.class);
+  }
 
+  public void addStartupClasspath (String startupClsName){
+    File startup = getAppFromClasspath(startupClsName);
+    if (startup == null){
+      throw new JPFClassLoaderException("no classpath entry for startup class: " + startupClsName);
+    }
+    addPathElement(startup.getPath());
+  }
+
+  public void addCoreClasspath (String[] args) {
+    File core = getCoreFromClasspath();
     if (core == null) {
       core = getCoreFromSite(args);
-
       if (core == null) { // out of luck
         throw new JPFClassLoaderException("no classpath entry for gov.nasa.jpf.JPF found (check site.properties)");
       }
     }
-
     addPathElement(core.getPath());
-
-    // add our known preloads
-    addPreloadedClass(JPFClassLoader.class);
-    addPreloadedClass(JPFClassLoaderException.class);
   }
 
   public void addPreloadedClass (Class<?> cls){
@@ -376,24 +382,25 @@ public class JPFClassLoader extends ClassLoader {
     return getCoreJar(coreDir);
   }
 
-  protected File getCoreFromClasspath () {
+  protected File getAppFromClasspath (String appClsName) {
     try {
-      Class<?> tag = Class.forName("gov.nasa.jpf.$coreTag");
+      Class<?> appCls = Class.forName(appClsName);
 
-      URL url = tag.getResource("$coreTag.class"); // we know it's there if we can load the class
+      String clsFile = appCls.getSimpleName() + ".class";
+      URL url = appCls.getResource(clsFile); // we know it's there if we can load the class
       String s = url.toString();
 
       String path = null;
       if (s.startsWith("jar:file:")){
-        // strip leading "jar:file:" amd trailing "!.." jar path
+        // strip leading "jar:file:" and trailing "!.." jar path
         path = s.substring(9,s.indexOf('!'));
       } else if (s.startsWith("file:")) {
-        // strip leading "file:" and trailing "/gov/nasa/jpf/$coreTag.class"
-        path = s.substring(5,s.length()-28);
+        // strip leading "file:" and trailing "/<appClsName>.class"
+        path = s.substring(5,s.length()- (appClsName.length() + 7));
       } else {
         return null; // don't know what that is
       }
-      
+
       File f = new File(path);
       if (f.exists()){
         return f;
@@ -406,6 +413,9 @@ public class JPFClassLoader extends ClassLoader {
     }
   }
 
+  protected File getCoreFromClasspath() {
+    return getAppFromClasspath("gov.nasa.jpf.$coreTag");
+  }
 
   // for debugging purposes
   public void printEntries() {

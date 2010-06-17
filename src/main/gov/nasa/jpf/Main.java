@@ -28,14 +28,17 @@ import java.lang.reflect.Modifier;
  */
 public class Main {
 
+  static final String DEFAULT_APP_CLASS = "gov.nasa.jpf.JPF";
+
   public static void main (String[] args) {
 
-    String appClass = "gov.nasa.jpf.JPF";
+    String appClsName = null;
 
     if (args.length > 1 && args[0].equals("-a")){
-      appClass = checkClassName(args[1]);
-      if (appClass == null){
+      appClsName = checkClassName(args[1]);
+      if (appClsName == null){
         System.err.println("error: not a valid class name: " + args[1]);
+        return;
       }
 
       String[] a = new String[args.length - 2];
@@ -45,26 +48,37 @@ public class Main {
 
     try {
       JPFClassLoader cl = new JPFClassLoader(args);
-      Class<?> jpfCls = cl.loadClass( appClass);
+
+      if (appClsName != null){
+        // f we don't start JPF, we better make sure te JPFClassloader finds this
+        // class, which otherwise couldn't load anything that does depend on
+        // JPF configured paths
+        cl.addStartupClasspath(appClsName);
+      } else {
+        appClsName = DEFAULT_APP_CLASS;
+      }
+      cl.addCoreClasspath(args);
+
+      Class<?> appCls = cl.loadClass(appClsName);
 
       Class<?>[] argTypes = { String[].class };
-		  Method mainMth = jpfCls.getMethod("main", argTypes);
+		  Method mainMth = appCls.getMethod("main", argTypes);
 
       int modifiers = mainMth.getModifiers();
       if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)){
-        System.err.println("no \"public static void main(String[])\" method in" + appClass);
+        System.err.println("no \"public static void main(String[])\" method in" + appClsName);
         return;
       }
 
       mainMth.invoke(null, new Object[] { args });
 
     } catch (ClassNotFoundException cnfx){
-      System.err.println("error: cannot find " + appClass);
+      System.err.println("error: cannot find " + appClsName);
     } catch (NoSuchMethodException nsmx){
-      System.err.println("error: no main(String[]) method found in " + appClass);
+      System.err.println("error: no main(String[]) method found in " + appClsName);
     } catch (IllegalAccessException iax){
       // we already checked for that, but anyways
-      System.err.println("no \"public static void main(String[])\" method in " + appClass);
+      System.err.println("no \"public static void main(String[])\" method in " + appClsName);
     } catch (InvocationTargetException ix) {
       ix.getCause().printStackTrace();
       // should already be reported by JPF
