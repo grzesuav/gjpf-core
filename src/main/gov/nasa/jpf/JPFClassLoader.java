@@ -18,16 +18,12 @@
 //
 package gov.nasa.jpf;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.List;
 import java.util.LinkedList;
@@ -182,12 +178,50 @@ public class JPFClassLoader extends ClassLoader {
     }
   }
 
+  /**
+   * simple utility ClassLoader with the sole purpose to locate java.class.path entries for given
+   * class names without trying to load/resolve these classes.
+   * We need this class so that we can find the classpath entries for classes
+   * that would require more than one entry to resolve. The primary case for this
+   * is an application class residing outside of jpf.jar but requiring classes from it
+   */
+  static class LocatorClassLoader extends ClassLoader {
+    File locateCPEntry (String clsName) {
+      try {
+        Class<?> cls = super.loadClass(clsName, false);
+        String clsFile = cls.getSimpleName() + ".class";
+        URL url = cls.getResource(clsFile); // we know it's there if we can load the class
+        String s = url.toString();
+
+        String path = null;
+        if (s.startsWith("jar:file:")) {
+          // strip leading "jar:file:" and trailing "!.." jar path
+          path = s.substring(9, s.indexOf('!'));
+        } else if (s.startsWith("file:")) {
+          // strip leading "file:" and trailing "/<appClsName>.class"
+          path = s.substring(5, s.length() - (clsName.length() + 7));
+        } else {
+          return null; // don't know what that is
+        }
+
+        File f = new File(path);
+        if (f.exists()) {
+          return f;
+        } else {
+          return null; // maybe we should throw here
+        }
+
+      } catch (ClassNotFoundException cnfx){
+        return null;
+      }
+    }
+  }
+
+
   static Pattern libClassPattern = Pattern.compile("(javax?|sun)\\.");
 
   HashMap<String,Class<?>> preloads = new HashMap<String,Class<?>>();
   List<CpEntry> cpEntries = new LinkedList<CpEntry>();
-
-
 
   public JPFClassLoader (String[] args) {
     // JPF URLs will be added later on, mostly by JPF after we have a Config
@@ -199,7 +233,10 @@ public class JPFClassLoader extends ClassLoader {
   }
 
   public void addStartupClasspath (String startupClsName){
-    File startup = getAppFromClasspath(startupClsName);
+    // note we can't do a Class.forName() here because that tries to resolve this class
+    // which might require jpf.jar (which we don't have yet)
+    LocatorClassLoader cl = new LocatorClassLoader();
+    File startup = cl.locateCPEntry(startupClsName);
     if (startup == null){
       throw new JPFClassLoaderException("no classpath entry for startup class: " + startupClsName);
     }
@@ -207,7 +244,8 @@ public class JPFClassLoader extends ClassLoader {
   }
 
   public void addCoreClasspath (String[] args) {
-    File core = getCoreFromClasspath();
+    LocatorClassLoader cl = new LocatorClassLoader();
+    File core = cl.locateCPEntry("gov.nasa.jpf.$coreTag");
     if (core == null) {
       core = getCoreFromSite(args);
       if (core == null) { // out of luck
@@ -382,40 +420,6 @@ public class JPFClassLoader extends ClassLoader {
     return getCoreJar(coreDir);
   }
 
-  protected File getAppFromClasspath (String appClsName) {
-    try {
-      Class<?> appCls = Class.forName(appClsName);
-
-      String clsFile = appCls.getSimpleName() + ".class";
-      URL url = appCls.getResource(clsFile); // we know it's there if we can load the class
-      String s = url.toString();
-
-      String path = null;
-      if (s.startsWith("jar:file:")){
-        // strip leading "jar:file:" and trailing "!.." jar path
-        path = s.substring(9,s.indexOf('!'));
-      } else if (s.startsWith("file:")) {
-        // strip leading "file:" and trailing "/<appClsName>.class"
-        path = s.substring(5,s.length()- (appClsName.length() + 7));
-      } else {
-        return null; // don't know what that is
-      }
-
-      File f = new File(path);
-      if (f.exists()){
-        return f;
-      } else {
-        return null; // maybe we should throw here
-      }
-
-    } catch (ClassNotFoundException cnfx){
-      return null;
-    }
-  }
-
-  protected File getCoreFromClasspath() {
-    return getAppFromClasspath("gov.nasa.jpf.$coreTag");
-  }
 
   // for debugging purposes
   public void printEntries() {

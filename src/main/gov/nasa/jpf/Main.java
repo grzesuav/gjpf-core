@@ -50,7 +50,7 @@ public class Main {
       JPFClassLoader cl = new JPFClassLoader(args);
 
       if (appClsName != null){
-        // f we don't start JPF, we better make sure te JPFClassloader finds this
+        // if we don't start JPF, we better make sure te JPFClassloader finds this
         // class, which otherwise couldn't load anything that does depend on
         // JPF configured paths
         cl.addStartupClasspath(appClsName);
@@ -58,7 +58,6 @@ public class Main {
         appClsName = DEFAULT_APP_CLASS;
       }
       cl.addCoreClasspath(args);
-
       Class<?> appCls = cl.loadClass(appClsName);
 
       Class<?>[] argTypes = { String[].class };
