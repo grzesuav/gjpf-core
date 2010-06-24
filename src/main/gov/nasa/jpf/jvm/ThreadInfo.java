@@ -1879,7 +1879,7 @@ public class ThreadInfo
 
     frame.getMethodInfo().enter(this);
 
-    Verify.beginAtomic(); // to shut off avoidable context switches (MONITOR_ENTER and wait() can still block)
+    vm.getSystemState().incAtomic(); // to shut off avoidable context switches (MONITOR_ENTER and wait() can still block)
     while (depth <= countStackFrames()) {
       Instruction nextPC = executeInstruction();
 
@@ -1892,7 +1892,7 @@ public class ThreadInfo
         pc = nextPC;
       }
     }
-    Verify.endAtomic();
+    vm.getSystemState().decAtomic();
 
     // the frame was already removed by the RETURN insn of the frame's method
   }
@@ -1921,7 +1921,7 @@ public class ThreadInfo
 
     frame.getMethodInfo().enter(this);
 
-    Verify.beginAtomic(); // to shut off avoidable context switches (MONITOR_ENTER and wait() can still block)
+    vm.getSystemState().incAtomic(); // to shut off avoidable context switches (MONITOR_ENTER and wait() can still block)
     while (depth <= countStackFrames()) {
       Instruction nextPC = executeInstructionHidden();
 
@@ -1938,7 +1938,7 @@ public class ThreadInfo
         }
       }
     }
-    Verify.endAtomic();
+    vm.getSystemState().decAtomic();
 
     // the frame was already removed by the RETURN insn of the frame's method
   }
