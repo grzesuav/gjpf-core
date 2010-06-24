@@ -203,7 +203,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     ChoiceGenerator<?> cg = ss.getChoiceGenerator();
 
     assert (cg != null) && (cgClass.isAssignableFrom(cg.getClass())) :
-          "expected ChoiceGenerator of type " + cg.getClass().getName();
+          "expected ChoiceGenerator of type " + cgClass.getName() + ", got: " + cg.getClass().getName();
     return ((ChoiceGenerator<T>)cg).getNextChoice();
   }
 
@@ -235,7 +235,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return true;  // not used anyways
 
     } else {  // this is what really returns results
-      return getNextChoice(ss,CustomBooleanChoiceGenerator.class,Boolean.class);
+      return getNextChoice(ss,BooleanChoiceGenerator.class,Boolean.class);
     }
   }
 
@@ -257,7 +257,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return registerChoiceGenerator(env,ss,ti,cg,0);
 
     } else {
-      return getNextChoice(ss,IntIntervalGenerator.class,Integer.class);
+      return getNextChoice(ss,IntChoiceGenerator.class,Integer.class);
     }
   }
 
@@ -272,7 +272,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return registerChoiceGenerator(env,ss,ti,cg,0);
 
     } else {
-      return getNextChoice(ss,IntChoiceFromSet.class,Integer.class);
+      return getNextChoice(ss,IntChoiceGenerator.class,Integer.class);
     }
   }
 
