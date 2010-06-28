@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFNativePeerException;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.util.JPFLogger;
 
 import java.lang.reflect.*;
 
@@ -43,7 +44,7 @@ public class NativePeer {
   static final String MODEL_PACKAGE = "<model>";
   static final String DEFAULT_PACKAGE = "<default>";
 
-  static Logger logger = JPF.getLogger("gov.nasa.jpf.jvm.NativePeer");
+  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.NativePeer");
 
   static ClassLoader loader;
   static HashMap<String, NativePeer> peers;
@@ -149,7 +150,7 @@ public class NativePeer {
         // Method.invoke() got fast enough so that we don't need a peer dispatcher anymore
                 
         if (logger.isLoggable(Level.INFO)) {
-          logger.info("load peer: " + peerCls.getName());
+          logger.info("load peer: ", peerCls.getName());
         }
 
         peer = new NativePeer(peerCls, ci);
@@ -527,12 +528,9 @@ public class NativePeer {
         }
 
         if (mi != null) {
-          if (logger.isLoggable(Level.INFO)) {
-            logger.info("load MJI method: " + mname);
-          }
+          logger.info("load MJI method: ", mname);
 
           mi.setMJI(true);
-
 
           if (cacheMethods) {
             methods.put(mi.getUniqueName(), mth); // no use to store unless it can be called!

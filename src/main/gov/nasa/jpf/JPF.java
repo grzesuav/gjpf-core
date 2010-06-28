@@ -26,6 +26,7 @@ import gov.nasa.jpf.report.Reporter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListener;
 import gov.nasa.jpf.util.FileFinder;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LogManager;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.ObjArray;
@@ -39,6 +40,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -107,9 +109,11 @@ public class JPF implements Runnable {
    * use this one to get a Logger that is initialized via our Config mechanism. Note that
    * our own Loggers do NOT pass
    */
-  public static Logger getLogger (String name) {
+  public static JPFLogger getLogger (String name) {
     return LogManager.getLogger( name);
   }
+
+
 
   public static void main(String[] args) throws Throwable {
 

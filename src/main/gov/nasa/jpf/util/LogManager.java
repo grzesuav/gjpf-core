@@ -43,7 +43,7 @@ import java.util.logging.LogRecord;
  */
 public class LogManager {
     
-  static HashMap<String,Logger> loggers = new HashMap<String, Logger>(); // our own set
+  static HashMap<String,JPFLogger> loggers = new HashMap<String, JPFLogger>(); // our own set
   
   static Level defaultLevel;
   static Handler handler;  // we have only one
@@ -105,23 +105,24 @@ public class LogManager {
     return defaultLevel;
   }
   
-  public static Logger getLogger (String name) {
+  public static JPFLogger getLogger (String name) {
     // how often can you say 'Logger' in one method..
-    Logger logger = loggers.get(name);
+    JPFLogger logger = loggers.get(name);
     
     if (logger == null) {
       // we haven't had this one yet - create and init a new one from the host logging system
-      logger = Logger.getLogger(name);
-      logger.setLevel( getLevel(name));
-      logger.addHandler(handler);
-      logger.setUseParentHandlers(false); // we don't want to pass this up
+      Logger baseLogger = Logger.getLogger(name);
+      baseLogger.setLevel( getLevel(name));
+      baseLogger.addHandler(handler);
+      baseLogger.setUseParentHandlers(false); // we don't want to pass this up
       
+      // wrap it
+      logger = new JPFLogger(baseLogger);
       loggers.put(name, logger);
     }
     
     return logger;
   }
-
   
   public static void setOutput(OutputStream out) {
     // need to have init() called first

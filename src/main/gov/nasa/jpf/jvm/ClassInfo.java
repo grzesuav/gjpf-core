@@ -27,6 +27,7 @@ import gov.nasa.jpf.JPFSite;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.util.Source;
 
@@ -82,7 +83,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   public static final int INITIALIZED = -2;
 
 
-  static Logger logger = JPF.getLogger("gov.nasa.jpf.jvm.ClassInfo");
+  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.ClassInfo");
 
   static Config config;
 
@@ -550,7 +551,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
               jpf.addUniqueTypeListener(listener);
 
               if (logger.isLoggable(Level.INFO)){
-                logger.info("autoload annotation listener: @" + aName + " => " + listener.getClass().getName());
+                logger.info("autoload annotation listener: @", aName, " => ", listener.getClass().getName());
               }
 
             } catch (JPFConfigException cx) {
@@ -661,9 +662,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return new ClassInfo(typeName, idx);
 
     } else {
-      if (logger.isLoggable(Level.FINER)) {
-        logger.finer("resolve classinfo: " + className);
-      }
+      logger.finer("resolve classinfo: ", className);
 
       JavaClass clazz = getJavaClass(typeName);
       if (clazz != null){
@@ -728,9 +727,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
           String base = file.getBase();  // could be a dir or a jar
           String path = file.getPath();
           if (path.startsWith(base)){ // don't report twice if base is a dir
-            logger.finer("loading classfile: " + path);
+            logger.finer("loading classfile: ", path);
           } else {
-            logger.finer("loading classfile: " + path + " from: " + base);
+            logger.finer("loading classfile: ", path, " from: ", base);
           }
         }
 
@@ -1817,9 +1816,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     } else {
       String superName = jc.getSuperclassName();
 
-      if (logger.isLoggable(Level.FINER)) {
-        logger.finer("resolving superclass: " + superName + " of " + name);
-      }
+      logger.finer("resolving superclass: ", superName, " of ", name);
 
       ClassInfo sci = getResolvedClassInfo(superName);
       if (sci == null){
