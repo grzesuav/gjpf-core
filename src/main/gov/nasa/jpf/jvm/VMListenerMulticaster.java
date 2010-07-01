@@ -254,5 +254,15 @@ public class VMListenerMulticaster implements VMListener
     tail.choiceGeneratorProcessed(vm);    
   }
 
+  public void methodEntered (JVM vm) {
+    head.methodEntered(vm);
+    tail.methodEntered(vm);
+  }
+
+  public void methodExited (JVM vm) {
+    head.methodExited(vm);
+    tail.methodExited(vm);
+  }
+
 }
 

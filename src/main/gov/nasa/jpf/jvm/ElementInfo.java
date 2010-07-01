@@ -361,6 +361,9 @@ public abstract class ElementInfo implements Cloneable {
     return fields.getObjectAttr();
   }
 
+  /**
+   * this sets an attribute for the whole object
+   */
   public void setObjectAttr (Object attr){
     cloneFields().setObjectAttr(attr);
   }
@@ -407,6 +410,9 @@ public abstract class ElementInfo implements Cloneable {
   }
 
 
+  /**
+   * this sets an attribute for the field with index 'idx'
+   */
   public void setElementAttr (int idx, Object attr){
     cloneFields().setFieldAttr(idx, attr);
   }

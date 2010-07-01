@@ -886,6 +886,8 @@ public class MethodInfo extends InfoObject implements Cloneable {
         ci.setInitializing(ti);
       }
     }
+
+    ti.getVM().notifyMethodEntered(ti, this);
   }
 
   public void leave (ThreadInfo ti) {
@@ -909,6 +911,8 @@ public class MethodInfo extends InfoObject implements Cloneable {
         ci.setInitialized();
       }
     }
+
+    ti.getVM().notifyMethodExited(ti, this);
   }
   
   /**
@@ -919,7 +923,16 @@ public class MethodInfo extends InfoObject implements Cloneable {
     if (((attrs & MJI_NATIVE) != 0) || isNative()) {
       NativePeer nativePeer = ci.getNativePeer();
       if (nativePeer != null) {
-        return  nativePeer.executeMethod(ti, this);
+        Instruction nextInsn = null;
+        JVM vm = ti.getVM();
+
+        // since there is no enter/leave for native methods, we have to do
+        // the notifications explicitly
+        vm.notifyMethodEntered(ti, this);
+        nextInsn = nativePeer.executeMethod(ti, this);
+        vm.notifyMethodExited(ti, this);
+        return nextInsn;
+
       } else {
         return ti.createAndThrowException("java.lang.UnsatisfiedLinkError",
                                           ci.getName() + '.' + getUniqueName() + " (no peer)");
@@ -927,8 +940,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
       
     } else {
       ti.pushFrame( new StackFrame(this, ti.getTopFrame()));
-      enter(ti);
-
       return ti.getPC();
     }
   }

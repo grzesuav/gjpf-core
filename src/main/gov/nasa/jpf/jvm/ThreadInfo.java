@@ -1780,6 +1780,11 @@ public class ThreadInfo
     skipInstruction = false;
     nextPc = null;
 
+    if (pc.isFirstInstruction()){
+      // its the first instruction within this method
+      pc.getMethodInfo().enter(this);
+    }
+
     if (log.isLoggable(Level.FINER)) {
       log.fine( pc.getMethodInfo().getCompleteName() + " " + pc.getPosition() + " : " + pc);
     }
@@ -1877,8 +1882,6 @@ public class ThreadInfo
     int    depth = countStackFrames();
     Instruction pc = frame.getPC();
 
-    frame.getMethodInfo().enter(this);
-
     vm.getSystemState().incAtomic(); // to shut off avoidable context switches (MONITOR_ENTER and wait() can still block)
     while (depth <= countStackFrames()) {
       Instruction nextPC = executeInstruction();
@@ -1918,8 +1921,6 @@ public class ThreadInfo
     pushFrame(frame);
     int    depth = countStackFrames();
     Instruction pc = frame.getPC();
-
-    frame.getMethodInfo().enter(this);
 
     vm.getSystemState().incAtomic(); // to shut off avoidable context switches (MONITOR_ENTER and wait() can still block)
     while (depth <= countStackFrames()) {

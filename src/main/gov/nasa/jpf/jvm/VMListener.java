@@ -156,6 +156,19 @@ public interface VMListener extends JPFListener {
    * a ChoiceGnerator has returned all his choices
    */
   void choiceGeneratorProcessed (JVM vm);
-  
+
+  /**
+   * method body was entered. This is notified before the first instruction
+   * is executed
+   */
+  void methodEntered (JVM vm);
+
+  /**
+   * method body was left. This is notified after the last instruction had
+   * been executed
+   * NOTE - this is also notified when a StackFrame is dropped due to unhandled exceptions
+   */
+  void methodExited (JVM vm);
+
 }
 

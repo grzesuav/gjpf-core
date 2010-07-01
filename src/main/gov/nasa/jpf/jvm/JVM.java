@@ -95,6 +95,7 @@ public class JVM {
   protected Instruction     lastInstruction;
   protected Instruction     nextInstruction;
   protected ElementInfo     lastElementInfo;
+  protected MethodInfo      lastMethodInfo;
   protected ChoiceGenerator<?> lastChoiceGenerator;
 
   protected boolean isTraceReplay; // can be set by listeners to indicate this is a replay
@@ -952,6 +953,27 @@ try {
 
   }
 
+  protected void notifyMethodEntered (ThreadInfo ti, MethodInfo mi){
+    if (listener != null){
+      lastThreadInfo = ti;
+      lastMethodInfo = mi;
+      listener.methodEntered(this);
+      lastMethodInfo = null;
+      lastThreadInfo = null;
+    }
+  }
+
+  protected void notifyMethodExited (ThreadInfo ti, MethodInfo mi){
+    if (listener != null){
+      lastThreadInfo = ti;
+      lastMethodInfo = mi;
+      listener.methodExited(this);
+      lastMethodInfo = null;
+      lastThreadInfo = null;
+    }
+  }
+
+
   // VMListener acquisition
   public int getThreadNumber () {
     if (lastThreadInfo != null) {
@@ -1066,6 +1088,14 @@ try {
    */
   public ThreadInfo getLastThreadInfo () {
     return lastThreadInfo;
+  }
+
+  /**
+   * answer the MethodInfo that was most recently entered or exited (only
+   * valid from inside notification)
+   */
+  public MethodInfo getLastMethodInfo () {
+    return lastMethodInfo;
   }
 
   /**
