@@ -114,4 +114,41 @@ public class TraceTest extends TestJPF {
       tf.delete();
     }
   }
+
+  public void baz() {
+    // note there always is an automatic thread-CG after static initialization
+    boolean a = Verify.getBoolean();  // depth 2
+    System.out.print("a=");
+    System.out.println(a);
+    boolean b = Verify.getBoolean();  // depth 3
+    System.out.print("b=");
+    System.out.println(a);
+    boolean c = Verify.getBoolean();  // depth 4
+    System.out.print("c=");
+    System.out.println(a);
+    assert false : "should not search up to this";
+  }
+
+  @Test public void testDepth () {
+    File tf = new File(TRACE);
+
+    try {
+      if (tf.exists()) {
+        tf.delete();
+      }
+
+      noPropertyViolation("+listener=.listener.TraceStorer",
+              "+trace.file=" + TRACE,
+              "+trace.depth=3",
+              "+search.depth_limit=3",
+              TEST_CLASS, "baz");
+
+      noPropertyViolation("+listener=.listener.ChoiceSelector",
+              "+choice.use_trace=" + TRACE,
+              "+search.depth_limit=3",
+              TEST_CLASS, "baz");
+    } finally {
+      tf.delete();
+    }
+  }
 }

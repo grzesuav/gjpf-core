@@ -98,7 +98,7 @@ public class TraceStorer extends ListenerAdapter {
   }
  
   public void stateAdvanced (Search search){
-    if (search.getDepth() >= storeDepth){
+    if (search.getDepth() == storeDepth){
       storeTrace("search depth reached: " + storeDepth);
       checkSearchTermination();
     }

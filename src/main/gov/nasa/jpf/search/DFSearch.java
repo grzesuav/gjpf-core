@@ -71,20 +71,16 @@ public class DFSearch extends Search {
         }
 
         depth--;
-        //assert depth == vm.getPath().length();
-
         notifyStateBacktracked();
       }
 
       if (forward()) {
+        depth++;
         notifyStateAdvanced();
 
         if (hasPropertyTermination()) {
           break;
         }
-
-        depth++;
-        //assert depth == vm.getPath().length();
 
         if (isNewState) {
           if (depth >= maxDepth) {

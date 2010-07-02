@@ -154,16 +154,21 @@ public class StaticArea extends Area<StaticElementInfo> {
     return ei;
   }
 
-
-  StaticElementInfo createElementInfo () {
+  //--- StaticElementInfo factory methods
+  protected StaticElementInfo createElementInfo () {
     return new StaticElementInfo();
   }
 
-  StaticElementInfo createElementInfo (ClassInfo ci, int clsObjRef) {
+  protected StaticElementInfo createElementInfo (Fields f, Monitor m, int clsObjRef){
+    return new StaticElementInfo(f,m,clsObjRef);
+  }
+
+
+  protected StaticElementInfo createElementInfo (ClassInfo ci, int clsObjRef) {
     Fields   f = ci.createStaticFields();
     Monitor  m = new Monitor();
 
-    StaticElementInfo ei = new StaticElementInfo(f, m, clsObjRef);
+    StaticElementInfo ei = createElementInfo(f, m, clsObjRef);
     ci.setStaticElementInfo(ei);
 
     ci.initializeStaticData(ei);
@@ -189,7 +194,7 @@ public class StaticArea extends Area<StaticElementInfo> {
    * Returns the index where class with specified name would be stored,
    * regardless of whether it's in the structure.
    */
-  int indexFor (String cname) {
+  protected int indexFor (String cname) {
     return staticMap.poolIndex(cname);
   }
 }

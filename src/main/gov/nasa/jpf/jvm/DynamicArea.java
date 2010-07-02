@@ -43,28 +43,28 @@ public class DynamicArea extends Area<DynamicElementInfo> {
   /**
    * Used to store various mark phase infos
    */
-  final BitSet isUsed = new BitSet();
-  final BitSet isRoot = new BitSet();
-  final IntVector refThread = new IntVector();
-  final IntVector lastAttrs = new IntVector();
+  protected final BitSet isUsed = new BitSet();
+  protected final BitSet isRoot = new BitSet();
+  protected final IntVector refThread = new IntVector();
+  protected final IntVector lastAttrs = new IntVector();
 
-  boolean runFinalizer;
-  boolean sweep;
+  protected boolean runFinalizer;
+  protected boolean sweep;
 
   // just an internal helper
-  int markLevel;
+  protected int markLevel;
 
-  boolean outOfMemory; // can be used by listeners to simulate outOfMemory conditions
+  protected boolean outOfMemory; // can be used by listeners to simulate outOfMemory conditions
 
   /** used to keep track of marked WeakRefs that might have to be updated */
-  private ArrayList<Fields> weakRefs;
+  protected ArrayList<Fields> weakRefs;
 
   /**
    * DynamicMap is a mapping table used to achieve heap symmetry,
    * associating thread/pc specific DynamicMapIndex objects with their
    * corresponding DynamicArea elements[] index.
    */
-  private final IntTable<DynamicMapIndex> dynamicMap = new IntTable<DynamicMapIndex>();
+  protected final IntTable<DynamicMapIndex> dynamicMap = new IntTable<DynamicMapIndex>();
 
   public static void init (Config config) {
 
@@ -243,7 +243,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     JVM.getVM().notifyGCEnd();
   }
 
-  void initGc () {
+  protected void initGc () {
     isRoot.clear();
     isUsed.clear();
   }
@@ -290,7 +290,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    *       DynamicArea.markRecursive(objref,tid,refAttrs, attrMask, fieldInfo)
    * @aspects: gc
    */
-  void markRecursive (int objref) {
+  protected void markRecursive (int objref) {
     int tid = refThread.get(objref);
     ElementInfo ei = elements.get(objref);
     int attrMask = ElementInfo.ATTR_PROP_MASK;
@@ -302,7 +302,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
   }
 
 
-  void markRecursive (int objref, int refTid, int refAttr, int attrMask, FieldInfo fi) {
+  protected void markRecursive (int objref, int refTid, int refAttr, int attrMask, FieldInfo fi) {
     if (objref == -1) {
       return;
     }
@@ -368,7 +368,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    * from Thread roots
    * @aspects: gc
    */
-  void markThreadRoot (int objref, int tid) {
+  protected void markThreadRoot (int objref, int tid) {
     if (objref == -1) {
       return;
     }
@@ -392,7 +392,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    * from static fields
    * @aspects: gc
    */
-  void markStaticRoot (int objref) {
+  protected void markStaticRoot (int objref) {
     if (objref == -1) {
       return;
     }
@@ -457,7 +457,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
                                      Types.isReference(elementType));
     Monitor  m = new Monitor();
 
-    DynamicElementInfo e = new DynamicElementInfo(f, m);
+    DynamicElementInfo e = createElementInfo(f, m);
     add(idx, e);
 
     if (ti != null) { // maybe we should report them all, and put the burden on the listener
@@ -485,7 +485,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     Fields             f = ci.createInstanceFields();
     Monitor            m = new Monitor();
 
-    DynamicElementInfo dei = new DynamicElementInfo(f, m);
+    DynamicElementInfo dei = createElementInfo(f, m);
 
     // get the index where to store this sucker, but be aware of that the
     // returned index might be outside the current elements array (super.add
@@ -557,7 +557,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     }
   }
 
-  boolean checkInternStringEntry (InternStringEntry e) {
+  protected boolean checkInternStringEntry (InternStringEntry e) {
     ElementInfo ei = get(e.ref);
     if (ei != null && ei.getClassInfo() == ClassInfo.stringClassInfo) {
       // check if it was the interned string
@@ -571,7 +571,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     return false;
   }
 
-  HashMap<String,InternStringEntry> internStrings = new HashMap<String,InternStringEntry>();
+  protected HashMap<String,InternStringEntry> internStrings = new HashMap<String,InternStringEntry>();
 
   public int newInternString (String str, ThreadInfo ti) {
     int ref = -1;
@@ -597,7 +597,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    * NOTE: this implementation requires our own Reference/WeakReference implementation, to
    * make sure the 'ref' field is the first one
    */
-  void checkWeakRefs () {
+  protected void checkWeakRefs () {
     if (weakRefs != null) {
       int len = weakRefs.size();
 
@@ -616,11 +616,17 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     }
   }
 
-  DynamicElementInfo createElementInfo () {
+  //--- factory methods for creating associated ElementInfos
+  protected DynamicElementInfo createElementInfo () {
     return new DynamicElementInfo();
   }
 
-  void registerWeakReference (Fields f) {
+  protected DynamicElementInfo createElementInfo (Fields f, Monitor m){
+    return new DynamicElementInfo(f,m);
+  }
+
+
+  protected void registerWeakReference (Fields f) {
     if (weakRefs == null) {
       weakRefs = new ArrayList<Fields>();
     }
@@ -642,7 +648,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     return -1;
   }
 
-  private int indexFor (ThreadInfo th) {
+  protected int indexFor (ThreadInfo th) {
     Instruction pc = null;
 
     if (th != null) {
@@ -678,11 +684,11 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    * used during the linearization
    */
 
-  private IntTable<String> object2Value;
+  protected IntTable<String> object2Value;
 
-  private int lincount;
+  protected int lincount;
 
-  private PredicateMap pMap = null;
+  protected PredicateMap pMap = null;
 
   public Vector<String> linearizeRoot(int objref) {
   	object2Value = new IntTable<String>();
@@ -746,7 +752,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
   }
 
   // for debugging
-  void verifyLockInfo() {
+  protected void verifyLockInfo() {
     for (DynamicElementInfo dei : elements) {
       if (dei != null) {
         dei.verifyLockInfo(ks.tl);

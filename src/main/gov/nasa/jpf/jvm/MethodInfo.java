@@ -867,8 +867,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
         objref = isBeforeCall ? th.getCalleeThis(this) : th.getThis();
       }
 
-      DynamicArea da = JVM.getVM().getDynamicArea();
-      ei = da.get(objref);
+      ei = th.getElementInfo(objref);
 
       assert (ei != null) : ("inconsistent stack, no object or class ref: " +
                                getCompleteName() + " (" + objref +")");

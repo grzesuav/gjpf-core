@@ -50,8 +50,22 @@ public abstract class Instruction implements InstructionVisit {
           int offset) {
   }
 
+  /**
+   * is this the first instruction in a method
+   */
   public boolean isFirstInstruction() {
     return (offset == 0);
+  }
+
+  /**
+   * called by ThreadInfo.executeInstruction if this is the first instruction
+   * in a method
+   */
+  public void processFirstInstruction(ThreadInfo ti){
+    // we have to check in case this is a synthetic, orphan instruction
+    if (mi != null){
+      mi.enter(ti);
+    }
   }
 
   /**
@@ -79,6 +93,7 @@ public abstract class Instruction implements InstructionVisit {
   public MethodInfo getMethodInfo() {
     return mi;
   }
+
 
   /**
    * that's used for explicit construction of MethodInfos (synthetic methods)

@@ -62,8 +62,11 @@ public class ChoiceSelector extends ListenerAdapter {
   // set if we replay a trace
   ChoicePoint trace;
 
-  // start the search when reaching the end of the stored trace
+  // start the search when reaching the end of the stored trace. If not set,
+  // the listener will just randomly select single choices once the trace
+  // got processed
   boolean searchAfterTrace;
+  
 
   public ChoiceSelector (Config config, JPF jpf) {
     random = new Random( config.getInt("choice.seed", 42));
