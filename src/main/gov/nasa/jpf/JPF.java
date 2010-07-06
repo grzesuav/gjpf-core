@@ -210,84 +210,52 @@ public class JPF implements Runnable {
     return urls.toArray(new URL[urls.size()]);
   }
 
-  static Pattern absPath = Pattern.compile("(?:[a-zA-Z]:)?[/\\\\].*");
+  
+  private static boolean configPathsSet = false;  // do this just once
 
-  static void appendPath (Config conf, String pathKey, String key){
-    String projName = key.substring(0, key.length() - pathKey.length() -1);
-    String projPath = conf.getString(projName);
+  void setNativeClassPath() {
 
-    if (projPath != null){
-      projPath += '/';
+    if (!configPathsSet){
+      configPathsSet = true;
 
-      String[] elements = conf.getCompactStringArray(key);
-      if (elements != null){
-        for (String e : elements) {
-          if (e != null && e.length()>0){
+      ClassLoader cl = JPF.class.getClassLoader();
+      if (cl instanceof JPFClassLoader) {
+        JPFClassLoader jpfCl = (JPFClassLoader) cl;
 
-            // if this entry is not an absolute path, or doesn't start with
-            // the project path, prepend the project path
-            if (!(absPath.matcher(e).matches()) && !e.startsWith(projPath)) {
-              e = projPath + e;
-            }
+        // since this is a JPFClassLoader, we can add all the known locations
+        // to the current classpath
 
-            // if this element is a wildcard pattern spec, append all matching files
-            if (FileFinder.containsWildcards(e)){
-              FileFinder finder = new FileFinder();
-              for (File f : finder.findMatches(e)){
-                conf.append(pathKey, f.getAbsolutePath());
-              }
+        String[] nativeCp = config.getCompactStringArray("native_classpath");
+        nativeCp = FileFinder.expandWildcards(nativeCp);
 
-            } else { // not a wildcard, append just the path element itself
-              conf.append(pathKey, e);
+        if (nativeCp != null){
+          jpfCl.setPathElements(nativeCp);
+          //jpfCl.printEntries();
+        }
+
+        if (logger.isLoggable(Level.FINE)){
+          for (String e : jpfCl.getClasspathElements()){
+            logger.fine("JPFClassLoader pathElement: " + e);
+          }
+        }
+
+      } else {
+        // if this is not a JPFClassLoader, we have to rely on a correctly set native
+        // CLASSPATH, but we can still use our own loader for peers and listeners
+
+        String[] nativeCp = config.getCompactStringArray("native_classpath");
+        nativeCp = FileFinder.expandWildcards(nativeCp);
+
+        if (nativeCp != null) {
+          URLClassLoader ucl = URLClassLoader.newInstance(getURLs(nativeCp));
+          config.setClassLoader(ucl);
+
+          if (logger.isLoggable(Level.FINE)){
+            for (URL url : ucl.getURLs()){
+              logger.fine("URLClassLoader pathElement: " + url.toString());
             }
           }
         }
-      }
-
-    } else {
-      throw new JPFConfigException("no project path for " + projName);
-    }
-  }
-
-  static void setConfigPaths(Config conf) {
-
-    // note - this is in the order of entry, i.e. reflects priorities
-    // we have to process this in reverse order so that later entries are prioritized
-    String[] keys = conf.getEntrySequence();
-
-    for (int i = keys.length-1; i>=0; i--){
-      String k = keys[i];
-      if (k.endsWith(".native_classpath")){
-        appendPath(conf,"native_classpath", k);
-      } else if (k.endsWith(".classpath")){
-        appendPath(conf,"classpath", k);
-      } else if (k.endsWith(".sourcepath")){
-        appendPath(conf,"sourcepath", k);
-      } else if (k.endsWith("peer_packages")){
-        conf.append("peer_packages", conf.getString(k), ",");
-      }
-    }
-
-    //conf.printEntries();
-
-    ClassLoader cl = JPF.class.getClassLoader();
-    if (cl instanceof JPFClassLoader){
-      // since this is a JPFClassLoader, we can add all the known locations
-      // to the current classpath
-
-      JPFClassLoader jpfCl = (JPFClassLoader)cl;
-      String[] nativeCps = conf.getCompactStringArray("native_classpath");
-      jpfCl.setPathElements(nativeCps);
-
-      //jpfCl.printEntries();
-
-    } else {
-      // if this is not a JPFClassLoader, we have to rely on a correctly set native
-      // CLASSPATH, but we can still use our own loader for peers and listeners
-
-      String[] nativeCp = conf.getCompactStringArray("native_classpath");
-      if (nativeCp != null){
-        conf.setClassLoader(URLClassLoader.newInstance(getURLs(nativeCp)));
       }
     }
   }
@@ -306,6 +274,8 @@ public class JPF implements Runnable {
     if (logger == null) { // maybe somebody created a JPF object explicitly
       logger = initLogging(config);
     }
+
+    setNativeClassPath(); // before we do anything else
 
     String tgt = config.getTarget();
     if (tgt == null || (tgt.length() == 0)) {
@@ -630,7 +600,6 @@ public class JPF implements Runnable {
    */
   public static Config createConfig (String[] args) {
     Config conf = new Config(args, JPF.class);
-    setConfigPaths(conf);
     return conf;
   }
   
@@ -684,7 +653,7 @@ public class JPF implements Runnable {
         }
         
       // NOTE - this is not an exception firewall anymore
-        
+
       } finally {
         status = Status.DONE;
       }

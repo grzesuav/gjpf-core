@@ -38,6 +38,41 @@ public class FileFinder {
     return (pattern.indexOf('*') >= 0);
   }
 
+  public static String[] expandWildcards (String[] pathNames){
+    ArrayList<String> list = null;
+    FileFinder finder = null;
+
+    for (int i=0; i<pathNames.length; i++){
+      String e = pathNames[i];
+
+      if (containsWildcards(e)){
+        if (list == null){
+          list= new ArrayList<String>(pathNames.length + 20);
+          for (int j=0; j<i; j++){
+            list.add(pathNames[j]);
+          }
+          finder = new FileFinder();
+        }
+
+        for (File f : finder.findMatches(e)){
+          list.add(f.getAbsolutePath());
+        }
+
+      } else {
+        if (list != null){
+          list.add(e);
+        }
+      }
+    }
+
+    if (list != null){
+      return list.toArray(new String[list.size()]);
+    } else {
+      return pathNames;
+    }
+  }
+
+
   protected List<File> splitPath (String pattern) {
     ArrayList<File> list = new ArrayList<File>();
 

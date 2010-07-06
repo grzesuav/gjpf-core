@@ -37,6 +37,7 @@ import java.util.Properties;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 
 /**
@@ -220,6 +221,9 @@ public class Config extends Properties {
     //--- at last, the (rest of the) command line properties
     loadArgs(a);
     
+    // compute the global 'native_classpath', 'classpath', 'sourcepath' and 'peer_packages'
+    collectGlobalPaths();
+
     //printEntries();
   }
 
@@ -1831,11 +1835,12 @@ public class Config extends Properties {
     
     return p;
   }
-  
+
+
   public File[] getPathArray (String key) {    
     String v = getProperty(key);
     if (v != null) {
-      String[] pe = removeEmptyStrings(split(v));
+      String[] pe = removeEmptyStrings( pathSplit(v));
       
       if (pe != null && pe.length > 0) {
         File[] files = new File[pe.length];
@@ -1857,6 +1862,17 @@ public class Config extends Properties {
     }
     
     return null;
+  }
+
+  static final char[] UNIX_PATH_SEPARATORS = {',', ';', ':' };
+  static final char[] WINDOWS_PATH_SEPARATORS = {',', ';' };
+
+  protected String[] pathSplit (String input){
+    if (File.pathSeparatorChar == ':'){
+      return split( input, UNIX_PATH_SEPARATORS);
+    } else {
+      return split( input, WINDOWS_PATH_SEPARATORS);
+    }
   }
 
   static final char[] DELIMS = { ',', ';' };
@@ -1918,6 +1934,60 @@ public class Config extends Properties {
     }
 
     return elements.toArray(new String[elements.size()]);
+  }
+
+
+  /**
+   * collect all the <project>.{native_classpath,classpath,sourcepath,peer_packages}
+   * and append them to the global settings
+   */
+  void collectGlobalPaths() {
+    // note - this is in the order of entry, i.e. reflects priorities
+    // we have to process this in reverse order so that later entries are prioritized
+    String[] keys = getEntrySequence();
+
+    for (int i = keys.length-1; i>=0; i--){
+      String k = keys[i];
+      if (k.endsWith(".native_classpath")){
+        appendPath("native_classpath", k);
+      } else if (k.endsWith(".classpath")){
+        appendPath("classpath", k);
+      } else if (k.endsWith(".sourcepath")){
+        appendPath("sourcepath", k);
+      } else if (k.endsWith("peer_packages")){
+        append("peer_packages", getString(k), ",");
+      }
+    }
+  }
+
+  static Pattern absPath = Pattern.compile("(?:[a-zA-Z]:)?[/\\\\].*");
+
+  void appendPath (String pathKey, String key){
+    String projName = key.substring(0, key.length() - pathKey.length() -1);
+    String projPath = getString(projName);
+
+    if (projPath != null){
+      projPath += '/';
+
+      String[] elements = getCompactStringArray(key);
+      if (elements != null){
+        for (String e : elements) {
+          if (e != null && e.length()>0){
+
+            // if this entry is not an absolute path, or doesn't start with
+            // the project path, prepend the project path
+            if (!(absPath.matcher(e).matches()) && !e.startsWith(projPath)) {
+              e = projPath + e;
+            }
+
+            append(pathKey, e);
+          }
+        }
+      }
+
+    } else {
+      throw new JPFConfigException("no project path for " + projName);
+    }
   }
 
 

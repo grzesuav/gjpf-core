@@ -76,5 +76,4 @@ public class TypeNameTest extends TestJPF {
       assert a[3] == aa[3];
     }
   }
-
 }

@@ -173,6 +173,9 @@
     <jar jarfile="build/jpf.jar" index="true">
       <fileset dir="build/main"/>
       <fileset dir="build/peers"/>
+      <!-- this is redundant, but if JPF is executed from java.class.path it wouldn't find annotations -->
+      <fileset dir="build/annotations"/>
+      
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Implementation-Vendor" value="NASA Ames Research Center"/>

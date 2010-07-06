@@ -62,8 +62,9 @@ public class JPFTestRun {
 
     try {
       jpf = createAndRunJPF(test, args);
-    } catch (Throwable x) {
-      test.fail("JPF internal exception executing: ", args, x.toString());
+    } catch (Throwable t) {
+      t.printStackTrace();
+      test.fail("JPF internal exception executing: ", args, t.toString());
     }
 
     List<Error> errors = jpf.getSearchErrors();
@@ -85,8 +86,9 @@ public class JPFTestRun {
 
     try {
       createAndRunJPF(test, args);
-    } catch (Throwable x) {
-      test.fail("JPF internal exception executing: ", args, x.toString());
+    } catch (Throwable t) {
+      t.printStackTrace();
+      test.fail("JPF internal exception executing: ", args, t.toString());
     }
 
     ExceptionInfo xi = JVM.getVM().getPendingException();
@@ -122,6 +124,7 @@ public class JPFTestRun {
       jpf = createAndRunJPF(test,args);
     } catch (Throwable t) {
       // we get as much as one little hickup and we declare it failed
+      t.printStackTrace();
       test.fail("JPF internal exception executing: ", args, t.toString());
       return;
     }
