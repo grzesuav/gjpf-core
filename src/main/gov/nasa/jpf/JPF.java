@@ -144,6 +144,8 @@ public class JPF implements Runnable {
       return;
     }
 
+    setNativeClassPath(conf); // in case we have to find a shell
+
     // check if there is a shell class specification, in which case we just delegate
     JPFShell shell = conf.getInstance("shell", JPFShell.class);
     if (shell != null) {
@@ -213,7 +215,7 @@ public class JPF implements Runnable {
   
   private static boolean configPathsSet = false;  // do this just once
 
-  void setNativeClassPath() {
+  static void setNativeClassPath(Config config) {
 
     if (!configPathsSet){
       configPathsSet = true;
@@ -275,7 +277,7 @@ public class JPF implements Runnable {
       logger = initLogging(config);
     }
 
-    setNativeClassPath(); // before we do anything else
+    setNativeClassPath(config); // before we do anything else
 
     String tgt = config.getTarget();
     if (tgt == null || (tgt.length() == 0)) {
