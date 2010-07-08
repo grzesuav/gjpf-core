@@ -299,6 +299,59 @@ public class JPF_java_lang_Thread {
     }
   }
 
+  /**
+   * this is here so that we don't have to break the transition on a synchronized call
+   */
+
+  static void join0 (MJIEnv env, int objref, long millis){
+    ThreadInfo ti = env.getThreadInfo(); // thie is the CURRENT thread
+
+    if (millis < 0){
+      env.throwException("java.lang.IllegalArgumentException", "timeout value is negative");
+      return;
+    }
+
+    if (ti.isInterrupted(true)){ // interrupt status is set, throw and bail
+      // note that we have to throw even if the thread to join to is not alive anymore
+      env.throwInterrupt();
+
+    } else {
+      ElementInfo ei = env.getElementInfo(objref); // the thread object to wait on
+
+      if (ti.isFirstStepInsn()) { // we already have a CG
+        JPF_java_lang_Object.wait0(env, objref, millis);
+        ei.unlock(ti);
+
+        // note that the interrupt status was already reset in wait() if we got interrupted
+        if ((millis == 0) && isAlive____Z(env, objref) && !env.hasPendingInterrupt()) {
+          // somebody notified us, but the thread is still there, do it again
+          env.repeatInvocation();
+        }
+
+      } else { // first time exec, create a CG if the thread is still alive
+
+        if (isAlive____Z(env,objref)){
+          ei.lock(ti);
+          JPF_java_lang_Object.wait0(env, objref, millis);
+        }
+      }
+    }
+  }
+
+  public static void join____V (MJIEnv env, int objref){
+    join0(env,objref,0);
+  }
+
+  public static void join__J__V (MJIEnv env, int objref, long millis) {
+    join0(env,objref,millis);
+
+  }
+
+  public static void join__JI__V (MJIEnv env, int objref, long millis, int nanos) {
+    join0(env,objref,millis); // <2do> we ignore nanos for now
+  }
+
+
   public static long getId____J (MJIEnv env, int objref) {
     // doc says it only has to be valid and unique during lifetime of thread, hence we just use
     // the ThreadList index

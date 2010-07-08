@@ -1004,6 +1004,27 @@ public class MJIEnv {
     throwException("java.lang.AssertionError", details);
   }
 
+
+  public String getPendingException(){
+    return exception;
+  }
+
+  public String getPendingExceptionDetails(){
+    return exceptionDetails;
+  }
+
+  public boolean hasPendingException(){
+    return (exception != null);
+  }
+
+  public boolean hasPendingInterrupt(){
+    return (exception != null && "java.lang.InterruptedException".equals(exception));
+  }
+
+  public void throwInterrupt(){
+    throwException("java.lang.InterruptedException");
+  }
+
   void setCallEnvironment (MethodInfo mi) {
     this.mi = mi;
 

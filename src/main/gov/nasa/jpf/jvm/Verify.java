@@ -197,6 +197,13 @@ public class Verify {
 
   public static void breakTransition () {}
 
+  /**
+   * simple debugging aids to imperatively print the current path output of the SUT
+   * (to be used with vm.path_output)
+   */
+  public static void printPathOutput(String msg) {}
+  public static void printPathOutput(boolean cond, String msg) {}
+
   public static void print (String s) {
     System.out.print(s);
   }

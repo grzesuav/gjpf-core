@@ -980,7 +980,7 @@ public abstract class ElementInfo implements Cloneable {
       // note that we add only once, i.e. rely on the monitor lockCount to
       // determine when to remove an object from our lock set
       //assert area.ks.tl.get(ti.index) == ti;  // covered by verifyLockInfo
-      ti.addLockedObject(this);
+      ti.updateLockedObject(this);
     }
 
     if (monitor.hasLockedThreads()) {

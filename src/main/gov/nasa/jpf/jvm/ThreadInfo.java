@@ -1324,6 +1324,14 @@ public class ThreadInfo
     lockRef = -1;
   }
 
+  /**
+   * this is used when restoring states
+   */
+  void updateLockedObject (ElementInfo ei) {
+    lockedObjects.add(ei);
+    // don't notify here, it's just a restore
+  }
+
   void addLockedObject (ElementInfo ei) {
     lockedObjects.add(ei);
     vm.notifyObjectLocked(this, ei);

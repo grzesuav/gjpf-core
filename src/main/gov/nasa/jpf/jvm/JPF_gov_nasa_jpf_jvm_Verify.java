@@ -616,4 +616,38 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return MJIEnv.NULL;
     }
   }
+
+
+  public static void printPathOutput__ZLjava_lang_String_2__V (MJIEnv env, int clsObjRef, boolean cond, int msgRef){
+    if (cond){
+      printPathOutput__Ljava_lang_String_2__V(env,clsObjRef,msgRef);
+    }
+  }
+
+  public static void printPathOutput__Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int msgRef){
+    JVM vm = env.getVM();
+
+    System.out.println();
+    if (msgRef != MJIEnv.NULL){
+      String msg = env.getStringObject(msgRef);
+      System.out.println("~~~~~~~~~~~~~~~~~~~~~~~ begin program output at: " + msg);
+    } else {
+      System.out.println("~~~~~~~~~~~~~~~~~~~~~~~ begin path output");
+    }
+
+    for (Transition t : vm.getPath()) {
+      String s = t.getOutput();
+      if (s != null) {
+        System.out.print(s);
+      }
+    }
+
+    // we might be in the middle of a transition that isn't stored yet in the path
+    String s = vm.getPendingOutput();
+    if (s != null) {
+      System.out.print(s);
+    }
+
+    System.out.println("~~~~~~~~~~~~~~~~~~~~~~~ end path output");
+  }
 }

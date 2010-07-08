@@ -284,8 +284,10 @@ public class ThreadTest extends TestJPF {
   }
 
   @Test public void testTimeoutJoin () {
-    Verify.resetCounter(0);
-    Verify.resetCounter(1);
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+      Verify.resetCounter(1);
+    }
 
     if (verifyNoPropertyViolation()) {
       Runnable r = new Runnable() {
@@ -294,7 +296,7 @@ public class ThreadTest extends TestJPF {
           synchronized(this){
             System.out.println("[t] started");
           }
-          didRunThread = Thread.currentThread().getName();
+          didRunThread = Thread.currentThread().getName(); // this causes a CG
           System.out.println("[t] finished");
         }
       };
@@ -331,7 +333,11 @@ public class ThreadTest extends TestJPF {
       } catch (InterruptedException ix) {
         throw new RuntimeException("main thread was interrupted");
       }
+    }
 
+    if (!isJPFRun()){
+      assert Verify.getCounter(0) > 0;
+      assert Verify.getCounter(1) > 0;
     }
   }
 

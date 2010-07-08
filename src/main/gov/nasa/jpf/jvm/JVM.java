@@ -141,16 +141,15 @@ public class JVM {
     config = conf;
 
     runGc = config.getBoolean("vm.gc", true);
+
     treeOutput = config.getBoolean("vm.tree_output", true);
     // we have to defer setting pathOutput until we have a reporter registered
+
+
     indentOutput = config.getBoolean("vm.indent_output",false);
 
-try {
     initSubsystems(config);
     initFields(config);
-} catch (Throwable t){
-  t.printStackTrace(System.err);
-}
   }
 
   public JPF getJPF() {
@@ -509,7 +508,11 @@ try {
   }
 
   public boolean hasToRecordPathOutput() {
-    return jpf.getReporter().hasToReportOutput();
+    if (config.getBoolean("vm.path_output")){ // explicitly requested
+      return true;
+    } else {
+      return jpf.getReporter().hasToReportOutput(); // implicilty required
+    }
   }
 
   protected void notifyChoiceGeneratorSet (ChoiceGenerator<?>cg) {
@@ -1393,6 +1396,17 @@ try {
     out.append(c);
   }
 
+  /**
+   * get the pending output (not yet stored in the path)
+   */
+  public String getPendingOutput() {
+    if (out != null && out.length() > 0){
+      return out.toString();
+    } else {
+      return null;
+    }
+  }
+  
   /**
    * this is here so that we can intercept it in subclassed VMs
    */
