@@ -127,8 +127,12 @@ public class Config extends Properties {
   static final String TARGET_KEY = "target";
   static final String TARGET_ARGS_KEY = "target_args";
 
+  static final char   KEY_PREFIX = '@';
   static final String REQUIRES_KEY = "@requires";
-  static final String INCLUDES_KEY = "@include";
+  static final String INCLUDE_KEY = "@include";
+  static final String INCLUDE_UNLESS_KEY = "@include_unless";
+  static final String INCLUDE_IF_KEY = "@include_if";
+
 
   public static final String LIST_SEPARATOR = ",";
   static final String PATH_SEPARATOR = ","; // the default for automatic appends
@@ -395,6 +399,8 @@ public class Config extends Properties {
           is = new FileInputStream(f);
           load(is);
           return true;
+        } else {
+          throw exception("property file does not exist: " + f.getAbsolutePath());
         }
       } catch (MissingRequiredKeyException rkx){
         // Hmpff - control exception
@@ -709,12 +715,23 @@ public class Config extends Properties {
     return s;    
   }
 
+
   boolean loadPropertiesRecursive (String fileName){
     // save the current values of automatic properties
     String curConfig = (String)get("config");
     String curConfigPath = (String)get("config_path");
 
-    boolean ret = loadProperties(fileName);
+    File propFile = new File(fileName);
+    if (!propFile.isAbsolute()){
+      propFile = new File(curConfigPath, fileName);
+    }
+    String absPath = propFile.getAbsolutePath();
+
+    if (!propFile.isFile()){
+      throw exception("property file does not exist: " + absPath);
+    }
+
+    boolean ret = loadProperties(absPath);
 
     // restore the automatic properties
     super.put("config", curConfig);
@@ -723,42 +740,93 @@ public class Config extends Properties {
     return ret;
   }
 
+  void includePropertyFile(String key, String value){
+    value = expandString(key, value);
+    if (value != null && value.length() > 0){
+      loadPropertiesRecursive(value);
+    } else {
+      throw exception("@include pathname argument missing");
+    }
+  }
+
+  void includeCondPropertyFile(String key, String value, boolean keyPresent){
+    value = expandString(key, value);
+    if (value != null && value.length() > 0){
+      // check if it's a conditional "@include_unless/if = ?key?pathName"
+      if (value.charAt(0) == '?'){
+        int idx = value.indexOf('?', 1);
+        if (idx > 1){
+          String k = value.substring(1, idx);
+          if (containsKey(k) == keyPresent){
+            String v = value.substring(idx+1);
+            if (v.length() > 0){
+              loadPropertiesRecursive(v);
+            } else {
+              throw exception("@include_unless pathname argument missing (?<key>?<pathName>)");
+            }
+          }
+
+        } else {
+          throw exception("malformed @include_unless argument (?<key>?<pathName>), found: " + value);
+        }
+      } else {
+        throw exception("malformed @include_unless argument (?<key>?<pathName>), found: " + value);
+      }
+    } else {
+      throw exception("@include_unless missing ?<key>?<pathName> argument");
+    }
+  }
+
   // we override this so that we can handle expansion for both key and value
   // (value expansion can be recursive, i.e. refer to itself)
   @Override
-  public Object put (Object key, Object value){
+  public Object put (Object keyObject, Object valueObject){
 
-    if (key == null){
-      throw new JPFConfigException("no null keys allowed");
-    } else if (!(key instanceof String)){
-      throw new JPFConfigException("only String keys allowed, got: " + key);
+    if (keyObject == null){
+      throw exception("no null keys allowed");
+    } else if (!(keyObject instanceof String)){
+      throw exception("only String keys allowed, got: " + keyObject);
     }
-    if (value != null && !(value instanceof String)){
-      throw new JPFConfigException("only String or null values allowed, got: " + value);
+    if (valueObject != null && !(valueObject instanceof String)){
+      throw exception("only String or null values allowed, got: " + valueObject);
     }
 
-    // shortcircuit loading of property files - used to enforce order
-    // of properties, e.g. to model dependencies
-    if (REQUIRES_KEY.equals(key)){
-      if (value != null) {
-        for (String reqKey : split((String) value)){
-          if (!containsKey(reqKey)){
+    String key = (String)keyObject;
+    String value = (String)valueObject;
+
+    if (key.length() == 0){
+      throw exception("no empty keys allowed");
+    }
+
+    if (key.charAt(0) == KEY_PREFIX){
+
+      if (REQUIRES_KEY.equals(key)) {
+        // shortcircuit loading of property files - used to enforce order
+        // of properties, e.g. to model dependencies
+        for (String reqKey : split(value)) {
+          if (!containsKey(reqKey)) {
             throw new MissingRequiredKeyException(reqKey);
           }
         }
+        return null;
+        
+      } else if (INCLUDE_KEY.equals(key)) {
+        includePropertyFile(key, value);
+        return null;
+      } else if (INCLUDE_UNLESS_KEY.equals(key)) {
+        includeCondPropertyFile(key, value, false);
+        return null;
+      } else if (INCLUDE_IF_KEY.equals(key)) {
+        includeCondPropertyFile(key, value, true);
+        return null;
+      } else {
+        throw exception("unknown keyword: " + key);
       }
-    }
 
-    // recursively load a property file
-    if (INCLUDES_KEY.equals(key)){
-      if (!loadPropertiesRecursive(expandString((String)key, (String)value))){
-        throw new JPFConfigException("include not found: " + value);
-      }
-      return null;
 
     } else {
       // finally, a real key/value pair to add (or remove) - expand and store
-      String k = expandString(null, (String) key);
+      String k = expandString(null, key);
 
       if (!(value == null)) { // add or overwrite entry
         String v = (String) value;
@@ -906,6 +974,11 @@ public class Config extends Properties {
   
   
   public JPFException exception (String msg) {
+    String context = getString("config");
+    if (context != null){
+      msg = "error in " + context + " : " + msg;
+    }
+
     return new JPFConfigException(msg);
   }
 
