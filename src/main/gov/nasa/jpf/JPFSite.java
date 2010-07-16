@@ -70,7 +70,11 @@ import java.util.regex.Pattern;
  *
  *
  * NOTE! - this class is (partially) used by JPFClassLoader, i.e. it SHOULD NOT
- * contain any references to classes which might have to be loaded by it
+ * contain any references to classes which might have to be loaded by it.
+ *
+ * This is the reason why we have redundancy between JPFSite and Config - the
+ * latter one isn't loaded yet, we still have to find out (through JPFSite)
+ * where to get it. JPFSite is used in a bootstrapping process.
  */
 public class JPFSite {
 
@@ -81,10 +85,16 @@ public class JPFSite {
   static final String SITE_PROPERTIES = "site.properties";
   static final String PROJECT_PROPERTIES = "jpf.properties";
 
+  // the singleton
   private static JPFSite site;
 
+  // where the site.properties reside
   private File siteProps;
-  private File siteCoreDir;
+
+  // the essential data we want to get out of it
+  private File siteCoreDir;  // where the jpf-core resides
+
+  private HashMap<String,String> entries;
 
   //--- our public interface
 
@@ -97,6 +107,8 @@ public class JPFSite {
   }
 
   private JPFSite(String[] args) {
+    entries = new HashMap<String,String>();
+
     // first, check if we have an explicit +site=<file> argument
     File props = getSiteFromArgs(args);
 
@@ -115,7 +127,11 @@ public class JPFSite {
       props = getSiteFromDirs();
     }
 
-    siteProps = props;
+    if (props != null && props.isFile()){
+      siteProps = props;
+      getEntriesFromFile(props, entries);
+    }
+
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -123,11 +139,52 @@ public class JPFSite {
   public File getSiteCoreDir (){
     if (siteCoreDir == null){
       if (siteProps != null){
-        siteCoreDir = getMatchFromFile(siteProps, "jpf-core");
+        String pathName = entries.get("jpf-core");
+        if (pathName != null){
+          siteCoreDir = new File(pathName);
+        }
       }
     }
 
     return siteCoreDir;
+  }
+
+  public String getAppClasspath (String appClsName) {
+    // check if there is a key for that classname in the site properties
+    return entries.get(appClsName);
+  }
+
+  /**
+   * <2do> this is clearly suboptimal since it is very redundant with normal
+   * Config processing. Check if we can't avoid this by creating a Config
+   * in Main (i.e. before we initialize the JPFClassLoader)
+   */
+  public List<String> getStartupClasspathEntries (){
+    ArrayList<String> list = new ArrayList<String>();
+
+    String startups = entries.get("startups");
+    if (startups != null){
+      String delim = (File.pathSeparatorChar == ':') ? "[;,:]" : "[;,]";
+      for (String d : startups.split(delim)){
+        File f = new File(d,"jpf.properties");
+        if (f.isFile()){
+          String cpe = getMatchFromFile(f, ".*\\.native_classpath");
+          for (String e: cpe.split(delim)){
+            // since the jpf.properties entries are most likely relative
+            // we need to turn them into absolutes
+            File ep = new File(e);
+            if (ep.isAbsolute()){
+              list.add(e);
+            } else {
+              ep = new File(d,e);
+              list.add(ep.getAbsolutePath());
+            }
+          }
+        }
+      }
+    }
+
+    return list;
   }
 
   File getSiteFromArgs(String[] args){
@@ -155,7 +212,10 @@ public class JPFSite {
   File getSiteFromProject() {
     File f = new File(PROJECT_PROPERTIES);
     if (f.isFile()){
-      return getMatchFromFile(f, "site");
+      String path = getMatchFromFile(f, "site");
+      if (path != null){
+        return new File(path);
+      }
     }
 
     return null;
@@ -183,15 +243,86 @@ public class JPFSite {
   File getMatchFromFile (String pathName, String key){
     File f = new File(pathName);
     if (f.isFile()){
-      return getMatchFromFile(f, key);
-    } else {
-      return null;
+      String path = getMatchFromFile(f, key);
+      if (path != null){
+        return new File(path);
+      }
     }
+
+    return null;
+  }
+
+  boolean getEntriesFromFile (File propFile, HashMap<String,String> map){
+    if (!propFile.isFile()){
+      return false;
+    }
+
+    File dir = propFile.getParentFile();
+    map.put("config_path", dir.getAbsolutePath());
+
+    try {
+      FileReader fr = new FileReader(propFile);
+      BufferedReader br = new BufferedReader(fr);
+
+      for (String line = br.readLine(); line != null; line = br.readLine()) {
+        Matcher m = pattern.matcher(line);
+        if (m.matches()) {
+          String key = m.group(1);
+          String val = m.group(2);
+
+          val = expand(val, map);
+
+          if ((key.length() > 0) && (val.length() > 0)) {
+            //--- check for continuation lines
+            if (val.charAt(val.length() - 1) == '\\') {
+              val = val.substring(0, val.length() - 1).trim();
+              for (line = br.readLine(); line != null; line = br.readLine()) {
+                line = line.trim();
+                int len = line.length();
+                if ((len > 0) && (line.charAt(len - 1) == '\\')) {
+                  line = line.substring(0, line.length() - 1).trim();
+                  val += expand(line, map);
+                } else {
+                  val += expand(line, map);
+                  break;
+                }
+              }
+            }
+
+            //--- check for append/prepend expansions
+            if (key.charAt(key.length() - 1) == '+') { // key+=path expansion
+              key = key.substring(0, key.length() - 1);
+              String v = map.get(key);
+              if (v != null) {
+                val = v + val;
+              }
+            } else if (key.charAt(0) == '+') {        // +key=path expansion
+              key = key.substring(1);
+              String v = map.get(key);
+              if (v != null) {
+                val = val + v;
+              }
+            }
+
+            map.put(key, val);
+          }
+        }
+      }
+      br.close();
+
+    } catch (FileNotFoundException fnfx) {
+      return false;
+    } catch (IOException iox) {
+      return false;
+    }
+
+    return true;
   }
 
   // minimal parsing - only local key and and config_path expansion
-  File getMatchFromFile (File propFile, String lookupKey){
-    String path = null;
+  String getMatchFromFile (File propFile, String lookupKey){
+    String value = null;
+    Pattern lookupPattern = Pattern.compile(lookupKey);
 
     HashMap<String, String> map = new HashMap<String, String>();
     String dir = propFile.getParent();
@@ -229,8 +360,9 @@ public class JPFSite {
               }
             }
 
-            if (lookupKey.equals(key)) {
-              path = val;
+            Matcher lookupMatcher = lookupPattern.matcher(key);
+            if (lookupMatcher.matches()) {
+              value = val;
               break;
             } else {
               if (key.charAt(key.length() - 1) == '+') {
@@ -259,11 +391,7 @@ public class JPFSite {
       return null;
     }
 
-    if (path != null){
-      return new File(path);
-    } else {
-      return null;
-    }
+    return value;
   }
 
   /**

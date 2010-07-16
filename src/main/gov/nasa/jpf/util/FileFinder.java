@@ -42,6 +42,10 @@ public class FileFinder {
     ArrayList<String> list = null;
     FileFinder finder = null;
 
+    if (pathNames == null){
+      return new String[0];
+    }
+
     for (int i=0; i<pathNames.length; i++){
       String e = pathNames[i];
 

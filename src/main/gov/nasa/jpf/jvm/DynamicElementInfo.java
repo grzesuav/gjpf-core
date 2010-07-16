@@ -53,9 +53,9 @@ public final class DynamicElementInfo extends ElementInfo {
     return getClassInfo().getInstanceField(fieldIndex);
   }
 
-  public DynamicElementInfo getFieldDereference (FieldInfo fi) {
+  public ElementInfo getReferencedElementInfo (FieldInfo fi) {
     assert fi.isReference();
-    return (DynamicElementInfo) area.get(getIntField(fi));
+    return area.get(getIntField(fi));
   }
 
   public FieldInfo getFieldInfo (String fname) {
@@ -73,5 +73,14 @@ public final class DynamicElementInfo extends ElementInfo {
 
   protected Ref getRef () {
     return new ObjRef(getIndex());
+  }
+
+  public ElementInfo getEnclosingElementInfo(){
+    for (FieldInfo fi : getClassInfo().getDeclaredInstanceFields()){
+      if (fi.getName().startsWith("this$")){
+        return getReferencedElementInfo(fi);
+      }
+    }
+    return null;
   }
 }

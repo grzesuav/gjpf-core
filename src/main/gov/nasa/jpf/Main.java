@@ -49,15 +49,18 @@ public class Main {
     try {
       JPFClassLoader cl = new JPFClassLoader(args);
 
-      if (appClsName != null){
-        // if we don't start JPF, we better make sure te JPFClassloader finds this
-        // class, which otherwise couldn't load anything that does depend on
-        // JPF configured paths
-        cl.addStartupClasspath(appClsName);
-      } else {
+      if (appClsName == null){
         appClsName = DEFAULT_APP_CLASS;
       }
+
+      // in case we start something else than JPF
+      // <2do> this is badly redudant/overlapping with Config, check if we
+      // can't instantiate Config here
+      cl.addStartupClasspath(args, appClsName);
+
+      // we assume we need the core no matter what the appClsName is
       cl.addCoreClasspath(args);
+
       Class<?> appCls = cl.loadClass(appClsName);
 
       Class<?>[] argTypes = { String[].class };

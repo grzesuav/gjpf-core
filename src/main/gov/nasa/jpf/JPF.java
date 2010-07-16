@@ -230,8 +230,8 @@ public class JPF implements Runnable {
         String[] nativeCp = config.getCompactStringArray("native_classpath");
         nativeCp = FileFinder.expandWildcards(nativeCp);
 
-        if (nativeCp != null){
-          jpfCl.setPathElements(nativeCp);
+        if (nativeCp.length > 0){
+          jpfCl.addPathElements(nativeCp);
           //jpfCl.printEntries();
         }
 
@@ -248,7 +248,7 @@ public class JPF implements Runnable {
         String[] nativeCp = config.getCompactStringArray("native_classpath");
         nativeCp = FileFinder.expandWildcards(nativeCp);
 
-        if (nativeCp != null) {
+        if (nativeCp.length > 0) {
           URLClassLoader ucl = URLClassLoader.newInstance(getURLs(nativeCp));
           config.setClassLoader(ucl);
 

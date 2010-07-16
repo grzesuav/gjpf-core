@@ -113,7 +113,7 @@ public final class StaticElementInfo extends ElementInfo {
     if (ci == getClassInfo()) {
       return this;
     } else {
-      return ((StaticArea)(Area)area).get( ci.getName());
+      return ((StaticArea)area).get( ci.getName());
     }
   }
   
@@ -156,11 +156,11 @@ public final class StaticElementInfo extends ElementInfo {
   public String toString() {
     return getClassInfo().getName(); // don't append index (useless and misleading for statics)
   }
-  
-  /*  never used? -pcd
-  private void blowup () {
-    throw new JPFException("cannot access StaticElementInfo by index");
+
+  protected ElementInfo getReferencedElementInfo (FieldInfo fi){
+    assert fi.isReference();
+    DynamicArea heap = DynamicArea.getHeap();
+    return heap.get(getIntField(fi));
   }
-  */
 }
 

@@ -500,13 +500,32 @@ public abstract class ElementInfo implements Cloneable {
     }
   }
 
-  public Object getFieldValueObject (String fname){
+  // <2do> we need to tell 'null' values apart from 'no such field'
+  public Object getFieldValueObject (String fname) {
+    Object ret = null;
     FieldInfo fi = getFieldInfo(fname);
+
     if (fi != null){
-      return fi.getValueObject(fields);
+      ret = fi.getValueObject(fields);
+
     } else {
-      return null;
+      // check if there is an enclosing class object
+      ElementInfo eiEnclosing = getEnclosingElementInfo();
+      if (eiEnclosing != null){
+        ret = eiEnclosing.getFieldValueObject(fname);
+
+      } else {
+        // we should check static fields in enclosing scopes, but there is no
+        // other way than to guess this from the name, and the outer
+        // classes might not even be initialized yet
+      }
     }
+
+    return ret;
+  }
+
+  public ElementInfo getEnclosingElementInfo() {
+    return null; // only for DynamicElementInfos
   }
 
   public void setReferenceField(FieldInfo fi, int value) {
@@ -682,10 +701,7 @@ public abstract class ElementInfo implements Cloneable {
     return getIntField(fi);
   }
 
-  public DynamicElementInfo getFieldDereference (FieldInfo fi) {
-    assert fi.isReference();
-    return area.ks.da.get(getIntField(fi));
-  }
+  abstract ElementInfo getReferencedElementInfo (FieldInfo fi);
 
   public long getLongField(FieldInfo fi) {
     checkFieldInfo(fi);

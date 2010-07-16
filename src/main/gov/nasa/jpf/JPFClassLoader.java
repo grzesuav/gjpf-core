@@ -124,6 +124,13 @@ public class JPFClassLoader extends ClassLoader {
     String getPath() {
       return jar.getName();
     }
+
+    public boolean equals(Object o){
+      return (o instanceof JarCpEntry) && ((JarCpEntry)o).urlBase.equals(urlBase);
+    }
+    public int hashCode(){
+      return urlBase.hashCode();
+    }
   }
 
   static class DirCpEntry extends CpEntry {
@@ -176,6 +183,13 @@ public class JPFClassLoader extends ClassLoader {
     String getPath() {
       return dir.getPath();
     }
+
+    public boolean equals(Object o){
+      return (o instanceof DirCpEntry) && ((DirCpEntry)o).dir.equals(dir);
+    }
+    public int hashCode(){
+      return dir.hashCode();
+    }
   }
 
   /**
@@ -222,6 +236,7 @@ public class JPFClassLoader extends ClassLoader {
 
   HashMap<String,Class<?>> preloads = new HashMap<String,Class<?>>();
   List<CpEntry> cpEntries = new LinkedList<CpEntry>();
+  JPFSite site;
 
   public JPFClassLoader (String[] args) {
     // JPF URLs will be added later on, mostly by JPF after we have a Config
@@ -230,7 +245,10 @@ public class JPFClassLoader extends ClassLoader {
     // add our known preloads
     addPreloadedClass(JPFClassLoader.class);
     addPreloadedClass(JPFClassLoaderException.class);
+
+    site = JPFSite.getSite(args);
   }
+
 
   public void addStartupClasspath (String startupClsName){
     // note we can't do a Class.forName() here because that tries to resolve this class
@@ -238,9 +256,28 @@ public class JPFClassLoader extends ClassLoader {
     LocatorClassLoader cl = new LocatorClassLoader();
     File startup = cl.locateCPEntry(startupClsName);
     if (startup == null){
-      throw new JPFClassLoaderException("no classpath entry for startup class: " + startupClsName);
+      String startupCpEntries = site.getAppClasspath(startupClsName);
+      if (startupCpEntries != null){
+        String delim = (File.pathSeparatorChar == ':') ? "[;,:]" : "[;,]";
+        for (String e : startupCpEntries.split(delim)){
+          addPathElement(e);
+        }
+      } else {
+        throw new JPFClassLoaderException("no classpath entry for startup class: " + startupClsName);
+      }
+
+    } else {
+      // this is a problem if classes have already been loaded from this location
+      addPathElement(startup.getPath());
     }
-    addPathElement(startup.getPath());
+  }
+
+  public void addStartupClasspath(String[] args, String startupClsName){
+    // check if there is a 'startup' spec in the args or the site.properties
+    // if yes, add native_classpath entries from jpf.properties found in such dirs
+    for (String e : site.getStartupClasspathEntries()){
+      addPathElement(e);
+    }
   }
 
   public void addCoreClasspath (String[] args) {
@@ -260,27 +297,29 @@ public class JPFClassLoader extends ClassLoader {
   }
 
   public void setPathElements (String[] pathElements){
-    cpEntries.clear();
+    cpEntries.clear(); // this is dangerous if there already have been classes loaded from cpEntries
+    addPathElements(pathElements);
+  }
 
+  public void addPathElements (String[] pathElements){
     for (String e : pathElements){
       CpEntry ce = getCpEntry(e);
       if (ce != null) {
-        cpEntries.add(ce);
-     }
+        addUniqueCpEntry(ce);
+      }
     }
   }
 
   public void addPathElement (String cpElement){
     CpEntry ce = getCpEntry(cpElement);
     if (ce != null) {
-      cpEntries.add(ce);
+      addUniqueCpEntry(ce);
     }
   }
 
-  public void addFirstPathElement (String cpElement){
-    CpEntry ce = getCpEntry(cpElement);
-    if (ce != null) {
-      cpEntries.add(0, ce);
+  private void addUniqueCpEntry (CpEntry e){
+    if (!cpEntries.contains(e)){
+      cpEntries.add(e);
     }
   }
 
@@ -415,7 +454,6 @@ public class JPFClassLoader extends ClassLoader {
    * Config class to use from this cpe
    */
   protected File getCoreFromSite (String[] args) {
-    JPFSite site = JPFSite.getSite(args);
     File coreDir = site.getSiteCoreDir();
     return getCoreJar(coreDir);
   }
