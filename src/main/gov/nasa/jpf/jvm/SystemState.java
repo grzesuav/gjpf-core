@@ -504,11 +504,13 @@ public class SystemState {
     if (curCg instanceof ThreadChoiceGenerator) {
       ThreadChoiceGenerator tcg = (ThreadChoiceGenerator)curCg;
       if (tcg.isSchedulingPoint()) {
-        execThread = tcg.getNextChoice();
+        ThreadInfo tiNext = tcg.getNextChoice();
+        if (tiNext != execThread){
+          vm.notifyThreadScheduled(tiNext);
+          execThread = tiNext;
+        }
 
         assert execThread.isRunnable() : "current thread not runnable: " + execThread.getStateDescription();
-
-        vm.notifyThreadScheduled(execThread);
       }
     }
 

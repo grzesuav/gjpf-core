@@ -2496,10 +2496,7 @@ public class ThreadInfo
     Instruction pc = getPC();
     Instruction nextPc = null;
 
-    if (currentThread != this) {
-      vm.notifyThreadScheduled(this);
-      currentThread = this;
-    }
+    currentThread = this;
 
     // this constitutes the main transition loop. It gobbles up
     // insns until there either is none left anymore in this thread,
