@@ -20,6 +20,7 @@
 package gov.nasa.jpf.tool;
 
 import gov.nasa.jpf.JPFSite;
+import gov.nasa.jpf.util.JPFPropertiesParser;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -121,8 +122,7 @@ public class RunAnt {
 
     // if we didn't find any, look for the tools in the site configured jpf-core
     if (toolsDir == null){
-      JPFSite site = JPFSite.getSite(args);
-      dir = site.getSiteCoreDir();
+      dir = getSiteCoreDir();
 
       for (File d : new File[] {dir, new File(dir, "tools"), new File(dir, "lib")}) {
         if (hasAntJar(d)) {
@@ -137,6 +137,27 @@ public class RunAnt {
     } else {
       abort("no ant.jar found in known tools dirs (check your site.properties)");
     }
+  }
+
+  static File getSiteCoreDir() {
+    String userHome = System.getProperty("user.home");
+    File f = new File( userHome, "jpf/site.properties");
+    if (!f.isFile()){
+      f = new File( userHome, ".jpf/site.properties");
+      if (!f.isFile()){
+        return null;
+      }
+    }
+
+    String path = JPFPropertiesParser.getMatchFromFile(f.getAbsolutePath(), "jpf-core");
+    if (path != null){
+      File coreDir = new File(path);
+      if (coreDir.isDirectory()){
+        return coreDir;
+      }
+    }
+
+    return null;
   }
 
   static boolean hasAntJar (File toolsDir){

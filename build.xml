@@ -198,8 +198,12 @@
     <jar jarfile="build/RunJPF.jar">
       <fileset dir="build/main">
         <include name="gov/nasa/jpf/Main.class"/>
-        <include name="gov/nasa/jpf/JPFSite.class"/>
         <include name="gov/nasa/jpf/JPFClassLoader*.class"/>
+        <include name="gov/nasa/jpf/Config.class"/>
+        <include name="gov/nasa/jpf/Config$MissingRequiredKeyException.class"/>
+        <include name="gov/nasa/jpf/JPFException.class"/>
+        <include name="gov/nasa/jpf/JPFConfigException.class"/>
+        <include name="gov/nasa/jpf/util/JPFPropertiesParser.class"/>
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
@@ -213,7 +217,7 @@
     <jar jarfile="build/RunAnt.jar">
       <fileset dir="build/main">
         <include name="gov/nasa/jpf/tool/RunAnt.class"/>
-        <include name="gov/nasa/jpf/JPFSite.class"/>
+        <include name="gov/nasa/jpf/util/JPFPropertiesParser.class"/>
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>

@@ -22,7 +22,7 @@ public class ConfigTest extends TestJPF {
     String dir = "src/tests/gov/nasa/jpf/test/unit/";
     String[] args = {dir + "configTestApp.jpf"};
 
-    Config conf = new Config(args, Config.class);
+    Config conf = new Config(args);
 
     String val = conf.getString("vm.class");
     assert "gov.nasa.jpf.jvm.JVM".equals(val);
@@ -40,18 +40,17 @@ public class ConfigTest extends TestJPF {
   public void testDefaultExplicitTargetInit ()  {
     String[] args = {"urgh.org.MySystemUnderTest"};
 
-    Config conf = new Config( args, Config.class);
+    Config conf = new Config( args);
     assert "urgh.org.MySystemUnderTest".equals(conf.getTarget());
   }
 
   @Test
   public void testExplicitLocations () {
     String dir = "src/tests/gov/nasa/jpf/test/unit/";
-    String[] args = {"+default=" + dir + "configTestDefault.properties",
-                     "+site=" + dir + "configTestSite.properties",
+    String[] args = {"+site=" + dir + "configTestSite.properties",
                      "+app=" + dir + "configTestApp.jpf" };
 
-    Config conf = new Config( args, Config.class);
+    Config conf = new Config( args);
     conf.printEntries();
 
     assert "urgh.org.MySystemUnderTest".equals(conf.getTarget());
@@ -61,11 +60,10 @@ public class ConfigTest extends TestJPF {
   public void testTargetArgsOverride () {
 
     String dir = "src/tests/gov/nasa/jpf/test/unit/";
-    String[] args = {"+default=" + dir + "configTestDefault.properties",
-                      dir + "configTestApp.jpf",
+    String[] args = { dir + "configTestApp.jpf",
                       "x", "y"};
 
-    Config conf = new Config(args, Config.class);
+    Config conf = new Config(args);
     conf.printEntries();
 
     String[] ta = conf.getTargetArgs();
@@ -77,11 +75,10 @@ public class ConfigTest extends TestJPF {
   @Test
   public void testClassPaths () {
     String dir = "src/tests/gov/nasa/jpf/test/unit/";
-    String[] args = {"+default=" + dir + "configTestDefault.properties",
-                     "+site=" + dir + "configTestSite.properties",
+    String[] args = {"+site=" + dir + "configTestSite.properties",
                      "+app=" + dir + "configTestApp.jpf" };
 
-    Config conf = new Config( args, Config.class);
+    Config conf = new Config( args);
     conf.printEntries();
 
     // those properties are very weak!
@@ -99,7 +96,7 @@ public class ConfigTest extends TestJPF {
                       dir + "configTestRequires.jpf" };
 
     Config.enableLogging(true);
-    Config conf = new Config( args, Config.class);
+    Config conf = new Config( args);
     String v = conf.getString("whoa");
     System.out.println("got whoa = " + v);
     
@@ -113,7 +110,7 @@ public class ConfigTest extends TestJPF {
                       dir + "configTestRequiresFail.jpf" };
 
     Config.enableLogging(true);
-    Config conf = new Config( args, Config.class);
+    Config conf = new Config( args);
     String v = conf.getString("whoa");
     System.out.println("got whoa = " + v);
 
@@ -127,7 +124,7 @@ public class ConfigTest extends TestJPF {
                       dir + "configTestIncludes.jpf" };
 
     Config.enableLogging(true);
-    Config conf = new Config( args, Config.class);
+    Config conf = new Config( args);
     String v = conf.getString("my.common");
     System.out.println("got my.common = " + v);
 

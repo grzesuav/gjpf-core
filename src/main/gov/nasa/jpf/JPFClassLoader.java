@@ -192,105 +192,18 @@ public class JPFClassLoader extends ClassLoader {
     }
   }
 
-  /**
-   * simple utility ClassLoader with the sole purpose to locate java.class.path entries for given
-   * class names without trying to load/resolve these classes.
-   * We need this class so that we can find the classpath entries for classes
-   * that would require more than one entry to resolve. The primary case for this
-   * is an application class residing outside of jpf.jar but requiring classes from it
-   */
-  static class LocatorClassLoader extends ClassLoader {
-    File locateCPEntry (String clsName) {
-      try {
-        Class<?> cls = super.loadClass(clsName, false);
-        String clsFile = cls.getSimpleName() + ".class";
-        URL url = cls.getResource(clsFile); // we know it's there if we can load the class
-        String s = url.toString();
-
-        String path = null;
-        if (s.startsWith("jar:file:")) {
-          // strip leading "jar:file:" and trailing "!.." jar path
-          path = s.substring(9, s.indexOf('!'));
-        } else if (s.startsWith("file:")) {
-          // strip leading "file:" and trailing "/<appClsName>.class"
-          path = s.substring(5, s.length() - (clsName.length() + 7));
-        } else {
-          return null; // don't know what that is
-        }
-
-        File f = new File(path);
-        if (f.exists()) {
-          return f;
-        } else {
-          return null; // maybe we should throw here
-        }
-
-      } catch (ClassNotFoundException cnfx){
-        return null;
-      }
-    }
-  }
 
 
   static Pattern libClassPattern = Pattern.compile("(javax?|sun)\\.");
 
   HashMap<String,Class<?>> preloads = new HashMap<String,Class<?>>();
   List<CpEntry> cpEntries = new LinkedList<CpEntry>();
-  JPFSite site;
 
   public JPFClassLoader (String[] args) {
     // JPF URLs will be added later on, mostly by JPF after we have a Config
     super(JPFClassLoader.class.getClassLoader());
-
-    // add our known preloads
-    addPreloadedClass(JPFClassLoader.class);
-    addPreloadedClass(JPFClassLoaderException.class);
-
-    site = JPFSite.getSite(args);
   }
 
-
-  public void addStartupClasspath (String startupClsName){
-    // note we can't do a Class.forName() here because that tries to resolve this class
-    // which might require jpf.jar (which we don't have yet)
-    LocatorClassLoader cl = new LocatorClassLoader();
-    File startup = cl.locateCPEntry(startupClsName);
-    if (startup == null){
-      String startupCpEntries = site.getAppClasspath(startupClsName);
-      if (startupCpEntries != null){
-        String delim = (File.pathSeparatorChar == ':') ? "[;,:]" : "[;,]";
-        for (String e : startupCpEntries.split(delim)){
-          addPathElement(e);
-        }
-      } else {
-        throw new JPFClassLoaderException("no classpath entry for startup class: " + startupClsName);
-      }
-
-    } else {
-      // this is a problem if classes have already been loaded from this location
-      addPathElement(startup.getPath());
-    }
-  }
-
-  public void addStartupClasspath(String[] args, String startupClsName){
-    // check if there is a 'startup' spec in the args or the site.properties
-    // if yes, add native_classpath entries from jpf.properties found in such dirs
-    for (String e : site.getStartupClasspathEntries()){
-      addPathElement(e);
-    }
-  }
-
-  public void addCoreClasspath (String[] args) {
-    LocatorClassLoader cl = new LocatorClassLoader();
-    File core = cl.locateCPEntry("gov.nasa.jpf.$coreTag");
-    if (core == null) {
-      core = getCoreFromSite(args);
-      if (core == null) { // out of luck
-        throw new JPFClassLoaderException("no classpath entry for gov.nasa.jpf.JPF found (check site.properties)");
-      }
-    }
-    addPathElement(core.getPath());
-  }
 
   public void addPreloadedClass (Class<?> cls){
     preloads.put(cls.getName(), cls);
@@ -430,32 +343,6 @@ public class JPFClassLoader extends ClassLoader {
     }
 
     return null;
-  }
-
-  protected File getCoreJar (File coreDir){
-    if (coreDir != null && coreDir.isDirectory()){
-      File buildDir = new File(coreDir, "build");
-      if (buildDir.isDirectory()) {
-        File jpfJar = new File(buildDir, "jpf.jar");
-        if (jpfJar.isFile()) {
-          return jpfJar;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * return the classpath element for our init classes (JPF, Config) that is
-   * configured in the site.properties.
-   *
-   * Note that we can't use Config for this since we still have to locate the
-   * Config class to use from this cpe
-   */
-  protected File getCoreFromSite (String[] args) {
-    File coreDir = site.getSiteCoreDir();
-    return getCoreJar(coreDir);
   }
 
 

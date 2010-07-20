@@ -52,6 +52,9 @@ import java.lang.reflect.Method;
  *
  * Only jpf.jar needs to be added to the external jars of the target project,
  * JPF automatically finds all other JPF related jars from its site configuration
+ *
+ * NOTE - resolving this class is not allowed to load any classes that require
+ * the JPFClassLoader
  */
 public class JPFTestSuite extends TestJPF {
 

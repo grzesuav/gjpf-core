@@ -113,22 +113,17 @@ public class JPF implements Runnable {
     return LogManager.getLogger( name);
   }
 
+  public static void main(String[] args){
+    start(createConfig(args), args);
+  }
 
-
-  public static void main(String[] args) throws Throwable {
-
+  public static void start(Config conf, String[] args){
     int options = getOptions(args);
 
     if (args.length == 0 || isOptionEnabled(HELP,options)) {
       showUsage();
       return;
     }
-
-    if (isOptionEnabled(LOG, options)){ // mostly for debugging purposes
-      Config.enableLogging(true);
-    }
-
-    Config conf = createConfig(args);
 
     // this is redundant to jpf.report.<publisher>.start=..config..
     // but nobody can remember this (it's only used to produce complete reports)
@@ -172,11 +167,13 @@ public class JPF implements Runnable {
           x.printStackTrace();
         }
 
+        /**
         Throwable cause = x.getCause();
         if ((cause != null) && conf.getBoolean("pass_exceptions", false)) {
           cause.fillInStackTrace();
           throw cause;
         }
+        **/
 
       } catch (JPFException jx) {
         logger.severe( "JPF exception, terminating: " + jx.getMessage());
@@ -213,49 +210,18 @@ public class JPF implements Runnable {
   }
 
   
-  private static boolean configPathsSet = false;  // do this just once
-
   static void setNativeClassPath(Config config) {
+    if (!config.hasSetClassLoader()) {
+      String[] nativeCp = config.getCompactStringArray("native_classpath");
+      nativeCp = FileFinder.expandWildcards(nativeCp);
 
-    if (!configPathsSet){
-      configPathsSet = true;
+      if (nativeCp.length > 0) {
+        URLClassLoader ucl = URLClassLoader.newInstance(getURLs(nativeCp));
+        config.setClassLoader(ucl);
 
-      ClassLoader cl = JPF.class.getClassLoader();
-      if (cl instanceof JPFClassLoader) {
-        JPFClassLoader jpfCl = (JPFClassLoader) cl;
-
-        // since this is a JPFClassLoader, we can add all the known locations
-        // to the current classpath
-
-        String[] nativeCp = config.getCompactStringArray("native_classpath");
-        nativeCp = FileFinder.expandWildcards(nativeCp);
-
-        if (nativeCp.length > 0){
-          jpfCl.addPathElements(nativeCp);
-          //jpfCl.printEntries();
-        }
-
-        if (logger.isLoggable(Level.FINE)){
-          for (String e : jpfCl.getClasspathElements()){
-            logger.fine("JPFClassLoader pathElement: " + e);
-          }
-        }
-
-      } else {
-        // if this is not a JPFClassLoader, we have to rely on a correctly set native
-        // CLASSPATH, but we can still use our own loader for peers and listeners
-
-        String[] nativeCp = config.getCompactStringArray("native_classpath");
-        nativeCp = FileFinder.expandWildcards(nativeCp);
-
-        if (nativeCp.length > 0) {
-          URLClassLoader ucl = URLClassLoader.newInstance(getURLs(nativeCp));
-          config.setClassLoader(ucl);
-
-          if (logger.isLoggable(Level.FINE)){
-            for (URL url : ucl.getURLs()){
-              logger.fine("URLClassLoader pathElement: " + url.toString());
-            }
+        if (logger.isLoggable(Level.FINE)) {
+          for (URL url : ucl.getURLs()) {
+            logger.fine("URLClassLoader pathElement: " + url.toString());
           }
         }
       }
@@ -601,8 +567,7 @@ public class JPF implements Runnable {
    * then overlays all command line arguments that are key/value pairs
    */
   public static Config createConfig (String[] args) {
-    Config conf = new Config(args, JPF.class);
-    return conf;
+    return new Config(args);
   }
   
   /**

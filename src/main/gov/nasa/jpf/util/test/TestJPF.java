@@ -19,18 +19,13 @@
 package gov.nasa.jpf.util.test;
 
 import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.Config;
-import gov.nasa.jpf.Error;
-import gov.nasa.jpf.JPF;
 
 import gov.nasa.jpf.Property;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Reflection;
-import java.util.List;
 import java.io.PrintStream;
 
 
-import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

@@ -22,7 +22,6 @@ package gov.nasa.jpf.util;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 
-import gov.nasa.jpf.JPFSite;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;

@@ -19,8 +19,12 @@
 package gov.nasa.jpf;
 
 
+import gov.nasa.jpf.util.JPFPropertiesParser;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -37,6 +41,7 @@ import java.util.Properties;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -169,55 +174,26 @@ public class Config extends Properties {
   
   final Object[] CONFIG_ARGS = { this };
 
-  String[] args;
+  String[] args; // our original (non-nullified) command line args
 
 
-  /*                       property lookup
-   *   property type   :      spec             :  default
-   *   ----------------:-----------------------:----------
-   * |  default        :   +default            : "default.properties" via codebase
-   * |                 :                       :
-   * |  site           :   +site               : "${user.home}/.jpf/site.properties"
-   * |                 :                       :
-   * |  project*       :      -                : <ext-dir>|<cur-dir>/jpf.properties
-   * |                 :                       :
-   * |  app            :   +app                : -
-   * |                 :                       :
-   * v  cmdline        :   +<key>=<val>        : -
-   *
-   * (1) if there is an explicit spec and the pathname does not exist, throw a
-   * Config.JPFConfigException
-   *
-   * (2) if the system properties cannot be found, throw a Config.JPFConfigException
-   *
-   */
-  public Config (String[] args, Class<?> codeBase)  {
+  public Config (String[] args)  {
     this.args = args;
     String[] a = args.clone(); // we might nullify some of them
 
-    //--- the JPF system (default) properties
-    // we need the codeBase to find default.properties, which is the reason why
-    // the Config object cannot be created before we know where to get the core
-    // classes from
-    loadDefaultProperties( getPathArg(a,"default"), codeBase);
+    String appProperties = getAppPropertiesLocation(a);
+    String siteProperties = getSitePropertiesLocation(a, appProperties);
+
 
     //--- the site properties
-    String siteProperties = getPathArg(a, "site");
-    if (siteProperties == null){ // could be configured in defaults
-      siteProperties = getString("site");
-    }
     if (siteProperties != null){
       loadProperties( siteProperties);
     }
 
-    //--- get the project properties from the configured extensions / current dir
+    //--- get the project properties from current dir + site configured extensions
     loadProjectProperties();
 
     //--- the application properties
-    String appProperties = getPathArg(a, "app");
-    if (appProperties == null){ // wasn't specified as a key=value arg
-      appProperties = getAppArg(a); // but maybe it's the targetArg
-    }
     if (appProperties != null){
       loadProperties( appProperties);
     }
@@ -244,6 +220,46 @@ public class Config extends Properties {
       System.out.println(msg);
     }
   }
+
+
+  String getAppPropertiesLocation(String[] args){
+    String path = null;
+
+    path = getPathArg(args, "app");
+    if (path == null){
+      // see if the first free arg is a *.jpf
+      path = getAppArg(args);
+    }
+
+    return path;
+  }
+
+  String getSitePropertiesLocation(String[] args, String appPropPath){
+    String path = getPathArg(args, "site");
+
+    if (path == null){
+      // look into the app properties
+      if (appPropPath != null){
+        path = JPFPropertiesParser.getMatchFromFile(appPropPath,"site");
+
+        if (path == null){
+          // try ${user.home}/.jpf/site.properties
+          String userHome = System.getProperty("user.home");
+          File f = new File( userHome, "jpf/site.properties");
+          if (!f.isFile()){
+            f = new File(userHome, ".jpf/site.properties");
+          }
+
+          if (f.isFile()){
+            path = f.getAbsolutePath();
+          }
+        }
+      }
+    }
+
+    return path;
+  }
+
 
   // watch out - this does not reset the computed paths!
   public Config reload() {
@@ -347,33 +363,6 @@ public class Config extends Properties {
     }
   }
 
-  protected void loadDefaultProperties (String fileName, Class<?> codeBase) {
-    boolean found = false;
-
-    if (fileName == null) {
-      fileName = "default.properties";
-    }
-
-    // first, try to load from a file
-    File f = new File(fileName);
-    if (f.exists()) {
-      loadProperties(f.getPath());
-      found = true;
-      
-    } else {  // if there is no file, try to load as a resource 
-      Class<?> clazz = (codeBase != null) ? codeBase : Config.class;
-      URL url = clazz.getResource(fileName);
-      if (url != null) {
-        loadProperties(url);
-        found = true;
-      }
-    }
-
-    if (!found) {
-      throw new JPFConfigException("no default properties");
-    }
-
-  }
 
   protected void setConfigPathProperties (String fileName){
     put("config", fileName);
@@ -940,6 +929,10 @@ public class Config extends Properties {
 
   public ClassLoader getClassLoader (){
     return loader;
+  }
+
+  public boolean hasSetClassLoader (){
+    return Config.class.getClassLoader() != loader;
   }
 
   //------------------------------ public methods - the Config API

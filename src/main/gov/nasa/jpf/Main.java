@@ -18,9 +18,14 @@
 //
 package gov.nasa.jpf;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
 
 /**
  * this class is a wrapper for starting JPF so that it sets the classpath
@@ -28,15 +33,16 @@ import java.lang.reflect.Modifier;
  */
 public class Main {
 
-  static final String DEFAULT_APP_CLASS = "gov.nasa.jpf.JPF";
+  static final String DEFAULT_STARTUP_CLASS = "gov.nasa.jpf.JPF";
 
   public static void main (String[] args) {
 
-    String appClsName = null;
+    String startupClsName = null;
 
     if (args.length > 1 && args[0].equals("-a")){
-      appClsName = checkClassName(args[1]);
-      if (appClsName == null){
+      // we have an explicit startup class name argument
+      startupClsName = checkClassName(args[1]);
+      if (startupClsName == null){
         System.err.println("error: not a valid class name: " + args[1]);
         return;
       }
@@ -44,49 +50,78 @@ public class Main {
       String[] a = new String[args.length - 2];
       System.arraycopy(args, 2, a, 0, a.length);
       args = a;
+
+    } else {
+      startupClsName = DEFAULT_STARTUP_CLASS;
     }
 
     try {
+      /**
       JPFClassLoader cl = new JPFClassLoader(args);
 
-      if (appClsName == null){
-        appClsName = DEFAULT_APP_CLASS;
+      //--- set the path elements for the JPFClassLoader from config
+      Config conf = new Config(args);
+      for (File p : conf.getPathArray("native_classpath")){
+        cl.addPathElement(p.getAbsolutePath());
       }
+      conf.setClassLoader(cl);
 
-      // in case we start something else than JPF
-      // <2do> this is badly redudant/overlapping with Config, check if we
-      // can't instantiate Config here
-      cl.addStartupClasspath(args, appClsName);
+      //--- add the preloaded classes
+      cl.addPreloadedClass(JPFClassLoader.class);
+      cl.addPreloadedClass(JPFClassLoaderException.class);
+      cl.addPreloadedClass(Config.class);
+      cl.addPreloadedClass(JPFConfigException.class);
+      **/
+      
+      Config conf = new Config(args);
+      String[] nativeCp = conf.getCompactStringArray("native_classpath");
+      URLClassLoader cl = URLClassLoader.newInstance(getURLs(nativeCp));
+      conf.setClassLoader(cl);
 
-      // we assume we need the core no matter what the appClsName is
-      cl.addCoreClasspath(args);
+      //--- load the startup class through the JPFClassLoader
+      Class<?> startupCls = cl.loadClass(startupClsName);
 
-      Class<?> appCls = cl.loadClass(appClsName);
-
-      Class<?>[] argTypes = { String[].class };
-		  Method mainMth = appCls.getMethod("main", argTypes);
-
-      int modifiers = mainMth.getModifiers();
-      if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)){
-        System.err.println("no \"public static void main(String[])\" method in" + appClsName);
-        return;
+      //--- call the (best) startup class entry
+      if (!call( startupCls, "start", new Object[] {conf,args})){
+        if (!call( startupCls, "main", new Object[] {args})){
+          System.err.println("error: cannot find public static 'start(Config,String[])' or 'main(String[])' in " + startupClsName);
+        }
       }
-
-      mainMth.invoke(null, new Object[] { args });
 
     } catch (ClassNotFoundException cnfx){
-      System.err.println("error: cannot find " + appClsName);
+      System.err.println("error: cannot find " + startupClsName);
+    } 
+  }
+
+  private static boolean call( Class<?> cls, String mthName, Object[] args){
+    try {
+      Class<?>[] argTypes = new Class<?>[args.length];
+      for (int i=0; i<args.length; i++){
+        argTypes[i] = args[i].getClass();
+      }
+
+      Method m = cls.getDeclaredMethod(mthName, argTypes);
+
+      int modifiers = m.getModifiers();
+      if (Modifier.isStatic(modifiers) && Modifier.isPublic(modifiers)){
+        m.invoke(null, args);
+        return true;
+      }
+
     } catch (NoSuchMethodException nsmx){
-      System.err.println("error: no main(String[]) method found in " + appClsName);
+      return false;
     } catch (IllegalAccessException iax){
-      // we already checked for that, but anyways
-      System.err.println("no \"public static void main(String[])\" method in " + appClsName);
+      return false;
     } catch (InvocationTargetException ix) {
       ix.getCause().printStackTrace();
       // should already be reported by JPF
+      return true;
     } catch (JPFClassLoaderException ex){
-      System.err.println(ex);
+      System.err.println("error: " + ex);
+      return false;
     }
+
+    return false;
   }
 
   private static String checkClassName (String cls){
@@ -100,4 +135,24 @@ public class Main {
     
     return cls;
   }
+
+
+
+  static URL[] getURLs (String[] paths){
+    ArrayList<URL> urls = new ArrayList<URL>();
+
+    for (String p : paths) {
+      File f = new File(p);
+      if (f.exists()) {
+        try {
+          urls.add(f.toURI().toURL());
+        } catch (MalformedURLException x) {
+          throw new RuntimeException("illegal native_classpath element: " + p);
+        }
+      }
+    }
+
+    return urls.toArray(new URL[urls.size()]);
+  }
+
 }
