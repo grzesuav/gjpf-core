@@ -19,7 +19,9 @@
 package gov.nasa.jpf;
 
 
-import gov.nasa.jpf.util.JPFPropertiesParser;
+import gov.nasa.jpf.util.FileUtils;
+import gov.nasa.jpf.util.JPFSiteUtils;
+import gov.nasa.jpf.util.Misc;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,6 +33,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -137,6 +140,7 @@ public class Config extends Properties {
   static final String INCLUDE_KEY = "@include";
   static final String INCLUDE_UNLESS_KEY = "@include_unless";
   static final String INCLUDE_IF_KEY = "@include_if";
+  static final String USING_KEY = "@using";
 
 
   public static final String LIST_SEPARATOR = ",";
@@ -183,7 +187,6 @@ public class Config extends Properties {
 
     String appProperties = getAppPropertiesLocation(a);
     String siteProperties = getSitePropertiesLocation(a, appProperties);
-
 
     //--- the site properties
     if (siteProperties != null){
@@ -239,20 +242,21 @@ public class Config extends Properties {
 
     if (path == null){
       // look into the app properties
+      // NOTE: we might want to drop this in the future because it constitutes
+      // a cyclic properties file dependency
       if (appPropPath != null){
-        path = JPFPropertiesParser.getMatchFromFile(appPropPath,"site");
+        path = JPFSiteUtils.getMatchFromFile(appPropPath,"site");
+      }
 
-        if (path == null){
-          // try ${user.home}/.jpf/site.properties
-          String userHome = System.getProperty("user.home");
-          File f = new File( userHome, "jpf/site.properties");
-          if (!f.isFile()){
-            f = new File(userHome, ".jpf/site.properties");
-          }
-
-          if (f.isFile()){
-            path = f.getAbsolutePath();
-          }
+      if (path == null) {
+        // fall back to ${user.home}/[.]jpf/site.properties
+        String userHome = System.getProperty("user.home");
+        File f = new File(userHome, "jpf/site.properties");
+        if (!f.isFile()) {
+          f = new File(userHome, ".jpf/site.properties");
+        }
+        if (f.isFile()) {
+          path = f.getAbsolutePath();
         }
       }
     }
@@ -481,19 +485,8 @@ public class Config extends Properties {
   }
 
   protected void addJPFdirsFromClasspath(List<File> jpfDirs) {
-    String[] cpEntries = null;
-
-    ClassLoader cl = Config.class.getClassLoader();
-    if (cl instanceof JPFClassLoader){
-      // in case it wasn't in the system classpath, this should now
-      // contain the config classpath as the single element
-      cpEntries = ((JPFClassLoader)cl).getClasspathElements();
-    }
-
-    if (cpEntries == null || cpEntries.length == 0){ 
-      String cp = System.getProperty("java.class.path");
-      cpEntries = cp.split(File.pathSeparator);
-    }
+    String cp = System.getProperty("java.class.path");
+    String[] cpEntries = cp.split(File.pathSeparator);
 
     for (String p : cpEntries) {
       File f = new File(p);
@@ -766,6 +759,23 @@ public class Config extends Properties {
     }
   }
 
+
+  void includeProjectPropertyFile (String projectId){
+    String projectPath = getString(projectId);
+    if (projectPath != null){
+      File projectProps = new File(projectPath, "jpf.properties");
+      if (projectProps.isFile()){
+        loadPropertiesRecursive(projectProps.getAbsolutePath());
+
+      } else {
+        throw exception("project properties not found: " + projectProps.getAbsolutePath());
+      }
+
+    } else {
+      throw exception("unknown project id (check site.properties): " + projectId);
+    }
+  }
+
   // we override this so that we can handle expansion for both key and value
   // (value expansion can be recursive, i.e. refer to itself)
   @Override
@@ -807,6 +817,9 @@ public class Config extends Properties {
         return null;
       } else if (INCLUDE_IF_KEY.equals(key)) {
         includeCondPropertyFile(key, value, true);
+        return null;
+      } else if (USING_KEY.equals(key)){
+        includeProjectPropertyFile(value);
         return null;
       } else {
         throw exception("unknown keyword: " + key);
@@ -923,7 +936,7 @@ public class Config extends Properties {
   }
 
 
-  void setClassLoader (ClassLoader newLoader){
+  public void setClassLoader (ClassLoader newLoader){
     loader = newLoader;
   }
 
@@ -933,6 +946,27 @@ public class Config extends Properties {
 
   public boolean hasSetClassLoader (){
     return Config.class.getClassLoader() != loader;
+  }
+
+  public ClassLoader setClassLoader(ClassLoader parent, String... keys){
+    ArrayList<String> list = new ArrayList<String>();
+
+    for (String key : keys){
+      String[] cp = getCompactStringArray(key);
+      cp = FileUtils.expandWildcards(cp);
+      for (String e : cp){
+        list.add(e);
+      }
+    }
+
+    URL[] urls = FileUtils.getURLs(list);
+    URLClassLoader ucl = URLClassLoader.newInstance(urls, parent);
+
+    //for (URL url : urls) System.out.println("@@ " + url);
+
+    loader = ucl;
+
+    return ucl;
   }
 
   //------------------------------ public methods - the Config API
@@ -1333,6 +1367,16 @@ public class Config extends Properties {
     return removeEmptyStrings(getStringArray(key));
   }
 
+  
+  public String[] getStringArray(String key, String[] def){
+    String v = getProperty(key);
+    if (v != null && (v.length() > 0)) {
+      return split(v);
+    } else {
+      return def;
+    }
+  }
+
   public static String[] removeEmptyStrings (String[] a){
     if (a != null) {
       int n = 0;
@@ -1360,15 +1404,6 @@ public class Config extends Properties {
     }
 
     return null;
-  }
-  
-  public String[] getStringArray(String key, String[] def){
-    String v = getProperty(key);
-    if (v != null && (v.length() > 0)) {
-      return split(v);
-    } else {
-      return def;
-    }
   }
 
 
@@ -1753,156 +1788,6 @@ public class Config extends Properties {
     return -1;
   }
 
-
-  /**
-   * turn a mixed path list into a valid Windows path set with drive letters, 
-   * and '\' and ';' separators. Also remove multiple consecutive separators
-   * this assumes the path String to be already expanded
-   */
-  public String asCanonicalWindowsPath (String p) {
-    boolean changed = false;
-        
-    int n = p.length();
-    char[] buf = new char[n];
-    p.getChars(0, n, buf, 0);
-    
-    for (int i=0; i<n; i++) {
-      char c = buf[i];
-      if (c == '/' || c == '\\') {
-        if (c == '/'){
-          buf[i] = '\\'; changed = true;
-        }
-        
-        // remove multiple occurrences of dir separators
-        int i1 = i+1;
-        if (i1 < n) {
-          for (c = buf[i1]; i1 < n && (c == '/' || c == '\\'); c = buf[i1]) {
-            System.arraycopy(buf, i + 2, buf, i1, n - (i + 2));
-            n--;
-            changed = true;
-          }
-        }
-        
-      } else if (c == ':') {
-        // is this part of a drive letter spec?
-        int i1 = i+1;
-        if (i1<n && (buf[i1] == '\\' || buf[i1] == '/')) {
-          if (i>0) {
-            if (i == 1 || (buf[i-2] == ';')){
-              continue;
-            }
-          }
-        }
-        buf[i] = ';'; changed = true;
-        
-      } else if (c == ',') {
-        buf[i] = ';'; changed = true;        
-      }
-      
-      if (buf[i] == ';') { // remove multiple occurrences of path separators
-        int i1 = i+1;
-        if (i1<n) {
-          for (c = buf[i1] ;(c == ':' || c == ';' || c == ','); c = buf[i1]){
-            System.arraycopy(buf, i+2, buf, i1, n - (i+2));
-            n--;
-            changed = true;
-          }
-        }
-      }
-    }
-
-    if (changed) {
-      p = new String(buf, 0, n);
-    }
-    
-    return p;
-  }
-
-  /**
-   * turn a mixed path list into a valid Unix path set without drive letters, 
-   * and with '/' and ':' separators. Also remove multiple consecutive separators
-   * this assumes the path String to be already expanded
-   */
-  public String asCanonicalUnixPath (String p) {
-    boolean changed = false;
-    
-    int n = p.length();
-    char[] buf = new char[n];
-    p.getChars(0, n, buf, 0);
-    
-    for (int i=0; i<n; i++) {
-      char c = buf[i];
-      if (c == '/' || c == '\\') {
-        if (c == '\\'){
-          buf[i] = '/'; changed = true;
-        }
-        
-        // remove multiple occurrences of dir separators
-        int i1 = i+1;
-        if (i1 < n){
-          for (c = buf[i1]; i1 < n && (c == '/' || c == '\\'); c = buf[i1]) {
-            System.arraycopy(buf, i + 2, buf, i1, n - (i + 2));
-            n--;
-            changed = true;
-          }
-        }
-        
-      } else if (c == ':') {
-        // strip drive letters - maybe this is trying to be too smart,
-        // since we only do this for a "...:X:\..." but not a 
-        // "...:X:/...", which could be a valid unix path list
-        
-        // is this part of a drive letter spec?
-        int i1 = i+1;
-        if (i1<n) {
-          if (buf[i1] == '\\') {
-            if (i>0) {
-              if (i == 1 || (buf[i-2] == ':')){  // strip the drive letter
-                System.arraycopy(buf, i1, buf, i-1, n - (i1));
-                n-=2;
-                changed = true;
-              }
-            }
-          }
-        }
-        
-      } else if (c == ';'){
-        buf[i] = ':'; changed = true;
-           
-      } else if (c == ',') {
-        buf[i] = ':'; changed = true;        
-      }
-      
-      if (buf[i] == ':') {  // remove multiple occurrences of path separators
-        int i1 = i+1;
-        if (i1<n) {
-          for (c = buf[i1] ;(c == ':' || c == ';' || c == ','); c = buf[i1]){
-            System.arraycopy(buf, i+2, buf, i1, n - (i+2));
-            n--;
-            changed = true;
-          }
-        }
-      }
-    }
-    
-    if (changed) {
-      p = new String(buf, 0, n);
-    }
-    
-    return p;
-  }
-  
-  public String asPlatformPath (String p) {
-    if (File.separatorChar == '/') { // Unix'ish file system
-      p = asCanonicalUnixPath(p);
-    } else { // Windows'ish file system 
-      p = asCanonicalWindowsPath(p);      
-    }
-    
-    return p;
-  }
-
-
   public File[] getPathArray (String key) {    
     String v = getProperty(key);
     if (v != null) {
@@ -1911,7 +1796,7 @@ public class Config extends Properties {
       if (pe != null && pe.length > 0) {
         File[] files = new File[pe.length];
         for (int i=0; i<files.length; i++) {
-          String path = asPlatformPath(pe[i]);
+          String path = FileUtils.asPlatformPath(pe[i]);
           files[i] = new File(path);
         }
         return files;
@@ -1924,7 +1809,7 @@ public class Config extends Properties {
   public File getPath (String key) {
     String v = getProperty(key);
     if (v != null) {
-      return new File(asPlatformPath(v));
+      return new File(FileUtils.asPlatformPath(v));
     }
     
     return null;

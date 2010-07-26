@@ -26,6 +26,7 @@ import gov.nasa.jpf.JPFListener;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.util.Source;
@@ -1250,7 +1251,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       buf.append(v);
     }
 
-    String cp = config.asPlatformPath(buf.toString());
+    String cp = FileUtils.asPlatformPath(buf.toString());
     logger.fine("classpath set: " + cp);
     modelClassPath = new ClassPath(cp);
   }

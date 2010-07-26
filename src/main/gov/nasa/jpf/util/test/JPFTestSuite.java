@@ -19,11 +19,11 @@
 
 package gov.nasa.jpf.util.test;
 
-import gov.nasa.jpf.JPFClassLoader;
-import gov.nasa.jpf.JPFClassLoaderException;
 import gov.nasa.jpf.Property;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 /**
  * JPFTestSuite is the base class for (JUnit) tests using JPF outside of
@@ -59,18 +59,28 @@ import java.lang.reflect.Method;
 public class JPFTestSuite extends TestJPF {
 
   static private boolean runClean = false; // new JPF classes for each test method
-  private JPFClassLoader jpfLoader = null;
+  private ClassLoader jpfLoader = null;
 
   static final String JPF_RUN = "gov.nasa.jpf.util.test.JPFTestRun";
 
+  public static class TestClassLoader extends URLClassLoader {
+    TestClassLoader () {
+      super(null);  // no URLs yet
+    }
 
-  JPFClassLoader getLoader() {
+    public boolean isInitialized() {
+      return getURLs().length > 0;
+    }
+
+    // this is unfortunately protected in the URLClassLoader, which is why we need TestClassLoader
+    public void addURL(URL url){
+      super.addURL(url);
+    }
+  }
+
+  ClassLoader getLoader() {
     if (jpfLoader == null || runClean) {
-      JPFClassLoader cl = new JPFClassLoader(null);
-
-      cl.addPreloadedClass(JPFTestSuite.class);
-      cl.addPreloadedClass(TestJPF.class);
-
+      TestClassLoader cl = new TestClassLoader();
       jpfLoader = cl;
     }
     return jpfLoader;
@@ -100,16 +110,13 @@ public class JPFTestSuite extends TestJPF {
       ix.getCause().printStackTrace();
       fail(ix.getCause().toString());
       // should already be reported by JPF
-    } catch (JPFClassLoaderException ex) {
-      fail(ex.toString());
     }
   }
 
   @Override
   public void propertyViolation (Class<? extends Property> propertyCls, String... args ){
     try {
-      JPFClassLoader loader = getLoader();
-      loader.addPreloadedClass(propertyCls);
+      ClassLoader loader = getLoader();
 
       Class<?> cls = loader.loadClass(JPF_RUN);
 
@@ -128,8 +135,6 @@ public class JPFTestSuite extends TestJPF {
       ix.getCause().printStackTrace();
       fail(ix.getCause().toString());
       // should already be reported by JPF
-    } catch (JPFClassLoaderException ex) {
-      fail(ex.toString());
     }
   }
 
@@ -153,16 +158,13 @@ public class JPFTestSuite extends TestJPF {
       ix.getCause().printStackTrace();
       fail(ix.getCause().toString());
       // should already be reported by JPF
-    } catch (JPFClassLoaderException ex) {
-      fail(ex.toString());
     }
   }
 
   @Override
   public void jpfException (Class<? extends Throwable> xCls, String... args) {
     try {
-      JPFClassLoader loader = getLoader();
-      loader.addPreloadedClass(xCls);
+      ClassLoader loader = getLoader();
 
       Class<?> cls = loader.loadClass(JPF_RUN);
 
@@ -181,8 +183,6 @@ public class JPFTestSuite extends TestJPF {
       ix.getCause().printStackTrace();
       fail(ix.getCause().toString());
       // should already be reported by JPF
-    } catch (JPFClassLoaderException ex) {
-      fail(ex.toString());
     }
   }  
 }

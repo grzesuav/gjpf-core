@@ -26,7 +26,12 @@ import gov.nasa.jpf.jvm.JVM;
 import java.io.PrintWriter;
 import java.util.List;
 import gov.nasa.jpf.Error;
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.Property;
+import gov.nasa.jpf.util.FileUtils;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * helper class acting as a type firewall for running JUnit tests using JPF,
@@ -36,9 +41,40 @@ import gov.nasa.jpf.Property;
  */
 public class JPFTestRun {
 
+  static void setNativeClassPath(Config conf){
+    ClassLoader cl = JPFTestRun.class.getClassLoader();
+
+    if (cl instanceof JPFTestSuite.TestClassLoader){
+      JPFTestSuite.TestClassLoader tcl = (JPFTestSuite.TestClassLoader)cl;
+
+      if (!tcl.isInitialized()){
+        // this classloader does not have any path entries yet
+
+        String[] nativeCp = conf.getCompactStringArray("native_classpath");
+        nativeCp = FileUtils.expandWildcards(nativeCp);
+
+        for (String p : nativeCp){
+          File f = new File(p);
+          if (f.exists()) {
+            try {
+              URL url = f.toURI().toURL();
+              tcl.addURL(url);
+             } catch (MalformedURLException x) {
+              throw new JPFConfigException("illegal native_classpath element: " + p);
+            }
+          }
+        }
+
+        // we don't need to set the config classloader since Config was loaded by it
+      }
+    }
+  }
+
   static JPF createAndRunJPF (TestJPF test, String[] args){
     JPF jpf = null;
-    Config conf = JPF.createConfig(args);
+
+    Config conf = new Config(args);
+    setNativeClassPath(conf);
 
     if (conf.getTarget() != null) {
       jpf = new JPF(conf);

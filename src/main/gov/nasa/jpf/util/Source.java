@@ -149,18 +149,18 @@ public class Source {
     try {
       int i = spec.indexOf(".jar");
       if (i >= 0) {  // jar
-        String pn = config.asPlatformPath(spec.substring(0, i + 4));
+        String pn = FileUtils.asPlatformPath(spec.substring(0, i + 4));
         File jar = new File(pn);
         if (jar.exists()) {
           int i0 = i + 5; // scrub the leading path separator
           // JarFile assumes Unix for archive-internal paths (also on Windows)
-          String ep = (spec.length() > i0) ? config.asCanonicalUnixPath(spec.substring(i0)) : null;
+          String ep = (spec.length() > i0) ? FileUtils.asCanonicalUnixPath(spec.substring(i0)) : null;
           // we should probably check here if there is such a dir in the Jar
           sr = new JarRoot(pn, ep);
         }
 
       } else {       // directory
-        String pn = config.asPlatformPath(spec);
+        String pn = FileUtils.asPlatformPath(spec);
         File dir = new File(pn);
         if (dir.exists()) {
           sr = new DirRoot(pn);

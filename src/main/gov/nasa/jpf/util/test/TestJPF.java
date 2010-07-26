@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.util.test;
 
+import gov.nasa.jpf.JPFShell;
 import gov.nasa.jpf.jvm.*;
 
 import gov.nasa.jpf.Property;
@@ -59,7 +60,7 @@ import org.junit.*;
  * </li>
  * </ol>
  */
-public abstract class TestJPF extends Assert  {
+public abstract class TestJPF extends Assert implements JPFShell  {
   static PrintStream out = System.out;
 
   public static final String UNNAMED_PACKAGE = "";
@@ -71,8 +72,9 @@ public abstract class TestJPF extends Assert  {
   private boolean runDirectly; // don't run test methods through JPF, invoke it directly
   private String sutClassName;
 
-  //------ internal methods
 
+
+  //--- internal methods
 
   public void fail (String msg, String[] args, String cause){
     StringBuilder sb = new StringBuilder();
@@ -300,6 +302,14 @@ public abstract class TestJPF extends Assert  {
     runTests(testClass, testMethods);
   }
 
+  //--- the JPFShell interface
+  public void start(String[] testMethods){
+    Class<? extends TestJPF> testClass = getClass(); // this is an instance method
+    runTests(testClass, testMethods);
+  }
+
+
+  //--- the JPF run test methods
 
   /**
    * run JPF expecting a AssertionError in the SuT

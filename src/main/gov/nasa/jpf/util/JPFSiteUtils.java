@@ -29,9 +29,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * utility class to extract expandable key/value pairs out of Java property files
+ * utility class for JPF site configuration related functions
  */
-public class JPFPropertiesParser {
+public class JPFSiteUtils {
 
   //--- preparse support - we need this if we use app properties to locat lower level property files
 
@@ -120,10 +120,8 @@ public class JPFPropertiesParser {
     return value;
   }
 
-  /**
-   * simple non-recursive, local key and system property expander
-   */
-  static String expandLocal (String s, HashMap<String,String> map) {
+  // simple non-recursive, local key and system property expander
+  private static String expandLocal (String s, HashMap<String,String> map) {
     int i, j = 0;
     if (s == null || s.length() == 0) {
       return s;
@@ -154,4 +152,81 @@ public class JPFPropertiesParser {
     return s;
   }
 
+
+  /**
+   * get location of jpf-core from site.properties
+   * @return null if it doesn't exist
+   */
+  public static File getSiteCoreDir() {
+    String userHome = System.getProperty("user.home");
+    File f = new File( userHome, "jpf/site.properties");
+    if (!f.isFile()){
+      f = new File( userHome, ".jpf/site.properties");
+      if (!f.isFile()){
+        return null;
+      }
+    }
+
+    String path = getMatchFromFile(f.getAbsolutePath(), "jpf-core");
+    if (path != null){
+      File coreDir = new File(path);
+      if (coreDir.isDirectory()){
+        return coreDir;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * find project properties (jpf.properties) from current dir
+   */
+  public static File getCurrentProjectProperties() {
+    File d = new File(System.getProperty("user.dir"));
+
+    do {
+      File f = new File(d, "jpf.properties");
+      if (f.isFile()){
+        return f;
+      }
+      d = d.getParentFile();
+    } while (d != null);
+
+    return null;
+  }
+
+
+  static Pattern idPattern = Pattern.compile("^[ \t]*([^# \t][^ \t]*)[ \t]*=[ \t]*\\$\\{config_path\\}");
+
+  /**
+   * look for a "<id> = ${config_path}" entry in current dir/jpf.properties
+   * this looks recursively upwards
+   * @return null if no jpf.properties found
+   */
+  public static String getCurrentProjectId (){
+    File propFile = getCurrentProjectProperties();
+
+    if (propFile != null){
+      try {
+        FileReader fr = new FileReader(propFile);
+        BufferedReader br = new BufferedReader(fr);
+
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
+          Matcher m = idPattern.matcher(line);
+          if (m.matches()) {
+            String key = m.group(1);
+            return key;
+          }
+        }
+        br.close();
+
+      } catch (FileNotFoundException fnfx) {
+        return null;
+      } catch (IOException iox) {
+        return null;
+      }
+    }
+
+    return null;
+  }
 }

@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.jvm.ThreadInfo;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -27,7 +26,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 

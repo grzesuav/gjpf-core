@@ -25,7 +25,7 @@ import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.report.Reporter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListener;
-import gov.nasa.jpf.util.FileFinder;
+import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LogManager;
 import gov.nasa.jpf.util.Misc;
@@ -212,19 +212,7 @@ public class JPF implements Runnable {
   
   static void setNativeClassPath(Config config) {
     if (!config.hasSetClassLoader()) {
-      String[] nativeCp = config.getCompactStringArray("native_classpath");
-      nativeCp = FileFinder.expandWildcards(nativeCp);
-
-      if (nativeCp.length > 0) {
-        URLClassLoader ucl = URLClassLoader.newInstance(getURLs(nativeCp));
-        config.setClassLoader(ucl);
-
-        if (logger.isLoggable(Level.FINE)) {
-          for (URL url : ucl.getURLs()) {
-            logger.fine("URLClassLoader pathElement: " + url.toString());
-          }
-        }
-      }
+      config.setClassLoader( JPF.class.getClassLoader(), "native_classpath");
     }
   }
 
@@ -239,11 +227,11 @@ public class JPF implements Runnable {
   public JPF(Config conf) {
     config = conf;
 
+    setNativeClassPath(config); // before we do anything else
+
     if (logger == null) { // maybe somebody created a JPF object explicitly
       logger = initLogging(config);
     }
-
-    setNativeClassPath(config); // before we do anything else
 
     String tgt = config.getTarget();
     if (tgt == null || (tgt.length() == 0)) {

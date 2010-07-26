@@ -28,7 +28,7 @@ package gov.nasa.jpf;
  *
  * Usually, JPFShell implementors have a <init>(Config) ctor so that they
  * don't need to obtain a new Config object. This is the reason for
- * using a shell instance instead of a static main() method - we cannot
+ * using a shell *instance* instead of a static main() method - we cannot
  * pass the Config object that was already created by JPF.main() at this point
  * into the shell main(), which means we would either have to turn Config
  * into a singleton (causing problems for multiple JPF runs), or create a new
