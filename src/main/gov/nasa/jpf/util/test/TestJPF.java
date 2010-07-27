@@ -18,18 +18,25 @@
 //
 package gov.nasa.jpf.util.test;
 
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPFShell;
 import gov.nasa.jpf.jvm.*;
 
 import gov.nasa.jpf.Property;
+import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Reflection;
+import java.io.File;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.List;
 import org.junit.*;
 
 
@@ -302,6 +309,27 @@ public abstract class TestJPF extends Assert implements JPFShell  {
     runTests(testClass, testMethods);
   }
 
+  protected JPF createAndRunJPF (String[] args){
+    JPF jpf = null;
+
+    Config conf = new Config(args);
+
+    if (conf.getTarget() != null) {
+      jpf = new JPF(conf);
+
+      if (showConfig()) {
+        conf.print(new PrintWriter(System.out));
+      }
+
+      JPF_gov_nasa_jpf_util_test_TestJPF.init();
+
+      jpf.run();
+    }
+
+    return jpf;
+  }
+
+
   //--- the JPFShell interface
   public void start(String[] testMethods){
     Class<? extends TestJPF> testClass = getClass(); // this is an instance method
@@ -315,8 +343,8 @@ public abstract class TestJPF extends Assert implements JPFShell  {
    * run JPF expecting a AssertionError in the SuT
    * @param args JPF main() arguments
    */
-  public void assertionError (String details, String... args) {
-    unhandledException("java.lang.AssertionError", details, args );
+  public JPF assertionError (String details, String... args) {
+    return unhandledException("java.lang.AssertionError", details, args );
   }
   protected boolean verifyAssertionErrorDetails (String details, String... args){
     if (runDirectly) {
@@ -343,8 +371,34 @@ public abstract class TestJPF extends Assert implements JPFShell  {
    * run JPF expecting no SuT property violations or JPF exceptions
    * @param args JPF main() arguments
    */
-  public void noPropertyViolation (String... args) {
-    JPFTestRun.noPropertyViolation(this, args);
+  public JPF noPropertyViolation (String... args) {
+    JPF jpf = null;
+
+    report(args);
+
+    try {
+      jpf = createAndRunJPF(args);
+    } catch (Throwable t) {
+      // we get as much as one little hickup and we declare it failed
+      t.printStackTrace();
+      fail("JPF internal exception executing: ", args, t.toString());
+      return jpf;
+    }
+
+    List<Error> errors = jpf.getSearchErrors();
+    if ((errors != null) && (errors.size() > 0)) {
+      fail("JPF found unexpected errors: " + (errors.get(0)).getDescription());
+    }
+
+    JVM vm = jpf.getVM();
+    if (vm != null) {
+      ExceptionInfo xi = vm.getPendingException();
+      if (xi != null) {
+        fail("JPF caught exception executing: ", args, xi.getExceptionClassname());
+      }
+    }
+
+    return jpf;
   }
   protected boolean verifyNoPropertyViolation (String...jpfArgs){
     if (runDirectly) {
@@ -365,8 +419,43 @@ public abstract class TestJPF extends Assert implements JPFShell  {
    * @param details detail message of the expected exception
    * @param args JPF arguments
    */
-  public void unhandledException ( String xClassName, String details, String... args) {
-    JPFTestRun.unhandledException(this, xClassName, details, args);
+  public JPF unhandledException ( String xClassName, String details, String... args) {
+    JPF jpf = null;
+
+    report(args);
+
+    try {
+      jpf = createAndRunJPF(args);
+    } catch (Throwable t) {
+      t.printStackTrace();
+      fail("JPF internal exception executing: ", args, t.toString());
+      return jpf;
+    }
+
+    ExceptionInfo xi = JVM.getVM().getPendingException();
+    if (xi == null) {
+      fail("JPF failed to catch exception executing: ", args, ("expected " + xClassName));
+    } else {
+      String xn = xi.getExceptionClassname();
+      if (!xn.equals(xClassName)) {
+        if (xn.equals(TestException.class.getName())) {
+          xn = xi.getCauseClassname();
+          if (!xn.equals(xClassName)) {
+            fail("JPF caught wrong exception: " + xn + ", expected: " + xClassName);
+          }
+          if (details != null) {
+            String xd = xi.getCauseDetails();
+            if (!details.equals(xd)) {
+              fail("wrong exception details: " + xd + ", expected: " + details);
+            }
+          }
+        } else {
+          fail("JPF caught wrong exception: " + xn + ", expected: " + xClassName);
+        }
+      }
+    }
+
+    return jpf;
   }
   protected boolean verifyUnhandledExceptionDetails (String xClassName, String details, String... args){
     if (runDirectly) {
@@ -395,8 +484,29 @@ public abstract class TestJPF extends Assert implements JPFShell  {
    * NOTE - xClassName needs to be the concrete exception, not a super class
    * @param args JPF main() arguments
    */
-  public void jpfException (Class<? extends Throwable> xCls, String... args) {
-    JPFTestRun.jpfException(this, xCls, args);
+  public JPF jpfException (Class<? extends Throwable> xCls, String... args) {
+    JPF jpf = null;
+    Throwable exception = null;
+
+    report(args);
+
+    try {
+      jpf = createAndRunJPF( args);
+    } catch (JPF.ExitException xx) {
+      exception = xx.getCause();
+    } catch (Throwable x) {
+      exception = x;
+    }
+
+    if (exception != null){
+      if (!xCls.isAssignableFrom(exception.getClass())){
+        fail("JPF produced wrong exception: " + exception + ", expected: " + xCls.getName());
+      }
+    } else {
+      fail("JPF failed to produce exception, expected: " + xCls.getName());
+    }
+
+    return jpf;
   }
   protected boolean verifyJPFException (Class<? extends Throwable> xCls, String... args){
     if (runDirectly) {
@@ -415,8 +525,29 @@ public abstract class TestJPF extends Assert implements JPFShell  {
    * run JPF expecting a property violation of the SuT
    * @param args JPF main() arguments
    */
-  public void propertyViolation (Class<? extends Property> propertyCls, String... args ){
-    JPFTestRun.propertyViolation(this, propertyCls, args);
+  public JPF propertyViolation (Class<? extends Property> propertyCls, String... args ){
+    JPF jpf = null;
+
+    report(args);
+
+    try {
+      jpf = createAndRunJPF( args);
+    } catch (Throwable t) {
+      t.printStackTrace();
+      fail("JPF internal exception executing: ", args, t.toString());
+    }
+
+    List<Error> errors = jpf.getSearchErrors();
+    if (errors != null) {
+      for (Error e : errors) {
+        if (propertyCls == e.getProperty().getClass()) {
+          return jpf; // success, we got the sucker
+        }
+      }
+    }
+
+    fail("JPF failed to detect error: " + propertyCls.getName());
+    return jpf;
   }
   protected boolean verifyPropertyViolation (Class<? extends Property> propertyCls, String... args){
     if (runDirectly) {
@@ -434,8 +565,8 @@ public abstract class TestJPF extends Assert implements JPFShell  {
    * run JPF expecting a deadlock in the SuT
    * @param args JPF main() arguments
    */
-  public void deadlock (String... args) {
-    propertyViolation(NotDeadlockedProperty.class, args );
+  public JPF deadlock (String... args) {
+    return propertyViolation(NotDeadlockedProperty.class, args );
   }
   protected boolean verifyDeadlock (String... args){
     if (runDirectly) {
