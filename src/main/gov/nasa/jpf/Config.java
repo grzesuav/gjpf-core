@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -72,27 +73,31 @@ import java.util.regex.Pattern;
  * Except of JPF and Config itself, all JPF classes are loaded by a
  * Classloader that is constucted by Config (e.g. by collecting jars from
  * known/configured locations), i.e. we SHOULD NOT rely on any 3rd party
- * libraries within Config. Ideally, only JPF should have to be in the
- * platform classpath (or the jpf.jar manifest)
+ * libraries within Config. The class should be as autarkical as possible.
  *
  *
  * PROPERTY SOURCES
  * ----------------
  *
- * (1) default.properties - as the name implies, these are version/system specific
- * defaults that come with the jpf-core installation and should not be changed
- *
- * (2) site.properties - this file specifies the location of the jpf-core and
+ * (1) one site.properties - this file specifies the location of the jpf-core and
  * installed extensions, like:
  *
- *     jpf.core = /Users/pcmehlitz/projects/jpf-v5/jpf-core
+ *     jpf-core = /Users/pcmehlitz/projects/jpf/jpf-core
  *     ...
- *     # numeric extension
- *     ext.numeric = /Users/pcmehlitz/projects/jpf-v5/jpf-numeric
- *     extensions+=,${ext.numeric}
+ *     jpf-numeric = /Users/pcmehlitz/projects/jpf/jpf-numeric
+ *     ...
+ *     extensions = ${jpf-core}
  *
- * (3) application properties - (formerly called mode property file) specifies
- * all the settings for a specific SUT run, esp. listener and target/target_args.
+ * Each key/directory that is in site.properties is used to locate a corresponding
+ * project property (jpf.properties) file
+ *
+ * (2) any number of jpf.properties project properties files - each directory
+ * entry in the 'extensions' list is checked for a jpf.properties file, which 
+ * is automatically loaded if found. Project properties mostly contain path 
+ * settings that are used to initialize class loading by the host VM and JPF
+ *
+ * (3) one *.jpf application properties - this specifies all the settings for a
+ * specific JPF run, esp. listener and target/target_args.
  * app properties can be specified as the sole JPF argument, i.e. instead of
  * a SUT classname
  *     ..
@@ -109,18 +114,18 @@ import java.util.regex.Pattern;
  *                       property lookup
  *   property type   :      spec             :  default
  *   ----------------:-----------------------:----------
- * |  default        :   +default            : "default.properties" via codebase
+ * |  site           :   +site               : "${user.home}/[.]jpf/site.properties"
  * |                 :                       :
- * |  site           :   +site               : "${user.home}/.jpf/site.properties"
+ * |  project        :  'extensions' value   : set in site.properties
  * |                 :                       :
  * |  app            :   +app                : -
  * |                 :                       :
  * v  cmdline        :   +<key>=<val>        : -
  *
- * (1) if there is an explicit spec and the pathname does not exist, throw a
+ * * if there is an explicit spec and the pathname does not exist, throw a
  * JPFConfigException
  *
- * (2) if the system properties cannot be found, throw a JPFConfigException
+ * * if the system properties cannot be found, throw a JPFConfigException
  *
  *
  * <2do> need to make NumberFormatException handling consistent - should always
@@ -1943,6 +1948,32 @@ public class Config extends Properties {
 
 
   //--- our modification interface
+
+  /**
+   * iterate over all keys, if a key starts with the provided keyPrefix, add
+   * this value under the corresponding key suffix. For example:
+   *
+   *  test.report.console.finished = result
+   *
+   *    -> prompotePropertyCategory("test.") ->
+   *
+   *  report.console.finished = result
+   */
+  public void promotePropertyCategory (String keyPrefix){
+    int prefixLen = keyPrefix.length();
+
+    for (Map.Entry<Object,Object> e : entrySet()){
+      Object k = e.getKey();
+      if (k instanceof String){
+        String key = (String)k;
+        if (key.startsWith(keyPrefix)){
+          String keySuffix = key.substring(prefixLen);
+          put(keySuffix, e.getValue());
+        }
+      }
+    }
+  }
+
   
   @Override
   public Object setProperty (String key, String newValue) {    

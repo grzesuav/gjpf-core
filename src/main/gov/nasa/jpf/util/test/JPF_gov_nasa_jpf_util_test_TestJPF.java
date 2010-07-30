@@ -125,6 +125,10 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
     }
   }
 
+  public static int createAndRunJPF___3Ljava_lang_String_2__Lgov_nasa_jpf_JPF_2 (MJIEnv env, int clsObjRef, int argsRef){
+    // don't get recursive
+    return MJIEnv.NULL;
+  }
 
   /**
    * if any of our methods are executed, we know that we already run under JPF

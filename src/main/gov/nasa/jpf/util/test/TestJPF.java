@@ -110,7 +110,7 @@ public abstract class TestJPF implements JPFShell  {
   }
 
   protected void fail (String msg){
-    throw new TestFailure(msg);
+    throw new AssertionError(msg);
   }
 
   public void report (String[] args) {
@@ -314,14 +314,20 @@ public abstract class TestJPF implements JPFShell  {
     return testMethods;
   }
 
-  protected static void report(String msg){
-    System.out.print("# ");
+  protected static void reportTestStart(String mthName){
+    System.out.println();
+    System.out.print("......................................... testing ");
+    System.out.println(mthName);
+  }
+
+  protected static void reportTestFinished(String msg){
+    System.out.print("......................................... ");
     System.out.println(msg);
   }
 
   protected static void reportResults(String clsName, int nTests, int nFailures, int nErrors, List<String> results){
     System.out.println();
-    System.out.print("# execution of testsuite: " + clsName);
+    System.out.print("......................................... execution of testsuite: " + clsName);
     if (nFailures > 0 || nErrors > 0){
       System.out.println(" FAILED");
     } else if (nTests > 0) {
@@ -331,13 +337,15 @@ public abstract class TestJPF implements JPFShell  {
     }
 
     if (results != null){
+      int i=0;
       for (String result : results){
-        System.out.print("#  ");
+        System.out.print(".... [" + ++i + "] ");
         System.out.println(result);
       }
     }
 
-    System.out.println("# tests: " + nTests + ", failures: " + nFailures + ", errors: " + nErrors);
+    System.out.print(".........................................");
+    System.out.println(" tests: " + nTests + ", failures: " + nFailures + ", errors: " + nErrors);
   }
 
   /**
@@ -364,21 +372,21 @@ public abstract class TestJPF implements JPFShell  {
           Object testObject = testCls.newInstance();
 
           nTests++;
-          report("## running test: " + testMethodName);
+          reportTestStart( testMethodName);
 
           testMethod.invoke(testObject);
           result += ": Ok";
 
         } catch (InvocationTargetException x) {
           Throwable cause = x.getCause();
-          if (cause instanceof TestFailure) {
+          if (cause instanceof AssertionError) {
             nFailures++;
-            report("test method failed with: " + cause.getMessage());
+            reportTestFinished("test method failed with: " + cause.getMessage());
             result += ": Failed";
 
           } else {
             nErrors++;
-            report("unexpected error while executing test method: " + cause.getMessage());
+            reportTestFinished("unexpected error while executing test method: " + cause.getMessage());
             result += ": Error";
           }
 
@@ -388,21 +396,22 @@ public abstract class TestJPF implements JPFShell  {
         }
 
         results.add(result);
+        reportTestFinished(result);
       }
 
     //--- those exceptions are unexpected and represent unrecoverable test harness errors
     } catch (InstantiationException x) {
       nErrors++;
-      report("TEST ERROR: cannot instantiate test class: " + x.getMessage());
+      reportTestFinished("TEST ERROR: cannot instantiate test class: " + x.getMessage());
     } catch (IllegalAccessException x) { // can't happen if getTestMethods() worked
       nErrors++;
-      report("TEST ERROR: method not public: " + testMethodName);
+      reportTestFinished("TEST ERROR: method not public: " + testMethodName);
     } catch (IllegalArgumentException x) {  // can't happen if getTestMethods() worked
       nErrors++;
-      report("TEST ERROR: illegal argument for test method: " + testMethodName);
+      reportTestFinished("TEST ERROR: illegal argument for test method: " + testMethodName);
     } catch (RuntimeException rx) {
       nErrors++;
-      report("TEST ERROR: " + rx.toString());
+      reportTestFinished("TEST ERROR: " + rx.toString());
     }
 
     if (!hideSummary){
@@ -411,7 +420,7 @@ public abstract class TestJPF implements JPFShell  {
 
     if (nErrors > 0 || nFailures > 0){
       if (isRunTestRun()){
-        // we need to report this test has failed
+        // we need to reportTestFinished this test has failed
         throw new RunTest.Failed();
       }
     }
@@ -429,12 +438,13 @@ public abstract class TestJPF implements JPFShell  {
     runTests(testClass, testMethods);
   }
 
-
-
   protected JPF createAndRunJPF (String[] args){
     JPF jpf = null;
 
     Config conf = new Config(args);
+
+    // if we have any specific test property overrides, do so
+    conf.promotePropertyCategory("test.");
 
     if (conf.getTarget() != null) {
       jpf = new JPF(conf);

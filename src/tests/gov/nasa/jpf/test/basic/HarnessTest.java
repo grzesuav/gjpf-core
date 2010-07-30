@@ -1,5 +1,6 @@
 package gov.nasa.jpf.test.basic;
 
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.jvm.NoUncaughtExceptionsProperty;
 import gov.nasa.jpf.util.test.TestJPF;
@@ -20,6 +21,8 @@ public class HarnessTest extends TestJPF {
   }
 
   //--- here are the test methods
+
+  // this is the high level TestJPF API
 
   @Test public void test_1 () {
     if (verifyNoPropertyViolation()){
@@ -56,4 +59,18 @@ public class HarnessTest extends TestJPF {
     }
   }
 
+
+  // this is the low level TestJPF API
+
+  @Test public void test_6 () {
+    JPF jpf = null;
+
+    if ((jpf = noPropertyViolation("gov.nasa.jpf.test.basic.HarnessTest", "test_6")) != null){
+      System.out.println("** this is low level API test_6 - it should succeed");
+    }
+
+    if (jpf != null){
+      assert jpf.getSearchErrors().isEmpty() : "unexpected JPF search errors";
+    }
+  }
 }
