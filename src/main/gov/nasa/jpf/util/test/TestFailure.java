@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2009 United States Government as represented by the
+// Copyright (C) 2010 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,15 +16,23 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf;
+
+package gov.nasa.jpf.util.test;
 
 /**
- * runtime exception indicating a problem during JPFClassLoader construction
+ * exception class that represents a failed test. Only such exceptions count
+ * towards the number of failed tests, as opposed to errors that might be due
+ * to the test harness or mis-configuration
  *
- * <2do> maybe we should CL hoist the whole JPFException and use this as base
+ * this needs to be an AssertionError so that JUnit would recognize test
+ * failures.
+ *
+ * However, we need to be able to distinguish this from plain AssertionErrors
+ * so that we can tell failed assertions apart from explicitly failed tests
  */
-public class JPFClassLoaderException extends RuntimeException {
-  public JPFClassLoaderException (String details){
+public class TestFailure extends AssertionError {
+
+  public TestFailure (String details){
     super(details);
   }
 }

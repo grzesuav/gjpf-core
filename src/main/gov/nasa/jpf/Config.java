@@ -399,7 +399,7 @@ public class Config extends Properties {
         // Hmpff - control exception
         log("missing required key: " + rkx.getMessage() + ", skipping: " + fileName);
       } catch (IOException iex) {
-        throw new JPFConfigException("error loading properties: " + fileName, iex);
+        throw exception("error reading properties: " + fileName);
       } finally {
         if (is != null){
           try {

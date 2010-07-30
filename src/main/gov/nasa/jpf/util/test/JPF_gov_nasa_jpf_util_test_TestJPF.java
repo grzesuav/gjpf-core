@@ -135,12 +135,24 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
   public static boolean isJUnitRun____Z (MJIEnv env, int clsObjRef){
     return false;
   }
+  public static boolean isRunTestRun____Z (MJIEnv env, int clsObjRef){
+    return false;
+  }
 
 
   // we need to override these so that the actual test code gets executed
   // if we fail to intercept, the bytecode will actually start JPF
+  public static int noPropertyViolation___3Ljava_lang_String_2__Lgov_nasa_jpf_JPF_2 (MJIEnv env, int clsObjRef, int jpfArgsRef){
+    return MJIEnv.NULL;
+  }
   public static boolean verifyNoPropertyViolation___3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef, int jpfArgsRef){
     return true;
+  }
+
+
+  public static int assertionError__Ljava_lang_String_2_3Ljava_lang_String_2__Lgov_nasa_jpf_JPF_2 (MJIEnv env, int clsObjRef,
+                                  int detailsRef, int jpfArgsRef){
+    return MJIEnv.NULL;
   }
   public static boolean verifyAssertionErrorDetails__Ljava_lang_String_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                   int detailsRef, int jpfArgsRef){
@@ -148,6 +160,12 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
   }
   public static boolean verifyAssertionError___3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef, int jpfArgsRef){
     return true;
+  }
+
+
+  public static int unhandledException__Ljava_lang_String_2Ljava_lang_String_2_3Ljava_lang_String_2__Lgov_nasa_jpf_JPF_2 (MJIEnv env, int clsObjRef,
+                                  int xClassNameRef, int detailsRef, int jpfArgsRef){
+    return MJIEnv.NULL;
   }
   public static boolean verifyUnhandledException__Ljava_lang_String_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                   int xClassNameRef, int jpfArgsRef){
@@ -157,13 +175,30 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
                                   int xClassNameRef, int detailsRef, int jpfArgsRef){
     return true;
   }
+
+
+  public static int propertyViolation__Ljava_lang_Class_2_3Ljava_lang_String_2__Lgov_nasa_jpf_JPF_2 (MJIEnv env, int clsObjRef,
+                                  int propClsRef, int jpfArgsRef){
+    return MJIEnv.NULL;
+  }
   public static boolean verifyPropertyViolation__Ljava_lang_Class_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                   int propClsRef, int jpfArgsRef){
     return true;
   }
+
+
+  public static int jpfException__Ljava_lang_Class_2_3Ljava_lang_String_2__Lgov_nasa_jpf_JPF_2 (MJIEnv env, int clsObjRef,
+                                  int xClsRef, int jpfArgsRef){
+    return MJIEnv.NULL;
+  }
   public static boolean verifyJPFException__Ljava_lang_Class_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                   int xClsRef, int jpfArgsRef){
     return true;
+  }
+
+
+  public static int deadlock___3Ljava_lang_String_2__Lgov_nasa_jpf_JPF_2 (MJIEnv env, int clsObjRef, int jpfArgsRef){
+    return MJIEnv.NULL;
   }
   public static boolean verifyDeadlock___3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef, int jpfArgsRef){
     return true;

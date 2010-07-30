@@ -95,7 +95,6 @@
            debug="${debug}" source="${src_level}" deprecation="${deprecation}"
            classpathref="lib.path"/>
 
-	  <copy file="default.properties" todir="build/main/gov/nasa/jpf" failonerror="true"/>
 	  <copy file="build.properties" todir="build/main/gov/nasa/jpf" failonerror="false"/>
     <copy todir="build/main/gov/nasa/jpf/tool/templates" failonerror="false">
       <fileset dir="src/main/gov/nasa/jpf/tool/templates"/>
@@ -219,6 +218,7 @@
       <fileset dir="build/main">
         <include name="gov/nasa/jpf/tool/Run.class"/>
         <include name="gov/nasa/jpf/tool/RunTest.class"/>
+        <include name="gov/nasa/jpf/tool/RunTest$Failed.class"/>
         <include name="gov/nasa/jpf/Config.class"/>
         <include name="gov/nasa/jpf/Config$MissingRequiredKeyException.class"/>
         <include name="gov/nasa/jpf/JPFException.class"/>

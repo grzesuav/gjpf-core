@@ -31,6 +31,7 @@ public class Run {
   static void error (String msg){
     System.err.print("error: ");
     System.err.println(msg);
+    System.exit(1);
   }
 
   // filter out leading '+' arguments (Config initialization)
@@ -68,7 +69,7 @@ public class Run {
         argTypes[i] = args[i].getClass();
       }
 
-      Method m = cls.getDeclaredMethod(mthName, argTypes);
+      Method m = cls.getMethod(mthName, argTypes);
 
       int modifiers = m.getModifiers();
       if (Modifier.isStatic(modifiers) && Modifier.isPublic(modifiers)){
