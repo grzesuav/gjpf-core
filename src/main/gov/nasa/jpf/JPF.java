@@ -25,24 +25,18 @@ import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.report.Reporter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListener;
-import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LogManager;
 import gov.nasa.jpf.util.Misc;
-import gov.nasa.jpf.util.ObjArray;
 import gov.nasa.jpf.util.RunRegistry;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 
 /**

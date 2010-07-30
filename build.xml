@@ -96,9 +96,6 @@
            classpathref="lib.path"/>
 
 	  <copy file="build.properties" todir="build/main/gov/nasa/jpf" failonerror="false"/>
-    <copy todir="build/main/gov/nasa/jpf/tool/templates" failonerror="false">
-      <fileset dir="src/main/gov/nasa/jpf/tool/templates"/>
-    </copy>
   </target>
   
   <target name="-compile-peers" if="have_peers" depends="-compile-main" >
@@ -239,7 +236,7 @@
     <jar jarfile="build/RunAnt.jar">
       <fileset dir="build/main">
         <include name="gov/nasa/jpf/tool/RunAnt.class"/>
-        <include name="gov/nasa/jpf/util/JPFPropertiesParser.class"/>
+        <include name="gov/nasa/jpf/util/JPFSiteUtils.class"/>
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>

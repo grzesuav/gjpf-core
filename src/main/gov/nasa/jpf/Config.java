@@ -158,6 +158,8 @@ public class Config extends Properties {
   static final String TRUE = "true";
   static final String FALSE = "false";
 
+  static final String IGNORE_VALUE = "-";
+
   // do we want to log the config init
   public static boolean log = false;
 
@@ -1958,6 +1960,9 @@ public class Config extends Properties {
    *    -> prompotePropertyCategory("test.") ->
    *
    *  report.console.finished = result
+   *
+   * if a matching key has an IGNORE_VALUE value ("-"), the entry is *not* promoted
+   * (we need this to override promoted keys)
    */
   public void promotePropertyCategory (String keyPrefix){
     int prefixLen = keyPrefix.length();
@@ -1967,8 +1972,11 @@ public class Config extends Properties {
       if (k instanceof String){
         String key = (String)k;
         if (key.startsWith(keyPrefix)){
-          String keySuffix = key.substring(prefixLen);
-          put(keySuffix, e.getValue());
+          Object v = e.getValue();
+          if (! IGNORE_VALUE.equals(v)){
+            String keySuffix = key.substring(prefixLen);
+            put(keySuffix, v);
+          }
         }
       }
     }

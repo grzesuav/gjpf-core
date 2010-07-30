@@ -1,5 +1,5 @@
 REM
-REM overly simplified batch file to start JPF from a command prompt
+REM overly simplified batch file to start JPF tests from a command prompt
 REM
 
 @echo off
