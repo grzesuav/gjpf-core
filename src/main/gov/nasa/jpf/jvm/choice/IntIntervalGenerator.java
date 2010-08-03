@@ -31,7 +31,7 @@ import gov.nasa.jpf.jvm.IntChoiceGenerator;
 public class IntIntervalGenerator extends IntChoiceGenerator {
 
   
-  int min, max;
+  protected int min, max;
   int next;
   int delta;
 
