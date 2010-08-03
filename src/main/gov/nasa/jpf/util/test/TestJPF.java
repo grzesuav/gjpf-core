@@ -109,7 +109,11 @@ public abstract class TestJPF implements JPFShell  {
     fail(sb.toString());
   }
 
-  protected void fail (String msg){
+  public void fail (){
+    throw new AssertionError();
+  }
+
+  public void fail (String msg){
     throw new AssertionError(msg);
   }
 
@@ -697,6 +701,67 @@ public abstract class TestJPF implements JPFShell  {
       propertyViolation(NotDeadlockedProperty.class, args);
       return false;
     }
+  }
+
+  // these are the org.junit.Assert APIs, but we don't want org.junit to be
+  // required to run tests
+
+  public static void assertEquals(String msg, Object expected, Object actual){
+    if (expected == null || actual == null){
+      assert expected == actual : msg;
+    } else {
+      assert expected.equals(actual) : msg;
+    }
+  }
+
+  public static void assertEquals(Object expected, Object actual){
+    if (expected == null || actual == null){
+      assert expected == actual;
+    } else {
+      assert expected.equals(actual);
+    }
+  }
+  public static void assertEquals(int expected, int actual){
+    assert expected == actual;
+  }
+  public static void assertEquals(long expected, long actual){
+    assert expected == actual;
+  }
+  public static void assertEquals(double expected, double actual){
+    assert false : "identity comparison of floating point values";
+  }
+  public static void assertEquals(float expected, float actual){
+    assert false : "identity comparison of floating point values";
+  }
+  public static void assertEquals(double expected, double actual, double delta){
+    assert Math.abs(expected - actual) <= delta;
+  }
+  public static void assertEquals(float expected, float actual, float delta){
+    assert Math.abs(expected - actual) <= delta;
+  }
+
+
+  public static void assertNotNull(Object o){
+    assert o != null;
+  }
+  public static void assertNull(Object o){
+    assert o == null;
+  }
+  public static void assertSame(Object expected, Object actual){
+    assert expected == actual;
+  }
+
+  public static void assertFalse (String msg, boolean cond){
+    assert !cond : msg;
+  }
+  public static void assertFalse (boolean cond){
+    assert !cond;
+  }
+  public static void assertTrue (String msg, boolean cond){
+    assert cond : msg;
+  }
+  public static void assertTrue (boolean cond){
+    assert cond;
   }
 
 }
