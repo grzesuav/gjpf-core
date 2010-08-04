@@ -1175,7 +1175,6 @@ public abstract class ElementInfo implements Cloneable {
     // this might set other threads blocked - make sure we lock first or the sequence
     // of notifications is a bit screwed (i.e. the lock would appear *after* the block)
     blockLockContenders();
-
   }
 
   /**

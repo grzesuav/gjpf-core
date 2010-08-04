@@ -100,7 +100,14 @@ public abstract class ReturnInstruction extends Instruction {
 
       } else { // Ok, we can get the lock, time to die
         // notify waiters on thread termination
-        ei.lock(ti);
+
+        if (!ti.holdsLock(ei)){
+          // we only need to increase the lockcount if we don't own the lock yet,
+          // as is the case for synchronized run() in anonymous threads (otherwise
+          // we have a lockcount > 1 and hence do not unlock upon return)
+          ei.lock(ti);
+        }
+
         ei.notifiesAll();
         ei.unlock(ti);
 

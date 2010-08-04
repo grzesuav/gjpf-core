@@ -59,6 +59,27 @@ public class JoinTest extends TestJPF {
     }
   }
 
+  @Test public void testNoRunnableSimpleJoin() {
+    if (verifyNoPropertyViolation(JPF_ARGS)) {
+      Thread t = new Thread() {
+        public synchronized void run() {
+          System.out.println("thread-1 run");
+        }
+      };
+
+      t.start();
+
+      try {
+        t.join();
+        assert !t.isAlive();
+        System.out.println("main returned from join");
+      } catch (InterruptedException x) {
+        fail("join() did throw InterruptedException");
+      }
+    }
+  }
+
+
   @Test public void testNotAliveJoin(){
     if (verifyNoPropertyViolation(JPF_ARGS)) {
       Runnable r = new Runnable() {
