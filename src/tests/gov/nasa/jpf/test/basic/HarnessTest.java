@@ -65,7 +65,7 @@ public class HarnessTest extends TestJPF {
   @Test public void test_6 () {
     JPF jpf = null;
 
-    if ((jpf = noPropertyViolation("gov.nasa.jpf.test.basic.HarnessTest", "test_6")) != null){
+    if ((jpf = noPropertyViolation("gov.nasa.jpf.test.basic.HarnessTest", "test_6")) == null){
       System.out.println("** this is low level API test_6 - it should succeed");
     }
 
