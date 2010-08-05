@@ -195,12 +195,15 @@
         <include name="gov/nasa/jpf/tool/Run.class"/>
         <include name="gov/nasa/jpf/tool/RunJPF.class"/>
         <include name="gov/nasa/jpf/Config.class"/>
+        <include name="gov/nasa/jpf/ConfigChangeListener.class"/>
         <include name="gov/nasa/jpf/Config$MissingRequiredKeyException.class"/>
         <include name="gov/nasa/jpf/JPFShell.class"/>
         <include name="gov/nasa/jpf/JPFException.class"/>
         <include name="gov/nasa/jpf/JPFConfigException.class"/>
         <include name="gov/nasa/jpf/util/JPFSiteUtils.class"/>
         <include name="gov/nasa/jpf/util/FileUtils.class"/>
+        <include name="gov/nasa/jpf/util/StringMatcher.class"/>
+
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
@@ -217,11 +220,13 @@
         <include name="gov/nasa/jpf/tool/RunTest.class"/>
         <include name="gov/nasa/jpf/tool/RunTest$Failed.class"/>
         <include name="gov/nasa/jpf/Config.class"/>
+        <include name="gov/nasa/jpf/ConfigChangeListener.class"/>
         <include name="gov/nasa/jpf/Config$MissingRequiredKeyException.class"/>
         <include name="gov/nasa/jpf/JPFException.class"/>
         <include name="gov/nasa/jpf/JPFConfigException.class"/>
         <include name="gov/nasa/jpf/util/JPFSiteUtils.class"/>
         <include name="gov/nasa/jpf/util/FileUtils.class"/>
+        <include name="gov/nasa/jpf/util/StringMatcher.class"/>
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>

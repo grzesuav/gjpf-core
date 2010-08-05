@@ -299,12 +299,13 @@ public class JPF_java_lang_Thread {
     }
   }
 
+
   /**
    * this is here so that we don't have to break the transition on a synchronized call
    */
-
   static void join0 (MJIEnv env, int objref, long millis){
     ThreadInfo ti = env.getThreadInfo(); // thie is the CURRENT thread
+    SystemState ss = env.getSystemState();
 
     if (millis < 0){
       env.throwException("java.lang.IllegalArgumentException", "timeout value is negative");
@@ -319,8 +320,14 @@ public class JPF_java_lang_Thread {
       ElementInfo ei = env.getElementInfo(objref); // the thread object to wait on
 
       if (ti.isFirstStepInsn()) { // we already have a CG
-        JPF_java_lang_Object.wait0(env, objref, millis);
-        ei.unlock(ti);
+        if (ti.isUnblocked()){
+          // this means we couldn't acquire the lock for waiting
+
+        } else {
+          JPF_java_lang_Object.wait0(env, objref, millis);
+          ei.unlock(ti);
+
+        }
 
         // note that the interrupt status was already reset in wait() if we got interrupted
         if ((millis == 0) && isAlive____Z(env, objref) && !env.hasPendingInterrupt()) {
@@ -328,26 +335,46 @@ public class JPF_java_lang_Thread {
           env.repeatInvocation();
         }
 
+
       } else { // first time exec, create a CG if the thread is still alive
 
-        if (isAlive____Z(env,objref)){
-          ei.lock(ti);
-          JPF_java_lang_Object.wait0(env, objref, millis);
+        if (isAlive____Z(env, objref)) {
+
+          if (!ei.canLock(ti)) {
+            // we have to come back when we can acquire the lock
+            // this case shoots our intention to save states since we might end up
+            // with two CGs per join - one for acquiring the lock, and one for the wait
+            ei.block(ti);
+
+            ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
+            if (cg != null) {
+              ss.setNextChoiceGenerator(cg);
+            }
+            env.repeatInvocation();
+ 
+          } else {
+
+            ei.lock(ti);
+            JPF_java_lang_Object.wait0(env, objref, millis);
+          }
+
+        } else {
+          // nothing, thread is already terminated
         }
       }
     }
   }
 
-  public static void join____V (MJIEnv env, int objref){
+  public static void _join____V (MJIEnv env, int objref){
     join0(env,objref,0);
   }
 
-  public static void join__J__V (MJIEnv env, int objref, long millis) {
+  public static void _join__J__V (MJIEnv env, int objref, long millis) {
     join0(env,objref,millis);
 
   }
 
-  public static void join__JI__V (MJIEnv env, int objref, long millis, int nanos) {
+  public static void _join__JI__V (MJIEnv env, int objref, long millis, int nanos) {
     join0(env,objref,millis); // <2do> we ignore nanos for now
   }
 

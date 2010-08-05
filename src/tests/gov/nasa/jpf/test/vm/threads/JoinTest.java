@@ -79,6 +79,36 @@ public class JoinTest extends TestJPF {
     }
   }
 
+  static class SomeThread extends Thread {
+    Object o;
+
+    public void run() {
+      synchronized (this){
+        // this causes a transition break - write on a shared object while
+        // we still hold the lock
+        o = new Object();
+      }
+      System.out.println("thread-1 done");
+    }
+  }
+
+  @Test public void testBlockedJoin() {
+    if (verifyNoPropertyViolation("+cg.threads.break_start=true",
+                                  "+vm.storage.class=null")) {
+      Thread t = new SomeThread();
+
+      t.start();
+      System.out.println("main started thread-1");
+
+      try {
+        t.join();
+        assert !t.isAlive();
+        System.out.println("main returned from join");
+      } catch (InterruptedException x) {
+        fail("join() did throw InterruptedException");
+      }
+    }
+  }
 
   @Test public void testNotAliveJoin(){
     if (verifyNoPropertyViolation(JPF_ARGS)) {

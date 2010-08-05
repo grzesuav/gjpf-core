@@ -214,16 +214,48 @@ public class Thread implements Runnable {
 
 **/
   /**
-   * note these are not synchronized anymore since they are native
-   * the reason is that we don't want two CGs per join call (one for the
+   * note these are not synchronized anymore since they are intercepted by the
+   * native peer. The reason is that we don't want two CGs per join call (one for the
    * sync call, and one for the wait) because this can cause serious
    * performance degradation
    */
-  public native void join () throws InterruptedException;
+  public void join () throws InterruptedException {
+    synchronized(this){
 
-  public native void join (long millis) throws InterruptedException;
+      if (interrupted()) {
+        throw new InterruptedException();
+      }
 
-  public native void join (long millis, int nanos) throws InterruptedException;
+      while (isAlive()) {
+        // apparently, the JDK doesn't throw InterruptedExceptions if
+        // we get interrupted after waiting in the join
+        wait();
+      }
+    }
+  }
+
+  public void join (long millis) throws InterruptedException {
+    join(millis, 0);
+  }
+
+  public void join (long millis, int nanos) throws InterruptedException {
+
+    if (millis < 0){
+      throw new java.lang.IllegalArgumentException("timeout value is negative");
+
+    } else if (millis == 0){
+      join();
+
+    } else {
+      synchronized(this){
+        if (interrupted()){
+          throw new InterruptedException();
+        }
+
+        wait(millis);
+      }
+    }
+  }
 
     
 

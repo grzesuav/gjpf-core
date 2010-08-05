@@ -2505,10 +2505,7 @@ public class ThreadInfo
     int nExec = 0;
     isFirstStepInsn = true; // so that potential CG generators know
     do {
-      //for debugging locks:  -peterd
-      //vm.ss.ks.da.verifyLockInfo();
       nextPc = executeInstruction();
-      //vm.ss.ks.da.verifyLockInfo();
 
       if (ss.breakTransition()) {
         // shortcut break if there was no progress (a ChoiceGenerator was created)
@@ -2519,12 +2516,6 @@ public class ThreadInfo
       }
 
       isFirstStepInsn = false;
-
-      //if ((++nExec % checkBudgetCount) == 0) {
-        // if (vm.checkBudget()){
-        //    break;
-        // }
-      //}
 
     } while (pc != null);
 
