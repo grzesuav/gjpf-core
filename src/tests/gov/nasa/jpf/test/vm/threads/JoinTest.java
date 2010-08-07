@@ -29,7 +29,7 @@ import org.junit.Test;
  */
 public class JoinTest extends TestJPF {
 
-  static final String[] JPF_ARGS = { "+cg.threads.break_start=false",
+  static final String[] JPF_ARGS = { "+cg.threads.break_start=true",
                                      "+cg.threads.break_yield=true",
                                      "+vm.tree_output=false",
                                      "+vm.path_output=true"};
@@ -42,7 +42,7 @@ public class JoinTest extends TestJPF {
     if (verifyNoPropertyViolation(JPF_ARGS)) {
       Runnable r = new Runnable() {
         public void run() {
-          System.out.println("thread-1 run");
+          System.out.println("thread-0 run");
         }
       };
 
@@ -63,7 +63,7 @@ public class JoinTest extends TestJPF {
     if (verifyNoPropertyViolation(JPF_ARGS)) {
       Thread t = new Thread() {
         public synchronized void run() {
-          System.out.println("thread-1 run");
+          System.out.println("thread-0 run");
         }
       };
 
@@ -88,7 +88,7 @@ public class JoinTest extends TestJPF {
         // we still hold the lock
         o = new Object();
       }
-      System.out.println("thread-1 done");
+      System.out.println("thread-0 done");
     }
   }
 
@@ -98,7 +98,7 @@ public class JoinTest extends TestJPF {
       Thread t = new SomeThread();
 
       t.start();
-      System.out.println("main started thread-1");
+      System.out.println("main started thread-0");
 
       try {
         t.join();
@@ -110,11 +110,34 @@ public class JoinTest extends TestJPF {
     }
   }
 
+  @Test public void testJoinHoldingLock(){
+    if (verifyNoPropertyViolation(JPF_ARGS)) {
+      Runnable r = new Runnable() {
+        public void run() {
+          System.out.println("thread-0 run");
+        }
+      };
+
+      Thread t = new Thread(r);
+      t.start();
+
+      try {
+        synchronized(t){
+          t.join();
+        }
+        System.out.println("main returned from join");
+      } catch (InterruptedException x) {
+        fail("join() did throw InterruptedException");
+      }
+    }
+  }
+
+
   @Test public void testNotAliveJoin(){
     if (verifyNoPropertyViolation(JPF_ARGS)) {
       Runnable r = new Runnable() {
         public void run() {
-          System.out.println("thread-1 run");
+          System.out.println("thread-0 run");
         }
       };
 
@@ -139,7 +162,7 @@ public class JoinTest extends TestJPF {
     if (verifyNoPropertyViolation(JPF_ARGS)) {
       Runnable r = new Runnable() {
         public void run() {
-          System.out.println("thread-1 run");
+          System.out.println("thread-0 run");
         }
       };
 
@@ -163,7 +186,7 @@ public class JoinTest extends TestJPF {
 
       Runnable r = new Runnable() {
         public void run() {
-          System.out.println("thread-1 interrupting main");
+          System.out.println("thread-0 interrupting main");
           mainThread.interrupt();
         }
       };
@@ -232,6 +255,74 @@ public class JoinTest extends TestJPF {
       }
     }
   }
+
+
+  @Test public void testJoinAfterNotify() {
+    if (verifyNoPropertyViolation(JPF_ARGS)) {
+      try {
+        final Thread t = new Thread() {
+          public void run() {
+            synchronized(this){
+              System.out.println("thread-0 notifying");
+              notifyAll(); // this should not get us out of the join()
+            }
+            System.out.println("thread-0 terminating");
+          }
+        };
+
+        t.start();
+        System.out.println("main joining..");
+        t.join();
+        System.out.println("main joined");
+
+        Verify.printPathOutput("main termination");
+        assert !t.isAlive();
+
+      } catch (Exception ex) {
+        fail("unexpected exception: " + ex);
+      }
+    }
+  }
+
+  @Test public void testJoinNotifyDeadlock() {
+    if (verifyDeadlock(JPF_ARGS)) {
+      try {
+        final Thread t = new Thread() {
+          public void run() {
+            synchronized(this){
+              System.out.println("thread-0 notifying");
+              notifyAll();
+
+              try {
+                System.out.println("thread-0 waiting");
+                wait();
+              } catch (InterruptedException ix){
+                System.out.println("unexpected interrupt");
+              }
+            }
+            System.out.println("thread-0 terminating");
+          }
+        };
+
+        t.start();
+        System.out.println("main joining..");
+        t.join();
+        System.out.println("main joined");
+
+        synchronized (t){
+          System.out.println("main notifying");
+          t.notify();
+        }
+
+        Verify.printPathOutput("main termination");
+        assert !t.isAlive();
+
+      } catch (Exception ex) {
+        fail("unexpected exception: " + ex);
+      }
+    }
+  }
+
 
   @Test public void testRedundantJoin() {
     if (verifyNoPropertyViolation(JPF_ARGS)) {
@@ -434,7 +525,7 @@ public class JoinTest extends TestJPF {
     if (verifyNoPropertyViolation(JPF_ARGS)) {
       Runnable r = new Runnable() {
         public void run() {
-          System.out.println("thread-1 run");
+          System.out.println("thread-0 run");
           Thread.yield();
         }
       };
@@ -451,9 +542,11 @@ public class JoinTest extends TestJPF {
         // we should get here for both terminated and non-terminated thread
         switch (t.getState()) {
           case TERMINATED:
+            System.out.println("got terminated case");
             Verify.incrementCounter(0);
             break;
           case RUNNABLE:
+            System.out.println("got timedout case");
             Verify.incrementCounter(1);
             break;
           default:
@@ -480,7 +573,7 @@ public class JoinTest extends TestJPF {
     if (verifyNoPropertyViolation(JPF_ARGS)) {
       Runnable r = new Runnable() {
         public void run() {
-          System.out.println("thread-1 run");
+          System.out.println("thread-0 run");
           Thread.yield();
         }
       };
@@ -528,6 +621,76 @@ public class JoinTest extends TestJPF {
       } catch (IllegalArgumentException ax){
         System.out.println("caught " + ax);
       }
+    }
+  }
+
+  @Test public void testNestedLocksJoin() {
+    if (verifyNoPropertyViolation(JPF_ARGS)){
+      Thread t1 = new Thread() {
+        public synchronized void run() {
+          System.out.println("t1 notifying");
+          notifyAll();
+
+          try{
+            System.out.println("t1 waiting");
+            wait();
+          } catch (InterruptedException ix){
+            System.out.println("t1 unexpectedly interrupted");
+          }
+
+          System.out.println("t1 terminating");
+        }
+      };
+
+      Thread t2 = new Thread() {
+        public synchronized void run() {
+          System.out.println("t2 notifying");
+          notifyAll();
+
+          try{
+            System.out.println("t2 waiting");
+            wait();
+          } catch (InterruptedException ix){
+            System.out.println("t2 unexpectedly interrupted");
+          }
+
+          System.out.println("t2 terminating");
+        }
+      };
+
+      synchronized (t2){
+        try {
+          t2.start();
+          
+          System.out.println("main waiting on t2");
+          t2.wait();
+
+          synchronized(t1){
+            t1.start();
+
+            System.out.println("main waiting on t1");
+            t1.wait();
+
+            System.out.println("main notifying t1");
+            t1.notify();
+          }
+
+          System.out.println("main joining t1");
+          t1.join();
+
+          System.out.println("main notifying t2");
+          t2.notify();
+
+          System.out.println("main joining t2");
+          t2.join();
+
+        } catch (InterruptedException ix){
+          System.out.println("main unexpectedly interrupted");
+        }
+      }
+
+      System.out.println("main terminating");
+      Verify.printPathOutput("main termination");
     }
   }
 }

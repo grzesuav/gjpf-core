@@ -93,11 +93,12 @@ public class WaitTest extends TestJPF
       Runnable waiter = new Runnable() {
 
         public synchronized void run() {
+          System.out.println("thread-0 running");
           try {
             wait(); // needs to be first insn
-            System.out.println("notified");
+            System.out.println("thread-0 notified");
           } catch (InterruptedException ix) {
-            throw new RuntimeException("got interrupted");
+            throw new RuntimeException("thread-0 got interrupted");
           }
         }
       };
@@ -107,7 +108,7 @@ public class WaitTest extends TestJPF
       t.start();
 
       synchronized (waiter) {
-        System.out.println("notifying");
+        System.out.println("main notifying");
         waiter.notify();
       }
     }

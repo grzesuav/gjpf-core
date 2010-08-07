@@ -199,20 +199,6 @@ public class Thread implements Runnable {
   public native boolean isAlive ();
 
 
-/**
-  public synchronized void join () throws InterruptedException {
-    while (isAlive()) {
-      wait();
-    }
-  }
-  public synchronized void join (long millis) throws InterruptedException {
-    wait(millis);
-  }
-  public synchronized void join (long millis, int nanos) throws InterruptedException {
-    wait(millis);
-  }
-
-**/
   /**
    * note these are not synchronized anymore since they are intercepted by the
    * native peer. The reason is that we don't want two CGs per join call (one for the

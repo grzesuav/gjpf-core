@@ -303,78 +303,92 @@ public class JPF_java_lang_Thread {
   /**
    * this is here so that we don't have to break the transition on a synchronized call
    */
-  static void join0 (MJIEnv env, int objref, long millis){
-    ThreadInfo ti = env.getThreadInfo(); // thie is the CURRENT thread
+  static void join0 (MJIEnv env, int joineeRef, long timeout){
+    ThreadInfo ti = env.getThreadInfo(); // this is the CURRENT thread
+    ElementInfo ei = env.getElementInfo(joineeRef); // the thread object to wait on
+    boolean isAlive = getThreadInfo(env, joineeRef).isAlive();
     SystemState ss = env.getSystemState();
-
-    if (millis < 0){
-      env.throwException("java.lang.IllegalArgumentException", "timeout value is negative");
-      return;
-    }
 
     if (ti.isInterrupted(true)){ // interrupt status is set, throw and bail
       // note that we have to throw even if the thread to join to is not alive anymore
       env.throwInterrupt();
+      return;
+    }
 
-    } else {
-      ElementInfo ei = env.getElementInfo(objref); // the thread object to wait on
+    //--- the join
+    if (ti.isFirstStepInsn()) { // re-execution, we already have a CG
 
-      if (ti.isFirstStepInsn()) { // we already have a CG
-        if (ti.isUnblocked()){
-          // this means we couldn't acquire the lock for waiting
+      switch (ti.getState()) {
 
-        } else {
-          JPF_java_lang_Object.wait0(env, objref, millis);
-          ei.unlock(ti);
+        case UNBLOCKED: // this was from a block before we could wait
+          break;
 
+        case NOTIFIED_UNBLOCKED: // this was from a wait
+          ei.lockNotified(ti);
+          ei.unlock(ti); // what if we did hold the lock before join()?
+          break;
+
+        case TIMEDOUT: // this was from a timed out wait
+          ei.lockNotified(ti); // remove from ei.lockedThreads!
+          ei.unlock(ti); // what if we did hold the lock before join()?
+          return;
+
+        default:
+          throw new JPFException("invalid thread state of: " + ti.getName() + " is " + ti.getStateName() +
+                  " while joining on " + ei);
+      }
+
+      if (isAlive){ // we still need to wait
+        ei.lock(ti);
+        ei.wait(ti, timeout);
+        env.repeatInvocation();
+      }
+
+    } else { // first time exec, create a CG if the thread is still alive
+
+      if (timeout < 0){
+        env.throwException("java.lang.IllegalArgumentException", "timeout value is negative");
+        return;
+      }
+
+      if (isAlive) {
+        ChoiceGenerator<ThreadInfo> cg = null;
+
+        if (!ei.canLock(ti)) {
+          // this puts us into BLOCKED state, from which we will emerge as UNBLOCKED
+          ei.block(ti);
+          cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
+
+        } else { // we can acquire the lock for the wait
+          // this puts us into WAITING or TIMEOUT_WAITING, from where we come out UNBLOCKED
+          // (after lock release of notify) or TIMEDOUT
+          // note that the lock is required by wait()
+
+          ei.lock(ti);
+          ei.wait(ti, timeout);
+          cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
         }
 
-        // note that the interrupt status was already reset in wait() if we got interrupted
-        if ((millis == 0) && isAlive____Z(env, objref) && !env.hasPendingInterrupt()) {
-          // somebody notified us, but the thread is still there, do it again
-          env.repeatInvocation();
-        }
+        assert (cg != null) : "no choice generator for blocked join of " + ti;
+        ss.setNextChoiceGenerator(cg);
+        env.repeatInvocation();
 
-
-      } else { // first time exec, create a CG if the thread is still alive
-
-        if (isAlive____Z(env, objref)) {
-
-          if (!ei.canLock(ti)) {
-            // we have to come back when we can acquire the lock
-            // this case shoots our intention to save states since we might end up
-            // with two CGs per join - one for acquiring the lock, and one for the wait
-            ei.block(ti);
-
-            ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
-            if (cg != null) {
-              ss.setNextChoiceGenerator(cg);
-            }
-            env.repeatInvocation();
- 
-          } else {
-
-            ei.lock(ti);
-            JPF_java_lang_Object.wait0(env, objref, millis);
-          }
-
-        } else {
-          // nothing, thread is already terminated
-        }
+      } else {
+        // nothing to do, thread is already terminated
       }
     }
   }
 
-  public static void _join____V (MJIEnv env, int objref){
+  public static void join____V (MJIEnv env, int objref){
     join0(env,objref,0);
   }
 
-  public static void _join__J__V (MJIEnv env, int objref, long millis) {
+  public static void join__J__V (MJIEnv env, int objref, long millis) {
     join0(env,objref,millis);
 
   }
 
-  public static void _join__JI__V (MJIEnv env, int objref, long millis, int nanos) {
+  public static void join__JI__V (MJIEnv env, int objref, long millis, int nanos) {
     join0(env,objref,millis); // <2do> we ignore nanos for now
   }
 
@@ -391,17 +405,18 @@ public class JPF_java_lang_Thread {
     ThreadInfo ti = getThreadInfo(env, objref);
 
     switch (ti.getState()) {
-    case NEW:             return 1;
-    case RUNNING:         return 2;
-    case BLOCKED:         return 0;
-    case UNBLOCKED:       return 2;
-    case WAITING:         return 5;
-    case TIMEOUT_WAITING: return 4;
-    case SLEEPING:        return 4;
-    case NOTIFIED:        return 2;
-    case INTERRUPTED:     return 2;
-    case TIMEDOUT:        return 2;
-    case TERMINATED:      return 3;
+    case NEW:                return 1;
+    case RUNNING:            return 2;
+    case BLOCKED:            return 0;
+    case UNBLOCKED:          return 2;
+    case NOTIFIED_UNBLOCKED: return 2;
+    case WAITING:            return 5;
+    case TIMEOUT_WAITING:    return 4;
+    case SLEEPING:           return 4;
+    case NOTIFIED:           return 2;
+    case INTERRUPTED:        return 2;
+    case TIMEDOUT:           return 2;
+    case TERMINATED:         return 3;
     default:
       throw new JPFException("illegal thread state: " + ti.getState());
     }

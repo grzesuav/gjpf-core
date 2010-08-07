@@ -88,7 +88,7 @@ public class JPF_java_lang_Object {
 
         // note that we can't get here if we are in NOTIFIED or INTERRUPTED state,
         // since we still have to reacquire the lock
-        case UNBLOCKED:
+        case NOTIFIED_UNBLOCKED:
         case TIMEDOUT: // nobody else acquired the lock
           // thread status set by explicit notify() call
           env.lockNotified(objref);

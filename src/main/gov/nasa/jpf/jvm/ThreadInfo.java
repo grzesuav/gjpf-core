@@ -61,7 +61,8 @@ public class ThreadInfo
     UNBLOCKED,  // was BLOCKED but can acquire the lock now
     WAITING,  // waiting to be notified
     TIMEOUT_WAITING,
-    NOTIFIED,  // was WAITING and got notified
+    NOTIFIED,  // was WAITING and got notified, but is still blocked
+    NOTIFIED_UNBLOCKED, // was NOTIFIED, and can now acquire the lock
     INTERRUPTED,  // was WAITING and got interrupted
     TIMEDOUT,  // was TIMEOUT_WAITING and timed out
     TERMINATED,
@@ -352,7 +353,7 @@ public class ThreadInfo
 
     if (oldStatus != newStatus) {
 
-      assert (oldStatus != State.TERMINATED) : "can't resurrect threads";
+      assert (oldStatus != State.TERMINATED) : "can't resurrect thread " + this + " to " + newStatus.name();
 
       threadDataClone().state = newStatus;
 
@@ -370,6 +371,8 @@ public class ThreadInfo
       case BLOCKED:
         vm.notifyThreadBlocked(this);
         break;
+      case UNBLOCKED:
+        break; // nothing to notify
       case WAITING:
         vm.notifyThreadWaiting(this);
         break;
@@ -379,12 +382,47 @@ public class ThreadInfo
       case NOTIFIED:
         vm.notifyThreadNotified(this);
         break;
+      case NOTIFIED_UNBLOCKED:
+        break; // nothing to notify
       }
 
       if (log.isLoggable(Level.FINE)){
         log.fine("setStatus of " + getName() + " from "
                  + oldStatus.name() + " to " + newStatus.name());
       }
+    }
+  }
+
+  void setBlockedState () {
+    State currentState = threadData.state;
+    switch (currentState){
+      case RUNNING:
+      case UNBLOCKED:
+        setState(State.BLOCKED);
+        break;
+      case NOTIFIED_UNBLOCKED:
+        setState(State.NOTIFIED);
+        break;
+
+      default:
+        assert false : "thread " + this + "can't be blocked in state: " + currentState.name();
+    }
+  }
+
+  void setNotifiedState() {
+    State currentState = threadData.state;
+    switch (currentState){
+      case BLOCKED:
+      case NOTIFIED:
+        // can happen in a Thread.join()
+        break;
+      case WAITING:
+      case TIMEOUT_WAITING:
+        setState(State.NOTIFIED);
+        break;
+
+      default:
+        assert false : "thread " + this + "can't be notified in state: " + currentState.name();
     }
   }
 
@@ -406,6 +444,7 @@ public class ThreadInfo
     switch (threadData.state) {
     case RUNNING:
     case UNBLOCKED:
+    case NOTIFIED_UNBLOCKED:
       return true;
     case SLEEPING:
       return true;    // that's arguable, but since we don't model time we treat it like runnable
@@ -423,8 +462,7 @@ public class ThreadInfo
     switch (threadData.state) {
     case RUNNING:
     case UNBLOCKED:
-      // that also takes care of NOTIFIED threads, since they
-      // won't run again until they can re-acquire the lock
+    case NOTIFIED_UNBLOCKED:
       return true;
     case TIMEOUT_WAITING: // it's not yet, but it will be at the time it gets scheduled
     case SLEEPING:
@@ -446,6 +484,7 @@ public class ThreadInfo
 
     case RUNNING:
     case UNBLOCKED:
+    case NOTIFIED_UNBLOCKED:
     case SLEEPING:
       return true;
 
@@ -516,7 +555,7 @@ public class ThreadInfo
 
   public boolean isUnblocked () {
     State state = threadData.state;
-    return (state == State.UNBLOCKED) || (state == State.TIMEDOUT);
+    return (state == State.UNBLOCKED) || (state == State.NOTIFIED_UNBLOCKED) || (state == State.TIMEDOUT);
   }
 
   public boolean isBlocked () {
@@ -2042,6 +2081,7 @@ public class ThreadInfo
     case BLOCKED:
     case UNBLOCKED:
     case NOTIFIED:
+    case NOTIFIED_UNBLOCKED:
     case TIMEDOUT:
       // just set interrupt flag
       eiThread.setBooleanField("interrupted", true);

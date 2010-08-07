@@ -1126,15 +1126,16 @@ public abstract class ElementInfo implements Cloneable {
     // require to lock us in their next exec
     ThreadInfo[] lockedThreads = monitor.getLockedThreads();
     for (int i=0; i<lockedThreads.length; i++) {
-      if (lockedThreads[i].isRunnable()) {
-        lockedThreads[i].setState(ThreadInfo.State.BLOCKED);
-        //lockedThreads[i].setLockRef(index);
+      ThreadInfo ti = lockedThreads[i];
+      if (ti.isRunnable()) {
+        ti.setBlockedState();
       }
     }
   }
 
   /**
    * from a MONITOR_ENTER or sync INVOKExx if we cannot acquire the lock
+   * note: this is not called from a NOTIFIED_UNBLOCKED state, so we don't have to restore NOTIFIED
    */
   public void block (ThreadInfo ti) {
     assert (monitor.getLockingThread() != null) && (monitor.getLockingThread() != ti) :
@@ -1163,7 +1164,8 @@ public abstract class ElementInfo implements Cloneable {
     // before we execute anything else, mark this thread as not being blocked anymore
     ti.resetLockRef();
 
-    if (ti.getState() == ThreadInfo.State.UNBLOCKED) {
+    ThreadInfo.State state = ti.getState();
+    if (state == ThreadInfo.State.UNBLOCKED || state == ThreadInfo.State.NOTIFIED_UNBLOCKED) {
       ti.setState(ThreadInfo.State.RUNNING);
     }
 
@@ -1193,15 +1195,14 @@ public abstract class ElementInfo implements Cloneable {
         switch (lockedThreads[i].getState()) {
 
         case NOTIFIED:
-        case INTERRUPTED:
-        case BLOCKED:
         case TIMEDOUT:
+        case INTERRUPTED:
+          lockedThreads[i].setState(ThreadInfo.State.NOTIFIED_UNBLOCKED);
+          break;
+
+        case BLOCKED:
           // Ok, this thread becomes runnable again
           lockedThreads[i].setState(ThreadInfo.State.UNBLOCKED);
-
-          // this used to break invariant implied by updateLockingInfo() -peterd
-          //lockedThreads[i].resetLockRef();
-
           break;
 
         case WAITING:
@@ -1250,7 +1251,7 @@ public abstract class ElementInfo implements Cloneable {
       // no waiters, nothing to do
     } else if (nWaiters == 1) {
       // very deterministic, just a little optimization
-      locked[iWaiter].setState(ThreadInfo.State.NOTIFIED);
+      locked[iWaiter].setNotifiedState();
     } else {
       // Ok, this is the non-deterministic case
       ChoiceGenerator cg = ss.getChoiceGenerator();
@@ -1259,7 +1260,7 @@ public abstract class ElementInfo implements Cloneable {
         "notify " + this + " without ThreadChoiceGenerator: " + cg;
 
       ThreadInfo tiNotify = ((ThreadChoiceGenerator)cg).getNextChoice();
-      tiNotify.setState(ThreadInfo.State.NOTIFIED);
+      tiNotify.setNotifiedState();
     }
 
     ti.getVM().notifyObjectNotifies(ti, this);
@@ -1267,14 +1268,15 @@ public abstract class ElementInfo implements Cloneable {
 
   /**
    * notify all waiters. This is a deterministic action
-   * all waiters remain in the locked list, since they still have to be unblocked
+   * all waiters remain in the locked list, since they still have to be unblocked,
+   * which happens in the unlock (monitor_exit or sync return) following the notifyAll()
    */
   public void notifiesAll() {
     assert monitor.getLockingThread() != null : "notifyAll on unlocked object: " + this;
 
     ThreadInfo[] locked = monitor.getLockedThreads();
     for (int i=0; i<locked.length; i++) {
-      locked[i].setState(ThreadInfo.State.NOTIFIED);
+      locked[i].setNotifiedState();
     }
 
     JVM.getVM().notifyObjectNotifiesAll(ThreadInfo.currentThread, this);
@@ -1309,8 +1311,11 @@ public abstract class ElementInfo implements Cloneable {
     ThreadInfo[] lockedThreads = monitor.getLockedThreads();
     for (int i=0; i<lockedThreads.length; i++) {
       switch (lockedThreads[i].getState()) {
-      case BLOCKED:
       case NOTIFIED:
+        lockedThreads[i].setState(ThreadInfo.State.NOTIFIED_UNBLOCKED);
+        break;
+
+      case BLOCKED:
       case INTERRUPTED:
         lockedThreads[i].setState(ThreadInfo.State.UNBLOCKED);
         break;
@@ -1327,9 +1332,6 @@ public abstract class ElementInfo implements Cloneable {
   public void lockNotified (ThreadInfo ti) {
     assert ti.isUnblocked() : "resume waiting thread " + ti.getName() + " which is not unblocked";
 
-    // in case we get here from an UNBLOCKED_INTERRUPTED state, throwing the exception
-    // has to be done from the WAIT insn, not here
-
     setMonitorWithoutLocked(ti);
     monitor.setLockingThread( ti);
     monitor.setLockCount( ti.getLockCount());
@@ -1340,7 +1342,7 @@ public abstract class ElementInfo implements Cloneable {
 
     blockLockContenders();
 
-    // pcm - this is important, if we later-on backtrack (reset the
+    // this is important, if we later-on backtrack (reset the
     // ThreadInfo.lockedObjects set, and then restore from the saved heap), the
     // lock set would not include the lock when we continue to execute this thread
     ti.addLockedObject(this); //wv: add locked object back here
