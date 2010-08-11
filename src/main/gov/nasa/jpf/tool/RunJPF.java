@@ -44,12 +44,29 @@ import java.util.ArrayList;
  */
 public class RunJPF extends Run {
 
+  public static final int HELP = 1;
+  public static final int SHOW = 2;
+  public static final int LOG = 4;
+
   static final String JPF_CLASSNAME = "gov.nasa.jpf.JPF";
 
   public static void main (String[] args) {
-
     try {
+      int options = getOptions(args);
+
+      if (args.length == 0 || isOptionEnabled(HELP, options)) {
+        showUsage();
+        return;
+      }
+      if (isOptionEnabled(LOG, options)) {
+        Config.enableLogging(true);
+      }
+
       Config conf = new Config(args);
+
+      if (isOptionEnabled(SHOW, options)) {
+        conf.printEntries();
+      }
 
       ClassLoader cl = conf.setClassLoader(RunJPF.class.getClassLoader(), "native_classpath");
 
@@ -79,6 +96,43 @@ public class RunJPF extends Run {
     }
   }
 
+  public static int getOptions (String[] args){
+    int mask = 0;
 
+    if (args != null){
+
+      for (int i = 0; i < args.length; i++) {
+        String a = args[i];
+        if ("-help".equals(a)){
+          args[i] = null;
+          mask |= HELP;
+
+        } else if ("-show".equals(a)) {
+          args[i] = null;
+          mask |= SHOW;
+
+        } else if ("-log".equals(a)){
+          args[i] = null;
+          mask |= LOG;
+        }
+      }
+    }
+
+    return mask;
+  }
+
+  public static boolean isOptionEnabled (int option, int mask){
+    return ((mask & option) != 0);
+  }
+
+  static void showUsage() {
+    System.out.println("Usage: \"java [<vm-option>..] -jar ...RunJPF.jar [<jpf-option>..] [<app> [<app-arg>..]]");
+    System.out.println("  <jpf-option> : -help  : print usage information");
+    System.out.println("               | -log   : print configuration initialization steps");
+    System.out.println("               | -show  : print configuration dictionary contents");
+    System.out.println("               | +<key>=<value>  : add or override key/value pair to config dictionary");
+    System.out.println("  <app>        : *.jpf application properties file pathname | fully qualified application class name");
+    System.out.println("  <app-arg>    : arguments passed into main() method of application class");
+  }
 
 }

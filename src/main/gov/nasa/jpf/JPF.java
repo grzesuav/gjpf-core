@@ -25,13 +25,13 @@ import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.report.Reporter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListener;
+import gov.nasa.jpf.tool.RunJPF;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LogManager;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.RunRegistry;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -108,22 +108,29 @@ public class JPF implements Runnable {
   }
 
   public static void main(String[] args){
-    start(createConfig(args), args);
-  }
+    int options = RunJPF.getOptions(args);
 
-  public static void start(Config conf, String[] args){
-    int options = getOptions(args);
-
-    if (args.length == 0 || isOptionEnabled(HELP,options)) {
+    if (args.length == 0 || RunJPF.isOptionEnabled( RunJPF.HELP,options)) {
       showUsage();
       return;
     }
 
+    if (RunJPF.isOptionEnabled( RunJPF.LOG,options)){
+      Config.enableLogging(true);
+    }
+
+    Config conf = createConfig(args);
+
+    if (RunJPF.isOptionEnabled( RunJPF.SHOW, options)) {
+      conf.printEntries();
+    }
+
+    start(conf, args);
+  }
+
+  public static void start(Config conf, String[] args){
     // this is redundant to jpf.report.<publisher>.start=..config..
     // but nobody can remember this (it's only used to produce complete reports)
-    if (isOptionEnabled(SHOW, options)) {
-      conf.print(new PrintWriter(System.out));
-    }
 
     if (logger == null) {
       logger = initLogging(conf);
@@ -420,40 +427,6 @@ public class JPF implements Runnable {
 
   public boolean foundErrors() {
     return !(search.getErrors().isEmpty());
-  }
-
-
-  static final int HELP = 1;
-  static final int SHOW = 2;
-  static final int LOG = 4;
-
-  public static int getOptions (String[] args){
-    int mask = 0;
-    
-    if (args != null){
-
-      for (int i = 0; i < args.length; i++) {
-        String a = args[i];
-        if ("-help".equals(a)){
-          args[i] = null;
-          mask |= HELP;
-          
-        } else if ("-show".equals(a)) {
-          args[i] = null;
-          mask |= SHOW;
-          
-        } else if ("-log".equals(a)){
-          args[i] = null;
-          mask |= LOG;          
-        }
-      }
-    }
-    
-    return mask;
-  }
-  
-  public static boolean isOptionEnabled (int option, int mask){
-    return ((mask & option) != 0);
   }
 
   /**

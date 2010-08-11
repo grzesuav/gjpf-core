@@ -29,7 +29,7 @@ import gov.nasa.jpf.util.Invocation;
 /**
  * ChoiceGenerator that represents method calls
  */
-public class InvocationCG extends ChoiceGenerator {
+public class InvocationCG extends ChoiceGenerator<Invocation> {
 
   List<Invocation> invokes;
   Invocation cur;
@@ -41,35 +41,43 @@ public class InvocationCG extends ChoiceGenerator {
     it = invokes.listIterator();
   }
   
+  @Override
   public void advance () {
     cur = it.next();
   }
 
-  public Class getChoiceType () {
+  @Override
+  public Class<Invocation> getChoiceType () {
     return Invocation.class;
   }
 
+  @Override
   public Invocation getNextChoice () {
     return cur;
   }
 
+  @Override
   public int getProcessedNumberOfChoices () {
     return it.nextIndex();
   }
 
+  @Override
   public int getTotalNumberOfChoices () {
     return invokes.size();
   }
 
+  @Override
   public boolean hasMoreChoices () {
     return it.hasNext();
   }
 
+  @Override
   public ChoiceGenerator randomize () {
     // <2do>
     return this;
   }
 
+  @Override
   public String toString() {
     StringBuilder sb = new StringBuilder(getClass().getName());
     sb.append(" [");
@@ -90,6 +98,7 @@ public class InvocationCG extends ChoiceGenerator {
     pw.print(toString());
   }
   
+  @Override
   public void reset () {
     cur = null;
     it = invokes.listIterator();

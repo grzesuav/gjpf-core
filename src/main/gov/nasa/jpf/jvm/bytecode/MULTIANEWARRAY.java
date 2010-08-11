@@ -33,8 +33,8 @@ import org.apache.bcel.classfile.ConstantPool;
  * ..., count1, [count2, ...] => ..., arrayref
  */
 public class MULTIANEWARRAY extends Instruction {
-  private String type;
-  private int    dimensions;
+  protected String type;
+  protected int dimensions;
 
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     type = cp.constantToString(cp.getConstant(
