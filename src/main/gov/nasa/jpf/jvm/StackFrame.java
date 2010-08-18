@@ -193,24 +193,23 @@ public class StackFrame implements Constants, Cloneable {
     String[] localTypes = mi.getLocalVariableTypes();
     if (localTypes != null) { // might not have been compiled with debug info
       String type = localTypes[i];
-
-      if ("boolean".equals(type)) {
+      if ("Z".equals(type)) {
         return locals[i] != 0 ? Boolean.TRUE : Boolean.FALSE;
-      } else if ("byte".equals(type)) {
+      } else if ("B".equals(type)) {
         return new Byte((byte)locals[i]);
-      } else if ("char".equals(type)) {
+      } else if ("C".equals(type)) {
         return new Character((char)locals[i]);
-      } else if ("short".equals(type)) {
+      } else if ("S".equals(type)) {
         return new Short((short)locals[i]);
-      } else if ("int".equals(type)) {
+      } else if ("I".equals(type)) {
         return new Integer(locals[i]);
-      } else if ("float".equals(type)) {
+      } else if ("F".equals(type)) {
         return new Float( Float.intBitsToFloat(locals[i]));
-      } else if ("long".equals(type)) {
+      } else if ("J".equals(type)) {
         return new Long ( Types.intsToLong(locals[i], locals[i+1]) );
-      } else if ("double".equals(type)) {
+      } else if ("D".equals(type)) {
         return new Double( Double.longBitsToDouble(Types.intsToLong(locals[i], locals[i+1])));
-      } else { // reference
+      } else { // reference or unknown ('?')
         if (locals[i] != -1) {
           return DynamicArea.getHeap().get(locals[i]);
         }
