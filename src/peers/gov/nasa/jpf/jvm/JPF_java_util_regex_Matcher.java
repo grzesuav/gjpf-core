@@ -33,7 +33,7 @@ public class JPF_java_util_regex_Matcher {
 
   static HashMap<Integer, Matcher> matchers;
  
-  public static void init (Config conf){
+  public static void init (Config conf) {
     matchers = new HashMap<Integer,Matcher>();
   }
 
@@ -48,7 +48,7 @@ public class JPF_java_util_regex_Matcher {
     return matchers.get(id);
   }
   
-  public static void register____V (MJIEnv env, int objref){
+  public static void register____V (MJIEnv env, int objref) {
     int patRef = env.getReferenceField(objref, "pattern");
     
     int regexRef = env.getReferenceField(patRef, "regex");
@@ -64,22 +64,50 @@ public class JPF_java_util_regex_Matcher {
     putInstance(env, objref, matcher);
   }
   
-  public static boolean matches____Z (MJIEnv env, int objref){
+  public static boolean matches____Z (MJIEnv env, int objref) {
     Matcher matcher = getInstance( env, objref);
     return matcher.matches();
   }
   
-  public static boolean find____Z (MJIEnv env, int objref){
+  public static boolean find____Z (MJIEnv env, int objref) {
 	Matcher matcher = getInstance( env, objref);
     return matcher.find();
   }
-  
-  public static int end____I (MJIEnv env, int objref){
-	Matcher matcher = getInstance( env, objref);
-	return matcher.end();
+
+  public static boolean lookingAt____Z(MJIEnv env, int objref) {
+    Matcher matcher = getInstance(env, objref);
+    return matcher.lookingAt();
   }
-  
-  public static int reset____Ljava_util_regex_Matcher_2 (MJIEnv env, int objref){
+
+  public static int start__I__I(MJIEnv env, int objref, int group) {
+    Matcher matcher = getInstance(env, objref);
+    return matcher.start(group);
+  }
+
+  public static int end__I__I(MJIEnv env, int objref, int group) {
+    Matcher matcher = getInstance(env, objref);
+    return matcher.end(group);
+  }
+
+  public static int regionStart____I(MJIEnv env, int objref) {
+    Matcher matcher = getInstance(env, objref);
+    return matcher.regionStart();
+  }
+
+  public static int regionEnd____I(MJIEnv env, int objref) {
+    Matcher matcher = getInstance(env, objref);
+    return matcher.regionEnd();
+  }
+
+  public static int region__II__Ljava_util_regex_Matcher_2(MJIEnv env, int objref, int start, int end) {
+    Matcher matcher = getInstance(env, objref);
+    matcher = matcher.region(start, end);
+    putInstance(env, objref, matcher);
+
+    return objref;
+  }
+       
+  public static int reset____Ljava_util_regex_Matcher_2 (MJIEnv env, int objref) {
     Matcher matcher = getInstance( env, objref);
 
     int inputRef = env.getReferenceField(objref, "input");
@@ -91,7 +119,12 @@ public class JPF_java_util_regex_Matcher {
     return objref;
   }
   
-  public static int group__I__Ljava_lang_String_2 (MJIEnv env, int objref, int i){
+  public static int groupCount____I (MJIEnv env, int objref) {
+    Matcher matcher = getInstance(env, objref);
+    return matcher.groupCount();
+  }
+  
+  public static int group__I__Ljava_lang_String_2 (MJIEnv env, int objref, int i) {
     Matcher matcher = getInstance( env, objref);
     String grp = matcher.group(i);
     
@@ -111,5 +144,57 @@ public class JPF_java_util_regex_Matcher {
 
     int resultref = env.newString(result);
     return resultref;
+  }
+  
+  public static int replaceFirst__Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int objref, int string) {
+    Matcher matcher = getInstance(env, objref);
+    String replacement = env.getStringObject(string);
+    String result = matcher.replaceFirst(replacement);
+
+    int resultref = env.newString(result);
+    return resultref;
+  }
+
+  public static boolean hasTransparentBounds____Z(MJIEnv env, int objref) {
+    Matcher matcher = getInstance(env, objref);
+    return matcher.hasTransparentBounds();
+  }
+
+  public static int useTransparentBounds__Z__Ljava_util_regex_Matcher_2(MJIEnv env, int objref, boolean b) {
+    Matcher matcher = getInstance(env, objref);
+    matcher = matcher.useTransparentBounds(b);
+    putInstance(env, objref, matcher);
+     
+    return objref;
+  }
+
+  public static boolean hasAnchoringBounds____Z(MJIEnv env, int objref) {
+    Matcher matcher = getInstance(env, objref);
+    return matcher.hasTransparentBounds();
+  }
+
+  public static int useAnchoringBounds__Z__Ljava_util_regex_Matcher_2(MJIEnv env, int objref, boolean b) {
+    Matcher matcher = getInstance(env, objref);
+    matcher = matcher.useAnchoringBounds(b);
+    putInstance(env, objref, matcher);
+
+    return objref;
+  }
+
+  public static int toString____Ljava_lang_String_2 (MJIEnv env, int objref) {
+    Matcher matcher = getInstance(env, objref);
+    String str = matcher.toString();
+
+    return env.newString(str);
+  }
+   
+  public static boolean hitEnd____Z (MJIEnv env, int objref) {
+    Matcher matcher = getInstance( env, objref);
+    return matcher.hitEnd();
+  }
+      
+  public static boolean requireEnd____Z (MJIEnv env, int objref) {
+    Matcher matcher = getInstance( env, objref);
+    return matcher.requireEnd();
   }
 }
