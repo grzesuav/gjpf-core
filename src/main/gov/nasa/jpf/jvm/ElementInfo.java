@@ -1235,38 +1235,6 @@ public abstract class ElementInfo implements Cloneable {
    * Note that even if we notify a thread here, it still remains in the lockedThreads
    * list until the lock is released (notified threads cannot run right away)
    */
-  public void _notifies (SystemState ss, ThreadInfo ti) {
-    assert monitor.getLockingThread() != null : "notify on unlocked object: " + this;
-
-    ThreadInfo[] locked = monitor.getLockedThreads();
-    int i, nWaiters=0, iWaiter=0;
-
-    for (i=0; i<locked.length; i++) {
-      if (locked[i].isWaiting()) {
-        nWaiters++;
-        iWaiter = i;
-      }
-    }
-
-    if (nWaiters == 0) {
-      // no waiters, nothing to do
-    } else if (nWaiters == 1) {
-      // very deterministic, just a little optimization
-      locked[iWaiter].setNotifiedState();
-    } else {
-      // Ok, this is the non-deterministic case
-      ChoiceGenerator cg = ss.getChoiceGenerator();
-
-      assert (cg != null) && (cg instanceof ThreadChoiceGenerator) :
-        "notify " + this + " without ThreadChoiceGenerator: " + cg;
-
-      ThreadInfo tiNotify = ((ThreadChoiceGenerator)cg).getNextChoice();
-      tiNotify.setNotifiedState();
-    }
-
-    ti.getVM().notifyObjectNotifies(ti, this);
-  }
-
   public void notifies(SystemState ss, ThreadInfo ti){
     notifies(ss, ti, true);
   }
@@ -1340,42 +1308,6 @@ public abstract class ElementInfo implements Cloneable {
    * wait to be notified. thread has to hold the lock, but gives it up in the wait.
    * Make sure lockCount can be restored properly upon notification
    */
-  public void _wait (ThreadInfo ti, long timeout) {
-    assert (monitor.getLockingThread() == ti) : "wait on unlocked object: " + this;
-
-    // store the lock count in the waiting thread (we have to restore to
-    // the same value once we get notified)
-    ti.setLockCount(monitor.getLockCount());
-
-    // we have to add this thread to the locked list since it will be still blocked once it got notified
-    setMonitorWithLocked(ti);
-    monitor.setLockingThread( null);
-    monitor.setLockCount(0);
-
-    ti.removeLockedObject(this); //wv: remove locked object here
-    ti.setLockRef(index);
-
-    if (timeout == 0) {
-      ti.setState(ThreadInfo.State.WAITING);
-    } else {
-      ti.setState(ThreadInfo.State.TIMEOUT_WAITING);
-    }
-
-    // unblock all runnable threads that are blocked on this lock
-    ThreadInfo[] lockedThreads = monitor.getLockedThreads();
-    for (int i=0; i<lockedThreads.length; i++) {
-      switch (lockedThreads[i].getState()) {
-      case NOTIFIED:
-      case BLOCKED:
-      case INTERRUPTED:
-        lockedThreads[i].setState(ThreadInfo.State.UNBLOCKED);
-        break;
-      }
-    }
-
-    ti.getVM().notifyObjectWait(ti, this);
-  }
-
   public void wait(ThreadInfo ti, long timeout){
     wait(ti,timeout,true);
   }
