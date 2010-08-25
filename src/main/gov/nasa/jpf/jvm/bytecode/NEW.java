@@ -40,6 +40,11 @@ public class NEW extends Instruction {
     cname = cp.constantToString(cp.getConstant(
                                       ((org.apache.bcel.generic.NEW) i).getIndex()));
   }
+  
+  public String getClassName()    // Needed for Java Race Finder
+  {
+     return(cname);
+  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     JVM vm = ti.getVM();

@@ -69,6 +69,11 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
       skipConstructedFinals = config.getBoolean("vm.por.skip_constructed_finals", false);
     }
   }
+  
+  public String getClassName()   // Needed for Java Race Finder
+  {
+     return(className);
+  }
 
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     org.apache.bcel.generic.FieldInstruction fi;
