@@ -154,48 +154,11 @@ public class JVM {
     treeOutput = config.getBoolean("vm.tree_output", true);
     // we have to defer setting pathOutput until we have a reporter registered
     indentOutput = config.getBoolean("vm.indent_output",false);
-    
-    TimeModel[] timeModels = TimeModel.values();
-    String[] modelNames = new String[timeModels.length];
-    
-    for (int i = 0; i < timeModels.length; i++)
-      modelNames[i] = timeModels[i].toString();
-    
-    int timeModelIndex = config.getChoiceIndexIgnoreCase("vm.time.model", modelNames);
-  
-    if (timeModelIndex != -1)
-      timeModel = timeModels[timeModelIndex];
-    else
-      timeModel = TimeModel.SystemTime;
-    
-    switch (timeModel) {
-      case ConstantZero:
-      case SystemTime:
-        milliTime = 0;
-        nanoTime  = 0;
-        break;
-       
-      case ConstantStartTime:
-        nanoTime  = System.nanoTime();
-        milliTime = System.currentTimeMillis();
-        nanoTime  = (nanoTime + System.nanoTime()) / 2;
-        break;
-       
-      case ConstantConfig:
-        milliTime = config.getLong("vm.time.currentTimeMillis");
-        nanoTime  = config.getLong("vm.time.nanoTime");
-        break;
-       
-      default:
-        throw new JPFException("Unhandled time model: " + timeModel);
-    }
 
-    try {
-      initSubsystems(config);
-      initFields(config);
-    } catch (Throwable t) {
-      t.printStackTrace(System.err);
-    }
+    initTimeModel(config);
+
+    initSubsystems(config);
+    initFields(config);
   }
 
   public JPF getJPF() {
@@ -228,6 +191,45 @@ public class JVM {
     ChoiceGenerator.init(config);
 
     // peer classes get initialized upon NativePeer creation
+  }
+
+  protected void initTimeModel (Config config){
+    TimeModel[] timeModels = TimeModel.values();
+    String[] modelNames = new String[timeModels.length];
+
+    for (int i = 0; i < timeModels.length; i++){
+      modelNames[i] = timeModels[i].toString();
+    }
+
+    int timeModelIndex = config.getChoiceIndexIgnoreCase("vm.time.model", modelNames);
+
+    if (timeModelIndex != -1){
+      timeModel = timeModels[timeModelIndex];
+    } else {
+      timeModel = TimeModel.SystemTime;
+    }
+
+    switch (timeModel) {
+      case ConstantZero:
+      case SystemTime:
+        milliTime = 0;
+        nanoTime  = 0;
+        break;
+
+      case ConstantStartTime:
+        nanoTime  = System.nanoTime();
+        milliTime = System.currentTimeMillis();
+        nanoTime  = (nanoTime + System.nanoTime()) / 2;
+        break;
+
+      case ConstantConfig:
+        milliTime = config.getLong("vm.time.currentTimeMillis");
+        nanoTime  = config.getLong("vm.time.nanoTime");
+        break;
+
+      default:
+        throw new JPFConfigException("Unhandled time model: " + timeModel);
+    }
   }
 
   /**
@@ -349,7 +351,7 @@ public class JVM {
 
     int permitRef = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"),null);
     ElementInfo eiPermitRef = da.get(permitRef);
-    eiPermitRef.setBooleanField("isTaken", true);
+    eiPermitRef.setBooleanField("blockPark", true);
     ei.setReferenceField("permit", permitRef);
 
     // we need to keep the attributes on the JPF side in sync here

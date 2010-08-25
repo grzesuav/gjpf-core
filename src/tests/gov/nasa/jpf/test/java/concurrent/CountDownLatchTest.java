@@ -11,57 +11,47 @@ public class CountDownLatchTest extends TestJPF {
   private static final int COUNTER_SUCCESS   = 0;
   private static final int COUNTER_EXCHANGED = 1;
 
-  private final CountDownLatch    latch     = new CountDownLatch(N);
-  private final Exchanger<Object> exchanger = new Exchanger<Object>();
-  private final ExecutorService   service   = Executors.newFixedThreadPool(N);
 
   public static void main(String[] args) {
     runTestsOfThisClass(args);
   }
 
   @Test
-  public void testCountDown() throws InterruptedException
-  {
+  public void testCountDown() throws InterruptedException {
     if (verifyNoPropertyViolation("+vm.time.model=ConstantZero")) {
-      if (Verify.getBoolean(false))
-        main();
-      else
-        verify();
-    }
-  }
-  
-  private void main() throws InterruptedException {
-    Runnable task = new Runnable() {
-      public void run() {
-        base();
+
+      final CountDownLatch    latch     = new CountDownLatch(N);
+      final Exchanger<Object> exchanger = new Exchanger<Object>();
+      final ExecutorService   service   = Executors.newFixedThreadPool(N);
+
+      Runnable task = new Runnable() {
+        public void run() {
+          try {
+            Object source = new Object();
+            Object result = exchanger.exchange(source);
+            //Object result = exchanger.exchange(source, 1L, TimeUnit.SECONDS); // If N==2 and without jpf-concurrent, the timeout causes 149,808 states to be explored.
+            assert source != result : "source != result";
+            assert result != null : "result != null";
+            latch.countDown();
+            Verify.incrementCounter(COUNTER_EXCHANGED);
+          } catch (InterruptedException e) {
+            throw new Error(e);
+          }
+        }
+      };
+
+      for (int i = 0; i < N; i++) {
+        service.execute(task);
       }
-    };
 
-    for (int i = 0; i < N; i++)
-      service.execute(task);
+      latch.await();
+      service.shutdown();
 
-    latch.await();
-    service.shutdown();
+      Verify.incrementCounter(COUNTER_SUCCESS);
 
-    Verify.incrementCounter(COUNTER_SUCCESS);
-  }
-  
-  private void verify() {
-    Assert.assertTrue("Never succeeded", Verify.getCounter(COUNTER_SUCCESS) > 0);
-    Assert.assertTrue("Never exchanged", Verify.getCounter(COUNTER_EXCHANGED) > 0);
-  }
-  
-  private void base() {
-    try {
-      Object source = new Object();
-      Object result = exchanger.exchange(source);
-      //Object result = exchanger.exchange(source, 1L, TimeUnit.SECONDS); // If N==2 and without jpf-concurrent, the timeout causes 149,808 states to be explored.
-      assert source != result : "source != result";
-      assert result != null : "result != null";
-      latch.countDown();
-      Verify.incrementCounter(COUNTER_EXCHANGED);
-    } catch (InterruptedException e) {
-      throw new Error(e);
+    } else { // outside JPF
+      assert Verify.getCounter(COUNTER_SUCCESS) > 0 : "never succeeded";
+      assert Verify.getCounter(COUNTER_EXCHANGED) > 0 : "never exchanged";
     }
   }
 }

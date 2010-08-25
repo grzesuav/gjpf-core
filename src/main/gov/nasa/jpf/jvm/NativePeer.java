@@ -51,7 +51,7 @@ public class NativePeer {
   static final int  MAX = 6;
   static Object[][]  argCache;
   static Config config;
-  static boolean warnOrphanMethod;
+  static boolean noOrphanMethods;
 
   static String[] peerPackages;
 
@@ -72,7 +72,7 @@ public class NativePeer {
     peerPackages = getPeerPackages(conf);
 
     config = conf;
-    warnOrphanMethod = conf.getBoolean("vm.warn_orphan_method", true);
+    noOrphanMethods = conf.getBoolean("vm.no_orphan_methods", false);
   }
 
   static String[] getPeerPackages (Config conf) {
@@ -539,11 +539,15 @@ public class NativePeer {
           } else {
             // otherwise we are just interested in setting the MethodInfo attributes
           }
+
         } else {
-          String message = "orphant NativePeer method: " + ci.getName() + '.' + mname;
+          // we have an orphan method, i.e. a peer method that does not map into any model method
+          // (this is usually a signature typo or an out-of-sync peer)
+          String message = "orphan NativePeer method: " + ci.getName() + '.' + mname;
            
-          if (!warnOrphanMethod)
+          if (noOrphanMethods){
             throw new JPFException(message);
+          }
 
           // issue a warning if we have a NativePeer native method w/o a corresponding
           // method in the model class (this might happen due to compiler optimizations

@@ -30,8 +30,11 @@ import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.util.Source;
+import java.io.ByteArrayInputStream;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.util.Collections;

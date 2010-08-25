@@ -299,8 +299,9 @@ public class DynamicArea extends Area<DynamicElementInfo> {
 
     //logMark( null, ei, tid, attrMask);
 
-    if (ei != null)    
+    if (ei != null) { // <2do> how can this happen?
       ei.markRecursive(tid, attrMask);
+    }
   }
 
 

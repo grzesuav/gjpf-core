@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.io.PrintWriter;
+
 /**
  * we don't want this class! This is a hodgepodge of stuff that shouldn't be in Java, but
  * is handy for some hacks. The reason we have it here - very rudimentary - is that
@@ -83,51 +85,66 @@ public class JPF_sun_misc_Unsafe {
   }
 
 
-  // these just encapsulate waits on a very private Thread field object ("permit"). wait() requires
-  // owning the lock, but the trick is to not expose any lock that would cause JPF to break
-  // the transition and add additional states (e.g. by synchronizing on the Unsafe object itself),
-  // hence we have to do the lock/unlock explicitly from within park/unpark. In case of the
-  // park(), this is slightly more complicated since it might get re-executed
+  // this is a specialized, native wait that does not require a lock, and that can
+  // be turned off by a preceding unpark() call (which is not accumulative)
+  // park can be interrupted, but it doesn't throw an InterruptedException, and it doesn't clear the status
 
-  public static void park__ZJ__V (MJIEnv env, int unsafeRef, boolean isAbsolute, long timeout) {
+  public static void park__ZJ__V (MJIEnv env, int unsafeRef, boolean isAbsoluteTime, long timeout) {
     ThreadInfo ti = env.getThreadInfo();
     int objRef = ti.getThreadObjectRef();
-
-    if (ti.isInterrupted(false)) {
-      return;
-    }
-
     int permitRef = env.getReferenceField( objRef, "permit");
     ElementInfo ei = env.getElementInfo(permitRef);
 
-    // NOTE - this means the native Object.wait() bottom half has to handle
-    // being called in a RUNNING state (which otherwise won't happen), or we
-    // get invalid thread state exceptions
+    if (ti.isFirstStepInsn()){ // re-executed
 
-    if (ei.getBooleanField("isTaken")) { // we have to block
-      ei.lock(ti); // otherwise a subsequent wait will blow up
-      JPF_java_lang_Object.wait__J__V(env,permitRef,timeout);
+      //assert ti.getLockObject() == null : "private 'permit' object locked";
 
-    } else {
-      if (ti.isFirstStepInsn()) {  // somebody might have notified us
-        JPF_java_lang_Object.wait__J__V(env,permitRef,timeout);
-        ei.unlock(ti); // simulate the accompanying MONITOR_EXIT
+      // notified | timedout | interrupted -> running
+      switch (ti.getState()) {
+        case NOTIFIED:
+        case TIMEDOUT:
+        case INTERRUPTED:
+          ti.setRunning();
+          ti.resetLockRef();
+        default:
       }
-      ei.setBooleanField("isTaken", true);
+
+    } else { // first time
+
+      if (ti.isInterrupted(false)) {
+        return;
+      }
+
+      if (ei.getBooleanField("blockPark")) { // we have to wait, but don't need a lock
+        // running -> waiting | timeout_waiting
+        ei.wait(ti, timeout, false);
+
+        SystemState ss = env.getSystemState();
+        // note we pass in the timeout value, since this might determine the type of CG that is created
+        ChoiceGenerator cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
+        ss.setNextChoiceGenerator(cg);
+
+        env.repeatInvocation();
+
+      } else {
+        ei.setBooleanField("blockPark", true); // next time
+      }
     }
   }
 
   public static void unpark__Ljava_lang_Object_2__V (MJIEnv env, int unsafeRef, int objRef) {
     ThreadInfo ti = env.getThreadInfo();
+    ThreadInfo tiParked = JPF_java_lang_Thread.getThreadInfo(env, objRef);
+    SystemState ss = env.getSystemState();
 
-    ThreadInfo t1 = JPF_java_lang_Thread.getThreadInfo(env, objRef); // needed? -pcd
     int permitRef = env.getReferenceField( objRef, "permit");
     ElementInfo ei = env.getElementInfo(permitRef);
 
-    ei.lock(ti);
-    ei.setBooleanField("isTaken", false);
-    ei.notifies(env.getSystemState(), ti);
-    ei.unlock(ti);
+    if (tiParked.getLockObject() == ei){
+      ei.notifies(ss, ti, false);
+    } else {
+      ei.setBooleanField("blockPark", false);
+    }
   }
 
   public static void ensureClassInitialized__Ljava_lang_Class_2__V (MJIEnv env, int unsafeRef, int clsObjRef) {
