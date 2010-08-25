@@ -18,7 +18,7 @@ public class CountDownLatchTest extends TestJPF {
 
   @Test
   public void testCountDown() {
-    if (verifyNoPropertyViolation()) {
+    if (verifyNoPropertyViolation( /* "+listener=.listener.ExecTracker" */ )) {
 
       final int n = 2; // <2do> bump up once we model java.util.concurrent
 

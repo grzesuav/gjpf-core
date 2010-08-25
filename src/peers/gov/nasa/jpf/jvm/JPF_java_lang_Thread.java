@@ -318,30 +318,23 @@ public class JPF_java_lang_Thread {
     //--- the join
     if (ti.isFirstStepInsn()) { // re-execution, we already have a CG
 
-      switch (ti.getState()) {
-
-        case UNBLOCKED: // this was from a block before we could wait
-          break;
-
-        case NOTIFIED_UNBLOCKED: // this was from a wait
+      switch (ti.getState()){
+        case UNBLOCKED:
+          // Thread was owning the lock when it joined - we have to wait until
+          // we can reacquire it
           ei.lockNotified(ti);
-          ei.unlock(ti); // what if we did hold the lock before join()?
           break;
 
-        case TIMEDOUT: // this was from a timed out wait
-          ei.lockNotified(ti); // remove from ei.lockedThreads!
-          ei.unlock(ti); // what if we did hold the lock before join()?
-          return;
+        case TIMEDOUT:
+          ei.resumeNonlockedWaiter(ti);
+          break;
 
-        default:
-          throw new JPFException("invalid thread state of: " + ti.getName() + " is " + ti.getStateName() +
-                  " while joining on " + ei);
-      }
-
-      if (isAlive){ // we still need to wait
-        ei.lock(ti);
-        ei.wait(ti, timeout);
-        env.repeatInvocation();
+        case RUNNING:
+          if (isAlive) { // we still need to wait
+            ei.wait(ti, timeout, false); // no need for a new CG
+            env.repeatInvocation();
+          }
+          break;
       }
 
     } else { // first time exec, create a CG if the thread is still alive
@@ -352,22 +345,9 @@ public class JPF_java_lang_Thread {
       }
 
       if (isAlive) {
-        ChoiceGenerator<ThreadInfo> cg = null;
 
-        if (!ei.canLock(ti)) {
-          // this puts us into BLOCKED state, from which we will emerge as UNBLOCKED
-          ei.block(ti);
-          cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
-
-        } else { // we can acquire the lock for the wait
-          // this puts us into WAITING or TIMEOUT_WAITING, from where we come out UNBLOCKED
-          // (after lock release of notify) or TIMEDOUT
-          // note that the lock is required by wait()
-
-          ei.lock(ti);
-          ei.wait(ti, timeout);
-          cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
-        }
+        ei.wait(ti, timeout, false);
+        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
 
         assert (cg != null) : "no choice generator for blocked join of " + ti;
         ss.setNextChoiceGenerator(cg);
@@ -379,6 +359,7 @@ public class JPF_java_lang_Thread {
     }
   }
 
+/**/
   public static void join____V (MJIEnv env, int objref){
     join0(env,objref,0);
   }
@@ -391,7 +372,7 @@ public class JPF_java_lang_Thread {
   public static void join__JI__V (MJIEnv env, int objref, long millis, int nanos) {
     join0(env,objref,millis); // <2do> we ignore nanos for now
   }
-
+/**/
 
   public static long getId____J (MJIEnv env, int objref) {
     // doc says it only has to be valid and unique during lifetime of thread, hence we just use
@@ -409,7 +390,6 @@ public class JPF_java_lang_Thread {
     case RUNNING:            return 2;
     case BLOCKED:            return 0;
     case UNBLOCKED:          return 2;
-    case NOTIFIED_UNBLOCKED: return 2;
     case WAITING:            return 5;
     case TIMEOUT_WAITING:    return 4;
     case SLEEPING:           return 4;

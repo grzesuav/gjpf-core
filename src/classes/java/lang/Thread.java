@@ -31,24 +31,17 @@ public class Thread implements Runnable {
   public static final int NORM_PRIORITY = 5;
   public static final int MAX_PRIORITY = 10;
 
-  // this is for the dreaded Unsafe.park() synchronization. I hope it would vanish
-  static class Permit {
-    boolean isTaken = true;
-  }
-
   // initialized in init(), except of the main thread (which gets explicitly initialized by the VM)
   ThreadGroup         group;
   Runnable            target;
   String              name;
   int                 priority;
   boolean             isDaemon;
-  Permit              permit;
 
   // this is an explicit thread state that gets set on a call of interrupt(), but
   // only if the thread is not blocked. If it is, we only change the status.
   // this gets cleared by calling interrupted()
   boolean             interrupted;
-
 
   // <2do> those two seem to be the only interfaces to the ThreadLocal
   // implementation. Replace once we have our own
@@ -56,7 +49,15 @@ public class Thread implements Runnable {
   ThreadLocal.ThreadLocalMap threadLocals;
   ThreadLocal.ThreadLocalMap inheritableThreadLocals;
 
-  // referenced by the dreaded java.util.concurrent.locks.LockSupport via sun.misc.Unsafe
+  // this is what we use for sun.misc.Unsafe.park()/unpark()
+  // this is accessed from the native peer, JVM.createMainThread() and sun.misc.Unsafe
+  static class Permit {
+    boolean blockPark = true; // this is used to remember unpark() calls before park() (they don't accumulate)
+  }
+  Permit permit; // the object is used for wait/notify
+
+  // referenced by java.util.concurrent.locks.LockSupport via sun.misc.Unsafe
+  // DON'T CHANGE THIS NAME
   volatile Object parkBlocker;
 
   public enum State { BLOCKED, NEW, RUNNABLE, TERMINATED, TIMED_WAITING, WAITING }
