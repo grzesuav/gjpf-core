@@ -89,7 +89,7 @@ public class JPF_sun_misc_Unsafe {
   // hence we have to do the lock/unlock explicitly from within park/unpark. In case of the
   // park(), this is slightly more complicated since it might get re-executed
 
-  public static void park__ZJ__V (MJIEnv env, int unsafeRef, boolean isAbsoluteTime, long timeout) {
+  public static void park__ZJ__V (MJIEnv env, int unsafeRef, boolean isAbsolute, long timeout) {
     ThreadInfo ti = env.getThreadInfo();
     int objRef = ti.getThreadObjectRef();
 

@@ -41,6 +41,7 @@ public final class Method extends AccessibleObject implements Member {
   public native Class<?> getReturnType();
   public native Class<?>[] getParameterTypes();
   public native Type[] getGenericParameterTypes();
+  public native Class<?>[] getExceptionTypes();
 
   public native Class<?> getDeclaringClass();
 

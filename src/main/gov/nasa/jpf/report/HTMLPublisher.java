@@ -668,6 +668,7 @@ public class HTMLPublisher extends Publisher {
   private void writeErrors(PrintWriter output) {
     List<Error> errors;
     Error error;
+    String details;
     int i;
 
     errors = reporter.getErrors();
@@ -688,13 +689,19 @@ public class HTMLPublisher extends Publisher {
 
     for (i = 0; i < errors.size(); i++) {
       error = errors.get(i);
+      details = error.getDetails();
+      
+      if (details == null)
+        details = "";
+      else
+        details = details.trim();       
 
       output.print("         <tr><td>");
       output.print(error.getId());
       output.print("</td><td>");
       output.print(escape(error.getDescription()));
       output.println("</td><td><pre>");
-      output.print(escape(error.getDetails().trim()));
+      output.print(escape(details));
       output.println("</pre></td></tr>");
     }
 
@@ -1727,14 +1734,22 @@ public class HTMLPublisher extends Publisher {
       output.println("      <br/>");
       return;
     }
+    
+    if (!super.reporter.getVM().hasToRecordSteps()) {
+      output.println("      <i>Steps not recorded.</i>");
+      output.println("      <i>Enable by setting report.html.finished+=,trace</i>");
+      output.println("      <br/>");
+      output.println("      <br/>");
+      return;
+    }
 
-    stacks = new HashMap<Integer, ArrayList<Pair<String, String>>>();
-    openNodes = new HashSet<String>();
-    stack = null;
-    lastInst = null;
-    treeId = null;
-    index = 0;
-    stateID = -1;
+    stacks     = new HashMap<Integer, ArrayList<Pair<String, String>>>();
+    openNodes  = new HashSet<String>();
+    stack      = null;
+    lastInst   = null;
+    treeId     = null;
+    index      = 0;
+    stateID    = -1;
     m_noSource = 0;
     lastThread = -1;
 
@@ -1744,13 +1759,15 @@ public class HTMLPublisher extends Publisher {
       curThread = trans.getThreadIndex();
       if (lastThread != curThread) {
         lastThread = curThread;
-        lastInst = null;
+        lastInst   = null;
         m_noSource = 0;
 
         writeTransExit(output, treeId, stack, stateID, openNodes);
-        treeId = "tree" + ++index;
-        stack = getStack(stacks, curThread);
+        
+        treeId  = "tree" + ++index;
+        stack   = getStack(stacks, curThread);
         stateID = trans.getStateId();
+        
         writeTransEnter(output, treeId, stack, trans, index);
       }
 
@@ -1911,7 +1928,7 @@ public class HTMLPublisher extends Publisher {
         }
 
         methodId = enterMethod(output, treeId, stack, trans.getStateId(), inst);
-        last = Integer.MAX_VALUE - 1;
+        last     = Integer.MAX_VALUE - 1;
       } else if (stack.isEmpty()) {
         continue;
       }
@@ -1983,7 +2000,7 @@ public class HTMLPublisher extends Publisher {
 
     writeNoSource(output, treeId, parent, stateID);
 
-    name = getMethod(inst);
+    name   = getMethod(inst);
 
     method = new Pair<String, String>(name, parent + "-" + m_treeNodeMethodId++);
     stack.add(method);
@@ -2101,7 +2118,7 @@ public class HTMLPublisher extends Publisher {
 
     writeNoSource(output, treeId, methodId, stateID);
 
-    current = inst.getLineNumber();
+    current  = inst.getLineNumber();
     filename = inst.getMethodInfo().getSourceFileName();
 
     for (last++; last < current; last++) {
@@ -2116,15 +2133,11 @@ public class HTMLPublisher extends Publisher {
     String line, num;
     int i, max;
 
-    if (methodId == null) {
-      methodId = null;
-    }
-
     source = Source.getSource(filename);
-    line = source.getLine(number);
+    line   = source.getLine(number);
 
-    num = Integer.toString(number);
-    max = Integer.toString(source.getLineCount()).length();
+    num    = Integer.toString(number);
+    max    = Integer.toString(source.getLineCount()).length();
 
     writeTableTreeNodeBegin(output, treeId + methodId + "-" + m_treeNodeLineId++);
 
@@ -2138,9 +2151,8 @@ public class HTMLPublisher extends Publisher {
 
     output.print("exec\">");
 
-    for (i = max - num.length(); i > 0; i--) {
+    for (i = max - num.length(); i > 0; i--)
       output.print(' ');
-    }
 
     writeSourceAnchor(output, filename, number);
     output.print(num);

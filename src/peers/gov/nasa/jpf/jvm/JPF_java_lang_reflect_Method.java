@@ -110,6 +110,42 @@ public class JPF_java_lang_reflect_Method {
     return getParameterTypes(env, objRef, getMethodInfo(env, objRef));
   }
   
+  static int getExceptionTypes(MJIEnv env, int objRef, MethodInfo mi) {
+    try {
+      ThreadInfo ti = env.getThreadInfo();
+      String[] exceptionNames = mi.getThrownExceptionClassNames();
+       
+      if (exceptionNames == null) {
+        exceptionNames = MethodInfo.EMPTY;
+      }
+       
+      int[] ar = new int[exceptionNames.length];
+       
+      for (int i = 0; i < exceptionNames.length; i++) {
+        ClassInfo ci = ClassInfo.getResolvedClassInfo(exceptionNames[i]);
+        if (!ci.isRegistered()) {
+          ci.registerClass(ti);
+        }
+         
+        ar[i] = ci.getClassObjectRef();
+      }
+       
+      int aRef = env.newObjectArray("Ljava/lang/Class;", exceptionNames.length);
+      for (int i = 0; i < exceptionNames.length; i++) {
+        env.setReferenceArrayElement(aRef, i, ar[i]);
+      }
+       
+      return aRef;
+    } catch (NoClassInfoException cx) {
+      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
+      return MJIEnv.NULL;
+    }
+  }
+  
+  public static int getExceptionTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef) {
+    return getExceptionTypes(env, objRef, getMethodInfo(env, objRef));
+  }
+  
   public static int getReturnType____Ljava_lang_Class_2 (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);
     ThreadInfo ti = env.getThreadInfo();

@@ -1,48 +1,67 @@
 package gov.nasa.jpf.test.java.concurrent;
 
-import gov.nasa.jpf.util.test.TestJPF;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Exchanger;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import org.junit.Test;
+import gov.nasa.jpf.jvm.*;
+import gov.nasa.jpf.util.test.*;
+import java.util.concurrent.*;
+import org.junit.*;
 
-// <2do> there seems to be some rather nasty state explosion - revisit
-// once we model java.util.concurrent
 public class CountDownLatchTest extends TestJPF {
+
+  private static final int N = 2;                    // Too many states to test if set higher than 2.  jpf-concurrent's gov.nasa.jpf.test.java.concurrent.CountDownLatchTest can handle more threads.
+  private static final int COUNTER_SUCCESS   = 0;
+  private static final int COUNTER_EXCHANGED = 1;
+
+  private final CountDownLatch    latch     = new CountDownLatch(N);
+  private final Exchanger<Object> exchanger = new Exchanger<Object>();
+  private final ExecutorService   service   = Executors.newFixedThreadPool(N);
 
   public static void main(String[] args) {
     runTestsOfThisClass(args);
   }
 
   @Test
-  public void testCountDown() {
-    if (verifyNoPropertyViolation()) {
-
-      final int n = 2; // <2do> bump up once we model java.util.concurrent
-
-      final CountDownLatch done = new CountDownLatch(n);
-      final Exchanger<Object> exchanger = new Exchanger<Object>();
-      final ExecutorService es = Executors.newFixedThreadPool(3);
-      for (int i = 0; i < n; i++) {
-        es.submit(new Runnable() {
-
-          public void run() {
-            try {
-              exchanger.exchange(new Object(), 1L, TimeUnit.SECONDS);
-              done.countDown();
-            } catch (Throwable e) {
-              throw new Error(e);
-            }
-          }
-        });
+  public void testCountDown() throws InterruptedException
+  {
+    if (verifyNoPropertyViolation("+vm.time.model=ConstantZero")) {
+      if (Verify.getBoolean(false))
+        main();
+      else
+        verify();
+    }
+  }
+  
+  private void main() throws InterruptedException {
+    Runnable task = new Runnable() {
+      public void run() {
+        base();
       }
-      try {
-        done.await();
-        es.shutdown();
-      } catch (InterruptedException ix) {
-      }
+    };
+
+    for (int i = 0; i < N; i++)
+      service.execute(task);
+
+    latch.await();
+    service.shutdown();
+
+    Verify.incrementCounter(COUNTER_SUCCESS);
+  }
+  
+  private void verify() {
+    Assert.assertTrue("Never succeeded", Verify.getCounter(COUNTER_SUCCESS) > 0);
+    Assert.assertTrue("Never exchanged", Verify.getCounter(COUNTER_EXCHANGED) > 0);
+  }
+  
+  private void base() {
+    try {
+      Object source = new Object();
+      Object result = exchanger.exchange(source);
+      //Object result = exchanger.exchange(source, 1L, TimeUnit.SECONDS); // If N==2 and without jpf-concurrent, the timeout causes 149,808 states to be explored.
+      assert source != result : "source != result";
+      assert result != null : "result != null";
+      latch.countDown();
+      Verify.incrementCounter(COUNTER_EXCHANGED);
+    } catch (InterruptedException e) {
+      throw new Error(e);
     }
   }
 }

@@ -144,8 +144,8 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     JVM.getVM().notifyGCBegin();
     initGc();
 
-    // phase 0 - not awefully nice - we have to chache the attribute values
-    // so that we can determine at the end of the gc if any life object has
+    // phase 0 - not awefully nice - we have to cache the attribute values
+    // so that we can determine at the end of the gc if any live object has
     // changed only in its attributes. 'lastAttrs' could be a local.
     // Since we have this loop, we also use it to reset all the propagated
     // (i.e. re-computed) object attributes of live objects
@@ -298,7 +298,9 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     markLevel = 0;
 
     //logMark( null, ei, tid, attrMask);
-    ei.markRecursive(tid, attrMask);
+
+    if (ei != null)    
+      ei.markRecursive(tid, attrMask);
   }
 
 

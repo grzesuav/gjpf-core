@@ -345,14 +345,12 @@ public class JPF_java_lang_System {
   // real time, but we could at least give some SystemState dependent
   // increment
   public static long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
-    // <2do> this should be configurable policy
-    //return env.getVM().getTime();
-    return System.currentTimeMillis();
+    return env.getVM().currentTimeMillis();
   }
 
   // <2do> - likewise. Java 1.5's way to measure relative time
   public static long nanoTime____J (MJIEnv env, int clsObjRef) {
-    return env.getVM().getTime();
+    return env.getVM().nanoTime();
   }  
   
   // this works on the assumption that we sure break the transition, and
