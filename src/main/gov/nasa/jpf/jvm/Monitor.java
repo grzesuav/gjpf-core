@@ -82,6 +82,10 @@ public class Monitor {
     pw.println("}]");
   }
   
+  @Deprecated
+  Monitor cloneWithoutLocked () {
+    return new Monitor(lockingThread, lockCount, emptySet);
+  }
   
   Monitor cloneWithLocked (ThreadInfo ti) {
     return new Monitor(lockingThread, lockCount, add(lockedThreads, ti));
@@ -91,10 +95,20 @@ public class Monitor {
     return new Monitor(lockingThread, lockCount, remove(lockedThreads, ti));
   }
 
+  @Deprecated
+  Monitor cloneWithLocked (ThreadInfo[] locked) {
+    return new Monitor(lockingThread, lockCount, locked);
+  }
+  
   public Monitor clone () {
     return new Monitor(lockingThread, lockCount, lockedThreads.clone());
   }
   
+  @Deprecated
+  void setLocked (ThreadInfo[] locked) {
+    lockedThreads = locked.clone();
+    Arrays.sort(lockedThreads);
+  }
   
   /**
    * Compares to another object.
@@ -181,15 +195,7 @@ public class Monitor {
     return (lockedThreads.length > 0);
   }
   
-  public boolean hasWaitingThreads () {
-    for (int i=0; i<lockedThreads.length; i++) {
-      if (lockedThreads[i].isWaiting()) {
-        return true;
-      }
-    }
-
-    return false;
-  }
+  
   
   /**
    * Returns true if it is possible to lock the monitor.
@@ -240,9 +246,7 @@ public class Monitor {
     for (; pos < len && ti.compareTo(list[pos]) > 0; pos++) {
       newList[pos] = list[pos];
     }
-
     newList[pos] = ti;
-
     for (; pos < len; pos++) {
       newList[pos+1] = list[pos];
     }

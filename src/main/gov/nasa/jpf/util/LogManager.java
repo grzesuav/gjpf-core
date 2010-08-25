@@ -44,8 +44,7 @@ import java.util.logging.LogRecord;
 public class LogManager {
     
   static HashMap<String,JPFLogger> loggers = new HashMap<String, JPFLogger>(); // our own set
-
-  static boolean isInitialized = false;
+  
   static Level defaultLevel;
   static Handler handler;  // we have only one
   
@@ -63,25 +62,21 @@ public class LogManager {
    * values have to do in this case (make sure we catch the proper Config exceptions)
    */
   public static void init (Config conf) {
-    if (!isInitialized){
-      try {
-        defaultLevel = Level.parse(conf.getString("log.level", "INFO").toUpperCase());
-      } catch (Throwable x) {
-        defaultLevel = Level.WARNING;
-      }
-
-      activeSevere = conf.getStringArray("log.severe");
-      activeWarning = conf.getStringArray("log.warning");
-      activeInfo = conf.getStringArray("log.info");
-      activeConfig = conf.getStringArray("log.config");
-      activeFine = conf.getStringArray("log.fine");
-      activeFiner = conf.getStringArray("log.finer");
-      activeFinest = conf.getStringArray("log.finest");
-
-      handler = conf.getEssentialInstance("log.handler.class", Handler.class);
-
-      isInitialized = true;
+    try {
+      defaultLevel = Level.parse( conf.getString("log.level", "INFO").toUpperCase());
+    } catch (Throwable x) {
+      defaultLevel = Level.WARNING;
     }
+    
+    activeSevere = conf.getStringArray("log.severe");
+    activeWarning = conf.getStringArray("log.warning");
+    activeInfo = conf.getStringArray("log.info");
+    activeConfig = conf.getStringArray("log.config");
+    activeFine = conf.getStringArray("log.fine");
+    activeFiner = conf.getStringArray("log.finer");
+    activeFinest = conf.getStringArray("log.finest");
+    
+    handler = conf.getEssentialInstance("log.handler.class", Handler.class);
   }
   
   static boolean checkInclusion (String[] actives, String name) {

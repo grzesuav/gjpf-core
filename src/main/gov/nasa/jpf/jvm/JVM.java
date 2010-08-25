@@ -303,7 +303,7 @@ public class JVM {
 
     int permitRef = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"),null);
     ElementInfo eiPermitRef = da.get(permitRef);
-    eiPermitRef.setBooleanField("blockPark", true);
+    eiPermitRef.setBooleanField("isTaken", true);
     ei.setReferenceField("permit", permitRef);
 
     // we need to keep the attributes on the JPF side in sync here

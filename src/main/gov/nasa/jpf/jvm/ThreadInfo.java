@@ -62,6 +62,7 @@ public class ThreadInfo
     WAITING,  // waiting to be notified
     TIMEOUT_WAITING,
     NOTIFIED,  // was WAITING and got notified, but is still blocked
+    NOTIFIED_UNBLOCKED, // was NOTIFIED, and can now acquire the lock
     INTERRUPTED,  // was WAITING and got interrupted
     TIMEDOUT,  // was TIMEOUT_WAITING and timed out
     TERMINATED,
@@ -381,6 +382,8 @@ public class ThreadInfo
       case NOTIFIED:
         vm.notifyThreadNotified(this);
         break;
+      case NOTIFIED_UNBLOCKED:
+        break; // nothing to notify
       }
 
       if (log.isLoggable(Level.FINE)){
@@ -396,6 +399,9 @@ public class ThreadInfo
       case RUNNING:
       case UNBLOCKED:
         setState(State.BLOCKED);
+        break;
+      case NOTIFIED_UNBLOCKED:
+        setState(State.NOTIFIED);
         break;
 
       default:
@@ -438,6 +444,7 @@ public class ThreadInfo
     switch (threadData.state) {
     case RUNNING:
     case UNBLOCKED:
+    case NOTIFIED_UNBLOCKED:
       return true;
     case SLEEPING:
       return true;    // that's arguable, but since we don't model time we treat it like runnable
@@ -455,6 +462,7 @@ public class ThreadInfo
     switch (threadData.state) {
     case RUNNING:
     case UNBLOCKED:
+    case NOTIFIED_UNBLOCKED:
       return true;
     case TIMEOUT_WAITING: // it's not yet, but it will be at the time it gets scheduled
     case SLEEPING:
@@ -476,18 +484,15 @@ public class ThreadInfo
 
     case RUNNING:
     case UNBLOCKED:
+    case NOTIFIED_UNBLOCKED:
     case SLEEPING:
       return true;
 
     case TIMEOUT_WAITING:
       // depends on if we can re-acquire the lock
-      //assert lockRef != -1 : "timeout waiting but no blocked object";
-      if (lockRef != -1){
-        ElementInfo ei = vm.getDynamicArea().get(lockRef);
-        return ei.canLock(this);
-      } else {
-        return true;
-      }
+      assert lockRef != -1 : "timeout waiting but no blocked object";
+      ElementInfo ei = vm.getDynamicArea().get(lockRef);
+      return ei.canLock(this);
 
     default:
       return false;
@@ -544,9 +549,13 @@ public class ThreadInfo
     return (threadData.state == State.NOTIFIED);
   }
 
+  public boolean isTimedout () {
+    return (threadData.state == State.TIMEDOUT);
+  }
+
   public boolean isUnblocked () {
     State state = threadData.state;
-    return (state == State.UNBLOCKED) || (state == State.TIMEDOUT);
+    return (state == State.UNBLOCKED) || (state == State.NOTIFIED_UNBLOCKED) || (state == State.TIMEDOUT);
   }
 
   public boolean isBlocked () {
@@ -781,11 +790,10 @@ public class ThreadInfo
    * record what this thread is being blocked on.
    */
   void setLockRef (int objref) {
-/**
     assert ((lockRef == -1) || (lockRef == objref)) :
       "attempt to overwrite lockRef: " + vm.getDynamicArea().get(lockRef) +
       " with: " + vm.getDynamicArea().get(objref);
-**/
+
     lockRef = objref;
   }
 
@@ -2073,6 +2081,7 @@ public class ThreadInfo
     case BLOCKED:
     case UNBLOCKED:
     case NOTIFIED:
+    case NOTIFIED_UNBLOCKED:
     case TIMEDOUT:
       // just set interrupt flag
       eiThread.setBooleanField("interrupted", true);
@@ -2085,10 +2094,9 @@ public class ThreadInfo
 
       // since this is potentially called w/o owning the wait lock, we
       // have to check if the waiter goes directly to UNBLOCKED
-      ElementInfo eiLock = getElementInfo(lockRef);
+      ElementInfo eiLock = list.ks.da.get(lockRef);
       if (eiLock.canLock(this)) {
         setState(State.UNBLOCKED);
-        eiLock.setMonitorWithoutLocked(this);
       }
       break;
 
