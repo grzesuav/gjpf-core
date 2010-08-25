@@ -374,18 +374,6 @@ public class Config extends Properties {
     }
   }
 
-    if (fileName == null)
-      return;
-    }
-    
-    // if there is no file, try to load as a resource 
-    Class<?> clazz = (codeBase != null) ? codeBase : Config.class;
-    URL url = clazz.getResource(fileName);
-    if (url != null) {
-      loadProperties(url);
-      return;
-    throw new JPFConfigException("no default properties");
-
   protected void setConfigPathProperties (String fileName){
     put("config", fileName);
     int i = fileName.lastIndexOf(File.separatorChar);
