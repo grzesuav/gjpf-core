@@ -38,20 +38,14 @@ import java.util.logging.Logger;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.AnnotationInfo;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.ExceptionHandler;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.*;
 import gov.nasa.jpf.jvm.bytecode.GOTO;
 import gov.nasa.jpf.jvm.bytecode.IfInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.report.*;
-import gov.nasa.jpf.util.Misc;
-import gov.nasa.jpf.util.StringSetMatcher;
+import gov.nasa.jpf.util.*;
 
 /**
  * a listener to report coverage statistics
@@ -453,10 +447,24 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
     }
 
     boolean isInterface() {
-      if (ci == null) { // never loaded
-        ci = ClassInfo.getResolvedClassInfo(className);
-      }
+      if (ci == null)           // never loaded
+        if (!isCodeLoaded())    // can it be loaded?
+          return false;         // will never load
+
       return ci.isInterface();
+    }
+    
+    boolean isCodeLoaded() {
+      if (ci != null)
+        return true;
+
+      try {
+        ci = ClassInfo.getResolvedClassInfo(className);
+      } catch (NoClassInfoException e) {
+        log.warning("CoverageAnalyzer problem: " + e);   // Just log the problem but don't fail.  We still want the report to be written.
+      }
+      
+      return ci != null;
     }
 
     MethodCoverage getMethodCoverage(MethodInfo mi) {
@@ -547,6 +555,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
       return cov;
     }
   }
+
   StringSetMatcher includes = null; //  means all
   StringSetMatcher excludes = null; //  means none
   StringSetMatcher loaded;
@@ -706,11 +715,11 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
           continue; // no code
         }
 
+        cls.total++;
+        
         if (cc.covered) {
           cls.covered++;
         }
-
-        cls.total++;
 
         insn.add(cc.getCoveredInsn());
         line.add(cc.getCoveredLines());

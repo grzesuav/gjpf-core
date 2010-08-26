@@ -18,13 +18,15 @@
 //
 package gov.nasa.jpf.report;
 
-import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.Error;
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.*;
 import gov.nasa.jpf.jvm.bytecode.*;
 import gov.nasa.jpf.util.*;
 import java.io.*;
 import java.util.*;
+import java.util.logging.*;
 
 /*
  * Outputs the report in HTML format.  Currently only Firefox 3.0.7 through 3.0.10 have been tested.
@@ -77,8 +79,10 @@ public class HTMLPublisher extends Publisher {
   };
 
   private final static String XML_VERSION = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-  private final static String DOCTYPE = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml11.dtd\">";
-  private final static String HTML = "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:svg=\"http://www.w3.org/2000/svg\" xml:lang=\"en\" lang=\"en\">";
+  private final static String DOCTYPE     = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml11.dtd\">";
+  private final static String HTML        = "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:svg=\"http://www.w3.org/2000/svg\" xml:lang=\"en\" lang=\"en\">";
+  private final static Logger s_logger    = JPF.getLogger("gov.nasa.jpf.report.HTMLPublisher");
+
   private final String m_pathName;
   private final HashMap<String, Pair<BitSet, BitSet>> m_sourceCoverage = new HashMap<String, Pair<BitSet, BitSet>>();
   private final ArrayList<TabInfo> m_tabs = new ArrayList<TabInfo>();
@@ -1479,15 +1483,33 @@ public class HTMLPublisher extends Publisher {
     HashMap<String, Integer> count;
     ClassInfo klass, classes[];
     String name, lastName;
-    int i;
+    int i, end;
 
     classes = ClassInfo.getLoadedClasses();
+    end     = classes.length;
+    
+    for (i = classes.length; --i >= 0; )
+    {
+      if (classes[i] == null)
+         classes[i] = classes[--end];
+       
+      if (classes[i].getPackageName() == null)
+        s_logger.warning("HTMLPublisher problem: class has a null package.  Class = " + classes[i].getName());
+    }
+    
+    if (end != classes.length)
+    {
+      classes = Arrays.copyOf(classes, end);
+      s_logger.warning("HTMLPublisher problem: ClassInfo.getLoadedClasses() returned an array with null elements");
+    }
+
     sortClasses(classes);
     count = computeClassCounts(classes);
     lastName = "";
 
     for (i = 0; i < classes.length; i++) {
       klass = classes[i];
+      
       name = klass.getName();
 
       writeLoadedClassesPackage(output, name, lastName, count);
@@ -1570,8 +1592,19 @@ public class HTMLPublisher extends Publisher {
 
         item1 = class1.getPackageName();
         item2 = class2.getPackageName();
+        
+        if (item1 == null)
+        {
+           if (item2 != null)
+              return(-1);
 
-        result = item1.compareTo(item2);
+           result = 0;
+        }
+        else if (item2 == null)
+           return(1);
+        else
+           result = item1.compareTo(item2);
+        
         if (result == 0) {
           result = class1.getName().compareTo(class2.getName());
         } else if (item1.length() == 0) { // Sort the classes with no package to the bottom.
@@ -1597,6 +1630,9 @@ public class HTMLPublisher extends Publisher {
     for (i = classes.length - 1; i >= 0; i--) {
       pack = classes[i].getPackageName();
       addPackageCount(result, pack);
+       
+      if (pack == null)
+        continue;
 
       for (index = pack.indexOf('.'); index >= 0; index = pack.indexOf('.', index + 1)) {
         addPackageCount(result, pack.substring(0, index));
