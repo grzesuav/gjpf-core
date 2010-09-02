@@ -447,7 +447,8 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
     private final CGAccessor m_accessors[];
     private final Object m_value;
     private final int m_level;
-    private ChoiceGenerator m_sample;
+    private String m_sampleGeneratorClassName;
+    private Instruction m_sampleGeneratorInstruction;
     private int m_choiceCount;
     private int m_generatorCount;
 
@@ -473,8 +474,9 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       m_choiceCount += generator.getTotalNumberOfChoices();
 
       if (isLeaf()) {
-        if (m_sample == null) {
-          m_sample = generator;
+        if (m_sampleGeneratorClassName == null) {
+          m_sampleGeneratorClassName = generator.getClass().getName();
+          m_sampleGeneratorInstruction = generator.getInsn();
         }
 
         return;
@@ -506,8 +508,12 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       return (m_generatorCount);
     }
 
-    public ChoiceGenerator getSampleGenerator() {
-      return (m_sample);
+    public String getSampleGeneratorClassName() {
+      return (m_sampleGeneratorClassName);
+    }
+    
+    public Instruction getSampleGeneratorInstruction() {
+      return (m_sampleGeneratorInstruction);
     }
 
     public boolean isLeaf() {
@@ -731,8 +737,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       ChoiceGenerator generator;
       Instruction instruction;
 
-      generator = node.getSampleGenerator();
-      instruction = generator.getInsn();
+      instruction = node.getSampleGeneratorInstruction();
 
       // Location
       publishPadding(levelCount);
@@ -757,7 +762,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       // Generator Class
       publishPadding(levelCount);
       m_output.print("Generator Class:  ");
-      m_output.println(generator.getClass().getName());
+      m_output.println(node.getSampleGeneratorClassName());
     }
 
     private void publishPadding(int levelCount) {
@@ -940,8 +945,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       String fileName;
       int line;
 
-      generator = node.getSampleGenerator();
-      instruction = generator.getInsn();
+      instruction = node.getSampleGeneratorInstruction();
       mi = instruction.getMethodInfo();
       ci = mi.getClassInfo();
 
@@ -978,7 +982,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
 
       // Generator Class
       m_output.print("<td>");
-      m_output.print(HTMLPublisher.escape(generator.getClass().getName()));
+      m_output.print(HTMLPublisher.escape(node.getSampleGeneratorClassName()));
       m_output.print("</td>");
     }
   }
