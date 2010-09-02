@@ -54,7 +54,6 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
   private final long m_maxMemory;
   private final int m_maxStates;
   private final int m_maxChoices;
-  private final ArrayList<ChoiceGenerator> m_generators = new ArrayList<ChoiceGenerator>(); // Keep ChoiceGenerators so we don't lose any in backtracking
   private final ArrayList<CGGrouper> m_groupers = new ArrayList<CGGrouper>();
   private final int m_maxOutputLines; // how many detail lines do we display in the report
   private long m_terminateTime;
@@ -137,19 +136,33 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
 
   public void choiceGeneratorSet(JVM vm) {
     ChoiceGenerator generator;
+    int i;
 
     // NOTE: we get this from SystemState.nextSuccessor, i.e. when the CG
     // is actually used (which doesn't necessarily mean it produces a new state,
     // but it got created from a new state)
+    
+    // The original code stored each choice generator in an ArrayList.  For long 
+    // running tests, this would grow and cause an OutOfMemoryError.  Now, the 
+    // generators are dealt with as they are created.  This means a bit more 
+    // processing up front but huge memory savings in the long run.  If the 
+    // machine has multiple processors, a better solution would be to have a 
+    // background thread process the generators.
 
     generator = vm.getLastChoiceGenerator();
     m_choiceCount += generator.getTotalNumberOfChoices();
-    m_generators.add(generator);
+
+    for (i = m_groupers.size(); --i >= 0; )
+      m_groupers.get(i).add(generator);
   }
 
   public void searchStarted(Search search) {
+    int i;
+    
+    for (i = m_groupers.size(); --i >= 0; )
+      m_groupers.get(i).clear();
+    
     m_choiceCount = 0;
-    m_generators.clear();
     m_terminateTime = m_maxTime + System.currentTimeMillis();
   }
 
@@ -180,19 +193,15 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
   }
 
   public void publishFinished(Publisher publisher) {
-    ChoiceGenerator generators[];
     CGGrouper groupers[];
-
-    generators = new ChoiceGenerator[m_generators.size()];
-    m_generators.toArray(generators);
 
     groupers = new CGGrouper[m_groupers.size()];
     m_groupers.toArray(groupers);
 
     if (publisher instanceof ConsolePublisher) {
-      new PublishConsole((ConsolePublisher) publisher, generators, groupers, m_maxOutputLines).publish();
+      new PublishConsole((ConsolePublisher) publisher, groupers, m_maxOutputLines).publish();
     } else if (publisher instanceof HTMLPublisher) {
-      new PublishHtml((HTMLPublisher) publisher, generators, groupers, m_maxOutputLines).publish();
+      new PublishHtml((HTMLPublisher) publisher, groupers, m_maxOutputLines).publish();
     }
   }
 
@@ -589,6 +598,8 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
 
     private final CGAccessor m_accessors[];
     private final String m_name;
+    private       TreeNode m_root;
+    private       boolean m_sorted;
 
     CGGrouper(CGAccessor accessors[], String name) {
       if (accessors.length <= 0) {
@@ -601,44 +612,47 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
 
       m_accessors = accessors;
       m_name = name;
+      
+      clear();
+    }
+    
+    public void clear() {
+      m_sorted = false;
+      m_root = new TreeNode(m_accessors, 0, "All");
     }
 
     public String getName() {
-      return (m_name);
+      return(m_name);
     }
 
     public int getLevelCount() {
-      return (m_accessors.length);
+      return(m_accessors.length);
     }
 
-    public TreeNode makeTree(ChoiceGenerator generators[]) {
-      TreeNode root;
-      int i;
-
-      root = new TreeNode(m_accessors, 0, "All");
-
-      for (i = 0; i < generators.length; i++) // Go up so that the order is preserved in the tree.
-      {
-        root.add(generators[i]);
+    public TreeNode getTree() {
+      if (!m_sorted) {
+        m_sorted = true;
+        m_root.sort();
       }
-
-      root.sort();
-
-      return (root);
+      
+      return(m_root);
+    }
+    
+    public void add(ChoiceGenerator generator) {
+      m_sorted = false;
+      m_root.add(generator); 
     }
   }
 
   private static abstract class Publish {
 
     protected final Publisher m_publisher;
-    protected final ChoiceGenerator m_generators[];
     protected final CGGrouper m_groupers[];
     protected final int m_maxOutputLines;
     protected PrintWriter m_output;
 
-    Publish(Publisher publisher, ChoiceGenerator generators[], CGGrouper groupers[], int maxOutputLines) {
+    Publish(Publisher publisher, CGGrouper groupers[], int maxOutputLines) {
       m_publisher = publisher;
-      m_generators = generators;
       m_groupers = groupers;
       m_maxOutputLines = maxOutputLines;
     }
@@ -648,8 +662,8 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
 
   private static class PublishConsole extends Publish {
 
-    PublishConsole(ConsolePublisher publisher, ChoiceGenerator[] generators, CGGrouper[] groupers, int maxOutputLines) {
-      super(publisher, generators, groupers, maxOutputLines);
+    PublishConsole(ConsolePublisher publisher, CGGrouper[] groupers, int maxOutputLines) {
+      super(publisher, groupers, maxOutputLines);
       m_output = publisher.getOut();
     }
 
@@ -668,7 +682,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
 
       lines = 0;
       levelCount = grouper.getLevelCount();
-      node = grouper.makeTree(m_generators);
+      node = grouper.getTree();
       tour = node.tour();
 
       m_publisher.publishTopicStart("Grouped By: " + grouper.getName());
@@ -757,8 +771,8 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
 
   private static class PublishHtml extends Publish {
 
-    PublishHtml(HTMLPublisher publisher, ChoiceGenerator[] generators, CGGrouper[] groupers, int maxOutputLines) {
-      super(publisher, generators, groupers, maxOutputLines);
+    PublishHtml(HTMLPublisher publisher, CGGrouper[] groupers, int maxOutputLines) {
+      super(publisher, groupers, maxOutputLines);
       m_output = publisher.getOut("State Space");
     }
 
@@ -799,7 +813,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       lastLevel = -1;
       publisher = (HTMLPublisher) m_publisher;
       nodeID = new StringBuilder(Integer.toString(treeID));
-      node = grouper.makeTree(m_generators);
+      node = grouper.getTree();
       tour = node.tour();
       nodeIDs = new ArrayList<String>();
 
