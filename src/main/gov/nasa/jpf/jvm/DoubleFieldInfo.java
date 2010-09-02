@@ -37,7 +37,9 @@ public class DoubleFieldInfo extends FieldInfo {
     ei.getFields().setDoubleValue(ei, storageOffset, init);
   }
 
-
+  public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType() {
+    return DoubleChoiceGenerator.class;
+  }
 
   public int getStorageSize () {
     return 2;

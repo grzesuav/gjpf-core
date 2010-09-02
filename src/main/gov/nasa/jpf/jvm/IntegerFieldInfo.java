@@ -37,6 +37,10 @@ public class IntegerFieldInfo extends FieldInfo {
     ei.getFields().setIntValue(ei, storageOffset, init);
   }
 
+  public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType() {
+    return IntChoiceGenerator.class;
+  }
+
   public String valueToString (Fields f) {
     int i = f.getIntValue(storageOffset);
     return Integer.toString(i);

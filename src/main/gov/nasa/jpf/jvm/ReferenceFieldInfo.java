@@ -49,6 +49,10 @@ public class ReferenceFieldInfo extends FieldInfo {
     return true;
   }
 
+  public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType() {
+    return ReferenceChoiceGenerator.class;
+  }
+
   public boolean isArrayField () {
     return ci.isArray;
   }

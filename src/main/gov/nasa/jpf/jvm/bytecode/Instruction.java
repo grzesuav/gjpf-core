@@ -225,6 +225,9 @@ public abstract class Instruction implements InstructionVisit {
     }
   }
 
+  /**
+   * this returns a "pathname:line" string
+   */
   public String getFileLocation() {
     ClassInfo ci = mi.getClassInfo();
     if (ci != null) {
@@ -236,6 +239,9 @@ public abstract class Instruction implements InstructionVisit {
     }
   }
 
+  /**
+   * this returns a "filename:line" string
+   */
   public String getFilePos() {
     ClassInfo ci = mi.getClassInfo();
     int line = mi.getLineNumber(this);
@@ -252,6 +258,9 @@ public abstract class Instruction implements InstructionVisit {
     }
   }
 
+  /**
+   * this returns a "class.method(line)" string
+   */
   public String getSourceLocation() {
     ClassInfo ci = mi.getClassInfo();
 

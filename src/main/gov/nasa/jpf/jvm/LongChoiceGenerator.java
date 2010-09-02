@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2006 United States Government as represented by the
+// Copyright (C) 2010 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,39 +16,36 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
+
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.*;
+import gov.nasa.jpf.jvm.choice.RandomOrderLongCG;
 
 
 /**
- * type, name, modifier info of float fields
+ * base type for 'long' choice generator types
  */
-public class FloatFieldInfo extends FieldInfo {
-  float init;
+public abstract class LongChoiceGenerator extends ChoiceGenerator<Long> {
 
-  public FloatFieldInfo (String name, String type, int modifiers,
-                         ConstantValue cv, ClassInfo ci, int idx, int off) {
-    super(name, type, modifiers, cv, ci, idx, off);
-
-    init = (cv != null) ? Float.parseFloat(cv.toString()) : 0.0f;
+  protected LongChoiceGenerator (String id) {
+    super(id);
   }
 
-  public void initialize (ElementInfo ei) {
-    ei.getFields().setFloatValue(ei, storageOffset, init);
+  public abstract Long getNextChoice ();
+
+  public Class<Long> getChoiceType() {
+    return Long.class;
   }
 
-  public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType() {
-    return FloatChoiceGenerator.class;
+  public String toString () {
+    return (super.toString() + " => " + getNextChoice());
   }
 
-  public String valueToString (Fields f) {
-    float v = f.getFloatValue(storageOffset);
-    return Float.toString(v);
-  }
-
-  public Object getValueObject (Fields f){
-    float v = f.getFloatValue(storageOffset);
-    return new Float(v);
+  /**
+   * this is just our generic Decorator - if a concrete instance has a better
+   * way of handling this w/o changing , it is free to override this method
+   */
+  public LongChoiceGenerator randomize () {
+    return new RandomOrderLongCG(this);
   }
 }

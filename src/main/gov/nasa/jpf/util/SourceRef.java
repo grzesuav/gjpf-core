@@ -35,6 +35,17 @@ public class SourceRef {
     line = l;
   }
 
+  public SourceRef (String spec){
+    int idx = spec.indexOf(":");
+    if (idx > 0){
+      fileName = spec.substring(0, idx);
+      line = Integer.parseInt(spec.substring(idx+1));
+    } else {
+      fileName = spec;
+      line = 0;
+    }
+  }
+
   public String getLocationString() {
     return (fileName + ':' + line);
   }
@@ -96,6 +107,19 @@ public class SourceRef {
     }
 
     return true;
+  }
+
+  public boolean equals (String filePos){
+    if (filePos.startsWith(fileName)){
+      int len = fileName.length();
+      if (filePos.charAt(len) == ':'){
+        if (Integer.parseInt(filePos.substring(len+1)) == line){
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   public int hashCode() {

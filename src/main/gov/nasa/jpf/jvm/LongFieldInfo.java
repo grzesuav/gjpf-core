@@ -41,6 +41,10 @@ public class LongFieldInfo extends FieldInfo {
     return 2;
   }
 
+  public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType() {
+    return LongChoiceGenerator.class;
+  }
+
   public String valueToString (Fields f) {
     long v = f.getLongValue(storageOffset);
     return Long.toString(v);

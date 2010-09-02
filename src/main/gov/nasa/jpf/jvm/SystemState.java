@@ -268,6 +268,16 @@ public class SystemState {
     return (T)cg;
   }
 
+  public <T extends ChoiceGenerator<?>> T getInsnChoiceGeneratorOfType (Class<T> cgType, Instruction insn, ChoiceGenerator<?> cgPrev){
+    ChoiceGenerator<?> cg = cgPrev != null ? cgPrev.getPreviousChoiceGenerator() : curCg;
+
+    if (cg != null && cg.getInsn() == insn && cgType.isAssignableFrom(cg.getClass())){
+      return (T)cg;
+    }
+
+    return null;
+  }
+
   public ChoiceGenerator<?> getNextChoiceGenerator () {
     return nextCg;
   }
@@ -518,10 +528,7 @@ public class SystemState {
 
     entryAtomicLevel = atomicLevel; // store before we start to execute
 
-    //for debugging locks:  -peterd
-    //ks.da.verifyLockInfo();
     execThread.executeStep(this);
-    //ks.da.verifyLockInfo();
 
     return true;
   }

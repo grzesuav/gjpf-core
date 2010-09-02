@@ -194,6 +194,9 @@ public abstract class FieldInfo extends InfoObject {
     return ClassInfo.getResolvedClassInfo(type);
   }
 
+  public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType (){
+    return null;
+  }
 
   /**
    * pushClinit the corresponding data in the provided Fields instance

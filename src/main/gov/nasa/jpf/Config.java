@@ -1053,6 +1053,7 @@ public class Config extends Properties {
     }
   }
 
+
   //----------------------- type specific accessors
 
   public boolean getBoolean(String key) {
@@ -1111,6 +1112,18 @@ public class Config extends Properties {
     }
   }
 
+  public String[] getKeysStartingWith (String prefix){
+    ArrayList<String> list = new ArrayList<String>();
+
+    for (Enumeration e = keys(); e.hasMoreElements(); ){
+      String k = e.toString();
+      if (k.startsWith(prefix)){
+        list.add(k);
+      }
+    }
+
+    return list.toArray(new String[list.size()]);
+  }
 
   public int[] getIntArray (String key) throws JPFConfigException {
     String v = getProperty(key);
