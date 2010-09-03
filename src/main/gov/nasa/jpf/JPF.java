@@ -18,8 +18,7 @@
 //
 package gov.nasa.jpf;
 
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.VMListener;
+import gov.nasa.jpf.jvm.*;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.report.Reporter;
@@ -569,6 +568,8 @@ public class JPF implements Runnable {
         // to know how far we got. We don't inform any other listeners though
         // if it throws an exception we bail - we can't handle it w/o memory
         try {
+          search.notifySearchConstraintHit("JPF out of memory");
+          search.error(new NoOutOfMemoryErrorProperty());            // JUnit tests will succeed if OOM isn't flagged.
           reporter.searchFinished(search);
         } catch (Throwable t){
           throw new JPFListenerException("exception during out-of-memory termination", t);
