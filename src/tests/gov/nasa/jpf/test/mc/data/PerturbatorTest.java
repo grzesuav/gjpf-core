@@ -41,7 +41,7 @@ public class PerturbatorTest extends TestJPF {
       Verify.resetCounter(0);
     }
 
-    if (verifyNoPropertyViolation("+listener=.listener.ResultPerturbator",
+    if (verifyNoPropertyViolation("+listener=.listener.Perturbator",
                                   "+perturb.fields=data",
                                   "+perturb.data.class=.perturb.IntOverUnder",
                                   "+perturb.data.field=gov.nasa.jpf.test.mc.data.PerturbatorTest.data",
@@ -72,7 +72,7 @@ public class PerturbatorTest extends TestJPF {
       Verify.resetCounter(0);
     }
 
-    if (verifyNoPropertyViolation("+listener=.listener.ResultPerturbator",
+    if (verifyNoPropertyViolation("+listener=.listener.Perturbator",
                                   "+perturb.fields=data",
                                   "+perturb.data.class=.perturb.IntOverUnder",
                                   "+perturb.data.field=gov.nasa.jpf.test.mc.data.PerturbatorTest.data",
