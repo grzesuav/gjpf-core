@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.test.mc.data;
 
+import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 
@@ -36,6 +37,10 @@ public class PerturbatorTest extends TestJPF {
   @Test
   public void testIntFieldPerturbation() {
 
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+    }
+
     if (verifyNoPropertyViolation("+listener=.listener.ResultPerturbator",
                                   "+perturb.fields=data",
                                   "+perturb.data.class=.perturb.IntOverUnder",
@@ -45,6 +50,49 @@ public class PerturbatorTest extends TestJPF {
       int d = data;
       System.out.print("d = ");
       System.out.println(d);
+
+      Verify.incrementCounter(0);
+      switch (Verify.getCounter(0)){
+        case 1: assert d == 43; break;
+        case 2: assert d == 42; break;
+        case 3: assert d == 41; break;
+        default:
+          assert false : "wrong counter value: " + Verify.getCounter(0);
+      }
+
+    } else {
+      assert Verify.getCounter(0) == 3;
     }
   }
+
+  @Test
+  public void testFieldPerturbationLocation() {
+
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+    }
+
+    if (verifyNoPropertyViolation("+listener=.listener.ResultPerturbator",
+                                  "+perturb.fields=data",
+                                  "+perturb.data.class=.perturb.IntOverUnder",
+                                  "+perturb.data.field=gov.nasa.jpf.test.mc.data.PerturbatorTest.data",
+                                  "+perturb.data.location=PerturbatorTest.java:87",
+                                  "+perturb.data.delta=1")){
+      System.out.println("instance field location perturbation test");
+
+      int x = data; // this should not be perturbed
+      System.out.print("x = ");
+      System.out.println(x);
+
+      int d = data; // this should be
+      System.out.print("d = ");
+      System.out.println(d);
+
+      Verify.incrementCounter(0);
+
+    } else {
+      assert Verify.getCounter(0) == 3;
+    }
+  }
+
 }

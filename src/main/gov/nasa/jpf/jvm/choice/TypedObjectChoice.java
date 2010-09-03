@@ -34,13 +34,14 @@ import gov.nasa.jpf.jvm.ReferenceChoiceGenerator;
 public class TypedObjectChoice extends ReferenceChoiceGenerator {
   
   // the requested object type
-  String type;
+  protected String type;
   
   // the object references
-  int[] values; 
+  protected int[] values;
   
   // our enumeration state
-  int count;
+  protected int count;
+
   
   public TypedObjectChoice (Config conf, String id)  {
     DynamicArea heap = DynamicArea.getHeap();

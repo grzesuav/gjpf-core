@@ -34,9 +34,8 @@ import gov.nasa.jpf.jvm.IntChoiceGenerator;
 public class IntChoiceFromSet extends IntChoiceGenerator {
 
 	// int values to choose from stored as Strings or Integers
-	Object[] values;
-	
-	int count = -1;
+	protected Object[] values;
+	protected int count = -1;
 	
 	/**
 	 * @param conf JPF configuration object

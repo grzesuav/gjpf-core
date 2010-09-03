@@ -31,9 +31,9 @@ import gov.nasa.jpf.util.Invocation;
  */
 public class InvocationCG extends ChoiceGenerator<Invocation> {
 
-  List<Invocation> invokes;
-  Invocation cur;
-  ListIterator<Invocation> it;
+  protected List<Invocation> invokes;
+  protected Invocation cur;
+  protected ListIterator<Invocation> it;
   
   public InvocationCG (List<Invocation> invokes){
     this.invokes = invokes;

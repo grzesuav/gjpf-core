@@ -27,9 +27,8 @@ import gov.nasa.jpf.jvm.DoubleChoiceGenerator;
  */
 public class DoubleThresholdGenerator extends DoubleChoiceGenerator {
 
-  double[] values = new double[3];
-
-  int count;
+  protected double[] values = new double[3];
+  protected int count;
 
   public DoubleThresholdGenerator(Config conf, String id) {
     super(id);

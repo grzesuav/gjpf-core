@@ -32,8 +32,8 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
 
   
   protected int min, max;
-  int next;
-  int delta;
+  protected int next;
+  protected int delta;
 
   public void reset () {
     if (delta == 0) {

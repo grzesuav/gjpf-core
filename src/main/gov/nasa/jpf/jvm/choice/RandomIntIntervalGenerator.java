@@ -30,15 +30,15 @@ import java.util.Random;
  */
 public class RandomIntIntervalGenerator extends IntChoiceGenerator {
 
-  int min, max; // both inclusive
-  int nChoices;
-  long seed;
+  protected int min, max; // both inclusive
+  protected int nChoices;
+  protected long seed;
 
-  Random random;
-  int range;
+  protected Random random;
+  protected int range;
 
-  int next;
-  int count = 0;
+  protected int next;
+  protected int count = 0;
 
   public RandomIntIntervalGenerator (int min, int max, int nChoices){
     this(min,max,nChoices,0L);

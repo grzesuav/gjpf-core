@@ -43,7 +43,14 @@ import java.util.List;
 /**
  * listener that perturbs GETFIELD/GETSTATIC and InvokeInstruction results
  *
- * NOTE - this listener initializes
+ * NOTE - this listener initializes in two steps: (1) during listener construction
+ * it builds a list of classes it has to monitor, and (2) during class load
+ * time it further analyzes classes from this list to get the actual target
+ * objects (FieldInfos and MethodInfos) so that instruction monitoring is
+ * efficient enough.
+ *
+ * This means the listener always has to be instantiated BEFORE the respective
+ * target classes get loaded.
  *
  * configuration example:
  *   perturb.fields = altitude,...
@@ -54,7 +61,7 @@ import java.util.List;
  *
  */
 
-public class ResultPerturbator extends ListenerAdapter {
+public class Perturbator extends ListenerAdapter {
 
   static JPFLogger log = JPF.getLogger("gov.nasa.jpf.Perturbator");
 
@@ -70,7 +77,7 @@ public class ResultPerturbator extends ListenerAdapter {
 
   static Class<?>[] argTypes = { Config.class, String.class };
 
-  public ResultPerturbator (Config conf){
+  public Perturbator (Config conf){
 
     // get the configured field perturbators
     String[] fieldIds = conf.getCompactTrimmedStringArray("perturb.fields");
@@ -167,7 +174,7 @@ public class ResultPerturbator extends ListenerAdapter {
       Entry e = perturbedFields.get(fi);
 
       if (e != null){  // managed field
-        if (e.sref == null || e.sref.equals(insn.getFileLocation())){  // none or managed filePos
+        if (e.sref == null || e.sref.equals(insn.getFilePos())){  // none or managed filePos
           StackFrame frame = ti.getTopFrame();
           SystemState ss = vm.getSystemState();
 

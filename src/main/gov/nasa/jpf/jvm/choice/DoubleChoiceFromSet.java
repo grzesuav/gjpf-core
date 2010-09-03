@@ -33,8 +33,8 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
   
   static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.choice");
   
-  Object[] values;
-  int count;
+  protected Object[] values;
+  protected int count;
   
   public DoubleChoiceFromSet (Config conf, String id) {
     super(id);

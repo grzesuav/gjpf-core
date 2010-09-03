@@ -30,7 +30,7 @@ import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
  */
 public class IntOverUnder implements OperandPerturbator {
 
-  int delta;
+  protected int delta;
 
   public IntOverUnder (Config conf, String keyPrefix){
     delta = conf.getInt(keyPrefix + ".delta", 0);

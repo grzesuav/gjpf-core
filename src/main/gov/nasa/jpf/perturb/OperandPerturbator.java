@@ -22,11 +22,16 @@ package gov.nasa.jpf.perturb;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.StackFrame;
 
+
+/**
+ * basic type for policy objects that perturb operand stacks by means
+ * of choice generators
+ */
 public interface OperandPerturbator {
 
   Class<?> getCGType();
 
-  ChoiceGenerator<?> createChoiceGenerator (StackFrame frame, int offset);
+  ChoiceGenerator<?> createChoiceGenerator (StackFrame frame, int operandOffset);
   
-  void perturb (ChoiceGenerator<?> cg, StackFrame frame, int offset);
+  void perturb (ChoiceGenerator<?> cg, StackFrame frame, int operandOffset);
 }
