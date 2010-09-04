@@ -65,6 +65,13 @@ public class VerifyTest extends TestJPF {
       assert "bar".equals(p);
     }
   }
+  
+  @Test public void testChangeListener () {
+    
+    if (verifyNoPropertyViolation()) {
+      Verify.setProperties("listener=gov.nasa.jpf.listener.StateSpaceAnalyzer");  // This used to cause a NullPointerException
+    }
+  }
 
   //... and many more to come
 }
