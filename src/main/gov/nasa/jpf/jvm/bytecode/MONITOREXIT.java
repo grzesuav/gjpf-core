@@ -51,7 +51,7 @@ public class MONITOREXIT extends LockInstruction {
        throw new JPFException("Trying to release a lock that isn't owned by the current thread.");
 
     if (isLastUnlock(ei))                       // If this is the last release, then consider a choice point
-      if (isShared(ti, ei))                     // If the object is shared, then consider a choice point
+      //if (isShared(ti, ei))                     // If the object is shared, then consider a choice point
         if (!ti.isFirstStepInsn())              // First time around - reexecute if the scheduling policy gives us a choice point
           if (executeChoicePoint(ss, ti, ei))
             return this;                        // Repeat execution.  Keep instruction on the stack.
