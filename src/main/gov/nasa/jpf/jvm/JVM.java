@@ -275,7 +275,7 @@ public class JVM {
   public boolean initialize () {
 
     if (!checkClassName(mainClassName)) {
-      log.severe("not a valid class name: " + mainClassName);
+      log.severe("Not a valid main class: " + mainClassName);
       return false;
     }
 
