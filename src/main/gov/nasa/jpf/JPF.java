@@ -56,14 +56,19 @@ public class JPF implements Runnable {
             
       //--- check for new listeners
       if ("listener".equals(key)) {
+        if (oldValue == null)
+          oldValue = "";
+        
         String[] nv = config.asStringArray(newValue);
         String[] ov = config.asStringArray(oldValue);
         String[] newListeners = Misc.getAddedElements(ov, nv);
+        Class<?>[] argTypes = { Config.class, JPF.class };          // Many listeners have 2 parameter constructors
+        Object[] args = {config, JPF.this };
         
         if (newListeners != null) {
           for (String clsName : newListeners) {
             try {
-              JPFListener newListener = config.getInstance("listener", clsName, JPFListener.class);
+              JPFListener newListener = config.getInstance("listener", clsName, JPFListener.class, argTypes, args);
               addListener(newListener);
               logger.info("config changed, added listener " + clsName);
 
@@ -244,7 +249,7 @@ public class JPF implements Runnable {
   /**
    * convenience method if caller doesn't care about Config
    */
-  public JPF (String[] args) {
+  public JPF (String ... args) {
     this( createConfig(args));
   }
   

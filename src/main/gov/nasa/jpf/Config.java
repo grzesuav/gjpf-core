@@ -1671,6 +1671,15 @@ public class Config extends Properties {
     return getInstance(key, cls, type, argTypes, args, id);
   }
 
+  public <T> T getInstance (String id, String clsName, Class<T> type, Class<?>[] argTypes, Object[] args) throws JPFConfigException {
+    Class<?> cls = asClass(clsName);
+    
+    if (cls != null) {
+      return getInstance(id, cls, type, argTypes, args, id);
+    } else {
+      return null;
+    }
+  }
   
   public <T> T getInstance (String id, String clsName, Class<T> type) throws JPFConfigException {
     Class<?>[] argTypes = CONFIG_ARGTYPES;
@@ -1713,7 +1722,7 @@ public class Config extends Properties {
         ctor = cls.getConstructor(argTypes);
         o = ctor.newInstance(args);
       } catch (NoSuchMethodException nmx) {
-
+         
         if ((argTypes.length > 1) || ((argTypes.length == 1) && (argTypes[0] != Config.class))) {
           // fallback 1: try a single Config param
           argTypes = CONFIG_ARGTYPES;
