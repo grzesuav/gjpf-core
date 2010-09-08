@@ -2162,6 +2162,15 @@ public class ThreadInfo
     markChanged(topIdx);
   }
 
+  /**
+   * replace the top frame - this is a dangerous method that should only
+   * be used to restore operators and locals in post-execution notifications
+   * to their pre-execution contents
+   */
+  public void swapTopFrame (StackFrame frame) {
+    stack.set(topIdx, frame);
+    top = frame;
+  }
 
   /**
    * Peeks the top value from the top stack frame.

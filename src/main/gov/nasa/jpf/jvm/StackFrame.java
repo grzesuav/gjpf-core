@@ -633,6 +633,7 @@ public class StackFrame implements Constants, Cloneable {
     top = -1;
   }
 
+  // this is a deep copy
   public StackFrame clone () {
     try {
       StackFrame sf = (StackFrame) super.clone();

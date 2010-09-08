@@ -72,10 +72,13 @@ public class Perturbator extends ListenerAdapter {
     OperandPerturbator perturbator;
   }
 
+  static Class<?>[] argTypes = { Config.class, String.class };
+
+
   HashMap<String,List<Entry>> fieldWatchList = new HashMap<String,List<Entry>>();
   HashMap<FieldInfo,Entry> perturbedFields = new HashMap<FieldInfo,Entry>();
 
-  static Class<?>[] argTypes = { Config.class, String.class };
+  StackFrame savedFrame;
 
   public Perturbator (Config conf){
 
@@ -162,7 +165,20 @@ public class Perturbator extends ListenerAdapter {
     Instruction insn = vm.getLastInstruction();
     ThreadInfo ti = vm.getLastThreadInfo();
 
-    // save operand stack for relevant ops to allow re-execution
+    if (insn instanceof GETFIELD){
+      FieldInfo fi = ((InstanceFieldInstruction)insn).getFieldInfo();
+      Entry e = perturbedFields.get(fi);
+
+      if (e != null) {  // managed field
+        if (isRelevantInstruction(e,insn)) {
+          if (!ti.isFirstStepInsn()){
+            // save the current stackframe so that we can restore it before
+            // we re-execute
+            savedFrame = ti.getTopFrame().clone();
+          }
+        }
+      }
+    }
   }
 
   public void instructionExecuted(JVM vm) {
@@ -171,36 +187,50 @@ public class Perturbator extends ListenerAdapter {
 
     if (insn instanceof GETFIELD){
       FieldInfo fi = ((InstanceFieldInstruction)insn).getFieldInfo();
-      Entry e = perturbedFields.get(fi);
+      perturbFieldOperand(vm, ti, insn, fi);
+    }
+  }
 
-      if (e != null){  // managed field
-        if (e.sref == null || e.sref.equals(insn.getFilePos())){  // none or managed filePos
-          StackFrame frame = ti.getTopFrame();
-          SystemState ss = vm.getSystemState();
+  protected boolean isRelevantInstruction (Entry e, Instruction insn){
+    return e.sref == null || e.sref.equals(insn.getFilePos());
+  }
 
-          if (ti.isFirstStepInsn()) { // retrieve value from CG and replace it on operand stack
-            ChoiceGenerator<?> cg = ss.getInsnChoiceGeneratorOfType(e.cgType, insn, null);
-            if (cg != null){
-              e.perturbator.perturb(cg, frame, 0);
-            } else {
-              log.warning("wrong choice generator type ", cg);
-            }
-            
+  protected void perturbFieldOperand (JVM vm, ThreadInfo ti, Instruction insn, FieldInfo fi){
+    Entry e = perturbedFields.get(fi);
+
+    if (e != null) {  // managed field
+      if (isRelevantInstruction(e,insn)) {  // none or managed filePos
+        StackFrame frame = ti.getTopFrame();
+        SystemState ss = vm.getSystemState();
+
+        if (ti.isFirstStepInsn()) { // retrieve value from CG and replace it on operand stack
+          ChoiceGenerator<?> cg = ss.getInsnChoiceGeneratorOfType(e.cgType, insn, null);
+          if (cg != null) {
+            e.perturbator.perturb(cg, frame, 0);
           } else {
-            ChoiceGenerator<?> cg = e.perturbator.createChoiceGenerator(frame, 0);
-            if (cg != null){
-              ss.setNextChoiceGenerator(cg);
+            log.warning("wrong choice generator type ", cg);
+          }
 
-              // we have to restore stack contents
-              int objref = ((InstanceFieldInstruction)insn).getLastThis();
-              frame.setOperand(0, objref, true);
+        } else {
+          ChoiceGenerator<?> cg = e.perturbator.createChoiceGenerator(frame, 0);
+          if (cg != null) {
+            ss.setNextChoiceGenerator(cg);
 
-              ti.setNextPC(insn); // reexecute
+            // we have to restore stack contents
+            if (savedFrame != null){
+              // for field ops, we could more efficiently restore the stackframe
+              // to pre-ecec state from last 'this' or classobject ref, but this is more
+              // general and also works for return values
+              ti.swapTopFrame(savedFrame);
+              savedFrame = null;
+            } else {
+              log.severe("no savedStackFrame");
             }
+
+            ti.setNextPC(insn); // reexecute
           }
         }
       }
     }
   }
-
 }
