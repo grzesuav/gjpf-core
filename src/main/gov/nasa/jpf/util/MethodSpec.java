@@ -28,7 +28,7 @@ import java.util.BitSet;
  * utility class that can match methods/args against specs.
  * argument signatures can be given in dot notation (like javap), arguments
  * can be marked with a preceeding '^'
- * if the class or name part are ommitted, "*" is assumed
+ * if the class or name part are omitted, "*" is assumed
  * a preceeding '!' means the match is inverted
  *
  * spec examples
@@ -36,98 +36,53 @@ import java.util.BitSet;
  *   "java.util.HashMap.add(java.lang.Object,^java.lang.Object)"
  *   "*.*(x.y.MyClass)"
  */
-public class MethodSpec {
+public class MethodSpec extends FeatureSpec {
 
-  static final char MARK = '^';
-  static final char SUB = '+';
-  static final char INVERTED = '!';
+  static class MethodParseData extends ParseData {
+    String sigSpec;
+  }
 
-  String src;
-
-  // those can be wildcard expressions
-  StringMatcher  clsSpec;
-  StringMatcher  nameSpec;
-
-  boolean matchInverted;  // matches everything that does NOT conform to the specs
-  boolean matchOverride;  // matches overridden methods of the clsSpec
+  static final char MARK = '^';  // to mark arguments
 
   String  sigSpec;  // this is only the argument part, including parenthesis
   BitSet  markedArgs;
 
 
+  /**
+   * factory method that includes the parser
+   */
   public static MethodSpec createMethodSpec (String s){
-    String ts = null;  // type spec
-    String ms = null;  // method name spec
-    String ss = null;  // method signature spec
-    boolean isInverted = false;
+    MethodParseData d = new MethodParseData();
 
     s = s.trim();
     String src = s;
 
-    if (s.length() > 0){
-      if (s.charAt(0) == INVERTED){
-        isInverted = true;
-        s = s.substring(1).trim();
-      }
-    }
+    s = parseInversion(s,d);
 
     int i = s.indexOf(('('));
     if (i >= 0){ // we have a signature part
-
       int j = s.lastIndexOf(')');
       if (j > i){
-        ss = s.substring(i, j+1);
+        d.sigSpec = s.substring(i, j+1);
         s = s.substring(0, i);
 
       } else {
         return null; // error, unbalanced parenthesis
       }
-
     }
 
-    i = s.lastIndexOf('.'); // beginning of name
-    if (i >= 0){
-      if (i==0){
-        ts = "*";
-      } else {
-        ts = s.substring(0, i);
-      }
-
-      ms = s.substring(i+1);
-      if (ms.length() == 0){
-        return null;
-      }
-
-    } else { // no name, all methods
-      if (s.length() == 0){
-        ts = "*";
-      } else {
-        ts = s;
-      }
-      ms = "*";
-    }
+    parseTypeAndName(s,d);
 
     try {
-      return new MethodSpec(src, ts, ms, ss, isInverted);
+      return new MethodSpec(src, d.typeSpec, d.nameSpec, d.sigSpec, d.matchInverted);
     } catch (IllegalArgumentException iax){
       return null;
     }
   }
 
 
-  MethodSpec (String rawSpec, String cls, String name, String argSig, boolean inverted){
-
-    src = rawSpec;
-    matchInverted = inverted;
-
-    int l = cls.length()-1;
-    if (cls.charAt(l) == SUB){
-      cls = cls.substring(0, l);
-      matchOverride = true;
-    }
-
-    clsSpec = new StringMatcher(cls);
-    nameSpec = new StringMatcher(name);
+  public MethodSpec (String rawSpec, String cls, String name, String argSig, boolean inverted){
+    super(rawSpec,cls,name,inverted);
 
     if (argSig != null){
       parseSignature(argSig);
@@ -138,7 +93,7 @@ public class MethodSpec {
    * assumed to be comma separated type list using fully qualified dot notation 
    * like javap, but arguments can be marked with preceeding '^', 
    * like "(java.lang.String,^int[])"
-   * spec includes parnethesis
+   * spec includes parenthesis
    */
   void parseSignature (String spec){
     BitSet m = null;
@@ -172,9 +127,6 @@ public class MethodSpec {
     markedArgs = m;
   }
 
-  public String getSource() {
-    return src;
-  }
 
   public String toString() {
     StringBuilder sb = new StringBuilder();
@@ -202,6 +154,7 @@ public class MethodSpec {
     return sb.toString();
   }
 
+  
   public BitSet getMarkedArgs () {
     return markedArgs;
   }
@@ -210,35 +163,16 @@ public class MethodSpec {
     return (markedArgs == null || markedArgs.get(idx));
   }
 
-  public boolean matchOverride () {
-    return matchOverride;
-  }
 
   //--- our matchers
-  protected boolean isMatchingType(ClassInfo ci){
-    if (clsSpec.matches(ci.getName())){  // also takes care of '*'
-      return true;
-    }
 
-    if (matchOverride){
-      // check all superclasses
-      for (ClassInfo sci = ci.getSuperClass(); sci != null; sci = sci.getSuperClass()){
-        if (clsSpec.matches(sci.getName())){
-          return true;
-        }
-      }
+  public boolean matches (Object feature){
+    if (feature instanceof MethodInfo){
+      return matches((MethodInfo)feature);
+    } else {
+      return false;
     }
-
-    // check interfaces (regardless of 'override' - interfaces make no sense otherwise
-    for (String ifcName : ci.getAllInterfaces()) {
-      if (clsSpec.matches(ifcName)) {
-        return true;
-      }
-    }
-
-    return false;
   }
-
 
   public boolean matches (MethodInfo mi){
     ClassInfo ci = mi.getClassInfo();

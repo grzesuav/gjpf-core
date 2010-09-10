@@ -31,6 +31,8 @@ public interface OperandPerturbator {
 
   Class<?> getCGType();
 
+  Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType();
+
   ChoiceGenerator<?> createChoiceGenerator (StackFrame frame, int operandOffset);
   
   void perturb (ChoiceGenerator<?> cg, StackFrame frame, int operandOffset);

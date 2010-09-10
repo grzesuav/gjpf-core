@@ -147,6 +147,7 @@ public class Config extends Properties {
   static final String INCLUDE_IF_KEY = "@include_if";
   static final String USING_KEY = "@using";
 
+  static final String[] EMPTY_STRING_ARRAY = new String[0];
 
   public static final String LIST_SEPARATOR = ",";
   static final String PATH_SEPARATOR = ","; // the default for automatic appends
@@ -1372,14 +1373,20 @@ public class Config extends Properties {
 
   public String[] getCompactTrimmedStringArray (String key){
     String[] a = getStringArray(key);
-    for (int i=0; i<a.length; i++){
-      String s = a[i];
-      if (s != null && s.length() > 0){
-        a[i] = s.trim();
+
+    if (a != null) {
+      for (int i = 0; i < a.length; i++) {
+        String s = a[i];
+        if (s != null && s.length() > 0) {
+          a[i] = s.trim();
+        }
       }
+
+      return removeEmptyStrings(a);
+
+    } else {
+      return EMPTY_STRING_ARRAY;
     }
-    
-    return removeEmptyStrings(a);
   }
 
   public String[] getCompactStringArray(String key){

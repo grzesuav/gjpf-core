@@ -801,6 +801,35 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return returnType;
   }
 
+  public Class<? extends ChoiceGenerator<?>> getReturnChoiceGeneratorType (){
+    switch (getReturnType()){
+      case Types.T_BOOLEAN:
+        return BooleanChoiceGenerator.class;
+
+      case Types.T_BYTE:
+      case Types.T_CHAR:
+      case Types.T_SHORT:
+      case Types.T_INT:
+        return IntChoiceGenerator.class;
+
+      case Types.T_LONG:
+        return LongChoiceGenerator.class;
+
+      case Types.T_FLOAT:
+        return FloatChoiceGenerator.class;
+
+      case Types.T_DOUBLE:
+        return DoubleChoiceGenerator.class;
+
+      case Types.T_ARRAY:
+      case Types.T_REFERENCE:
+      case Types.T_VOID:
+        return ReferenceChoiceGenerator.class;
+    }
+
+    return null;
+  }
+
   /**
    * Returns the signature of the method.
    */
