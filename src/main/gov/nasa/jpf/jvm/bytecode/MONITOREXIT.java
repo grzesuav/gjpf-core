@@ -18,13 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.*;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.SystemState;
-import gov.nasa.jpf.jvm.ThreadInfo;
-
+import gov.nasa.jpf.jvm.*;
 import org.apache.bcel.classfile.ConstantPool;
 
 
@@ -43,27 +37,25 @@ public class MONITOREXIT extends LockInstruction {
       return ti.createAndThrowException("java.lang.NullPointerException",
                                         "attempt to release lock for null object");
     }
-    
+
     lastLockRef = objref;
     ElementInfo ei = ks.da.get(objref);
-    
-    if (!isLockOwner(ti, ei))
-       throw new JPFException("Trying to release a lock that isn't owned by the current thread.");
+
+    ei.unlock(ti);                              // Do this before potentially creating the CG, but don't pop yet, since then we've lost the lock object (also in RETURN)
 
     if (isLastUnlock(ei))                       // If this is the last release, then consider a choice point
-      //if (isShared(ti, ei))                     // If the object is shared, then consider a choice point
+      if (isShared(ti, ei))                     // If the object is shared, then consider a choice point
         if (!ti.isFirstStepInsn())              // First time around - reexecute if the scheduling policy gives us a choice point
           if (executeChoicePoint(ss, ti, ei))
             return this;                        // Repeat execution.  Keep instruction on the stack.
-
-    ti.pop(); // now we can safely purge the lock object, the unlocking alreday is done
     
+    ti.pop();                                   // Now we can safely purge the lock object, the unlocking already is done above.
+
     return getNext(ti);
   }
   
   private boolean executeChoicePoint(SystemState ss, ThreadInfo ti, ElementInfo ei) {
-    ei.unlock(ti);  // Do this before potentially creating the CG, but don't pop yet, since then we've lost the lock object (also in RETURN)
-
+    
     ChoiceGenerator cg = ss.getSchedulerFactory().createMonitorExitCG(ei, ti);
         
     if (cg == null) {
