@@ -63,4 +63,7 @@ public class IntOverUnder implements OperandPerturbator {
     frame.setOperand(offset, val, false);
   }
 
+  public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType(){
+    return IntChoiceFromSet.class;
+  }
 }
