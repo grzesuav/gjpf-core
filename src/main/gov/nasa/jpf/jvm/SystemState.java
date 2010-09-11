@@ -211,7 +211,7 @@ public class SystemState {
     return id;
   }
 
-  void setId (int newId) {
+  public void setId (int newId) {
     id = newId;
     trail.setStateId(newId);
   }
@@ -422,7 +422,7 @@ public class SystemState {
     return ks.tl.get(idx);
   }
 
-  boolean isDeadlocked () {
+  public boolean isDeadlocked () {
     if (isBlockedInAtomicSection) {
       return true; // blocked in atomic section
     }
@@ -534,7 +534,7 @@ public class SystemState {
   }
 
   // this is called on every executeInstruction from the running thread
-  boolean breakTransition () {
+  public boolean breakTransition () {
     return ((nextCg != null) || isIgnored);
   }
 

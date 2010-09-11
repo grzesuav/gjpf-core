@@ -96,7 +96,7 @@ public class Reporter extends ListenerAdapter {
   }
 
   Publisher[] createPublishers (Config conf) {
-    String[] def = { "gov.nasa.jpf.report.ConsolePublisher" };
+    String[] def = { "console" };
     ArrayList<Publisher> list = new ArrayList<Publisher>();
 
     Class<?>[] argTypes = { Config.class, Reporter.class };
