@@ -36,35 +36,72 @@ public abstract class VirtualInvocation extends InstanceInvocation {
 
   ClassInfo lastCalleeCi; // cached for performance
 
+  private boolean m_skipLocalSync;      // Can't store this in a static since there might be multiple VM instances.
+  private boolean m_skipLocalSyncSet;
+
   protected VirtualInvocation () {}
 
-
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    int objRef = ti.getCalleeThis( getArgSize());
+    int objRef = ti.getCalleeThis(getArgSize());
 
-    if (objRef == -1) { // NPE
-      return ti.createAndThrowException("java.lang.NullPointerException",
-                                        "calling '" + mname + "' on null object");
-    }
+    if (objRef == -1)
+      return ti.createAndThrowException("java.lang.NullPointerException", "Calling '" + mname + "' on null object");
 
     MethodInfo mi = getInvokedMethod(ti, objRef);
-    if (mi == null) {
-      return ti.createAndThrowException("java.lang.NoSuchMethodError",
-                                        ti.getClassInfo(objRef).getName() + "." + mname);
-    }
+    
+    if (mi == null)
+      return ti.createAndThrowException("java.lang.NoSuchMethodError", ti.getClassInfo(objRef).getName() + "." + mname);
+    
+    ElementInfo ei = ks.da.get(objRef);
+    
+    if (mi.isSynchronized())
+      if (!isLockOwner(ti, ei))                            // If the object isn't already owned by this thread, then consider a choice point
+        if (isShared(ti, ei)) {                            // If the object is shared, then consider a choice point
+          ChoiceGenerator<?> cg = getSyncCG(objRef, mi, ss, ks, ti);
+          if (cg != null) {
+            ss.setNextChoiceGenerator(cg);
+            return this;   // repeat exec, keep insn on stack
+          }
+        }
 
-    if (mi.isSynchronized()) {
-      ChoiceGenerator<?> cg = getSyncCG(objRef, mi, ss, ks, ti);
-      if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
-        return this;   // repeat exec, keep insn on stack
-      }
-    }
-
-    // this will lock the object if necessary
-    return mi.execute(ti);
+    return mi.execute(ti);    // this will lock the object if necessary
   }
 
+  /**
+   * If the current thread already owns the lock, then the current thread can go on.
+   * For example, this is a recursive acquisition.
+   */
+  protected boolean isLockOwner(ThreadInfo ti, ElementInfo ei) {
+    return ei.getLockingThread() == ti;
+  }
+
+  /**
+   * If the object will still be owned, then the current thread can go on.
+   * For example, all but the last monitorexit for the object.
+   */
+  protected boolean isLastUnlock(ElementInfo ei) {
+    return ei.getLockCount() == 1;
+  }
+
+  /**
+   * If the object isn't shared, then the current thread can go on.
+   * For example, this object isn't reachable by other threads.
+   */
+  protected boolean isShared(ThreadInfo ti, ElementInfo ei) {
+    if (!getSkipLocalSync(ti))
+      return true;
+
+    return ei.isShared();
+  }
+
+  private boolean getSkipLocalSync(ThreadInfo ti) {
+    if (!m_skipLocalSyncSet) {
+      m_skipLocalSync = ti.getVM().getConfig().getBoolean("vm.por.skip_local_sync", false); // Default is false to keep original behavior.
+      m_skipLocalSyncSet = true;
+    }
+
+    return m_skipLocalSync;
+  }
 
   public MethodInfo getInvokedMethod(ThreadInfo ti){
     int objRef;
