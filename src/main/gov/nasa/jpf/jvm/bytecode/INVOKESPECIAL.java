@@ -35,6 +35,10 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * invokedMethod is supposed to be constant (ClassInfo can't change)
  */
 public class INVOKESPECIAL extends InstanceInvocation {
+
+  private boolean m_skipLocalSync;    // Can't store this in a static since there might be multiple VM instances.
+  private boolean m_skipLocalSyncSet;
+
   public INVOKESPECIAL () {}
 
   public int getByteCode () {
@@ -45,30 +49,68 @@ public class INVOKESPECIAL extends InstanceInvocation {
     int objRef = ti.getCalleeThis( getArgSize());
     lastObj = objRef;
 
-    // we don't have to check for NULL objects since this is either a ctor or
-    // a private method
+    // we don't have to check for NULL objects since this is either a ctor, a 
+    // private method, or a super method
 
     MethodInfo mi = getInvokedMethod(ti);
-    if (mi == null) {
-      return ti.createAndThrowException("java.lang.NoSuchMethodException",
-                                   "calling " + cname + "." + mname);
-    }
 
-    if (mi.isSynchronized()) {
-      ChoiceGenerator<?> cg = getSyncCG(objRef, mi, ss, ks, ti);
-      if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
-        return this;   // repeat exec, keep insn on stack
-      }
-    }
+    if (mi == null)
+      return ti.createAndThrowException("java.lang.NoSuchMethodException", "Calling " + cname + "." + mname);
+
+    ElementInfo ei = ks.da.get(objRef);
+
+    if (mi.isSynchronized())
+      if (!isLockOwner(ti, ei))           // If the object isn't already owned by this thread, then consider a choice point
+        if (isShared(ti, ei)) {           // If the object is shared, then consider a choice point
+          ChoiceGenerator<?> cg = getSyncCG(objRef, mi, ss, ks, ti);
+          if (cg != null) {
+            ss.setNextChoiceGenerator(cg);
+            return this;   // repeat exec, keep insn on stack
+          }
+        }
 
     return mi.execute(ti);
   }
 
+  /**
+   * If the current thread already owns the lock, then the current thread can go on.
+   * For example, this is a recursive acquisition.
+   */
+  protected boolean isLockOwner(ThreadInfo ti, ElementInfo ei) {
+    return ei.getLockingThread() == ti;
+  }
 
   /**
-   * we can do some more caching here - the MethodInfo should be const
+   * If the object will still be owned, then the current thread can go on.
+   * For example, all but the last monitorexit for the object.
    */
+  protected boolean isLastUnlock(ElementInfo ei) {
+    return ei.getLockCount() == 1;
+  }
+
+  /**
+   * If the object isn't shared, then the current thread can go on.
+   * For example, this object isn't reachable by other threads.
+   */
+  protected boolean isShared(ThreadInfo ti, ElementInfo ei) {
+    if (!getSkipLocalSync(ti))
+      return true;
+
+    return ei.isShared();
+  }
+
+  private boolean getSkipLocalSync(ThreadInfo ti) {
+    if (!m_skipLocalSyncSet) {
+      m_skipLocalSync = ti.getVM().getConfig().getBoolean("vm.por.skip_local_sync", false); // Default is false to keep original behavior.
+      m_skipLocalSyncSet = true;
+    }
+
+    return m_skipLocalSync;
+  }
+
+  /**
+    * we can do some more caching here - the MethodInfo should be const
+    */
   public MethodInfo getInvokedMethod (ThreadInfo th) {
 
     // since INVOKESPECIAL is only used for private methods and ctors,
