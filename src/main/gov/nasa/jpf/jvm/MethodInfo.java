@@ -907,7 +907,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
   public void enter (ThreadInfo ti) {
     if (isSynchronized()) {
-      ElementInfo ei = getBlockedObject(ti, false);
+      ElementInfo ei = getBlockedObject(ti, true);
       ei.lock(ti);
       
       if (isStatic() && isClinit()) {
@@ -967,6 +967,8 @@ public class MethodInfo extends InfoObject implements Cloneable {
       }
       
     } else {
+      enter(ti);
+
       ti.pushFrame( new StackFrame(this, ti.getTopFrame()));
       return ti.getPC();
     }

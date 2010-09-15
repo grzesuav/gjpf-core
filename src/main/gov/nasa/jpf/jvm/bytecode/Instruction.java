@@ -57,16 +57,6 @@ public abstract class Instruction implements InstructionVisit {
     return (offset == 0);
   }
 
-  /**
-   * called by ThreadInfo.executeInstruction if this is the first instruction
-   * in a method
-   */
-  public void processFirstInstruction(ThreadInfo ti){
-    // we have to check in case this is a synthetic, orphan instruction
-    if (mi != null){
-      mi.enter(ti);
-    }
-  }
 
   /**
    * answer if this is a potential loop closing jump

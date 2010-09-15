@@ -69,7 +69,7 @@ import java.util.List;
  *   perturb.returns = velocity,...
  *   perturb.velocity.method = x.y.MyClass.computeVelocity()
  *   perturb.velocity.class = .perturb.IntOverUnder
- *   perturb.altitude.delta = 50
+ *   perturb.velocity.delta = 50
  *
  */
 
@@ -123,6 +123,10 @@ public class Perturbator extends ListenerAdapter {
   StackFrame savedFrame;
 
   public Perturbator (Config conf){
+
+    // in the ctor we only find out which classname patterns we have to watch
+    // for, and store them in a list (together with their partially initialized
+    // Perturbation instances) that is to be checked upon classLoaded notifications
 
     // get the configured field perturbators
     String[] fieldIds = conf.getCompactTrimmedStringArray("perturb.fields");
@@ -189,6 +193,12 @@ public class Perturbator extends ListenerAdapter {
 
 
   public void classLoaded (JVM jvm){
+    // this one takes the watchlists, finds out if the loaded class matches
+    // any of the watch entries, and in case it does fully initializes
+    // the corresponding Perturbation object with the target construct
+    // (MethodInfo, FieldInfo) we use to identify relevant ops during
+    // instruction execution notifications
+
     ClassInfo ci = jvm.getLastClassInfo();
     String clsName = ci.getName();
 

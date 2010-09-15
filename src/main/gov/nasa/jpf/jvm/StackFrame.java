@@ -1059,7 +1059,7 @@ public class StackFrame implements Constants, Cloneable {
    * this includes locals and pc
    */
   public void printStackContent () {
-    PrintStream pw = System.err;
+    PrintStream pw = System.out;
 
     pw.print( "\tat ");
     pw.print( mi.getCompleteName());
@@ -1096,7 +1096,7 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public void printStackTrace () {
-    System.err.println( getStackTraceInfo());
+    System.out.println( getStackTraceInfo());
   }
 
   public void swap () {

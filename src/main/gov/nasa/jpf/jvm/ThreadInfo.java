@@ -1819,12 +1819,6 @@ public class ThreadInfo
     skipInstruction = false;
     nextPc = null;
 
-    if (pc.isFirstInstruction()){
-      // its the first instruction within this method, we might have to take
-      // care of things like obtaining locks, issuing notifications etc.
-      pc.processFirstInstruction(this);
-    }
-
     if (log.isLoggable(Level.FINER)) {
       log.fine( pc.getMethodInfo().getCompleteName() + " " + pc.getPosition() + " : " + pc);
     }
