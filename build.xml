@@ -197,6 +197,7 @@
         <include name="gov/nasa/jpf/Config.class"/>
         <include name="gov/nasa/jpf/ConfigChangeListener.class"/>
         <include name="gov/nasa/jpf/Config$MissingRequiredKeyException.class"/>
+        <include name="gov/nasa/jpf/JPFClassLoader.class"/>
         <include name="gov/nasa/jpf/JPFShell.class"/>
         <include name="gov/nasa/jpf/JPFException.class"/>
         <include name="gov/nasa/jpf/JPFConfigException.class"/>
@@ -222,6 +223,7 @@
         <include name="gov/nasa/jpf/Config.class"/>
         <include name="gov/nasa/jpf/ConfigChangeListener.class"/>
         <include name="gov/nasa/jpf/Config$MissingRequiredKeyException.class"/>
+        <include name="gov/nasa/jpf/JPFClassLoader.class"/>
         <include name="gov/nasa/jpf/JPFException.class"/>
         <include name="gov/nasa/jpf/JPFConfigException.class"/>
         <include name="gov/nasa/jpf/util/JPFSiteUtils.class"/>

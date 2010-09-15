@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -519,9 +520,10 @@ public class Config extends Properties {
    */
   protected boolean registerJPFdir(List<File> list, File dir){
     try {
-      String absPath = dir.getCanonicalPath();
+      dir = dir.getCanonicalFile();
+
       for (File e : list) {
-        if (e.getCanonicalPath().equals(absPath)) {
+        if (e.equals(dir)) {
           list.remove(e);
           list.add(e);
           return false;
@@ -544,7 +546,8 @@ public class Config extends Properties {
       File parent = f.getParentFile();
       if (parent == null){
         parent = new File(f.getAbsolutePath());
-        if (parent.getName().equals(root.getName())){
+
+        if (parent.getName().equals(root.getName())) {
           return root;
         } else {
           return parent;
@@ -621,6 +624,7 @@ public class Config extends Properties {
     if (idx > 0) {
       String key = a.substring(0, idx).trim();
       String val = a.substring(idx + 1).trim();
+
       if (val.length() == 0){
         val = null;
       }
@@ -955,26 +959,28 @@ public class Config extends Properties {
     return Config.class.getClassLoader() != loader;
   }
 
-  public ClassLoader setClassLoader(ClassLoader parent, String... keys){
+  public JPFClassLoader initClassLoader( ClassLoader parent) {
     ArrayList<String> list = new ArrayList<String>();
 
-    for (String key : keys){
-      String[] cp = getCompactStringArray(key);
-      cp = FileUtils.expandWildcards(cp);
-      for (String e : cp){
-        list.add(e);
-      }
+    String[] cp = getCompactStringArray("native_classpath");
+    cp = FileUtils.expandWildcards(cp);
+    for (String e : cp) {
+      list.add(e);
     }
-
     URL[] urls = FileUtils.getURLs(list);
-    URLClassLoader ucl = URLClassLoader.newInstance(urls, parent);
+
+    String[] nativeLibs = getCompactStringArray("native_libraries");
+
+    //URLClassLoader cl = URLClassLoader.newInstance(urls, parent);
+    JPFClassLoader cl = new JPFClassLoader( urls, nativeLibs, parent);
 
     //for (URL url : urls) System.out.println("@@ " + url);
 
-    loader = ucl;
+    loader = cl;
 
-    return ucl;
+    return cl;
   }
+
 
   //------------------------------ public methods - the Config API
 
@@ -1823,6 +1829,19 @@ public class Config extends Properties {
     return -1;
   }
 
+  public URL getURL (String key){
+    String v = getProperty(key);
+    if (v != null) {
+      try {
+        return FileUtils.getURL(v);
+      } catch (Throwable x){
+        throw exception("malformed URL: " + v);
+      }
+    } else {
+      return null;
+    }
+  }
+
   public File[] getPathArray (String key) {    
     String v = getProperty(key);
     if (v != null) {
@@ -1924,13 +1943,16 @@ public class Config extends Properties {
 
 
   /**
-   * collect all the <project>.{native_classpath,classpath,sourcepath,peer_packages}
+   * collect all the <project>.{native_classpath,classpath,sourcepath,peer_packages,native_libraries}
    * and append them to the global settings
    */
   void collectGlobalPaths() {
     // note - this is in the order of entry, i.e. reflects priorities
     // we have to process this in reverse order so that later entries are prioritized
     String[] keys = getEntrySequence();
+
+    String nativeLibKey = "." + System.getProperty("os.name") +
+            '.' + System.getProperty("os.arch") + ".native_libraries";
 
     for (int i = keys.length-1; i>=0; i--){
       String k = keys[i];
@@ -1942,6 +1964,8 @@ public class Config extends Properties {
         appendPath("sourcepath", k);
       } else if (k.endsWith("peer_packages")){
         append("peer_packages", getString(k), ",");
+      } else if (k.endsWith(nativeLibKey)){
+        appendPath("native_libraries", k);
       }
     }
   }
@@ -1949,11 +1973,17 @@ public class Config extends Properties {
   static Pattern absPath = Pattern.compile("(?:[a-zA-Z]:)?[/\\\\].*");
 
   void appendPath (String pathKey, String key){
-    String projName = key.substring(0, key.length() - pathKey.length() -1);
-    String projPath = getString(projName);
+    String projName = key.substring(0, key.indexOf('.'));
+    String pathPrefix = null;
 
-    if (projPath != null){
-      projPath += '/';
+    if (projName.isEmpty()){
+      pathPrefix = new File(".").getAbsolutePath();
+    } else {
+      pathPrefix = getString(projName);
+    }
+
+    if (pathPrefix != null){
+      pathPrefix += '/';
 
       String[] elements = getCompactStringArray(key);
       if (elements != null){
@@ -1962,8 +1992,8 @@ public class Config extends Properties {
 
             // if this entry is not an absolute path, or doesn't start with
             // the project path, prepend the project path
-            if (!(absPath.matcher(e).matches()) && !e.startsWith(projPath)) {
-              e = projPath + e;
+            if (!(absPath.matcher(e).matches()) && !e.startsWith(pathPrefix)) {
+              e = pathPrefix + e;
             }
 
             append(pathKey, e);
@@ -1972,7 +2002,7 @@ public class Config extends Properties {
       }
 
     } else {
-      throw new JPFConfigException("no project path for " + projName);
+      throw new JPFConfigException("no project path for " + key);
     }
   }
 

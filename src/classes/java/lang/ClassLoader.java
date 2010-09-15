@@ -39,7 +39,11 @@ public class ClassLoader {
   //--- internals
   private native void init0();
   private native String getResourcePath (String rname);
-  
+
+
+  protected static boolean registerAsParallelCapable() {
+    return true; // dummy, in prep for jdk7
+  }
   
   protected ClassLoader() {
     // the system ClassLoader ctor

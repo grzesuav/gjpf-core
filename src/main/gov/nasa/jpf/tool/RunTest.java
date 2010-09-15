@@ -20,6 +20,7 @@
 package gov.nasa.jpf.tool;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPFClassLoader;
 import gov.nasa.jpf.util.JPFSiteUtils;
 import java.lang.reflect.InvocationTargetException;
 
@@ -50,14 +51,12 @@ public class RunTest extends Run {
 
       try {
         Config conf = new Config(args);
-        ClassLoader cl = RunTest.class.getClassLoader();
+        JPFClassLoader cl = conf.initClassLoader(RunTest.class.getClassLoader());
 
         String projectId = JPFSiteUtils.getCurrentProjectId();
         if (projectId != null) {
           String testCpKey = projectId + ".test_classpath";
-          cl = conf.setClassLoader(RunTest.class.getClassLoader(), "native_classpath", testCpKey);
-        } else {
-          cl = conf.setClassLoader(RunTest.class.getClassLoader(), "native_classpath");
+          cl.addURL( conf.getURL(testCpKey));
         }
 
         Class<?> testJpfCls = cl.loadClass("gov.nasa.jpf.util.test.TestJPF");

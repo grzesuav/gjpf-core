@@ -68,7 +68,7 @@ public class RunJPF extends Run {
         conf.printEntries();
       }
 
-      ClassLoader cl = conf.setClassLoader(RunJPF.class.getClassLoader(), "native_classpath");
+      ClassLoader cl = conf.initClassLoader(RunJPF.class.getClassLoader());
 
       // using JPFShell is Ok since it is just a simple non-derived interface
       // note this uses a <init>(Config) ctor in the shell class if there is one

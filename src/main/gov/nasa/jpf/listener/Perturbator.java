@@ -253,8 +253,6 @@ public class Perturbator extends ListenerAdapter {
     Instruction insn = vm.getLastInstruction();
     ThreadInfo ti = vm.getLastThreadInfo();
 
-    savedFrame = null;
-
     if (insn instanceof GETFIELD){
       FieldInfo fi = ((InstanceFieldInstruction)insn).getFieldInfo();
       FieldPerturbation e = perturbedFields.get(fi);

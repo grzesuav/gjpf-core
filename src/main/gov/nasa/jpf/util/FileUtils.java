@@ -151,18 +151,26 @@ public class FileUtils {
 
   //--- URL conversion
 
+  public static URL getURL (String spec){
+    try {
+      // check if there is a protocol specification
+      if (spec.indexOf("://") >= 0) {
+        return new URL(spec);
+
+      } else {
+        File f = new File(spec).getCanonicalFile();
+        return f.toURI().toURL();
+      }
+    } catch (Throwable x) {
+      throw new RuntimeException("illegal pathname: " + spec);
+    }
+  }
+
   public static URL[] getURLs (String[] paths){
     ArrayList<URL> urls = new ArrayList<URL>();
 
     for (String p : paths) {
-      File f = new File(p);
-      if (f.exists()) {
-        try {
-          urls.add(f.toURI().toURL());
-        } catch (MalformedURLException x) {
-          throw new RuntimeException("illegal native_classpath element: " + p);
-        }
-      }
+      urls.add( getURL(p));
     }
 
     return urls.toArray(new URL[urls.size()]);
@@ -172,14 +180,7 @@ public class FileUtils {
     ArrayList<URL> urls = new ArrayList<URL>();
 
     for (String p : paths) {
-      File f = new File(p);
-      if (f.exists()) {
-        try {
-          urls.add(f.toURI().toURL());
-        } catch (MalformedURLException x) {
-          throw new RuntimeException("illegal native_classpath element: " + p);
-        }
-      }
+      urls.add( getURL(p));
     }
 
     return urls.toArray(new URL[urls.size()]);

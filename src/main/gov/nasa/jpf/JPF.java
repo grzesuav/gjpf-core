@@ -197,27 +197,10 @@ public class JPF implements Runnable {
     }
   }
 
-  static URL[] getURLs (String[] paths){
-    ArrayList<URL> urls = new ArrayList<URL>();
-
-    for (String p : paths) {
-      File f = new File(p);
-      if (f.exists()) {
-        try {
-          urls.add(f.toURI().toURL());
-        } catch (MalformedURLException x) {
-          throw new JPFConfigException("illegal native_classpath element: " + p);
-        }
-      }
-    }
-
-    return urls.toArray(new URL[urls.size()]);
-  }
-
   
   static void setNativeClassPath(Config config) {
     if (!config.hasSetClassLoader()) {
-      config.setClassLoader( JPF.class.getClassLoader(), "native_classpath");
+      config.initClassLoader( JPF.class.getClassLoader());
     }
   }
 
