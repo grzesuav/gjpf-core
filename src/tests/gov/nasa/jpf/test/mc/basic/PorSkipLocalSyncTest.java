@@ -20,6 +20,7 @@ package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.jvm.*;
 import gov.nasa.jpf.util.test.*;
+import java.rmi.*;
 import org.junit.*;
 
 /**
@@ -27,6 +28,8 @@ import org.junit.*;
  */
 public class PorSkipLocalSyncTest extends TestJPF
 {
+   private static final boolean DEBUG_LOG = true;
+   
    private static final int COUNTER_THREAD_1 = 0;
    private static final int COUNTER_THREAD_2 = 1;
    private static final int COUNTER_FINISHED = 2;
@@ -43,7 +46,7 @@ public class PorSkipLocalSyncTest extends TestJPF
       {
          Verify.setProperties("vm.por.skip_local_sync=false");
 
-         test(3);    // With POR boundaries from the synchronized statement, each thread should have 2 execution paths through run().
+         porOnLocalSync(3);    // With POR boundaries from the synchronized statement, each thread should have 2 execution paths through run().
       }
    }
 
@@ -54,14 +57,129 @@ public class PorSkipLocalSyncTest extends TestJPF
       {
          Verify.setProperties("vm.por.skip_local_sync=true");  
          
-         test(1);    // With no POR boundaries from the synchronized statement, the threads should just execute straight through run() with no POR boundaries.
+         porOnLocalSync(1);    // With no POR boundaries from the synchronized statement, the threads should just execute straight through run() with no POR boundaries.
       }
    }
    
-   private void test(int expectedCount) throws InterruptedException
+   private void porOnLocalSync(int expectedCount) throws InterruptedException
+   {
+      Runnable task1, task2;
+      
+      task1 = new Runnable() {public void run() {localSync(COUNTER_THREAD_1);}};
+      task2 = new Runnable() {public void run() {localSync(COUNTER_THREAD_2);}};
+      
+      test(expectedCount, task1, task2);
+   }
+
+   private static void localSync(int index)
+   {
+      Object sync;
+
+      sync = new Object();
+
+      synchronized (sync) // sync can only be reached by the local thread.  There really is no need to put a POR boundary here.
+      {
+      }
+
+      Verify.incrementCounter(index);
+   }
+
+   @Test
+   public void porOnLocalMethodSync() throws InterruptedException
+   {
+      if (verifyNoPropertyViolation())
+      {
+         Verify.setProperties("vm.por.skip_local_sync=false");
+
+         porOnLocalMethodSync(3);
+      }
+   }
+
+   @Test
+   public void noPorOnLocalMethodSync() throws InterruptedException
+   {
+      if (verifyNoPropertyViolation())
+      {
+         Verify.setProperties("vm.por.skip_local_sync=true");
+         
+         porOnLocalMethodSync(1);
+      }
+   }
+   
+   private void porOnLocalMethodSync(int expectedCount) throws InterruptedException
+   {
+      Runnable task1, task2;
+      
+      task1 = new Runnable() {public void run() {localMethodSync(COUNTER_THREAD_1);}};
+      task2 = new Runnable() {public void run() {localMethodSync(COUNTER_THREAD_2);}};
+            
+      test(expectedCount, task1, task2);
+   }
+
+   private static void localMethodSync(int index)
+   {
+      new LocalMethodSync().run();          // Create this object within the context of this thread so it can't be marked as shared.
+
+      Verify.incrementCounter(index);
+   }
+
+   private static class LocalMethodSync implements Runnable
+   {
+      public synchronized void run()
+      {
+      }
+   }
+   
+   @Test
+   public void porOnLocalSuperMethodSync() throws InterruptedException
+   {
+      if (verifyNoPropertyViolation())
+      {
+         Verify.setProperties("vm.por.skip_local_sync=false");
+         
+         porOnLocalSuperMethodSync(3);
+      }
+   }
+   
+   @Test
+   public void noPorOnLocalSuperMethodSync() throws InterruptedException
+   {
+      if (verifyNoPropertyViolation())
+      {
+         Verify.setProperties("vm.por.skip_local_sync=true");
+         
+         porOnLocalSuperMethodSync(1);
+      }
+   }
+   
+   private void porOnLocalSuperMethodSync(int expectedCount) throws InterruptedException
+   {
+      Runnable task1, task2;
+      
+      task1 = new Runnable() {public void run() {localSuperMethodSync(COUNTER_THREAD_1);}};
+      task2 = new Runnable() {public void run() {localSuperMethodSync(COUNTER_THREAD_2);}};
+      
+      test(expectedCount, task1, task2);
+   }
+   
+   private static void localSuperMethodSync(int index)
+   {
+      new LocalSuperMethodSync().run();
+      
+      Verify.incrementCounter(index);
+   }
+   
+   private static class LocalSuperMethodSync extends LocalMethodSync
+   {
+      public void run()
+      {
+         super.run();
+      }
+   }
+
+   private void test(int expectedCount, Runnable task1, Runnable task2) throws InterruptedException
    {
       Thread thread;
-      Runnable task;
       int counter1, counter2, finished;
 
       Verify.resetCounter(COUNTER_THREAD_1);
@@ -72,46 +190,39 @@ public class PorSkipLocalSyncTest extends TestJPF
       {
          finished = Verify.getCounter(COUNTER_FINISHED);
          
-         //Verify.print("Finished = " + finished);
-         //Verify.println();
+         if (DEBUG_LOG)
+         {
+            Verify.print("Finished = " + finished);
+            Verify.println();
+         }
          
          assert finished == 1;
          return;
       }
 
-      //Verify.setProperties("listener=gov.nasa.jpf.listener.StateSpaceAnalyzer");
+      if (DEBUG_LOG)
+         Verify.setProperties("listener=gov.nasa.jpf.listener.StateSpaceAnalyzer");
 
-      task   = new Runnable() {public void run() {sync(COUNTER_THREAD_2);}};
-      thread = new Thread(task);
+      thread = new Thread(task2);
       
       thread.start();
-      sync(COUNTER_THREAD_1);
+      task1.run();
       thread.join();
 
       counter1 = Verify.getCounter(COUNTER_THREAD_1);
       counter2 = Verify.getCounter(COUNTER_THREAD_2);
 
-      //Verify.print("Counter1 = " + counter1);
-      //Verify.println();
-
-      //Verify.print("Counter2 = " + counter2);
-      //Verify.println();
-      
-      Verify.ignoreIf(counter1 != expectedCount);
-      Verify.ignoreIf(counter2 != expectedCount);
-      Verify.incrementCounter(COUNTER_FINISHED);
-   }
-   
-   private static void sync(int index)
-   {
-      Object sync;
-
-      sync = new Object();
-
-      synchronized (sync)  // sync can only be reached by the local thread.  There really is no need to put a POR boundary here.
+      if (DEBUG_LOG)
       {
-      }
+         Verify.print("Counter1 = " + counter1);
+         Verify.println();
 
-      Verify.incrementCounter(index);
+         Verify.print("Counter2 = " + counter2);
+         Verify.println();
+      }
+      
+      Verify.ignoreIf(counter1 < expectedCount);
+      Verify.ignoreIf(counter2 < expectedCount);
+      Verify.incrementCounter(COUNTER_FINISHED);
    }
 }
