@@ -21,6 +21,8 @@ package gov.nasa.jpf.jvm;
 import java.util.BitSet;
 
 import gov.nasa.jpf.Config;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * Contains the list of all currently active threads.
@@ -29,7 +31,7 @@ import gov.nasa.jpf.Config;
  * a challenge for keeping ThreadInfo identities, which are otherwise nice for
  * directly storing ThreadInfo references in Monitors and/or listeners.
  */
-public class ThreadList implements Cloneable {
+public class ThreadList implements Cloneable, Iterable<ThreadInfo> {
   /**
    * The threads.
    */
@@ -306,4 +308,27 @@ public class ThreadList implements Cloneable {
       System.err.println("[" + i++ + "] " + t);
     }
   }
+
+  public Iterator<ThreadInfo> iterator() {
+    return new Iterator() {
+      int i = 0;
+
+      public boolean hasNext() {
+        return threads != null && threads.length>0 && i<threads.length;
+      }
+
+      public ThreadInfo next() {
+        if (threads != null && threads.length>0 && i<threads.length){
+          return threads[i++];
+        } else {
+          throw new NoSuchElementException();
+        }
+      }
+
+      public void remove() {
+        throw new UnsupportedOperationException("Iterator<ThreadInfo>.remove()");
+      }
+    };
+  }
+
 }
