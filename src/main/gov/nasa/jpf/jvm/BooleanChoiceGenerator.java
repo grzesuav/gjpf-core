@@ -26,7 +26,7 @@ import gov.nasa.jpf.Config;
 public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
 
   // do we evaluate [false, true] or [true, false]
-  static boolean falseFirst = true;
+  boolean falseFirst = true;
 
   int count = -1;
   boolean next;
@@ -35,6 +35,13 @@ public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
     super(id);
 
     falseFirst = conf.getBoolean("cg.boolean.false_first", true);
+    next = falseFirst;
+  }
+
+  public BooleanChoiceGenerator( boolean falseFirst, String id){
+    super(id);
+    
+    this.falseFirst = falseFirst;
     next = falseFirst;
   }
 

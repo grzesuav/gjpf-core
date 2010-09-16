@@ -337,6 +337,10 @@
            fork="yes" forkmode="perTest" maxmemory="1024m" outputtoformatters="true">
       <formatter type="plain" usefile="${junit.usefile}"/>
 
+      <assertions>
+        <enable/>
+      </assertions>
+
       <classpath>
         <path refid="lib.path"/>
         <pathelement location="build/tests"/>

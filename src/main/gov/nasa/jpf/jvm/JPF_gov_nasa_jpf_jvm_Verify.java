@@ -22,7 +22,6 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.choice.CustomBooleanChoiceGenerator;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
@@ -229,7 +228,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     ChoiceGenerator<?> cg;
 
     if (!ti.isFirstStepInsn()) { // first time around
-      cg = new CustomBooleanChoiceGenerator(falseFirst, "boolean");
+      cg = new BooleanChoiceGenerator(falseFirst, "boolean");
       ss.setNextChoiceGenerator(cg);
       env.repeatInvocation();
       return true;  // not used anyways

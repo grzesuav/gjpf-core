@@ -328,7 +328,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
         return (CGType.DataChoice);
       }
 
-      if (generator instanceof CustomBooleanChoiceGenerator) {
+      if (generator instanceof BooleanChoiceGenerator) {
         return (CGType.DataChoice);
       }
 
