@@ -72,6 +72,40 @@ public class VerifyTest extends TestJPF {
       Verify.setProperties("listener=gov.nasa.jpf.listener.StateSpaceAnalyzer");  // This used to cause a NullPointerException
     }
   }
+  
+  @Test public void testGetBoolean () {
 
+    Verify.resetCounter(0);
+    Verify.resetCounter(1);
+
+    if (verifyNoPropertyViolation()) {
+      Verify.incrementCounter(Verify.getBoolean() ? 1 : 0);
+    } else {
+      assert Verify.getCounter(0) == 1;
+      assert Verify.getCounter(1) == 1;
+    }
+  }
+
+  @Test public void testGetBooleanFalseFirst () {
+    boolean falseFirst, value;
+
+    Verify.resetCounter(0);
+
+    if (verifyNoPropertyViolation()) {
+    
+      falseFirst = Verify.getBoolean();
+    
+      Verify.resetCounter(0);
+    
+      value = Verify.getBoolean(falseFirst);
+      
+      Verify.ignoreIf(Verify.getCounter(0) != 0);
+      
+      Verify.incrementCounter(0);
+      
+      assert value == !falseFirst;
+    }
+  }
+   
   //... and many more to come
 }

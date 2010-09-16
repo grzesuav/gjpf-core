@@ -235,7 +235,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return true;  // not used anyways
 
     } else {  // this is what really returns results
-      return getNextChoice(ss,BooleanChoiceGenerator.class,Boolean.class);
+      return getNextChoice(ss,CustomBooleanChoiceGenerator.class,Boolean.class);
     }
   }
 
