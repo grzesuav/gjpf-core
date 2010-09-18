@@ -45,7 +45,7 @@ public class LogManager {
     
   static HashMap<String,JPFLogger> loggers = new HashMap<String, JPFLogger>(); // our own set
   
-  static Level defaultLevel;
+  static Level defaultLevel = Level.WARNING;
   static Handler handler;  // we have only one
   
   // I don't like these categories too much, but we want to act as a stand in
@@ -76,7 +76,7 @@ public class LogManager {
     activeFiner = conf.getStringArray("log.finer");
     activeFinest = conf.getStringArray("log.finest");
     
-    handler = conf.getEssentialInstance("log.handler.class", Handler.class);
+    handler = conf.getInstance("log.handler.class", Handler.class);
   }
   
   static boolean checkInclusion (String[] actives, String name) {
@@ -106,6 +106,11 @@ public class LogManager {
   }
   
   public static JPFLogger getLogger (String name) {
+    if (handler == null){
+      // <2do> this is only a band aid for missing LogManager.init(conf) calls
+      handler = new LogHandler.DefaultConsoleHandler();
+    }
+
     // how often can you say 'Logger' in one method..
     JPFLogger logger = loggers.get(name);
     

@@ -179,6 +179,10 @@ public class SystemState {
     // recordSteps is set later by VM, first we need a reporter (which requires the VM)
   }
 
+  protected SystemState() {
+    // just for unit test mockups
+  }
+
   public void setStartThread (ThreadInfo ti) {
     execThread = ti;
     trail = new Transition(nextCg, execThread);
@@ -286,21 +290,27 @@ public class SystemState {
    * set the ChoiceGenerator to be used in the next transition
    */
   public void setNextChoiceGenerator (ChoiceGenerator<?> cg) {
-    if (randomizeChoices) {
-      nextCg = cg.randomize();
-    } else {
-      nextCg = cg;
+    // first, check if we have to randomize it (might create a new one)
+    if (randomizeChoices){
+      cg = cg.randomize();
     }
 
-    // link it in
-    nextCg.setPreviousChoiceGenerator( curCg);
+    // set its context (thread and insn)
+    cg.setContext(execThread);
 
-    // store the info about who created this CG
-    ThreadInfo ti = ThreadInfo.getCurrentThread();
-    nextCg.setThreadInfo(ti);
-    nextCg.setInsn(ti.getPC());
+    // do we already have a nextCG, which means this one is a cascadet CG
+    if (nextCg != null){
+      cg.setPreviousChoiceGenerator( nextCg);
+      nextCg.setCascaded(); // note the last registered CG is NOT set cascaded
+
+    } else {
+      cg.setPreviousChoiceGenerator(curCg);
+    }
+
+    nextCg = cg;
   }
 
+  
   public Object getBacktrackData () {
     return new Memento(this);
   }
@@ -472,9 +482,14 @@ public class SystemState {
 
 
   /**
-   * Compute next state.
+   * Compute next program state
+   *
    * return 'true' if we actually executed instructions, 'false' if this
    * state was already completely processed
+   *
+   * This is one of the key methods of the JPF execution
+   * engine (together with VM.forward() and ThreadInfo.executeStep(),executeInstruction()
+   *
    */
   public boolean nextSuccessor (JVM vm) throws JPFException {
 
@@ -485,53 +500,143 @@ public class SystemState {
       isBoring = false;
     }
 
-    // nextCg got set at the end of the previous transition
-    // (or a preceding choiceGeneratorSet() notification)
+    // 'nextCg' got set at the end of the previous transition (or a preceding
+    // choiceGeneratorSet() notification).
+    // Be aware of that 'nextCg' is only the *last* CG that was registered, i.e.
+    // there can be any number of CGs between the previous 'curCg' and 'nextCg'
+    // that were registered for the same insn.
     while (nextCg != null) {
       curCg = nextCg;
       nextCg = null;
 
-      // Hmm, that's a bit late (should be in setNextCG), but we keep it here
+      // Hmm, that's a bit late (could be in setNextCG), but we keep it here
       // for the sake of locality, and it's more consistent if it just refers
       // to curCg, i.e. the CG that is actually going to be used
-      vm.notifyChoiceGeneratorSet(curCg);
+      notifyChoiceGeneratorSet(vm, curCg);
     }
 
     assert (curCg != null) : "transition without choice generator";
 
-    do {
-      if (!curCg.hasMoreChoices()) {
-        vm.notifyChoiceGeneratorProcessed(curCg);
-        return false;
-      }
-
-      curCg.advance();
-
-      isIgnored=false;
-      vm.notifyChoiceGeneratorAdvanced(curCg); // this might set ignored
-    } while (isIgnored);
-
-    if (curCg instanceof ThreadChoiceGenerator) {
-      ThreadChoiceGenerator tcg = (ThreadChoiceGenerator)curCg;
-      if (tcg.isSchedulingPoint()) {
-        ThreadInfo tiNext = tcg.getNextChoice();
-        if (tiNext != execThread){
-          vm.notifyThreadScheduled(tiNext);
-          execThread = tiNext;
-        }
-
-        assert execThread.isRunnable() : "current thread not runnable: " + execThread.getStateDescription();
-      }
+    if (!advanceCurCg( vm)){
+      return false;
     }
 
-    trail = new Transition(curCg, execThread);
+    // do we have a thread context switch
+    setExecThread( vm, curCg);
 
+    assert execThread.isRunnable() : "current thread not runnable: " + execThread.getStateDescription();
+
+
+    trail = new Transition(curCg, execThread);
     entryAtomicLevel = atomicLevel; // store before we start to execute
 
     execThread.executeStep(this);
 
     return true;
   }
+
+  // the number of advanced choice generators in this step
+  protected int nAdvancedCGs;
+
+  protected void advance( JVM vm, ChoiceGenerator<?> cg){
+    while (true) {
+      if (cg.hasMoreChoices()){
+        cg.advance();
+
+        isIgnored = false;
+        vm.notifyChoiceGeneratorAdvanced(cg);
+        if (!isIgnored){
+          nAdvancedCGs++;
+          break;
+        }
+        
+      } else {
+        vm.notifyChoiceGeneratorProcessed(cg);
+        break;
+      }
+    }
+  }
+
+  protected void advanceAllCascadedParents( JVM vm, ChoiceGenerator<?> cg){
+    ChoiceGenerator<?> parent = cg.getCascadedParent();
+    if (parent != null){
+      advanceAllCascadedParents(vm, parent);
+    }
+    advance(vm, cg);
+  }
+
+  protected boolean advanceCascadedParent (JVM vm, ChoiceGenerator<?> cg){
+    if (cg.hasMoreChoices()){
+      advance(vm,cg);
+      return true;
+
+    } else {
+      ChoiceGenerator<?> parent = cg.getCascadedParent();
+      if (parent != null){
+        if (advanceCascadedParent(vm,parent)){
+          cg.reset();
+          advance(vm,cg);
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+
+  protected boolean advanceCurCg (JVM vm){
+    nAdvancedCGs = 0;
+
+    ChoiceGenerator<?> cg = curCg;
+    ChoiceGenerator<?> parent = cg.getCascadedParent();
+
+    if (cg.hasMoreChoices()){
+      // check if this is the first time, when we also have to advance our parents
+      if (parent != null && parent.getProcessedNumberOfChoices() == 0){
+        advanceAllCascadedParents(vm,parent);
+      }
+      advance(vm, cg);
+
+    } else { // this one is done, but how about our parents
+      if (parent != null){
+        if (advanceCascadedParent(vm,parent)){
+          cg.reset();
+          advance(vm,cg);
+        }
+      }
+    }
+
+    return (nAdvancedCGs > 0);
+  }
+
+
+
+  protected void notifyChoiceGeneratorSet (JVM vm, ChoiceGenerator<?> cg){
+    ChoiceGenerator<?> parent = cg.getCascadedParent();
+    if (parent != null) {
+      notifyChoiceGeneratorSet(vm, parent);
+    }
+    vm.notifyChoiceGeneratorSet(cg); // notify top down
+  }
+
+  protected void setExecThread( JVM vm, ChoiceGenerator<?> cg){
+    if (cg instanceof ThreadChoiceGenerator){
+      ThreadChoiceGenerator tcg = (ThreadChoiceGenerator)cg;
+      if (tcg.isSchedulingPoint()){
+        ThreadInfo tiNext = tcg.getNextChoice();
+        if (tiNext != execThread){
+          vm.notifyThreadScheduled(tiNext);
+          execThread = tiNext;
+          return;
+        }
+      }
+    }
+
+    ChoiceGenerator<?> parent = cg.getCascadedParent();
+    if (parent != null){
+      setExecThread( vm, parent);
+    }
+  }
+
 
   // this is called on every executeInstruction from the running thread
   public boolean breakTransition () {

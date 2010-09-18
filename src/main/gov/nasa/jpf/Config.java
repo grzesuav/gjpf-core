@@ -1461,7 +1461,7 @@ public class Config extends Properties {
       try {
         return loader.loadClass(v);
       } catch (ClassNotFoundException cfx) {
-        throw new JPFConfigException("class not found " + v);
+        throw new JPFConfigException("class not found " + v + " by classloader: " + loader);
       } catch (ExceptionInInitializerError ix) {
         throw new JPFConfigException("class initialization of " + v + " failed: " + ix,
             ix);

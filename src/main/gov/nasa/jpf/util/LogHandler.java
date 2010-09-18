@@ -51,7 +51,13 @@ public class LogHandler extends Handler {
       showLevel = conf.getBoolean("log.show_level", true);
       format = showName || showLevel;
     }
-    
+
+    DefaultFormatter (boolean showName, boolean showLevel){
+      this.showName = showName;
+      this.showLevel = showLevel;
+      format = showName || showLevel;
+    }
+
     // we might want to parameterize this
     public String format (LogRecord r) {
       if (format) {
@@ -122,7 +128,11 @@ public class LogHandler extends Handler {
     setFormatter(new DefaultFormatter(conf));
     setOutput(ostream);
   }
-    
+
+  protected LogHandler() {
+    // for derived classes
+  }
+
   OutputStream connectSocket (String host, String portSpec) {
     int port = -1;
     
@@ -210,6 +220,17 @@ public class LogHandler extends Handler {
       log.config("logging to System.out");
     } else {
       log.warning("unknown log destination");
+    }
+  }
+
+
+  // a dfault handler that doesn't need Config
+  public static class DefaultConsoleHandler extends LogHandler {
+    public DefaultConsoleHandler() {
+      ostream = System.out;
+
+      setFormatter(new DefaultFormatter(false,true));
+      setOutput(ostream);
     }
   }
 }

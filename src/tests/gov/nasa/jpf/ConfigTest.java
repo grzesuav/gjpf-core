@@ -1,6 +1,6 @@
 
 
-package gov.nasa.jpf.test.unit;
+package gov.nasa.jpf;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.test.TestJPF;
@@ -19,7 +19,7 @@ public class ConfigTest extends TestJPF {
   @Test
   public void testDefaultAppPropertyInit () {
 
-    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String dir = "src/tests/gov/nasa/jpf/";
     String[] args = {dir + "configTestApp.jpf"};
 
     Config conf = new Config(args);
@@ -32,7 +32,7 @@ public class ConfigTest extends TestJPF {
 
     // that's testing key expansion and the builtin "config_path"
     val = conf.getString("mySUT.location");
-    assert (val != null && val.endsWith("unit"));
+    assert (val != null && val.endsWith("src/tests/gov/nasa/jpf"));
 
   }
 
@@ -46,7 +46,7 @@ public class ConfigTest extends TestJPF {
 
   @Test
   public void testExplicitLocations () {
-    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String dir = "src/tests/gov/nasa/jpf/";
     String[] args = {"+site=" + dir + "configTestSite.properties",
                      "+app=" + dir + "configTestApp.jpf" };
 
@@ -59,7 +59,7 @@ public class ConfigTest extends TestJPF {
   @Test
   public void testTargetArgsOverride () {
 
-    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String dir = "src/tests/gov/nasa/jpf/";
     String[] args = { dir + "configTestApp.jpf",
                       "x", "y"};
 
@@ -74,7 +74,7 @@ public class ConfigTest extends TestJPF {
 
   @Test
   public void testClassPaths () {
-    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String dir = "src/tests/gov/nasa/jpf/";
     String[] args = {"+site=" + dir + "configTestSite.properties",
                      "+app=" + dir + "configTestApp.jpf" };
 
@@ -91,7 +91,7 @@ public class ConfigTest extends TestJPF {
 
   @Test
   public void testRequiresOk () {
-    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String dir = "src/tests/gov/nasa/jpf/";
     String[] args = { "+site=" + dir + "configTestSite.properties",
                       dir + "configTestRequires.jpf" };
 
@@ -105,7 +105,7 @@ public class ConfigTest extends TestJPF {
 
   @Test
   public void testRequiresFail () {
-    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String dir = "src/tests/gov/nasa/jpf/";
     String[] args = { "+site=" + dir + "configTestSite.properties",
                       dir + "configTestRequiresFail.jpf" };
 
@@ -119,7 +119,7 @@ public class ConfigTest extends TestJPF {
 
   @Test
   public void testIncludes () {
-    String dir = "src/tests/gov/nasa/jpf/test/unit/";
+    String dir = "src/tests/gov/nasa/jpf/";
     String[] args = { "+site=" + dir + "configTestSite.properties",
                       dir + "configTestIncludes.jpf" };
 

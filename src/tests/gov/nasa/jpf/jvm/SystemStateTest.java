@@ -1,0 +1,131 @@
+//
+// Copyright (C) 2010 United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration
+// (NASA).  All Rights Reserved.
+//
+// This software is distributed under the NASA Open Source Agreement
+// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
+// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
+// directory tree for the complete NOSA document.
+//
+// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
+// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
+// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
+// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
+//
+
+package gov.nasa.jpf.jvm;
+
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.SystemState;
+import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
+import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
+import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
+import gov.nasa.jpf.util.LogManager;
+
+import gov.nasa.jpf.util.test.TestJPF;
+import org.junit.Test;
+
+
+/**
+ * unit test driver for SystemState functions
+ */
+public class SystemStateTest extends TestJPF {
+
+  static class MyJVM extends JVM {
+
+    protected void notifyChoiceGeneratorSet (ChoiceGenerator<?>cg) {
+      System.out.println("notifyChoiceGeneratorSet: " + cg);
+    }
+    protected void notifyChoiceGeneratorAdvanced (ChoiceGenerator<?>cg) {
+      System.out.println("notifyChoiceGeneratorAdvanced: " + cg);
+    }
+    protected void notifyChoiceGeneratorProcessed (ChoiceGenerator<?>cg) {
+      System.out.println("notifyChoiceGeneratorProcessed: " + cg);
+    }
+  }
+
+  static class MySystemState extends SystemState {
+  }
+
+
+  public static void main (String[] args){
+    runTestsOfThisClass(args);
+  }
+
+  @Test
+  public void testCascadedCGops() {
+
+    MyJVM vm = new MyJVM();
+    MySystemState ss = new MySystemState();
+
+    BooleanChoiceGenerator cg1 = new BooleanChoiceGenerator(); // false,true
+    IntChoiceFromSet       cg2 = new IntChoiceFromSet( 1, 2);
+    DoubleChoiceFromSet    cg3 = new DoubleChoiceFromSet( 42.1, 42.2);
+
+    cg2.isCascaded = true;
+    cg1.isCascaded = true;
+
+    cg3.prev = cg2;
+    cg2.prev = cg1;
+    ss.curCg = cg3;
+
+    //--- test initial advance
+    System.out.println("--- testing advanceAllCascadedParents()");
+    ss.advanceCurCg(vm);
+
+    assert cg1.getNextChoice() == false;
+    assert cg2.getNextChoice() == 1;
+    assert cg3.getNextChoice() == 42.1;
+
+
+    //--- test advanceCascadedParent
+    System.out.println("--- testing advanceCascadedParent()");
+    cg2.advance(2);
+    cg3.advance(2);
+
+    assert !cg2.hasMoreChoices();
+    assert !cg3.hasMoreChoices();
+
+    System.out.println(cg1);
+    System.out.println(cg2);
+    System.out.println(cg3);
+        
+    ss.advanceCascadedParent(vm,cg3);
+
+    assert cg1.getNextChoice() == true;
+    assert cg2.getNextChoice() == 1;
+    assert cg3.getNextChoice() == 42.1;
+  }
+
+  @Test
+  public void testCascadedCGadvance() {
+
+    MyJVM vm = new MyJVM();
+    MySystemState ss = new MySystemState();
+
+    BooleanChoiceGenerator cg1 = new BooleanChoiceGenerator(); // false,true
+    IntChoiceFromSet       cg2 = new IntChoiceFromSet( 1, 2);
+    DoubleChoiceFromSet    cg3 = new DoubleChoiceFromSet( 42.1, 42.2);
+
+    cg2.isCascaded = true;
+    cg1.isCascaded = true;
+
+    cg3.prev = cg2;
+    cg2.prev = cg1;
+    ss.curCg = cg3;
+
+    int n = 0;
+    while (ss.advanceCurCg(vm)){
+      System.out.println("--");
+      n++;
+    }
+
+    assert n == 8;
+  }
+}

@@ -17,7 +17,7 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.test.unit;
+package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.jvm.Types;
 import gov.nasa.jpf.util.test.TestJPF;

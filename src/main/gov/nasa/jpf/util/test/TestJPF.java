@@ -383,6 +383,7 @@ public abstract class TestJPF implements JPFShell  {
 
         } catch (InvocationTargetException x) {
           Throwable cause = x.getCause();
+cause.printStackTrace();
           if (cause instanceof AssertionError) {
             nFailures++;
             reportTestFinished("test method failed with: " + cause.getMessage());

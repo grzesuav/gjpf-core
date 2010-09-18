@@ -49,7 +49,7 @@ public class IntChoiceFromSet extends IntChoiceGenerator {
 		}
 	}
 
-  public IntChoiceFromSet(int[] val){
+  public IntChoiceFromSet(int... val){
     super(null);
 
     if (val != null){

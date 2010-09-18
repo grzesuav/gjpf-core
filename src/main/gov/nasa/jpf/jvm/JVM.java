@@ -161,6 +161,10 @@ public class JVM {
     initFields(config);
   }
 
+  protected JVM (){
+    // just to support unit test mockups
+  }
+
   public JPF getJPF() {
     return jpf;
   }
@@ -316,11 +320,12 @@ public class JVM {
   }
 
   protected void initSystemState (ThreadInfo mainThread){
+    ss.setStartThread(mainThread);
+
     // the first transition probably doesn't have much choice (unless there were
     // threads started in the static init), but we want to keep it uniformly anyways
     ChoiceGenerator<?> cg = new ThreadChoiceFromSet(getThreadList().getRunnableThreads(), true);
     ss.setNextChoiceGenerator(cg);
-    ss.setStartThread(mainThread);
 
     ss.recordSteps(hasToRecordSteps());
 

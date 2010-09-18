@@ -11,7 +11,7 @@ public class RandomOrderIntCG extends IntChoiceGenerator {
   protected int nextIdx;
   
   public RandomOrderIntCG(IntChoiceGenerator sub) {
-    super(sub.id);
+    super(sub.getId());
     setPreviousChoiceGenerator(sub.getPreviousChoiceGenerator());
     choices = new int[sub.getTotalNumberOfChoices()];
     for (int i = 0; i < choices.length; i++) {

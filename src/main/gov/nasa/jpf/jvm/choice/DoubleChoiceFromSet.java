@@ -47,7 +47,7 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
     count = -1;
   }
 
-  public DoubleChoiceFromSet (double[] val){
+  public DoubleChoiceFromSet (double... val){
     super(null);
 
     if (val != null){
@@ -61,6 +61,7 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
 
     count = -1;
   }
+
 
   public void reset () {
     count = -1;

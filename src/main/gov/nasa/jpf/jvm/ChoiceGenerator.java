@@ -36,28 +36,31 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   protected static Random random = new Random(42);
 
   // want the id to be visible to subclasses outside package
-  public String id;
+  protected String id;
 
   // for subsequent access, there is no need to translate a JPF String object reference
   // into a host VM String anymore (we just need it for creation to look up
   // the class if this is a named CG)
-  int idRef;
+  protected int idRef;
 
   // used to cut off further choice enumeration
   protected boolean isDone;
 
   // we keep a linked list of CG's
-  ChoiceGenerator<?> prev;
+  protected ChoiceGenerator<?> prev;
 
   // the instruction that created this CG
-  Instruction insn;
+  protected Instruction insn;
 
   // and the thread that executed this insn
-  ThreadInfo ti;
+  protected ThreadInfo ti;
 
   // free attributes (set on demand)
-  LinkedList<Object> attrs;
+  protected LinkedList<Object> attrs;
 
+  // answer if this is a cascaded CG, i.e. we had more than one registered
+  // within the same transition. Note this is NOT set for the last CG registered
+  protected boolean isCascaded;
 
   // in case this is initalized from a JVM context
   public static void init (Config config) {
@@ -121,12 +124,22 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     return insn;
   }
 
+
+  public void setContext (ThreadInfo tiCreator){
+    ti = tiCreator;
+    insn = tiCreator.getPC();
+  }
+
   public String getSourceLocation() {
     return insn.getSourceLocation();
   }
 
   public void setPreviousChoiceGenerator (ChoiceGenerator<?> cg) {
     prev = cg;
+  }
+
+  public void setCascaded() {
+    isCascaded = true;
   }
 
   public ChoiceGenerator<?> getPreviousChoiceGeneratorOfType(Class<?> cls) {
@@ -141,12 +154,31 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     return null;
   }
 
+  /**
+   * returns the prev CG if it was registered for the same insn
+   */
+  ChoiceGenerator<?> getCascadedParent (){
+    if (prev != null){
+      if (prev.isCascaded){
+        return prev;
+      }
+    }
+
+    return null;
+  }
+
   public abstract boolean hasMoreChoices ();
 
   /**
-   * advance to the next choice
+   * advance to the next choice. This is the only method that really
+   * advances our enumeration
    */
   public abstract void advance ();
+
+  
+  // we can't put the advanceForCurrentInsn() here because it has to do
+  // notifications, which are the SystemState responsibility
+
 
   /**
    * advance n choices

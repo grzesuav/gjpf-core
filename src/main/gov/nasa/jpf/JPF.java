@@ -205,6 +205,9 @@ public class JPF implements Runnable {
   }
 
 
+  protected JPF (){
+    // just to support unit test mockups
+  }
 
   /**
    * create new JPF object. Note this is always guaranteed to return, but the

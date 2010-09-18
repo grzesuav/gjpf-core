@@ -30,7 +30,7 @@ public class RandomOrderLongCG extends LongChoiceGenerator {
   protected int nextIdx;
 
   public RandomOrderLongCG (LongChoiceGenerator sub) {
-    super(sub.id);
+    super(sub.getId());
     setPreviousChoiceGenerator(sub.getPreviousChoiceGenerator());
     choices = new long[sub.getTotalNumberOfChoices()];
     for (int i = 0; i < choices.length; i++) {
