@@ -1286,12 +1286,11 @@ public abstract class ElementInfo implements Cloneable {
 
     } else {
       // Ok, this is the non-deterministic case
-      ChoiceGenerator cg = ss.getChoiceGenerator();
+      ThreadChoiceGenerator cg = ss.getCurrentSchedulingPoint();
 
-      assert (cg != null) && (cg instanceof ThreadChoiceGenerator) :
-        "notify " + this + " without ThreadChoiceGenerator: " + cg;
+      assert (cg != null) : "no ThreadChoiceGenerator in notify";
 
-      notifies0(((ThreadChoiceGenerator)cg).getNextChoice());
+      notifies0(cg.getNextChoice());
     }
 
     ti.getVM().notifyObjectNotifies(ti, this);

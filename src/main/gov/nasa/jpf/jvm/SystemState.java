@@ -320,6 +320,23 @@ public class SystemState {
     }
   }
 
+  /**
+   * this returns the most recently registered ThreadChoiceGenerator that is 
+   * also a scheduling point, or 'null' if there is none in the list of current CGs
+   */
+  public ThreadChoiceGenerator getCurrentSchedulingPoint () {
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
+      if (cg instanceof ThreadChoiceGenerator){
+        ThreadChoiceGenerator tcg = (ThreadChoiceGenerator)cg;
+        if (tcg.isSchedulingPoint()){
+          return tcg;
+        }
+      }
+    }
+
+    return null;
+  }
+
   public ChoiceGenerator<?>[] getCurrentChoiceGenerators () {
     int n=0;
     for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
@@ -586,7 +603,7 @@ public class SystemState {
     }
 
     // do we have a thread context switch
-    setExecThread( vm, curCg);
+    setExecThread( vm);
 
     assert execThread.isRunnable() : "current thread not runnable: " + execThread.getStateDescription();
 
@@ -682,22 +699,14 @@ public class SystemState {
     vm.notifyChoiceGeneratorSet(cg); // notify top down
   }
 
-  protected void setExecThread( JVM vm, ChoiceGenerator<?> cg){
-    if (cg instanceof ThreadChoiceGenerator){
-      ThreadChoiceGenerator tcg = (ThreadChoiceGenerator)cg;
-      if (tcg.isSchedulingPoint()){
-        ThreadInfo tiNext = tcg.getNextChoice();
-        if (tiNext != execThread){
-          vm.notifyThreadScheduled(tiNext);
-          execThread = tiNext;
-          return;
-        }
+  protected void setExecThread( JVM vm){
+    ThreadChoiceGenerator tcg = getCurrentSchedulingPoint();
+    if (tcg != null){
+      ThreadInfo tiNext = tcg.getNextChoice();
+      if (tiNext != execThread) {
+        vm.notifyThreadScheduled(tiNext);
+        execThread = tiNext;
       }
-    }
-
-    ChoiceGenerator<?> parent = cg.getCascadedParent();
-    if (parent != null){
-      setExecThread( vm, parent);
     }
   }
 
