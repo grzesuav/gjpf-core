@@ -44,7 +44,7 @@ public class IntOverUnder implements OperandPerturbator {
     return IntChoiceFromSet.class;
   }
 
-  public ChoiceGenerator<?> createChoiceGenerator (StackFrame frame, int offset){
+  public ChoiceGenerator<?> createChoiceGenerator (String id, StackFrame frame, int offset){
     int val = frame.peek(offset);
 
     int[] values = new int[3];
@@ -53,7 +53,7 @@ public class IntOverUnder implements OperandPerturbator {
     values[1] = val;
     values[2] = val - delta;
 
-    return new IntChoiceFromSet(values);
+    return new IntChoiceFromSet(id, values);
   }
 
   public void perturb(ChoiceGenerator<?>cg, StackFrame frame, int offset) {

@@ -44,11 +44,13 @@ public class TypedObjectChoice extends ReferenceChoiceGenerator {
 
   
   public TypedObjectChoice (Config conf, String id)  {
+    super(id);
+    
     DynamicArea heap = DynamicArea.getHeap();
     
     type = conf.getString(id + ".type");
     if (type == null) {
-      throw conf.exception("missing 'type' property for TypedObjectGenerator " + id);
+      throw conf.exception("missing 'type' property for TypedObjectChoice " + id);
     }
     
     ArrayList<ElementInfo> list = new ArrayList<ElementInfo>();
@@ -103,7 +105,7 @@ public class TypedObjectChoice extends ReferenceChoiceGenerator {
   }
   
   public String toString() {
-    StringBuilder sb = new StringBuilder("TypedObjectGenerator [id=");
+    StringBuilder sb = new StringBuilder("TypedObjectChoice [id=");
     sb.append(id);
     sb.append(",type=");
     sb.append(type);

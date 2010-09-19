@@ -47,8 +47,8 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
     count = -1;
   }
 
-  public DoubleChoiceFromSet (double... val){
-    super(null);
+  public DoubleChoiceFromSet (String id, double... val){
+    super(id);
 
     if (val != null){
       values = new Double[val.length];

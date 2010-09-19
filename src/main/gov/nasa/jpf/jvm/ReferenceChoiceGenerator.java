@@ -24,6 +24,10 @@ package gov.nasa.jpf.jvm;
  */
 public abstract class ReferenceChoiceGenerator extends ChoiceGenerator<Integer> {
 
+  protected ReferenceChoiceGenerator (String id){
+    super(id);
+  }
+
   public abstract Integer getNextChoice();
   
   public Class<Integer> getChoiceType() {

@@ -53,8 +53,8 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
     }
   }
 
-  public IntIntervalGenerator(int min, int max, int delta) {
-    super(null);
+  public IntIntervalGenerator(String id, int min, int max, int delta) {
+    super(id);
 
     this.min = min;
     this.max = max;
@@ -63,8 +63,8 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
     reset();
   }
 
-  public IntIntervalGenerator(int min, int max) {
-    this(min, max, 1);
+  public IntIntervalGenerator(String id, int min, int max) {
+    this(id, min, max, 1);
   }
 
   public IntIntervalGenerator(Config conf, String id) {

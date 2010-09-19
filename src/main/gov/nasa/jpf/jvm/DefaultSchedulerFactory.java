@@ -83,17 +83,17 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     return list;
   }
 
-  protected ChoiceGenerator<ThreadInfo> getRunnableCG () {
+  protected ChoiceGenerator<ThreadInfo> getRunnableCG (String id) {
     ThreadInfo[] choices = getRunnablesIfChoices();
     if (choices != null) {
-      return new ThreadChoiceFromSet( choices, true);
+      return new ThreadChoiceFromSet( id, choices, true);
     } else {
       return null;
     }
   }
 
-  protected ChoiceGenerator<ThreadInfo> getSyncCG (ElementInfo ei, ThreadInfo ti) {
-    return getRunnableCG();
+  protected ChoiceGenerator<ThreadInfo> getSyncCG (String id, ElementInfo ei, ThreadInfo ti) {
+    return getRunnableCG(id);
   }
 
   protected boolean matchesMethodAndElement(StringSetMatcher matcher,
@@ -181,14 +181,14 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
         ss.setBlockedInAtomicSection();
       }
 
-      return new ThreadChoiceFromSet(getRunnables(), true);
+      return new ThreadChoiceFromSet("monitorEnter", getRunnables(), true);
 
     } else {
       if (ss.isAtomic() || isNeverBreakMonitorBoundaries(ei, ti, isMethodCall)) {
         return null;
       }
 
-      return getSyncCG(ei, ti);
+      return getSyncCG( "monitorEnter", ei, ti);
     }
   }
 
@@ -202,7 +202,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       ss.setBlockedInAtomicSection();
     }
 
-    return new ThreadChoiceFromSet(getRunnables(), true);
+    return new ThreadChoiceFromSet( "wait", getRunnables(), true);
   }
 
   public ChoiceGenerator<ThreadInfo> createNotifyCG (ElementInfo ei, ThreadInfo ti) {
@@ -215,7 +215,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       // if there are less than 2 threads waiting, there is no nondeterminism
       return null;
     } else {
-      return new ThreadChoiceFromSet(waiters, false);
+      return new ThreadChoiceFromSet( "notify", waiters, false);
     }
   }
 
@@ -228,7 +228,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       return null;
     }
 
-    return getSyncCG(ei, ti);
+    return getSyncCG( "sharedField", ei, ti);
   }
 
   public ChoiceGenerator<ThreadInfo> createSharedArrayAccessCG (ElementInfo ei, ThreadInfo ti) {
@@ -270,7 +270,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       // -> skip over all prev. CG insns of the same type
       }
        **/
-      ChoiceGenerator<ThreadInfo> cg = getSyncCG(ei, ti);
+      ChoiceGenerator<ThreadInfo> cg = getSyncCG( "sharedArray", ei, ti);
       return cg;
 
     } else {
@@ -298,7 +298,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       if (ss.isAtomic()) {
         return null;
       }
-      return getRunnableCG();
+      return getRunnableCG("start");
 
     } else {
       return null;
@@ -311,7 +311,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       if (ss.isAtomic()) {
         return null;
       }
-      return getRunnableCG();
+      return getRunnableCG("yield");
 
     } else {
       return null;
@@ -323,7 +323,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       return null;
     }
 
-    return getRunnableCG();
+    return getRunnableCG("interrupt");
   }
 
   public ChoiceGenerator<ThreadInfo> createThreadSleepCG (ThreadInfo sleepThread, long millis, int nanos) {
@@ -332,7 +332,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
         return null;
       }
       // we treat this as a simple reschedule
-      return createThreadYieldCG(sleepThread);
+      return getRunnableCG("sleep");
 
     } else {
       return null;
@@ -347,17 +347,17 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     // a subsequent call to vm.isEndState()
     // <2do> FIXME this is redundant and error prone
     if (tl.hasAnyAliveThread()) {
-      return new ThreadChoiceFromSet(getRunnablesWithout(terminateThread), true);
+      return new ThreadChoiceFromSet( "terminate", getRunnablesWithout(terminateThread), true);
     } else {
       return null;
     }
   }
 
   public ChoiceGenerator<ThreadInfo> createThreadSuspendCG () {
-    return getRunnableCG();
+    return getRunnableCG("suspend");
   }
 
   public ChoiceGenerator<ThreadInfo> createThreadResumeCG () {
-    return getRunnableCG();
+    return getRunnableCG("resume");
   }
 }

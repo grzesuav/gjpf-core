@@ -64,21 +64,26 @@ public class SystemStateTest extends TestJPF {
     MyJVM vm = new MyJVM();
     MySystemState ss = new MySystemState();
 
-    BooleanChoiceGenerator cg1 = new BooleanChoiceGenerator(); // false,true
-    IntChoiceFromSet       cg2 = new IntChoiceFromSet( 1, 2);
-    DoubleChoiceFromSet    cg3 = new DoubleChoiceFromSet( 42.1, 42.2);
+    IntChoiceFromSet       cg0 = new IntChoiceFromSet( "cg0", -100, -200); // not cascaded
+    BooleanChoiceGenerator cg1 = new BooleanChoiceGenerator("cg1"); // false,true
+    IntChoiceFromSet       cg2 = new IntChoiceFromSet( "cg2", 1, 2);
+    DoubleChoiceFromSet    cg3 = new DoubleChoiceFromSet( "cg3", 42.1, 42.2);
 
     cg2.isCascaded = true;
     cg1.isCascaded = true;
 
     cg3.prev = cg2;
     cg2.prev = cg1;
+    cg1.prev = cg0;
     ss.curCg = cg3;
 
+    cg0.advance();
+
     //--- test initial advance
-    System.out.println("--- testing advanceAllCascadedParents()");
+    System.out.println("--- testing advanceCurCg()");
     ss.advanceCurCg(vm);
 
+    assert cg0.getNextChoice() == -100;
     assert cg1.getNextChoice() == false;
     assert cg2.getNextChoice() == 1;
     assert cg3.getNextChoice() == 42.1;
@@ -98,6 +103,7 @@ public class SystemStateTest extends TestJPF {
         
     ss.advanceCascadedParent(vm,cg3);
 
+    assert cg0.getNextChoice() == -100;
     assert cg1.getNextChoice() == true;
     assert cg2.getNextChoice() == 1;
     assert cg3.getNextChoice() == 42.1;
@@ -109,9 +115,9 @@ public class SystemStateTest extends TestJPF {
     MyJVM vm = new MyJVM();
     MySystemState ss = new MySystemState();
 
-    BooleanChoiceGenerator cg1 = new BooleanChoiceGenerator(); // false,true
-    IntChoiceFromSet       cg2 = new IntChoiceFromSet( 1, 2);
-    DoubleChoiceFromSet    cg3 = new DoubleChoiceFromSet( 42.1, 42.2);
+    BooleanChoiceGenerator cg1 = new BooleanChoiceGenerator("cg1"); // false,true
+    IntChoiceFromSet       cg2 = new IntChoiceFromSet( "cg2", 1, 2);
+    DoubleChoiceFromSet    cg3 = new DoubleChoiceFromSet( "cg3", 42.1, 42.2);
 
     cg2.isCascaded = true;
     cg1.isCascaded = true;

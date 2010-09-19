@@ -99,10 +99,10 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
     return (isPossibleToPreempt && numOfPreemptions >= maxNumOfPreemptions) ? new ThreadInfo[] { currentThread } : list;
   }
 
-  protected ChoiceGenerator<ThreadInfo> getRunnableCG() {
+  protected ChoiceGenerator<ThreadInfo> getRunnableCG(String id) {
     ThreadInfo[] choices = getRunnablesIfChoices();
     if (choices != null) {
-      return createContextBoundingThreadChoiceFromSet(choices, true);
+      return createContextBoundingThreadChoiceFromSet(id, choices, true);
     } else {
       return null;
     }
@@ -115,14 +115,14 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
         ss.setBlockedInAtomicSection();
       }
 
-      return createContextBoundingThreadChoiceFromSet(getRunnables(), true);
+      return createContextBoundingThreadChoiceFromSet("monitorEnter", getRunnables(), true);
 
     } else {
       if (ss.isAtomic()) {
         return null;
       }
 
-      return getSyncCG(ei, ti);
+      return getSyncCG("monitorEnter", ei, ti);
     }
   }
 
@@ -132,7 +132,7 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
       ss.setBlockedInAtomicSection();
     }
 
-    return createContextBoundingThreadChoiceFromSet(getRunnables(), true);
+    return createContextBoundingThreadChoiceFromSet("wait",getRunnables(), true);
   }
 
   public ChoiceGenerator<ThreadInfo> createNotifyCG(ElementInfo ei,
@@ -146,7 +146,7 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
       // if there are less than 2 threads waiting, there is no nondeterminism
       return null;
     } else {
-      return createContextBoundingThreadChoiceFromSet(waiters, false);
+      return createContextBoundingThreadChoiceFromSet("notify",waiters, false);
     }
   }
 
@@ -155,17 +155,14 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
     // terminateThread is already TERMINATED at this point
     ThreadList tl = vm.getThreadList();
     if (tl.getRunnableThreadCount() > 0) {
-      return createContextBoundingThreadChoiceFromSet(
-          getRunnablesWithout(terminateThread), true);
+      return createContextBoundingThreadChoiceFromSet( "terminate", getRunnablesWithout(terminateThread), true);
     } else {
       return null;
     }
   }
 
-  private ContextBoundingThreadChoiceFromSet createContextBoundingThreadChoiceFromSet(
-      ThreadInfo[] ti, boolean isSchedulingPoint) {
-    ContextBoundingThreadChoiceFromSet tcg = new ContextBoundingThreadChoiceFromSet(
-        ti, isSchedulingPoint);
+  private ContextBoundingThreadChoiceFromSet createContextBoundingThreadChoiceFromSet(String id, ThreadInfo[] ti, boolean isSchedulingPoint) {
+    ContextBoundingThreadChoiceFromSet tcg = new ContextBoundingThreadChoiceFromSet( id, ti, isSchedulingPoint);
     tcg.setPossibleToPreempt(isPossibleToPreempt);
     tcg.setNumOfPreemptions(numOfPreemptions);
     return tcg;
@@ -181,9 +178,8 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
 
     private boolean hasPreemptionOccured;
 
-    public ContextBoundingThreadChoiceFromSet(ThreadInfo[] set,
-        boolean isSchedulingPoint) {
-      super(set, isSchedulingPoint);
+    public ContextBoundingThreadChoiceFromSet( String id, ThreadInfo[] set, boolean isSchedulingPoint) {
+      super(id, set, isSchedulingPoint);
       this.currentThread = ThreadInfo.getCurrentThread();
     }
 

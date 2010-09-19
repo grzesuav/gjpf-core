@@ -38,12 +38,12 @@ public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
     next = falseFirst;
   }
 
-  public BooleanChoiceGenerator () {
-    super(null);
+  public BooleanChoiceGenerator (String id) {
+    super(id);
     next = falseFirst;
   }
 
-  public BooleanChoiceGenerator( boolean falseFirst, String id){
+  public BooleanChoiceGenerator( String id, boolean falseFirst ){
     super(id);
     
     this.falseFirst = falseFirst;

@@ -366,7 +366,7 @@ public class JPF_java_lang_System {
       ti.setTerminated();
     }
     
-    ss.setNextChoiceGenerator( new BreakGenerator(env.getThreadInfo(), true));
+    ss.setNextChoiceGenerator( new BreakGenerator("exit", env.getThreadInfo(), true));
   }
 
   public static void gc____V (MJIEnv env, int clsObjRef) {

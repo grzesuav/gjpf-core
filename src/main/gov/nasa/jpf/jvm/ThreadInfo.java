@@ -2573,7 +2573,7 @@ public class ThreadInfo
     ThreadInfo[] runnables = list.getRunnableThreads();
 
     if (forceBreak || (runnables.length > 1)) {
-      ThreadChoiceGenerator cg = new ThreadChoiceFromSet(runnables,true);
+      ThreadChoiceGenerator cg = new ThreadChoiceFromSet("reschedule",runnables,true);
       SystemState ss = vm.getSystemState();
       ss.setNextChoiceGenerator(cg); // this breaks the transition
     }
@@ -2585,7 +2585,7 @@ public class ThreadInfo
    * (to avoid state explosion)
    */
   public void breakTransition() {
-    BreakGenerator cg = new BreakGenerator(this, false);
+    BreakGenerator cg = new BreakGenerator( "breakTransition", this, false);
     SystemState ss = vm.getSystemState();
     ss.setNextChoiceGenerator(cg); // this breaks the transition
   }

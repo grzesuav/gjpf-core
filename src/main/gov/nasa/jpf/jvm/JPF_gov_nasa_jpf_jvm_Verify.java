@@ -198,11 +198,10 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     return dummyVal;
   }
 
-  static <T,C extends ChoiceGenerator<T>> T getNextChoice (SystemState ss, Class<C> cgClass, Class<T> choiceClass){
-    ChoiceGenerator<?> cg = ss.getChoiceGenerator();
+  static <T,C extends ChoiceGenerator<T>> T getNextChoice (SystemState ss, String id, Class<C> cgClass, Class<T> choiceClass){
+    ChoiceGenerator<?> cg = ss.getCurrentChoiceGenerator(id, cgClass);
 
-    assert (cg != null) && (cgClass.isAssignableFrom(cg.getClass())) :
-          "expected ChoiceGenerator of type " + cgClass.getName() + ", got: " + cg.getClass().getName();
+    assert (cg != null) : "no ChoiceGenerator of type " + cgClass.getName();
     return ((ChoiceGenerator<T>)cg).getNextChoice();
   }
 
@@ -212,13 +211,13 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     ChoiceGenerator<?> cg;
 
     if (!ti.isFirstStepInsn()) { // first time around
-      cg = new BooleanChoiceGenerator(config, "boolean");
+      cg = new BooleanChoiceGenerator(config, "verifyGetBoolean");
       ss.setNextChoiceGenerator(cg);
       env.repeatInvocation();
       return true;  // not used anyways
 
     } else {  // this is what really returns results
-      return getNextChoice(ss,BooleanChoiceGenerator.class,Boolean.class);
+      return getNextChoice(ss,"verifyGetBoolean", BooleanChoiceGenerator.class,Boolean.class);
     }
   }
 
@@ -228,13 +227,13 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     ChoiceGenerator<?> cg;
 
     if (!ti.isFirstStepInsn()) { // first time around
-      cg = new BooleanChoiceGenerator(falseFirst, "boolean");
+      cg = new BooleanChoiceGenerator( "verifyGetBooleanZ", falseFirst );
       ss.setNextChoiceGenerator(cg);
       env.repeatInvocation();
       return true;  // not used anyways
 
     } else {  // this is what really returns results
-      return getNextChoice(ss,BooleanChoiceGenerator.class,Boolean.class);
+      return getNextChoice(ss,"verifyGetBooleanZ", BooleanChoiceGenerator.class, Boolean.class);
     }
   }
 
@@ -252,11 +251,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
         min = t;
       }
 
-      IntChoiceGenerator cg = new IntIntervalGenerator(min,max);
+      IntChoiceGenerator cg = new IntIntervalGenerator( "verifyGetInt", min,max);
       return registerChoiceGenerator(env,ss,ti,cg,0);
 
     } else {
-      return getNextChoice(ss,IntChoiceGenerator.class,Integer.class);
+      return getNextChoice(ss, "verifyGetInt", IntChoiceGenerator.class, Integer.class);
     }
   }
 
@@ -267,11 +266,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     if (!ti.isFirstStepInsn()) { // first time around
       int[] values = env.getIntArrayObject(valArrayRef);
 
-      IntChoiceGenerator cg = new IntChoiceFromSet(values);
+      IntChoiceGenerator cg = new IntChoiceFromSet( "verifyGetIntSet", values);
       return registerChoiceGenerator(env,ss,ti,cg,0);
 
     } else {
-      return getNextChoice(ss,IntChoiceGenerator.class,Integer.class);
+      return getNextChoice(ss, "verifyGetIntSet", IntChoiceGenerator.class, Integer.class);
     }
   }
 
@@ -287,7 +286,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return registerChoiceGenerator(env,ss,ti,cg, 0);
 
     } else {
-      return getNextChoice(ss,IntChoiceGenerator.class,Integer.class);
+      String id = env.getStringObject(idRef);
+      return getNextChoice(ss, id, IntChoiceGenerator.class,Integer.class);
     }
   }
 
@@ -301,7 +301,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return registerChoiceGenerator(env,ss,ti,cg, 0);
 
     } else {
-      return getNextChoice(ss,ReferenceChoiceGenerator.class,Integer.class);
+      String id = env.getStringObject(idRef);
+      return getNextChoice(ss, id, ReferenceChoiceGenerator.class,Integer.class);
     }
   }
 
@@ -315,7 +316,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return registerChoiceGenerator(env,ss,ti,cg, 0.0);
 
     } else {
-      return getNextChoice(ss,DoubleChoiceGenerator.class,Double.class);
+      String id = env.getStringObject(idRef);
+      return getNextChoice(ss, id, DoubleChoiceGenerator.class,Double.class);
     }
   }
 
@@ -325,11 +327,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
     if (!ti.isFirstStepInsn()) { // first time around
       double[] values = env.getDoubleArrayObject(valArrayRef);
-      DoubleChoiceGenerator cg = new DoubleChoiceFromSet(values);
+      DoubleChoiceGenerator cg = new DoubleChoiceFromSet("verifyDoubleSet", values);
       return registerChoiceGenerator(env,ss,ti,cg, 0.0);
 
     } else {
-      return getNextChoice(ss,DoubleChoiceFromSet.class,Double.class);
+      return getNextChoice(ss, "verifyDoubleSet", DoubleChoiceFromSet.class,Double.class);
     }
   }
 

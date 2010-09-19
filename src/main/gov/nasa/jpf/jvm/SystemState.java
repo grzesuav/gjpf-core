@@ -188,29 +188,6 @@ public class SystemState {
     trail = new Transition(nextCg, execThread);
   }
 
-  /**
-   * return the stack of CGs of the current path
-   */
-  public ChoiceGenerator<?>[] getChoiceGenerators () {
-    ChoiceGenerator<?> cg;
-    int i, n;
-
-    cg = curCg;
-    for (n=0; cg != null; n++) {
-      cg = cg.getPreviousChoiceGenerator();
-    }
-
-    ChoiceGenerator<?>[] list = new ChoiceGenerator[n];
-
-    cg = curCg;
-    for (i=list.length-1; cg != null; i--) {
-      list[i] = cg;
-      cg = cg.getPreviousChoiceGenerator();
-    }
-
-    return list;
-  }
-
   public int getId () {
     return id;
   }
@@ -256,22 +233,109 @@ public class SystemState {
     return schedulerFactory;
   }
 
+  //--- these are the various choice generator retrievers
+
   /**
-   * answer the ChoiceGenerator that was used in the current transition
+   * answer the ChoiceGenerator that is used in the current transition
    */
   public ChoiceGenerator<?> getChoiceGenerator () {
     return curCg;
   }
 
-  public <T extends ChoiceGenerator<?>> T getLastChoiceGeneratorOfType (Class<T> cgType) {
-    ChoiceGenerator<?> cg = curCg;
-    while ((cg != null) && !(cgType.isAssignableFrom(cg.getClass()))) {
-      cg = cg.getPreviousChoiceGenerator();
+  public ChoiceGenerator<?> getChoiceGenerator (String id) {
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
+      if (id.equals(cg.getId())){
+        return cg;
+      }
     }
 
-    return (T)cg;
+    return null;
   }
 
+  /**
+   * return the stack of CGs of the current path
+   */
+  public ChoiceGenerator<?>[] getChoiceGenerators () {
+    int n=0;
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
+      n++;
+    }
+
+    ChoiceGenerator<?>[] a = new ChoiceGenerator<?>[n];
+
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
+      a[--n] = cg;
+    }
+
+    return a;
+  }
+
+
+  public <T extends ChoiceGenerator<?>> T getLastChoiceGeneratorOfType (Class<T> cgType) {
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
+      if (cgType.isAssignableFrom(cg.getClass())) {
+        return (T)cg;
+      }
+    }
+
+    return null;
+  }
+
+  public <T extends ChoiceGenerator<?>> T getCurrentChoiceGeneratorOfType (Class<T> cgType) {
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
+      if (cgType.isAssignableFrom(cg.getClass())){
+        return (T)cg;
+      }
+    }
+
+    return null;
+  }
+
+  public <T extends ChoiceGenerator<?>> T getCurrentChoiceGenerator (String id, Class<T> cgType) {
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
+      if (id.equals(cg.getId()) && cgType.isAssignableFrom(cg.getClass())){
+        return (T)cg;
+      }
+    }
+
+    return null;
+  }
+
+
+  public ChoiceGenerator<?> getCurrentChoiceGenerator (String id) {
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
+      if (id.equals(cg.getId())){
+        return cg;
+      }
+    }
+
+    return null;
+  }
+
+  public ChoiceGenerator<?> getCurrentChoiceGenerator (ChoiceGenerator<?> cgPrev) {
+    if (cgPrev == null){
+      return curCg;
+    } else {
+      return cgPrev.getCascadedParent();
+    }
+  }
+
+  public ChoiceGenerator<?>[] getCurrentChoiceGenerators () {
+    int n=0;
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
+      n++;
+    }
+
+    ChoiceGenerator<?>[] a = new ChoiceGenerator<?>[n];
+
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
+      a[--n] = cg;
+    }
+
+    return a;
+  }
+
+  
   public <T extends ChoiceGenerator<?>> T getInsnChoiceGeneratorOfType (Class<T> cgType, Instruction insn, ChoiceGenerator<?> cgPrev){
     ChoiceGenerator<?> cg = cgPrev != null ? cgPrev.getPreviousChoiceGenerator() : curCg;
 

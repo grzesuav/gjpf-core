@@ -35,7 +35,9 @@ public class InvocationCG extends ChoiceGenerator<Invocation> {
   protected Invocation cur;
   protected ListIterator<Invocation> it;
   
-  public InvocationCG (List<Invocation> invokes){
+  public InvocationCG (String id, List<Invocation> invokes){
+    super(id);
+    
     this.invokes = invokes;
     
     it = invokes.listIterator();

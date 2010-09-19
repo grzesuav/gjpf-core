@@ -289,7 +289,7 @@ public class Perturbator extends ListenerAdapter {
           // pop the callee stackframe and modify the caller stackframe
           // note that we don't need to execute in order to get the perturbation base
           // value because its already on the operand stack
-          ChoiceGenerator<?> cg = e.perturbator.createChoiceGenerator(ti.getTopFrame(), 0);
+          ChoiceGenerator<?> cg = e.perturbator.createChoiceGenerator("perturbReturn", ti.getTopFrame(), 0);
           if (cg != null) {
             ss.setNextChoiceGenerator(cg);
             ti.setNextPC(insn); // reexecute
@@ -298,7 +298,7 @@ public class Perturbator extends ListenerAdapter {
 
         } else {
           // re-executing, modify the operand stack top and execute
-          ChoiceGenerator<?> cg = ss.getInsnChoiceGeneratorOfType(e.cgType, insn, null);
+          ChoiceGenerator<?> cg = ss.getCurrentChoiceGenerator("perturbReturn", e.cgType);
           if (cg != null) {
             e.perturbator.perturb(cg, ti.getTopFrame(), 0);
           }
@@ -321,7 +321,7 @@ public class Perturbator extends ListenerAdapter {
           SystemState ss = vm.getSystemState();
 
           if (ti.isFirstStepInsn()) { // retrieve value from CG and replace it on operand stack
-            ChoiceGenerator<?> cg = ss.getInsnChoiceGeneratorOfType(p.cgType, insn, null);
+            ChoiceGenerator<?> cg = ss.getCurrentChoiceGenerator( "perturbGetField", p.cgType);
             if (cg != null) {
               p.perturbator.perturb(cg, frame, 0);
             } else {
@@ -329,7 +329,7 @@ public class Perturbator extends ListenerAdapter {
             }
 
           } else { // first time around, create&set the CG and reexecute
-            ChoiceGenerator<?> cg = p.perturbator.createChoiceGenerator(frame, 0);
+            ChoiceGenerator<?> cg = p.perturbator.createChoiceGenerator( "perturbGetField", frame, 0);
             if (cg != null) {
               assert savedFrame != null;
 

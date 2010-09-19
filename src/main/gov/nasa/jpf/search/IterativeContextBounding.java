@@ -93,7 +93,7 @@ public class IterativeContextBounding extends Search {
     maxDepth = getMaxSearchDepth();
 
     ThreadInfo currentThread = vm.getCurrentThread();
-    ThreadChoiceFromSet initialCG = new ThreadChoiceFromSet(
+    ThreadChoiceFromSet initialCG = new ThreadChoiceFromSet( "icbSearch",
         new ThreadInfo[] { currentThread }, true);
     workQueue.add(new WorkItem(vm.getState(), initialCG));
 
@@ -220,7 +220,7 @@ public class IterativeContextBounding extends Search {
                 // If the current thread is enabled, the context switch is preemptive.
                 // We replace the next choice generator with a new choice generator
                 // containing only the current thread to continue with.
-                ThreadChoiceFromSet tcg = new ThreadChoiceFromSet(
+                ThreadChoiceFromSet tcg = new ThreadChoiceFromSet( "icbSearchCurEnabled",
                     new ThreadInfo[] { vm.getCurrentThread() }, true);
                 vm.getSystemState().setNextChoiceGenerator(tcg);
 
@@ -228,8 +228,7 @@ public class IterativeContextBounding extends Search {
                 // generator with those threads and add it to the next work queue
                 if (enabledThreads.size() > 0) {
                   ThreadInfo[] tia = enabledThreads.toArray(new ThreadInfo[0]);
-                  ThreadChoiceFromSet tcgNext = new ThreadChoiceFromSet(tia,
-                      true);
+                  ThreadChoiceFromSet tcgNext = new ThreadChoiceFromSet( "icbSearchEnabled", tia, true);
                   nextWorkQueue.add(new WorkItem(currVMState, tcgNext));
                 }
               }

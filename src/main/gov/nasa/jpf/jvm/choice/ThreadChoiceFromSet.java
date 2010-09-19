@@ -28,8 +28,8 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
   protected ThreadInfo[] values;
   protected int count;
   
-  public ThreadChoiceFromSet (ThreadInfo[] set, boolean isSchedulingPoint) {
-    super(isSchedulingPoint);
+  public ThreadChoiceFromSet (String id, ThreadInfo[] set, boolean isSchedulingPoint) {
+    super(id, isSchedulingPoint);
     
     values = set;
     count = -1;

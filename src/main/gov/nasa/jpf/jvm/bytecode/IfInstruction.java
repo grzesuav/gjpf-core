@@ -84,20 +84,17 @@ public abstract class IfInstruction extends Instruction {
    */
   protected Instruction executeBothBranches (SystemState ss, KernelState ks, ThreadInfo ti){
     if (!ti.isFirstStepInsn()) {
-      ChoiceGenerator cg = new BooleanChoiceGenerator(ti.getVM().getConfig(),
-                                                      mi.getName() +
-                                                      getClass().getSimpleName());
+      BooleanChoiceGenerator cg = new BooleanChoiceGenerator(ti.getVM().getConfig(), "ifAll");
       ss.setNextChoiceGenerator(cg);
       return this;
       
     } else {
-      ChoiceGenerator cg = ss.getChoiceGenerator();
-      assert (cg != null) && (cg instanceof BooleanChoiceGenerator) :
-        "expected BooleanChoiceGenerator, got: " + cg;
+      BooleanChoiceGenerator cg = ss.getCurrentChoiceGenerator("ifAll", BooleanChoiceGenerator.class);
+      assert (cg != null) : "no BooleanChoiceGenerator";
       
       popConditionValue(ti); // we are not interested in concrete values
       
-      conditionValue = ((BooleanChoiceGenerator)cg).getNextChoice();
+      conditionValue = cg.getNextChoice();
       
       if (conditionValue) {
         return getTarget();

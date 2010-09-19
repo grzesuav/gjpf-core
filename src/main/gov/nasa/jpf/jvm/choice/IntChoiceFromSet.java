@@ -49,8 +49,8 @@ public class IntChoiceFromSet extends IntChoiceGenerator {
 		}
 	}
 
-  public IntChoiceFromSet(int... val){
-    super(null);
+  public IntChoiceFromSet(String id, int... val){
+    super(id);
 
     if (val != null){
       values = new Integer[val.length];

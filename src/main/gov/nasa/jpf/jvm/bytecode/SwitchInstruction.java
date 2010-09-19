@@ -76,17 +76,16 @@ public abstract class SwitchInstruction extends Instruction {
   /** useful for symbolic execution modes */
   public Instruction executeAllBranches (SystemState ss, KernelState ks, ThreadInfo ti) {
     if (!ti.isFirstStepInsn()) {
-      ChoiceGenerator cg = new IntIntervalGenerator(0,matches.length);
+      IntIntervalGenerator cg = new IntIntervalGenerator("switchAll", 0,matches.length);
       ss.setNextChoiceGenerator(cg);
       return this;
       
     } else {
-      ChoiceGenerator cg = ss.getChoiceGenerator();
-      assert (cg != null) && (cg instanceof IntChoiceGenerator) :
-        "expected IntChoiceGenerator, got: " + cg;
+      IntIntervalGenerator cg = ss.getCurrentChoiceGenerator("switchAll", IntIntervalGenerator.class);
+      assert (cg != null) : "no IntIntervalGenerator";
       
       int idx = ti.pop(); // but we are not using it
-      idx = ((IntChoiceGenerator)cg).getNextChoice();
+      idx = cg.getNextChoice();
       
       if (idx == matches.length){ // default branch
         lastIdx = DEFAULT;

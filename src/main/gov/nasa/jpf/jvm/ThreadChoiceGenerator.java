@@ -31,11 +31,7 @@ public abstract class ThreadChoiceGenerator extends ChoiceGenerator<ThreadInfo> 
    * objects for each of it
    */
   boolean isSchedulingPoint;
-  
-  protected ThreadChoiceGenerator (boolean isSchedulingPoint) {
-    this.isSchedulingPoint = isSchedulingPoint;
-  }
-  
+    
   protected ThreadChoiceGenerator (String id, boolean isSchedulingPoint) {
     super(id);
     this.isSchedulingPoint = isSchedulingPoint;

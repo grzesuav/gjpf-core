@@ -99,14 +99,14 @@ public class JPF_java_lang_Thread {
   public static void interrupt____V (MJIEnv env, int objref) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
-    ChoiceGenerator<?> cg = ss.getChoiceGenerator();
 
     ThreadInfo interruptedThread = getThreadInfo( env, objref);
 
     if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
       interruptedThread.interrupt();
+
     } else {
-      cg = ss.getSchedulerFactory().createInterruptCG( interruptedThread);
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createInterruptCG( interruptedThread);
       if (cg != null) {
         ss.setNextChoiceGenerator(cg);
         env.repeatInvocation();
@@ -130,7 +130,6 @@ public class JPF_java_lang_Thread {
   public static void start____V (MJIEnv env, int objref) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
-    ChoiceGenerator<?> cg = ss.getChoiceGenerator();
     JVM vm = ti.getVM();
 
     if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
@@ -195,7 +194,7 @@ public class JPF_java_lang_Thread {
       }
 
       // now we have a new thread, create a CG for scheduling it
-      cg = ss.getSchedulerFactory().createThreadStartCG( newThread);
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG( newThread);
       if (cg != null) {
         ss.setNextChoiceGenerator(cg);
         env.repeatInvocation();
@@ -206,10 +205,9 @@ public class JPF_java_lang_Thread {
   public static void yield____V (MJIEnv env, int clsObjRef) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
-    ChoiceGenerator<?> cg = ss.getChoiceGenerator();
 
     if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
-      cg = ss.getSchedulerFactory().createThreadYieldCG( ti);
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadYieldCG( ti);
       if (cg != null) {
         ss.setNextChoiceGenerator(cg);
         env.repeatInvocation();
@@ -222,10 +220,9 @@ public class JPF_java_lang_Thread {
   public static void sleep__JI__V (MJIEnv env, int clsObjRef, long millis, int nanos) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
-    ChoiceGenerator<?> cg = ss.getChoiceGenerator();
 
     if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
-      cg = ss.getSchedulerFactory().createThreadSleepCG( ti, millis, nanos);
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSleepCG( ti, millis, nanos);
       if (cg != null) {
         ss.setNextChoiceGenerator(cg);
         env.repeatInvocation();
@@ -252,7 +249,7 @@ public class JPF_java_lang_Thread {
     }
 
     if (!operator.isFirstStepInsn()) {
-      ChoiceGenerator cg = ss.getSchedulerFactory().createThreadSuspendCG();
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG();
       if (cg != null) {
         ss.setNextChoiceGenerator(cg);
         env.repeatInvocation();
@@ -261,7 +258,7 @@ public class JPF_java_lang_Thread {
     }
 
     if (target.suspend()) {  // No sense in adding a CG if the thread didn't transition from suspended to resumed.
-      ChoiceGenerator cg = ss.getSchedulerFactory().createThreadSuspendCG();
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG();
       if (cg != null) {
         ss.setNextChoiceGenerator(cg);
       }
@@ -283,7 +280,7 @@ public class JPF_java_lang_Thread {
     }
 
     if (!operator.isFirstStepInsn()) {
-      ChoiceGenerator cg = ss.getSchedulerFactory().createThreadResumeCG();
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG();
       if (cg != null) {
         ss.setNextChoiceGenerator(cg);
         env.repeatInvocation();
@@ -292,7 +289,7 @@ public class JPF_java_lang_Thread {
     }
 
     if (target.resume()) {  // No sense in adding a CG if the thread didn't transition from suspended to resumed.
-      ChoiceGenerator cg = ss.getSchedulerFactory().createThreadResumeCG();
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG();
       if (cg != null) {
         ss.setNextChoiceGenerator(cg);
       }

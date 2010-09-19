@@ -34,8 +34,8 @@ public class BreakGenerator extends ThreadChoiceGenerator {
   int state = -1;
   boolean isTerminator;
 
-  public BreakGenerator (ThreadInfo ti, boolean isTerminator) {
-    super(true);
+  public BreakGenerator (String id, ThreadInfo ti, boolean isTerminator) {
+    super(id, true);
     
     this.ti = ti;
     this.isTerminator = isTerminator;

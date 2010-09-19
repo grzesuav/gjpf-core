@@ -37,7 +37,7 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
 
   // want the id to be visible to subclasses outside package
   protected String id;
-
+  
   // for subsequent access, there is no need to translate a JPF String object reference
   // into a host VM String anymore (we just need it for creation to look up
   // the class if this is a named CG)

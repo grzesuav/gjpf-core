@@ -324,7 +324,7 @@ public class JVM {
 
     // the first transition probably doesn't have much choice (unless there were
     // threads started in the static init), but we want to keep it uniformly anyways
-    ChoiceGenerator<?> cg = new ThreadChoiceFromSet(getThreadList().getRunnableThreads(), true);
+    ChoiceGenerator<?> cg = new ThreadChoiceFromSet("root", getThreadList().getRunnableThreads(), true);
     ss.setNextChoiceGenerator(cg);
 
     ss.recordSteps(hasToRecordSteps());

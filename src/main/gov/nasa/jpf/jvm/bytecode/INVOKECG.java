@@ -59,15 +59,15 @@ public class INVOKECG extends Instruction {
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     
     if (!ti.isFirstStepInsn()) {
-      ChoiceGenerator cg = new InvocationCG(invokes);
+      InvocationCG cg = new InvocationCG( "INVOKECG", invokes);
       ss.setNextChoiceGenerator(cg);
       return this;
       
     } else {
-      ChoiceGenerator cg = ss.getChoiceGenerator();
-      assert (cg != null) && (cg instanceof InvocationCG) : "expected InvocationCG, got: " + cg;
+      InvocationCG cg = ss.getCurrentChoiceGenerator( "INVOKECG", InvocationCG.class);
+      assert (cg != null) : "no current InvocationCG";
 
-      Invocation call = ((InvocationCG)cg).getNextChoice();
+      Invocation call = cg.getNextChoice();
       MethodInfo callee = call.getMethodInfo();
       InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
 
