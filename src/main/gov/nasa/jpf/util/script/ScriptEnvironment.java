@@ -257,16 +257,16 @@ public abstract class ScriptEnvironment<CG extends ChoiceGenerator<?>>
 
   static final String[] ACTIVE_DEFAULT = { DEFAULT };
 
-  public CG getNext () {
-    return getNext(ACTIVE_DEFAULT, null);
+  public CG getNext (String id) {
+    return getNext(id, ACTIVE_DEFAULT, null);
   }
 
-  public CG getNext (String[] activeStates) {
-    return getNext(activeStates, null);
+  public CG getNext (String id, String[] activeStates) {
+    return getNext(id, activeStates, null);
   }
 
   // this is our main purpose in life, but there is some policy in here
-  public CG getNext (String[] activeStates, BitSet isReEntered) {
+  public CG getNext (String id, String[] activeStates, BitSet isReEntered) {
 
     cur = cur.advance(activeStates, isReEntered);
 
@@ -295,10 +295,10 @@ public abstract class ScriptEnvironment<CG extends ChoiceGenerator<?>>
       }
     }
 
-    return createCGFromEvents(events);
+    return createCGFromEvents(id, events);
   }
 
-  protected abstract CG createCGFromEvents(List<Event> events);
+  protected abstract CG createCGFromEvents(String id, List<Event> events);
 
   //--- StateExtension interface
   public ActiveSnapshot getStateExtension() {
@@ -314,250 +314,4 @@ public abstract class ScriptEnvironment<CG extends ChoiceGenerator<?>>
     jpf.addSearchListener(sel);
   }
 
-  /**************************************************************************
-   * test drivers & infrastructure (move to reg tests at some point)
-   */
-
-  static class EventChoice extends ChoiceGenerator<Event> {
-    int cur = -1;
-    Event e;
-
-    protected EventChoice() {}
-
-    EventChoice (Event e){
-      this.e = e;
-    }
-
-    public void advance() {
-      cur++;
-    }
-
-    public boolean hasMoreChoices() {
-      return (cur<0);
-    }
-
-    public Class<Event> getChoiceType() {
-      return Event.class;
-    }
-
-    public Event getNextChoice() {
-      return (cur == 0) ? e : null;
-    }
-
-    public int getProcessedNumberOfChoices() {
-      return cur+1;
-    }
-
-    public int getTotalNumberOfChoices() {
-      return 1;
-    }
-
-
-    public ChoiceGenerator randomize() {
-      return null;
-    }
-
-    public void reset() {
-      cur = -1;
-    }
-
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      sb.append(getClass().getName());
-
-      sb.append("[id=\"");
-      sb.append(id);
-      sb.append("\",");
-
-      if (cur >= 0) {
-        sb.append(MARKER);
-      }
-      sb.append(e.toString());
-
-      sb.append(']');
-      return sb.toString();
-    }
-
-  }
-
-  static class EventChoiceSet extends EventChoice {
-    ArrayList<Event> list = new ArrayList<Event>();
-
-    public EventChoiceSet () {
-    }
-
-    public void add (Event e) {
-      list.add(e);
-    }
-
-    public boolean hasMoreChoices() {
-      return (cur<list.size());
-    }
-
-    public Event getNextChoice() {
-      return (cur >= 0 && cur < list.size()) ? list.get(cur) : null;
-    }
-
-    public int getTotalNumberOfChoices() {
-      return list.size();
-    }
-
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      sb.append(getClass().getName());
-
-      sb.append("[id=\"");
-      sb.append(id);
-      sb.append("\",");
-
-      for (int i=0; i<list.size(); i++) {
-        if (i > 0) {
-          sb.append(',');
-        }
-        if (i == cur) {
-          sb.append(MARKER);
-        }
-        sb.append(list.get(i).toString());
-      }
-      sb.append(']');
-      return sb.toString();
-    }
-  }
-
-  static class EventEnv extends ScriptEnvironment<EventChoice> {
-
-    public EventEnv (String fname) throws FileNotFoundException {
-      super(fname);
-    }
-
-    public EventEnv(String name, Reader r) {
-      super(name,r);
-    }
-
-    protected EventChoice createCGFromEvents(List<Event> events) {
-      if (events.isEmpty()) {
-        return null;
-      } else if (events.size() == 1) {
-        return new EventChoice( events.get(0));
-      } else {
-        EventChoiceSet cg = new EventChoiceSet();
-        for (Event e : events) {
-          cg.add( e);
-        }
-        return cg;
-      }
-    }
-  }
-
-  public static void main (String[] args) {
-    //testNoMoveSequence();
-    //testBacktrack();
-    testMoveSequence();
-  }
-
-  static void testNoMoveSequence () {
-    String s = "SECTION A {\n" +
-               "  start, ANY {a1,a2}, REPEAT 2 {r}, end \n" +
-               "}\n" +
-               "SECTION B {\n" +
-               "  foo, bar, baz \n" +
-               "}";
-
-    String[][] a = { { "A", "B" },
-                     { "A", "B" },
-                     { "A", "B" },
-                     { "A", "B" },
-                     { "A", "B" },
-                     { "A", "B" } };
-
-    try {
-      ScriptEnvironment env = new EventEnv("test", new StringReader(s));
-      env.parseScript();
-
-      for (String[] sections : a) {
-        ChoiceGenerator cg = env.getNext(sections);
-        System.out.println(Misc.toString(sections, "[", ",", "]") + " => " + cg);
-      }
-
-    } catch (Throwable t){
-      t.printStackTrace();
-    }
-  }
-
-  static void testMoveSequence () {
-    String s = "SECTION A {\n" +
-               "  start, ANY {a1,a2}, REPEAT 2 {r}, end \n" +
-               "}\n" +
-               "SECTION B {\n" +
-               "  foo, bar, baz \n" +
-               "}\n" +
-               "SECTION C {\n" +
-               "  du, da \n" +
-               "}";
-
-
-    String[][] a = { { "A", "B" },
-                     { "A", "B" },
-                     { "A", "C" },
-                     { "B" } };
-
-    try {
-      EventEnv env = new EventEnv("test", new StringReader(s));
-      env.parseScript();
-
-      for (String[] sections : a) {
-        ChoiceGenerator<?> cg = env.getNext(sections);
-        System.out.println(Misc.toString(sections, "[", ",", "]") + " => " + cg);
-      }
-
-    } catch (Throwable t){
-      t.printStackTrace();
-    }
-  }
-
-
-  static void testBacktrack () {
-    String s = "SECTION A {\n" +
-               "  start, ANY {a1,a2}, REPEAT 2 {r}, end \n" +
-               "}\n" +
-               "SECTION B {\n" +
-               "  foo, bar, baz \n" +
-               "}";
-
-    String[][] a = { { "A", "B" },
-                     { "A", "B" },
-                     { "A", "B" },
-                     { "A", "B" },
-                     { "A", "B" },
-                     { "A", "B" } };
-
-    try {
-      EventEnv env = new EventEnv("test", new StringReader(s));
-      env.parseScript();
-
-      ChoiceGenerator<?> cg = null;
-      int i =0;
-
-      cg = env.getNext(a[i]);
-      System.out.println(Misc.toString(a[i], "[", ",", "]") + " => " + cg);
-      i++;
-
-      cg = env.getNext(a[i]);
-      System.out.println(Misc.toString(a[i], "[", ",", "]") + " => " + cg);
-      i++;
-
-      ScriptEnvironment.ActiveSnapshot snap = env.getStateExtension();
-
-      cg = env.getNext(a[i]);
-      System.out.println(Misc.toString(a[i], "[", ",", "]") + " => " + cg);
-      //i++;
-
-      env.restore(snap);
-      cg = env.getNext(a[i]);
-      System.out.println(Misc.toString(a[i], "[", ",", "]") + " => " + cg);
-    } catch (Throwable t){
-      t.printStackTrace();
-    }
-
-  }
 }

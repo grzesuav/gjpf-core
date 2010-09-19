@@ -79,10 +79,6 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   }
  
 
-  protected ChoiceGenerator () {
-    this.id = "-";
-  }
-
   protected ChoiceGenerator (String id) {
     this.id = id;
   }

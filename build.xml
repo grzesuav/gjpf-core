@@ -351,37 +351,7 @@
       <batchtest todir="build/tests">
         <fileset dir="build/tests">
           <exclude name="**/JPF_*.class"/>
-
-          <!-- the unit tests -->
-          <include name="gov/nasa/jpf/*Test.class"/>
-          <include name="gov/nasa/jpf/jvm/*Test.class"/>
-
-          <!-- VM compatibility system tests -->
-          <include name="gov/nasa/jpf/test/basic/*Test.class"/>
-          <include name="gov/nasa/jpf/test/vm/basic/*Test.class"/>
-          <include name="gov/nasa/jpf/test/vm/reflection/*Test.class"/>
-          <include name="gov/nasa/jpf/test/vm/threads/*Test.class"/>
-          <include name="*Test.class"/>
-        </fileset>
-      </batchtest>
-
-      <batchtest todir="build/tests">
-        <fileset dir="build/tests">
-          <exclude name="**/JPF_*.class"/>
-
-          <!-- library compatibility system tests -->
-          <include name="gov/nasa/jpf/test/java/**/*Test.class"/>
-        </fileset>
-      </batchtest>
-
-      <batchtest todir="build/tests">
-        <fileset dir="build/tests">
-          <exclude name="**/JPF_*.class"/>
-
-          <!-- verification system tests -->
-          <include name="gov/nasa/jpf/test/mc/basic/*Test.class"/>
-          <include name="gov/nasa/jpf/test/mc/threads/*Test.class"/>
-          <include name="gov/nasa/jpf/test/mc/data/*Test.class"/>
+          <include name="**/*Test.class"/>
         </fileset>
       </batchtest>
 

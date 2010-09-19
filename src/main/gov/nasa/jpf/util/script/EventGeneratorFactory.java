@@ -52,7 +52,9 @@ public abstract class EventGeneratorFactory extends ListenerAdapter
 
     int startPos, endPos;
 
-    Loop (int startPos,  int endPos){
+    Loop (String id, int startPos,  int endPos){
+      super(id);
+      
       this.startPos = startPos;
       this.endPos = endPos;
     }
@@ -135,7 +137,7 @@ public abstract class EventGeneratorFactory extends ListenerAdapter
   }
 
   protected void addLoop (int startPos) {
-    queue.add(new Loop(startPos, queue.size()-1));
+    queue.add( new Loop( "loop", startPos, queue.size()-1));
   }
 
   public abstract Class<?> getEventType();
