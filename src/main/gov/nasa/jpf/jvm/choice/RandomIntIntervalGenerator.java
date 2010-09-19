@@ -40,12 +40,12 @@ public class RandomIntIntervalGenerator extends IntChoiceGenerator {
   protected int next;
   protected int count = 0;
 
-  public RandomIntIntervalGenerator (int min, int max, int nChoices){
-    this(min,max,nChoices,0L);
+  public RandomIntIntervalGenerator (String id, int min, int max, int nChoices){
+    this(id, min,max,nChoices,0L);
   }
 
-  public RandomIntIntervalGenerator (int min, int max, int nChoices, long seed){
-    super(null);
+  public RandomIntIntervalGenerator (String id, int min, int max, int nChoices, long seed){
+    super(id);
 
     this.min = min;
     this.max = max;
