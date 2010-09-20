@@ -24,6 +24,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import java.lang.reflect.Array;
 
 
 /**
@@ -270,6 +271,25 @@ public class SystemState {
     return a;
   }
 
+  public <T extends ChoiceGenerator<?>> T[] getChoiceGeneratorsOfType (Class<T> cgType) {
+    int n=0;
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
+      if (cgType.isAssignableFrom(cg.getClass())){
+        n++;
+      }
+    }
+
+    T[] a = (T[])Array.newInstance(cgType, n);
+
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
+      if (cgType.isAssignableFrom(cg.getClass())){
+        a[--n] = (T)cg;
+      }
+    }
+
+    return a;
+  }
+
 
   public <T extends ChoiceGenerator<?>> T getLastChoiceGeneratorOfType (Class<T> cgType) {
     for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
@@ -371,6 +391,13 @@ public class SystemState {
    * set the ChoiceGenerator to be used in the next transition
    */
   public void setNextChoiceGenerator (ChoiceGenerator<?> cg) {
+    if (isIgnored){
+      // if this transition is already marked as ignored, we are not allowed
+      // to set nextCg because 'isIgnored' results in a shortcut backtrack that
+      // is not handed back to the Search (its solely in JVM forward)
+      return;
+    }
+
     // first, check if we have to randomize it (might create a new one)
     if (randomizeChoices){
       cg = cg.randomize();
@@ -416,6 +443,12 @@ public class SystemState {
    * this can be called anywhere from within a transition, to revert it and
    * go on with the next choice. This is mostly used explicitly in the app
    * via Verify.ignoreIf(..)
+   *
+   * calling setIgnored() also breaks the current transition, i.e. no further
+   * instructions are executed within this step
+   *
+   * NOTE: this reverts any previous or future setNextChoiceGenerator() call
+   * during this transition
    */
   public void setIgnored (boolean b) {
 

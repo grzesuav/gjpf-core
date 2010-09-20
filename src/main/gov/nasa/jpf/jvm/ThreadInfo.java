@@ -2568,6 +2568,8 @@ public class ThreadInfo
    * because yield in itself is not POR relevant (doesn't change anything), or
    * because there might be only one runnable thread. In both cases, the transition
    * would not be broken.
+   * If there is more than one runnable thread, this also differs from
+   * breakTransition(), which will continue with the same thread
    */
   public void reschedule (boolean forceBreak) {
     ThreadInfo[] runnables = list.getRunnableThreads();
@@ -2582,13 +2584,39 @@ public class ThreadInfo
   /**
    * this is a version that unconditionally breaks the current transition
    * without really adding choices. It only goes on with the same thread
-   * (to avoid state explosion)
+   * (to avoid state explosion).
+   *
+   * if the current transition is already marked as ignored, this method does nothing
+   *
+   * NOTE: this neither means that we ignore the current transition, nor that
+   * it is an end state
    */
   public void breakTransition() {
-    BreakGenerator cg = new BreakGenerator( "breakTransition", this, false);
     SystemState ss = vm.getSystemState();
-    ss.setNextChoiceGenerator(cg); // this breaks the transition
+
+    if (!ss.isIgnored()){
+      // isIgnored is not a normal backtrack, so we shouldn't set a CG
+      // (this is used quite often in conjunction
+      BreakGenerator cg = new BreakGenerator( "breakTransition", this, false);
+      ss.setNextChoiceGenerator(cg); // this breaks the transition
+    }
   }
+
+  /**
+   * this breaks the current transition with a CG that forces an end state (i.e.
+   * has no choices)
+   * this only takes effect if the current transition is not already marked
+   * as ignored
+   */
+  public void breakTransition(boolean isTerminator) {
+    SystemState ss = vm.getSystemState();
+
+    if (!ss.isIgnored()){
+      BreakGenerator cg = new BreakGenerator( "breakTransition", this, isTerminator);
+      ss.setNextChoiceGenerator(cg); // this breaks the transition
+    }
+  }
+
 
   public boolean checkPorFieldBoundary () {
     return isFirstStepInsn && porFieldBoundaries && list.hasOtherRunnablesThan(this);

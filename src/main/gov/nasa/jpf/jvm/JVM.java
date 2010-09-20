@@ -1322,10 +1322,18 @@ public class JVM {
   }
 
   /**
-   * return the current SystemState's ChoiceGenerator object
+   * return the current (last registered) SystemState's ChoiceGenerator object
    */
   public ChoiceGenerator<?> getChoiceGenerator () {
     return ss.getChoiceGenerator();
+  }
+
+  public ChoiceGenerator<?>[] getChoiceGenerators() {
+    return ss.getChoiceGenerators();
+  }
+
+  public <T extends ChoiceGenerator<?>> T[] getChoiceGeneratorsOfType (Class<T> cgType) {
+    return ss.getChoiceGeneratorsOfType(cgType);
   }
 
   public boolean isTerminated () {
