@@ -98,8 +98,12 @@ public class Transition implements Iterable<Step> { // <2do> cloneable
     return ti.getIndex();
   }
 
-  public ChoiceGenerator getChoiceGenerator() {
+  public ChoiceGenerator<?> getChoiceGenerator() {
     return cg;
+  }
+
+  public ChoiceGenerator<?>[] getChoiceGeneratorCascade(){
+    return cg.getCascade();
   }
 
   public void incStepCount() {

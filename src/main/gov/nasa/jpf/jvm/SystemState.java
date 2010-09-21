@@ -254,40 +254,14 @@ public class SystemState {
   }
 
   /**
-   * return the stack of CGs of the current path
+   * return the whole stack of CGs of the current path
    */
   public ChoiceGenerator<?>[] getChoiceGenerators () {
-    int n=0;
-    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
-      n++;
-    }
-
-    ChoiceGenerator<?>[] a = new ChoiceGenerator<?>[n];
-
-    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
-      a[--n] = cg;
-    }
-
-    return a;
+    return curCg.getAll();
   }
 
   public <T extends ChoiceGenerator<?>> T[] getChoiceGeneratorsOfType (Class<T> cgType) {
-    int n=0;
-    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
-      if (cgType.isAssignableFrom(cg.getClass())){
-        n++;
-      }
-    }
-
-    T[] a = (T[])Array.newInstance(cgType, n);
-
-    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
-      if (cgType.isAssignableFrom(cg.getClass())){
-        a[--n] = (T)cg;
-      }
-    }
-
-    return a;
+    return curCg.getAllOfType(cgType);
   }
 
 
@@ -358,18 +332,7 @@ public class SystemState {
   }
 
   public ChoiceGenerator<?>[] getCurrentChoiceGenerators () {
-    int n=0;
-    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
-      n++;
-    }
-
-    ChoiceGenerator<?>[] a = new ChoiceGenerator<?>[n];
-
-    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
-      a[--n] = cg;
-    }
-
-    return a;
+    return curCg.getCascade();
   }
 
   

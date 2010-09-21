@@ -53,6 +53,18 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
     }
   }
 
+  /**
+   *  don't use this since it is not safe for cascaded ChoiceGenerators
+   * (we need the 'id' to be as context specific as possible)
+   */
+  @Deprecated public IntIntervalGenerator(int min, int max){
+    this("?", min, max);
+  }
+
+  @Deprecated public IntIntervalGenerator(int min, int max, int delta){
+    this("?", min, max, delta);
+  }
+
   public IntIntervalGenerator(String id, int min, int max, int delta) {
     super(id);
 

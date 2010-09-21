@@ -1322,12 +1322,27 @@ public class JVM {
   }
 
   /**
-   * return the current (last registered) SystemState's ChoiceGenerator object
+   * return the last registered SystemState's ChoiceGenerator object
+   * NOTE: there might be more than one ChoiceGenerator associated with the
+   * current transition (ChoiceGenerators can be cascaded)
    */
   public ChoiceGenerator<?> getChoiceGenerator () {
     return ss.getChoiceGenerator();
   }
 
+  /**
+   * return the latest registered ChoiceGenerator used in this transition
+   * that matches the provided 'id' and is of 'cgType'.
+   * 
+   * This should be the main getter for clients that are cascade aware
+   */
+  public <T extends ChoiceGenerator<?>> T getCurrentChoiceGenerator (String id, Class<T> cgType) {
+    return ss.getCurrentChoiceGenerator(id,cgType);
+  }
+
+  /**
+   * returns all ChoiceGenerators in current path
+   */
   public ChoiceGenerator<?>[] getChoiceGenerators() {
     return ss.getChoiceGenerators();
   }

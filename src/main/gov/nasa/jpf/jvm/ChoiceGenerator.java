@@ -22,6 +22,7 @@ import java.util.Random;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import java.lang.reflect.Array;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -77,7 +78,14 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
 		  random.setSeed(System.currentTimeMillis());
 	  } 
   }
- 
+
+  /**
+   *  don't use this since it is not safe for cascaded ChoiceGenerators
+   * (we need the 'id' to be as context specific as possible)
+   */
+  @Deprecated protected ChoiceGenerator () {
+    id = "?";
+  }
 
   protected ChoiceGenerator (String id) {
     this.id = id;
@@ -162,6 +170,65 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
 
     return null;
   }
+
+  /**
+   * return array with all cascaded parents and this CG, in registration order
+   */
+  ChoiceGenerator<?>[] getCascade() {
+    int n=0;
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.getCascadedParent()){
+      n++;
+    }
+
+    ChoiceGenerator<?>[] a = new ChoiceGenerator<?>[n];
+
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.getCascadedParent()){
+      a[--n] = cg;
+    }
+
+    return a;
+  }
+
+  /**
+   * return array with all parents and this CG, in registration order
+   */
+  ChoiceGenerator<?>[] getAll() {
+    int n=0;
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev){
+      n++;
+    }
+
+    ChoiceGenerator<?>[] a = new ChoiceGenerator<?>[n];
+
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev){
+      a[--n] = cg;
+    }
+
+    return a;
+  }
+
+  /**
+   * return array with all CGs (including this one) of given 'cgType', in registration order
+   */
+  public <T extends ChoiceGenerator<?>> T[] getAllOfType (Class<T> cgType) {
+    int n=0;
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev){
+      if (cgType.isAssignableFrom(cg.getClass())){
+        n++;
+      }
+    }
+
+    T[] a = (T[])Array.newInstance(cgType, n);
+
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev){
+      if (cgType.isAssignableFrom(cg.getClass())){
+        a[--n] = (T)cg;
+      }
+    }
+
+    return a;
+  }
+
 
   public abstract boolean hasMoreChoices ();
 
