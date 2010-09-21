@@ -61,11 +61,14 @@ public class StackFrame implements Constants, Cloneable {
 
   protected MethodInfo mi;              /** which method is executed in this frame */
 
-  public boolean hasReferenceOperand (int n, int objRef){
+  /**
+   * is the operand at top-'offset' a reference with the value 'objRef'
+   */
+  public boolean hasReferenceOperand (int offset, int objRef){
     int[] op = operands;
     boolean[] ref = isOperandRef;
 
-    for (int i=0, j=top-n+1; i<n && j>=0; i++, j++) {
+    for (int i=0, j=top-offset+1; i<offset && j>=0; i++, j++) {
       if (ref[j] && (op[j] == objRef)){
         return true;
       }

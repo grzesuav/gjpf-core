@@ -1910,7 +1910,11 @@ public class ThreadInfo
     return (nextPc != null);
   }
 
-  public boolean isReexecuted() {
+  public void reExecuteInstruction() {
+    nextPc = getPC();
+  }
+
+  public boolean willReExecuteInstruction() {
     return (getPC() == nextPc);
   }
 

@@ -227,13 +227,13 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     ChoiceGenerator<?> cg;
 
     if (!ti.isFirstStepInsn()) { // first time around
-      cg = new BooleanChoiceGenerator( "verifyGetBooleanZ", falseFirst );
+      cg = new BooleanChoiceGenerator( "verifyGetBoolean(Z)", falseFirst );
       ss.setNextChoiceGenerator(cg);
       env.repeatInvocation();
       return true;  // not used anyways
 
     } else {  // this is what really returns results
-      return getNextChoice(ss,"verifyGetBooleanZ", BooleanChoiceGenerator.class, Boolean.class);
+      return getNextChoice(ss,"verifyGetBoolean(Z)", BooleanChoiceGenerator.class, Boolean.class);
     }
   }
 
@@ -251,11 +251,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
         min = t;
       }
 
-      IntChoiceGenerator cg = new IntIntervalGenerator( "verifyGetInt", min,max);
+      IntChoiceGenerator cg = new IntIntervalGenerator( "verifyGetInt(II)", min,max);
       return registerChoiceGenerator(env,ss,ti,cg,0);
 
     } else {
-      return getNextChoice(ss, "verifyGetInt", IntChoiceGenerator.class, Integer.class);
+      return getNextChoice(ss, "verifyGetInt(II)", IntChoiceGenerator.class, Integer.class);
     }
   }
 
@@ -266,11 +266,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     if (!ti.isFirstStepInsn()) { // first time around
       int[] values = env.getIntArrayObject(valArrayRef);
 
-      IntChoiceGenerator cg = new IntChoiceFromSet( "verifyGetIntSet", values);
+      IntChoiceGenerator cg = new IntChoiceFromSet( "verifyGetIntSet([I)", values);
       return registerChoiceGenerator(env,ss,ti,cg,0);
 
     } else {
-      return getNextChoice(ss, "verifyGetIntSet", IntChoiceGenerator.class, Integer.class);
+      return getNextChoice(ss, "verifyGetIntSet([I)", IntChoiceGenerator.class, Integer.class);
     }
   }
 
@@ -327,11 +327,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
     if (!ti.isFirstStepInsn()) { // first time around
       double[] values = env.getDoubleArrayObject(valArrayRef);
-      DoubleChoiceGenerator cg = new DoubleChoiceFromSet("verifyDoubleSet", values);
+      DoubleChoiceGenerator cg = new DoubleChoiceFromSet("verifyDoubleSet([D)", values);
       return registerChoiceGenerator(env,ss,ti,cg, 0.0);
 
     } else {
-      return getNextChoice(ss, "verifyDoubleSet", DoubleChoiceFromSet.class,Double.class);
+      return getNextChoice(ss, "verifyDoubleSet([D)", DoubleChoiceFromSet.class,Double.class);
     }
   }
 
