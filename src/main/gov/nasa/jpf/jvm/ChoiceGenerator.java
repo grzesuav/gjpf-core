@@ -268,9 +268,11 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     b.append(getProcessedNumberOfChoices());
     b.append('/');
     b.append(getTotalNumberOfChoices());
+    b.append(",isCascaded:");
+    b.append(isCascaded);
 
     if (attrs != null){
-      b.append(", attrs:[");
+      b.append(",attrs:[");
       int i=0;
       for (Object a: attrs){
         if (i++ > 1){

@@ -1800,9 +1800,39 @@ public class ThreadInfo
     topClone().dup_x2();
   }
 
-  public void skipInstructionLogging () {
-    logInstruction = false;
+  /**
+   * execute a step using on-the-fly partial order reduction
+   */
+  protected boolean executeStep (SystemState ss) throws JPFException {
+    Instruction pc = getPC();
+    Instruction nextPc = null;
+
+    currentThread = this;
+
+    // this constitutes the main transition loop. It gobbles up
+    // insns until there either is none left anymore in this thread,
+    // or it didn't execute (which indicates the insn registered a CG for
+    // subsequent invocation)
+    int nExec = 0;
+    isFirstStepInsn = true; // so that potential CG generators know
+    do {
+      nextPc = executeInstruction();
+
+      if (ss.breakTransition()) {
+        // shortcut break if there was no progress (a ChoiceGenerator was created)
+        // or if the state is explicitly set as ignored
+        break;
+      } else {
+        pc = nextPc;
+      }
+
+      isFirstStepInsn = false;
+
+    } while (pc != null);
+
+    return true;
   }
+
 
   /**
    * Execute next instruction.
@@ -1880,6 +1910,10 @@ public class ThreadInfo
     return (nextPc != null);
   }
 
+  public boolean isReexecuted() {
+    return (getPC() == nextPc);
+  }
+
   /**
    * skip the next bytecode. To be used by listeners to on-the-fly replace
    * instructions. Note that you have to explicitly call setNextPc() in this case
@@ -1890,6 +1924,10 @@ public class ThreadInfo
 
   public boolean isInstructionSkipped() {
     return skipInstruction;
+  }
+
+  public void skipInstructionLogging () {
+    logInstruction = false;
   }
 
   /**
@@ -2521,40 +2559,6 @@ public class ThreadInfo
 
   public void restoreThreadData(ThreadData td) {
     threadData = td;
-  }
-
-
-  /**
-   * execute a step using on-the-fly partial order reduction
-   */
-  protected boolean executeStep (SystemState ss) throws JPFException {
-    Instruction pc = getPC();
-    Instruction nextPc = null;
-
-    currentThread = this;
-
-    // this constitutes the main transition loop. It gobbles up
-    // insns until there either is none left anymore in this thread,
-    // or it didn't execute (which indicates the insn registered a CG for
-    // subsequent invocation)
-    int nExec = 0;
-    isFirstStepInsn = true; // so that potential CG generators know
-    do {
-      nextPc = executeInstruction();
-
-      if (ss.breakTransition()) {
-        // shortcut break if there was no progress (a ChoiceGenerator was created)
-        // or if the state is explicitly set as ignored
-        break;
-      } else {
-        pc = nextPc;
-      }
-
-      isFirstStepInsn = false;
-
-    } while (pc != null);
-
-    return true;
   }
 
   /**

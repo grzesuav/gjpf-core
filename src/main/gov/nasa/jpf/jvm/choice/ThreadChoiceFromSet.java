@@ -102,7 +102,14 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
   
   public void printOn (PrintWriter pw) {
     pw.print(getClass().getName());
-    pw.print(" {");
+    pw.append("[id=\"");
+    pw.append(id);
+    pw.append('"');
+
+    pw.append(",isCascaded:");
+    pw.append(Boolean.toString(isCascaded));
+
+    pw.print(",{");
     for (int i=0; i<values.length; i++) {
       if (i > 0) pw.print(',');
       if (i == count) {
@@ -110,7 +117,7 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
       }
       pw.print(values[i].getName());
     }
-    pw.print("}");
+    pw.print("}]");
   }
   
   public ThreadChoiceFromSet randomize () {

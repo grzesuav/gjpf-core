@@ -118,13 +118,14 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
 
   public String toString () {
     StringBuilder sb = new StringBuilder(getClass().getName());
-    if (id == null) {
-      sb.append('[');
-    } else {
-      sb.append("[id=\"");
-      sb.append(id);
-      sb.append("\",");
-    }
+    sb.append("[id=\"");
+    sb.append(id);
+    sb.append('"');
+
+    sb.append(",isCascaded:");
+    sb.append(isCascaded);
+
+    sb.append(",");
     sb.append(min);
     sb.append("..");
     sb.append(max);

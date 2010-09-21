@@ -133,7 +133,12 @@ public class IntChoiceFromSet extends IntChoiceGenerator {
     StringBuilder sb = new StringBuilder(getClass().getName());
     sb.append("[id=\"");
     sb.append(id);
-    sb.append("\",");
+    sb.append('"');
+
+    sb.append(",isCascaded:");
+    sb.append(isCascaded);
+
+    sb.append(",");
     for (int i=0; i<values.length; i++) {
       if (i > 0) {
         sb.append(',');
