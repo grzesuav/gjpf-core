@@ -62,13 +62,14 @@ public class StackFrame implements Constants, Cloneable {
   protected MethodInfo mi;              /** which method is executed in this frame */
 
   /**
-   * is the operand at top-'offset' a reference with the value 'objRef'
+   * does any of the 'nTopSlots' hold a reference value of 'objRef'
+   * 'nTopSlots' is usually obtained from MethodInfo.getNumberOfCallerStackSlots()
    */
-  public boolean hasReferenceOperand (int offset, int objRef){
+  public boolean includesReferenceOperand (int nTopSlots, int objRef){
     int[] op = operands;
     boolean[] ref = isOperandRef;
 
-    for (int i=0, j=top-offset+1; i<offset && j>=0; i++, j++) {
+    for (int i=0, j=top-nTopSlots+1; i<nTopSlots && j>=0; i++, j++) {
       if (ref[j] && (op[j] == objRef)){
         return true;
       }
@@ -76,6 +77,7 @@ public class StackFrame implements Constants, Cloneable {
 
     return false;
   }
+
 
   /**
    * Creates a new stack frame for a given method.
