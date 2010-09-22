@@ -78,6 +78,22 @@ public class StackFrame implements Constants, Cloneable {
     return false;
   }
 
+  /**
+   * does any of the operand slots hold a reference value of 'objRef'
+   */
+  public boolean includesReferenceOperand (int objRef){
+    int[] op = operands;
+    boolean[] ref = isOperandRef;
+
+    for (int i=0; i<op.length; i++) {
+      if (ref[i] && (op[i] == objRef)){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
 
   /**
    * Creates a new stack frame for a given method.
