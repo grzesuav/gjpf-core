@@ -648,6 +648,8 @@ public class SystemState {
       return true;
 
     } else {
+      vm.notifyChoiceGeneratorProcessed(cg);
+
       ChoiceGenerator<?> parent = cg.getCascadedParent();
       if (parent != null){
         if (advanceCascadedParent(vm,parent)){

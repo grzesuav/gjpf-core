@@ -85,6 +85,15 @@ public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
   public String toString () {
     StringBuilder sb = new StringBuilder(getClass().getName());
     sb.append('[');
+    sb.append("[id=\"");
+    sb.append(id);
+    sb.append('"');
+
+    sb.append(",isCascaded:");
+    sb.append(isCascaded);
+
+    sb.append(",{");
+
     if (count < 1) {
       sb.append(MARKER);
       sb.append(next);
@@ -96,7 +105,7 @@ public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
       sb.append(MARKER);
       sb.append(next);
     }
-    sb.append(']');
+    sb.append("}]");
     return sb.toString();
   }
   
