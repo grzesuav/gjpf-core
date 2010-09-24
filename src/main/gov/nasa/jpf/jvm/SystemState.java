@@ -674,6 +674,8 @@ public class SystemState {
       advance(vm, cg);
 
     } else { // this one is done, but how about our parents
+      vm.notifyChoiceGeneratorProcessed(cg);
+
       if (parent != null){
         if (advanceCascadedParent(vm,parent)){
           cg.reset();
