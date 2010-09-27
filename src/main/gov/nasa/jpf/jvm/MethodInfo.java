@@ -905,7 +905,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return ei;
   }
 
-  public void enter (ThreadInfo ti) {
+  private void enter (ThreadInfo ti) {
     if (isSynchronized()) {
       ElementInfo ei = getBlockedObject(ti, true);
       ei.lock(ti);
@@ -915,6 +915,8 @@ public class MethodInfo extends InfoObject implements Cloneable {
       }
     }
 
+    StackFrame frame = new StackFrame(this, ti.getTopFrame());
+    ti.pushFrame(frame);
     ti.getVM().notifyMethodEntered(ti, this);
   }
 
@@ -951,14 +953,22 @@ public class MethodInfo extends InfoObject implements Cloneable {
     if (((attrs & MJI_NATIVE) != 0) || isNative()) {
       NativePeer nativePeer = ci.getNativePeer();
       if (nativePeer != null) {
-        Instruction nextInsn = null;
         JVM vm = ti.getVM();
+        StackFrame frame = new StackFrame(this, ti.getTopFrame());
 
         // since there is no enter/leave for native methods, we have to do
         // the notifications explicitly
+        ti.pushFrame(frame);                      // Make the logic easier in listeners (e.g. vm.getLastMethod() == vm.getCurrentThread().getMethod())
         vm.notifyMethodEntered(ti, this);
-        nextInsn = nativePeer.executeMethod(ti, this);
+        ti.popFrame(false);                       // Can't keep the frame for later in this method since nativePeer.executeMethod will do work on the top of the stack
+        // <2do> Allow for the frame to remain on the stack for the duration of the call to nativePeer.executeMethod().
+
+        Instruction nextInsn = nativePeer.executeMethod(ti, this);
+
+        ti.pushFrame(frame); // Make the logic easier in listeners (e.g. vm.getLastMethod() == vm.getCurrentThread().getMethod())
         vm.notifyMethodExited(ti, this);
+        ti.popFrame(false);                       // Can't keep the frame since we don't want to leak frames.
+        
         return nextInsn;
 
       } else {
@@ -969,7 +979,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
     } else {
       enter(ti);
 
-      ti.pushFrame( new StackFrame(this, ti.getTopFrame()));
       return ti.getPC();
     }
   }

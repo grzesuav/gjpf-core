@@ -19,6 +19,7 @@
 package java.io;
 
 import gov.nasa.jpf.jvm.Verify;
+import java.nio.charset.*;
 
 /**
  * natively convert char output into byte output
@@ -44,6 +45,21 @@ public class OutputStreamWriter extends Writer {
   
   public OutputStreamWriter(OutputStream os) {
     out = os;
+  }
+  
+  public OutputStreamWriter(OutputStream os, Charset cs) {
+    out = os;
+    throw new UnsupportedOperationException("OutputStreamWriter model does not fully implement this constructor");
+  }
+  
+  public OutputStreamWriter(OutputStream os, CharsetEncoder end) {
+    out = os;
+    throw new UnsupportedOperationException("OutputStreamWriter model does not fully implement this constructor");
+  }
+  
+  public OutputStreamWriter(OutputStream os, String charsetName) {
+    out = os;
+    throw new UnsupportedOperationException("OutputStreamWriter model does not fully implement this constructor");
   }
   
   public void close(){

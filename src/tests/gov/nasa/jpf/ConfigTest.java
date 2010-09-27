@@ -1,9 +1,8 @@
-
-
 package gov.nasa.jpf;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.test.TestJPF;
+import java.io.*;
+import java.util.regex.*;
 import org.junit.Test;
 
 
@@ -19,8 +18,8 @@ public class ConfigTest extends TestJPF {
   @Test
   public void testDefaultAppPropertyInit () {
 
-    String dir = "src/tests/gov/nasa/jpf/";
-    String[] args = {dir + "configTestApp.jpf"};
+    String dir = "src/tests/gov/nasa/jpf";
+    String[] args = {dir + "/configTestApp.jpf"};
 
     Config conf = new Config(args);
 
@@ -32,8 +31,13 @@ public class ConfigTest extends TestJPF {
 
     // that's testing key expansion and the builtin "config_path"
     val = conf.getString("mySUT.location");
-    assert (val != null && val.endsWith("src/tests/gov/nasa/jpf"));
+    
+    assert val != null;
+    
+    if (!File.separator.equals("/"))
+       dir = dir.replaceAll("/", Matcher.quoteReplacement(File.separator));  // On UNIX Config returns / and on Windows Config returns \\
 
+    assert val.endsWith(dir);
   }
 
   @Test

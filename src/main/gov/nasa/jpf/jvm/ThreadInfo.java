@@ -2257,7 +2257,11 @@ public class ThreadInfo
   /**
    * Removes a stack frame.
    */
-  public boolean popFrame () {
+  public boolean popFrame() {
+    return popFrame(true);  
+  }
+     
+  public boolean popFrame (boolean modifyReturnedDirectCall) {
     //if (getMethod().isAtomic()) {
       //list.ks.clearAtomic();
     //}
@@ -2266,10 +2270,12 @@ public class ThreadInfo
       vm.getSystemState().activateGC();
     }
 
-    if (top instanceof DirectCallStackFrame) {
-      returnedDirectCall = (DirectCallStackFrame) top;
-    } else {
-      returnedDirectCall = null;
+    if (modifyReturnedDirectCall) {
+      if (top instanceof DirectCallStackFrame) {
+        returnedDirectCall = (DirectCallStackFrame) top;
+      } else {
+        returnedDirectCall = null;
+      }
     }
 
     stack.remove(topIdx);

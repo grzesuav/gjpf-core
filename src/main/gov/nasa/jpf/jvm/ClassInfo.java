@@ -143,6 +143,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    * Name of the class. e.g. "java.lang.String"
    */
   protected String name;
+  
+  /**
+   * Signature of the class. e.g. "Ljava/lang/String;"
+   */
+  private String signature;
 
   // various class attributes
   protected boolean      isClass = true;
@@ -609,6 +614,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   public boolean isReferenceArray () {
     return isReferenceArray;
   }
+  
+  public static ClassInfo getClassInfo(int uniqueId) {
+    return loadedClasses.get(uniqueId); 
+  }
+  
 
   /**
    * obtain ClassInfo object for given class name
@@ -951,6 +961,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     };
   }
+  
+  public Iterator<MethodInfo> declaredMethodIterator() {
+    return methods.values().iterator();
+  }
 
   /**
    * Search up the class hierarchy to find a static field
@@ -1041,7 +1055,20 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     return null;
   }
-
+  
+  public String getSignature() {
+    if (signature == null) {
+      if (isPrimitive()) {
+        signature = name;
+      } else if (isArray()) {
+        signature = name.replaceAll("\\.", "/");
+      } else {
+        signature = "L" + name.replaceAll("\\.", "/") + ";";
+      }
+    }
+    
+    return signature;     
+  }
 
   /**
    * Returns the name of the class.  e.g. "java.lang.String".  similar to
@@ -1242,7 +1269,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    */
   public static void reset () {
     loadedClasses.clear();
-
+    
     classClassInfo = null;
     objectClassInfo = null;
     stringClassInfo = null;

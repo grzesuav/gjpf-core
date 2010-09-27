@@ -59,6 +59,7 @@ public class MethodListenerTest extends TestJPF {
 
     public void methodEntered (JVM vm){
       MethodInfo mi = vm.getLastMethodInfo();
+      assertSame(mi, vm.getCurrentThread().getMethod());
 
       if (CLSNAME.equals(mi.getClassName())){
         String mthName = mi.getName();
@@ -81,6 +82,8 @@ public class MethodListenerTest extends TestJPF {
     public void methodExited (JVM vm){
       if (traceActive){
         MethodInfo mi = vm.getLastMethodInfo();
+        assertSame(mi, vm.getCurrentThread().getMethod());
+        
         if (CLSNAME.equals(mi.getClassName())){
           level--;
 
@@ -145,6 +148,10 @@ public class MethodListenerTest extends TestJPF {
   void blowUp() {
     throw new RuntimeException("I blow up");
   }
+  
+  void time() {
+    System.currentTimeMillis();
+  }
 
   //--- test methods
   @Test public void testBasicInvocation() {
@@ -152,13 +159,13 @@ public class MethodListenerTest extends TestJPF {
       foo();
       
     } else {
-      assert traceEquals(
+      assertTrue(traceEquals(
               "> testBasicInvocation",
               "  > foo",
               "    > bar",
               "    < bar",
               "  < foo",
-              "< testBasicInvocation");
+              "< testBasicInvocation"));
     }
   }
 
@@ -171,14 +178,14 @@ public class MethodListenerTest extends TestJPF {
       }
 
     } else {
-      assert traceEquals(
+      assertTrue(traceEquals(
               "> testException",
               "  > baz",
               "    > blowUp",
               "X java.lang.RuntimeException",
               "    < blowUp",
               "  < baz",
-              "< testException");
+              "< testException"));
     }
   }
 }
