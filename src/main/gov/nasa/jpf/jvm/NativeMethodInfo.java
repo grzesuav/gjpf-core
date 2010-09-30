@@ -141,7 +141,10 @@ public class NativeMethodInfo extends MethodInfo {
       }
 
       if (env.getRepeat()) {
-        ti.popFrame();
+        if (ti.getTopFrame().getMethodInfo() == this){
+          ti.popFrame();
+        }
+        // don't pop arguments, we will re-execute
         return ti.getPC();
       }
 

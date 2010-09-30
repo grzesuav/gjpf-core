@@ -45,6 +45,10 @@ public class NativeStackFrame extends StackFrame {
     operands = EMPTY_ARRAY;
   }
 
+  public boolean isNative() {
+    return true;
+  }
+
   public boolean modifiesState() {
     return false;
   }

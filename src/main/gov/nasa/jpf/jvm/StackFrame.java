@@ -141,6 +141,9 @@ public class StackFrame implements Constants, Cloneable {
     isLocalRef = new boolean[nLocals];
   }
 
+  public boolean isNative() {
+    return false;
+  }
 
   /**
    * return the object reference for an instance method to be called (we are still in the

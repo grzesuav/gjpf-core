@@ -125,6 +125,15 @@ public abstract class ReturnInstruction extends Instruction {
 
     } else { // there are still frames on the stack
       ti.popFrame(); // do this *before* we push the return value
+
+      StackFrame frame = ti.getTopFrame();
+      if (frame.isNative()){
+        // this was a roundtrip
+        frame.getMethodInfo().leave(ti);
+        ti.popFrame(false);
+        return ti.getPC();
+      }
+
       Instruction nextPC = ti.getReturnFollowOnPC();
 
       if (nextPC != ti.getPC()) {
