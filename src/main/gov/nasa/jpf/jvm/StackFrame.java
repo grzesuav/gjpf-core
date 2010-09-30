@@ -61,38 +61,6 @@ public class StackFrame implements Constants, Cloneable {
 
   protected MethodInfo mi;              /** which method is executed in this frame */
 
-  /**
-   * does any of the 'nTopSlots' hold a reference value of 'objRef'
-   * 'nTopSlots' is usually obtained from MethodInfo.getNumberOfCallerStackSlots()
-   */
-  public boolean includesReferenceOperand (int nTopSlots, int objRef){
-    int[] op = operands;
-    boolean[] ref = isOperandRef;
-
-    for (int i=0, j=top-nTopSlots+1; i<nTopSlots && j>=0; i++, j++) {
-      if (ref[j] && (op[j] == objRef)){
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * does any of the operand slots hold a reference value of 'objRef'
-   */
-  public boolean includesReferenceOperand (int objRef){
-    int[] op = operands;
-    boolean[] ref = isOperandRef;
-
-    for (int i=0; i<op.length; i++) {
-      if (ref[i] && (op[i] == objRef)){
-        return true;
-      }
-    }
-
-    return false;
-  }
 
 
   /**
@@ -264,6 +232,47 @@ public class StackFrame implements Constants, Cloneable {
 
   public String getSourceFile () {
     return mi.getClassInfo().getSourceFileName();
+  }
+
+  /**
+   * does any of the 'nTopSlots' hold a reference value of 'objRef'
+   * 'nTopSlots' is usually obtained from MethodInfo.getNumberOfCallerStackSlots()
+   */
+  public boolean includesReferenceOperand (int nTopSlots, int objRef){
+    int[] op = operands;
+    boolean[] ref = isOperandRef;
+
+    for (int i=0, j=top-nTopSlots+1; i<nTopSlots && j>=0; i++, j++) {
+      if (ref[j] && (op[j] == objRef)){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * does any of the operand slots hold a reference value of 'objRef'
+   */
+  public boolean includesReferenceOperand (int objRef){
+    int[] op = operands;
+    boolean[] ref = isOperandRef;
+
+    for (int i=0; i<op.length; i++) {
+      if (ref[i] && (op[i] == objRef)){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * is this StackFrame modifying the KernelState
+   * this is true unless this is a NativeStackFrame
+   */
+  public boolean modifiesState() {
+    return true;
   }
 
   public boolean isDirectCallFrame () {

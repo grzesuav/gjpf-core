@@ -1606,6 +1606,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return methods;
   }
 
+  /**
+   * be careful, this replaces or adds MethodInfos dynamically
+   */
+  public MethodInfo putDeclaredMethod (MethodInfo mi){
+    return methods.put(mi.getUniqueName(), mi);
+  }
+
   public MethodInfo[] getDeclaredMethodInfos() {
     MethodInfo[] a = new MethodInfo[methods.size()];
     methods.values().toArray(a);

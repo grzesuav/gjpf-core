@@ -98,7 +98,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
         return false;
       }
 
-      if (!ti.getMethod().isSyncRelevant()) {
+      if (!mi.isSyncRelevant()) {
         // filter out ctors (which in all likeliness will execute before
         // an object becomes shared) and <clinit>, which is synchronized
         // by the VM

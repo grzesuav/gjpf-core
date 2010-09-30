@@ -994,13 +994,26 @@ public class ThreadInfo
   }
 
   /**
-   * Returns the current method in the top stack frame.
+   * returns the current method in the top stack frame, which is always a
+   * bytecode method (executed by JPF)
    */
-  public MethodInfo getMethod () {
+  public MethodInfo getTopMethod () {
     if (top != null) {
       return top.getMethodInfo();
     } else {
       return null;
+    }
+  }
+
+  /**
+   * returns the currently executing MethodInfo, which can be a native/MJI method
+   */
+  public MethodInfo getMethod() {
+    MethodInfo mi = vm.getLastMethodInfo();
+    if (mi != null){
+      return mi;
+    } else {
+      return getTopMethod();
     }
   }
 
@@ -1466,18 +1479,8 @@ public class ThreadInfo
       }
     }
 
-    // check if we are in a native method (other than fillInStackTrace()
-    // called from an exception ctor), which isn't on the stack
-    // (but we want to see it anyways).
     int j=0;
-    MethodInfo nativeMth = env.getMethodInfo();
-    if ((nativeMth != null) && (n == stack.size())){
-      snap = new int[n*2 + 2];
-      snap[j++] = nativeMth.getGlobalId();
-      snap[j++] = -1;
-    } else {
-      snap = new int[n*2];
-    }
+    snap = new int[n*2];
 
     for (int i=n-1; i>=0; i--){
       StackFrame frame = stack.get(i);
@@ -1592,36 +1595,31 @@ public class ThreadInfo
 
 
     StackTraceElement (int methodId, int pcOffset) {
-      if (methodId == MethodInfo.REFLECTION_CALL){
-          clsName = "java.lang.reflect.Method";
-          mthName = "invoke";
-          fileName = "Native Method";
-          line    = -1;
+      if (methodId == MethodInfo.REFLECTION_CALL) {
+        clsName = "java.lang.reflect.Method";
+        mthName = "invoke";
+        fileName = "Native Method";
+        line = -1;
 
-      } else if (methodId == MethodInfo.DIRECT_CALL){
-          ignore = true;
+      } else if (methodId == MethodInfo.DIRECT_CALL) {
+        ignore = true;
 
       } else {
         MethodInfo mi = MethodInfo.getMethodInfo(methodId);
-        if (mi != null){
-        clsName = mi.getClassName();
-        mthName = mi.getName();
+        if (mi != null) {
+          clsName = mi.getClassName();
+          mthName = mi.getName();
 
-        if (mi.isMJI()){
-          fileName = "Native Method";
-          line = -1;
-        } else {
-          fileName = mi.getSourceFileName();
+          fileName = mi.getStackTraceSource();
           line = mi.getLineNumber(mi.getInstruction(pcOffset));
-        }
 
         } else { // this sounds like a bug
           clsName = "?";
           mthName = "?";
           fileName = "?";
           line = -1;
+        }
       }
-    }
     }
 
     StackTraceElement (int sRef){
@@ -2188,15 +2186,6 @@ public class ThreadInfo
     }
   }
 
-  /**
-   * Adds a new stack frame for a new called method.
-   */
-  public void pushFrame (StackFrame frame) {
-    topIdx = stack.size();
-    stack.add(frame);
-    top = frame;
-    markChanged(topIdx);
-  }
 
   /**
    * replace the top frame - this is a dangerous method that should only
@@ -2254,6 +2243,18 @@ public class ThreadInfo
     }
   }
 
+
+  /**
+   * Adds a new stack frame for a new called method.
+   */
+  public void pushFrame (StackFrame frame) {
+    topIdx = stack.size();
+    stack.add(frame);
+    top = frame;
+
+    markChanged(topIdx);
+  }
+
   /**
    * Removes a stack frame.
    */
@@ -2262,12 +2263,13 @@ public class ThreadInfo
   }
      
   public boolean popFrame (boolean modifyReturnedDirectCall) {
-    //if (getMethod().isAtomic()) {
-      //list.ks.clearAtomic();
-    //}
 
     if (top.hasAnyRef()) {
       vm.getSystemState().activateGC();
+    }
+
+    if (top.modifiesState()){
+      markChanged(topIdx);
     }
 
     if (modifyReturnedDirectCall) {
@@ -2279,9 +2281,6 @@ public class ThreadInfo
     }
 
     stack.remove(topIdx);
-
-    markChanged(topIdx);
-
     topIdx--;
 
     if (topIdx >= 0) {

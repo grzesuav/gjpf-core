@@ -39,7 +39,7 @@ public class JSR extends Instruction {
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     th.push(getNext(th).getPosition(), false);
 
-    return th.getMethod().getInstructionAt(target);
+    return mi.getInstructionAt(target);
   }
 
   public int getLength() {

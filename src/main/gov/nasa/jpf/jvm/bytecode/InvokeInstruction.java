@@ -139,21 +139,7 @@ public abstract class InvokeInstruction extends Instruction {
   }
 
   StackFrame getCallerFrame (ThreadInfo ti, MethodInfo callee) {
-    StackFrame frame = null;
-
-    if (isCompleted(ti) && callee.isMJI()){
-      // note that args are already from the caller stack (native methods
-      // are executed synchronously, and push the return value BEFORE returning
-      // from the invoke insn)
-      frame = NativePeer.getLastCaller();
-    } else {
-      // locate the caller stack and get it from there. Note this might be
-      // further down the stack, since we might already have pushed the
-      // callee frame (or a direct call overlay like clinit)
-      frame = ti.getStackFrameExecuting(this, 0);
-    }
-
-    return frame;
+    return ti.getStackFrameExecuting(this, 0);
   }
 
   /**

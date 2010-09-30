@@ -34,7 +34,7 @@ public class RETURN extends ReturnInstruction {
 
     // Constructors don't return anything so this is the only instruction that can be used to return from a constructor.
 
-    MethodInfo mi = ti.getMethod();  // Get the current method being executed (e.g. returned from).
+    //MethodInfo mi = ti.getMethod();  // Get the current method being executed (e.g. returned from).
 
     if (mi.isInit()) {  // Check to see if this method is a constructor.
 

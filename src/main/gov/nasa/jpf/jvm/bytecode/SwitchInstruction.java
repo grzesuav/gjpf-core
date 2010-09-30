@@ -66,11 +66,11 @@ public abstract class SwitchInstruction extends Instruction {
     for (int i = 0, l = matches.length; i < l; i++) {
       if (value == matches[i]) {
         lastIdx = i;
-        return ti.getMethod().getInstructionAt(targets[i]);
+        return mi.getInstructionAt(targets[i]);
       }
     }
 
-    return ti.getMethod().getInstructionAt(target);
+    return mi.getInstructionAt(target);
   }
 
   /** useful for symbolic execution modes */
@@ -89,10 +89,10 @@ public abstract class SwitchInstruction extends Instruction {
       
       if (idx == matches.length){ // default branch
         lastIdx = DEFAULT;
-        return ti.getMethod().getInstructionAt(target);        
+        return mi.getInstructionAt(target);
       } else {
         lastIdx = idx;
-        return ti.getMethod().getInstructionAt(targets[idx]);        
+        return mi.getInstructionAt(targets[idx]);
       }
     }
   }

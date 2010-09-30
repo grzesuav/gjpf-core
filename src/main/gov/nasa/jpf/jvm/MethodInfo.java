@@ -53,7 +53,7 @@ import org.apache.bcel.classfile.RuntimeVisibleParameterAnnotations;
 public class MethodInfo extends InfoObject implements Cloneable {
 
   static final int INIT_MTH_SIZE = 4096;
-  private static ArrayList<MethodInfo> mthTable;
+  protected static ArrayList<MethodInfo> mthTable;
   
   // special globalIds
   static final int DIRECT_CALL = -1;
@@ -103,6 +103,14 @@ public class MethodInfo extends InfoObject implements Cloneable {
     }
   }
 
+  /** a unique int assigned to this method */
+  protected int globalId = -1;
+
+  /**
+   * this is a lazy evaluated mangled name consisting of the name and
+   * arg type signature
+   */
+  protected String uniqueName;
 
   /** Name of the method */
   protected String name;
@@ -154,26 +162,18 @@ public class MethodInfo extends InfoObject implements Cloneable {
   // <2do> pcm - turn this into a derived class
 
   /**  the number of stack slots for the arguments (incl. 'this'), lazy eval */
-  private int argSize = -1;
+  protected int argSize = -1;
 
   /** number of arguments (excl. 'this'), lazy eval */
-  private int nArgs = -1;
+  protected int nArgs = -1;
 
   /** what return type do we have (again, lazy evaluated) */
-  private byte returnType = -1;
+  protected byte returnType = -1;
 
   /** used for native method parameter conversion (lazy evaluated) */
-  private byte[] argTypes = null;
+  protected byte[] argTypes = null;
 
 
-  /**
-   * this is a lazy evaluated mangled name consisting of the name and
-   * arg type signature
-   */
-  private String uniqueName;
-    
-  /** a unique int assigned to this method */
-  private int globalId = -1;
   
   static InstructionFactory insnFactory;
   
@@ -505,6 +505,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
    */
   public static String getUniqueName (String mname, String signature) {
     return (mname + signature);
+  }
+
+  public String getStackTraceSource() {
+    return getSourceFileName();
   }
 
   public byte[] getArgumentTypes () {
@@ -905,21 +909,32 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return ei;
   }
 
-  private void enter (ThreadInfo ti) {
+  protected StackFrame createStackFrame (ThreadInfo ti){
+    return new StackFrame(this, ti.getTopFrame());
+  }
+
+  /**
+   * locking, stackframe push and enter notification
+   */
+  public void enter (ThreadInfo ti) {
     if (isSynchronized()) {
       ElementInfo ei = getBlockedObject(ti, true);
       ei.lock(ti);
-      
+
       if (isStatic() && isClinit()) {
         ci.setInitializing(ti);
       }
     }
 
-    StackFrame frame = new StackFrame(this, ti.getTopFrame());
-    ti.pushFrame(frame);
+    // we need to do this after locking
+    ti.pushFrame( createStackFrame(ti));
+
     ti.getVM().notifyMethodEntered(ti, this);
   }
 
+  /**
+   * unlocking and exit notification
+   */
   public void leave (ThreadInfo ti) {
     
     // <2do> - that's not really enough, we might have suspicious bytecode that fails
@@ -931,7 +946,9 @@ public class MethodInfo extends InfoObject implements Cloneable {
     
     if (isSynchronized()) {
       ElementInfo ei = getBlockedObject(ti, false);
-      ei.unlock(ti);
+      if (ei.isLocked()){
+        ei.unlock(ti);
+      }
       
       if (isStatic() && isClinit()) {
         // we just released the lock on the class object, returning from a clinit
@@ -946,39 +963,16 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
   
   /**
-   * execute this method, which might be either bytecode or native.
+   * execute this method invocation
    */
   public Instruction execute (ThreadInfo ti) {
 
-    if (((attrs & MJI_NATIVE) != 0) || isNative()) {
-      NativePeer nativePeer = ci.getNativePeer();
-      if (nativePeer != null) {
-        JVM vm = ti.getVM();
-        StackFrame frame = new StackFrame(this, ti.getTopFrame());
-
-        // since there is no enter/leave for native methods, we have to do
-        // the notifications explicitly
-        ti.pushFrame(frame);                      // Make the logic easier in listeners (e.g. vm.getLastMethod() == vm.getCurrentThread().getMethod())
-        vm.notifyMethodEntered(ti, this);
-        ti.popFrame(false);                       // Can't keep the frame for later in this method since nativePeer.executeMethod will do work on the top of the stack
-        // <2do> Allow for the frame to remain on the stack for the duration of the call to nativePeer.executeMethod().
-
-        Instruction nextInsn = nativePeer.executeMethod(ti, this);
-
-        ti.pushFrame(frame); // Make the logic easier in listeners (e.g. vm.getLastMethod() == vm.getCurrentThread().getMethod())
-        vm.notifyMethodExited(ti, this);
-        ti.popFrame(false);                       // Can't keep the frame since we don't want to leak frames.
-        
-        return nextInsn;
-
-      } else {
-        return ti.createAndThrowException("java.lang.UnsatisfiedLinkError",
+    if (isNative()) {
+      // this should have been a NativeMethodInfo by now
+      return ti.createAndThrowException("java.lang.UnsatisfiedLinkError",
                                           ci.getName() + '.' + getUniqueName() + " (no peer)");
-      }
-      
-    } else {
+    } else { // normal bytecode method
       enter(ti);
-
       return ti.getPC();
     }
   }
