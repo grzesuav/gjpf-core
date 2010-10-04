@@ -230,6 +230,8 @@ public abstract class InstructionVisitorAdapter
 	public void visit(INVOKESTATIC ins){}
 	
 	public void visit(INVOKEVIRTUAL ins){}
+
+  public void visit(INVOKENATIVE ins){}
 	
 	public void visit(IOR ins){}
 	

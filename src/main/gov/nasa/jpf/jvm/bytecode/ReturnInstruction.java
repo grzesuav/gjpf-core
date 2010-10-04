@@ -21,6 +21,8 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.NativeMethodInfo;
+import gov.nasa.jpf.jvm.NativeStackFrame;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -126,24 +128,17 @@ public abstract class ReturnInstruction extends Instruction {
     } else { // there are still frames on the stack
       ti.popFrame(); // do this *before* we push the return value
 
-      StackFrame frame = ti.getTopFrame();
-      if (frame.isNative()){
-        // this was a roundtrip
-        frame.getMethodInfo().leave(ti);
-        ti.popFrame(false);
-        return ti.getPC();
-      }
-
       Instruction nextPC = ti.getReturnFollowOnPC();
-
       if (nextPC != ti.getPC()) {
-        // don't remove or push args if we repeat this insn!
+        // remove args and push return value
         ti.removeArguments(mi);
         pushReturnValue(ti);
 
         if (attr != null){
           setReturnAttr(ti, attr);
         }
+      } else {
+        // don't remove args and push return value, we repeat this insn!
       }
 
       return nextPC;

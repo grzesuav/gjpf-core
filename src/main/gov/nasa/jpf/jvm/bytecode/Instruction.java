@@ -264,8 +264,9 @@ public abstract class Instruction implements InstructionVisit {
     }
   }
 
-  protected abstract void setPeer(org.apache.bcel.generic.Instruction i,
-          ConstantPool cp);
+  protected void setPeer(org.apache.bcel.generic.Instruction i, ConstantPool cp) {
+    // nothing here
+  }
 
   public void init(InstructionHandle h, int off, MethodInfo m,
           ConstantPool cp) {

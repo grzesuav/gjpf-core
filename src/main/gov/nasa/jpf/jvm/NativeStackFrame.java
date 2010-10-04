@@ -21,15 +21,24 @@ package gov.nasa.jpf.jvm;
 
 /**
  * a stack frame for MJI methods
- * NOTE: this is not actively used during native method execution, it just
- * preserves call stack consistency
+ *
+ * NOTE: operands and locals can be, but are not automatically used during
+ * native method execution.
+ *
+ * This differs from a DirectCallStackFrame in that it (a) can cause re-execution
+ * of the native method (e.g. for iterative round trips from a native method), and
+ * it does return values into its caller frame
  */
-public class NativeStackFrame extends StackFrame {
+public class NativeStackFrame extends DynamicStackFrame {
 
   static int[] EMPTY_ARRAY = new int[0];
 
+  // if this is set, the native method invocation is repeated once this
+  // stack frame is on top again
+  boolean repeatInvocation;
+
   public NativeStackFrame (MethodInfo mi, StackFrame caller){
-    this.mi = mi;
+    super(mi,caller);
 
     if (!mi.isStatic()){
       thisRef = caller.getCalleeThis(mi);
@@ -41,8 +50,17 @@ public class NativeStackFrame extends StackFrame {
     pc = mi.getInstruction(0);
     top = -1;
 
+    // we start out with no operands and locals
     locals = EMPTY_ARRAY;
     operands = EMPTY_ARRAY;
+  }
+
+  public void repeatInvocation(boolean cond){
+    repeatInvocation = cond;
+  }
+
+  public boolean isRepeatedInvocation() {
+    return repeatInvocation;
   }
 
   public boolean isNative() {

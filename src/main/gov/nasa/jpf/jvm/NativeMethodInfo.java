@@ -22,7 +22,9 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFNativePeerException;
+import gov.nasa.jpf.jvm.bytecode.INVOKENATIVE;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.util.JPFLogger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -67,12 +69,15 @@ public class NativeMethodInfo extends MethodInfo {
 
     // what about maxLocals and maxStack?
 
-    // we just have one dummy instruction
-    code = new Instruction[1];
-    code[0] = insnFactory.create(ci, Constants.NOP); // maybe we should have a EXEC_NATIVE pseudo insn
-
     this.peer = peer;
     this.mth = mth;
+
+
+    CodeBuilder cb = getCodeBuilder();
+    Instruction insn = insnFactory.create(null, INVOKENATIVE.OPCODE);
+    ((INVOKENATIVE)insn).setInvokedMethod(this);
+    cb.append(insn);
+    cb.setCode();
   }
 
   public void replace( MethodInfo mi){
@@ -140,7 +145,7 @@ public class NativeMethodInfo extends MethodInfo {
         return ti.createAndThrowException(exception, details);
       }
 
-      if (env.getRepeat()) {
+      if (env.isRepeatedInvocation()) {
         if (ti.getTopFrame().getMethodInfo() == this){
           ti.popFrame();
         }

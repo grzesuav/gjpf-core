@@ -963,9 +963,30 @@ public class MJIEnv {
    * NOTE - this does NOT mean it's the NEXT executed insn, since the native method
    * might have pushed direct call frames on the stack before asking us to repeat it
    */
-  public void repeatInvocation () {
-    repeat = true;
+  public void repeatInvocation(){
+    repeatInvocation(true);
   }
+
+  public void repeatInvocation (boolean cond) {
+    StackFrame frame = ti.getTopFrame();
+    if (frame instanceof NativeStackFrame){
+      NativeStackFrame nativeFrame = (NativeStackFrame)frame;
+      nativeFrame.repeatInvocation(cond);
+    } else {
+      throw new JPFException("attempt to repeat non-native invocation");
+    }
+  }
+
+  public boolean isRepeatedInvocation () {
+    StackFrame frame = ti.getTopFrame();
+    if (frame instanceof NativeStackFrame){
+      NativeStackFrame nativeFrame = (NativeStackFrame)frame;
+      return nativeFrame.isRepeatedInvocation();
+    } else {
+      throw new JPFException("attempt to repeat non-native invocation");
+    }
+  }
+
 
   public void setNextChoiceGenerator (ChoiceGenerator<?> cg){
     vm.getSystemState().setNextChoiceGenerator(cg);
@@ -1110,10 +1131,6 @@ public class MJIEnv {
 
   Instruction getInstruction () {
     return ti.getPC();
-  }
-
-  boolean getRepeat () {
-    return repeat;
   }
 
   StaticArea getStaticArea () {

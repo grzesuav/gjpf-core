@@ -125,6 +125,7 @@ public interface InstructionVisitor {
 	public void visit(INVOKESPECIAL ins);
 	public void visit(INVOKESTATIC ins);
 	public void visit(INVOKEVIRTUAL ins);
+  public void visit(INVOKENATIVE ins);
 	public void visit(IOR ins);
 	public void visit(IREM ins);
 	public void visit(IRETURN ins);

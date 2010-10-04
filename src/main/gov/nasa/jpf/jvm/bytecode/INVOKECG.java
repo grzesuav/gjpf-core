@@ -48,10 +48,6 @@ public class INVOKECG extends Instruction {
   
   public INVOKECG() {}
 
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    // nothing - this is an artificial instruction
-  }
-  
   public void setInvokes(List<Invocation> invokes) {
     this.invokes = invokes;
   }

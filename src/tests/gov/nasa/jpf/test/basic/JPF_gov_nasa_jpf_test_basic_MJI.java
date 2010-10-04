@@ -161,7 +161,7 @@ public class JPF_gov_nasa_jpf_test_basic_MJI {
       frame.push(a+1);
       ti.pushFrame(frame);
 
-      env.repeatInvocation();
+      env.repeatInvocation(); // this will continue with the first insn of the top StackFrame
 
     } else {  // re-invoked
       DirectCallStackFrame frame = ti.getReturnedDirectCall();

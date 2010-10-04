@@ -2294,16 +2294,22 @@ public class ThreadInfo
 
   /**
    * NOTE - this has to be called *after* the returning frame was popped
+   * a returned DirectCallStackFrame is already off the stack, but still stored
+   * in 'returnedDirectCall'
    */
   public Instruction getReturnFollowOnPC () {
     if (returnedDirectCall != null) {
       Instruction next = returnedDirectCall.getNextPC();
       if (next != null) {
+        // the direct call had an explicitly set next instruction (usual case)
         return next;
       } else {
+        // it might have overlaid calls
         return top.getPC();
       }
+
     } else {
+      // normal bytecode exec, continue with the instruction followind the InvokeInstruction
       return top.getPC().getNext();
     }
   }
