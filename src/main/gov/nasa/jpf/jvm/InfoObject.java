@@ -44,7 +44,23 @@ public abstract class InfoObject {
       annotations = ai;
     }
   }
-  
+
+  public void addAnnotation (AnnotationInfo newAnnotation){
+    AnnotationInfo[] ai = annotations;
+    if (ai != null){
+      ai = new AnnotationInfo[1];
+      ai[0] = newAnnotation;
+
+    } else {
+      int len = annotations.length;
+      ai = new AnnotationInfo[len+1];
+      System.arraycopy(annotations, 0, ai, 0, len);
+      ai[len] = newAnnotation;
+    }
+
+    annotations = ai;
+  }
+
   public AnnotationInfo[] getAnnotations() {
     return annotations;
   }

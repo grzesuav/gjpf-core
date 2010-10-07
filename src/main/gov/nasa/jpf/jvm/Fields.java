@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
+import gov.nasa.jpf.util.Misc;
 
 
 /**
@@ -347,32 +348,10 @@ public abstract class Fields implements Cloneable {
       }
     }
 
-    //--- check attributes (if any)
-    Object[] a = fieldAttrs;
-    Object[] a1 = f.fieldAttrs;
-    if ((a == null) != (a1 == null)) {
+    if (!Misc.compare(l, fieldAttrs, f.fieldAttrs)){
       return false;
     }
-    if (a != null) {
-      l = a.length;
-      if (l != a1.length) {
-        return false;
-      }
-      for (int i=0; i<l; i++) {
-        if (a[i] == null) {
-          if (a1[i] != null) {
-            return false;
-          }
-        } else {
-          if (a1[i] == null) {
-            return false;
-          } else if (!a[i].equals(a1[i])) {
-            return false;
-          }
-        }
-      }
-    }
-
+    
     if (objectAttr != null){
       if (!objectAttr.equals(f.objectAttr)){
         return false;
