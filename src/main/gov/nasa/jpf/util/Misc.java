@@ -344,6 +344,48 @@ public class Misc {
     }
   }
 
+  /**
+   * compare first len objects of two reference arrays, which can contain null
+   * elements. If any of the reference arrays is null, this is treated as
+   * if all elements would be null
+   */
+  public static boolean compare (int len, Object[] a1, Object[] a2){
+    if (a1 == null && a2 == null){
+      return true;
+    }
+    
+    if (a1 == null){
+      if (a2 != null){
+        for (int i=0; i<len; i++){
+          if (a2[i] != null){
+            return false;
+          }
+        }
+      }
+    } else if (a2 == null){
+      for (int i=0; i<len; i++){
+        if (a1[i] != null){
+          return false;
+        }
+      }      
+    } else {
+      for (int i = 0; i < len; i++) {
+        Object o1 = a1[i];
+        Object o2 = a2[i];
+
+        if (o1 != null) {
+          if (!o1.equals(o2)) {
+            return false;
+          }
+        } else if (o2 != null) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  }
+
 
   /*=================== PRIVATE STUFF ===================*/
 

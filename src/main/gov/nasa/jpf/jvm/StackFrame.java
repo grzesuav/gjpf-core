@@ -24,6 +24,7 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.Misc;
 
 import org.apache.bcel.Constants;
 
@@ -959,7 +960,7 @@ public class StackFrame implements Constants, Cloneable {
       return false;
     }
 
-    // compare the locals
+    //--- compare the locals
     int[] l = sf.locals;
     boolean[] lr = sf.isLocalRef;
     int   nlocals = locals.length;
@@ -972,8 +973,11 @@ public class StackFrame implements Constants, Cloneable {
         return false;
       }
     }
-
-    // compare the operand stacks
+    if (!Misc.compare(nlocals,localAttr,sf.localAttr)){
+      return false;
+    }
+    
+    //--- compare the operand stacks
     int[] o = sf.operands;
     boolean[] or = sf.isOperandRef;
 
@@ -985,10 +989,13 @@ public class StackFrame implements Constants, Cloneable {
         return false;
       }
     }
+    if (!Misc.compare(top+1, operandAttr, sf.operandAttr)){
+      return false;
+    }
 
     return true;
   }
-
+  
   public boolean hasAnyRef () {
     for (int i=0; i<=top; i++) {
       if (isOperandRef[i]) {
