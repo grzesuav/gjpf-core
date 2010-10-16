@@ -254,27 +254,26 @@ public class JPF_java_lang_reflect_Method {
   public static int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                                            int objRef, int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
-    Instruction insn = ti.getPC();
         
     MethodInfo mi = getMethodInfo(env,mthRef);
-    DirectCallStackFrame frame;
-    
-    if (!ti.isResumedInstruction(insn)) { // make a direct call
+    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+
+    if (frame != null){
+      return createBoxedReturnValueObject( env, mi, frame);
+
+    } else {
       MethodInfo stub = mi.createReflectionCallStub();
-      frame = new DirectCallStackFrame(stub, insn);
-        
+      frame = new DirectCallStackFrame(stub, 2,0);
+
       if (!mi.isStatic()) {
         frame.push(objRef, true);
       }
-      
+
       pushUnboxedArguments(env, mi, frame, argsRef);
-      
+
       ti.pushFrame(frame);
-      env.repeatInvocation();
-      
+
       return MJIEnv.NULL;
-    } else { // direct call returned, unbox return type (if any)      
-      return createBoxedReturnValueObject(env, mi, ti.getReturnedDirectCall());
     }
   }
   

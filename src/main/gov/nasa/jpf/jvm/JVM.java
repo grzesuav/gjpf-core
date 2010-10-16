@@ -568,6 +568,22 @@ public class JVM {
     }
   }
 
+  protected void notifyChoiceGeneratorRegistered (ChoiceGenerator<?>cg) {
+    if (listener != null) {
+      try {
+        lastChoiceGenerator = cg;
+        listener.choiceGeneratorRegistered(this);
+        lastChoiceGenerator = null;
+      } catch (UncaughtException x) {
+        throw x;
+      } catch (JPF.ExitException x) {
+        throw x;
+      } catch (Throwable t){
+        throw new JPFListenerException("exception during choiceGeneratorRegistered() notification", t);
+      }
+    }
+  }
+
   protected void notifyChoiceGeneratorSet (ChoiceGenerator<?>cg) {
     if (listener != null) {
       try {

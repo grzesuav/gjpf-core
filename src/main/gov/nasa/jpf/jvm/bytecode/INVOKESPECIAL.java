@@ -46,7 +46,8 @@ public class INVOKESPECIAL extends InstanceInvocation {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    int objRef = ti.getCalleeThis( getArgSize());
+    int argSize = getArgSize();
+    int objRef = ti.getCalleeThis( argSize);
     lastObj = objRef;
 
     // we don't have to check for NULL objects since this is either a ctor, a 
@@ -54,8 +55,9 @@ public class INVOKESPECIAL extends InstanceInvocation {
 
     MethodInfo mi = getInvokedMethod(ti);
 
-    if (mi == null)
+    if (mi == null){
       return ti.createAndThrowException("java.lang.NoSuchMethodException", "Calling " + cname + "." + mname);
+    }
 
     ElementInfo ei = ks.da.get(objRef);
 

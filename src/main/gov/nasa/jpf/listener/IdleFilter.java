@@ -173,7 +173,7 @@ public class IdleFilter extends PropertyListenerAdapter {
               case JUMP:
                 // pretty bold, we jump past the loop end and go on from there
 
-                Instruction next = insn.getNext();
+                Instruction next = insn.getFollowingInstruction();
                 ti.setNextPC(next);
 
                 log.warning("jumped past loop in: " + ti.getName() +

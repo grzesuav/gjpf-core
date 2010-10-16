@@ -143,7 +143,17 @@ public interface VMListener extends JPFListener {
   void exceptionHandled (JVM vm);
 
   /**
-   * a new ChoiceGenerator was registered, which means we have a transition boundary
+   * next ChoiceGenerator was registered, which means this is the end of the current transition
+   * 
+   * the reason why we have this in addition to the choiceGeneratorSet is that listeners
+   * can reset the registered CG and so force the current transition to continue (although the
+   * listener in this case has to make sure the operand stack is in a consistent state for
+   * continued execution because there might be a bottom half of an Instruction.execute() missing)
+   */
+  void choiceGeneratorRegistered (JVM vm);
+
+  /**
+   * a new ChoiceGenerator was set, which means we are at the beginning of a new transition
    */
   void choiceGeneratorSet (JVM vm);
   

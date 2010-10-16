@@ -50,7 +50,7 @@ public class JPF_java_lang_Class {
       Instruction insn = ti.getPC();
       ClassInfo ci = getReferredClassInfo(env, robj).getComponentClassInfo();
 
-      if (insn.requiresClinitCalls(ti, ci)) {
+      if (insn.causedClinitCalls(ti, ci)) {
         env.repeatInvocation();
         return MJIEnv.NULL;
       }
@@ -152,7 +152,7 @@ public class JPF_java_lang_Class {
       return MJIEnv.NULL;
     }
     
-    if (insn.requiresClinitCalls(ti, ci)) {
+    if (insn.causedClinitCalls(ti, ci)) {
       env.repeatInvocation();
       return MJIEnv.NULL;
     }
@@ -170,48 +170,45 @@ public class JPF_java_lang_Class {
    * via the class object of the class to instantiate
    */
   public static int newInstance____Ljava_lang_Object_2 (MJIEnv env, int robj) {
-    ClassInfo ci = getReferredClassInfo(env,robj);   // what are we
     ThreadInfo ti = env.getThreadInfo();
-    Instruction insn = ti.getPC();
-    int objRef = MJIEnv.NULL;
-    
-    if(ci.isAbstract()){
-      env.throwException("java.lang.InstantiationException");
-      return MJIEnv.NULL;
-    }
-    
-    // this is a java.lang.Class instance method, so the class we are instantiating
-    // must already be initialized (either by Class.forName() or accessing the
-    // .class field
-    
-    if (!ti.isResumedInstruction(insn)) {
-      objRef = env.newObject(ci);  // create the thing
-    
+    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+
+    if (frame != null){
+      return frame.pop();
+
+    } else {
+      ClassInfo ci = getReferredClassInfo(env,robj);   // what are we
+
+      if(ci.isAbstract()){ // not allowed to instantiate
+        env.throwException("java.lang.InstantiationException");
+        return MJIEnv.NULL;
+      }
+
+      int objRef = env.newObject(ci);  // create the thing
+
       MethodInfo mi = ci.getMethod("<init>()V", true);
-      if (mi != null) { // Oops - direct call required
-        
+      if (mi != null) { // direct call required for initialization
+
         // <2do> - still need to handle protected
         if (mi.isPrivate()){
           env.throwException("java.lang.IllegalAccessException", "cannot access non-public member of class " + ci.getName());
-          return MJIEnv.NULL;          
+          return MJIEnv.NULL;
         }
-        
+
         MethodInfo stub = mi.createDirectCallStub("[init]");
-        DirectCallStackFrame frame = new DirectCallStackFrame(stub, insn);
+        frame = new DirectCallStackFrame(stub, 2,0);
         frame.push( objRef, true);
         // Hmm, we borrow the DirectCallStackFrame to cache the object ref
         // (don't try that with a normal StackFrame)
         frame.dup();
         ti.pushFrame(frame);
-        env.repeatInvocation();
+
         return MJIEnv.NULL;
+
+      } else {
+        return objRef; // no initialization required
       }
-        
-    } else { // it was resumed after we had to direct call the default ctor
-      objRef = ti.getReturnedDirectCall().pop();
     }
-    
-    return objRef;
   }
   
   public static int getSuperclass____Ljava_lang_Class_2 (MJIEnv env, int robj) {
@@ -410,7 +407,7 @@ public class JPF_java_lang_Class {
     Instruction insn = ti.getPC();
     ClassInfo fci = ClassInfo.getResolvedClassInfo("java.lang.reflect.Field");
     
-    if (insn.requiresClinitCalls(ti, fci)) {
+    if (insn.causedClinitCalls(ti, fci)) {
       env.repeatInvocation();
       return MJIEnv.NULL;
     }
@@ -472,7 +469,7 @@ public class JPF_java_lang_Class {
       Instruction insn = ti.getPC();
       ClassInfo fci = ClassInfo.getResolvedClassInfo("java.lang.reflect.Field");
       
-      if (insn.requiresClinitCalls(ti, fci)) {
+      if (insn.causedClinitCalls(ti, fci)) {
         env.repeatInvocation();
         return MJIEnv.NULL;
       }

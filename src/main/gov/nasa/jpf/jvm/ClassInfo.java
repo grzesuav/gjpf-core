@@ -24,8 +24,11 @@ import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListener;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
+import gov.nasa.jpf.jvm.bytecode.ARETURN;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
+import gov.nasa.jpf.jvm.bytecode.IRETURN;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.bytecode.LRETURN;
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjVector;
@@ -360,21 +363,21 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       MethodInfo pmi = new MethodInfo(this, mi.getUniqueName(), 1, 2, Modifier.PUBLIC);
       MethodInfo.CodeBuilder cb = pmi.getCodeBuilder();
 
-      ALOAD aload = (ALOAD)insnFactory.create(this, Constants.ALOAD);
+      ALOAD aload = insnFactory.create(this, ALOAD.class);
       aload.setIndex(0); // load this
       cb.append(aload);
 
-      GETFIELD getfield = (GETFIELD)insnFactory.create(this, Constants.GETFIELD);
+      GETFIELD getfield = insnFactory.create(this, GETFIELD.class);
       getfield.setField(mname, name);
       cb.append(getfield);
 
       if (fi.isReference()){
-        cb.append(insnFactory.create(this, Constants.ARETURN));
+        cb.append(insnFactory.create(this, ARETURN.class));
       } else {
         if (fi.getStorageSize() == 1) {
-          cb.append(insnFactory.create(this, Constants.IRETURN));
+          cb.append(insnFactory.create(this, IRETURN.class));
         } else {
-          cb.append(insnFactory.create(this, Constants.LRETURN));
+          cb.append(insnFactory.create(this, LRETURN.class));
         }
       }
 
@@ -1721,25 +1724,31 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    * @return  true if clinit stackframes were pushed, i.e. context instruction
    * needs to be re-executed
    */
-  public boolean initializeClass (ThreadInfo ti, Instruction continuation) {
+  public boolean initializeClass (ThreadInfo ti) {
     int pushedFrames = 0;
+    StackFrame frame = ti.getTopFrame();
 
     // push clinits of class hierarchy (upwards, since call stack is LIFO)
     for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
-      if (ci.pushClinit(ti, continuation)) {
-        continuation = null;
+      if (ci.pushClinit(ti)) {
         pushedFrames++;
       }
     }
 
-    return (pushedFrames > 0);
+    if (pushedFrames > 0){
+      // caller needs to reexecute the insn that caused the initialization
+      return true;
+
+    } else {
+      return false;
+    }
   }
 
   /**
    * local class initialization
    * @return  true if we pushed a <clinit> frame
    */
-  protected boolean pushClinit (ThreadInfo ti, Instruction continuation) {
+  protected boolean pushClinit (ThreadInfo ti) {
     int stat = sei.getStatus();
 
     if (stat != INITIALIZED) {
@@ -1749,7 +1758,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
         MethodInfo mi = getMethod("<clinit>()V", false);
         if (mi != null) {
           MethodInfo stub = mi.createDirectCallStub("[clinit]");
-          StackFrame sf = new DirectCallStackFrame(stub, continuation);
+          StackFrame sf = new DirectCallStackFrame(stub);
           ti.pushFrame( sf);
           return true;
 

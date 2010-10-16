@@ -146,14 +146,17 @@ public class ExceptionHandlingTest extends TestJPF {
         System.out.println(')');
       }
 
-      assert st.length == 2 : "wrong stack trace depth";
+      assert st.length == 3 : "wrong stack trace depth";
 
       String clsName = ExceptionHandlingTest.class.getName();
       assert st[0].getClassName().equals(clsName);
       assert st[0].getMethodName().equals("testStackTrace");
 
-      assert st[1].getClassName().equals(clsName);
-      assert st[1].getMethodName().equals("main");
+      assert st[1].getClassName().equals("gov.nasa.jpf.util.test.TestJPF");
+      assert st[1].getMethodName().equals("runTestsOfThisClass");
+
+      assert st[2].getClassName().equals(clsName);
+      assert st[2].getMethodName().equals("main");
     }
   }
   

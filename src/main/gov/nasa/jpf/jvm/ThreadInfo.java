@@ -620,6 +620,26 @@ public class ThreadInfo
     return stack.size();
   }
 
+  public StackFrame getCallerStackFrame (int offset){
+    int idx = stack.size() - offset -1;
+    if (idx >= 0){
+      return stack.get(idx);
+    } else {
+      return null;
+    }
+  }
+
+  public StackFrame getLastNonSyntheticStackFrame (){
+    for (int i = stack.size()-1; i>= 0; i--){
+      StackFrame frame = stack.get(i);
+      if (!frame.isSynthetic()){
+        return frame;
+      }
+    }
+
+    return null;
+  }
+
   public StackFrame getStackFrame(int idx){
     return stack.get(idx);
   }
@@ -1724,7 +1744,7 @@ public class ThreadInfo
     }
 
     if (!ci.isInitialized()){
-      if (ci.initializeClass(this, getPC())) {
+      if (ci.initializeClass(this)) {
         return getPC();
       }
     }
@@ -1867,13 +1887,17 @@ public class ThreadInfo
     // here we have our post exec bytecode exec observation point
     vm.notifyInstructionExecuted(this, pc, nextPc);
 
-    // set the next insn to execute if we did not return from the last frame stack
-    // (note that nextPc might have been set by a listener)
+    // set+return the next insn to execute if we did not return from the last stack frame.
+    // Note that 'nextPc' might have been set by a listener, and/or 'top' might have
+    // been changed by executing an invoke, return or throw (handler), or by
+    // pushing overlay calls on the stack
     if (top != null) {
+      // <2do> this is where we would have to handle general insn repeat
       setPC(nextPc);
+      return nextPc;
+    } else {
+      return null;
     }
-
-    return nextPc;
   }
 
   /**
@@ -1884,6 +1908,8 @@ public class ThreadInfo
     Instruction pc = getPC();
     SystemState ss = vm.getSystemState();
     KernelState ks = vm.getKernelState();
+
+    nextPc = null; // reset in case pc.execute blows (this could be behind an exception firewall)
 
     if (log.isLoggable(Level.FINE)) {
       log.fine( pc.getMethodInfo().getCompleteName() + " " + pc.getPosition() + " : " + pc);
@@ -1934,11 +1960,16 @@ public class ThreadInfo
 
   /**
    * explicitly set the next insn to execute. To be used by listeners that
-   * replace bytecode exec (during 'executeInstruction' notification)
+   * replace bytecode exec (during 'executeInstruction' notification
+   *
+   * Note this is dangerous because you have to make sure the operand stack is
+   * in a consistent state. This also will fail if someone already ordered
+   * reexecution of the current instruction
    */
   public void setNextPC (Instruction insn) {
     nextPc = insn;
   }
+
 
   /**
    * Executes a method call. Be aware that it executes the whole method as one atomic
@@ -1955,12 +1986,14 @@ public class ThreadInfo
     pushFrame(frame);
     int    depth = countStackFrames();
     Instruction pc = frame.getPC();
+    SystemState ss = vm.getSystemState();
 
-    vm.getSystemState().incAtomic(); // to shut off avoidable context switches (MONITOR_ENTER and wait() can still block)
+    ss.incAtomic(); // to shut off avoidable context switches (MONITOR_ENTER and wait() can still block)
+
     while (depth <= countStackFrames()) {
       Instruction nextPC = executeInstruction();
 
-      if (nextPC == pc) {
+      if (ss.getNextChoiceGenerator() != null) {
         // BANG - we can't have CG's here
         // should be rather an ordinary exception
         // createAndThrowException("java.lang.AssertionError", "choice point in sync executed method: " + frame);
@@ -1969,7 +2002,10 @@ public class ThreadInfo
         pc = nextPC;
       }
     }
+
     vm.getSystemState().decAtomic();
+
+    nextPc = null;
 
     // the frame was already removed by the RETURN insn of the frame's method
   }
@@ -1993,10 +2029,12 @@ public class ThreadInfo
   public void executeMethodHidden (DirectCallStackFrame frame) {
 
     pushFrame(frame);
-    int    depth = countStackFrames();
+    
+    int depth = countStackFrames(); // this includes the DirectCallStackFrame
     Instruction pc = frame.getPC();
 
     vm.getSystemState().incAtomic(); // to shut off avoidable context switches (MONITOR_ENTER and wait() can still block)
+
     while (depth <= countStackFrames()) {
       Instruction nextPC = executeInstructionHidden();
 
@@ -2013,7 +2051,10 @@ public class ThreadInfo
         }
       }
     }
+
     vm.getSystemState().decAtomic();
+
+    nextPc = null;
 
     // the frame was already removed by the RETURN insn of the frame's method
   }
@@ -2253,69 +2294,59 @@ public class ThreadInfo
     top = frame;
 
     markChanged(topIdx);
+
+    returnedDirectCall = null;
   }
 
   /**
-   * Removes a stack frame.
+   * Removes a stack frame
    */
-  public boolean popFrame() {
-    return popFrame(true);  
-  }
-     
-  public boolean popFrame (boolean modifyReturnedDirectCall) {
+  public StackFrame popFrame() {
+    StackFrame frame = top;
 
-    if (top.hasAnyRef()) {
+    //--- do our housekeeping
+    if (frame.hasAnyRef()) {
       vm.getSystemState().activateGC();
     }
-
-    if (top.modifiesState()){
+    if (frame.modifiesState()){ // ?? move to special return insns?
       markChanged(topIdx);
     }
 
-    if (modifyReturnedDirectCall) {
-      if (top instanceof DirectCallStackFrame) {
-        returnedDirectCall = (DirectCallStackFrame) top;
-      } else {
-        returnedDirectCall = null;
-      }
-    }
-
+    //--- now get the frame off the stack
     stack.remove(topIdx);
     topIdx--;
 
     if (topIdx >= 0) {
       top = stack.get(topIdx);
-      return true;
     } else {
       top = null;
-      return false;
     }
+
+    return top;
   }
 
   /**
-   * NOTE - this has to be called *after* the returning frame was popped
-   * a returned DirectCallStackFrame is already off the stack, but still stored
-   * in 'returnedDirectCall'
+   * removing DirectCallStackFrames is a bit different (only happens from
+   * DIRECTCALLRETURN insns)
    */
-  public Instruction getReturnFollowOnPC () {
-    if (returnedDirectCall != null) {
-      Instruction next = returnedDirectCall.getNextPC();
-      if (next != null) {
-        // the direct call had an explicitly set next instruction (usual case)
-        return next;
-      } else {
-        // it might have overlaid calls
-        return top.getPC();
-      }
+  public StackFrame popDirectCallFrame() {
+    assert top instanceof DirectCallStackFrame;
 
+    // we don't need to mark anything as changed because we didn't
+    // use references in this stackframe
+
+    returnedDirectCall = (DirectCallStackFrame)top;
+    
+    stack.remove(topIdx);
+    topIdx--;
+
+    if (topIdx >= 0) {
+      top = stack.get(topIdx);
     } else {
-      // normal bytecode exec, continue with the instruction followind the InvokeInstruction
-      return top.getPC().getNext();
+      top = null;
     }
-  }
 
-  public boolean isResumedInstruction (Instruction insn) {
-    return (returnedDirectCall != null) && (returnedDirectCall.getNextPC() == insn);
+    return top;
   }
 
   public DirectCallStackFrame getReturnedDirectCall () {

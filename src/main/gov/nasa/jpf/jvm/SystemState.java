@@ -379,6 +379,8 @@ public class SystemState {
     }
 
     nextCg = cg;
+
+    execThread.getVM().notifyChoiceGeneratorRegistered(cg); // <2do> we need a better way to get the vm
   }
 
   

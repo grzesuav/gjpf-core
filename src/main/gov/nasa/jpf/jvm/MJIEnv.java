@@ -46,7 +46,7 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
  * don't need mi or ci).
  *
  * Note also this only works because we are not getting recursive in
- * native method calls. In fact, the whole DirectCallStackFrame / repeatInvocation
+ * native method calls. In fact, the whole DirectCallStackFrame / repeatTopInstruction
  * mechanism is there to turn logial recursion (JPF calling native, calling
  * JPF, calling native,..) into iteration. Otherwise we couldn't backtrack
  */
@@ -959,32 +959,16 @@ public class MJIEnv {
   }
   
   /**
-   * repeat execution of the InvokeInstruction that caused a native method call
+   * repeat execution of the instruction that caused a native method call
    * NOTE - this does NOT mean it's the NEXT executed insn, since the native method
-   * might have pushed direct call frames on the stack before asking us to repeat it
+   * might have pushed direct call frames on the stack before asking us to repeat it.
    */
-  public void repeatInvocation(){
-    repeatInvocation(true);
+  public void repeatInvocation () {
+    repeat = true;
   }
 
-  public void repeatInvocation (boolean cond) {
-    StackFrame frame = ti.getTopFrame();
-    if (frame instanceof NativeStackFrame){
-      NativeStackFrame nativeFrame = (NativeStackFrame)frame;
-      nativeFrame.repeatInvocation(cond);
-    } else {
-      throw new JPFException("attempt to repeat non-native invocation");
-    }
-  }
-
-  public boolean isRepeatedInvocation () {
-    StackFrame frame = ti.getTopFrame();
-    if (frame instanceof NativeStackFrame){
-      NativeStackFrame nativeFrame = (NativeStackFrame)frame;
-      return nativeFrame.isRepeatedInvocation();
-    } else {
-      throw new JPFException("attempt to repeat non-native invocation");
-    }
+  public boolean isInvocationRepeated() {
+    return repeat;
   }
 
 
@@ -1004,7 +988,7 @@ public class MJIEnv {
   // NOTE - this can only be called from a native method context, since
   // otherwise the top frame is the callee
   public Object[] getArgAttributes () {
-    StackFrame caller = ti.getTopFrame();
+    StackFrame caller = getCallerStackFrame();
     return caller.getArgumentAttrs(mi);
   }
 
@@ -1299,7 +1283,13 @@ public class MJIEnv {
     // NOTE: we have to repeat no matter what, since this is called from
     // a handler context (if we only had to create a class object w/o
     // calling clinit, we can't just go on)
-    insn.requiresClinitCalls(ti,ci);
+    insn.causedClinitCalls(ti,ci);
     repeatInvocation();
+  }
+
+  public StackFrame getCallerStackFrame() {
+    // since native methods are now executed within their own stack frames
+    // we provide a little helper to get the caller
+    return ti.getLastNonSyntheticStackFrame();
   }
 }

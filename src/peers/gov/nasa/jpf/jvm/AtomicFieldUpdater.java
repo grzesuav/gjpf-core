@@ -39,8 +39,7 @@ public class AtomicFieldUpdater {
     ElementInfo ei = env.getElementInfo(tRef);
     SystemState ss = env.getSystemState();
 
-    ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSharedFieldAccessCG(
-        ei, ti);
+    ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSharedFieldAccessCG(ei, ti);
     if (cg != null) {
       ss.setNextChoiceGenerator(cg);
       env.repeatInvocation();

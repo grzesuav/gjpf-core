@@ -22,9 +22,10 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFNativePeerException;
-import gov.nasa.jpf.jvm.bytecode.INVOKENATIVE;
+import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.NATIVERETURN;
 import gov.nasa.jpf.util.JPFLogger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -72,13 +73,18 @@ public class NativeMethodInfo extends MethodInfo {
     this.peer = peer;
     this.mth = mth;
 
-
     CodeBuilder cb = getCodeBuilder();
-    Instruction insn = insnFactory.create(null, INVOKENATIVE.OPCODE);
-    ((INVOKENATIVE)insn).setInvokedMethod(this);
-    cb.append(insn);
+
+    // just two insns in here, both synthetic
+    EXECUTENATIVE exec = insnFactory.create(null, EXECUTENATIVE.class);
+    exec.setExecutedMethod(this);
+    cb.append(exec);
+
+    cb.append( insnFactory.create(null, NATIVERETURN.class));
+
     cb.setCode();
   }
+
 
   public void replace( MethodInfo mi){
     mthTable.set(mi.globalId, this);
@@ -90,13 +96,22 @@ public class NativeMethodInfo extends MethodInfo {
     return true;
   }
 
+  public boolean hasEmptyBody (){
+    // how would we know
+    return false;
+  }
+
   public NativePeer getNativePeer() {
     return peer;
   }
 
+  public Method getMethod() {
+    return mth;
+  }
+
   @Override
   public String getStackTraceSource() {
-    return "native " + peer.getClass().getName();
+    return peer.getPeerClassName();
   }
 
   @Override
@@ -106,18 +121,18 @@ public class NativeMethodInfo extends MethodInfo {
 
   @Override
   protected StackFrame createStackFrame (ThreadInfo ti){
-    return new NativeStackFrame(this, ti.getTopFrame());
+    StackFrame caller = ti.getTopFrame();
+    Object[] args = getArguments(ti);
+    return new NativeStackFrame(this, caller, args);
   }
 
 
-  @Override
-  public Instruction execute (ThreadInfo ti) {
+  public Instruction executeNative (ThreadInfo ti) {
     Object   ret = null;
     Object[] args = null;
     String   exception;
     MJIEnv   env = ti.getMJIEnv();
-    ElementInfo ei = null;
-    JVM vm = ti.getVM();
+    NativeStackFrame nativeFrame = (NativeStackFrame)ti.getTopFrame();
 
     env.setCallEnvironment(this);
 
@@ -127,10 +142,9 @@ public class NativeMethodInfo extends MethodInfo {
     }
 
     try {
-      args = getArguments(env, ti, mth);
+      args = nativeFrame.getArguments();
 
-      enter(ti); // this does the locking, stackframe push and enter notification
-
+      // this is the reflection call into the native peer
       ret = mth.invoke(peer.getPeerClass(), args);
 
       // these are our non-standard returns
@@ -145,24 +159,27 @@ public class NativeMethodInfo extends MethodInfo {
         return ti.createAndThrowException(exception, details);
       }
 
-      if (env.isRepeatedInvocation()) {
-        if (ti.getTopFrame().getMethodInfo() == this){
-          ti.popFrame();
+      StackFrame top = ti.getTopFrame();
+      if (top == nativeFrame){ // no roundtrips, straight return
+
+        if (env.isInvocationRepeated()){
+          // don't advance
+          return nativeFrame.getPC();
+
+        } else {
+          //releaseArgArray(args);
+
+          nativeFrame.setReturnValue(ret);
+          nativeFrame.setReturnAttr(env.getReturnAttribute());
+
+          return nativeFrame.getPC().getFollowingInstruction(); // that should be the NATIVERETURN
         }
-        // don't pop arguments, we will re-execute
-        return ti.getPC();
-      }
 
-      leave(ti); // this does unlocking and exit notification, the stackframe is still pushed
-
-      // since there is no RETURN, we have to clean up the stack frames ourselves
-      ti.popFrame();
-      ti.removeArguments(this);  // watch out - that means the callers stack is modified during the INVOKE
-
-      releaseArgArray(args);
-
-      if (ret != null){
-        pushReturnValue(ti, ret, env.getReturnAttribute());
+      } else {
+        // direct calls from within the native method, i.e. nativeFrame is not
+        // on top anymore, but its current instruction (invoke) will be reexecuted
+        // because DirectCallStackFrames don't advance the pc of the new top top upon return
+        return top.getPC();
       }
 
     } catch (IllegalArgumentException iax) {
@@ -178,26 +195,13 @@ public class NativeMethodInfo extends MethodInfo {
       // we don't try to hand them back to the application
       throw new JPFNativePeerException("exception in native method "
           + ci.getName() + '.' + getName(), itx.getTargetException());
-
-    } finally {
-      // unlocking for exceptional exits would occur in ti.ceateAndThrowException()
-
-      // bad native methods might keep references around
-      env.clearCallEnvironment();
     }
-
-    Instruction pc = ti.getPC();
-
-    // System.exit() now creates a CG, i.e. there is a next pc, but it
-    // will never be executed if the termination condition is recognized correctly
-    // (if not, we get an AssertionError when the CG is used)
-
-    // there is no RETURN for a native method, so we have to advance explicitly
-    return pc.getNext();
   }
 
 
   private Object[] getArgArray (int n) {
+    return new Object[n];
+/**
     Object[] a;
     if (n < MAX_NARGS) {
       a = argCache[n];
@@ -211,9 +215,13 @@ public class NativeMethodInfo extends MethodInfo {
     }
 
     return a;
+**/
   }
 
   private void releaseArgArray (Object[] a){
+/**
+System.out.println("@@ release args: " + a);
+
     int n = a.length;
     if (n < MAX_NARGS){
       if (argCache[n] == null){
@@ -222,6 +230,7 @@ public class NativeMethodInfo extends MethodInfo {
     }
 
     // can't reset lastArgs because we haven't notified listeners yet
+**/
   }
 
 
@@ -230,10 +239,14 @@ public class NativeMethodInfo extends MethodInfo {
    * Use the MethodInfo parameter type info for this (not the reflect.Method
    * type array), or otherwise we won't have any type check
    */
-  private Object[] getArguments (MJIEnv env, ThreadInfo ti, Method mth) {
+  protected Object[] getArguments (ThreadInfo ti) {
+    // these are just local refs to speed up
     int      nArgs = getNumberOfArguments();
-    Object[] a = getArgArray(nArgs + 2);
     byte[]   argTypes = getArgumentTypes();
+
+    //Object[] a = getArgArray(nArgs + 2);
+    Object[] a = new Object[nArgs+2];
+
     int      stackOffset;
     int      i, j, k;
     int      ival;
@@ -305,79 +318,18 @@ public class NativeMethodInfo extends MethodInfo {
       stackOffset++;
     }
 
+    //--- set  our standard MJI header arguments
     if (isStatic()) {
       a[1] = new Integer(ci.getClassObjectRef());
     } else {
       a[1] = new Integer(ti.getCalleeThis(this));
     }
 
-    a[0] = env;
+    a[0] = ti.getMJIEnv();
 
     return a;
   }
 
 
-  private void pushReturnValue (ThreadInfo ti, Object ret, Object retAttr) {
-    int  ival;
-    long lval;
-    int  retSize = 1;
-
-    // in case of a return type mismatch, we get a ClassCastException, which
-    // is handled in executeMethod() and reported as a InvocationTargetException
-    // (not completely accurate, but we rather go with safety)
-    if (ret != null) {
-      switch (getReturnType()) {
-      case Types.T_BOOLEAN:
-        ival = Types.booleanToInt(((Boolean) ret).booleanValue());
-        ti.push(ival, false);
-        break;
-
-      case Types.T_BYTE:
-        ti.push(((Byte) ret).byteValue(), false);
-        break;
-
-      case Types.T_CHAR:
-        ti.push(((Character) ret).charValue(), false);
-        break;
-
-      case Types.T_SHORT:
-        ti.push(((Short) ret).shortValue(), false);
-        break;
-
-      case Types.T_INT:
-        ti.push(((Integer) ret).intValue(), false);
-        break;
-
-      case Types.T_LONG:
-        ti.longPush(((Long) ret).longValue());
-        retSize=2;
-        break;
-
-      case Types.T_FLOAT:
-        ival = Types.floatToInt(((Float) ret).floatValue());
-        ti.push(ival, false);
-        break;
-
-      case Types.T_DOUBLE:
-        lval = Types.doubleToLong(((Double) ret).doubleValue());
-        ti.longPush(lval);
-        retSize=2;
-        break;
-
-      default:
-        // everything else is supposed to be a reference
-        ti.push(((Integer) ret).intValue(), true);
-      }
-
-      if (retAttr != null) {
-        StackFrame frame = ti.getTopFrame(); // no need to clone anymore
-        if (retSize == 1) {
-          frame.setOperandAttr(retAttr);
-        } else {
-          frame.setLongOperandAttr(retAttr);
-        }
-      }
-    }
-  }
 
 }

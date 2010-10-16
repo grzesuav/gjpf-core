@@ -427,7 +427,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   public static void setLocalAttribute__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int snRef, int attr) {
     String slotName = env.getStringObject(snRef);
     ThreadInfo ti = env.getThreadInfo();
-    StackFrame frame = ti.getTopFrame();
+    StackFrame frame = env.getCallerStackFrame(); // we are executing in a NativeStackFrame
 
     if (!frame.getMethodInfo().isStatic() &&  slotName.equals("this")) {
       frame.setLocalAttr(0, new Integer(attr)); // only for instance methods of course
@@ -445,7 +445,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   public static int getLocalAttribute__Ljava_lang_String_2__I (MJIEnv env, int clsRef, int snRef) {
     String slotName = env.getStringObject(snRef);
     ThreadInfo ti = env.getThreadInfo();
-    StackFrame frame = ti.getTopFrame();
+    StackFrame frame = env.getCallerStackFrame();
 
     int slotIdx = frame.getLocalVariableOffset(slotName);
     if (slotIdx >= 0) {

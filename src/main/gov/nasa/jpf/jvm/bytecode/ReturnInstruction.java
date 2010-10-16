@@ -80,9 +80,9 @@ public abstract class ReturnInstruction extends Instruction {
       }
     }
 
-    Object attr = getReturnAttr(ti);
-    storeReturnValue(ti);
     returnFrame = ti.getTopFrame();
+    Object attr = getReturnAttr(ti); // do this before we pop
+    storeReturnValue(ti);
 
     if (ti.getStackDepth() == 1) { // done - last stackframe in this thread
       int objref = ti.getThreadObjectRef();
@@ -126,22 +126,18 @@ public abstract class ReturnInstruction extends Instruction {
       }
 
     } else { // there are still frames on the stack
-      ti.popFrame(); // do this *before* we push the return value
+      StackFrame top = ti.popFrame();
 
-      Instruction nextPC = ti.getReturnFollowOnPC();
-      if (nextPC != ti.getPC()) {
-        // remove args and push return value
-        ti.removeArguments(mi);
-        pushReturnValue(ti);
+      // remove args, push return value and continue with next insn
+      // (DirectCallStackFrames don't use this)
+      ti.removeArguments(mi);
+      pushReturnValue(ti);
 
-        if (attr != null){
-          setReturnAttr(ti, attr);
-        }
-      } else {
-        // don't remove args and push return value, we repeat this insn!
+      if (attr != null) {
+        setReturnAttr(ti, attr);
       }
 
-      return nextPC;
+      return top.getPC().getFollowingInstruction();
     }
   }
   

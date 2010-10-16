@@ -48,7 +48,11 @@ public class StackFrame implements Constants, Cloneable {
 
   /** This array can be used to store attributes (e.g. variable names) for
    * operands. We don't do anything with this except of preserving it (across
-   * dups etc.), so it's pretty much up to the VM listeners what's stored
+   * dups etc.), so it's pretty much up to the VM listeners/peers what's stored
+   *
+   * NOTE: attribute values are not restored upon backtracking per default, but
+   * attribute references are. If you need restoration of values, use copy-on-write
+   * in your clients
    *
    * these are set on demand
    */
@@ -61,8 +65,6 @@ public class StackFrame implements Constants, Cloneable {
   protected Instruction pc;             /** the next insn to execute (program counter) */
 
   protected MethodInfo mi;              /** which method is executed in this frame */
-
-
 
   /**
    * Creates a new stack frame for a given method.
@@ -280,6 +282,10 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public boolean isDirectCallFrame () {
+    return false;
+  }
+
+  public boolean isSynthetic() {
     return false;
   }
 
@@ -947,18 +953,19 @@ public class StackFrame implements Constants, Cloneable {
   // would be pointless to compare stack/local values
   public boolean equals (Object object) {
     // casts to stack frame
+    if (object == null || !(object instanceof StackFrame)){
+      return false;
+    }
+
     StackFrame sf = (StackFrame) object;
 
-    // compares the program counter REFERENCES
-    // the code is statically read into the vm so the same
-    // chunk of code means the same reference
     if (pc != sf.pc) {
       return false;
     }
-
     if (mi != sf.mi) {
       return false;
     }
+
 
     //--- compare the locals
     int[] l = sf.locals;
@@ -993,6 +1000,7 @@ public class StackFrame implements Constants, Cloneable {
       return false;
     }
 
+
     return true;
   }
   
@@ -1012,15 +1020,20 @@ public class StackFrame implements Constants, Cloneable {
     return false;
   }
 
-  public void hash (HashData hd) {
+  protected void hash (HashData hd) {
     // it's debatable if we add the attributes to the state, but whatever it
     // is, it should be kept consistent with the Fields.hash()
     Object[] attrs;
     int[] v;
+    boolean[] r;
+
+    hd.add(mi.getGlobalId());
 
     v = locals;
+    r = isLocalRef;
     for (int i = 0, l = v.length; i < l; i++) {
       hd.add(v[i]);
+      hd.add(r[i]);
     }
     attrs = localAttr;
     if (attrs != null) {
@@ -1030,8 +1043,10 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     v = operands;
+    r = isOperandRef;
     for (int i=0; i<=top; i++) {
       hd.add(v[i]);
+      hd.add(r[i]);
     }
     attrs = operandAttr;
     if (attrs != null) {
@@ -1397,6 +1412,7 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public void push (int v, boolean ref) {
+
     top++;
     operands[top] = v;
     isOperandRef[top] = ref;
@@ -1417,13 +1433,15 @@ public class StackFrame implements Constants, Cloneable {
 
     int offset = 0;
 
-    for (int i = 0, l = lNames.length; i < l;) {
-      if (name.equals(lNames[i])) {
-        return offset;
-      } else if (lTypes[i].charAt(0) != '?'){
-        int typeSize = Types.getTypeSize(lTypes[i]);
-        offset += typeSize;
-        i += typeSize;
+    if (lNames != null){
+      for (int i = 0, l = lNames.length; i < l;) {
+        if (name.equals(lNames[i])) {
+          return offset;
+        } else if (lTypes[i].charAt(0) != '?') {
+          int typeSize = Types.getTypeSize(lTypes[i]);
+          offset += typeSize;
+          i += typeSize;
+        }
       }
     }
 

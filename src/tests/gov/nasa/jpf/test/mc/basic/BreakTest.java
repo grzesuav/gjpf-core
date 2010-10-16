@@ -19,6 +19,7 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.SystemState;
@@ -190,21 +191,17 @@ public class BreakTest extends TestJPF {
   //--- test ignore after setting nextCG
 
   public static class VerifyNextIntBreaker extends BreakListener {
-    public void instructionExecuted(JVM vm) {
-      Instruction insn = vm.getLastInstruction();
+    public void choiceGeneratorRegistered(JVM vm) {
       ThreadInfo ti = vm.getLastThreadInfo();
       SystemState ss = vm.getSystemState();
+      
+      ChoiceGenerator<?> cg = ss.getNextChoiceGenerator();
+      if (cg.getId().equals("verifyGetInt(II)")) {
+        System.out.println("# breaking & pruning after: " + ti.getPC());
+        System.out.println("# registered (ignored) CG: " + cg);
 
-      if (insn instanceof InvokeInstruction) { // break on method call
-        InvokeInstruction call = (InvokeInstruction) insn;
-
-        if ("getInt(II)I".equals(call.getInvokedMethodName())){ // this insn did create a CG
-          System.out.println("# breaking & pruning after: " + insn);
-          System.out.println("# registered (ignored) CG: " + vm.getSystemState().getNextChoiceGenerator());
-
-          ss.setIgnored(true); // should reset the IntIntervalCG registered by the native getInt()
-          ti.breakTransition(); // should have no effect
-        }
+        ss.setIgnored(true); // should reset the IntIntervalCG registered by the native getInt()
+        ti.breakTransition(); // should have no effect
       }
     }
   }

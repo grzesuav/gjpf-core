@@ -35,30 +35,39 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
  */
 public class DirectCallStackFrame extends DynamicStackFrame {
   
-  Instruction nextPc;
-    
   public DirectCallStackFrame (MethodInfo stub) {
     super(stub, null);
   }
-  
-  public DirectCallStackFrame (MethodInfo stub, Instruction nextInsn) {
+
+  public DirectCallStackFrame (MethodInfo stub, int nOperandSlots, int nLocalSlots) {
     super(stub, null);
-    
-    nextPc = nextInsn;
+
+    if (nOperandSlots > 0){
+      operands = new int[nOperandSlots];
+      isOperandRef = new boolean[nOperandSlots];
+    }
+
+    if (nLocalSlots > 0){
+      locals = new int[nLocalSlots];
+      isLocalRef = new boolean[nLocalSlots];
+    }
   }
-  
+
+
   public void reset() {
     pc = mi.getInstruction(0);
   }
   
-  public Instruction getNextPC() {
-    return nextPc;
-  }
   
   public boolean isDirectCallFrame() {
     return true;
   }
-      
+
+  @Override
+  public boolean isSynthetic() {
+    return true;
+  }
+
   public String getClassName() {
     return "<direct call>";
   }

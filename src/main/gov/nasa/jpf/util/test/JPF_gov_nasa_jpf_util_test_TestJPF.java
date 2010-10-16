@@ -26,10 +26,9 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
 
   private static void pushDirectCallFrame(MJIEnv env, MethodInfo mi, int objRef) {
     ThreadInfo ti = env.getThreadInfo();
-    Instruction resumeInsn = ti.getPC();
 
     MethodInfo stub = mi.createDirectCallStub("[test]");
-    DirectCallStackFrame frame = new DirectCallStackFrame(stub, resumeInsn);
+    DirectCallStackFrame frame = new DirectCallStackFrame(stub);
     frame.pushRef(objRef);
     ti.pushFrame(frame);
   }
@@ -44,7 +43,7 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
           testMethods[i++] = mi;
         } else {
           reset____V();
-          env.throwException("gov.nasa.jpf.util.test.TestException",
+          env.throwException("java.lang.RuntimeException",
                   "no such test method: public void " + test + "()");
           return false;
         }
@@ -88,7 +87,7 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
 
     if (!done) {
       if (testMethods == null) {
-        StackFrame frame = ti.getTopFrame(); // the runTestsOfThisClass() caller
+        StackFrame frame = env.getCallerStackFrame(); // the runTestsOfThisClass() caller
 
         testClass = frame.getClassInfo();
         testClassCtor = testClass.getMethod("<init>()V", true);

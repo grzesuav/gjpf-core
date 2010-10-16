@@ -44,18 +44,20 @@ public abstract class VirtualInvocation extends InstanceInvocation {
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int objRef = ti.getCalleeThis(getArgSize());
 
-    if (objRef == -1)
+    if (objRef == -1) {
       return ti.createAndThrowException("java.lang.NullPointerException", "Calling '" + mname + "' on null object");
+    }
 
     MethodInfo mi = getInvokedMethod(ti, objRef);
     
-    if (mi == null)
+    if (mi == null) {
       return ti.createAndThrowException("java.lang.NoSuchMethodError", ti.getClassInfo(objRef).getName() + "." + mname);
+    }
     
     ElementInfo ei = ks.da.get(objRef);
     
-    if (mi.isSynchronized())
-      if (!isLockOwner(ti, ei))                            // If the object isn't already owned by this thread, then consider a choice point
+    if (mi.isSynchronized()) {
+      if (!isLockOwner(ti, ei)) {                          // If the object isn't already owned by this thread, then consider a choice point
         if (isShared(ti, ei)) {                            // If the object is shared, then consider a choice point
           ChoiceGenerator<?> cg = getSyncCG(objRef, mi, ss, ks, ti);
           if (cg != null) {
@@ -63,6 +65,8 @@ public abstract class VirtualInvocation extends InstanceInvocation {
             return this;   // repeat exec, keep insn on stack
           }
         }
+      }
+    }
 
     return mi.execute(ti);    // this will lock the object if necessary
   }

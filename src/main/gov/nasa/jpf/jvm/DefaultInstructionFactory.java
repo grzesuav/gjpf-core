@@ -37,7 +37,7 @@ public class DefaultInstructionFactory implements InstructionFactory {
   }
 
   static {
-    insnClass = createInsnClassArray(260);
+    insnClass = createInsnClassArray(265);
 
     // note that bcel doesn't have different instruction classes for
     // immediate operand variants
@@ -269,6 +269,9 @@ public class DefaultInstructionFactory implements InstructionFactory {
     // our artificial bytecodes - very unlikely to ever be overridden
     insnClass[gov.nasa.jpf.jvm.bytecode.RUNSTART.OPCODE] = gov.nasa.jpf.jvm.bytecode.RUNSTART.class;
     insnClass[gov.nasa.jpf.jvm.bytecode.INVOKECLINIT.OPCODE] = gov.nasa.jpf.jvm.bytecode.INVOKECLINIT.class;
+    insnClass[gov.nasa.jpf.jvm.bytecode.NATIVERETURN.OPCODE] = gov.nasa.jpf.jvm.bytecode.NATIVERETURN.class;
+    insnClass[gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE.OPCODE] = gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE.class;
+    insnClass[gov.nasa.jpf.jvm.bytecode.DIRECTCALLRETURN.OPCODE] = gov.nasa.jpf.jvm.bytecode.DIRECTCALLRETURN.class;
   }
 
 
@@ -287,13 +290,13 @@ public class DefaultInstructionFactory implements InstructionFactory {
   /**
    * this is used for explicit method construction
    * NOTE: Instruction instances are created with default ctor and might require
-   * further intialization
+   * further initialization
    */
   public Instruction create(ClassInfo ciMth, int opCode) {
-    Class<?> cls = insnClass[opCode];
+    Class<? extends Instruction> cls = insnClass[opCode];
     if (cls != null) {
       try {
-        Instruction insn = (Instruction) cls.newInstance();
+        Instruction insn = cls.newInstance();
         return insn;
 
       } catch (Throwable e) {
@@ -306,4 +309,32 @@ public class DefaultInstructionFactory implements InstructionFactory {
     }
   }
 
+  public <T extends Instruction> T create(ClassInfo ciMth, Class<T> insnCls){
+
+    T insn = null;
+
+    // note that we can't just use insnCls to instantiate since it might be overridden
+    // by a derived InstructionFactory
+    // we have to use it to get the opcode for getting the real class, which is
+    // a bit queer
+
+    try {
+      insn = insnCls.newInstance();
+
+      int opCode = insn.getByteCode();
+      Class<? extends Instruction> cls = insnClass[opCode];
+
+      if (cls != null && (cls != insnCls)){
+        // note - this means if we null a parent factory class entry, we reset
+        // this to the default
+        insn = (T) cls.newInstance();
+      }
+
+      return insn;
+
+    } catch (Throwable e){
+        throw new JPFException("creation of JPF Instruction object for "
+                + insnCls.getSimpleName() + " failed: " + e);
+    }
+  }
 }

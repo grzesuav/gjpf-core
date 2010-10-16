@@ -185,7 +185,7 @@ public class JPF_java_lang_System {
   static int createPrintStream (MJIEnv env, int clsObjRef){
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
-
+    StackFrame frame = ti.getTopFrame();
     ClassInfo ci = ClassInfo.getResolvedClassInfo("gov.nasa.jpf.ConsoleOutputStream");
 
     // it's not really used, but it would be hack'ish to use a class whose
@@ -195,7 +195,7 @@ public class JPF_java_lang_System {
     }
 
     if (!ci.isInitialized()) {
-      if (ci.initializeClass(ti, insn)) {
+      if (ci.initializeClass(ti)) {
         env.repeatInvocation();
         return MJIEnv.NULL;
       }

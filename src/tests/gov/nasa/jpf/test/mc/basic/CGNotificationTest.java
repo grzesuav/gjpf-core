@@ -26,6 +26,7 @@ import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Verify;
+import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
@@ -41,6 +42,14 @@ public class CGNotificationTest extends TestJPF {
   public static class Sequencer extends ListenerAdapter {
 
     static ArrayList<String> sequence;
+
+    public void choiceGeneratorRegistered(JVM vm) {
+      ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
+      System.out.println("# CG registered: " + cg);
+      sequence.add("registered " + cg.getId());
+
+      assert cg.hasMoreChoices();
+    }
 
     public void choiceGeneratorSet(JVM vm) {
       ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
@@ -69,10 +78,10 @@ public class CGNotificationTest extends TestJPF {
       ThreadInfo ti = vm.getLastThreadInfo();
       SystemState ss = vm.getSystemState();
 
-      if (insn instanceof InvokeInstruction) { // break on method call
-        InvokeInstruction call = (InvokeInstruction) insn;
+      if (insn instanceof EXECUTENATIVE) { // break on native method exec
+        EXECUTENATIVE exec = (EXECUTENATIVE) insn;
 
-        if ("getInt(II)I".equals(call.getInvokedMethodName())){ // this insn did create a CG
+        if (exec.getExecutedMethodName().equals("getInt")){// this insn did create a CG
           if (!ti.isFirstStepInsn()){
 
             IntChoiceGenerator cg = new IntChoiceFromSet("listenerCG", 3,4);
@@ -107,10 +116,14 @@ public class CGNotificationTest extends TestJPF {
 
     if (!isJPFRun()){
       String[] expected = {
+        "registered root",
         "set root",
         "advance root ThreadInfo [name=main,index=0]",
+        "registered verifyGetBoolean",
         "set verifyGetBoolean",
         "advance verifyGetBoolean false",
+        "registered verifyGetInt(II)",
+        "registered listenerCG",
         "set verifyGetInt(II)",
         "set listenerCG",
         "advance verifyGetInt(II) 1",
@@ -123,6 +136,8 @@ public class CGNotificationTest extends TestJPF {
         "processed listenerCG",
         "processed verifyGetInt(II)",
         "advance verifyGetBoolean true",
+        "registered verifyGetInt(II)",
+        "registered listenerCG",
         "set verifyGetInt(II)",
         "set listenerCG",
         "advance verifyGetInt(II) 1",
@@ -142,6 +157,7 @@ public class CGNotificationTest extends TestJPF {
       int i=0;
       for (String s : Sequencer.sequence){
         assert expected[i++].equals(s);
+        //System.out.println("\"" + s + "\",");
       }
     }
   }

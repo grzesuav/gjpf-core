@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.NoClassInfoException;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -50,6 +51,7 @@ public class NEW extends Instruction {
     JVM vm = ti.getVM();
     DynamicArea da = vm.getDynamicArea();
     ClassInfo ci;
+    StackFrame frame = ti.getTopFrame();
 
     try {
       ci = ClassInfo.getResolvedClassInfo(cname);
@@ -65,8 +67,8 @@ public class NEW extends Instruction {
 
     // since this is a NEW, we also have to pushClinit
     if (!ci.isInitialized()) {
-      if (ci.initializeClass(ti, this)) {
-        return ti.getPC();
+      if (ci.initializeClass(ti)) {
+        return ti.getPC();  // reexecute this instruction once we return from the clinits
       }
     }
 
@@ -95,5 +97,9 @@ public class NEW extends Instruction {
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+
+  public String toString() {
+    return "new " + cname;
   }
 }

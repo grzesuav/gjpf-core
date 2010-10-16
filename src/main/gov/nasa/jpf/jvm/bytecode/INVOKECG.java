@@ -68,9 +68,9 @@ public class INVOKECG extends Instruction {
       InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
 
       if (callee.isStatic()){
-        realInvoke = (InvokeInstruction) insnFactory.create(null, Constants.INVOKESTATIC);
+        realInvoke = insnFactory.create(null, INVOKESTATIC.class);
       } else {
-        realInvoke = (InvokeInstruction) insnFactory.create(null, Constants.INVOKENONVIRTUAL);
+        realInvoke = insnFactory.create(null, INVOKEVIRTUAL.class);
       }
       realInvoke.init(mi, offset, position);
       realInvoke.setInvokedMethod( callee.getClassInfo().getName(),
@@ -124,9 +124,11 @@ public class INVOKECG extends Instruction {
   public boolean isExtendedInstruction() {
     return true;
   }
-  
+
+  public static final int OPCODE = 258;
+
   public int getByteCode () {
-    return 258;
+    return OPCODE;
   }
   
   public void accept(InstructionVisitor insVisitor) {

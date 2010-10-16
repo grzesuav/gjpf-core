@@ -35,13 +35,16 @@ import gov.nasa.jpf.jvm.Types;
  */
 public class NEWARRAY extends Instruction {
   protected String type;
+  protected String typeName; // deferred
+
+  int arrayLength = -1;
 
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     type = Constants.SHORT_TYPE_NAMES[((org.apache.bcel.generic.NEWARRAY) i).getTypecode()];
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    int size = ti.pop();
+    arrayLength = ti.pop();
     DynamicArea heap = DynamicArea.getHeap();
     
     // there is no clinit for array classes, but we still have  to create a class object
@@ -57,11 +60,11 @@ public class NEWARRAY extends Instruction {
     if (heap.getOutOfMemory()) { // simulate OutOfMemoryError
       return ti.createAndThrowException("java.lang.OutOfMemoryError",
                                         "trying to allocate new " +
-                                          Types.getTypeName(type) +
-                                        "[" + size + "]");
+                                          getTypeName() +
+                                        "[" + arrayLength + "]");
     }
     
-    int arrayRef = heap.newArray(type, size, ti);
+    int arrayRef = heap.newArray(type, arrayLength, ti);
     ti.push(arrayRef, true);
 
     ss.checkGC(); // has to happen after we push the new object ref
@@ -79,5 +82,29 @@ public class NEWARRAY extends Instruction {
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+
+  public String getTypeName() {
+    if (typeName == null){
+      typeName = Types.getTypeName(type);
+    }
+    return typeName;
+  }
+
+  public int getArrayLength() {
+    return arrayLength;
+  }
+
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("newarray ");
+    sb.append(getTypeName());
+    sb.append('[');
+    if (arrayLength >=0){
+      sb.append(arrayLength);
+    }
+    sb.append(']');
+
+    return sb.toString();
   }
 }

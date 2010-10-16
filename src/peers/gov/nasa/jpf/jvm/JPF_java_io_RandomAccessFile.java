@@ -56,7 +56,8 @@ public class JPF_java_io_RandomAccessFile {
     Instruction insn = ti.getPC();
     
     ClassInfo ci = ClassInfo.getResolvedClassInfo(DataRepresentation);
-    if (insn.requiresClinitCalls(ti, ci)) {
+    if (insn.causedClinitCalls(ti, ci)) {
+      env.repeatInvocation();
       return null;
     }
     
@@ -151,7 +152,7 @@ public class JPF_java_io_RandomAccessFile {
   	
     ClassInfo dataRep = getDataRepresentationClassInfo(env);
     if (dataRep == null) {
-      env.repeatInvocation();
+      // will be reexecuted
       return 0;
     }
     

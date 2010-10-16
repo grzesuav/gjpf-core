@@ -54,6 +54,7 @@ public abstract class ListenerAdapter implements VMListener, SearchListener, Pub
   public void exceptionThrown(JVM vm) {}
   public void exceptionBailout(JVM vm) {}
   public void exceptionHandled(JVM vm) {}
+  public void choiceGeneratorRegistered (JVM vm) {}
   public void choiceGeneratorSet (JVM vm) {}
   public void choiceGeneratorAdvanced (JVM vm) {}
   public void choiceGeneratorProcessed (JVM vm) {}

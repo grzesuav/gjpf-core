@@ -19,26 +19,36 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.Misc;
+
 /**
  * a stack frame for MJI methods
  *
  * NOTE: operands and locals can be, but are not automatically used during
  * native method execution.
- *
- * This differs from a DirectCallStackFrame in that it (a) can cause re-execution
- * of the native method (e.g. for iterative round trips from a native method), and
- * it does return values into its caller frame
  */
 public class NativeStackFrame extends DynamicStackFrame {
 
   static int[] EMPTY_ARRAY = new int[0];
 
-  // if this is set, the native method invocation is repeated once this
-  // stack frame is on top again
-  boolean repeatInvocation;
+  // we don't use the operand stack or locals for arguments and return value
+  // because (1) they don't have the right representation (host VM),
+  // (2) for performance reasons (no array alloc), and (3) because there is no
+  // choice point once we enter a native method, so there is no need to do
+  // copy-on-write on the ThreadInfo callstack. Native method execution is
+  // atomic (leave alone roundtrips of course)
 
-  public NativeStackFrame (MethodInfo mi, StackFrame caller){
-    super(mi,caller);
+  // return value registers
+  Object ret;
+  Object retAttr;
+
+  // our argument registers
+  Object[] args;
+
+  public NativeStackFrame (NativeMethodInfo mi, StackFrame caller, Object[] argValues){
+    super(mi,null);
 
     if (!mi.isStatic()){
       thisRef = caller.getCalleeThis(mi);
@@ -53,26 +63,114 @@ public class NativeStackFrame extends DynamicStackFrame {
     // we start out with no operands and locals
     locals = EMPTY_ARRAY;
     operands = EMPTY_ARRAY;
+
+    args = argValues;
   }
 
-  public void repeatInvocation(boolean cond){
-    repeatInvocation = cond;
+  public StackFrame clone () {
+    NativeStackFrame sf = (NativeStackFrame) super.clone();
+
+    if (args != null) {
+      sf.args = args.clone();
+    }
+
+    return sf;
   }
 
-  public boolean isRepeatedInvocation() {
-    return repeatInvocation;
-  }
 
+
+  @Override
   public boolean isNative() {
     return true;
   }
 
+  @Override
+  public boolean isSynthetic() {
+    return true;
+  }
+
+  @Override
   public boolean modifiesState() {
+    // native stackframes don't do anything with their operands or locals per se
+    // they are executed atomically, so there is no need to ever restore them
     return false;
   }
 
+  @Override
   public boolean hasAnyRef() {
     return false;
   }
-  
+
+  public void setReturnAttr (Object a){
+    retAttr = a;
+  }
+
+  public void setReturnValue(Object r){
+    ret = r;
+  }
+
+  public Object getReturnValue() {
+    return ret;
+  }
+
+  public Object getReturnAttr() {
+    return retAttr;
+  }
+
+  public Object[] getArguments() {
+    return args;
+  }
+
+  public void markThreadRoots (int tid) {
+    super.markThreadRoots(tid);
+
+    if (ret != null && ret instanceof Integer && mi.isReferenceReturnType()){
+      DynamicArea heap = DynamicArea.getHeap();
+      heap.markThreadRoot(((Integer)ret).intValue(), tid);
+    }
+  }
+
+  protected void hash (HashData hd) {
+    super.hash(hd);
+
+    if (ret != null){
+      hd.add(ret);
+    }
+    if (retAttr != null){
+      hd.add(retAttr);
+    }
+
+    for (Object a : args){
+      hd.add(a);
+    }
+  }
+
+  public boolean equals (Object object) {
+    if (object == null || !(object instanceof NativeStackFrame)){
+      return false;
+    }
+
+    if (!super.equals(object)){
+      return false;
+    }
+
+    NativeStackFrame o = (NativeStackFrame)object;
+
+    if (ret != o.ret){
+      return false;
+    }
+    if (retAttr != o.retAttr){
+      return false;
+    }
+
+    if (args.length != o.args.length){
+      return false;
+    }
+
+    if (!Misc.compare(args.length, args, o.args)){
+      return false;
+    }
+
+    return true;
+  }
 }

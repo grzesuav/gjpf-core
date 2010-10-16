@@ -30,7 +30,7 @@ public class JPF_java_lang_Math {
   public static double abs__D__D (MJIEnv env, int clsObjRef, double a) {
     // return Math.abs(a);
     
-    return (a <= .0) ? -a : a;
+    return (a <= .0) ? (.0 - a) : a;
   }
 
   public static float abs__F__F (MJIEnv env, int clsObjRef, float a) {

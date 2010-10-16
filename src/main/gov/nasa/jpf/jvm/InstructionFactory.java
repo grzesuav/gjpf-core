@@ -45,4 +45,5 @@ public interface InstructionFactory extends Constants {
    */
   public Instruction create (ClassInfo ciMth, int opCode);
 
+  public <T extends Instruction> T create (ClassInfo ciMth, Class<T> insnCls);
 }

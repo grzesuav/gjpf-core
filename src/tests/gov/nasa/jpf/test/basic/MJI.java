@@ -176,7 +176,7 @@ public class MJI {
   public void testHiddenRoundtripException () {
     System.out.println("## entering testHiddenroundtripException()");
     int res = echo(20) + nativeHiddenRoundtrip(-1); // get something on the operand stack
-    assert (res == -1) : "atomic roundtrip exception not caught";
+    assert (res == 19) : "atomic roundtrip exception not caught";
 
     System.out.println("## exiting testHiddenroundtripException()");
   }

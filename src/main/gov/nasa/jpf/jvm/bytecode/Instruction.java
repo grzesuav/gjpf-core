@@ -92,7 +92,11 @@ public abstract class Instruction implements InstructionVisit {
     this.mi = mi;
   }
 
-  public Instruction getNext() {
+  /**
+   * this returns the next instruction within the same method, which might
+   * or might not be the next one to execute (branches, overlay calls etc.)
+   */
+  public Instruction getFollowingInstruction() {
     return mi.getInstruction(offset + 1);
   }
 
@@ -283,7 +287,7 @@ public abstract class Instruction implements InstructionVisit {
     this.position = position;
   }
 
-  public boolean requiresClinitCalls(ThreadInfo ti, ClassInfo ci) {
+  public boolean causedClinitCalls(ThreadInfo ti, ClassInfo ci) {
 
     //if (!ti.isResumedInstruction(this)) {
 
@@ -295,7 +299,7 @@ public abstract class Instruction implements InstructionVisit {
     }
 
     if (!ci.isInitialized()) {
-      if (ci.initializeClass(ti, this)) {
+      if (ci.initializeClass(ti)) {
         //ti.skipInstructionLogging();
         return true; // there are new <clinit> frames on the stack, execute them
       }
@@ -306,18 +310,19 @@ public abstract class Instruction implements InstructionVisit {
   }
 
   /**
-   * this is returning the next Instruction to execute, to be called after
-   * we executed ourselves.
+   * this is returning the next Instruction to execute, to be called to obtain
+   * the return value of execute() if this is not a branch insn
    *
-   * Be aware of that we might have had exceptions caused by our execution,
-   * i.e. we can't simply assume it's the next insn following us (we have to
-   * acquire the 'current' insn after our exec from the ThreadInfo).
+   * Be aware of that we might have had exceptions caused by our execution
+   * (-> lower frame), or we might have had overlaid calls (-> higher frame),
+   * i.e. we can't simply assume it's the following insn. We have to
+   * acquire this through the top frame of the ThreadInfo.
    *
    * note: the System.exit() problem should be gone, now that it is implemented
    * as ThreadInfo state (TERMINATED), rather than purged stacks
    */
-  public Instruction getNext(ThreadInfo th) {
-    return th.getPC().getNext();
+  public Instruction getNext (ThreadInfo ti) {
+    return ti.getPC().getFollowingInstruction();
   }
   
   public void accept(InstructionVisitor insVisitor) {

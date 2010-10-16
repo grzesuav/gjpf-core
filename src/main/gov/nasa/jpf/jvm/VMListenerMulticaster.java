@@ -239,6 +239,11 @@ public class VMListenerMulticaster implements VMListener
     tail.objectNotifyAll(vm);    
   }
 
+  public void choiceGeneratorRegistered (JVM vm) {
+    head.choiceGeneratorRegistered(vm);
+    tail.choiceGeneratorRegistered(vm);
+  }
+
   public void choiceGeneratorSet (JVM vm) {
     head.choiceGeneratorSet(vm);
     tail.choiceGeneratorSet(vm);        

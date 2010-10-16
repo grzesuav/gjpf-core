@@ -67,9 +67,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
   protected static boolean warnedLocalInfo = false;
   
   //--- various JPF method attributes
-  static final int  MJI_NONE    = 0;
-  static final int  MJI_NATIVE  = 0x1;
-  
   static final int  EXEC_ATOMIC = 0x10000; // method executed atomically
   static final int  EXEC_HIDDEN = 0x20000; // method hidden from path
   static final int  FIREWALL    = 0x40000; // firewall any unhandled exceptions
@@ -169,6 +166,9 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
   /** what return type do we have (again, lazy evaluated) */
   protected byte returnType = -1;
+
+  /** number of stack slots for return value */
+  protected int retSize = -1;
 
   /** used for native method parameter conversion (lazy evaluated) */
   protected byte[] argTypes = null;
@@ -397,7 +397,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
   protected MethodInfo createCallStub (String originator, int id){
     MethodInfo mi = new MethodInfo(id);
     String cname = ci.getName();
-    Instruction insn;
 
     mi.name = originator + name; // + cname; // could maybe also include the called method, but keep it fast
     mi.signature = "()V";
@@ -413,24 +412,26 @@ public class MethodInfo extends InfoObject implements Cloneable {
     // createAndInitialize the code
     CodeBuilder cb = mi.getCodeBuilder();
 
+    InvokeInstruction call = null;
     if (isStatic()){
       mi.modifiers |= Modifier.STATIC;
       
       if (isClinit()) {
-        insn = insnFactory.create(null, INVOKECLINIT.OPCODE);
+        call = insnFactory.create(null, INVOKECLINIT.class);
       } else {
-        insn = insnFactory.create(null, Constants.INVOKESTATIC);
+        call = insnFactory.create(null, INVOKESTATIC.class);
       }
     } else if (name.equals("<init>")){
-      insn = insnFactory.create(null, Constants.INVOKESPECIAL);
+      call = insnFactory.create(null, INVOKESPECIAL.class);
     } else {
-      insn = insnFactory.create(null, Constants.INVOKEVIRTUAL);
+      call = insnFactory.create(null, INVOKEVIRTUAL.class);
     }
-    ((InvokeInstruction)insn).setInvokedMethod(cname, name, signature);
-    cb.append(insn);
-    
-    insn = insnFactory.create(null, Constants.RETURN);
-    cb.append(insn);
+    call.setInvokedMethod(cname, name, signature);
+    cb.append(call);
+
+    // this is a special return, we don't return any values from direct calls
+    // (there is no corresponding invoke on the stack)
+    cb.append(insnFactory.create(null, DIRECTCALLRETURN.class));
 
     cb.setCode();
 
@@ -438,7 +439,8 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
   
   /**
-   * NOTE - this only works in conjunction with a special StackFrame
+   * NOTE - this only works in conjunction with a special StackFrame,
+   * the caller has to make sure the right operands are pushed for the call arguments!
    */
   public MethodInfo createDirectCallStub (String originator) {
     return createCallStub(originator, DIRECT_CALL);
@@ -680,7 +682,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
 
   public boolean isMJI () {
-    return ((attrs & MJI_NATIVE) != 0);
+    return false;
   }
 
   public int getMaxLocals () {
@@ -805,6 +807,30 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return returnType;
   }
 
+  /**
+   * what is the slot size of the return value
+   */
+  public int getReturnSize() {
+    if (retSize == -1){
+      switch (getReturnType()) {
+        case Types.T_VOID:
+          retSize = 0;
+          break;
+
+        case Types.T_LONG:
+        case Types.T_DOUBLE:
+          retSize = 2;
+          break;
+
+        default:
+          retSize = 1;
+          break;
+      }
+    }
+
+    return retSize;
+  }
+
   public Class<? extends ChoiceGenerator<?>> getReturnChoiceGeneratorType (){
     switch (getReturnType()){
       case Types.T_BOOLEAN:
@@ -909,6 +935,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return ei;
   }
 
+  // override this if there is a need for a special StackFrame
   protected StackFrame createStackFrame (ThreadInfo ti){
     return new StackFrame(this, ti.getTopFrame());
   }
@@ -966,15 +993,13 @@ public class MethodInfo extends InfoObject implements Cloneable {
    * execute this method invocation
    */
   public Instruction execute (ThreadInfo ti) {
+    enter(ti);
+    return ti.getPC();
+  }
 
-    if (isNative()) {
-      // this should have been a NativeMethodInfo by now
-      return ti.createAndThrowException("java.lang.UnsatisfiedLinkError",
-                                          ci.getName() + '.' + getUniqueName() + " (no peer)");
-    } else { // normal bytecode method
-      enter(ti);
-      return ti.getPC();
-    }
+  public boolean hasEmptyBody (){
+    // only instruction is a return
+    return (code.length == 1 && (code[0] instanceof ReturnInstruction));
   }
 
   /**
@@ -1175,14 +1200,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
     }
 
     return v;
-  }
-
-  void setMJI (boolean isMJI) {
-    if (isMJI) {
-      attrs |= MJI_NATIVE;
-    } else {
-      attrs &= ~MJI_NATIVE;
-    }
   }
   
   public String toString() {

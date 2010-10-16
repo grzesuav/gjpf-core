@@ -19,55 +19,50 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.DirectCallStackFrame;
 import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.NativeMethodInfo;
-import gov.nasa.jpf.jvm.NativeStackFrame;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
- * this is a synthetic instruction to (re-)execute native methods
+ * this is used to return from a DirectCallStackFrame
  *
- * Note that StackFrame and lock handling has to occur from within
- * the corresponding NativeMethodInfo
+ * Note that it is NOT a ReturnInstruction, in case listeners monitor these
+ * and expect corresponding InvokeInstructions. Although it seems intuitive, it
+ * would be pointless to derive it because the ReturnInstruction.execute() does
+ * a lot of things we would have to cut off, i.e. it would require more effort
+ * to undo this (no sync, no return value, no pc advance on the returned-to
+ * stackframe etc.)
  */
-public class INVOKENATIVE extends InvokeInstruction {
+public class DIRECTCALLRETURN extends Instruction {
 
+  @Override
   public boolean isExtendedInstruction() {
     return true;
   }
 
-  public static final int OPCODE = 258;
+  public static final int OPCODE = 261;
 
+  @Override
   public int getByteCode () {
     return OPCODE;
   }
 
-  public void setInvokedMethod (NativeMethodInfo mi){
-    setInvokedMethod(mi.getClassName(), mi.getBaseName(), mi.getSignature());
-
-    invokedMethod = mi;
-  }
-
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 
-  public Instruction execute(SystemState ss, KernelState ks, ThreadInfo ti) {
+  @Override
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    // pop the current frame but do not advance the new top frame, and do
+    // touch its operand stack
 
-    // we don't have to enter/leave or push/pop a frame, that's all done
-    // in NativeMethodInfo.execute
-    return invokedMethod.execute(ti);
+    //DirectCallStackFrame frame = (DirectCallStackFrame) ti.getTopFrame();
+
+    StackFrame frame = ti.popDirectCallFrame();
+
+    return frame.getPC();
   }
-
-  public MethodInfo getInvokedMethod(ThreadInfo ti) {
-    return invokedMethod;
-  }
-
-  public Object getFieldValue(String id, ThreadInfo ti) {
-    return null;
-  }
-
 }

@@ -86,7 +86,7 @@ public class INVOKECLINIT extends INVOKESTATIC {
         // registerLockContender added it to the lockedThreads list of the monnitor,
         // and ti might be blocked on it (if we couldn't lock in the top half above)
         ei.unregisterLockContender(ti);
-        return getNext();
+        return getFollowingInstruction();
       }
     }
     

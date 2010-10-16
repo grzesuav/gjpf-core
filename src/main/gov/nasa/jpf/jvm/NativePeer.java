@@ -164,6 +164,9 @@ public class NativePeer {
     return peerClass;
   }
 
+  public String getPeerClassName() {
+    return peerClass.getName();
+  }
 
   void initialize (Class<?> peerClass, ClassInfo ci, boolean cacheMethods) {
     if ((this.ci != null) || (this.peerClass != null)) {

@@ -11,14 +11,15 @@ public class JPF_gov_nasa_jpf_SerializationConstructor {
   public static int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                              int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
-    Instruction insn = ti.getPC();        
-    DirectCallStackFrame frame;
-    
-    if (!ti.isResumedInstruction(insn)) { // make a direct call  
-      
+    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+
+    if (frame != null){
+      return frame.pop();
+
+    } else {
       int clsRef = env.getReferenceField(mthRef, "mdc");
       ClassInfo ci = JPF_java_lang_Class.getReferredClassInfo(env, clsRef);
-            
+
       int superCtorRef = env.getReferenceField(mthRef, "firstNonSerializableCtor");
       MethodInfo mi = JPF_java_lang_reflect_Constructor.getMethodInfo(env,superCtorRef);
 
@@ -26,23 +27,16 @@ public class JPF_gov_nasa_jpf_SerializationConstructor {
         env.throwException("java.lang.InstantiationException");
         return MJIEnv.NULL;
       }
-      
-      int objRef = env.newObject(ci);
 
+      int objRef = env.newObject(ci);
       MethodInfo stub = mi.createDirectCallStub("[serialization]");
-      frame = new DirectCallStackFrame(stub, insn);
-        
+      frame = new DirectCallStackFrame(stub, 2,0);
       frame.push(objRef, true);
       frame.dup(); // we store the return object on the frame (don't do that with a normal frame)
-      
       ti.pushFrame(frame);
-      env.repeatInvocation();
-      
+
+      //env.repeatInvocation(); // we don't need this, direct calls don't advance their return frame
       return MJIEnv.NULL; // doesn't matter
-      
-    } else { // direct call returned, unbox return type (if any)
-      frame = ti.getReturnedDirectCall();
-      return frame.pop();
     }
   }
 
