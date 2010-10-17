@@ -398,7 +398,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     MethodInfo mi = new MethodInfo(id);
     String cname = ci.getName();
 
-    mi.name = originator + name; // + cname; // could maybe also include the called method, but keep it fast
+    mi.name = originator; // + name; // + cname; // could maybe also include the called method, but keep it fast
     mi.signature = "()V";
     mi.maxLocals = isStatic() ? 0 : 1;
     mi.maxStack = getNumberOfCallerStackSlots();  // <2do> cache for optimization
