@@ -97,7 +97,7 @@ public class AssertionProperty extends PropertyListenerAdapter {
 
           ti.pop(); // ensure operand stack integrity (ATHROW pops)
           ti.skipInstruction();
-          ti.setNextPC(insn.getFollowingInstruction());
+          ti.setNextPC(insn.getNext());
 
         } else {
           ti.skipInstruction();

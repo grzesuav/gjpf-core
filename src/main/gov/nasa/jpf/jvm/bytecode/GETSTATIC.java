@@ -50,7 +50,7 @@ public class GETSTATIC extends StaticFieldInstruction {
     // this can be actually different (can be a base)
     clsInfo = fieldInfo.getClassInfo();
 
-    if (!mi.isClinit(clsInfo) && causedClinitCalls(ti, clsInfo)) {
+    if (!mi.isClinit(clsInfo) && requiresClinitCalls(ti, clsInfo)) {
       return ti.getPC();
     }
 

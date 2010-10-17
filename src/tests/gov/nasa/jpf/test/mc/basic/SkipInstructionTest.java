@@ -44,7 +44,7 @@ public class SkipInstructionTest extends TestJPF {
           ti.push(42, false);
 
           ti.skipInstruction();
-          ti.setNextPC(pc.getFollowingInstruction());
+          ti.setNextPC(pc.getNext());
         }
       }
     }

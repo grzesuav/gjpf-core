@@ -1283,7 +1283,7 @@ public class MJIEnv {
     // NOTE: we have to repeat no matter what, since this is called from
     // a handler context (if we only had to create a class object w/o
     // calling clinit, we can't just go on)
-    insn.causedClinitCalls(ti,ci);
+    insn.requiresClinitCalls(ti,ci);
     repeatInvocation();
   }
 

@@ -137,7 +137,7 @@ public abstract class ReturnInstruction extends Instruction {
         setReturnAttr(ti, attr);
       }
 
-      return top.getPC().getFollowingInstruction();
+      return top.getPC().getNext();
     }
   }
   

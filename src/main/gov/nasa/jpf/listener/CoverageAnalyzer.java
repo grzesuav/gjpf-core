@@ -162,7 +162,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
       ti = null;  // Remove IDE warning about unused variable.
       // Hmm, we have to store the bb set at this point
       BitSet bb = getBasicBlocks();
-      Instruction next = insn.getFollowingInstruction();
+      Instruction next = insn.getNext();
       if (next != null) { // insn might be a sync return
         bb.set(next.getOffset());
       }
@@ -359,7 +359,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
             Instruction tgt = ifInsn.getTarget();
             bb.set(tgt.getOffset());
 
-            tgt = ifInsn.getFollowingInstruction();
+            tgt = ifInsn.getNext();
             bb.set(tgt.getOffset());
           } else if (insn instanceof GOTO) {
             Instruction tgt = ((GOTO) insn).getTarget();
@@ -368,7 +368,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
             // hmm, this might be a bit too conservative, but who says we
             // don't jump out of a caller into a handler, or even that we
             // ever return from the call?
-            Instruction tgt = insn.getFollowingInstruction();
+            Instruction tgt = insn.getNext();
             bb.set(tgt.getOffset());
           }
         }

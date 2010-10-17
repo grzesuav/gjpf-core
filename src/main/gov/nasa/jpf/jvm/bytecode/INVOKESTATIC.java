@@ -91,7 +91,7 @@ public class INVOKESTATIC extends InvokeInstruction {
     // this can be actually different than (can be a base)
     clsInfo = callee.getClassInfo();
     
-    if (causedClinitCalls(ti, clsInfo)) {
+    if (requiresClinitCalls(ti, clsInfo)) {
       // do class initialization before continuing
       return ti.getPC();
     }

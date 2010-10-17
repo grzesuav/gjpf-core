@@ -172,7 +172,7 @@ public class NativeMethodInfo extends MethodInfo {
           nativeFrame.setReturnValue(ret);
           nativeFrame.setReturnAttr(env.getReturnAttribute());
 
-          return nativeFrame.getPC().getFollowingInstruction(); // that should be the NATIVERETURN
+          return nativeFrame.getPC().getNext(); // that should be the NATIVERETURN
         }
 
       } else {

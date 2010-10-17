@@ -2349,6 +2349,16 @@ public class ThreadInfo
     return top;
   }
 
+  public boolean hasReturnedFromDirectCall () {
+    // this is reset each time we push a new frame
+    return (returnedDirectCall != null);
+  }
+
+  public boolean hasReturnedFromDirectCall(String directCallId){
+    return (returnedDirectCall != null &&
+            returnedDirectCall.getMethodName().equals(directCallId));
+  }
+
   public DirectCallStackFrame getReturnedDirectCall () {
     return returnedDirectCall;
   }

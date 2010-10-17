@@ -19,7 +19,6 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.DirectCallStackFrame;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
@@ -29,11 +28,15 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * this is used to return from a DirectCallStackFrame
  *
  * Note that it is NOT a ReturnInstruction, in case listeners monitor these
- * and expect corresponding InvokeInstructions. Although it seems intuitive, it
- * would be pointless to derive it because the ReturnInstruction.execute() does
+ * and expect corresponding InvokeInstructions. Although this would seem intuitive, it
+ * would be pointless to derive because the ReturnInstruction.execute() does
  * a lot of things we would have to cut off, i.e. it would require more effort
  * to undo this (no sync, no return value, no pc advance on the returned-to
  * stackframe etc.)
+ *
+ * However, having a dedicated direct call return instruction makes sense so
+ * that the ReturnInstruction of the called method does not have to handle
+ * direct calls specifically
  */
 public class DIRECTCALLRETURN extends Instruction {
 

@@ -99,40 +99,70 @@ public class PerturbatorTest extends TestJPF {
     return i;
   }
 
+  int bar (int i){
+    return i-1;
+  }
+
   @Test
   public void testIntReturnPerturbation() {
 
     if (!isJPFRun()){
       Verify.resetCounter(0);
+      Verify.resetCounter(1);
     }
 
     if (verifyNoPropertyViolation("+listener=.listener.Perturbator",
-                                  "+perturb.returns=foo",
+                                  "+perturb.returns=foo,bar",
+
                                   "+perturb.foo.class=.perturb.IntOverUnder",
                                   "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foo(int)",
-                                  "+perturb.foo.location=PerturbatorTest.java:121",
-                                  "+perturb.foo.delta=1")){
+                                  "+perturb.foo.location=PerturbatorTest.java:133",
+                                  "+perturb.foo.delta=1",
+                                  
+                                  "+perturb.bar.class=.perturb.IntOverUnder",
+                                  "+perturb.bar.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.bar(int)",
+                                  "+perturb.bar.delta=5")){
+      int x, y;
+
       System.out.println("int return perturbation test");
 
-      int d = foo(-1); // this should not be perturbed
+      x = foo(-1); // this should not be perturbed ('foo' has a location spec)
       System.out.print("foo() = ");
-      System.out.println(d);
+      System.out.println(x);
 
-      d = foo(42); // this should be
+      x = foo(42); // line 133 => this should be
       System.out.print("foo() = ");
-      System.out.println(d);
+      System.out.println(x);
 
       Verify.incrementCounter(0);
       switch (Verify.getCounter(0)){
-        case 1: assert d == 43; break;
-        case 2: assert d == 42; break;
-        case 3: assert d == 41; break;
+        // foo() preturbations
+        case 1: assert x == 43; break;
+        case 2: assert x == 42; break;
+        case 3: assert x == 41; break;
         default:
-          assert false : "wrong counter value: " + Verify.getCounter(0);
+          assert false : "wrong counter 0 (foo() perturbation) value: " + Verify.getCounter(0);
+      }
+
+      if (x == 41){
+        y = bar(40); // this too (no location spec for 'bar')
+        System.out.print("bar() = ");
+        System.out.println(y);
+
+        Verify.incrementCounter(1);
+        switch (Verify.getCounter(1)){
+          // bar() perturbations
+          case 1: assert y == 44; break;
+          case 2: assert y == 39; break;
+          case 3: assert y == 34; break;
+          default:
+            assert false : "wrong counter 1 (bar() perturbation) value: " + Verify.getCounter(1);
+        }
       }
 
     } else {
       assert Verify.getCounter(0) == 3;
+      assert Verify.getCounter(1) == 3;
     }
   }
 

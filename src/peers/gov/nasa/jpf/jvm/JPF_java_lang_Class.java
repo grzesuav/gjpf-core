@@ -50,7 +50,7 @@ public class JPF_java_lang_Class {
       Instruction insn = ti.getPC();
       ClassInfo ci = getReferredClassInfo(env, robj).getComponentClassInfo();
 
-      if (insn.causedClinitCalls(ti, ci)) {
+      if (insn.requiresClinitCalls(ti, ci)) {
         env.repeatInvocation();
         return MJIEnv.NULL;
       }
@@ -152,7 +152,7 @@ public class JPF_java_lang_Class {
       return MJIEnv.NULL;
     }
     
-    if (insn.causedClinitCalls(ti, ci)) {
+    if (insn.requiresClinitCalls(ti, ci)) {
       env.repeatInvocation();
       return MJIEnv.NULL;
     }
@@ -407,7 +407,7 @@ public class JPF_java_lang_Class {
     Instruction insn = ti.getPC();
     ClassInfo fci = ClassInfo.getResolvedClassInfo("java.lang.reflect.Field");
     
-    if (insn.causedClinitCalls(ti, fci)) {
+    if (insn.requiresClinitCalls(ti, fci)) {
       env.repeatInvocation();
       return MJIEnv.NULL;
     }
@@ -469,7 +469,7 @@ public class JPF_java_lang_Class {
       Instruction insn = ti.getPC();
       ClassInfo fci = ClassInfo.getResolvedClassInfo("java.lang.reflect.Field");
       
-      if (insn.causedClinitCalls(ti, fci)) {
+      if (insn.requiresClinitCalls(ti, fci)) {
         env.repeatInvocation();
         return MJIEnv.NULL;
       }

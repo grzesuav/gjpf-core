@@ -93,10 +93,10 @@ public abstract class Instruction implements InstructionVisit {
   }
 
   /**
-   * this returns the next instruction within the same method, which might
-   * or might not be the next one to execute (branches, overlay calls etc.)
+   * this returns the instruction at the following code offset within the same
+   * method, which might or might not be the next one to execute (branches, overlay calls etc.).
    */
-  public Instruction getFollowingInstruction() {
+  public Instruction getNext() {
     return mi.getInstruction(offset + 1);
   }
 
@@ -287,12 +287,12 @@ public abstract class Instruction implements InstructionVisit {
     this.position = position;
   }
 
-  public boolean causedClinitCalls(ThreadInfo ti, ClassInfo ci) {
-
-    //if (!ti.isResumedInstruction(this)) {
-
-    // <2do> why would a resumed insn not require class init? it might be resumed
-    // for other reasons than having previously forced a <clinit>
+  /**
+   * this is a misnomer - we actually push the clinit calls here in case
+   * we need some. 'causedClinitCalls' might be more appropriate, but it is
+   * used in a number of external projects
+   */
+  public boolean requiresClinitCalls(ThreadInfo ti, ClassInfo ci) {
 
     if (!ci.isRegistered()){
       ci.registerClass(ti);
@@ -304,7 +304,6 @@ public abstract class Instruction implements InstructionVisit {
         return true; // there are new <clinit> frames on the stack, execute them
       }
     }
-    //}
 
     return false;
   }
@@ -322,7 +321,7 @@ public abstract class Instruction implements InstructionVisit {
    * as ThreadInfo state (TERMINATED), rather than purged stacks
    */
   public Instruction getNext (ThreadInfo ti) {
-    return ti.getPC().getFollowingInstruction();
+    return ti.getPC().getNext();
   }
   
   public void accept(InstructionVisitor insVisitor) {
