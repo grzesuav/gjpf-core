@@ -86,6 +86,9 @@ public class System {
         throw new UnsupportedOperationException("JavaLangAccess.blockedOn() not supported yet");
         //t.blockedOn(b);
       }
+      public void registerShutdownHook(int slot, Runnable r) {
+        throw new UnsupportedOperationException("JavaLangAccess.registerShutdownHook() not supported yet");
+      }
     };
   }
 

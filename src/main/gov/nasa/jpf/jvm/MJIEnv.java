@@ -1130,7 +1130,7 @@ public class MJIEnv {
   }
 
   public ThreadInfo getThreadInfo (int threadObjRef){
-    return ThreadInfo.getThreadInfo(ti.getVM(), threadObjRef);
+    return ThreadInfo.getThreadInfo(threadObjRef);
   }
 
   // <2do> - naming? not very intuitive

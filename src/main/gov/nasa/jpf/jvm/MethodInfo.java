@@ -53,7 +53,7 @@ import org.apache.bcel.classfile.RuntimeVisibleParameterAnnotations;
 public class MethodInfo extends InfoObject implements Cloneable {
 
   static final int INIT_MTH_SIZE = 4096;
-  protected static ArrayList<MethodInfo> mthTable;
+  protected static final ArrayList<MethodInfo> mthTable = new ArrayList<MethodInfo>(INIT_MTH_SIZE);
   
   // special globalIds
   static final int DIRECT_CALL = -1;
@@ -180,7 +180,8 @@ public class MethodInfo extends InfoObject implements Cloneable {
   static boolean init (Config config) {
     insnFactory = config.getEssentialInstance("vm.insn_factory.class", InstructionFactory.class);
     
-    mthTable = new ArrayList<MethodInfo>(INIT_MTH_SIZE);
+    mthTable.clear();
+    
     return true;
   }
   

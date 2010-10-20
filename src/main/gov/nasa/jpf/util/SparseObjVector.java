@@ -64,8 +64,14 @@ public class SparseObjVector<E> {
     nextRehash = (int)(MAX_LOAD_REHASH * mask);
   }
 
-  
-  
+  public void clear() {
+    pow = DEFAULT_POW;
+    newTable();
+    count = 0;
+    mask = valTable.length - 1;
+    nextWipe = (int) (MAX_LOAD_WIPE * mask);
+    nextRehash = (int) (MAX_LOAD_REHASH * mask);
+  }
   
   // INTERNAL //
   

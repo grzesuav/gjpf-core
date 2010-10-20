@@ -28,11 +28,11 @@ import gov.nasa.jpf.jvm.bytecode.RUNSTART;
 public class JPF_java_lang_Thread {
 
   public static boolean isAlive____Z (MJIEnv env, int objref) {
-    return getThreadInfo(env, objref).isAlive();
+    return getThreadInfo(objref).isAlive();
   }
 
   public static void setDaemon0__Z__V (MJIEnv env, int objref, boolean isDaemon) {
-    ThreadInfo ti = getThreadInfo(env, objref);
+    ThreadInfo ti = getThreadInfo(objref);
     ti.setDaemon(isDaemon);
   }
 
@@ -53,18 +53,18 @@ public class JPF_java_lang_Thread {
     // to get the initial values into ThreadData, and gets inconsistent
     // if this method is called (just works because the 'name' field is only
     // directly accessed from within the Thread ctors)
-    ThreadInfo ti = getThreadInfo(env, objref);
+    ThreadInfo ti = getThreadInfo(objref);
     ti.setName(env.getStringObject(nameRef));
   }
 
   public static void setPriority0__I__V (MJIEnv env, int objref, int prio) {
     // again, we have to cache this in ThreadData for performance reasons
-    ThreadInfo ti = getThreadInfo(env, objref);
+    ThreadInfo ti = getThreadInfo(objref);
     ti.setPriority(prio);
   }
 
   public static int countStackFrames____I (MJIEnv env, int objref) {
-    return getThreadInfo(env, objref).countStackFrames();
+    return getThreadInfo(objref).countStackFrames();
   }
 
   public static int currentThread____Ljava_lang_Thread_2 (MJIEnv env, int clsObjRef) {
@@ -100,7 +100,7 @@ public class JPF_java_lang_Thread {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
 
-    ThreadInfo interruptedThread = getThreadInfo( env, objref);
+    ThreadInfo interruptedThread = getThreadInfo(objref);
 
     if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
       interruptedThread.interrupt();
@@ -117,7 +117,7 @@ public class JPF_java_lang_Thread {
   // these could be in the model, but we keep it symmetric, which also saves
   // us the effort of avoiding unwanted shared object field access CGs
   public static boolean isInterrupted____Z (MJIEnv env, int objref) {
-    ThreadInfo ti = getThreadInfo( env, objref);
+    ThreadInfo ti = getThreadInfo(objref);
     return ti.isInterrupted(false);
   }
 
@@ -134,7 +134,7 @@ public class JPF_java_lang_Thread {
 
     if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
 
-      ThreadInfo newThread = getThreadInfo(env, objref);
+      ThreadInfo newThread = getThreadInfo(objref);
       // check if this thread was already started. If it's still running, this
       // is a IllegalThreadStateException. If it already terminated, it just gets
       // silently ignored in Java 1.4, but the 1.5 spec explicitly marks this
@@ -238,7 +238,7 @@ public class JPF_java_lang_Thread {
 
   public static void suspend____ (MJIEnv env, int threadObjRef) {
     ThreadInfo operator = env.getThreadInfo();
-    ThreadInfo target = getThreadInfo(env, threadObjRef);
+    ThreadInfo target = getThreadInfo(threadObjRef);
     SystemState ss = env.getSystemState();
 
     // The first time through here, we need to let other threads (if any) have a chance to call suspend and resume.  Also, need to let the target thread have a chance to do some work.
@@ -267,7 +267,7 @@ public class JPF_java_lang_Thread {
 
   public static void resume____ (MJIEnv env, int threadObjRef) {
     ThreadInfo operator = env.getThreadInfo();
-    ThreadInfo target = getThreadInfo(env, threadObjRef);
+    ThreadInfo target = getThreadInfo(threadObjRef);
     SystemState ss = env.getSystemState();
 
     assert operator != target : "A thread is calling resume on itself when it should have been suspended!";
@@ -303,7 +303,7 @@ public class JPF_java_lang_Thread {
   static void join0 (MJIEnv env, int joineeRef, long timeout){
     ThreadInfo ti = env.getThreadInfo(); // this is the CURRENT thread
     ElementInfo ei = env.getElementInfo(joineeRef); // the thread object to wait on
-    boolean isAlive = getThreadInfo(env, joineeRef).isAlive();
+    boolean isAlive = getThreadInfo(joineeRef).isAlive();
     SystemState ss = env.getSystemState();
 
     if (ti.isInterrupted(true)){ // interrupt status is set, throw and bail
@@ -374,13 +374,13 @@ public class JPF_java_lang_Thread {
   public static long getId____J (MJIEnv env, int objref) {
     // doc says it only has to be valid and unique during lifetime of thread, hence we just use
     // the ThreadList index
-    ThreadInfo ti = getThreadInfo(env, objref);
+    ThreadInfo ti = getThreadInfo(objref);
     return ti.getIndex();
   }
 
   public static int getState0____I (MJIEnv env, int objref) {
     // return the state index with respect to one of the public Thread.States
-    ThreadInfo ti = getThreadInfo(env, objref);
+    ThreadInfo ti = getThreadInfo(objref);
 
     switch (ti.getState()) {
     case NEW:                return 1;
@@ -413,9 +413,8 @@ public class JPF_java_lang_Thread {
   protected static ThreadInfo createThreadInfo (MJIEnv env, int objref) {
     return ThreadInfo.createThreadInfo(env.getVM(), objref);
   }
-
-  static ThreadInfo getThreadInfo (MJIEnv env, int objref) {
-    return ThreadInfo.getThreadInfo(env.getVM(), objref);
+  
+  static ThreadInfo getThreadInfo (int objref) {
+    return ThreadInfo.getThreadInfo(objref);     
   }
-
 }
