@@ -24,7 +24,6 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.Debug;
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.IntVector;
-import gov.nasa.jpf.util.Misc;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -43,7 +42,6 @@ public class DynamicArea extends Area<DynamicElementInfo> {
   /**
    * Used to store various mark phase infos
    */
-  protected final BitSet isUsed = new BitSet();
   protected final BitSet isRoot = new BitSet();
   protected final IntVector refThread = new IntVector();
   protected final IntVector lastAttrs = new IntVector();
@@ -153,7 +151,8 @@ public class DynamicArea extends Area<DynamicElementInfo> {
       ei = elements.get(i);
       if (ei != null) {
         lastAttrs.set( i, ei.attributes);
-        ei.attributes &= ~ElementInfo.ATTR_PROP_MASK;
+
+        ei.attributes &= ~(ElementInfo.ATTR_PROP_MASK | ElementInfo.ATTR_IS_LIVE);
 
         if ((ei.attributes & ElementInfo.ATTR_PINDOWN) != 0){
           markPinnedDown(i);
@@ -172,10 +171,8 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     // phase 2 - walk through all the marked ones recursively
     // Now we traverse, and propagate the reachability attribute. After this
     // phase, all live objects should be marked with the 'curGc' value
-    for (i=0; i<length; i++) {
-      if (isRoot.get(i)) {
-        markRecursive(i);
-      }
+    for (i=isRoot.nextSetBit(0); i>= 0; i = isRoot.nextSetBit(i+1)){
+      markRecursive(i);
     }
 
     // phase 3 - run finalization (slightly approximated, since it should be
@@ -185,7 +182,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     if (sweep && runFinalizer) {
       for (i = 0; i < length; i++) {
         ei = elements.get(i);
-        if ((ei != null) && !isUsed.get(i)) {
+        if (ei != null && !ei.isLive()){
           // <2do> here we have to add the object to the finalizer queue
           // and activate the FinalizerThread (which is kind of a root object too)
           // not sure yet how to handle this best to avoid more state space explosion
@@ -201,7 +198,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     for (i = 0; i < length; i++) {
       ei = elements.get(i);
       if (ei != null) {
-        if (isUsed.get(i)) {
+        if (ei.isLive()){
           // Ok, it's live, BUT..
           // beware of the case where the only change we had was a attribute
           // change - the downside of our marvelous object attribute system is
@@ -236,7 +233,6 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     }
 
     if (sweep) {
-      ks.tl.sweepTerminated(isUsed);
       checkWeakRefs(); // for potential nullification
     }
 
@@ -245,7 +241,6 @@ public class DynamicArea extends Area<DynamicElementInfo> {
 
   protected void initGc () {
     isRoot.clear();
-    isUsed.clear();
   }
 
   void logMark (FieldInfo fi, ElementInfo ei, int tid, int attrMask) {
@@ -273,7 +268,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     System.out.print( " ");
 
     if (isRoot.get(ei.index)) System.out.print( "R");
-    if (isUsed.get(ei.index)) System.out.print( "V");
+    if (ei.isLive())  System.out.print( "V");
 
     System.out.println();
     /**/
@@ -296,24 +291,57 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     int attrMask = ElementInfo.ATTR_PROP_MASK;
 
     markLevel = 0;
+    markHead = markEnd = null;
 
     //logMark( null, ei, tid, attrMask);
 
-    if (ei != null) { // <2do> how can this happen?
+    if (ei != null) {
       ei.markRecursive(tid, attrMask);
+      processMarkQueue();
     }
   }
 
 
-  protected void markRecursive (int objref, int refTid, int refAttr, int attrMask, FieldInfo fi) {
+  static class MarkEntry {
+    MarkEntry next; // single linked list
+
+    int objref;  // reference value
+    int refTid;  // referencing thread
+    int refAttr;
+    int attrMask;
+  }
+
+  MarkEntry markHead, markEnd;
+
+  protected void queueMark (int objref, int refTid, int refAttr, int attrMask){
+    MarkEntry e = new MarkEntry();
+    e.objref = objref;
+    e.refTid = refTid;
+    e.refAttr = refAttr;
+    e.attrMask = attrMask;
+
+    if (markEnd != null){
+      markEnd.next = e;
+    } else {
+      markHead = e;
+    }
+
+    markEnd = e;
+  }
+
+  protected void processMarkQueue() {
+    for (MarkEntry e = markHead; e != null; e = e.next){
+      markRecursive(e.objref,e.refTid,e.refAttr,e.attrMask);
+    }
+    markHead = markEnd = null;
+  }
+
+
+  protected void markRecursive (int objref, int refTid, int refAttr, int attrMask) {
     if (objref == -1) {
       return;
     }
     ElementInfo ei = elements.get(objref);
-
-    if (fi != null) {
-      attrMask &= fi.getAttributes();
-    }
 
     markLevel++;
 
@@ -321,7 +349,8 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     // have to make sure we do this only where needed (or we might get an infinite recursion
     // or at least get slow)
 
-    if (isUsed.get(objref)) {
+    if (ei.isLive()){
+
       // we have seen this before, and have to check for a change in attributes that
       // might require a re-recurse. That change could either be introduced at this
       // level (we hit a non-shared object referenced from another thread), or it could
@@ -342,10 +371,8 @@ public class DynamicArea extends Area<DynamicElementInfo> {
 
       // only if the attributes have changed, we have to recurse
       if (ei.getAttributes() != attrs) {
-        // make sure we don't traverse this again (note that root objects are marked 'isUsed')
-        if (isRoot.get(objref)) {
-          isRoot.clear(objref);
-        }
+        // make sure we don't traverse this again (note that root objects are marked as 'live')
+        isRoot.clear(objref);
 
         ei.markRecursive(refTid, attrMask);
 
@@ -355,7 +382,8 @@ public class DynamicArea extends Area<DynamicElementInfo> {
 
     } else {
       // first time around, mark used, record referencing thread, set attributes, and recurse
-      isUsed.set(objref);
+      ei.setLive();
+
       refThread.set(objref, refTid);
 
       ei.propagateAttributes(refAttr, attrMask);
@@ -376,17 +404,20 @@ public class DynamicArea extends Area<DynamicElementInfo> {
       return;
     }
 
+    ElementInfo ei = elements.get(objref);
+
     if (isRoot.get(objref)) {
+
       int rt = refThread.get(objref);
       if ((rt != tid) && (rt != -1)) {
-        elements.get(objref).setShared();
+        ei.setShared();
         // <2do> - this would be the place to add a listener notification
       }
     } else {
       isRoot.set(objref);
       refThread.set(objref, tid);
 
-      isUsed.set(objref);
+      ei.setLive();
     }
   }
 
@@ -400,21 +431,79 @@ public class DynamicArea extends Area<DynamicElementInfo> {
       return;
     }
 
+    ElementInfo ei = elements.get(objref);
+
     isRoot.set(objref);
     refThread.set(objref, -1);
 
-    isUsed.set(objref);
+    ei.setLive();
 
-    elements.get(objref).setShared();
+    ei.setShared();
     // <2do> - this would be the place to add a listener notification
   }
 
   void markPinnedDown (int objref){
+    ElementInfo ei = elements.get(objref);
+
     isRoot.set(objref);
     refThread.set(objref, -1);
-    isUsed.set(objref);
+
+    ei.setLive();
     // don't set shared yet
   }
+
+  void updateReachability( ElementInfo ei, int oldRef, int newRef) {
+    ThreadInfo ti = ThreadInfo.getCurrentThread(); // might be null during VM init
+    if ((ti == null) || ti.isInCtor() || !ti.usePor()) {
+      return;
+    }
+
+    if (oldRef != newRef) {
+      ElementInfo oei, nei;
+
+      if (ei.isShared()) { // object holding the changed reference field is shared
+        if (oldRef != -1) {
+          oei = elements.get(oldRef);
+          if (!oei.isImmutable()) { // it's already shared, anyway
+            // Ok, give up and do a full mark, the old object might not be
+            // reachable anymore
+            analyzeHeap(false); // takes care of the newRef, too
+            return;
+          }
+        }
+
+        if (newRef != -1) {
+          nei = elements.get(newRef);
+          if (!nei.isShared() && !nei.isImmutable()) {
+            // no need to walk the whole heap, just recursively promote nei
+            // and all its reachables to 'shared'
+            nei.setShared();
+            // <2do> - this would be the place to add listener notification
+
+            initGc(); // <2do> do we need to clear isRoot?
+            markHead = markEnd = null;
+
+            nei.markRecursive(ti.getIndex(), ElementInfo.ATTR_PROP_MASK);
+            processMarkQueue();
+          }
+        }
+      } else { // owner of changed field not shared (oldRef can't change status)
+        if (newRef != -1) {
+          nei = elements.get(newRef);
+          if (nei.isSchedulingRelevant()) { // shared and mutable
+            // give up, nei might become non-shared
+            analyzeHeap(false);
+          }
+        }
+      }
+    }
+
+    if (oldRef != -1) {
+      JVM.getVM().getSystemState().activateGC(); // needs GC at the end of this
+                                                 // transition
+    }
+  }
+
 
   public boolean isSchedulingRelevantObject (int objRef) {
     if (objRef == -1) return false;
