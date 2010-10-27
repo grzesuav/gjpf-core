@@ -58,10 +58,11 @@ public class Monitor {
     Arrays.sort(lockedThreads);
   }
   
-  void printFields (PrintWriter pw) {
+  public void printFields (PrintWriter pw) {
     int i;
-    
-    pw.print("[");
+
+    pw.print(this);
+    pw.print(" [");
     if (lockingThread != null) {
       pw.print( "locked by: ");
       pw.print( lockingThread.getName());
@@ -82,6 +83,10 @@ public class Monitor {
     pw.println("}]");
   }
   
+  // for debugging purposes
+  public void dump() {
+    printFields(new PrintWriter(System.out));
+  }
   
   Monitor cloneWithLocked (ThreadInfo ti) {
     return new Monitor(lockingThread, lockCount, add(lockedThreads, ti));
@@ -110,11 +115,11 @@ public class Monitor {
 
     Monitor m = (Monitor) o;
 
-    if (lockingThread != m.getLockingThread()) {
+    if (lockingThread != m.lockingThread) {
       return false;
     }
 
-    if (lockCount != m.getLockCount()) {
+    if (lockCount != m.lockCount) {
       return false;
     }
 
@@ -140,7 +145,7 @@ public class Monitor {
     
     hd.add(lockCount);
     
-    for (int i = 0, l = lockedThreads.length; i < l; i++) {
+    for (int i = 0; i < lockedThreads.length; i++) {
       hd.add(lockedThreads[i].getIndex());
     }    
   }

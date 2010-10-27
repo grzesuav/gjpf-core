@@ -1289,7 +1289,7 @@ public class JVM {
   }
 
   public KernelState getKernelState () {
-    return ss.ks;
+    return ss.getKernelState();
   }
 
   public Config getConfig() {

@@ -49,9 +49,6 @@ public class DynamicArea extends Area<DynamicElementInfo> {
   protected boolean runFinalizer;
   protected boolean sweep;
 
-  // just an internal helper
-  protected int markLevel;
-
   protected boolean outOfMemory; // can be used by listeners to simulate outOfMemory conditions
 
   /** used to keep track of marked WeakRefs that might have to be updated */
@@ -87,6 +84,11 @@ public class DynamicArea extends Area<DynamicElementInfo> {
 
   public static DynamicArea getHeap () {
     return heap;
+  }
+
+  public Memento getMemento() {
+    ElementInfo.Memento[] a = new ElementInfo.Memento[elements.length()];
+    return new GenericAreaMemento( a);
   }
 
   /**
@@ -243,9 +245,9 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     isRoot.clear();
   }
 
+  // for debugging purposes
   void logMark (FieldInfo fi, ElementInfo ei, int tid, int attrMask) {
     /**/
-    for (int i=0; i<=markLevel; i++) System.out.print("    ");
 
     if (fi != null) {
       System.out.print('\'');
@@ -290,7 +292,6 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     ElementInfo ei = elements.get(objref);
     int attrMask = ElementInfo.ATTR_PROP_MASK;
 
-    markLevel = 0;
     markHead = markEnd = null;
 
     //logMark( null, ei, tid, attrMask);
@@ -343,8 +344,6 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     }
     ElementInfo ei = elements.get(objref);
 
-    markLevel++;
-
     // this is a bit tricky - (1) we have to recursively descend, and (2) we
     // have to make sure we do this only where needed (or we might get an infinite recursion
     // or at least get slow)
@@ -389,8 +388,6 @@ public class DynamicArea extends Area<DynamicElementInfo> {
       ei.propagateAttributes(refAttr, attrMask);
       ei.markRecursive(refTid, attrMask);
     }
-
-    markLevel--;
   }
 
 

@@ -1089,19 +1089,19 @@ public class ThreadInfo
 
 
   public ElementInfo getObjectLocal (String lname) {
-    return list.ks.da.get(getLocalVariable(lname));
+    return vm.getDynamicArea().get(getLocalVariable(lname));
   }
 
   public ElementInfo getObjectLocal (int lindex) {
-    return list.ks.da.get(getLocalVariable(lindex));
+    return vm.getDynamicArea().get(getLocalVariable(lindex));
   }
 
   public ElementInfo getObjectLocal (int fr, String lname) {
-    return list.ks.da.get(getLocalVariable(fr, lname));
+    return vm.getDynamicArea().get(getLocalVariable(fr, lname));
   }
 
   public ElementInfo getObjectLocal (int fr, int lindex) {
-    return list.ks.da.get(getLocalVariable(fr, lindex));
+    return vm.getDynamicArea().get(getLocalVariable(fr, lindex));
   }
 
   /**
@@ -1112,7 +1112,7 @@ public class ThreadInfo
   }
 
   public ElementInfo getObjectReturnValue () {
-    return list.ks.da.get(peek());
+    return vm.getDynamicArea().get(peek());
   }
 
   // might return composite
@@ -1294,23 +1294,23 @@ public class ThreadInfo
   }
 
   public String getStringLocal (String lname) {
-    return list.ks.da.get(getLocalVariable(lname)).asString();
+    return vm.getDynamicArea().get(getLocalVariable(lname)).asString();
   }
 
   public String getStringLocal (int lindex) {
-    return list.ks.da.get(getLocalVariable(lindex)).asString();
+    return vm.getDynamicArea().get(getLocalVariable(lindex)).asString();
   }
 
   public String getStringLocal (int fr, String lname) {
-    return list.ks.da.get(getLocalVariable(fr, lname)).asString();
+    return vm.getDynamicArea().get(getLocalVariable(fr, lname)).asString();
   }
 
   public String getStringLocal (int fr, int lindex) {
-    return list.ks.da.get(getLocalVariable(fr, lindex)).asString();
+    return vm.getDynamicArea().get(getLocalVariable(fr, lindex)).asString();
   }
 
   public String getStringReturnValue () {
-    return list.ks.da.get(peek()).asString();
+    return vm.getDynamicArea().get(peek()).asString();
   }
 
   /**

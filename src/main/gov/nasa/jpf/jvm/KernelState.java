@@ -26,22 +26,17 @@ import java.util.Stack;
 
 
 /**
- * This class represents the application state (memory and threads, but not scheduling)
+ * This class represents the SUT program state (statics, heap and threads)
  */
 public class KernelState {
-  /**
-   * The area containing the classes.
-   */
+
+  /** The area containing static fields and  classes */
   public StaticArea sa;
 
-  /**
-   * The area containing the objects.
-   */
+  /** The area containing the heap */
   public DynamicArea da;
 
-  /**
-   * The list of the threads.
-   */
+  /** The list of the threads */
   public ThreadList tl;
 
   /**
@@ -58,8 +53,19 @@ public class KernelState {
 
     sa = config.getEssentialInstance("vm.static_area.class", StaticArea.class, argTypes, args);
     da = config.getEssentialInstance("vm.dynamic_area.class", DynamicArea.class, argTypes, args);
+    tl = config.getEssentialInstance("vm.thread_list.class", ThreadList.class, argTypes, args);
+  }
 
-    tl = new ThreadList(config,this);
+  public StaticArea getStaticArea() {
+    return sa;
+  }
+
+  public DynamicArea getDynamicArea() {
+    return da;
+  }
+
+  public ThreadList getThreadList() {
+    return tl;
   }
 
   /**
@@ -130,6 +136,8 @@ public class KernelState {
     sa.cleanUpDanglingReferences();
   }
 
+
+
   public void hash (HashData hd) {
     da.hash(hd);
     sa.hash(hd);
@@ -138,9 +146,4 @@ public class KernelState {
       tl.get(i).hash(hd);
     }
   }
-
-  public ThreadList getThreadList () {
-    return tl;
-  }
-
 }

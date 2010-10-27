@@ -234,6 +234,10 @@ public class SystemState {
     return schedulerFactory;
   }
 
+  public KernelState getKernelState() {
+    return ks;
+  }
+
   //--- these are the various choice generator retrievers
 
   /**

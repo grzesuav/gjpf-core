@@ -29,6 +29,7 @@ import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.StaticElementInfo;
 import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.ThreadList;
 import gov.nasa.jpf.util.BitArray;
 import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.IntVector;
@@ -128,8 +129,18 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
     heapMap.clear();
     invHeapMap.clear();
 
-    buf.add(ks.tl.length());
-    for (ThreadInfo t : ks.tl.getThreads()) {
+    ThreadList tl = ks.tl;
+    int tlen = tl.length();
+
+    //buf.add(ks.tl.length());
+    //for (ThreadInfo t : ks.tl.getThreads()) {
+
+    for (int j=0; j<tlen; j++){
+      ThreadInfo t = tl.get(j);
+      if (!t.isAlive()) {
+        continue;
+      }
+
       addObjRef(t.getThreadObjectRef());
       buf.add(t.getState().ordinal());
       StackFrame[] frames = t.dumpStack();

@@ -34,17 +34,40 @@ import java.util.Vector;
  * @see gov.nasa.jpf.jvm.FieldInfo
  */
 public abstract class ElementInfo implements Cloneable {
-  protected Fields          fields;
 
-  protected Monitor         monitor;
+  public static interface Memento<EI extends ElementInfo> {
+    EI restore();
+  }
 
-  protected Area<?>         area;
+  //////////// ditch it - same as the ElementInfo itself, clone will do
+  protected static abstract class GenericMemento<EI extends ElementInfo> implements Memento<EI>{
 
-  protected int             index;
+    protected Fields f;
+    protected Monitor m;
+    protected int r;
+    protected int a;
+    protected FieldLockInfo[] l;
+
+    protected GenericMemento (Fields fields, Monitor monitor, int ref, int attributes){
+      f = fields;
+      m = monitor;
+      r = ref;
+      a = attributes;
+    }
+
+    // to be used by the implementor restore() methods
+    public void restore(ElementInfo ei) {
+      ei.fields = f;
+      ei.monitor = m;
+      ei.index = r;
+      ei.attributes = a;
+    }
+  }
 
   // object attribute flag values
   public static final int   ATTR_NONE          = 0x0;
 
+  // mask of the mark-phase propagated attributes
   public static final int   ATTR_PROP_MASK     = 0x0000ffff;
 
   //--- the propagated ones - only lower 16 bits can be used
@@ -85,8 +108,20 @@ public abstract class ElementInfo implements Cloneable {
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
   public static final int   ATTR_CONSTRUCTED   = 0x100000;
 
+  public static final int   ATTR_FIELDS_CHANGED = 0x1000000;
+  public static final int   ATTR_MONITOR_CHANGED= 0x2000000;
+
+  public static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED);
+
   // transient flag set if object is reachable from root object, i.e. can't be recycled
   public static final int   ATTR_IS_LIVE       = 0x80000000;
+
+
+  //--- instance fields
+
+  protected Fields          fields;
+  protected Monitor         monitor;
+  protected int             index;
 
   // these are our state-stored object attributes
   // WATCH OUT! only include info that otherwise reflects a state change, so
@@ -98,22 +133,6 @@ public abstract class ElementInfo implements Cloneable {
   // one stored in the lower 2 bytes
   protected int             attributes;
 
-  /*
-   * The following information is used to cache the value of the indexes so that
-   * an explicit indexing is not necessary at each storing.
-   */
-  protected boolean         fChanged           = true;
-
-  /**
-   * the monitor index (into the Monitor HashPool) which is stored/restored
-   * for/in backtracking.
-   * The critical thing is to not change a Monitor object once it is stored.
-   * The first operation after that happened (i.e. storeDataTo() or
-   * backtrackTo got called) has to clone the Monitor object, all subsequent
-   * operations on it until it gets stored can use the same object
-   * '-1' means we have a fresh Monitor object, i.e. we don't have to clone
-   */
-  protected boolean         mChanged           = true;
 
   /**
    * FieldLockInfos are never backtracked! They are set in the order of
@@ -131,7 +150,29 @@ public abstract class ElementInfo implements Cloneable {
     attributes = f.getClassInfo().getElementInfoAttrs();
   }
 
+  protected ElementInfo( Fields f, Monitor m, int ref, int a) {
+    fields = f;
+    monitor = m;
+    index = ref;
+    attributes = a;
+  }
+
+
   protected ElementInfo() {
+  }
+
+  protected abstract <EI extends ElementInfo> Memento<EI> getMemento();
+
+  public boolean hasChanged() {
+    return (attributes & ATTR_ANY_CHANGED) != 0;
+  }
+
+  public boolean hasMonitorChanged() {
+    return (attributes & ATTR_MONITOR_CHANGED) != 0;
+  }
+
+  public boolean haveFieldsChanged() {
+    return (attributes & ATTR_FIELDS_CHANGED) != 0;
   }
 
   public String toString() {
@@ -270,7 +311,6 @@ public abstract class ElementInfo implements Cloneable {
       return false;
     }
 
-    setArea(null);
     setIndex(-1);
 
     return true;
@@ -292,7 +332,6 @@ public abstract class ElementInfo implements Cloneable {
   }
 
   protected void resurrect (Area<?> area, int index) {
-    setArea(area);
     setIndex(index);
   }
 
@@ -317,13 +356,6 @@ public abstract class ElementInfo implements Cloneable {
     return false;
   }
 
-  public void setArea(Area<?> newArea) {
-    area = newArea;
-  }
-
-  public Area<?> getArea() {
-    return area;
-  }
 
   /** a bit simplistic, but will do for object equalness */
   public boolean equals(Object other) {
@@ -827,11 +859,11 @@ public abstract class ElementInfo implements Cloneable {
   }
 
   public ElementInfo getDeclaredObjectField(String fname, String referenceType) {
-    return area.ks.da.get(getDeclaredIntField(fname, referenceType));
+    return DynamicArea.getHeap().get(getDeclaredIntField(fname, referenceType));
   }
 
   public ElementInfo getObjectField(String fname) {
-    return area.ks.da.get(getIntField(fname));
+    return DynamicArea.getHeap().get(getIntField(fname));
   }
 
 
@@ -848,7 +880,7 @@ public abstract class ElementInfo implements Cloneable {
     int ref = getIntField(fname);
 
     if (ref != -1) {
-      ElementInfo ei = area.ks.da.get(ref);
+      ElementInfo ei = DynamicArea.getHeap().get(ref);
       if (ei == null) {
         System.out.println("OUTCH: " + ref + ", this: " + index);
         throw new NullPointerException(); // gets rid of null warning -pcd
@@ -903,41 +935,14 @@ public abstract class ElementInfo implements Cloneable {
   }
 
   public String asString() {
-    if (!ClassInfo.isStringClassInfo(fields.getClassInfo())) {
-      throw new JPFException("object is not of type java.lang.String");
-    }
-
-    int value = getDeclaredIntField("value", "java.lang.String");
-    int length = getDeclaredIntField("count", "java.lang.String");
-    int offset = getDeclaredIntField("offset", "java.lang.String");
-
-    ElementInfo e = area.get(value);
-
-    StringBuilder sb = new StringBuilder();
-
-    for (int i = offset; i < (offset + length); i++) {
-      sb.append((char) e.fields.getIntValue(i));
-    }
-
-    return sb.toString();
+    throw new JPFException("not a String object: " + this);
   }
 
   /**
    * just a helper to avoid creating objects just for the sake of comparing
    */
   public boolean equalsString (String s) {
-    if (!ClassInfo.isStringClassInfo(fields.getClassInfo())) {
-      return false;
-    }
-
-    int value = getDeclaredIntField("value", "java.lang.String");
-    int length = getDeclaredIntField("count", "java.lang.String");
-    int offset = getDeclaredIntField("offset", "java.lang.String");
-
-    ElementInfo e = area.get(value);
-    ArrayFields af = (ArrayFields)e.getFields();
-
-    return af.equals(offset, length, s);
+    throw new JPFException("not a String object: " + this);
   }
 
   void updateLockingInfo() {
@@ -990,15 +995,6 @@ public abstract class ElementInfo implements Cloneable {
     try {
       ElementInfo ei = (ElementInfo) super.clone();
 
-      if (ei.fChanged) {
-        ei.fields = fields.clone();
-      }
-
-      if (ei.mChanged) {
-        ei.monitor = monitor.clone();
-      }
-
-      ei.area = null;
       ei.index = -1;
 
       return ei;
@@ -1030,7 +1026,7 @@ public abstract class ElementInfo implements Cloneable {
   abstract public FieldInfo getFieldInfo(int i);
 
   public void log() { // <2do> replace this
-    if (fChanged) {
+    if (haveFieldsChanged()) {
       Debug.println(Debug.MESSAGE, "(fields have changed)");
     }
 
@@ -1041,7 +1037,7 @@ public abstract class ElementInfo implements Cloneable {
           + fi.valueToString(fields));
     }
 
-    if (mChanged) {
+    if (hasMonitorChanged()) {
       Debug.println(Debug.MESSAGE, "(monitor has changed)");
     }
 
@@ -1057,7 +1053,7 @@ public abstract class ElementInfo implements Cloneable {
 
     assert ti.lockRef == -1 || ti.lockRef == index :
       "thread " + ti + " trying to register for : " + this +
-      " ,but already blocked on: " + area.get(ti.lockRef);
+      " ,but already blocked on: " + DynamicArea.getHeap().get(ti.lockRef);
 
     // note that using the lockedThreads list is a bit counter-intuitive
     // since the thread is still in RUNNING or UNBLOCKED state, but it will
@@ -1418,10 +1414,11 @@ public abstract class ElementInfo implements Cloneable {
   public void setLive() {
     attributes |= ATTR_IS_LIVE;
   }
-  
+
+  protected abstract void markAreaChanged();
+
   public void markUnchanged() {
-    fChanged = false;
-    mChanged = false;
+    attributes &= ~ATTR_ANY_CHANGED;
   }
 
   /**
@@ -1434,14 +1431,13 @@ public abstract class ElementInfo implements Cloneable {
   protected abstract Ref getRef();
 
   protected Fields cloneFields() {
-    if (fChanged) {
-      return fields;
+    if ((attributes & ATTR_FIELDS_CHANGED) == 0) {
+      fields = fields.clone();
+      attributes |= ATTR_FIELDS_CHANGED;
+      markAreaChanged();
     }
 
-    fChanged = true;
-    area.markChanged(index);
-
-    return fields = fields.clone();
+    return fields;
   }
 
   /**
@@ -1449,8 +1445,8 @@ public abstract class ElementInfo implements Cloneable {
    * not yet stored (mIndex = -1), and memory has changed (area)
    */
   void resetMonitorIndex () {
-    mChanged = true;
-    area.markChanged(index);
+    attributes |= ATTR_MONITOR_CHANGED;
+    markAreaChanged();
   }
 
   /**
@@ -1465,16 +1461,14 @@ public abstract class ElementInfo implements Cloneable {
    * optimization which is just here because of the associated mIndex == -1 check
    */
   void setMonitor () {
-    if (mChanged) {
-      // nothing to do, use the existing monitor
-    } else {
+    if ((attributes & ATTR_MONITOR_CHANGED) == 0) {
       resetMonitorIndex();
       monitor = monitor.clone();
     }
   }
 
   void setMonitorWithLocked( ThreadInfo ti) {
-    if (mChanged) { // no need to clone, it hasn't been pooled yet
+    if ((attributes & ATTR_MONITOR_CHANGED) != 0) {
       monitor.addLocked(ti);
     } else {
       resetMonitorIndex();
@@ -1483,7 +1477,7 @@ public abstract class ElementInfo implements Cloneable {
   }
 
   void setMonitorWithoutLocked (ThreadInfo ti) {
-    if (mChanged) { // no need to clone, it hasn't been pooled yet
+    if ((attributes & ATTR_MONITOR_CHANGED) != 0) { // no need to clone, it hasn't been pooled yet
       monitor.removeLocked(ti);
     } else {
       resetMonitorIndex();
@@ -1554,7 +1548,7 @@ public abstract class ElementInfo implements Cloneable {
 
     ThreadInfo ti = monitor.getLockingThread();
     if (ti != null) {
-      assert area.ks.tl.get(ti.index) == ti;
+      assert tl.get(ti.index) == ti;
       assert ti.lockedObjects.contains(this);
     }
 
@@ -1562,7 +1556,7 @@ public abstract class ElementInfo implements Cloneable {
       ThreadInfo[] lockedThreads = monitor.getLockedThreads();
       for (i=0; i<lockedThreads.length; i++) {
         ti = lockedThreads[i];
-        assert area.ks.tl.get(ti.index) == ti;
+        assert tl.get(ti.index) == ti;
         assert ti.lockRef == index;
       }
     }

@@ -32,15 +32,26 @@ import java.util.NoSuchElementException;
  * directly storing ThreadInfo references in Monitors and/or listeners.
  */
 public class ThreadList implements Cloneable, Iterable<ThreadInfo> {
-  /**
-   * The threads.
-   */
-  private ThreadInfo[] threads;
+
+  static ThreadList threadList;
 
   /**
-   * Reference of the kernel state this thread list belongs to.
+   * to store/restore all threads (including stack frames and thread states)
    */
-  public KernelState ks;
+  public interface Memento {
+    void restore();
+  }
+
+
+  /** all threads (including terminated ones) */
+  protected ThreadInfo[] threads;
+
+  /** reference of the kernel state this thread list belongs to */
+  public KernelState ks;  // <2do> bad backlink, remove!
+
+  public static ThreadList getThreadList() {
+    return threadList;
+  }
 
   private ThreadList() {
     // nothing here
@@ -52,6 +63,8 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo> {
   public ThreadList (Config config, KernelState ks) {
     this.ks = ks;
     threads = new ThreadInfo[0];
+
+    threadList = this;
   }
 
 

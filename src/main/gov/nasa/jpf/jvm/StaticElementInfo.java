@@ -26,10 +26,27 @@ import gov.nasa.jpf.util.HashData;
  * StaticElementInfo is only used to store "static class fields" in the
  * StaticArea.  It specifically knows about the relationship amongst
  * classes, and will recursively lookup a data member if needed.
- *
- * @see gov.nasa.jpf.jvm.ElementInfo
  */
 public final class StaticElementInfo extends ElementInfo {
+
+  protected static class NonPooledMemento extends GenericMemento<StaticElementInfo>{
+
+    int cor;
+    int s;
+
+    protected NonPooledMemento (Fields f, Monitor m, int ref, int a, int cor, int s){
+      super(f,m,ref,a);
+
+      this.cor = cor;
+      this.s = s;
+    }
+
+    public StaticElementInfo restore() {
+      return new StaticElementInfo(f,m,r,a,cor,s);
+    }
+  }
+
+
   int classObjectRef = -1;
   int status = ClassInfo.UNINITIALIZED;
 
@@ -41,11 +58,26 @@ public final class StaticElementInfo extends ElementInfo {
     classObjectRef = classObjRef;
   }
 
+  public StaticElementInfo (Fields f, Monitor m, int idx, int a, int cor, int s) {
+    super(f, m, idx,a);
+
+    classObjectRef = cor;
+    status = s;
+  }
+
+  public Memento<StaticElementInfo> getMemento() {
+    return new NonPooledMemento(fields,monitor,index,attributes,classObjectRef,status);
+  }
+
   @Override
   public void hash(HashData hd) {
     super.hash(hd);
     hd.add(classObjectRef);
     hd.add(status);
+  }
+
+  protected void markAreaChanged(){
+    StaticArea.getStaticArea().markChanged(index);
   }
 
   public void setIntField(FieldInfo fi, int value) {
@@ -69,7 +101,7 @@ public final class StaticElementInfo extends ElementInfo {
   void setStatus (int newStatus) {
     if (status != newStatus) {
       status = newStatus;
-      area.markChanged(index);
+      markAreaChanged();
     }
   }
   
@@ -113,7 +145,7 @@ public final class StaticElementInfo extends ElementInfo {
     if (ci == getClassInfo()) {
       return this;
     } else {
-      return ((StaticArea)area).get( ci.getName());
+      return StaticArea.getStaticArea().get( ci.getName());
     }
   }
   

@@ -27,11 +27,36 @@ import gov.nasa.jpf.JPFException;
  * @see gov.nasa.jpf.jvm.ElementInfo
  */
 public final class DynamicElementInfo extends ElementInfo {
+
+  protected static class NonPooledMemento extends GenericMemento<DynamicElementInfo> {
+
+    protected NonPooledMemento (Fields f, Monitor m, int ref, int a){
+      super(f,m,ref,a);
+    }
+
+    public DynamicElementInfo restore() {
+      return new DynamicElementInfo(f,m,r,a);
+    }
+  }
+
   public DynamicElementInfo () {
   }
 
   public DynamicElementInfo (Fields f, Monitor m) {
     super(f, m);
+  }
+
+  public DynamicElementInfo (Fields f, Monitor m, int ref, int a) {
+    super(f, m, ref, a);
+  }
+
+
+  protected Memento<DynamicElementInfo> getMemento() {
+    return new NonPooledMemento(fields,monitor,index,attributes);
+  }
+
+  protected void markAreaChanged(){
+    DynamicArea.getHeap().markChanged(index);
   }
 
   public void setIntField(FieldInfo fi, int value) {
@@ -55,7 +80,7 @@ public final class DynamicElementInfo extends ElementInfo {
 
   public ElementInfo getReferencedElementInfo (FieldInfo fi) {
     assert fi.isReference();
-    return area.get(getIntField(fi));
+    return DynamicArea.getHeap().get(getIntField(fi));
   }
 
   public FieldInfo getFieldInfo (String fname) {
@@ -83,4 +108,43 @@ public final class DynamicElementInfo extends ElementInfo {
     }
     return null;
   }
+
+  public String asString() {
+    if (!ClassInfo.isStringClassInfo(fields.getClassInfo())) {
+      throw new JPFException("object is not of type java.lang.String");
+    }
+
+    int value = getDeclaredIntField("value", "java.lang.String");
+    int length = getDeclaredIntField("count", "java.lang.String");
+    int offset = getDeclaredIntField("offset", "java.lang.String");
+
+    ElementInfo e = DynamicArea.getHeap().get(value);
+
+    StringBuilder sb = new StringBuilder();
+
+    for (int i = offset; i < (offset + length); i++) {
+      sb.append((char) e.fields.getIntValue(i));
+    }
+
+    return sb.toString();
+  }
+
+  /**
+   * just a helper to avoid creating objects just for the sake of comparing
+   */
+  public boolean equalsString (String s) {
+    if (!ClassInfo.isStringClassInfo(fields.getClassInfo())) {
+      return false;
+    }
+
+    int value = getDeclaredIntField("value", "java.lang.String");
+    int length = getDeclaredIntField("count", "java.lang.String");
+    int offset = getDeclaredIntField("offset", "java.lang.String");
+
+    ElementInfo e = DynamicArea.getHeap().get(value);
+    ArrayFields af = (ArrayFields)e.getFields();
+
+    return af.equals(offset, length, s);
+  }
+
 }

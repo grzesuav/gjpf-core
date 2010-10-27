@@ -31,6 +31,43 @@ import java.util.NoSuchElementException;
  */
 public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
 
+  public interface Memento {
+    void restore();
+  }
+
+  /**
+   * saves area contents in a simple ElementInfo.Memento array for later restoration
+   */
+  class GenericAreaMemento implements Memento {
+    ElementInfo.Memento<EI>[] e;
+
+    protected GenericAreaMemento (ElementInfo.Memento<EI>[] e){
+      int len = elements.length();
+      for (int i=0; i<len; i++){
+        EI ei = elements.get(i);
+        if (ei != null){
+          e[i] = ei.getMemento();
+        }
+      }
+
+      this.e = e;
+    }
+
+    public void restore() {
+      int len = e.length;
+
+      nElements = len;
+      elements.setSize(len);
+      
+      for (int i=0; i<len; i++){
+        ElementInfo.Memento<EI> em = e[i];
+        elements.set(i, em != null ? em.restore() : null);
+      }
+
+      hasChanged.clear();
+    }
+  }
+
   /**
    * Contains the information for each element.
    */
@@ -81,6 +118,53 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     }
   }
 
+  public class ChangedIterator implements java.util.Iterator<EI> {
+    int i = getNextChanged(0);
+
+    public void remove() {
+      throw new UnsupportedOperationException ("illegal operation, only GC can remove objects");
+    }
+
+    public boolean hasNext() {
+      return (i >= 0);
+    }
+
+    public EI next() {
+      if (i >= 0){
+        EI ei = elements.get(i);
+        i = getNextChanged(i+1);
+        return ei;
+
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+  }
+
+  // its not a standard java.util.Iterator because we don't want to box ints
+  public class ChangedReferenceIterator implements gov.nasa.jpf.util.IntIterator {
+    int i = getNextChanged(0);
+
+    public void remove() {
+      throw new UnsupportedOperationException ("illegal operation, only GC can remove objects");
+    }
+
+    public boolean hasNext() {
+      return (i >= 0);
+    }
+
+    public int next() {
+      if (i >= 0){
+        int ref = i;
+        i = getNextChanged(i+1);
+        return ref;
+
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+  }
+
   public Area (KernelState ks) {
     this.ks = ks;
     elements = new ObjVector<EI>(1024);
@@ -91,6 +175,20 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
   public Iterator iterator() {
     return new Iterator();
   }
+
+  public ChangedIterator changedIterator() {
+    return new ChangedIterator();
+  }
+
+  public ChangedReferenceIterator changedReferenceIterator() {
+    return new ChangedReferenceIterator();
+  }
+
+  public int numberOfChanged() {
+    return hasChanged.cardinality();
+  }
+
+  public abstract Memento getMemento();
 
   /**
    * reset any information that has to be re-computed in a backtrack
@@ -182,7 +280,6 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
   // somtimes it seems to be bigger
   // UPDATE: fixed? -pcd
   protected void add (int index, EI e) {
-    e.setArea(this);
     e.setIndex(index);
 
     assert (elements.get(index) == null) :

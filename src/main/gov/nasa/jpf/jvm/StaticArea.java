@@ -31,7 +31,7 @@ public class StaticArea extends Area<StaticElementInfo> {
   static StaticArea staticArea;
 
   /**
-   * analogy of DynamicMap to achieve symmetry for static fields (sp that order
+   * analogy of DynamicMap to achieve symmetry for static fields (so that order
    * of class init does not matter)
    */
   private IntTable<String> staticMap = new IntTable<String>();
@@ -57,6 +57,11 @@ public class StaticArea extends Area<StaticElementInfo> {
     // <2do> - revisit during DynamicArea / Static redesign
     staticArea = this;
   }
+
+  public Memento getMemento() {
+    return new GenericAreaMemento( new ElementInfo.Memento[elements.length()]);
+  }
+
 
   public boolean containsClass (String cname) {
     return indexOf(cname) != -1;
