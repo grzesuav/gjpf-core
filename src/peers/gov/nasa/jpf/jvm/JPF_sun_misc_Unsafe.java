@@ -134,7 +134,7 @@ public class JPF_sun_misc_Unsafe {
 
   public static void unpark__Ljava_lang_Object_2__V (MJIEnv env, int unsafeRef, int objRef) {
     ThreadInfo ti = env.getThreadInfo();
-    ThreadInfo tiParked = JPF_java_lang_Thread.getThreadInfo(env, objRef);
+    ThreadInfo tiParked = JPF_java_lang_Thread.getThreadInfo(objRef);
     SystemState ss = env.getSystemState();
 
     int permitRef = env.getReferenceField( objRef, "permit");

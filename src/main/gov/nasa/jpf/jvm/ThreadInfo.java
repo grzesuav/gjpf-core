@@ -158,7 +158,7 @@ public class ThreadInfo
    * this is where we keep ThreadInfos, indexed by their java.lang.Thread objRef, to
    * enable us to keep ThreadInfo identities across backtracked and restored states
    */
-  static SparseObjVector<ThreadInfo> threadInfos;
+  static final SparseObjVector<ThreadInfo> threadInfos = new SparseObjVector<ThreadInfo>();
 
   // the following parameters are configurable. Would be nice if we could keep
   // them on a per-instance basis, but there are a few locations
@@ -190,14 +190,14 @@ public class ThreadInfo
   static boolean init (Config config) {
     currentThread = null;
     mainThread = null;
+    
+    threadInfos.clear();
 
     haltOnThrow = config.getStringArray("vm.halt_on_throw");
     porInEffect = config.getBoolean("vm.por");
     porFieldBoundaries = porInEffect && config.getBoolean("vm.por.field_boundaries");
     porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
     checkBudgetCount = config.getInt("vm.budget.check_count", 9999);
-
-    threadInfos = new SparseObjVector<ThreadInfo>();
 
     return true;
   }
@@ -276,12 +276,10 @@ public class ThreadInfo
    * just retrieve the ThreadInfo object for this java.lang.Thread object. This method is
    * only valid after the thread got created
    */
-  static ThreadInfo getThreadInfo (JVM vm, int objRef) {
+  public static ThreadInfo getThreadInfo(int objRef) {
     return threadInfos.get(objRef);
   }
-
-
-
+  
   public static ThreadInfo getCurrentThread() {
     return currentThread;
   }
@@ -615,7 +613,7 @@ public class ThreadInfo
   public List<StackFrame> getStack() {
     return stack;
   }
-
+  
   public int getStackDepth() {
     return stack.size();
   }
@@ -937,6 +935,10 @@ public class ThreadInfo
     */
   public boolean resume() {
     return (threadData.suspendCount > 0) && (--threadDataClone().suspendCount == 0);
+  }
+  
+  public boolean isSuspended() {
+    return threadData.suspendCount > 0;
   }
 
   public LinkedList<ElementInfo> getLockedObjects () {

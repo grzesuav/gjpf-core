@@ -265,6 +265,39 @@ public class JPF_java_lang_System {
   
   static String JAVA_CLASS_PATH = "java.class.path";
   
+  public static String getSUTJavaClassPath(JVM vm) {
+    ClassInfo system = ClassInfo.getResolvedClassInfo("java.lang.System");
+    
+    if (system == null) {
+      return null; 
+    }
+    
+    MethodInfo getProperty = system.getMethod("getProperty(Ljava/lang/String;)Ljava/lang/String;", true);
+    MethodInfo stub = getProperty.createDirectCallStub("getSUTJavaClassPath");
+    stub.setFirewall(true);
+
+    ThreadInfo thread = vm.getCurrentThread();
+    int javaClassPath = vm.getDynamicArea().newString(JAVA_CLASS_PATH, thread);
+    
+    DirectCallStackFrame frame = new DirectCallStackFrame(stub);
+    frame.push(javaClassPath);
+    
+    try {
+      thread.executeMethodHidden(frame);
+    } catch (UncaughtException e) {
+       thread.clearPendingException();
+       thread.popFrame();
+       thread.advancePC();
+       return null;
+    }
+    
+    int ref = frame.peek();
+    DynamicElementInfo metaResult = vm.getDynamicArea().get(ref);
+    String result = metaResult.asString();
+    
+    return result;
+  }
+  
   static int getSelectedSysPropsFromHost (MJIEnv env){
     Config conf = env.getConfig();
     String keys[] = conf.getStringArray("vm.sysprop.keys");

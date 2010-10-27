@@ -391,14 +391,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     this.uniqueId = uniqueId;
     loadedClasses.set(uniqueId,this);
-  }
+   }
 
 
   protected ClassInfo (JavaClass jc, int uniqueId) {
     initialize( jc, uniqueId);
   }
-
-
+  
   protected static void updateCachedClassInfos (ClassInfo ci) {
     String name = ci.name;
 
@@ -619,9 +618,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
   
   public static ClassInfo getClassInfo(int uniqueId) {
-    return loadedClasses.get(uniqueId); 
-  }
-  
+    if (uniqueId >= 0) {
+      return loadedClasses.get(uniqueId); 
+    } else {
+      return null; 
+    }
+  }  
 
   /**
    * obtain ClassInfo object for given class name
@@ -787,6 +789,17 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     }
 
     return is;
+  }
+  
+  public JavaClass getJavaClass() {
+    if (name == null) { 
+      return null; 
+    } 
+    
+    String typeName = Types.getCanonicalTypeName(name);
+    JavaClass clazz = getJavaClass(typeName);
+    
+    return(clazz);
   }
 
   static JavaClass getJavaClass (String className) {
@@ -1272,7 +1285,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    */
   public static void reset () {
     loadedClasses.clear();
-    
+
     classClassInfo = null;
     objectClassInfo = null;
     stringClassInfo = null;
