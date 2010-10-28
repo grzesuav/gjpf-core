@@ -131,10 +131,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
   protected int[] lineNumbers;
 
   /** Local variables names */
-  protected String[] localVariableNames;
+  protected String[] localVariableNames = EMPTY;
 
   /** Local variables types */
-  protected String[] localVariableTypes;
+  protected String[] localVariableTypes = EMPTY;
 
   /** Maximum number of local variables */
   protected int maxLocals;
@@ -243,8 +243,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
     this.signature = "()V";
     this.maxLocals = maxLocals;
     this.maxStack = maxStack;
-    this.localVariableNames = EMPTY;
-    this.localVariableTypes = EMPTY;
     this.modifiers = modifiers;
 
     this.lineNumbers = null;
@@ -1123,7 +1121,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     Code c = m.getCode();
 
     if (c == null) {
-      return null;
+      return EMPTY;
     }
 
     LocalVariableTable lvt = c.getLocalVariableTable();
@@ -1139,7 +1137,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
         warnedLocalInfo = true;
       }
 
-      return null;
+      return EMPTY;
     }
 
     LocalVariable[] lv = lvt.getLocalVariableTable();

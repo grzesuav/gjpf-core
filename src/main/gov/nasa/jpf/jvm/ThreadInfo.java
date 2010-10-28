@@ -277,7 +277,11 @@ public class ThreadInfo
    * only valid after the thread got created
    */
   public static ThreadInfo getThreadInfo(int objRef) {
-    return threadInfos.get(objRef);
+    if (objRef >= 0) { 
+      return threadInfos.get(objRef);
+    } else {
+      return null;
+    }
   }
   
   public static ThreadInfo getCurrentThread() {
