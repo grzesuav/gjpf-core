@@ -754,13 +754,25 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     return ei.linearize(result);
   }
 
-  // for debugging
-  protected void verifyLockInfo() {
-    for (DynamicElementInfo dei : elements) {
-      if (dei != null) {
-        dei.verifyLockInfo(ks.tl);
-      }
+  
+  // for debugging only
+  public void checkConsistency() {
+    int nTotal = 0;
+    for (int i = 0; i<elements.size(); i++) {
+      DynamicElementInfo ei = elements.get(i);
+            
+      if (ei != null) {
+        assert ei.getIndex() == i : "inconsistent reference value of " + ei + " : " + i;
+        if (ei.hasChanged()){
+          assert hasChanged.get(i) : "inconsistent change status of " + ei;
+        }
+        nTotal++;
+        
+        ei.checkConsistency();
+      }      
     }
+    
+    assert (nTotal == nElements) : "inconsistent number of elements: " + nTotal;
   }
 }
 

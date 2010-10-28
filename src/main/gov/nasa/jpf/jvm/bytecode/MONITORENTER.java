@@ -39,17 +39,22 @@ public class MONITORENTER extends LockInstruction {
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int objref = ti.peek();      // Don't pop yet before we know we really execute
 
-    if (objref == -1)
+    if (objref == -1){
       return ti.createAndThrowException("java.lang.NullPointerException", "Attempt to acquire lock for null object");
+    }
 
     lastLockRef = objref;
     ElementInfo ei = ks.da.get(objref);
     
-    if (!isLockOwner(ti, ei))           // If the object isn't already owned by this thread, then consider a choice point
-      if (isShared(ti, ei))             // If the object is shared, then consider a choice point
-        if (!ti.isFirstStepInsn())      // First time around - reexecute if the scheduling policy gives us a choice point
-          if (executeChoicePoint(ss, ti, ei))
+    if (!isLockOwner(ti, ei)){           // If the object isn't already owned by this thread, then consider a choice point
+      if (isShared(ti, ei)){             // If the object is shared, then consider a choice point
+        if (!ti.isFirstStepInsn()){      // First time around - reexecute if the scheduling policy gives us a choice point
+          if (executeChoicePoint(ss, ti, ei)){
             return this;                // Repeat execution.  Keep instruction on the stack.
+          }
+        }
+      }
+    }
     
     ti.pop();
     ei.lock(ti);  // Still have to increment the lockCount
@@ -58,18 +63,20 @@ public class MONITORENTER extends LockInstruction {
   }  
   
   private boolean executeChoicePoint(SystemState ss, ThreadInfo ti, ElementInfo ei) {
-    if (!ei.canLock(ti))
-      ei.block(ti);          // block first, so that we don't get this thread in the list of CGs
+    if (!ei.canLock(ti)){
+      ei.block(ti);          // block first, so that we don't get this thread in the list of CG choices
+    }
 
-    ChoiceGenerator cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
+    ChoiceGenerator<?> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
 
     if (cg == null) {                   // Ok, break here
       assert !ti.isBlocked() : "scheduling policy did not return ChoiceGenerator for blocking MONITOR_ENTER";
       return(false);
     }
 
-    if (!ti.isBlocked())
+    if (!ti.isBlocked()){
       ei.registerLockContender(ti);  // Record that this thread would lock the object upon next execution
+    }
  
     ss.setNextChoiceGenerator(cg);
     

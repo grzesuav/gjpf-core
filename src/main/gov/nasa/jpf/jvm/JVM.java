@@ -42,6 +42,13 @@ import java.util.logging.Logger;
  */
 public class JVM {
 
+  /**
+   * this is a debugging aid to control compilation of expensive consistency checks
+   * (we don't control these with class-wise assertion enabling since we do use
+   * unconditional assertions for mandatory consistency checks)
+   */
+  public static final boolean CHECK_CONSISTENCY = true;
+  
   private static enum TimeModel {ConstantZero, ConstantStartTime, ConstantConfig, SystemTime};
 
   protected static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.JVM");
@@ -1603,6 +1610,8 @@ public class JVM {
   public boolean backtrack () {
     boolean success = backtracker.backtrack();
     if (success) {
+      if (CHECK_CONSISTENCY) checkConsistency();
+      
       // restore the path
       path.removeLast();
       lastTrailInfo = path.getLast();
@@ -1651,6 +1660,8 @@ public class JVM {
   public boolean forward () {
     while (true) { // loop until we find a state that isn't ignored
       try {
+        if (CHECK_CONSISTENCY) checkConsistency(); // don't push an inconsistent state
+        
         // saves the current state for backtracking purposes of depth first
         // searches and state observers. If there is a previously cached
         // kernelstate, use that one
@@ -1668,6 +1679,7 @@ public class JVM {
           if (ss.isIgnored()) {
             // do it again
             backtracker.backtrackKernelState();
+            if (CHECK_CONSISTENCY) checkConsistency();
             continue;
 
           } else { // this is the normal forward that executed insns, and wasn't ignored
@@ -1897,5 +1909,13 @@ public class JVM {
     if (ss.nextCg != null) {
       ss.nextCg.reset();
     }
+  }
+  
+  /**
+   * only for debugging, this is expensive
+   */
+  public void checkConsistency() {
+    getThreadList().checkConsistency();
+    getDynamicArea().checkConsistency();
   }
 }

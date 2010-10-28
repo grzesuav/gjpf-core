@@ -19,19 +19,27 @@ abstract class CollapsePools {
     private WeakPool<Monitor>    monitorPool    = new WeakPool<Monitor>   (8);
 
     public StackFrame poolStackFrame(StackFrame o) {
-      return stackFramePool.pool(o);
+      StackFrame p = stackFramePool.pool(o); 
+      if (JVM.CHECK_CONSISTENCY) assert p.equals(o);
+      return p;
     }
 
     public Fields poolFields(Fields o) {
-      return fieldsPool.pool(o);
+      Fields p = fieldsPool.pool(o);
+      if (JVM.CHECK_CONSISTENCY) assert p.equals(o);
+      return p;
     }
 
     public ThreadData poolThreadData(ThreadData o) {
-      return threadDataPool.pool(o);
+      ThreadData p = threadDataPool.pool(o);
+      if (JVM.CHECK_CONSISTENCY) assert p.equals(o);
+      return p;
     }
 
     public Monitor poolMonitor(Monitor o) {
-      return monitorPool.pool(o);
+      Monitor p = monitorPool.pool(o);
+      if (JVM.CHECK_CONSISTENCY) assert p.equals(o);
+      return p;
     }
   }
   

@@ -82,7 +82,7 @@ implements IncrementalChangeTracker {
     } else {
       td = entry.td;
     }
-
+    
     int firstChanged;
     if (entry != null && ti == entry.ti) {
       if (ti.hasChanged.isEmpty()) {

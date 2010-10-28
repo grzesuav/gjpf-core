@@ -331,4 +331,15 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo> {
     };
   }
 
+
+  /**
+   * only for debugging purposes, this is expensive
+   */
+  public void checkConsistency() {
+    for (int i = 0; i < threads.length; i++) {
+      ThreadInfo ti = threads[i];
+      
+      ti.checkConsistency();
+    }
+  }
 }

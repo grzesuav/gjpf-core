@@ -913,33 +913,17 @@ public abstract class ElementInfo implements Cloneable {
    * get a cloned list of the waiters for this object
    */
   public ThreadInfo[] getWaitingThreads() {
-    ThreadInfo[] locked = monitor.getLockedThreads();
-    int i, j, n = 0;
-
-    for (i=0; i<locked.length; i++) {
-      if (locked[i].isWaiting()) {
-        n++;
-      }
-    }
-
-    if (n == 0) {
-      return Monitor.emptySet;
-    } else {
-      ThreadInfo[] waiters = new ThreadInfo[n];
-      for (i=0, j=0; j<n; i++) {
-        if (locked[i].isWaiting()) {
-          waiters[j++] = locked[i];
-        }
-      }
-
-      return waiters;
-    }
+    return monitor.getWaitingThreads();
   }
 
   public boolean hasWaitingThreads() {
     return monitor.hasWaitingThreads();
   }
 
+  public ThreadInfo[] getBlockedOrWaitingThreads() {
+    return monitor.getBlockedOrWaitingThreads();
+  }
+    
   public int arrayLength() {
     return fields.arrayLength();
   }
@@ -986,7 +970,11 @@ public abstract class ElementInfo implements Cloneable {
     return af.equals(offset, length, s);
   }
 
-  void updateLockingInfo() {
+  /**
+   * called during state restoration. Note that thread states have already been
+   * restored
+   */
+  protected void updateLockingInfo() {
     int i;
 
     ThreadInfo ti = monitor.getLockingThread();
@@ -1008,7 +996,12 @@ public abstract class ElementInfo implements Cloneable {
       for (i=0; i<lockedThreads.length; i++) {
         ti = lockedThreads[i];
         //assert area.ks.tl.get(ti.index) == ti;  // covered by verifyLockInfo
-        ti.setLockRef(index);
+        
+        // note that the thread might still be runnable if we have several threads
+        // competing for the same lock
+        if (!ti.isRunnable()){
+          ti.setLockRef(index);
+        }
       }
     }
   }
@@ -1111,7 +1104,7 @@ public abstract class ElementInfo implements Cloneable {
     setMonitorWithLocked(ti);
 
     // added to satisfy invariant implied by updateLockingInfo() -peterd
-    ti.setLockRef(index);
+    //ti.setLockRef(index);
   }
 
   /**
@@ -1122,7 +1115,7 @@ public abstract class ElementInfo implements Cloneable {
     setMonitorWithoutLocked(ti);
 
     // moved from INVOKECLINIT -peterd
-    ti.resetLockRef();
+    //ti.resetLockRef();
   }
 
   void blockLockContenders () {
@@ -1132,7 +1125,7 @@ public abstract class ElementInfo implements Cloneable {
     for (int i=0; i<lockedThreads.length; i++) {
       ThreadInfo ti = lockedThreads[i];
       if (ti.isRunnable()) {
-        ti.setBlockedState();
+        ti.setBlockedState(index);
       }
     }
   }
@@ -1146,9 +1139,8 @@ public abstract class ElementInfo implements Cloneable {
           "attempt to block " + ti.getName() + " on unlocked or own locked object: " + this;
 
     setMonitorWithLocked(ti);
-
-    ti.setLockRef(index);
-    ti.setState(ThreadInfo.State.BLOCKED);
+    
+    ti.setBlockedState(index);    
   }
 
   /**
@@ -1207,14 +1199,16 @@ public abstract class ElementInfo implements Cloneable {
 
       ThreadInfo[] lockedThreads = monitor.getLockedThreads();
       for (int i = 0; i < lockedThreads.length; i++) {
-        switch (lockedThreads[i].getState()) {
+        ThreadInfo lti = lockedThreads[i];
+        switch (lti.getState()) {
 
         case BLOCKED:
         case NOTIFIED:
         case TIMEDOUT:
         case INTERRUPTED:
           // Ok, this thread becomes runnable again
-          lockedThreads[i].setState(ThreadInfo.State.UNBLOCKED);
+          lti.resetLockRef();
+          lti.setState(ThreadInfo.State.UNBLOCKED);
           break;
 
         case WAITING:
@@ -1258,9 +1252,9 @@ public abstract class ElementInfo implements Cloneable {
 
     } else {
       // waiter didn't hold the lock, set it running
-      tiWaiter.setRunning();
-      tiWaiter.resetLockRef();
       setMonitorWithoutLocked(tiWaiter);
+      tiWaiter.resetLockRef();
+      tiWaiter.setRunning();
     }
   }
 
@@ -1281,11 +1275,13 @@ public abstract class ElementInfo implements Cloneable {
 
     if (nWaiters == 0) {
       // no waiters, nothing to do
+      
     } else if (nWaiters == 1) {
+      // only one waiter, no choice point
       notifies0(locked[iWaiter]);
 
     } else {
-      // Ok, this is the non-deterministic case
+      // Ok, we have to choose which waiter to notify
       ThreadChoiceGenerator cg = ss.getCurrentSchedulingPoint();
 
       assert (cg != null) : "no ThreadChoiceGenerator in notify";
@@ -1322,7 +1318,7 @@ public abstract class ElementInfo implements Cloneable {
     wait(ti,timeout,true);
   }
 
-  // this is used from a context where we don't require a lock, e.g. Unsafe.park()/unpark()
+  // this is also used from a context where we don't require a lock, e.g. Unsafe.park()/unpark()
   public void wait (ThreadInfo ti, long timeout, boolean hasToHoldLock){
     boolean holdsLock = monitor.getLockingThread() == ti;
 
@@ -1330,14 +1326,14 @@ public abstract class ElementInfo implements Cloneable {
       assert holdsLock : "wait on unlocked object: " + this;
     }
 
+    setMonitorWithLocked(ti);
+    ti.setLockRef(index);
+    
     if (timeout == 0) {
       ti.setState(ThreadInfo.State.WAITING);
     } else {
       ti.setState(ThreadInfo.State.TIMEOUT_WAITING);
     }
-
-    setMonitorWithLocked(ti);
-    ti.setLockRef(index);
 
     if (holdsLock) {
       ti.setLockCount(monitor.getLockCount());
@@ -1350,11 +1346,13 @@ public abstract class ElementInfo implements Cloneable {
       // unblock all runnable threads that are blocked on this lock
       ThreadInfo[] lockedThreads = monitor.getLockedThreads();
       for (int i = 0; i < lockedThreads.length; i++) {
-        switch (lockedThreads[i].getState()) {
+        ThreadInfo lti = lockedThreads[i];
+        switch (lti.getState()) {
           case NOTIFIED:
           case BLOCKED:
           case INTERRUPTED:
-            lockedThreads[i].setState(ThreadInfo.State.UNBLOCKED);
+            lti.resetLockRef();
+            lti.setState(ThreadInfo.State.UNBLOCKED);
             break;
         }
       }
@@ -1376,9 +1374,9 @@ public abstract class ElementInfo implements Cloneable {
     monitor.setLockingThread( ti);
     monitor.setLockCount( ti.getLockCount());
 
-    ti.setState( ThreadInfo.State.RUNNING);
     ti.setLockCount(0);
     ti.resetLockRef();
+    ti.setState( ThreadInfo.State.RUNNING);
 
     blockLockContenders();
 
@@ -1394,9 +1392,9 @@ public abstract class ElementInfo implements Cloneable {
   public void resumeNonlockedWaiter (ThreadInfo ti){
     setMonitorWithoutLocked(ti);
 
-    ti.setRunning();
     ti.setLockCount(0);
     ti.resetLockRef();
+    ti.setRunning();
   }
 
 
@@ -1529,10 +1527,14 @@ public abstract class ElementInfo implements Cloneable {
     }
   }
 
-  boolean isLockedBy(ThreadInfo ti) {
+  public boolean isLockedBy(ThreadInfo ti) {
     return ((monitor != null) && (monitor.getLockingThread() == ti));
   }
 
+  public boolean isLocking(ThreadInfo ti){
+    return (monitor != null) && monitor.isLocking(ti);
+  }
+  
   void _printAttributes(String cls, String msg, int oldAttrs) {
     if (getClassInfo().getName().equals(cls)) {
       System.out.println(msg + " " + this + " attributes: "
@@ -1586,24 +1588,31 @@ public abstract class ElementInfo implements Cloneable {
     return result;
   }
 
-  // for debugging
-  void verifyLockInfo(ThreadList tl) {
-    int i;
-
+  public boolean hasChanged() {
+    return fChanged || mChanged;
+  }
+    
+  public void checkConsistency() {
     ThreadInfo ti = monitor.getLockingThread();
     if (ti != null) {
-      assert area.ks.tl.get(ti.index) == ti;
-      assert ti.lockedObjects.contains(this);
+      // object has to be in the lockedObjects list of this thread
+      checkAssertion( ti.getLockedObjects().contains(this), "locked object not in thread: " + ti);
     }
-
+    
     if (monitor.hasLockedThreads()) {
-      ThreadInfo[] lockedThreads = monitor.getLockedThreads();
-      for (i=0; i<lockedThreads.length; i++) {
-        ti = lockedThreads[i];
-        assert area.ks.tl.get(ti.index) == ti;
-        assert ti.lockRef == index;
+      for (ThreadInfo lti : monitor.getBlockedOrWaitingThreads()){
+        checkAssertion( lti.lockRef == index, "blocked or waiting thread has invalid lockRef: " + lti);
       }
     }
   }
+  
+  protected void checkAssertion(boolean cond, String failMsg){
+    if (!cond){
+      System.out.println("!!!!!! failed ElementInfo consistency: "  + this + ": " + failMsg);
+      JVM.getVM().dumpThreadStates();
+      assert false;
+    }
+  }
+
 }
 
