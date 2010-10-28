@@ -47,7 +47,7 @@ public abstract class ElementInfo implements Cloneable {
 
   public static final int   ATTR_PROP_MASK     = 0x0000ffff;
 
-  // the propagated ones - only lower 16 bits can be used
+  //--- the propagated ones - only lower 16 bits can be used
 
   // reachable from different threads
   public static final int   ATTR_TSHARED       = 0x1;
@@ -63,7 +63,8 @@ public abstract class ElementInfo implements Cloneable {
   // don't promote to shared along this path
   public static final int   ATTR_NO_PROMOTE    = 0x4;
 
-  // the non-propagated attributes - use only higher 16 bits
+
+  //--- the non-propagated attributes - use only higher 16 bits
 
   // to-be-done, would be code attr, too, and could easily be checked at runtime
   // (hello, a new property)
@@ -83,6 +84,9 @@ public abstract class ElementInfo implements Cloneable {
   // This attribute is set in gov.nasa.jpf.jvm.bytecode.RETURN.execute().
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
   public static final int   ATTR_CONSTRUCTED   = 0x100000;
+
+  // transient flag set if object is reachable from root object, i.e. can't be recycled
+  public static final int   ATTR_IS_LIVE       = 0x80000000;
 
   // these are our state-stored object attributes
   // WATCH OUT! only include info that otherwise reflects a state change, so
@@ -196,7 +200,7 @@ public abstract class ElementInfo implements Cloneable {
       if (fields.isReferenceArray()) {
         n = fields.arrayLength();
         for (i = 0; i < n; i++) {
-          heap.markRecursive( fields.getIntValue(i), tid, attributes, attrMask, null);
+          heap.queueMark( fields.getIntValue(i), tid, attributes, attrMask);
         }
       }
     } else {
@@ -221,8 +225,8 @@ public abstract class ElementInfo implements Cloneable {
               // the mask values up to the point where we would promote an otherwise
               // unshared root object due to a different thread id (in case we
               // didn't catch a mask on the way that prevents this)
-              heap.markRecursive( fields.getReferenceValue(fi.getStorageOffset()),
-                                  tid, attributes, attrMask, fi);
+              heap.queueMark( fields.getReferenceValue(fi.getStorageOffset()),
+                                  tid, attributes, attrMask & fi.getAttributes());
             }
           }
         }
@@ -448,58 +452,6 @@ public abstract class ElementInfo implements Cloneable {
     setLongField(fname, Types.doubleToLong(value));
   }
 
-
-  void updateReachability(int oldRef, int newRef) {
-    ThreadInfo ti = ThreadInfo.getCurrentThread(); // might be null if still in VM
-                                             // init
-    if ((ti == null) || ti.isInCtor() || !ti.usePor()) {
-      return;
-    }
-
-    if (oldRef != newRef) {
-      DynamicArea heap = DynamicArea.getHeap();
-      ElementInfo oei, nei;
-
-      if (isShared()) {
-        if (oldRef != -1) {
-          oei = heap.get(oldRef);
-          if (!oei.isImmutable()) { // it's already shared, anyway
-            // Ok, give up and do a full mark, the old object might not be
-            // reachable anymore
-            heap.analyzeHeap(false); // takes care of the newRef, too
-            return;
-          }
-        }
-
-        if (newRef != -1) {
-          nei = heap.get(newRef);
-          if (!nei.isShared() && !nei.isImmutable()) {
-            // no need to walk the whole heap, just recursively promote nei
-            // and all its reachables to 'shared'
-            nei.setShared();
-            // <2do> - this would be the place to add listener notification
-
-            heap.initGc(); // doesn't belong here, should be encapsulated in DA
-            nei.markRecursive(ti.getIndex(), ATTR_PROP_MASK);
-          }
-        }
-      } else { // we are not shared (oldRef can't change status)
-        if (newRef != -1) {
-          nei = heap.get(newRef);
-          if (nei.isSchedulingRelevant()) { // shared and mutable
-            // give up, nei might become non-shared
-            heap.analyzeHeap(false);
-          }
-        }
-      }
-    }
-
-    if (oldRef != -1) {
-      JVM.getVM().getSystemState().activateGC(); // needs GC at the end of this
-                                                 // transition
-    }
-  }
-
   // <2do> we need to tell 'null' values apart from 'no such field'
   public Object getFieldValueObject (String fname) {
     Object ret = null;
@@ -537,7 +489,9 @@ public abstract class ElementInfo implements Cloneable {
     if (fi.isReference()) {
       int oldValue = f.getReferenceValue(off);
       f.setReferenceValue(this, off, value);
-      updateReachability(oldValue, value);
+
+      DynamicArea.getHeap().updateReachability(this,oldValue, value);
+
     } else {
       throw new JPFException("not a reference field: " + fi.getName());
     }
@@ -1455,6 +1409,14 @@ public abstract class ElementInfo implements Cloneable {
     attributes = a;
   }
 
+  public boolean isLive() {
+    return (attributes & ATTR_IS_LIVE) != 0;
+  }
+
+  public void setLive() {
+    attributes |= ATTR_IS_LIVE;
+  }
+  
   public void markUnchanged() {
     fChanged = false;
     mChanged = false;

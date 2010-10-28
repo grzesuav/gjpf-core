@@ -286,22 +286,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo> {
     return hasBlockedThreads;
   }
 
-  public void sweepTerminated(BitSet isUsed) {
-    // illegal?
-    /*
-    ThreadInfo[] newThreads = threads;
-    for (int i = 0; i < threads.length; i++) {
-      ThreadInfo ti = threads[i];
-      if (ti.threadData.status == ThreadInfo.TERMINATED &&
-          !isUsed.get(ti.threadData.objref)) {
-        newThreads = Monitor.remove(newThreads, ti);
-        ks.changed();
-      }
-    }
-    threads = newThreads;
-    */
-  }
-
   public void dump () {
     int i=0;
     for (ThreadInfo t : threads) {
