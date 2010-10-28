@@ -1666,7 +1666,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return false;
   }
 
-
+  // Note: JVM.registerStartupClass() must be kept in sync
   public void registerClass (ThreadInfo ti){
     if (sei == null){
        
@@ -1770,7 +1770,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    */
   protected boolean pushClinit (ThreadInfo ti) {
     int stat = sei.getStatus();
-
+    
     if (stat != INITIALIZED) {
       if (stat != ti.getIndex()) {
         // even if it is already initializing - if it does not happen in the current thread

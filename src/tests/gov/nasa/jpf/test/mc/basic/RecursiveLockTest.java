@@ -18,9 +18,7 @@
 //
 package gov.nasa.jpf.test.mc.basic;
 
-import gov.nasa.jpf.jvm.*;
 import gov.nasa.jpf.util.test.*;
-import java.util.concurrent.atomic.*;
 import org.junit.*;
 
 /**
