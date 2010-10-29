@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.*;
+import org.apache.bcel.classfile.ConstantValue;
 
 
 /**
@@ -27,10 +27,15 @@ import org.apache.bcel.classfile.*;
 public class FloatFieldInfo extends FieldInfo {
   float init;
 
+  @Deprecated
   public FloatFieldInfo (String name, String type, int modifiers,
-                         ConstantValue cv, ClassInfo ci, int idx, int off) {
-    super(name, type, modifiers, cv, ci, idx, off);
+                          ConstantValue cv, ClassInfo ci, int idx, int off) {
+    this(name, type, "", modifiers, cv, ci, idx, off);
+  }
 
+  public FloatFieldInfo (String name, String type, String genericSignature, int modifiers,
+                          ConstantValue cv, ClassInfo ci, int idx, int off) {
+    super(name, type, genericSignature, modifiers, cv, ci, idx, off);
     init = (cv != null) ? Float.parseFloat(cv.toString()) : 0.0f;
   }
 

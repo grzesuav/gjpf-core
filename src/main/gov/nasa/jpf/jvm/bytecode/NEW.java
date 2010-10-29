@@ -23,7 +23,6 @@ import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.NoClassInfoException;
-import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -51,7 +50,6 @@ public class NEW extends Instruction {
     JVM vm = ti.getVM();
     DynamicArea da = vm.getDynamicArea();
     ClassInfo ci;
-    StackFrame frame = ti.getTopFrame();
 
     try {
       ci = ClassInfo.getResolvedClassInfo(cname);

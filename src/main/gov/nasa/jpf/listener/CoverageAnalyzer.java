@@ -237,8 +237,11 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
 
       for (i = inst.length - 1; i >= 0; i--) {
         line = inst[i].getLineNumber();
-        executable.set(line);
-        covered.set(line);
+         
+        if (line > 0) {
+          executable.set(line);
+          covered.set(line);
+        }
       }
 
       for (i = inst.length - 1; i >= 0; i--) {
@@ -1082,6 +1085,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
 
     void printMethodCoverages(ClassCoverage cc) {
       String classNameTree = "cc-" + cc.className.replace('.', '-') + '-';
+      int line, lineNumbers[];
       boolean result = true;
 
       if (cc.methods == null) {
@@ -1103,7 +1107,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
           }
         }
       });
-
+      
       for (Map.Entry<MethodInfo, MethodCoverage> e : mthEntries) {
         MethodCoverage mc = e.getValue();
         MethodInfo mi = mc.getMethodInfo();
@@ -1115,8 +1119,15 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
 
         HTMLPublisher.writeTableTreeNodeBegin(pw, classNameTree + HTMLPublisher.escape(mi.getLongName()));
         pw.print("            <td class=\"firstCol\">");
-
-        ((HTMLPublisher) publisher).writeSourceAnchor(pw, mi.getSourceFileName(), mi.getLineNumbers()[0]);
+         
+        lineNumbers = mi.getLineNumbers();
+        if ((lineNumbers != null) && (lineNumbers.length > 0)) {
+          line = lineNumbers[0]; 
+        } else {
+          line = 0; 
+        }
+         
+        ((HTMLPublisher) publisher).writeSourceAnchor(pw, mi.getSourceFileName(), line);
 
         pw.print(HTMLPublisher.escape(mi.getLongName()));
         pw.println("</a></td>");

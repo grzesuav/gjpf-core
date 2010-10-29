@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.*;
+import org.apache.bcel.classfile.ConstantValue;
 import gov.nasa.jpf.JPFException;
 
 
@@ -30,9 +30,15 @@ public class ReferenceFieldInfo extends FieldInfo {
   String sInit; // <2do> pcm - just a temporary quirk to init from string literals
                 // check if there are other non-object reference inits
 
+  @Deprecated
   public ReferenceFieldInfo (String name, String type, int modifiers,
                              ConstantValue cv, ClassInfo ci, int idx, int off) {
-    super(name, type, modifiers, cv, ci, idx, off);
+    this(name, type, "", modifiers, cv, ci, idx, off);
+  }
+  
+  public ReferenceFieldInfo (String name, String type, String genericSignature, int modifiers,
+                             ConstantValue cv, ClassInfo ci, int idx, int off) {
+    super(name, type, genericSignature, modifiers, cv, ci, idx, off);
     init = computeInitValue(cv);
   }
 

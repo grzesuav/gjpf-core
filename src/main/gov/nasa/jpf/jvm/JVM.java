@@ -26,7 +26,6 @@ import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
-import gov.nasa.jpf.util.Source;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -468,24 +467,28 @@ public class JVM {
 
   // note this has to be in order - we don't want to init a derived class before
   // it's parent is initialized
+  // This code must be kept in sync with ClassInfo.registerClass()
   void registerStartupClass (ClassInfo ci, List<ClassInfo> queue) {
-    StaticArea sa = getStaticArea();
-
     if (!queue.contains(ci)) {
-
       if (ci.getSuperClass() != null) {
         registerStartupClass( ci.getSuperClass(), queue);
       }
+      
+      for (String ifcName : ci.getAllInterfaces()) {
+        ClassInfo ici = ClassInfo.getResolvedClassInfo(ifcName);
+        registerStartupClass(ici, queue);
+      }
 
+      ClassInfo.logger.finer("registering class: ", ci.getName());
       queue.add(ci);
 
+      StaticArea sa = getStaticArea();
       if (!sa.containsClass(ci.getName())){
         sa.addClass(ci);
       }
     }
   }
-
-
+  
   protected void createStartupClassObjects (List<ClassInfo> queue, ThreadInfo ti){
     for (ClassInfo ci : queue) {
       ci.createClassObject(ti);
@@ -509,6 +512,7 @@ public class JVM {
   }
 
   protected void pushMain (Config config) {
+    config = null;  // Get rid of IDE warning
     DynamicArea da = ss.ks.da;
     ClassInfo ci = ClassInfo.getResolvedClassInfo(mainClassName);
     MethodInfo mi = ci.getMethod("main([Ljava/lang/String;)V", false);
@@ -1510,6 +1514,8 @@ public class JVM {
    * this is here so that we can intercept it in subclassed VMs
    */
   public Instruction handleException (ThreadInfo ti, int xObjRef){
+    ti = null;        // Get rid of IDE warning
+    xObjRef = 0;
     return null;
   }
 

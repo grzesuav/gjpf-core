@@ -38,6 +38,7 @@ public class StaticArea extends Area<StaticElementInfo> {
 
 
   public static void init (Config config) {
+    config = null; // Get rid of IDE warning
   }
 
   public static StaticArea getStaticArea() {
@@ -56,6 +57,8 @@ public class StaticArea extends Area<StaticElementInfo> {
     // subclassing!)
     // <2do> - revisit during DynamicArea / Static redesign
     staticArea = this;
+    
+    config = null;  // Get rid of IDE warning
   }
 
   public boolean containsClass (String cname) {

@@ -283,7 +283,11 @@ public class ThreadInfo
    * only valid after the thread got created
    */
   public static ThreadInfo getThreadInfo(int objRef) {
-    return threadInfos.get(objRef);
+    if (objRef >= 0) { 
+      return threadInfos.get(objRef);
+    } else {
+      return null;
+    }
   }
   
   public static ThreadInfo getCurrentThread() {
@@ -857,11 +861,17 @@ public class ThreadInfo
   public int getLine (int idx) {
     return frame(idx).getLine();
   }
-
+  
+  public LocalVarInfo[] getLocalVars() {
+    return top.getLocalVars();
+  }
+  
+  @Deprecated  // Use getLocalVars() instead
   public String[] getLocalNames () {
     return top.getLocalVariableNames();
   }
 
+  @Deprecated  // Use getLocalNames() instead
   public String[] getLocalNames (int fr) {
     return frame(fr).getLocalVariableNames();
   }

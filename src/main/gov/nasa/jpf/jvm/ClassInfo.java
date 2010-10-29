@@ -27,7 +27,6 @@ import gov.nasa.jpf.jvm.bytecode.ALOAD;
 import gov.nasa.jpf.jvm.bytecode.ARETURN;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.IRETURN;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.LRETURN;
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFLogger;
@@ -51,14 +50,8 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.bcel.Constants;
 
-import org.apache.bcel.classfile.ClassParser;
-import org.apache.bcel.classfile.ConstantPool;
-import org.apache.bcel.classfile.Field;
-import org.apache.bcel.classfile.JavaClass;
-import org.apache.bcel.classfile.Method;
+import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.util.ClassPath;
 import org.apache.bcel.util.ClassPath.ClassFile;
@@ -224,6 +217,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
   /** Name of the file which contains the source of this class. */
   protected String sourceFileName;
+  
+  /** Generic signature of the class */
+  protected String genericSignature;
 
   /** A unique id associate with this class. */
   protected int uniqueId;
@@ -283,10 +279,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return ci == stringClassInfo;
   }
 
-  private ClassInfo () {
-    // for explicit construction only
-  }
-
   /**
    * ClassInfo ctor used for builtin types (arrays and primitive types)
    * i.e. classes we don't have class files for
@@ -303,6 +295,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     packageName = ""; // builtin classes don't reside in java.lang !
     sourceFileName = null;
     source = null;
+    genericSignature = "";
 
     // no fields
     iFields = emptyFields;
@@ -338,6 +331,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     interfaceNames.add(annotationCls.name);
     packageName = annotationCls.packageName;
     sourceFileName = annotationCls.sourceFileName;
+    genericSignature = annotationCls.genericSignature;
 
     sFields = new FieldInfo[0]; // none
     staticDataSize = 0;
@@ -352,9 +346,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     for (MethodInfo mi : annotationCls.getDeclaredMethodInfos()){
       String mname = mi.getName();
       String mtype = mi.getReturnTypeName();
+      String genericSignature = mi.getGenericSignature();
 
       // createAndInitialize an instance field for it
-      FieldInfo fi = FieldInfo.create(mname, mtype, 0, null, this, idx, off);
+      FieldInfo fi = FieldInfo.create(mname, mtype, genericSignature, 0, null, this, idx, off);
       iFields[idx++] = fi;
       off += fi.getStorageSize();
 
@@ -456,6 +451,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     sourceFileName = computeSourceFileName(jc);
     source = null;
+    genericSignature = computeGenericSignature(jc);
 
     isWeakReference = isWeakReference0();
     finalizer = getFinalizer0();
@@ -479,6 +475,18 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     // gets called
 
     JVM.getVM().notifyClassLoaded(this);
+  }
+  
+  String computeGenericSignature(JavaClass jc) {
+    Attribute attribs[] = jc.getAttributes();
+    for (int i = attribs.length; --i >= 0; ) {
+      if (attribs[i] instanceof Signature) {
+        Signature signature = (Signature) attribs[i];
+        return signature.getSignature();
+      }
+    }
+    
+    return "";
   }
 
   /**
@@ -596,7 +604,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return false;
     }
   }
-
+  
+  public String getGenericSignature() {
+    return genericSignature;
+  }
+  
   public boolean isArray () {
     return isArray;
   }
@@ -638,15 +650,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    * objects until registerClass(ti) is called.
    *
    * Before any field or method access, the class also has to be initialized,
-   * which can include overlayed execution of <clinit> methods, which is done
+   * which can include overlayed execution of &lt;clinit&gt; methods, which is done
    * by calling initializeClass(ti,insn)
    *
    * @param className fully qualified classname to get a ClassInfo for
    * @return the ClassInfo for the classname passed in
    * @throws NoClassInfoException with missing className as message
    *
-   * @see registerClass(ThreadInfo)
-   * @see initializeClass(ThreadInfo,Instruction)
+   * @see ClassInfo#registerClass(ThreadInfo)
+   * @see ClassInfo#initializeClass(ThreadInfo)
    *
    * <2do> we could also separate resolveClass(), but this would require an
    * additional state {resolved,registered,initialized}, and it is questionable
@@ -777,6 +789,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
         is = file.getInputStream();
       }
     } catch (IOException ioe) {
+      ioe = null;  // Get rid of IDE warning
       // try resource
     }
 
@@ -1108,6 +1121,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
   public int getFieldAttrs (int fieldIndex) {
+    fieldIndex = 0; // Get rid of IDE warning
+     
     return 0;
   }
 
@@ -1150,6 +1165,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     //    Reflection r = reflection.instantiate();
     //    return r.isStaticMethodAbstractionDeterministic(th, mi);
     // <2do> - still has to be implemented
+     
+    th = null;  // Get rid of IDE warning
+    mi = null;
+     
     return true;
   }
 
@@ -1310,10 +1329,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return cp.split("[:;]");
   }
 
-  protected static void buildModelClassPath (Config config) {
+  public static String makeModelClassPath (Config config) {
     StringBuilder buf = new StringBuilder(256);
-    char ps = File.pathSeparatorChar;
-    String  v;
+    String ps = File.pathSeparator;
+    String v;
 
     for (File f : config.getPathArray("boot_classpath")){
       buf.append(f.getAbsolutePath());
@@ -1330,8 +1349,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     if (v != null) {
       buf.append(v);
     }
+    
+    return buf.toString();
+  }
 
-    String cp = FileUtils.asPlatformPath(buf.toString());
+  protected static void buildModelClassPath (Config config) {
+    String cp = makeModelClassPath(config);
+    cp = FileUtils.asPlatformPath(cp);
     logger.fine("classpath set: " + cp);
     modelClassPath = new ClassPath(cp);
   }
@@ -1347,6 +1371,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
   protected static Set<String> loadBuiltinInterfaces (String type) {
+    type = null; // Get rid of IDE warning 
+     
     return Collections.unmodifiableSet(new HashSet<String>(0));
   }
 
@@ -1354,7 +1380,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   /**
    * Loads the ClassInfo for named class.
    * @param set a Set to which the interface names (String) are added
-   * @param ci class to find interfaceNames for.
+   * @param interfaces class to find interfaceNames for.
    */
   void loadInterfaceRec (Set<String> set, Set<String> interfaces) throws NoClassInfoException {
     if (interfaces != null) {
@@ -1659,10 +1685,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return false;
   }
 
-
+  // Note: JVM.registerStartupClass() must be kept in sync
   public void registerClass (ThreadInfo ti){
     if (sei == null){
-
+       
       // do this recursively for superclasses and interfaceNames
       if (superClass != null) {
         superClass.registerClass(ti);
@@ -1672,6 +1698,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
         ClassInfo ici = getResolvedClassInfo(ifcName); // already resolved at this point
         ici.registerClass(ti);
       }
+
+      logger.finer("registering class: ", name);
 
       // register ourself in the static area
       StaticArea sa = StaticArea.getStaticArea();
@@ -1733,13 +1761,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    * this recursively initializes all super classes
    *
    * @param ti executing thread
-   * @param continuation context instruction that causes initialization
    * @return  true if clinit stackframes were pushed, i.e. context instruction
    * needs to be re-executed
    */
   public boolean initializeClass (ThreadInfo ti) {
     int pushedFrames = 0;
-    StackFrame frame = ti.getTopFrame();
 
     // push clinits of class hierarchy (upwards, since call stack is LIFO)
     for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
@@ -1759,11 +1785,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
   /**
    * local class initialization
-   * @return  true if we pushed a <clinit> frame
+   * @return true if we pushed a &lt;clinit&gt; frame
    */
   protected boolean pushClinit (ThreadInfo ti) {
     int stat = sei.getStatus();
-
+    
     if (stat != INITIALIZED) {
       if (stat != ti.getIndex()) {
         // even if it is already initializing - if it does not happen in the current thread
@@ -1809,8 +1835,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
   void initializeStaticData (ElementInfo ei) {
-    Fields f = ei.getFields();
-
     for (int i=0; i<sFields.length; i++) {
       FieldInfo fi = sFields[i];
       fi.initialize(ei);
@@ -1849,6 +1873,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
   Map<String, MethodInfo> loadBuiltinMethods (String type) {
+    type = null;  // Get rid of IDE warning 
+     
     return new HashMap<String, MethodInfo>(0);
   }
 

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.*;
 import org.apache.bcel.classfile.ConstantPool;
 
 /**
@@ -39,20 +40,20 @@ public abstract class LocalVariableInstruction extends Instruction
   }
   
   public String getLocalVariableName () {
-    String[] names = mi.getLocalVariableNames();
+    LocalVarInfo[] localVars = mi.getLocalVars();
     
-    if (names != null) {
-      return names[index];
+    if (localVars != null) {
+      return localVars[index].getName();
     } else {
       return "?";
     }
   }
   
   public String getLocalVariableType () {
-    String[] types = mi.getLocalVariableTypes();
+    LocalVarInfo[] localVars = mi.getLocalVars();
     
-    if (types != null) {
-      return types[index];
+    if (localVars != null) {
+      return localVars[index].getType();
     } else {
       return "?";
     }

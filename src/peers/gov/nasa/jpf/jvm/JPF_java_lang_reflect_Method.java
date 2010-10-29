@@ -116,7 +116,7 @@ public class JPF_java_lang_reflect_Method {
       String[] exceptionNames = mi.getThrownExceptionClassNames();
        
       if (exceptionNames == null) {
-        exceptionNames = MethodInfo.EMPTY;
+        exceptionNames = new String[0];
       }
        
       int[] ar = new int[exceptionNames.length];
