@@ -844,11 +844,17 @@ public class ThreadInfo
   public int getLine (int idx) {
     return frame(idx).getLine();
   }
-
+  
+  public LocalVarInfo[] getLocalVars() {
+    return top.getLocalVars();
+  }
+  
+  @Deprecated  // Use getLocalVars() instead
   public String[] getLocalNames () {
     return top.getLocalVariableNames();
   }
 
+  @Deprecated  // Use getLocalNames() instead
   public String[] getLocalNames (int fr) {
     return frame(fr).getLocalVariableNames();
   }

@@ -173,9 +173,9 @@ public class StackFrame implements Constants, Cloneable {
 
   public Object getLocalOrFieldValue (String id) {
     // try locals first
-    String[] localNames = mi.getLocalVariableNames();
-    for (int i=0; i<localNames.length; i++) {
-      if (localNames[i].equals(id)) {
+    LocalVarInfo localVars[] = mi.getLocalVars();
+    for (int i=0; i<locals.length; i++) {
+      if (localVars[i].getName().equals(id)) {
         return getLocalValueObject(i);
       }
     }
@@ -185,9 +185,9 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public Object getLocalValueObject (int i) {
-    String[] localTypes = mi.getLocalVariableTypes();
-    if (localTypes != null) { // might not have been compiled with debug info
-      String type = localTypes[i];
+    LocalVarInfo localVars[] = mi.getLocalVars();
+    if (localVars != null) { // might not have been compiled with debug info
+      String type = localVars[i].getType();
       if ("Z".equals(type)) {
         return locals[i] != 0 ? Boolean.TRUE : Boolean.FALSE;
       } else if ("B".equals(type)) {
@@ -542,7 +542,12 @@ public class StackFrame implements Constants, Cloneable {
     return locals.length;
   }
 
-  public String[] getLocalVariableNames () {
+  public LocalVarInfo[] getLocalVars () {
+    return mi.getLocalVars();
+  }
+
+  @Deprecated  // Use getLocalVars() instead
+  public String[] getLocalVariableNames() {
     return mi.getLocalVariableNames();
   }
 
@@ -551,14 +556,13 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public String getLocalVariableType (String name) {
-    String[] lNames = mi.getLocalVariableNames();
-    String[] lTypes = mi.getLocalVariableTypes();
-
-    if ((lNames != null) && (lTypes != null)) {
-      for (int i = 0, l = lNames.length; i < l; i++) {
-        if (name.equals(lNames[i])) {
-          return lTypes[i];
-        }
+    LocalVarInfo localVars[] = mi.getLocalVars();
+    
+    if (localVars != null) {
+      for (int i = 0; i < localVars.length; i++) {
+        if (name.equals(localVars[i].getName())) {
+          return localVars[i].getType(); 
+        }   
       }
     }
 
@@ -1428,24 +1432,25 @@ public class StackFrame implements Constants, Cloneable {
 
   // return the value of a variable given the name
   public int getLocalVariableOffset (String name) {
-    String[] lNames = mi.getLocalVariableNames();
-    String[] lTypes = mi.getLocalVariableTypes();
-
+    LocalVarInfo localVars[] = mi.getLocalVars();
     int offset = 0;
 
-    if (lNames != null){
-      for (int i = 0, l = lNames.length; i < l;) {
-        if (name.equals(lNames[i])) {
+    if (localVars != null) {
+      for (int i = 0; i < localVars.length; ) {
+        LocalVarInfo localVar = localVars[i];
+        if (name.equals(localVar.getName())) {
           return offset;
-        } else if (lTypes[i].charAt(0) != '?') {
-          int typeSize = Types.getTypeSize(lTypes[i]);
-          offset += typeSize;
-          i += typeSize;
+        } else {
+          String type = localVar.getType();
+          if (type.charAt(0) != '?') { 
+            int typeSize = Types.getTypeSize(type); 
+            offset += typeSize;
+            i += typeSize;
+          }
         }
       }
     }
 
     return -1;
   }
-
 }
