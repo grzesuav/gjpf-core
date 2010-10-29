@@ -65,7 +65,10 @@ public class ThreadData {
    */
   int lockCount;
 
-  /** The suspend count of the thread */
+  /** the stack depth at the time the lock is first acquired */
+  int lockedStackDepth = -1;
+
+   /** The suspend count of the thread */
   int suspendCount;
 
   public ThreadData clone () {
@@ -76,6 +79,7 @@ public class ThreadData {
     t.objref = objref;
     t.target = target;
     t.lockCount = lockCount;
+    t.lockedStackDepth = lockedStackDepth;
     t.suspendCount = suspendCount;
 
     t.priority = priority;
@@ -94,7 +98,7 @@ public class ThreadData {
 
     return ((state == t.state) && (ci == t.ci) && (objref == t.objref) &&
            (target == t.target) && (priority == t.priority) &&
-           (isDaemon == t.isDaemon) && (lockCount == t.lockCount) &&
+           (isDaemon == t.isDaemon) && (lockCount == t.lockCount) && (lockedStackDepth == t.lockedStackDepth) &&
            (suspendCount == t.suspendCount) && (name.equals(t.name)));
   }
 
@@ -103,6 +107,7 @@ public class ThreadData {
     hd.add(objref);
     hd.add(target);
     hd.add(lockCount);
+    hd.add(lockedStackDepth);
     hd.add(suspendCount);
     hd.add(priority);
     hd.add(isDaemon);
@@ -138,6 +143,8 @@ public class ThreadData {
     sb.append(priority);
     sb.append(",lockCount=");
     sb.append(lockCount);
+    sb.append(",lockedStackDepth=");
+    sb.append(lockedStackDepth);
     sb.append(",suspendCount=");
     sb.append(suspendCount);
 

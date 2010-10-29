@@ -39,6 +39,9 @@ public class Monitor {
   /** the nesting level for recursive lock acquisition */
   private int lockCount;
   
+  /** the stack depth at the time the lock is first acquired */
+  private int lockedStackDepth = -1;
+  
   /** the list of waiting or blocked threads */
   ThreadInfo[] lockedThreads;
 
@@ -46,13 +49,12 @@ public class Monitor {
    * Creates a new empty monitor.
    */
   public Monitor () {
-    lockingThread = null;
-    lockCount = 0;    
     lockedThreads = emptySet;
   }
 
-  private Monitor (ThreadInfo locking, int count, ThreadInfo[] locked) {
+  private Monitor (ThreadInfo locking, int depth, int count, ThreadInfo[] locked) {
     lockingThread = locking;
+    lockedStackDepth = depth;
     lockCount = count;
     lockedThreads = locked.clone();
     Arrays.sort(lockedThreads);
@@ -72,6 +74,9 @@ public class Monitor {
     pw.print(", lockCount: ");
     pw.print( lockCount);
     
+    pw.print(", lockedStackDepth: ");
+    pw.print(lockedStackDepth);
+    
     pw.print(", locked: {");
     for (i=0; i<lockedThreads.length; i++) {
       if (i > 0) pw.print(',');
@@ -84,15 +89,15 @@ public class Monitor {
   
   
   Monitor cloneWithLocked (ThreadInfo ti) {
-    return new Monitor(lockingThread, lockCount, add(lockedThreads, ti));
+    return new Monitor(lockingThread, lockedStackDepth, lockCount, add(lockedThreads, ti));
   }
 
   Monitor cloneWithoutLocked (ThreadInfo ti) {
-    return new Monitor(lockingThread, lockCount, remove(lockedThreads, ti));
+    return new Monitor(lockingThread, lockedStackDepth, lockCount, remove(lockedThreads, ti));
   }
 
   public Monitor clone () {
-    return new Monitor(lockingThread, lockCount, lockedThreads.clone());
+    return new Monitor(lockingThread, lockedStackDepth, lockCount, lockedThreads.clone());
   }
   
   
@@ -117,7 +122,11 @@ public class Monitor {
     if (lockCount != m.getLockCount()) {
       return false;
     }
-
+    
+    if (lockedStackDepth != m.getLockedStackDepth()) {
+      return false;
+    }
+    
     ThreadInfo[] list = m.lockedThreads;
     if (lockedThreads.length != list.length) {
       return false;
@@ -139,6 +148,7 @@ public class Monitor {
     }
     
     hd.add(lockCount);
+    hd.add(lockedStackDepth);
     
     for (int i = 0, l = lockedThreads.length; i < l; i++) {
       hd.add(lockedThreads[i].getIndex());
@@ -207,17 +217,30 @@ public class Monitor {
     lockingThread = ti;
   }
   
-
-  void incLockCount () {
-    lockCount++;
+  public int getLockedStackDepth() {
+    return lockedStackDepth;
   }
   
+  void setLockedStackDepth(int depth) {
+    lockedStackDepth = depth;
+  }
+  
+  void incLockCount () {
+    if (lockCount == 0) {
+      lockedStackDepth = lockingThread.getStackDepth(); 
+    }
+    
+    lockCount++;
+  }
   
   void decLockCount () {
     assert lockCount > 0 : "negative lockCount";
     lockCount--;
+
+    if (lockCount <= 0) {
+      lockedStackDepth = -1;
+    }
   }
-  
   
   void setLockCount (int lc) {
     assert lc >= 0 : "attempt to set negative lockCount";

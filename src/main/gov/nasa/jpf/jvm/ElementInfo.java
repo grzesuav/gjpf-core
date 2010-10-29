@@ -23,7 +23,6 @@ import gov.nasa.jpf.util.Debug;
 import gov.nasa.jpf.util.HashData;
 
 import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.Vector;
 
 /**
@@ -807,7 +806,11 @@ public abstract class ElementInfo implements Cloneable {
   public boolean isLocked() {
     return (monitor.getLockCount() > 0);
   }
-
+  
+  public int getLockedStackDepth() {
+    return monitor.getLockedStackDepth();
+  }
+  
   public boolean isArray() {
     return fields.isArray();
   }
@@ -1341,9 +1344,11 @@ public abstract class ElementInfo implements Cloneable {
 
     if (holdsLock) {
       ti.setLockCount(monitor.getLockCount());
+      ti.setLockedStackDepth(monitor.getLockedStackDepth());
 
       monitor.setLockingThread(null);
       monitor.setLockCount(0);
+      monitor.setLockedStackDepth(-1);
 
       ti.removeLockedObject(this);
 
@@ -1374,10 +1379,12 @@ public abstract class ElementInfo implements Cloneable {
 
     setMonitorWithoutLocked(ti);
     monitor.setLockingThread( ti);
-    monitor.setLockCount( ti.getLockCount());
+    monitor.setLockCount(ti.getLockCount());
+    monitor.setLockedStackDepth(ti.getLockedStackDepth());
 
     ti.setState( ThreadInfo.State.RUNNING);
     ti.setLockCount(0);
+    ti.setLockedStackDepth(0);
     ti.resetLockRef();
 
     blockLockContenders();
@@ -1396,6 +1403,7 @@ public abstract class ElementInfo implements Cloneable {
 
     ti.setRunning();
     ti.setLockCount(0);
+    ti.setLockedStackDepth(0);
     ti.resetLockRef();
   }
 
@@ -1590,6 +1598,7 @@ public abstract class ElementInfo implements Cloneable {
   void verifyLockInfo(ThreadList tl) {
     int i;
 
+    tl = null;  // Get rid of IDE warning
     ThreadInfo ti = monitor.getLockingThread();
     if (ti != null) {
       assert area.ks.tl.get(ti.index) == ti;

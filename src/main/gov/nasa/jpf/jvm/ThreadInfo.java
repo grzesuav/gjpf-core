@@ -930,7 +930,17 @@ public class ThreadInfo
   public int getLockCount () {
     return threadData.lockCount;
   }
-
+  
+  public void setLockedStackDepth(int depth) {
+    if (threadData.lockedStackDepth != depth) { 
+      threadDataClone().lockedStackDepth = depth; 
+    }
+  }
+  
+  public int getLockedStackDepth() {
+    return threadData.lockedStackDepth;
+  } 
+  
   /**
     * Increments the suspend counter.
     * @return true if the suspend counter was 0 before this call (e.g. the thread was just suspended)
@@ -1302,7 +1312,7 @@ public class ThreadInfo
    * by the executing method
    */
   public void dumpStoringData (IntVector v) {
-
+    v = null;  // Get rid of IDE warnings
   }
 
   public String getStringLocal (String lname) {
@@ -1843,7 +1853,6 @@ public class ThreadInfo
     // insns until there either is none left anymore in this thread,
     // or it didn't execute (which indicates the insn registered a CG for
     // subsequent invocation)
-    int nExec = 0;
     isFirstStepInsn = true; // so that potential CG generators know
     do {
       nextPc = executeInstruction();
@@ -2830,6 +2839,10 @@ public class ThreadInfo
    */
   void init (int rGroup, int rRunnable, int rName, long stackSize,
              boolean setPriority) {
+    rGroup = 0;            // Get rid fo IDE warnings
+    stackSize = 0;
+    setPriority = false;
+     
     DynamicArea da = JVM.getVM().getDynamicArea();
     ElementInfo ei = da.get(rName);
 

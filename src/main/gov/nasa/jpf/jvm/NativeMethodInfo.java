@@ -19,17 +19,14 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFNativePeerException;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.NATIVERETURN;
 import gov.nasa.jpf.util.JPFLogger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import org.apache.bcel.Constants;
 
 /**
  * a MethodInfo for a native peer executed method
@@ -49,12 +46,8 @@ public class NativeMethodInfo extends MethodInfo {
     }
   }
 
-
   Method mth; // the native method to execute in lieu
-
   NativePeer peer;
-
-
 
   public NativeMethodInfo (MethodInfo mi, Method mth, NativePeer peer){
     super(mi.globalId);
@@ -62,6 +55,7 @@ public class NativeMethodInfo extends MethodInfo {
     uniqueName = mi.uniqueName;
     name = mi.name;
     signature = mi.signature;
+    genericSignature = mi.genericSignature;
     ci = mi.ci;
     modifiers = mi.modifiers;
     attrs = mi.attrs;
@@ -84,7 +78,6 @@ public class NativeMethodInfo extends MethodInfo {
 
     cb.setCode();
   }
-
 
   public void replace( MethodInfo mi){
     mthTable.set(mi.globalId, this);
@@ -126,7 +119,6 @@ public class NativeMethodInfo extends MethodInfo {
     return new NativeStackFrame(this, caller, args);
   }
 
-
   public Instruction executeNative (ThreadInfo ti) {
     Object   ret = null;
     Object[] args = null;
@@ -148,7 +140,8 @@ public class NativeMethodInfo extends MethodInfo {
       ret = mth.invoke(peer.getPeerClass(), args);
 
       // these are our non-standard returns
-      if ((exception = env.getException()) != null) {
+      exception = env.getException();
+      if (exception != null) {
         String details = env.getExceptionDetails();
 
         // even though we should prefer throwing normal exceptions,
@@ -197,42 +190,6 @@ public class NativeMethodInfo extends MethodInfo {
           + ci.getName() + '.' + getName(), itx.getTargetException());
     }
   }
-
-
-  private Object[] getArgArray (int n) {
-    return new Object[n];
-/**
-    Object[] a;
-    if (n < MAX_NARGS) {
-      a = argCache[n];
-      if (a != null){
-        argCache[n] = null;
-      } else {
-        a = new Object[n];
-      }
-    } else {
-      a = new Object[n];
-    }
-
-    return a;
-**/
-  }
-
-  private void releaseArgArray (Object[] a){
-/**
-System.out.println("@@ release args: " + a);
-
-    int n = a.length;
-    if (n < MAX_NARGS){
-      if (argCache[n] == null){
-        argCache[n] = a;
-      }
-    }
-
-    // can't reset lastArgs because we haven't notified listeners yet
-**/
-  }
-
 
   /**
    * Get and convert the native method parameters off the ThreadInfo stack.
@@ -329,7 +286,4 @@ System.out.println("@@ release args: " + a);
 
     return a;
   }
-
-
-
 }
