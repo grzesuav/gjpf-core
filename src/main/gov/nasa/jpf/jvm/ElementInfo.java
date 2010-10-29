@@ -1565,12 +1565,30 @@ public abstract class ElementInfo implements Cloneable {
       for (ThreadInfo lti : monitor.getBlockedOrWaitingThreads()){
         checkAssertion( lti.lockRef == index, "blocked or waiting thread has invalid lockRef: " + lti);
       }
+
+      // we can't check for having lock contenders without being shared, since this can happen
+      // in case an object is behind a FieldInfo shared-ness firewall (e.g. ThreadGroup.threads), or
+      // is kept/used in native code (listener, peer)
     }
   }
   
   protected void checkAssertion(boolean cond, String failMsg){
     if (!cond){
       System.out.println("!!!!!! failed ElementInfo consistency: "  + this + ": " + failMsg);
+
+      System.out.println("object: " + this);
+      System.out.println("isShared: " + isShared());
+      
+      ThreadInfo tiLock = getLockingThread();
+      if (tiLock != null) System.out.println("locked by: " + tiLock);
+      
+      if (monitor.hasLockedThreads()){
+        System.out.println("lock contenders:");
+        for (ThreadInfo ti : monitor.getLockedThreads()){
+          System.out.println("  " + ti + " = " + ti.getState());
+        }
+      }
+      
       JVM.getVM().dumpThreadStates();
       assert false;
     }

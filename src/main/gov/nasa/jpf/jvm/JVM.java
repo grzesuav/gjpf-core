@@ -47,7 +47,7 @@ public class JVM {
    * (we don't control these with class-wise assertion enabling since we do use
    * unconditional assertions for mandatory consistency checks)
    */
-  public static final boolean CHECK_CONSISTENCY = true;
+  public static final boolean CHECK_CONSISTENCY = false;
   
   private static enum TimeModel {ConstantZero, ConstantStartTime, ConstantConfig, SystemTime};
 
@@ -1593,8 +1593,8 @@ public class JVM {
     }
   }
 
-  // just a Q&D debugging aid
-  void dumpThreadStates () {
+  // just a debugging aid
+  public void dumpThreadStates () {
     java.io.PrintWriter pw = new java.io.PrintWriter(System.out, true);
     printLiveThreadStatus(pw);
     pw.flush();
