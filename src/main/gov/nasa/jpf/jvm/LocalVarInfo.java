@@ -21,14 +21,36 @@ package gov.nasa.jpf.jvm;
 public class LocalVarInfo {
   private final String name;
   private final String type;
+  private final String genericSignature;
   private final int    startPC;
   private final int    length;
     
-  public LocalVarInfo(String name, String type, int startPC, int length) {
-    this.name    = name;
-    this.type    = type;
-    this.startPC = startPC;
-    this.length  = length;
+  public LocalVarInfo(String name, String type, String genericSignature, int startPC, int length) {
+    if (name == null) {
+      throw new NullPointerException("name == null"); 
+    }   
+
+    if (type == null) {
+      throw new NullPointerException("type == null"); 
+    }   
+      
+    if (genericSignature == null) {
+      throw new NullPointerException("genericSignature == null"); 
+    }   
+      
+    if (startPC < 0) {
+      throw new NullPointerException("startPC < 0 : " + startPC); 
+    }
+
+    if (length < 0) {
+      throw new NullPointerException("length < 0 : " + length);
+    }
+   
+    this.name             = name;
+    this.type             = type;
+    this.genericSignature = genericSignature;
+    this.startPC          = startPC;
+    this.length           = length;
   }
     
   public String getName() {
@@ -38,7 +60,11 @@ public class LocalVarInfo {
   public String getType() {
     return type; 
   }
-     
+  
+  public String getGenericSignature() {
+    return genericSignature;
+  }
+  
   public int getStartPC() {
     return startPC; 
   }

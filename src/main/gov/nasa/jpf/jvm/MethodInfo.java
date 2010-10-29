@@ -33,6 +33,7 @@ import org.apache.bcel.classfile.LineNumberTable;
 import org.apache.bcel.classfile.LocalVariable;
 import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.classfile.Method;
+import org.apache.bcel.classfile.Signature;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.InstructionList;
 
@@ -114,6 +115,9 @@ public class MethodInfo extends InfoObject implements Cloneable {
   /** Signature of the method */
   protected String signature;
 
+  /** Generic signature of the method */
+  protected String genericSignature;
+
   /** Class the method belongs to */
   protected ClassInfo ci;
 
@@ -186,6 +190,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   protected MethodInfo (Method m, ClassInfo c) {
     name = m.getName();
     signature = m.getSignature();
+    genericSignature = computeGenericSignature(m);
     ci = c;
 
     code = loadCode(m);
@@ -234,6 +239,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     this.name = name;
     this.uniqueName = name;
     this.signature = "()V";
+    this.genericSignature = "";
     this.maxLocals = maxLocals;
     this.maxStack = maxStack;
     this.modifiers = modifiers;
@@ -261,7 +267,19 @@ public class MethodInfo extends InfoObject implements Cloneable {
   public static void setInstructionFactory (InstructionFactory newFactory){
     insnFactory = newFactory;
   }
-
+  
+  protected static String computeGenericSignature(Method m) {
+    Attribute attribs[] = m.getAttributes();
+    for (int i = attribs.length; --i >= 0; ) {
+      if (attribs[i] instanceof Signature) { 
+        Signature signature = (Signature) attribs[i]; 
+        return signature.getSignature(); 
+      }
+    }
+  
+    return "";
+  }
+  
   protected void loadParameterAnnotations (Method m){
 
     for (Attribute a : m.getAttributes()){
@@ -392,6 +410,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
     mi.name = originator; // + name; // + cname; // could maybe also include the called method, but keep it fast
     mi.signature = "()V";
+    mi.genericSignature = "";
     mi.maxLocals = isStatic() ? 0 : 1;
     mi.maxStack = getNumberOfCallerStackSlots();  // <2do> cache for optimization
     mi.localVars = EMPTY;
@@ -874,6 +893,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return signature;
   }
 
+  public String getGenericSignature() {
+    return genericSignature;
+  }
+  
   /**
    * Returns true if the method is static.
    */
@@ -1157,10 +1180,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
       int index = var.getIndex();
       int length = var.getLength();
       maxLength = Math.max(length, length);
-      vars[index] = new LocalVarInfo(var.getName(), var.getSignature(), var.getStartPC(), length);
+      vars[index] = new LocalVarInfo(var.getName(), var.getSignature(), "", var.getStartPC(), length);  // <2do> Pass the generic signature when BCEL supports generic signatures for local variables
     }
     
-    LocalVarInfo temp = new LocalVarInfo("?", "?", 0, maxLength);
+    LocalVarInfo temp = new LocalVarInfo("?", "?", "", 0, maxLength);
 
     for (int i = vars.length; --i >= 0; ) {
       if (vars[i] == null) {

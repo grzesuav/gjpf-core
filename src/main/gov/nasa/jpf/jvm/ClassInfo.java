@@ -51,11 +51,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
 
-import org.apache.bcel.classfile.ClassParser;
-import org.apache.bcel.classfile.ConstantPool;
-import org.apache.bcel.classfile.Field;
-import org.apache.bcel.classfile.JavaClass;
-import org.apache.bcel.classfile.Method;
+import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.util.ClassPath;
 import org.apache.bcel.util.ClassPath.ClassFile;
@@ -221,6 +217,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
   /** Name of the file which contains the source of this class. */
   protected String sourceFileName;
+  
+  /** Generic signature of the class */
+  protected String genericSignature;
 
   /** A unique id associate with this class. */
   protected int uniqueId;
@@ -296,6 +295,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     packageName = ""; // builtin classes don't reside in java.lang !
     sourceFileName = null;
     source = null;
+    genericSignature = "";
 
     // no fields
     iFields = emptyFields;
@@ -331,6 +331,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     interfaceNames.add(annotationCls.name);
     packageName = annotationCls.packageName;
     sourceFileName = annotationCls.sourceFileName;
+    genericSignature = annotationCls.genericSignature;
 
     sFields = new FieldInfo[0]; // none
     staticDataSize = 0;
@@ -345,9 +346,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     for (MethodInfo mi : annotationCls.getDeclaredMethodInfos()){
       String mname = mi.getName();
       String mtype = mi.getReturnTypeName();
+      String genericSignature = mi.getGenericSignature();
 
       // createAndInitialize an instance field for it
-      FieldInfo fi = FieldInfo.create(mname, mtype, 0, null, this, idx, off);
+      FieldInfo fi = FieldInfo.create(mname, mtype, genericSignature, 0, null, this, idx, off);
       iFields[idx++] = fi;
       off += fi.getStorageSize();
 
@@ -449,6 +451,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     sourceFileName = computeSourceFileName(jc);
     source = null;
+    genericSignature = computeGenericSignature(jc);
 
     isWeakReference = isWeakReference0();
     finalizer = getFinalizer0();
@@ -472,6 +475,18 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     // gets called
 
     JVM.getVM().notifyClassLoaded(this);
+  }
+  
+  String computeGenericSignature(JavaClass jc) {
+    Attribute attribs[] = jc.getAttributes();
+    for (int i = attribs.length; --i >= 0; ) {
+      if (attribs[i] instanceof Signature) {
+        Signature signature = (Signature) attribs[i];
+        return signature.getSignature();
+      }
+    }
+    
+    return "";
   }
 
   /**
@@ -589,7 +604,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return false;
     }
   }
-
+  
+  public String getGenericSignature() {
+    return genericSignature;
+  }
+  
   public boolean isArray () {
     return isArray;
   }
