@@ -118,7 +118,7 @@ public class JPF_java_lang_Object {
         ei.wait(ti, timeout);
 
         // note we pass in the timeout value, since this might determine the type of CG that is created
-        ChoiceGenerator cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
+        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
         assert (cg != null) : "wait of " + ti.getName() + " on: " + ei + " created no choice generator";
         ss.setNextChoiceGenerator(cg);
 

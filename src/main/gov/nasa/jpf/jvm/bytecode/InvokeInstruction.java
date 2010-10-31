@@ -18,17 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicArea;
-import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.NativePeer;
-import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.Types;
+import gov.nasa.jpf.jvm.*;
 
 import org.apache.bcel.classfile.ConstantPool;
 import org.apache.bcel.generic.ConstantPoolGen;
@@ -298,15 +288,15 @@ public abstract class InvokeInstruction extends Instruction {
 
   public Object getArgumentValue (String id, ThreadInfo ti){
     MethodInfo mi = getInvokedMethod();
-    String[] localNames = mi.getLocalVariableNames();
+    LocalVarInfo localVars[] = mi.getLocalVars();
     Object[] args = getArgumentValues(ti);
 
-    if (localNames != null){
+    if (localVars != null){
       int j = mi.isStatic() ? 0 : 1;
 
       for (int i=0; i<args.length; i++, j++){
         Object a = args[i];
-        if (localNames[j].equals(id)){
+        if (id.equals(localVars[j].getName())){
           return a;
         } else {
           if (a instanceof Long || a instanceof Double){

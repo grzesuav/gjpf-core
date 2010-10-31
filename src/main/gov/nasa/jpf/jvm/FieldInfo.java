@@ -21,6 +21,8 @@ package gov.nasa.jpf.jvm;
 import java.lang.reflect.Modifier;
 
 import org.apache.bcel.classfile.ConstantValue;
+import org.apache.bcel.classfile.Attribute;
+import org.apache.bcel.classfile.Signature;
 import org.apache.bcel.classfile.Field;
 
 
@@ -40,6 +42,7 @@ public abstract class FieldInfo extends InfoObject {
   
   protected final String name;
   protected final String type;
+  protected final String genericSignature;
   protected int storageSize;
 
   protected final ClassInfo ci; // class this field belongs to
@@ -56,24 +59,42 @@ public abstract class FieldInfo extends InfoObject {
   // low 16 bit: object attribute propagation mask  (non-final!)
   int attributes = ElementInfo.ATTR_PROP_MASK;
 
-  
+  protected static String computeGenericSignature(Field f) {
+    Attribute attribs[] = f.getAttributes();
+    for (int i = attribs.length; --i >= 0; ) {
+      if (attribs[i] instanceof Signature) {
+        Signature signature = (Signature) attribs[i];
+        return signature.getSignature();
+      }
+    }
+     
+    return "";
+  }
+
   /**
-   * factory method for the various concrete FieldInfos
-   */
+    * factory method for the various concrete FieldInfos
+    */
   public static FieldInfo create (Field f, ClassInfo ci, int idx, int off) {
     String name = f.getName();
     String type = Types.getCanonicalTypeName(f.getType().toString());
     ConstantValue cv = f.getConstantValue();
     int modifiers = f.getModifiers();
-
-    FieldInfo ret = create(name, type, modifiers, cv, ci, idx, off);
+    String genericSignature = computeGenericSignature(f);
+    FieldInfo ret = create(name, type, genericSignature, modifiers, cv, ci, idx, off);
     ret.loadAnnotations(f.getAnnotationEntries());
 
     return ret;
   }
 
+  @Deprecated
   public static FieldInfo create (String name, String type, int modifiers,
                                   ConstantValue cv, ClassInfo ci, int idx, int off){
+    return create(name, type, "", modifiers, cv, ci, idx, off);
+  }
+  
+  public static FieldInfo create (String name, String type, String genericSignature, int modifiers,
+                                  ConstantValue cv, ClassInfo ci, int idx, int off){
+     
     FieldInfo ret;
 
     if ("boolean".equals(type) ||
@@ -81,22 +102,29 @@ public abstract class FieldInfo extends InfoObject {
         "char".equals(type) ||
         "short".equals(type) ||
         "int".equals(type)){
-      ret = new IntegerFieldInfo(name, type, modifiers, cv, ci, idx, off);
+      ret = new IntegerFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
     } else if ("long".equals(type)){
-      ret = new LongFieldInfo(name, type, modifiers, cv, ci, idx, off);
+      ret = new LongFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
     } else if ("double".equals(type)){
-      ret = new DoubleFieldInfo(name, type, modifiers, cv, ci, idx, off);
+      ret = new DoubleFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
     } else if ("float".equals(type)){
-      ret = new FloatFieldInfo(name, type, modifiers, cv, ci, idx, off);
+      ret = new FloatFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
     } else {
-      ret = new ReferenceFieldInfo(name, type, modifiers, cv, ci, idx, off);
+      ret = new ReferenceFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
     }
 
     return ret;
   }
 
-  
+  /*
+  @Deprecated
   protected FieldInfo (String name, String type, int modifiers,
+                       ConstantValue cv, ClassInfo ci, int idx, int off) {
+    this(name, type, "", modifiers, cv, ci, idx, off); 
+  }
+  */
+
+  protected FieldInfo(String name, String type, String genericSignature, int modifiers, 
                        ConstantValue cv, ClassInfo ci, int idx, int off) {
     this.name = name;
     this.type = type;
@@ -105,6 +133,7 @@ public abstract class FieldInfo extends InfoObject {
     this.fieldIndex = idx;
     this.storageOffset = off;
     this.modifiers = modifiers;
+    this.genericSignature = genericSignature;
   }
 
 
@@ -189,7 +218,11 @@ public abstract class FieldInfo extends InfoObject {
   public String getType () {
     return type;
   }
-
+  
+  public String getGenericSignature() {
+    return genericSignature; 
+  }
+  
   public ClassInfo getTypeClassInfo () {
     return ClassInfo.getResolvedClassInfo(type);
   }

@@ -22,6 +22,7 @@ import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StaticElementInfo;
@@ -92,9 +93,9 @@ public abstract class VirtualInvocation extends InstanceInvocation {
    * For example, this object isn't reachable by other threads.
    */
   protected boolean isShared(ThreadInfo ti, ElementInfo ei) {
-    if (!getSkipLocalSync(ti))
+    if (!getSkipLocalSync(ti)){
       return true;
-
+    }
     return ei.isShared();
   }
 

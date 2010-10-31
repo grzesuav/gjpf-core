@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.util.HashData;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -39,7 +40,10 @@ public class Monitor {
   /** the nesting level for recursive lock acquisition */
   private int lockCount;
   
-  /** the list of waiting or blocked threads */
+  /** 
+   * the list of threads that try to acquire the lock (can be in blocked, waiting or 
+   * running state).
+   */
   ThreadInfo[] lockedThreads;
 
   /**
@@ -196,6 +200,31 @@ public class Monitor {
     return false;
   }
   
+  public ThreadInfo[] getWaitingThreads() {
+    ArrayList<ThreadInfo> list = new ArrayList<ThreadInfo>();
+    
+    for (ThreadInfo ti : lockedThreads){
+      if (ti.isWaiting()){
+        list.add(ti);
+      }
+    }
+    
+    return list.toArray(new ThreadInfo[list.size()]);
+  }
+
+  public ThreadInfo[] getBlockedOrWaitingThreads() {
+    ArrayList<ThreadInfo> list = new ArrayList<ThreadInfo>();
+    
+    for (ThreadInfo ti : lockedThreads){
+      if (ti.isWaiting() || ti.isBlocked()){
+        list.add(ti);
+      }
+    }
+    
+    return list.toArray(new ThreadInfo[list.size()]);
+  }
+
+  
   /**
    * Returns true if it is possible to lock the monitor.
    */
@@ -237,6 +266,18 @@ public class Monitor {
     lockedThreads = emptySet;
   }
 
+  public boolean isLocking(ThreadInfo ti){
+    if (lockedThreads != null){
+      for (ThreadInfo lti : lockedThreads){
+        if (lti == ti){
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
   static ThreadInfo[] add (ThreadInfo[] list, ThreadInfo ti) {
     int len = list.length;
     ThreadInfo[] newList = new ThreadInfo[len+1];

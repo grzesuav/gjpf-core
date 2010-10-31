@@ -38,10 +38,10 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
   /**
    * saves area contents in a simple ElementInfo.Memento array for later restoration
    */
-  class GenericAreaMemento implements Memento {
+  class GenericSnapshotMemento implements Memento {
     ElementInfo.Memento<EI>[] e;
 
-    protected GenericAreaMemento (ElementInfo.Memento<EI>[] e){
+    protected GenericSnapshotMemento (ElementInfo.Memento<EI>[] e){
       int len = elements.length();
       for (int i=0; i<len; i++){
         EI ei = elements.get(i);

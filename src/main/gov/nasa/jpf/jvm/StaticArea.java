@@ -38,6 +38,7 @@ public class StaticArea extends Area<StaticElementInfo> {
 
 
   public static void init (Config config) {
+    config = null; // Get rid of IDE warning
   }
 
   public static StaticArea getStaticArea() {
@@ -56,10 +57,12 @@ public class StaticArea extends Area<StaticElementInfo> {
     // subclassing!)
     // <2do> - revisit during DynamicArea / Static redesign
     staticArea = this;
+    
+    config = null;  // Get rid of IDE warning
   }
 
   public Memento getMemento() {
-    return new GenericAreaMemento( new ElementInfo.Memento[elements.length()]);
+    return new GenericSnapshotMemento( new ElementInfo.Memento[elements.length()]);
   }
 
 

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.Debug;
 
 import org.apache.bcel.Constants;
@@ -34,6 +33,7 @@ import org.apache.bcel.classfile.LineNumberTable;
 import org.apache.bcel.classfile.LocalVariable;
 import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.classfile.Method;
+import org.apache.bcel.classfile.Signature;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.InstructionList;
 
@@ -43,7 +43,6 @@ import org.apache.bcel.classfile.Attribute;
 import org.apache.bcel.classfile.ExceptionTable;
 import org.apache.bcel.classfile.ParameterAnnotationEntry;
 import org.apache.bcel.classfile.ParameterAnnotations;
-import org.apache.bcel.classfile.RuntimeVisibleParameterAnnotations;
 
 
 /**
@@ -59,7 +58,9 @@ public class MethodInfo extends InfoObject implements Cloneable {
   static final int DIRECT_CALL = -1;
   static final int REFLECTION_CALL = -2;
 
-  static final String[] EMPTY = new String[0];
+  static final LocalVarInfo[] EMPTY = new LocalVarInfo[0];
+  
+  static final int[] EMPTY_INT = new int[0];
   
   /**
    * Used to warn about local variable information.
@@ -74,7 +75,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
   static final int  IS_CLINIT   = 0x80000;
   static final int  IS_INIT     = 0x100000;
   
-
   public class CodeBuilder {
     ArrayList<Instruction> insns = new ArrayList<Instruction>();
 
@@ -115,6 +115,9 @@ public class MethodInfo extends InfoObject implements Cloneable {
   /** Signature of the method */
   protected String signature;
 
+  /** Generic signature of the method */
+  protected String genericSignature;
+
   /** Class the method belongs to */
   protected ClassInfo ci;
 
@@ -129,12 +132,9 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
   /** Table used for line numbers */
   protected int[] lineNumbers;
-
-  /** Local variables names */
-  protected String[] localVariableNames;
-
-  /** Local variables types */
-  protected String[] localVariableTypes;
+  
+  /** Local variable information */
+  protected LocalVarInfo localVars[] = EMPTY;
 
   /** Maximum number of local variables */
   protected int maxLocals;
@@ -144,7 +144,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
   /** null if we don't have any */
   AnnotationInfo[][] parameterAnnotations;
-
 
   //--- a batch of attributes
   
@@ -191,6 +190,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   protected MethodInfo (Method m, ClassInfo c) {
     name = m.getName();
     signature = m.getSignature();
+    genericSignature = computeGenericSignature(m);
     ci = c;
 
     code = loadCode(m);
@@ -199,9 +199,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     lineNumbers = loadLineNumbers(m);
     maxLocals = getMaxLocals(m);
     maxStack = getMaxStack(m);
-    localVariableNames = loadLocalVariableNames(m);
-    localVariableTypes = loadLocalVariableTypes(m);
-    
+    localVars = loadLocalVars(m);
     modifiers = m.getModifiers();
         
     // clinits are automatically synchronized on the class object,
@@ -241,10 +239,9 @@ public class MethodInfo extends InfoObject implements Cloneable {
     this.name = name;
     this.uniqueName = name;
     this.signature = "()V";
+    this.genericSignature = "";
     this.maxLocals = maxLocals;
     this.maxStack = maxStack;
-    this.localVariableNames = EMPTY;
-    this.localVariableTypes = EMPTY;
     this.modifiers = modifiers;
 
     this.lineNumbers = null;
@@ -270,7 +267,19 @@ public class MethodInfo extends InfoObject implements Cloneable {
   public static void setInstructionFactory (InstructionFactory newFactory){
     insnFactory = newFactory;
   }
-
+  
+  protected static String computeGenericSignature(Method m) {
+    Attribute attribs[] = m.getAttributes();
+    for (int i = attribs.length; --i >= 0; ) {
+      if (attribs[i] instanceof Signature) { 
+        Signature signature = (Signature) attribs[i]; 
+        return signature.getSignature(); 
+      }
+    }
+  
+    return "";
+  }
+  
   protected void loadParameterAnnotations (Method m){
 
     for (Attribute a : m.getAttributes()){
@@ -401,10 +410,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
     mi.name = originator; // + name; // + cname; // could maybe also include the called method, but keep it fast
     mi.signature = "()V";
+    mi.genericSignature = "";
     mi.maxLocals = isStatic() ? 0 : 1;
     mi.maxStack = getNumberOfCallerStackSlots();  // <2do> cache for optimization
-    mi.localVariableNames = EMPTY;
-    mi.localVariableTypes = EMPTY;
+    mi.localVars = EMPTY;
     mi.lineNumbers = null;
     mi.exceptions = null;
     mi.thrownExceptionClassNames = null;
@@ -721,13 +730,29 @@ public class MethodInfo extends InfoObject implements Cloneable {
   public String[] getThrownExceptionClassNames () {
     return thrownExceptionClassNames;
   }
-
-  public String[] getLocalVariableNames () {
-    return localVariableNames;
+  
+  public LocalVarInfo[] getLocalVars() {
+    return localVars; 
   }
 
-  public String[] getLocalVariableTypes () {
-    return localVariableTypes;
+  @Deprecated  // Use getLocalVars() instead
+  public String[] getLocalVariableNames() {
+    String[] result = new String[localVars.length];
+    for (int i = localVars.length; --i >= 0; ) {
+      result[i] = localVars[i].getName(); 
+    }
+    
+    return result;
+  }
+
+  @Deprecated  // Use getLocalVars() instead
+  public String[] getLocalVariableTypes() {
+    String[] result = new String[localVars.length];
+    for (int i = localVars.length; --i >= 0; ) {
+      result[i] = localVars[i].getType(); 
+    }
+     
+    return result;
   }
 
   public MethodInfo getOverriddenMethodInfo(){
@@ -868,6 +893,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return signature;
   }
 
+  public String getGenericSignature() {
+    return genericSignature;
+  }
+  
   /**
    * Returns true if the method is static.
    */
@@ -1112,18 +1141,18 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
 
   /**
-   * Loads the names of the local variables.
+   * Loads the local variables.
    *
    * NOTE: BCEL only gives us a list of all *named* locals, which might not
    * include all local vars (temporaries, like StringBuilder). Note that we have
    * to fill this with "?" in order to make the returned array correspond with
    * slot numbers
    */
-  protected String[] loadLocalVariableNames (Method m) {
+  protected LocalVarInfo[] loadLocalVars (Method m) {
     Code c = m.getCode();
 
     if (c == null) {
-      return null;
+      return EMPTY;
     }
 
     LocalVariableTable lvt = c.getLocalVariableTable();
@@ -1139,70 +1168,32 @@ public class MethodInfo extends InfoObject implements Cloneable {
         warnedLocalInfo = true;
       }
 
-      return null;
+      return EMPTY;
     }
 
     LocalVariable[] lv = lvt.getLocalVariableTable();
-    int             length = lv.length;
-    String[]        v = new String[c.getMaxLocals()];
+    LocalVarInfo[]  vars = new LocalVarInfo[c.getMaxLocals()];
+    int             maxLength = 0;
 
-    for (int i = 0; i < length; i++) {
-      v[lv[i].getIndex()] = lv[i].getName();
+    for (int i = lv.length; --i >= 0; ) {
+      LocalVariable var = lv[i];
+      int index = var.getIndex();
+      int length = var.getLength();
+      maxLength = Math.max(length, length);
+      vars[index] = new LocalVarInfo(var.getName(), var.getSignature(), "", var.getStartPC(), length);  // <2do> Pass the generic signature when BCEL supports generic signatures for local variables
     }
+    
+    LocalVarInfo temp = new LocalVarInfo("?", "?", "", 0, maxLength);
 
-    for (int i=0; i<v.length; i++) {
-      if (v[i] == null) {
-        v[i] = "?";
+    for (int i = vars.length; --i >= 0; ) {
+      if (vars[i] == null) {
+        vars[i] = temp;
       }
     }
 
-    return v;
+    return vars;
   }
 
-  /**
-   * Loads the types of the local variables.
-   * see loadLocalVariableNames for the problem with temporaries and
-   * why we can't copy the types 1:1
-   */
-  protected String[] loadLocalVariableTypes (Method m) {
-    Code c = m.getCode();
-
-    if (c == null) {
-      return null;
-    }
-
-    LocalVariableTable lvt = c.getLocalVariableTable();
-
-    if (lvt == null) {
-      if (!warnedLocalInfo && !ci.isSystemClass()) {
-        Debug.println(Debug.WARNING, "No local variable information available");
-        Debug.println(Debug.WARNING, "for " + getCompleteName());
-        Debug.println(Debug.WARNING,
-                      "Recompile with -g to include this information");
-        Debug.println(Debug.WARNING);
-        warnedLocalInfo = true;
-      }
-
-      return null;
-    }
-
-    LocalVariable[] lv = lvt.getLocalVariableTable();
-    int             length = lv.length;
-    String[]        v = new String[c.getMaxLocals()];
-
-    for (int i = 0; i < length; i++) {
-      v[lv[i].getIndex()] = lv[i].getSignature();
-    }
-
-    for (int i=0; i<v.length; i++) {
-      if (v[i] == null) {
-        v[i] = "?";
-      }
-    }
-
-    return v;
-  }
-  
   public String toString() {
     return "MethodInfo[" + getFullName() + ']';
   }

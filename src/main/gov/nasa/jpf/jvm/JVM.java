@@ -26,7 +26,6 @@ import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
-import gov.nasa.jpf.util.Source;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -42,6 +41,13 @@ import java.util.logging.Logger;
  */
 public class JVM {
 
+  /**
+   * this is a debugging aid to control compilation of expensive consistency checks
+   * (we don't control these with class-wise assertion enabling since we do use
+   * unconditional assertions for mandatory consistency checks)
+   */
+  public static final boolean CHECK_CONSISTENCY = false;
+  
   private static enum TimeModel {ConstantZero, ConstantStartTime, ConstantConfig, SystemTime};
 
   protected static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.JVM");
@@ -461,24 +467,28 @@ public class JVM {
 
   // note this has to be in order - we don't want to init a derived class before
   // it's parent is initialized
+  // This code must be kept in sync with ClassInfo.registerClass()
   void registerStartupClass (ClassInfo ci, List<ClassInfo> queue) {
-    StaticArea sa = getStaticArea();
-
     if (!queue.contains(ci)) {
-
       if (ci.getSuperClass() != null) {
         registerStartupClass( ci.getSuperClass(), queue);
       }
+      
+      for (String ifcName : ci.getAllInterfaces()) {
+        ClassInfo ici = ClassInfo.getResolvedClassInfo(ifcName);
+        registerStartupClass(ici, queue);
+      }
 
+      ClassInfo.logger.finer("registering class: ", ci.getName());
       queue.add(ci);
 
+      StaticArea sa = getStaticArea();
       if (!sa.containsClass(ci.getName())){
         sa.addClass(ci);
       }
     }
   }
-
-
+  
   protected void createStartupClassObjects (List<ClassInfo> queue, ThreadInfo ti){
     for (ClassInfo ci : queue) {
       ci.createClassObject(ti);
@@ -502,6 +512,7 @@ public class JVM {
   }
 
   protected void pushMain (Config config) {
+    config = null;  // Get rid of IDE warning
     DynamicArea da = ss.ks.da;
     ClassInfo ci = ClassInfo.getResolvedClassInfo(mainClassName);
     MethodInfo mi = ci.getMethod("main([Ljava/lang/String;)V", false);
@@ -1503,6 +1514,8 @@ public class JVM {
    * this is here so that we can intercept it in subclassed VMs
    */
   public Instruction handleException (ThreadInfo ti, int xObjRef){
+    ti = null;        // Get rid of IDE warning
+    xObjRef = 0;
     return null;
   }
 
@@ -1586,8 +1599,8 @@ public class JVM {
     }
   }
 
-  // just a Q&D debugging aid
-  void dumpThreadStates () {
+  // just a debugging aid
+  public void dumpThreadStates () {
     java.io.PrintWriter pw = new java.io.PrintWriter(System.out, true);
     printLiveThreadStatus(pw);
     pw.flush();
@@ -1603,6 +1616,8 @@ public class JVM {
   public boolean backtrack () {
     boolean success = backtracker.backtrack();
     if (success) {
+      if (CHECK_CONSISTENCY) checkConsistency();
+      
       // restore the path
       path.removeLast();
       lastTrailInfo = path.getLast();
@@ -1651,6 +1666,8 @@ public class JVM {
   public boolean forward () {
     while (true) { // loop until we find a state that isn't ignored
       try {
+        if (CHECK_CONSISTENCY) checkConsistency(); // don't push an inconsistent state
+        
         // saves the current state for backtracking purposes of depth first
         // searches and state observers. If there is a previously cached
         // kernelstate, use that one
@@ -1668,6 +1685,7 @@ public class JVM {
           if (ss.isIgnored()) {
             // do it again
             backtracker.backtrackKernelState();
+            if (CHECK_CONSISTENCY) checkConsistency();
             continue;
 
           } else { // this is the normal forward that executed insns, and wasn't ignored
@@ -1897,5 +1915,13 @@ public class JVM {
     if (ss.nextCg != null) {
       ss.nextCg.reset();
     }
+  }
+  
+  /**
+   * only for debugging, this is expensive
+   */
+  public void checkConsistency() {
+    getThreadList().checkConsistency();
+    getDynamicArea().checkConsistency();
   }
 }

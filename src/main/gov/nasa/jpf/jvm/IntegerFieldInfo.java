@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.*;
+import org.apache.bcel.classfile.ConstantValue;
 
 
 /**
@@ -27,9 +27,15 @@ import org.apache.bcel.classfile.*;
 public class IntegerFieldInfo extends FieldInfo {
   int init;
 
+  @Deprecated
   public IntegerFieldInfo (String name, String type, int modifiers,
-                           ConstantValue cv, ClassInfo ci, int idx, int off) {
-    super(name, type, modifiers, cv, ci, idx, off);
+                          ConstantValue cv, ClassInfo ci, int idx, int off) {
+    this(name, type, "", modifiers, cv, ci, idx, off);
+  }
+
+  public IntegerFieldInfo (String name, String type, String genericSignature, int modifiers,
+                          ConstantValue cv, ClassInfo ci, int idx, int off) {
+     super(name, type, genericSignature, modifiers, cv, ci, idx, off);
     init = (cv != null) ? Integer.parseInt(cv.toString()) : 0;
   }
 

@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
@@ -277,9 +278,15 @@ public class ThreadInfo
    * only valid after the thread got created
    */
   public static ThreadInfo getThreadInfo(int objRef) {
-    return threadInfos.get(objRef);
+    if (objRef >= 0) { 
+      return threadInfos.get(objRef);
+    } else {
+      return null;
+    }
   }
-  
+
+
+
   public static ThreadInfo getCurrentThread() {
     return currentThread;
   }
@@ -361,22 +368,27 @@ public class ThreadInfo
         // nothing. the notifyThreadStarted has to happen from
         // Thread.start(), since the thread could have been blocked
         // at the time with a sync run() method
+        assert lockRef == -1;
         break;
       case TERMINATED:
         vm.notifyThreadTerminated(this);
         break;
       case BLOCKED:
+        assert lockRef != -1;
         vm.notifyThreadBlocked(this);
         break;
       case UNBLOCKED:
+        assert lockRef == -1;
         break; // nothing to notify
       case WAITING:
+        assert lockRef != -1;
         vm.notifyThreadWaiting(this);
         break;
       case INTERRUPTED:
         vm.notifyThreadInterrupted(this);
         break;
       case NOTIFIED:
+        assert lockRef != -1;
         vm.notifyThreadNotified(this);
         break;
       }
@@ -388,11 +400,14 @@ public class ThreadInfo
     }
   }
 
-  void setBlockedState () {
+  void setBlockedState (int objref) {
+    
     State currentState = threadData.state;
     switch (currentState){
+      case NEW:
       case RUNNING:
       case UNBLOCKED:
+        lockRef = objref;
         setState(State.BLOCKED);
         break;
 
@@ -613,7 +628,7 @@ public class ThreadInfo
   public List<StackFrame> getStack() {
     return stack;
   }
-  
+
   public int getStackDepth() {
     return stack.size();
   }
@@ -840,11 +855,17 @@ public class ThreadInfo
   public int getLine (int idx) {
     return frame(idx).getLine();
   }
-
+  
+  public LocalVarInfo[] getLocalVars() {
+    return top.getLocalVars();
+  }
+  
+  @Deprecated  // Use getLocalVars() instead
   public String[] getLocalNames () {
     return top.getLocalVariableNames();
   }
 
+  @Deprecated  // Use getLocalNames() instead
   public String[] getLocalNames (int fr) {
     return frame(fr).getLocalVariableNames();
   }
@@ -2164,6 +2185,7 @@ public class ThreadInfo
       // have to check if the waiter goes directly to UNBLOCKED
       ElementInfo eiLock = getElementInfo(lockRef);
       if (eiLock.canLock(this)) {
+        resetLockRef();
         setState(State.UNBLOCKED);
         eiLock.setMonitorWithoutLocked(this);
       }
@@ -2840,5 +2862,77 @@ public class ThreadInfo
    */
   public int compareTo (ThreadInfo that) {
     return this.index - that.index;
+  }
+  
+  /**
+   * only for debugging purposes
+   */
+  public void checkConsistency(){
+    checkAssertion(threadData != null, "no thread data");
+    
+    // if the thread is runnable, it can't be blocked
+    if (isRunnable()){
+      checkAssertion(lockRef == -1, "runnable thread with non-null lockRef: " + lockRef) ;
+    }
+    
+    // every thread that is not terminated has to have a stackframe with a next pc
+    if (!isTerminated() && !isNew()){
+      checkAssertion( !stack.isEmpty(), "empty stack " + getState());
+      checkAssertion( top != null, "no top frame");
+      checkAssertion( top.getPC() != null, "no top PC");
+    }
+    
+    // if we are timedout, the top pc has to be either on a native Object.wait() or Unsafe.park()
+    if (isTimedOut()){
+      Instruction insn = top.getPC();
+      checkAssertion( insn instanceof EXECUTENATIVE, "thread timedout outside of native method");
+      
+      // this is a bit dangerous in case we introduce new timeout points
+      MethodInfo mi = ((EXECUTENATIVE)insn).getExecutedMethod();
+      String mname = mi.getUniqueName();
+      checkAssertion( mname.equals("wait(J") || mname.equals("park(ZJ"), "timedout thread outside timeout method: " + mi.getCompleteName());
+    }
+    
+    if (lockRef != -1){
+      // object we are blocked on has to exist
+      ElementInfo ei = this.getElementInfo(lockRef);
+      checkAssertion( ei != null, "thread locked on non-existing object: " + lockRef);
+      
+      // we have to be in the lockedThreads list of that objects monitor
+      checkAssertion( ei.isLocking(this), "thread blocked on non-locking object: " + ei);
+      
+      // can't be blocked on a lock we own (but could be in waiting before giving it up)
+      if (!isWaiting() && lockedObjects != null && !lockedObjects.isEmpty()){
+        for (ElementInfo lei : lockedObjects){
+            checkAssertion( lei.getIndex() != lockRef, "non-waiting thread blocked on owned lock: " + lei);
+        }
+      }
+      
+      // the state has to be BLOCKED, NOTIFIED, WAITING or TIMEOUT_WAITING
+      checkAssertion( isWaiting() || isBlockedOrNotified(), "locked thread not waiting, blocked or notified");
+      
+    } else { // no lockRef set
+      checkAssertion( !isWaiting() && !isBlockedOrNotified(), "non-locked thread is waiting, blocked or notified");
+    }
+    
+    // if we have locked objects, we have to be the locking thread of each of them
+    if (lockedObjects != null && !lockedObjects.isEmpty()){
+      for (ElementInfo ei : lockedObjects){
+        ThreadInfo lti = ei.getLockingThread();
+        if (lti != null){
+          checkAssertion(lti == this, "not the locking thread for locked object: " + ei + " owned by " + lti);
+        } else {
+          // can happen for a nested monitor lockout
+        }
+      }
+    }
+  }
+  
+  protected void checkAssertion(boolean cond, String failMsg){
+    if (!cond){
+      System.out.println("!!!!!! failed thread consistency: "  + this + ": " + failMsg);
+      vm.dumpThreadStates();
+      assert false;
+    }
   }
 }

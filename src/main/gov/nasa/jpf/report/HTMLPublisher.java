@@ -1085,7 +1085,7 @@ public class HTMLPublisher extends Publisher {
   }
 
   private void writeLocalVariables(PrintWriter output, StackFrame frame, String frameID) {
-    String names[];
+    LocalVarInfo localVars[];
     Object attr;
     int i;
 
@@ -1095,8 +1095,8 @@ public class HTMLPublisher extends Publisher {
     output.println("          <td>Local Variables</td>");
     writeTableTreeNodeEnd(output);
 
-    names = frame.getLocalVariableNames();
-    if (names == null) {
+    localVars = frame.getLocalVars();
+    if (localVars == null) {
       return;
     }
 
@@ -1106,9 +1106,9 @@ public class HTMLPublisher extends Publisher {
       writeTableTreeNodeBegin(output, frameID + i);
 
       output.print("          <td>");
-      output.print(frame.getLocalVariableType(names[i]));
+      output.print(localVars[i].getType());
       output.print(' ');
-      output.print(names[i]);
+      output.print(localVars[i].getName());
       output.print(" = ");
       output.print(frame.getLocalValueObject(i));
 
