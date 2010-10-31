@@ -23,7 +23,6 @@ import gov.nasa.jpf.util.Debug;
 import gov.nasa.jpf.util.HashData;
 
 import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.Vector;
 
 /**
@@ -45,7 +44,7 @@ public abstract class ElementInfo implements Cloneable {
   // mask of the mark-phase propagated attributes
   public static final int   ATTR_PROP_MASK     = 0x0000ffff;
 
-  //--- the propagated ones - only lower 16 bits can be used
+  // the propagated ones - only lower 16 bits can be used
 
   // reachable from different threads
   public static final int   ATTR_TSHARED       = 0x1;
@@ -61,8 +60,7 @@ public abstract class ElementInfo implements Cloneable {
   // don't promote to shared along this path
   public static final int   ATTR_NO_PROMOTE    = 0x4;
 
-
-  //--- the non-propagated attributes - use only higher 16 bits
+  // the non-propagated attributes - use only higher 16 bits
 
   // to-be-done, would be code attr, too, and could easily be checked at runtime
   // (hello, a new property)

@@ -65,7 +65,7 @@ public class ThreadData {
    */
   int lockCount;
 
-  /** The suspend count of the thread */
+   /** The suspend count of the thread */
   int suspendCount;
 
   public ThreadData clone () {

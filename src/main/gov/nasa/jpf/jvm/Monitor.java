@@ -119,11 +119,11 @@ public class Monitor {
 
     Monitor m = (Monitor) o;
 
-    if (lockingThread != m.lockingThread) {
+    if (lockingThread != m.getLockingThread()) {
       return false;
     }
 
-    if (lockCount != m.lockCount) {
+    if (lockCount != m.getLockCount()) {
       return false;
     }
 
