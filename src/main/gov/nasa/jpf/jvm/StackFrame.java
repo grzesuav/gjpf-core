@@ -25,6 +25,8 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Misc;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import org.apache.bcel.Constants;
 
@@ -1177,60 +1179,73 @@ public class StackFrame implements Constants, Cloneable {
     }
   }
 
-  public String toString () {
-    StringBuilder sb = new StringBuilder();
-
-    sb.append("StackFrame[");
-    sb.append(mi.getUniqueName());
-    sb.append(",top="); sb.append(top);
-    sb.append(",operands=[");
+  protected void printContentsOn(PrintWriter pw){
+    pw.print("mi=");
+    pw.print(mi.getUniqueName());
+    pw.print(",top="); pw.print(top);
+    pw.print(",operands=[");
 
     for (int i = 0; i <= top; i++) {
       if (i != 0) {
-        sb.append(',');
+        pw.print(',');
       }
 
-      sb.append(operands[i]);
+      pw.print(operands[i]);
 
       if (operandAttr != null && operandAttr[i] != null) {
-        sb.append('(');
-        sb.append(operandAttr[i]);
-        sb.append(')');
+        pw.print('(');
+        pw.print(operandAttr[i]);
+        pw.print(')');
       }
     }
 
-    sb.append("],locals=[");
+    pw.print("],locals=[");
 
     for (int i = 0; i < locals.length; i++) {
       if (i != 0) {
-        sb.append(',');
+        pw.print(',');
       }
 
-      sb.append(locals[i]);
+      pw.print(locals[i]);
       if ((localAttr != null) && (localAttr[i] != null)) {
-        sb.append('(');
-        sb.append(localAttr[i]);
-        sb.append(')');
+        pw.print('(');
+        pw.print(localAttr[i]);
+        pw.print(')');
       }
     }
 
-    sb.append("],pc=");
-    sb.append(pc.getPosition());
-    sb.append(",oRefs=");
+    pw.print("],pc=");
+    pw.print(pc.getPosition());
+    pw.print(",oRefs=");
 
     for (int i = 0; i <= top; i++) {
-      sb.append(isOperandRef[i] ? 'R' : '-');
+      pw.print(isOperandRef[i] ? 'R' : '-');
     }
 
-    sb.append(",lRefs=");
+    pw.print(",lRefs=");
 
     for (int i = 0; i < locals.length; i++) {
-      sb.append(isLocalRef[i] ? 'R' : '-');
+      pw.print(isLocalRef[i] ? 'R' : '-');
     }
 
-    sb.append(']');
+    pw.print(']');
 
-    return sb.toString();
+  }
+
+  protected int objectHashCode() {
+    return super.hashCode();
+  }
+
+  public String toString () {
+    StringWriter sw = new StringWriter(128);
+    PrintWriter pw = new PrintWriter(sw);
+
+    pw.print("StackFrame@");
+    pw.print(Integer.toHexString(objectHashCode()));
+    printContentsOn(pw);
+    pw.print('}');
+
+    return sw.toString();
   }
 
   public long longPeek () {
@@ -1453,4 +1468,13 @@ public class StackFrame implements Constants, Cloneable {
 
     return -1;
   }
+
+  //--- those are only in some of our subclasses
+  public void setReturnValue(Object ret){
+    throw new UnsupportedOperationException("no return value register in StackFrame");
+  }
+  public void setReturnAttr(Object attr){
+    throw new UnsupportedOperationException("no return value attribute register in StackFrame");
+  }
+
 }

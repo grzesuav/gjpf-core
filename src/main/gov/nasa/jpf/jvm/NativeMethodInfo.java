@@ -160,10 +160,9 @@ public class NativeMethodInfo extends MethodInfo {
           return nativeFrame.getPC();
 
         } else {
-          //releaseArgArray(args);
 
-          nativeFrame.setReturnValue(ret);
-          nativeFrame.setReturnAttr(env.getReturnAttribute());
+          ti.setReturnValue(ret);
+          ti.setReturnAttr(env.getReturnAttribute());
 
           return nativeFrame.getPC().getNext(); // that should be the NATIVERETURN
         }

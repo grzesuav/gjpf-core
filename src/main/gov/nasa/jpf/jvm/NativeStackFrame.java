@@ -22,6 +22,8 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Misc;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * a stack frame for MJI methods
@@ -109,6 +111,11 @@ public class NativeStackFrame extends DynamicStackFrame {
     ret = r;
   }
 
+  public void clearReturnValue() {
+    ret = null;
+    retAttr = null;
+  }
+
   public Object getReturnValue() {
     return ret;
   }
@@ -126,7 +133,8 @@ public class NativeStackFrame extends DynamicStackFrame {
 
     if (ret != null && ret instanceof Integer && mi.isReferenceReturnType()){
       DynamicArea heap = DynamicArea.getHeap();
-      heap.markThreadRoot(((Integer)ret).intValue(), tid);
+      int ref = ((Integer)ret).intValue();
+      heap.markThreadRoot(ref, tid);
     }
   }
 
@@ -172,5 +180,25 @@ public class NativeStackFrame extends DynamicStackFrame {
     }
 
     return true;
+  }
+
+  public String toString () {
+    StringWriter sw = new StringWriter(128);
+    PrintWriter pw = new PrintWriter(sw);
+
+    pw.print("NativeStackFrame@");
+    pw.print(Integer.toHexString(objectHashCode()));
+    pw.print("{ret=");
+    pw.print(ret);
+    if (retAttr != null){
+      pw.print('(');
+      pw.print(retAttr);
+      pw.print(')');
+    }
+    pw.print(',');
+    printContentsOn(pw);
+    pw.print('}');
+
+    return sw.toString();
   }
 }

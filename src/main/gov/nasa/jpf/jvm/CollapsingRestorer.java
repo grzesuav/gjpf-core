@@ -100,7 +100,9 @@ implements IncrementalChangeTracker {
     }
 
     for (int i = firstChanged; i < length; i++) {
-      tmpFrames.add(pool.poolStackFrame(ti.stack.get(i)));
+      StackFrame frame = ti.stack.get(i);
+      StackFrame pooledFrame = pool.poolStackFrame(frame);
+      tmpFrames.add( pooledFrame);
     }
 
     ti.markUnchanged();
@@ -229,6 +231,7 @@ implements IncrementalChangeTracker {
         
         ei.markUnchanged();
         ei.updateLockingInfo(); // monitor needs to be set before we call this
+
       } else {
         area.remove(i, true);
       }

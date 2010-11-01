@@ -21,20 +21,14 @@ package gov.nasa.jpf;
 
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFSiteUtils;
-import gov.nasa.jpf.util.Misc;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -46,7 +40,6 @@ import java.util.Properties;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -1123,7 +1116,7 @@ public class Config extends Properties {
     ArrayList<String> list = new ArrayList<String>();
 
     for (Enumeration e = keys(); e.hasMoreElements(); ){
-      String k = e.toString();
+      String k = e.nextElement().toString();
       if (k.startsWith(prefix)){
         list.add(k);
       }

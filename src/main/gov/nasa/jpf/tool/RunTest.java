@@ -39,6 +39,8 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class RunTest extends Run {
 
+  public static Config config;
+
   public static class Failed extends RuntimeException {
     public Failed (){
     }
@@ -50,13 +52,13 @@ public class RunTest extends Run {
       testClsName = checkClassName(testClsName);
 
       try {
-        Config conf = new Config(args);
-        JPFClassLoader cl = conf.initClassLoader(RunTest.class.getClassLoader());
+        config = new Config(args);
+        JPFClassLoader cl = config.initClassLoader(RunTest.class.getClassLoader());
 
         String projectId = JPFSiteUtils.getCurrentProjectId();
         if (projectId != null) {
           String testCpKey = projectId + ".test_classpath";
-          cl.addURL( conf.getURL(testCpKey));
+          cl.addURL( config.getURL(testCpKey));
         }
 
         Class<?> testJpfCls = cl.loadClass("gov.nasa.jpf.util.test.TestJPF");

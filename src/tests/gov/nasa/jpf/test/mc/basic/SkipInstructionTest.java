@@ -37,7 +37,7 @@ public class SkipInstructionTest extends TestJPF {
       if (pc instanceof GETFIELD) {
         GETFIELD gf = (GETFIELD) pc;
         if (gf.getVariableId().equals(SkipInstructionTest.class.getName() + ".answer")) {
-          System.out.println("@@ now intercepting: " + pc);
+          System.out.println("now intercepting: " + pc);
 
           // simulate the operand stack behavior of the skipped insn
           ti.pop();

@@ -86,7 +86,43 @@ public abstract class TestJPF implements JPFShell  {
 
   @FilterField protected String sutClassName;
 
+  static class GlobalArg {
+    String key;
+    String val;
 
+    GlobalArg (String k, String v){
+      key = k;
+      val = v;
+    }
+  }
+
+  @FilterField static ArrayList<GlobalArg> globalArgs;
+
+  protected static ArrayList<GlobalArg> getGlobalArgs() {
+    Config globalConf = RunTest.config;
+    if (globalConf != null){
+      String[] testKeys = globalConf.getKeysStartingWith("test.");
+      if (testKeys.length > 0){
+        ArrayList<GlobalArg> list = new ArrayList<GlobalArg>();
+
+        for (String key : testKeys){
+          String val = globalConf.getString(key);
+          key = key.substring(5);
+          list.add(new GlobalArg(key,val));
+        }
+
+        return list;
+      }
+    }
+
+    return null;
+  }
+
+  static {
+    if (!isJPFRun()){
+      globalArgs = getGlobalArgs();
+    }
+  }
 
   //--- internal methods
 
@@ -383,7 +419,7 @@ public abstract class TestJPF implements JPFShell  {
 
         } catch (InvocationTargetException x) {
           Throwable cause = x.getCause();
-cause.printStackTrace();
+          cause.printStackTrace();
           if (cause instanceof AssertionError) {
             nFailures++;
             reportTestFinished("test method failed with: " + cause.getMessage());
@@ -447,6 +483,12 @@ cause.printStackTrace();
     JPF jpf = null;
 
     Config conf = new Config(args);
+
+    if (globalArgs != null){
+      for (GlobalArg ga : globalArgs){
+        conf.put( ga.key, ga.val);
+      }
+    }
 
     // if we have any specific test property overrides, do so
     conf.promotePropertyCategory("test.");
