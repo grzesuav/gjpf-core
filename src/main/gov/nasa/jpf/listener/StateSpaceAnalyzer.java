@@ -426,7 +426,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
     private static CGType getType(ThreadChoiceGenerator generator, ReturnInstruction instruction) {
       MethodInfo mi;
 
-      if (generator.getThreadInfo().countStackFrames() <= 1) // The main thread has 0 frames.  Other threads have 1 frame.
+      if (generator.getThreadInfo().getStackDepth() <= 1) // The main thread has 0 frames.  Other threads have 1 frame.
       {
         return (CGType.ThreadTerminate);
       }

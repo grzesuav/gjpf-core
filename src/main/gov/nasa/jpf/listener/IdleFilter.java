@@ -149,7 +149,7 @@ public class IdleFilter extends PropertyListenerAdapter {
     if (insn.isBackJump()) {
       ts.backJumps++;
 
-      int loopStackDepth = ti.countStackFrames();
+      int loopStackDepth = ti.getStackDepth();
       int loopPc = jvm.getNextInstruction().getPosition();
 
       if ((loopStackDepth != ts.loopStackDepth) || (loopPc != ts.loopStartPc)) {
@@ -212,7 +212,7 @@ public class IdleFilter extends PropertyListenerAdapter {
       // we assume this is not an idle loop and terminate the checks
       if ((insn instanceof InvokeInstruction)
           || (insn instanceof ArrayStoreInstruction)) {
-        int stackDepth = ti.countStackFrames();
+        int stackDepth = ti.getStackDepth();
         int pc = insn.getPosition();
 
         if (stackDepth == ts.loopStackDepth) {

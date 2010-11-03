@@ -84,7 +84,7 @@ public class SimpleIdleFilter extends ListenerAdapter {
 
        ts.backJumps++;
 
-       int loopStackDepth = ti.countStackFrames();
+       int loopStackDepth = ti.getStackDepth();
        int loopPc = jvm.getNextInstruction().getPosition();
 
        if ((loopStackDepth != ts.loopStackDepth) || (loopPc != ts.loopStartPc)) {
