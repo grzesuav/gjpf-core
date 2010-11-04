@@ -70,11 +70,7 @@ implements IncrementalChangeTracker {
     }
   }
 
-  protected transient final ObjVector<StackFrame> tmpFrames = new ObjVector<StackFrame>();
-
   protected TState updateThreadCache(ThreadInfo ti, TState entry) {
-    int   length = ti.stack.size();
-
     ThreadData td;
     if (ti.tdChanged || entry == null || ti != entry.ti) { // cache not valid
       td = pool.poolThreadData(ti.threadData);
@@ -82,35 +78,26 @@ implements IncrementalChangeTracker {
     } else {
       td = entry.td;
     }
-    
-    int firstChanged;
-    if (entry != null && ti == entry.ti) {
-      if (ti.hasChanged.isEmpty()) {
-        firstChanged = length;
-      } else {
-        firstChanged = ti.hasChanged.nextSetBit(0);
-      }
-    } else {  // cache not valid
-      firstChanged = 0;
-    }
 
-    //tmpFrames.clear();  // invariant ouside this method
-    if (entry != null) {
-      tmpFrames.append(entry.frames, 0, firstChanged);
-    }
-
-    for (int i = firstChanged; i < length; i++) {
-      StackFrame frame = ti.stack.get(i);
+    // pool the changed StackFrames (always on top)
+    StackFrame topFrame = ti.getTopFrame();
+    for (StackFrame frame = topFrame, last=null; frame != null && frame.hasChanged(); frame = frame.getPrevious()){
       StackFrame pooledFrame = pool.poolStackFrame(frame);
-      tmpFrames.add( pooledFrame);
+      //StackFrame pooledFrame = frame;
+      if (frame != pooledFrame){ //replace with the pooled frame if we already had one
+        if (last != null){
+          last.setPrevious( pooledFrame);
+        } else if (frame == topFrame){
+          topFrame = pooledFrame;
+        }
+      }
+      last = pooledFrame;
+      pooledFrame.setChanged(false); // copy on next write
     }
 
     ti.markUnchanged();
 
-    StackFrame[] frames = tmpFrames.toArray(new StackFrame[tmpFrames.size()]);
-    tmpFrames.clear();
-
-    return new TState(ti,td,frames);
+    return new TState(ti,td,topFrame);
   }
 
   protected void updateDynamicAreaCache (DynamicArea area) {
@@ -204,7 +191,8 @@ implements IncrementalChangeTracker {
 
     ti.resetVolatiles();
     ti.restoreThreadData(td);
-    ti.replaceStackFrames(Arrays.asList(tstate.frames));
+    ti.setTopFrame(tstate.topFrame);
+
     ti.markUnchanged();
 
     return ti;
@@ -295,10 +283,10 @@ implements IncrementalChangeTracker {
   protected static class TState {
     public final ThreadInfo ti; // not pooled; for cache rejection
     public final ThreadData td;
-    public final StackFrame[] frames;
+    public final StackFrame topFrame;
 
-    public TState(ThreadInfo ti, ThreadData td, StackFrame[] frames) {
-      this.ti = ti; this.td = td; this.frames = frames;
+    public TState(ThreadInfo ti, ThreadData td, StackFrame topFrame) {
+      this.ti = ti; this.td = td; this.topFrame = topFrame;
     }
   }
 

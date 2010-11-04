@@ -153,16 +153,14 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
                                            int clsNameRef) {
     String refClassName = env.getStringObject(clsNameRef);
     ThreadInfo ti = env.getThreadInfo();
-    int        stackDepth = ti.countStackFrames();
 
-    if (stackDepth < 2) {
-      return false;      // native methods don't have a stackframe
+    StackFrame caller = ti.getLastInvokedStackFrame();
+    if (caller != null){
+      ClassInfo ci = caller.getClassInfo();
+      return ci.isInstanceOf(refClassName);
     }
 
-    String mthClassName = ti.getCallStackClass(1);
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(mthClassName);
-
-    return ci.isInstanceOf(refClassName);
+    return false;
   }
 
 

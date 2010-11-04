@@ -337,7 +337,7 @@ public class Perturbator extends ListenerAdapter {
               // we could more efficiently restore the stackframe
               // to pre-exec state from last 'this' or classobject ref, but then
               // we have to deal with different field value sizes
-              ti.swapTopFrame(savedFrame);
+              ti.setTopFrame(savedFrame);
               ti.setNextPC(insn); // reexecute
 
               savedFrame = null;

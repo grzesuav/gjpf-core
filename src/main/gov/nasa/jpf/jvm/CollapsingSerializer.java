@@ -18,12 +18,19 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.CollapsingRestorer.DEIState;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.Misc;
+import java.util.Collections;
 
-import java.util.BitSet;
 import java.util.Iterator;
+import java.util.List;
+
+/**
+ * CONSIDER THIS BROKEN
+ *
+ * <2do> the StackFrame cache order mismatch makes this less than optimal, but its
+ * probably going to vanish anyways
+ */
 
 public class CollapsingSerializer extends CachingSerializerDeserializer {
   protected final CollapsePools.AllIndexed pool = new CollapsePools.AllIndexed();
@@ -33,7 +40,7 @@ public class CollapsingSerializer extends CachingSerializerDeserializer {
 
   protected void updateThreadCache(ThreadInfo ti, TCacheEntry entry) {
     IntVector cache = entry.cache;
-    int   length = ti.stack.size();
+    int length = ti.getStackDepth();
 
     if (ti.tdChanged || ti != entry.ti) { // cache not valid
       cache.set(0, pool.getThreadDataIndex(ti));
@@ -43,22 +50,36 @@ public class CollapsingSerializer extends CachingSerializerDeserializer {
 
     final int cStart = 2;
 
+    // this is in stack order (top first)
+    List<StackFrame> changedFrames = ti.getChangedStackFrames();
+
     int firstChanged;
     if (ti == entry.ti) {
-      if (ti.hasChanged.isEmpty()) {
+      if (changedFrames.isEmpty()) {
         firstChanged = length;
       } else {
-        firstChanged = ti.hasChanged.nextSetBit(0);
+        firstChanged = length - changedFrames.size();
       }
     } else {  // cache not valid
       firstChanged = 0;
       entry.ti = ti; // going to be valid for next time
     }
 
-    cache.setSize(cStart + firstChanged);
+    if (firstChanged != length){
+      cache.setSize(cStart + firstChanged);
 
-    for (int i = firstChanged; i < length; i++) {
-      cache.add(pool.getStackFrameIndex(ti.stack.get(i)));
+      // <2do> this doesn't work - it doesn't replace the prev fields with the pooled frame instances
+      Collections.reverse(changedFrames); // we need to add them in ascending order
+      StackFrame last = firstChanged == 0 ? null : changedFrames.get(0).getPrevious(); // unchanged or null
+
+      for (StackFrame frame : changedFrames) {
+        int idx = pool.getStackFrameIndex(frame);
+        StackFrame pooledFrame = pool.getStackFrameAt(idx);
+        pooledFrame.setPrevious(last);
+        last = pooledFrame;
+
+        cache.add(idx);
+      }
     }
 
     ti.markUnchanged();
@@ -133,24 +154,12 @@ public class CollapsingSerializer extends CachingSerializerDeserializer {
 
     ti.restoreThreadData(td);
 
-    final int length = storing.get();
+    int length = storing.get();
 
-    Iterator<StackFrame> iter = new Iterator<StackFrame>() {
-      int i = 0;
-
-      public boolean hasNext () {
-        return i < length;
-      }
-
-      public StackFrame next () {
-        i++;
-        return pool.getStackFrameAt(storing.get());
-      }
-
-      public void remove () {}
-    };
-
-    ti.replaceStackFrames(Misc.iterableFromIterator(iter));
+    // we only need to restore the top StackFrame
+    storing.advance(length-1);
+    StackFrame frame = pool.getStackFrameAt(storing.get());
+    ti.setTopFrame(frame);
 
     ti.markUnchanged();
 

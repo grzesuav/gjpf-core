@@ -522,7 +522,8 @@ public class JVM {
       throw new JPFException("no main() method in " + ci.getName());
     }
 
-    ti.pushFrame(new StackFrame(mi, null));
+    StackFrame mainFrame = new StackFrame(mi, null);
+    ti.pushFrame(mainFrame);
 
     int argsObjref = da.newArray("Ljava/lang/String;", args.length, null);
     ElementInfo argsElement = ss.ks.da.get(argsObjref);
@@ -1543,14 +1544,13 @@ public class JVM {
    * (it's also using a bit too much internals for that)
    */
   public void printLiveThreadStatus (PrintWriter pw) {
-    int imax = ss.getThreadCount();
+    int nThreads = ss.getThreadCount();
     int n=0;
 
-    for (int i = 0; i < imax; i++) {
+    for (int i = 0; i < nThreads; i++) {
       ThreadInfo ti = ss.getThreadInfo(i);
-      List<StackFrame> stack = ti.getStack();
 
-      if (stack.size() > 0) {
+      if (ti.getStackDepth() > 0){
         n++;
         //pw.print("Thread: ");
         //pw.print(ti.getName());
@@ -1582,8 +1582,7 @@ public class JVM {
         }
 
         pw.println("  call stack:");
-        for (int j=stack.size()-1; j>=0; j--) { // we have to print this reverse
-          StackFrame frame = stack.get(j);
+        for (StackFrame frame : ti){
           if (!frame.isDirectCallFrame()) {
             pw.print("\tat ");
             pw.println(frame.getStackTraceInfo());
@@ -1616,7 +1615,7 @@ public class JVM {
   public boolean backtrack () {
     boolean success = backtracker.backtrack();
     if (success) {
-      if (CHECK_CONSISTENCY) checkConsistency();
+      if (CHECK_CONSISTENCY) checkConsistency(false);
       
       // restore the path
       path.removeLast();
@@ -1666,7 +1665,7 @@ public class JVM {
   public boolean forward () {
     while (true) { // loop until we find a state that isn't ignored
       try {
-        if (CHECK_CONSISTENCY) checkConsistency(); // don't push an inconsistent state
+        if (CHECK_CONSISTENCY) checkConsistency(true); // don't push an inconsistent state
         
         // saves the current state for backtracking purposes of depth first
         // searches and state observers. If there is a previously cached
@@ -1685,7 +1684,7 @@ public class JVM {
           if (ss.isIgnored()) {
             // do it again
             backtracker.backtrackKernelState();
-            if (CHECK_CONSISTENCY) checkConsistency();
+            if (CHECK_CONSISTENCY) checkConsistency(false);
             continue;
 
           } else { // this is the normal forward that executed insns, and wasn't ignored
@@ -1919,9 +1918,14 @@ public class JVM {
   
   /**
    * only for debugging, this is expensive
+   *
+   * If this is a store (forward) this is called before the state is stored.
+   *
+   * If this is a restore (visited forward or backtrack), this is called after
+   * the state got restored
    */
-  public void checkConsistency() {
-    getThreadList().checkConsistency();
-    getDynamicArea().checkConsistency();
+  public void checkConsistency(boolean isStateStore) {
+    getThreadList().checkConsistency( isStateStore);
+    getDynamicArea().checkConsistency( isStateStore);
   }
 }

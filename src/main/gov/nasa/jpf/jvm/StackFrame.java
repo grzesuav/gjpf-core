@@ -41,6 +41,13 @@ import org.apache.bcel.Constants;
  * hence a BitSet is not too useful
  */
 public class StackFrame implements Constants, Cloneable {
+
+   /**
+    * the previous StackFrame (usually the caller, null if first). To be set when
+    * the frame is pushed on the ThreadInfo callstack
+    */
+  protected StackFrame prev;
+
   protected int top;   /** top index of the operand stack (NOT size) */
 
   protected int thisRef = -1;  /** local[0] can change, but we have to keep 'this' */
@@ -67,6 +74,9 @@ public class StackFrame implements Constants, Cloneable {
   protected Instruction pc;             /** the next insn to execute (program counter) */
 
   protected MethodInfo mi;              /** which method is executed in this frame */
+
+  protected boolean isPooled; /** has this instance been pooled (this is NOT cloned, hashed or compared) */
+  protected boolean changed;
 
   /**
    * Creates a new stack frame for a given method.
@@ -171,6 +181,17 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     return operands[top-i];
+  }
+
+  public StackFrame getPrevious() {
+    return prev;
+  }
+
+  /**
+   * to be set (by ThreadInfo) when the frame is pushed
+   */
+  public void setPrevious (StackFrame frame){
+    prev = frame;
   }
 
   public Object getLocalOrFieldValue (String id) {
@@ -289,6 +310,10 @@ public class StackFrame implements Constants, Cloneable {
 
   public boolean isSynthetic() {
     return false;
+  }
+
+  public boolean isInvoked() {
+    return true;
   }
 
   // gets and sets some derived information
@@ -696,12 +721,21 @@ public class StackFrame implements Constants, Cloneable {
         sf.localAttr = localAttr.clone();
       }
 
+      sf.changed = false; // has to be set explicitly
+
       return sf;
     } catch (CloneNotSupportedException cnsx) {
       throw new JPFException(cnsx);
     }
   }
 
+  public boolean hasChanged() {
+    return changed;
+  }
+
+  public void setChanged(boolean hasChanged) {
+    changed = hasChanged;
+  }
 
   // all the dupses don't have any GC side effect (everything is already
   // on the stack), so skip the GC requests associated with push()/pop()
@@ -965,6 +999,10 @@ public class StackFrame implements Constants, Cloneable {
 
     StackFrame sf = (StackFrame) object;
 
+    if (prev != sf.prev){
+      return false;
+    }
+
     if (pc != sf.pc) {
       return false;
     }
@@ -1033,6 +1071,9 @@ public class StackFrame implements Constants, Cloneable {
     int[] v;
     boolean[] r;
 
+    if (prev != null){
+      hd.add(prev.objectHashCode());
+    }
     hd.add(mi.getGlobalId());
 
     v = locals;
@@ -1083,13 +1124,17 @@ public class StackFrame implements Constants, Cloneable {
 
     for (int i=0; i<= top; i++) {
       if (isOperandRef[i]) {
-        heap.markThreadRoot(operands[i], tid);
+        if (!heap.markThreadRoot(operands[i], tid)){
+          assert false : "dangling operand reference:" + operands[i] + " in thread: " + tid + " ,frame: " + this;
+        }
       }
     }
 
     for (int i = 0, l = locals.length; i < l; i++) {
       if (isLocalRef[i]) {
-        heap.markThreadRoot(locals[i], tid);
+        if (!heap.markThreadRoot(locals[i], tid)){
+          assert false : "dangling local reference:" + locals[i] + " in thread: " + tid + " ,frame: " + this;
+        }
       }
     }
   }
@@ -1180,7 +1225,9 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   protected void printContentsOn(PrintWriter pw){
-    pw.print("mi=");
+    pw.print("changed=");
+    pw.print(changed);
+    pw.print(",mi=");
     pw.print(mi.getUniqueName());
     pw.print(",top="); pw.print(top);
     pw.print(",operands=[");

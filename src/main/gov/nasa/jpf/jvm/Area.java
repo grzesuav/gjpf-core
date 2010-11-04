@@ -309,7 +309,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     if (nullOk && ei == null) return;
 
     assert (ei != null) : "trying to remove null object at index: " + index;
-    
+
     if (ei.recycle()) {
       elements.set(index, null);
       elements.squeeze();

@@ -39,6 +39,7 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,20 +76,65 @@ public class ThreadInfo
   static ThreadInfo currentThread;
   static ThreadInfo mainThread;
 
+
+  protected class StackIterator implements Iterator<StackFrame> {
+    StackFrame frame = top;
+
+    public boolean hasNext() {
+      return frame != null;
+    }
+
+    public StackFrame next() {
+      if (frame != null){
+        StackFrame ret = frame;
+        frame = frame.getPrevious();
+        return ret;
+
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+
+    public void remove() {
+      throw new UnsupportedOperationException("can't remove StackFrames");
+    }
+  }
+
+  protected class InvokedStackIterator extends StackIterator implements Iterator<StackFrame> {
+    InvokedStackIterator() {
+      frame = getLastInvokedStackFrame();
+    }
+
+    public StackFrame next() {
+      if (frame != null){
+        StackFrame ret = frame;
+        frame = null;
+        for (StackFrame f=ret.getPrevious(); f != null; f = f.getPrevious()){
+          if (f.isInvoked()){
+            frame = f;
+            break;
+          }
+        }
+        return ret;
+
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+  }
+
+
   protected ExceptionInfo pendingException;
 
   /** backtrack-relevant Information about the thread */
   protected ThreadData threadData;
 
-  /**
-   * The stack frames of the JVM.
-   * <2do> will be replaced by direct links in StackFrames
-   */
-  protected ArrayList<StackFrame> stack = new ArrayList<StackFrame>();
 
   /** the top stack frame */
   protected StackFrame top = null;
-  protected int topIdx = -1;
+
+  /** the current stack depth (number of frames) */
+  protected int stackDepth;
 
   /**
    * Reference of the thread list it is in.
@@ -99,15 +145,11 @@ public class ThreadInfo
   /** thread list index */
   public int index;
 
-  /**
-   * <2do> pcm - BAD, if it doesn't get set after changing ThreadData fields
-   * that result in a new hashvalue, we get terribly out of sync. Move this logic
-   * into ThreadData, where it belongs!
-   */
-  public boolean tdChanged;
+  /** has the ThreadData been changed */
+  protected boolean tdChanged;
 
-  /** which stackframes have changed */
-  protected final BitSet hasChanged = new BitSet();
+  /** has any of the StackFrames been changed */
+  protected boolean tfChanged;
 
   /** the first insn in the current transition */
   protected boolean isFirstStepInsn;
@@ -118,7 +160,7 @@ public class ThreadInfo
   /** store the last executed insn in the path */
   protected boolean logInstruction;
 
-  /** the last returned direct call frame (which contains the continuation) */
+  /** the last returned direct call frame */
   protected DirectCallStackFrame returnedDirectCall;
 
   /** the next insn to execute (null prior to execution) */
@@ -241,9 +283,8 @@ public class ThreadInfo
     // this is nasty - 'priority', 'name', 'target' and 'group' are not taken
     // from the object, but set within the java.lang.Thread ctors
 
-    stack.clear();
     top = null;
-    topIdx = -1;
+    stackDepth = 0;
 
     lockedObjects = new LinkedList<ElementInfo>();
 
@@ -593,14 +634,6 @@ public class ThreadInfo
     return Types.intToBoolean(getLocalVariable(lindex));
   }
 
-  public boolean getBooleanLocal (int fr, String lname) {
-    return Types.intToBoolean(getLocalVariable(fr, lname));
-  }
-
-  public boolean getBooleanLocal (int fr, int lindex) {
-    return Types.intToBoolean(getLocalVariable(fr, lindex));
-  }
-
   public boolean getBooleanReturnValue () {
     return Types.intToBoolean(peek());
   }
@@ -613,39 +646,86 @@ public class ThreadInfo
     return (byte) getLocalVariable(lindex);
   }
 
-  public byte getByteLocal (int fr, String lname) {
-    return (byte) getLocalVariable(fr, lname);
-  }
-
-  public byte getByteLocal (int fr, int lindex) {
-    return (byte) getLocalVariable(fr, lindex);
-  }
 
   public byte getByteReturnValue () {
     return (byte) peek();
   }
 
+  public Iterator<StackFrame> iterator () {
+    return new StackIterator();
+  }
+
+  public Iterable<StackFrame> invokedStackFrames () {
+    return new Iterable<StackFrame>() {
+      public Iterator<StackFrame> iterator() {
+        return new InvokedStackIterator();
+      }
+    };
+  }
+
+  /**
+   * @deprecated - use Iterable<StackFrame>
+   */
   public List<StackFrame> getStack() {
-    return stack;
+    ArrayList<StackFrame> list = new ArrayList<StackFrame>(stackDepth);
+
+    int i = stackDepth-1;
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      list.set(i--, frame);
+    }
+
+    return list;
+  }
+
+  /**
+   * returns StackFrames which have been entered through a corresponding
+   * invoke instruction (in top first order)
+   */
+  public List<StackFrame> getInvokedStackFrames() {
+    ArrayList<StackFrame> list = new ArrayList<StackFrame>(stackDepth);
+
+    int i = stackDepth-1;
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      if (frame.isInvoked()){
+        list.set(i--, frame);
+      }
+    }
+
+    return list;
+  }
+
+  public List<StackFrame> getChangedStackFrames() {
+    ArrayList<StackFrame> list = new ArrayList<StackFrame>();
+
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      if (!frame.hasChanged()){
+        list.add(frame);
+      }
+    }
+
+    return list;
   }
 
   public int getStackDepth() {
-    return stack.size();
+    return stackDepth;
   }
 
   public StackFrame getCallerStackFrame (int offset){
-    int idx = stack.size() - offset -1;
-    if (idx >= 0){
-      return stack.get(idx);
-    } else {
-      return null;
+    int n = offset;
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      if (n < 0){
+        break;
+      } else if (n == 0){
+        return frame;
+      }
+      n--;
     }
+    return null;
   }
 
-  public StackFrame getLastNonSyntheticStackFrame (){
-    for (int i = stack.size()-1; i>= 0; i--){
-      StackFrame frame = stack.get(i);
-      if (!frame.isSynthetic()){
+  public StackFrame getLastInvokedStackFrame() {
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      if (!frame.isInvoked()){
         return frame;
       }
     }
@@ -653,16 +733,14 @@ public class ThreadInfo
     return null;
   }
 
-  public StackFrame getStackFrame(int idx){
-    return stack.get(idx);
-  }
-
-  public String getCallStackClass (int i) {
-    if (i < stack.size()) {
-      return frame(i).getClassName();
-    } else {
-      return null;
+  public StackFrame getLastNonSyntheticStackFrame (){
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      if (!frame.isSynthetic()){
+        return frame;
+      }
     }
+
+    return null;
   }
 
   /**
@@ -709,14 +787,6 @@ public class ThreadInfo
     return (char) getLocalVariable(lindex);
   }
 
-  public char getCharLocal (int fr, String lname) {
-    return (char) getLocalVariable(fr, lname);
-  }
-
-  public char getCharLocal (int fr, int lindex) {
-    return (char) getLocalVariable(fr, lindex);
-  }
-
   public char getCharReturnValue () {
     return (char) peek();
   }
@@ -736,14 +806,6 @@ public class ThreadInfo
     return Types.longToDouble(getLongLocalVariable(lindex));
   }
 
-  public double getDoubleLocal (int fr, String lname) {
-    return Types.longToDouble(getLongLocalVariable(fr, lname));
-  }
-
-  public double getDoubleLocal (int fr, int lindex) {
-    return Types.longToDouble(getLongLocalVariable(fr, lindex));
-  }
-
   public double getDoubleReturnValue () {
     return Types.longToDouble(longPeek());
   }
@@ -760,14 +822,6 @@ public class ThreadInfo
     return Types.intToFloat(getLocalVariable(lindex));
   }
 
-  public float getFloatLocal (int fr, String lname) {
-    return Types.intToFloat(getLocalVariable(fr, lname));
-  }
-
-  public float getFloatLocal (int fr, int lindex) {
-    return Types.intToFloat(getLocalVariable(fr, lindex));
-  }
-
   public float getFloatReturnValue () {
     return Types.intToFloat(peek());
   }
@@ -778,14 +832,6 @@ public class ThreadInfo
 
   public int getIntLocal (int lindex) {
     return getLocalVariable(lindex);
-  }
-
-  public int getIntLocal (int fr, String lname) {
-    return getLocalVariable(fr, lname);
-  }
-
-  public int getIntLocal (int fr, int lindex) {
-    return getLocalVariable(fr, lindex);
   }
 
   public int getIntReturnValue () {
@@ -848,13 +894,6 @@ public class ThreadInfo
       return top.getLine();
     }
   }
-
-  /**
-   * Returns the line the thread is at.
-   */
-  public int getLine (int idx) {
-    return frame(idx).getLine();
-  }
   
   public LocalVarInfo[] getLocalVars() {
     return top.getLocalVars();
@@ -865,11 +904,6 @@ public class ThreadInfo
     return top.getLocalVariableNames();
   }
 
-  @Deprecated  // Use getLocalNames() instead
-  public String[] getLocalNames (int fr) {
-    return frame(fr).getLocalVariableNames();
-  }
-
   /**
    * Sets the value of a local variable.
    */
@@ -878,24 +912,10 @@ public class ThreadInfo
   }
 
   /**
-   * Returns the value of a local variable in a particular frame.
-   */
-  public int getLocalVariable (int fr, int idx) {
-    return frame(fr).getLocalVariable(idx);
-  }
-
-  /**
    * Returns the value of a local variable.
    */
   public int getLocalVariable (int idx) {
     return top.getLocalVariable(idx);
-  }
-
-  /**
-   * Gets the value of a local variable from its name and frame.
-   */
-  public int getLocalVariable (int fr, String name) {
-    return frame(fr).getLocalVariable(name);
   }
 
   /**
@@ -912,12 +932,6 @@ public class ThreadInfo
     return top.isLocalVariableRef(idx);
   }
 
-  /**
-   * Gets the type associated with a local variable.
-   */
-  public String getLocalVariableType (int fr, String name) {
-    return frame(fr).getLocalVariableType(name);
-  }
 
   /**
    * Gets the type associated with a local variable.
@@ -989,14 +1003,6 @@ public class ThreadInfo
     return getLongLocalVariable(lindex);
   }
 
-  public long getLongLocal (int fr, String lname) {
-    return getLongLocalVariable(fr, lname);
-  }
-
-  public long getLongLocal (int fr, int lindex) {
-    return getLongLocalVariable(fr, lindex);
-  }
-
   /**
    * Sets the value of a long local variable.
    */
@@ -1007,22 +1013,8 @@ public class ThreadInfo
   /**
    * Returns the value of a long local variable.
    */
-  public long getLongLocalVariable (int fr, int idx) {
-    return frame(fr).getLongLocalVariable(idx);
-  }
-
-  /**
-   * Returns the value of a long local variable.
-   */
   public long getLongLocalVariable (int idx) {
     return top.getLongLocalVariable(idx);
-  }
-
-  /**
-   * Gets the value of a long local variable from its name.
-   */
-  public long getLongLocalVariable (int fr, String name) {
-    return frame(fr).getLongLocalVariable(name);
   }
 
   /**
@@ -1072,8 +1064,7 @@ public class ThreadInfo
   }
 
   public boolean isCtorOnStack (int objRef){
-    for (int i = topIdx; i>= 0; i--){
-      StackFrame f = stack.get(i);
+    for (StackFrame f = top; f != null; f = f.getPrevious()){
       if (f.getThis() == objRef && f.getMethodInfo().isCtor()){
         return true;
       }
@@ -1083,8 +1074,7 @@ public class ThreadInfo
   }
 
   public boolean isClinitOnStack (ClassInfo ci){
-    for (int i = topIdx; i>= 0; i--){
-      StackFrame f = stack.get(i);
+    for (StackFrame f = top; f != null; f = f.getPrevious()){
       MethodInfo mi = f.getMethodInfo();
       if (mi.isClinit(ci)){
         return true;
@@ -1094,17 +1084,6 @@ public class ThreadInfo
     return false;
   }
 
-  /**
-   * Returns the method info of a specific stack frame.
-   */
-  public MethodInfo getMethod (int idx) {
-    StackFrame sf = frame(idx);
-    if (sf != null) {
-      return sf.getMethodInfo();
-    } else {
-      return null;
-    }
-  }
 
   public String getName () {
     return threadData.name;
@@ -1117,14 +1096,6 @@ public class ThreadInfo
 
   public ElementInfo getObjectLocal (int lindex) {
     return vm.getDynamicArea().get(getLocalVariable(lindex));
-  }
-
-  public ElementInfo getObjectLocal (int fr, String lname) {
-    return vm.getDynamicArea().get(getLocalVariable(fr, lname));
-  }
-
-  public ElementInfo getObjectLocal (int fr, int lindex) {
-    return vm.getDynamicArea().get(getLocalVariable(fr, lindex));
   }
 
   /**
@@ -1242,13 +1213,6 @@ public class ThreadInfo
   }
 
   /**
-   * Returns the program counter of a stack frame.
-   */
-  public Instruction getPC (int i) {
-    return frame(i).getPC();
-  }
-
-  /**
    * Returns the program counter of the top stack frame.
    */
   public Instruction getPC () {
@@ -1271,14 +1235,6 @@ public class ThreadInfo
     return (short) getLocalVariable(lindex);
   }
 
-  public short getShortLocal (int fr, String lname) {
-    return (short) getLocalVariable(fr, lname);
-  }
-
-  public short getShortLocal (int fr, int lindex) {
-    return (short) getLocalVariable(fr, lindex);
-  }
-
   public short getShortReturnValue () {
     return (short) peek();
   }
@@ -1293,8 +1249,7 @@ public class ThreadInfo
   public String getStackTrace () {
     StringBuilder sb = new StringBuilder(256);
 
-    for (int i = topIdx; i >= 0; i--) {
-      StackFrame sf = stack.get(i);
+    for (StackFrame sf = top; sf != null; sf = sf.getPrevious()){
       MethodInfo mi = sf.getMethodInfo();
 
       if (mi.isCtor()){
@@ -1305,7 +1260,7 @@ public class ThreadInfo
       }
 
       sb.append("\tat ");
-      sb.append(stack.get(i).getStackTraceInfo());
+      sb.append(sf.getStackTraceInfo());
       sb.append('\n');
     }
 
@@ -1330,14 +1285,6 @@ public class ThreadInfo
 
   public String getStringLocal (int lindex) {
     return vm.getDynamicArea().get(getLocalVariable(lindex)).asString();
-  }
-
-  public String getStringLocal (int fr, String lname) {
-    return vm.getDynamicArea().get(getLocalVariable(fr, lname)).asString();
-  }
-
-  public String getStringLocal (int fr, int lindex) {
-    return vm.getDynamicArea().get(getLocalVariable(fr, lindex)).asString();
   }
 
   public String getStringReturnValue () {
@@ -1439,13 +1386,6 @@ public class ThreadInfo
 
 
   /**
-   * Pops a set of values from the caller stack frame.
-   */
-  public void callerPop (int n) {
-    frameClone(-1).pop(n);
-  }
-
-  /**
    * Clears the operand stack of all value.
    */
   public void clearOperandStack () {
@@ -1456,10 +1396,7 @@ public class ThreadInfo
     try {
       ThreadInfo other = (ThreadInfo) super.clone();
 
-      // the threadData is pooled, so we should not have to clone it
-
-      // but the StackFrames will change, deep copy them
-      other.stack = cloneStack();
+      // threadData and top StackFrame are copy-on-write, so we should not have to clone them
 
       // and so do the lockedObjects
       other.lockedObjects = cloneLockedObjects();
@@ -1481,60 +1418,35 @@ public class ThreadInfo
     return lo;
   }
 
-  ArrayList<StackFrame> cloneStack() {
-    ArrayList<StackFrame> sf = new ArrayList<StackFrame>(stack.size());
-
-    for (StackFrame f : stack) {
-      sf.add(f.clone());
-    }
-
-    return sf;
-  }
-
-  public StackFrame[] dumpStack() {
-    return stack.toArray(new StackFrame[stack.size()]);
-  }
 
   /**
    * Returns the number of stack frames.
    */
   public int countStackFrames () {
-    return stack.size();
+    return stackDepth;
   }
-
-  int countVisibleStackFrames() {
-    int n = 0;
-    int len = stack.size();
-    for (int i = 0; i < len; i++) {
-      if (!stack.get(i).isDirectCallFrame()) {
-        n++;
-      }
-    }
-    return n;
-  }
-
-  /****
-   * <2do> the whole snapshot business looks a bit convoluted - streamline
-   ****/
 
   /**
    * get a stack snapshot that consists of an array of {mthId,pc} pairs.
+   * strip stackframes that execute instance methods of the exception object
    */
   public int[] getSnapshot (int xObjRef) {
-    int[] snap;
-    int n = stack.size();
+    StackFrame frame = top;
+    int n = stackDepth;
 
     if (xObjRef != MJIEnv.NULL){ // filter out exception method frames
-      for (int i=n-1; i>=0 && (stack.get(i).getThis() == xObjRef); i--){
+      for (;frame != null; frame = frame.getPrevious()){
+        if (frame.getThis() != xObjRef){
+          break;
+        }
         n--;
       }
     }
 
     int j=0;
-    snap = new int[n*2];
+    int[] snap = new int[n*2];
 
-    for (int i=n-1; i>=0; i--){
-      StackFrame frame = stack.get(i);
+    for (; frame != null; frame = frame.getPrevious()){
       snap[j++] = frame.getMethodInfo().getGlobalId();
       snap[j++] = frame.getPC().getOffset();
     }
@@ -2162,8 +2074,8 @@ public class ThreadInfo
   public void hash (HashData hd) {
     threadData.hash(hd);
 
-    for (int i = 0, l = stack.size(); i < l; i++) {
-      stack.get(i).hash(hd);
+    for (StackFrame f = top; f != null; f = f.getPrevious()){
+      f.hash(hd);
     }
   }
 
@@ -2253,20 +2165,26 @@ public class ThreadInfo
     }
 
     // 3. now all references on the stack
-    for (int i = 0, l = stack.size(); i < l; i++) {
-      stack.get(i).markThreadRoots(index);
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      frame.markThreadRoots(index);
     }
   }
 
 
   /**
    * replace the top frame - this is a dangerous method that should only
-   * be used to restore operators and locals in post-execution notifications
+   * be used from Restoreres and to restore operators and locals in post-execution notifications
    * to their pre-execution contents
    */
-  public void swapTopFrame (StackFrame frame) {
-    stack.set(topIdx, frame);
+  public void setTopFrame (StackFrame frame) {
     top = frame;
+
+    // since we have swapped the top frame, the stackDepth might have changed
+    int n = 0;
+    for (StackFrame f = frame; f != null; f = f.getPrevious()){
+      n++;
+    }
+    stackDepth = n;
   }
 
   /**
@@ -2320,11 +2238,15 @@ public class ThreadInfo
    * Adds a new stack frame for a new called method.
    */
   public void pushFrame (StackFrame frame) {
-    topIdx = stack.size();
-    stack.add(frame);
-    top = frame;
 
-    markChanged(topIdx);
+    frame.setPrevious(top);
+
+    top = frame;
+    stackDepth++;
+
+    // a new frame cannot have been stored yet, so we don't need to clone on the next mod
+    // note this depends on not pushing a frame in the top half of a CG method
+    markTfChanged(top);
 
     returnedDirectCall = null;
   }
@@ -2339,16 +2261,13 @@ public class ThreadInfo
     if (frame.hasAnyRef()) {
       vm.getSystemState().activateGC();
     }
-    if (frame.modifiesState()){ // ?? move to special return insns?
-      markChanged(topIdx);
-    }
+    //if (frame.modifiesState()){ // ?? move to special return insns?
+    //  markTfChanged();
+    //}
 
-    //--- now get the frame off the stack
-    stack.remove(topIdx);
-    topIdx--;
-
-    if (topIdx >= 0) {
-      top = stack.get(topIdx);
+    if (stackDepth > 0){
+      top = frame.getPrevious();
+      stackDepth--;
     } else {
       top = null;
     }
@@ -2367,12 +2286,10 @@ public class ThreadInfo
     // use references in this stackframe
 
     returnedDirectCall = (DirectCallStackFrame)top;
-    
-    stack.remove(topIdx);
-    topIdx--;
 
-    if (topIdx >= 0) {
-      top = stack.get(topIdx);
+    if (stackDepth > 0){
+      top = top.getPrevious();
+      stackDepth--;
     } else {
       top = null;
     }
@@ -2405,20 +2322,20 @@ public class ThreadInfo
   }
 
   /**
-   * Prints the content of the stack.
+   * Prints the content of the stack
    */
   public void printStackContent () {
-    for (int i = topIdx; i >= 0; i--) {
-      stack.get(i).printStackContent();
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      frame.printStackContent();
     }
   }
 
   /**
-   * Prints the trace of the stack.
+   * Prints current stacktrace information
    */
   public void printStackTrace () {
-    for (int i = topIdx; i >= 0; i--) {
-      stack.get(i).printStackTrace();
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      frame.printStackTrace();
     }
   }
 
@@ -2594,11 +2511,6 @@ public class ThreadInfo
     throw new UncaughtException(this, exceptionObjRef);
   }
 
-  public void dropFrame () {
-    MethodInfo mi = getMethod();
-    mi.leave(this);
-    popFrame();
-  }
 
   public ExceptionInfo getPendingException () {
     return pendingException;
@@ -2611,19 +2523,6 @@ public class ThreadInfo
   public void clearPendingException () {
     NoUncaughtExceptionsProperty.setExceptionInfo(null);
     pendingException = null;
-  }
-
-  public void replaceStackFrames(Iterable<StackFrame> iter) {
-    stack.clear();
-    for (StackFrame sf : iter) {
-      stack.add(sf);
-    }
-    topIdx = stack.size() - 1;
-    if (topIdx >= 0) {
-      top = stack.get(topIdx);
-    } else {
-      top = null;
-    }
   }
 
   /**
@@ -2718,12 +2617,18 @@ public class ThreadInfo
   }
 
   protected void markUnchanged() {
-    hasChanged.clear();
+    tfChanged = false;
     tdChanged = false;
+
+    for (StackFrame f = top; f != null && f.hasChanged(); f = f.getPrevious()){
+      f.setChanged(false);
+    }
   }
 
-  protected void markChanged(int idx) {
-    hasChanged.set(idx);
+  protected void markTfChanged(StackFrame frame) {
+    frame.setChanged(true);
+
+    tfChanged = true;
     list.ks.changed();
   }
 
@@ -2732,54 +2637,22 @@ public class ThreadInfo
     list.ks.changed();
   }
 
-  /**
-   * Returns a specific stack frame.
-   */
-  public StackFrame frame (int idx) {
-    if (idx < 0) {
-      idx += topIdx;
-    }
-
-    return stack.get(idx);
-  }
-
   public StackFrame getCallerStackFrame() {
-    if (topIdx <= 0) {
-      return null;
+    if (top != null){
+      return top.getPrevious();
     } else {
-      return stack.get(topIdx-1);
+      return null;
     }
   }
 
-  /**
-   * Returns a clone of a specific stack frame.
-   */
-  protected StackFrame frameClone (int i) {
-    if (i < 0) {
-      i += topIdx;
-    } else if (i == topIdx) {
-      return topClone();
-    }
-
-    if (hasChanged.get(i)) {
-      return stack.get(i);
-    }
-    // else
-    markChanged(i);
-
-    StackFrame clone = stack.get(i).clone();
-    stack.set(i, clone);
-    return clone;
-  }
 
   /**
    * Returns a clone of the top stack frame.
    */
   protected StackFrame topClone () {
-    if (!hasChanged.get(topIdx)) {
-      markChanged(topIdx);
+    if (!top.hasChanged()) {
       top = top.clone();
-      stack.set(topIdx, top);
+      markTfChanged(top);
     }
     return top;
   }
@@ -2792,10 +2665,16 @@ public class ThreadInfo
   }
 
   public StackFrame getStackFrameExecuting (Instruction insn, int offset){
-    for (int i=topIdx-offset; i>=0; i--){
-      StackFrame f = stack.get(i);
-      if (f.getPC() == insn){
-        return f;
+    int n = offset;
+    StackFrame frame = top;
+
+    for (; (n > 0) && frame != null; frame = frame.getPrevious()){
+      n--;
+    }
+
+    for(; frame != null; frame = frame.getPrevious()){
+      if (frame.getPC() == insn){
+        return frame;
       }
     }
 
@@ -2864,9 +2743,6 @@ public class ThreadInfo
     // stackSize and setPriority are only used by native subsystems
   }
 
-  public Iterator<StackFrame> iterator () {
-    return stack.iterator();
-  }
 
   /**
    * Comparison for sorting based on index.
@@ -2878,7 +2754,7 @@ public class ThreadInfo
   /**
    * only for debugging purposes
    */
-  public void checkConsistency(){
+  public void checkConsistency(boolean isStore){
     checkAssertion(threadData != null, "no thread data");
     
     // if the thread is runnable, it can't be blocked
@@ -2886,9 +2762,9 @@ public class ThreadInfo
       checkAssertion(lockRef == -1, "runnable thread with non-null lockRef: " + lockRef) ;
     }
     
-    // every thread that is not terminated has to have a stackframe with a next pc
+    // every thread that has been started and is not terminated has to have a stackframe with a next pc
     if (!isTerminated() && !isNew()){
-      checkAssertion( !stack.isEmpty(), "empty stack " + getState());
+      checkAssertion( stackDepth > 0, "empty stack " + getState());
       checkAssertion( top != null, "no top frame");
       checkAssertion( top.getPC() != null, "no top PC");
     }
@@ -2935,6 +2811,13 @@ public class ThreadInfo
         } else {
           // can happen for a nested monitor lockout
         }
+      }
+    }
+
+    if (!isStore){
+      // all stack frames have to be set to unchanged
+      for (StackFrame f = top; f != null; f = f.getPrevious()){
+        checkAssertion( !f.hasChanged(), "changed stackframe upon restore: " + f);
       }
     }
   }

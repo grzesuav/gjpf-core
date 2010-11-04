@@ -21,6 +21,11 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
 
+/**
+ * <2do> having to cache all frames (to compute the storingData) makes this
+ * less than efficient - this might disappear
+ */
+
 public abstract class CachingSerializerDeserializer
 extends AbstractSerializerDeserializer
 implements IncrementalChangeTracker {

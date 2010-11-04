@@ -995,10 +995,7 @@ public class HTMLPublisher extends Publisher {
   }
 
   private void writeThreadStack(PrintWriter output, ThreadInfo thread) {
-    StackFrame frame;
-    List<StackFrame> stack;
     String frameID;
-    int i;
 
     output.println("      <hr/>");
     output.print("      <p id=\"");
@@ -1011,9 +1008,7 @@ public class HTMLPublisher extends Publisher {
 
     output.println("      <p><b>Call Stack</b></p>");
 
-    stack = thread.getStack();
-
-    if (stack.isEmpty()) {
+    if (thread.getStackDepth() <= 0) {
       output.println("      <i>No call stack.</i>");
       output.println("      <br/>");
       output.println("      <br/>");
@@ -1025,14 +1020,13 @@ public class HTMLPublisher extends Publisher {
     output.println("            <td></td>");
     writeTableTreeNodeEnd(output);
 
-    for (i = stack.size() - 1; i >= 0; i--) {
-      frame = stack.get(i);
-
+    int i = thread.getStackDepth()-1;
+    for (StackFrame frame : thread){
       if (frame.isDirectCallFrame()) {
         continue;
       }
 
-      frameID = "thread" + thread.getIndex() + "-frame" + i;
+      frameID = "thread" + thread.getIndex() + "-frame" + i--;
 
       writeStackMethod(output, frame, frameID);
       writeLocalVariables(output, frame, frameID);

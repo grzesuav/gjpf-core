@@ -28,7 +28,9 @@ import java.util.Iterator;
  * 
  * This is a duplicate of CollapsingSerializer that removes lots of optimizations
  * to help find bugs.
- *   
+ *
+ * <2do> pcm - this is going away
+ *
  * @author peterd
  */
 public class RobustCollapsingSerializer extends CachingSerializerDeserializer {
@@ -39,25 +41,23 @@ public class RobustCollapsingSerializer extends CachingSerializerDeserializer {
 
   protected void updateThreadCache(ThreadInfo ti, TCacheEntry entry) {
     IntVector cache = entry.cache;
-    int   length = ti.stack.size();
-    
+    int   length = ti.getStackDepth();
+
     cache.set(0, pool.getThreadDataIndex(ti));
     cache.set(1, length);
 
     ti.threadData = ti.threadData.clone();
-    
+
     final int cStart = 2;
-    
-    int firstChanged;
-    firstChanged = 0;
+
     entry.ti = ti; // going to be valid for next time
 
-    cache.setSize(cStart + firstChanged);
-    
-    for (int i = firstChanged; i < length; i++) {
-      cache.add(pool.getStackFrameIndex(ti.stack.get(i).clone()));
+    cache.setSize(cStart);
+
+    for (StackFrame frame : ti){ // since we add all, we can do so in order
+      cache.add(pool.getStackFrameIndex(frame.clone()));
     }
-    
+
     ti.markUnchanged();
   }
 
@@ -134,24 +134,12 @@ public class RobustCollapsingSerializer extends CachingSerializerDeserializer {
       
     ti.restoreThreadData(td);
 
-    final int length = storing.get();
+    int length = storing.get();
     
-    Iterator<StackFrame> iter = new Iterator<StackFrame>() {
-      int i = 0;
-      
-      public boolean hasNext () {
-        return i < length;
-      }
-
-      public StackFrame next () {
-        i++;
-        return pool.getStackFrameAt(storing.get()).clone();
-      }
-
-      public void remove () {}
-    };
-    
-    ti.replaceStackFrames(Misc.iterableFromIterator(iter));
+    // we only need to restore the top StackFrame
+    storing.advance(length-1);
+    StackFrame frame = pool.getStackFrameAt(storing.get());
+    ti.setTopFrame(frame);
       
     ti.markUnchanged();
 

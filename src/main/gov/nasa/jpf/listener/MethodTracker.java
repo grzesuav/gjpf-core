@@ -76,7 +76,7 @@ public class MethodTracker extends ListenerAdapter {
     ThreadInfo ti = vm.getLastThreadInfo();
 
     if (mi != lastMi) {
-      logMethodCall(ti, mi, ti.getStack().size());
+      logMethodCall(ti, mi, ti.getStackDepth());
       lastMi = mi;
 
     } else if (insn instanceof InvokeInstruction) {
@@ -102,7 +102,7 @@ public class MethodTracker extends ListenerAdapter {
 
       if (callee != null) {
         if (callee.isMJI()) {
-          logMethodCall(ti, callee, ti.getStack().size()+1);
+          logMethodCall(ti, callee, ti.getStackDepth()+1);
         }
       } else {
         out.println("ERROR: unknown callee of: " + insn);

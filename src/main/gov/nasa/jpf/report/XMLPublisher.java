@@ -219,9 +219,7 @@ public class XMLPublisher extends Publisher {
         out.println("      <lock-request object=\"" + ei + "\"/>");
       }
       // stack frames
-      List<StackFrame> callStack = ti.getStack();
-      Collections.reverse(callStack);
-      for (StackFrame frame : callStack){
+      for (StackFrame frame : ti){
         if (!frame.isDirectCallFrame()){
           out.println("      <frame>" + frame.getStackTraceInfo() + "</frame>");
         }

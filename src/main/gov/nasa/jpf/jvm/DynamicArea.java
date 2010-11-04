@@ -396,26 +396,31 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    * from Thread roots
    * @aspects: gc
    */
-  protected void markThreadRoot (int objref, int tid) {
+  protected boolean markThreadRoot (int objref, int tid) {
     if (objref == -1) {
-      return;
+      return true;
     }
 
     ElementInfo ei = elements.get(objref);
 
-    if (isRoot.get(objref)) {
+    if (ei != null) {
+      if (isRoot.get(objref)) {
 
-      int rt = refThread.get(objref);
-      if ((rt != tid) && (rt != -1)) {
-        ei.setShared();
-        // <2do> - this would be the place to add a listener notification
+        int rt = refThread.get(objref);
+        if ((rt != tid) && (rt != -1)) {
+          ei.setShared();
+          // <2do> - this would be the place to add a listener notification
+        }
+      } else {
+        isRoot.set(objref);
+        refThread.set(objref, tid);
+
+        ei.setLive();
       }
-    } else {
-      isRoot.set(objref);
-      refThread.set(objref, tid);
-
-      ei.setLive();
+      return true;
     }
+
+    return false;
   }
 
   /**
@@ -740,11 +745,13 @@ public class DynamicArea extends Area<DynamicElementInfo> {
   protected int indexFor (ThreadInfo th) {
     Instruction pc = null;
 
+    
     if (th != null) {
-      int pos = th.countStackFrames();
-      while (pc instanceof INVOKECLINIT && pos > 0) {
-        pos--;
-        pc = th.getPC(pos);
+      for (StackFrame f = th.getTopFrame(); f != null; f = f.getPrevious()) {
+        pc = f.getPC();
+        if (!(pc instanceof INVOKECLINIT)) {
+          break;
+        }
       }
     }
 
@@ -842,7 +849,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
 
   
   // for debugging only
-  public void checkConsistency() {
+  public void checkConsistency(boolean isStore) {
     int nTotal = 0;
     for (int i = 0; i<elements.size(); i++) {
       DynamicElementInfo ei = elements.get(i);

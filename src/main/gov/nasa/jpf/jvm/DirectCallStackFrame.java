@@ -68,6 +68,12 @@ public class DirectCallStackFrame extends DynamicStackFrame {
     return true;
   }
 
+  @Override
+  public boolean isInvoked() {
+    // there was no corresponding InvokeInstruction
+    return false;
+  }
+
   public String getClassName() {
     return "<direct call>";
   }
