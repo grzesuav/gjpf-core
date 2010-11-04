@@ -39,8 +39,8 @@ public class Throwable {
     
   protected StackTraceElement[] stackTrace; // only set on demand, if getStackTrace() is called
   
-  
   public Throwable() {
+    new StackTraceElement();   // Force this class to load here instead of in createStackTrace()
     fillInStackTrace();
   }
 
