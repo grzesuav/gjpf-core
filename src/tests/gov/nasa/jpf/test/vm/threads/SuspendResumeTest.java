@@ -20,246 +20,265 @@ package gov.nasa.jpf.test.vm.threads;
 
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
-import org.junit.Test;
-
+import org.junit.*;
 
 /**
- * regression test for suspend/resume (adapted patch from Nathan Reynolds)
+ * regression test for suspend/resume
  */
 @SuppressWarnings("deprecation")
-public class SuspendResumeTest extends TestJPF {
+public class SuspendResumeTest extends TestJPF implements Runnable
+{
+   private final Object m_lock   = new Object();
+   private final Thread m_waiter = new Thread(this);
+      
+   public static void main(String args[])
+   {
+      runTestsOfThisClass(args);
+   }
+   
+   public void run()
+   {
+      synchronized (m_lock)
+      {
+         try
+         {
+            m_lock.wait();
+         }
+         catch (InterruptedException e)
+         {
+            e.printStackTrace();
 
-  private final static Thread s_waiter = new Thread(new Runnable() {
-
-    public void run() {
-      waiter();
-    }
-  });
-  private final static Object s_lock = new Object();
-  private final static Runnable s_suspend = new Runnable() {
-
-    public void run() {
-      s_waiter.suspend();
-    }
-    private final String operation = "Suspend";
-  };
-  private final static Runnable s_resume = new Runnable() {
-
-    public void run() {
-      s_waiter.resume();
-    }
-    private final String operation = "Resume";
-  };
-  private final static Runnable s_notify = new Runnable() {
-
-    public void run() {
-      s_lock.notify();
-    }
-    private final String operation = "Notify";
-  };
-  private final static Runnable s_verifyRunnable = new VerifyState(Thread.State.RUNNABLE);
-  private final static Runnable s_verifyBlocked = new VerifyState(Thread.State.BLOCKED);
-  private final static Runnable s_verifyWaiting = new VerifyState(Thread.State.WAITING);
-  private final static Runnable s_verifyTerminated = new VerifyState(Thread.State.TERMINATED);
-  private final static Runnable s_assertRunnable = new AssertState(Thread.State.RUNNABLE);
-  private final static Runnable s_assertBlocked = new VerifyState(Thread.State.BLOCKED);
-  private final static Runnable s_assertWaiting = new VerifyState(Thread.State.WAITING);
-  private final static Runnable s_assertTerminated = new VerifyState(Thread.State.TERMINATED);
-  private final static Runnable s_tests[][] = {
-    new Runnable[]{
-      new LockedSteps(new Runnable[]{
-        s_verifyBlocked,
-        s_suspend,
-        s_assertBlocked,
-        s_resume,
-        s_assertBlocked,}),
-      s_verifyWaiting,
-      new LockedSteps(new Runnable[]{
-        s_assertWaiting,
-        s_notify,
-        s_verifyWaiting,
-        s_verifyBlocked,}),
-      s_verifyTerminated
-    },
-    new Runnable[]{
-      new LockedSteps(new Runnable[]{
-        s_verifyWaiting,
-        s_suspend,
-        s_assertWaiting,
-        s_notify,
-        s_assertWaiting,}),
-      s_assertWaiting,
-      s_resume,
-      s_verifyTerminated
-    },
-    new Runnable[]{
-      new LockedSteps(new Runnable[]{
-        s_verifyWaiting,
-        s_suspend,
-        s_assertWaiting,
-        s_notify,
-        s_assertWaiting,
-        s_resume,
-        s_verifyWaiting,
-        s_verifyBlocked,}),
-      s_verifyTerminated
-    },
-    new Runnable[]{
-      new LockedSteps(new Runnable[]{
-        s_verifyWaiting,
-        s_suspend,
-        s_assertWaiting,
-        s_resume,
-        s_assertWaiting,
-        s_notify,
-        s_verifyWaiting,
-        s_verifyBlocked,}),
-      s_verifyTerminated
-    },
-    new Runnable[]{
-      new LockedSteps(new Runnable[]{
-        s_verifyWaiting,
-        s_notify,
-        s_verifyWaiting,
-        s_suspend,
-        s_verifyWaiting,}),
-      s_assertWaiting,
-      s_resume,
-      s_verifyTerminated
-    },
-    new Runnable[]{
-      new LockedSteps(new Runnable[]{
-        s_verifyWaiting,
-        s_notify,
-        s_verifyWaiting,
-        s_suspend,
-        s_verifyWaiting,
-        s_resume,
-        s_verifyWaiting,
-        s_verifyBlocked,}),
-      s_verifyTerminated
-    },
-    new Runnable[]{
-      new LockedSteps(new Runnable[]{
-        s_verifyWaiting,
-        s_notify,
-        s_verifyBlocked,
-        s_suspend,
-        s_assertBlocked,}),
-      s_assertBlocked,
-      s_resume,
-      s_verifyTerminated
-    },
-    new Runnable[]{
-      new LockedSteps(new Runnable[]{
-        s_verifyWaiting,
-        s_notify,
-        s_verifyBlocked,
-        s_suspend,
-        s_assertBlocked,
-        s_resume,
-        s_assertBlocked,}),
-      s_verifyTerminated
-    },};
-
-  public static int getTestCount() {
-    return (s_tests.length);
-  }
-
-
-  private static void test(int index) {
-    Verify.resetCounter(0);
-
-    System.out.println("Test #" + index);
-
-    s_waiter.setDaemon(false);
-    s_waiter.setName("Waiter");
-    s_waiter.start();
-
-    test(s_tests[index]);
-
-    Verify.incrementCounter(0);
-    assert Verify.getCounter(0) == 1;
-  }
-
-  private static void test(Runnable steps[]) {
-    int i;
-
-    for (i = 0; i < steps.length; i++) {
-      steps[i].run();
-    }
-  }
-
-  private static void waiter() {
-    synchronized (s_lock) {
-      try {
-        s_lock.wait();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-        assert false;
+            assert false;
+         }
       }
-    }
-  }
+   }
+   
+   @Before
+   public void before()
+   {
+      if (!Verify.isRunningInJPF())
+         return;
+      
+      Verify.resetCounter(0);
+      
+      m_waiter.setDaemon(false);
+      m_waiter.setName("Waiter");
+      m_waiter.start();
+   }
+   
+   @After
+   public void after()
+   {
+      if (!Verify.isRunningInJPF())
+         return;
 
-  private static class VerifyState implements Runnable {
+      Verify.ignoreIf(m_waiter.getState() != Thread.State.TERMINATED);
 
-    private final String m_operation = "Verify";
-    private final Thread.State m_state;
+      Verify.incrementCounter(0);
 
-    VerifyState(Thread.State state) {
-      m_state = state;
-    }
-
-    public void run() {
-      Verify.ignoreIf(s_waiter.getState() != m_state);
-    }
-  }
-
-  private static class AssertState implements Runnable {
-
-    private final String m_operation = "Assert";
-    private final Thread.State m_state;
-
-    AssertState(Thread.State state) {
-      m_state = state;
-    }
-
-    public void run() {
-      assert s_waiter.getState() == m_state;
-    }
-  }
-
-  private static class LockedSteps implements Runnable {
-
-    private final String m_operation = "Locked Steps";
-    private final Runnable m_steps[];
-
-    LockedSteps(Runnable steps[]) {
-      m_steps = steps;
-    }
-
-    public void run() {
-      int i;
-
-      synchronized (s_lock) {
-        for (i = 0; i < m_steps.length - 1; i++) {
-          m_steps[i].run();
-        }
+      assert Verify.getCounter(0) == 1;
+   }
+   
+   @Test
+   public void suspendResumeUnlockLockNotify()
+   {
+      if (verifyNoPropertyViolation())
+      {
+         synchronized (m_lock)
+         {
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
+         
+            m_waiter.suspend();
+         
+            assert m_waiter.getState() == Thread.State.BLOCKED;
+         
+            m_waiter.resume();
+            
+            assert m_waiter.getState() == Thread.State.BLOCKED;
+         }
+         
+         Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+         
+         synchronized (m_lock)
+         {
+            assert m_waiter.getState() == Thread.State.WAITING;
+            
+            m_lock.notify();
+            
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
+         }
       }
-    }
-  }
+   }
+   
+   @Test
+   public void suspendNotifyUnlockResume()
+   {
+      if (verifyNoPropertyViolation())
+      {
+         synchronized (m_lock)
+         {
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            
+            m_waiter.suspend();
+            
+            assert m_waiter.getState() == Thread.State.WAITING;
+            
+            m_lock.notify();
+            
+            assert m_waiter.getState() == Thread.State.WAITING;
+         }
+         
+         assert m_waiter.getState() == Thread.State.WAITING;
+         
+         m_waiter.resume();
+      }
+   }
+   
+   @Test
+   public void suspendNotifyResumeUnlock()
+   {
+      if (verifyNoPropertyViolation())
+      {
+         synchronized (m_lock)
+         {
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            
+            m_waiter.suspend();
+            
+            assert m_waiter.getState() == Thread.State.WAITING;
+            
+            m_lock.notify();
+            
+            assert m_waiter.getState() == Thread.State.WAITING;
+            
+            m_waiter.resume();
+            
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
+         }
+      }
+   }
+   
+   @Test
+   public void suspendResumeNotifyUnlock()
+   {
+      if (verifyNoPropertyViolation())
+      {
+         synchronized (m_lock)
+         {
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            
+            m_waiter.suspend();
+            
+            assert m_waiter.getState() == Thread.State.WAITING;
+            
+            m_waiter.resume();
+            
+            assert m_waiter.getState() == Thread.State.WAITING;
+            
+            m_lock.notify();
+            
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
+         }
+      }
+   }
+   
+   @Test
+   public void notifySuspendUnlockResumeWaiting()
+   {
+      if (verifyNoPropertyViolation())
+      {
+         synchronized (m_lock)
+         {
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            
+            m_lock.notify();
 
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            
+            m_waiter.suspend();
+            
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+         }
+         
+         assert m_waiter.getState() == Thread.State.WAITING;
 
-  //--- the test methods
+         m_waiter.resume();
+      }
+   }
+   
+   @Test
+   public void notifySuspendResumeWaitingBlockedUnlock()
+   {
+      if (verifyNoPropertyViolation())
+      {
+         synchronized (m_lock)
+         {
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            
+            m_lock.notify();
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            
+            m_waiter.suspend();
+            
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
 
-  @Test
-  public void test () {
-    if (verifyNoPropertyViolation()){
-      test(Verify.getInt(0, s_tests.length - 1));
-    }
-  }
+            m_waiter.resume();
+
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
+         }
+      }
+   }
+   
+   @Test
+   public void notifyBlockedSuspendUnlockResume()
+   {
+      if (verifyNoPropertyViolation())
+      {
+         synchronized (m_lock)
+         {
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            
+            m_lock.notify();
+
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
+            
+            m_waiter.suspend();
+            
+            assert m_waiter.getState() == Thread.State.BLOCKED;
+         }
+         
+         assert m_waiter.getState() == Thread.State.BLOCKED;
+
+         m_waiter.resume();
+      }
+   }
+
+   @Test
+   public void notifyBlockedSuspendResumeUnlock()
+   {
+      if (verifyNoPropertyViolation())
+      {
+         synchronized (m_lock)
+         {
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
+            
+            m_lock.notify();
+
+            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
+            
+            m_waiter.suspend();
+            
+            assert m_waiter.getState() == Thread.State.BLOCKED;
+
+            m_waiter.resume();
+
+            assert m_waiter.getState() == Thread.State.BLOCKED;
+         }
+      }
+   }
 }
