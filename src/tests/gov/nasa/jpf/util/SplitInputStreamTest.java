@@ -14,8 +14,8 @@ public class SplitInputStreamTest extends TestJPF
 
    private static final String s_jpfArgs[] = new String[]
    {
-      "+report.publisher=html",
-      "+report.html.finished+=,trace",
+      //"+report.publisher=html",
+      //"+report.html.finished+=,trace",
       "+listener+=,gov.nasa.jpf.listener.CoverageAnalyzer",
       "+coverage.include=gov.nasa.jpf.util.SplitInputStream*", 
       "+coverage.loaded_only=true",
