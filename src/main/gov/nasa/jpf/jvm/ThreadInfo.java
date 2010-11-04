@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -664,15 +665,19 @@ public class ThreadInfo
   }
 
   /**
+   * this returns a copy of the StackFrames in reverse order. Note this is
+   * redundant because the frames are linked explicitly
    * @deprecated - use Iterable<StackFrame>
    */
+  @Deprecated
   public List<StackFrame> getStack() {
     ArrayList<StackFrame> list = new ArrayList<StackFrame>(stackDepth);
 
-    int i = stackDepth-1;
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
-      list.set(i--, frame);
+      list.add(frame);
     }
+
+    Collections.reverse(list);
 
     return list;
   }
