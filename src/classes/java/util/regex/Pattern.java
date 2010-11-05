@@ -49,6 +49,16 @@ public class Pattern {
     return regex;
   }
   
+  public String[] split (CharSequence input){
+    return split(input,0);
+  }
+
+  public String[] split (CharSequence input, int limit){
+    return split0(input.toString(), limit); // just to avoid the CharSequence charAt() hassle on the native side
+  }
+
+  private native String[] split0(String input, int limit);
+  
   public String toString() {
     return regex;
   }
