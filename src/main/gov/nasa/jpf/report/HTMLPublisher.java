@@ -1096,7 +1096,7 @@ public class HTMLPublisher extends Publisher {
 
     frameID += "-";
 
-    for (i = 0; i < frame.getLocalVariableCount(); i++) {
+    for (i = 0; i < localVars.length; i++) {
       writeTableTreeNodeBegin(output, frameID + i);
 
       output.print("          <td>");
