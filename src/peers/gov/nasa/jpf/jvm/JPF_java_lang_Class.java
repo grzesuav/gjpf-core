@@ -36,7 +36,7 @@ public class JPF_java_lang_Class {
   public static void init (Config conf){
     // we create Method and Constructor objects, so we better make sure these
     // classes are initialized (they already might be so)
-    JPF_java_lang_reflect_Method.init();
+    JPF_java_lang_reflect_Method.init(conf);
     JPF_java_lang_reflect_Constructor.init(conf);    
   }
   
@@ -233,7 +233,7 @@ public class JPF_java_lang_Class {
 
     ClassInfo ci = getReferredClassInfo(env, clsRef);
     
-    StringBuilder sb = new StringBuilder(mname);
+    StringBuffer sb = new StringBuffer(mname);
     sb.append('(');
     int nParams = argTypesRef != MJIEnv.NULL ? env.getArrayLength(argTypesRef) : 0;
     for (int i=0; i<nParams; i++) {

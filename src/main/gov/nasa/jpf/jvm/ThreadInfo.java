@@ -2443,8 +2443,6 @@ public class ThreadInfo
           String details = ci.getName(); // <2do> should also include the cause details
           ci = ClassInfo.getResolvedClassInfo("java.lang.reflect.InvocationTargetException");
           exceptionObjRef = createException(ci, details, exceptionObjRef);
-          ei = da.get(exceptionObjRef);
-          pendingException = new ExceptionInfo(this, ei);
         }
 
 //System.out.println("## unwinding to: " + mi.getResolvedClassInfo().getName() + "." + mi.getUniqueName());

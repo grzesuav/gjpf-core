@@ -18,17 +18,19 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.*;
+
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.MethodInfoRegistry;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
-import java.lang.reflect.*;
+
 
 public class JPF_java_lang_reflect_Method {
 
   static MethodInfoRegistry registry;
     
-  public static void init () {
+  public static void init (Config conf) {
     // this is an example of how to handle cross-initialization between
     // native peers - this might also get explicitly called by the java.lang.Class
     // peer, since it creates Method objects. Here we have to make sure
@@ -76,7 +78,7 @@ public class JPF_java_lang_reflect_Method {
     return mi.getModifiers();
   }
   
-  static int getParameterTypes( MJIEnv env, MethodInfo mi) {
+  static int getParameterTypes( MJIEnv env, int objRef, MethodInfo mi) {
     try {
       ThreadInfo ti = env.getThreadInfo();
       String[] argTypeNames = mi.getArgumentTypeNames();
@@ -105,10 +107,10 @@ public class JPF_java_lang_reflect_Method {
   }
   
   public static int getParameterTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef){
-    return getParameterTypes(env, getMethodInfo(env, objRef));
+    return getParameterTypes(env, objRef, getMethodInfo(env, objRef));
   }
   
-  static int getExceptionTypes(MJIEnv env, MethodInfo mi) {
+  static int getExceptionTypes(MJIEnv env, int objRef, MethodInfo mi) {
     try {
       ThreadInfo ti = env.getThreadInfo();
       String[] exceptionNames = mi.getThrownExceptionClassNames();
@@ -141,7 +143,7 @@ public class JPF_java_lang_reflect_Method {
   }
   
   public static int getExceptionTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef) {
-    return getExceptionTypes(env, getMethodInfo(env, objRef));
+    return getExceptionTypes(env, objRef, getMethodInfo(env, objRef));
   }
   
   public static int getReturnType____Ljava_lang_Class_2 (MJIEnv env, int objRef){
@@ -179,11 +181,6 @@ public class JPF_java_lang_reflect_Method {
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"));
       rei = env.getElementInfo(ret);
       rei.setDoubleField("value", v);
-    } else if (rt == Types.T_FLOAT) {
-      int v = frame.pop();
-      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"));
-      rei = env.getElementInfo(ret);
-      rei.setIntField("value", v);
     } else if (rt == Types.T_LONG) {
       long v = frame.longPop();
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Long"));
@@ -221,245 +218,44 @@ public class JPF_java_lang_reflect_Method {
     return ret;
   }
 
-  static boolean pushUnboxedArguments (MJIEnv env, MethodInfo mi, StackFrame frame, int argsRef) {
-    ElementInfo source;
-    ClassInfo sourceClass;
-    String destTypeNames[];
-    Object objValue;
-    long rawValue;
-    int i, nArgs, passedCount, sourceRef;
-    byte sourceType, destTypes[];
-     
-    destTypes     = mi.getArgumentTypes();
-    destTypeNames = mi.getArgumentTypeNames();
-    nArgs         = destTypeNames.length;
-    passedCount   = env.getArrayLength(argsRef);
-    
-    if (nArgs != passedCount) {
-      env.throwException(IllegalArgumentException.class.getName(), "Wrong number of arguments passed.  Actual = " + passedCount + ".  Expected = " + nArgs);
-      return false;
-    }
-    
-    for (i = 0; i < nArgs; i++) {
-      
-      sourceRef = env.getReferenceArrayElement(argsRef, i);
-
-      if (sourceRef == MJIEnv.NULL) {
-        if ((destTypes[i] != Types.T_OBJECT) && (destTypes[i] != Types.T_ARRAY)) {
-          env.throwException(IllegalArgumentException.class.getName(), "Wrong argument type at index " + i + ".  Actual = (null).  Expected = " + destTypeNames[i]);
-          return false;
-        } 
-         
-        frame.pushRef(MJIEnv.NULL);
-        continue;
-      }
-
-      source      = env.getElementInfo(sourceRef);
-      sourceClass = source.getClassInfo();
-      sourceType  = getClassType(sourceClass);
-       
-      if (!isCompatible(sourceType, destTypes[i], sourceClass, destTypeNames[i])) {
-        env.throwException(IllegalArgumentException.class.getName(), "Wrong argument type at index " + i + ".  Source Class = " + sourceClass.getName() + ".  Dest Class = " + destTypeNames[i]);
-        return false;
-      }
-       
-      objValue = readValue(source, sourceType);
-      rawValue = convertValue(destTypes[i], objValue);
-       
-      pushValue(frame, destTypes[i], rawValue);
-    }
-    
-    return true;
-  }
-  
-  private static byte getClassType(ClassInfo clazz) {
-    String className;
-    
-    className = clazz.getName();
-    
-    if (className.equals("java.lang.Byte")) {
-      return Types.T_BYTE; 
-    }
-
-    if (className.equals("java.lang.Short")) {
-      return Types.T_SHORT; 
-    }
-
-    if (className.equals("java.lang.Integer")) {
-      return Types.T_INT; 
-    }
-
-    if (className.equals("java.lang.Long")) {
-      return Types.T_LONG; 
-    }
-
-    if (className.equals("java.lang.Float")) {
-      return Types.T_FLOAT; 
-    }
-
-    if (className.equals("java.lang.Double")) {
-      return Types.T_DOUBLE; 
-    }
-
-    if (className.equals("java.lang.Boolean")) {
-      return Types.T_BOOLEAN; 
-    }
-
-    if (className.equals("java.lang.Character")) {
-      return Types.T_CHAR; 
-    }
-
-    if (className.equals("java.lang.Void")) {
-      return Types.T_VOID; 
-    }
-    
-    if (className.charAt(0) == '[') {
-      return Types.T_ARRAY;
-    }
-    
-    return Types.T_OBJECT;
-  }
-  
-  private static boolean isCompatible(byte sourceType, byte destType, ClassInfo sourceClass, String destClassName) {
-    switch (destType) {
-      case Types.T_DOUBLE:
-        if (sourceType == Types.T_DOUBLE)
-          return true;
-        //break;
+  static void pushUnboxedArguments (MJIEnv env, MethodInfo mi, StackFrame frame, int argsRef) {
+    byte[] at = mi.getArgumentTypes();
+    int nArgs = at.length;
         
-      case Types.T_FLOAT:
-        if (sourceType == Types.T_FLOAT)
-          return true;
-        //break;
-
-      case Types.T_LONG:
-        if (sourceType == Types.T_LONG)
-          return true; 
-        //break;
-
-      case Types.T_INT:
-        if (sourceType == Types.T_CHAR)   // HotSpot's Method.invoke() will convert char to double/float/long/int
-          return true;
-
-        if (sourceType == Types.T_INT)
-          return true;
-        //break;
-       
-      case Types.T_SHORT:
-        if (sourceType == Types.T_SHORT)
-          return true;
-        //break;
-
-      case Types.T_BYTE:
-        return sourceType == Types.T_BYTE;
-
-      case Types.T_BOOLEAN:
-        return sourceType == Types.T_BOOLEAN;
-
-      case Types.T_CHAR:
-        return sourceType == Types.T_CHAR;
-
-      case Types.T_ARRAY:
-      case Types.T_OBJECT:
-        return sourceClass.isInstanceOf(destClassName);
-
-      case Types.T_VOID:
-      default:
-        throw new JPFException("Can not convert " + sourceClass.getName() + " to " + destClassName);
-    }
-  }
-  
-  private static Object readValue(ElementInfo value, byte type) {
-    switch (type) {
-      case Types.T_DOUBLE:  return value.getDoubleField("value");
-      case Types.T_LONG:    return value.getLongField("value");
-      case Types.T_FLOAT:   return value.getFloatField("value");
-      case Types.T_INT:     return value.getIntField("value");
-      case Types.T_SHORT:   return value.getShortField("value");
-      case Types.T_BYTE:    return value.getByteField("value");
-      case Types.T_CHAR:    return value.getCharField("value");
-      case Types.T_BOOLEAN: return value.getBooleanField("value");
-       
-      case Types.T_ARRAY:
-      case Types.T_OBJECT:
-        return value.getIndex();
-
-      case Types.T_VOID:
-      default:
-        throw new JPFException("Unhandled type: " + type);
-    }
-  }
-  
-  private static long convertValue(byte type, Object value) {
-    if ((type != Types.T_CHAR) && (value instanceof Character)) {  // HotSpot's Method.invoke() will convert char into double/float/long/int
-      value = Integer.valueOf(((Character) value).charValue());
-    } 
-     
-    switch (type) {
-      case Types.T_DOUBLE:  return Double.doubleToLongBits(((Number) value).doubleValue());
-      case Types.T_FLOAT:   return Float.floatToIntBits(((Number) value).floatValue());
-      case Types.T_LONG:    return ((Number) value).longValue();
-      case Types.T_INT:     return ((Number) value).intValue();
-      case Types.T_SHORT:   return ((Number) value).shortValue();
-      case Types.T_BYTE:    return ((Number) value).byteValue();
-      case Types.T_CHAR:    return ((Character) value).charValue();
-      case Types.T_BOOLEAN: return ((Boolean) value).booleanValue() ? 1 : 0;
-
-      case Types.T_ARRAY:
-      case Types.T_OBJECT:
-         return ((Integer) value).intValue();
-
-      case Types.T_VOID:
-      default:
-         throw new JPFException("Unhandled type: " + type);
-    }
-  }
-  
-  private static void pushValue(StackFrame frame, byte type, long value) {
-    switch (type) {
-      case Types.T_DOUBLE:
-      case Types.T_LONG:
-        frame.longPush(value);
-        break;
-              
-      case Types.T_FLOAT:
-      case Types.T_INT:
-      case Types.T_SHORT:
-      case Types.T_BYTE:
-      case Types.T_CHAR:
-      case Types.T_BOOLEAN:
-        frame.push((int) value);
-        break;
-
-      case Types.T_ARRAY:
-      case Types.T_OBJECT:
-        frame.pushRef((int) value);
-        break;
-
-      case Types.T_VOID:
-      default:
-        throw new JPFException("Unhandled type: " + type);
+    for (int i=0; i<nArgs; i++) {
+      int argRef = env.getReferenceArrayElement(argsRef, i);
+      if (argRef != MJIEnv.NULL){
+        ElementInfo aei = env.getElementInfo(argRef);
+        ClassInfo aci = aei.getClassInfo();
+        
+        // of course, we should only unbox if the argument type is a builtin
+        if (aci.isBoxClass() && (at[i] != Types.T_OBJECT)) { // unbox
+          String cname = aci.getName();
+          if (cname.equals("java.lang.Long")) {
+            long l = aei.getLongField("value");
+            frame.longPush(l);
+          } else if (cname.equals("java.lang.Double")) {
+            double d = aei.getDoubleField("value");
+            frame.push(Types.hiDouble(d), false);
+            frame.push(Types.loDouble(d), false);
+          } else {
+            int v = aei.getIntField("value");
+            frame.push(v, false);
+          }
+        } else { // otherwise it's a reference
+          frame.push(argRef, true);
+        }
+      } else {
+        frame.push(MJIEnv.NULL,true);
+      }
     }
   }
   
   public static int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                                            int objRef, int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
+        
     MethodInfo mi = getMethodInfo(env,mthRef);
-    ClassInfo calleeClass = mi.getClassInfo();
-    ElementInfo mth = ti.getElementInfo(mthRef);
-    boolean accessible = (Boolean) mth.getFieldValueObject("isAccessible");
-    
-    if (!accessible) {
-      StackFrame frame = ti.getTopFrame().getPrevious();
-      ClassInfo callerClass = frame.getClassInfo();
-      
-      if (callerClass != calleeClass) {
-        env.throwException(IllegalAccessException.class.getName(), "Class " + callerClass.getName() + " can not access a member of class " + calleeClass.getName() + " with modifiers \"" + Modifier.toString(mi.getModifiers()));
-        return MJIEnv.NULL;
-      }
-    }
-    
     DirectCallStackFrame frame = ti.getReturnedDirectCall();
 
     if (frame != null){
@@ -467,29 +263,14 @@ public class JPF_java_lang_reflect_Method {
 
     } else {
       MethodInfo stub = mi.createReflectionCallStub();
-      frame = new DirectCallStackFrame(stub, stub.getMaxStack(), stub.getMaxLocals());
+      frame = new DirectCallStackFrame(stub, 2,0);
 
       if (!mi.isStatic()) {
-        if (objRef == MJIEnv.NULL) {
-          env.throwException(NullPointerException.class.getName(), "Expected an instance of " + calleeClass);
-          return MJIEnv.NULL;
-        }
-
-        ElementInfo obj = ti.getElementInfo(objRef);
-        ClassInfo objClass = obj.getClassInfo();
-        
-        if (!objClass.isInstanceOf(calleeClass)) {
-          env.throwException(IllegalArgumentException.class.getName(), "Object is not an instance of declaring class.  Actual = " + objClass + ".  Expected = " + calleeClass);
-          return MJIEnv.NULL;
-        }
-        
         frame.push(objRef, true);
       }
 
-      if (!pushUnboxedArguments(env, mi, frame, argsRef)) {
-        return MJIEnv.NULL;  
-      }
-       
+      pushUnboxedArguments(env, mi, frame, argsRef);
+
       ti.pushFrame(frame);
 
       return MJIEnv.NULL;

@@ -919,10 +919,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     for (Map.Entry<String, MethodInfo>e : methods.entrySet()) {
       String name = e.getKey();
       if (name.startsWith(fullName)) {
-        MethodInfo m = e.getValue(); 
-        if (!isRecursiveLookup || m.isPublic()) {   // Class.getMethod() only finds public methods (recursively).  Class.getDeclaredMethod() finds all methods (non-recursively).
-          return m;
-        }
+        return e.getValue();
       }
     }
 
