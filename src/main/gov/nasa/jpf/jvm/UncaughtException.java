@@ -42,7 +42,7 @@ public class UncaughtException extends RuntimeException implements Printable {
     thread = ti;
     xObjRef = objRef;
     
-    ElementInfo ei = DynamicArea.getHeap().get(xObjRef);
+    ElementInfo ei = ti.getElementInfo(xObjRef);
     xClsName = ei.getClassInfo().getName();
     details = ei.getStringField("detailMessage");
   }

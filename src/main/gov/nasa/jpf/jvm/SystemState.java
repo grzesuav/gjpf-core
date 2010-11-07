@@ -238,6 +238,10 @@ public class SystemState {
     return ks;
   }
 
+  public Heap getHeap() {
+    return ks.getHeap();
+  }
+
   //--- these are the various choice generator retrievers
 
   /**

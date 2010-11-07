@@ -21,8 +21,8 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.ATHROW;
@@ -76,13 +76,13 @@ public class AssertionProperty extends PropertyListenerAdapter {
     if (insn instanceof ATHROW) {
       ThreadInfo ti = vm.getLastThreadInfo();
       
-      DynamicArea da = vm.getDynamicArea();
+      Heap heap = vm.getHeap();
       int xobjref = ti.peek();
-      ElementInfo ei = da.get(xobjref);
+      ElementInfo ei = heap.get(xobjref);
       ClassInfo ci = ei.getClassInfo();
       if (ci.getName().equals("java.lang.AssertionError")) {
         int msgref = ei.getIntField("detailMessage");
-        ElementInfo eiMsg = da.get(msgref);
+        ElementInfo eiMsg = heap.get(msgref);
 
         // Ok, arm ourselves
         caughtAssertion = true;

@@ -1,4 +1,4 @@
-//
+// 
 // Copyright (C) 2006 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
@@ -18,8 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.bytecode.Instruction;
-
 /**
  * this is a StackFrame that can dynamically grow its operand stack size (and associated
  * operand attributes). To be used for floating calls, where we don't want to mis-use the
@@ -31,7 +29,6 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
  * called methods pushed onto their own operand stack. If the DirectCallStackFrame user
  * needs such return values, it has to do so via ThreadInfo.getReturnedDirectCall()
  *
- * Note that these frames do not appear in a Thread's call stack!
  */
 public class DirectCallStackFrame extends DynamicStackFrame {
   

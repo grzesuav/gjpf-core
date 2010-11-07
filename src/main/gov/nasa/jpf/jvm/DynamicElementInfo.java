@@ -50,7 +50,7 @@ public final class DynamicElementInfo extends ElementInfo implements ElementInfo
   }
 
   protected void markAreaChanged(){
-    DynamicArea.getHeap().markChanged(index);
+    JVM.getVM().getHeap().markChanged(index);
   }
 
   public void setIntField(FieldInfo fi, int value) {
@@ -74,7 +74,7 @@ public final class DynamicElementInfo extends ElementInfo implements ElementInfo
 
   public ElementInfo getReferencedElementInfo (FieldInfo fi) {
     assert fi.isReference();
-    return DynamicArea.getHeap().get(getIntField(fi));
+    return JVM.getVM().getHeap().get(getIntField(fi));
   }
 
   public FieldInfo getFieldInfo (String fname) {
@@ -112,7 +112,7 @@ public final class DynamicElementInfo extends ElementInfo implements ElementInfo
     int length = getDeclaredIntField("count", "java.lang.String");
     int offset = getDeclaredIntField("offset", "java.lang.String");
 
-    ElementInfo e = DynamicArea.getHeap().get(value);
+    ElementInfo e = JVM.getVM().getHeap().get(value);
 
     StringBuilder sb = new StringBuilder();
 
@@ -135,7 +135,7 @@ public final class DynamicElementInfo extends ElementInfo implements ElementInfo
     int length = getDeclaredIntField("count", "java.lang.String");
     int offset = getDeclaredIntField("offset", "java.lang.String");
 
-    ElementInfo e = DynamicArea.getHeap().get(value);
+    ElementInfo e = JVM.getVM().getHeap().get(value);
     ArrayFields af = (ArrayFields)e.getFields();
 
     return af.equals(offset, length, s);

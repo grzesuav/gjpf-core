@@ -141,11 +141,10 @@ public final class StaticElementInfo extends ElementInfo implements ElementInfo.
    * attributes, since we reside in the StaticArea
    * @aspects: gc
    */
-  void markStaticRoot () {
+  void markStaticRoot (Heap heap) {
     // WATCH IT! this overrides the heap object behavior in our super class.
     // See ElementInfo.markStaticRoot() for details
     
-    DynamicArea heap = DynamicArea.getHeap();
     ClassInfo ci = getClassInfo();
     int n = ci.getNumberOfStaticFields();
     
@@ -178,7 +177,7 @@ public final class StaticElementInfo extends ElementInfo implements ElementInfo.
 
   protected ElementInfo getReferencedElementInfo (FieldInfo fi){
     assert fi.isReference();
-    DynamicArea heap = DynamicArea.getHeap();
+    Heap heap = JVM.getVM().getHeap();
     return heap.get(getIntField(fi));
   }
 }

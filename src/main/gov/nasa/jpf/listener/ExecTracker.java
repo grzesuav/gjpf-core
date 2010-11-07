@@ -225,8 +225,11 @@ public class ExecTracker extends ListenerAdapter {
           out.print(((FieldInstruction)insn).getVariableId());
         }
       } else if (insn instanceof LockInstruction) {
+        LockInstruction lockInsn = (LockInstruction)insn;
+        int lockRef = lockInsn.getLastLockRef();
+
         out.print(" ");
-        out.print(((LockInstruction)insn).getLastLockElementInfo());
+        out.print( ti.getElementInfo(lockRef));
       }
       out.println();
     }

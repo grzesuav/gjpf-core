@@ -198,7 +198,7 @@ public class VarRecorder extends ListenerAdapter {
     if (objRef == -1)
       return(false);
 
-    ei = DynamicArea.getHeap().get(objRef);
+    ei = jvm.getHeap().get(objRef);
     if (ei == null)
       return(false);
 
@@ -409,7 +409,7 @@ public class VarRecorder extends ListenerAdapter {
       case Types.T_SHORT:   return(String.valueOf(lo));
 
       case Types.T_OBJECT:
-        ElementInfo ei = DynamicArea.getHeap().get(lo);
+        ElementInfo ei = JVM.getVM().getHeap().get(lo);
         if (ei == null)
           return(null);
 

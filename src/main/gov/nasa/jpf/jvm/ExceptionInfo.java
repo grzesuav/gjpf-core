@@ -46,7 +46,7 @@ public class ExceptionInfo {
     
     int msgRef = ei.getReferenceField("detailMessage");
     if (msgRef != -1){
-      ElementInfo eiMsg = DynamicArea.getHeap().get(msgRef);
+      ElementInfo eiMsg = ti.getElementInfo(msgRef);
       sb.append(" : ");
       sb.append(eiMsg.asString());
     }
@@ -57,7 +57,7 @@ public class ExceptionInfo {
   public String getCauseClassname() {
     int causeRef = ei.getReferenceField("cause");
     if (causeRef != -1){
-      ElementInfo eiCause = DynamicArea.getHeap().get(causeRef);
+      ElementInfo eiCause = ti.getElementInfo(causeRef);
       return eiCause.getClassInfo().getName();
     }
     
@@ -66,10 +66,10 @@ public class ExceptionInfo {
   public String getCauseDetails() {
     int causeRef = ei.getReferenceField("cause");
     if (causeRef != -1){
-      ElementInfo eiCause = DynamicArea.getHeap().get(causeRef);
+      ElementInfo eiCause = ti.getElementInfo(causeRef);
       int msgRef = eiCause.getReferenceField("detailMessage");
       if (msgRef != -1){
-        ElementInfo eiMsg = DynamicArea.getHeap().get(msgRef);
+        ElementInfo eiMsg = ti.getElementInfo(msgRef);
         return eiMsg.asString();
       }
     }

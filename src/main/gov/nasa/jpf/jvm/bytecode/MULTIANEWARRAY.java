@@ -19,8 +19,8 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -42,7 +42,7 @@ public class MULTIANEWARRAY extends Instruction {
     dimensions = ((org.apache.bcel.generic.MULTIANEWARRAY) i).getDimensions();
   }
 
-  public static int allocateArray (DynamicArea heap, String type, int[] dim, ThreadInfo ti, int d) {
+  public static int allocateArray (Heap heap, String type, int[] dim, ThreadInfo ti, int d) {
     int         l = dim[d];
     int         arrayRef = heap.newArray(type.substring(d + 1), l, ti);
     ElementInfo e = heap.get(arrayRef);
@@ -71,7 +71,7 @@ public class MULTIANEWARRAY extends Instruction {
       ci.setInitialized();
     }
     
-    int arrayRef = allocateArray(ks.da, type, dim, ti, 0);
+    int arrayRef = allocateArray(ti.getHeap(), type, dim, ti, 0);
 
     // put the result (the array reference) on the stack
     ti.push(arrayRef, true);

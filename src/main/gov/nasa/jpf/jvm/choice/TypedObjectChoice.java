@@ -23,8 +23,9 @@ import java.util.ArrayList;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.Heap;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.ReferenceChoiceGenerator;
 
 /**
@@ -46,7 +47,7 @@ public class TypedObjectChoice extends ReferenceChoiceGenerator {
   public TypedObjectChoice (Config conf, String id)  {
     super(id);
     
-    DynamicArea heap = DynamicArea.getHeap();
+    Heap heap = JVM.getVM().getHeap();
     
     type = conf.getString(id + ".type");
     if (type == null) {
@@ -55,7 +56,7 @@ public class TypedObjectChoice extends ReferenceChoiceGenerator {
     
     ArrayList<ElementInfo> list = new ArrayList<ElementInfo>();
     
-    for ( ElementInfo ei : heap) {
+    for ( ElementInfo ei : heap.elements()) {
       ClassInfo ci = ei.getClassInfo();
       if (ci.isInstanceOf(type)) {
         list.add(ei);

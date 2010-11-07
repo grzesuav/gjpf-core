@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.KernelState;
@@ -61,7 +60,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
       return ti.createAndThrowException("java.lang.NullPointerException",
                                  "referencing field '" + fname + "' on null object");
     }
-    ElementInfo ei = DynamicArea.getHeap().get(objRef);
+    ElementInfo ei = ti.getElementInfo(objRef);
 
     // check if this breaks the current transition
     if (isNewPorFieldBoundary(ti, fi, objRef)) {
@@ -116,7 +115,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     FieldInfo fi = getFieldInfo();
     int storageSize = fi.getStorageSize();
     int objRef = ti.peek( (storageSize == 1) ? 1 : 2);
-    ElementInfo ei = DynamicArea.getHeap().get(objRef);
+    ElementInfo ei = ti.getElementInfo( objRef);
 
     return ei;
   }

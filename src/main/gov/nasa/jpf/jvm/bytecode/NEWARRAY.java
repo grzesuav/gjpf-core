@@ -25,7 +25,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 
 import org.apache.bcel.Constants;
 import org.apache.bcel.classfile.ConstantPool;
-import gov.nasa.jpf.jvm.DynamicArea;
+import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.Types;
 
 
@@ -45,7 +45,7 @@ public class NEWARRAY extends Instruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     arrayLength = ti.pop();
-    DynamicArea heap = DynamicArea.getHeap();
+    Heap heap = ti.getHeap();
     
     // there is no clinit for array classes, but we still have  to create a class object
     // since its a builtin class, we also don't have to bother with NoClassDefFoundErrors
@@ -57,7 +57,7 @@ public class NEWARRAY extends Instruction {
       ci.setInitialized();
     }
    
-    if (heap.getOutOfMemory()) { // simulate OutOfMemoryError
+    if (heap.isOutOfMemory()) { // simulate OutOfMemoryError
       return ti.createAndThrowException("java.lang.OutOfMemoryError",
                                         "trying to allocate new " +
                                           getTypeName() +

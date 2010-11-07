@@ -36,14 +36,6 @@ public abstract class LockInstruction extends Instruction {
     return lastLockRef;
   }
   
-  public ElementInfo getLastLockElementInfo() {
-    if (lastLockRef != -1) {
-      return DynamicArea.getHeap().get(lastLockRef);
-    }
-    
-    return null;
-  }
-
   /**
    * If the current thread already owns the lock, then the current thread can go on.
    * For example, this is a recursive acquisition.

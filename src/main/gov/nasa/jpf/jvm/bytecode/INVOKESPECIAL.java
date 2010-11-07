@@ -135,7 +135,7 @@ public class INVOKESPECIAL extends InstanceInvocation {
   @Override
   public Object getFieldValue (String id, ThreadInfo ti) {
     int objRef = getCalleeThis(ti);
-    ElementInfo ei = ti.getVM().getDynamicArea().get(objRef);
+    ElementInfo ei = ti.getElementInfo(objRef);
 
     Object v = ei.getFieldValueObject(id);
 

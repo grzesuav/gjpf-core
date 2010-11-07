@@ -277,7 +277,8 @@ public class JPF_java_lang_System {
     stub.setFirewall(true);
 
     ThreadInfo thread = vm.getCurrentThread();
-    int javaClassPath = vm.getDynamicArea().newString(JAVA_CLASS_PATH, thread);
+    Heap heap = vm.getHeap();
+    int javaClassPath = heap.newString(JAVA_CLASS_PATH, thread);
     
     DirectCallStackFrame frame = new DirectCallStackFrame(stub);
     frame.push(javaClassPath);
@@ -292,7 +293,7 @@ public class JPF_java_lang_System {
     }
     
     int ref = frame.peek();
-    DynamicElementInfo metaResult = vm.getDynamicArea().get(ref);
+    ElementInfo metaResult = heap.get(ref);
     String result = metaResult.asString();
     
     return result;

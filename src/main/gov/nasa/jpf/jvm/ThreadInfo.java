@@ -269,8 +269,7 @@ public class ThreadInfo
 
   private void init (JVM vm, int objRef) {
 
-    DynamicArea da = vm.getDynamicArea();
-    ElementInfo ei = da.get(objRef);
+    ElementInfo ei = vm.getElementInfo(objRef);
 
     this.vm = vm;
 
@@ -538,7 +537,7 @@ public class ThreadInfo
       // depends on if we can re-acquire the lock
       //assert lockRef != -1 : "timeout waiting but no blocked object";
       if (lockRef != -1){
-        ElementInfo ei = vm.getDynamicArea().get(lockRef);
+        ElementInfo ei = vm.getElementInfo(lockRef);
         return ei.canLock(this);
       } else {
         return true;
@@ -867,8 +866,8 @@ public class ThreadInfo
   void setLockRef (int objref) {
 /**
     assert ((lockRef == -1) || (lockRef == objref)) :
-      "attempt to overwrite lockRef: " + vm.getDynamicArea().get(lockRef) +
-      " with: " + vm.getDynamicArea().get(objref);
+      "attempt to overwrite lockRef: " + vm.getHeap().get(lockRef) +
+      " with: " + vm.getHeap().get(objref);
 **/
     lockRef = objref;
   }
@@ -885,7 +884,7 @@ public class ThreadInfo
     if (lockRef == -1) {
       return null;
     } else {
-      return vm.getDynamicArea().get(lockRef);
+      return vm.getElementInfo(lockRef);
     }
   }
 
@@ -1096,11 +1095,11 @@ public class ThreadInfo
 
 
   public ElementInfo getObjectLocal (String lname) {
-    return vm.getDynamicArea().get(getLocalVariable(lname));
+    return vm.getElementInfo(getLocalVariable(lname));
   }
 
   public ElementInfo getObjectLocal (int lindex) {
-    return vm.getDynamicArea().get(getLocalVariable(lindex));
+    return vm.getElementInfo(getLocalVariable(lindex));
   }
 
   /**
@@ -1111,7 +1110,7 @@ public class ThreadInfo
   }
 
   public ElementInfo getObjectReturnValue () {
-    return vm.getDynamicArea().get(peek());
+    return vm.getElementInfo(peek());
   }
 
   // might return composite
@@ -1285,15 +1284,15 @@ public class ThreadInfo
   }
 
   public String getStringLocal (String lname) {
-    return vm.getDynamicArea().get(getLocalVariable(lname)).asString();
+    return vm.getElementInfo(getLocalVariable(lname)).asString();
   }
 
   public String getStringLocal (int lindex) {
-    return vm.getDynamicArea().get(getLocalVariable(lindex)).asString();
+    return vm.getElementInfo(getLocalVariable(lindex)).asString();
   }
 
   public String getStringReturnValue () {
-    return vm.getDynamicArea().get(peek()).asString();
+    return vm.getElementInfo(peek()).asString();
   }
 
   /**
@@ -1476,9 +1475,9 @@ public class ThreadInfo
       }
     }
 
-    DynamicArea da = DynamicArea.getHeap();
-    int aref = da.newArray("Ljava/lang/StackTraceElement;", nVisible, this);
-    ElementInfo aei = da.get(aref);
+    Heap heap = vm.getHeap();
+    int aref = heap.newArray("Ljava/lang/StackTraceElement;", nVisible, this);
+    ElementInfo aei = heap.get(aref);
     for (int i=0; i<nVisible; i++){
       int eref = list[i].createJPFStackTraceElement();
       aei.setElement( i, eref);
@@ -1601,15 +1600,15 @@ public class ThreadInfo
       if (ignore) {
         return MJIEnv.NULL;
       } else {
-        DynamicArea da = DynamicArea.getHeap();
+        Heap heap = vm.getHeap();
 
         ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.StackTraceElement");
-        int sRef = da.newObject(ci, ThreadInfo.this);
+        int sRef = heap.newObject(ci, ThreadInfo.this);
 
-        ElementInfo  sei = da.get(sRef);
-        sei.setReferenceField("clsName", da.newString(clsName, ThreadInfo.this));
-        sei.setReferenceField("mthName", da.newString(mthName, ThreadInfo.this));
-        sei.setReferenceField("fileName", da.newString(fileName, ThreadInfo.this));
+        ElementInfo  sei = heap.get(sRef);
+        sei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this));
+        sei.setReferenceField("mthName", heap.newString(mthName, ThreadInfo.this));
+        sei.setReferenceField("fileName", heap.newString(fileName, ThreadInfo.this));
         sei.setIntField("line", line);
 
         return sRef;
@@ -1661,14 +1660,14 @@ public class ThreadInfo
    * call stack
    */
   int createException (ClassInfo ci, String details, int causeRef){
-    DynamicArea da = DynamicArea.getHeap();
-    int         objref = da.newObject(ci, this);
-    int         msgref = -1;
+    Heap heap = vm.getHeap();
+    int objref = heap.newObject(ci, this);
+    int msgref = -1;
 
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
 
     if (details != null) {
-      msgref = da.newString(details, this);
+      msgref = heap.newString(details, this);
       ei.setReferenceField("detailMessage", msgref);
     }
 
@@ -2006,10 +2005,13 @@ public class ThreadInfo
     // the frame was already removed by the RETURN insn of the frame's method
   }
 
+  public Heap getHeap () {
+    return vm.getHeap();
+  }
 
   public ElementInfo getElementInfo (int ref) {
-    DynamicArea da = vm.getDynamicArea();
-    return da.get(ref);
+    Heap heap = vm.getHeap();
+    return heap.get(ref);
   }
 
   // we get our last stackframe popped, so it's time to close down
@@ -2159,7 +2161,7 @@ public class ThreadInfo
    * @aspects: gc
    */
   void markRoots () {
-    DynamicArea        heap = DynamicArea.getHeap();
+    Heap heap = vm.getHeap();
 
     // 1. mark the Thread object itself
     heap.markThreadRoot(threadData.objref, index);
@@ -2171,7 +2173,7 @@ public class ThreadInfo
 
     // 3. now all references on the stack
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
-      frame.markThreadRoots(index);
+      frame.markThreadRoots(heap, index);
     }
   }
 
@@ -2409,8 +2411,8 @@ public class ThreadInfo
    * unwind stack frames until we find a matching handler for the exception object
    */
   public Instruction throwException (int exceptionObjRef) {
-    DynamicArea da = DynamicArea.getHeap();
-    ElementInfo ei = da.get(exceptionObjRef);
+    Heap heap = vm.getHeap();
+    ElementInfo ei = heap.get(exceptionObjRef);
     ClassInfo ci = ei.getClassInfo();
     String cname = ci.getName();
     MethodInfo mi;
@@ -2443,6 +2445,8 @@ public class ThreadInfo
           String details = ci.getName(); // <2do> should also include the cause details
           ci = ClassInfo.getResolvedClassInfo("java.lang.reflect.InvocationTargetException");
           exceptionObjRef = createException(ci, details, exceptionObjRef);
+          ei = heap.get(exceptionObjRef);
+          pendingException = new ExceptionInfo(this, ei);
         }
 
 //System.out.println("## unwinding to: " + mi.getResolvedClassInfo().getName() + "." + mi.getUniqueName());
@@ -2737,8 +2741,7 @@ public class ThreadInfo
     stackSize = 0;
     setPriority = false;
      
-    DynamicArea da = JVM.getVM().getDynamicArea();
-    ElementInfo ei = da.get(rName);
+    ElementInfo ei = vm.getElementInfo(rName);
 
     threadDataClone();
     threadData.name = ei.asString();

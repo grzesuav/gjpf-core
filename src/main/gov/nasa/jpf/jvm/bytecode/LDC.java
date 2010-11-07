@@ -19,8 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.DynamicArea;
-import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -91,7 +89,7 @@ public class LDC extends Instruction {
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     if (type == Type.STRING) {
       // too bad we can't cache it, since location might change between different paths
-      value = DynamicArea.getHeap().newInternString(string,ti);
+      value = ti.getHeap().newInternString(string,ti);
       ti.push(value, true);
 
     } else if (type == Type.CLASS) {

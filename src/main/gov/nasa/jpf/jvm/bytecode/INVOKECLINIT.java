@@ -20,7 +20,6 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
@@ -53,8 +52,7 @@ public class INVOKECLINIT extends INVOKESTATIC {
     MethodInfo callee = getInvokedMethod(ti);
     ClassInfo ci = callee.getClassInfo();
     
-    DynamicArea da = ti.getVM().getDynamicArea();
-    ElementInfo ei = da.get(ci.getClassObjectRef());
+    ElementInfo ei = ti.getElementInfo(ci.getClassObjectRef());
 
     // first time around - reexecute if the scheduling policy gives us a choice point
     if (!ti.isFirstStepInsn()) {

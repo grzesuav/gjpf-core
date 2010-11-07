@@ -34,8 +34,8 @@ public class JPF_java_lang_Object {
 
 
   public static int clone____Ljava_lang_Object_2 (MJIEnv env, int objref) {
-    DynamicArea da = env.getDynamicArea();
-    ElementInfo objinfo = da.get(objref);
+    Heap heap = env.getHeap();
+    ElementInfo objinfo = heap.get(objref);
     ClassInfo ci = objinfo.getClassInfo();
     if (!ci.isInstanceOf("java.lang.Cloneable")) {
       env.throwException("java.lang.CloneNotSupportedException",
@@ -53,11 +53,11 @@ public class JPF_java_lang_Object {
           componentType = cci.getType();
         }
 
-        newref = da.newArray(componentType, objinfo.arrayLength(), env.getThreadInfo());
+        newref = heap.newArray(componentType, objinfo.arrayLength(), env.getThreadInfo());
       } else {
-        newref = da.newObject(ci, env.getThreadInfo());
+        newref = heap.newObject(ci, env.getThreadInfo());
       }
-      ElementInfo newinfo = da.get(newref);
+      ElementInfo newinfo = heap.get(newref);
       newinfo.getFields().copyFrom(objinfo.getFields());
       return newref;
     }

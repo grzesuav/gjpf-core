@@ -73,7 +73,7 @@ public class InvokeListenerTest extends TestJPF {
     ElementInfo getTarget (ThreadInfo ti, InvokeInstruction call){
       if (call instanceof VirtualInvocation){
         int objRef = ((VirtualInvocation)call).getCalleeThis(ti);
-        return ti.getVM().getDynamicArea().get(objRef);
+        return ti.getElementInfo(objRef);
       } else if (call instanceof INVOKESTATIC){
         return ((INVOKESTATIC)call).getInvokedMethod().getClassInfo().getStaticElementInfo();
       } else {

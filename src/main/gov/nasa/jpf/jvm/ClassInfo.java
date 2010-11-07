@@ -1715,7 +1715,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
   // note this requires 'sei' to be already set
   ElementInfo createClassObject (ThreadInfo ti){
-    DynamicArea heap = DynamicArea.getHeap();
+    Heap heap = JVM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
     int clsObjRef = heap.newObject(classClassInfo, ti);
     ElementInfo ei = heap.get(clsObjRef);

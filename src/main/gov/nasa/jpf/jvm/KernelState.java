@@ -64,6 +64,10 @@ public class KernelState {
     return da;
   }
 
+  public Heap getHeap() {
+    return da;
+  }
+
   public ThreadList getThreadList() {
     return tl;
   }

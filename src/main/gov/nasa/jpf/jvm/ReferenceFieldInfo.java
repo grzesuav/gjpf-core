@@ -47,7 +47,7 @@ public class ReferenceFieldInfo extends FieldInfo {
     if (i == -1) {
       return "null";
     } else {
-      return DynamicArea.getHeap().get(i).toString();
+      return (JVM.getVM().getHeap().get(i)).toString();
     }
   }
 
@@ -97,7 +97,8 @@ public class ReferenceFieldInfo extends FieldInfo {
   public void initialize (ElementInfo ei) {
     int ref = init;
     if (sInit != null) {
-      ref = DynamicArea.getHeap().newString(sInit, null);
+      Heap heap = JVM.getVM().getHeap();
+      ref = heap.newString(sInit, null);
     }
     ei.getFields().setReferenceValue(ei, storageOffset, ref);
   }
@@ -107,7 +108,8 @@ public class ReferenceFieldInfo extends FieldInfo {
     if (i == -1) {
       return null;
     } else {
-      return DynamicArea.getHeap().get(i);
+      Heap heap = JVM.getVM().getHeap();
+      return heap.get(i);
     }
   }
 }

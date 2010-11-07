@@ -37,10 +37,6 @@ public class StaticArea extends Area<StaticElementInfo> {
   private IntTable<String> staticMap = new IntTable<String>();
 
 
-  public static void init (Config config) {
-    config = null; // Get rid of IDE warning
-  }
-
   public static StaticArea getStaticArea() {
     return staticArea;
   }
@@ -126,12 +122,13 @@ public class StaticArea extends Area<StaticElementInfo> {
   }
 
   public void markRoots () {
+    Heap heap = JVM.getVM().getHeap();
     int length = elements.size();
 
     for (int i = 0; i < length; i++) {
       StaticElementInfo ei = elements.get(i);
       if (ei != null) {
-        ei.markStaticRoot();
+        ei.markStaticRoot(heap);
       }
     }
   }

@@ -20,8 +20,6 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.JPFConfigException;
-import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
@@ -103,9 +101,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   }
 
   public static String getType (int objRef, MJIEnv env) {
-    DynamicArea da = env.getDynamicArea();
-
-    return Types.getTypeName(da.get(objRef).getType());
+    return Types.getTypeName(env.getElementInfo(objRef).getType());
   }
 
   public static void addComment__Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int stringRef) {
@@ -536,27 +532,6 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     env.getSystemState().setBoring(b);
   }
 
-  protected static int[] arrayOfObjectsOfType (DynamicArea da, String type) {
-    int[] map = new int[0];
-    int   map_size = 0;
-
-    for (int i = 0; i < da.getLength(); i++) {
-      if (da.get(i) != null) {
-        if ((Types.getTypeName(da.get(i).getType())).equals(type)) {
-          if (map_size >= map.length) {
-            int[] n = new int[map_size + 1];
-            System.arraycopy(map, 0, n, 0, map.length);
-            map = n;
-          }
-
-          map[map_size] = i;
-          map_size++;
-        }
-      }
-    }
-
-    return map;
-  }
 
   public static boolean isRunningInJPF____Z(MJIEnv env, int clsObjRef) {
     return true;

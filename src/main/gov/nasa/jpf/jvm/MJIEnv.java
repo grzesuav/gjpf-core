@@ -57,7 +57,7 @@ public class MJIEnv {
   ClassInfo               ci;
   MethodInfo              mi;
   ThreadInfo              ti;
-  DynamicArea             da;
+  Heap                    heap;
   StaticArea              sa;
 
   // those are various attributes set by the execution. note that
@@ -73,9 +73,9 @@ public class MJIEnv {
 
     // set those here so that we don't have an inconsistent state between
     // creation of an MJI object and the first native method call in
-    // this thread (where any access to the da or sa would bomb)
+    // this thread (where any access to the heap or sa would bomb)
     vm = ti.getVM();
-    da = vm.getDynamicArea();
+    heap = vm.getHeap();
     sa = vm.getStaticArea();
   }
 
@@ -100,7 +100,7 @@ public class MJIEnv {
   }
 
   public void gc() {
-    da.gc();
+    heap.gc();
   }
 
   public void ignoreTransition () {
@@ -108,12 +108,12 @@ public class MJIEnv {
   }
 
   public boolean isArray (int objref) {
-    return da.get(objref).isArray();
+    return heap.get(objref).isArray();
   }
 
   public int getArrayLength (int objref) {
     if (isArray(objref)) {
-      return da.get(objref).arrayLength();
+      return heap.get(objref).arrayLength();
     } else {
       throwException("java.lang.IllegalArgumentException");
 
@@ -122,7 +122,7 @@ public class MJIEnv {
   }
 
   public String getArrayType (int objref) {
-    return da.get(objref).getArrayType();
+    return heap.get(objref).getArrayType();
   }
 
   public int getArrayTypeSize (int objref) {
@@ -131,7 +131,7 @@ public class MJIEnv {
 
   public boolean hasFieldAttrs (int objref){
     if (objref != NULL){
-      ElementInfo ei = da.get(objref);
+      ElementInfo ei = heap.get(objref);
       return ei.hasFieldAttrs();
     }
 
@@ -142,7 +142,7 @@ public class MJIEnv {
   // this returns all attrs, i.e. can be composite
   // (use to copy all)
   public Object getFieldAttr (int objref, String fname){
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     if (ei != null){
       FieldInfo fi = ei.getFieldInfo(fname);
       if (fi != null){
@@ -154,7 +154,7 @@ public class MJIEnv {
     return null;
   }
   public <T> T getFieldAttr (int objref, String fname, Class<T> attrType){
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     if (ei != null){
       FieldInfo fi = ei.getFieldInfo(fname);
       if (fi != null){
@@ -169,14 +169,14 @@ public class MJIEnv {
   // this returns all attrs, i.e. can be composite
   // (use to copy all)
   public Object getElementAttr (int objref, int idx){
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     if (ei != null){
       return ei.getElementAttr(idx);
     }
     return null;
   }
   public <T> T getElementAttr (int objref, int idx, Class<T> attrType){
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     if (ei != null){
       return ei.getElementAttr(attrType, idx);
     }
@@ -186,21 +186,21 @@ public class MJIEnv {
 
 
   public void setElementAttr (int objref, int idx, Object a){
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     if (ei != null){
       ei.setElementAttr(idx, a);
     }
   }
 
   public void setObjectAttr (int objref, Object a){
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     if (ei != null){
       ei.setObjectAttr(a);
     }
   }
 
   public <T> T getObjectAttr (int objref, Class<T> attrType){
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     if (ei != null){
       return ei.getObjectAttr(attrType);
     }
@@ -217,11 +217,11 @@ public class MJIEnv {
   }
 
   public boolean getBooleanArrayElement (int objref, int index) {
-    return Types.intToBoolean( da.get(objref).getElement(index));
+    return Types.intToBoolean( heap.get(objref).getElement(index));
   }
 
   public void setBooleanArrayElement (int objref, int index, boolean value) {
-    da.get(objref).setElement(index, Types.booleanToInt(value));
+    heap.get(objref).setElement(index, Types.booleanToInt(value));
   }
 
   public void setByteField (int objref, String fname, byte val) {
@@ -257,74 +257,74 @@ public class MJIEnv {
   }
 
   public void setByteArrayElement (int objref, int index, byte value) {
-    da.get(objref).setElement(index, value);
+    heap.get(objref).setElement(index, value);
   }
 
   public byte getByteArrayElement (int objref, int index) {
-    return (byte) da.get(objref).getElement(index);
+    return (byte) heap.get(objref).getElement(index);
   }
 
   public void setCharArrayElement (int objref, int index, char value) {
-    da.get(objref).setElement(index, value);
+    heap.get(objref).setElement(index, value);
   }
 
   public void setIntArrayElement (int objref, int index, int value) {
-    da.get(objref).setElement(index, value);
+    heap.get(objref).setElement(index, value);
   }
 
   public void setShortArrayElement (int objref, int index, short value) {
-    da.get(objref).setElement(index, value);
+    heap.get(objref).setElement(index, value);
   }
 
   public void setFloatArrayElement (int objref, int index, float value) {
-    da.get(objref).setElement(index, Types.floatToInt(value));
+    heap.get(objref).setElement(index, Types.floatToInt(value));
   }
 
   public float getFloatArrayElement (int objref, int index) {
-    return Types.intToFloat(da.get(objref).getElement(index));
+    return Types.intToFloat(heap.get(objref).getElement(index));
   }
 
   public short getShortArrayElement (int objref, int index) {
-    return (short) da.get(objref).getElement(index);
+    return (short) heap.get(objref).getElement(index);
   }
 
   public int getIntArrayElement (int objref, int index) {
-    return da.get(objref).getElement(index);
+    return heap.get(objref).getElement(index);
   }
 
   public char getCharArrayElement (int objref, int index) {
-    return (char) da.get(objref).getElement(index);
+    return (char) heap.get(objref).getElement(index);
   }
 
   public void setIntField (int objref, String fname, int val) {
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     ei.setIntField(fname, val);
   }
 
   // these two are the workhorses
   public void setDeclaredIntField (int objref, String refType, String fname, int val) {
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     ei.setDeclaredIntField(fname, refType, val);
   }
 
   public int getIntField (int objref, String fname) {
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     return ei.getIntField(fname);
   }
 
   public int getDeclaredIntField (int objref, String refType, String fname) {
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     return ei.getDeclaredIntField(fname, refType);
   }
 
   // these two are the workhorses
   public void setDeclaredReferenceField (int objref, String refType, String fname, int val) {
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     ei.setDeclaredReferenceField(fname, refType, val);
   }
 
   public void setReferenceField (int objref, String fname, int ref) {
-     ElementInfo ei = da.get(objref);
+     ElementInfo ei = heap.get(objref);
      ei.setReferenceField(fname, ref);
   }
 
@@ -334,7 +334,7 @@ public class MJIEnv {
 
   // we need this in case of a masked field
   public int getReferenceField (int objref, FieldInfo fi) {
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     return ei.getReferenceField(fi);
   }
 
@@ -378,39 +378,39 @@ public class MJIEnv {
 
 
   public void setLongArrayElement (int objref, int index, long value) {
-    da.get(objref).setLongElement(index, value);
+    heap.get(objref).setLongElement(index, value);
   }
 
   public long getLongArrayElement (int objref, int index) {
-    return da.get(objref).getLongElement(index);
+    return heap.get(objref).getLongElement(index);
   }
 
   public void setLongField (int objref, String fname, long val) {
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     ei.setLongField(fname, val);
   }
 
 //  public void setLongField (int objref, String refType, String fname, long val) {
-//    ElementInfo ei = da.get(objref);
+//    ElementInfo ei = heap.get(objref);
 //    ei.setLongField(fname, refType, val);
 //  }
 
   public long getLongField (int objref, String fname) {
-    ElementInfo ei = da.get(objref);
+    ElementInfo ei = heap.get(objref);
     return ei.getLongField(fname);
   }
 
 //  public long getLongField (int objref, String refType, String fname) {
-//    ElementInfo ei = da.get(objref);
+//    ElementInfo ei = heap.get(objref);
 //    return ei.getLongField(fname, refType);
 //  }
 
   public void setReferenceArrayElement (int objref, int index, int eRef) {
-    da.get(objref).setElement(index, eRef);
+    heap.get(objref).setElement(index, eRef);
   }
 
   public int getReferenceArrayElement (int objref, int index) {
-    return da.get(objref).getElement(index);
+    return heap.get(objref).getElement(index);
   }
 
   public void setShortField (int objref, String fname, short val) {
@@ -422,7 +422,7 @@ public class MJIEnv {
   }
 
   public String getTypeName (int objref) {
-    return da.get(objref).getType();
+    return heap.get(objref).getType();
   }
 
   public boolean isInstanceOf (int objref, String clsName) {
@@ -690,11 +690,11 @@ public class MJIEnv {
   }
 
   public double getDoubleArrayElement (int objref, int index) {
-    return Types.longToDouble( da.get(objref).getLongElement(index));
+    return Types.longToDouble( heap.get(objref).getLongElement(index));
   }
 
   public void setDoubleArrayElement (int objref, int index, double value) {
-    da.get(objref).setLongElement(index, Types.doubleToLong(value));
+    heap.get(objref).setLongElement(index, Types.doubleToLong(value));
   }
 
 
@@ -706,7 +706,11 @@ public class MJIEnv {
   }
 
   public boolean isSchedulingRelevantObject(int objref){
-    return da.isSchedulingRelevantObject(objref);
+    if (objref != NULL){
+      return heap.get(objref).isSchedulingRelevant();
+    }
+
+    return false;
   }
 
   public boolean canLock (int objref) {
@@ -716,15 +720,15 @@ public class MJIEnv {
   }
 
   public int newBooleanArray (int size) {
-    return da.newArray("Z", size, ti);
+    return heap.newArray("Z", size, ti);
   }
 
   public int newByteArray (int size) {
-    return da.newArray("B", size, ti);
+    return heap.newArray("B", size, ti);
   }
 
   public int newByteArray (byte[] buf){
-    int ref = da.newArray("B", buf.length, ti);
+    int ref = heap.newArray("B", buf.length, ti);
     for (int i=0; i<buf.length; i++){
       setByteArrayElement(ref, i, buf[i]);
     }
@@ -732,11 +736,11 @@ public class MJIEnv {
   }
 
   public int newCharArray (int size) {
-    return da.newArray("C", size, ti);
+    return heap.newArray("C", size, ti);
   }
 
   public int newCharArray (char[] buf){
-    int ref = da.newArray("C", buf.length, ti);
+    int ref = heap.newArray("C", buf.length, ti);
     for (int i=0; i<buf.length; i++){
       setCharArrayElement(ref, i, buf[i]);
     }
@@ -745,11 +749,11 @@ public class MJIEnv {
 
 
   public int newDoubleArray (int size) {
-    return da.newArray("D", size, ti);
+    return heap.newArray("D", size, ti);
   }
 
   public int newDoubleArray (double[] buf){
-    int ref = da.newArray("D", buf.length, ti);
+    int ref = heap.newArray("D", buf.length, ti);
     for (int i=0; i<buf.length; i++){
       setDoubleArrayElement(ref, i, buf[i]);
     }
@@ -757,15 +761,15 @@ public class MJIEnv {
   }
 
   public int newFloatArray (int size) {
-    return da.newArray("F", size, ti);
+    return heap.newArray("F", size, ti);
   }
 
   public int newIntArray (int size) {
-    return da.newArray("I", size, ti);
+    return heap.newArray("I", size, ti);
   }
 
   public int newIntArray (int[] buf){
-    int ref = da.newArray("I", buf.length, ti);
+    int ref = heap.newArray("I", buf.length, ti);
     for (int i=0; i<buf.length; i++){
       setIntArrayElement(ref, i, buf[i]);
     }
@@ -773,11 +777,11 @@ public class MJIEnv {
   }
 
   public int newLongArray (int size) {
-    return da.newArray("J", size, ti);
+    return heap.newArray("J", size, ti);
   }
 
   public int newLongArray (int[] buf){
-    int ref = da.newArray("J", buf.length, ti);
+    int ref = heap.newArray("J", buf.length, ti);
     for (int i=0; i<buf.length; i++){
       setLongArrayElement(ref, i, buf[i]);
     }
@@ -789,7 +793,7 @@ public class MJIEnv {
    * caller would have to take appropriate action anyways
    */
   public int newObject (ClassInfo ci) {
-    return da.newObject(ci, ti);
+    return heap.newObject(ci, ti);
   }
 
   public int newObject (String clsName) {
@@ -806,18 +810,18 @@ public class MJIEnv {
       elementClsName = Types.getTypeCode(elementClsName, false);
     }
 
-    return da.newArray(elementClsName, size, ti);
+    return heap.newArray(elementClsName, size, ti);
   }
 
   public int newShortArray (int size) {
-    return da.newArray("S", size, ti);
+    return heap.newArray("S", size, ti);
   }
 
   public int newString (String s) {
     if (s == null){
       return NULL;
     } else {
-      return da.newString(s, ti);
+      return heap.newString(s, ti);
     }
   }
 
@@ -885,43 +889,43 @@ public class MJIEnv {
   }
 
   public int newInteger (int n){
-    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Integer"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Integer"), ti);
     setIntField(r,"value",n);
     return r;
   }
 
   public int newLong (long l){
-    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Long"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Long"), ti);
     setLongField(r,"value",l);
     return r;
   }
 
   public int newDouble (double d){
-    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"), ti);
     setDoubleField(r,"value",d);
     return r;
   }
 
   public int newFloat (float f){
-    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"), ti);
     setIntField(r,"value",Types.floatToInt(f));
     return r;
   }
 
   public int newByte (byte b){
-    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Byte"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Byte"), ti);
     setIntField(r,"value",b);
     return r;
   }
 
   public int newShort (short s){
-    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Short"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Short"), ti);
     setIntField(r,"value",s);
     return r;
   }
 
   public int newCharacter (char c){
-    int r = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Character"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Character"), ti);
     setIntField(r,"value",c);
     return r;
   }
@@ -1051,7 +1055,7 @@ public class MJIEnv {
   }
 
   ElementInfo getClassElementInfo (int clsObjRef) {
-    ElementInfo ei = da.get(clsObjRef);
+    ElementInfo ei = heap.get(clsObjRef);
     int         cref = ei.getIntField("cref");
 
     ElementInfo cei = sa.get(cref);
@@ -1084,12 +1088,12 @@ public class MJIEnv {
     return getClassInfo(objref).getName();
   }
 
-  DynamicArea getDynamicArea () {
-    return JVM.getVM().getDynamicArea();
+  public Heap getHeap () {
+    return vm.getHeap();
   }
 
   public ElementInfo getElementInfo (int objref) {
-    return da.get(objref);
+    return heap.get(objref);
   }
 
   public int getStateId () {

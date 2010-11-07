@@ -35,9 +35,7 @@ import java.util.Vector;
  * DynamicArea is the heap, i.e. the area were all objects created by NEW
  * insn live. Hence the garbage collection mechanism resides here
  */
-public class DynamicArea extends Area<DynamicElementInfo> {
-
-  static DynamicArea heap;
+public class DynamicArea extends Area<DynamicElementInfo> implements Heap {
 
   /**
    * Used to store various mark phase infos
@@ -45,6 +43,8 @@ public class DynamicArea extends Area<DynamicElementInfo> {
   protected final BitSet isRoot = new BitSet();
   protected final IntVector refThread = new IntVector();
   protected final IntVector lastAttrs = new IntVector();
+
+  protected MarkQueue markQueue = new MarkQueue();
 
   protected boolean runFinalizer;
   protected boolean sweep;
@@ -61,10 +61,6 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    */
   protected final IntTable<DynamicMapIndex> dynamicMap = new IntTable<DynamicMapIndex>();
 
-  public static void init (Config config) {
-
-  }
-
   /**
    * Creates a new empty dynamic area.
    */
@@ -73,22 +69,15 @@ public class DynamicArea extends Area<DynamicElementInfo> {
 
     runFinalizer = config.getBoolean("vm.finalize", true);
     sweep = config.getBoolean("vm.sweep",true);
-
-    // beware - we store 'this' in a static field, which (a) makes it
-    // effectively a singleton, (b) means the assignment should be the very last
-    // insn to avoid handing out a ref to a partially initialized object (no
-    // subclassing!)
-    // <2do> - revisit during DynamicArea / Static redesign
-    heap = this;
-  }
-
-  public static DynamicArea getHeap () {
-    return heap;
   }
 
   public Memento getMemento() {
     ElementInfo.Memento[] a = new ElementInfo.Memento[elements.length()];
     return new GenericSnapshotMemento( a);
+  }
+
+  public Iterable<ElementInfo> elements() {
+    return new ElementInfoIterator();
   }
 
   /**
@@ -102,7 +91,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     return n;
   }
 
-  public boolean getOutOfMemory () {
+  public boolean isOutOfMemory () {
     return outOfMemory;
   }
 
@@ -245,6 +234,15 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     isRoot.clear();
   }
 
+  public void cleanUpDanglingReferences () {
+    for (ElementInfo e : this) {
+      if (e != null) {
+        e.cleanUp(this);
+      }
+    }
+  }
+
+
   // for debugging purposes
   void logMark (FieldInfo fi, ElementInfo ei, int tid, int attrMask) {
     /**/
@@ -292,53 +290,21 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     ElementInfo ei = elements.get(objref);
     int attrMask = ElementInfo.ATTR_PROP_MASK;
 
-    markHead = markEnd = null;
+    markQueue.clear();
 
     //logMark( null, ei, tid, attrMask);
 
     if (ei != null) {
-      ei.markRecursive(tid, attrMask);
-      processMarkQueue();
+      ei.markRecursive( this, tid, attrMask);
+      markQueue.process(this);
     }
   }
 
-
-  static class MarkEntry {
-    MarkEntry next; // single linked list
-
-    int objref;  // reference value
-    int refTid;  // referencing thread
-    int refAttr;
-    int attrMask;
+  public void queueMark (int objref, int refTid, int refAttr, int attrMask){
+    markQueue.queue(objref, refTid, refAttr, attrMask);
   }
 
-  MarkEntry markHead, markEnd;
-
-  protected void queueMark (int objref, int refTid, int refAttr, int attrMask){
-    MarkEntry e = new MarkEntry();
-    e.objref = objref;
-    e.refTid = refTid;
-    e.refAttr = refAttr;
-    e.attrMask = attrMask;
-
-    if (markEnd != null){
-      markEnd.next = e;
-    } else {
-      markHead = e;
-    }
-
-    markEnd = e;
-  }
-
-  protected void processMarkQueue() {
-    for (MarkEntry e = markHead; e != null; e = e.next){
-      markRecursive(e.objref,e.refTid,e.refAttr,e.attrMask);
-    }
-    markHead = markEnd = null;
-  }
-
-
-  protected void markRecursive (int objref, int refTid, int refAttr, int attrMask) {
+  public void mark (int objref, int refTid, int refAttr, int attrMask) {
     if (objref == -1) {
       return;
     }
@@ -373,7 +339,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
         // make sure we don't traverse this again (note that root objects are marked as 'live')
         isRoot.clear(objref);
 
-        ei.markRecursive(refTid, attrMask);
+        ei.markRecursive( this, refTid, attrMask);
 
       } else {
         // if attributes haven't changed, we still have to traverse this if it is a root object
@@ -386,7 +352,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
       refThread.set(objref, refTid);
 
       ei.propagateAttributes(refAttr, attrMask);
-      ei.markRecursive(refTid, attrMask);
+      ei.markRecursive( this, refTid, attrMask);
     }
   }
 
@@ -396,7 +362,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    * from Thread roots
    * @aspects: gc
    */
-  protected boolean markThreadRoot (int objref, int tid) {
+  public boolean markThreadRoot (int objref, int tid) {
     if (objref == -1) {
       return true;
     }
@@ -428,7 +394,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
    * from static fields
    * @aspects: gc
    */
-  protected void markStaticRoot (int objref) {
+  public void markStaticRoot (int objref) {
     if (objref == -1) {
       return;
     }
@@ -454,7 +420,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     // don't set shared yet
   }
 
-  void updateReachability( ElementInfo ei, int oldRef, int newRef) {
+  public void updateReachability( boolean isSharedOwner, int oldRef, int newRef) {
     ThreadInfo ti = ThreadInfo.getCurrentThread(); // might be null during VM init
     if ((ti == null) || ti.isInCtor() || !ti.usePor()) {
       return;
@@ -463,7 +429,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     if (oldRef != newRef) {
       ElementInfo oei, nei;
 
-      if (ei.isShared()) { // object holding the changed reference field is shared
+      if (isSharedOwner) { // object holding the changed reference field is shared
         if (oldRef != -1) {
           oei = elements.get(oldRef);
           if (!oei.isImmutable()) { // it's already shared, anyway
@@ -483,10 +449,10 @@ public class DynamicArea extends Area<DynamicElementInfo> {
             // <2do> - this would be the place to add listener notification
 
             initGc(); // <2do> do we need to clear isRoot?
-            markHead = markEnd = null;
+            markQueue.clear();
 
-            nei.markRecursive(ti.getIndex(), ElementInfo.ATTR_PROP_MASK);
-            processMarkQueue();
+            nei.markRecursive( this, ti.getIndex(), ElementInfo.ATTR_PROP_MASK);
+            markQueue.process( this);
           }
         }
       } else { // owner of changed field not shared (oldRef can't change status)
@@ -500,17 +466,9 @@ public class DynamicArea extends Area<DynamicElementInfo> {
       }
     }
 
-    if (oldRef != -1) {
-      JVM.getVM().getSystemState().activateGC(); // needs GC at the end of this
-                                                 // transition
+    if (oldRef != -1) {  // needs GC at the end of this transition
+      JVM.getVM().getSystemState().activateGC(); 
     }
-  }
-
-
-  public boolean isSchedulingRelevantObject (int objRef) {
-    if (objRef == -1) return false;
-
-    return elements.get(objRef).isSchedulingRelevant();
   }
 
   public void log () {
@@ -686,6 +644,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
     }
   }
 
+
   /**
    * reset all weak references that now point to collected objects to 'null'
    * NOTE: this implementation requires our own Reference/WeakReference implementation, to
@@ -720,7 +679,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
   }
 
 
-  protected void registerWeakReference (Fields f) {
+  public void registerWeakReference (Fields f) {
     if (weakRefs == null) {
       weakRefs = new ArrayList<Fields>();
     }
@@ -844,7 +803,7 @@ public class DynamicArea extends Area<DynamicElementInfo> {
   	result.addElement(objRep);
 
     ElementInfo ei = elements.get(objref);
-    return ei.linearize(result);
+    return ei.linearize( this, result);
   }
 
   

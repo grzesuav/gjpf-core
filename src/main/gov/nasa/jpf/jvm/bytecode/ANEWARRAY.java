@@ -40,7 +40,7 @@ public class ANEWARRAY extends Instruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    DynamicArea heap = DynamicArea.getHeap();    
+    Heap heap = ti.getHeap();
     int size = ti.pop();
     
     // there is no clinit for array classes, but we still have  to create a class object
@@ -53,7 +53,7 @@ public class ANEWARRAY extends Instruction {
       ci.setInitialized();
     }
     
-    if (heap.getOutOfMemory()) { // simulate OutOfMemoryError
+    if (heap.isOutOfMemory()) { // simulate OutOfMemoryError
       return ti.createAndThrowException("java.lang.OutOfMemoryError",
                                         "trying to allocate new " +
                                           Types.getTypeName(type) +

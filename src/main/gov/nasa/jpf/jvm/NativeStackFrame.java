@@ -128,11 +128,10 @@ public class NativeStackFrame extends DynamicStackFrame {
     return args;
   }
 
-  public void markThreadRoots (int tid) {
-    super.markThreadRoots(tid);
+  public void markThreadRoots (Heap heap, int tid) {
+    super.markThreadRoots( heap, tid);
 
     if (ret != null && ret instanceof Integer && mi.isReferenceReturnType()){
-      DynamicArea heap = DynamicArea.getHeap();
       int ref = ((Integer)ret).intValue();
       heap.markThreadRoot(ref, tid);
     }

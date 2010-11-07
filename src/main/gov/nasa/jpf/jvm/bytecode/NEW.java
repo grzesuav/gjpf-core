@@ -19,8 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicArea;
-import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.NoClassInfoException;
 import gov.nasa.jpf.jvm.SystemState;
@@ -47,8 +46,7 @@ public class NEW extends Instruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    JVM vm = ti.getVM();
-    DynamicArea da = vm.getDynamicArea();
+    Heap da = ti.getHeap();
     ClassInfo ci;
 
     try {
@@ -70,7 +68,7 @@ public class NEW extends Instruction {
       }
     }
 
-    if (da.getOutOfMemory()) { // simulate OutOfMemoryError
+    if (da.isOutOfMemory()) { // simulate OutOfMemoryError
       return ti.createAndThrowException("java.lang.OutOfMemoryError",
                                         "trying to allocate new " + cname);
     }

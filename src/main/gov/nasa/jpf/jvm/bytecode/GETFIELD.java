@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.KernelState;
@@ -41,7 +40,7 @@ public class GETFIELD extends InstanceFieldInstruction {
                                         "referencing field '" + fname + "' on null object");
     }
 
-    ElementInfo ei = DynamicArea.getHeap().get(objRef);
+    ElementInfo ei = ti.getElementInfo(objRef);
 
     FieldInfo fi = getFieldInfo();
     if (fi == null) {
@@ -84,7 +83,7 @@ public class GETFIELD extends InstanceFieldInstruction {
 
   public ElementInfo peekElementInfo (ThreadInfo ti) {
     int objRef = ti.peek();
-    ElementInfo ei = DynamicArea.getHeap().get(objRef);
+    ElementInfo ei = ti.getElementInfo(objRef);
     return ei;
   }
 

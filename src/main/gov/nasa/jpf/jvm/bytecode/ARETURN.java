@@ -18,9 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.Types;
 
 import org.apache.bcel.classfile.ConstantPool;
 
@@ -55,7 +53,7 @@ public class ARETURN extends ReturnInstruction {
     if (ret == -1) {
       return null;
     } else {
-      return DynamicArea.getHeap().get(ret);
+      return ti.getElementInfo(ret);
     }
   }
   

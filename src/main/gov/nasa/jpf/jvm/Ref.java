@@ -60,10 +60,12 @@ public abstract class Ref {
   }
 
   public String toString () {
+    JVM vm = JVM.getVM();
+
     if (isClass) { // StaticElementInfo
-      return JVM.getVM().getStaticArea().get(reference).toString(); // this is SO ugly, remove this
+      return vm.getStaticArea().get(reference).toString(); // this is SO ugly, remove this
     } else {       // DynamicElementInfo
-      return (DynamicArea.getHeap().get(reference)).toString();
+      return (vm.getHeap().get(reference)).toString();
     }
   }
 }

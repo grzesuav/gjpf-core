@@ -214,9 +214,8 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
       return empty;
     }
 
-    public FieldLockInfo cleanUp () {
-      DynamicArea area = DynamicArea.getHeap();
-      if (area.get(lockRef) == null) {
+    public FieldLockInfo cleanUp (Heap heap) {
+      if (heap.get(lockRef) == null) {
         return FieldLockInfo.empty;
       } else {
         return this;
@@ -295,14 +294,13 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
       return this;
     }
 
-    public FieldLockInfo cleanUp () {
-      DynamicArea area = DynamicArea.getHeap();
+    public FieldLockInfo cleanUp (Heap heap) {
       int[] newSet = null;
       int l = 0;
 
       if (lockRefSet != null) {
         for (int i=0; i<lockRefSet.length; i++) {
-          if (area.get(lockRefSet[i]) == null) { // we got a stale one, so we have to change us
+          if (heap.get(lockRefSet[i]) == null) { // we got a stale one, so we have to change us
 
             if (newSet == null) { // first one, copy everything up to it
               newSet = new int[lockRefSet.length-1];

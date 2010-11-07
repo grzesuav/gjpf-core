@@ -22,6 +22,7 @@ import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.ObjVector;
 
 import java.util.BitSet;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -90,11 +91,14 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
    */
   protected final BitSet hasChanged;
 
+
   /**
-   * very simplistic iterator so that clients can abstract away from
-   * our internal heap representation during Object enumeration
+   * support for iterators that return all allocated objects, so that
+   * clients don't have to know our concrete implementation
+   *
+   * sometimes it sucks not having variant generics
    */
-  public class Iterator implements java.util.Iterator<EI> {
+  protected abstract class IteratorBase {
     int i, visited;
 
     public void remove() {
@@ -105,6 +109,9 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
       return (i < elements.size()) && (visited < nElements);
     }
 
+  }
+
+  protected class EIiterator extends IteratorBase implements Iterator<EI> {
     public EI next() {
       for (; i < elements.size(); i++) {
         EI ei = elements.get(i);
@@ -118,8 +125,32 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     }
   }
 
+  protected class ElementInfoIterator extends IteratorBase implements Iterator<ElementInfo>, Iterable<ElementInfo> {
+    public ElementInfo next() {
+      for (; i < elements.size(); i++) {
+        ElementInfo ei = elements.get(i);
+        if (ei != null) {
+          i++; visited++;
+          return ei;
+        }
+      }
+
+      throw new NoSuchElementException();
+    }
+
+    public Iterator<ElementInfo> iterator() {
+      return this;
+    }
+  }
+
+  /**
+   * extended iterator that just returns changed elements entries. Note that next()
+   * can return 'null' elements, in which case we can to query the current ref value
+   * with getLastRef()
+   */
   public class ChangedIterator implements java.util.Iterator<EI> {
     int i = getNextChanged(0);
+    int ref = -1;
 
     public void remove() {
       throw new UnsupportedOperationException ("illegal operation, only GC can remove objects");
@@ -132,6 +163,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     public EI next() {
       if (i >= 0){
         EI ei = elements.get(i);
+        ref = i;
         i = getNextChanged(i+1);
         return ei;
 
@@ -139,9 +171,16 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
         throw new NoSuchElementException();
       }
     }
+
+    /**
+     * this returns the index of the last element returned by next()
+     */
+    public int getLastRef() {
+      return ref;
+    }
   }
 
-  // its not a standard java.util.Iterator because we don't want to box ints
+  // its not a standard java.util.EIiterator because we don't want to box ints
   public class ChangedReferenceIterator implements gov.nasa.jpf.util.IntIterator {
     int i = getNextChanged(0);
 
@@ -172,8 +211,8 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     hasChanged = new BitSet();
   }
 
-  public Iterator iterator() {
-    return new Iterator();
+  public EIiterator iterator() {
+    return new EIiterator();
   }
 
   public ChangedIterator changedIterator() {
@@ -203,9 +242,11 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
   }
 
   void cleanUpDanglingReferences () {
+    Heap heap = JVM.getVM().getHeap();
+
     for (ElementInfo e : this) {
       if (e != null) {
-        e.cleanUp();
+        e.cleanUp(heap);
       }
     }
   }
@@ -290,7 +331,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     markChanged(index);
   }
 
-  protected void markChanged (int index) {
+  public void markChanged (int index) {
     hasChanged.set(index);
     ks.changed();
   }

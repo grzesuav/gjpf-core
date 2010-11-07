@@ -27,8 +27,8 @@ public class JPF_java_lang_String {
     // now this is REALLY a naive implementation of 'intern', but
     // at least we don't burn state for a Hashtable.
     // Replace this once we have a real String abstraction
-    DynamicArea   da = env.getDynamicArea();
-    ElementInfo   sei = da.get(robj);
+    Heap   heap = env.getHeap();
+    ElementInfo   sei = heap.get(robj);
 
     // <2do> really? with heap symmetry, can't a corresponding one be at > robj?
     //*reply:
@@ -36,7 +36,7 @@ public class JPF_java_lang_String {
     // is at a point > robj (or there is no other matching string), robj is
     // the canonical. -peterd 
     for (int i = 0; i < robj; i++) {
-      ElementInfo ei = da.get(i);
+      ElementInfo ei = heap.get(i);
 
       if (ei != null) {
         if (ei.equals(sei)) {
@@ -54,19 +54,19 @@ public class JPF_java_lang_String {
       
     }
 
-    DynamicArea   da = env.getDynamicArea();
-    ElementInfo   s1 = da.get(objRef);
-    ElementInfo   s2 = da.get(argRef);
+    Heap   heap = env.getHeap();
+    ElementInfo   s1 = heap.get(objRef);
+    ElementInfo   s2 = heap.get(argRef);
 
     if (!env.isInstanceOf(argRef,"java.lang.String")) {
       return false;
     }
     
-    Fields f1 = da.get( s1.getReferenceField("value")).getFields();
+    Fields f1 = heap.get( s1.getReferenceField("value")).getFields();
     int o1 = s1.getIntField("offset");
     int l1 = s1.getIntField("count");
     
-    Fields f2 = da.get( s2.getReferenceField("value")).getFields();
+    Fields f2 = heap.get( s2.getReferenceField("value")).getFields();
     int o2 = s2.getIntField("offset");
     int l2 = s2.getIntField("count");
     

@@ -20,8 +20,8 @@
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ObjRef;
 
@@ -73,7 +73,7 @@ public class Invocation {
       int ref = ((ObjRef)a).getReference();
       
       if (ref != -1){
-        ElementInfo ei = DynamicArea.getHeap().get(ref);
+        ElementInfo ei = JVM.getVM().getElementInfo(ref);
         ClassInfo ci = ei.getClassInfo();
         String cname = ci.getName();
         if (cname.equals("java.lang.String")){

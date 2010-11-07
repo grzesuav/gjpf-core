@@ -19,10 +19,9 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
-import gov.nasa.jpf.jvm.FieldLockInfo;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
@@ -55,12 +54,11 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
       return false;
     }
 
-    DynamicArea da = DynamicArea.getHeap();
-    ElementInfo ei = da.get(objRef);
+    ElementInfo ei = ti.getElementInfo(objRef);
 
     // no use to break if there is no other thread, or the object is not shared
     // (but note this might change in a following execution path)
-    if ( !ti.hasOtherRunnables() || !da.isSchedulingRelevantObject(objRef)) {
+    if ( !ti.hasOtherRunnables() || !ei.isSchedulingRelevant()) {
       return false;
     }
     // from here on, we know this is a shared object that can be accessed concurrently
@@ -134,7 +132,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
    */
   public ElementInfo getLastElementInfo () {
     if (lastThis != -1) {
-      return DynamicArea.getHeap().get(lastThis);
+      return JVM.getVM().getHeap().get(lastThis); // <2do> remove - should be in clients
     }
 
     return null;

@@ -21,7 +21,6 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
@@ -97,8 +96,7 @@ public class INVOKESTATIC extends InvokeInstruction {
     }
 
     if (callee.isSynchronized()) {
-      DynamicArea da = ti.getVM().getDynamicArea();
-      ElementInfo ei = da.get(clsInfo.getClassObjectRef());
+      ElementInfo ei = ti.getElementInfo( clsInfo.getClassObjectRef());
 
       if (ei.getLockingThread() != ti) { // not a recursive lock
     

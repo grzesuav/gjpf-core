@@ -229,7 +229,7 @@ public class StackFrame implements Constants, Cloneable {
         return new Double( Double.longBitsToDouble(Types.intsToLong(locals[i], locals[i+1])));
       } else { // reference or unknown ('?')
         if (locals[i] != -1) {
-          return DynamicArea.getHeap().get(locals[i]);
+          return JVM.getVM().getHeap().get(locals[i]);
         }
       }
     }
@@ -240,7 +240,7 @@ public class StackFrame implements Constants, Cloneable {
   public Object getFieldValue (String id) {
     // try instance fields first
     if (thisRef != -1) {  // it's an instance method
-      ElementInfo ei = DynamicArea.getHeap().get(thisRef);
+      ElementInfo ei = JVM.getVM().getHeap().get(thisRef);
       Object v = ei.getFieldValueObject(id);
       if (v != null) {
         return v;
@@ -1119,9 +1119,7 @@ public class StackFrame implements Constants, Cloneable {
    * references. Done during phase1 marking of threads (the stack is one of the
    * Thread gc roots)
    */
-  public void markThreadRoots (int tid) {
-    DynamicArea heap = DynamicArea.getHeap();
-
+  public void markThreadRoots (Heap heap, int tid) {
     for (int i=0; i<= top; i++) {
       if (isOperandRef[i]) {
         if (!heap.markThreadRoot(operands[i], tid)){

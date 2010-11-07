@@ -145,7 +145,7 @@ public abstract class InvokeInstruction extends Instruction {
     StackFrame frame = getCallerFrame(ti, callee);
 
     assert frame != null : "can't find caller stackframe for: " + this;
-    return getArgsFromCaller(frame, callee);
+    return getArgsFromCaller(ti, frame, callee);
   }
 
   public Object[] getArgumentAttrs (ThreadInfo ti) {
@@ -193,7 +193,7 @@ public abstract class InvokeInstruction extends Instruction {
   }
 
 
-  Object[] getArgsFromCaller (StackFrame frame, MethodInfo callee){
+  Object[] getArgsFromCaller (ThreadInfo ti, StackFrame frame, MethodInfo callee){
     int n = callee.getNumberOfArguments();
     Object[] args = new Object[n];
     byte[] at = callee.getArgumentTypes();
@@ -205,7 +205,7 @@ public abstract class InvokeInstruction extends Instruction {
       case Types.T_REFERENCE:
         int ref = frame.peek(off);
         if (ref >=0) {
-          args[i] = DynamicArea.getHeap().get(ref);
+          args[i] = ti.getElementInfo(ref);
         } else {
           args[i] = null;
         }

@@ -166,12 +166,12 @@ public abstract class ElementInfo implements Cloneable {
   /**
    * we had a GC, update the live objects
    */
-  void cleanUp () {
+  void cleanUp (Heap heap) {
     if (fLockInfo != null) {
       for (int i=0; i<fLockInfo.length; i++) {
         FieldLockInfo fli = fLockInfo[i];
         if (fli != null) {
-          fLockInfo[i] = fli.cleanUp();
+          fLockInfo[i] = fli.cleanUp(heap);
         }
       }
     }
@@ -206,8 +206,7 @@ public abstract class ElementInfo implements Cloneable {
    *
    * @aspects: gc
    */
-  void markRecursive(int tid, int attrMask) {
-    DynamicArea heap = DynamicArea.getHeap();
+  void markRecursive(Heap heap, int tid, int attrMask) {
     int i, n;
 
     if (isArray()) {
@@ -495,7 +494,7 @@ public abstract class ElementInfo implements Cloneable {
       int oldValue = f.getReferenceValue(off);
       f.setReferenceValue(this, off, value);
 
-      DynamicArea.getHeap().updateReachability(this,oldValue, value);
+      JVM.getVM().getHeap().updateReachability( isShared(),oldValue, value);
 
     } else {
       throw new JPFException("not a reference field: " + fi.getName());
@@ -832,11 +831,11 @@ public abstract class ElementInfo implements Cloneable {
   }
 
   public ElementInfo getDeclaredObjectField(String fname, String referenceType) {
-    return DynamicArea.getHeap().get(getDeclaredIntField(fname, referenceType));
+    return JVM.getVM().getHeap().get(getDeclaredIntField(fname, referenceType));
   }
 
   public ElementInfo getObjectField(String fname) {
-    return DynamicArea.getHeap().get(getIntField(fname));
+    return JVM.getVM().getHeap().get(getIntField(fname));
   }
 
 
@@ -853,7 +852,7 @@ public abstract class ElementInfo implements Cloneable {
     int ref = getIntField(fname);
 
     if (ref != -1) {
-      ElementInfo ei = DynamicArea.getHeap().get(ref);
+      ElementInfo ei = JVM.getVM().getHeap().get(ref);
       if (ei == null) {
         System.out.println("OUTCH: " + ref + ", this: " + index);
         throw new NullPointerException(); // gets rid of null warning -pcd
@@ -1015,7 +1014,7 @@ public abstract class ElementInfo implements Cloneable {
 
     assert ti.lockRef == -1 || ti.lockRef == index :
       "thread " + ti + " trying to register for : " + this +
-      " ,but already blocked on: " + DynamicArea.getHeap().get(ti.lockRef);
+      " ,but already blocked on: " + ti.getElementInfo(ti.lockRef);
 
     // note that using the lockedThreads list is a bit counter-intuitive
     // since the thread is still in RUNNING or UNBLOCKED state, but it will
@@ -1471,8 +1470,7 @@ public abstract class ElementInfo implements Cloneable {
    * The following code is used to linearize a rooted structure in the heap
    */
 
-  public Vector<String> linearize (Vector<String> result) {
-    DynamicArea heap = DynamicArea.getHeap();
+  public Vector<String> linearize (Heap heap, Vector<String> result) {
     int i, n;
 
     if (isArray()) {

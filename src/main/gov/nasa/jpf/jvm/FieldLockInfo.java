@@ -47,7 +47,7 @@ public abstract class FieldLockInfo implements Cloneable  {
   public abstract FieldLockInfo checkProtection (ThreadInfo ti, ElementInfo ei, FieldInfo fi);
   public abstract boolean isProtected ();
   
-  public abstract FieldLockInfo cleanUp ();
+  public abstract FieldLockInfo cleanUp (Heap heap);
   protected abstract int[] getCandidateLockSet();
     
   public boolean isFinal() {
@@ -95,7 +95,7 @@ public abstract class FieldLockInfo implements Cloneable  {
   }
 
   void appendLockSet (StringBuilder sb, int[] lockSet) {
-    DynamicArea heap = DynamicArea.getHeap();
+    Heap heap = JVM.getVM().getHeap();
 
     if ((lockSet == null) || (lockSet.length == 0)) {
       sb.append( "{}");
@@ -130,7 +130,7 @@ class EmptyFieldLockInfo extends FieldLockInfo {
     return this;
   }
       
-  public FieldLockInfo cleanUp () {
+  public FieldLockInfo cleanUp (Heap heap) {
     return this;
   }
   

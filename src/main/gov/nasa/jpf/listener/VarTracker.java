@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.listener;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.jvm.JVM;
@@ -33,12 +32,10 @@ import java.util.Iterator;
 import java.util.Collection;
 import java.util.List;
 import java.util.Collections;
-import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.jvm.bytecode.StoreInstruction;
 import gov.nasa.jpf.jvm.bytecode.ArrayStoreInstruction;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
 
 
@@ -164,7 +161,7 @@ public class VarTracker extends ListenerAdapter {
       // a pattern like:  ..GETFIELD.. some-stack-operations .. xASTORE
       int objRef = ti.peek();
       if (objRef != -1) {
-        ElementInfo ei = DynamicArea.getHeap().get(objRef);
+        ElementInfo ei = jvm.getHeap().get(objRef);
         if (ei.isArray()) {
           varId = ((VariableAccessor)insn).getVariableId();
           

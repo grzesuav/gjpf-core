@@ -190,7 +190,7 @@ public class JPF_java_lang_Thread {
       // reachability so that subsequent potential breaks work correctly
       if (newThread.usePor()){ // means we use on-the-fly POR
         //env.getSystemState().activateGC();
-        env.getDynamicArea().analyzeHeap(false); // sledgehammer mark
+        env.getHeap().analyzeHeap(false); // sledgehammer mark
       }
 
       // now we have a new thread, create a CG for scheduling it

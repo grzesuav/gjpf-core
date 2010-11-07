@@ -122,7 +122,7 @@ public class ThreadData {
   }
 
   public String getFieldValues () {
-    DynamicArea heap = DynamicArea.getHeap();
+    Heap heap = JVM.getVM().getHeap();
     StringBuilder sb = new StringBuilder("name=");
 
     sb.append(name);

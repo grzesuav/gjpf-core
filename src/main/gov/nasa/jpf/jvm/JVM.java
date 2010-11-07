@@ -194,8 +194,6 @@ public class JVM {
     ClassInfo.init(config);
     ThreadInfo.init(config);
     MethodInfo.init(config);
-    DynamicArea.init(config);
-    StaticArea.init(config);
     NativePeer.init(config);
     FieldInstruction.init(config);
     ChoiceGenerator.init(config);
@@ -348,20 +346,20 @@ public class JVM {
    * bytecode yet (which would need a ThreadInfo context)
    */
   protected ThreadInfo createMainThread () {
-    DynamicArea da = getDynamicArea();
+    Heap heap = getHeap();
 
     // first we need a group for this baby (happens to be called "main")
 
-    int tObjRef = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread"), null);
+    int tObjRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread"), null);
     int grpObjref = createSystemThreadGroup(tObjRef);
 
-    ElementInfo ei = da.get(tObjRef);
+    ElementInfo ei = heap.get(tObjRef);
     ei.setReferenceField("group", grpObjref);
-    ei.setReferenceField("name", da.newString("main", null));
+    ei.setReferenceField("name", heap.newString("main", null));
     ei.setIntField("priority", Thread.NORM_PRIORITY);
 
-    int permitRef = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"),null);
-    ElementInfo eiPermitRef = da.get(permitRef);
+    int permitRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"),null);
+    ElementInfo eiPermitRef = heap.get(permitRef);
     eiPermitRef.setBooleanField("blockPark", true);
     ei.setReferenceField("permit", permitRef);
 
@@ -377,21 +375,21 @@ public class JVM {
   }
 
   protected int createSystemThreadGroup (int mainThreadRef) {
-    DynamicArea da = getDynamicArea();
+    Heap heap = getHeap();
 
-    int ref = da.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), null);
-    ElementInfo ei = da.get(ref);
+    int ref = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), null);
+    ElementInfo ei = heap.get(ref);
 
     // since we can't call methods yet, we have to init explicitly (BAD)
     // <2do> - this isn't complete yet
 
-    int grpName = da.newString("main", null);
+    int grpName = heap.newString("main", null);
     ei.setReferenceField("name", grpName);
 
     ei.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
 
-    int threadsRef = da.newArray("Ljava/lang/Thread;", 4, null);
-    ElementInfo eiThreads = da.get(threadsRef);
+    int threadsRef = heap.newArray("Ljava/lang/Thread;", 4, null);
+    ElementInfo eiThreads = heap.get(threadsRef);
     eiThreads.setElement(0, mainThreadRef);
 
     ei.setReferenceField("threads", threadsRef);
@@ -512,8 +510,7 @@ public class JVM {
   }
 
   protected void pushMain (Config config) {
-    config = null;  // Get rid of IDE warning
-    DynamicArea da = ss.ks.da;
+    Heap heap = getHeap();
     ClassInfo ci = ClassInfo.getResolvedClassInfo(mainClassName);
     MethodInfo mi = ci.getMethod("main([Ljava/lang/String;)V", false);
     ThreadInfo ti = ss.getThreadInfo(0);
@@ -525,11 +522,11 @@ public class JVM {
     StackFrame mainFrame = new StackFrame(mi, null);
     ti.pushFrame(mainFrame);
 
-    int argsObjref = da.newArray("Ljava/lang/String;", args.length, null);
-    ElementInfo argsElement = ss.ks.da.get(argsObjref);
+    int argsObjref = heap.newArray("Ljava/lang/String;", args.length, null);
+    ElementInfo argsElement = heap.get(argsObjref);
 
     for (int i = 0; i < args.length; i++) {
-      int stringObjref = da.newString(args[i], null);
+      int stringObjref = heap.newString(args[i], null);
       argsElement.setElement(i, stringObjref);
     }
     ti.setLocalVariable(0, argsObjref, true);
@@ -1226,7 +1223,7 @@ public class JVM {
 
   public ClassInfo getClassInfo (int objref) {
     if (objref != MJIEnv.NULL) {
-      return getDynamicArea().get(objref).getClassInfo();
+      return getElementInfo(objref).getClassInfo();
     } else {
       return null;
     }
@@ -1679,7 +1676,7 @@ public class JVM {
         // this changes the SystemState (e.g. finds the next thread to run)
         if (ss.nextSuccessor(this)) {
           //for debugging locks:  -peterd
-          //ss.ks.da.verifyLockInfo();
+          //ss.ks.heap.verifyLockInfo();
 
           if (ss.isIgnored()) {
             // do it again
@@ -1842,8 +1839,15 @@ public class JVM {
     return ti;
   }
 
+  /**
+   * <2do> this is a band aid to bundle all these legacy reference chains
+   * from JPFs past. The goal is to replace them with proper accessors (normally
+   * through ThreadInfo, MJIEnv or JVM, which all act as facades) wherever possible,
+   * and use JVM.getVM() where there is no access to such a facade. Once this
+   * has been completed, we can start refactoring the users of JVM.getVM() to
+   * get access to a suitable facade. 
+   */
   public static JVM getVM () {
-    // <2do> remove this, no more static refs!
     return jvm;
   }
 
@@ -1854,11 +1858,12 @@ public class JVM {
     error_id = 0;
   }
 
-  /**
-   * return the 'heap' object, which is a global service
-   */
-  public DynamicArea getDynamicArea () {
-    return ss.ks.da;
+  public Heap getHeap() {
+    return ss.getHeap();
+  }
+
+  public ElementInfo getElementInfo(int objref){
+    return ss.getHeap().get(objref);
   }
 
   public ThreadInfo getCurrentThread () {
@@ -1926,6 +1931,6 @@ public class JVM {
    */
   public void checkConsistency(boolean isStateStore) {
     getThreadList().checkConsistency( isStateStore);
-    getDynamicArea().checkConsistency( isStateStore);
+    getHeap().checkConsistency( isStateStore);
   }
 }

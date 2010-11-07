@@ -22,8 +22,8 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicArea;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -41,7 +41,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
-import java.util.regex.Pattern;
 
 /**
  * HeapTracker - property-listener class to check heap utilization along all
@@ -318,13 +317,13 @@ public class HeapTracker extends PropertyListenerAdapter {
   }
 
   public void gcEnd(JVM jvm) {
-    DynamicArea da = jvm.getDynamicArea();
+    Heap heap = jvm.getHeap();
 
     int n = 0;
     int nShared = 0;
     int nImmutable = 0;
 
-    for (ElementInfo ei : da) {
+    for (ElementInfo ei : heap.elements()) {
       n++;
 
       if (ei.isShared()) nShared++;
@@ -408,7 +407,7 @@ public class HeapTracker extends PropertyListenerAdapter {
     if (throwOutOfMemory) {
       if (((maxHeapSizeLimit >=0) && (stat.heapSize > maxHeapSizeLimit)) ||
           ((maxLiveLimit >=0) && ((stat.nNew - stat.nReleased) > maxLiveLimit))){
-        DynamicArea.getHeap().setOutOfMemory(true);
+        jvm.getHeap().setOutOfMemory(true);
       }
     }
   }

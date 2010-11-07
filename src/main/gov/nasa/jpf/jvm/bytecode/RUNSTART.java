@@ -53,7 +53,7 @@ public class RUNSTART extends Instruction {
     // if this is the first insn in a synchronized run(), we also have to
     // grab the lock
     if (mi.isSynchronized()) {
-      ElementInfo ei = ti.getVM().getDynamicArea().get(ti.getThis());
+      ElementInfo ei = ti.getElementInfo(ti.getThis());
       ei.lock(ti);
     }
 
