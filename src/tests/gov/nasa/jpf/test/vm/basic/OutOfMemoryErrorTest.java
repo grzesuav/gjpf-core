@@ -42,7 +42,7 @@ public class OutOfMemoryErrorTest extends TestJPF
          
          while (true)
          {
-            hog = new byte[10 * 1024 * 1024];
+            hog = new byte[1024 * 1024 * 1024];
             
             hold.add(hog);
          }

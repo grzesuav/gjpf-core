@@ -37,17 +37,14 @@
 package gov.nasa.jpf.test.java.lang;
 
 import gov.nasa.jpf.util.test.TestJPF;
+import java.io.*;
 import java.lang.reflect.Method;
 import org.junit.Test;
-
-//interface A {}
-//class Base extends TestJPF implements A {}
-interface B {}
 
 /**
  * test of java.lang.Class API
  */
-public class ClassTest extends TestJPF implements Cloneable, B {
+public class ClassTest extends TestJPF implements Cloneable, Serializable {
   
   public static void main (String[] args) {
     runTestsOfThisClass(args);
@@ -60,7 +57,8 @@ public class ClassTest extends TestJPF implements Cloneable, B {
   int data = 42; // that creates a default ctor for our newInstance test
 
 
-  @Test public void testClassForName () throws ClassNotFoundException {
+  @Test 
+  public void testClassForName () throws ClassNotFoundException {
     if (verifyNoPropertyViolation()) {
 
       Class<?> clazz = Class.forName(clsName);
@@ -77,7 +75,8 @@ public class ClassTest extends TestJPF implements Cloneable, B {
     }
   }
 
-  @Test public void testGetClass () {
+  @Test 
+  public void testGetClass () {
     if (verifyNoPropertyViolation()) {
       Class<?> clazz = this.getClass();
 
@@ -92,7 +91,8 @@ public class ClassTest extends TestJPF implements Cloneable, B {
     }
   }
 
-  @Test public void testIdentity () {
+  @Test 
+  public void testIdentity () {
     if (verifyNoPropertyViolation()) {
       Class<?> clazz1 = null;
       Class<?> clazz2 = ClassTest.class;
@@ -101,6 +101,7 @@ public class ClassTest extends TestJPF implements Cloneable, B {
       try {
         clazz1 = Class.forName(clsName);
       } catch (Throwable x) {
+        x = null;  // Get rid of IDE warning
       }
 
       if (clazz1 != clazz2) {
@@ -115,7 +116,8 @@ public class ClassTest extends TestJPF implements Cloneable, B {
     }
   }
   
-  @Test public void testNewInstance () throws InstantiationException, IllegalAccessException {
+  @Test 
+  public void testNewInstance () throws InstantiationException, IllegalAccessException {
     if (verifyNoPropertyViolation()) {
       Class<?> clazz = ClassTest.class;
       ClassTest o = (ClassTest) clazz.newInstance();
@@ -133,25 +135,28 @@ public class ClassTest extends TestJPF implements Cloneable, B {
     private InAccessible() {}
   }
   
-  @Test public void testNewInstanceFailAccess () throws IllegalAccessException, InstantiationException {
+  @Test 
+  public void testNewInstanceFailAccess () throws IllegalAccessException, InstantiationException {
     if (verifyUnhandledException("java.lang.IllegalAccessException")){
       Class<?> clazz = InAccessible.class;
-      Object o = clazz.newInstance();
+      clazz.newInstance();
     }
   }
   
   static abstract class AbstractClass {
   }
     
-  @Test public void testNewInstanceFailAbstract () throws IllegalAccessException, InstantiationException {
+  @Test 
+  public void testNewInstanceFailAbstract () throws IllegalAccessException, InstantiationException {
     if (verifyUnhandledException("java.lang.InstantiationException")){
       Class<?> clazz = AbstractClass.class;
-      Object o = clazz.newInstance();
+      clazz.newInstance();
     }
   }
   
   
-  @Test public void testIsAssignableFrom () {
+  @Test 
+  public void testIsAssignableFrom () {
     if (verifyNoPropertyViolation()) {
       Class<?> clazz1 = Integer.class;
       Class<?> clazz2 = Object.class;
@@ -162,7 +167,8 @@ public class ClassTest extends TestJPF implements Cloneable, B {
     }
   }  
   
-  @Test public void testInstanceOf () {
+  @Test 
+  public void testInstanceOf () {
     if (verifyNoPropertyViolation()) {
       assert this instanceof Cloneable;
       assert this instanceof TestJPF;
@@ -174,6 +180,7 @@ public class ClassTest extends TestJPF implements Cloneable, B {
     }
   }
   
+  @Test
   public void testAsSubclass () {
     if (verifyNoPropertyViolation()) {
       Class<?> clazz1 = Float.class;
@@ -182,16 +189,17 @@ public class ClassTest extends TestJPF implements Cloneable, B {
       assert clazz2 != null;
       
       try {
-        Class<? extends String> clazz3 = clazz1.asSubclass(String.class);
+        clazz1.asSubclass(String.class);
         assert false : "testAsSubclass() failed to throw ClassCastException";
       } catch (ClassCastException ccx) {
-        
+        ccx = null;  // Get rid of IDE warning
       } 
     }    
   }
   
   @SuppressWarnings("null")
-  @Test public void testClassField () {
+  @Test 
+  public void testClassField () {
     if (verifyNoPropertyViolation()) {
 
       Class<?> clazz = ClassTest.class;
@@ -206,7 +214,8 @@ public class ClassTest extends TestJPF implements Cloneable, B {
     }
   }
 
-  @Test public void testInterfaces () {
+  @Test 
+  public void testInterfaces () {
     if (verifyNoPropertyViolation()) {
       Class<?>[] ifc = ClassTest.class.getInterfaces();
       if (ifc.length != 2) {
@@ -214,7 +223,7 @@ public class ClassTest extends TestJPF implements Cloneable, B {
       }
 
       int n = ifc.length;
-      String[] ifcs = {"java.lang.Cloneable", B.class.getName()};
+      String[] ifcs = {Cloneable.class.getName(), Serializable.class.getName()};
       for (int i = 0; i < ifcs.length; i++) {
         for (int j = 0; j < ifc.length; j++) {
           if (ifc[j].getName().equals(ifcs[i])) {
@@ -246,7 +255,7 @@ public class ClassTest extends TestJPF implements Cloneable, B {
       System.out.println("why is TestClass.<clinit>() executed?");
     }
     public TestClass() {}
-    public TestClass (int a) {}
+    public TestClass (int a) {a = 0;}
     public void foo() {}               // 1
     void bar() {}                      // 2
     public static void baz () {}       // 3

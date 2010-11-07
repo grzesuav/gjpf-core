@@ -35,7 +35,7 @@ public class JPF_java_lang_Class {
   
   public static void init (Config conf){
     // we create Method and Constructor objects, so we better make sure these
-    // classes are initialized (they already might be so)
+    // classes are initialized (they already might be)
     JPF_java_lang_reflect_Method.init(conf);
     JPF_java_lang_reflect_Constructor.init(conf);    
   }
@@ -229,11 +229,11 @@ public class JPF_java_lang_Class {
   }
 
   static int getMethod (MJIEnv env, int clsRef, String mname, int argTypesRef,
-                        boolean isRecursiveLookup) {
+                        boolean isRecursiveLookup, boolean publicOnly) {
 
     ClassInfo ci = getReferredClassInfo(env, clsRef);
     
-    StringBuffer sb = new StringBuffer(mname);
+    StringBuilder sb = new StringBuilder(mname);
     sb.append('(');
     int nParams = argTypesRef != MJIEnv.NULL ? env.getArrayLength(argTypesRef) : 0;
     for (int i=0; i<nParams; i++) {
@@ -248,7 +248,7 @@ public class JPF_java_lang_Class {
     String fullMthName = sb.toString();
 
     MethodInfo mi = ci.getReflectionMethod(fullMthName, isRecursiveLookup);
-    if (mi == null) {
+    if (mi == null || (publicOnly && !mi.isPublic())) {
       env.throwException("java.lang.NoSuchMethodException", ci.getName() + '.' + fullMthName);
       return MJIEnv.NULL;
       
@@ -269,27 +269,21 @@ public class JPF_java_lang_Class {
   public static int getDeclaredMethod__Ljava_lang_String_2_3Ljava_lang_Class_2__Ljava_lang_reflect_Method_2 (MJIEnv env, int clsRef,
                                                                                                      int nameRef, int argTypesRef) {
     String mname = env.getStringObject(nameRef);
-    return getMethod(env, clsRef, mname, argTypesRef, false);
+    return getMethod(env, clsRef, mname, argTypesRef, false, false);
   }
 
   
   public static int getDeclaredConstructor___3Ljava_lang_Class_2__Ljava_lang_reflect_Constructor_2 (MJIEnv env,
                                                                                                int clsRef,
                                                                                                int argTypesRef){
-    int ctorRef =  getMethod(env,clsRef,"<init>",argTypesRef,false);
+    int ctorRef =  getMethod(env,clsRef,"<init>",argTypesRef,false, false);
     return ctorRef;
   }
   
   public static int getMethod__Ljava_lang_String_2_3Ljava_lang_Class_2__Ljava_lang_reflect_Method_2 (MJIEnv env, int clsRef,
                                                                                                      int nameRef, int argTypesRef) {
-    try {
     String mname = env.getStringObject(nameRef);
-    return getMethod(env, clsRef, mname, argTypesRef, true);
-    } catch (Throwable t){
-      t.printStackTrace();
-      System.exit(0);
-      return -1;
-    }
+    return getMethod( env, clsRef, mname, argTypesRef, true, true);
   }
 
   private static void addDeclaredMethodsRec (HashMap<String,MethodInfo>methods, ClassInfo ci){
@@ -398,7 +392,7 @@ public class JPF_java_lang_Class {
   public static int getConstructor___3Ljava_lang_Class_2__Ljava_lang_reflect_Constructor_2 (MJIEnv env, int clsRef,
                                                                                        int argTypesRef){
     // <2do> should only return a public ctor 
-    return getMethod(env,clsRef, "<init>",argTypesRef,false);
+    return getMethod(env,clsRef, "<init>",argTypesRef,false,true);
   }
   
   public static int getDeclaredFields_____3Ljava_lang_reflect_Field_2 (MJIEnv env, int objRef) {
