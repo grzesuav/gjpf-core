@@ -19,6 +19,7 @@
 
 package java.lang;
 
+import gov.nasa.jpf.*;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
@@ -40,7 +41,12 @@ public class Throwable {
   protected StackTraceElement[] stackTrace; // only set on demand, if getStackTrace() is called
   
   public Throwable() {
-    new StackTraceElement();   // Force this class to load here instead of in createStackTrace()
+    try {                                            // Use Class.forName() instead of new StackTraceElement() since the latter creates garbage.
+      Class.forName("java.lang.StackTraceElement");  // Force this class to load here instead of in createStackTrace().
+    } catch (ClassNotFoundException e) {
+      throw new JPFException("Unexpected exception from Class.forName(\"java.lang.StackTraceElement\")", e);
+    }
+     
     fillInStackTrace();
   }
 
