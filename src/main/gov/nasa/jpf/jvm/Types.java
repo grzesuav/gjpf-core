@@ -404,13 +404,13 @@ public class Types {
         n = 0;
         break;
       case 'L':   // reference = 1 slot
-        do i++; while (signature.charAt(i) != ';');
+        i = signature.indexOf(';', i);    
         n++;
         break;
       case '[':
         do i++; while (signature.charAt(i) == '[');
         if (signature.charAt(i) == 'L') {
-          do i++; while (signature.charAt(i) != ';');
+          i = signature.indexOf(';', i);
         }
         n++;
         break;
@@ -423,11 +423,7 @@ public class Types {
       }
     }
     
-    if (n > nArgSlots) {
-      return n;
-    } else {
-      return nArgSlots;
-    }
+    return Math.max(n, nArgSlots);
   }
   
   public static int getNumberOfArguments (String signature) {

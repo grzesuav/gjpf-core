@@ -103,7 +103,10 @@ public class JPF_java_lang_reflect_Constructor {
       frame = new DirectCallStackFrame(stub,2,0);
       frame.push(objRef, true);  // (1) we store the return object on the frame
       frame.dup();
-      JPF_java_lang_reflect_Method.pushUnboxedArguments(env, mi, frame, argsRef);
+      
+      if (!JPF_java_lang_reflect_Method.pushUnboxedArguments(env, mi, frame, argsRef)) {
+        return MJIEnv.NULL;
+      }
 
       ti.pushFrame(frame);
 
@@ -115,7 +118,7 @@ public class JPF_java_lang_reflect_Constructor {
   public static int getParameterTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef){
     // kind of dangerous, but we don't refer to any fields and the underlying JPF construct
     // (MethodInfo) is the same, so we just delegate to avoid copying non-trivial code
-    return JPF_java_lang_reflect_Method.getParameterTypes (env, objRef, getMethodInfo(env,objRef));
+    return JPF_java_lang_reflect_Method.getParameterTypes (env, getMethodInfo(env,objRef));
   }
 
   public static int getModifiers____I (MJIEnv env, int objRef){
