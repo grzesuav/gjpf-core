@@ -1,4 +1,4 @@
-//
+ //
 // Copyright (C) 2010 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
@@ -26,23 +26,42 @@ package gov.nasa.jpf.jvm;
  */
 public class MarkQueue {
 
-  static class MarkEntry {
+  static final int MAX_FREE = 1024;
 
+  static class MarkEntry {
     MarkEntry next; // single linked list
+
     int objref;  // reference value
     int refTid;  // referencing thread
     int refAttr;
     int attrMask;
   }
+
   MarkEntry markEnd;
   MarkEntry markHead;
 
+  // since MarkEntry objects are used/processed during the mark phase
+  // in rapid succession, we cache up to MAX_FREE of them
+  int nFree;
+  MarkEntry free;
+
   public void queue(int objref, int refTid, int refAttr, int attrMask) {
-    MarkEntry e = new MarkEntry();
+    MarkEntry e;
+
+    if (nFree > 0){ // reuse a cached MarkEntry object
+      e = free;
+      free = e.next;
+      nFree--;
+
+    } else {
+      e = new MarkEntry();
+    }
+
     e.objref = objref;
     e.refTid = refTid;
     e.refAttr = refAttr;
     e.attrMask = attrMask;
+    e.next = null;
 
     if (markEnd != null) {
       markEnd.next = e;
@@ -54,13 +73,28 @@ public class MarkQueue {
   }
 
   public void process(Heap heap) {
-    for (MarkEntry e = markHead; e != null; e = e.next) {
+    for (MarkEntry e = markHead; e != null; ) {
       heap.mark( e.objref, e.refTid, e.refAttr, e.attrMask);
+
+      if (nFree < MAX_FREE){
+        // recycle to save some allocation and a lot of shortliving garbage
+        MarkEntry next = e.next;
+        e.next = (nFree++ > 0) ? free : null;
+        free = e;
+        e = next;
+
+      } else {
+        e = e.next;
+      }
     }
     clear();
   }
 
   public void clear () {
-    markHead = markEnd = null;
+    markHead = null;
+    markEnd = null;
+
+    // don't reset nFree and free since we limit the memory size of our cache
+    // and the MarkEntry object do not reference anything
   }
 }

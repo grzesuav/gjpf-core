@@ -18,11 +18,10 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.util.IntVector;
-import gov.nasa.jpf.util.Misc;
 import java.util.Collections;
 
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -34,6 +33,12 @@ import java.util.List;
 
 public class CollapsingSerializer extends CachingSerializerDeserializer {
   protected final CollapsePools.AllIndexed pool = new CollapsePools.AllIndexed();
+
+  public CollapsingSerializer () {
+    if (! (JVM.getVM().getHeap() instanceof DynamicArea)){
+      throw new JPFConfigException("CollapsingSerializer requires DynamicArea heap");
+    }
+  }
 
 
   // ************ SERIALIZATION STUFF ************ //

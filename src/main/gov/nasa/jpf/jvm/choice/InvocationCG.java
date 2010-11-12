@@ -104,6 +104,8 @@ public class InvocationCG extends ChoiceGenerator<Invocation> {
   public void reset () {
     cur = null;
     it = invokes.listIterator();
+
+    isDone = false;
   }
 
 }

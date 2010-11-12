@@ -52,7 +52,7 @@ import java.util.logging.Logger;
  * in this data structure.
  */
 public class ThreadInfo
-     implements Iterable<StackFrame>, Comparable<ThreadInfo>, Cloneable {
+     implements Iterable<StackFrame>, Comparable<ThreadInfo>, Cloneable, Restorable<ThreadInfo> {
 
   static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.ThreadInfo");
 
@@ -263,6 +263,11 @@ public class ThreadInfo
     }
   }
 
+  public Memento<ThreadInfo> getMemento(MementoFactory factory) {
+    return factory.getMemento(this);
+  }
+
+  
   public static ThreadInfo getMainThread () {
     return mainThread;
   }
@@ -1388,7 +1393,6 @@ public class ThreadInfo
     vm.notifyObjectUnlocked(this, ei);
   }
 
-
   /**
    * Clears the operand stack of all value.
    */
@@ -1398,14 +1402,9 @@ public class ThreadInfo
 
   public Object clone() {
     try {
-      ThreadInfo other = (ThreadInfo) super.clone();
-
       // threadData and top StackFrame are copy-on-write, so we should not have to clone them
-
-      // and so do the lockedObjects
-      other.lockedObjects = cloneLockedObjects();
-
-      return other;
+      // lockedObjects are state-volatile and restored explicitly after a backtrack
+      return super.clone();
 
     } catch (CloneNotSupportedException cnsx) {
       return null;

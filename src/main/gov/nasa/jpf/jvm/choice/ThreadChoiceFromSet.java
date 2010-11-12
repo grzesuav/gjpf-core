@@ -37,6 +37,8 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
   
   public void reset () {
     count = -1;
+
+    isDone = false;
   }
   
   public ThreadInfo getNextChoice () {

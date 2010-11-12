@@ -486,16 +486,16 @@ public class SystemState {
 
 
   public int getNonDaemonThreadCount () {
-    return ks.tl.getNonDaemonThreadCount();
+    return ks.threads.getNonDaemonThreadCount();
   }
 
   public ElementInfo getObject (int reference) {
-    return ks.da.get(reference);
+    return ks.heap.get(reference);
   }
 
   @Deprecated
   public ThreadInfo getThread (int index) {
-    return ks.tl.get(index);
+    return ks.threads.get(index);
   }
 
   @Deprecated
@@ -504,19 +504,19 @@ public class SystemState {
   }
 
   public int getThreadCount () {
-    return ks.tl.length();
+    return ks.threads.length();
   }
 
   public int getRunnableThreadCount () {
-    return ks.tl.getRunnableThreadCount();
+    return ks.threads.getRunnableThreadCount();
   }
 
   public int getLiveThreadCount () {
-    return ks.tl.getLiveThreadCount();
+    return ks.threads.getLiveThreadCount();
   }
 
   public ThreadInfo getThreadInfo (int idx) {
-    return ks.tl.get(idx);
+    return ks.threads.get(idx);
   }
 
   public boolean isDeadlocked () {

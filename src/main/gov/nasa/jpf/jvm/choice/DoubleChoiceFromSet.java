@@ -107,6 +107,7 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
 
   public void reset () {
     count = -1;
+    isDone = false;
   }
   
   public Double getNextChoice () {

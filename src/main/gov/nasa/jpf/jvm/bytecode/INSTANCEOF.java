@@ -47,7 +47,7 @@ public class INSTANCEOF extends Instruction {
 
     if (objref == -1) {
       th.push(0, false);
-    } else if (ks.da.get(objref).instanceOf(type)) {
+    } else if (ks.heap.get(objref).instanceOf(type)) {
       th.push(1, false);
     } else {
       th.push(0, false);

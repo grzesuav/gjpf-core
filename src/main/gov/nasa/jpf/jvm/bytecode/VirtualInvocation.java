@@ -55,7 +55,7 @@ public abstract class VirtualInvocation extends InstanceInvocation {
       return ti.createAndThrowException("java.lang.NoSuchMethodError", ti.getClassInfo(objRef).getName() + "." + mname);
     }
     
-    ElementInfo ei = ks.da.get(objRef);
+    ElementInfo ei = ks.heap.get(objRef);
     
     if (mi.isSynchronized()) {
       if (!isLockOwner(ti, ei)) {                          // If the object isn't already owned by this thread, then consider a choice point

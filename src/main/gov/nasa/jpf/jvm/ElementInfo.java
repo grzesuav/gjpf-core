@@ -32,11 +32,7 @@ import java.util.Vector;
  *
  * @see gov.nasa.jpf.jvm.FieldInfo
  */
-public abstract class ElementInfo implements Cloneable {
-
-  public static interface Memento<EI extends ElementInfo> {
-    EI restore();
-  }
+public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> {
 
   // object attribute flag values
   public static final int   ATTR_NONE          = 0x0;
@@ -116,6 +112,9 @@ public abstract class ElementInfo implements Cloneable {
    */
   FieldLockInfo[] fLockInfo;
 
+  Memento<ElementInfo> memento; // cache for unchanged ElementInfos
+  
+
   public ElementInfo(Fields f, Monitor m) {
     fields = f;
     monitor = m;
@@ -130,11 +129,8 @@ public abstract class ElementInfo implements Cloneable {
     attributes = a;
   }
 
-
   protected ElementInfo() {
   }
-
-  protected abstract <EI extends ElementInfo> Memento<EI> getMemento();
 
   public boolean hasChanged() {
     return (attributes & ATTR_ANY_CHANGED) != 0;
@@ -954,11 +950,8 @@ public abstract class ElementInfo implements Cloneable {
 
   public Object clone() {
     try {
-      ElementInfo ei = (ElementInfo) super.clone();
-
-      ei.index = -1;
-
-      return ei;
+      return (ElementInfo) super.clone();
+      
     } catch (CloneNotSupportedException e) {
       e.printStackTrace();
       throw new InternalError("should not happen");
@@ -1360,6 +1353,15 @@ public abstract class ElementInfo implements Cloneable {
     return fields;
   }
 
+  public void restore(int index, int attributes, Fields fields, Monitor monitor){
+    markUnchanged();
+    
+    this.index = index;
+    this.attributes = attributes;
+    this.fields = fields;
+    this.monitor = monitor;
+  }
+
   public void restoreMonitor(Monitor m) {
     monitor = m;
   }
@@ -1464,50 +1466,6 @@ public abstract class ElementInfo implements Cloneable {
           + Integer.toHexString(attributes) + " was: "
           + Integer.toHexString(oldAttrs));
     }
-  }
-
-  /*
-   * The following code is used to linearize a rooted structure in the heap
-   */
-
-  public Vector<String> linearize (Heap heap, Vector<String> result) {
-    int i, n;
-
-    if (isArray()) {
-      if (fields.isReferenceArray()) {
-        n = fields.arrayLength();
-        for (i=0; i<n; i++) {
-          result = heap.linearize(fields.getIntValue(i),result);
-        }
-      }
-    } else {
-      ClassInfo ci = getClassInfo();
-      do {
-        n = ci.getNumberOfDeclaredInstanceFields();
-        for (i=0; i<n; i++) {
-          FieldInfo fi = ci.getDeclaredInstanceField(i);
-          if (fi.isReference()) {
-            if ((i == 0) && ci.isWeakReference()) {
-              // we need to reset the ref field once the referenced object goes away
-              // NOTE: only the *first* WeakReference field is a weak ref
-              // (this is why we have our own implementation)
-
-            	//dont' know what to do here?
-            	return result;
-
-            } else {
-              // the refAttrs are not immediately masked because we have to preserve
-              // the mask values up to the point where we would promote a otherwise
-              // unshared root object due to a different thread id (in case we didn't
-              // catch a mask on the way that prevents this)
-              result = heap.linearize(fields.getReferenceValue(fi.getStorageOffset()),result);
-            }
-          }
-        }
-        ci = ci.getSuperClass();
-      } while (ci != null);
-    }
-    return result;
   }
 
 

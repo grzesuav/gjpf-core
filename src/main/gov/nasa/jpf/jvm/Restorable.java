@@ -20,25 +20,9 @@
 package gov.nasa.jpf.jvm;
 
 /**
- * state storer/restorer that works solely on a snapshot basis
+ * generic interface of objects that can provide state storage/restore capabilities
  */
-public class SnapshotRestorer extends AbstractRestorer<SnapshotRestorer.ProgramSnapshot>{
+public interface Restorable<T> {
 
-
-  static class ProgramSnapshot {
-    ThreadList.Memento  threadlistMemento;
-    DynamicArea.Memento heapMemento;
-    StaticArea.Memento  staticsMemento;
-  }
-
-  @Override
-  protected ProgramSnapshot computeRestorableData() {
-    return null;
-  }
-
-  @Override
-  protected void doRestore(ProgramSnapshot data) {
-    
-  }
-
+  Memento<T> getMemento(MementoFactory factory);
 }

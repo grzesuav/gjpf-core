@@ -119,6 +119,8 @@ public class IntChoiceFromSet extends IntChoiceGenerator {
 
   public void reset () {
     count = -1;
+
+    isDone = false;
   }
     
 	/** 

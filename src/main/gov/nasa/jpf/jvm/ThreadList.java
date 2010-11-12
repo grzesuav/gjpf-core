@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.util.BitSet;
 
 import gov.nasa.jpf.Config;
 import java.util.Iterator;
@@ -31,17 +30,7 @@ import java.util.NoSuchElementException;
  * a challenge for keeping ThreadInfo identities, which are otherwise nice for
  * directly storing ThreadInfo references in Monitors and/or listeners.
  */
-public class ThreadList implements Cloneable, Iterable<ThreadInfo> {
-
-  static ThreadList threadList;
-
-  /**
-   * to store/restore all threads (including stack frames and thread states)
-   */
-  public interface Memento {
-    void restore();
-  }
-
+public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<ThreadList> {
 
   /** all threads (including terminated ones) */
   protected ThreadInfo[] threads;
@@ -49,11 +38,8 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo> {
   /** reference of the kernel state this thread list belongs to */
   public KernelState ks;  // <2do> bad backlink, remove!
 
-  public static ThreadList getThreadList() {
-    return threadList;
-  }
 
-  private ThreadList() {
+  protected ThreadList() {
     // nothing here
   }
 
@@ -63,10 +49,11 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo> {
   public ThreadList (Config config, KernelState ks) {
     this.ks = ks;
     threads = new ThreadInfo[0];
-
-    threadList = this;
   }
 
+  public Memento<ThreadList> getMemento(MementoFactory factory) {
+    return factory.getMemento(this);
+  }
 
   public Object clone() {
     ThreadList other = new ThreadList();

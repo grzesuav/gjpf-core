@@ -36,6 +36,8 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
   protected int delta;
 
   public void reset () {
+    isDone = false;
+
     if (delta == 0) {
       throw new JPFException("IntIntervalGenerator delta value is 0");
     }

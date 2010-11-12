@@ -72,6 +72,8 @@ public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
   public void reset () {
     count = -1;
     next = falseFirst;
+
+    isDone = false;
   }
   
   public int getTotalNumberOfChoices () {

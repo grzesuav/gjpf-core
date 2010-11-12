@@ -356,6 +356,9 @@ public class Misc {
     
     if (a1 == null){
       if (a2 != null){
+        if (a2.length < len){
+          return false;
+        }
         for (int i=0; i<len; i++){
           if (a2[i] != null){
             return false;
@@ -363,12 +366,19 @@ public class Misc {
         }
       }
     } else if (a2 == null){
+      if (a1.length < len){
+        return false;
+      }
       for (int i=0; i<len; i++){
         if (a1[i] != null){
           return false;
         }
       }      
     } else {
+      if (a1.length < len || a2.length < len){
+        return false;
+      }
+
       for (int i = 0; i < len; i++) {
         Object o1 = a1[i];
         Object o2 = a2[i];

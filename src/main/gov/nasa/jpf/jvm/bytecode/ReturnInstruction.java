@@ -69,7 +69,7 @@ public abstract class ReturnInstruction extends Instruction {
 
       if (mi.isSynchronized()) {
         int objref = ti.getThis();
-        ElementInfo ei = ks.da.get(objref);
+        ElementInfo ei = ks.heap.get(objref);
 
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createSyncMethodExitCG(ei, ti);
         if (cg != null) {
@@ -86,7 +86,7 @@ public abstract class ReturnInstruction extends Instruction {
 
     if (ti.getStackDepth() == 1) { // done - last stackframe in this thread
       int objref = ti.getThreadObjectRef();
-      ElementInfo ei = ks.da.get(objref);
+      ElementInfo ei = ks.heap.get(objref);
 
       // beware - this notifies all waiters on this thread (e.g. in a join())
       // hence it has to be able to acquire the lock

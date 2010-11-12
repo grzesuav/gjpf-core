@@ -39,7 +39,7 @@ public class MONITOREXIT extends LockInstruction {
     }
 
     lastLockRef = objref;
-    ElementInfo ei = ks.da.get(objref);
+    ElementInfo ei = ks.heap.get(objref);
 
     ei.unlock(ti);                              // Do this before potentially creating the CG, but don't pop yet, since then we've lost the lock object (also in RETURN)
 

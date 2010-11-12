@@ -72,6 +72,8 @@ public class RandomIntIntervalGenerator extends IntChoiceGenerator {
   public void reset () {
     random = new Random(seed);
     count = 0;
+
+    isDone = false;
   }
 
 	public boolean hasMoreChoices() {

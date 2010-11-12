@@ -68,6 +68,8 @@ public class RandomOrderLongCG extends LongChoiceGenerator {
 
   public void reset() {
     nextIdx = -1;
+
+    isDone = false;
   }
 
 }

@@ -26,7 +26,7 @@ import gov.nasa.jpf.JPFException;
  * DynamicElementInfo objects represent heap objects
  * @see gov.nasa.jpf.jvm.ElementInfo
  */
-public final class DynamicElementInfo extends ElementInfo implements ElementInfo.Memento<DynamicElementInfo> {
+public final class DynamicElementInfo extends ElementInfo {
 
 
   public DynamicElementInfo () {
@@ -40,13 +40,8 @@ public final class DynamicElementInfo extends ElementInfo implements ElementInfo
     super(f, m, ref, a);
   }
 
-
-  protected Memento<DynamicElementInfo> getMemento() {
-    return (Memento<DynamicElementInfo>)clone();
-  }
-
-  public DynamicElementInfo restore() {
-    return (DynamicElementInfo)clone();
+  public Memento<ElementInfo> getMemento(MementoFactory factory) {
+    return factory.getMemento(this);
   }
 
   protected void markAreaChanged(){
@@ -62,7 +57,6 @@ public final class DynamicElementInfo extends ElementInfo implements ElementInfo
       throw new JPFException("reference field: " + fi.getName());
     }
   }
-
 
   public int getNumberOfFields () {
     return getClassInfo().getNumberOfInstanceFields();

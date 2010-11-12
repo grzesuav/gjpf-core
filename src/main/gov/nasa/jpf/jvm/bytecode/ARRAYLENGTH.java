@@ -41,7 +41,7 @@ public class ARRAYLENGTH extends Instruction {
                                         "array length of null object");
     }
     
-    th.push(ks.da.get(objref).arrayLength(), false);
+    th.push(ks.heap.get(objref).arrayLength(), false);
 
     return getNext(th);
   }

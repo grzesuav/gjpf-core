@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.util.ObjVector;
 
 import java.util.Arrays;
@@ -46,13 +47,18 @@ implements IncrementalChangeTracker {
   protected final ObjVector<DEIState> dCaches = new ObjVector<DEIState>();
   protected final ObjVector<SEIState> sCaches = new ObjVector<SEIState>();
 
+  public CollapsingRestorer () {
+    if (! (JVM.getVM().getHeap() instanceof DynamicArea)){
+      throw new JPFConfigException("CollapsingRestorer requires DynamicArea heap");
+    }
+  }
 
   // ************ SERIALIZATION STUFF ************ //
 
   protected KState computeRestorableData() {
-    updateThreadListCache(ks.tl);
-    updateStaticAreaCache(ks.sa);
-    updateDynamicAreaCache(ks.da);
+    updateThreadListCache(ks.getThreadList());
+    updateStaticAreaCache(ks.getStaticArea());
+    updateDynamicAreaCache((DynamicArea)ks.getHeap());
 
     TState[] tstates = tCaches.toArray(new TState[tCaches.size()]);
     DEIState[] dstates = dCaches.toArray(new DEIState[dCaches.size()]);
@@ -163,9 +169,9 @@ implements IncrementalChangeTracker {
   protected void doRestore (KState state) {
     // we need to restore the Thread list first, since objects (ElementInfos)
     // might refer to it (e.g. when re-computing volatiles)
-    doRestore(ks.tl, state.tstates);
-    doRestore(ks.sa, state.sstates);
-    doRestore(ks.da, state.dstates);
+    doRestore(ks.getThreadList(), state.tstates);
+    doRestore(ks.getStaticArea(), state.sstates);
+    doRestore((DynamicArea)ks.getHeap(), state.dstates);
   }
 
   protected void doRestore (ThreadList tl, TState[] tstates) {

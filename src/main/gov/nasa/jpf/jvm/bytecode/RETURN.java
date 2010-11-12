@@ -39,7 +39,7 @@ public class RETURN extends ReturnInstruction {
     if (mi.isInit()) {  // Check to see if this method is a constructor.
 
       int objref = ti.getThis();
-      ElementInfo ei = ks.da.get(objref); // Get the object.
+      ElementInfo ei = ks.heap.get(objref); // Get the object.
 
       if (!ei.isConstructed()) {  // Don't bother doing the following work if the object is already constructed.
 

@@ -56,7 +56,7 @@ public class TypedObjectChoice extends ReferenceChoiceGenerator {
     
     ArrayList<ElementInfo> list = new ArrayList<ElementInfo>();
     
-    for ( ElementInfo ei : heap.elements()) {
+    for ( ElementInfo ei : heap.liveObjects()) {
       ClassInfo ci = ei.getClassInfo();
       if (ci.isInstanceOf(type)) {
         list.add(ei);
@@ -95,6 +95,8 @@ public class TypedObjectChoice extends ReferenceChoiceGenerator {
   @Override
   public void reset () {
     count = -1;
+
+    isDone = false;
   }
 
   public Integer getNextChoice () {

@@ -75,6 +75,13 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
     }
   }
 
+  @Test
+  public void testClassForNameException () throws ClassNotFoundException {
+    if (verifyUnhandledException("java.lang.ClassNotFoundException")) {
+      Class<?> clazz = Class.forName("x.y.NonExisting");
+    }
+  }
+
   @Test 
   public void testGetClass () {
     if (verifyNoPropertyViolation()) {

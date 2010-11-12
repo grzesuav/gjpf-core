@@ -28,16 +28,16 @@ import java.util.Stack;
 /**
  * This class represents the SUT program state (statics, heap and threads)
  */
-public class KernelState {
+public class KernelState implements Restorable<KernelState> {
 
   /** The area containing static fields and  classes */
-  public StaticArea sa;
+  public StaticArea statics;
 
   /** The area containing the heap */
-  public DynamicArea da;
+  public Heap heap;
 
   /** The list of the threads */
-  public ThreadList tl;
+  public ThreadList threads;
 
   /**
    * current listeners waiting for notification of next change.
@@ -51,25 +51,25 @@ public class KernelState {
     Class<?>[] argTypes = { Config.class, KernelState.class };
     Object[] args = { config, this };
 
-    sa = config.getEssentialInstance("vm.static_area.class", StaticArea.class, argTypes, args);
-    da = config.getEssentialInstance("vm.dynamic_area.class", DynamicArea.class, argTypes, args);
-    tl = config.getEssentialInstance("vm.thread_list.class", ThreadList.class, argTypes, args);
+    statics = config.getEssentialInstance("vm.static.class", StaticArea.class, argTypes, args);
+    heap = config.getEssentialInstance("vm.heap.class", Heap.class, argTypes, args);
+    threads = config.getEssentialInstance("vm.threads.class", ThreadList.class, argTypes, args);
+  }
+
+  public Memento<KernelState> getMemento(MementoFactory factory) {
+    return factory.getMemento(this);
   }
 
   public StaticArea getStaticArea() {
-    return sa;
-  }
-
-  public DynamicArea getDynamicArea() {
-    return da;
+    return statics;
   }
 
   public Heap getHeap() {
-    return da;
+    return heap;
   }
 
   public ThreadList getThreadList() {
-    return tl;
+    return threads;
   }
 
   /**
@@ -106,7 +106,7 @@ public class KernelState {
   }
 
   boolean isDeadlocked () {
-    return tl.isDeadlocked();
+    return threads.isDeadlocked();
   }
 
   /**
@@ -117,37 +117,34 @@ public class KernelState {
    * actually might want to check for
    */
   public boolean isTerminated () {
-    //return !tl.anyAliveThread();
-    return !tl.hasMoreThreadsToRun();
+    //return !threads.anyAliveThread();
+    return !threads.hasMoreThreadsToRun();
   }
 
   public int getThreadCount () {
-    return tl.length();
+    return threads.length();
   }
 
   @Deprecated
   public ThreadInfo getThreadInfo (int index) {
-    return tl.get(index);
+    return threads.get(index);
   }
-
 
   public void gc () {
         
-    da.gc();
+    heap.gc();
 
     // we might have stored stale references in live objects
-    da.cleanUpDanglingReferences();
-    sa.cleanUpDanglingReferences();
+    heap.cleanUpDanglingReferences();
+    statics.cleanUpDanglingReferences();
   }
 
-
-
   public void hash (HashData hd) {
-    da.hash(hd);
-    sa.hash(hd);
+    heap.hash(hd);
+    statics.hash(hd);
 
-    for (int i = 0, l = tl.length(); i < l; i++) {
-      tl.get(i).hash(hd);
+    for (int i = 0, l = threads.length(); i < l; i++) {
+      threads.get(i).hash(hd);
     }
   }
 }

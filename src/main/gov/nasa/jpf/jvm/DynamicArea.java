@@ -28,14 +28,13 @@ import gov.nasa.jpf.util.IntVector;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.Vector;
 
 
 /**
- * DynamicArea is the heap, i.e. the area were all objects created by NEW
- * insn live. Hence the garbage collection mechanism resides here
+ * DynamicArea is used to model the heap (dynamic memory), i.e. the area were all
+ * objects created by NEW insn live. Hence the garbage collection mechanism resides here
  */
-public class DynamicArea extends Area<DynamicElementInfo> implements Heap {
+public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Restorable<Heap> {
 
   /**
    * Used to store various mark phase infos
@@ -71,13 +70,12 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap {
     sweep = config.getBoolean("vm.sweep",true);
   }
 
-  public Memento getMemento() {
-    ElementInfo.Memento[] a = new ElementInfo.Memento[elements.length()];
-    return new GenericSnapshotMemento( a);
+  public Iterable<ElementInfo> liveObjects() {
+    return new ElementInfoIterator();
   }
 
-  public Iterable<ElementInfo> elements() {
-    return new ElementInfoIterator();
+  public Memento<Heap> getMemento(MementoFactory factory) {
+    return factory.getMemento(this);
   }
 
   /**
@@ -156,8 +154,8 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap {
     // value of '-1', but are NOT recursively processed yet (i.e. all other
     // ElementInfos still have the old 'lastGc'). However, all root marked objects
     // do have their proper reachability attribute set
-    ks.tl.markRoots(); // mark thread stacks
-    ks.sa.markRoots(); // mark objects referenced from StaticArea ElementInfos
+    ks.threads.markRoots(); // mark thread stacks
+    ks.statics.markRoots(); // mark objects referenced from StaticArea ElementInfos
 
     // phase 2 - walk through all the marked ones recursively
     // Now we traverse, and propagate the reachability attribute. After this
@@ -733,78 +731,6 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap {
     return index;
   }
 
-  /*
-   * The following code is used to linearize a rooted structure in the heap
-   * A PredicateMap is used to map states onto predicates as an additional key
-   * used during the linearization
-   */
-
-  protected IntTable<String> object2Value;
-
-  protected int lincount;
-
-  protected PredicateMap pMap = null;
-
-  public Vector<String> linearizeRoot(int objref) {
-  	object2Value = new IntTable<String>();
-  	lincount = 0;
-  	Vector<String> result = new Vector<String>();
-  	return linearize(objref,result);
-  }
-
-  public Vector<String> linearizeRoot(int objref, PredicateMap obj) {
-  	object2Value = new IntTable<String>();
-  	lincount = 0;
-  	Vector<String> result = new Vector<String>();
-  	pMap = obj;
-  	return linearize(objref,result);
-  }
-  /*
-   * A StructureMap is a special PredicateMap that is just an identity
-   * function, i.e. only the structure is important no additional predicaes
-   * are used
-   */
-  static class StructureMap extends PredicateMap {
-  	public void evaluate() {
-  	}
-  	public String getRep() {
-  		return "";
-  	}
-  }
-
-  public Vector<String> linearize(int objref, Vector<String> result) {
-
-  	PredicateMap mapObj = pMap;
-
-  	if (objref == -1) {
-    	result.addElement("-1");
-  		return result;
-    }
-
-  	if (mapObj == null)
-    	mapObj = new StructureMap();
-
-  	mapObj.setRef(objref);
-  	String refRep = "" + mapObj.getRef();
-
-  	String objRep;
-
-  	if (object2Value.hasEntry(refRep)) {
-  		objRep = "" + object2Value.get(refRep).val;
-  		result.addElement(objRep);
-  		return result;
-  	} else {
-    	object2Value.add(refRep, lincount);
-    	mapObj.evaluate();
-    	objRep = "" + lincount + mapObj.getRep();
-    	lincount++;
-  	}
-
-  	result.addElement(objRep);
-
-    ElementInfo ei = elements.get(objref);
-    return ei.linearize( this, result);
-  }
 
   
   // for debugging only

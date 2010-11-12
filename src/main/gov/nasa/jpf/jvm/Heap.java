@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.jvm;
 
-import java.util.Vector;
+import gov.nasa.jpf.util.HashData;
 
 /**
  * this is our implementation independent model of the heap
@@ -31,7 +31,6 @@ public interface Heap {
   ElementInfo get (int objref);
 
   void gc();
-
 
   boolean isOutOfMemory();
 
@@ -45,8 +44,9 @@ public interface Heap {
 
   int newInternString (String str, ThreadInfo ti);
   
-  Iterable<ElementInfo> elements();
+  Iterable<ElementInfo> liveObjects();
 
+  int size();
 
   //--- system internal interface
 
@@ -56,9 +56,6 @@ public interface Heap {
   void analyzeHeap (boolean sweep);
 
   void updateReachability( boolean isSharedOwner, int oldRef, int newRef);
-
-  // <2do> check if we still need this
-  Vector<String> linearize(int objref, Vector<String> result);
 
   void checkConsistency (boolean isStateStore);
 
@@ -79,4 +76,12 @@ public interface Heap {
   void mark (int objref, int refTid, int refAttr, int attrMask);
 
   void markChanged(int objref);
+
+  void hash(HashData hd);
+
+  void resetVolatiles();
+
+  void restoreVolatiles();
+
+  Memento<Heap> getMemento(MementoFactory factory);
 }

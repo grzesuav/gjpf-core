@@ -1112,7 +1112,7 @@ public class JVM {
   }
 
   public StaticElementInfo getClassReference (String name) {
-    return ss.ks.sa.get(name);
+    return ss.ks.statics.get(name);
   }
 
   public boolean hasPendingException () {
@@ -1878,7 +1878,7 @@ public class JVM {
    * same for "loaded classes", but be advised it will probably go away at some point
    */
   public StaticArea getStaticArea () {
-    return ss.ks.sa;
+    return ss.ks.statics;
   }
 
   /**

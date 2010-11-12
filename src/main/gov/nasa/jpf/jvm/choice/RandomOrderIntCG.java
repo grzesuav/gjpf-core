@@ -49,5 +49,7 @@ public class RandomOrderIntCG extends IntChoiceGenerator {
 
   public void reset() {
     nextIdx = -1;
+
+    isDone = false;
   }
 }

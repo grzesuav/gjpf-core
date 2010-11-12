@@ -44,7 +44,7 @@ public class MONITORENTER extends LockInstruction {
     }
 
     lastLockRef = objref;
-    ElementInfo ei = ks.da.get(objref);
+    ElementInfo ei = ks.heap.get(objref);
     
     if (!isLockOwner(ti, ei)){           // If the object isn't already owned by this thread, then consider a choice point
       if (isShared(ti, ei)){             // If the object is shared, then consider a choice point

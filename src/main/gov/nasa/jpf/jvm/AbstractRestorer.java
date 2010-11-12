@@ -20,13 +20,16 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 
-public abstract class AbstractRestorer<Saved>
-implements StateRestorer<Saved>, KernelState.ChangeListener {
+public abstract class AbstractRestorer<Saved> implements StateRestorer<Saved>, KernelState.ChangeListener {
+
   protected Saved cached = null;
+
+  JVM vm;
   protected KernelState ks = null;
 
   
   public void attach(JVM jvm) {
+    vm = jvm;
     ks = jvm.getKernelState();
   }
   

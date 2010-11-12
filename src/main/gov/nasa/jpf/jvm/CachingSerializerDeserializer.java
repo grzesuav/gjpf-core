@@ -56,9 +56,9 @@ implements IncrementalChangeTracker {
 
   protected int[] computeStoringData () {
     // update caches
-    updateThreadListCache(ks.tl);
-    updateStaticAreaCache(ks.sa);
-    updateDynamicAreaCache(ks.da);
+    updateThreadListCache(ks.getThreadList());
+    updateStaticAreaCache(ks.getStaticArea());
+    updateDynamicAreaCache((DynamicArea)ks.getHeap());
 
     // compute required length
     int totalLen = 1;
@@ -107,9 +107,9 @@ implements IncrementalChangeTracker {
     
     // we need to restore the Thread list first, since objects (ElementInfos)
     // might refer to it (e.g. when re-computing volatiles)
-    doRestore(ks.tl, storing);
-    doRestore(ks.sa, storing);
-    doRestore(ks.da, storing);
+    doRestore(ks.getThreadList(), storing);
+    doRestore(ks.getStaticArea(), storing);
+    doRestore((DynamicArea)ks.getHeap(), storing);
   }
   
   protected void doRestore (ThreadList tl, ArrayOffset storing) {

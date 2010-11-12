@@ -323,7 +323,7 @@ public class HeapTracker extends PropertyListenerAdapter {
     int nShared = 0;
     int nImmutable = 0;
 
-    for (ElementInfo ei : heap.elements()) {
+    for (ElementInfo ei : heap.liveObjects()) {
       n++;
 
       if (ei.isShared()) nShared++;

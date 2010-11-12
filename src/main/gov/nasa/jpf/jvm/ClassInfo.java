@@ -1687,8 +1687,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
   // Note: JVM.registerStartupClass() must be kept in sync
   public void registerClass (ThreadInfo ti){
+    // ti might be null if we are still in main thread creation
+
     if (sei == null){
-       
       // do this recursively for superclasses and interfaceNames
       if (superClass != null) {
         superClass.registerClass(ti);
@@ -1702,7 +1703,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       logger.finer("registering class: ", name);
 
       // register ourself in the static area
-      StaticArea sa = StaticArea.getStaticArea();
+      StaticArea sa = JVM.getVM().getStaticArea();
       sei = sa.addClass(this);
 
       createClassObject(ti);

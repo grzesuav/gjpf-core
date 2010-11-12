@@ -21,19 +21,20 @@ package gov.nasa.jpf.jvm.abstraction.filter;
 
 import gov.nasa.jpf.jvm.ArrayFields;
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicElementInfo;
+import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
+import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StackFrame;
+import gov.nasa.jpf.jvm.StaticArea;
 import gov.nasa.jpf.jvm.StaticElementInfo;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.ThreadList;
 import gov.nasa.jpf.util.BitArray;
 import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.IntVector;
-import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.ObjVector;
 
 
@@ -103,15 +104,16 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
   protected transient IntVector heapMap    = new IntVector(200);
   protected transient IntVector invHeapMap = new IntVector(200);
 
-  protected void addObjRef(int objref) {
+  protected void addObjRef(Heap heap, int objref) {
     if (objref < 0) {
       buf.add(-1);
+
     } else {
       int idx = heapMap.get(objref);
       if (idx == 0) {
-        DynamicElementInfo d = ks.da.get(objref);
+        ElementInfo ei = heap.get(objref);
 
-        if (d == null) { // some weird cases
+        if (ei == null) { // some weird cases
           idx = -1;
         } else {
           idx = invHeapMap.size();
@@ -129,11 +131,12 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
     heapMap.clear();
     invHeapMap.clear();
 
-    ThreadList tl = ks.tl;
+    ThreadList tl = ks.getThreadList();
     int tlen = tl.length();
+    Heap heap = ks.getHeap();
 
-    //buf.add(ks.tl.length());
-    //for (ThreadInfo t : ks.tl.getThreads()) {
+    //buf.add(ks.threads.length());
+    //for (ThreadInfo t : ks.threads.getThreads()) {
 
     for (int j=0; j<tlen; j++){
       ThreadInfo t = tl.get(j);
@@ -141,7 +144,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
         continue;
       }
 
-      addObjRef(t.getThreadObjectRef());
+      addObjRef( heap, t.getThreadObjectRef());
       buf.add(t.getState().ordinal());
 
       int frameCountPos = buf.size();
@@ -170,7 +173,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
           for (int i = 0; i < lcount; i++) {
             int v = f.getLocalVariable(i);
             if (f.isLocalVariableRef(i)) {
-              addObjRef(v);
+              addObjRef( heap, v);
             } else {
               buf.add(v);
             }
@@ -182,7 +185,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
           for (int i = 0; i < ocount; i++) {
             int v = f.getAbsOperand(i);
             if (f.isAbsOperandRef(i)) {
-              addObjRef(v);
+              addObjRef( heap, v);
             } else {
               buf.add(v);
             }
@@ -196,8 +199,9 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
       buf.set(frameCountPos, frameCount);
     }
 
-    buf.add(ks.sa.getLength());
-    for (StaticElementInfo s : ks.sa) {
+    StaticArea statics = ks.getStaticArea();
+    buf.add(statics.getLength());
+    for (StaticElementInfo s : statics) {
       if (s == null) {
         buf.add(-1);
       } else {
@@ -212,7 +216,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
           if (! filtered.get(i)) {
             int v = fields.getIntValue(i);
             if (refs.get(i)) {
-              addObjRef(v);
+              addObjRef( heap, v);
             } else {
               buf.add(v);
             }
@@ -222,7 +226,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
     }
 
     for (int newRef = 0; newRef < invHeapMap.size(); newRef++) {
-      DynamicElementInfo d = ks.da.get(invHeapMap.get(newRef));
+      ElementInfo d = heap.get(invHeapMap.get(newRef));
 
       Fields fields = d.getFields();
       ClassInfo ci = fields.getClassInfo();
@@ -232,7 +236,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
         buf.add(values.length);
         if (ci.isReferenceArray()) {
           for (int i = 0; i < values.length; i++) {
-            addObjRef(values[i]);
+            addObjRef( heap, values[i]);
           }
         } else {
           buf.append(values);
@@ -245,7 +249,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
           if (! filtered.get(i)) {
             int v = fields.getIntValue(i);
             if (refs.get(i)) {
-              addObjRef(v);
+              addObjRef( heap, v);
             } else {
               buf.add(v);
             }

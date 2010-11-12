@@ -146,7 +146,7 @@ public class JPF_java_lang_Class {
     Instruction insn = ti.getPC();
     String            clsName = env.getStringObject(stringRef);
     
-    ClassInfo         ci = ClassInfo.getResolvedClassInfo(clsName);
+    ClassInfo         ci = ClassInfo.tryGetResolvedClassInfo(clsName);
     if (ci == null){
       env.throwException("java.lang.ClassNotFoundException", clsName);
       return MJIEnv.NULL;

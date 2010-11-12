@@ -26,9 +26,7 @@ import gov.nasa.jpf.util.IntTable;
 /**
  * memory area for static fields
  */
-public class StaticArea extends Area<StaticElementInfo> {
-
-  static StaticArea staticArea;
+public class StaticArea extends Area<StaticElementInfo> implements Restorable<StaticArea> {
 
   /**
    * analogy of DynamicMap to achieve symmetry for static fields (so that order
@@ -37,28 +35,15 @@ public class StaticArea extends Area<StaticElementInfo> {
   private IntTable<String> staticMap = new IntTable<String>();
 
 
-  public static StaticArea getStaticArea() {
-    return staticArea;
-  }
-
   /**
    * Creates a new empty static area.
    */
   public StaticArea (Config config, KernelState ks) {
     super(ks);
-
-    // beware - we store 'this' in a static field, which (a) makes it
-    // effectively a singleton, (b) means the assignment should be the very last
-    // insn to avoid handing out a ref to a partially initialized object (no
-    // subclassing!)
-    // <2do> - revisit during DynamicArea / Static redesign
-    staticArea = this;
-    
-    config = null;  // Get rid of IDE warning
   }
 
-  public Memento getMemento() {
-    return new GenericSnapshotMemento( new ElementInfo.Memento[elements.length()]);
+  public Memento<StaticArea> getMemento(MementoFactory factory) {
+    return factory.getMemento(this);
   }
 
 

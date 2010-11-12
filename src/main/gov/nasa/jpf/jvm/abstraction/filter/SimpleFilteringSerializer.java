@@ -21,18 +21,20 @@ package gov.nasa.jpf.jvm.abstraction.filter;
 import gov.nasa.jpf.jvm.AbstractSerializer;
 import gov.nasa.jpf.jvm.ArrayFields;
 import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.DynamicElementInfo;
+import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
+import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StackFrame;
+import gov.nasa.jpf.jvm.StaticArea;
 import gov.nasa.jpf.jvm.StaticElementInfo;
 import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.ThreadList;
 import gov.nasa.jpf.util.BitArray;
 import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.IntVector;
-import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.ObjVector;
 
 /**
@@ -134,11 +136,14 @@ public class SimpleFilteringSerializer extends AbstractSerializer {
   }
 
   protected transient IntVector buf = new IntVector(300);
-  protected int[] computeStoringData() {
-    buf.clear();
 
-    buf.add(ks.tl.length());
-    for (ThreadInfo t : ks.tl.getThreads()) {
+  protected int[] computeStoringData() {
+
+    ThreadList threads = ks.getThreadList();
+    buf.clear();
+    buf.add(threads.length());
+
+    for (ThreadInfo t : threads.getThreads()) {
       buf.add2(t.getThreadObjectRef(),t.getState().ordinal());
 
       int frameCountPos = buf.size();
@@ -183,8 +188,9 @@ public class SimpleFilteringSerializer extends AbstractSerializer {
       buf.set(frameCountPos, frameCount);
     }
 
-    buf.add(ks.da.getLength());
-    for (DynamicElementInfo d : ks.da) {
+    Heap heap = ks.getHeap();
+    buf.add( heap.size());
+    for (ElementInfo d : heap.liveObjects()) {
       if (d == null) {
         buf.add(-1);
       } else {
@@ -211,10 +217,11 @@ public class SimpleFilteringSerializer extends AbstractSerializer {
       }
     }
 
+    StaticArea statics = ks.getStaticArea();
     //[not really needed, but to be safe:
-    buf.add(ks.sa.getLength());
+    buf.add(statics.getLength());
     //]
-    for (StaticElementInfo s : ks.sa) {
+    for (StaticElementInfo s : statics) {
       if (s == null) {
         buf.add(-1);
       } else {

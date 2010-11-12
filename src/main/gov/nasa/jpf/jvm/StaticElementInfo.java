@@ -27,8 +27,7 @@ import gov.nasa.jpf.util.HashData;
  * StaticArea.  It specifically knows about the relationship amongst
  * classes, and will recursively lookup a data member if needed.
  */
-public final class StaticElementInfo extends ElementInfo implements ElementInfo.Memento<StaticElementInfo> {
-
+public final class StaticElementInfo extends ElementInfo {
 
   int classObjectRef = -1;
   int status = ClassInfo.UNINITIALIZED;
@@ -48,12 +47,8 @@ public final class StaticElementInfo extends ElementInfo implements ElementInfo.
     status = s;
   }
 
-  protected Memento<StaticElementInfo> getMemento() {
-    return (Memento<StaticElementInfo>)clone();
-  }
-
-  public StaticElementInfo restore() {
-    return (StaticElementInfo)clone();
+  public Memento<ElementInfo> getMemento(MementoFactory factory) {
+    return factory.getMemento(this);
   }
 
   @Override
@@ -64,7 +59,7 @@ public final class StaticElementInfo extends ElementInfo implements ElementInfo.
   }
 
   protected void markAreaChanged(){
-    StaticArea.getStaticArea().markChanged(index);
+    JVM.getVM().getStaticArea().markChanged(index);
   }
 
   public void setIntField(FieldInfo fi, int value) {
@@ -132,7 +127,7 @@ public final class StaticElementInfo extends ElementInfo implements ElementInfo.
     if (ci == getClassInfo()) {
       return this;
     } else {
-      return StaticArea.getStaticArea().get( ci.getName());
+      return JVM.getVM().getStaticArea().get( ci.getName());
     }
   }
   

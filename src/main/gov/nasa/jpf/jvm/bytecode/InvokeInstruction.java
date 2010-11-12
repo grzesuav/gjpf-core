@@ -314,7 +314,7 @@ public abstract class InvokeInstruction extends Instruction {
    */
   protected ChoiceGenerator<?> getSyncCG (int objRef, MethodInfo mi,
                                           SystemState ss, KernelState ks, ThreadInfo ti) {
-    ElementInfo ei = ks.da.get(objRef);
+    ElementInfo ei = ks.heap.get(objRef);
 
     if (ei.getLockingThread() == ti) {
       assert ei.getLockCount() > 0;

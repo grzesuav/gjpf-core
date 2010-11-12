@@ -32,43 +32,6 @@ import java.util.NoSuchElementException;
  */
 public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
 
-  public interface Memento {
-    void restore();
-  }
-
-  /**
-   * saves area contents in a simple ElementInfo.Memento array for later restoration
-   */
-  class GenericSnapshotMemento implements Memento {
-    ElementInfo.Memento<EI>[] e;
-
-    protected GenericSnapshotMemento (ElementInfo.Memento<EI>[] e){
-      int len = elements.length();
-      for (int i=0; i<len; i++){
-        EI ei = elements.get(i);
-        if (ei != null){
-          e[i] = ei.getMemento();
-        }
-      }
-
-      this.e = e;
-    }
-
-    public void restore() {
-      int len = e.length;
-
-      nElements = len;
-      elements.setSize(len);
-      
-      for (int i=0; i<len; i++){
-        ElementInfo.Memento<EI> em = e[i];
-        elements.set(i, em != null ? em.restore() : null);
-      }
-
-      hasChanged.clear();
-    }
-  }
-
   /**
    * Contains the information for each element.
    */
@@ -111,7 +74,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
 
   }
 
-  protected class EIiterator extends IteratorBase implements Iterator<EI> {
+  protected class EIiterator extends IteratorBase implements Iterator<EI>, Iterable<EI> {
     public EI next() {
       for (; i < elements.size(); i++) {
         EI ei = elements.get(i);
@@ -123,12 +86,16 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
 
       throw new NoSuchElementException();
     }
+
+    public Iterator<EI> iterator() {
+      return this;
+    }
   }
 
   protected class ElementInfoIterator extends IteratorBase implements Iterator<ElementInfo>, Iterable<ElementInfo> {
     public ElementInfo next() {
       for (; i < elements.size(); i++) {
-        ElementInfo ei = elements.get(i);
+        EI ei = elements.get(i);
         if (ei != null) {
           i++; visited++;
           return ei;
@@ -141,6 +108,10 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     public Iterator<ElementInfo> iterator() {
       return this;
     }
+  }
+
+  public Iterable<EI> elements() {
+    return new EIiterator();
   }
 
   /**
@@ -211,6 +182,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     hasChanged = new BitSet();
   }
 
+
   public EIiterator iterator() {
     return new EIiterator();
   }
@@ -227,17 +199,16 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     return hasChanged.cardinality();
   }
 
-  public abstract Memento getMemento();
 
   /**
    * reset any information that has to be re-computed in a backtrack
    * (i.e. hasn't been stored explicitly)
    */
-  void resetVolatiles () {
+  public void resetVolatiles () {
     // nothing yet
   }
 
-  void restoreVolatiles () {
+  public void restoreVolatiles () {
     // nothing to do
   }
 
@@ -251,7 +222,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     }
   }
 
-  public int count () {
+  public int size () {
     return nElements;
   }
 
@@ -305,12 +276,16 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
 
   public void removeAll() { removeAllFrom(0); }
 
+  // this is called during restoration, we don't have to mark changes
   public void removeAllFrom (int idx) {
     int l = elements.size();
 
     for (int i = idx; i < l; i++) {
-      remove(i,true);
+      elements.set(i, null);
     }
+
+    nElements -= (l - idx);
+    elements.squeeze();
   }
 
   public String toString () {

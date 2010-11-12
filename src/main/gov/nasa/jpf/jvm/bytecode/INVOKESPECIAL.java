@@ -59,7 +59,7 @@ public class INVOKESPECIAL extends InstanceInvocation {
       return ti.createAndThrowException("java.lang.NoSuchMethodException", "Calling " + cname + "." + mname);
     }
 
-    ElementInfo ei = ks.da.get(objRef);
+    ElementInfo ei = ks.heap.get(objRef);
 
     if (mi.isSynchronized())
       if (!isLockOwner(ti, ei))           // If the object isn't already owned by this thread, then consider a choice point

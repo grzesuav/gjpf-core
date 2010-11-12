@@ -111,7 +111,7 @@ public class SearchMonitor extends ListenerAdapter {
       
       newStates++; 
       
-      currentHeapCount = search.getVM().getKernelState().da.count();
+      currentHeapCount = search.getVM().getHeap().size();
       
       if (currentHeapCount > maxHeapCount)
       	maxHeapCount = currentHeapCount;

@@ -73,6 +73,7 @@ public class BreakGenerator extends ThreadChoiceGenerator {
 
   public void reset () {
     state = -1;
+    isDone = false;
   }
 
 }
