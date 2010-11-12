@@ -47,7 +47,7 @@ public class CollapsingSerializer extends CachingSerializerDeserializer {
     IntVector cache = entry.cache;
     int length = ti.getStackDepth();
 
-    if (ti.tdChanged || ti != entry.ti) { // cache not valid
+    if (ti.hasDataChanged() || ti != entry.ti) { // cache not valid
       cache.set(0, pool.getThreadDataIndex(ti));
     }
 

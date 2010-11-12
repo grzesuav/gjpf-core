@@ -77,10 +77,17 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
   public static final int   ATTR_CONSTRUCTED   = 0x100000;
 
-  public static final int   ATTR_FIELDS_CHANGED = 0x1000000;
-  public static final int   ATTR_MONITOR_CHANGED= 0x2000000;
+  // those are reset during state storage/restore
+  public static final int   ATTR_FIELDS_CHANGED     = 0x1000000;
+  public static final int   ATTR_MONITOR_CHANGED    = 0x2000000;
+  // did we ever have a change before (this is sticky)
+  public static final int   ATTR_HAS_CHANGED_BEFORE = 0x4000000;
 
-  public static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED);
+  static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED);
+  static final int   ATTR_SET_FIELDS_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_HAS_CHANGED_BEFORE);
+  static final int   ATTR_SET_MONITOR_CHANGED = (ATTR_MONITOR_CHANGED | ATTR_HAS_CHANGED_BEFORE);
+  static final int   ATTR_CHANGESET = ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_HAS_CHANGED_BEFORE;
+
 
   // transient flag set if object is reachable from root object, i.e. can't be recycled
   public static final int   ATTR_IS_LIVE       = 0x80000000;
@@ -1382,9 +1389,14 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     attributes |= ATTR_IS_LIVE;
   }
 
+  public boolean isNewOrChanged() {
+    return (attributes & ATTR_CHANGESET) != ATTR_HAS_CHANGED_BEFORE;
+  }
+
   protected abstract void markAreaChanged();
 
   public void markUnchanged() {
+    // note this does NOT reset ATTR_HAS_CHANGED_BEFORE
     attributes &= ~ATTR_ANY_CHANGED;
   }
 
@@ -1400,7 +1412,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   protected Fields cloneFields() {
     if ((attributes & ATTR_FIELDS_CHANGED) == 0) {
       fields = fields.clone();
-      attributes |= ATTR_FIELDS_CHANGED;
+      attributes |= ATTR_SET_FIELDS_CHANGED;
       markAreaChanged();
     }
 
@@ -1412,7 +1424,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * not yet stored (mIndex = -1), and memory has changed (area)
    */
   void resetMonitorIndex () {
-    attributes |= ATTR_MONITOR_CHANGED;
+    attributes |= ATTR_SET_MONITOR_CHANGED;
     markAreaChanged();
   }
 

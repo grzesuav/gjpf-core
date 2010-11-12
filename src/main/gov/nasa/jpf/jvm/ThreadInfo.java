@@ -50,6 +50,10 @@ import java.util.logging.Logger;
  * information about the thread, and the stack frames.
  * Race detection and lock order also store some information
  * in this data structure.
+ *
+ * Note that we preserve identities according to their associated java.lang.Thread object
+ * (threadData.objref). This esp. means along the same path, a ThreadInfo reference
+ * is kept invariant
  */
 public class ThreadInfo
      implements Iterable<StackFrame>, Comparable<ThreadInfo>, Cloneable, Restorable<ThreadInfo> {
@@ -141,16 +145,23 @@ public class ThreadInfo
    * Reference of the thread list it is in.
    * <2do> - bad cross ref (ThreadList should know about ThreadInfo, but not vice versa)
    */
-  public ThreadList list;
+  protected ThreadList list;
 
   /** thread list index */
-  public int index;
+  protected int index;
 
-  /** has the ThreadData been changed */
-  protected boolean tdChanged;
 
-  /** has any of the StackFrames been changed */
-  protected boolean tfChanged;
+  static final int ATTR_DATA_CHANGED  = 0x1000000;
+  static final int ATTR_STACK_CHANGED = 0x2000000;
+  static final int ATTR_HAS_CHANGED_BEFORE = 0x400000;
+
+  static final int ATTR_ANY_CHANGED = (ATTR_DATA_CHANGED | ATTR_STACK_CHANGED);
+  static final int ATTR_SET_DATA_CHANGED = (ATTR_DATA_CHANGED | ATTR_HAS_CHANGED_BEFORE);
+  static final int ATTR_SET_STACK_CHANGED = (ATTR_STACK_CHANGED | ATTR_HAS_CHANGED_BEFORE);
+  static final int ATTR_CHANGESET = ATTR_DATA_CHANGED | ATTR_STACK_CHANGED | ATTR_HAS_CHANGED_BEFORE;
+
+  protected int attributes;
+
 
   /** the first insn in the current transition */
   protected boolean isFirstStepInsn;
@@ -160,6 +171,7 @@ public class ThreadInfo
 
   /** store the last executed insn in the path */
   protected boolean logInstruction;
+
 
   /** the last returned direct call frame */
   protected DirectCallStackFrame returnedDirectCall;
@@ -184,7 +196,7 @@ public class ThreadInfo
   JVM vm;
 
   /**
-   * !! this is a volatile object, i.e. has to be reset and restored
+   * !! this is a volatile object, i.e. it has to be re-computed explicitly
    * !! after each backtrack (we don't want to duplicate state storage)
    * list of lock objects currently held by this thread.
    * unfortunately, we cannot organize this as a stack, since it might get
@@ -197,6 +209,9 @@ public class ThreadInfo
    * the reference of the object if this thread is blocked or waiting for
    */
   int lockRef = -1;
+
+
+  Memento<ThreadInfo> memento; // cache for unchanged ThreadInfos
 
   /**
    * this is where we keep ThreadInfos, indexed by their java.lang.Thread objRef, to
@@ -294,7 +309,7 @@ public class ThreadInfo
     lockedObjects = new LinkedList<ElementInfo>();
 
     markUnchanged();
-    tdChanged = true;
+    attributes |= ATTR_SET_DATA_CHANGED;
   }
 
   /**
@@ -2538,7 +2553,7 @@ public class ThreadInfo
    * (which unfortunately includes lock counts, hence this should be changed)
    */
   protected ThreadData threadDataClone () {
-    if (tdChanged) {
+    if ((attributes & ATTR_DATA_CHANGED) != 0) {
       // already cloned, so we don't have to clone
     } else {
       // reset, so that next storage request would recompute tdIndex
@@ -2625,8 +2640,7 @@ public class ThreadInfo
   }
 
   protected void markUnchanged() {
-    tfChanged = false;
-    tdChanged = false;
+    attributes &= ~ATTR_ANY_CHANGED;
 
     for (StackFrame f = top; f != null && f.hasChanged(); f = f.getPrevious()){
       f.setChanged(false);
@@ -2636,12 +2650,12 @@ public class ThreadInfo
   protected void markTfChanged(StackFrame frame) {
     frame.setChanged(true);
 
-    tfChanged = true;
+    attributes |= ATTR_SET_STACK_CHANGED;
     list.ks.changed();
   }
 
   protected void markTdChanged() {
-    tdChanged = true;
+    attributes |= ATTR_SET_DATA_CHANGED;
     list.ks.changed();
   }
 
@@ -2653,6 +2667,21 @@ public class ThreadInfo
     }
   }
 
+  public boolean hasDataChanged() {
+    return (attributes & ATTR_DATA_CHANGED) != 0;
+  }
+
+  public boolean hasStackChanged() {
+    return (attributes & ATTR_STACK_CHANGED) != 0;
+  }
+
+  public boolean hasChanged() {
+    return (attributes & ATTR_ANY_CHANGED) != 0;
+  }
+
+  public boolean isNewOrChanged() {
+    return (attributes & ATTR_CHANGESET) != ATTR_HAS_CHANGED_BEFORE;
+  }
 
   /**
    * Returns a clone of the top stack frame.

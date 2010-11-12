@@ -50,17 +50,27 @@ public class DefaultMementoRestorer extends MementoRestorer {
   }
 
   // we keep the ThreadList identity
-  static class TlMemento implements Memento<ThreadList> {
+  static class TlistMemento implements Memento<ThreadList> {
     // note that ThreadInfo mementos are also identity preserving
     Memento<ThreadInfo>[] tiMementos;
 
-    TlMemento(MementoRestorer factory, ThreadList tl) {
+    TlistMemento(MementoRestorer factory, ThreadList tl) {
       ThreadInfo[] threads = tl.threads;
       int len = threads.length;
 
       tiMementos = new Memento[len];
       for (int i=0; i<len; i++){
-        tiMementos[i] = threads[i].getMemento(factory);
+        ThreadInfo ti = threads[i];
+        Memento<ThreadInfo> m = null;
+
+        if (!ti.isNewOrChanged()){
+          m = ti.memento;
+        }
+        if (m == null){
+          m = ti.getMemento(factory);
+          ti.memento = m;
+        }
+        tiMementos[i] = m;
       }
     }
 
@@ -69,7 +79,9 @@ public class DefaultMementoRestorer extends MementoRestorer {
       ThreadInfo[] threads = new ThreadInfo[len];
       for (int i=0; i<len; i++){
         TiMemento m = (TiMemento) tiMementos[i];
-        threads[i] = m.restore(m.ti);
+        ThreadInfo ti = m.restore(m.ti);
+        ti.memento = m;
+        threads[i] = ti;
       }
       tl.threads = threads;
 
@@ -81,7 +93,11 @@ public class DefaultMementoRestorer extends MementoRestorer {
    * note that ThreadInfo instances are invariant along the same path
    */
   static class TiMemento implements Memento<ThreadInfo> {
+    // we have to preserve ThreadInfo identities.
+    // If we ever want to avoid storing direct references, we would use
+    // ThreadInfo.getThreadInfo(threadData.objref) to retrieve the ThreadInfo
     ThreadInfo ti;
+
     ThreadData threadData;
     StackFrame top;
     int stackDepth;
@@ -125,7 +141,7 @@ public class DefaultMementoRestorer extends MementoRestorer {
       int i=0;
       for (E ei : area.elements()){
         Memento<ElementInfo> m = null;
-        if (!area.hasChanged.get(ei.index)){
+        if (!ei.isNewOrChanged()){
           m = ei.memento;
         }
         if (m == null){
@@ -275,7 +291,7 @@ public class DefaultMementoRestorer extends MementoRestorer {
   }
 
   public Memento<ThreadList> getMemento(ThreadList tlist) {
-    return new TlMemento(this,tlist);
+    return new TlistMemento(this,tlist);
   }
 
   public Memento<ThreadInfo> getMemento(ThreadInfo ti) {

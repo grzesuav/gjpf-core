@@ -42,7 +42,9 @@ public abstract class Fields implements Cloneable {
   /** the class of this object */
   protected final ClassInfo ci;
 
-  /** this is where we store the instance data */
+  /** this is where we store the instance data. should be final but we set it
+   * during a clone
+   */
   protected int[] values;
 
   /**
@@ -348,8 +350,10 @@ public abstract class Fields implements Cloneable {
       }
     }
 
-    if (!Misc.compare(l, fieldAttrs, f.fieldAttrs)){
-      return false;
+    if (fieldAttrs != null || f.fieldAttrs != null){
+      if (!Misc.compare(getNumberOfFieldsOrElements(), fieldAttrs, f.fieldAttrs)) {
+        return false;
+      }
     }
     
     if (objectAttr != null){

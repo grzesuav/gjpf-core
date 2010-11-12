@@ -319,6 +319,10 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     return !hasChanged.isEmpty();
   }
 
+  public boolean hasChanged(int index){
+    return hasChanged.get(index);
+  }
+
   protected void remove (int index, boolean nullOk) {
     EI ei = elements.get(index);
 

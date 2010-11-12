@@ -78,7 +78,7 @@ implements IncrementalChangeTracker {
 
   protected TState updateThreadCache(ThreadInfo ti, TState entry) {
     ThreadData td;
-    if (ti.tdChanged || entry == null || ti != entry.ti) { // cache not valid
+    if (ti.hasDataChanged() || entry == null || ti != entry.ti) { // cache not valid
       td = pool.poolThreadData(ti.threadData);
       ti.threadData = td;
     } else {
