@@ -66,10 +66,6 @@ public class FieldTest extends TestFieldBase {
   double  _D = base_D;
   Object  _o = base_o;
 
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test public void testReadInstance () {
     if (verifyNoPropertyViolation()) {
       assert _Z == base_Z;

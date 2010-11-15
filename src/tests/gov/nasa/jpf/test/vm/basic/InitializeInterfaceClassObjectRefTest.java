@@ -31,24 +31,20 @@ import org.junit.*;
  */
 public class InitializeInterfaceClassObjectRefTest extends TestJPF implements InitializeInterfaceClassObjectRefTestInterface
 {
-   public static void main(String args[])
-   {
-      runTestsOfThisClass(args);   // Not really needed since test() doesn't do anything when running in JPF
-   }
-   
    @Test
    public void test()
    {
-      if (verifyNoPropertyViolation("+log.finest+=,gov.nasa.jpf.jvm.ClassInfo"))
+      if (verifyUnhandledExceptionDetails(RuntimeException.class.getName(), "This test throws an expected exception.", "+log.finest+=,gov.nasa.jpf.jvm.ClassInfo"))
       {
-         // nothing to do while running in JPF
+         // Throw an exception to avoid backtracking.  Backtracking will wipe out the class object ref.
+         throw new RuntimeException("This test throws an expected exception.");
       }
       else
       {
          ClassInfo ci = ClassInfo.getResolvedClassInfo(InitializeInterfaceClassObjectRefTestInterface.class.getName());
          
          if (ci.getClassObjectRef() < 0)
-            throw new AssertionError();
+            throw new AssertionError("ci.getClassObjectRef() < 0 : " + ci.getClassObjectRef());
       }
    }
 }

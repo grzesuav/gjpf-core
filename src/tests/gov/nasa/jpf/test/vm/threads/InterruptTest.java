@@ -27,13 +27,6 @@ import org.junit.Test;
  */
 public class InterruptTest extends TestJPF {
 
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
-
-  //--- the test methods
-
   @Test public void testInterruptStatus () {
     if (verifyNoPropertyViolation()) {
       Thread t = Thread.currentThread();

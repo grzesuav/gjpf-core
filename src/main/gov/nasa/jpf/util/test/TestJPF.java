@@ -18,35 +18,29 @@
 //
 package gov.nasa.jpf.util.test;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPFShell;
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.Error;
+import gov.nasa.jpf.Property;
 import gov.nasa.jpf.jvm.*;
 
-import gov.nasa.jpf.Property;
 import gov.nasa.jpf.annotation.FilterField;
 import gov.nasa.jpf.tool.RunTest;
-import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Reflection;
-import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
-import org.junit.*;
-
+import java.util.*;
 
 /**
  * base class for JPF unit tests. TestJPF mostly includes JPF invocations
  * that check for occurrence or absence of certain execution results
- * 
+ *
  * This class can be used in two modes:
  *
  * <ol>
@@ -59,15 +53,12 @@ import org.junit.*;
  * JPF.main argument list (based on the calling class / method names). Note that
  * you have to obey naming conventions for this to work:
  *
- * <ul>
  * <li> the SuT class has to be the same as the test class without "Test", e.g.
  * "CastTest" -> "Cast" </li>
- * 
+ *
  * <li> the SuT method has to have the same name as the @Test method that
  * invokes JPF, e.g. "CastTest {.. @Test void testArrayCast() ..}" ->
  * "Cast {.. void testArrayCast()..} </li>
- *
- * </li>
  * </ol>
  */
 public abstract class TestJPF implements JPFShell  {
@@ -114,8 +105,10 @@ public abstract class TestJPF implements JPFShell  {
         return list;
       }
     }
+    
+    ArrayList<GlobalArg> result = null;  // Get rid of IDE warning
 
-    return null;
+    return result;
   }
 
   static {
@@ -164,20 +157,11 @@ public abstract class TestJPF implements JPFShell  {
     out.println();
   }
 
-  private String[] getArgsForCallerMethod (String[] jpfArgs){
-    StackTraceElement callerEntry = Reflection.getCallerElement(2);
-
-    String testMethod = callerEntry.getMethodName();
-    String[] args = Misc.appendArray(jpfArgs, sutClassName, testMethod);
-
-    return args;
-  }
-
   /**
    * compute the SuT class name for a given JUnit test class: remove
    * optionally ending "..Test", and replace package (if specified)
    * 
-   * @param testClass the JUnit test class
+   * @param testClassName the JUnit test class
    * @param sutPackage optional SuT package name (without ending '.', null
    * os SAME_PACKAGE means same package, "" or UNNAMED_PACKAGE means unnamed package)
    * @return main class name of system under test
@@ -424,7 +408,6 @@ public abstract class TestJPF implements JPFShell  {
             nFailures++;
             reportTestFinished("test method failed with: " + cause.getMessage());
             result += ": Failed";
-
           } else {
             nErrors++;
             reportTestFinished("unexpected error while executing test method: " + cause.getMessage());
@@ -467,6 +450,21 @@ public abstract class TestJPF implements JPFShell  {
     }
   }
 
+  static void runTestOfClass(String args[]) throws Throwable {
+    Class<?> clazz;
+    Method method;
+    Object target;
+    
+    clazz  = Class.forName(args[0]);
+    target = clazz.newInstance();
+    method = clazz.getDeclaredMethod(args[1]);
+
+    try {
+      method.invoke(target);
+    } catch (InvocationTargetException e) {
+      throw e.getCause(); 
+    }
+  }
 
   /**
    * NOTE: this needs to be called from the concrete test class, typically from
@@ -515,7 +513,6 @@ public abstract class TestJPF implements JPFShell  {
     runTests(testClass, testMethods);
   }
 
-
   //--- the JPF run test methods
 
   /**
@@ -530,7 +527,7 @@ public abstract class TestJPF implements JPFShell  {
       return true;
     } else {
       StackTraceElement caller = Reflection.getCallerElement();
-      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      args = appendTestClass(args, caller);
       unhandledException("java.lang.AssertionError", details, args);
       return false;
     }
@@ -540,7 +537,7 @@ public abstract class TestJPF implements JPFShell  {
       return true;
     } else {
       StackTraceElement caller = Reflection.getCallerElement();
-      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      args = appendTestClass(args, caller);
       unhandledException("java.lang.AssertionError", null, args);
       return false;
     }
@@ -580,12 +577,12 @@ public abstract class TestJPF implements JPFShell  {
 
     return jpf;
   }
-  protected boolean verifyNoPropertyViolation (String...jpfArgs){
+  protected boolean verifyNoPropertyViolation (String...args){
     if (runDirectly) {
       return true;
     } else {
       StackTraceElement caller = Reflection.getCallerElement();
-      String[] args = Misc.appendArray(jpfArgs, caller.getClassName(), caller.getMethodName());
+      args = appendTestClass(args, caller);
       noPropertyViolation(args);
       return false;
     }
@@ -622,6 +619,13 @@ public abstract class TestJPF implements JPFShell  {
       }
     }
 
+    // TODO - Need to assert details
+    /*
+    if ((details != null) && (details.equals(xi.getDetails()))) {
+      fail("JPF caught the right exception but the detaisl were wrong: " + xi.getDetails() + ", expected: " + details);
+    }
+    */
+
     return jpf;
   }
   protected boolean verifyUnhandledExceptionDetails (String xClassName, String details, String... args){
@@ -629,7 +633,7 @@ public abstract class TestJPF implements JPFShell  {
       return true;
     } else {
       StackTraceElement caller = Reflection.getCallerElement();
-      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      args = appendTestClass(args, caller);
       unhandledException(xClassName, details, args);
       return false;
     }
@@ -639,7 +643,7 @@ public abstract class TestJPF implements JPFShell  {
       return true;
     } else {
       StackTraceElement caller = Reflection.getCallerElement();
-      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      args = appendTestClass(args, caller);
       unhandledException(xClassName, null, args);
       return false;
     }
@@ -680,7 +684,7 @@ public abstract class TestJPF implements JPFShell  {
       return true;
     } else {
       StackTraceElement caller = Reflection.getCallerElement();
-      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      args = appendTestClass(args, caller);
       jpfException(xCls, args);
       return false;
     }
@@ -721,7 +725,7 @@ public abstract class TestJPF implements JPFShell  {
       return true;
     } else {
       StackTraceElement caller = Reflection.getCallerElement();
-      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      args = appendTestClass(args, caller);
       propertyViolation(propertyCls, args);
       return false;
     }
@@ -740,12 +744,51 @@ public abstract class TestJPF implements JPFShell  {
       return true;
     } else {
       StackTraceElement caller = Reflection.getCallerElement();
-      args = Misc.appendArray(args, caller.getClassName(), caller.getMethodName());
+      args = appendTestClass(args, caller);
       propertyViolation(NotDeadlockedProperty.class, args);
       return false;
     }
   }
+  
+  private String[] appendTestClass(String args[], StackTraceElement caller) {
+    Class clazz;
+    Method method;
+    String className, methodName;
+    int modifiers;
+    boolean hasMain;
 
+    methodName = caller.getMethodName();
+    className  = caller.getClassName();
+
+    try {
+      clazz = Class.forName(className);
+    } catch (ClassNotFoundException e) {
+      fail(e.getMessage());
+      return args;
+    }
+
+    hasMain = false;
+
+    try {
+      method    = clazz.getDeclaredMethod("main", String[].class);
+      modifiers = method.getModifiers();
+       
+      if ((Modifier.isPublic(modifiers)) && (Modifier.isStatic(modifiers)) && (!Modifier.isAbstract(modifiers))) {
+        hasMain = true;
+      }
+    } catch (NoSuchMethodException e) {
+      e = null;  // Get rid of IDE warning
+    }
+    
+    if (hasMain) {
+      args = Misc.appendArray(args, className, methodName);
+    } else {
+      args = Misc.appendArray(args, TestJPFHelper.class.getName(), className, methodName);  
+    }
+    
+    return args;
+  }
+  
   // these are the org.junit.Assert APIs, but we don't want org.junit to be
   // required to run tests
 
@@ -771,9 +814,13 @@ public abstract class TestJPF implements JPFShell  {
     assert expected == actual;
   }
   public static void assertEquals(double expected, double actual){
+    expected = 0;  // Get rid of IDE warning
+    actual   = 0;
     assert false : "identity comparison of floating point values";
   }
   public static void assertEquals(float expected, float actual){
+    expected = 0; // Get rid of IDE warning
+    actual   = 0;
     assert false : "identity comparison of floating point values";
   }
   public static void assertEquals(double expected, double actual, double delta){

@@ -25,10 +25,6 @@ import java.lang.reflect.Field;
 
 public class FieldTest extends TestJPF {
 
-  public static void main (String[] args) {
-    runTestsOfThisClass( args);
-  }
-
   int instInt = 42;
   double instDouble = 42.0;
   double primField = 42.0;

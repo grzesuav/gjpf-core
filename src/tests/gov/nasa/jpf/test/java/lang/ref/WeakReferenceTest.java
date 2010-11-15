@@ -27,11 +27,6 @@ import java.lang.ref.*;
 
 public class WeakReferenceTest extends TestJPF
 {
-   public static void main(String[] args)
-   {
-      runTestsOfThisClass(args);
-   }
-
    @Test
    public void testGCClearsRef()
    {

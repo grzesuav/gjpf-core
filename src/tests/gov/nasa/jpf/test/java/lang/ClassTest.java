@@ -46,11 +46,6 @@ import org.junit.Test;
  */
 public class ClassTest extends TestJPF implements Cloneable, Serializable {
   
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
-
   /**************************** tests **********************************/
   static String clsName = ClassTest.class.getName();
 

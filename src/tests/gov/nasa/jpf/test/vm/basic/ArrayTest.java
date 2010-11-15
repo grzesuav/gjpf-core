@@ -26,10 +26,6 @@ import org.junit.Test;
  */
 public class ArrayTest extends TestJPF {
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void test2DArray() {
     if (verifyNoPropertyViolation()) {

@@ -28,10 +28,6 @@ public class IdleLoopTest extends TestJPF {
 
   static final String LISTENER = "+listener=.listener.IdleFilter";
 
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test public void testBreak () {
     if (verifyNoPropertyViolation(LISTENER, "+idle.action=break", "+log.warning=gov.nasa.jpf.listener.IdleFilter")) {
       int y = 4;

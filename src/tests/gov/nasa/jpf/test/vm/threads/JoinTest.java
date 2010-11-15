@@ -34,10 +34,6 @@ public class JoinTest extends TestJPF {
                                      "+vm.tree_output=false",
                                      "+vm.path_output=true"};
 
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test public void testSimpleJoin(){
     if (verifyNoPropertyViolation(JPF_ARGS)) {
       Runnable r = new Runnable() {

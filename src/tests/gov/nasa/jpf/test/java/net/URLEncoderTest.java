@@ -31,10 +31,6 @@ import org.junit.Test;
  */
 public class URLEncoderTest extends TestJPF {
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   /************************** test methods ************************/
   @Test
   public void testEncodeCycle (){

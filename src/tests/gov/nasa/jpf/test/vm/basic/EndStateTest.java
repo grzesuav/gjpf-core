@@ -28,7 +28,7 @@ import org.junit.Test;
  */
 public class EndStateTest extends TestJPF {
 
-  public static void main (String[] args) {
+  public static void main (String[] args) {  // <2do> Fix test so that it doesn't require a main
     runTestsOfThisClass(args);
   }
 

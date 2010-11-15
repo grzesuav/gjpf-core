@@ -34,11 +34,6 @@ public class PorSkipLocalSyncTest extends TestJPF
    private static final int COUNTER_THREAD_2 = 1;
    private static final int COUNTER_FINISHED = 2;
    
-   public static void main(String args[])
-   {
-      runTestsOfThisClass(args);
-   }
-   
    @Test
    public void porOnLocalSync() throws InterruptedException
    {

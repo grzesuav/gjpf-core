@@ -37,10 +37,6 @@ public class SharedRefTest extends TestJPF implements Runnable {
   
   SharedOrNot o;
 
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   public SharedRefTest () {
     // only for JUnit
   }

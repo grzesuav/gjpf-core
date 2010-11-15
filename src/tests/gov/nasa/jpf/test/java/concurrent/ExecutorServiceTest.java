@@ -30,10 +30,6 @@ import org.junit.Test;
  */
 public class ExecutorServiceTest extends TestJPF {
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   //--- the test methods
   @Test
   public void testShutdown() {

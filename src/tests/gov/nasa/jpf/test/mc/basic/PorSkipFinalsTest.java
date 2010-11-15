@@ -201,8 +201,4 @@ public class PorSkipFinalsTest extends TestJPF {
       assert Verify.getCounter(0) == 16;
     }
   }
-
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
 }

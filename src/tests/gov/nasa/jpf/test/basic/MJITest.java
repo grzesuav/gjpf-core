@@ -37,12 +37,6 @@ public class MJITest extends TestJPF {
 
   static String TEST_CLASS = "gov.nasa.jpf.test.basic.MJI";
 
-  // only used if we run this directly, i.e. outside of JUnit
-  public static void main (String[] selectedMethods) {
-    runTestsOfThisClass(selectedMethods);
-  }
-
-
   /**************************** tests **********************************/
 
   /* codes to select test functions in model class

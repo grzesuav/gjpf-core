@@ -29,7 +29,7 @@ public class TraceTest extends TestJPF {
   static final String TEST_CLASS = TraceTest.class.getName();
   static final String TRACE = "trace";
 
-  public static void main(String[] args) {
+  public static void main(String[] args) {    // <2do> Fix this test so that it doesn't require main
     runTestsOfThisClass(args);
   }
 

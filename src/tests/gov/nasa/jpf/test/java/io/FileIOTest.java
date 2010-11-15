@@ -40,10 +40,6 @@ public class FileIOTest extends TestJPF {
 
   public static final String fname = "_test_";
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void testRoundtrip() throws IOException, FileNotFoundException {
     if (verifyNoPropertyViolation()) {

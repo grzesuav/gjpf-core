@@ -30,10 +30,6 @@ import org.junit.Test;
  * test of gov.nasa.jpf.jvm.Verify nondeterministic data initailization
  */
 public class RandomTest extends TestJPF {
-  public static void main (String[] args) throws InvocationTargetException {
-    runTestsOfThisClass(args);
-  }
-
   private void run (int n){
     int i = Verify.getInt(0,n); // we should backtrack 0..n times to this location
     Verify.incrementCounter(0); // counter '0' should have value (n+1) after JPF is done

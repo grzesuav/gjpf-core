@@ -59,11 +59,6 @@ public class BreakTest extends TestJPF {
 
   int data;
   
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
-
   //--- test setIgnored
 
   public static class FieldIgnorer extends BreakListener {

@@ -16,31 +16,12 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.test.vm.basic;
+package gov.nasa.jpf.util.test;
 
-import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.util.test.*;
-import java.util.*;
-import org.junit.*;
-
-public class OutOfMemoryErrorTest extends TestJPF
+public class TestJPFHelper
 {
-   @Test
-   public void outOfMemoryErrorFails()
+   public static void main(String args[]) throws Throwable
    {
-      ArrayList<byte[]> hold;
-      byte hog[];
-      
-      if (verifyPropertyViolation(NoOutOfMemoryErrorProperty.class))
-      {
-         hold = new ArrayList<byte[]>();
-         
-         while (true)
-         {
-            hog = new byte[1024 * 1024 * 1024];
-            
-            hold.add(hog);
-         }
-      }
+      TestJPF.runTestOfClass(args);
    }
 }

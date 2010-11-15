@@ -126,15 +126,6 @@ public class AttrsTest extends TestJPF {
     }
   }
 
-
-  public static void main (String[] args){
-    runTestsOfThisClass( args);
-  }
-
-//------------
-
-
-
   static int sInt;
   int iInt;
 

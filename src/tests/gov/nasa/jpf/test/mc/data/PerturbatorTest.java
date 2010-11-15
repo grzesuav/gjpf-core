@@ -30,10 +30,6 @@ public class PerturbatorTest extends TestJPF {
 
   int data = 42;
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void testIntFieldPerturbation() {
 
@@ -76,7 +72,7 @@ public class PerturbatorTest extends TestJPF {
                                   "+perturb.fields=data",
                                   "+perturb.data.class=.perturb.IntOverUnder",
                                   "+perturb.data.field=gov.nasa.jpf.test.mc.data.PerturbatorTest.data",
-                                  "+perturb.data.location=PerturbatorTest.java:87",
+                                  "+perturb.data.location=PerturbatorTest.java:83",
                                   "+perturb.data.delta=1")){
       System.out.println("instance field location perturbation test");
 
@@ -116,7 +112,7 @@ public class PerturbatorTest extends TestJPF {
 
                                   "+perturb.foo.class=.perturb.IntOverUnder",
                                   "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foo(int)",
-                                  "+perturb.foo.location=PerturbatorTest.java:133",
+                                  "+perturb.foo.location=PerturbatorTest.java:129",
                                   "+perturb.foo.delta=1",
                                   
                                   "+perturb.bar.class=.perturb.IntOverUnder",
@@ -130,7 +126,7 @@ public class PerturbatorTest extends TestJPF {
       System.out.print("foo() = ");
       System.out.println(x);
 
-      x = foo(42); // line 133 => this should be
+      x = foo(42); // line 129 => this should be
       System.out.print("foo() = ");
       System.out.println(x);
 

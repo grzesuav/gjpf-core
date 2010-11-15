@@ -20,7 +20,7 @@ package gov.nasa.jpf.test.mc.basic;
 
 
 import gov.nasa.jpf.jvm.Verify;
-import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.util.test.*;
 import org.junit.Test;
 
 
@@ -28,10 +28,6 @@ import org.junit.Test;
  * test various Verify APIs
  */
 public class VerifyTest extends TestJPF {
-
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
 
   @Test public void testBreak () {
 
@@ -57,7 +53,7 @@ public class VerifyTest extends TestJPF {
     if (verifyNoPropertyViolation()) {
       String target = Verify.getProperty("target");
       System.out.println("got target=" + target);
-      assert "gov.nasa.jpf.test.mc.basic.VerifyTest".equals( target);
+      assert target.equals(TestJPFHelper.class.getName());
 
       Verify.setProperties("foo=bar");
       String p = Verify.getProperty("foo");

@@ -26,10 +26,6 @@ import org.junit.Test;
  */
 public class AssertTest extends TestJPF {
 
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test public void testAssertionViolation () {
     if (verifyAssertionErrorDetails("oops, assertion failed")){
       int i = 1;

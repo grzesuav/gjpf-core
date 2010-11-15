@@ -11,11 +11,6 @@ public class CountDownLatchTest extends TestJPF {
   private static final int COUNTER_SUCCESS   = 0;
   private static final int COUNTER_EXCHANGED = 1;
 
-
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void testCountDown() throws InterruptedException {
     if (verifyNoPropertyViolation("+vm.time.model=ConstantZero")) {

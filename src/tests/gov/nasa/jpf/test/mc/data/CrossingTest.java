@@ -40,10 +40,6 @@ import org.junit.Test;
 
 public class CrossingTest extends TestJPF {
 
-  public static void main (String[] args){
-    runTestsOfThisClass(args);
-  }
-
   static class Constants {
 
     public static final boolean east = true;

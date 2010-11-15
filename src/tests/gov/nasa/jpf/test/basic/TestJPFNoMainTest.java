@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2009 United States Government as represented by the
+// Copyright (C) 2006 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,39 +16,23 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
+package gov.nasa.jpf.test.basic;
 
-package gov.nasa.jpf.jvm;
-
-import gov.nasa.jpf.jvm.Types;
+import gov.nasa.jpf.jvm.*;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 
-/**
- * unit tests for gov.nasa.jpf.jvm.Types
- */
-public class TypesTest extends TestJPF {
-
-  @Test public void testGetSignatureName () {
-    
-    String in  = "int foo(int,java.lang.String)";
-    String out = "foo(ILjava/lang/String;)I";    
-    String s = Types.getSignatureName(in);
-    System.out.println( in + " => " + s);
-    assert out.equals(s);
-
-    in  = "double[] what_ever (char[], X )";
-    out = "what_ever([CLX;)[D";
-    s = Types.getSignatureName(in);
-    System.out.println( in + " => " + s);
-    assert out.equals(s);
-
-    in  = "bar()";
-    out = "bar()";
-    s = Types.getSignatureName(in);
-    System.out.println( in + " => " + s);
-    assert out.equals(s);
-
-  }
-
-  //... and many more to come
+public class TestJPFNoMainTest extends TestJPF
+{
+   @Test
+   public void ensureCompatibility()
+   {
+      if (!Verify.isRunningInJPF())
+         Verify.resetCounter(0);
+      
+      if (verifyNoPropertyViolation())
+         Verify.incrementCounter(0);
+      else  // Runs after JPF finishes
+         assertEquals(1, Verify.getCounter(0));
+   }
 }

@@ -27,10 +27,6 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  */
 public class AtomicIntegerFieldUpdaterTest extends TestJPF {
 
-  //-------------------- driver to execute single test methods
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
   int value;
 
   @Test

@@ -127,10 +127,6 @@ public class MethodTest extends TestMethodBase {
     return 8;
   }
   
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void testCtor() {
     if (verifyNoPropertyViolation()) {

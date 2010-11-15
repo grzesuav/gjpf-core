@@ -31,11 +31,6 @@ public class SuspendResumeTest extends TestJPF implements Runnable
    private final Object m_lock   = new Object();
    private final Thread m_waiter = new Thread(this);
       
-   public static void main(String args[])
-   {
-      runTestsOfThisClass(args);
-   }
-   
    public void run()
    {
       synchronized (m_lock)

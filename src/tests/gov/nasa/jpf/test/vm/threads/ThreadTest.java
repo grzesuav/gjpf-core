@@ -30,10 +30,6 @@ import org.junit.Test;
 public class ThreadTest extends TestJPF {
   static String didRunThread = null;
 
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test public void testDaemon () {
     if (verifyNoPropertyViolation()) {
       Runnable r = new Runnable() {

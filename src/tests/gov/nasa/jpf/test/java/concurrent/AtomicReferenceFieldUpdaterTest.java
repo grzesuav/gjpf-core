@@ -29,11 +29,6 @@ public class AtomicReferenceFieldUpdaterTest extends TestJPF {
 
   static final String[] JPF_ARGS = {"+cg.enumreate_cas=true"};
 
-  //-------------------- driver to execute single test methods
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   //--- the test methods
   String str;
   byte[] buf;

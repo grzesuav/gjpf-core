@@ -37,20 +37,13 @@ public class AccessibleObject {
     return isAccessible;
   }
     
-  public <T extends Annotation> T getAnnotation (Class<T> cls) {
-    return null;  // not yet
-  }
+  public native <T extends Annotation> T getAnnotation (Class<T> cls); // <2do> Implement in JPF_java_lang_reflect_Constructor
 
   public boolean isAnnotationPresent (Class<? extends Annotation> cls) {
-    return false; // not yet
+    return getAnnotation(cls) != null;
   }
 
-  public Annotation[] getAnnotations() {
-    return null;  // not yet
-  }
+  public native Annotation[] getAnnotations(); // <2do> Implement in JPF_java_lang_reflect_Constructor
 
-  public Annotation[] getDeclaredAnnotations() {
-    return null;  // not yet
-  }
-
+  public native Annotation[] getDeclaredAnnotations(); // <2do> Implement in JPF_java_lang_reflect_Method, JPF_java_lang_reflect_Class and JPF_java_lang_reflect_Constructor
 }

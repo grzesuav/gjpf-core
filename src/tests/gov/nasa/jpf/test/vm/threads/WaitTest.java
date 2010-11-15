@@ -30,10 +30,6 @@ public class WaitTest extends TestJPF
   boolean cond;
   boolean done;
   
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test public void testVerySimpleWait () {
     if (verifyNoPropertyViolation()) {
       System.out.println("running testVerySimpleWait()");

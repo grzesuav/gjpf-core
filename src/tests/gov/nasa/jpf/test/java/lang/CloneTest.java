@@ -27,11 +27,6 @@ import gov.nasa.jpf.util.test.TestJPF;
  */
 public class CloneTest extends TestJPF {
 
-    //--- driver to execute single test methods
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void testCloneArray() {
     if (verifyNoPropertyViolation()){

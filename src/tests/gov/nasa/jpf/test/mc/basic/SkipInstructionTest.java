@@ -50,10 +50,6 @@ public class SkipInstructionTest extends TestJPF {
     }
   }
 
-  public static void main (String[] args){
-    runTestsOfThisClass(args);
-  }
-
   //--- the test methods
 
   int answer = 0;

@@ -29,10 +29,6 @@ import org.junit.Test;
  */
 public class StackFrameTest extends TestJPF {
 
-  public static void main (String[] args){
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void testDup2_x1() {
     // 1 2 3  => 2 3.1 2 3
