@@ -134,10 +134,10 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return null;
   }
 
-  public void markRoots () {
+  public void markRoots (Heap heap) {
     for (int i = 0, l = threads.length; i < l; i++) {
       if (threads[i].isAlive()) {
-        threads[i].markRoots();
+        threads[i].markRoots(heap);
       }
     }
   }

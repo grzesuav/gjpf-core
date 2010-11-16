@@ -154,8 +154,8 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // value of '-1', but are NOT recursively processed yet (i.e. all other
     // ElementInfos still have the old 'lastGc'). However, all root marked objects
     // do have their proper reachability attribute set
-    ks.threads.markRoots(); // mark thread stacks
-    ks.statics.markRoots(); // mark objects referenced from StaticArea ElementInfos
+    ks.threads.markRoots(this); // mark thread stacks
+    ks.statics.markRoots(this); // mark objects referenced from StaticArea ElementInfos
 
     // phase 2 - walk through all the marked ones recursively
     // Now we traverse, and propagate the reachability attribute. After this
@@ -360,31 +360,26 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
    * from Thread roots
    * @aspects: gc
    */
-  public boolean markThreadRoot (int objref, int tid) {
+  public void markThreadRoot (int objref, int tid) {
     if (objref == -1) {
-      return true;
+      return;
     }
 
     ElementInfo ei = elements.get(objref);
+    assert ei != null;
 
-    if (ei != null) {
-      if (isRoot.get(objref)) {
-
-        int rt = refThread.get(objref);
-        if ((rt != tid) && (rt != -1)) {
-          ei.setShared();
-          // <2do> - this would be the place to add a listener notification
-        }
-      } else {
-        isRoot.set(objref);
-        refThread.set(objref, tid);
-
-        ei.setLive();
+    if (isRoot.get(objref)) {
+      int rt = refThread.get(objref);
+      if ((rt != tid) && (rt != -1)) {
+        ei.setShared();
+        // <2do> - this would be the place to add a listener notification
       }
-      return true;
-    }
+    } else {
+      isRoot.set(objref);
+      refThread.set(objref, tid);
 
-    return false;
+      ei.setLive();
+    }
   }
 
   /**
@@ -398,6 +393,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     }
 
     ElementInfo ei = elements.get(objref);
+    assert ei != null;
 
     isRoot.set(objref);
     refThread.set(objref, -1);

@@ -1419,6 +1419,11 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return fields;
   }
 
+
+  public void resetMarkAttrs() {
+    attributes &= ~ATTR_IS_LIVE;
+  }
+
   /**
    * this has to be called every time we create a new monitor, so that we know it's
    * not yet stored (mIndex = -1), and memory has changed (area)

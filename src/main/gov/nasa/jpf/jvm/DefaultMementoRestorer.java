@@ -169,9 +169,8 @@ public class DefaultMementoRestorer extends MementoRestorer {
       for (int i=0; i<len; i++){
         EIMemento<E> m = a[i];
         index = m.ref;
-        for (int j=lastIndex+1; j<index; j++){
-          e.set(j, null);
-        }
+
+        area.removeRange(lastIndex+1, index);
         lastIndex = index;
 
         E ei = e.get(index);

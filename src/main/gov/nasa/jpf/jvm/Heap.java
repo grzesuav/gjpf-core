@@ -57,9 +57,7 @@ public interface Heap {
 
   void updateReachability( boolean isSharedOwner, int oldRef, int newRef);
 
-  void checkConsistency (boolean isStateStore);
-
-  boolean markThreadRoot (int objref, int tid);
+  void markThreadRoot (int objref, int tid);
 
   void markStaticRoot (int objRef);
 
@@ -82,6 +80,9 @@ public interface Heap {
   void resetVolatiles();
 
   void restoreVolatiles();
+
+  void checkConsistency (boolean isStateStore);
+
 
   Memento<Heap> getMemento(MementoFactory factory);
 }

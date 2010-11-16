@@ -204,7 +204,13 @@ public final class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     }
   }
 
-  public void clear() { setSize(0); }
+  public void clear() { 
+    //setSize(0);
+
+    // faster than iterating over the whole array
+    data = new Object[data.length];
+    size = 0;
+  }
   
   public int size() { return size; }
   
@@ -244,10 +250,66 @@ public final class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     System.arraycopy(src.data, srcPos, dst, dstPos, len);
   }
 
+  public int removeAll() {
+    int n=0;
+    Object[] data = this.data;
+    int len = size;
+
+    for (int i=0; i<len; i++){
+      if (data[i] != null){
+        data[i] = null;
+        n++;
+      }
+    }
+    size = 0;
+    return n;
+  }
+
+  /**
+   * remove all non-null elements between 'fromIdx' (inclusive) and
+   * 'toIdx' (exclusive)
+   * throw IndexOutOfBoundsException if index values are out of range
+   */
+  public int removeRange(int fromIdx, int toIdx){
+    int n = 0;
+    Object[] data = this.data;
+
+    // it's the callers responsibility to ensure proper index ranges
+    //if (fromIdx < 0) fromIdx = 0;
+    //if (toIdx > size) toIdx = size;
+
+    for (int i=fromIdx; i<toIdx; i++){
+      if (data[i] != null){
+        data[i] = null;
+        n++;
+      }
+    }
+
+    if (toIdx >= size){
+      int i=fromIdx-1;
+      for (; i>=0 && (data[i] == null); i--);
+      size = i+1;
+    }
+
+    return n;
+  }
+
+  public int removeFrom(int fromIdx){
+    return removeRange(fromIdx,size);
+  }
+
   public Iterator<E> iterator () {
     return new OVIterator();
   }
-  
+
+  public Iterator<E> nonNullIterator() {
+    return new NonNullIterator();
+  }
+
+  public Iterable<E> elements() {
+    return new NonNullIterator();
+  }
+
   class OVIterator implements Iterator<E> {
     int idx = 0;
     
@@ -266,6 +328,38 @@ public final class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     public void remove () {
       throw new UnsupportedOperationException();
     }
-    
   }
+
+  class NonNullIterator implements Iterator<E>, Iterable<E> {
+    int idx = 0;
+    int count = 0;
+
+    public boolean hasNext() {
+      return (count < size && idx < size);
+    }
+
+    @SuppressWarnings("unchecked")
+    public E next () {
+      int len = data.length;
+      for (int i=idx; i<len; i++){
+        Object o = data[i];
+        if (o != null){
+          count++;
+          idx = i+1;
+          return (E)o;
+        }
+      }
+
+      throw new NoSuchElementException();
+    }
+
+    public void remove () {
+      throw new UnsupportedOperationException();
+    }
+
+    public Iterator<E> iterator() {
+      return this;
+    }
+  }
+
 }

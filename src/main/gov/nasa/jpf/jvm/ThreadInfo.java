@@ -2174,8 +2174,7 @@ public class ThreadInfo
    * root set (Thread object, Runnable, stack)
    * @aspects: gc
    */
-  void markRoots () {
-    Heap heap = vm.getHeap();
+  void markRoots (Heap heap) {
 
     // 1. mark the Thread object itself
     heap.markThreadRoot(threadData.objref, index);

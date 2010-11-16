@@ -123,7 +123,8 @@ public class JVM {
   protected StateSerializer serializer;
 
   /** potential execution listeners */
-  protected VMListener    listener;
+  //protected VMListener    listener;
+  protected VMListener[] listeners = new VMListener[0];
   
   /** the selected time model to use */
   protected TimeModel timeModel;
@@ -533,15 +534,37 @@ public class JVM {
   }
 
   public void addListener (VMListener newListener) {
-    listener = VMListenerMulticaster.add(listener, newListener);
+    //listener = VMListenerMulticaster.add(listener, newListener);
+    
+    int len = listeners.length;
+    VMListener[] a = new VMListener[len+1];
+    System.arraycopy(listeners, 0, a, 0, len);
+    a[len] = newListener;
+    listeners = a;
   }
 
   public boolean hasListenerOfType (Class<?> listenerCls) {
-    return VMListenerMulticaster.containsType(listener,listenerCls);
+    //return VMListenerMulticaster.containsType(listener,listenerCls);
+
+    for (int i=0; i<listeners.length; i++){
+      if (listenerCls.isInstance(listeners[i])){
+        return true;
+      }
+    }
+    return false;
   }
 
   public void removeListener (VMListener removeListener) {
-    listener = VMListenerMulticaster.remove(listener,removeListener);
+    //listener = VMListenerMulticaster.remove(listener,removeListener);
+
+    for (int i=0; i<listeners.length; i++){
+      if (listeners[i] == removeListener){
+        VMListener[] a = new VMListener[listeners.length-1];
+        System.arraycopy(listeners, 0, a, 0, i);
+        System.arraycopy(listeners, i+1, a, i, listeners.length-i-1);
+        listeners = a;
+      }
+    }
   }
 
   public void setTraceReplay (boolean isReplay) {
@@ -578,10 +601,13 @@ public class JVM {
   }
 
   protected void notifyChoiceGeneratorRegistered (ChoiceGenerator<?>cg) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastChoiceGenerator = cg;
-        listener.choiceGeneratorRegistered(this);
+        //listener.choiceGeneratorRegistered(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].choiceGeneratorRegistered(this);
+        }
         lastChoiceGenerator = null;
       } catch (UncaughtException x) {
         throw x;
@@ -590,14 +616,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during choiceGeneratorRegistered() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyChoiceGeneratorSet (ChoiceGenerator<?>cg) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastChoiceGenerator = cg;
-        listener.choiceGeneratorSet(this);
+        //listener.choiceGeneratorSet(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].choiceGeneratorSet(this);
+        }
         lastChoiceGenerator = null;
       } catch (UncaughtException x) {
         throw x;
@@ -606,14 +635,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during choiceGeneratorSet() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyChoiceGeneratorAdvanced (ChoiceGenerator<?>cg) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastChoiceGenerator = cg;
-        listener.choiceGeneratorAdvanced(this);
+        //listener.choiceGeneratorAdvanced(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].choiceGeneratorAdvanced(this);
+        }
         lastChoiceGenerator = null;
       } catch (UncaughtException x) {
         throw x;
@@ -622,14 +654,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during choiceGeneratorAdvanced() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyChoiceGeneratorProcessed (ChoiceGenerator<?>cg) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastChoiceGenerator = cg;
-        listener.choiceGeneratorProcessed(this);
+        //listener.choiceGeneratorProcessed(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].choiceGeneratorProcessed(this);
+        }
         lastChoiceGenerator = null;
       } catch (UncaughtException x) {
         throw x;
@@ -638,16 +673,19 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during choiceGeneratorProcessed() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyExecuteInstruction (ThreadInfo ti, Instruction insn) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
         lastInstruction = insn;
 
-        listener.executeInstruction(this);
+        //listener.executeInstruction(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].executeInstruction(this);
+        }
 
         //nextInstruction = null;
         //lastInstruction = null;
@@ -659,17 +697,20 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during executeInstruction() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyInstructionExecuted (ThreadInfo ti, Instruction insn, Instruction nextInsn) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
         lastInstruction = insn;
         nextInstruction = nextInsn;
 
-        listener.instructionExecuted(this);
+        //listener.instructionExecuted(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].instructionExecuted(this);
+        }
 
         //nextInstruction = null;
         //lastInstruction = null;
@@ -682,14 +723,17 @@ public class JVM {
         throw new JPFListenerException("exception during instructionExecuted() notification", t);
       }
 
-    }
+    //}
   }
 
   protected void notifyThreadStarted (ThreadInfo ti) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
-        listener.threadStarted(this);
+        //listener.threadStarted(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].threadStarted(this);
+        }
         //lastThreadInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -698,17 +742,20 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadStarted() notification", t);
       }
-    }
+    //}
   }
 
   // NOTE: the supplied ThreadInfo does NOT have to be the running thread, as this
   // notification can occur as a result of a lock operation in the current thread
   protected void notifyThreadBlocked (ThreadInfo ti) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
         lastElementInfo = ti.getLockObject();
-        listener.threadBlocked(this);
+        //listener.threadBlocked(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].threadBlocked(this);
+        }
         //lastThreadInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -717,14 +764,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadBlocked() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyThreadWaiting (ThreadInfo ti) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
-        listener.threadWaiting(this);
+        //listener.threadWaiting(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].threadWaiting(this);
+        }
         //lastThreadInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -733,14 +783,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadWaiting() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyThreadNotified (ThreadInfo ti) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
-        listener.threadNotified(this);
+        //listener.threadNotified(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].threadNotified(this);
+        }
         //lastThreadInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -749,14 +802,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadNotified() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyThreadInterrupted (ThreadInfo ti) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
-        listener.threadInterrupted(this);
+        //listener.threadInterrupted(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].threadInterrupted(this);
+        }
         //lastThreadInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -765,14 +821,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadInterrupted() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyThreadTerminated (ThreadInfo ti) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
-        listener.threadTerminated(this);
+        //listener.threadTerminated(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].threadTerminated(this);
+        }
         //lastThreadInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -781,14 +840,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadTerminated() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyThreadScheduled (ThreadInfo ti) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
-        listener.threadScheduled(this);
+        //listener.threadScheduled(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].threadScheduled(this);
+        }
         //lastThreadInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -797,14 +859,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during threadScheduled() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyClassLoaded (ClassInfo ci) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastClassInfo = ci;
-        listener.classLoaded(this);
+        //listener.classLoaded(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].classLoaded(this);
+        }
         //lastClassInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -813,16 +878,19 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during classLoaded() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyObjectCreated (ThreadInfo ti, ElementInfo ei) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
         lastElementInfo = ei;
 
-        listener.objectCreated(this);
+        //listener.objectCreated(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].objectCreated(this);
+        }
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
@@ -833,14 +901,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectCreated() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyObjectReleased (ElementInfo ei) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastElementInfo = ei;
-        listener.objectReleased(this);
+        //listener.objectReleased(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].objectReleased(this);
+        }
         //lastElementInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -849,16 +920,19 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectReleased() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyObjectLocked (ThreadInfo ti, ElementInfo ei){
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
         lastElementInfo = ei;
 
-        listener.objectLocked(this);
+        //listener.objectLocked(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].objectLocked(this);
+        }
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
@@ -869,16 +943,19 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectLocked() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyObjectUnlocked (ThreadInfo ti, ElementInfo ei) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
         lastElementInfo = ei;
 
-        listener.objectUnlocked(this);
+        //listener.objectUnlocked(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].objectUnlocked(this);
+        }
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
@@ -889,16 +966,19 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectUnlocked() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyObjectWait (ThreadInfo ti, ElementInfo ei) {
-    if (listener != null) {
+    //if (listener != null) {
       try { 
         lastThreadInfo = ti;
         lastElementInfo = ei;
 
-        listener.objectWait(this);
+        //listener.objectWait(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].objectWait(this);
+        }
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
@@ -909,16 +989,19 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectWait() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyObjectNotifies (ThreadInfo ti, ElementInfo ei) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
         lastElementInfo = ei;
 
-        listener.objectNotify(this);
+        //listener.objectNotify(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].objectNotify(this);
+        }
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
@@ -929,16 +1012,19 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectNotifies() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyObjectNotifiesAll (ThreadInfo ti, ElementInfo ei) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
         lastElementInfo = ei;
 
-        listener.objectNotifyAll(this);
+        //listener.objectNotifyAll(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].objectNotifyAll(this);
+        }
 
         //lastElementInfo = null;
         //lastThreadInfo = null;
@@ -949,13 +1035,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during objectNotifiesAll() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyGCBegin () {
-    if (listener != null) {
+    //if (listener != null) {
       try {
-        listener.gcBegin(this);
+        //listener.gcBegin(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].gcBegin(this);
+        }
+
       } catch (UncaughtException x) {
         throw x;
       } catch (JPF.ExitException x) {
@@ -963,13 +1053,16 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during gcBegin() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyGCEnd () {
-    if (listener != null) {
+    //if (listener != null) {
       try {
-        listener.gcEnd(this);
+        //listener.gcEnd(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].gcEnd(this);
+        }
       } catch (UncaughtException x) {
         throw x;
       } catch (JPF.ExitException x) {
@@ -977,16 +1070,19 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during gcEnd() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyExceptionThrown (ThreadInfo ti, ElementInfo ei) {
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
         lastElementInfo = ei;
 
-        listener.exceptionThrown(this);
+        //listener.exceptionThrown(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].exceptionThrown(this);
+        }
 
         lastElementInfo = null;
         lastThreadInfo = null;
@@ -997,14 +1093,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during exceptionThrown() notification", t);
       }
-    }
+    //}
   }
 
   protected void notifyExceptionBailout (ThreadInfo ti){
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
-        listener.exceptionBailout(this);
+        //listener.exceptionBailout(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].exceptionBailout(this);
+        }
         lastThreadInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -1013,15 +1112,17 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during exceptionBailout() notification", t);
       }
-    }
-    
+    //}
   }
 
   protected void notifyExceptionHandled (ThreadInfo ti){
-    if (listener != null) {
+    //if (listener != null) {
       try {
         lastThreadInfo = ti;
-        listener.exceptionHandled(this);
+        //listener.exceptionHandled(this);
+        for (int i=0; i<listeners.length; i++){
+          listeners[i].exceptionHandled(this);
+        }
         lastThreadInfo = null;
       } catch (UncaughtException x) {
         throw x;
@@ -1030,28 +1131,33 @@ public class JVM {
       } catch (Throwable t){
         throw new JPFListenerException("exception during exceptionHandler() notification", t);
       }
-    }
-
+    //}
   }
 
   protected void notifyMethodEntered (ThreadInfo ti, MethodInfo mi){
-    if (listener != null){
+    //if (listener != null){
       lastThreadInfo = ti;
       lastMethodInfo = mi;
-      listener.methodEntered(this);
+      //listener.methodEntered(this);
+      for (int i=0; i<listeners.length; i++){
+        listeners[i].methodEntered(this);
+      }
       lastMethodInfo = null;
       lastThreadInfo = null;
-    }
+    //}
   }
 
   protected void notifyMethodExited (ThreadInfo ti, MethodInfo mi){
-    if (listener != null){
+    //if (listener != null){
       lastThreadInfo = ti;
       lastMethodInfo = mi;
-      listener.methodExited(this);
+      //listener.methodExited(this);
+      for (int i=0; i<listeners.length; i++){
+        listeners[i].methodExited(this);
+      }
       lastMethodInfo = null;
       lastThreadInfo = null;
-    }
+    //}
   }
 
 

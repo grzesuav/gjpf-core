@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.BitSet256;
 
 
 /**
@@ -28,6 +29,8 @@ import gov.nasa.jpf.JPFException;
  */
 public final class DynamicElementInfo extends ElementInfo {
 
+  // set where we keep the referencing ThreadInfo ids
+  BitSet256 refTids = new BitSet256();
 
   public DynamicElementInfo () {
   }

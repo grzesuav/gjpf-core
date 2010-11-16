@@ -74,27 +74,11 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
 
   }
 
-  protected class EIiterator extends IteratorBase implements Iterator<EI>, Iterable<EI> {
-    public EI next() {
-      for (; i < elements.size(); i++) {
-        EI ei = elements.get(i);
-        if (ei != null) {
-          i++; visited++;
-          return ei;
-        }
-      }
-
-      throw new NoSuchElementException();
-    }
-
-    public Iterator<EI> iterator() {
-      return this;
-    }
-  }
 
   protected class ElementInfoIterator extends IteratorBase implements Iterator<ElementInfo>, Iterable<ElementInfo> {
     public ElementInfo next() {
-      for (; i < elements.size(); i++) {
+      int len = elements.size();
+      for (; i < len; i++) {
         EI ei = elements.get(i);
         if (ei != null) {
           i++; visited++;
@@ -111,7 +95,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
   }
 
   public Iterable<EI> elements() {
-    return new EIiterator();
+    return elements.elements();
   }
 
   /**
@@ -151,7 +135,8 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     }
   }
 
-  // its not a standard java.util.EIiterator because we don't want to box ints
+  // this one answers the changed reference values (ints).
+  // It's not a standard java.util.EIiterator because we don't want to box ints
   public class ChangedReferenceIterator implements gov.nasa.jpf.util.IntIterator {
     int i = getNextChanged(0);
 
@@ -183,8 +168,8 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
   }
 
 
-  public EIiterator iterator() {
-    return new EIiterator();
+  public Iterator<EI> iterator() {
+    return elements.nonNullIterator();
   }
 
   public ChangedIterator changedIterator() {
@@ -274,18 +259,20 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     return hd.getValue();
   }
 
-  public void removeAll() { removeAllFrom(0); }
+  public void removeAll() { 
+    elements.clear();
+    nElements = 0;
+  }
 
   // this is called during restoration, we don't have to mark changes
   public void removeAllFrom (int idx) {
-    int l = elements.size();
+    int n = elements.removeFrom(idx);
+    nElements -= n;
+  }
 
-    for (int i = idx; i < l; i++) {
-      elements.set(i, null);
-    }
-
-    nElements -= (l - idx);
-    elements.squeeze();
+  public void removeRange( int fromIdx, int toIdx){
+    int n = elements.removeRange(fromIdx, toIdx);
+    nElements -= n;
   }
 
   public String toString () {

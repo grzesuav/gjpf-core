@@ -1122,16 +1122,18 @@ public class StackFrame implements Constants, Cloneable {
   public void markThreadRoots (Heap heap, int tid) {
     for (int i=0; i<= top; i++) {
       if (isOperandRef[i]) {
-        if (!heap.markThreadRoot(operands[i], tid)){
-          assert false : "dangling operand reference:" + operands[i] + " in thread: " + tid + " ,frame: " + this;
+        int objref = operands[i];
+        if (objref != MJIEnv.NULL){
+          heap.markThreadRoot(objref, tid);
         }
       }
     }
 
     for (int i = 0, l = locals.length; i < l; i++) {
       if (isLocalRef[i]) {
-        if (!heap.markThreadRoot(locals[i], tid)){
-          assert false : "dangling local reference:" + locals[i] + " in thread: " + tid + " ,frame: " + this;
+        int objref = locals[i];
+        if (objref != MJIEnv.NULL){
+          heap.markThreadRoot(objref, tid);
         }
       }
     }
