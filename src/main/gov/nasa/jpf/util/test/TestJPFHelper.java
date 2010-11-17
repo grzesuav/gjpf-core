@@ -25,31 +25,38 @@ import gov.nasa.jpf.JPFException;
  * Note - this gets loaded by the JPFClassLoader, i.e. all the paths are already set
  */
 public class TestJPFHelper {
-   public static void main(String args[]) {
-     if (args.length == 0){
-       throw new JPFException("no test target class specified");
-     }
 
-     try {
-       Class<?> cls = Class.forName(args[0]);
-       if (TestJPF.class.isAssignableFrom(cls)){
-         Class<? extends TestJPF> testCls = cls.asSubclass(TestJPF.class);
+  public static void main(String args[]) throws Throwable {
 
-         String[] testMethods;
-         if (args.length > 1){
-           testMethods = new String[args.length-1];
-           System.arraycopy(args, 1, testMethods, 0, testMethods.length);
-         } else {
-           testMethods = new String[0];
-         }
+    if (!TestJPF.isJPFRun()) {
+      if (args.length == 0) {
+        throw new JPFException("no test target class specified");
+      }
 
-         TestJPF.runTests(testCls, testMethods);
-       }
+      try {
+        Class<?> cls = Class.forName(args[0]);
+        if (TestJPF.class.isAssignableFrom(cls)) {
+          Class<? extends TestJPF> testCls = cls.asSubclass(TestJPF.class);
 
-     } catch (ClassCastException ccx){
-       throw new JPFException("testClass not a gov.nasa.jpf.util.test.TestJPF subclass");
-     } catch (ClassNotFoundException cnfx){
-       throw new JPFException("testClass not found by TestJPFHelper: " + args[0]);
-     }
-   }
+          String[] testMethods;
+          if (args.length > 1) {
+            testMethods = new String[args.length - 1];
+            System.arraycopy(args, 1, testMethods, 0, testMethods.length);
+          } else {
+            testMethods = new String[0];
+          }
+
+          TestJPF.runTests(testCls, testMethods);
+        }
+
+      } catch (ClassCastException ccx) {
+        throw new JPFException("testClass not a gov.nasa.jpf.util.test.TestJPF subclass");
+      } catch (ClassNotFoundException cnfx) {
+        throw new JPFException("testClass not found by TestJPFHelper: " + args[0]);
+      }
+
+    } else {
+      TestJPF.runTestOfClass(args);
+    }
+  }
 }

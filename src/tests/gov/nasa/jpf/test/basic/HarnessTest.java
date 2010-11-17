@@ -12,7 +12,7 @@ import org.junit.Test;
 public class HarnessTest extends TestJPF
 {
    int d;
-   
+
    @Test
    public void noViolation()
    {
