@@ -42,7 +42,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   // the propagated ones - only lower 16 bits can be used
 
-  // reachable from different threads
+  // reachable from different threads. It doesn't mean this is actually a shared
+  // object, but it potentially could be
   public static final int   ATTR_TSHARED       = 0x1;
 
   // this one is redundant if we just base it on the ClassInfo
@@ -80,13 +81,15 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // those are reset during state storage/restore
   public static final int   ATTR_FIELDS_CHANGED     = 0x1000000;
   public static final int   ATTR_MONITOR_CHANGED    = 0x2000000;
+  public static final int   ATTR_ATTRS_CHANGED      = 0x4000000;
   // did we ever have a change before (this is sticky)
-  public static final int   ATTR_HAS_CHANGED_BEFORE = 0x4000000;
+  public static final int   ATTR_HAS_CHANGED_BEFORE = 0x8000000;
 
-  static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED);
+  static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_ATTRS_CHANGED);
   static final int   ATTR_SET_FIELDS_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_HAS_CHANGED_BEFORE);
   static final int   ATTR_SET_MONITOR_CHANGED = (ATTR_MONITOR_CHANGED | ATTR_HAS_CHANGED_BEFORE);
-  static final int   ATTR_CHANGESET = ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_HAS_CHANGED_BEFORE;
+  static final int   ATTR_SET_ATTRS_CHANGED = (ATTR_ATTRS_CHANGED | ATTR_HAS_CHANGED_BEFORE);
+  static final int   ATTR_CHANGESET = ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_ATTRS_CHANGED | ATTR_HAS_CHANGED_BEFORE;
 
 
   // transient flag set if object is reachable from root object, i.e. can't be recycled
@@ -188,15 +191,25 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return fields.hasRefField(objRef);
   }
 
-  void setShared() {
-    attributes |= ATTR_TSHARED;
+  boolean setShared() {
+    if ((attributes & ATTR_TSHARED) == 0){
+      attributes |= (ATTR_TSHARED | ATTR_SET_ATTRS_CHANGED);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /**
    * set shared, but only if the ATTR_TSHARED bit isn't masked out
    */
-  void setShared(int attrMask) {
-    attributes |= (attrMask & ATTR_TSHARED);
+  boolean setShared(int attrMask) {
+    if ( ((attributes & ATTR_TSHARED) == 0) && ((attrMask & ATTR_TSHARED) != 0)){
+      attributes |= (ATTR_TSHARED | ATTR_SET_ATTRS_CHANGED);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /**

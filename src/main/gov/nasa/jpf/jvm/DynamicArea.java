@@ -324,7 +324,9 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
 
       // Ok, gotcha - but be aware sharedness might be masked out (the ThreadGroup thing)
       if (!ei.isShared() && (refTid != refThread.get(objref))) {
-        ei.setShared(attrMask);
+        if (ei.setShared(attrMask)){
+          markChanged(objref);
+        }
       }
 
       // even if we didn't change sharedness here, we have to propagate attributes
@@ -371,7 +373,9 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     if (isRoot.get(objref)) {
       int rt = refThread.get(objref);
       if ((rt != tid) && (rt != -1)) {
-        ei.setShared();
+        if (ei.setShared()){
+          markChanged(objref);
+        }
         // <2do> - this would be the place to add a listener notification
       }
     } else {
@@ -400,7 +404,9 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
 
     ei.setLive();
 
-    ei.setShared();
+    if (ei.setShared()){
+      markChanged(objref);
+    }
     // <2do> - this would be the place to add a listener notification
   }
 
@@ -439,7 +445,9 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
           if (!nei.isShared() && !nei.isImmutable()) {
             // no need to walk the whole heap, just recursively promote nei
             // and all its reachables to 'shared'
-            nei.setShared();
+            if (nei.setShared()){
+              markChanged(newRef);
+            }
             // <2do> - this would be the place to add listener notification
 
             initGc(); // <2do> do we need to clear isRoot?
