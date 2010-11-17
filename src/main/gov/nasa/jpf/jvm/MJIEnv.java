@@ -546,14 +546,16 @@ public class MJIEnv {
   }
 
   public String[] getStringArrayObject (int aRef){
-    if (aRef == NULL) return null;
+    String[] sa = null;
+     
+    if (aRef == NULL) return sa;
 
     ClassInfo aci = getClassInfo(aRef);
     if (aci.isArray()){
       ClassInfo eci = aci.getComponentClassInfo();
       if (eci.getName().equals("java.lang.String")){
         int len = getArrayLength(aRef);
-        String[] sa = new String[len];
+        sa = new String[len];
 
         for (int i=0; i<len; i++){
           int sRef = getReferenceArrayElement(aRef,i);
@@ -588,21 +590,22 @@ public class MJIEnv {
   }
 
   public Object[] getArgumentArray (int argRef) {
-    if (argRef == NULL) return null;
+    Object[] args = null;
+    if (argRef == NULL) return args;
 
     int nArgs = getArrayLength(argRef);
-    Object[] args = new Object[nArgs];
+    args = new Object[nArgs];
 
     for (int i=0; i<nArgs; i++){
       int aref = getReferenceArrayElement(argRef,i);
       ClassInfo ci = getClassInfo(aref);
       String clsName = ci.getName();
       if (clsName.equals("java.lang.Boolean")){
-        args[i] = new Boolean(getBooleanField(aref,"value"));
+        args[i] = Boolean.valueOf(getBooleanField(aref,"value"));
       } else if (clsName.equals("java.lang.Integer")){
-        args[i] = new Integer(getIntField(aref,"value"));
+        args[i] = Integer.valueOf(getIntField(aref,"value"));
       } else if (clsName.equals("java.lang.Double")){
-        args[i] = new Double(getDoubleField(aref,"value"));
+        args[i] = Double.valueOf(getDoubleField(aref,"value"));
       } else if (clsName.equals("java.lang.String")){
         args[i] = getStringObject(aref);
       }
@@ -612,7 +615,7 @@ public class MJIEnv {
   }
 
   public Boolean getBooleanObject (int objref){
-    return new Boolean(getBooleanField(objref, "value"));
+    return Boolean.valueOf(getBooleanField(objref, "value"));
   }
 
   public Byte getByteObject (int objref){

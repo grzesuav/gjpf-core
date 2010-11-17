@@ -109,10 +109,6 @@ public class MethodListenerTest extends TestJPF {
     }
   }
 
-  public static void main (String[] args){
-    runTestsOfThisClass(args);
-  }
-
   static ArrayList<String> trace = new ArrayList<String>();
 
   static boolean traceEquals(String... expected){

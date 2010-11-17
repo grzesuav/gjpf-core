@@ -175,12 +175,6 @@ public class ScriptEnvironmentTest extends TestJPF {
   }
 
 
-  public static void main (String[] args){
-    runTestsOfThisClass(args);
-  }
-  
-  //--- our test methods
-  
   // <2do> - need to add more test conditions than just unexpected exceptions!
   
   @Test

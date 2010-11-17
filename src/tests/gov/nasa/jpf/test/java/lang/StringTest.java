@@ -27,10 +27,6 @@ import org.junit.Test;
  */
 public class StringTest extends TestJPF {
 
-  public static void main(String[] args) throws InvocationTargetException {
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void testIntern() {
     if (verifyNoPropertyViolation()) {

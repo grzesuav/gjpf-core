@@ -23,10 +23,6 @@ import gov.nasa.jpf.util.test.TestJPF;
 
 public class OldClassicTest extends TestJPF {
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   /**************************** tests **********************************/
   class Event {
 

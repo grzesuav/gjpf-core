@@ -53,10 +53,6 @@ class B {
 
 public class TypeNameTest extends TestJPF {
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void testArrayCloning() {
     if (verifyNoPropertyViolation()) {

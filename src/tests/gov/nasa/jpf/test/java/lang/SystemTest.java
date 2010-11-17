@@ -29,10 +29,6 @@ public class SystemTest extends TestJPF {
   final Object lock = new Object(); // need a shared object
   boolean exitCalled;
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void testExit() {
     if (verifyNoPropertyViolation()) {

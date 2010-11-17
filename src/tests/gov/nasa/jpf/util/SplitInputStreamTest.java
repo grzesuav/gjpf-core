@@ -39,11 +39,6 @@ public class SplitInputStreamTest extends TestJPF
    private InputStream      m_input;
    private byte             m_expect[];
 
-   public static void main(String args[])
-   {
-      runTestsOfThisClass(args);
-   }
-
    @Before
    public void before() throws IOException
    {

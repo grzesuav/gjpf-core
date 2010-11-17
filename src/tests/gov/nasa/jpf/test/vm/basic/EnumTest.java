@@ -12,10 +12,6 @@ public class EnumTest extends TestJPF {
   }
 
   
-  public static void main (String[] args) {
-    runTestsOfThisClass( args);
-  }
-
   @Test public void testValueOf () {
     if (verifyNoPropertyViolation()) {
       assert A.valueOf("ONE") == A.ONE;

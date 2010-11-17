@@ -29,12 +29,6 @@ import org.junit.Test;
  */
 public class AtomicLongFieldUpdaterTest extends TestJPF {
 
-  //-------------------- driver to execute single test methods
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
-
   static {
     Verify.setProperties("cg.enumerate_cas=true");
   }

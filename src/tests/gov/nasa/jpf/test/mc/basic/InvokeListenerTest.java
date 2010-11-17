@@ -106,13 +106,6 @@ public class InvokeListenerTest extends TestJPF {
 
   }
 
-  public static void main (String[] args){
-    runTestsOfThisClass(args);
-  }
-
-  //--- the test methods
-  
-
   double testInstanceMethod (double d, int c){
     return d + c;
   }

@@ -34,10 +34,6 @@ import org.junit.Test;
  */
 public class ObjectStreamTest extends TestJPF {
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   static class X implements Serializable {
     String q = "the ultimate question";
     Y a = new Y(-42);

@@ -41,11 +41,6 @@ import org.junit.Test;
  */
 public class CascadedCGTest extends TestJPF {
 
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
-
   public static class IntChoiceCascader extends ListenerAdapter {
     static int result;
 

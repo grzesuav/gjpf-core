@@ -20,16 +20,11 @@ package gov.nasa.jpf.test.vm.basic;
 
 import java.lang.annotation.*;
 import gov.nasa.jpf.util.test.TestJPF;
+import java.lang.reflect.*;
 import org.junit.Test;
 
 
 public class AnnotationTest extends TestJPF {
-
-  public static void main (String[] args) {
-    runTestsOfThisClass(args);
-  }
-
-  //--- test methods
 
   @Test //----------------------------------------------------------------------
   @A1("foo")
@@ -167,6 +162,7 @@ public class AnnotationTest extends TestJPF {
     String b();
   }
 
+  @Deprecated
   @Test //----------------------------------------------------------------------
   @A6
   public void testSingleDefaultParamOk () {
@@ -193,4 +189,15 @@ public class AnnotationTest extends TestJPF {
     String value() default "whatever";
   }
 
+  @Test
+  public void loadedClass() throws ClassNotFoundException, NoSuchMethodException {
+    if (verifyNoPropertyViolation()) { 
+      Class clazz = Class.forName("gov.nasa.jpf.test.vm.basic.ArrayTest");  // Any class outside of this file will do.
+      Method method = clazz.getDeclaredMethod("test2DArray");               // Any method with an annotation will do.
+      Annotation annotations[] = method.getAnnotations();
+      assertEquals(1, annotations.length);
+      assertNotNull(annotations[0]);
+      assertTrue(annotations[0] instanceof Test);                           // Any annotation will do.
+    }
+  }
 }

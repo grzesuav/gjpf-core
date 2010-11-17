@@ -26,11 +26,6 @@ import org.junit.*;
  */
 public class RecursiveLockTest extends TestJPF
 {
-   public static void main(String[] args)
-   {
-      runTestsOfThisClass(args);
-   }
-
    @Test
    public void recursiveUnlock() throws InterruptedException
    {

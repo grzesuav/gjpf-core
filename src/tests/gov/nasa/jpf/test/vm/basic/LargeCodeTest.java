@@ -27,11 +27,6 @@ import org.junit.Test;
 public class LargeCodeTest extends TestJPF {
 
 
-  public static void main (String[] args){
-    runTestsOfThisClass(args);
-  }
-
-
   @Test public void testGotoW () {
     if (verifyNoPropertyViolation()){
       for (int i = 1; i < 5000; i++) {

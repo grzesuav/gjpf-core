@@ -6,10 +6,6 @@ import org.junit.Test;
 
 public class RuntimeTest extends TestJPF {
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   @Test
   public void testAvailableProcessors() {
 

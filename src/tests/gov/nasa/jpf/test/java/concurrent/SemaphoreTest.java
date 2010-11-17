@@ -27,10 +27,6 @@ import org.junit.Test;
  */
 public class SemaphoreTest extends TestJPF {
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   //--- test methods
 
   static final int MAX = 1;

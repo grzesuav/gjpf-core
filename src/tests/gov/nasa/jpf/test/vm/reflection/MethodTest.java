@@ -38,11 +38,6 @@ public class MethodTest extends TestJPF
       static int d = 4200;
    }
 
-   public static void main(String[] args)
-   {
-      runTestsOfThisClass(args);
-   }
-
    public Boo getBoo()
    {
       return null;

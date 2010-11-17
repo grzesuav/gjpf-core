@@ -27,10 +27,6 @@ public class AtomicTest extends TestJPF {
   
   static int data = 42;
   
-  public static void main (String[] args){
-    runTestsOfThisClass(args);
-  }
-  
   @Test public void testNoRace () {
     if (verifyNoPropertyViolation()) {
       Runnable r = new Runnable() {

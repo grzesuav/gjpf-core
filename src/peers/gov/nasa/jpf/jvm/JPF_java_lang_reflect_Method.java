@@ -52,6 +52,7 @@ public class JPF_java_lang_reflect_Method {
     ElementInfo ei = env.getElementInfo(eidx);
     
     ei.setIntField("regIdx", regIdx);
+    ei.setBooleanField("isAccessible", mi.isPublic());
     
     return eidx;
   }
@@ -492,7 +493,7 @@ public class JPF_java_lang_reflect_Method {
       }
        
       ti.pushFrame(frame);
-
+      
       return MJIEnv.NULL;
     }
   }

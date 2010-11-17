@@ -31,10 +31,6 @@ import java.lang.reflect.Array;
  */
 public class ArrayTest extends TestJPF {
 
-  public static void main (String[] args) {
-    runTestsOfThisClass( args);
-  }
-
   int[] arrayInt = new int[]{42};
   double[] arrayDouble = new double[]{42.0};
 

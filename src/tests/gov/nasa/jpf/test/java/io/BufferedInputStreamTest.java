@@ -34,8 +34,8 @@ import org.junit.Test;
 public class BufferedInputStreamTest extends TestJPF {
 
   //-------------------- driver to execute single test methods
-  public static void main(String[] args) {
-    createTestFile();
+  public static void main(String[] args) throws Throwable {
+    createTestFile();           // <2do> Fix TestJPF so that main() is not needed and @Before and @After are executed for each @Test
     try {
       runTestsOfThisClass(args);
     } finally {

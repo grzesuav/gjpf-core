@@ -28,11 +28,6 @@ import org.junit.*;
  */
 public class UnlockNonSharedTest extends TestJPF
 {
-   public static void main(String args[]) throws InterruptedException
-   {
-      runTestsOfThisClass(args);
-   }
-
    @Test
    public void test() throws InterruptedException
    {

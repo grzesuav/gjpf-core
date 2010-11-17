@@ -26,10 +26,6 @@ import org.junit.Test;
  */
 public class DeadlockTest extends TestJPF {
 
-  public static void main(String[] args) {
-    runTestsOfThisClass(args);
-  }
-
   //--- tests
   abstract class SyncRunnable implements Runnable {
 
