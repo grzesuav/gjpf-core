@@ -67,7 +67,14 @@ public class RunTest extends Run {
         if (testJpfCls.isAssignableFrom(testCls)) {
           String[] testArgs = getTestArgs(args);
           if (!call(testCls, "main", new Object[]{testArgs})) {
-            error("can't find public static void main(String[]) in " + testCls.getName());
+
+            // no main, try to run through TestJPFHelper
+            Class<?> helperTestCls = cl.loadClass("gov.nasa.jpf.util.test.TestJPFHelper");
+            String[] helperTestArgs = new String[testArgs.length+1];
+            System.arraycopy(testArgs,0, helperTestArgs,1,testArgs.length);
+            helperTestArgs[0] = testClsName;
+
+            call(helperTestCls, "main", new Object[] {helperTestArgs});
           }
 
         } else {
