@@ -19,6 +19,9 @@
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.JPFException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
  * reflection utilities
@@ -80,6 +83,30 @@ public class Reflection {
     } else {
       return null;
     }
+  }
+
+  public static boolean tryCallMain(Class<?> cls, String[] args) throws InvocationTargetException {
+    try {
+      Method method = cls.getDeclaredMethod("main", String[].class);
+      int modifiers = method.getModifiers();
+
+      if ((modifiers & (Modifier.PUBLIC | Modifier.STATIC | Modifier.ABSTRACT)) == (Modifier.PUBLIC | Modifier.STATIC)) {
+        method.invoke(null, (Object)args);
+        return true;
+      }
+
+    } catch (NoSuchMethodException nsmx) {
+      //System.out.println(nsmx);
+      // just return false
+    } catch (IllegalAccessException iax){
+      //System.out.println(iax);
+      // can't happen, we checked for it before invoking
+    } catch (IllegalArgumentException iargx){
+      //System.out.println(iargx);
+      // can't happen, we checked for it before invoking
+    }
+
+    return false;
   }
 
 }

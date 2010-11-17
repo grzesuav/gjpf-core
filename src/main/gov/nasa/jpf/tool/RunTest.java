@@ -66,16 +66,14 @@ public class RunTest extends Run {
 
         if (testJpfCls.isAssignableFrom(testCls)) {
           String[] testArgs = getTestArgs(args);
-          if (!call(testCls, "main", new Object[]{testArgs})) {
 
-            // no main, try to run through TestJPFHelper
-            Class<?> helperTestCls = cl.loadClass("gov.nasa.jpf.util.test.TestJPFHelper");
-            String[] helperTestArgs = new String[testArgs.length+1];
-            System.arraycopy(testArgs,0, helperTestArgs,1,testArgs.length);
-            helperTestArgs[0] = testClsName;
+          // TestJPFHelper will check if the testCls has a main(), or otherwise run through TestJPF
+          Class<?> testRunnerCls = cl.loadClass("gov.nasa.jpf.util.test.TestJPFHelper");
+          String[] testRunnerArgs = new String[testArgs.length + 1];
+          System.arraycopy(testArgs, 0, testRunnerArgs, 1, testArgs.length);
+          testRunnerArgs[0] = testClsName;
 
-            call(helperTestCls, "main", new Object[] {helperTestArgs});
-          }
+          call(testRunnerCls, "main", new Object[] {testRunnerArgs});
 
         } else {
           error("not a gov.nasa.jpf.TestJPF derived class: " + testClsName);

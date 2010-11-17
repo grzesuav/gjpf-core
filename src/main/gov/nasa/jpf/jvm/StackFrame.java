@@ -1228,7 +1228,7 @@ public class StackFrame implements Constants, Cloneable {
     pw.print("changed=");
     pw.print(changed);
     pw.print(",mi=");
-    pw.print(mi.getUniqueName());
+    pw.print( mi != null ? mi.getUniqueName() : "null");
     pw.print(",top="); pw.print(top);
     pw.print(",operands=[");
 
@@ -1262,7 +1262,7 @@ public class StackFrame implements Constants, Cloneable {
     }
 
     pw.print("],pc=");
-    pw.print(pc.getPosition());
+    pw.print(pc != null ? pc.getPosition() : "null");
     pw.print(",oRefs=");
 
     for (int i = 0; i <= top; i++) {

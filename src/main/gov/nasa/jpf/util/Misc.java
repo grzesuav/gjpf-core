@@ -328,6 +328,34 @@ public class Misc {
     }
   }
 
+  public static <T> T[] prependArray (T[] base, T... elements) {
+    if (base == null || base.length == 0){
+      return elements;
+    } else if (elements == null || elements.length == 0){
+      return base;
+    } else {
+      Class<?> componentType = base.getClass().getComponentType();
+      T[] a = (T[]) Array.newInstance(componentType, base.length + elements.length);
+      System.arraycopy(base,0, a,elements.length, base.length);
+      System.arraycopy(elements,0, a,0, elements.length);
+      return a;
+    }
+  }
+
+  public static String[] prependArray (String[] base, String... elements){
+    if (base == null || base.length == 0){
+      return elements;
+    } else if (elements == null || elements.length == 0){
+      return base;
+    } else {
+      String[] a = new String[base.length + elements.length];
+      System.arraycopy(base,0, a,elements.length, base.length);
+      System.arraycopy(elements,0, a,0, elements.length);
+      return a;
+    }
+  }
+
+
   public static <T> T[] arrayWithoutFirst( T[] base, int nElements){
     if (base == null){
       return null;
@@ -342,6 +370,14 @@ public class Misc {
       System.arraycopy(base, nElements, a, 0, n);
       return a;
     }
+  }
+
+  public static String[] arrayWithoutFirst(String[] base, int nElements){
+    String[] a = new String[base.length-1];
+    if (a.length > 0){
+      System.arraycopy(base,1,a,0,a.length);
+    }
+    return a;
   }
 
   /**

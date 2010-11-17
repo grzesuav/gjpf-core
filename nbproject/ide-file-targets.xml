@@ -15,6 +15,7 @@
       <pathelement location="src/peers"/>
     </sourcepath>
 
+    <property name="testrunner" value="gov.nasa.jpf.util.test.TestJPFHelper"/>
 
     <!-- TODO: do we really have to duplicate this for each container dir? -->
     <!-- TODO: !!! automatic recompile doesn't work, this is a NetBeans/Ant problem !!! -->
@@ -165,12 +166,13 @@
         <fail unless="run.class">Must set property 'run.class'</fail>
         <ant antfile="build.xml" inheritall="false" target="compile"/>
         <input message="please enter arguments" addproperty="arg.input"/>
-        <java classname="${run.class}" failonerror="true" fork="true">
+        <java classname="${testrunner}" failonerror="true" fork="true">
             <classpath>
                 <pathelement location="build/tests"/>
                 <path refid="base.path"/>
             </classpath>
             <jvmarg value="-ea"/>
+            <arg value="${run.class}"/>
             <arg line="${arg.input}"/>
         </java>
     </target>
@@ -195,11 +197,12 @@
 
         <input message="please enter arguments" addproperty="arg.input"/>
 
-        <java classname="${debug.class}" fork="true">
+        <java classname="${testrunner}" fork="true">
             <classpath refid="cp.tests"/>
             <jvmarg value="-ea"/>
             <jvmarg value="-Xdebug"/>
             <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
+            <arg value="${debug.class}"/>
             <arg line="${arg.input}"/>
         </java>
     </target>

@@ -19,15 +19,17 @@
 package gov.nasa.jpf.util.test;
 
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.Reflection;
 
 /**
  * helper class to run test classes that don't have a main() method
  * Note - this gets loaded by the JPFClassLoader, i.e. all the paths are already set
+ * (we can use everything from jpf.jar)
  */
 public class TestJPFHelper {
 
   public static void main(String args[]) throws Throwable {
-
     if (!TestJPF.isJPFRun()) {
       if (args.length == 0) {
         throw new JPFException("no test target class specified");
@@ -35,28 +37,31 @@ public class TestJPFHelper {
 
       try {
         Class<?> cls = Class.forName(args[0]);
-        if (TestJPF.class.isAssignableFrom(cls)) {
-          Class<? extends TestJPF> testCls = cls.asSubclass(TestJPF.class);
+        args = Misc.arrayWithoutFirst(args, 1);
 
-          String[] testMethods;
-          if (args.length > 1) {
-            testMethods = new String[args.length - 1];
-            System.arraycopy(args, 1, testMethods, 0, testMethods.length);
-          } else {
-            testMethods = new String[0];
-          }
-
-          TestJPF.runTests(testCls, testMethods);
+        if (!Reflection.tryCallMain(cls,args)){
+          runWithoutMain(cls,args);
         }
 
-      } catch (ClassCastException ccx) {
-        throw new JPFException("testClass not a gov.nasa.jpf.util.test.TestJPF subclass");
       } catch (ClassNotFoundException cnfx) {
         throw new JPFException("testClass not found by TestJPFHelper: " + args[0]);
       }
 
     } else {
       TestJPF.runTestOfClass(args);
+    }
+  }
+
+
+  // no main in test class, start via TestJPF
+  static void runWithoutMain(Class<?> cls, String[] args){
+    if (TestJPF.class.isAssignableFrom(cls)) {
+      Class<? extends TestJPF> testCls = cls.asSubclass(TestJPF.class);
+
+      TestJPF.runTests(testCls, args);
+
+    } else {
+      throw new JPFException("testClass not a gov.nasa.jpf.util.test.TestJPF subclass");
     }
   }
 }
