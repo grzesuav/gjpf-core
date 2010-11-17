@@ -420,6 +420,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // don't set shared yet
   }
 
+
   public void updateReachability( boolean isSharedOwner, int oldRef, int newRef) {
     ThreadInfo ti = ThreadInfo.getCurrentThread(); // might be null during VM init
     if ((ti == null) || ti.isInCtor() || !ti.usePor()) {

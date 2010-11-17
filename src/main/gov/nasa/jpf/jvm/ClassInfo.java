@@ -449,6 +449,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     // ones are handled by the peer (by means of setting MethodInfo attributes)
     nativePeer = NativePeer.getNativePeer(this);
 
+    checkUnresolvedNativeMethods();
+
     sourceFileName = computeSourceFileName(jc);
     source = null;
     genericSignature = computeGenericSignature(jc);
@@ -476,7 +478,16 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     JVM.getVM().notifyClassLoaded(this);
   }
-  
+
+  void checkUnresolvedNativeMethods(){
+    for (MethodInfo mi : methods.values()){
+      if (mi.isUnresolvedNativeMethod()){
+        NativeMethodInfo nmi = new NativeMethodInfo(mi, null, nativePeer);
+        nmi.replace(mi);
+      }
+    }
+  }
+
   String computeGenericSignature(JavaClass jc) {
     Attribute attribs[] = jc.getAttributes();
     for (int i = attribs.length; --i >= 0; ) {

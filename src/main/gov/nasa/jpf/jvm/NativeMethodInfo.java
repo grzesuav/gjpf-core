@@ -85,6 +85,12 @@ public class NativeMethodInfo extends MethodInfo {
   }
 
   @Override
+  public boolean isUnresolvedNativeMethod() {
+    // we are already a NativeMethodInfo
+    return false;
+  }
+
+  @Override
   public boolean isMJI () {
     return true;
   }
@@ -104,7 +110,11 @@ public class NativeMethodInfo extends MethodInfo {
 
   @Override
   public String getStackTraceSource() {
-    return peer.getPeerClassName();
+    if (peer != null){
+      return peer.getPeerClassName();
+    } else {
+      return "no peer";
+    }
   }
 
   @Override

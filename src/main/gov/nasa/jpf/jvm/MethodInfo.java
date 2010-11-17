@@ -349,7 +349,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   public static int getNumberOfLoadedMethods () {
     return mthTable.size();
   }
-    
+
   void setAtomic (boolean isAtomic) {
     if (isAtomic) {
       attrs |= EXEC_ATOMIC;
@@ -794,6 +794,11 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return ((modifiers & Modifier.ABSTRACT) != 0);
   }
   
+  // overridden by NativeMethodInfo
+  public boolean isUnresolvedNativeMethod(){
+    return ((modifiers & Modifier.NATIVE) != 0);
+  }
+
   public int getNumberOfArguments () {
     if (nArgs < 0) {
       nArgs = Types.getNumberOfArguments(signature);
@@ -918,7 +923,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
   public boolean isProtected() {
     return ((modifiers & Modifier.PROTECTED) != 0);
   }
-  
   
   /**
    * Returns true if the method is synchronized.
