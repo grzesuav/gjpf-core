@@ -496,6 +496,7 @@ public abstract class TestJPF implements JPFShell  {
     if (conf.getTarget() != null) {
       jpf = new JPF(conf);
 
+      getOptions(args);
       if (showConfig) {
         conf.print(new PrintWriter(System.out));
       }
