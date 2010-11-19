@@ -27,10 +27,10 @@ import gov.nasa.jpf.JPFException;
  */
 public final class DynamicElementInfo extends ElementInfo {
 
-  // set where we keep the last referencing ThreadInfo id during reachability analysis
-  int refTid;
-
-  //BitSet256 won't do for statics
+  // number of references from shared objects or static fields. If this
+  // gets down to 0 we have to check thread stacks to see if this object
+  // is still shared
+  int sharedRefs;
 
   public DynamicElementInfo () {
   }

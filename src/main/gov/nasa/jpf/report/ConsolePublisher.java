@@ -370,16 +370,20 @@ public class ConsolePublisher extends Publisher {
     publishTopicStart("statistics");
     out.println("elapsed time:       " + formatHMS(reporter.getElapsedTime()));
     out.println("states:             new=" + stat.newStates + ", visited=" + stat.visitedStates
-                                     + ", backtracked=" + stat.backtracked + ", end=" + stat.endStates);
-    out.println("search:             maxDepth=" + stat.maxDepth + ", constraints=" + stat.constraints);
-    out.println("choice generators:  thread=" + stat.threadCGs + ", data=" + stat.dataCGs);
-    out.println("heap:               gc=" + stat.gcCycles + ", new=" + stat.nObjects +
-                                                         ", free=" + stat.nRecycled);
+            + ", backtracked=" + stat.backtracked + ", end=" + stat.endStates);
+    out.println("search:             maxDepth=" + stat.maxDepth + ", constraints hit=" + stat.constraints);
+    out.println("choice generators:  thread=" + stat.threadCGs
+            + " (signal=" + stat.signalCGs + ", lock=" + stat.monitorCGs + ", shared ref=" + stat.sharedAccessCGs
+            + "), data=" + stat.dataCGs);
+    out.println("heap:               gc-invocations=" + stat.gcCycles);
+    out.println("objects:            " + "new=" + stat.nNewObjects
+            + ", released=" + stat.nReleasedObjects
+            + ", max live=" + stat.maxLiveObjects);
     out.println("instructions:       " + stat.insns);
-    out.println("max memory:         " + (stat.maxUsed >>20) + "MB");
+    out.println("max memory:         " + (stat.maxUsed >> 20) + "MB");
 
-    out.println("loaded code:        classes=" + ClassInfo.getNumberOfLoadedClasses() + ", methods=" +
-                                      MethodInfo.getNumberOfLoadedMethods());
+    out.println("loaded code:        classes=" + ClassInfo.getNumberOfLoadedClasses() + ", methods="
+            + MethodInfo.getNumberOfLoadedMethods());
   }
 
 }

@@ -1516,6 +1516,20 @@ public class StackFrame implements Constants, Cloneable {
     return -1;
   }
 
+  void cleanup (ThreadInfo ti) {
+    for (int i=0; i<locals.length; i++){
+      if (isLocalRef[i]){
+        int ref = locals[i];
+        if (ref != MJIEnv.NULL){
+          ElementInfo ei = ti.getElementInfo(ref);
+          if (ei.isShared()){
+            // decrement reference count
+          }
+        }
+      }
+    }
+  }
+
   //--- those are only in some of our subclasses
   public void setReturnValue(Object ret){
     throw new UnsupportedOperationException("no return value register in StackFrame");

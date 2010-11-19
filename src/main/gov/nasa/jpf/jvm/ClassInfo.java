@@ -639,7 +639,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   public boolean isReferenceArray () {
     return isReferenceArray;
   }
-  
+
+  public boolean isObjectClassInfo() {
+    return this == objectClassInfo;
+  }
+
+  public boolean isStringClassInfo() {
+    return this == stringClassInfo;
+  }
+
   public static ClassInfo getClassInfo(int uniqueId) {
     if (uniqueId >= 0) {
       return loadedClasses.get(uniqueId); 

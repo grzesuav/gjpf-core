@@ -2292,6 +2292,8 @@ public class ThreadInfo
       top = null;
     }
 
+    //frame.cleanup(this);
+
     return top;
   }
 
@@ -2420,6 +2422,7 @@ public class ThreadInfo
     return false;
   }
 
+
   /**
    * unwind stack frames until we find a matching handler for the exception object
    */
@@ -2428,16 +2431,11 @@ public class ThreadInfo
     ElementInfo ei = heap.get(exceptionObjRef);
     ClassInfo ci = ei.getClassInfo();
     String cname = ci.getName();
-    MethodInfo mi;
-    Instruction insn;
-    int nFrames = countStackFrames();
-    int i, j;
+    StackFrame handlerFrame = null; // the stackframe that has a matching handler (if any)
+    ExceptionHandler matchingHandler = null; // the matching handler we found (if any)
 
-//System.out.println("## ---- got: " + ci.getName());
-
-    // first, give the VM a chance to intercept
-    // (we do this before changing anything)
-    insn = vm.handleException(this, exceptionObjRef);
+    // first, give the VM a chance to intercept (we do this before changing anything)
+    Instruction insn = vm.handleException(this, exceptionObjRef);
     if (insn != null){
       return insn;
     }
@@ -2448,91 +2446,95 @@ public class ThreadInfo
 
     vm.notifyExceptionThrown(this, ei);
 
-    if (!haltOnThrow(cname)) {
-      for (j=0; j<nFrames; j++) {
-        mi = getMethod();
-        insn = getPC();
+    if (haltOnThrow(cname)) {
+      // shortcut - we don't try to find a handler for this one but bail immediately
+      NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
+      throw new UncaughtException(this, exceptionObjRef);
+    }
 
-        // that means we have to turn the exception into an InvocationTargetException
-        if (mi.isReflectionCallStub()) {
-          String details = ci.getName(); // <2do> should also include the cause details
-          ci = ClassInfo.getResolvedClassInfo("java.lang.reflect.InvocationTargetException");
-          exceptionObjRef = createException(ci, details, exceptionObjRef);
-          ei = heap.get(exceptionObjRef);
-          pendingException = new ExceptionInfo(this, ei);
-        }
+    // check if we find a matching handler, and if we do store it. Leave the
+    // stack untouched so that listeners can still inspect it
+    for (StackFrame frame = top; (frame != null) && (handlerFrame == null); frame = frame.getPrevious()) {
+      MethodInfo mi = frame.getMethodInfo();
 
-//System.out.println("## unwinding to: " + mi.getResolvedClassInfo().getName() + "." + mi.getUniqueName());
+      // that means we have to turn the exception into an InvocationTargetException
+      if (mi.isReflectionCallStub()) {
+        ci               = ClassInfo.getResolvedClassInfo("java.lang.reflect.InvocationTargetException");
+        exceptionObjRef  = createException(ci, cname, exceptionObjRef);
+        cname            = ci.getName();
+        ei               = heap.get(exceptionObjRef);
+        pendingException = new ExceptionInfo(this, ei);
+      }
 
-        ExceptionHandler[] exceptions = mi.getExceptions();
-        if (exceptions != null) {
-          int p = insn.getPosition();
+      insn = frame.getPC();
+      int position = insn.getPosition();
 
-          // checks the exception caught in order
-          for (i = 0; i < exceptions.length; i++) {
-            ExceptionHandler eh = exceptions[i];
-
-            // if it falls in the right range
-            if ((p >= eh.getBegin()) && (p < eh.getEnd())) {
-              String en = eh.getName();
-              //System.out.println("## checking: " + ci.getName() + " handler: " + en + " depth: " + stack.size());
-
-              // checks if this type of exception is caught here (null means 'any')
-              if ((en == null) || ci.isInstanceOf(en)) {
-                int handlerOffset = eh.getHandler();
-
-                // according to the VM spec, before transferring control to the handler we have
-                // to reset the operand stack to contain only the exception reference
-                // (4.9.2 - "4. merge the state of the operand stack..")
-                clearOperandStack();
-                push(exceptionObjRef, true);
-
-                // jumps to the exception handler
-                Instruction startOfHandlerBlock = mi.getInstructionAt(handlerOffset);
-                setPC(startOfHandlerBlock); // set! we might be in a isDeterministic / isRunnable
-
-                // notify before we reset the pendingException
-                vm.notifyExceptionHandled(this);
-
-                pendingException = null; // handled, no need to keep it
-
-                return startOfHandlerBlock;
-              }
+      ExceptionHandler[] exceptions = mi.getExceptions();
+      if (exceptions != null) {
+        // checks the exceptions caught (in order of handler definitions)
+        for (ExceptionHandler handler : exceptions){
+          // checks if it falls in the right range
+          if ((position >= handler.getBegin()) && (position < handler.getEnd())) {
+            // checks if this type of exception is caught here (null means 'any')
+            String en = handler.getName();
+            if ((en == null) || ci.isInstanceOf(en)) {
+              handlerFrame = frame;
+              matchingHandler = handler;
+              break;
             }
           }
         }
+      }
 
-        if (mi.isFirewall()) {
-          // this method should not let exceptions pass into lower level stack frames
-          // (e.g. for <clinit>, or hidden direct calls)
-          // <2do> if this is a <clinit>, we should probably turn into an
-          // ExceptionInInitializerError first
-          break;
-        }
-
-        // that takes care of releasing locks
-        // (which interestingly enough seem to be the compilers responsibility now)
-        mi.leave(this);
-
-        // notify before we pop the frame
-        vm.notifyExceptionBailout(this);
-
-        // remove a frame
-        popFrame();
+      if ((handlerFrame == null) && mi.isFirewall()) {
+        // this method should not let exceptions pass into lower level stack frames
+        // (e.g. for <clinit>, or hidden direct calls)
+        // <2do> if this is a <clinit>, we should probably turn into an
+        // ExceptionInInitializerError first
+        unwindTo(frame);
+        NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
+        throw new UncaughtException(this, exceptionObjRef);
       }
     }
 
-//System.out.println("## unhandled!");
+    if (handlerFrame == null) {
+      // no handler -> uncaught exception
+      // Note - the stack has not been modified yet, it is still in the same state
+      // where the exception was thrown
+      NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
+      throw new UncaughtException(this, exceptionObjRef);
 
-    // Ok, I finally made my peace with UncaughtException - it can be called from various places,
-    // including the VM (<clinit>, finalizer) and we can't rely on that all these locations check
-    // for pc == null. Even if they would, at this point there is nothing to do anymore, get to the
-    // NoUncaughtProperty reporting as quickly as possible, since chances are we would be even
-    // obfuscating the problem
-    NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
-    throw new UncaughtException(this, exceptionObjRef);
+    } else { // we found a matching handler
+      unwindTo(handlerFrame);
+
+      // according to the VM spec, before transferring control to the handler we have
+      // to reset the operand stack to contain only the exception reference
+      // (4.9.2 - "4. merge the state of the operand stack..")
+      clearOperandStack();
+      push(exceptionObjRef, true);
+
+      // jump to the exception handler and set pc so that listeners can see it
+      int handlerOffset = matchingHandler.getHandler();
+      insn = handlerFrame.getMethodInfo().getInstructionAt(handlerOffset);
+      setPC(insn);
+
+      // notify before we reset the pendingException
+      vm.notifyExceptionHandled(this);
+
+      pendingException = null; // handled, no need to keep it
+
+      return insn;
+    }
   }
 
+  private void unwindTo (StackFrame newTopFrame){
+    for (StackFrame frame = top; frame != newTopFrame; frame = frame.getPrevious()) {
+      MethodInfo mi = frame.getMethodInfo();
+      mi.leave(this); // that takes care of releasing locks
+      vm.notifyExceptionBailout(this); // notify before we pop the frame
+      popFrame();
+    }
+  }
 
   public ExceptionInfo getPendingException () {
     return pendingException;

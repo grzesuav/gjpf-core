@@ -515,9 +515,9 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     DynamicElementInfo e = createElementInfo(f, m);
     add(idx, e);
 
-    if (ti != null) { // maybe we should report them all, and put the burden on the listener
+    //if (ti != null) { // maybe we should report them all, and put the burden on the listener
       JVM.getVM().notifyObjectCreated(ti, elements.get(idx));
-    }
+    //}
 
     // see newObject for 'outOfMemory' handling
 
@@ -553,9 +553,9 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // and do the default (const) field initialization
     ci.initializeInstanceData(dei);
 
-    if (th != null) { // maybe we should report them all, and put the burden on the listener
+    //if (th != null) { // maybe we should report them all, and put the burden on the listener
       JVM.getVM().notifyObjectCreated(th, dei);
-    }
+    //}
 
     // note that we don't return -1 if 'outOfMemory' (which is handled in
     // the NEWxx bytecode) because our allocs are used from within the

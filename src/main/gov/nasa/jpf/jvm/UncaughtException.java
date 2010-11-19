@@ -25,7 +25,12 @@ import java.io.PrintWriter;
 
 /**
  * represents the case of an unhandled exception detected by JPF
- * <2do> control flow exception (non local goto), remove this!
+ *
+ * This is a "controlflow exception", but I finally made my peace with it since
+ * UncaughtExceptions can be thrown from various places, including the VM (<clinit>, finalizer)
+ * and we can't rely on that all these locations can check for pc == null. Even if they would,
+ * at this point there is nothing to do anymore, get to the NoUncaughtProperty reporting
+ * as quickly as possible, since chances are we would be even obfuscating the problem
  */
 @SuppressWarnings("serial")
 public class UncaughtException extends RuntimeException implements Printable {

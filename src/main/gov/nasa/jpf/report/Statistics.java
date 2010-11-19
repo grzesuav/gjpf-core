@@ -21,8 +21,15 @@ package gov.nasa.jpf.report;
 
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ThreadChoiceGenerator;
+import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
+import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.LockInstruction;
 import gov.nasa.jpf.search.Search;
 
 /**
@@ -56,9 +63,13 @@ public class Statistics extends ListenerAdapter implements Cloneable {
   public int gcCycles = 0;
   public int insns = 0;
   public int threadCGs = 0;
+  public int sharedAccessCGs = 0;
+  public int monitorCGs = 0;
+  public int signalCGs = 0;
   public int dataCGs = 0;
-  public int nObjects = 0;
-  public int nRecycled = 0;
+  public int nNewObjects = 0;
+  public int nReleasedObjects = 0;
+  public int maxLiveObjects = 0;
 
   public synchronized Statistics clone() {
     try {
@@ -69,6 +80,11 @@ public class Statistics extends ListenerAdapter implements Cloneable {
   }
   
   public synchronized void gcBegin (JVM vm) {
+    int heapSize = vm.getHeap().size();
+    if (heapSize > maxLiveObjects){
+      maxLiveObjects = heapSize;
+    }
+
     gcCycles++;
   }
   
@@ -80,17 +96,35 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     ChoiceGenerator<?> cg = vm.getChoiceGenerator();
     if (cg instanceof ThreadChoiceGenerator){
       threadCGs++;
+
+      Instruction insn = cg.getInsn();
+      if (insn instanceof FieldInstruction){
+        sharedAccessCGs++;
+      } else if (insn instanceof LockInstruction || insn instanceof InvokeInstruction){
+        monitorCGs++;
+      } else if (insn instanceof EXECUTENATIVE){
+        MethodInfo mi = insn.getMethodInfo();
+        if (mi != null){
+          ClassInfo ci = mi.getClassInfo();
+          if (ci != null){
+            if (ci.isObjectClassInfo()){
+              // its got to be either a wait or a notify
+              signalCGs++;
+            }
+          }
+        }
+      }
     } else {
       dataCGs++;
     }
   }
   
   public synchronized void objectCreated (JVM vm){
-    nObjects++;
+    nNewObjects++;
   }
   
   public synchronized void objectReleased (JVM vm){
-    nRecycled++;
+    nReleasedObjects++;
   }
   
   public synchronized void stateAdvanced (Search search){

@@ -43,7 +43,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // the propagated ones - only lower 16 bits can be used
 
   // reachable from different threads. It doesn't mean this is actually a shared
-  // object, but it potentially could be
+  // object, but it potentially could be, so we have to be able to create CGs
+  // in operations using such references
   public static final int   ATTR_TSHARED       = 0x1;
 
   // this one is redundant if we just base it on the ClassInfo

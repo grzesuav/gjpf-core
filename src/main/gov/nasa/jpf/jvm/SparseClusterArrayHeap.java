@@ -89,9 +89,9 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
       // and do the default (const) field initialization
       ci.initializeInstanceData(dei);
 
-      if (ti != null) { // maybe we should report them all, and put the burden on the listener
+      //if (ti != null) { // maybe we should report them all, and put the burden on the listener
         vm.notifyObjectCreated(ti, dei);
-      }
+      //}
     }
 
     // note that we don't return -1 if 'outOfMemory' (which is handled in

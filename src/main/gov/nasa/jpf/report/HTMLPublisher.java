@@ -532,11 +532,11 @@ public class HTMLPublisher extends Publisher {
     output.println("</td></tr>");
 
     output.print("         <tr><td>&#160;&#160;&#160;New Objects:&#160;&#160;</td><td align=\"right\">");
-    output.print(stats.nObjects);
+    output.print(stats.nNewObjects);
     output.println("</td></tr>");
 
     output.print("         <tr><td>&#160;&#160;&#160;Free Objects:&#160;&#160;</td><td align=\"right\">");
-    output.print(stats.nRecycled);
+    output.print(stats.nReleasedObjects);
     output.println("</td></tr>");
 
     output.print("         <tr><td>&#160;&#160;&#160;Max Memory:&#160;&#160;</td><td align=\"right\">");
