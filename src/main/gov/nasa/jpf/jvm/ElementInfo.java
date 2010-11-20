@@ -19,7 +19,9 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.BitSet64;
 import gov.nasa.jpf.util.Debug;
+import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.HashData;
 
 import java.io.PrintWriter;
@@ -101,7 +103,11 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   protected Fields          fields;
   protected Monitor         monitor;
-  protected int             refTid; // the last referencing thread id
+  
+  // the set of referencing thread ids. Note that we need an implementation that
+  // is not depending on order of order of reference, or we effectively shoot
+  // heap symmetry
+  protected FixedBitSet     refTid;
 
   protected int             index;
 
@@ -131,9 +137,12 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public ElementInfo(Fields f, Monitor m, int tid) {
     fields = f;
     monitor = m;
-    refTid = tid;
 
-    attributes = f.getClassInfo().getElementInfoAttrs();
+    // Ok, this is a hard limit, but for the time being a SUT with more
+    // than 64 threads is blowing us out of the water state-space-wise anyways
+    refTid = new BitSet64(tid);
+
+    // attributes are set in the concrete type ctors
   }
 
   protected ElementInfo( Fields f, Monitor m, int ref, int a) {
@@ -200,14 +209,42 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return fields.hasRefField(objRef);
   }
 
-
-  public int getRefTid() {
+  /**
+   * BEWARE - never change the returned object without knowing about the
+   * ElementInfo change status, this field is state managed!
+   */
+  public FixedBitSet getRefTid() {
     return refTid;
   }
 
-  public void setRefTid (int tid){
-    refTid = tid;
-    attributes |= ATTR_REFTID_CHANGED;
+  public boolean hasMultipleReferencingThreads() {
+    return refTid.cardinality() > 1;
+  }
+
+  public void updateRefTidWith (int tid){
+    FixedBitSet b = refTid;
+
+    if (!b.get(tid)){
+      if ((attributes & ATTR_REFTID_CHANGED) == 0){
+        b = b.clone();
+        refTid = b;
+        attributes |= ATTR_SET_REFTID_CHANGED;
+      }
+      b.set(tid);
+    }
+  }
+
+  public void updateRefTidWithout (int tid){
+    FixedBitSet b = refTid;
+
+    if (b.get(tid)){
+      if ((attributes & ATTR_REFTID_CHANGED) == 0){
+        b = b.clone();
+        refTid = b;
+        attributes |= ATTR_SET_REFTID_CHANGED;
+      }
+      b.clear(tid);
+    }
   }
 
   boolean setShared() {
@@ -292,17 +329,55 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
 
+  /**
+   * note this was a prospective answer (reachability), but now it is
+   * actual - only elements that already have been referenced from different threads
+   * might return true. If the refTid set is cleaned from terminated threads, it
+   * more precisely means this element has been referenced from different threads
+   * that are still alive
+   */
   public boolean isShared() {
-    return ((attributes & ATTR_TSHARED) != 0);
+    //return ((attributes & ATTR_TSHARED) != 0);
+    return refTid.cardinality() > 1;
   }
 
   public boolean isImmutable() {
     return ((attributes & ATTR_IMMUTABLE) != 0);
   }
 
-  public boolean isSchedulingRelevant() {
+  public boolean checkUpdatedSchedulingRelevance (ThreadInfo ti) {
     // only mutable, shared objects are relevant
-    return ((attributes & (ATTR_TSHARED | ATTR_IMMUTABLE)) == ATTR_TSHARED);
+    //return ((attributes & (ATTR_TSHARED | ATTR_IMMUTABLE)) == ATTR_TSHARED);
+
+    int tid = ti.getIndex();
+    updateRefTidWith(tid);
+    
+    if ((attributes & ATTR_IMMUTABLE) != 0){
+      return false;
+    }
+
+    int nThreadRefs = refTid.cardinality();
+    if (nThreadRefs > 1){
+
+      // check if we have to cleanup the refTid set, or if some other accessors are not runnable
+      ThreadList tl = JVM.getVM().getThreadList();
+      for (int i=refTid.nextSetBit(0); i>=0; i = refTid.nextSetBit(i+1)){
+        ThreadInfo tiRef = tl.get(i);
+        if (tiRef == null || tiRef.isTerminated()) {
+          updateRefTidWithout(i);
+          nThreadRefs--;
+        } else if (!tiRef.isRunnable()){
+          nThreadRefs--;
+        }
+      }
+
+//System.out.println("@@ check " + (nThreadRefs > 1) + " from " + tid + " of " + this + " : " + refTid);
+      return (nThreadRefs > 1);
+
+    } else { // only one referencing thread
+//System.out.println("@@ check false from " + tid + " of " + this + " : " + refTid);
+      return false;
+    }
   }
 
   /**
@@ -547,6 +622,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return null; // only for DynamicElementInfos
   }
 
+/**
   public void setReferenceField(FieldInfo fi, int newValue) {
     ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
                                                         // in case of a static
@@ -572,6 +648,20 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
         heap.updateReachability( true, oldValue, newValue);
       }
 
+    } else {
+      throw new JPFException("not a reference field: " + fi.getName());
+    }
+  }
+**/
+
+  public void setReferenceField(FieldInfo fi, int newValue) {
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
+                                                        // in case of a static
+    Fields f = ei.cloneFields();
+    int offset = fi.getStorageOffset();
+
+    if (fi.isReference()) {
+      f.setReferenceValue(this, offset, newValue);
     } else {
       throw new JPFException("not a reference field: " + fi.getName());
     }
@@ -1424,6 +1514,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     fields = f;
   }
 
+  /**
+   * BEWARE - never change the returned object without knowing about the
+   * ElementInfo change status, this field is state managed!
+   */
   public Fields getFields() {
     return fields;
   }
@@ -1441,6 +1535,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     monitor = m;
   }
 
+  /**
+   * BEWARE - never change the returned object without knowing about the
+   * ElementInfo change status, this field is state managed!
+   */
   public Monitor getMonitor() {
     return monitor;
   }
@@ -1563,6 +1661,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
 
     if (monitor.hasLockedThreads()) {
+      checkAssertion( refTid.cardinality() > 1, "locked threads without multiple referencing threads");
+
       for (ThreadInfo lti : monitor.getBlockedOrWaitingThreads()){
         checkAssertion( lti.lockRef == index, "blocked or waiting thread has invalid lockRef: " + lti);
       }
@@ -1578,7 +1678,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       System.out.println("!!!!!! failed ElementInfo consistency: "  + this + ": " + failMsg);
 
       System.out.println("object: " + this);
-      System.out.println("isShared: " + isShared());
+      System.out.println("refTid: " + refTid);
       
       ThreadInfo tiLock = getLockingThread();
       if (tiLock != null) System.out.println("locked by: " + tiLock);

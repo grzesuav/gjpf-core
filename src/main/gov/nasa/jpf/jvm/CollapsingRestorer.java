@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFConfigException;
+import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.ObjVector;
 
 import java.util.Arrays;
@@ -117,7 +118,7 @@ implements IncrementalChangeTracker {
           Fields f = poolFields(ei);
           Monitor m = poolMonitor(ei);
           int a = ei.getAttributes();
-          int t = ei.getRefTid();
+          FixedBitSet t = ei.getRefTid();
           dCaches.set(i,new DEIState(f,m,a,t));
           ei.markUnchanged();
         } else {
@@ -149,7 +150,7 @@ implements IncrementalChangeTracker {
           Fields f = poolFields(ei);
           Monitor m = poolMonitor(ei);
           int a = ei.getAttributes();
-          int t = ei.getRefTid();
+          FixedBitSet t = ei.getRefTid();
           int c = ei.getClassObjectRef();
           int s = ei.getStatus();
           sCaches.set(i, new SEIState(f,m,a,t,c,s));
@@ -303,11 +304,11 @@ implements IncrementalChangeTracker {
   protected static abstract class EIState {
     public final Fields fields;
     public final Monitor monitor;
-    public final int refTid;
+    public final FixedBitSet refTid;
     public final int attributes;
 
 
-    public EIState(Fields fields, Monitor monitor, int attributes, int refTid) {
+    public EIState(Fields fields, Monitor monitor, int attributes, FixedBitSet refTid) {
       this.fields = fields;
       this.monitor = monitor;
       this.attributes = attributes;
@@ -317,7 +318,7 @@ implements IncrementalChangeTracker {
 
   protected static class DEIState extends EIState {
 
-    public DEIState(Fields fields, Monitor monitor, int attributes, int refTid) {
+    public DEIState(Fields fields, Monitor monitor, int attributes, FixedBitSet refTid) {
       super(fields,monitor,attributes,refTid);
     }
   }
@@ -326,7 +327,7 @@ implements IncrementalChangeTracker {
     public final int classRef;
     public final int status;
 
-    public SEIState(Fields fields, Monitor monitor, int attributes, int refTid, int classRef, int status) {
+    public SEIState(Fields fields, Monitor monitor, int attributes, FixedBitSet refTid, int classRef, int status) {
       super(fields,monitor,attributes,refTid);
 
       this.classRef = classRef;

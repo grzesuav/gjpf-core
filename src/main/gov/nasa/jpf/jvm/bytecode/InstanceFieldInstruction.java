@@ -58,7 +58,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
 
     // no use to break if there is no other thread, or the object is not shared
     // (but note this might change in a following execution path)
-    if ( !ti.hasOtherRunnables() || !ei.isSchedulingRelevant()) {
+    if ( !ti.hasOtherRunnables() || !ei.checkUpdatedSchedulingRelevance(ti)) {
       return false;
     }
     // from here on, we know this is a shared object that can be accessed concurrently

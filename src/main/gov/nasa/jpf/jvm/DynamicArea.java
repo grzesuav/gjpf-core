@@ -420,7 +420,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // don't set shared yet
   }
 
-
+/**
   public void updateReachability( boolean isSharedOwner, int oldRef, int newRef) {
     ThreadInfo ti = ThreadInfo.getCurrentThread(); // might be null during VM init
     if ((ti == null) || ti.isInCtor() || !ti.usePor()) {
@@ -461,7 +461,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
       } else { // owner of changed field not shared (oldRef can't change status)
         if (newRef != -1) {
           nei = elements.get(newRef);
-          if (nei.isSchedulingRelevant()) { // shared and mutable
+          if (nei.checkUpdatedSchedulingRelevance()) { // shared and mutable
             // give up, nei might become non-shared
             analyzeHeap(false);
           }
@@ -473,16 +473,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
       JVM.getVM().getSystemState().activateGC(); 
     }
   }
-
-  public void log () {
-    Debug.println(Debug.MESSAGE, "DA");
-
-    for (int i = 0; i < elements.size(); i++) {
-      if (elements.get(i) != null) {
-        elements.get(i).log();
-      }
-    }
-  }
+**/
 
 
   /**

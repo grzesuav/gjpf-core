@@ -2292,8 +2292,6 @@ public class ThreadInfo
       top = null;
     }
 
-    //frame.cleanup(this);
-
     return top;
   }
 

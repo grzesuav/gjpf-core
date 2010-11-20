@@ -37,8 +37,10 @@ public final class StaticElementInfo extends ElementInfo {
 
   public StaticElementInfo (Fields f, Monitor m, int tid, int classObjRef) {
     super(f, m, tid);
-    
+
     classObjectRef = classObjRef;
+
+    // initial attributes?
   }
 
   public Memento<ElementInfo> getMemento(MementoFactory factory) {

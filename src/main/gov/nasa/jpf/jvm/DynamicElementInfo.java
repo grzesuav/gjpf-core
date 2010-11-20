@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.util.HashData;
 
 /**
  * A specialized version of ElementInfo for use in the DynamicArea.
@@ -33,8 +32,9 @@ public final class DynamicElementInfo extends ElementInfo {
 
   public DynamicElementInfo (Fields f, Monitor m, int tid) {
     super(f, m, tid);
-  }
 
+    attributes = f.getClassInfo().getElementInfoAttrs();
+  }
 
   public Memento<ElementInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);

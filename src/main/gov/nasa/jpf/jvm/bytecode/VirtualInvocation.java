@@ -96,7 +96,8 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     if (!getSkipLocalSync(ti)){
       return true;
     }
-    return ei.isShared();
+    //return ei.isShared();
+    return ei.checkUpdatedSchedulingRelevance(ti);
   }
 
   private boolean getSkipLocalSync(ThreadInfo ti) {

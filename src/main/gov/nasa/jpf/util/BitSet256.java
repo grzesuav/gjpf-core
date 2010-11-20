@@ -19,6 +19,9 @@
 
 package gov.nasa.jpf.util;
 
+import gov.nasa.jpf.JPFException;
+
+
 /**
  * a fixed size BitSet with 256 bits.
  *
@@ -30,9 +33,34 @@ package gov.nasa.jpf.util;
  * Instances of this class do not allocate any additional memory, we keep all
  * data in builtin type fields
  */
-public class BitSet256 {
+public class BitSet256 implements FixedBitSet, Cloneable {
+
+  public static final int INDEX_MASK = 0xffffff00;
+
   long l0, l1, l2, l3;
   int cardinality;
+
+  public BitSet256 (){
+    // nothing in here
+  }
+
+  public BitSet256 (int i){
+    set(i);
+  }
+
+  public BitSet256 (int... idx){
+    for (int i : idx){
+      set(i);
+    }
+  }
+
+  public BitSet256 clone() {
+    try {
+      return (BitSet256) super.clone();
+    } catch (CloneNotSupportedException ex) {
+      throw new JPFException("BitSet256 clone failed");
+    }
+  }
 
   private final int computeCardinality (){
     int n= Long.bitCount(l0);
@@ -45,68 +73,70 @@ public class BitSet256 {
   //--- public interface (much like java.util.BitSet)
 
   public void set (int i){
-    long bitPattern = (1L << i);
+    if ((i & INDEX_MASK) == 0) {
+      long bitPattern = (1L << i);
 
-    switch (i >> 6){
-      case 0:
-        if ((l0 & bitPattern) == 0L){
-          cardinality++;
-          l0 |= bitPattern;
-        }
-        break;
-      case 1:
-        if ((l1 & bitPattern) == 0L){
-          cardinality++;
-          l1 |= bitPattern;
-        }
-        break;
-      case 2:
-        if ((l2 & bitPattern) == 0L){
-          cardinality++;
-          l2 |= bitPattern;
-        }
-        break;
-      case 3:
-        if ((l3 & bitPattern) == 0L){
-          cardinality++;
-          l3 |= bitPattern;
-        }
-        break;
-      default:
-        throw new IndexOutOfBoundsException("BitSet256 index out of range: " + i);
+      switch (i >> 6) {
+        case 0:
+          if ((l0 & bitPattern) == 0L) {
+            cardinality++;
+            l0 |= bitPattern;
+          }
+          break;
+        case 1:
+          if ((l1 & bitPattern) == 0L) {
+            cardinality++;
+            l1 |= bitPattern;
+          }
+          break;
+        case 2:
+          if ((l2 & bitPattern) == 0L) {
+            cardinality++;
+            l2 |= bitPattern;
+          }
+          break;
+        case 3:
+          if ((l3 & bitPattern) == 0L) {
+            cardinality++;
+            l3 |= bitPattern;
+          }
+      }
+    } else {
+      throw new IndexOutOfBoundsException("BitSet256 index out of range: " + i);
     }
   }
 
   public void clear (int i){
-    long bitPattern = ~(1L << i);
+    if ((i & INDEX_MASK) == 0) {
+      long bitPattern = ~(1L << i);
 
-    switch (i >> 6){
-      case 0:
-        if ((l0 & bitPattern) != 0L){
-          cardinality--;
-          l0 &= bitPattern;
-        }
-        break;
-      case 1:
-        if ((l1 & bitPattern) != 0L){
-          cardinality--;
-          l1 &= bitPattern;
-        }
-        break;
-      case 2:
-        if ((l2 & bitPattern) != 0L){
-          cardinality--;
-          l2 &= bitPattern;
-        }
-        break;
-      case 3:
-        if ((l3 & bitPattern) != 0L){
-          cardinality--;
-          l3 &= bitPattern;
-        }
-        break;
-      default:
-        throw new IndexOutOfBoundsException("BitSet256 index out of range: " + i);
+      switch (i >> 6) {
+        case 0:
+          if ((l0 & bitPattern) != 0L) {
+            cardinality--;
+            l0 &= bitPattern;
+          }
+          break;
+        case 1:
+          if ((l1 & bitPattern) != 0L) {
+            cardinality--;
+            l1 &= bitPattern;
+          }
+          break;
+        case 2:
+          if ((l2 & bitPattern) != 0L) {
+            cardinality--;
+            l2 &= bitPattern;
+          }
+          break;
+        case 3:
+          if ((l3 & bitPattern) != 0L) {
+            cardinality--;
+            l3 &= bitPattern;
+          }
+      }
+    } else {
+      throw new IndexOutOfBoundsException("BitSet256 index out of range: " + i);
     }
   }
 
@@ -119,20 +149,22 @@ public class BitSet256 {
   }
 
   public boolean get (int i){
-    long bitPattern = (1L << i);
+    if ((i & INDEX_MASK) == 0) {
+      long bitPattern = (1L << i);
 
-    switch (i >> 6){
-      case 0:
-        return ((l0 & bitPattern) != 0);
-      case 1:
-        return ((l1 & bitPattern) != 0);
-      case 2:
-        return ((l2 & bitPattern) != 0);
-      case 3:
-        return ((l3 & bitPattern) != 0);
-      default:
-        throw new IndexOutOfBoundsException("BitSet256 index out of range: " + i);
+      switch (i >> 6) {
+        case 0:
+          return ((l0 & bitPattern) != 0);
+        case 1:
+          return ((l1 & bitPattern) != 0);
+        case 2:
+          return ((l2 & bitPattern) != 0);
+        case 3:
+          return ((l3 & bitPattern) != 0);
+      }
     }
+
+    throw new IndexOutOfBoundsException("BitSet256 index out of range: " + i);
   }
 
   public int cardinality() {
@@ -174,61 +206,65 @@ public class BitSet256 {
 
 
   public int nextSetBit (int fromIdx){
-    int i;
-    int i0 = fromIdx & 0x3f;
-    switch (fromIdx >> 6){
-      case 0:
-        if ((i=Long.numberOfTrailingZeros(l0 & (0xffffffffffffffffL << i0))) <64) return i;
-        if ((i=Long.numberOfTrailingZeros(l1)) <64) return i + 64;
-        if ((i=Long.numberOfTrailingZeros(l2)) <64) return i + 128;
-        if ((i=Long.numberOfTrailingZeros(l3)) <64) return i + 192;
-        break;
-      case 1:
-        if ((i=Long.numberOfTrailingZeros(l1 & (0xffffffffffffffffL << i0))) <64) return i + 64;
-        if ((i=Long.numberOfTrailingZeros(l2)) <64) return i + 128;
-        if ((i=Long.numberOfTrailingZeros(l3)) <64) return i + 192;
-        break;
-      case 2:
-        if ((i=Long.numberOfTrailingZeros(l2 & (0xffffffffffffffffL << i0))) <64) return i + 128;
-        if ((i=Long.numberOfTrailingZeros(l3)) <64) return i + 192;
-        break;
-      case 3:
-        if ((i=Long.numberOfTrailingZeros(l3 & (0xffffffffffffffffL << i0))) <64) return i + 192;
-        break;
-      default:
-        throw new IndexOutOfBoundsException("BitSet256 index out of range: " + fromIdx);
-    }
+    if ((fromIdx & INDEX_MASK) == 0) {
+      int i;
+      int i0 = fromIdx & 0x3f;
+      switch (fromIdx >> 6){
+        case 0:
+          if ((i=Long.numberOfTrailingZeros(l0 & (0xffffffffffffffffL << i0))) <64) return i;
+          if ((i=Long.numberOfTrailingZeros(l1)) <64) return i + 64;
+          if ((i=Long.numberOfTrailingZeros(l2)) <64) return i + 128;
+          if ((i=Long.numberOfTrailingZeros(l3)) <64) return i + 192;
+          break;
+        case 1:
+          if ((i=Long.numberOfTrailingZeros(l1 & (0xffffffffffffffffL << i0))) <64) return i + 64;
+          if ((i=Long.numberOfTrailingZeros(l2)) <64) return i + 128;
+          if ((i=Long.numberOfTrailingZeros(l3)) <64) return i + 192;
+          break;
+        case 2:
+          if ((i=Long.numberOfTrailingZeros(l2 & (0xffffffffffffffffL << i0))) <64) return i + 128;
+          if ((i=Long.numberOfTrailingZeros(l3)) <64) return i + 192;
+          break;
+        case 3:
+          if ((i=Long.numberOfTrailingZeros(l3 & (0xffffffffffffffffL << i0))) <64) return i + 192;
+      }
 
-    return -1;
+      return -1;
+
+    } else {
+      throw new IndexOutOfBoundsException("BitSet256 index out of range: " + fromIdx);
+    }
   }
 
   public int nextClearBit (int fromIdx){
-    int i;
-    int i0 = fromIdx & 0x3f;
-    switch (fromIdx >> 6){
-      case 0:
-        if ((i=Long.numberOfTrailingZeros(~l0 & (0xffffffffffffffffL << i0))) <64) return i;
-        if ((i=Long.numberOfTrailingZeros(~l1)) <64) return i + 64;
-        if ((i=Long.numberOfTrailingZeros(~l2)) <64) return i + 128;
-        if ((i=Long.numberOfTrailingZeros(~l3)) <64) return i + 192;
-        break;
-      case 1:
-        if ((i=Long.numberOfTrailingZeros(~l1 & (0xffffffffffffffffL << i0))) <64) return i + 64;
-        if ((i=Long.numberOfTrailingZeros(~l2)) <64) return i + 128;
-        if ((i=Long.numberOfTrailingZeros(~l3)) <64) return i + 192;
-        break;
-      case 2:
-        if ((i=Long.numberOfTrailingZeros(~l2 & (0xffffffffffffffffL << i0))) <64) return i + 128;
-        if ((i=Long.numberOfTrailingZeros(~l3)) <64) return i + 192;
-        break;
-      case 3:
-        if ((i=Long.numberOfTrailingZeros(~l3 & (0xffffffffffffffffL << i0))) <64) return i + 192;
-        break;
-      default:
-        throw new IndexOutOfBoundsException("BitSet256 index out of range: " + fromIdx);
-    }
+    if ((fromIdx & INDEX_MASK) == 0) {
+      int i;
+      int i0 = fromIdx & 0x3f;
+      switch (fromIdx >> 6){
+        case 0:
+          if ((i=Long.numberOfTrailingZeros(~l0 & (0xffffffffffffffffL << i0))) <64) return i;
+          if ((i=Long.numberOfTrailingZeros(~l1)) <64) return i + 64;
+          if ((i=Long.numberOfTrailingZeros(~l2)) <64) return i + 128;
+          if ((i=Long.numberOfTrailingZeros(~l3)) <64) return i + 192;
+          break;
+        case 1:
+          if ((i=Long.numberOfTrailingZeros(~l1 & (0xffffffffffffffffL << i0))) <64) return i + 64;
+          if ((i=Long.numberOfTrailingZeros(~l2)) <64) return i + 128;
+          if ((i=Long.numberOfTrailingZeros(~l3)) <64) return i + 192;
+          break;
+        case 2:
+          if ((i=Long.numberOfTrailingZeros(~l2 & (0xffffffffffffffffL << i0))) <64) return i + 128;
+          if ((i=Long.numberOfTrailingZeros(~l3)) <64) return i + 192;
+          break;
+        case 3:
+          if ((i=Long.numberOfTrailingZeros(~l3 & (0xffffffffffffffffL << i0))) <64) return i + 192;
+      }
 
-    return -1;
+      return -1;
+
+    } else {
+      throw new IndexOutOfBoundsException("BitSet256 index out of range: " + fromIdx);
+    }
   }
 
   public void and (BitSet256 other){
@@ -272,6 +308,10 @@ public class BitSet256 {
     }
   }
 
+  public void hash(HashData hd){
+    hd.add(hashCode());
+  }
+
   /**
    * answer the same hashCodes as java.util.BitSet
    */
@@ -289,7 +329,7 @@ public class BitSet256 {
     sb.append('{');
 
     boolean first = true;
-    for (int i=nextSetBit(0); i>= 0; i = nextSetBit(i)){
+    for (int i=nextSetBit(0); i>= 0; i = nextSetBit(i+1)){
       if (!first){
         sb.append(',');
       } else {

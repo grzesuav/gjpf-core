@@ -352,6 +352,9 @@
         <fileset dir="build/tests">
           <exclude name="**/JPF_*.class"/>
           <include name="**/*Test.class"/>
+
+          <!-- temporary disabled -->
+          <exclude name="**/PorSkipLocalSyncTest.class"/>
         </fileset>
       </batchtest>
 

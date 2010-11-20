@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.ObjVector;
 
 /**
@@ -213,7 +214,7 @@ public class DefaultMementoRestorer extends MementoRestorer {
     int ref;
     Fields fields;
     Monitor monitor;
-    int refTid;
+    FixedBitSet refTid;
     int attributes;
 
     EIMemento (MementoFactory factory, EI ei){

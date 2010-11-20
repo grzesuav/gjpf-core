@@ -55,7 +55,7 @@ public interface Heap {
 
   void analyzeHeap (boolean sweep);
 
-  void updateReachability( boolean isSharedOwner, int oldRef, int newRef);
+  //void updateReachability( boolean isSharedOwner, int oldRef, int newRef);
 
   void markThreadRoot (int objref, int tid);
 
