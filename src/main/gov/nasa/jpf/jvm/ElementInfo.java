@@ -82,15 +82,15 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // those are reset during state storage/restore
   public static final int   ATTR_FIELDS_CHANGED     = 0x1000000;
   public static final int   ATTR_MONITOR_CHANGED    = 0x2000000;
-  public static final int   ATTR_ATTRS_CHANGED      = 0x4000000;
+  public static final int   ATTR_REFTID_CHANGED     = 0x4000000;
   // did we ever have a change before (this is sticky)
   public static final int   ATTR_HAS_CHANGED_BEFORE = 0x8000000;
 
-  static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_ATTRS_CHANGED);
+  static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_REFTID_CHANGED);
   static final int   ATTR_SET_FIELDS_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_HAS_CHANGED_BEFORE);
   static final int   ATTR_SET_MONITOR_CHANGED = (ATTR_MONITOR_CHANGED | ATTR_HAS_CHANGED_BEFORE);
-  static final int   ATTR_SET_ATTRS_CHANGED = (ATTR_ATTRS_CHANGED | ATTR_HAS_CHANGED_BEFORE);
-  static final int   ATTR_CHANGESET = ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_ATTRS_CHANGED | ATTR_HAS_CHANGED_BEFORE;
+  static final int   ATTR_SET_REFTID_CHANGED = (ATTR_REFTID_CHANGED | ATTR_HAS_CHANGED_BEFORE);
+  static final int   ATTR_CHANGESET = ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_REFTID_CHANGED | ATTR_HAS_CHANGED_BEFORE;
 
 
   // transient flag set if object is reachable from root object, i.e. can't be recycled
@@ -101,6 +101,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   protected Fields          fields;
   protected Monitor         monitor;
+  protected int             refTid; // the last referencing thread id
+
   protected int             index;
 
   // these are our state-stored object attributes
@@ -126,9 +128,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   Memento<ElementInfo> memento; // cache for unchanged ElementInfos
   
 
-  public ElementInfo(Fields f, Monitor m) {
+  public ElementInfo(Fields f, Monitor m, int tid) {
     fields = f;
     monitor = m;
+    refTid = tid;
 
     attributes = f.getClassInfo().getElementInfoAttrs();
   }
@@ -155,6 +158,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return (attributes & ATTR_FIELDS_CHANGED) != 0;
   }
 
+  public boolean hasRefTidChanged() {
+    return (attributes & ATTR_REFTID_CHANGED) != 0;
+  }
+
   public String toString() {
     return (getClassInfo().getName() + '@' + index);
   }
@@ -169,6 +176,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public void setFieldLockInfo (FieldInfo fi, FieldLockInfo flInfo) {
     fLockInfo[fi.getFieldIndex()] = flInfo;
   }
+
 
   /**
    * we had a GC, update the live objects
@@ -192,9 +200,19 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return fields.hasRefField(objRef);
   }
 
+
+  public int getRefTid() {
+    return refTid;
+  }
+
+  public void setRefTid (int tid){
+    refTid = tid;
+    attributes |= ATTR_REFTID_CHANGED;
+  }
+
   boolean setShared() {
     if ((attributes & ATTR_TSHARED) == 0){
-      attributes |= (ATTR_TSHARED | ATTR_SET_ATTRS_CHANGED);
+      attributes |= ATTR_TSHARED;
       return true;
     } else {
       return false;
@@ -206,7 +224,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    */
   boolean setShared(int attrMask) {
     if ( ((attributes & ATTR_TSHARED) == 0) && ((attrMask & ATTR_TSHARED) != 0)){
-      attributes |= (ATTR_TSHARED | ATTR_SET_ATTRS_CHANGED);
+      attributes |= ATTR_TSHARED;
       return true;
     } else {
       return false;
@@ -345,19 +363,47 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return false;
   }
 
+  
+  public void hash(HashData hd) {
+    fields.hash(hd);
+    monitor.hash(hd);
+    hd.add(refTid);
+    
+    // attributes ?
+  }
 
-  /** a bit simplistic, but will do for object equalness */
-  public boolean equals(Object other) {
-    if (other == null) {
+  @Override
+  public int hashCode() {
+    HashData hd = new HashData();
+
+    hash(hd);
+
+    return hd.getValue();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o != null && o instanceof ElementInfo) {
+      ElementInfo other = (ElementInfo) o;
+
+      if (attributes != other.attributes){ // ??
+        return false;
+      }
+      if (!fields.equals(other.fields)) {
+        return false;
+      }
+      if (!monitor.equals(other.monitor)){
+        return false;
+      }
+      if (refTid != other.refTid){
+        return false;
+      }
+
+      return true;
+
+    } else {
       return false;
     }
-
-    if (getClass() != other.getClass()) {
-      return false;
-    }
-
-    ElementInfo ei = (ElementInfo) other;
-    return fields.equals(ei.fields);
   }
 
   public ClassInfo getClassInfo() {
@@ -501,21 +547,41 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return null; // only for DynamicElementInfos
   }
 
-  public void setReferenceField(FieldInfo fi, int value) {
+  public void setReferenceField(FieldInfo fi, int newValue) {
     ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
                                                         // in case of a static
     Fields f = ei.cloneFields();
-    int off = fi.getStorageOffset();
+    int offset = fi.getStorageOffset();
 
     if (fi.isReference()) {
-      int oldValue = f.getReferenceValue(off);
-      f.setReferenceValue(this, off, value);
+      int oldValue = f.getReferenceValue(offset);
+      f.setReferenceValue(this, offset, newValue);
 
-      JVM.getVM().getHeap().updateReachability( isShared(),oldValue, value);
+      Heap heap = JVM.getVM().getHeap();
+      if (isShared()){
+
+        if (newValue != MJIEnv.NULL){
+          ElementInfo nei = heap.get(newValue);
+          nei.addSharedReference(ei);
+        }
+        if (oldValue != MJIEnv.NULL){
+          ElementInfo oei = heap.get(oldValue);
+          oei.removeSharedReference(ei);
+        }
+
+        heap.updateReachability( true, oldValue, newValue);
+      }
 
     } else {
       throw new JPFException("not a reference field: " + fi.getName());
     }
+  }
+
+  protected void addSharedReference(ElementInfo refEi){
+    // nothing here
+  }
+  protected void removeSharedReference(ElementInfo refEi){
+    // nothing here
   }
 
   public void setDeclaredReferenceField(String fname, String clsBase, int value) {
@@ -979,18 +1045,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
   }
 
-  public void hash(HashData hd) {
-    fields.hash(hd);
-    monitor.hash(hd);
-  }
-
-  public int hashCode() {
-    HashData hd = new HashData();
-
-    hash(hd);
-
-    return hd.getValue();
-  }
 
   public boolean instanceOf(String type) {
     return Types.instanceOf(fields.getType(), type);

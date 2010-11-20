@@ -1723,7 +1723,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
       // register ourself in the static area
       StaticArea sa = JVM.getVM().getStaticArea();
-      sei = sa.addClass(this);
+      sei = sa.addClass(this, ti);
 
       createClassObject(ti);
     }

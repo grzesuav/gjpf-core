@@ -35,16 +35,10 @@ public final class StaticElementInfo extends ElementInfo {
   public StaticElementInfo () {
   }
 
-  public StaticElementInfo (Fields f, Monitor m, int classObjRef) {
-    super(f, m);
+  public StaticElementInfo (Fields f, Monitor m, int tid, int classObjRef) {
+    super(f, m, tid);
+    
     classObjectRef = classObjRef;
-  }
-
-  public StaticElementInfo (Fields f, Monitor m, int idx, int a, int coref, int s) {
-    super(f, m, idx,a);
-
-    classObjectRef = coref;
-    status = s;
   }
 
   public Memento<ElementInfo> getMemento(MementoFactory factory) {
@@ -56,6 +50,25 @@ public final class StaticElementInfo extends ElementInfo {
     super.hash(hd);
     hd.add(classObjectRef);
     hd.add(status);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (super.equals(o) && o instanceof StaticElementInfo) {
+      StaticElementInfo other = (StaticElementInfo) o;
+
+      if (classObjectRef != other.classObjectRef) {
+        return false;
+      }
+      if (status != other.status) {
+        return false;
+      }
+
+      return true;
+
+    } else {
+      return false;
+    }
   }
 
   protected void markAreaChanged(){
@@ -75,6 +88,10 @@ public final class StaticElementInfo extends ElementInfo {
     }
   }
 
+  public boolean isShared() {
+    // static fields are always thread global
+    return true;
+  }
 
   public int getStatus() {
     return status;

@@ -483,7 +483,7 @@ public class JVM {
 
       StaticArea sa = getStaticArea();
       if (!sa.containsClass(ci.getName())){
-        sa.addClass(ci);
+        sa.addClass(ci, null);
       }
     }
   }

@@ -52,12 +52,28 @@ protected DynamicStackFrame (MethodInfo mi, StackFrame caller){
     }
   }
 
-  public void push (int v, boolean ref) {
+  public void push (int v) {
     if (top >= (operands.length-1)) {
       growOperands();
     }
-    super.push(v,ref);
+    super.push(v);
   }
+
+
+  public void push (int v, boolean isRef) {
+    if (top >= (operands.length-1)) {
+      growOperands();
+    }
+    super.push(v,isRef);
+  }
+
+  public void pushRef (int v) {
+    if (top >= (operands.length-1)) {
+      growOperands();
+    }
+    super.pushRef(v);
+  }
+
 
   // those are of less interest, unless somebody creates a method on the fly
 

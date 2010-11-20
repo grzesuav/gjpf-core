@@ -211,15 +211,17 @@ public class DefaultMementoRestorer extends MementoRestorer {
 
   static class EIMemento<EI extends ElementInfo> implements Memento<ElementInfo> {
     int ref;
-    int attributes;
     Fields fields;
     Monitor monitor;
+    int refTid;
+    int attributes;
 
     EIMemento (MementoFactory factory, EI ei){
       this.ref = ei.index;
       this.attributes = ei.attributes;
       this.fields = ei.fields;
       this.monitor = ei.monitor;
+      this.refTid = ei.refTid;
 
       ei.markUnchanged();
     }
@@ -229,6 +231,7 @@ public class DefaultMementoRestorer extends MementoRestorer {
       ei.attributes = attributes;
       ei.fields = fields;
       ei.monitor = monitor;
+      ei.refTid = refTid;
 
       ei.updateLockingInfo();
       ei.markUnchanged();

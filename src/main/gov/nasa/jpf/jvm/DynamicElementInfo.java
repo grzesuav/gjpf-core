@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.HashData;
 
 /**
  * A specialized version of ElementInfo for use in the DynamicArea.
@@ -27,21 +28,13 @@ import gov.nasa.jpf.JPFException;
  */
 public final class DynamicElementInfo extends ElementInfo {
 
-  // number of references from shared objects or static fields. If this
-  // gets down to 0 we have to check thread stacks to see if this object
-  // is still shared
-  int sharedRefs;
-
   public DynamicElementInfo () {
   }
 
-  public DynamicElementInfo (Fields f, Monitor m) {
-    super(f, m);
+  public DynamicElementInfo (Fields f, Monitor m, int tid) {
+    super(f, m, tid);
   }
 
-  public DynamicElementInfo (Fields f, Monitor m, int ref, int a) {
-    super(f, m, ref, a);
-  }
 
   public Memento<ElementInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);

@@ -512,7 +512,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
                                      Types.isReference(elementType));
     Monitor  m = new Monitor();
 
-    DynamicElementInfo e = createElementInfo(f, m);
+    DynamicElementInfo e = createElementInfo(f, m, ti);
     add(idx, e);
 
     //if (ti != null) { // maybe we should report them all, and put the burden on the listener
@@ -533,19 +533,19 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
    * <2do> this should return a DynamicElementInfo (most callers need it anyways,
    * and getting the ref out of the ElementInfo is more efficient than a get(ref)
    */
-  public int newObject (ClassInfo ci, ThreadInfo th) {
+  public int newObject (ClassInfo ci, ThreadInfo ti) {
     int index;
 
     // create the thing itself
     Fields             f = ci.createInstanceFields();
     Monitor            m = new Monitor();
 
-    DynamicElementInfo dei = createElementInfo(f, m);
+    DynamicElementInfo dei = createElementInfo(f, m, ti);
 
     // get the index where to store this sucker, but be aware of that the
     // returned index might be outside the current elements array (super.add
     // takes care of this <Hrmm>)
-    index = indexFor(th);
+    index = indexFor(ti);
 
     // store it on the heap
     add(index, dei);
@@ -553,8 +553,8 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // and do the default (const) field initialization
     ci.initializeInstanceData(dei);
 
-    //if (th != null) { // maybe we should report them all, and put the burden on the listener
-      JVM.getVM().notifyObjectCreated(th, dei);
+    //if (ti != null) { // maybe we should report them all, and put the burden on the listener
+      JVM.getVM().notifyObjectCreated(ti, dei);
     //}
 
     // note that we don't return -1 if 'outOfMemory' (which is handled in
@@ -677,8 +677,9 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     return new DynamicElementInfo();
   }
 
-  protected DynamicElementInfo createElementInfo (Fields f, Monitor m){
-    return new DynamicElementInfo(f,m);
+  protected DynamicElementInfo createElementInfo (Fields f, Monitor m, ThreadInfo ti){
+    int tid = ti == null ? 0 : ti.getIndex();
+    return new DynamicElementInfo(f,m,tid);
   }
 
 

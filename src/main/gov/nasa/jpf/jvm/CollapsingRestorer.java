@@ -117,7 +117,8 @@ implements IncrementalChangeTracker {
           Fields f = poolFields(ei);
           Monitor m = poolMonitor(ei);
           int a = ei.getAttributes();
-          dCaches.set(i,new DEIState(f,m,a));
+          int t = ei.getRefTid();
+          dCaches.set(i,new DEIState(f,m,a,t));
           ei.markUnchanged();
         } else {
           dCaches.set(i,null);
@@ -148,9 +149,10 @@ implements IncrementalChangeTracker {
           Fields f = poolFields(ei);
           Monitor m = poolMonitor(ei);
           int a = ei.getAttributes();
+          int t = ei.getRefTid();
           int c = ei.getClassObjectRef();
           int s = ei.getStatus();
-          sCaches.set(i, new SEIState(f,m,a,c,s));
+          sCaches.set(i, new SEIState(f,m,a,t,c,s));
           ei.markUnchanged();
 
         } else {
@@ -222,6 +224,7 @@ implements IncrementalChangeTracker {
         restoreFields(ei, estate.fields);
         ei.monitor = estate.monitor;
         ei.attributes = estate.attributes;
+        ei.refTid = estate.refTid;
         
         ei.markUnchanged();
         ei.updateLockingInfo(); // monitor needs to be set before we call this
@@ -253,6 +256,7 @@ implements IncrementalChangeTracker {
         restoreFields(ei, estate.fields);
         ei.monitor = estate.monitor;
         ei.attributes = estate.attributes;
+        ei.refTid = estate.refTid;
         ei.classObjectRef = estate.classRef;
         ei.status = estate.status;
 
@@ -296,23 +300,37 @@ implements IncrementalChangeTracker {
     }
   }
 
-  protected static class DEIState {
+  protected static abstract class EIState {
     public final Fields fields;
     public final Monitor monitor;
+    public final int refTid;
     public final int attributes;
 
-    public DEIState(Fields fields, Monitor monitor, int attributes) {
-      this.fields = fields; this.monitor = monitor; this.attributes = attributes;
+
+    public EIState(Fields fields, Monitor monitor, int attributes, int refTid) {
+      this.fields = fields;
+      this.monitor = monitor;
+      this.attributes = attributes;
+      this.refTid = refTid;
     }
   }
 
-  protected static class SEIState extends DEIState {
+  protected static class DEIState extends EIState {
+
+    public DEIState(Fields fields, Monitor monitor, int attributes, int refTid) {
+      super(fields,monitor,attributes,refTid);
+    }
+  }
+
+  protected static class SEIState extends EIState {
     public final int classRef;
     public final int status;
 
-    public SEIState(Fields fields, Monitor monitor, int attributes, int classRef, int status) {
-      super(fields,monitor,attributes);
-      this.classRef = classRef; this.status = status;
+    public SEIState(Fields fields, Monitor monitor, int attributes, int refTid, int classRef, int status) {
+      super(fields,monitor,attributes,refTid);
+
+      this.classRef = classRef;
+      this.status = status;
     }
   }
 

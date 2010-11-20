@@ -26,6 +26,8 @@ import java.util.HashMap;
  */
 public class InternStringRepository {
 
+  // <2do> this doesn't work with HeuristicSearch - it can hop forth and back between state branches
+
   protected HashMap<String,InternStringEntry> internStrings = new HashMap<String,InternStringEntry>();
   
   // we are trying to save a backtracked HashMap here. The idea is that the string

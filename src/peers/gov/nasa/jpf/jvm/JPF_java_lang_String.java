@@ -24,26 +24,11 @@ package gov.nasa.jpf.jvm;
 public class JPF_java_lang_String {
   
   public static int intern____Ljava_lang_String_2 (MJIEnv env, int robj) {
-    // now this is REALLY a naive implementation of 'intern', but
-    // at least we don't burn state for a Hashtable.
-    // Replace this once we have a real String abstraction
+    // <2do> Replace this with a JPF space HashSet once we have a String model
     Heap   heap = env.getHeap();
-    ElementInfo   sei = heap.get(robj);
 
-    // <2do> really? with heap symmetry, can't a corresponding one be at > robj?
-    //*reply:
-    // this picks a canonical one, the one with the lowest objref.  if a match
-    // is at a point > robj (or there is no other matching string), robj is
-    // the canonical. -peterd 
-    for (int i = 0; i < robj; i++) {
-      ElementInfo ei = heap.get(i);
-
-      if (ei != null) {
-        if (ei.equals(sei)) {
-          return i;
-        }
-      }
-    }
+    String s = env.getStringObject(robj);
+    robj = heap.newInternString(s, env.getThreadInfo());
 
     return robj;
   }

@@ -52,8 +52,9 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
 
   // internal stuff
 
-  protected DynamicElementInfo createElementInfo (Fields f, Monitor m){
-    return new DynamicElementInfo(f,m);
+  protected DynamicElementInfo createElementInfo (Fields f, Monitor m, ThreadInfo ti){
+    int tid = ti == null ? 0 : ti.getIndex();
+    return new DynamicElementInfo(f,m,tid);
   }
 
   //--- Heap interface
@@ -76,7 +77,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
     // create the thing itself
     Fields             f = ci.createInstanceFields();
     Monitor            m = new Monitor();
-    DynamicElementInfo dei = createElementInfo(f, m);
+    DynamicElementInfo dei = createElementInfo(f, m, ti);
 
     // get next free index into thread cluster
     int tid = (ti != null) ? ti.getIndex() : 0;

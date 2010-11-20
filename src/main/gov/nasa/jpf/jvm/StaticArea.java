@@ -112,47 +112,21 @@ public class StaticArea extends Area<StaticElementInfo> implements Restorable<St
     }
   }
 
-  /*
-   * note this does not recurse upwards, i.e. the client has to take care of
-   * superclass init. The reason for this is that we also have to
-   * deal with clinit calls, and handling those is depending on the
-   * client (e.g. for blocking/ re-execution of the insn after returning
-   * from the clinit (stack)
-   */
-  public StaticElementInfo addClass (ClassInfo ci, int clsObjRef) {
-    StaticElementInfo ei = null;
-    int index = indexOf(ci.getName());
-
-    if (index == -1) {
-      index = indexFor(ci.getName());
-      ei = createElementInfo(ci, clsObjRef);
-      add(index, ei);
-      return ei;
-
-    } else {
-      // startupClass (no clsObjRef set yet)
-      ei = get(index);
-      ei.setClassObjectRef(clsObjRef);
-    }
-
-    return ei;
-  }
-
   //--- StaticElementInfo factory methods
   protected StaticElementInfo createElementInfo () {
     return new StaticElementInfo();
   }
 
-  protected StaticElementInfo createElementInfo (Fields f, Monitor m, int clsObjRef){
-    return new StaticElementInfo(f,m,clsObjRef);
+  protected StaticElementInfo createElementInfo (Fields f, Monitor m, int tid, int clsObjRef){
+    return new StaticElementInfo(f,m,tid, clsObjRef);
   }
 
 
-  protected StaticElementInfo createElementInfo (ClassInfo ci, int clsObjRef) {
+  protected StaticElementInfo createElementInfo (ClassInfo ci, int tid, int clsObjRef) {
     Fields   f = ci.createStaticFields();
     Monitor  m = new Monitor();
 
-    StaticElementInfo ei = createElementInfo(f, m, clsObjRef);
+    StaticElementInfo ei = createElementInfo(f, m, tid, clsObjRef);
     ci.setStaticElementInfo(ei);
 
     ci.initializeStaticData(ei);
@@ -164,8 +138,9 @@ public class StaticArea extends Area<StaticElementInfo> implements Restorable<St
    * note this has to be followed by creating, initializing and linking
    * a class object - the StaticElementInfo needs its reference value
    */
-  public StaticElementInfo addClass (ClassInfo ci) {
-    StaticElementInfo ei = createElementInfo(ci, -1);
+  public StaticElementInfo addClass (ClassInfo ci, ThreadInfo ti) {
+    int tid = ti == null ? 0 : ti.getIndex();
+    StaticElementInfo ei = createElementInfo(ci, tid, -1);
     int index = indexFor(ci.getName());
 
     add(index, ei);

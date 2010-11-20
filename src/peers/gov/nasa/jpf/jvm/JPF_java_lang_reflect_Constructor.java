@@ -100,7 +100,7 @@ public class JPF_java_lang_reflect_Constructor {
       int objRef = env.newObject(ci);
       MethodInfo stub = mi.createDirectCallStub("[reflection]");
 
-      frame = new DirectCallStackFrame(stub, stub.getMaxStack(), stub.getMaxLocals());
+      frame = new DirectCallStackFrame(stub, stub.getMaxStack()+1, stub.getMaxLocals());
       frame.push(objRef, true);  // (1) we store the return object on the frame
       frame.dup();
 
