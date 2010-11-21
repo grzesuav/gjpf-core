@@ -186,13 +186,6 @@ public class JPF_java_lang_Thread {
         newThread.setState( ThreadInfo.State.RUNNING);
       }
 
-      // <2do> now that we have another runnable, we should re-compute
-      // reachability so that subsequent potential breaks work correctly
-      if (newThread.usePor()){ // means we use on-the-fly POR
-        //env.getSystemState().activateGC();
-        env.getHeap().analyzeHeap(false); // sledgehammer mark
-      }
-
       // now we have a new thread, create a CG for scheduling it
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG( newThread);
       if (cg != null) {

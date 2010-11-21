@@ -961,8 +961,7 @@ public class MJIEnv {
   }
 
   public void pinDown (int objref, boolean keepAlive) {
-    ElementInfo ei = getElementInfo(objref);
-    ei.pinDown(keepAlive);
+    vm.getHeap().pinDown(objref);
   }
   
   /**

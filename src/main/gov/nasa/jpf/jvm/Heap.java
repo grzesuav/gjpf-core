@@ -50,10 +50,6 @@ public interface Heap {
 
   //--- system internal interface
 
-  // these methods are used by heap related classes such as StackFrames and
-  // ElementInfos, to keep them as heap implementation independent as possible
-
-  void analyzeHeap (boolean sweep);
 
   //void updateReachability( boolean isSharedOwner, int oldRef, int newRef);
 
@@ -61,9 +57,11 @@ public interface Heap {
 
   void markStaticRoot (int objRef);
 
+  void pinDown (int objRef);
+
   void cleanUpDanglingReferences();
 
-  void registerWeakReference (Fields f);
+  void registerWeakReference (ElementInfo ei);
 
   // to be called from ElementInfo.markRecursive(), to avoid exposure of
   // mark implementation

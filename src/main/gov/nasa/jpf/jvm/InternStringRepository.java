@@ -71,7 +71,7 @@ public class InternStringRepository {
     if (e == null || !checkInternStringEntry(heap, e)) { // not seen or new state branch
       ref = heap.newString(str,ti);
       ElementInfo ei = heap.get(ref);
-      ei.pinDown(true); // that's important, interns don't get recycled
+      heap.pinDown(ei.getIndex()); // that's important, interns don't get recycled
 
       int vref = ei.getReferenceField("value");
       ei = heap.get(vref);

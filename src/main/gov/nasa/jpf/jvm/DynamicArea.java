@@ -21,7 +21,6 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.bytecode.INVOKECLINIT;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.util.Debug;
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.IntVector;
 
@@ -35,6 +34,7 @@ import java.util.HashMap;
  * objects created by NEW insn live. Hence the garbage collection mechanism resides here
  */
 public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Restorable<Heap> {
+
 
   /**
    * Used to store various mark phase infos
@@ -51,7 +51,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   protected boolean outOfMemory; // can be used by listeners to simulate outOfMemory conditions
 
   /** used to keep track of marked WeakRefs that might have to be updated */
-  protected ArrayList<Fields> weakRefs;
+  protected ArrayList<ElementInfo> weakRefs;
 
   /**
    * DynamicMap is a mapping table used to achieve heap symmetry,
@@ -97,33 +97,22 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     outOfMemory = isOutOfMemory;
   }
 
-  public void setSweep (boolean b){
-    sweep = b;
-  }
-
-  public void gc () {
-    analyzeHeap(sweep);
-  }
-
   /**
-   * Our precise mark & sweep garbage collector. Be aware of two things
-   *
-   * (1) it's called every transition (forward) we detect has changed a reference,
-   *     to ensure heap symmetry (save states), but at the cost of huge
-   *     gc loads, where we cannot perform all the nasty performance tricks of
-   *     'normal' GCs
-   * (2) we do even more - we keep track of reachability, i.e. if an object is
-   *     reachable from a thread root object, to check if it is thread local
-   *     (in which case we can ignore corresponding field accesses as potential
-   *     scheduling relevant insns in our on-the-fly partial order reduction).
-   *     Note that reachability does not mean accessibility, which is much harder
+   * Our deterministic  mark & sweep garbage collector.
+   * It is called after each transition (forward) that has changed a reference,
+   * to ensure heap symmetry (save states), but at the cost of huge
+   * gc loads, where we cannot perform all the nasty performance tricks of normal GCs.
+   * To avoid overpopulation of our heap, this can also be called every
+   * 'vm.max_alloc_gc' allocations.
+   * 
+   * note that we no longer perform reachability analysis here, which has been
+   * replaced by tracking referencing thread ids
    */
 
-  public void analyzeHeap (boolean sweep) {
+  public void gc () {
     // <2do> pcm - we should refactor so that POR reachability (which is checked
     // on each ref PUTFIELD, PUTSTATIC) is more effective !!
 
-    int i;
     int length = elements.size();
     ElementInfo ei;
     weakRefs = null;
@@ -136,15 +125,14 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // changed only in its attributes. 'lastAttrs' could be a local.
     // Since we have this loop, we also use it to reset all the propagated
     // (i.e. re-computed) object attributes of live objects
-    for (i=0; i<length; i++) {
+    for (int i=0; i<length; i++) {
       ei = elements.get(i);
       if (ei != null) {
         lastAttrs.set( i, ei.attributes);
 
         ei.attributes &= ~(ElementInfo.ATTR_PROP_MASK | ElementInfo.ATTR_IS_LIVE);
-
-        if ((ei.attributes & ElementInfo.ATTR_PINDOWN) != 0){
-          markPinnedDown(i);
+        if (ei.isPinnedDown()){
+          markPinDown(ei);
         }
       }
     }
@@ -160,7 +148,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // phase 2 - walk through all the marked ones recursively
     // Now we traverse, and propagate the reachability attribute. After this
     // phase, all live objects should be marked with the 'curGc' value
-    for (i=isRoot.nextSetBit(0); i>= 0; i = isRoot.nextSetBit(i+1)){
+    for (int i=isRoot.nextSetBit(0); i>= 0; i = isRoot.nextSetBit(i+1)){
       markRecursive(i);
     }
 
@@ -169,7 +157,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // we need to do this in two passes, or otherwise we might end up
     // removing objects that are still referenced from within finalizers
     if (sweep && runFinalizer) {
-      for (i = 0; i < length; i++) {
+      for (int i = 0; i < length; i++) {
         ei = elements.get(i);
         if (ei != null && !ei.isLive()){
           // <2do> here we have to add the object to the finalizer queue
@@ -184,7 +172,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // all objects with 'lastGc' != 'curGc', and check for attribute-only changes
     int count = 0;
 
-    for (i = 0; i < length; i++) {
+    for (int i = 0; i < length; i++) {
       ei = elements.get(i);
       if (ei != null) {
         if (ei.isLive()){
@@ -322,13 +310,6 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
 
       int attrs = ei.getAttributes();
 
-      // Ok, gotcha - but be aware sharedness might be masked out (the ThreadGroup thing)
-      if (!ei.isShared() && (refTid != refThread.get(objref))) {
-        if (ei.setShared(attrMask)){
-          markChanged(objref);
-        }
-      }
-
       // even if we didn't change sharedness here, we have to propagate attributes
       // (we might get here from the recursion of another object detected to be shared)
       ei.propagateAttributes(refAttr, attrMask);
@@ -370,15 +351,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     ElementInfo ei = elements.get(objref);
     assert ei != null;
 
-    if (isRoot.get(objref)) {
-      int rt = refThread.get(objref);
-      if ((rt != tid) && (rt != -1)) {
-        if (ei.setShared()){
-          markChanged(objref);
-        }
-        // <2do> - this would be the place to add a listener notification
-      }
-    } else {
+    if (!isRoot.get(objref)) {
       isRoot.set(objref);
       refThread.set(objref, tid);
 
@@ -403,22 +376,17 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     refThread.set(objref, -1);
 
     ei.setLive();
-
-    if (ei.setShared()){
-      markChanged(objref);
-    }
-    // <2do> - this would be the place to add a listener notification
   }
 
-  void markPinnedDown (int objref){
-    ElementInfo ei = elements.get(objref);
+  void markPinDown(ElementInfo ei) {
+    int objref = ei.getIndex();
 
     isRoot.set(objref);
     refThread.set(objref, -1);
 
     ei.setLive();
-    // don't set shared yet
   }
+
 
 /**
   public void updateReachability( boolean isSharedOwner, int oldRef, int newRef) {
@@ -626,7 +594,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     if (e == null || !checkInternStringEntry(e)) { // not seen or new state branch
       ref = newString(str,ti);
       ElementInfo ei = get(ref);
-      ei.pinDown(true); // that's important, interns don't get recycled
+      pinDown(ref); // that's important, interns don't get recycled
 
       int vref = ei.getReferenceField("value");
       ei = get(vref);
@@ -638,6 +606,19 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     }
   }
 
+  public void pinDown (int objRef) {
+    ElementInfo ei = elements.get(objRef);
+    ei.pinDown(true);
+    markChanged(objRef);
+  }
+
+  public void registerWeakReference (ElementInfo ei) {
+    if (weakRefs == null) {
+      weakRefs = new ArrayList<ElementInfo>();
+    }
+
+    weakRefs.add(ei);
+  }
 
   /**
    * reset all weak references that now point to collected objects to 'null'
@@ -646,15 +627,14 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
    */
   protected void checkWeakRefs () {
     if (weakRefs != null) {
-      int len = weakRefs.size();
-
-      for (int i = 0; i < len; i++) {
-        Fields f = weakRefs.get(i);
+      for (ElementInfo ei : weakRefs) {
+        Fields f = ei.getFields();
         int    ref = f.getIntValue(0); // watch out, the 0 only works with our own WeakReference impl
         if (ref != -1) {
-          ElementInfo ei = elements.get(ref);
-          if ((ei == null) || (ei.isNull())) {
-            f.setReferenceValue(ei, 0, -1);
+          ElementInfo refEi = get(ref);
+          if ((refEi == null) || (refEi.isNull())) {
+            // we need to make sure the Fields are properly state managed
+            ei.setReferenceField(ei.getFieldInfo(0), -1);
           }
         }
       }
@@ -671,15 +651,6 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   protected DynamicElementInfo createElementInfo (Fields f, Monitor m, ThreadInfo ti){
     int tid = ti == null ? 0 : ti.getIndex();
     return new DynamicElementInfo(f,m,tid);
-  }
-
-
-  public void registerWeakReference (Fields f) {
-    if (weakRefs == null) {
-      weakRefs = new ArrayList<Fields>();
-    }
-
-    weakRefs.add(f);
   }
 
   public int getNext (ClassInfo ci, int idx){

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.test.java.lang;
 
+import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
 import java.lang.reflect.InvocationTargetException;
 import org.junit.Test;
@@ -30,10 +31,13 @@ public class StringTest extends TestJPF {
   @Test
   public void testIntern() {
     if (verifyNoPropertyViolation()) {
+      boolean c1 = Verify.getBoolean(); // to do some state storing / backtracking
       String a = "Blah".intern();
       String b = new String("Blah");
 
       assert (a != b) : "'new String(intern) != intern' failed";
+
+      boolean c2 = Verify.getBoolean(); // to do some more storing / backtracking
 
       String c = b.intern();
 

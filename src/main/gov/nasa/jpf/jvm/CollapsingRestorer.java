@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.util.FixedBitSet;
+import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
 
 import java.util.Arrays;
@@ -287,7 +288,9 @@ implements IncrementalChangeTracker {
     public final SEIState[] sstates;
 
     public KState(TState[] tstates, DEIState[] dstates, SEIState[] sstates) {
-      this.tstates = tstates; this.dstates = dstates; this.sstates = sstates;
+      this.tstates = tstates;
+      this.dstates = dstates;
+      this.sstates = sstates;
     }
   }
 
@@ -297,7 +300,9 @@ implements IncrementalChangeTracker {
     public final StackFrame topFrame;
 
     public TState(ThreadInfo ti, ThreadData td, StackFrame topFrame) {
-      this.ti = ti; this.td = td; this.topFrame = topFrame;
+      this.ti = ti;
+      this.td = td;
+      this.topFrame = topFrame;
     }
   }
 

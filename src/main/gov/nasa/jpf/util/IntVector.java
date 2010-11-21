@@ -18,12 +18,14 @@
 //
 package gov.nasa.jpf.util;
 
+import gov.nasa.jpf.JPFException;
+
 
 /**
  * (more efficient?) alternative to Vector<Integer>
  * @author pcd
  */
-public final class IntVector implements Comparable<IntVector> {
+public final class IntVector implements Comparable<IntVector>, Cloneable {
   public static final int defaultInitCap = 40;
 
   
@@ -43,7 +45,7 @@ public final class IntVector implements Comparable<IntVector> {
     size = 0;
   }
   
-  public IntVector(int[] init) {
+  public IntVector(int... init) {
     this(Growth.defaultGrowth, init.length);
     size = init.length;
     System.arraycopy(init, 0, data, 0, size);
@@ -54,7 +56,18 @@ public final class IntVector implements Comparable<IntVector> {
   public IntVector(int initCap) { this(Growth.defaultGrowth, initCap); }
   
   public IntVector() { this(Growth.defaultGrowth,defaultInitCap); }
-  
+
+  public IntVector clone() {
+    try {
+      IntVector v = (IntVector)super.clone();
+      v.data = data.clone();
+      return v;
+
+    } catch (CloneNotSupportedException cnsx){
+      throw new JPFException("IntVector clone failed");
+    }
+  }
+
   public void add(int x) {
     if (size+1 > data.length) {
       ensureCapacity(size+1);
@@ -63,7 +76,17 @@ public final class IntVector implements Comparable<IntVector> {
     size++;
   }
 
-  public void add2(int x1, int x2) {
+  public boolean addIfAbsent (int x) {
+    for (int i=0; i<size; i++){
+      if (data[i] == x){
+        return false;
+      }
+    }
+    add(x);
+    return true;
+  }
+
+  public void add(int x1, int x2) {
     if (size+2 > data.length) {
       ensureCapacity(size+2);
     }
@@ -73,7 +96,7 @@ public final class IntVector implements Comparable<IntVector> {
     size++;
   }
   
-  public void add3(int x1, int x2, int x3) {
+  public void add(int x1, int x2, int x3) {
     if (size+3 > data.length) {
       ensureCapacity(size+3);
     }
@@ -120,7 +143,19 @@ public final class IntVector implements Comparable<IntVector> {
     System.arraycopy(x.data, 0, data, size, x.size);
     size += x.size;
   }
-  
+
+  public boolean removeFirst (int x){
+    for (int i=0; i<size; i++){
+      if (data[i] == x){
+        System.arraycopy(data,i+1, data,i, size-i);
+        size--;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   public int get(int idx) {
     if (idx >= size) {
       return 0;
@@ -133,7 +168,26 @@ public final class IntVector implements Comparable<IntVector> {
     ensureSize(idx+1);
     data[idx] = x;
   }
-  
+
+  public int getFirstIndexOfValue(int x) {
+    for (int i=0; i<size; i++){
+      if (data[i] == x){
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  public boolean contains (int x) {
+    for (int i=0; i<size; i++){
+      if (data[i] == x){
+        return true;
+      }
+    }
+    return false;
+  }
+
+
   public int[] toArray (int[] dst) {
     System.arraycopy(data,0,dst,0,size);
     return dst;

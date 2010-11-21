@@ -20,6 +20,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.FixedBitSet;
+import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
 
 /**
@@ -198,14 +199,14 @@ public class DefaultMementoRestorer extends MementoRestorer {
     }
   }
 
-  static class HeapMemento extends AreaMemento<DynamicElementInfo,DynamicArea> implements Memento<Heap> {
-    HeapMemento (MementoFactory factory, DynamicArea area){
+  static class DAMemento extends AreaMemento<DynamicElementInfo,DynamicArea> implements Memento<Heap> {
+    DAMemento (MementoFactory factory, DynamicArea area){
       super(factory, area);
     }
 
     public Heap restore (Heap heap){
       // not very typesafe
-      return (Heap) super.restore((DynamicArea)heap);
+      return super.restore((DynamicArea)heap);
     }
   }
 
@@ -302,7 +303,7 @@ public class DefaultMementoRestorer extends MementoRestorer {
   }
 
   public Memento<Heap> getMemento(DynamicArea da) {
-    return new HeapMemento(this,da);
+    return new DAMemento(this,da);
   }
 
   public Memento<StaticArea> getMemento(StaticArea sa) {

@@ -144,7 +144,7 @@ public class SimpleFilteringSerializer extends AbstractSerializer {
     buf.add(threads.length());
 
     for (ThreadInfo t : threads.getThreads()) {
-      buf.add2(t.getThreadObjectRef(),t.getState().ordinal());
+      buf.add(t.getThreadObjectRef(),t.getState().ordinal());
 
       int frameCountPos = buf.size();
       buf.add(0); // placeholder
@@ -160,7 +160,7 @@ public class SimpleFilteringSerializer extends AbstractSerializer {
         } else {
           pc = -1;
         }
-        buf.add2(mi.getGlobalId(), pc);
+        buf.add(mi.getGlobalId(), pc);
 
         int lenIdx = buf.size();
         buf.add(0); // place holder

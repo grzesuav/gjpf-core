@@ -69,6 +69,10 @@ public class OutputStreamWriter extends Writer {
   public void flush() {
     // nothing
   }
+
+  void flushBuffer() {
+    // nothing
+  }
   
   public native String getEncoding();
   

@@ -161,7 +161,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
         } else {
           pc = -1;
         }
-        buf.add2(mi.getGlobalId(), pc);
+        buf.add(mi.getGlobalId(), pc);
 
         int lenIdx = buf.size();
         buf.add(0); // place holder

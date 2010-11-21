@@ -21,7 +21,9 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.SparseClusterArray;
+import java.util.ArrayList;
 
 /**
  *
@@ -35,12 +37,21 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
 
   protected InternStringRepository internStrings = new InternStringRepository();
 
-  protected MarkQueue markQueue = new MarkQueue();
+  // list of pinned down references (this is only efficient for a small number of objects)
+  protected IntVector pinDownList;
 
   protected boolean runFinalizer;
   protected boolean sweep;
 
   protected boolean outOfMemory; // can be used by listeners to simulate outOfMemory conditions
+
+  //--- these objects are only used during gc
+
+  // used to keep track of marked WeakRefs that might have to be updated
+  protected ArrayList<ElementInfo> weakRefs;
+
+  protected MarkQueue markQueue = new MarkQueue();
+
 
 
   public SparseClusterArrayHeap (Config config, KernelState ks){
@@ -140,31 +151,62 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
     return nSet;
   }
 
-  public void updateReachability(boolean isSharedOwner, int oldRef, int newRef) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
 
   public void checkConsistency(boolean isStateStore) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    // <2do>
   }
 
   public void cleanUpDanglingReferences() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    // <2do>
   }
 
-  public void registerWeakReference(Fields f) {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public void pinDown (int objRef) {
+    if (pinDownList == null){
+      pinDownList = new IntVector(16);
+    }
+    pinDownList.addIfAbsent(objRef);
+
+    ElementInfo ei = get(objRef);
+    ei.pinDown(true);
   }
 
+  public void registerWeakReference (ElementInfo ei) {
+    if (weakRefs == null) {
+      weakRefs = new ArrayList<ElementInfo>();
+    }
+
+    weakRefs.add(ei);
+  }
+
+  /**
+   * reset all weak references that now point to collected objects to 'null'
+   * NOTE: this implementation requires our own Reference/WeakReference implementation, to
+   * make sure the 'ref' field is the first one
+   */
+  protected void cleanupWeakRefs () {
+    if (weakRefs != null) {
+      for (ElementInfo ei : weakRefs) {
+        Fields f = ei.getFields();
+        int    ref = f.getIntValue(0); // watch out, the 0 only works with our own WeakReference impl
+        if (ref != -1) {
+          ElementInfo refEi = get(ref);
+          if ((refEi == null) || (refEi.isNull())) {
+            // we need to make sure the Fields are properly state managed
+            ei.setReferenceField(ei.getFieldInfo(0), -1);
+          }
+        }
+      }
+
+      weakRefs = null;
+    }
+  }
+  
   public void gc() {
-    analyzeHeap(sweep);
-  }
-
-  public void analyzeHeap(boolean sweep) {
     vm.notifyGCBegin();
 
     markQueue.clear();
 
+    markPinDownList();
     vm.getThreadList().markRoots(this); // mark thread stacks
     vm.getStaticArea().markRoots(this); // mark objects referenced from StaticArea ElementInfos
 
@@ -207,12 +249,17 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
    */
   public void markStaticRoot (int objref) {
     // statics are globals and treated as shared
-    markQueue.queue(objref, 0, ElementInfo.ATTR_TSHARED, ElementInfo.ATTR_PROP_MASK);
+    markQueue.queue(objref, 0, 0, ElementInfo.ATTR_PROP_MASK);
   }
 
-  void markPinnedDown (int objref){
-    // statics are globals and treated as shared
-    markQueue.queue(objref, 0, 0, ElementInfo.ATTR_PROP_MASK);
+  void markPinDownList (){
+    if (pinDownList != null){
+      int len = pinDownList.size();
+      for (int i=0; i<len; i++){
+        int objref = pinDownList.get(i);
+        markQueue.queue(objref, 0, 0, ElementInfo.ATTR_PROP_MASK);
+      }
+    }
   }
 
 
@@ -240,11 +287,6 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
       // have to check for these changes being masked out (attrMask)
 
       int attrs = ei.getAttributes();
-
-      // Ok, gotcha - but be aware sharedness might be masked out (the ThreadGroup thing)
-      if (!ei.isShared() && (refTid != (objref>>>S1))) {
-        ei.setShared(attrMask);
-      }
 
       // even if we didn't change sharedness here, we have to propagate attributes
       // (we might get here from the recursion of another object detected to be shared)

@@ -105,12 +105,6 @@ public class DefaultAttributor implements Attributor {
     
     String fid = jc.getClassName() + '.' + f.getName();
 
-    // this field would make everything reachable, so blank it out
-    // <2do> - this is bad because the field is apparently named differently in
-    // non-Sun Java implementations
-    if (fid.equals("java.lang.ThreadGroup.threads")) {
-      attr &= ~ElementInfo.ATTR_TSHARED;
-    }
     
     if (f.isFinal()) {
       // <2do> Hmm, finals are not really immutable, they only

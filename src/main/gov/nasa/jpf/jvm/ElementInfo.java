@@ -25,7 +25,6 @@ import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.HashData;
 
 import java.io.PrintWriter;
-import java.util.Vector;
 
 /**
  * Describes an element of memory containing the field values of a class or an
@@ -44,11 +43,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   // the propagated ones - only lower 16 bits can be used
 
-  // reachable from different threads. It doesn't mean this is actually a shared
-  // object, but it potentially could be, so we have to be able to create CGs
-  // in operations using such references
-  public static final int   ATTR_TSHARED       = 0x1;
-
   // this one is redundant if we just base it on the ClassInfo
   // (->fields->classinfo)
   // but we might use code attrs in the future to set this on a per-instance
@@ -57,24 +51,16 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // object doesn't change value
   public static final int   ATTR_IMMUTABLE     = 0x2;
 
-  // don't promote to shared along this path
-  public static final int   ATTR_NO_PROMOTE    = 0x4;
-
   // the non-propagated attributes - use only higher 16 bits
-
-  // to-be-done, would be code attr, too, and could easily be checked at runtime
-  // (hello, a new property)
-  public static final int   ATTR_SINGLE_WRITER = 0x10000;
 
   // don't propagate attributes through this object
   public static final int   ATTR_NO_PROPAGATE  = 0x20000;
 
-  // object is assumed to be fully protected (i.e. no field access that is
-  // not protected by a lock)
-  public static final int   ATTR_PROTECTED     = 0x40000;
-
   // don't reycle this object as long as the flag is set
-  public static final int   ATTR_PINDOWN       = 0x80000;
+  public static final int   ATTR_PINDOWN       = 0x10000;
+
+  // this is a identity-managed object
+  public static final int   ATTR_INTERN        = 0x20000;
 
   // The constructor for the object has returned.  Final fields can no longer break POR
   // This attribute is set in gov.nasa.jpf.jvm.bytecode.RETURN.execute().
@@ -247,26 +233,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
   }
 
-  boolean setShared() {
-    if ((attributes & ATTR_TSHARED) == 0){
-      attributes |= ATTR_TSHARED;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  /**
-   * set shared, but only if the ATTR_TSHARED bit isn't masked out
-   */
-  boolean setShared(int attrMask) {
-    if ( ((attributes & ATTR_TSHARED) == 0) && ((attrMask & ATTR_TSHARED) != 0)){
-      attributes |= ATTR_TSHARED;
-      return true;
-    } else {
-      return false;
-    }
-  }
 
   /**
    * the recursive phase2 marker entry, which propagates the attributes set by a
@@ -303,7 +269,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
               // we need to reset the ref field once the referenced object goes away
               // NOTE: only the *first* WeakReference field is a weak ref
               // (this is why we have our own implementation)
-              heap.registerWeakReference(fields);
+              heap.registerWeakReference(this);
             } else {
 
               // the refAttrs are not immediately masked because we have to preserve
@@ -1490,17 +1456,36 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   /**
-   * imperatively set GC status
-   *
-   * @param keepAlive true: keep alive no matter what, false: gc normally
+   * object is kept alive regardless of references
+   * NOTE - this is not a public method, pinning down an object is now
+   * done through the Heap API, which sets this flag here, but might or might not
+   * use it. Just setting this flag directly does not guarantee the Heap will
+   * treat this object as pinned down
    */
-  public void pinDown(boolean keepAlive) {
+  void pinDown(boolean keepAlive) {
     if (keepAlive) {
       attributes |= ATTR_PINDOWN;
     } else {
       attributes &= ~ATTR_PINDOWN;
     }
   }
+
+  public boolean isPinnedDown() {
+    return (attributes & ATTR_PINDOWN) != 0;
+  }
+
+  /**
+   * set the identity managed flag. Same as ATTR_PINDOWN - this has to be done
+   * from the Heap in order to have an effect
+   */
+  void inter (){
+    attributes |= ATTR_INTERN;
+  }
+
+  public boolean isIntern () {
+    return (attributes & ATTR_INTERN) != 0;
+  }
+
 
   public boolean isConstructed() {
     return (attributes & ATTR_CONSTRUCTED) != 0;
