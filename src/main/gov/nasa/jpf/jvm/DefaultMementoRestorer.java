@@ -143,14 +143,13 @@ public class DefaultMementoRestorer extends MementoRestorer {
       int i=0;
       for (E ei : area.elements()){
         Memento<ElementInfo> m = null;
-        if (!ei.isNewOrChanged()){
+        if (!ei.hasChanged()){
           m = ei.memento;
         }
         if (m == null){
           m = ei.getMemento(factory);
           ei.memento = m;
         }
-        
         // the cast sucks, but we don't want to expose EIMemento in the MementoFactory interface
         a[i++] = (EIMemento<E>)m;
       }
@@ -219,6 +218,8 @@ public class DefaultMementoRestorer extends MementoRestorer {
     int attributes;
 
     EIMemento (MementoFactory factory, EI ei){
+      ei.markUnchanged(); // we don't want any of the change flags
+
       this.ref = ei.index;
       this.attributes = ei.attributes;
       this.fields = ei.fields;
@@ -240,6 +241,25 @@ public class DefaultMementoRestorer extends MementoRestorer {
 
       return ei;
     }
+
+    /** for debugging purposes
+    public boolean equals(Object o){
+      if (o instanceof EIMemento){
+        EIMemento other = (EIMemento)o;
+        if (ref != other.ref) return false;
+        if (fields != other.fields) return false;
+        if (monitor != other.monitor) return false;
+        if (refTid != other.refTid) return false;
+        if (attributes != other.attributes) return false;
+        return true;
+      }
+      return false;
+    }
+    public String toString() {
+     return "EIMemento {ref="+ref+",attributes="+Integer.toHexString(attributes)+
+             ",fields="+fields+",monitor="+monitor+",refTid="+refTid+"}";
+    }
+    **/
   }
 
   static class DEIMemento extends EIMemento<DynamicElementInfo> implements Memento<ElementInfo> {
@@ -285,6 +305,22 @@ public class DefaultMementoRestorer extends MementoRestorer {
 
       return sei;
     }
+
+    /** for debugging purposes
+    public boolean equals(Object o){
+      if (o instanceof SEIMemento){
+        SEIMemento other = (SEIMemento)o;
+        if (!super.equals(o)) return false;
+        if (classObjectRef != other.classObjectRef) return false;
+        if (status != other.status) return false;
+        return true;
+      }
+      return false;
+    }
+    public String toString() {
+      return "SEIMemento {{" +super.toString() + "},classObjRef="+classObjectRef+",status="+status+"}";
+    }
+    **/
   }
 
 

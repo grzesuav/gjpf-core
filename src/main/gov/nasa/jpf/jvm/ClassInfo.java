@@ -1257,7 +1257,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   /**
    * note this only returns true is this is really the java.lang.ref.Reference classInfo
    */
-  public boolean isRefClass () {
+  public boolean isReferenceClassInfo () {
     return (this == refClassInfo);
   }
 

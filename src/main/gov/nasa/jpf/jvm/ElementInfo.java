@@ -35,54 +35,44 @@ import java.io.PrintWriter;
  */
 public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> {
 
+  //--- the lower 2 bytes of the attribute field are sticky (state stored)
+
   // object attribute flag values
-  public static final int   ATTR_NONE          = 0x0;
-
-  // mask of the mark-phase propagated attributes
-  public static final int   ATTR_PROP_MASK     = 0x0000ffff;
-
-  // the propagated ones - only lower 16 bits can be used
-
-  // this one is redundant if we just base it on the ClassInfo
-  // (->fields->classinfo)
-  // but we might use code attrs in the future to set this on a per-instance
-  // basis
+  public static final int   ATTR_NONE          = 0x0000;
 
   // object doesn't change value
-  public static final int   ATTR_IMMUTABLE     = 0x2;
-
-  // the non-propagated attributes - use only higher 16 bits
-
-  // don't propagate attributes through this object
-  public static final int   ATTR_NO_PROPAGATE  = 0x20000;
+  public static final int   ATTR_IMMUTABLE     = 0x0001;
 
   // don't reycle this object as long as the flag is set
-  public static final int   ATTR_PINDOWN       = 0x10000;
+  public static final int   ATTR_PINDOWN       = 0x0002;
 
   // this is a identity-managed object
-  public static final int   ATTR_INTERN        = 0x20000;
+  public static final int   ATTR_INTERN        = 0x0004;
 
   // The constructor for the object has returned.  Final fields can no longer break POR
   // This attribute is set in gov.nasa.jpf.jvm.bytecode.RETURN.execute().
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
-  public static final int   ATTR_CONSTRUCTED   = 0x100000;
+  public static final int   ATTR_CONSTRUCTED   = 0x0010;
 
-  // those are reset during state storage/restore
-  public static final int   ATTR_FIELDS_CHANGED     = 0x1000000;
-  public static final int   ATTR_MONITOR_CHANGED    = 0x2000000;
-  public static final int   ATTR_REFTID_CHANGED     = 0x4000000;
-  // did we ever have a change before (this is sticky)
-  public static final int   ATTR_HAS_CHANGED_BEFORE = 0x8000000;
 
-  static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_REFTID_CHANGED);
-  static final int   ATTR_SET_FIELDS_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_HAS_CHANGED_BEFORE);
-  static final int   ATTR_SET_MONITOR_CHANGED = (ATTR_MONITOR_CHANGED | ATTR_HAS_CHANGED_BEFORE);
-  static final int   ATTR_SET_REFTID_CHANGED = (ATTR_REFTID_CHANGED | ATTR_HAS_CHANGED_BEFORE);
-  static final int   ATTR_CHANGESET = ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_REFTID_CHANGED | ATTR_HAS_CHANGED_BEFORE;
 
+  //--- the upper two bytes are for transient (heap internal) use only, and are not stored
+
+  // BEWARE if you add or change values, make sure these are not used in derived classes !
+  // <2do> this is efficient but fragile
+  public static final int   ATTR_FIELDS_CHANGED     = 0x10000;
+  public static final int   ATTR_MONITOR_CHANGED    = 0x20000;
+  public static final int   ATTR_REFTID_CHANGED     = 0x40000;
+  public static final int   ATTR_ATTRIBUTE_CHANGED  = 0x80000; // refers only to sticky bits
+
+  //--- useful flag sets & masks
+
+  static final int   ATTR_STORE_MASK = 0x0000ffff;
+
+  static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_REFTID_CHANGED | ATTR_ATTRIBUTE_CHANGED);
 
   // transient flag set if object is reachable from root object, i.e. can't be recycled
-  public static final int   ATTR_IS_LIVE       = 0x80000000;
+  public static final int   ATTR_IS_MARKED       = 0x80000000;
 
 
   //--- instance fields
@@ -214,7 +204,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       if ((attributes & ATTR_REFTID_CHANGED) == 0){
         b = b.clone();
         refTid = b;
-        attributes |= ATTR_SET_REFTID_CHANGED;
+        attributes |= ATTR_REFTID_CHANGED;
       }
       b.set(tid);
     }
@@ -227,7 +217,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       if ((attributes & ATTR_REFTID_CHANGED) == 0){
         b = b.clone();
         refTid = b;
-        attributes |= ATTR_SET_REFTID_CHANGED;
+        attributes |= ATTR_REFTID_CHANGED;
       }
       b.clear(tid);
     }
@@ -241,26 +231,28 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * it has to access some innards of both ClassInfo (FieldInfo container) and
    * Fields. But on the other hand, we want to keep the whole heap traversal
    * business as much centralized in ElementInfo and DynamicArea as possible
-   *
-   * @aspects: gc
    */
-  void markRecursive(Heap heap, int tid, int attrMask) {
+  void markRecursive(Heap heap) {
     int i, n;
 
     if (isArray()) {
       if (fields.isReferenceArray()) {
         n = fields.arrayLength();
         for (i = 0; i < n; i++) {
-          heap.queueMark( fields.getIntValue(i), tid, attributes, attrMask);
+          int objref = fields.getIntValue(i);
+          if (objref != MJIEnv.NULL){
+            heap.queueMark( objref);
+          }
         }
       }
-    } else {
+
+    } else { // not an array
       ClassInfo ci = getClassInfo();
       boolean isWeakRef = ci.isWeakReference();
 
       do {
         n = ci.getNumberOfDeclaredInstanceFields();
-        boolean isRef = isWeakRef && ci.isRefClass(); // is this the java.lang.ref.Reference part?
+        boolean isRef = isWeakRef && ci.isReferenceClassInfo(); // is this the java.lang.ref.Reference part?
 
         for (i = 0; i < n; i++) {
           FieldInfo fi = ci.getDeclaredInstanceField(i);
@@ -271,13 +263,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
               // (this is why we have our own implementation)
               heap.registerWeakReference(this);
             } else {
-
-              // the refAttrs are not immediately masked because we have to preserve
-              // the mask values up to the point where we would promote an otherwise
-              // unshared root object due to a different thread id (in case we
-              // didn't catch a mask on the way that prevents this)
-              heap.queueMark( fields.getReferenceValue(fi.getStorageOffset()),
-                                  tid, attributes, attrMask & fi.getAttributes());
+              int objref = fields.getReferenceValue(fi.getStorageOffset());
+              if (objref != MJIEnv.NULL){
+                heap.queueMark( objref);
+              }
             }
           }
         }
@@ -286,14 +275,14 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
   }
 
-  void propagateAttributes(int refAttr, int attrMask) {
-    attributes |= ((refAttr & attrMask) & ATTR_PROP_MASK);
-  }
 
   int getAttributes () {
     return attributes;
   }
 
+  int getStoredAttributes() {
+    return attributes & ATTR_STORE_MASK;
+  }
 
   /**
    * note this was a prospective answer (reachability), but now it is
@@ -381,27 +370,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   protected void resurrect (Area<?> area, int index) {
     setIndex(index);
-  }
-
-  /**
-   * check if there are any propagated attributes in ei we don't have yet
-   */
-  public boolean needsAttributePropagationFrom(ElementInfo ei) {
-    int a = attributes;
-    int o = ei.attributes;
-
-    if (a != o) {
-      if ((o & ATTR_PROP_MASK) > (a & ATTR_PROP_MASK))
-        return true;
-
-      for (int i = 0; i < 16; i++, o >>= 1, a >>= 1) {
-        if ((o & 0x1) > (a & 0x1)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
   }
 
   
@@ -1464,9 +1432,9 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    */
   void pinDown(boolean keepAlive) {
     if (keepAlive) {
-      attributes |= ATTR_PINDOWN;
+      attributes |= (ATTR_PINDOWN | ATTR_ATTRIBUTE_CHANGED);
     } else {
-      attributes &= ~ATTR_PINDOWN;
+      attributes &= (~ATTR_PINDOWN | ATTR_ATTRIBUTE_CHANGED);
     }
   }
 
@@ -1478,8 +1446,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * set the identity managed flag. Same as ATTR_PINDOWN - this has to be done
    * from the Heap in order to have an effect
    */
-  void inter (){
-    attributes |= ATTR_INTERN;
+  void intern (){
+    attributes |= (ATTR_INTERN | ATTR_ATTRIBUTE_CHANGED);
   }
 
   public boolean isIntern () {
@@ -1492,7 +1460,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public void setConstructed() {
-    attributes |= ATTR_CONSTRUCTED;
+    attributes |= (ATTR_CONSTRUCTED | ATTR_ATTRIBUTE_CHANGED);
   }
 
   public void restoreFields(Fields f) {
@@ -1532,23 +1500,23 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     attributes = a;
   }
 
-  public boolean isLive() {
-    return (attributes & ATTR_IS_LIVE) != 0;
+  public boolean isMarked() {
+    return (attributes & ATTR_IS_MARKED) != 0;
   }
 
-  public void setLive() {
-    attributes |= ATTR_IS_LIVE;
+  public void setMarked() {
+    attributes |= ATTR_IS_MARKED;
   }
 
-  public boolean isNewOrChanged() {
-    return (attributes & ATTR_CHANGESET) != ATTR_HAS_CHANGED_BEFORE;
-  }
 
   protected abstract void markAreaChanged();
 
   public void markUnchanged() {
-    // note this does NOT reset ATTR_HAS_CHANGED_BEFORE
     attributes &= ~ATTR_ANY_CHANGED;
+  }
+
+  public void setUnmarked() {
+    attributes &= ~ATTR_IS_MARKED;
   }
 
   /**
@@ -1563,7 +1531,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   protected Fields cloneFields() {
     if ((attributes & ATTR_FIELDS_CHANGED) == 0) {
       fields = fields.clone();
-      attributes |= ATTR_SET_FIELDS_CHANGED;
+      attributes |= ATTR_FIELDS_CHANGED;
       markAreaChanged();
     }
 
@@ -1571,16 +1539,12 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
 
-  public void resetMarkAttrs() {
-    attributes &= ~ATTR_IS_LIVE;
-  }
-
   /**
    * this has to be called every time we create a new monitor, so that we know it's
    * not yet stored (mIndex = -1), and memory has changed (area)
    */
   void resetMonitorIndex () {
-    attributes |= ATTR_SET_MONITOR_CHANGED;
+    attributes |= ATTR_MONITOR_CHANGED;
     markAreaChanged();
   }
 

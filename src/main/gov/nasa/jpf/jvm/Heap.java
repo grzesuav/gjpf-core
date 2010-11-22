@@ -46,6 +46,8 @@ public interface Heap {
   
   Iterable<ElementInfo> liveObjects();
 
+  Iterable<ElementInfo> markedObjects();
+
   int size();
 
   //--- system internal interface
@@ -59,17 +61,15 @@ public interface Heap {
 
   void pinDown (int objRef);
 
+  void unmarkAll();
+
   void cleanUpDanglingReferences();
 
   void registerWeakReference (ElementInfo ei);
 
   // to be called from ElementInfo.markRecursive(), to avoid exposure of
   // mark implementation
-  void queueMark (int objref, int refTid, int refAttr, int attrMask);
-
-  // to be called from MarkQueue (if the heap implementation uses an external
-  // data structure to keep track of marked references)
-  void mark (int objref, int refTid, int refAttr, int attrMask);
+  void queueMark (int objref);
 
   void markChanged(int objref);
 

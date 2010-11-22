@@ -20,47 +20,41 @@
 package gov.nasa.jpf.jvm;
 
 /**
- * queue class used to recursively mark live heap objects.
- * We use an explicit queue to avoid recursive calls that can run out of
+ * add class used to recursively mark live heap objects.
+ * We use an explicit add to avoid recursive calls that can run out of
  * stack space when traversing long reference chains (e.g. linked lists)
  */
-public class MarkQueue {
+public class ReferenceQueue {
 
   static final int MAX_FREE = 1024;
 
-  static class MarkEntry {
-    MarkEntry next; // single linked list
+  static class Entry {
+    Entry next; // single linked list
 
     int objref;  // reference value
-    int refTid;  // referencing thread
-    int refAttr;
-    int attrMask;
   }
 
-  MarkEntry markEnd;
-  MarkEntry markHead;
+  Entry markEnd;
+  Entry markHead;
 
-  // since MarkEntry objects are used/processed during the mark phase
+  // since Entry objects are used/processed during the mark phase
   // in rapid succession, we cache up to MAX_FREE of them
   int nFree;
-  MarkEntry free;
+  Entry free;
 
-  public void queue(int objref, int refTid, int refAttr, int attrMask) {
-    MarkEntry e;
+  public void add(int objref) {
+    Entry e;
 
-    if (nFree > 0){ // reuse a cached MarkEntry object
+    if (nFree > 0){ // reuse a cached Entry object
       e = free;
       free = e.next;
       nFree--;
 
     } else {
-      e = new MarkEntry();
+      e = new Entry();
     }
 
     e.objref = objref;
-    e.refTid = refTid;
-    e.refAttr = refAttr;
-    e.attrMask = attrMask;
     e.next = null;
 
     if (markEnd != null) {
@@ -72,13 +66,13 @@ public class MarkQueue {
     markEnd = e;
   }
 
-  public void process(Heap heap) {
-    for (MarkEntry e = markHead; e != null; ) {
-      heap.mark( e.objref, e.refTid, e.refAttr, e.attrMask);
+  public void process( ReferenceProcessor proc) {
+    for (Entry e = markHead; e != null; ) {
+      proc.processReference( e.objref);
 
       if (nFree < MAX_FREE){
         // recycle to save some allocation and a lot of shortliving garbage
-        MarkEntry next = e.next;
+        Entry next = e.next;
         e.next = (nFree++ > 0) ? free : null;
         free = e;
         e = next;
@@ -95,6 +89,6 @@ public class MarkQueue {
     markEnd = null;
 
     // don't reset nFree and free since we limit the memory size of our cache
-    // and the MarkEntry object do not reference anything
+    // and the Entry object do not reference anything
   }
 }

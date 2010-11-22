@@ -36,6 +36,7 @@ import gov.nasa.jpf.util.BitArray;
 import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
+import gov.nasa.jpf.util.SparseIntVector;
 
 
 /**
@@ -53,6 +54,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
   // indexed by class uniqueId
   final ObjVector<FinalBitSet> staticRefCache   = new ObjVector<FinalBitSet>();
 
+  Heap heap;
 
   @Override
   public void attach(JVM jvm) {
@@ -99,12 +101,17 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
   //inherited:
   //protected transient IntVector buf = new IntVector(300);
 
-  // 0 == unmapped
-  // 1 is first mapped, etc.
-  protected transient IntVector heapMap    = new IntVector(200);
-  protected transient IntVector invHeapMap = new IntVector(200);
+  // this stores the number in which object references are traversed, not
+  // the reference value itself, which provides some additional heap symmetry.
+  protected transient SparseIntVector heapMap = new SparseIntVector(12,0);
 
-  protected void addObjRef(Heap heap, int objref) {
+  // invHeapMap is a dense array of all encountered live and non-filtered objects
+  protected transient IntVector invHeapMap = new IntVector(4096);
+
+  // <2do> this seems only to be required for the DynamicArea heap with its low
+  // heap symmetry.
+
+  protected void addObjRef(int objref) {
     if (objref < 0) {
       buf.add(-1);
 
@@ -133,18 +140,16 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
 
     ThreadList tl = ks.getThreadList();
     int tlen = tl.length();
-    Heap heap = ks.getHeap();
+    heap = ks.getHeap();
 
-    //buf.add(ks.threads.length());
-    //for (ThreadInfo t : ks.threads.getThreads()) {
-
+    //--- serialize the threads
     for (int j=0; j<tlen; j++){
       ThreadInfo t = tl.get(j);
       if (!t.isAlive()) {
         continue;
       }
 
-      addObjRef( heap, t.getThreadObjectRef());
+      addObjRef( t.getThreadObjectRef());
       buf.add(t.getState().ordinal());
 
       int frameCountPos = buf.size();
@@ -173,7 +178,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
           for (int i = 0; i < lcount; i++) {
             int v = f.getLocalVariable(i);
             if (f.isLocalVariableRef(i)) {
-              addObjRef( heap, v);
+              addObjRef( v);
             } else {
               buf.add(v);
             }
@@ -185,7 +190,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
           for (int i = 0; i < ocount; i++) {
             int v = f.getAbsOperand(i);
             if (f.isAbsOperandRef(i)) {
-              addObjRef( heap, v);
+              addObjRef( v);
             } else {
               buf.add(v);
             }
@@ -199,6 +204,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
       buf.set(frameCountPos, frameCount);
     }
 
+    //--- the static fields
     StaticArea statics = ks.getStaticArea();
     buf.add(statics.getLength());
     for (StaticElementInfo s : statics) {
@@ -216,7 +222,7 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
           if (! filtered.get(i)) {
             int v = fields.getIntValue(i);
             if (refs.get(i)) {
-              addObjRef( heap, v);
+              addObjRef( v);
             } else {
               buf.add(v);
             }
@@ -225,31 +231,35 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
       }
     }
 
+    //--- and finally the referenced, non-filtered heap objects
     for (int newRef = 0; newRef < invHeapMap.size(); newRef++) {
-      ElementInfo d = heap.get(invHeapMap.get(newRef));
+      ElementInfo ei = heap.get(invHeapMap.get(newRef));
 
-      Fields fields = d.getFields();
+      Fields fields = ei.getFields();
       ClassInfo ci = fields.getClassInfo();
       buf.add(ci.getUniqueId());
-      if (fields instanceof ArrayFields) {
+
+      if (fields instanceof ArrayFields) { // array, not filtered
         int[] values = fields.dumpRawValues();
         buf.add(values.length);
         if (ci.isReferenceArray()) {
           for (int i = 0; i < values.length; i++) {
-            addObjRef( heap, values[i]);
+            addObjRef( values[i]);
           }
         } else {
           buf.append(values);
         }
-      } else {
+
+      } else { // named fields
         FinalBitSet filtered = getIFields(ci);
         FinalBitSet refs = getIFieldsAreRefs(ci);
+        
         int max = ci.getInstanceDataSize();
         for (int i = 0; i < max; i++) {
           if (! filtered.get(i)) {
             int v = fields.getIntValue(i);
             if (refs.get(i)) {
-              addObjRef( heap, v);
+              addObjRef( v);
             } else {
               buf.add(v);
             }

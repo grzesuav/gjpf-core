@@ -20,21 +20,9 @@
 package gov.nasa.jpf.jvm;
 
 /**
- * state storer/restorer that works solely on a snapshot basis
+ * interface for ReferenceQueue processors
  */
-public abstract class MementoRestorer extends AbstractRestorer<Memento<KernelState>> implements MementoFactory {
+public interface ReferenceProcessor {
 
-
-  @Override
-  protected Memento<KernelState> computeRestorableData() {
-    return ks.getMemento(this);
-  }
-
-  @Override
-  protected void doRestore(Memento<KernelState> data) {
-
-    // it's identity preserving, so we don't have to worry about updating external fields
-    ks = data.restore(ks);
-  }
-
+  void processReference (int objref);
 }

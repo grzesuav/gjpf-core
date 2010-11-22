@@ -29,6 +29,13 @@ import gov.nasa.jpf.util.HashData;
  */
 public final class StaticElementInfo extends ElementInfo {
 
+  // this is kind of dangerous - make sure these flags are still unused in ElementInfo
+  static final int ATTR_COR_CHANGED    = 0x100000;
+  static final int ATTR_STATUS_CHANGED = 0x200000;
+
+  static final int ATTR_ANY_CHANGED = ElementInfo.ATTR_ANY_CHANGED | ATTR_COR_CHANGED | ATTR_STATUS_CHANGED;
+
+
   int classObjectRef = -1;
   int status = ClassInfo.UNINITIALIZED;
 
@@ -45,6 +52,16 @@ public final class StaticElementInfo extends ElementInfo {
 
   public Memento<ElementInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
+  }
+
+  @Override
+  public boolean hasChanged() {
+    return (attributes & ATTR_ANY_CHANGED) != 0;
+  }
+
+  @Override
+  public void markUnchanged() {
+    attributes &= ~ATTR_ANY_CHANGED;
   }
 
   @Override
@@ -102,12 +119,9 @@ public final class StaticElementInfo extends ElementInfo {
   void setStatus (int newStatus) {
     if (status != newStatus) {
       status = newStatus;
+      attributes |= ATTR_STATUS_CHANGED;
       markAreaChanged();
     }
-  }
-  
-  public void restoreStatus(int s) {
-    status = s;
   }
 
   
@@ -183,6 +197,7 @@ public final class StaticElementInfo extends ElementInfo {
   
   public void setClassObjectRef(int r) {
     classObjectRef = r;
+    attributes |= ATTR_COR_CHANGED;
   }
 
   public String toString() {

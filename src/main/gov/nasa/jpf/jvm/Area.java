@@ -61,27 +61,24 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
    *
    * sometimes it sucks not having variant generics
    */
-  protected abstract class IteratorBase {
-    int i, visited;
+
+  protected class ElementInfoIterator implements Iterator<ElementInfo>, Iterable<ElementInfo> {
+    int index, visited;
 
     public void remove() {
       throw new UnsupportedOperationException ("illegal operation, only GC can remove objects");
     }
 
     public boolean hasNext() {
-      return (i < elements.size()) && (visited < nElements);
+      return (index < elements.size()) && (visited < nElements);
     }
 
-  }
-
-
-  protected class ElementInfoIterator extends IteratorBase implements Iterator<ElementInfo>, Iterable<ElementInfo> {
     public ElementInfo next() {
       int len = elements.size();
-      for (; i < len; i++) {
-        EI ei = elements.get(i);
+      for (; index < len; index++) {
+        EI ei = elements.get(index);
         if (ei != null) {
-          i++; visited++;
+          index++; visited++;
           return ei;
         }
       }
@@ -93,6 +90,37 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
       return this;
     }
   }
+
+  protected class MarkedElementInfoIterator implements Iterator<ElementInfo>, Iterable<ElementInfo> {
+    int index;
+
+    MarkedElementInfoIterator() {
+      index = getNextMarked(0);
+    }
+
+    public boolean hasNext() {
+      return (index >= 0);
+    }
+
+    public ElementInfo next() {
+      if (index >= 0){
+        int i = index;
+        index = getNextMarked(index + 1);
+        return elements.get(i);
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+
+    public Iterator<ElementInfo> iterator() {
+      return this;
+    }
+
+    public void remove() {
+      throw new UnsupportedOperationException ("illegal operation, only GC can remove objects");
+    }
+  }
+
 
   public Iterable<EI> elements() {
     return elements.elements();
@@ -187,7 +215,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
 
   /**
    * reset any information that has to be re-computed in a backtrack
-   * (i.e. hasn't been stored explicitly)
+   * (index.e. hasn't been stored explicitly)
    */
   public void resetVolatiles () {
     // nothing yet
@@ -211,6 +239,27 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     return nElements;
   }
 
+  int getNextMarked(int fromIndex) {
+    int len = elements.size();
+    for (int i = fromIndex; i < len; i++) {
+      EI ei = elements.get(i);
+      if (ei != null && ei.isMarked()) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  public void unmarkAll() {
+    int len = elements.size();
+    for (int i = 0; i < len; i++) {
+      EI ei = elements.get(i);
+      if (ei != null && ei.isMarked()) {
+        ei.setUnmarked();
+      }
+    }
+  }
+  
   public int getNextChanged (int startIdx) {
     return hasChanged.nextSetBit(startIdx);
   }

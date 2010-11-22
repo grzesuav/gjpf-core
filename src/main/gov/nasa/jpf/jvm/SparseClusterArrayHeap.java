@@ -28,7 +28,7 @@ import java.util.ArrayList;
 /**
  *
  */
-public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInfo> implements Heap {
+public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInfo> implements Heap, ReferenceProcessor {
 
   public static final int MAX_THREADS = MAX_CLUSTERS; // 256
   public static final int MAX_THREAD_ALLOC = MAX_CLUSTER_ENTRIES;  // 16,777,215
@@ -50,7 +50,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
   // used to keep track of marked WeakRefs that might have to be updated
   protected ArrayList<ElementInfo> weakRefs;
 
-  protected MarkQueue markQueue = new MarkQueue();
+  protected ReferenceQueue markQueue = new ReferenceQueue();
 
 
 
@@ -147,12 +147,20 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
+  public Iterable<ElementInfo> markedObjects() {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
   public int size() {
     return nSet;
   }
 
 
   public void checkConsistency(boolean isStateStore) {
+    // <2do>
+  }
+
+  public void unmarkAll(){
     // <2do>
   }
 
@@ -210,7 +218,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
     vm.getThreadList().markRoots(this); // mark thread stacks
     vm.getStaticArea().markRoots(this); // mark objects referenced from StaticArea ElementInfos
 
-    // queue pinned down objects
+    // add pinned down objects
 
     // at this point, all roots should be in the markQueue, but not traced yet
 
@@ -218,11 +226,11 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
 
     // now go over all objects, purge the ones that are not live and reset attrs for rest
     for (ElementInfo ei : this){
-      if (ei.isLive()){
-        ei.resetMarkAttrs(); // so that we are ready for the next cycle
+      if (ei.isMarked()){
+        ei.setUnmarked(); // so that we are ready for the next cycle
 
       } else {
-        // <2do> still have to process finalizers here, which might make the object live again
+        // <2do> still have to processReference finalizers here, which might make the object live again
 
         // check if this was a weak referenced, in which case the WeakReference ref field has to be nulled
 
@@ -240,7 +248,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
    */
   public void markThreadRoot (int objref, int tid) {
     // the shared check will happen in mark()
-    markQueue.queue(objref, tid, 0, ElementInfo.ATTR_PROP_MASK);
+    markQueue.add(objref);
   }
 
   /**
@@ -249,7 +257,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
    */
   public void markStaticRoot (int objref) {
     // statics are globals and treated as shared
-    markQueue.queue(objref, 0, 0, ElementInfo.ATTR_PROP_MASK);
+    markQueue.add(objref);
   }
 
   void markPinDownList (){
@@ -257,57 +265,27 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
       int len = pinDownList.size();
       for (int i=0; i<len; i++){
         int objref = pinDownList.get(i);
-        markQueue.queue(objref, 0, 0, ElementInfo.ATTR_PROP_MASK);
+        markQueue.add(objref);
       }
     }
   }
 
 
-  public void queueMark (int objref, int refTid, int refAttr, int attrMask){
-    markQueue.queue(objref, refTid, refAttr, attrMask);
+  public void queueMark (int objref){
+    markQueue.add(objref);
   }
 
-  // to be called from MarkQueue when processing it
-  public void mark (int objref, int refTid, int refAttr, int attrMask) {
+  // to be called from ReferenceQueue when processing it
+  public void processReference (int objref) {
     if (objref == -1) {
       return;
     }
+
     ElementInfo ei = get(objref);
-
-    // this is a bit tricky - (1) we have to recursively descend, and (2) we
-    // have to make sure we do this only where needed (or we might get an infinite recursion
-    // or at least get slow)
-
-    if (ei.isLive()){
-
-      // we have seen this before, and have to check for a change in attributes that
-      // might require a re-recurse. That change could either be introduced at this
-      // level (we hit a non-shared object referenced from another thread), or it could
-      // be refAttr inflicted (i.e. passed in from a re-recurse). But in any way, we
-      // have to check for these changes being masked out (attrMask)
-
-      int attrs = ei.getAttributes();
-
-      // even if we didn't change sharedness here, we have to propagate attributes
-      // (we might get here from the recursion of another object detected to be shared)
-      ei.propagateAttributes(refAttr, attrMask);
-
-
-      // only if the attributes have changed, we have to recurse
-      if (ei.getAttributes() != attrs) {
-
-        ei.markRecursive( this, refTid, attrMask);
-
-      } else {
-        // if attributes haven't changed, we still have to traverse this if it is a root object
-      }
-
-    } else { // its not live yet
+    if (ei != null && !ei.isMarked()){
       // first time around, mark used, record referencing thread, set attributes, and recurse
-      ei.setLive();
-
-      ei.propagateAttributes(refAttr, attrMask);
-      ei.markRecursive( this, refTid, attrMask);
+      ei.setMarked();
+      ei.markRecursive( this);
     }
   }
 

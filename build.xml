@@ -355,6 +355,7 @@
 
           <!-- temporary disabled -->
           <exclude name="**/PorSkipLocalSyncTest.class"/>
+
         </fileset>
       </batchtest>
 

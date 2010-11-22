@@ -101,7 +101,7 @@ public class DefaultAttributor implements Attributor {
   
   
   public int getFieldAttributes (JavaClass jc, Field f) {
-    int attr = ElementInfo.ATTR_PROP_MASK;
+    int attr = 0;
     
     String fid = jc.getClassName() + '.' + f.getName();
 

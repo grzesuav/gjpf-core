@@ -55,9 +55,8 @@ public abstract class FieldInfo extends InfoObject {
 
   protected int modifiers;
 
-  // high 16 bit: non-propagation relevant field attributes
-  // low 16 bit: object attribute propagation mask  (non-final!)
-  int attributes = ElementInfo.ATTR_PROP_MASK;
+  // those might relate to sticky ElementInto.ATTR_*
+  int attributes;
 
   protected static String computeGenericSignature(Field f) {
     Attribute attribs[] = f.getAttributes();
