@@ -33,13 +33,12 @@ public interface MementoFactory {
 
   Memento<ThreadInfo> getMemento(ThreadInfo ti);
 
-
   Memento<Heap> getMemento(DynamicArea da);
+  Memento<Heap> getMemento(SparseClusterArrayHeap sca);
 
   Memento<StaticArea> getMemento(StaticArea sa);
 
-
   Memento<ElementInfo> getMemento(DynamicElementInfo ei);
-
   Memento<ElementInfo> getMemento (StaticElementInfo ei);
+
 }

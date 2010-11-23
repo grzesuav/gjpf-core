@@ -225,9 +225,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     // nothing to do
   }
 
-  void cleanUpDanglingReferences () {
-    Heap heap = JVM.getVM().getHeap();
-
+  public void cleanUpDanglingReferences (Heap heap) {
     for (ElementInfo e : this) {
       if (e != null) {
         e.cleanUp(heap);

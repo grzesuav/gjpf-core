@@ -62,7 +62,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
   protected static final int MAX_CLUSTERS = CHUNK_SIZE;      // max int with CHUNK_BITS bits (8)
   protected static final int MAX_CLUSTER_ENTRIES = 0xffffff; // max int with 32-CHUNK_BITS bits (24) = 16,777,215 elements
 
-  protected Root root = new Root();
+  protected Root root;
   protected Chunk lastChunk;
   protected Chunk head;   // linked list for traversal
   protected int   nSet; // number of set elements;
@@ -72,29 +72,33 @@ public class SparseClusterArray <E> implements Iterable<E> {
 
   //------------------------------------ public types
   public static class Snapshot<T,E> {
-    Entry<E> first;
-    Entry<E> last;
+    Object[] values;
+    int[] indices;
 
-    void add (int index, E value) {
-      Entry entry = new Entry(index, value);
-
-      if (first == null) {
-        first = last = entry;
-      } else {
-        last.next = entry;
-        last = entry;
-      }
+    public Snapshot (int size){
+      values = new Object[size];
+      indices = new int[size];
     }
 
+    public int size() {
+      return indices.length;
+    }
+    public T getValue(int i){
+      return (T) values[i];
+    }
+    public int getIndex(int i){
+      return indices[i];
+    }
   }
+
 
   public static class Entry<E> {  // queued element
     int index;
-    Object value;
+    E value;
 
     Entry<E> next;
 
-    Entry (int index, Object value){
+    Entry (int index, E value){
       this.index = index;
       this.value = value;
     }
@@ -218,13 +222,13 @@ public class SparseClusterArray <E> implements Iterable<E> {
   //--- iteration over set elements
   // <2do> so far, both iterators are totally ignorant of changes in the underlying ADT
 
-  class ElementIterator implements Iterator<E> {
+  protected class ElementIterator<T>  implements Iterator<T>, Iterable<T> {
 
     int idx;
     Chunk cur;
     int nVisited;
 
-    ElementIterator () {
+    public ElementIterator () {
       cur = head;
     }
 
@@ -233,7 +237,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
     }
 
     @SuppressWarnings("unchecked")
-    public E next() {
+    public T next() {
       Chunk c = cur;
       int i = idx;
 
@@ -247,7 +251,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
           cur = c;
           idx = i+1;
           nVisited++;
-          return (E) c.elements[i];
+          return (T) c.elements[i];
         }
       }
 
@@ -258,13 +262,16 @@ public class SparseClusterArray <E> implements Iterable<E> {
       throw new UnsupportedOperationException("can't remove elements from SparseClusterArray iterator");
     }
 
+    public Iterator<T> iterator() {
+      return this;
+    }
   }
 
-  class ElementIndexIterator implements IndexIterator {
+  protected class ElementIndexIterator implements IndexIterator {
     int idx, processed;
     Chunk cur;
 
-    ElementIndexIterator (int startIdx){
+    public ElementIndexIterator (int startIdx){
       // locate the start chunk (they are sorted)
       Chunk c;
       int i = startIdx & ELEM_MASK;
@@ -329,6 +336,17 @@ public class SparseClusterArray <E> implements Iterable<E> {
   //------------------------------------ public API
 
   public SparseClusterArray (){
+    root = new Root();
+  }
+
+  /**
+   * be careful, this should only be used to get old stored elements during
+   * a Snapshot restore
+   */
+  protected SparseClusterArray (SparseClusterArray base){
+    root = base.root;
+    nSet = base.nSet;
+    head = base.head;
   }
 
   @SuppressWarnings("unchecked")
@@ -338,7 +356,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
     Chunk l3 = lastChunk;
 
     if (i < 0){
-      return null;
+      throw new IndexOutOfBoundsException();
     }
 
     if (l3 != null && (l3.base == (i & CHUNK_BASEMASK))) {  // cache optimization for in-cluster access
@@ -368,6 +386,10 @@ public class SparseClusterArray <E> implements Iterable<E> {
     ChunkNode l2;
     Chunk l3 = lastChunk;
     int j;
+
+    if (i < 0){
+      throw new IndexOutOfBoundsException();
+    }
 
     if (l3 == null || (l3.base != (i & CHUNK_BASEMASK))) { // cache optimization for in-cluster access
       j = i >>>  S1;
@@ -565,26 +587,33 @@ public class SparseClusterArray <E> implements Iterable<E> {
    * This is more suitable than cloning in case the array is very sparse, or
    * the elements contain a lot of transient data we don't want to store
    */
-  @SuppressWarnings("unchecked")
   public <T> Snapshot<E,T> getSnapshot (Transformer<E,T> transformer){
+    Snapshot<E,T> snap = new Snapshot<E,T>(nSet);
+    populateSnapshot(snap, transformer);
+
+    return snap;
+  }
+
+  protected void populateSnapshot (Snapshot snap, Transformer transformer){
     int n = nSet;
 
-    Snapshot snap = new Snapshot();
-    int j=0;
+    Object[] values = snap.values;
+    int[] indices = snap.indices;
 
+    int j=0;
     for (Chunk c = head; c != null; c = c.next) {
       int base = c.base;
       int i=-1;
       while ((i=c.nextSetBit(i+1)) >= 0) {
-        T val = transformer.transform((E)c.elements[i]);
-        snap.add((base + i), val);
+        Object val = transformer.transform((E)c.elements[i]);
+        values[j] = val;
+        indices[j] = base + i;
+
         if (++j >= n) {
           break;
         }
       }
     }
-
-    return (Snapshot<E,T>)snap;
   }
 
   @SuppressWarnings("unchecked")
@@ -593,9 +622,15 @@ public class SparseClusterArray <E> implements Iterable<E> {
     // but since snapshot elements are ordered it should be reasonably fast
     clear();
 
-    for (Entry e=snap.first; e != null; e = e.next) {
-      E obj = transformer.restore((T)e.value);
-      set(e.index,obj);
+    T[] values = (T[])snap.values;
+    int[] indices = snap.indices;
+    int len = indices.length;
+
+    for (int i=0; i<len; i++){
+      E obj = transformer.restore(values[i]);
+      int index = indices[i];
+
+      set(index,obj);
     }
   }
 
@@ -654,7 +689,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
   }
 
   public Iterator<E> iterator() {
-    return new ElementIterator();
+    return new ElementIterator<E>();
   }
 
   public int cardinality () {

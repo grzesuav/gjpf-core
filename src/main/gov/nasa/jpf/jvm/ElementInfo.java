@@ -73,6 +73,14 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   // transient flag set if object is reachable from root object, i.e. can't be recycled
   public static final int   ATTR_IS_MARKED       = 0x80000000;
+  
+  // this bit is set/unset by the heap in order to identify live objects that have
+  // already been unmarked. This is to avoid additional passes over the whole heap in
+  // order to clean up dangling references etc.
+  // NOTE - this bit should never be state stored - restored ElementInfo should never have it set
+  public static final int   ATTR_LIVE_BIT    = 0x40000000;
+
+  public static final int   ATTR_MARKED_OR_LIVE_BIT = (ATTR_IS_MARKED | ATTR_LIVE_BIT);
 
 
   //--- instance fields
@@ -164,7 +172,9 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
 
   /**
-   * we had a GC, update the live objects
+   * update all non-fields references used by this object. This is only called
+   * at the end of the gc, and recycled objects should be either null or
+   * not marked
    */
   void cleanUp (Heap heap) {
     if (fLockInfo != null) {
@@ -1500,6 +1510,22 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     attributes = a;
   }
 
+  public boolean isAlive(boolean liveBitValue) {
+    if (liveBitValue){
+      return (attributes & ATTR_LIVE_BIT) != 0;
+    } else {
+      return (attributes & ATTR_LIVE_BIT) == 0;
+    }
+  }
+
+  public void setAlive(boolean liveBitValue){
+    if (liveBitValue){
+      attributes |= ATTR_LIVE_BIT;
+    } else {
+      attributes &= ~ATTR_LIVE_BIT;
+    }
+  }
+
   public boolean isMarked() {
     return (attributes & ATTR_IS_MARKED) != 0;
   }
@@ -1508,6 +1534,15 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     attributes |= ATTR_IS_MARKED;
   }
 
+  public boolean isMarkedOrAlive (boolean liveBitValue){
+    if (liveBitValue) {
+      // any of the bits are set
+      return (attributes & ATTR_MARKED_OR_LIVE_BIT) != 0;
+    } else {
+      // only the mark bit is set
+      return (attributes & ATTR_MARKED_OR_LIVE_BIT) == ATTR_IS_MARKED;
+    }
+  }
 
   protected abstract void markAreaChanged();
 

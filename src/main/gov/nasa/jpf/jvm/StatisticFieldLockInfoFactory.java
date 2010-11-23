@@ -214,8 +214,13 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
       return empty;
     }
 
+    /**
+     * only called at the end of the gc on all live objects. The recycled ones
+     * are either already nulled in the heap, or are not marked as live
+     */
     public FieldLockInfo cleanUp (Heap heap) {
-      if (heap.get(lockRef) == null) {
+      ElementInfo ei = heap.get(lockRef);
+      if (!heap.isAlive(ei)) {
         return FieldLockInfo.empty;
       } else {
         return this;
@@ -294,14 +299,19 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
       return this;
     }
 
+    /**
+     * only called at the end of the gc on all live objects. The recycled ones
+     * are either already nulled in the heap, or are not marked as live
+     */
     public FieldLockInfo cleanUp (Heap heap) {
       int[] newSet = null;
       int l = 0;
 
       if (lockRefSet != null) {
         for (int i=0; i<lockRefSet.length; i++) {
-          if (heap.get(lockRefSet[i]) == null) { // we got a stale one, so we have to change us
+          ElementInfo ei = heap.get(lockRefSet[i]);
 
+          if (!heap.isAlive(ei)) { // we got a stale one, so we have to change us
             if (newSet == null) { // first one, copy everything up to it
               newSet = new int[lockRefSet.length-1];
               if (i > 0) {
@@ -309,6 +319,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
                 l = i;
               }
             }
+
           } else {
             if (newSet != null) { // we already had a dangling ref, now copy the live ones
               newSet[l++] = lockRefSet[i];
@@ -320,6 +331,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
       if (l == 1) {
           assert (newSet != null);
           return new SingleLockFli(tiLastCheck, newSet[0], checkLevel);
+          
       } else {
         if (newSet != null) {
           if (l == newSet.length) { // we just had one stale ref

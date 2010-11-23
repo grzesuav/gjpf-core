@@ -42,7 +42,7 @@ public abstract class LocalVariableInstruction extends Instruction
   public String getLocalVariableName () {
     LocalVarInfo[] localVars = mi.getLocalVars();
     
-    if (localVars != null) {
+    if (localVars != null && index < localVars.length) {
       return localVars[index].getName();
     } else {
       return "?";
@@ -52,7 +52,7 @@ public abstract class LocalVariableInstruction extends Instruction
   public String getLocalVariableType () {
     LocalVarInfo[] localVars = mi.getLocalVars();
     
-    if (localVars != null) {
+    if (localVars != null && index < localVars.length) {
       return localVars[index].getType();
     } else {
       return "?";

@@ -181,8 +181,10 @@ public class SparseClusterArrayTest extends TestJPF {
     };
 
     Snapshot<Integer,String> snap = arr.getSnapshot(transformer);
-    for (Entry<String> e = snap.first; e != null; e = e.next) {
-      System.out.println("a[" + e.index + "] = " + e.value);
+    // just for debugging purposes
+    int len = snap.size();
+    for (int i=0; i<len; i++){
+      System.out.println("a[" + snap.getIndex(i) + "] = " + snap.getValue(i));
     }
 
     arr.set(42,null);

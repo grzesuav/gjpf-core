@@ -23,12 +23,13 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.SparseClusterArray;
+import gov.nasa.jpf.util.Transformer;
 import java.util.ArrayList;
 
 /**
  *
  */
-public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInfo> implements Heap, ReferenceProcessor {
+public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> implements Heap, Restorable<Heap>, ReferenceProcessor {
 
   public static final int MAX_THREADS = MAX_CLUSTERS; // 256
   public static final int MAX_THREAD_ALLOC = MAX_CLUSTER_ENTRIES;  // 16,777,215
@@ -47,12 +48,21 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
 
   //--- these objects are only used during gc
 
-  // used to keep track of marked WeakRefs that might have to be updated
+  // used to keep track of marked WeakRefs that might have to be updated (no need to restore, only transient use during gc)
   protected ArrayList<ElementInfo> weakRefs;
 
   protected ReferenceQueue markQueue = new ReferenceQueue();
 
+  // this is set to false upon backtrack/restore
+  protected boolean liveBitValue;
 
+  public static class Snapshot<T> extends SparseClusterArray.Snapshot<ElementInfo,T> {
+    IntVector pinDownList;
+
+    Snapshot (int size){
+      super(size);
+    }
+  }
 
   public SparseClusterArrayHeap (Config config, KernelState ks){
     vm = JVM.getVM();
@@ -66,6 +76,27 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
   protected DynamicElementInfo createElementInfo (Fields f, Monitor m, ThreadInfo ti){
     int tid = ti == null ? 0 : ti.getIndex();
     return new DynamicElementInfo(f,m,tid);
+  }
+
+  public <T> Snapshot<T> getSnapshot (Transformer<ElementInfo,T> transformer){
+    Snapshot snap = new Snapshot(nSet);
+    populateSnapshot(snap,transformer);
+
+    if (pinDownList != null){
+      snap.pinDownList = pinDownList.clone();
+    }
+
+    return snap;
+  }
+
+  public <T> void restoreSnapshot (Snapshot<T> snap, Transformer<ElementInfo,T> transformer){
+    super.restoreSnapshot(snap, transformer);
+    
+    if (snap.pinDownList != null){
+      pinDownList = snap.pinDownList.clone();
+    }
+
+    liveBitValue = false;
   }
 
   //--- Heap interface
@@ -144,20 +175,11 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
   }
 
   public Iterable<ElementInfo> liveObjects() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  public Iterable<ElementInfo> markedObjects() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    return new ElementIterator<ElementInfo>();
   }
 
   public int size() {
     return nSet;
-  }
-
-
-  public void checkConsistency(boolean isStateStore) {
-    // <2do>
   }
 
   public void unmarkAll(){
@@ -165,7 +187,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
   }
 
   public void cleanUpDanglingReferences() {
-    // <2do>
+    // we shouldn't have any
   }
 
   public void pinDown (int objRef) {
@@ -213,6 +235,8 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
     vm.notifyGCBegin();
 
     markQueue.clear();
+    liveBitValue = !liveBitValue;
+
 
     markPinDownList();
     vm.getThreadList().markRoots(this); // mark thread stacks
@@ -226,38 +250,49 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
 
     // now go over all objects, purge the ones that are not live and reset attrs for rest
     for (ElementInfo ei : this){
-      if (ei.isMarked()){
+      if (ei.isMarked()){ // live object
         ei.setUnmarked(); // so that we are ready for the next cycle
+        ei.setAlive(liveBitValue);
+        ei.cleanUp(this);
 
       } else {
-        // <2do> still have to processReference finalizers here, which might make the object live again
-
-        // check if this was a weak referenced, in which case the WeakReference ref field has to be nulled
+        // <2do> still have to process finalizers here, which might make the object live again
 
         vm.notifyObjectReleased(ei);
         set(ei.getIndex(), null);   // <2do> - do we need a separate remove?
       }
     }
 
+    cleanupWeakRefs(); // for potential nullification
+
     vm.notifyGCEnd();
   }
 
-  /**
-   * called during non-recursive phase1 marking of all objects reachable
-   * from Thread roots
-   */
-  public void markThreadRoot (int objref, int tid) {
-    // the shared check will happen in mark()
-    markQueue.add(objref);
+  public boolean isAlive (ElementInfo ei){
+    return (ei == null || ei.isMarkedOrAlive(liveBitValue));
   }
 
-  /**
-   * called during non-recursive phase1 marking of all objects reachable
-   * from static fields
-   */
-  public void markStaticRoot (int objref) {
-    // statics are globals and treated as shared
-    markQueue.add(objref);
+  //--- these are the mark phase methods
+
+  // called from ElementInfo markRecursive. We don't want to expose the
+  // markQueue since a copying gc might not have it
+  public void queueMark (int objref){
+    if (objref == -1) {
+      return;
+    }
+
+    ElementInfo ei = get(objref);
+    if (!ei.isMarked()){ // only add objects once
+      ei.setMarked();
+      markQueue.add(objref);
+    }
+  }
+
+  // called from ReferenceQueue during processing of queued references
+  // note that all queued references are alread marked as live
+  public void processReference (int objref) {
+    ElementInfo ei = get(objref);
+    ei.markRecursive( this); // this might in turn call queueMark
   }
 
   void markPinDownList (){
@@ -270,22 +305,41 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
     }
   }
 
-
-  public void queueMark (int objref){
-    markQueue.add(objref);
-  }
-
-  // to be called from ReferenceQueue when processing it
-  public void processReference (int objref) {
+  /**
+   * called during non-recursive phase1 marking of all objects reachable
+   * from static fields
+   * @aspects: gc
+   */
+  public void markStaticRoot (int objref) {
     if (objref == -1) {
       return;
     }
 
     ElementInfo ei = get(objref);
-    if (ei != null && !ei.isMarked()){
-      // first time around, mark used, record referencing thread, set attributes, and recurse
+    assert ei != null;
+
+    if (!ei.isMarked()) {
       ei.setMarked();
-      ei.markRecursive( this);
+      markQueue.add(objref);
+    }
+  }
+
+  /**
+   * called during non-recursive phase1 marking of all objects reachable
+   * from Thread roots
+   * @aspects: gc
+   */
+  public void markThreadRoot (int objref, int tid) {
+    if (objref == -1) {
+      return;
+    }
+
+    ElementInfo ei = get(objref);
+    assert ei != null;
+
+    if (!ei.isMarked()) {
+      ei.setMarked();
+      markQueue.add(objref);
     }
   }
 
@@ -306,7 +360,12 @@ public class SparseClusterArrayHeap extends SparseClusterArray<DynamicElementInf
   }
 
   public Memento<Heap> getMemento(MementoFactory factory) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    return factory.getMemento(this);
   }
 
+
+
+  public void checkConsistency(boolean isStateStore) {
+    // <2do>
+  }
 }

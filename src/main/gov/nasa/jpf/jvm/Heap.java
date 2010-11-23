@@ -46,8 +46,6 @@ public interface Heap {
   
   Iterable<ElementInfo> liveObjects();
 
-  Iterable<ElementInfo> markedObjects();
-
   int size();
 
   //--- system internal interface
@@ -64,6 +62,8 @@ public interface Heap {
   void unmarkAll();
 
   void cleanUpDanglingReferences();
+
+  boolean isAlive (ElementInfo ei);
 
   void registerWeakReference (ElementInfo ei);
 

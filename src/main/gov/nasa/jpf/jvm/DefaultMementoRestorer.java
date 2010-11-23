@@ -22,6 +22,10 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
+import gov.nasa.jpf.util.SparseClusterArray;
+import gov.nasa.jpf.util.Transformer;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 
 /**
  * a MementoRestorer that provides memento classes for the standard KernelState components
@@ -174,8 +178,8 @@ public class DefaultMementoRestorer extends MementoRestorer {
         area.removeRange(lastIndex+1, index);
         lastIndex = index;
 
-        E ei = e.get(index);
-        ei = (E)m.restore(ei);
+        //E ei = e.get(index);
+        E ei = (E)m.restore(null);
         ei.memento = m;
         e.set(index, ei);
       }
@@ -210,14 +214,17 @@ public class DefaultMementoRestorer extends MementoRestorer {
   }
 
 
-  static class EIMemento<EI extends ElementInfo> implements Memento<ElementInfo> {
+  static class EIMemento<EI extends ElementInfo> extends SoftReference<EI> implements Memento<ElementInfo> {
     int ref;
     Fields fields;
     Monitor monitor;
     FixedBitSet refTid;
     int attributes;
 
+
     EIMemento (MementoFactory factory, EI ei){
+      super(ei);
+
       ei.markUnchanged(); // we don't want any of the change flags
 
       this.ref = ei.index;
@@ -269,6 +276,7 @@ public class DefaultMementoRestorer extends MementoRestorer {
 
     @Override
     public ElementInfo restore (ElementInfo ei){
+      ei = get();
       if (ei == null){
         ei = new DynamicElementInfo();
       }
@@ -291,11 +299,17 @@ public class DefaultMementoRestorer extends MementoRestorer {
 
     @Override
     public ElementInfo restore (ElementInfo ei){
+/**
       StaticElementInfo sei;
       if (ei == null){
         sei = new StaticElementInfo();
       } else {
         sei = (StaticElementInfo)ei;
+      }
+**/
+      StaticElementInfo sei = get();
+      if (sei == null){
+        sei = new StaticElementInfo();
       }
 
       super.restore(sei);
@@ -354,4 +368,57 @@ public class DefaultMementoRestorer extends MementoRestorer {
     return new SEIMemento(this,ei);
   }
 
+
+  //--- new heap support
+  static class ElementInfoTransformer implements Transformer<ElementInfo, Memento<ElementInfo>> {
+    MementoFactory factory;
+
+    ElementInfoTransformer(MementoFactory factory) {
+      this.factory = factory;
+    }
+
+    public Memento<ElementInfo> transform(ElementInfo ei) {
+      Memento<ElementInfo> m = null;
+      if (!ei.hasChanged()) {
+        m = ei.memento;
+      }
+      if (m == null) {
+        m = ei.getMemento(factory);
+        ei.memento = m;
+      }
+      return m;
+    }
+
+    public ElementInfo restore(Memento<ElementInfo> m) {
+      ElementInfo ei = m.restore(null);
+      ei.memento = m;
+      return ei;
+    }
+  }
+  ElementInfoTransformer transformer; // initialized upon demand
+
+
+  static class SCAMemento implements Memento<Heap> {
+    ElementInfoTransformer transformer;
+    SparseClusterArrayHeap.Snapshot<Memento<ElementInfo>> snap;
+
+    SCAMemento(MementoFactory factory, SparseClusterArrayHeap sca, ElementInfoTransformer transformer) {
+      this.transformer = transformer;
+      snap = sca.getSnapshot(transformer);
+    }
+
+    public Heap restore(Heap inSitu) {
+      SparseClusterArrayHeap sca = (SparseClusterArrayHeap)inSitu;
+      sca.restoreSnapshot(snap, transformer);
+      return sca;
+    }
+
+  }
+
+  public Memento<Heap> getMemento(SparseClusterArrayHeap sca){
+    if (transformer == null){
+      transformer = new ElementInfoTransformer(this);
+    }
+    return new SCAMemento(this,sca,transformer);
+  }
 }

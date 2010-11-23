@@ -57,6 +57,12 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
    */
   protected final IntTable<DynamicMapIndex> dynamicMap = new IntTable<DynamicMapIndex>();
 
+  // this is toggled before each gc, and always restored to false if we backtrack. Used in conjunction
+  // with isAlive(ElementInfo), which returns true if the object is either marked or has the right
+  // liveBit value. We need this to avoid additional passes over all live elements at the end of
+  // the gc in order to clean up
+  boolean liveBitValue;
+
   /**
    * Creates a new empty dynamic area.
    */
@@ -66,6 +72,13 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     runFinalizer = config.getBoolean("vm.finalize", true);
     sweep = config.getBoolean("vm.sweep",true);
   }
+
+  @Override
+  public void restoreVolatiles () {
+    // we always start with false after a restore
+    liveBitValue = false;
+  }
+
 
   public Iterable<ElementInfo> liveObjects() {
     return new ElementInfoIterator();
@@ -122,6 +135,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     JVM.getVM().notifyGCBegin();
 
     markQueue.clear();
+    liveBitValue = !liveBitValue; // toggle it
 
     //--- phase 1 - add our root sets.
     markPinnedDown();
@@ -163,6 +177,8 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
         } else {
           // for subsequent gc and serialization
           ei.setUnmarked();
+          ei.setAlive(liveBitValue);
+          ei.cleanUp(this);
         }
       }
     }
@@ -176,14 +192,11 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
 
 
   public void cleanUpDanglingReferences () {
-    for (ElementInfo e : this) {
-      if (e != null) {
-        e.cleanUp(this);
-      }
-    }
+    // nothing - we already cleaned up our live objects
   }
 
 
+  //--- these are the mark phase methods
 
   // called from ElementInfo markRecursive. We don't want to expose the
   // markQueue since a copying gc might not have it
@@ -259,6 +272,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     }
   }
 
+  //--- object creation
 
   /**
    * Creates a new array of the given type
@@ -436,6 +450,10 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     weakRefs.add(ei);
   }
 
+  public boolean isAlive (ElementInfo ei){
+    return (ei == null || ei.isMarkedOrAlive(liveBitValue));
+  }
+
   /**
    * reset all weak references that now point to collected objects to 'null'
    * NOTE: this implementation requires our own Reference/WeakReference implementation, to
@@ -467,20 +485,6 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   protected DynamicElementInfo createElementInfo (Fields f, Monitor m, ThreadInfo ti){
     int tid = ti == null ? 0 : ti.getIndex();
     return new DynamicElementInfo(f,m,tid);
-  }
-
-  public int getNext (ClassInfo ci, int idx){
-    int n = elements.size();
-    for (int i=idx; i<n; i++){
-      ElementInfo ei = elements.get(i);
-      if (ei != null){
-        if (ei.getClassInfo().isInstanceOf(ci)){
-          return i;
-        }
-      }
-    }
-
-    return -1;
   }
 
   protected int indexFor (ThreadInfo th) {

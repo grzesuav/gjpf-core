@@ -136,7 +136,7 @@ public class KernelState implements Restorable<KernelState> {
 
     // we might have stored stale references in live objects
     heap.cleanUpDanglingReferences();
-    statics.cleanUpDanglingReferences();
+    statics.cleanUpDanglingReferences(heap);
   }
 
   public void hash (HashData hd) {
