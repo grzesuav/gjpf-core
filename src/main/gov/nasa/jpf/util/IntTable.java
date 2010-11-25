@@ -18,9 +18,13 @@
 //
 package gov.nasa.jpf.util;
 
+import gov.nasa.jpf.JPFException;
 import java.util.Iterator;
 
-public final class IntTable<E> implements Iterable<IntTable.Entry<E>>{
+/**
+ * a hash map that holds int values
+ */
+public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable{
   static final int INIT_TBL_POW = 7;
   static final double MAX_LOAD = 0.80;
   
@@ -41,7 +45,19 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>{
     newTable(pow);
     size = 0;
   }
-  
+
+  public IntTable<E> clone() {
+    try {
+      IntTable t = (IntTable)super.clone();
+      t.table = table.clone();
+
+      return t;
+
+    } catch (CloneNotSupportedException cnsx){
+      throw new JPFException("clone failed");
+    }
+  }
+
   protected void newTable(int pow) {
     tblPow = pow;
     table = new ObjArray<Entry<E>>(1 << tblPow);

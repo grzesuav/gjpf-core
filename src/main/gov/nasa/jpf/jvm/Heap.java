@@ -71,6 +71,8 @@ public interface Heap {
   // mark implementation
   void queueMark (int objref);
 
+  void markUnchanged();
+
   void markChanged(int objref);
 
   void hash(HashData hd);

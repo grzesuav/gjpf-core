@@ -24,5 +24,5 @@ package gov.nasa.jpf.jvm;
  */
 public interface ReferenceProcessor {
 
-  void processReference (int objref);
+  void processReference (ElementInfo ei);
 }

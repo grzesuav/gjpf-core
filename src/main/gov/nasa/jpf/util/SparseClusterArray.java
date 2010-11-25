@@ -18,8 +18,10 @@
 //
 package gov.nasa.jpf.util;
 
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Random;
 
 /**
@@ -107,34 +109,34 @@ public class SparseClusterArray <E> implements Iterable<E> {
   //------------------------------------ internal types
 
   //--- how we keep our data - index based trie
-  static class Root {
-    Node[] seg = new Node[N_SEG];
+  protected static class Root {
+    public Node[] seg = new Node[N_SEG];
   }
 
   /**
    * this corresponds to a toplevel cluster (e.g. thread heap)
    */
-  static class Node  {
-    ChunkNode[] seg = new ChunkNode[N_SEG];
+  protected static class Node  {
+    public ChunkNode[] seg = new ChunkNode[N_SEG];
     //int minNextFree; // where to start looking for free elements, also used to determine if Node is full
   }
 
-  static class ChunkNode  {
-    Chunk[] seg  = new Chunk[N_SEG];
+  protected static class ChunkNode  {
+    public Chunk[] seg  = new Chunk[N_SEG];
     //int minNextFree; // where to start looking for free elements, also used to determine if ChunkNode is full
   }
 
-  static class Chunk implements Cloneable { // with some extra info to optimize in-chunk access
-    int base, top;
-    Chunk next;
-    Object[] elements;  // it's actually E[], but of course we can't create arrays of a generic type
-    long[] bitmap;
+  protected static class Chunk implements Cloneable { // with some extra info to optimize in-chunk access
+    public int base, top;
+    public Chunk next;
+    public Object[] elements;  // it's actually E[], but of course we can't create arrays of a generic type
+    public long[] bitmap;
 
     //int minNextFree; // where to start looking for free elements, also used to determine if Chunk is full
 
-    Chunk() {}
+    protected Chunk() {}
 
-    Chunk(int base){
+    protected Chunk(int base){
       this.base = base;
       this.top = base + N_ELEM;
 
@@ -163,7 +165,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
       return nc;
     }
 
-    private final int nextSetBit (int iStart) {
+    protected int nextSetBit (int iStart) {
       if (iStart < CHUNK_SIZE){
         long[] bm = bitmap;
         int j = (iStart >> 6); // bm word : iStart/64
@@ -185,7 +187,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
       }
     }
 
-    private final int nextClearBit (int iStart) {
+    protected int nextClearBit (int iStart) {
       if (iStart < CHUNK_SIZE){
         long[] bm = bitmap;
         int j = (iStart >> 6); // bm word : iStart/64
@@ -220,20 +222,24 @@ public class SparseClusterArray <E> implements Iterable<E> {
   }
 
   //--- iteration over set elements
-  // <2do> so far, both iterators are totally ignorant of changes in the underlying ADT
 
   protected class ElementIterator<T>  implements Iterator<T>, Iterable<T> {
-
-    int idx;
-    Chunk cur;
-    int nVisited;
+    int idx;    // next chunk index
+    Chunk cur;  // next chunk
 
     public ElementIterator () {
-      cur = head;
+      for (Chunk c = head; c != null; c = c.next){
+        int i = c.nextSetBit(0);
+        if (i>=0){
+          cur = c;
+          idx = i;
+          return;
+        }
+      }
     }
 
     public boolean hasNext() {
-      return (nVisited < nSet);
+      return (cur != null);
     }
 
     @SuppressWarnings("unchecked")
@@ -241,25 +247,41 @@ public class SparseClusterArray <E> implements Iterable<E> {
       Chunk c = cur;
       int i = idx;
 
-      while (c != null) {
-        i = c.nextSetBit(i);
-
-        if (i < 0) { // try next chunk
-          c = c.next;
-          i = 0;
-        } else {
-          cur = c;
-          idx = i+1;
-          nVisited++;
-          return (T) c.elements[i];
-        }
+      if (i < 0 || c == null){
+        throw new NoSuchElementException();
       }
 
-      return null;
+      Object ret = c.elements[i];
+      cur = null;
+
+      while (c!=null){
+        i = c.nextSetBit(i+1);
+        if (i>= 0){
+          idx = i;
+          cur = c;
+
+          if (ret == null){
+            // try to recover from a concurrent modification, maybe there is one left
+            ret = c.elements[i];
+            continue;
+          } else {
+            break;
+          }
+        } else {
+          i = -1;
+        }
+        c = c.next;
+      }
+
+      if (ret == null){
+        // somebody pulled the rug under our feet
+        throw new ConcurrentModificationException();
+      }
+      return (T)ret;
     }
 
     public void remove() {
-      throw new UnsupportedOperationException("can't remove elements from SparseClusterArray iterator");
+      throw new UnsupportedOperationException();
     }
 
     public Iterator<T> iterator() {
@@ -268,43 +290,87 @@ public class SparseClusterArray <E> implements Iterable<E> {
   }
 
   protected class ElementIndexIterator implements IndexIterator {
-    int idx, processed;
+    int idx;
     Chunk cur;
+
+    public ElementIndexIterator () {
+      for (Chunk c = head; c != null; c = c.next){
+        int i = c.nextSetBit(0);
+        if (i>=0){
+          cur = c;
+          idx = i;
+          return;
+        }
+      }
+    }
 
     public ElementIndexIterator (int startIdx){
       // locate the start chunk (they are sorted)
       Chunk c;
-      int i = startIdx & ELEM_MASK;
-      idx = i;
+      int i;
+
+      // get the first chunk at or above the startIdx
       for (c=head; c!= null; c=c.next) {
-        if (c.top > i) {
+        if (c.top > startIdx) {
           cur = c;
+          break;
+        }
+      }
+
+      if (c.base < startIdx){
+        i = startIdx & ELEM_MASK;
+      } else {
+        i = 0;
+      }
+
+      for (; c != null; c = c.next){
+        i = c.nextSetBit(i);
+        if (i>=0){
+          cur = c;
+          idx = i;
+          return;
+        } else {
+          i = 0;
         }
       }
     }
+
 
     public int next () {
       Chunk c = cur;
       int i = idx;
 
-      if (processed < nSet) {
-        while (c != null) {
-          i = c.nextSetBit(i);
-
-          if (i < 0) { // try next chunk
-            c = c.next;
-            i = 0;
-          } else {
-            cur = c;
-            idx = i+1;
-            processed++;
-            return i;
-          }
-        }
+      if (i < 0 || c == null){
+        return -1;
       }
 
+      int iRet = (c.elements[i] != null) ? c.base + i : -1;
       cur = null;
-      return -1;
+
+      while (c!=null){
+        i = c.nextSetBit(i+1);
+        if (i>= 0){
+          idx = i;
+          cur = c;
+
+          if (iRet < 0){
+            // try to recover from a concurrent modification, maybe there is one left
+            iRet = c.base + i;
+            continue;
+          } else {
+            break;
+          }
+        } else {
+          i = -1;
+        }
+        c = c.next;
+      }
+
+      if (iRet < 0){
+        // somebody pulled the rug under our feet
+        throw new ConcurrentModificationException();
+      }
+      return iRet;
     }
 
   }
@@ -477,12 +543,18 @@ public class SparseClusterArray <E> implements Iterable<E> {
         j = (i >>> S2) & SEG_MASK;
         if ((l2 = l1.seg[j]) != null) {         // new L2 -> new L3
           j = (i >>> S3) & SEG_MASK;
-          l3 = l2.seg[j];
+          if ((l3 = l2.seg[j]) == null){
+            return i; // no such l3 segment -> index is free
+          }
+        } else {
+          return i; // no such l2 segment yet -> index is free
         }
+      } else { // we don't have that root segment yet -> index is free
+        return i;
       }
     }
 
-    int k = i & CHUNK_BASEMASK;
+    int k = i & SEG_MASK;
     while (l3 != null) {
       k = l3.nextClearBit(k);
 
@@ -684,10 +756,14 @@ public class SparseClusterArray <E> implements Iterable<E> {
 
   //--- iteration over set elements
 
-  public IndexIterator getElementIndexIterator (int startIdx) {
-    return new ElementIndexIterator(startIdx);
+  public IndexIterator getElementIndexIterator () {
+    return new ElementIndexIterator();
   }
 
+  public IndexIterator getElementIndexIterator (int fromIndex) {
+    return new ElementIndexIterator(fromIndex);
+  }
+  
   public Iterator<E> iterator() {
     return new ElementIterator<E>();
   }

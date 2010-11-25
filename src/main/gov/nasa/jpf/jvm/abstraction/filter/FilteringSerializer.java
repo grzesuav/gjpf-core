@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.abstraction.filter;
 
 
+import gov.nasa.jpf.jvm.AbstractSerializer;
 import gov.nasa.jpf.jvm.ArrayFields;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
@@ -27,6 +28,7 @@ import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.ReferenceProcessor;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.StaticArea;
 import gov.nasa.jpf.jvm.StaticElementInfo;
@@ -36,7 +38,7 @@ import gov.nasa.jpf.util.BitArray;
 import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
-import gov.nasa.jpf.util.SparseIntVector;
+import gov.nasa.jpf.jvm.ReferenceQueue;
 
 
 /**
@@ -48,24 +50,58 @@ import gov.nasa.jpf.util.SparseIntVector;
  *
  * @author peterd
  */
-public class FilteringSerializer extends SimpleFilteringSerializer {
-  // indexed by class uniqueId
-  final ObjVector<FinalBitSet> instanceRefCache = new ObjVector<FinalBitSet>();
-  // indexed by class uniqueId
-  final ObjVector<FinalBitSet> staticRefCache   = new ObjVector<FinalBitSet>();
+public class FilteringSerializer extends AbstractSerializer implements ReferenceProcessor {
+
+  // indexed by method globalId
+  final ObjVector<FramePolicy> methodCache    = new ObjVector<FramePolicy>();
+
+  // the Fields slots reference masks, indexed by class uniqueId
+  final ObjVector<FinalBitSet> instanceRefMasks = new ObjVector<FinalBitSet>();
+  final ObjVector<FinalBitSet> staticRefMasks   = new ObjVector<FinalBitSet>();
+
+  // the Fields slots filter masks, indexed by class uniqueid
+  final ObjVector<FinalBitSet> instanceFilterMasks = new ObjVector<FinalBitSet>();
+  final ObjVector<FinalBitSet> staticFilterMasks   = new ObjVector<FinalBitSet>();
+
+
+  protected FilterConfiguration filter;
+
+  protected transient IntVector buf = new IntVector(4096);
 
   Heap heap;
+
 
   @Override
   public void attach(JVM jvm) {
     super.attach(jvm);
-    // more config?
+    
+    filter = jvm.getConfig().getInstance("filter.class", FilterConfiguration.class);
+    if (filter == null) {
+      filter = new DefaultFilterConfiguration();
+    }
+    filter.init(jvm.getConfig());
   }
 
+  protected FramePolicy getFramePolicy(MethodInfo mi) {
+    FramePolicy p = null;
 
-  FinalBitSet getIFieldsAreRefs(ClassInfo ci) {
+    int mid = mi.getGlobalId();
+    if (mid >= 0){
+      p = methodCache.get(mid);
+    if (p == null) {
+      p = filter.getFramePolicy(mi);
+      methodCache.set(mid, p);
+    }
+    } else {
+      p = filter.getFramePolicy(mi);
+    }
+
+    return p;
+  }
+
+  protected FinalBitSet getInstanceRefMask(ClassInfo ci) {
     int cid = ci.getUniqueId();
-    FinalBitSet v = instanceRefCache.get(cid);
+    FinalBitSet v = instanceRefMasks.get(cid);
     if (v == null) {
       BitArray b = new BitArray(ci.getInstanceDataSize());
       for (FieldInfo fi : filter.getMatchedInstanceFields(ci)) {
@@ -75,14 +111,14 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
       }
       v = FinalBitSet.create(b);
       if (v == null) throw new IllegalStateException("Null BitArray returned.");
-      instanceRefCache.set(cid, v);
+      instanceRefMasks.set(cid, v);
     }
     return v;
   }
 
-  FinalBitSet getSFieldsAreRefs(ClassInfo ci) {
+  protected FinalBitSet getStaticRefMask(ClassInfo ci) {
     int cid = ci.getUniqueId();
-    FinalBitSet v = staticRefCache.get(cid);
+    FinalBitSet v = staticRefMasks.get(cid);
     if (v == null) {
       BitArray b = new BitArray(ci.getStaticDataSize());
       for (FieldInfo fi : filter.getMatchedStaticFields(ci)) {
@@ -92,51 +128,131 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
       }
       v = FinalBitSet.create(b);
       if (v == null) throw new IllegalStateException("Null BitArray returned.");
-      staticRefCache.set(cid, v);
+      staticRefMasks.set(cid, v);
+    }
+    return v;
+  }
+
+  protected FinalBitSet getInstanceFilterMask(ClassInfo ci) {
+    int cid = ci.getUniqueId();
+    FinalBitSet v = instanceFilterMasks.get(cid);
+    if (v == null) {
+      BitArray b = new BitArray(ci.getInstanceDataSize());
+      b.setAll();
+      for (FieldInfo fi : filter.getMatchedInstanceFields(ci)) {
+        int start = fi.getStorageOffset();
+        int end = start + fi.getStorageSize();
+        for (int i = start; i < end; i++) {
+          b.clear(i);
+        }
+      }
+      v = FinalBitSet.create(b);
+      if (v == null) throw new IllegalStateException("Null BitArray returned.");
+      instanceFilterMasks.set(cid, v);
+    }
+    return v;
+  }
+
+  protected FinalBitSet getStaticFilterMask(ClassInfo ci) {
+    int cid = ci.getUniqueId();
+    FinalBitSet v = staticFilterMasks.get(cid);
+    if (v == null) {
+      BitArray b = new BitArray(ci.getStaticDataSize());
+      b.setAll();
+      for (FieldInfo fi : filter.getMatchedStaticFields(ci)) {
+        int start = fi.getStorageOffset();
+        int end = start + fi.getStorageSize();
+        for (int i = start; i < end; i++) {
+          b.clear(i);
+        }
+      }
+      v = FinalBitSet.create(b);
+      if (v == null) throw new IllegalStateException("Null BitArray returned.");
+      staticFilterMasks.set(cid, v);
     }
     return v;
   }
 
 
-  //inherited:
-  //protected transient IntVector buf = new IntVector(300);
+  //--- the methods that implement the heap traversal
 
-  // this stores the number in which object references are traversed, not
-  // the reference value itself, which provides some additional heap symmetry.
-  protected transient SparseIntVector heapMap = new SparseIntVector(12,0);
+  ReferenceQueue refQueue;
 
-  // invHeapMap is a dense array of all encountered live and non-filtered objects
-  protected transient IntVector invHeapMap = new IntVector(4096);
+  protected void initReferenceQueue() {
+    // note - this assumes all heap objects are in an unmarked state, but this
+    // is true if we execute outside the gc
 
-  // <2do> this seems only to be required for the DynamicArea heap with its low
-  // heap symmetry.
-
-  protected void addObjRef(int objref) {
-    if (objref < 0) {
-      buf.add(-1);
-
+    if (refQueue == null){
+      refQueue = new ReferenceQueue();
     } else {
-      int idx = heapMap.get(objref);
-      if (idx == 0) {
-        ElementInfo ei = heap.get(objref);
-
-        if (ei == null) { // some weird cases
-          idx = -1;
-        } else {
-          idx = invHeapMap.size();
-          invHeapMap.add(objref);
-        }
-        heapMap.set(objref, idx);
-      }
-      buf.add(idx);
+      refQueue.clear();
     }
   }
+
+  protected void addObjRef(int objref) {
+    if (objref >= 0) {
+      ElementInfo ei = heap.get(objref);
+      if (!ei.isMarked()) { // only add objects once
+        ei.setMarked();
+        refQueue.add(ei);
+      }
+    }
+
+    buf.add(objref);
+  }
+
+  public void processReference(ElementInfo ei) {
+
+    Fields fields = ei.getFields();
+    ClassInfo ci = fields.getClassInfo();
+    buf.add(ci.getUniqueId());
+
+    if (fields instanceof ArrayFields) { // array, not filtered
+      int[] values = fields.dumpRawValues();
+      buf.add(values.length);
+      if (ci.isReferenceArray()) {
+        for (int i = 0; i < values.length; i++) {
+          addObjRef(values[i]);
+        }
+      } else {
+        buf.append(values);
+      }
+
+    } else { // named fields
+      FinalBitSet filtered = getInstanceFilterMask(ci);
+      FinalBitSet refs = getInstanceRefMask(ci);
+
+      int max = ci.getInstanceDataSize();
+      for (int i = 0; i < max; i++) {
+        if (!filtered.get(i)) {
+          int v = fields.getIntValue(i);
+          if (refs.get(i)) {
+            addObjRef(v);
+          } else {
+            buf.add(v);
+          }
+        }
+      }
+    }
+  }
+
+  protected void processReferenceQueue () {
+    refQueue.process(this);
+    
+    // this sucks, but we can't do the 'isMarkedOrLive' trick used in gc here
+    // because gc depends on live bit integrity, and we only mark non-filtered live
+    // objects here, i.e. we can't just set the Heap liveBitValue subsequently.
+    heap.unmarkAll();
+  }
+
+
+  //--- our main purpose in life
 
   @Override
   protected int[] computeStoringData() {
     buf.clear();
-    heapMap.clear();
-    invHeapMap.clear();
+
+    initReferenceQueue();
 
     ThreadList tl = ks.getThreadList();
     int tlen = tl.length();
@@ -215,8 +331,8 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
 
         Fields fields = s.getFields();
         ClassInfo ci = fields.getClassInfo();
-        FinalBitSet filtered = getSFields(ci);
-        FinalBitSet refs = getSFieldsAreRefs(ci);
+        FinalBitSet filtered = getStaticFilterMask(ci);
+        FinalBitSet refs = getStaticRefMask(ci);
         int max = ci.getStaticDataSize();
         for (int i = 0; i < max; i++) {
           if (! filtered.get(i)) {
@@ -231,44 +347,10 @@ public class FilteringSerializer extends SimpleFilteringSerializer {
       }
     }
 
-    //--- and finally the referenced, non-filtered heap objects
-    for (int newRef = 0; newRef < invHeapMap.size(); newRef++) {
-      ElementInfo ei = heap.get(invHeapMap.get(newRef));
-
-      Fields fields = ei.getFields();
-      ClassInfo ci = fields.getClassInfo();
-      buf.add(ci.getUniqueId());
-
-      if (fields instanceof ArrayFields) { // array, not filtered
-        int[] values = fields.dumpRawValues();
-        buf.add(values.length);
-        if (ci.isReferenceArray()) {
-          for (int i = 0; i < values.length; i++) {
-            addObjRef( values[i]);
-          }
-        } else {
-          buf.append(values);
-        }
-
-      } else { // named fields
-        FinalBitSet filtered = getIFields(ci);
-        FinalBitSet refs = getIFieldsAreRefs(ci);
-        
-        int max = ci.getInstanceDataSize();
-        for (int i = 0; i < max; i++) {
-          if (! filtered.get(i)) {
-            int v = fields.getIntValue(i);
-            if (refs.get(i)) {
-              addObjRef( v);
-            } else {
-              buf.add(v);
-            }
-          }
-        }
-      }
-    }
+    processReferenceQueue();
 
     return buf.toArray();
   }
+
 
 }

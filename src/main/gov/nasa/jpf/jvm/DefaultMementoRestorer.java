@@ -145,6 +145,9 @@ public class DefaultMementoRestorer extends MementoRestorer {
       EIMemento<E>[] a = new EIMemento[len];
 
       int i=0;
+      // it actually makes sense to use the elements iterator at this point
+      // since this happens after gc, i.e. there is a good chance that the
+      // area got fragmented again
       for (E ei : area.elements()){
         Memento<ElementInfo> m = null;
         if (!ei.hasChanged()){
@@ -181,7 +184,8 @@ public class DefaultMementoRestorer extends MementoRestorer {
         //E ei = e.get(index);
         E ei = (E)m.restore(null);
         ei.memento = m;
-        e.set(index, ei);
+        //e.set(index, ei);
+        area.set(index,ei);
       }
 
       if (index >= 0){
@@ -405,6 +409,7 @@ public class DefaultMementoRestorer extends MementoRestorer {
     SCAMemento(MementoFactory factory, SparseClusterArrayHeap sca, ElementInfoTransformer transformer) {
       this.transformer = transformer;
       snap = sca.getSnapshot(transformer);
+      sca.markUnchanged();
     }
 
     public Heap restore(Heap inSitu) {

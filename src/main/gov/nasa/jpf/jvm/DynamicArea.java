@@ -19,26 +19,46 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.bytecode.INVOKECLINIT;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.util.IntTable;
-import gov.nasa.jpf.util.IntVector;
 
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 
 /**
- * DynamicArea is used to model the heap (dynamic memory), i.e. the area were all
+ * DynamicArea is used to model the heap (dynamic memory), idx.e. the area were all
  * objects created by NEW insn live. Hence the garbage collection mechanism resides here
  */
 public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Restorable<Heap>, ReferenceProcessor {
 
+  protected class LiveIterator<E> implements Iterator<E>, Iterable<E> {
+    int idx = elementsMap.nextSetBit(0);
 
-  /**
-   * Used to store various mark phase infos
-   */
+    public void remove() {
+      throw new UnsupportedOperationException ("illegal operation, only GC can remove objects");
+    }
+
+    public boolean hasNext() {
+      return (idx >= 0);
+    }
+
+    public E next() {
+      if (idx >= 0){
+        int ref = idx;
+        idx = elementsMap.nextSetBit(idx+1);
+        return (E)elements.get(ref);
+
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+
+    public Iterator<E> iterator() {
+      return this;
+    }
+  }
 
   protected ReferenceQueue markQueue = new ReferenceQueue();
 
@@ -55,7 +75,8 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
    * associating thread/pc specific DynamicMapIndex objects with their
    * corresponding DynamicArea elements[] index.
    */
-  protected final IntTable<DynamicMapIndex> dynamicMap = new IntTable<DynamicMapIndex>();
+  BitSet elementsMap = new BitSet(elements.length());
+
 
   // this is toggled before each gc, and always restored to false if we backtrack. Used in conjunction
   // with isAlive(ElementInfo), which returns true if the object is either marked or has the right
@@ -69,9 +90,10 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   public DynamicArea (Config config, KernelState ks) {
     super(ks);
 
-    runFinalizer = config.getBoolean("vm.finalize", true);
+    runFinalizer = config.getBoolean("vm.finalize", false);
     sweep = config.getBoolean("vm.sweep",true);
   }
+
 
   @Override
   public void restoreVolatiles () {
@@ -79,9 +101,14 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     liveBitValue = false;
   }
 
-
+  @Override
   public Iterable<ElementInfo> liveObjects() {
-    return new ElementInfoIterator();
+    return new LiveIterator<ElementInfo>();
+  }
+
+  @Override
+  public Iterable<DynamicElementInfo> elements() {
+    return new LiveIterator<DynamicElementInfo>();
   }
 
   public Iterable<ElementInfo> markedObjects() {
@@ -125,11 +152,11 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
    */
 
   public void gc () {
-    // <2do> pcm - we should refactor so that POR reachability (which is checked
-    // on each ref PUTFIELD, PUTSTATIC) is more effective !!
+    // note - it actually seems more efficient to directly iterate over the
+    // elements, and not use the elementsMap, which indicates that objects
+    // are reasonably packed at this point
 
     int length = elements.size();
-    ElementInfo ei;
     weakRefs = null;
 
     JVM.getVM().notifyGCBegin();
@@ -150,9 +177,11 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // we need to do this in two passes, or otherwise we might end up
     // removing objects that are still referenced from within finalizers
     if (sweep && runFinalizer) {
-      for (int i = 0; i < length; i++) {
-        ei = elements.get(i);
-        if (ei != null && !ei.isMarked()){
+      //for (int i = elementsMap.nextSetBit(0); i >= 0; i = elementsMap.nextSetBit(i + 1)) {
+      for (int i=0; i<length; i++){
+        ElementInfo ei = elements.get(i);
+        if (ei == null) continue;
+        if (!ei.isMarked()) {
           // <2do> here we have to add the object to the finalizer add
           // and activate the FinalizerThread (which is kind of a root object too)
           // not sure yet how to handle this best to avoid more state space explosion
@@ -161,25 +190,25 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
       }
     }
 
-    //--- phase 4 - all finalizations are done, reclaim all unmarked objects, i.e.
+    //--- phase 4 - all finalizations are done, reclaim all unmarked objects, idx.e.
     // all objects with 'lastGc' != 'curGc'
     int count = 0;
 
-    for (int i = 0; i < length; i++) {
-      ei = elements.get(i);
-      if (ei != null) {
-        if (!ei.isMarked() && sweep){
-          // this object is garbage, toast it
-          count++;
-          JVM.getVM().notifyObjectReleased(ei);
-          remove(i,false);
 
-        } else {
-          // for subsequent gc and serialization
-          ei.setUnmarked();
-          ei.setAlive(liveBitValue);
-          ei.cleanUp(this);
-        }
+    for (int i=0; i<length; i++){
+      ElementInfo ei = elements.get(i);
+      if (ei == null) continue;
+      if (!ei.isMarked() && sweep) {
+        // this object is garbage, toast it
+        count++;
+        JVM.getVM().notifyObjectReleased(ei);
+        remove(i, false);
+
+      } else {
+        // for subsequent gc and serialization
+        ei.setUnmarked();
+        ei.setAlive(liveBitValue);
+        ei.cleanUp(this);
       }
     }
 
@@ -208,17 +237,22 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     ElementInfo ei = elements.get(objref);
     if (!ei.isMarked()){ // only add objects once
       ei.setMarked();
-      markQueue.add(objref);
+      markQueue.add(ei);
+    }
+  }
+
+  public void queueMark (ElementInfo ei){
+    if (!ei.isMarked()){ // only add objects once
+      ei.setMarked();
+      markQueue.add(ei);
     }
   }
 
   // called from ReferenceQueue during processing of queued references
   // note that all queued references are alread marked as live
-  public void processReference (int objref) {
-    ElementInfo ei = elements.get(objref);
+  public void processReference (ElementInfo ei) {
     ei.markRecursive( this); // this might in turn call queueMark
   }
-
 
 
   public void markPinnedDown () {
@@ -227,8 +261,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
       ElementInfo ei = elements.get(i);
       if (ei != null) {
         if (ei.isPinnedDown()) {
-          ei.setMarked();
-          markQueue.add(ei.getIndex());
+          queueMark(ei);
         }
       }
     }
@@ -243,14 +276,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     if (objref == -1) {
       return;
     }
-
-    ElementInfo ei = elements.get(objref);
-    assert ei != null;
-
-    if (!ei.isMarked()) {
-      ei.setMarked();
-      markQueue.add(objref);
-    }
+    queueMark(objref);
   }
 
   /**
@@ -262,14 +288,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     if (objref == -1) {
       return;
     }
-
-    ElementInfo ei = elements.get(objref);
-    assert ei != null;
-
-    if (!ei.isMarked()) {
-      ei.setMarked();
-      markQueue.add(objref);
-    }
+    queueMark(objref);
   }
 
   //--- object creation
@@ -424,17 +443,58 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     if (e == null || !checkInternStringEntry(e)) { // not seen or new state branch
       ref = newString(str,ti);
       ElementInfo ei = get(ref);
+      ei.intern();
       pinDown(ref); // that's important, interns don't get recycled
 
       int vref = ei.getReferenceField("value");
-      ei = get(vref);
-      internStrings.put(str, new InternStringEntry(str,ref,ei.getFields()));
+      ElementInfo eiValues = get(vref);
+      internStrings.put(str, new InternStringEntry(str,ref,eiValues.getFields()));
       return ref;
 
     } else {
       return e.ref;
     }
   }
+
+  //--- the primitive add and remove operations (update the elementsMap)
+
+  @Override
+  protected void add (int index, DynamicElementInfo dei){
+    elementsMap.set(index);
+    super.add(index, dei);
+  }
+
+  @Override
+  protected void set (int index, DynamicElementInfo dei){
+    elementsMap.set(index);
+    super.set(index, dei);
+  }
+
+  @Override
+  protected void remove (int index, boolean nullOk){
+    elementsMap.clear(index);
+    super.remove(index, nullOk);
+  }
+
+  @Override
+  public void removeAllFrom (int index) {
+    elementsMap.clear(index, elementsMap.length());
+    super.removeAllFrom(index);
+  }
+
+  @Override
+  public void removeAll() {
+    elementsMap.clear();
+    super.removeAll();
+  }
+
+  @Override
+  public void removeRange( int fromIdx, int toIdx){
+    elementsMap.clear(fromIdx, toIdx);
+    super.removeRange(fromIdx,toIdx);
+  }
+
+
 
   public void pinDown (int objRef) {
     ElementInfo ei = elements.get(objRef);
@@ -487,38 +547,11 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     return new DynamicElementInfo(f,m,tid);
   }
 
-  protected int indexFor (ThreadInfo th) {
-    Instruction pc = null;
 
-    
-    if (th != null) {
-      for (StackFrame f = th.getTopFrame(); f != null; f = f.getPrevious()) {
-        pc = f.getPC();
-        if (!(pc instanceof INVOKECLINIT)) {
-          break;
-        }
-      }
-    }
-
-    int index;
-
-    DynamicMapIndex dmi = new DynamicMapIndex(pc, (th == null) ? 0 : th.index, 0);
-
-    for (;;) {
-      int newIdx = dynamicMap.nextPoolVal();
-      IntTable.Entry<DynamicMapIndex> e = dynamicMap.pool(dmi);
-      index = e.val;
-      if (index == newIdx || elements.get(index) == null) {
-        // new or unoccupied
-        break;
-      }
-      // else: occupied & seen before; also ok to modify dmi
-      dmi.next();
-    }
-
-    return index;
+  protected int indexFor (ThreadInfo ti){
+    //return elements.nextNull(0);
+    return elementsMap.nextClearBit(0);
   }
-
 
   
   // for debugging only

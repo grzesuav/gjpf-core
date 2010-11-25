@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.util;
 
+import gov.nasa.jpf.JPFException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -26,9 +27,9 @@ import java.util.NoSuchElementException;
  * Wrapper for arrays of objects which provides proper equals() and hashCode()
  * methods, and behaves nicely with Java 1.5 generics. 
  */
-public final class ObjArray<E> implements ReadOnlyObjList<E>, Iterable<E>  {
+public final class ObjArray<E> implements ReadOnlyObjList<E>, Iterable<E>, Cloneable  {
   final Object[] data;
-  
+
   public ObjArray(int size) {
     data = new Object[size];
   }
@@ -36,7 +37,12 @@ public final class ObjArray<E> implements ReadOnlyObjList<E>, Iterable<E>  {
   public ObjArray(E[] data) {
     this.data = data;
   }
-  
+
+  public ObjArray<E> clone() {
+    return new ObjArray( data.clone());
+  }
+
+
   public E[] toArray (E[] a) {
     if (a.length >= data.length) {
       System.arraycopy(data,0,a,0,data.length);

@@ -340,6 +340,13 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     markChanged(index);
   }
 
+  // for Restorer use only (EI is already properly initialized)
+  protected void set (int index, EI e) {
+    e.setIndex(index);
+    elements.set(index,e);
+  }
+
+
   public void markChanged (int index) {
     hasChanged.set(index);
     ks.changed();

@@ -134,6 +134,39 @@ public class SparseClusterArrayTest extends TestJPF {
   }
 
   @Test
+  public void testClusterNextNull () {
+    SparseClusterArray<Integer> arr = new SparseClusterArray<Integer>();
+
+    arr.set(0, 0); // have a lower chunk
+
+    int tid = 2;
+    int base = (tid << SparseClusterArray.S1);
+    int r = arr.firstNullIndex(base, SparseClusterArray.MAX_CLUSTER_ENTRIES);
+    assert r == 0x02000000;
+    System.out.println(Integer.toHexString(r));
+    arr.set(r, 42);
+
+    r = arr.firstNullIndex(base, SparseClusterArray.MAX_CLUSTER_ENTRIES);
+    assert r == 0x02000001;
+    System.out.println(Integer.toHexString(r));
+
+    for (int i=r; i < 0x0200ffff; i++){
+      arr.set(i,42);
+    }
+
+    arr.set(0x200f0ff, null);
+    r = arr.firstNullIndex(base, SparseClusterArray.MAX_CLUSTER_ENTRIES);
+    assert r == 0x200f0ff;
+    System.out.println(Integer.toHexString(r));
+    arr.set(0x200f0ff, 42);
+
+    r = arr.firstNullIndex(base, SparseClusterArray.MAX_CLUSTER_ENTRIES);
+    assert r == 0x200ffff;
+    System.out.println(Integer.toHexString(r));
+
+  }
+
+  @Test
   public void testClone() {
     SparseClusterArray<Integer> arr = new SparseClusterArray<Integer>();
 
@@ -231,6 +264,66 @@ public class SparseClusterArrayTest extends TestJPF {
     assert arr.cardinality() == 2;
     assert arr.get(42) == 42;
     assert arr.get(6276) == 6276;
+  }
+
+  @Test
+  public void testIterator() {
+    SparseClusterArray<Integer> arr = new SparseClusterArray<Integer>();
+
+    for (int i=0; i<300; i++){
+      arr.set(i,i);
+    }
+    for (int i=700; i < 1000; i++){
+      arr.set(i,i);
+    }
+    
+    // remove some while we iterate
+    boolean lastSeen = false;
+    int n = 0;
+    for (Integer i : arr){
+      if (i == 200){
+        for (int j = 150; j<750; j++){
+          arr.set(j, null);
+        }
+      } else if (i == 999){
+        lastSeen = true;
+      }
+      n++;
+    }
+    
+    assert n == 451 : "wrong number of visited elements: " + n; // [0-200] + [750-999]
+    assert lastSeen : "last element not seen";
+  }
+
+  @Test
+  public void testIndexIterator() {
+    SparseClusterArray<Integer> arr = new SparseClusterArray<Integer>();
+
+    for (int i=0; i<300; i++){
+      arr.set(i,i);
+    }
+    for (int i=700; i < 1000; i++){
+      arr.set(i,i);
+    }
+
+    // remove some while we iterate
+    boolean lastSeen = false;
+    int n = 0;
+    IndexIterator it = arr.getElementIndexIterator(100);
+    for (int i=it.next(); i>= 0; i = it.next()){
+System.out.println(i);
+      if (i == 200){
+        for (int j = 150; j<750; j++){
+          arr.set(j, null);
+        }
+      } else if (i == 999){
+        lastSeen = true;
+      }
+      n++;
+    }
+
+    assert n == 351 : "wrong number of visited elements: " + n; // [100-200] + [750-999]
+    assert lastSeen : "last element not seen";
   }
 
 

@@ -23,6 +23,11 @@ package gov.nasa.jpf.jvm;
  * add class used to recursively mark live heap objects.
  * We use an explicit add to avoid recursive calls that can run out of
  * stack space when traversing long reference chains (e.g. linked lists)
+ *
+ * NOTE - this class does not have any provisions to guarantee objects are
+ * only queued once. If this is required, the caller has to use features
+ * like ElementInfo.mark()/isMarked() or explicit mark sets (e.g.
+ * java.util.IdentityHashMap), but this can have serious impact on performance
  */
 public class ReferenceQueue {
 
@@ -31,7 +36,7 @@ public class ReferenceQueue {
   static class Entry {
     Entry next; // single linked list
 
-    int objref;  // reference value
+    ElementInfo refEi;  // referenced object
   }
 
   Entry markEnd;
@@ -42,7 +47,7 @@ public class ReferenceQueue {
   int nFree;
   Entry free;
 
-  public void add(int objref) {
+  public void add(ElementInfo ei) {
     Entry e;
 
     if (nFree > 0){ // reuse a cached Entry object
@@ -54,7 +59,7 @@ public class ReferenceQueue {
       e = new Entry();
     }
 
-    e.objref = objref;
+    e.refEi = ei;
     e.next = null;
 
     if (markEnd != null) {
@@ -68,7 +73,9 @@ public class ReferenceQueue {
 
   public void process( ReferenceProcessor proc) {
     for (Entry e = markHead; e != null; ) {
-      proc.processReference( e.objref);
+      proc.processReference( e.refEi);
+
+      e.refEi = null; // avoid memory leaks
 
       if (nFree < MAX_FREE){
         // recycle to save some allocation and a lot of shortliving garbage

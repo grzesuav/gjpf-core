@@ -20,14 +20,16 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.SparseClusterArray;
 import gov.nasa.jpf.util.Transformer;
 import java.util.ArrayList;
 
 /**
- *
+ * a Heap implementation that is based on the SparseClusterArray
  */
 public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> implements Heap, Restorable<Heap>, ReferenceProcessor {
 
@@ -36,15 +38,31 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
 
   protected JVM vm;
 
-  protected InternStringRepository internStrings = new InternStringRepository();
-
   // list of pinned down references (this is only efficient for a small number of objects)
+  // this is copy-on-first-write
   protected IntVector pinDownList;
 
-  protected boolean runFinalizer;
-  protected boolean sweep;
+  // interned Strings
+  // this is copy-on-first-write
+  protected IntTable<String> internStrings;
 
-  protected boolean outOfMemory; // can be used by listeners to simulate outOfMemory conditions
+
+  // the usual drill - the lower 2 bytes are sticky, the upper two ones 
+  // hold change status and transient (transition local) flags
+  int attributes;
+
+  static final int ATTR_GC            = 0x0001;
+  static final int ATTR_OUT_OF_MEMORY = 0x0002;
+  static final int ATTR_RUN_FINALIZER = 0x0004;
+
+  static final int ATTR_ELEMENTS_CHANGED  = 0x10000;
+  static final int ATTR_PINDOWN_CHANGED   = 0x20000;
+  static final int ATTR_INTERN_CHANGED    = 0x40000;
+  static final int ATTR_ATTRIBUTE_CHANGED = 0x80000;
+
+  // masks and sets
+  static final int ATTR_STORE_MASK = 0x0000ffff;
+  static final int ATTR_ANY_CHANGED = (ATTR_ELEMENTS_CHANGED | ATTR_PINDOWN_CHANGED | ATTR_INTERN_CHANGED | ATTR_ATTRIBUTE_CHANGED);
 
   //--- these objects are only used during gc
 
@@ -57,7 +75,9 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
   protected boolean liveBitValue;
 
   public static class Snapshot<T> extends SparseClusterArray.Snapshot<ElementInfo,T> {
+    int attributes;
     IntVector pinDownList;
+    IntTable<String> internStrings;
 
     Snapshot (int size){
       super(size);
@@ -66,9 +86,20 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
 
   public SparseClusterArrayHeap (Config config, KernelState ks){
     vm = JVM.getVM();
-    
-    runFinalizer = config.getBoolean("vm.finalize", true);
-    sweep = config.getBoolean("vm.sweep",true);
+
+    pinDownList = new IntVector(256);
+    attributes |= ATTR_PINDOWN_CHANGED; // no need to clone on next add
+
+    internStrings = new IntTable(8);
+    attributes |= ATTR_INTERN_CHANGED; // no need to clone on next add
+
+    if (config.getBoolean("vm.finalize", true)){
+      attributes |= ATTR_RUN_FINALIZER;
+    }
+
+    if (config.getBoolean("vm.sweep",true)){
+      attributes |= ATTR_GC;
+    }
   }
 
   // internal stuff
@@ -82,60 +113,110 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     Snapshot snap = new Snapshot(nSet);
     populateSnapshot(snap,transformer);
 
-    if (pinDownList != null){
-      snap.pinDownList = pinDownList.clone();
-    }
+    // these are copy-on-first-write
+    snap.pinDownList = pinDownList;
+    snap.internStrings = internStrings;
+    snap.attributes = attributes & ATTR_STORE_MASK;
 
     return snap;
   }
 
   public <T> void restoreSnapshot (Snapshot<T> snap, Transformer<ElementInfo,T> transformer){
     super.restoreSnapshot(snap, transformer);
-    
-    if (snap.pinDownList != null){
-      pinDownList = snap.pinDownList.clone();
-    }
 
-    liveBitValue = false;
+    pinDownList = snap.pinDownList;
+    internStrings = snap.internStrings;
+    attributes = snap.attributes;
+
+    liveBitValue = false; // always start with false after a restore
   }
 
   //--- Heap interface
 
+  public boolean isGcEnabled (){
+    return (attributes & ATTR_GC) != 0;
+  }
+
+  public void setGcEnabled(boolean doGC) {
+    if (doGC != isGcEnabled()) {
+      if (doGC) {
+        attributes |= ATTR_GC;
+      } else {
+        attributes &= ~ATTR_GC;
+      }
+      attributes |= ATTR_ATTRIBUTE_CHANGED;
+    }
+  }
+
   public boolean isOutOfMemory() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    return (attributes & ATTR_OUT_OF_MEMORY) != 0;
   }
 
   public void setOutOfMemory(boolean isOutOfMemory) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    if (isOutOfMemory != isOutOfMemory()) {
+      if (isOutOfMemory) {
+        attributes |= ATTR_OUT_OF_MEMORY;
+      } else {
+        attributes &= ~ATTR_OUT_OF_MEMORY;
+      }
+      attributes |= ATTR_ATTRIBUTE_CHANGED;
+    }
   }
 
   public int newArray(String elementType, int nElements, ThreadInfo ti) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    String type = "[" + elementType;
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(type);
+
+    if (!ci.isInitialized()){
+      // we do this explicitly here since there are no clinits for array classes
+      ci.registerClass(ti);
+      ci.setInitialized();
+    }
+
+    Fields  f = ci.createArrayFields(type, nElements,
+                                     Types.getTypeSize(elementType),
+                                     Types.isReference(elementType));
+    Monitor  m = new Monitor();
+    DynamicElementInfo ei = createElementInfo(f, m, ti);
+
+    int tid = (ti != null) ? ti.getIndex() : 0;
+    int index = firstNullIndex(tid << S1, MAX_CLUSTER_ENTRIES);
+    if (index < 0){
+      throw new JPFException("per-thread heap limit exceeded");
+    }
+    ei.setIndex(index);
+    set(index, ei);
+
+    attributes |= ATTR_ELEMENTS_CHANGED;
+
+    vm.notifyObjectCreated(ti, ei);
+
+    // see newObject for 'outOfMemory' handling
+
+    return index;
   }
 
   public int newObject(ClassInfo ci, ThreadInfo ti) {
-    int index = -1;
-
     // create the thing itself
-    Fields             f = ci.createInstanceFields();
-    Monitor            m = new Monitor();
-    DynamicElementInfo dei = createElementInfo(f, m, ti);
+    Fields f = ci.createInstanceFields();
+    Monitor m = new Monitor();
+    ElementInfo ei = createElementInfo(f, m, ti);
 
     // get next free index into thread cluster
     int tid = (ti != null) ? ti.getIndex() : 0;
-    index = firstNullIndex(tid << S1, MAX_CLUSTER_ENTRIES);
-
-    if (index >= 0){
-      dei.setIndex(index);
-      set(index, dei);
-
-      // and do the default (const) field initialization
-      ci.initializeInstanceData(dei);
-
-      //if (ti != null) { // maybe we should report them all, and put the burden on the listener
-        vm.notifyObjectCreated(ti, dei);
-      //}
+    int index = firstNullIndex(tid << S1, MAX_CLUSTER_ENTRIES);
+    if (index < 0){
+      throw new JPFException("per-thread heap limit exceeded");
     }
+    ei.setIndex(index);
+    set(index, ei);
+
+    attributes |= ATTR_ELEMENTS_CHANGED;
+
+    // and do the default (const) field initialization
+    ci.initializeInstanceData(ei);
+
+    vm.notifyObjectCreated(ti, ei);
 
     // note that we don't return -1 if 'outOfMemory' (which is handled in
     // the NEWxx bytecode) because our allocs are used from within the
@@ -145,7 +226,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     return index;
   }
 
-  public int newString(String str, ThreadInfo ti) {
+  private int newString(String str, ThreadInfo ti, boolean isIntern) {
     if (str != null) {
       int length = str.length();
       int index = newObject(ClassInfo.stringClassInfo, ti);
@@ -164,14 +245,40 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
         e.setElement(i, str.charAt(i));
       }
 
+      if (isIntern){
+        e.intern();
+      }
+
       return index;
+
     } else {
       return -1;
     }
   }
 
+  public int newString(String str, ThreadInfo ti){
+    return newString(str,ti,false);
+  }
+
   public int newInternString (String str, ThreadInfo ti) {
-    return internStrings.newInternString(this, str, ti);
+    IntTable.Entry<String> e = internStrings.get(str);
+    if (e == null){
+      int objref = newString(str,ti,true);
+
+      if ((attributes & ATTR_INTERN_CHANGED) == 0){
+        internStrings = internStrings.clone();
+        attributes |= ATTR_INTERN_CHANGED;
+      }
+      internStrings.add(str, objref);
+
+      // we know it has not been pinned down yet
+      pinDown0(objref);
+
+      return objref;
+
+    } else {
+      return e.val;
+    }
   }
 
   public Iterable<ElementInfo> liveObjects() {
@@ -182,22 +289,39 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     return nSet;
   }
 
+  public boolean hasChanged() {
+    return (attributes & ATTR_ANY_CHANGED) != 0;
+  }
+
   public void unmarkAll(){
-    // <2do>
+    for (ElementInfo ei : liveObjects()){
+      ei.setUnmarked();
+    }
+  }
+
+  public void markUnchanged() {
+    attributes &= ~ATTR_ANY_CHANGED;
   }
 
   public void cleanUpDanglingReferences() {
     // we shouldn't have any
   }
 
-  public void pinDown (int objRef) {
-    if (pinDownList == null){
-      pinDownList = new IntVector(16);
+  private void pinDown0 (int objRef){
+    if ((attributes & ATTR_PINDOWN_CHANGED) == 0) {
+      pinDownList = pinDownList.clone();
+      attributes |= ATTR_PINDOWN_CHANGED;
     }
-    pinDownList.addIfAbsent(objRef);
+    pinDownList.add(objRef);
 
     ElementInfo ei = get(objRef);
     ei.pinDown(true);
+  }
+
+  public void pinDown(int objRef) {
+    if (!pinDownList.contains(objRef)) {
+      pinDown0(objRef);
+    }
   }
 
   public void registerWeakReference (ElementInfo ei) {
@@ -235,8 +359,8 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     vm.notifyGCBegin();
 
     markQueue.clear();
+    weakRefs = null;
     liveBitValue = !liveBitValue;
-
 
     markPinDownList();
     vm.getThreadList().markRoots(this); // mark thread stacks
@@ -257,7 +381,6 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
 
       } else {
         // <2do> still have to process finalizers here, which might make the object live again
-
         vm.notifyObjectReleased(ei);
         set(ei.getIndex(), null);   // <2do> - do we need a separate remove?
       }
@@ -284,14 +407,13 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     ElementInfo ei = get(objref);
     if (!ei.isMarked()){ // only add objects once
       ei.setMarked();
-      markQueue.add(objref);
+      markQueue.add(ei);
     }
   }
 
   // called from ReferenceQueue during processing of queued references
   // note that all queued references are alread marked as live
-  public void processReference (int objref) {
-    ElementInfo ei = get(objref);
+  public void processReference (ElementInfo ei) {
     ei.markRecursive( this); // this might in turn call queueMark
   }
 
@@ -300,7 +422,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
       int len = pinDownList.size();
       for (int i=0; i<len; i++){
         int objref = pinDownList.get(i);
-        markQueue.add(objref);
+        queueMark(objref);
       }
     }
   }
@@ -311,16 +433,8 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
    * @aspects: gc
    */
   public void markStaticRoot (int objref) {
-    if (objref == -1) {
-      return;
-    }
-
-    ElementInfo ei = get(objref);
-    assert ei != null;
-
-    if (!ei.isMarked()) {
-      ei.setMarked();
-      markQueue.add(objref);
+    if (objref != -1) {
+      queueMark(objref);
     }
   }
 
@@ -330,21 +444,13 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
    * @aspects: gc
    */
   public void markThreadRoot (int objref, int tid) {
-    if (objref == -1) {
-      return;
-    }
-
-    ElementInfo ei = get(objref);
-    assert ei != null;
-
-    if (!ei.isMarked()) {
-      ei.setMarked();
-      markQueue.add(objref);
+    if (objref != -1) {
+      queueMark(objref);
     }
   }
 
   public void markChanged(int objref) {
-    
+    attributes |= ATTR_ELEMENTS_CHANGED;
   }
 
   public void hash(HashData hd) {
@@ -352,11 +458,11 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
   }
 
   public void resetVolatiles() {
-    
+    // we don't have any
   }
 
   public void restoreVolatiles() {
-    
+    // we don't have any
   }
 
   public Memento<Heap> getMemento(MementoFactory factory) {
@@ -368,4 +474,45 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
   public void checkConsistency(boolean isStateStore) {
     // <2do>
   }
+
+  /**
+   * this sucks! Since the "E get(int)" of SparseClusterArray gets type erased
+   * to "get:(I)Ljava/lang/Object", the compiler automatically wraps it into a
+   * "ElementInfo get(int)" in SparseClusterArrayHeap (at least it uses invokespecial)
+   *
+   * at least we have to slightly modify the super.get() anyways since we
+   * treat negative indices as a 'null' reference instead of throwing an exception.
+   * It also saves us one additional (ElementInfo) cast in the wrapper method,
+   * but otherwise its just a bad case of copied code
+   */
+  public ElementInfo get(int i) {
+    Node l1;
+    ChunkNode l2;
+    Chunk l3 = lastChunk;
+
+    if (i < 0) {
+      return null;
+    }
+
+    if (l3 != null && (l3.base == (i & CHUNK_BASEMASK))) {  // cache optimization for in-cluster access
+      return (ElementInfo) l3.elements[i & ELEM_MASK];
+    }
+
+    int j = i >>> S1;
+    if ((l1 = root.seg[j]) != null) {           // L1
+      j = (i >>> S2) & SEG_MASK;
+      if ((l2 = l1.seg[j]) != null) {           // L2
+        j = (i >>> S3) & SEG_MASK;
+        if ((l3 = l2.seg[j]) != null) {         // L3
+          // too bad we can't get rid of this cast
+          lastChunk = l3;
+          return (ElementInfo) l3.elements[i & ELEM_MASK];
+        }
+      }
+    }
+
+    lastChunk = null;
+    return null;
+  }
+
 }

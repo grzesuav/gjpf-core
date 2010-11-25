@@ -29,7 +29,7 @@ import java.util.ArrayList;
  * grows the structure as needed.
  * @author pcd
  */
-public final class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
+public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
   public static final int defaultInitCap = 40;
 
   
@@ -153,7 +153,18 @@ public final class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
       add(e);
     }
   }
-  
+
+  public int nextNull (int fromIndex){
+    for (int i=fromIndex; i<size; i++){
+      if (data[i] == null){
+        return i;
+      }
+    }
+
+    ensureCapacity(size+1);
+    return size;
+  }
+
   @SuppressWarnings("unchecked")
   public E get(int idx) {
     if (idx >= size) {
