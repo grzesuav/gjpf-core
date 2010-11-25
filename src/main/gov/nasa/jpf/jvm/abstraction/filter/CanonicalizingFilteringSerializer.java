@@ -20,8 +20,6 @@
 package gov.nasa.jpf.jvm.abstraction.filter;
 
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.util.IntVector;
-import gov.nasa.jpf.util.SparseIntVector;
 
 /**
  * a FilteringSerializer that performs on-the-fly heap canonicalization to
@@ -32,8 +30,8 @@ import gov.nasa.jpf.util.SparseIntVector;
  * sufficient symmetry, i.e. reference values depend on the order of
  * thread scheduling.
  *
- * Ad hoc heap symmetry is hard to achieve because of static initialization. Each
- * time a thread loads a class all the static init (at least the class object and
+ * Ad hoc heap symmetry is hard to achieve in the heap because of static initialization.
+ * Each time a thread loads a class all the static init (at least the class object and
  * its fields) are associated with this thread, hence thread reference
  * values depend on which classes are already loaded by other threads. Associating
  * all allocations from inside of clinits to one address range doesn't help either
@@ -43,23 +41,25 @@ import gov.nasa.jpf.util.SparseIntVector;
  */
 public class CanonicalizingFilteringSerializer extends FilteringSerializer {
 
-  // this stores the number in which object references are traversed, not
-  // the reference value itself, which provides some additional heap symmetry.
-  // NOTE - the problem is that it assumes we can allocate an array/map that is
-  // large enough to hold all possible reference values. This is true in the
-  // case of DynamicArea (which also stores elements in a single vector), but
-  // not for the SparseClusterArrayHeap. Using a SparseIntVector can help,
-  // but only if the number of serialized objects stays low enough.
-  protected transient SparseIntVector heapMap = new SparseIntVector(14,0);
-  //protected transient IntVector heapMap = new IntVector(4096);
+  // we flip this on every serialization, which helps us to avoid passes
+  // over the serialized objects to reset their sids. This work by resetting
+  // the sid to 0 upon backtrack, and counting either upwards from 1 or downwards
+  // from -1, but store the absolute value in the serialization stream
+  boolean positiveSid;
 
-  // invHeapMap is a dense array of all encountered live and non-filtered objects
-  protected transient IntVector invHeapMap = new IntVector(4096);
+  int sidCount;
 
   @Override
   protected void initReferenceQueue() {
-    heapMap.clear();
-    invHeapMap.clear();
+    super.initReferenceQueue();
+
+    if (positiveSid){
+      positiveSid = false;
+      sidCount = -1;
+    } else {
+      positiveSid = true;
+      sidCount = 1;
+    }
   }
 
   @Override
@@ -68,29 +68,31 @@ public class CanonicalizingFilteringSerializer extends FilteringSerializer {
       buf.add(-1);
 
     } else {
-      int idx = heapMap.get(objref);
-      if (idx == 0) {
-        ElementInfo ei = heap.get(objref);
+      ElementInfo ei = heap.get(objref);
+      int sid = ei.getSid();
 
-        if (ei == null) { // some weird cases
-          idx = -1;
-        } else {
-          idx = invHeapMap.size();
-          invHeapMap.add(objref);
+      if (positiveSid){ // count sid upwards from 1
+        if (sid <= 0){  // not seen before in this serialization run
+          sid = sidCount++;
+          ei.setSid(sid);
+          refQueue.add(ei);
         }
-        heapMap.set(objref, idx);
+      } else { // count sid downwards from -1
+        if (sid >= 0){ // not seen before in this serialization run
+          sid = sidCount--;
+          ei.setSid(sid);
+          refQueue.add(ei);
+        }
+        sid = -sid;
       }
-      buf.add(idx);
+
+      // note that we always add the absolute sid value
+      buf.add(sid);
     }
   }
 
   @Override
   protected void processReferenceQueue() {
-    int len = invHeapMap.size();
-    for (int i=0; i<len; i++){
-      int objref = invHeapMap.get(i);
-      ElementInfo ei = heap.get(objref);
-      processReference(ei);
-    }
+    refQueue.process(this);
   }
 }

@@ -27,6 +27,7 @@ import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.JenkinsStateSet;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ReferenceProcessor;
 import gov.nasa.jpf.jvm.StackFrame;
@@ -176,7 +177,7 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
 
   //--- the methods that implement the heap traversal
 
-  ReferenceQueue refQueue;
+  protected ReferenceQueue refQueue;
 
   protected void initReferenceQueue() {
     // note - this assumes all heap objects are in an unmarked state, but this
@@ -349,6 +350,10 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
 
     processReferenceQueue();
 
+//int[] data = buf.toArray();
+//long hash = JenkinsStateSet.longLookup3Hash(data);
+
+//System.out.println("@@@@ buf-size: " + buf.size() + ", hash= " + hash);
     return buf.toArray();
   }
 

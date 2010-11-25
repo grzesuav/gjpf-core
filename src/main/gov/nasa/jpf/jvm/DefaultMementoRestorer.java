@@ -247,6 +247,7 @@ public class DefaultMementoRestorer extends MementoRestorer {
       ei.monitor = monitor;
       ei.refTid = refTid;
 
+      ei.sid = 0;
       ei.updateLockingInfo();
       ei.markUnchanged();
 

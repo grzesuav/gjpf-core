@@ -54,7 +54,7 @@ public class JenkinsStateSet extends SerializingStateSet {
     return lastStateId + 1;
   }
  
-  static long longLookup3Hash(int[] val) {
+  public static long longLookup3Hash(int[] val) {
     // Jenkins' LOOKUP3 hash  (May 2006)
     int a = 0x510fb60d;
     int b = 0xa4cb30d9 + (val.length);

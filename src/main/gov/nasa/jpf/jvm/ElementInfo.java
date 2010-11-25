@@ -106,17 +106,22 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   protected int             attributes;
 
 
-  /**
-   * FieldLockInfos are never backtracked! They are set in the order of
-   * field access during the search, so that we can detect potential
-   * inconsistencies and re-run accordingly
-   * NOTE - if we ever recycle ElementInfo objects, this has to be
-   * updated
-   */
-  FieldLockInfo[] fLockInfo;
+  //--- the following fields are transient or search global, i.e. their values
+  // are not state-stored, but might be set during state restoration
 
-  Memento<ElementInfo> memento; // cache for unchanged ElementInfos
-  
+  // FieldLockInfos are never state-stored/backtracked! They are set in the order of
+  // field access during the search, so that we can detect potential
+  // inconsistencies and re-run accordingly
+  protected FieldLockInfo[] fLockInfo;
+
+  // cache for unchanged ElementInfos, so that we don't have to re-create memento
+  // objects all the time
+  protected Memento<ElementInfo> memento;
+
+  // cache for a serialized representation of the object, which can be used
+  // by state-matching. Value interpretation depends on the configured Serializer
+  protected int sid;
+
 
   public ElementInfo(Fields f, Monitor m, int tid) {
     fields = f;
@@ -186,6 +191,16 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       }
     }
   }
+
+  //--- sids are only supposed to be used by the state matching
+  public void setSid(int id){
+    sid = id;
+  }
+
+  public int getSid() {
+    return sid;
+  }
+
 
 
   /**
