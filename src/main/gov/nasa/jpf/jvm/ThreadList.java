@@ -39,6 +39,46 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
   public KernelState ks;  // <2do> bad backlink, remove!
 
 
+  static class TListMemento implements Memento<ThreadList> {
+    // note that ThreadInfo mementos are also identity preserving
+    Memento<ThreadInfo>[] tiMementos;
+
+    TListMemento(ThreadList tl) {
+      ThreadInfo[] threads = tl.threads;
+      int len = threads.length;
+
+      tiMementos = new Memento[len];
+      for (int i=0; i<len; i++){
+        ThreadInfo ti = threads[i];
+        Memento<ThreadInfo> m = null;
+
+        if (!ti.isNewOrChanged()){
+          m = ti.cachedMemento;
+        }
+        if (m == null){
+          m = ti.getMemento();
+          ti.cachedMemento = m;
+        }
+        tiMementos[i] = m;
+      }
+    }
+
+    public ThreadList restore(ThreadList tl){
+      int len = tiMementos.length;
+      ThreadInfo[] threads = new ThreadInfo[len];
+      for (int i=0; i<len; i++){
+        Memento<ThreadInfo> m = tiMementos[i];
+        ThreadInfo ti = m.restore(null);
+        ti.cachedMemento = m;
+        threads[ti.getIndex()] = ti;
+      }
+      tl.threads = threads;
+
+      return tl;
+    }
+  }
+
+
   protected ThreadList() {
     // nothing here
   }
@@ -53,6 +93,9 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
 
   public Memento<ThreadList> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
+  }
+  public Memento<ThreadList> getMemento(){
+    return new TListMemento(this);
   }
 
   public Object clone() {

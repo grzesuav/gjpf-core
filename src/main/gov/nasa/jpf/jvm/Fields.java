@@ -476,7 +476,7 @@ public abstract class Fields implements Cloneable {
   protected abstract String getLogChar ();
 
   // do not modify result!
-  public int[] dumpRawValues() {
+  public int[] getRawValues() {
     return values;
   }
 

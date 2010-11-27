@@ -17,7 +17,7 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm.abstraction.filter;
+package gov.nasa.jpf.jvm.serialize;
 
 import gov.nasa.jpf.jvm.ElementInfo;
 
@@ -39,7 +39,7 @@ import gov.nasa.jpf.jvm.ElementInfo;
  * approach in which only this segment is canonicalized might work, but it is
  * questionable if the overhead is worth the effort.
  */
-public class CanonicalizingFilteringSerializer extends FilteringSerializer {
+public class CFSerializer extends FilteringSerializer {
 
   // we flip this on every serialization, which helps us to avoid passes
   // over the serialized objects to reset their sids. This work by resetting
@@ -62,6 +62,10 @@ public class CanonicalizingFilteringSerializer extends FilteringSerializer {
     }
   }
 
+  protected void queueReference(ElementInfo ei){
+    refQueue.add(ei);
+  }
+
   @Override
   protected void addObjRef(int objref) {
     if (objref < 0) {
@@ -75,13 +79,13 @@ public class CanonicalizingFilteringSerializer extends FilteringSerializer {
         if (sid <= 0){  // not seen before in this serialization run
           sid = sidCount++;
           ei.setSid(sid);
-          refQueue.add(ei);
+          queueReference(ei);
         }
       } else { // count sid downwards from -1
         if (sid >= 0){ // not seen before in this serialization run
           sid = sidCount--;
           ei.setSid(sid);
-          refQueue.add(ei);
+          queueReference(ei);
         }
         sid = -sid;
       }

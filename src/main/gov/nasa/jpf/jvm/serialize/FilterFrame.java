@@ -16,19 +16,36 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.jvm.abstraction.filter;
+package gov.nasa.jpf.jvm.serialize;
 
-import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.FieldInfo;
-import gov.nasa.jpf.jvm.MethodInfo;
 
-public interface FilterConfiguration {
-  void init(Config config);
-  
-  Iterable<FieldInfo> getMatchedInstanceFields(ClassInfo ci); 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-  Iterable<FieldInfo> getMatchedStaticFields(ClassInfo ci); 
+/**
+ * USE CAREFULLY - Indicates that the stack frame of a method should not,
+ * in specified ways, be considered during state matching.
+ * 
+ * This can easily cause the search to be cut off even though the VM has made
+ * progress, so USE WISELY!
+ * 
+ * @author peterd
+ */
+@Target({ElementType.METHOD})
+public @interface FilterFrame {
+  /**
+   * True means locals (incl. parameters) and operand stack will be filtered.
+   */
+  boolean filterData() default true;
 
-  FramePolicy getFramePolicy(MethodInfo mi);
+  /**
+   * True means the location of the next instruction will be filtered.
+   */
+  boolean filterPC() default true;
+
+  /**
+   * True means frames below this one will not appear at all in the abstracted
+   * state.
+   */
+  boolean filterSubframes() default true;
 }

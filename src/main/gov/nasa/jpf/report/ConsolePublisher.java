@@ -375,10 +375,10 @@ public class ConsolePublisher extends Publisher {
     out.println("choice generators:  thread=" + stat.threadCGs
             + " (signal=" + stat.signalCGs + ", lock=" + stat.monitorCGs + ", shared ref=" + stat.sharedAccessCGs
             + "), data=" + stat.dataCGs);
-    out.println("heap:               gc-invocations=" + stat.gcCycles);
-    out.println("objects:            " + "new=" + stat.nNewObjects
+    out.println("heap:               " + "new=" + stat.nNewObjects
             + ", released=" + stat.nReleasedObjects
-            + ", max live=" + stat.maxLiveObjects);
+            + ", max live=" + stat.maxLiveObjects
+            + ", gc-cycles=" + stat.gcCycles);
     out.println("instructions:       " + stat.insns);
     out.println("max memory:         " + (stat.maxUsed >> 20) + "MB");
 

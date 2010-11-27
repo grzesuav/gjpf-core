@@ -16,7 +16,7 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.jvm.abstraction.filter;
+package gov.nasa.jpf.jvm.serialize;
 
 
 import gov.nasa.jpf.jvm.AbstractSerializer;
@@ -209,7 +209,7 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
     buf.add(ci.getUniqueId());
 
     if (fields instanceof ArrayFields) { // array, not filtered
-      int[] values = fields.dumpRawValues();
+      int[] values = fields.getRawValues();
       buf.add(values.length);
       if (ci.isReferenceArray()) {
         for (int i = 0; i < values.length; i++) {
@@ -223,10 +223,10 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
       FinalBitSet filtered = getInstanceFilterMask(ci);
       FinalBitSet refs = getInstanceRefMask(ci);
 
-      int max = ci.getInstanceDataSize();
-      for (int i = 0; i < max; i++) {
+      int[] values = fields.getRawValues();
+      for (int i = 0; i < values.length; i++) {
         if (!filtered.get(i)) {
-          int v = fields.getIntValue(i);
+          int v = values[i];
           if (refs.get(i)) {
             addObjRef(v);
           } else {

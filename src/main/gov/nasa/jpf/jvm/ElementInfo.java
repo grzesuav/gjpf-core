@@ -25,6 +25,7 @@ import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.HashData;
 
 import java.io.PrintWriter;
+import java.lang.ref.SoftReference;
 
 /**
  * Describes an element of memory containing the field values of a class or an
@@ -114,13 +115,74 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // inconsistencies and re-run accordingly
   protected FieldLockInfo[] fLockInfo;
 
-  // cache for unchanged ElementInfos, so that we don't have to re-create memento
+  // cache for unchanged ElementInfos, so that we don't have to re-create cachedMemento
   // objects all the time
-  protected Memento<ElementInfo> memento;
+  protected Memento<ElementInfo> cachedMemento;
 
   // cache for a serialized representation of the object, which can be used
   // by state-matching. Value interpretation depends on the configured Serializer
   protected int sid;
+
+
+  /**
+   * our default cachedMemento type
+   */
+  static public abstract class EIMemento<EI extends ElementInfo> extends SoftReference<EI> implements Memento<ElementInfo> {
+    int ref;
+    Fields fields;
+    Monitor monitor;
+    FixedBitSet refTid;
+    int attributes;
+
+
+    public EIMemento (EI ei){
+      super(ei);
+
+      ei.markUnchanged(); // we don't want any of the change flags
+
+      this.ref = ei.index;
+      this.attributes = ei.attributes;
+      this.fields = ei.fields;
+      this.monitor = ei.monitor;
+      this.refTid = ei.refTid;
+
+      ei.markUnchanged();
+    }
+
+    public ElementInfo restore (ElementInfo ei){
+      ei.index = ref;
+      ei.attributes = attributes;
+      ei.fields = fields;
+      ei.monitor = monitor;
+      ei.refTid = refTid;
+
+      ei.sid = 0;
+      ei.updateLockingInfo();
+      ei.markUnchanged();
+
+      return ei;
+    }
+
+    /** for debugging purposes
+    public boolean equals(Object o){
+      if (o instanceof EIMemento){
+        EIMemento other = (EIMemento)o;
+        if (ref != other.ref) return false;
+        if (fields != other.fields) return false;
+        if (monitor != other.monitor) return false;
+        if (refTid != other.refTid) return false;
+        if (attributes != other.attributes) return false;
+        return true;
+      }
+      return false;
+    }
+    public String toString() {
+     return "EIMemento {ref="+ref+",attributes="+Integer.toHexString(attributes)+
+             ",fields="+fields+",monitor="+monitor+",refTid="+refTid+"}";
+    }
+    **/
+  }
+
 
 
   public ElementInfo(Fields f, Monitor m, int tid) {
@@ -143,6 +205,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   protected ElementInfo() {
   }
+
+  public abstract Memento<ElementInfo> getMemento();
 
   public boolean hasChanged() {
     return (attributes & ATTR_ANY_CHANGED) != 0;
@@ -192,7 +256,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
   }
 
-  //--- sids are only supposed to be used by the state matching
+  //--- sids are only supposed to be used by the Serializer
   public void setSid(int id){
     sid = id;
   }
@@ -201,7 +265,15 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return sid;
   }
 
+  //--- cached mementos are only supposed to be used/set by the Restorer
 
+  public Memento<ElementInfo> getCachedMemento(){
+    return cachedMemento;
+  }
+
+  public void setCachedMemento (Memento<ElementInfo> memento){
+    cachedMemento = memento;
+  }
 
   /**
    * do we have a reference field with value objRef?

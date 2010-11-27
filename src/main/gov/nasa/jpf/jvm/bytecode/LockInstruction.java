@@ -26,8 +26,6 @@ import gov.nasa.jpf.jvm.*;
  */
 public abstract class LockInstruction extends Instruction {
   int lastLockRef = -1;
-  private boolean m_skipLocalSync;          // Can't store this in a static since there might be multiple VM instances.
-  private boolean m_skipLocalSyncSet;
 
   /**
     * only useful post-execution (in an instructionExecuted() notification)
@@ -57,20 +55,11 @@ public abstract class LockInstruction extends Instruction {
    * For example, this object isn't reachable by other threads.
    */
   protected boolean isShared(ThreadInfo ti, ElementInfo ei) {
-    if (!getSkipLocalSync(ti)) {
+    if (!ti.skipLocalSync()) {
       return true;
     }
     
     return ei.isShared();
-  }
-
-  private boolean getSkipLocalSync(ThreadInfo ti) {
-    if (!m_skipLocalSyncSet) {
-      m_skipLocalSync    = ti.getVM().getConfig().getBoolean("vm.por.skip_local_sync", false);  // Default is false to keep original behavior.
-      m_skipLocalSyncSet = true;
-    }
-
-    return m_skipLocalSync;
   }
 
   public void accept(InstructionVisitor insVisitor) {

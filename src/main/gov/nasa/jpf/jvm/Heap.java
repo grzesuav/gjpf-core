@@ -85,4 +85,5 @@ public interface Heap {
 
 
   Memento<Heap> getMemento(MementoFactory factory);
+  Memento<Heap> getMemento();
 }

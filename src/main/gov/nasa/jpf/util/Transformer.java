@@ -23,8 +23,6 @@ package gov.nasa.jpf.util;
  *
  * a utility interface that esp. can be used for generic containers
  */
-public interface Transformer<E,T> {
-
-  T transform (E e);
-  E restore (T t);
+public interface Transformer<T1,T2> {
+  T2 transform (T1 e);
 }

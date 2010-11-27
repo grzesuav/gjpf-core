@@ -35,6 +35,17 @@ public class StaticArea extends Area<StaticElementInfo> implements Restorable<St
   private IntTable<String> staticMap = new IntTable<String>();
 
 
+  static class SAMemento extends AreaMemento<StaticArea> implements Memento<StaticArea> {
+    SAMemento (StaticArea area){
+      super(area);
+    }
+
+    public StaticArea restore (StaticArea area){
+      super.restore(area);
+      return area;
+    }
+  }
+
   /**
    * Creates a new empty static area.
    */
@@ -44,6 +55,10 @@ public class StaticArea extends Area<StaticElementInfo> implements Restorable<St
 
   public Memento<StaticArea> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
+  }
+
+  public Memento<StaticArea> getMemento(){
+    return new SAMemento(this);
   }
 
 

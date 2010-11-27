@@ -17,42 +17,41 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm;
+package gov.nasa.jpf.jvm.serialize;
+
+import gov.nasa.jpf.jvm.ElementInfo;
 
 /**
- * a MementoRestorer that uses the default mementos
+ * a bounded canonicalizing & filtering serializer.
+ *
+ * This came to bear by accidentally discovering that most of the known JPF
+ * applications find targeted errors by just serializing the thread states,
+ * statics, and the heap objects referenced from the thread states. This must
+ * be caused by a high probability that threads more likely reference what
+ * they change
  */
-public class DefaultMementoRestorer extends MementoRestorer {
+public class BCFSerializer extends CFSerializer {
 
-  public Memento<KernelState> getMemento(KernelState ks) {
-    return ks.getMemento();
+  boolean traverseObjects;
+
+  @Override
+  protected void initReferenceQueue() {
+    super.initReferenceQueue();
+
+    traverseObjects = true;
   }
 
-  public Memento<ThreadList> getMemento(ThreadList tlist) {
-    return tlist.getMemento();
+
+  @Override
+  protected void queueReference(ElementInfo ei){
+    if (traverseObjects){
+      refQueue.add(ei);
+    }
   }
 
-  public Memento<ThreadInfo> getMemento(ThreadInfo ti) {
-    return ti.getMemento();
-  }
-
-  public Memento<Heap> getMemento(DynamicArea da) {
-    return da.getMemento();
-  }
-
-  public Memento<StaticArea> getMemento(StaticArea sa) {
-    return sa.getMemento();
-  }
-
-  public Memento<ElementInfo> getMemento(DynamicElementInfo ei) {
-    return ei.getMemento();
-  }
-
-  public Memento<ElementInfo> getMemento(StaticElementInfo ei) {
-    return ei.getMemento();
-  }
-
-  public Memento<Heap> getMemento(SparseClusterArrayHeap sca){
-    return sca.getMemento();
+  @Override
+  protected void processReferenceQueue() {
+    traverseObjects = false;
+    refQueue.process(this);
   }
 }

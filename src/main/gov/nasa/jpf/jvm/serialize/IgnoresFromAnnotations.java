@@ -1,8 +1,8 @@
-package gov.nasa.jpf.jvm.abstraction.filter;
+package gov.nasa.jpf.jvm.serialize;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.abstraction.filter.AmmendableFilterConfiguration.FieldAmmendment;
-import gov.nasa.jpf.jvm.abstraction.filter.AmmendableFilterConfiguration.FrameAmmendment;
+import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.FieldAmmendment;
+import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.FrameAmmendment;
 import gov.nasa.jpf.jvm.AnnotationInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.MethodInfo;

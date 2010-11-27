@@ -44,6 +44,29 @@ public class KernelState implements Restorable<KernelState> {
    */
   private Stack<ChangeListener> listeners = new Stack<ChangeListener>();
 
+
+  static class KsMemento implements Memento<KernelState> {
+    // note - order does matter: threads need to be restored before the heap
+    Memento<ThreadList> threadsMemento;
+    Memento<StaticArea> staticsMemento;
+    Memento<Heap> heapMemento;
+
+    KsMemento (KernelState ks){
+      threadsMemento = ks.threads.getMemento();
+      staticsMemento = ks.statics.getMemento();
+      heapMemento = ks.heap.getMemento();
+    }
+
+    public KernelState restore (KernelState ks) {
+      // those are all in-situ objects, no need to set them in ks
+      threadsMemento.restore(ks.threads);
+      staticsMemento.restore(ks.statics);
+      heapMemento.restore(ks.heap);
+
+      return ks;
+    }
+  }
+
   /**
    * Creates a new kernel state object.
    */
@@ -58,6 +81,10 @@ public class KernelState implements Restorable<KernelState> {
 
   public Memento<KernelState> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
+  }
+
+  public Memento<KernelState> getMemento(){
+    return new KsMemento(this);
   }
 
   public StaticArea getStaticArea() {

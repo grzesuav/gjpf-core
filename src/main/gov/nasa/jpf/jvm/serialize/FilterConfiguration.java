@@ -16,28 +16,19 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.jvm.abstraction.filter;
+package gov.nasa.jpf.jvm.serialize;
 
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.FieldInfo;
+import gov.nasa.jpf.jvm.MethodInfo;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
-
-/**
- * Indicates that a field in the model SHOULD BE considered during
- * state matching, even if other (prior) configuration would filter it.
- * @author peterd
- */
-@Target({ElementType.FIELD})
-public @interface UnfilterField {
-  /**
-   * If not the empty string, specifies a property that must be "true" to
-   * activate unfiltering--unless <code>invert</code> is set.
-   */
-  String condition() default "";
+public interface FilterConfiguration {
+  void init(Config config);
   
-  /**
-   * If set to <code>true</code>, property must be "false" to activate
-   * unfiltering. Does nothing if <code>condition</code> is empty string.
-   */
-  boolean invert() default false;
+  Iterable<FieldInfo> getMatchedInstanceFields(ClassInfo ci); 
+
+  Iterable<FieldInfo> getMatchedStaticFields(ClassInfo ci); 
+
+  FramePolicy getFramePolicy(MethodInfo mi);
 }

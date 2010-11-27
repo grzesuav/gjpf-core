@@ -45,7 +45,7 @@ import java.util.logging.Logger;
 public class JPF implements Runnable {
   
   /** JPF version, we read this in later from default.properties */
-  public static String VERSION    = "5.?";
+  public static String VERSION    = "6.0";
 
   static Logger logger     = null; // initially
 
@@ -441,7 +441,7 @@ public class JPF implements Runnable {
 
   public static void printBanner (Config config) {
     System.out.println("Java Pathfinder Model Checker v" +
-                  config.getString("jpf.version", "4") +
+                  config.getString("jpf.version", VERSION) +
                   " - (C) 1999-2008 RIACS/NASA Ames Research Center");
   }
 

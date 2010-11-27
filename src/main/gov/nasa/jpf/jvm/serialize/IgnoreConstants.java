@@ -1,6 +1,6 @@
-package gov.nasa.jpf.jvm.abstraction.filter;
+package gov.nasa.jpf.jvm.serialize;
 
-import gov.nasa.jpf.jvm.abstraction.filter.AmmendableFilterConfiguration.StaticAmmendment;
+import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.StaticAmmendment;
 import gov.nasa.jpf.jvm.FieldInfo;
 
 import java.util.Arrays;

@@ -204,16 +204,19 @@ public class SparseClusterArrayTest extends TestJPF {
     arr.set(67620, null);
     arr.set(7162827, new Integer(7162827));
 
-    Transformer<Integer,String> transformer = new Transformer<Integer,String>() {
+    Transformer<Integer,String> i2s = new Transformer<Integer,String>() {
       public String transform (Integer n) {
         return n.toString();
       }
-      public Integer restore (String s) {
+    };
+
+    Transformer<String,Integer> s2i = new Transformer<String,Integer>() {
+      public Integer transform (String s) {
         return new Integer( Integer.parseInt(s));
       }
     };
 
-    Snapshot<Integer,String> snap = arr.getSnapshot(transformer);
+    Snapshot<Integer,String> snap = arr.getSnapshot(i2s);
     // just for debugging purposes
     int len = snap.size();
     for (int i=0; i<len; i++){
@@ -224,7 +227,7 @@ public class SparseClusterArrayTest extends TestJPF {
     arr.set(87, new Integer(87));
     arr.set(7162827, new Integer(-1));
 
-    arr.restoreSnapshot(snap, transformer);
+    arr.restoreSnapshot(snap, s2i);
     for (Integer i : arr) {
       System.out.println(i);
     }

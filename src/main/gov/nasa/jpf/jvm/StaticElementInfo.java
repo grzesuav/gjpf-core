@@ -27,7 +27,7 @@ import gov.nasa.jpf.util.HashData;
  * StaticArea.  It specifically knows about the relationship amongst
  * classes, and will recursively lookup a data member if needed.
  */
-public final class StaticElementInfo extends ElementInfo {
+public final class StaticElementInfo extends ElementInfo implements Restorable<ElementInfo> {
 
   // this is kind of dangerous - make sure these flags are still unused in ElementInfo
   static final int ATTR_COR_CHANGED    = 0x100000;
@@ -38,6 +38,51 @@ public final class StaticElementInfo extends ElementInfo {
 
   int classObjectRef = -1;
   int status = ClassInfo.UNINITIALIZED;
+
+
+  // our default memento implementation
+  static class SEIMemento extends EIMemento<StaticElementInfo> {
+    int classObjectRef;
+    int status;
+
+    SEIMemento (StaticElementInfo ei) {
+      super(ei);
+
+      this.classObjectRef = ei.classObjectRef;
+      this.status = ei.status;
+    }
+
+    @Override
+    public ElementInfo restore (ElementInfo ei){
+      StaticElementInfo sei = (ei != null) ? (StaticElementInfo) ei : get();
+      if (sei == null){
+        sei = new StaticElementInfo();
+      }
+
+      super.restore(sei);
+
+      sei.status = status;
+      sei.classObjectRef = classObjectRef;
+
+      return sei;
+    }
+
+    /** for debugging purposes
+    public boolean equals(Object o){
+      if (o instanceof SEIMemento){
+        SEIMemento other = (SEIMemento)o;
+        if (!super.equals(o)) return false;
+        if (classObjectRef != other.classObjectRef) return false;
+        if (status != other.status) return false;
+        return true;
+      }
+      return false;
+    }
+    public String toString() {
+      return "SEIMemento {{" +super.toString() + "},classObjRef="+classObjectRef+",status="+status+"}";
+    }
+    **/
+  }
 
   public StaticElementInfo () {
   }
@@ -52,6 +97,10 @@ public final class StaticElementInfo extends ElementInfo {
 
   public Memento<ElementInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
+  }
+
+  public Memento<ElementInfo> getMemento(){
+    return new SEIMemento(this);
   }
 
   @Override

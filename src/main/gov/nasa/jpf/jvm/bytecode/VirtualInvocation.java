@@ -37,9 +37,6 @@ public abstract class VirtualInvocation extends InstanceInvocation {
 
   ClassInfo lastCalleeCi; // cached for performance
 
-  private boolean m_skipLocalSync;      // Can't store this in a static since there might be multiple VM instances.
-  private boolean m_skipLocalSyncSet;
-
   protected VirtualInvocation () {}
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
@@ -93,20 +90,11 @@ public abstract class VirtualInvocation extends InstanceInvocation {
    * For example, this object isn't reachable by other threads.
    */
   protected boolean isShared(ThreadInfo ti, ElementInfo ei) {
-    if (!getSkipLocalSync(ti)){
+    if (!ti.skipLocalSync()){
       return true;
     }
     //return ei.isShared();
     return ei.checkUpdatedSchedulingRelevance(ti);
-  }
-
-  private boolean getSkipLocalSync(ThreadInfo ti) {
-    if (!m_skipLocalSyncSet) {
-      m_skipLocalSync = ti.getVM().getConfig().getBoolean("vm.por.skip_local_sync", false); // Default is false to keep original behavior.
-      m_skipLocalSyncSet = true;
-    }
-
-    return m_skipLocalSync;
   }
 
   public MethodInfo getInvokedMethod(ThreadInfo ti){

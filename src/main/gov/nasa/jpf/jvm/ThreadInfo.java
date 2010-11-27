@@ -211,7 +211,44 @@ public class ThreadInfo
   int lockRef = -1;
 
 
-  Memento<ThreadInfo> memento; // cache for unchanged ThreadInfos
+  Memento<ThreadInfo> cachedMemento; // cache for unchanged ThreadInfos
+
+
+  static class TiMemento implements Memento<ThreadInfo> {
+    // we have to preserve ThreadInfo identities.
+    // If we ever want to avoid storing direct references, we would use
+    // ThreadInfo.getThreadInfo(threadData.objref) to retrieve the ThreadInfo
+    ThreadInfo ti;
+
+    ThreadData threadData;
+    StackFrame top;
+    int stackDepth;
+
+    TiMemento (ThreadInfo ti){
+      this.ti = ti;
+      threadData = ti.threadData;  // no need to clone - it's copy on first write
+      top = ti.top; // likewise
+      stackDepth = ti.stackDepth; // we just copy this for efficiency reasons
+
+      for (StackFrame frame = top; frame != null && frame.hasChanged(); frame = frame.getPrevious()){
+        frame.setChanged(false);
+      }
+      ti.markUnchanged();
+    }
+
+    public ThreadInfo restore(ThreadInfo ignored) {
+      ti.resetVolatiles();
+
+      ti.threadData = threadData;
+      ti.top = top;
+      ti.stackDepth = stackDepth;
+
+      ti.markUnchanged();
+
+      return ti;
+    }
+  }
+
 
   /**
    * this is where we keep ThreadInfos, indexed by their java.lang.Thread objRef, to
@@ -244,6 +281,8 @@ public class ThreadInfo
    */
   static boolean porSyncDetection;
 
+  static boolean porSkipLocalSync;
+
   static int checkBudgetCount;
 
   static boolean init (Config config) {
@@ -257,6 +296,7 @@ public class ThreadInfo
     porFieldBoundaries = porInEffect && config.getBoolean("vm.por.field_boundaries");
     porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
     checkBudgetCount = config.getInt("vm.budget.check_count", 9999);
+    porSkipLocalSync = config.getBoolean("vm.por.skip_local_sync", false);
 
     return true;
   }
@@ -282,7 +322,20 @@ public class ThreadInfo
     return factory.getMemento(this);
   }
 
-  
+  public Memento<ThreadInfo> getMemento(){
+    return new TiMemento(this);
+  }
+
+  //--- cached mementos are only supposed to be accessed from the Restorer
+
+  public Memento<ThreadInfo> getCachedMemento(){
+    return cachedMemento;
+  }
+
+  public void setCachedMemento(Memento<ThreadInfo> memento){
+    cachedMemento = memento;
+  }
+
   public static ThreadInfo getMainThread () {
     return mainThread;
   }
@@ -1885,6 +1938,9 @@ public class ThreadInfo
     return nextPc;
   }
 
+  public boolean skipLocalSync(){
+    return porSkipLocalSync;
+  }
 
   /**
    * is this after calling Instruction.execute()

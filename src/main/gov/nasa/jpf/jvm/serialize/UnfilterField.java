@@ -16,36 +16,28 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.jvm.abstraction.filter;
+package gov.nasa.jpf.jvm.serialize;
 
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
 /**
- * USE CAREFULLY - Indicates that the stack frame of a method should not,
- * in specified ways, be considered during state matching.
- * 
- * This can easily cause the search to be cut off even though the VM has made
- * progress, so USE WISELY!
- * 
+ * Indicates that a field in the model SHOULD BE considered during
+ * state matching, even if other (prior) configuration would filter it.
  * @author peterd
  */
-@Target({ElementType.METHOD})
-public @interface FilterFrame {
+@Target({ElementType.FIELD})
+public @interface UnfilterField {
   /**
-   * True means locals (incl. parameters) and operand stack will be filtered.
+   * If not the empty string, specifies a property that must be "true" to
+   * activate unfiltering--unless <code>invert</code> is set.
    */
-  boolean filterData() default true;
-
+  String condition() default "";
+  
   /**
-   * True means the location of the next instruction will be filtered.
+   * If set to <code>true</code>, property must be "false" to activate
+   * unfiltering. Does nothing if <code>condition</code> is empty string.
    */
-  boolean filterPC() default true;
-
-  /**
-   * True means frames below this one will not appear at all in the abstracted
-   * state.
-   */
-  boolean filterSubframes() default true;
+  boolean invert() default false;
 }

@@ -25,7 +25,26 @@ import gov.nasa.jpf.JPFException;
  * DynamicElementInfo objects represent heap objects
  * @see gov.nasa.jpf.jvm.ElementInfo
  */
-public final class DynamicElementInfo extends ElementInfo {
+public final class DynamicElementInfo extends ElementInfo implements Restorable<ElementInfo> {
+
+  // our default memento implementation
+  static class DEIMemento extends EIMemento<DynamicElementInfo> {
+    DEIMemento (DynamicElementInfo ei) {
+      super(ei);
+    }
+
+    @Override
+    public ElementInfo restore (ElementInfo ei){
+      DynamicElementInfo dei = (ei != null) ? (DynamicElementInfo) ei : get();
+      if (dei == null){
+        dei = new DynamicElementInfo();
+      }
+
+      super.restore(dei);
+      return dei;
+    }
+  }
+
 
   public DynamicElementInfo () {
   }
@@ -38,6 +57,10 @@ public final class DynamicElementInfo extends ElementInfo {
 
   public Memento<ElementInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
+  }
+
+  public Memento<ElementInfo> getMemento(){
+    return new DEIMemento(this);
   }
 
   protected void markAreaChanged(){

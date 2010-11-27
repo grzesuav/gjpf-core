@@ -1,4 +1,4 @@
-package gov.nasa.jpf.jvm.abstraction.filter;
+package gov.nasa.jpf.jvm.serialize;
 
 
 public class IgnoreReflectiveNames extends FieldAmmendmentByName {

@@ -54,6 +54,69 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
    */
   protected final BitSet hasChanged;
 
+  // our default memento implementation
+  static abstract class AreaMemento<A extends Area>  {
+    Memento<ElementInfo>[] liveEI;
+
+    public AreaMemento (A area){
+      int len = area.size();
+      Memento<ElementInfo>[] a = new Memento[len];
+
+      int i=0;
+      // it actually makes sense to use the elements iterator at this point
+      // since this happens after gc, i.e. there is a good chance that the
+      // area got fragmented again
+      for (ElementInfo ei : (Iterable<ElementInfo>)area.elements()){
+        Memento<ElementInfo> m = null;
+        if (!ei.hasChanged()){
+          m = ei.cachedMemento;
+        }
+        if (m == null){
+          m = ei.getMemento();
+          ei.cachedMemento = m;
+        }
+        a[i++] = m;
+      }
+
+      area.markUnchanged();
+      liveEI = a;
+    }
+
+    public A restore(A area) {
+      ObjVector<ElementInfo> e = area.elements;
+      Memento<ElementInfo>[] a = liveEI;
+      int len = a.length;
+
+      area.resetVolatiles();
+
+      int index = -1;
+      int lastIndex = -1;
+      for (int i=0; i<len; i++){
+        Memento<ElementInfo> m = a[i];
+        // ElementInfo mementos are Softreferences, so we don't need to get the
+        // restore-index upfront in order to retrieve the right inSitu object
+        ElementInfo ei = m.restore(null);
+
+        index = ei.getIndex();
+
+        area.removeRange(lastIndex+1, index);
+        lastIndex = index;
+
+        ei.cachedMemento = m;
+        e.set(index,ei);
+      }
+
+      if (index >= 0){
+        area.removeAllFrom(index+1);
+      }
+
+      area.nElements = len;
+      area.restoreVolatiles();
+      area.markUnchanged();
+
+      return area;
+    }
+  }
 
   /**
    * support for iterators that return all allocated objects, so that

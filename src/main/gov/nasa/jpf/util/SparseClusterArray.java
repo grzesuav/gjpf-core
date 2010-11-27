@@ -677,7 +677,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
       int base = c.base;
       int i=-1;
       while ((i=c.nextSetBit(i+1)) >= 0) {
-        Object val = transformer.transform((E)c.elements[i]);
+        Object val = transformer.transform(c.elements[i]);
         values[j] = val;
         indices[j] = base + i;
 
@@ -689,7 +689,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
   }
 
   @SuppressWarnings("unchecked")
-  public <T> void restoreSnapshot (Snapshot<E,T> snap, Transformer<E,T> transformer) {
+  public <T> void restoreSnapshot (Snapshot<E,T> snap, Transformer<T,E> transformer) {
     // <2do> - there are more efficient ways to restore small changes,
     // but since snapshot elements are ordered it should be reasonably fast
     clear();
@@ -699,7 +699,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
     int len = indices.length;
 
     for (int i=0; i<len; i++){
-      E obj = transformer.restore(values[i]);
+      E obj = transformer.transform(values[i]);
       int index = indices[i];
 
       set(index,obj);

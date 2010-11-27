@@ -128,7 +128,7 @@ public class SystemState {
   // garbage, which in turn can slow down the system considerably (heap size)
   // by setting 'nAllocGCThreshold', we can do sync. on-the-fly gc when the
   // number of new allocs within a single transition exceeds this value
-  int maxAllocPerGC;
+  int maxAllocGC;
   int nAlloc;
   
   RANDOMIZATION randomization = RANDOMIZATION.def;
@@ -175,7 +175,10 @@ public class SystemState {
     }
     
     
-    maxAllocPerGC = config.getInt("vm.max_alloc_gc", Integer.MAX_VALUE);
+    maxAllocGC = config.getInt("vm.max_alloc_gc", Integer.MAX_VALUE);
+    if (maxAllocGC <= 0){
+      maxAllocGC = Integer.MAX_VALUE;
+    }
 
     // recordSteps is set later by VM, first we need a reporter (which requires the VM)
   }
@@ -545,13 +548,13 @@ public class SystemState {
   }
 
   /**
-   * check if number of allocations since last GC exceed the maxAllocPerGC
+   * check if number of allocations since last GC exceed the maxAllocGC
    * threshold, perform on-the-fly GC if yes. This is aimed at avoiding a lot
    * of short-living garbage in long transitions, which slows down the heap
    * exponentially
    */
   public void checkGC () {
-    if (nAlloc++ > maxAllocPerGC){
+    if (nAlloc++ > maxAllocGC){
       gcIfNeeded();
     }
   }

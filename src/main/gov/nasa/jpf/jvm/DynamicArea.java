@@ -84,6 +84,19 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   // the gc in order to clean up
   boolean liveBitValue;
 
+
+  static class DAMemento extends AreaMemento<DynamicArea> implements Memento<Heap>{
+    DAMemento (DynamicArea area){
+      super(area);
+    }
+
+    public Heap restore (Heap heap){
+      // not very typesafe
+      return super.restore((DynamicArea)heap);
+    }
+  }
+
+
   /**
    * Creates a new empty dynamic area.
    */
@@ -118,6 +131,10 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
 
   public Memento<Heap> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
+  }
+
+  public Memento<Heap> getMemento(){
+    return new DAMemento(this);
   }
 
   /**

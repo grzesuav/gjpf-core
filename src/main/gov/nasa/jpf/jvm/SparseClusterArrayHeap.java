@@ -74,6 +74,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
   // this is set to false upon backtrack/restore
   protected boolean liveBitValue;
 
+
   public static class Snapshot<T> extends SparseClusterArray.Snapshot<ElementInfo,T> {
     int attributes;
     IntVector pinDownList;
@@ -83,6 +84,46 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
       super(size);
     }
   }
+
+  static Transformer<ElementInfo,Memento<ElementInfo>> ei2mei = new Transformer<ElementInfo,Memento<ElementInfo>>(){
+    public Memento<ElementInfo> transform (ElementInfo ei){
+      Memento<ElementInfo> m = null;
+      if (!ei.hasChanged()) {
+        m = ei.cachedMemento;
+      }
+      if (m == null) {
+        m = ei.getMemento();
+        ei.cachedMemento = m;
+      }
+      return m;
+    }
+  };
+
+  static Transformer<Memento<ElementInfo>,ElementInfo> mei2ei = new Transformer<Memento<ElementInfo>,ElementInfo>(){
+    public ElementInfo transform(Memento<ElementInfo> m) {
+      ElementInfo ei = m.restore(null);
+      ei.cachedMemento = m;
+      return ei;
+    }
+  };
+
+  // our default memento implementation
+  static class SCAMemento implements Memento<Heap> {
+    SparseClusterArrayHeap.Snapshot<Memento<ElementInfo>> snap;
+
+    SCAMemento(SparseClusterArrayHeap sca) {
+      snap = sca.getSnapshot(ei2mei);
+      sca.markUnchanged();
+    }
+
+    public Heap restore(Heap inSitu) {
+      SparseClusterArrayHeap sca = (SparseClusterArrayHeap)inSitu;
+      sca.restoreSnapshot(snap, mei2ei);
+      return sca;
+    }
+
+  }
+
 
   public SparseClusterArrayHeap (Config config, KernelState ks){
     vm = JVM.getVM();
@@ -121,7 +162,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     return snap;
   }
 
-  public <T> void restoreSnapshot (Snapshot<T> snap, Transformer<ElementInfo,T> transformer){
+  public <T> void restoreSnapshot (Snapshot<T> snap, Transformer<T,ElementInfo> transformer){
     super.restoreSnapshot(snap, transformer);
 
     pinDownList = snap.pinDownList;
@@ -467,6 +508,10 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
 
   public Memento<Heap> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
+  }
+
+  public Memento<Heap> getMemento(){
+    return new SCAMemento(this);
   }
 
 
