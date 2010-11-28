@@ -27,7 +27,6 @@ import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.JenkinsStateSet;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ReferenceProcessor;
 import gov.nasa.jpf.jvm.StackFrame;

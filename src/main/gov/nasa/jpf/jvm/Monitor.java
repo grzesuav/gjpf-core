@@ -41,8 +41,8 @@ public class Monitor {
   private int lockCount;
   
   /** 
-   * the list of threads that try to acquire the lock (can be in blocked, waiting or 
-   * running state).
+   * the list of threads that try to acquire the lock (can be in blocked, waiting,
+   * interrupted or running state).
    */
   ThreadInfo[] lockedThreads;
 
@@ -199,29 +199,105 @@ public class Monitor {
 
     return false;
   }
-  
-  public ThreadInfo[] getWaitingThreads() {
-    ArrayList<ThreadInfo> list = new ArrayList<ThreadInfo>();
-    
+
+  public int getNumberOfWaitingThreads() {
+    int n=0;
+
     for (ThreadInfo ti : lockedThreads){
       if (ti.isWaiting()){
-        list.add(ti);
+        n++;
       }
     }
-    
-    return list.toArray(new ThreadInfo[list.size()]);
+
+    return n;
   }
 
-  public ThreadInfo[] getBlockedOrWaitingThreads() {
-    ArrayList<ThreadInfo> list = new ArrayList<ThreadInfo>();
-    
+
+  public ThreadInfo[] getWaitingThreads() {
+    int n = getNumberOfWaitingThreads();
+
+    if (n > 0){
+      ThreadInfo[] list = new ThreadInfo[n];
+      int i=0;
+      for (int j=0; j<lockedThreads.length && i<n; j++){
+        ThreadInfo ti = lockedThreads[j];
+        if (ti.isWaiting()){
+          list[i++] = ti;
+        }
+      }
+
+      return list;
+
+    } else {
+      return emptySet;
+    }
+  }
+
+  public int getNumberOfBlockedThreads() {
+    int n=0;
+
     for (ThreadInfo ti : lockedThreads){
-      if (ti.isWaiting() || ti.isBlocked()){
-        list.add(ti);
+      if (ti.isBlocked()){
+        n++;
       }
     }
-    
-    return list.toArray(new ThreadInfo[list.size()]);
+
+    return n;
+  }
+
+
+  public ThreadInfo[] getBlockedThreads() {
+    int n = getNumberOfBlockedThreads();
+
+    if (n > 0){
+      ThreadInfo[] list = new ThreadInfo[n];
+      int i=0;
+      for (int j=0; j<lockedThreads.length && i<n; j++){
+        ThreadInfo ti = lockedThreads[j];
+        if (ti.isBlocked()){
+          list[i++] = ti;
+        }
+      }
+
+      return list;
+
+    } else {
+      return emptySet;
+    }
+  }
+
+
+  public int getNumberOfBlockedOrWaitingThreads() {
+    int n=0;
+
+    for (ThreadInfo ti : lockedThreads){
+      if (ti.isBlocked() || ti.isWaiting()){
+        n++;
+      }
+    }
+
+    return n;
+  }
+
+
+  public ThreadInfo[] getBlockedOrWaitingThreads() {
+    int n = getNumberOfBlockedThreads();
+
+    if (n > 0){
+      ThreadInfo[] list = new ThreadInfo[n];
+      int i=0;
+      for (int j=0; j<lockedThreads.length && i<n; j++){
+        ThreadInfo ti = lockedThreads[j];
+        if (ti.isBlocked() || ti.isWaiting()){
+          list[i++] = ti;
+        }
+      }
+
+      return list;
+
+    } else {
+      return emptySet;
+    }
   }
 
   

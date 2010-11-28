@@ -534,6 +534,7 @@ public class ThreadInfo
     State currentState = threadData.state;
     switch (currentState){
       case BLOCKED:
+      case INTERRUPTED: // too late, we are already interrupted
       case NOTIFIED:
         // can happen in a Thread.join()
         break;
@@ -2157,7 +2158,6 @@ public class ThreadInfo
   }
 
   public void interrupt () {
-
     ElementInfo eiThread = getElementInfo(getThreadObjectRef());
 
     State status = getState();
@@ -2774,7 +2774,7 @@ public class ThreadInfo
   }
 
   public String toString() {
-    return "ThreadInfo [name=" + getName() + ",index=" + index + ']';
+    return "ThreadInfo [name=" + getName() + ",index=" + index + ",state=" + getStateName() + ']';
   }
 
   void setDaemon (boolean isDaemon) {

@@ -75,7 +75,6 @@ public class StackFrame implements Constants, Cloneable {
 
   protected MethodInfo mi;              /** which method is executed in this frame */
 
-  protected boolean isPooled; /** has this instance been pooled (this is NOT cloned, hashed or compared) */
   protected boolean changed;
 
   /**

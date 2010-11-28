@@ -114,7 +114,7 @@ public class CGNotificationTest extends TestJPF {
       String[] expected = {
         "registered root",
         "set root",
-        "advance root ThreadInfo [name=main,index=0]",
+        "advance root ThreadInfo [name=main,index=0,state=RUNNING]",
         "registered verifyGetBoolean",
         "set verifyGetBoolean",
         "advance verifyGetBoolean false",

@@ -422,12 +422,9 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
           nThreadRefs--;
         }
       }
-
-//System.out.println("@@ check " + (nThreadRefs > 1) + " from " + tid + " of " + this + " : " + refTid);
       return (nThreadRefs > 1);
 
     } else { // only one referencing thread
-//System.out.println("@@ check false from " + tid + " of " + this + " : " + refTid);
       return false;
     }
   }
@@ -1082,6 +1079,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return monitor.hasWaitingThreads();
   }
 
+  public ThreadInfo[] getBlockedThreads() {
+    return monitor.getBlockedThreads();
+  }
+
   public ThreadInfo[] getBlockedOrWaitingThreads() {
     return monitor.getBlockedOrWaitingThreads();
   }
@@ -1353,15 +1354,17 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   
   
   private void notifies0 (ThreadInfo tiWaiter){
-    if (tiWaiter.getLockCount() > 0) {
-      // waiter did hold the lock, but gave it up in the wait,  so it can't run yet
-      tiWaiter.setNotifiedState();
+    if (tiWaiter.isWaiting()){
+      if (tiWaiter.getLockCount() > 0) {
+        // waiter did hold the lock, but gave it up in the wait,  so it can't run yet
+        tiWaiter.setNotifiedState();
 
-    } else {
-      // waiter didn't hold the lock, set it running
-      setMonitorWithoutLocked(tiWaiter);
-      tiWaiter.resetLockRef();
-      tiWaiter.setRunning();
+      } else {
+        // waiter didn't hold the lock, set it running
+        setMonitorWithoutLocked(tiWaiter);
+        tiWaiter.resetLockRef();
+        tiWaiter.setRunning();
+      }
     }
   }
 
@@ -1409,6 +1412,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
     ThreadInfo[] locked = monitor.getLockedThreads();
     for (int i=0; i<locked.length; i++) {
+      // !!!! if there is more than one BLOCKED thread (sync call or monitor enter), only one can be
+      // unblocked
       notifies0(locked[i]);
     }
 

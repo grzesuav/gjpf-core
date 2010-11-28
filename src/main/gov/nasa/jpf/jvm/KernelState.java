@@ -152,11 +152,6 @@ public class KernelState implements Restorable<KernelState> {
     return threads.length();
   }
 
-  @Deprecated
-  public ThreadInfo getThreadInfo (int index) {
-    return threads.get(index);
-  }
-
   public void gc () {
         
     heap.gc();

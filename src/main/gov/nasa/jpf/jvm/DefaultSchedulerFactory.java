@@ -220,7 +220,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   }
 
   public ChoiceGenerator<ThreadInfo> createNotifyAllCG (ElementInfo ei, ThreadInfo ti) {
-    return null; // no nondeterminism here, left mover
+    return null; // no choice here
   }
 
   public ChoiceGenerator<ThreadInfo> createSharedFieldAccessCG (ElementInfo ei, ThreadInfo ti) {

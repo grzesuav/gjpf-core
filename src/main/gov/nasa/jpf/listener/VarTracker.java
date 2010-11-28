@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.listener;
 
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.jvm.JVM;
@@ -26,6 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 import java.util.ArrayList;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.bytecode.VariableAccessor;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,6 +40,11 @@ import gov.nasa.jpf.jvm.bytecode.ArrayStoreInstruction;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
+import gov.nasa.jpf.report.ConsolePublisher;
+import gov.nasa.jpf.report.Publisher;
+import gov.nasa.jpf.util.MethodSpec;
+import gov.nasa.jpf.util.StringSetMatcher;
+import java.io.PrintWriter;
 
 
 /**
@@ -44,62 +52,77 @@ import gov.nasa.jpf.jvm.bytecode.ALOAD;
  * changed how often and from where. This should give a good idea if a state
  * space blows up because of some counter/timer vars, and where to apply the
  * necessary abstractions to close/shrink it
+ *
  */
 public class VarTracker extends ListenerAdapter {
-  
-  int changeThreshold = 1;
-  boolean filterSystemVars = false;
-  String classFilter = null;
+
+  // our matchers to determine which variables we have to report
+  StringSetMatcher includeVars = null; //  means all
+  StringSetMatcher excludeVars = null; //  means none
+
+  // filter methods from which access happens
+  MethodSpec methodSpec;
+
+  int maxVars; // maximum number of variables shown
   
   ArrayList<VarChange> queue = new ArrayList<VarChange>();
   ThreadInfo lastThread;
   HashMap<String, VarStat> stat = new HashMap<String, VarStat>();
   int nStates = 0;
   int maxDepth;
-  
-  void print (int n, int length) {
+
+
+  public VarTracker (Config config, JPF jpf){
+
+    includeVars = StringSetMatcher.getNonEmpty(config.getStringArray("vt.include"));
+    excludeVars = StringSetMatcher.getNonEmpty(config.getStringArray("vt.exclude",
+            new String[] {"java.*", "javax.*"} ));
+
+    maxVars = config.getInt("vt.max_vars", 25);
+
+    methodSpec = MethodSpec.createMethodSpec(config.getString("vt.methods", "!java.*.*"));
+
+    jpf.addPublisherExtension(ConsolePublisher.class, this);
+  }
+
+  public void publishPropertyViolation (Publisher publisher) {
+    PrintWriter pw = publisher.getOut();
+    publisher.publishTopicStart("field access ");
+
+    report(pw);
+  }
+
+  void print (PrintWriter pw, int n, int length) {
     String s = Integer.toString(n);
     int l = length - s.length();
     
     for (int i=0; i<l; i++) {
-      System.out.print(' ');
+      pw.print(' ');
     }
     
-    System.out.print(s);
+    pw.print(s);
   }
   
-  void report (String message) {
-    System.out.println("VarTracker results:");
-    System.out.println("           states:        " + nStates);
-    System.out.println("           max depth:     " + maxDepth);
-    System.out.println("           term reason:   " + message);
-    System.out.println();
-    System.out.println("           minChange:     " + changeThreshold);
-    System.out.println("           filterSysVars: " + filterSystemVars);
-    
-    if (classFilter != null) {
-      System.out.println("           classFilter:   " + classFilter);
-    }
-    
-    System.out.println();
-    System.out.println("      change    variable");
-    System.out.println("---------------------------------------");
+  void report (PrintWriter pw) {
+    pw.println();
+    pw.println("      change    variable");
+    pw.println("---------------------------------------");
     
     Collection<VarStat> values = stat.values();
     List<VarStat> valueList = new ArrayList<VarStat>();
     valueList.addAll(values);
     Collections.sort(valueList);
-    
+
+    int n = 0;
     for (VarStat s : valueList) {
-      int n = s.getChangeCount();
       
-      if (n < changeThreshold) {
+      if (n++ > maxVars) {
         break;
       }
       
-      print(s.nChanges, 12);
-      System.out.print("    ");
-      System.out.println(s.id);
+      print(pw, s.nChanges, 12);
+      pw.print("    ");
+      pw.println(s.id);
     }
   }
   
@@ -133,21 +156,7 @@ public class VarTracker extends ListenerAdapter {
     queue.clear();
   }
   
-  
-  public void propertyViolated(Search search) {
-    report("property violated");
-  }
-    
-  public void searchConstraintHit(Search search) {
-    report("search constraint hit");
-    
-    System.exit(0); // just for now, quick hack
-  }
-  
-  public void searchFinished(Search search) {
-    report("search finished");
-  }
-    
+      
   public void instructionExecuted(JVM jvm) {
     Instruction insn = jvm.getLastInstruction();
     ThreadInfo ti = jvm.getLastThreadInfo();
@@ -190,29 +199,25 @@ public class VarTracker extends ListenerAdapter {
         varId = ((VariableAccessor)insn).getVariableId();
       }
       
-      if (filterChange(varId)) {
+      if (isMethodRelevant(insn.getMethodInfo()) && isVarRelevant(varId)) {
         queue.add(new VarChange(varId));
         lastThread = ti;
       }
     }
   }
-  
-  boolean filterChange (String varId) {
-    
-    // filter based on the field owner
-    if (filterSystemVars) {
-      if (varId.startsWith("java.")) return false;
-      if (varId.startsWith("javax.")) return false;
-      if (varId.startsWith("sun.")) return false;
-    }
-    
-    // yes, it's a bit simplistic for now..
-    if ((classFilter != null) && (!varId.startsWith(classFilter))) {
+
+  boolean isMethodRelevant (MethodInfo mi){
+    return methodSpec.matches(mi);
+  }
+
+  boolean isVarRelevant (String varId) {
+    if (!StringSetMatcher.isMatch(varId, includeVars, excludeVars)){
       return false;
     }
     
     // filter subsequent changes in the same transition (to avoid gazillions of
     // VarChanges for loop variables etc.)
+    // <2do> this is very inefficient - improve
     for (int i=0; i<queue.size(); i++) {
       VarChange change = queue.get(i);
       if (change.getVariableId().equals(varId)) {
@@ -222,40 +227,6 @@ public class VarTracker extends ListenerAdapter {
     
     return true;
   }
-  
-  
-  void filterArgs (String[] args) {
-    for (int i=0; i<args.length; i++) {
-      if (args[i] != null) {
-        if (args[i].equals("-noSystemVars")) {
-          filterSystemVars = true;
-          args[i] = null;
-        } else if (args[i].equals("-minChange")) {
-          args[i++] = null;
-          if (i < args.length) {
-            changeThreshold = Integer.parseInt(args[i]);
-            args[i] = null;
-          }
-        } else if (args[i].equals("-classFilter")) {
-          args[i++] = null;
-          if (i < args.length) {
-            classFilter = args[i];
-            args[i] = null;
-          }
-        }
-      }
-    }
-  }
-  
-  static void printUsage () {
-    System.out.println("VarTracker - a JPF listener tool to report how often variables changed");
-    System.out.println("             at least once in every state (to detect state space holes)");
-    System.out.println("usage: java gov.nasa.jpf.tools.VarTracker <jpf-options> <varTracker-options> <class>");
-    System.out.println("       -noSystemVars : don't report system variable changes (java*)");
-    System.out.println("       -minChange <num> : don't report variables with less than <num> changes");
-    System.out.println("       -classFilter <string> : only report changes in classes starting with <string>");
-  }
-  
 }
 
 // <2do> expand into types to record value ranges

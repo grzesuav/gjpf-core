@@ -35,6 +35,8 @@ import java.util.BitSet;
  *   "x.y.Foo.*"
  *   "java.util.HashMap.add(java.lang.Object,^java.lang.Object)"
  *   "*.*(x.y.MyClass)"
+ *
+ * <2do> we should extend this to allow alternatives
  */
 public class MethodSpec extends FeatureSpec {
 
@@ -131,8 +133,10 @@ public class MethodSpec extends FeatureSpec {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("MethodSpec {");
+    sb.append("matchInverted:");
+    sb.append(matchInverted);
     if (clsSpec != null){
-      sb.append("clsSpec:\"");
+      sb.append(",clsSpec:\"");
       sb.append(clsSpec);
       sb.append('"');
     }
@@ -175,23 +179,26 @@ public class MethodSpec extends FeatureSpec {
   }
 
   public boolean matches (MethodInfo mi){
+    boolean isMatch = false;
     ClassInfo ci = mi.getClassInfo();
 
     if (isMatchingType(ci)){
       if (nameSpec.matches(mi.getName())){
-        boolean isMatch = false;
         if (sigSpec != null){
           // sigSpec includes '(',')' but not return type
           isMatch = mi.getSignature().startsWith(sigSpec);
         } else { // no sigSpec -> matches all signatures
           isMatch = true;
         }
-
-        return isMatch != matchInverted;
       }
     }
 
-    return false;
+    return isMatch != matchInverted;
+  }
+
+  public boolean matches (String clsName, String mthName){
+    boolean isMatch = clsSpec.matches(clsName) && nameSpec.matches(mthName);
+    return isMatch != matchInverted;
   }
 
   //--- testing & debugging
@@ -218,5 +225,11 @@ public class MethodSpec extends FeatureSpec {
 
     ms = createMethodSpec("*.foo(^int, ^double");
     System.out.println(ms);
+
+    ms = createMethodSpec("!java.*.*");
+    System.out.println(ms);
+    System.out.println("matches (java.lang.Object,*): " +
+            ms.matches("java.lang.Object", "*"));
+
   }
 }

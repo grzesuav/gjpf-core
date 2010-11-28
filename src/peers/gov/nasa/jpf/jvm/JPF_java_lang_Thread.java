@@ -383,8 +383,8 @@ public class JPF_java_lang_Thread {
     case WAITING:            return 5;
     case TIMEOUT_WAITING:    return 4;
     case SLEEPING:           return 4;
-    case NOTIFIED:           return 2;
-    case INTERRUPTED:        return 2;
+    case NOTIFIED:           return 0;
+    case INTERRUPTED:        return 0;
     case TIMEDOUT:           return 2;
     case TERMINATED:         return 3;
     default:

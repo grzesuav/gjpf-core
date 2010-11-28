@@ -1425,10 +1425,6 @@ public class JVM {
       } else {
         // config read only if serializer is not also a restorer
         restorer = config.getInstance("vm.restorer.class", StateRestorer.class);
-        if (serializer instanceof IncrementalChangeTracker &&
-            restorer instanceof IncrementalChangeTracker) {
-          config.throwException("Incompatible serializer and restorer!");
-        }
       }
       restorer.attach(this);
     }
