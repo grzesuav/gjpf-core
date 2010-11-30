@@ -119,21 +119,218 @@ public final class IntVector implements Comparable<IntVector>, Cloneable {
     size = newSize;
   }
 
-  public void append(int[] x) {
-    if (size + x.length > data.length) {
-      ensureCapacity(size + x.length);
+  public void append(int[] a) {
+    int newSize = size + a.length;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
     }
-    System.arraycopy(x, 0, data, size, x.length);
-    size += x.length;
+    System.arraycopy(a, 0, data, size, a.length);
+    size = newSize;
   }
-  
+
   public void append(int[] x, int pos, int len) {
-    if (size + len > data.length) {
-      ensureCapacity(size + len);
+    int newSize = size + len;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
     }
     System.arraycopy(x, pos, data, size, len);
-    size += len;
+    size = newSize;
   }
+
+  public void append(boolean[] a){
+    int newSize = size + a.length;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
+    }
+    for (int i = size; i < newSize; i++) {
+      data[i] = a[i] ? 1 : 0;
+    }
+    size = newSize;
+  }
+
+  public void appendPacked(boolean[] a){
+    int len = (a.length+31) >> 5;  // new data length, 32 booleans per word
+    int n = a.length >> 5; // number of full data words
+    int len1 = n << 5;
+    int rem = a.length % 32;
+
+    int newSize = size + len;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
+    }
+
+    int k=size;
+    int x=0;
+    int i=0;
+    while (i<len1){ // store full data words
+      x = a[i++] ? 1 : 0;
+      for (int j=1; j<32; j++){
+        x <<= 1;
+        if (a[i++]){
+          x |= 1;
+        }
+      }
+      data[k++] = x;
+    }
+
+    if (rem > 0) { // store partial word
+      if (i>0){
+        x = a[i-1] ? 1 : 0;
+      } else {
+        x = a[i++] ? 1 : 0;
+      }
+      while (i < a.length) {
+        x <<= 1;
+        if (a[i++]) {
+          x |= 1;
+        }
+      }
+      x <<= (32-rem);
+      data[k] = x;
+    }
+
+    size = newSize;
+  }
+
+  public void appendPacked(byte[] a){
+    int len = (a.length+3)/4;  // new data length, 4 bytes per word
+    int n = a.length >> 2; // number of full data words
+    int len1 = n << 2;
+
+    int newSize = size + len;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
+    }
+
+    int j=0;
+    int k=size;
+    int x;
+    while (j<len1){
+      x = a[j++] & 0xff;  x <<= 8;
+      x |= a[j++] & 0xff; x <<= 8;
+      x |= a[j++] & 0xff; x <<= 8;
+      x |= a[j++] & 0xff;
+      data[k++] = x;
+    }
+
+    switch (a.length % 4){
+      case 0:
+        break;
+      case 1:
+        data[k] = (a[j] << 24);
+        break;
+      case 2:
+        x = a[j++] & 0xff;  x <<= 8;
+        x |= (int)a[j] & 0xff;   x <<= 16;
+        data[k] = x;
+        break;
+      case 3:
+        x = a[j++] & 0xff;  x <<= 8;
+        x |= a[j++] & 0xff; x <<= 8;
+        x |= a[j] & 0xff;   x <<= 8;
+        data[k] = x;
+        break;
+    }
+
+    size = newSize;
+  }
+
+
+  public void appendPacked(char[] a){
+    int len = (a.length+1)/2;  // new data length, 2 chars per word
+    int n = a.length >> 1; // number of full data words
+    int len1 = n << 1;
+
+    int newSize = size + len;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
+    }
+
+    int j=0;
+    int k=size;
+    while (j<len1){
+      int x = a[j++] & 0xffff;  x <<= 16;
+      x |= a[j++] & 0xffff;
+      data[k++] = x;
+    }
+
+    if (a.length % 2 > 0){
+      data[k] = (a[j] & 0xffff) << 16;
+    }
+
+    size = newSize;
+  }
+
+  public void appendPacked(short[] a){
+    int len = (a.length+1)/2;  // new data length, 2 chars per word
+    int n = a.length >> 1; // number of full data words
+    int len1 = n << 1;
+
+    int newSize = size + len;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
+    }
+
+    int j=0;
+    int k=size;
+    while (j<len1){
+      int x = a[j++] & 0xffff;  x <<= 16;
+      x |= a[j++] & 0xffff;
+      data[k++] = x;
+    }
+
+    if (a.length % 2 > 0){
+      data[k] = (a[j] & 0xffff) << 16;
+    }
+
+    size = newSize;
+  }
+
+  public void appendRawBits(float[] a){
+    int newSize = size + a.length;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
+    }
+    int k=size;
+    for (int i = 0; i < a.length; i++) {
+      data[k++] = Float.floatToRawIntBits(a[i]);
+    }
+    size = newSize;
+  }
+
+
+  public void appendBits(long[] a){
+    int newSize = size + a.length * 2;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
+    }
+    
+    int k = size;
+    for (int i = 0; i<a.length; i++){
+      long l = a[i];
+      data[k++] = (int) (l >>> 32);
+      data[k++] = (int) (l & 0xffffffff);
+    }
+    
+    size = newSize;    
+  }
+
+  public void appendRawBits(double[] a){
+    int newSize = size + a.length * 2;
+    if (newSize > data.length) {
+      ensureCapacity(newSize);
+    }
+
+    int k = size;
+    for (int i = 0; i<a.length; i++){
+      long l = Double.doubleToRawLongBits(a[i]);
+      data[k++] = (int) (l >>> 32);
+      data[k++] = (int) (l & 0xffffffff);
+    }
+
+    size = newSize;
+  }
+
   
   public void append(IntVector x) {
     if (x == null) return;

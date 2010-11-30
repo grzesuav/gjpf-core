@@ -18,13 +18,46 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
+import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
+
 
 /**
  * Store into reference array
  * ..., arrayref, index, value  => ...
  */
-public class AASTORE extends ArrayStoreInstruction
-{
+public class AASTORE extends ArrayStoreInstruction {
+
+  int value;
+
+  protected void popValue(ThreadInfo ti){
+    value = ti.pop();
+  }
+
+  protected void setField (ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+    ei.checkArrayBounds(index);
+    ei.setReferenceElement(index, value);
+  }
+
+  protected Instruction checkArrayStoreException(ThreadInfo ti, ElementInfo ei){
+    ClassInfo c = ei.getClassInfo();
+
+    if (value != -1) { // no checks for storing 'null'
+      ClassInfo elementCi = ti.getClassInfo(value);
+      ClassInfo arrayElementCi = c.getComponentClassInfo();
+      if (!elementCi.isInstanceOf(arrayElementCi)) {
+        String exception = "java.lang.ArrayStoreException";
+        String exceptionDescription = elementCi.getName();
+        return ti.createAndThrowException(exception, exceptionDescription);
+      }
+    }
+
+    return null;
+  }
+
+
   public int getByteCode () {
     return 0x53;
   }

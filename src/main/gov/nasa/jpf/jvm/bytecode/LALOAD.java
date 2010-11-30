@@ -18,12 +18,23 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
+
 /**
  * Load long from array
  * ..., arrayref, index => ..., value
  */
 public class LALOAD extends LongArrayLoadInstruction {
-  
+
+  protected void push (ThreadInfo ti, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+    ei.checkArrayBounds(index);
+    long value = ei.getLongElement(index);
+    ti.longPush( value);
+  }
+
+
   public int getByteCode () {
     return 0x2F;
   }

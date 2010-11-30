@@ -68,11 +68,11 @@ public class GETSTATIC extends StaticFieldInstruction {
    
     switch (size) {
       case 1:
-        int ival = ei.getIntField(fieldInfo);
+        int ival = ei.get1SlotField(fieldInfo);
         ti.push(ival, fieldInfo.isReference());
         break;
       case 2:
-        long lval = ei.getLongField(fieldInfo);
+        long lval = ei.get2SlotField(fieldInfo);
         ti.longPush(lval);
         break;
       default:

@@ -24,14 +24,9 @@ import org.apache.bcel.classfile.ConstantValue;
 /**
  * type, name, modifier info of float fields
  */
-public class FloatFieldInfo extends FieldInfo {
+public class FloatFieldInfo extends SingleSlotFieldInfo {
   float init;
 
-  @Deprecated
-  public FloatFieldInfo (String name, String type, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-    this(name, type, "", modifiers, cv, ci, idx, off);
-  }
 
   public FloatFieldInfo (String name, String type, String genericSignature, int modifiers,
                           ConstantValue cv, ClassInfo ci, int idx, int off) {
@@ -40,7 +35,7 @@ public class FloatFieldInfo extends FieldInfo {
   }
 
   public void initialize (ElementInfo ei) {
-    ei.getFields().setFloatValue(ei, storageOffset, init);
+    ei.getFields().setFloatValue(storageOffset, init);
   }
 
   public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType() {
@@ -55,5 +50,9 @@ public class FloatFieldInfo extends FieldInfo {
   public Object getValueObject (Fields f){
     float v = f.getFloatValue(storageOffset);
     return new Float(v);
+  }
+
+  public boolean isFloatField(){
+    return true;
   }
 }

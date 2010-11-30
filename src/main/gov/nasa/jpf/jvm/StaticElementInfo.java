@@ -87,8 +87,8 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   public StaticElementInfo () {
   }
 
-  public StaticElementInfo (Fields f, Monitor m, int tid, int classObjRef) {
-    super(f, m, tid);
+  public StaticElementInfo (ClassInfo ci, Fields f, Monitor m, int tid, int classObjRef) {
+    super(ci, f, m, tid);
 
     classObjectRef = classObjRef;
 
@@ -101,6 +101,12 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
 
   public Memento<ElementInfo> getMemento(){
     return new SEIMemento(this);
+  }
+
+  @Override
+  protected int getNumberOfFieldsOrElements(){
+    // static fields can't be arrays, those are always heap objects
+    return ci.getNumberOfStaticFields();
   }
 
   @Override
@@ -141,19 +147,6 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
 
   protected void markAreaChanged(){
     JVM.getVM().getStaticArea().markChanged(index);
-  }
-
-  public void setIntField(FieldInfo fi, int value) {
-    //checkFieldInfo(fi); // in case somebody caches and uses the wrong FieldInfo
-
-    // might not be 'this' class
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-
-    if (!fi.isReference()) {
-      ei.cloneFields().setIntValue(ei, fi.getStorageOffset(), value);
-    } else {
-      throw new JPFException("reference field: " + fi.getName());
-    }
   }
 
   public boolean isShared() {

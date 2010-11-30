@@ -81,7 +81,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
         if (fi.isReference()) {
           ei.setReferenceField(fi, ival);
         } else {
-          ei.setIntField(fi, ival);
+          ei.set1SlotField(fi, ival);
         }
         break;
 
@@ -91,7 +91,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
         long lval = ti.longPop();
         lastValue = lval;
 
-        ei.setLongField(fi, lval);
+        ei.set2SlotField(fi, lval);
         break;
       default:
         throw new JPFException("invalid field type");

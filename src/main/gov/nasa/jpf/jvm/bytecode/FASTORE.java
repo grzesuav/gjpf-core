@@ -18,12 +18,28 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
+
 
 /**
  * Store into float array
  * ..., arrayref, index, value => ...
  */
 public class FASTORE extends ArrayStoreInstruction {
+
+  float value;
+
+  protected void popValue(ThreadInfo ti){
+    value = Float.intBitsToFloat(ti.pop());
+  }
+
+  protected void setField (ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+    ei.checkArrayBounds(index);
+    ei.setFloatElement(index, value);
+  }
+
 
   public int getByteCode () {
     return 0x51;

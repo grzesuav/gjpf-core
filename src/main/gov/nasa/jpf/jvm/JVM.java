@@ -391,7 +391,7 @@ public class JVM {
 
     int threadsRef = heap.newArray("Ljava/lang/Thread;", 4, null);
     ElementInfo eiThreads = heap.get(threadsRef);
-    eiThreads.setElement(0, mainThreadRef);
+    eiThreads.setReferenceElement(0, mainThreadRef);
 
     ei.setReferenceField("threads", threadsRef);
 
@@ -528,7 +528,7 @@ public class JVM {
 
     for (int i = 0; i < args.length; i++) {
       int stringObjref = heap.newString(args[i], null);
-      argsElement.setElement(i, stringObjref);
+      argsElement.setReferenceElement(i, stringObjref);
     }
     ti.setLocalVariable(0, argsObjref, true);
   }

@@ -18,12 +18,21 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
+
 
 /**
  * Load char from array
  * ..., arrayref, index => ..., value
  */
 public class CALOAD extends ArrayLoadInstruction {
+
+  protected void push (ThreadInfo th, ElementInfo e, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+    e.checkArrayBounds(index);
+    th.push( e.getCharElement(index), isReference());
+  }
 
   public int getByteCode () {
     return 0x34;

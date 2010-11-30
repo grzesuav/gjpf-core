@@ -86,6 +86,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   //--- instance fields
 
+  protected ClassInfo       ci;
   protected Fields          fields;
   protected Monitor         monitor;
   
@@ -129,6 +130,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    */
   static public abstract class EIMemento<EI extends ElementInfo> extends SoftReference<EI> implements Memento<ElementInfo> {
     int ref;
+    ClassInfo ci;
     Fields fields;
     Monitor monitor;
     FixedBitSet refTid;
@@ -141,6 +143,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       ei.markUnchanged(); // we don't want any of the change flags
 
       this.ref = ei.index;
+      this.ci = ei.ci;
       this.attributes = ei.attributes;
       this.fields = ei.fields;
       this.monitor = ei.monitor;
@@ -151,6 +154,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
     public ElementInfo restore (ElementInfo ei){
       ei.index = ref;
+      ei.ci = ci;
       ei.attributes = attributes;
       ei.fields = fields;
       ei.monitor = monitor;
@@ -168,6 +172,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       if (o instanceof EIMemento){
         EIMemento other = (EIMemento)o;
         if (ref != other.ref) return false;
+     *  if (ci != other.ci) return false;
         if (fields != other.fields) return false;
         if (monitor != other.monitor) return false;
         if (refTid != other.refTid) return false;
@@ -185,7 +190,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
 
 
-  public ElementInfo(Fields f, Monitor m, int tid) {
+  protected ElementInfo(ClassInfo c, Fields f, Monitor m, int tid) {
+    ci = c;
     fields = f;
     monitor = m;
 
@@ -194,13 +200,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     refTid = new BitSet64(tid);
 
     // attributes are set in the concrete type ctors
-  }
-
-  protected ElementInfo( Fields f, Monitor m, int ref, int a) {
-    fields = f;
-    monitor = m;
-    index = ref;
-    attributes = a;
   }
 
   protected ElementInfo() {
@@ -225,7 +224,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public String toString() {
-    return (getClassInfo().getName() + '@' + index);
+    return (getClassInfo().getName() + '@' + Integer.toHexString(index));
   }
 
   public FieldLockInfo getFieldLockInfo (FieldInfo fi) {
@@ -278,10 +277,9 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   /**
    * do we have a reference field with value objRef?
    */
-  boolean hasRefField(int objRef) {
-    return fields.hasRefField(objRef);
+  public boolean hasRefField (int objRef) {
+    return ci.hasRefField( objRef, fields);
   }
-
   /**
    * BEWARE - never change the returned object without knowing about the
    * ElementInfo change status, this field is state managed!
@@ -334,9 +332,9 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
     if (isArray()) {
       if (fields.isReferenceArray()) {
-        n = fields.arrayLength();
+        n = ((ArrayFields)fields).arrayLength();
         for (i = 0; i < n; i++) {
-          int objref = fields.getIntValue(i);
+          int objref = fields.getReferenceValue(i);
           if (objref != MJIEnv.NULL){
             heap.queueMark( objref);
           }
@@ -468,6 +466,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   
   public void hash(HashData hd) {
+    hd.add(ci.getUniqueId());
     fields.hash(hd);
     monitor.hash(hd);
     hd.add(refTid);
@@ -488,6 +487,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public boolean equals(Object o) {
     if (o != null && o instanceof ElementInfo) {
       ElementInfo other = (ElementInfo) o;
+
+      if (ci != other.ci){
+        return false;
+      }
 
       if (attributes != other.attributes){ // ??
         return false;
@@ -510,7 +513,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public ClassInfo getClassInfo() {
-    return fields.getClassInfo();
+    return ci;
   }
 
   abstract protected FieldInfo getDeclaredFieldInfo(String clsBase, String fname);
@@ -554,13 +557,16 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return fields.hasFieldAttrs(attrType);
   }
 
+  protected abstract int getNumberOfFieldsOrElements();
+
   /**
    * use this version if only the attr has changed, since we won't be able
    * to backtrack otherwise
    */
   public void setFieldAttr (FieldInfo fi, Object attr){
     ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    ei.cloneFields().setFieldAttr(fi.getFieldIndex(), attr);
+    int nFields = getNumberOfFieldsOrElements();
+    ei.cloneFields().setFieldAttr( nFields, fi.getFieldIndex(), attr);
   }
 
   /**
@@ -569,7 +575,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    */
   public void setFieldAttrNoClone (FieldInfo fi, Object attr){
     ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    ei.fields.setFieldAttr(fi.getFieldIndex(), attr);
+    int nFields = getNumberOfFieldsOrElements();
+    ei.fields.setFieldAttr( nFields, fi.getFieldIndex(), attr);
   }
 
   public <T> T getFieldAttr (Class<T> attrType, FieldInfo fi){
@@ -588,11 +595,13 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * this sets an attribute for the field with index 'idx'
    */
   public void setElementAttr (int idx, Object attr){
-    cloneFields().setFieldAttr(idx, attr);
+    int nElements = getNumberOfFieldsOrElements();
+    cloneFields().setFieldAttr( nElements, idx, attr);
   }
 
   public void setElementAttrNoClone (int idx, Object attr){
-    fields.setFieldAttr(idx, attr);
+    int nElements = getNumberOfFieldsOrElements();
+    fields.setFieldAttr(nElements,idx, attr);
   }
 
   public <T> T getElementAttr (Class<T> attrType, int idx){
@@ -604,8 +613,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return fields.getFieldAttr(idx);
   }
 
-  public abstract void setIntField(FieldInfo fi, int value);
-
   public void setDeclaredIntField(String fname, String clsBase, int value) {
     setIntField(getDeclaredFieldInfo(clsBase, fname), value);
   }
@@ -613,14 +620,31 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public void setBooleanField (String fname, boolean value) {
     setIntField( getFieldInfo(fname), value ? 1 : 0);
   }
-
+  public void setByteField (String fname, byte value) {
+    setByteField( getFieldInfo(fname), value);
+  }
+  public void setCharField (String fname, char value) {
+    setCharField( getFieldInfo(fname), value);
+  }
+  public void setShortField (String fname, short value) {
+    setShortField( getFieldInfo(fname), value);
+  }
   public void setIntField(String fname, int value) {
     setIntField(getFieldInfo(fname), value);
   }
-
-  public void setDoubleField (String fname, double value) {
-    setLongField(fname, Types.doubleToLong(value));
+  public void setLongField (String fname, long value) {
+    setLongField( getFieldInfo(fname), value);
   }
+  public void setFloatField (String fname, float value) {
+    setFloatField( getFieldInfo(fname), value);
+  }
+  public void setDoubleField (String fname, double value) {
+    setDoubleField( getFieldInfo(fname), value);
+  }
+  public void setReferenceField (String fname, int value) {
+    setReferenceField( getFieldInfo(fname), value);
+  }
+
 
   // <2do> we need to tell 'null' values apart from 'no such field'
   public Object getFieldValueObject (String fname) {
@@ -650,64 +674,141 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return null; // only for DynamicElementInfos
   }
 
-/**
+  public void setBooleanField(FieldInfo fi, boolean newValue) {
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
+                                                        // in case of a static
+    if (fi.isBooleanField()) {
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setBooleanValue( offset, newValue);
+    } else {
+      throw new JPFException("not a boolean field: " + fi.getName());
+    }
+  }
+
+  public void setByteField(FieldInfo fi, byte newValue) {
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
+                                                        // in case of a static
+    if (fi.isByteField()) {
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setByteValue( offset, newValue);
+    } else {
+      throw new JPFException("not a byte field: " + fi.getName());
+    }
+  }
+
+  public void setCharField(FieldInfo fi, char newValue) {
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
+                                                        // in case of a static
+    if (fi.isCharField()) {
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setCharValue( offset, newValue);
+    } else {
+      throw new JPFException("not a char field: " + fi.getName());
+    }
+  }
+
+  public void setShortField(FieldInfo fi, short newValue) {
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
+                                                        // in case of a static
+    if (fi.isShortField()) {
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setShortValue( offset, newValue);
+    } else {
+      throw new JPFException("not a short field: " + fi.getName());
+    }
+  }
+
+  public void setIntField(FieldInfo fi, int newValue) {
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
+                                                        // in case of a static
+    if (fi.isIntField()) {
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setIntValue( offset, newValue);
+    } else {
+      throw new JPFException("not an int field: " + fi.getName());
+    }
+  }
+
+  public void setLongField(FieldInfo fi, long newValue) {
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
+                                                        // in case of a static
+    if (fi.isLongField()) {
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setLongValue( offset, newValue);
+    } else {
+      throw new JPFException("not a long field: " + fi.getName());
+    }
+  }
+
+  public void setFloatField(FieldInfo fi, float newValue) {
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
+                                                        // in case of a static
+    if (fi.isFloatField()) {
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setFloatValue( offset, newValue);
+    } else {
+      throw new JPFException("not a float field: " + fi.getName());
+    }
+  }
+
+  public void setDoubleField(FieldInfo fi, double newValue) {
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
+                                                        // in case of a static
+    if (fi.isDoubleField()) {
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setDoubleValue( offset, newValue);
+    } else {
+      throw new JPFException("not a double field: " + fi.getName());
+    }
+  }
+
   public void setReferenceField(FieldInfo fi, int newValue) {
     ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
                                                         // in case of a static
-    Fields f = ei.cloneFields();
-    int offset = fi.getStorageOffset();
-
     if (fi.isReference()) {
-      int oldValue = f.getReferenceValue(offset);
-      f.setReferenceValue(this, offset, newValue);
-
-      Heap heap = JVM.getVM().getHeap();
-      if (isShared()){
-
-        if (newValue != MJIEnv.NULL){
-          ElementInfo nei = heap.get(newValue);
-          nei.addSharedReference(ei);
-        }
-        if (oldValue != MJIEnv.NULL){
-          ElementInfo oei = heap.get(oldValue);
-          oei.removeSharedReference(ei);
-        }
-
-        heap.updateReachability( true, oldValue, newValue);
-      }
-
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setReferenceValue( offset, newValue);
     } else {
       throw new JPFException("not a reference field: " + fi.getName());
     }
   }
-**/
 
-  public void setReferenceField(FieldInfo fi, int newValue) {
+  public void set1SlotField(FieldInfo fi, int newValue) {
     ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
                                                         // in case of a static
-    Fields f = ei.cloneFields();
-    int offset = fi.getStorageOffset();
-
-    if (fi.isReference()) {
-      f.setReferenceValue(this, offset, newValue);
+    if (fi.is1SlotField()) {
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setIntValue( offset, newValue);
     } else {
-      throw new JPFException("not a reference field: " + fi.getName());
+      throw new JPFException("not a 1 slot field: " + fi.getName());
     }
   }
 
-  protected void addSharedReference(ElementInfo refEi){
-    // nothing here
+  public void set2SlotField(FieldInfo fi, long newValue) {
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
+                                                        // in case of a static
+    if (fi.is2SlotField()) {
+      Fields f = ei.cloneFields();
+      int offset = fi.getStorageOffset();
+      f.setLongValue( offset, newValue);
+    } else {
+      throw new JPFException("not a 2 slot field: " + fi.getName());
+    }
   }
-  protected void removeSharedReference(ElementInfo refEi){
-    // nothing here
-  }
+
 
   public void setDeclaredReferenceField(String fname, String clsBase, int value) {
     setReferenceField(getDeclaredFieldInfo(clsBase, fname), value);
-  }
-
-  public void setReferenceField(String fname, int value) {
-    setReferenceField(getFieldInfo(fname), value);
   }
 
   public int getDeclaredReferenceField(String fname, String clsBase) {
@@ -750,7 +851,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public void setDeclaredLongField(String fname, String clsBase, long value) {
     FieldInfo fi = getDeclaredFieldInfo(clsBase, fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    ei.cloneFields().setLongValue(this,fi.getStorageOffset(), value);
+    ei.cloneFields().setLongValue( fi.getStorageOffset(), value);
   }
 
   public long getDeclaredLongField(String fname, String clsBase) {
@@ -850,67 +951,97 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   // those are the cached field value accessors. The caller is responsible
   // for assuring type compatibility
+
+  public boolean getBooleanField(FieldInfo fi) {
+    if (fi.isBooleanField()){
+      return fields.getBooleanValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a boolean field: " + fi.getName());
+    }
+  }
+  public byte getByteField(FieldInfo fi) {
+    if (fi.isByteField()){
+      return fields.getByteValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a byte field: " + fi.getName());
+    }
+  }
+  public char getCharField(FieldInfo fi) {
+    if (fi.isCharField()){
+      return fields.getCharValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a char field: " + fi.getName());
+    }
+  }
+  public short getShortField(FieldInfo fi) {
+    if (fi.isCharField()){
+      return fields.getShortValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a short field: " + fi.getName());
+    }
+  }
   public int getIntField(FieldInfo fi) {
-    checkFieldInfo(fi);
-    return fields.getIntValue(fi.getStorageOffset());
+    if (fi.isIntField()){
+      return fields.getIntValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a int field: " + fi.getName());
+    }
+  }
+  public long getLongField(FieldInfo fi) {
+    if (fi.isLongField()){
+      return fields.getLongValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a long field: " + fi.getName());
+    }
+  }
+  public float getFloatField (FieldInfo fi){
+    if (fi.isFloatField()){
+      return fields.getFloatValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a float field: " + fi.getName());
+    }
+  }
+  public double getDoubleField (FieldInfo fi){
+    if (fi.isDoubleField()){
+      return fields.getDoubleValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a double field: " + fi.getName());
+    }
+  }
+  public int getReferenceField (FieldInfo fi) {
+    if (fi.isReference()){
+      return fields.getReferenceValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a reference field: " + fi.getName());
+    }
   }
 
-  public int getReferenceField (FieldInfo fi) {
-    // the reference is just an 'int' for us
-    return getIntField(fi);
+  public int get1SlotField(FieldInfo fi) {
+    if (fi.is1SlotField()){
+      return fields.getIntValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a 1 slot field: " + fi.getName());
+    }
   }
+  public long get2SlotField(FieldInfo fi) {
+    if (fi.is2SlotField()){
+      return fields.getLongValue(fi.getStorageOffset());
+    } else {
+      throw new JPFException("not a 2 slot field: " + fi.getName());
+    }
+  }
+
 
   abstract ElementInfo getReferencedElementInfo (FieldInfo fi);
 
-  public long getLongField(FieldInfo fi) {
-    checkFieldInfo(fi);
-    return fields.getLongValue(fi.getStorageOffset());
-  }
-
-  public void setLongField(FieldInfo fi, long value) {
-    checkFieldInfo(fi);
-    cloneFields().setLongValue(this,fi.getStorageOffset(), value);
-  }
-
-  public void setLongField(String fname, long value) {
-    setLongField( getFieldInfo(fname), value);
-  }
-
-
-  public double getDoubleField (FieldInfo fi){
-    checkFieldInfo(fi);
-    return fields.getDoubleValue(fi.getStorageOffset());
-
-  }
-
-  public float getFloatField (FieldInfo fi){
-    checkFieldInfo(fi);
-    return fields.getFloatValue(fi.getStorageOffset());
-
-  }
-
-  public boolean getBooleanField (FieldInfo fi){
-    checkFieldInfo(fi);
-    return fields.getBooleanValue(fi.getStorageOffset());
-  }
 
   protected void checkArray(int index) {
-    if (!isArray()) { // <2do> should check for !long array
-      throw new JPFException(
-          "cannot access non array objects by index");
-    }
-    if ((index < 0) || (index >= fields.size())) {
-      throw new JPFException("illegal array offset: " + index);
-    }
-  }
-
-  protected void checkLongArray(int index) {
-    if (!isArray()) { // <2do> should check for !int array
-      throw new JPFException(
-          "cannot access non array objects by index");
-    }
-    if ((index < 0) || (index >= (fields.size() - 1))) {
-      throw new JPFException("illegal long array offset: " + index);
+    if (fields instanceof ArrayFields) { // <2do> should check for !long array
+      if ((index < 0) || (index >= ((ArrayFields)fields).arrayLength())) {
+        throw new JPFException("illegal array offset: " + index);
+      }
+    } else {
+      throw new JPFException("cannot access non array objects by index");
     }
   }
 
@@ -918,29 +1049,79 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return getClassInfo().isReferenceArray();
   }
 
-  // those are not really fields, so treat them differently!
-  public void setElement(int fidx, int value) {
-    checkArray(fidx);
-    if (isReferenceArray()) {
-      cloneFields().setReferenceValue(this, fidx, value);
-    } else {
-      cloneFields().setIntValue(this,fidx, value);
-    }
+  public void setBooleanElement(int idx, boolean value){
+    checkArray(idx);
+    cloneFields().setBooleanValue(idx, value);
+  }
+  public void setByteElement(int idx, byte value){
+    checkArray(idx);
+    cloneFields().setByteValue(idx, value);
+  }
+  public void setCharElement(int idx, char value){
+    checkArray(idx);
+    cloneFields().setCharValue(idx, value);
+  }
+  public void setShortElement(int idx, short value){
+    checkArray(idx);
+    cloneFields().setShortValue(idx, value);
+  }
+  public void setIntElement(int idx, int value){
+    checkArray(idx);
+    cloneFields().setIntValue(idx, value);
+  }
+  public void setLongElement(int idx, long value) {
+    checkArray(idx);
+    cloneFields().setLongValue(idx, value);
+  }
+  public void setFloatElement(int idx, float value){
+    checkArray(idx);
+    cloneFields().setFloatValue(idx, value);
+  }
+  public void setDoubleElement(int idx, double value){
+    checkArray(idx);
+    cloneFields().setDoubleValue(idx, value);
+  }
+  public void setReferenceElement(int idx, int value){
+    checkArray(idx);
+    cloneFields().setReferenceValue(idx, value);
   }
 
-  public void setLongElement(int index, long value) {
-    checkArray(index);
-    cloneFields().setLongValue(this,index*2, value);
-  }
 
-  public int getElement(int index) {
-    checkArray(index);
-    return fields.getIntValue(index);
+  public boolean getBooleanElement(int idx) {
+    checkArray(idx);
+    return fields.getBooleanValue(idx);
   }
-
-  public long getLongElement(int index) {
-    checkArray(index);
-    return fields.getLongValue(index*2);
+  public byte getByteElement(int idx) {
+    checkArray(idx);
+    return fields.getByteValue(idx);
+  }
+  public char getCharElement(int idx) {
+    checkArray(idx);
+    return fields.getCharValue(idx);
+  }
+  public short getShortElement(int idx) {
+    checkArray(idx);
+    return fields.getShortValue(idx);
+  }
+  public int getIntElement(int idx) {
+    checkArray(idx);
+    return fields.getIntValue(idx);
+  }
+  public long getLongElement(int idx) {
+    checkArray(idx);
+    return fields.getLongValue(idx);
+  }
+  public float getFloatElement(int idx) {
+    checkArray(idx);
+    return fields.getFloatValue(idx);
+  }
+  public double getDoubleElement(int idx) {
+    checkArray(idx);
+    return fields.getDoubleValue(idx);
+  }
+  public int getReferenceElement(int idx) {
+    checkArray(idx);
+    return fields.getReferenceValue(idx);
   }
 
   public void setIndex(int newIndex) {
@@ -968,63 +1149,85 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public boolean isArray() {
-    return fields.isArray();
+    return ci.isArray();
   }
 
   public String getArrayType() {
-    if (!fields.isArray()) {
+    if (!ci.isArray()) {
       throw new JPFException("object is not an array");
     }
 
-    return Types.getArrayElementType(fields.getType());
+    return Types.getArrayElementType(ci.getType());
   }
 
   public Object getBacktrackData() {
     return null;
   }
 
-  public char getCharArrayElement(int index) {
-    return (char) getElement(index);
-  }
 
-  public int getIntArrayElement(int findex) {
-    return getElement(findex);
-  }
-
-  public long getLongArrayElement(int findex) {
-    return getLongElement(findex);
-  }
-
+  // <2do> these will check for corresponding ArrayFields types
   public boolean[] asBooleanArray() {
-    return fields.asBooleanArray();
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).asBooleanArray();
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
   }
 
   public byte[] asByteArray() {
-    return fields.asByteArray();
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).asByteArray();
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
   }
 
   public short[] asShortArray() {
-    return fields.asShortArray();
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).asShortArray();
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
   }
 
   public char[] asCharArray() {
-    return fields.asCharArray();
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).asCharArray();
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
   }
 
   public int[] asIntArray() {
-    return fields.asIntArray();
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).asIntArray();
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
   }
 
   public long[] asLongArray() {
-    return fields.asLongArray();
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).asLongArray();
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
   }
 
   public float[] asFloatArray() {
-    return fields.asFloatArray();
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).asFloatArray();
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
   }
 
   public double[] asDoubleArray() {
-    return fields.asDoubleArray();
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).asDoubleArray();
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
   }
 
   public boolean isNull() {
@@ -1065,7 +1268,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public String getType() {
-    return fields.getType();
+    return ci.getType();
   }
 
   /**
@@ -1088,11 +1291,15 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
     
   public int arrayLength() {
-    return fields.arrayLength();
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).arrayLength();
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
   }
 
   public boolean isStringObject() {
-    return ClassInfo.isStringClassInfo(fields.getClassInfo());
+    return ClassInfo.isStringClassInfo(ci);
   }
 
   public String asString() {
@@ -1142,19 +1349,16 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return monitor.canLock(th);
   }
 
-  public void checkArrayBounds(int index)
-      throws ArrayIndexOutOfBoundsExecutiveException {
-    if (outOfBounds(index)) {
-      throw new ArrayIndexOutOfBoundsExecutiveException(
-          ThreadInfo.getCurrentThread().createAndThrowException(
+  public void checkArrayBounds(int index) throws ArrayIndexOutOfBoundsExecutiveException {
+    if (fields instanceof ArrayFields) {
+      if (index < 0 || index >= ((ArrayFields)fields).arrayLength()){
+        throw new ArrayIndexOutOfBoundsExecutiveException(
+              ThreadInfo.getCurrentThread().createAndThrowException(
               "java.lang.ArrayIndexOutOfBoundsException", Integer.toString(index)));
+      }
+    } else {
+      throw new JPFException("object is not an array: " + this);
     }
-  }
-
-  public void checkLongArrayBounds(int index)
-      throws ArrayIndexOutOfBoundsExecutiveException {
-    checkArrayBounds(index);
-    checkArrayBounds(index + 1);
   }
 
   public Object clone() {
@@ -1169,7 +1373,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
 
   public boolean instanceOf(String type) {
-    return Types.instanceOf(fields.getType(), type);
+    return Types.instanceOf(ci.getType(), type);
   }
 
   abstract public int getNumberOfFields();
@@ -1515,14 +1719,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     //pw.print( mIndex);
     monitor.printFields(pw);
     pw.flush();
-  }
-
-  public boolean outOfBounds(int index) {
-    if (!fields.isArray()) {
-      throw new JPFException("object is not an array");
-    }
-
-    return (index < 0 || index >= fields.size());
   }
 
   /**

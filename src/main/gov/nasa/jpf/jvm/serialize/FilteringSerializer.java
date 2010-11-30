@@ -204,25 +204,27 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
   public void processReference(ElementInfo ei) {
 
     Fields fields = ei.getFields();
-    ClassInfo ci = fields.getClassInfo();
+    ClassInfo ci = ei.getClassInfo();
     buf.add(ci.getUniqueId());
 
-    if (fields instanceof ArrayFields) { // array, not filtered
-      int[] values = fields.getRawValues();
-      buf.add(values.length);
-      if (ci.isReferenceArray()) {
+    if (fields instanceof ArrayFields) { // not filtered
+      ArrayFields afields = (ArrayFields) fields;
+      buf.add(afields.arrayLength());
+
+      if (afields.isReferenceArray()){
+        int[] values = afields.asReferenceArray();
         for (int i = 0; i < values.length; i++) {
           addObjRef(values[i]);
         }
       } else {
-        buf.append(values);
+        afields.appendTo(buf);
       }
 
-    } else { // named fields
+    } else { // named fields, filtered
       FinalBitSet filtered = getInstanceFilterMask(ci);
       FinalBitSet refs = getInstanceRefMask(ci);
 
-      int[] values = fields.getRawValues();
+      int[] values = fields.asFieldSlots();
       for (int i = 0; i < values.length; i++) {
         if (!filtered.get(i)) {
           int v = values[i];
@@ -330,7 +332,7 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
         buf.add(s.getStatus());
 
         Fields fields = s.getFields();
-        ClassInfo ci = fields.getClassInfo();
+        ClassInfo ci = s.getClassInfo();
         FinalBitSet filtered = getStaticFilterMask(ci);
         FinalBitSet refs = getStaticRefMask(ci);
         int max = ci.getStaticDataSize();

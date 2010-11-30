@@ -18,53 +18,25 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.JPFException;
+
 
 
 /**
  *a Field (data value) store for array objects
  */
-public class ArrayFields extends Fields {
-
-  private int    elementStorageSize;
-  private int    length;
-  private String elementType;
-  private boolean isReference;
-
-  public ArrayFields (String type, ClassInfo ci, int storageSize, int length,
-                      boolean isReference) {
-    super(type, ci, storageSize);
-    this.length = length;
-    this.isReference = isReference;
-    elementType = type.substring(1);
-    elementStorageSize = Types.getTypeSize(type);
-
-    // Ok, this seems to be a design anomaly, but array elements are not fields,
-    // hence the only non-0 element initialization is for reference arrays, and
-    // only with const, default 'null' values. All other inits (even the
-    // static init "a = {...}:") is compiled into explicit NEWARRAY, ASTORE..
-    // sequences, and does not need any special, automatic init code
-    if (isReference) {
-      for (int i=0; i<length; i++) {
-        values[i] = -1;
-      }
-    }
-  }
+public abstract class ArrayFields extends Fields {
 
   int getNumberOfFieldsOrElements () {
-    return length; // we have no fields
+    return arrayLength(); // we have no fields
   }
 
-  public int arrayLength () {
-    return length;
-  }
+  public abstract int arrayLength ();
 
-  public int getHeapSize () {
-    return Types.getTypeSizeInBytes(elementType) * length;
-  }
+  public abstract int getHeapSize ();
 
-  public FieldInfo getFieldInfo(String clsBase, String fname) {
-    // has none
-    return null;
+  public boolean isReferenceArray(){
+    return false;
   }
 
   public int getNumberOfFields() {
@@ -72,173 +44,126 @@ public class ArrayFields extends Fields {
     return 0;
   }
 
-  public FieldInfo getFieldInfo(int fieldIndex) {
-    // has none
-    return null;
+  public abstract Object getValues();
+
+  public boolean getBooleanValue (int pos) {
+  // overridden by subclass
+      throw new JPFException( "not a boolean[]");
+  }
+  public byte getByteValue (int pos) {
+    // overridden by subclass
+    throw new JPFException( "not a byte[] " + getClass().getName());
+  }
+  public char getCharValue (int pos) {
+    // overridden by subclass
+    throw new JPFException( "not a char[]");
+  }
+  public short getShortValue (int pos) {
+    // overridden by subclass
+    throw new JPFException( "not a short[]");
+  }
+  public int getIntValue (int pos) {
+    // overridden by subclass
+    throw new JPFException( "not an int[]");
+  }
+  public long getLongValue (int pos) {
+    // overridden by subclass
+    throw new JPFException( "not a long[]");
+  }
+  public float getFloatValue (int pos) {
+    // overridden by subclass
+    throw new JPFException( "not a float[]");
+  }
+  public double getDoubleValue (int pos) {
+    // overridden by subclass
+    throw new JPFException( "not a double[]");
+  }
+  public int getReferenceValue (int pos) {
+    // overridden by subclass
+    throw new JPFException( "not a reference array");
   }
 
-  /**
-   * @see gov.nasa.jpf.jvm.FieldInfo#getFieldIndex()
-   */
-  public int getFieldIndex (String name, String referenceType) {
-    // will this ever happen?
-    throw new NoSuchFieldError("array does not have any fields!" +
-                               getClassInfo().getName() + "." + name);
+  public void setBooleanValue (int pos, boolean newValue) {
+    // overridden by subclass
+    throw new JPFException( "not a boolean[]");
+  }
+  public void setByteValue (int pos, byte newValue) {
+    // overridden by subclass
+    throw new JPFException( "not a byte[]");
+  }
+  public void setCharValue (int pos, char newValue) {
+    // overridden by subclass
+    throw new JPFException( "not a char[]");
+  }
+  public void setShortValue (int pos, short newValue) {
+    // overridden by subclass
+    throw new JPFException( "not a short[]");
+  }
+  public void setIntValue (int pos, int newValue) {
+    // overridden by subclass
+    throw new JPFException( "not an int[]");
+  }
+  public void setFloatValue (int pos, float newValue){
+    // overridden by subclass
+    throw new JPFException( "not a float[]");
+  }
+  public void setLongValue (int pos, long newValue) {
+    // overridden by subclass
+    throw new JPFException( "not a long[]");
+  }
+  public void setDoubleValue (int pos, double newValue){
+    // overridden by subclass
+    throw new JPFException( "not a double[]");
+  }
+  public void setReferenceValue (int pos, int newValue){
+    // overridden by subclass
+    throw new JPFException( "not a reference array");
   }
 
-  public String getFieldName (int index) {
-    return Integer.toString(index / elementStorageSize);
-  }
-
-  public String getFieldType (String name, String referenceType) {
-    // will this ever happen?
-    throw new NoSuchFieldError("array does not have any fields!" +
-                               getClassInfo().getName() + "." + name);
-  }
-
-  public String getFieldType (int findex) {
-    if (elementType == null) {
-      elementType = getType().substring(1);
-    }
-
-    return elementType;
-  }
-
-  public String getLogChar () {
-    return "*";
-  }
-
-  public void setLongField (String name, String referenceType, long value) {
-    throw new NoSuchFieldError("array does not have any fields!" +
-                               getClassInfo().getName() + "." + name);
-  }
-
-  public long getLongField (String name, String referenceType) {
-    throw new NoSuchFieldError("array does not have any fields!" +
-                               getClassInfo().getName() + "." + name);
-  }
-
-  public boolean isReferenceArray() {
-    return isReference;
-  }
-
-  public boolean isRef (String name, String referenceType) {
-    throw new NoSuchFieldError("array does not have any fields!" +
-                               getClassInfo().getName() + "." + name);
-  }
 
   public boolean[] asBooleanArray () {
-    // <2do> we probably should check the type first
-    int       length = values.length;
-    boolean[] result = new boolean[length];
-
-    for (int i = 0; i < length; i++) {
-      result[i] = Types.intToBoolean(values[i]);
-    }
-
-    return result;
+    // overridden by subclass
+    throw new JPFException("not a boolean[]");
   }
-
   public byte[] asByteArray () {
-    // <2do> we probably should check the type first
-    int       length = values.length;
-    byte[] result = new byte[length];
-
-    for (int i = 0; i < length; i++) {
-      result[i] = (byte) values[i];
-    }
-
-    return result;
+    // overridden by subclass
+    throw new JPFException("not a byte[]");
   }
-
   public char[] asCharArray () {
-    // <2do> we probably should check the type first
-    int       length = values.length;
-    char[] result = new char[length];
-
-    for (int i = 0; i < length; i++) {
-      result[i] = (char)values[i];
-    }
-
-    return result;
+    // overridden by subclass
+    throw new JPFException("not a char[]");
   }
-
   public char[] asCharArray (int offset, int length) {
-    char[] result = new char[length];
-    int max = offset+length;
-
-    for (int i = offset, j=0; i < max; i++, j++) {
-      result[j] = (char)values[i];
-    }
-
-    return result;
+    // overridden by subclass
+    throw new JPFException("not a char[]");
   }
-
-  public boolean equals (int offset, int length, String s) {
-    if (offset+length > values.length) {
-      return false;
-    }
-
-    for (int i=offset, j=0; j<length; i++, j++) {
-      if ((char)values[i] != s.charAt(j)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
   public short[] asShortArray () {
-    // <2do> we probably should check the type first
-    int       length = values.length;
-    short[] result = new short[length];
-
-    for (int i = 0; i < length; i++) {
-      result[i] = (short) values[i];
-    }
-
-    return result;
+    // overridden by subclass
+    throw new JPFException("not a short[]");
   }
-
   public int[] asIntArray () {
-    // <2do> we probably should check the type first
-    return values.clone();
+    // overridden by subclass
+    throw new JPFException("not a int[]");
   }
-
+  public int[] asReferenceArray () {
+    // overridden by subclass
+    throw new JPFException("not a reference array");
+  }
   public long[] asLongArray () {
-    // <2do> we probably should check the type first
-    int       length = values.length / 2;
-    long[] result = new long[length];
-
-    for (int i = 0, j=0; i < length; i++, j+=2) {
-      result[i] = Types.intsToLong(values[j + 1], values[j]);
-    }
-
-    return result;
+    // overridden by subclass
+    throw new JPFException("not a long[]");
   }
-
   public float[] asFloatArray () {
-    // <2do> we probably should check the type first
-    int       length = values.length;
-    float[] result = new float[length];
-
-    for (int i = 0; i < length; i++) {
-      result[i] = Types.intToFloat(values[i]);
-    }
-
-    return result;
+    // overridden by subclass
+    throw new JPFException("not a float[]");
+  }
+  public double[] asDoubleArray () {
+    // overridden by subclass
+    throw new JPFException("not a double[]");
   }
 
-  public double[] asDoubleArray () {
-    // <2do> we probably should check the type first
-    int       length = values.length / 2;
-    double[] result = new double[length];
-
-    for (int i = 0, j=0; i < length; i++, j+=2) {
-      result[i] = Types.intsToDouble(values[j + 1], values[j]);
-    }
-
-    return result;
+  public int[] asFieldSlots() {
+    throw new JPFException("array has no field slots");
   }
 
 }

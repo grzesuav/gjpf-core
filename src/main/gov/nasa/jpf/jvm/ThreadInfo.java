@@ -1548,7 +1548,7 @@ public class ThreadInfo
     ElementInfo aei = heap.get(aref);
     for (int i=0; i<nVisible; i++){
       int eref = list[i].createJPFStackTraceElement();
-      aei.setElement( i, eref);
+      aei.setReferenceElement( i, eref);
     }
 
     return aref;
@@ -2123,14 +2123,14 @@ public class ThreadInfo
           int nthreads = eiGrp.getIntField("nthreads");
 
           for (int i=0; i<nthreads; i++) {
-            int tref = eiThreads.getElement(i);
+            int tref = eiThreads.getReferenceElement(i);
 
             if (tref == threadRef) { // compact the threads array
               int n1 = nthreads-1;
               for (int j=i; j<n1; j++) {
-                eiThreads.setElement(j, eiThreads.getElement(j+1));
+                eiThreads.setReferenceElement(j, eiThreads.getReferenceElement(j+1));
               }
-              eiThreads.setElement(n1, MJIEnv.NULL);
+              eiThreads.setReferenceElement(n1, MJIEnv.NULL);
 
               eiGrp.setIntField("nthreads", n1);
               if (n1 == 0) {

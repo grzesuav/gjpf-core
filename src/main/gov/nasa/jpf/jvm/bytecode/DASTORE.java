@@ -18,13 +18,28 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
+
 
 /**
  * Store into double array
  * ..., arrayref, index, value => ...
  */
-public class DASTORE extends LongArrayStoreInstruction
-{
+public class DASTORE extends LongArrayStoreInstruction {
+
+  double value;
+
+  protected void popValue(ThreadInfo ti){
+    value = Double.longBitsToDouble(ti.longPop());
+  }
+
+  protected void setField (ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+    ei.checkArrayBounds(index);
+    ei.setDoubleElement(index, value);
+  }
+
 
   public int getByteCode () {
     return 0x52;

@@ -85,22 +85,21 @@ public abstract class FieldInfo extends InfoObject {
     return ret;
   }
 
-  @Deprecated
-  public static FieldInfo create (String name, String type, int modifiers,
-                                  ConstantValue cv, ClassInfo ci, int idx, int off){
-    return create(name, type, "", modifiers, cv, ci, idx, off);
-  }
   
   public static FieldInfo create (String name, String type, String genericSignature, int modifiers,
                                   ConstantValue cv, ClassInfo ci, int idx, int off){
      
     FieldInfo ret;
 
-    if ("boolean".equals(type) ||
-        "byte".equals(type) ||
-        "char".equals(type) ||
-        "short".equals(type) ||
-        "int".equals(type)){
+    if ("boolean".equals(type)){
+      ret = new BooleanFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
+    } else if ("byte".equals(type)){
+      ret = new ByteFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
+    } else if ("char".equals(type)){
+      ret = new CharFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
+    } else if ("short".equals(type)){
+      ret = new ShortFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
+    } else if ("int".equals(type)){
       ret = new IntegerFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
     } else if ("long".equals(type)){
       ret = new LongFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
@@ -114,14 +113,6 @@ public abstract class FieldInfo extends InfoObject {
 
     return ret;
   }
-
-  /*
-  @Deprecated
-  protected FieldInfo (String name, String type, int modifiers,
-                       ConstantValue cv, ClassInfo ci, int idx, int off) {
-    this(name, type, "", modifiers, cv, ci, idx, off); 
-  }
-  */
 
   protected FieldInfo(String name, String type, String genericSignature, int modifiers, 
                        ConstantValue cv, ClassInfo ci, int idx, int off) {
@@ -138,6 +129,45 @@ public abstract class FieldInfo extends InfoObject {
 
   public abstract String valueToString (Fields f);
 
+  public boolean is1SlotField(){
+    return false;
+  }
+  public boolean is2SlotField(){
+    return false;
+  }
+
+  public boolean isBooleanField() {
+    return false;
+  }
+  public boolean isByteField() {
+    return false;
+  }
+  public boolean isCharField() {
+    return false;
+  }
+  public boolean isShortField() {
+    return false;
+  }
+  public boolean isIntField() {
+    return false;
+  }
+  public boolean isLongField() {
+    return false;
+  }
+  public boolean isFloatField(){
+    return false;
+  }
+  public boolean isDoubleField(){
+    return false;
+  }
+
+  public boolean isReference () {
+    return false;
+  }
+
+  public boolean isArrayField () {
+    return false;
+  }
 
   /**
    * Returns the class that this field is associated with.
@@ -160,13 +190,6 @@ public abstract class FieldInfo extends InfoObject {
     return fieldIndex;
   }
 
-  public boolean isReference () {
-    return false;
-  }
-
-  public boolean isArrayField () {
-    return false;
-  }
 
   /**
    * is this a static field? Counter productive to the current class struct,

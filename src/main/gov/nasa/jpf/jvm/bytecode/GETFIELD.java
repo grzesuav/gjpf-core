@@ -62,13 +62,13 @@ public class GETFIELD extends InstanceFieldInstruction {
     // we keep it at a similiar level
     switch (fi.getStorageSize()) {
       case 1:
-        ti.push( ei.getIntField(fi), fi.isReference());
+        ti.push( ei.get1SlotField(fi), fi.isReference());
         if (attr != null){
           ti.setOperandAttrNoClone(attr);
         }
         break;
       case 2:
-        ti.longPush( ei.getLongField(fi));
+        ti.longPush( ei.get2SlotField(fi));
         if (attr != null){
           ti.setLongOperandAttrNoClone(attr);
         }

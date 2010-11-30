@@ -58,7 +58,10 @@ public class JPF_java_lang_Object {
         newref = heap.newObject(ci, env.getThreadInfo());
       }
       ElementInfo newinfo = heap.get(newref);
-      newinfo.getFields().copyFrom(objinfo.getFields());
+
+      // Ok, this is nasty but efficient
+      newinfo.fields = objinfo.getFields().clone();
+
       return newref;
     }
   }

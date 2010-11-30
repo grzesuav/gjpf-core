@@ -145,9 +145,9 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
 
   // internal stuff
 
-  protected DynamicElementInfo createElementInfo (Fields f, Monitor m, ThreadInfo ti){
+  protected DynamicElementInfo createElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti){
     int tid = ti == null ? 0 : ti.getIndex();
-    return new DynamicElementInfo(f,m,tid);
+    return new DynamicElementInfo(ci,f,m,tid);
   }
 
   public <T> Snapshot<T> getSnapshot (Transformer<ElementInfo,T> transformer){
@@ -218,7 +218,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
                                      Types.getTypeSize(elementType),
                                      Types.isReference(elementType));
     Monitor  m = new Monitor();
-    DynamicElementInfo ei = createElementInfo(f, m, ti);
+    DynamicElementInfo ei = createElementInfo(ci, f, m, ti);
 
     int tid = (ti != null) ? ti.getIndex() : 0;
     int index = firstNullIndex(tid << S1, MAX_CLUSTER_ENTRIES);
@@ -241,7 +241,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     // create the thing itself
     Fields f = ci.createInstanceFields();
     Monitor m = new Monitor();
-    ElementInfo ei = createElementInfo(f, m, ti);
+    ElementInfo ei = createElementInfo(ci, f, m, ti);
 
     // get next free index into thread cluster
     int tid = (ti != null) ? ti.getIndex() : 0;
@@ -280,11 +280,9 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
       e.setIntField("offset", 0);
       e.setIntField("count", length);
 
-      e = get(value);
-      for (int i = 0; i < length; i++) {
-        // that's bad too, we should store chars as chars
-        e.setElement(i, str.charAt(i));
-      }
+      ElementInfo eVal = get(value);
+      CharArrayFields cf = (CharArrayFields)eVal.getFields();
+      cf.setCharValues(str.toCharArray());
 
       if (isIntern){
         e.intern();

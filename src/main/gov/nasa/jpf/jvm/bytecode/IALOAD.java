@@ -18,11 +18,21 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
+
 /**
  * Load int from array
  * ..., arrayref, index => ..., value
  */
 public class IALOAD extends ArrayLoadInstruction {
+
+  protected void push (ThreadInfo ti, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+    ei.checkArrayBounds(index);
+    int value = ei.getIntElement(index);
+    ti.push( value);
+  }
 
   public int getByteCode () {
     return 0x2E;

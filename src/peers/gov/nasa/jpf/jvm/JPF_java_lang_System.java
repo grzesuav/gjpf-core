@@ -34,137 +34,66 @@ import gov.nasa.jpf.jvm.choice.BreakGenerator;
  * MJI NativePeer class for java.lang.System library abstraction
  */
 public class JPF_java_lang_System {
-  
-  // <2do> - now this baby really needs to be fixed. Imagine what it
-  // does to an app that works with large vectors
+
   public static void arraycopy__Ljava_lang_Object_2ILjava_lang_Object_2II__V (MJIEnv env, int clsObjRef,
                                                                               int srcArrayRef, int srcIdx, 
                                                                               int dstArrayRef, int dstIdx,
                                                                               int length) {
-    int i;
-    
     if ((srcArrayRef == -1) || (dstArrayRef == -1)) {
       env.throwException("java.lang.NullPointerException");
       return;
     }
 
-    if (!env.isArray(srcArrayRef) || !env.isArray(dstArrayRef)) {
-      env.throwException("java.lang.ArrayStoreException");
-      return;
+    ElementInfo eiSrc = env.getElementInfo(srcArrayRef);
+    if (!eiSrc.isArray()){
+      env.throwException("java.lang.ArrayStoreException", "source not an array: " + eiSrc);
+      return;      
     }
-
-    int sts = env.getArrayTypeSize(srcArrayRef);
-    int dts = env.getArrayTypeSize(dstArrayRef);
-
-    if (sts != dts) {
-      env.throwException("java.lang.ArrayStoreException");
-      return;
-    }
-
-    // ARGHH <2do> pcm - at some point, we should REALLY do this with a block
-    // operation (saves lots of state, speed if arraycopy is really used)
-    // we could also use the native checks in that case
-    int sl = env.getArrayLength(srcArrayRef);
-    int dl = env.getArrayLength(dstArrayRef);
-
-    // <2do> - we need detail messages!
-    if ((srcIdx < 0) || ((srcIdx + length) > sl)) {
-      env.throwException("java.lang.ArrayIndexOutOfBoundsException");
-      return;
-    }
-
-    if ((dstIdx < 0) || ((dstIdx + length) > dl)) {
-      env.throwException("java.lang.ArrayIndexOutOfBoundsException");
-      return;
+    ElementInfo eiDst = env.getElementInfo(dstArrayRef);
+    if (!eiDst.isArray()){
+      env.throwException("java.lang.ArrayStoreException", "destination not an array: " + eiDst);
+      return;      
     }
     
-    ClassInfo srcArrayCi = env.getClassInfo(srcArrayRef);    
-    ClassInfo dstArrayCi = env.getClassInfo(dstArrayRef);      
-    
-    // finally do the copying
-    if (sts == 1) {  // word-size array
-      
-      // self copy - no checks required
-      if (srcArrayRef == dstArrayRef && srcIdx < dstIdx) {
-        // bugfix case by peterd; see docs for System.arraycopy
-        for (i = length - 1; i >= 0; i--) {
-          int v = env.getIntArrayElement(srcArrayRef, srcIdx + i);
-          env.setIntArrayElement(dstArrayRef, dstIdx + i, v);
-        }
-        
-      } else { // different array objects
+    // for references, we have to check the >>concrete<< element type compatibility ourselves
+    // since refs are stored as ints. THIS IS A JAVA SUCKER!!
+    if (eiDst.isReferenceArray() || eiSrc.isReferenceArray()){
+      ClassInfo dstElementCi = eiDst.getClassInfo().getComponentClassInfo();
 
-        // check reference types (fix from Milos Gligoric and Tihomir Gvero)
-        boolean isDstReferenceArray = dstArrayCi.isReferenceArray();
-        if (isDstReferenceArray != srcArrayCi.isReferenceArray()) {
-          env.throwException("java.lang.ArrayStoreException");          
-        }
-        
-        if (!isDstReferenceArray) {
-          // builtin element types have to be identical
-          if (srcArrayCi != dstArrayCi) {
-            env.throwException("java.lang.ArrayStoreException");            
-          }
-          
-          for (i = 0; i < length; i++) {
-            int v = env.getIntArrayElement(srcArrayRef, srcIdx + i);
-            env.setIntArrayElement(dstArrayRef, dstIdx + i, v);
-          }
-          
-        } else {
-          ClassInfo dstArrayElementCi = dstArrayCi.getComponentClassInfo();
-          
-          for (i = 0; i < length; i++) {
-            // check element type compatibility
-            int srcArrayElementRef = env.getReferenceArrayElement(srcArrayRef, srcIdx + i);
-            if (srcArrayElementRef != MJIEnv.NULL) {
-              ClassInfo srcArrayElementCi = env.getClassInfo(srcArrayElementRef);
-              if (!srcArrayElementCi.isInstanceOf(dstArrayElementCi)) {                   
-                env.throwException("java.lang.ArrayStoreException");
-                return;            
-              }
-            }
-
-            env.setIntArrayElement(dstArrayRef, dstIdx + i, srcArrayElementRef);
-          }
-        }
-      }
-      
-    } else {  // double word size array
-      
-      if (srcArrayRef == dstArrayRef && srcIdx < dstIdx) {
-        // self copy - no checks required
-        // bugfix case by peterd; see docs for System.arraycopy
-        for (i = length - 1; i >= 0; i--) {
-          long v = env.getLongArrayElement(srcArrayRef, srcIdx + i);
-          env.setLongArrayElement(dstArrayRef, dstIdx + i, v);
-        }    
-        
-      } else { // different array objects
-        
-        // builtin element types have to be identical
-        if (srcArrayCi != dstArrayCi) {
-          env.throwException("java.lang.ArrayStoreException");            
-        }
-        
-        for (i = 0; i < length; i++) {
-          long v = env.getLongArrayElement(srcArrayRef, srcIdx + i);
-          env.setLongArrayElement(dstArrayRef, dstIdx + i, v);
+      int max = srcIdx + length;
+      for (int i=srcIdx; i<max; i++){
+        int eref = eiSrc.getReferenceElement(i);
+        ClassInfo srcElementCi = env.getClassInfo(eref);
+        if (!srcElementCi.isInstanceOf(dstElementCi)) {
+          env.throwException("java.lang.ArrayStoreException");
+          return;
         }
       }
     }
+
+    Object src = ((ArrayFields)eiSrc.getFields()).getValues();
+    Object dst = ((ArrayFields)eiDst.getFields()).getValues();
     
+    try {
+      System.arraycopy(src,srcIdx, dst,dstIdx, length);
+    } catch (IndexOutOfBoundsException iobx){
+      env.throwException("java.lang.IndexOutOfBoundsException", iobx.getMessage());
+    } catch (ArrayStoreException asx){
+      env.throwException("java.lang.ArrayStoreException", asx.getMessage());      
+    }
+
+    // take care of the attributes
     if (env.hasFieldAttrs(srcArrayRef)){
       if (srcArrayRef == dstArrayRef && srcIdx < dstIdx) { // self copy
-        for (i = length - 1; i >= 0; i--) {
+        for (int i = length - 1; i >= 0; i--) {
           Object a = env.getElementAttr(srcArrayRef, srcIdx+i);
           env.setElementAttr(dstArrayRef, dstIdx+i, a);
-        }        
+        }
       } else {
-        for (i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++) {
           Object a = env.getElementAttr(srcArrayRef, srcIdx+i);
           env.setElementAttr(dstArrayRef, dstIdx+i, a);
-        }          
+        }
       }
     }
   }

@@ -31,9 +31,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  *
  *  ... array, index, <value> => ...
  */
-public abstract class ArrayStoreInstruction extends ArrayInstruction
-  implements StoreInstruction
-{
+public abstract class ArrayStoreInstruction extends ArrayInstruction implements StoreInstruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int aref = peekArrayRef(ti); // need to be poly, could be LongArrayStore
@@ -52,26 +50,18 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction
     int esize = getElementSize();
     Object attr = esize == 1 ? ti.getOperandAttr() : ti.getLongOperandAttr();
 
-    long value = getValue(ti);
+    popValue(ti);
     index = ti.pop();
     // don't set 'arrayRef' before we do the CG check (would kill loop optimization)
     arrayRef = ti.pop();
 
-    // check type compatibility for reference arrays - patch from Tihomir Gvero and Milos Gligoric
-    // (could be in AASTORE, but would also require duplicated code)
-    ClassInfo c = e.getClassInfo();
-    if (c.isReferenceArray() && (value != -1)) { // no checks for storing 'null'
-      ClassInfo elementCi = ti.getClassInfo((int) value);
-      ClassInfo arrayElementCi = c.getComponentClassInfo();
-      if (!elementCi.isInstanceOf(arrayElementCi)) {
-        String exception = "java.lang.ArrayStoreException";
-        String exceptionDescription = elementCi.getName();
-        return ti.createAndThrowException(exception, exceptionDescription);
-      }
+    Instruction xInsn = checkArrayStoreException(ti, e);
+    if (xInsn != null){
+      return xInsn;
     }
 
     try {
-      setField(e, index, value);
+      setField(e, index);
       e.setElementAttrNoClone(index,attr); // <2do> what if the value is the same but not the attr?
       return getNext(ti);
 
@@ -91,15 +81,15 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction
     return ti.peek(1);
   }
 
-  protected void setField (ElementInfo e, int index, long value)
-                    throws ArrayIndexOutOfBoundsExecutiveException {
-    e.checkArrayBounds(index);
-    e.setElement(index, (int) value);
+  protected Instruction checkArrayStoreException(ThreadInfo ti, ElementInfo ei){
+    return null;
   }
 
-  protected long getValue (ThreadInfo th) {
-    return /*(long)*/ th.pop();
-  }
+  protected abstract void popValue(ThreadInfo ti);
+
+  protected abstract void setField (ElementInfo e, int index)
+                    throws ArrayIndexOutOfBoundsExecutiveException;
+
 
   public boolean isRead() {
     return false;

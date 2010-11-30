@@ -123,7 +123,7 @@ public class Types {
 
   public static String getArrayElementType (String type) {
     if (type.charAt(0) != '[') {
-      throw new JPFException("not an array type");
+      throw new JPFException("not an array type: " + type);
     }
 
     return type.substring(1);

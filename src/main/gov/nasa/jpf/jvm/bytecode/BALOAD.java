@@ -18,12 +18,34 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
+import gov.nasa.jpf.jvm.BooleanArrayFields;
+import gov.nasa.jpf.jvm.ByteArrayFields;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.Fields;
+import gov.nasa.jpf.jvm.ThreadInfo;
+
 
 /**
  * Load byte or boolean from array
  * ..., arrayref, index => ..., value
  */
 public class BALOAD extends ArrayLoadInstruction {
+
+  protected void push (ThreadInfo ti, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+    ei.checkArrayBounds(index);
+
+    int value = 0;
+    Fields f = ei.getFields();
+    if (f instanceof ByteArrayFields){
+      value = ei.getByteElement(index);
+    } else if (f instanceof BooleanArrayFields){
+      value = ei.getBooleanElement(index) ? 1 : 0;
+    }
+
+    ti.push( value);
+  }
+
 
   public int getByteCode () {
     return 0x33;

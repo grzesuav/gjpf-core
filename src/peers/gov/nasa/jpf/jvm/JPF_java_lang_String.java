@@ -58,8 +58,17 @@ public class JPF_java_lang_String {
     if (l1 != l2) {
       return false;
     }
-    
-    return f1.isEqual(f2, o1, l1, o2);
+
+    char[] c1 = ((CharArrayFields)f1).asCharArray();
+    char[] c2 = ((CharArrayFields)f2).asCharArray();
+
+    for (int j=o1, k=o2, max=o1+l1; j<max; j++, k++){
+      if (c1[j] != c2[k]){
+        return false;
+      }
+    }
+
+    return true;
   }
   
   public static int toCharArray_____3C (MJIEnv env, int objref){
@@ -100,10 +109,10 @@ public class JPF_java_lang_String {
 
       // now get the char array data, but be aware they are stored as ints
       ElementInfo ei = env.getElementInfo(vref);
-      int[] values = ei.getFields().getValues();
+      char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
 
-      for (int i = 0; i < len; i++) {
-        h = 31*h + (char)values[off++];
+      for (int max=off+len; off<max; off++) {
+        h = 31*h + values[off];
       }
       env.setIntField(objref, "hash", h);
       

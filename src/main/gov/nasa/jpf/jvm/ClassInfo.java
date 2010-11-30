@@ -1243,7 +1243,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    * Returns the type of a class.
    */
   public String getType () {
-    return "L" + name.replace('.', '/') + ";";
+    if (!isArray) {
+      return "L" + name.replace('.', '/') + ";";
+    } else {
+      return name;
+    }
   }
 
   /**

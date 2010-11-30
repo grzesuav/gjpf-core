@@ -18,11 +18,21 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
+
 /**
  * Load double from array
  * ..., arrayref, index => ..., value
  */
 public class DALOAD extends LongArrayLoadInstruction {
+
+  protected void push (ThreadInfo ti, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+    ei.checkArrayBounds(index);
+    double value = ei.getDoubleElement(index);
+    ti.longPush( Double.doubleToLongBits(value));
+  }
 
   public int getByteCode () {
     return 0x31;

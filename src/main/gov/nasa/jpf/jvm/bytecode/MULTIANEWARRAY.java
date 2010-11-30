@@ -49,7 +49,7 @@ public class MULTIANEWARRAY extends Instruction {
 
     if (dim.length > (d + 1)) {
       for (int i = 0; i < l; i++) {
-        e.setElement(i, allocateArray(heap, type, dim, ti, d + 1));
+        e.setReferenceElement(i, allocateArray(heap, type, dim, ti, d + 1));
       }
     }
 

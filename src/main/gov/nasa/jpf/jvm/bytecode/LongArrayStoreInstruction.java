@@ -31,7 +31,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 public abstract class LongArrayStoreInstruction extends ArrayStoreInstruction {
   protected void setField (ElementInfo e, int index, long value)
                     throws ArrayIndexOutOfBoundsExecutiveException {
-    e.checkLongArrayBounds(index);
+    e.checkArrayBounds(index);
     e.setLongElement(index, value);
   }
 

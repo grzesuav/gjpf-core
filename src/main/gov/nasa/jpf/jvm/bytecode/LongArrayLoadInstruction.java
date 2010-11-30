@@ -27,9 +27,10 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * abstraction for long array loads
  */
 public abstract class LongArrayLoadInstruction extends ArrayLoadInstruction {
+
   protected void push (ThreadInfo th, ElementInfo e, int index)
                 throws ArrayIndexOutOfBoundsExecutiveException {
-    e.checkLongArrayBounds(index);
+    e.checkArrayBounds(index);
     th.longPush(e.getLongElement(index));
   }
   

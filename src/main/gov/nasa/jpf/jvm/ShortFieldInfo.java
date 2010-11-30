@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2006 United States Government as represented by the
+// Copyright (C) 2010 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,47 +16,40 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
+
 package gov.nasa.jpf.jvm;
 
 import org.apache.bcel.classfile.ConstantValue;
 
-
 /**
- * type, name and attribute information for 'double' fields
+ * fieldinfo for slots holding booleans
  */
-public class DoubleFieldInfo extends DoubleSlotFieldInfo {
-  double init;
+public class ShortFieldInfo extends SingleSlotFieldInfo {
 
+  short init;
 
-  public DoubleFieldInfo (String name, String type, String genericSignature, int modifiers,
+  public ShortFieldInfo (String name, String type, String genericSignature, int modifiers,
                           ConstantValue cv, ClassInfo ci, int idx, int off) {
     super(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    init = (cv != null) ? Double.parseDouble(cv.toString()) : 0.0;
+    init = (cv != null) ? Short.parseShort(cv.toString()) : 0;
   }
 
   public void initialize (ElementInfo ei) {
-    ei.getFields().setDoubleValue(storageOffset, init);
+    ei.getFields().setShortValue(storageOffset, init);
   }
 
-  public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType() {
-    return DoubleChoiceGenerator.class;
-  }
-
-  public int getStorageSize () {
-    return 2;
-  }
-
-  public String valueToString (Fields f) {
-    double d = f.getDoubleValue(storageOffset);
-    return Double.toString(d);
+  public boolean isShortField() {
+    return true;
   }
 
   public Object getValueObject (Fields f){
-    double d = f.getDoubleValue(storageOffset);
-    return new Double(d);
+    int i = f.getIntValue(storageOffset);
+    return new Short((short)i);
   }
 
-  public boolean isDoubleField(){
-    return true;
+  public String valueToString (Fields f) {
+    short i = f.getShortValue(storageOffset);
+    return Short.toString(i);
   }
+
 }

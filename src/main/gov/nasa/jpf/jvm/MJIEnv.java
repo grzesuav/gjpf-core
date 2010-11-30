@@ -217,83 +217,92 @@ public class MJIEnv {
   }
 
   public boolean getBooleanArrayElement (int objref, int index) {
-    return Types.intToBoolean( heap.get(objref).getElement(index));
+    return heap.get(objref).getBooleanElement(index);
   }
 
   public void setBooleanArrayElement (int objref, int index, boolean value) {
-    heap.get(objref).setElement(index, Types.booleanToInt(value));
+    heap.get(objref).setBooleanElement(index, value);
   }
 
+
   public void setByteField (int objref, String fname, byte val) {
-    setIntField(objref, fname, /*(int)*/ val);
+    heap.get(objref).setByteField(fname, val);
   }
 
   public byte getByteField (int objref, String fname) {
-    return (byte) getIntField(objref, fname);
+    return heap.get(objref).getByteField(fname);
   }
 
   public void setCharField (int objref, String fname, char val) {
-    setIntField(objref, fname, /*(int)*/ val);
+    heap.get(objref).setCharField(fname, val);
   }
 
   public char getCharField (int objref, String fname) {
-    return (char) getIntField(objref, fname);
+    return heap.get(objref).getCharField(fname);
   }
 
   public void setDoubleField (int objref, String fname, double val) {
-    setLongField(objref, fname, Types.doubleToLong(val));
+    heap.get(objref).setDoubleField(fname, val);
   }
 
   public double getDoubleField (int objref, String fname) {
-    return Types.longToDouble(getLongField(objref, fname));
+    return heap.get(objref).getDoubleField(fname);
   }
 
   public void setFloatField (int objref, String fname, float val) {
-    setIntField(objref, fname, Types.floatToInt(val));
+    heap.get(objref).setFloatField(fname, val);
   }
 
   public float getFloatField (int objref, String fname) {
-    return Types.intToFloat(getIntField(objref, fname));
+    return heap.get(objref).getFloatField(fname);
   }
 
+
   public void setByteArrayElement (int objref, int index, byte value) {
-    heap.get(objref).setElement(index, value);
+    heap.get(objref).setByteElement(index, value);
   }
 
   public byte getByteArrayElement (int objref, int index) {
-    return (byte) heap.get(objref).getElement(index);
+    return heap.get(objref).getByteElement(index);
   }
 
   public void setCharArrayElement (int objref, int index, char value) {
-    heap.get(objref).setElement(index, value);
+    heap.get(objref).setCharElement(index, value);
   }
 
   public void setIntArrayElement (int objref, int index, int value) {
-    heap.get(objref).setElement(index, value);
+    heap.get(objref).setIntElement(index, value);
   }
 
   public void setShortArrayElement (int objref, int index, short value) {
-    heap.get(objref).setElement(index, value);
+    heap.get(objref).setShortElement(index, value);
   }
 
   public void setFloatArrayElement (int objref, int index, float value) {
-    heap.get(objref).setElement(index, Types.floatToInt(value));
+    heap.get(objref).setFloatElement(index, Types.floatToInt(value));
   }
 
   public float getFloatArrayElement (int objref, int index) {
-    return Types.intToFloat(heap.get(objref).getElement(index));
+    return heap.get(objref).getFloatElement(index);
+  }
+
+  public double getDoubleArrayElement (int objref, int index) {
+    return heap.get(objref).getDoubleElement(index);
+  }
+  public void setDoubleArrayElement (int objref, int index, double value) {
+    heap.get(objref).setDoubleElement(index, value);
   }
 
   public short getShortArrayElement (int objref, int index) {
-    return (short) heap.get(objref).getElement(index);
+    return heap.get(objref).getShortElement(index);
   }
 
   public int getIntArrayElement (int objref, int index) {
-    return heap.get(objref).getElement(index);
+    return heap.get(objref).getIntElement(index);
   }
 
   public char getCharArrayElement (int objref, int index) {
-    return (char) heap.get(objref).getElement(index);
+    return heap.get(objref).getCharElement(index);
   }
 
   public void setIntField (int objref, String fname, int val) {
@@ -406,11 +415,11 @@ public class MJIEnv {
 //  }
 
   public void setReferenceArrayElement (int objref, int index, int eRef) {
-    heap.get(objref).setElement(index, eRef);
+    heap.get(objref).setReferenceElement(index, eRef);
   }
 
   public int getReferenceArrayElement (int objref, int index) {
-    return heap.get(objref).getElement(index);
+    return heap.get(objref).getReferenceElement(index);
   }
 
   public void setShortField (int objref, String fname, short val) {
@@ -437,48 +446,54 @@ public class MJIEnv {
   
   public void setStaticBooleanField (String clsName, String fname,
                                      boolean value) {
-    setStaticIntField(clsName, fname, Types.booleanToInt(value));
-  }
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    sa.get(ci.getName()).setBooleanField(fname, value);  }
 
   public boolean getStaticBooleanField (String clsName, String fname) {
-    return Types.intToBoolean(getStaticIntField(clsName, fname));
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    return sa.get(ci.getName()).getBooleanField(fname);
   }
 
   public void setStaticByteField (String clsName, String fname, byte value) {
-    setStaticIntField(clsName, fname, /*(int)*/ value);
-  }
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    sa.get(ci.getName()).setByteField(fname, value);  }
 
   public byte getStaticByteField (String clsName, String fname) {
-    return (byte) getStaticIntField(clsName, fname);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    return sa.get(ci.getName()).getByteField(fname);
   }
 
   public void setStaticCharField (String clsName, String fname, char value) {
-    setStaticIntField(clsName, fname, /*(int)*/ value);
-  }
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    sa.get(ci.getName()).setCharField(fname, value);  }
 
   public char getStaticCharField (String clsName, String fname) {
-    return (char) getStaticIntField(clsName, fname);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    return sa.get(ci.getName()).getCharField(fname);
   }
 
   public void setStaticDoubleField (String clsName, String fname, double val) {
-    setStaticLongField(clsName, fname, Types.doubleToLong(val));
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    sa.get(ci.getName()).setDoubleField(fname, val);
   }
 
   public double getStaticDoubleField (String clsName, String fname) {
-    return Types.longToDouble(getStaticLongField(clsName, fname));
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    return sa.get(ci.getName()).getDoubleField(fname);
   }
 
-  public void setStaticFloatField (String clsName, String fname, float value) {
-    setStaticIntField(clsName, fname, Types.floatToInt(value));
+  public void setStaticFloatField (String clsName, String fname, float val) {
+    sa.get(ci.getName()).setFloatField(fname, val);
   }
 
   public float getStaticFloatField (String clsName, String fname) {
-    return Types.intToFloat(getStaticIntField(clsName, fname));
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    return sa.get(ci.getName()).getFloatField(fname);
   }
 
-  public void setStaticIntField (String clsName, String fname, int value) {
+  public void setStaticIntField (String clsName, String fname, int val) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    sa.get(ci.getName()).setIntField(fname, value);
+    sa.get(ci.getName()).setIntField(fname, val);
   }
 
   public void setStaticIntField (int clsObjRef, String fname, int val) {
@@ -491,10 +506,8 @@ public class MJIEnv {
   }
 
   public int getStaticIntField (String clsName, String fname) {
-    ClassInfo         ci = ClassInfo.getResolvedClassInfo(clsName);
-    StaticElementInfo ei = sa.get(ci.getName());
-
-    return ei.getIntField(fname);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    return sa.get(ci.getName()).getIntField(fname);
   }
 
   public void setStaticLongField (String clsName, String fname, long value) {
@@ -525,11 +538,13 @@ public class MJIEnv {
   }
 
   public int getStaticReferenceField (String clsName, String fname) {
-    return getStaticIntField(clsName, fname);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    return sa.get(ci.getName()).getReferenceField(fname);
   }
 
   public short getStaticShortField (String clsName, String fname) {
-    return (short) getStaticIntField(clsName, fname);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    return sa.get(ci.getName()).getShortField(fname);
   }
 
   /**
@@ -691,15 +706,6 @@ public class MJIEnv {
 
     return a;
   }
-
-  public double getDoubleArrayElement (int objref, int index) {
-    return Types.longToDouble( heap.get(objref).getLongElement(index));
-  }
-
-  public void setDoubleArrayElement (int objref, int index, double value) {
-    heap.get(objref).setLongElement(index, Types.doubleToLong(value));
-  }
-
 
   public boolean[] getBooleanArrayObject (int objref) {
     ElementInfo ei = getElementInfo(objref);

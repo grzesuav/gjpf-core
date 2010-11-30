@@ -25,16 +25,11 @@ import gov.nasa.jpf.JPFException;
 /**
  * field info for object fields
  */
-public class ReferenceFieldInfo extends FieldInfo {
+public class ReferenceFieldInfo extends SingleSlotFieldInfo {
   int init=-1;
   String sInit; // <2do> pcm - just a temporary quirk to init from string literals
                 // check if there are other non-object reference inits
 
-  @Deprecated
-  public ReferenceFieldInfo (String name, String type, int modifiers,
-                             ConstantValue cv, ClassInfo ci, int idx, int off) {
-    this(name, type, "", modifiers, cv, ci, idx, off);
-  }
   
   public ReferenceFieldInfo (String name, String type, String genericSignature, int modifiers,
                              ConstantValue cv, ClassInfo ci, int idx, int off) {
@@ -100,7 +95,7 @@ public class ReferenceFieldInfo extends FieldInfo {
       Heap heap = JVM.getVM().getHeap();
       ref = heap.newString(sInit, null);
     }
-    ei.getFields().setReferenceValue(ei, storageOffset, ref);
+    ei.getFields().setReferenceValue( storageOffset, ref);
   }
 
   public Object getValueObject (Fields f){

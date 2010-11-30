@@ -24,14 +24,8 @@ import org.apache.bcel.classfile.ConstantValue;
 /**
  * type, name, mod info about integer fields
  */
-public class IntegerFieldInfo extends FieldInfo {
+public class IntegerFieldInfo extends SingleSlotFieldInfo {
   int init;
-
-  @Deprecated
-  public IntegerFieldInfo (String name, String type, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-    this(name, type, "", modifiers, cv, ci, idx, off);
-  }
 
   public IntegerFieldInfo (String name, String type, String genericSignature, int modifiers,
                           ConstantValue cv, ClassInfo ci, int idx, int off) {
@@ -40,7 +34,7 @@ public class IntegerFieldInfo extends FieldInfo {
   }
 
   public void initialize (ElementInfo ei) {
-    ei.getFields().setIntValue(ei, storageOffset, init);
+    ei.getFields().setIntValue( storageOffset, init);
   }
 
   public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType() {
@@ -54,19 +48,11 @@ public class IntegerFieldInfo extends FieldInfo {
 
   public Object getValueObject (Fields f){
     int i = f.getIntValue(storageOffset);
+    return new Integer(i);
+  }
 
-    if (type.equals("int")){
-      return new Integer(i);
-    } else if (type.equals("boolean")){
-      return new Boolean(i != 0);
-    } else if (type.equals("byte")){
-      return new Byte((byte)i);
-    } else if (type.equals("char")){
-      return new Character((char)i);
-    } else if (type.equals("short")){
-      return new Short((short)i);
-    } else {
-      throw new UnsupportedOperationException("unknown field type: " + type);
-    }
+  public boolean isIntField(){
+    // booleans, byte, char and short are too
+    return true;
   }
 }

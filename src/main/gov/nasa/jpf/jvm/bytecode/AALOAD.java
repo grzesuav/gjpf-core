@@ -18,11 +18,23 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
+
 /**
  * Load reference from array
  * ..., arrayref, index  => ..., value
  */
 public class AALOAD extends ArrayLoadInstruction {
+
+  protected void push (ThreadInfo ti, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+    ei.checkArrayBounds(index);
+    int value = ei.getReferenceElement(index);
+    ti.pushRef( value);
+  }
+
+
   protected boolean isReference () {
     return true;
   }

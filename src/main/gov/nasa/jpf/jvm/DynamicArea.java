@@ -337,7 +337,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
                                      Types.isReference(elementType));
     Monitor  m = new Monitor();
 
-    DynamicElementInfo e = createElementInfo(f, m, ti);
+    DynamicElementInfo e = createElementInfo(ci,f, m, ti);
     add(idx, e);
 
     //if (ti != null) { // maybe we should report them all, and put the burden on the listener
@@ -365,7 +365,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     Fields             f = ci.createInstanceFields();
     Monitor            m = new Monitor();
 
-    DynamicElementInfo dei = createElementInfo(f, m, ti);
+    DynamicElementInfo dei = createElementInfo(ci,f, m, ti);
 
     // get the index where to store this sucker, but be aware of that the
     // returned index might be outside the current elements array (super.add
@@ -406,10 +406,9 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
       e.setIntField("offset", 0);
       e.setIntField("count", length);
 
-      e = get(value);
-      for (int i = 0; i < length; i++) {
-        e.setElement(i, str.charAt(i));
-      }
+      ElementInfo eVal = get(value);
+      CharArrayFields cf = (CharArrayFields)eVal.getFields();
+      cf.setCharValues(str.toCharArray());
 
       return index;
     } else {
@@ -559,9 +558,9 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     return new DynamicElementInfo();
   }
 
-  protected DynamicElementInfo createElementInfo (Fields f, Monitor m, ThreadInfo ti){
+  protected DynamicElementInfo createElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti){
     int tid = ti == null ? 0 : ti.getIndex();
-    return new DynamicElementInfo(f,m,tid);
+    return new DynamicElementInfo(ci,f,m,tid);
   }
 
 

@@ -49,10 +49,10 @@ public final class DynamicElementInfo extends ElementInfo implements Restorable<
   public DynamicElementInfo () {
   }
 
-  public DynamicElementInfo (Fields f, Monitor m, int tid) {
-    super(f, m, tid);
+  public DynamicElementInfo (ClassInfo ci, Fields f, Monitor m, int tid) {
+    super(ci, f, m, tid);
 
-    attributes = f.getClassInfo().getElementInfoAttrs();
+    attributes = ci.getElementInfoAttrs();
   }
 
   public Memento<ElementInfo> getMemento(MementoFactory factory) {
@@ -63,6 +63,15 @@ public final class DynamicElementInfo extends ElementInfo implements Restorable<
     return new DEIMemento(this);
   }
 
+  @Override
+  protected int getNumberOfFieldsOrElements(){
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).arrayLength();
+    } else {
+      return ci.getNumberOfInstanceFields();
+    }
+  }
+
   protected void markAreaChanged(){
     JVM.getVM().getHeap().markChanged(index);
   }
@@ -71,7 +80,7 @@ public final class DynamicElementInfo extends ElementInfo implements Restorable<
     //checkFieldInfo(fi); // in case somebody caches and uses the wrong FieldInfo
 
     if (!fi.isReference()) {
-      cloneFields().setIntValue(this, fi.getStorageOffset(), value);
+      cloneFields().setIntValue( fi.getStorageOffset(), value);
     } else {
       throw new JPFException("reference field: " + fi.getName());
     }
@@ -117,30 +126,25 @@ public final class DynamicElementInfo extends ElementInfo implements Restorable<
   }
 
   public String asString() {
-    if (!ClassInfo.isStringClassInfo(fields.getClassInfo())) {
+    if (!ClassInfo.isStringClassInfo(ci)) {
       throw new JPFException("object is not of type java.lang.String");
     }
 
-    int value = getDeclaredIntField("value", "java.lang.String");
+    int vref = getDeclaredIntField("value", "java.lang.String");
     int length = getDeclaredIntField("count", "java.lang.String");
     int offset = getDeclaredIntField("offset", "java.lang.String");
 
-    ElementInfo e = JVM.getVM().getHeap().get(value);
+    ElementInfo eVal = JVM.getVM().getHeap().get(vref);
 
-    StringBuilder sb = new StringBuilder();
-
-    for (int i = offset; i < (offset + length); i++) {
-      sb.append((char) e.fields.getIntValue(i));
-    }
-
-    return sb.toString();
+    char[] value = eVal.asCharArray();
+    return new String(value,offset,length);
   }
 
   /**
    * just a helper to avoid creating objects just for the sake of comparing
    */
   public boolean equalsString (String s) {
-    if (!ClassInfo.isStringClassInfo(fields.getClassInfo())) {
+    if (!ClassInfo.isStringClassInfo(ci)) {
       return false;
     }
 
@@ -149,9 +153,9 @@ public final class DynamicElementInfo extends ElementInfo implements Restorable<
     int offset = getDeclaredIntField("offset", "java.lang.String");
 
     ElementInfo e = JVM.getVM().getHeap().get(value);
-    ArrayFields af = (ArrayFields)e.getFields();
+    CharArrayFields cf = (CharArrayFields)e.getFields();
 
-    return af.equals(offset, length, s);
+    return cf.asString(offset,length).equals(s);
   }
 
 }

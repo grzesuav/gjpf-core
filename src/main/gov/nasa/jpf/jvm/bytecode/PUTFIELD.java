@@ -82,7 +82,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
         if (fi.isReference()){
           ei.setReferenceField(fi, ival);
         } else {
-          ei.setIntField(fi, ival);
+          ei.set1SlotField(fi, ival);
         }
 
         break;
@@ -93,7 +93,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
         long lval = ti.longPop();
         lastValue = lval;
 
-        ei.setLongField(fi, lval);
+        ei.set2SlotField(fi, lval);
 
         break;
 

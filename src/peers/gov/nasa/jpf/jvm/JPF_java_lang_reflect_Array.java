@@ -140,75 +140,6 @@ public class JPF_java_lang_reflect_Array {
     }
   }
 
-  private static int getIntElem (MJIEnv env, int clsRef, int aref, int index) {
-    if (!check(env, aref, index)) return -1;
-    String type = env.getArrayType(aref);
-    switch (Types.getBaseType(type)) {
-      case Types.T_CHAR: case Types.T_INT: case Types.T_SHORT: case Types.T_BYTE:
-      case Types.T_BOOLEAN: case Types.T_FLOAT:
-        return env.getIntArrayElement(aref, index);
-      default:
-        env.throwException("java.lang.IllegalArgumentException");
-        return -1;
-    }
-  }
-
-  private static long getLongElem (MJIEnv env, int clsRef, int aref, int index) {
-    if (!check(env, aref, index)) return -1;
-    String type = env.getArrayType(aref);
-    switch (Types.getBaseType(type)) {
-      case Types.T_LONG: case Types.T_DOUBLE:
-        return env.getLongArrayElement(aref, index);
-      default:
-        env.throwException("java.lang.IllegalArgumentException");
-        return -1;
-    }
-  }
-  
-  public static boolean getBoolean__Ljava_lang_Object_2I__Z (MJIEnv env, int clsRef, int aref, int index) {
-    return (getIntElem(env, clsRef, aref, index) != 0) ? true : false;
-  }
-  
-  public static byte getByte__Ljava_lang_Object_2I__B (MJIEnv env, int clsRef, int aref, int index) {
-    return (byte)getIntElem(env, clsRef, aref, index);
-  }
-  
-  public static char getChar__Ljava_lang_Object_2I__C (MJIEnv env, int clsRef, int aref, int index) {
-    return (char)getIntElem(env, clsRef, aref, index);
-  }
-  
-  public static short getShort__Ljava_lang_Object_2I__S (MJIEnv env, int clsRef, int aref, int index) {
-    return (short)getIntElem(env, clsRef, aref, index);
-  }  
-  /**
-   * Peer method for the <code>java.lang.reflect.Array.getInt</code> method.
-   * Returns the <code>int</code> value of the indexed component from the specified array object.
-   * 
-   * @author Mirko Stojmenovic (mirko.stojmenovic@gmail.com)
-   * @author Igor Andjelkovic (igor.andjelkovic@gmail.com)
-   */
-  public static int getInt__Ljava_lang_Object_2I__I (MJIEnv env, int clsRef, int aref, int index) {
-    return getIntElem(env, clsRef, aref, index);
-  }
- 
-  public static long getLong__Ljava_lang_Object_2I__J (MJIEnv env, int clsRef, int aref, int index) {
-    return getLongElem(env, clsRef, aref, index);
-  }
- 
-  public static float getFloat__Ljava_lang_Object_2I__F (MJIEnv env, int clsRef, int aref, int index) {
-    return Types.intToFloat(getIntElem(env, clsRef, aref, index));
-  }
-  /**
-   * Peer method for the <code>java.lang.reflect.Array.getDouble</code> method.
-   * Returns the <code>double</code> value of the indexed component from the specified array object.
-   * 
-   * @author Mirko Stojmenovic (mirko.stojmenovic@gmail.com)
-   * @author Igor Andjelkovic (igor.andjelkovic@gmail.com)
-   */
-  public static double getDouble__Ljava_lang_Object_2I__D (MJIEnv env, int clsRef, int aref, int index) {
-    return Types.longToDouble(getLongElem(env, clsRef, aref, index));
-  }
-  
   private static boolean check (MJIEnv env, int aref, int index) {
     if (aref == MJIEnv.NULL) {
       env.throwException("java.lang.NullPointerException", "array argument is null");
@@ -224,75 +155,96 @@ public class JPF_java_lang_reflect_Array {
     }
     return true;
   }
-  
-  private static void setIntField (MJIEnv env, int clsRef, int aref, int index, int val) {
-    if (!check(env, aref, index)) return;
-    String type = env.getArrayType(aref);
-    switch (Types.getBaseType(type)) {
-      case Types.T_CHAR: case Types.T_INT: case Types.T_SHORT:
-      case Types.T_BYTE: case Types.T_BOOLEAN: case Types.T_FLOAT:
-        env.setIntArrayElement(aref, index, val);
-        return;
-      default:
-        env.throwException("java.lang.IllegalArgumentException");
-        break;
+
+  public static boolean getBoolean__Ljava_lang_Object_2I__Z (MJIEnv env, int clsRef, int aref, int index) {
+    if (check(env, aref, index)) {
+      return env.getBooleanArrayElement(aref, index);
     }
-  }  
-  
-  private static void setLongField (MJIEnv env, int clsRef, int aref, int index, long val) {
-    if (!check(env, aref, index)) return;
-    String type = env.getArrayType(aref);
-    switch (Types.getBaseType(type)) {
-      case Types.T_LONG: case Types.T_DOUBLE:
-        env.setLongArrayElement(aref, index, val);
-        return;
-      default:
-        env.throwException("java.lang.IllegalArgumentException");
-        break;
+    return false;
+  }
+  public static byte getByte__Ljava_lang_Object_2I__B (MJIEnv env, int clsRef, int aref, int index) {
+    if (check(env, aref, index)) {
+      return env.getByteArrayElement(aref, index);
     }
+    return 0;
+  }
+  public static char getChar__Ljava_lang_Object_2I__C (MJIEnv env, int clsRef, int aref, int index) {
+    if (check(env, aref, index)) {
+      return env.getCharArrayElement(aref, index);
+    }
+    return 0;
+  }
+  public static short getShort__Ljava_lang_Object_2I__S (MJIEnv env, int clsRef, int aref, int index) {
+    if (check(env, aref, index)) {
+      return env.getShortArrayElement(aref, index);
+    }
+    return 0;
   }  
+  public static int getInt__Ljava_lang_Object_2I__I (MJIEnv env, int clsRef, int aref, int index) {
+    if (check(env, aref, index)) {
+      return env.getIntArrayElement(aref, index);
+    }
+    return 0;
+  }
+
+  public static long getLong__Ljava_lang_Object_2I__J (MJIEnv env, int clsRef, int aref, int index) {
+    if (check(env, aref, index)) {
+      return env.getLongArrayElement(aref, index);
+    }
+    return 0;
+  } 
+  public static float getFloat__Ljava_lang_Object_2I__F (MJIEnv env, int clsRef, int aref, int index) {
+    if (check(env, aref, index)) {
+      return env.getFloatArrayElement(aref, index);
+    }
+    return 0;
+  }
+  public static double getDouble__Ljava_lang_Object_2I__D (MJIEnv env, int clsRef, int aref, int index) {
+    if (check(env, aref, index)) {
+      return env.getDoubleArrayElement(aref, index);
+    }
+    return 0;
+  }
+  
   
   public static void setBoolean__Ljava_lang_Object_2IZ__V (MJIEnv env, int clsRef, int aref, int index, boolean val) {
-    setIntField(env, clsRef, aref, index, val ? 1 : 0);
+    if (check(env, aref, index)) {
+      env.setBooleanArrayElement(aref, index, val);
+    }
   }
-  
   public static void setByte__Ljava_lang_Object_2IB__V (MJIEnv env, int clsRef, int aref, int index, byte val) {
-    setIntField(env, clsRef, aref, index, val);
+    if (check(env, aref, index)) {
+      env.setByteArrayElement(aref, index, val);
+    }
   }
-  
   public static void setChar__Ljava_lang_Object_2IC__V (MJIEnv env, int clsRef, int aref, int index, char val) {
-    setIntField(env, clsRef, aref, index, val);
+    if (check(env, aref, index)) {
+      env.setCharArrayElement(aref, index, val);
+    }
   }
-  
   public static void setShort__Ljava_lang_Object_2IS__V (MJIEnv env, int clsRef, int aref, int index, short val) {
-    setIntField(env, clsRef, aref, index, val);
+    if (check(env, aref, index)) {
+      env.setShortArrayElement(aref, index, val);
+    }
   }  
-  /**
-   * Peer method for the <code>java.lang.reflect.Array.setInt</code> method.
-   * Sets the value of the indexed component for the specified array object to the specified <code>int</code> value.
-   * 
-   * @author Mirko Stojmenovic (mirko.stojmenovic@gmail.com)
-   * @author Igor Andjelkovic (igor.andjelkovic@gmail.com)
-   */
   public static void setInt__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef, int aref, int index, int val) {
-    setIntField(env, clsRef, aref, index, val);
+    if (check(env, aref, index)) {
+      env.setIntArrayElement(aref, index, val);
+    }
   }
-  
   public static void setLong__Ljava_lang_Object_2IJ__V (MJIEnv env, int clsRef, int aref, int index, long val) {
-    setLongField(env, clsRef, aref, index, val);
+    if (check(env, aref, index)) {
+      env.setLongArrayElement(aref, index, val);
+    }
   }
-  
   public static void setFloat__Ljava_lang_Object_2IF__V (MJIEnv env, int clsRef, int aref, int index, float val) {
-    setIntField(env, clsRef, aref, index, Types.floatToInt(val));
+    if (check(env, aref, index)) {
+      env.setFloatArrayElement(aref, index, val);
+    }
   }
-  /**
-   * Peer method for the <code>java.lang.reflect.Array.setDouble</code> method.
-   * Sets the value of the indexed component for the specified array object to the specified <code>double</code> value.
-   * 
-   * @author Mirko Stojmenovic (mirko.stojmenovic@gmail.com)
-   * @author Igor Andjelkovic (igor.andjelkovic@gmail.com)
-   */
   public static void setDouble__Ljava_lang_Object_2ID__V (MJIEnv env, int clsRef, int aref, int index, double val) {
-    setLongField(env, clsRef, aref, index, Types.doubleToLong(val));
+    if (check(env, aref, index)) {
+      env.setDoubleArrayElement(aref, index, val);
+    }
   }
 }

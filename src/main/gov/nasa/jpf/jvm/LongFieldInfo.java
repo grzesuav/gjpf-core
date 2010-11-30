@@ -24,14 +24,8 @@ import org.apache.bcel.classfile.ConstantValue;
 /**
  *
  */
-public class LongFieldInfo extends FieldInfo {
+public class LongFieldInfo extends DoubleSlotFieldInfo {
   long init;
-
-  @Deprecated
-  public LongFieldInfo (String name, String type, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-    this(name, type, "", modifiers, cv, ci, idx, off);
-  }
 
   public LongFieldInfo (String name, String type, String genericSignature, int modifiers,
                           ConstantValue cv, ClassInfo ci, int idx, int off) {
@@ -40,7 +34,7 @@ public class LongFieldInfo extends FieldInfo {
   }
 
   public void initialize (ElementInfo ei) {
-    ei.getFields().setLongValue( ei, storageOffset, init);
+    ei.getFields().setLongValue( storageOffset, init);
   }
 
   public int getStorageSize() {
@@ -60,4 +54,9 @@ public class LongFieldInfo extends FieldInfo {
     long v = f.getLongValue(storageOffset);
     return new Long(v);
   }
+
+  public boolean isLongField(){
+    return true;
+  }
 }
+
