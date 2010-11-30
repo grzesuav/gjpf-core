@@ -73,7 +73,7 @@ public class WeakReferenceTest extends TestJPF
    private static void forceGC()
    {
       System.gc();         // Mark that GC is needed
-      Verify.getBoolean(); // Cause a state to be captured and hence GC to run
+      Verify.breakTransition(); // Cause a state to be captured and hence GC to run
    }
    
    private static class Target   // Make this object easy to find in JPF heap

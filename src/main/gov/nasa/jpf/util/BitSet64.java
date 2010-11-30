@@ -45,6 +45,17 @@ public class BitSet64 implements FixedBitSet, Cloneable {
     }
   }
 
+  public int longSize(){
+    return  1;
+  }
+  public long getLong(int i){
+    if (i==0) {
+      return l0;
+    } else {
+      throw new IndexOutOfBoundsException("BitSet64 has no long index " + i);
+    }
+  }
+
   public BitSet64 clone() {
     try {
       return (BitSet64) super.clone();

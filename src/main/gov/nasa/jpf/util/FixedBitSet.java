@@ -40,4 +40,6 @@ public interface FixedBitSet extends Cloneable {
   int length();
   void clear();
 
+  int longSize();
+  long getLong(int i);
 }

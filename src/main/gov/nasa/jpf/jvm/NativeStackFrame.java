@@ -31,9 +31,8 @@ import java.io.StringWriter;
  * NOTE: operands and locals can be, but are not automatically used during
  * native method execution.
  */
-public class NativeStackFrame extends DynamicStackFrame {
+public class NativeStackFrame extends StackFrame {
 
-  static int[] EMPTY_ARRAY = new int[0];
 
   // we don't use the operand stack or locals for arguments and return value
   // because (1) they don't have the right representation (host VM),
@@ -50,21 +49,11 @@ public class NativeStackFrame extends DynamicStackFrame {
   Object[] args;
 
   public NativeStackFrame (NativeMethodInfo mi, StackFrame caller, Object[] argValues){
-    super(mi,null);
+    super(mi,0,0);
 
     if (!mi.isStatic()){
       thisRef = caller.getCalleeThis(mi);
     }
-
-    // we don't have to copy the caller operands into locals since we
-    // don't use any locals or operands
-
-    pc = mi.getInstruction(0);
-    top = -1;
-
-    // we start out with no operands and locals
-    locals = EMPTY_ARRAY;
-    operands = EMPTY_ARRAY;
 
     args = argValues;
   }

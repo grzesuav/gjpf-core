@@ -42,13 +42,9 @@ import gov.nasa.jpf.jvm.ReferenceQueue;
 
 
 /**
- * Improvement on SimpleFilteringSerializer that performs heap
- * canonicalization/GC while serializing.  Despite the apparent extra
- * work, this one can be faster than its superclass because it does not
- * consider objects that become unreachable, such as class name strings
- * and other constants.
+ * serializer that can ignore marked fields and stackframes for state matching
  *
- * @author peterd
+ * <2do> rework filter policies
  */
 public class FilteringSerializer extends AbstractSerializer implements ReferenceProcessor {
 
@@ -286,36 +282,18 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
         }
         buf.add(mi.getGlobalId(), pc);
 
-        int lenIdx = buf.size();
-        buf.add(0); // place holder
-        int len = 0;
+        int len = f.getTopPos();
+        buf.add(len);
 
-        if (policy.includeLocals) {
-          int lcount = f.getLocalVariableCount();
-          len += lcount;
-          for (int i = 0; i < lcount; i++) {
-            int v = f.getLocalVariable(i);
-            if (f.isLocalVariableRef(i)) {
-              addObjRef( v);
-            } else {
-              buf.add(v);
-            }
+        // this looks like something we can push into the frame
+        int[] slots = f.getSlots();
+        for (int i=0; i<len; i++){
+          if (f.isReferenceSlot(i)){
+            addObjRef(slots[i]);
+          } else {
+            buf.add(slots[i]);
           }
         }
-        if (policy.includeOps) {
-          int ocount = f.getTopPos() + 1;
-          len += ocount;
-          for (int i = 0; i < ocount; i++) {
-            int v = f.getAbsOperand(i);
-            if (f.isAbsOperandRef(i)) {
-              addObjRef( v);
-            } else {
-              buf.add(v);
-            }
-          }
-        }
-
-        buf.set(lenIdx, len);
         if (!policy.recurse) break;
       }
 

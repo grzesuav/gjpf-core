@@ -22,7 +22,9 @@ import java.io.PrintStream;
 
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.util.BitSet256;
+import gov.nasa.jpf.util.BitSet64;
+import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Misc;
 import java.io.PrintWriter;
@@ -34,11 +36,20 @@ import org.apache.bcel.Constants;
 /**
  * Describes a stack frame.
  *
- * implementation is based on the fact that each Java method has a fixed size
- * operand stack (overrun actually checked by a real VM), and the heuristics that
- *  (a) stack / local operations are frequent
- *  (b) stack / local sizes are typically small (both < 10)
- * hence a BitSet is not too useful
+ * Java methods always have bounded local and operand stack sizes, computed
+ * at compile time, stored in the classfile, and checked at runtime by the
+ * bytecode verifier. Consequently, we combine locals and operands in one
+ * data structure with the following layout
+ *
+ *   slot[0]                : 'this'
+ *   ..                          .. local vars
+ *   slot[stackBase-1]      : last local var
+ *   slot[stackBase]        : first operand slot
+ *   ..    ^
+ *   ..    | operand stack range
+ *   ..    v
+ *   slot[top]              : highest used operand slot
+ *
  */
 public class StackFrame implements Constants, Cloneable {
 
@@ -48,14 +59,17 @@ public class StackFrame implements Constants, Cloneable {
     */
   protected StackFrame prev;
 
-  protected int top;   /** top index of the operand stack (NOT size) */
+  protected int top;                // top index of the operand stack (NOT size)
+                                    // this points to the last pushed value
 
-  protected int thisRef = -1;  /** local[0] can change, but we have to keep 'this' */
+  protected int thisRef = -1;       // slots[0] can change, but we have to keep 'this'
+  protected int stackBase;          // index where the operand stack begins
 
-  protected int[] operands;            /** the operand stack */
-  protected boolean[] isOperandRef;    /** which operand slots hold references */
+  protected int[] slots;            // the combined local and operand slots
+  protected FixedBitSet isRef;      // which slots contain references
 
-  /** This array can be used to store attributes (e.g. variable names) for
+  /*
+   * This array can be used to store attributes (e.g. variable names) for
    * operands. We don't do anything with this except of preserving it (across
    * dups etc.), so it's pretty much up to the VM listeners/peers what's stored
    *
@@ -65,63 +79,74 @@ public class StackFrame implements Constants, Cloneable {
    *
    * these are set on demand
    */
-  protected Object[] operandAttr;
-  protected Object[] localAttr;
+  protected Object[] attrs = null;  // the combined user-defined a (set on demand)
 
-  protected int[] locals;               /** the local variables */
-  protected boolean[] isLocalRef;       /** which local slots hold references */
-
-  protected Instruction pc;             /** the next insn to execute (program counter) */
-
-  protected MethodInfo mi;              /** which method is executed in this frame */
+  protected Instruction pc;         // the next insn to execute (program counter)
+  protected MethodInfo mi;          // which method is executed in this frame
 
   protected boolean changed;
 
+  static final int[] EMPTY_ARRAY = new int[0];
+  static final FixedBitSet EMPTY_BITSET = new BitSet64();
+
   /**
-   * Creates a new stack frame for a given method.
-   * 'isDirect' specifies if this method was called directly by the VM, i.e. there is
-   * no corresponding INVOKE insn in the underlying stack frame (for instance, that's
-   * important to know for handling return values and computing the next pc)
-   * 'caller' is the calling stack frame (if any)
+   * Creates a new stack frame for a given method
    */
   public StackFrame (MethodInfo m, StackFrame caller) {
     mi = m;
     pc = mi.getInstruction(0);
 
-    int nOperands = mi.getMaxStack();
-    operands = new int[nOperands];
-    isOperandRef = new boolean[nOperands];
-    top = -1;  // index, not size!
+    stackBase = m.getMaxLocals();
+    top = stackBase-1;
+
+    slots = new int[stackBase + m.getMaxStack()];
+    isRef = createReferenceMap(slots.length);
+    // a are initialized on demand
 
     int nargs = mi.getArgumentsSize();
-    int nlocals = (pc == null) ? nargs : mi.getMaxLocals();
-    locals = new int[nlocals];
-    isLocalRef = new boolean[nlocals];
 
     // copy the args, if any
     if ((nargs > 0) && (caller != null)) {
-      int[] a = caller.operands;
-      boolean[] r = caller.isOperandRef;
+      int[] a = caller.slots;
+      FixedBitSet r = caller.isRef;
 
       for (int i=0, j=caller.top-nargs+1; i<nargs; i++, j++) {
-        locals[i] = a[j];
-        isLocalRef[i] = r[j];
+        slots[i] = a[j];
+        isRef.set(i, r.get(j));
       }
 
       if (!mi.isStatic()) { // according to the spec, this is guaranteed upon entry
-        thisRef = locals[0];
+        thisRef = slots[0];
+        isRef.set(0);
       }
 
-      // copy attributes, if we have any
-      if (caller.operandAttr != null){
-        operandAttr = new Object[operands.length];
-        localAttr = new Object[locals.length];
+      if (caller.attrs != null){
+        attrs = new Object[slots.length];
 
-        Object[] oa = caller.operandAttr;
+        Object[] oa = caller.attrs;
         for (int i=0, j=caller.top-nargs+1; i<nargs; i++, j++) {
-          localAttr[i] = oa[j];
+          attrs[i] = oa[j];
         }
       }
+    }
+  }
+
+  protected StackFrame (MethodInfo m, int nLocals, int nOperands){
+    mi = m;
+    pc = mi.getInstruction(0);
+
+    stackBase = nLocals;
+    top = nLocals-1;
+
+    int nSlots = nLocals + nOperands;
+    if (nSlots > 0){
+      slots = new int[nLocals + nOperands];
+      isRef = createReferenceMap(slots.length);
+    } else {
+      // NativeStackFrames don't use locals or operands, but we
+      // don't want to add tests to all our methods
+      slots = EMPTY_ARRAY;
+      isRef = EMPTY_BITSET;
     }
   }
 
@@ -132,8 +157,8 @@ public class StackFrame implements Constants, Cloneable {
 
     thisRef = objRef;
 
-    locals[0] = thisRef;
-    isLocalRef[0] = true;
+    slots[0] = thisRef;
+    isRef.set(0);
   }
 
   /**
@@ -147,12 +172,20 @@ public class StackFrame implements Constants, Cloneable {
    * NOTE - TESTING ONLY! this does not have a MethodInfo
    */
   public StackFrame (int nLocals, int nOperands){
-    operands = new int[nOperands];
-    isOperandRef = new boolean[nOperands];
-    top = -1;  // index, not size!
+    stackBase = nLocals;
+    slots = new int[nLocals + nOperands];
+    isRef = createReferenceMap(slots.length);
+    top = nLocals-1;  // index, not size!
+  }
 
-    locals = new int[nLocals];
-    isLocalRef = new boolean[nLocals];
+  protected FixedBitSet createReferenceMap (int nSlots){
+    if (nSlots <= 64){
+      return new BitSet64();
+    } else if (nSlots <= 256){
+      return new BitSet256();
+    } else {
+      throw new JPFException("too many slots in " + mi.getCompleteName() + " : " + nSlots);
+    }
   }
 
   public boolean isNative() {
@@ -179,7 +212,7 @@ public class StackFrame implements Constants, Cloneable {
       return -1;
     }
 
-    return operands[top-i];
+    return slots[top-i];
   }
 
   public StackFrame getPrevious() {
@@ -196,7 +229,7 @@ public class StackFrame implements Constants, Cloneable {
   public Object getLocalOrFieldValue (String id) {
     // try locals first
     LocalVarInfo localVars[] = mi.getLocalVars();
-    for (int i=0; i<locals.length; i++) {
+    for (int i=0; i<stackBase; i++) {
       if (localVars[i].getName().equals(id)) {
         return getLocalValueObject(i);
       }
@@ -211,24 +244,24 @@ public class StackFrame implements Constants, Cloneable {
     if (localVars != null) { // might not have been compiled with debug info
       String type = localVars[i].getType();
       if ("Z".equals(type)) {
-        return locals[i] != 0 ? Boolean.TRUE : Boolean.FALSE;
+        return slots[i] != 0 ? Boolean.TRUE : Boolean.FALSE;
       } else if ("B".equals(type)) {
-        return new Byte((byte)locals[i]);
+        return new Byte((byte)slots[i]);
       } else if ("C".equals(type)) {
-        return new Character((char)locals[i]);
+        return new Character((char)slots[i]);
       } else if ("S".equals(type)) {
-        return new Short((short)locals[i]);
+        return new Short((short)slots[i]);
       } else if ("I".equals(type)) {
-        return new Integer(locals[i]);
+        return new Integer(slots[i]);
       } else if ("F".equals(type)) {
-        return new Float( Float.intBitsToFloat(locals[i]));
+        return new Float( Float.intBitsToFloat(slots[i]));
       } else if ("J".equals(type)) {
-        return new Long ( Types.intsToLong(locals[i], locals[i+1]) );
+        return new Long ( Types.intsToLong(slots[i], slots[i+1]) );
       } else if ("D".equals(type)) {
-        return new Double( Double.longBitsToDouble(Types.intsToLong(locals[i], locals[i+1])));
+        return new Double( Double.longBitsToDouble(Types.intsToLong(slots[i], slots[i+1])));
       } else { // reference or unknown ('?')
-        if (locals[i] != -1) {
-          return JVM.getVM().getHeap().get(locals[i]);
+        if (slots[i] != -1) {
+          return JVM.getVM().getHeap().get(slots[i]);
         }
       }
     }
@@ -267,11 +300,9 @@ public class StackFrame implements Constants, Cloneable {
    * 'nTopSlots' is usually obtained from MethodInfo.getNumberOfCallerStackSlots()
    */
   public boolean includesReferenceOperand (int nTopSlots, int objRef){
-    int[] op = operands;
-    boolean[] ref = isOperandRef;
 
     for (int i=0, j=top-nTopSlots+1; i<nTopSlots && j>=0; i++, j++) {
-      if (ref[j] && (op[j] == objRef)){
+      if (isRef.get(j) && (slots[j] == objRef)){
         return true;
       }
     }
@@ -283,11 +314,9 @@ public class StackFrame implements Constants, Cloneable {
    * does any of the operand slots hold a reference value of 'objRef'
    */
   public boolean includesReferenceOperand (int objRef){
-    int[] op = operands;
-    boolean[] ref = isOperandRef;
 
-    for (int i=0; i<op.length; i++) {
-      if (ref[i] && (op[i] == objRef)){
+    for (int i=stackBase; i<=top; i++) {
+      if (isRef.get(i) && (slots[i] == objRef)){
         return true;
       }
     }
@@ -329,10 +358,9 @@ public class StackFrame implements Constants, Cloneable {
    * @return index of local slot with attribute, -1 if none found
    */
   public int getLocalAttrIndex (Class<?> attrType, int startIdx){
-    Object[] la = localAttr;
-    if (la != null){
-      for (int i=startIdx; i<la.length; i++){
-        Object a = la[i];
+    if (attrs != null){
+      for (int i=startIdx; i<stackBase; i++){
+        Object a = attrs[i];
         if (a != null && attrType.isInstance(a)){
           return i;
         }
@@ -346,14 +374,14 @@ public class StackFrame implements Constants, Cloneable {
     setOperandAttr(0, attr);
   }
 
-  public void setOperandAttr (int offset, Object attr){
-    if (operandAttr == null && attr != null){
-      operandAttr = new Object[operands.length];
-      localAttr = new Object[locals.length];
+  public void setOperandAttr (int offset, Object newAttr){
+    if (attrs == null && newAttr != null){
+      attrs = new Object[slots.length];
     }
 
-    if (operandAttr != null){
-      operandAttr[top-offset] = attr;
+    if (attrs != null){ // newAttr might be null, in which case we have to clear
+      // <2do> should cap at stackBase
+      attrs[top-offset] = newAttr;
     }
   }
 
@@ -362,15 +390,13 @@ public class StackFrame implements Constants, Cloneable {
   }
 
 
-  public void setLocalAttr (int index, Object attr) {
-    if (index < locals.length){
-      if (localAttr == null && attr != null){
-        operandAttr = new Object[operands.length];
-        localAttr = new Object[locals.length];
+  public void setLocalAttr (int index, Object newAttr) {
+    if (index < stackBase){
+      if (attrs == null && newAttr != null){
+        attrs = new Object[slots.length];
       }
-
-      if (localAttr != null){
-        localAttr[index] = attr;
+      if (attrs != null){
+        attrs[index] = newAttr;
       }
     }
   }
@@ -380,30 +406,30 @@ public class StackFrame implements Constants, Cloneable {
   // modified, e.g. for a native method).
   // to be used from listeners
   public Object[] getArgumentAttrs (MethodInfo miCallee) {
-    if (operandAttr != null) {
+    if (attrs != null) {
       int nArgs = miCallee.getNumberOfArguments();
       byte[] at = miCallee.getArgumentTypes();
-      Object[] attrs;
+      Object[] a;
 
       if (!miCallee.isStatic()) {
-        attrs = new Object[nArgs+1];
-        attrs[0] = getOperandAttr(miCallee.getArgumentsSize()-1);
+        a = new Object[nArgs+1];
+        a[0] = getOperandAttr(miCallee.getArgumentsSize()-1);
       } else {
-        attrs = new Object[nArgs];
+        a = new Object[nArgs];
       }
 
-      for (int i=nArgs-1, off=0, j=attrs.length-1; i>=0; i--, j--) {
+      for (int i=nArgs-1, off=0, j=a.length-1; i>=0; i--, j--) {
         byte argType = at[i];
         if (argType == Types.T_LONG || argType == Types.T_DOUBLE) {
-          attrs[j] = getOperandAttr(off+1);
+          a[j] = getOperandAttr(off+1);
           off +=2;
         } else {
-          attrs[j] = getOperandAttr(off);
+          a[j] = getOperandAttr(off);
           off++;
         }
       }
 
-      return attrs;
+      return a;
 
     } else {
       return null;
@@ -416,7 +442,7 @@ public class StackFrame implements Constants, Cloneable {
    * care for argument types)
    */
   public boolean hasArgumentAttr (MethodInfo miCallee, Class<?> attrType){
-    if (operandAttr != null) {
+    if (attrs != null) {
       int nArgSlots = miCallee.getArgumentsSize();
 
       for (int i=0; i<nArgSlots; i++){
@@ -439,21 +465,21 @@ public class StackFrame implements Constants, Cloneable {
     int nArgSlots = miCallee.getArgumentsSize();
 
     for (int i=top-1; i>=top-nArgSlots; i--){
-      if (isOperandRef[i]){
-        visitor.visit(operands[i]);
+      if (isRef.get(i)){
+        visitor.visit(slots[i]);
       }
     }
   }
 
-  public int getAbsOperand(int idx) {
-    return operands[idx];
+  public int getSlot(int idx){
+    return slots[idx];
+  }
+  public boolean isReferenceSlot(int idx){
+    return isRef.get(idx);
   }
 
-  public boolean isAbsOperandRef(int idx) {
-    return isOperandRef[idx];
-  }
 
-  // we store long attrs at the local var index, which is the lower one
+  // we store long a at the local var index, which is the lower one
   public Object getLongOperandAttr () {
     return getOperandAttr(1);
   }
@@ -461,26 +487,22 @@ public class StackFrame implements Constants, Cloneable {
     return getOperandAttr(attrType,1);
   }
 
-  public boolean hasOperandAttrs () {
-    return operandAttr != null;
-  }
-
-  public boolean hasLocalAtts () {
-    return localAttr != null;
+  public boolean hasAttrs () {
+    return attrs != null;
   }
 
   // returns all
   public Object getOperandAttr () {
     // <2do> needs to handle composite
-    if ((top >=0) && (operandAttr != null)){
-      return operandAttr[top];
+    if ((top >=0) && (attrs != null)){
+      return attrs[top];
     } else {
       return null;
     }
   }
   public <T> T getOperandAttr (Class<T> attrType){
-    if ((top >=0) && (operandAttr != null)){
-      Object a = operandAttr[top];
+    if ((top >=0) && (attrs != null)){
+      Object a = attrs[top];
       if (a != null && attrType.isAssignableFrom(a.getClass())){
         return (T) a;
       }
@@ -491,15 +513,16 @@ public class StackFrame implements Constants, Cloneable {
 
   public Object getOperandAttr (int offset) {
     // <2do> needs to handle composite
-    if ((top >= offset) && (operandAttr != null)) {
-      return operandAttr[top-offset];
+    // <2do> check for stackBase
+    if ((top >= offset) && (attrs != null)) {
+      return attrs[top-offset];
     } else {
       return null;
     }
   }
   public <T> T getOperandAttr (Class<T> attrType, int offset){
-    if ((top >= offset) && (operandAttr != null)){
-      Object a = operandAttr[top-offset];
+    if ((top >= offset) && (attrs != null)){
+      Object a = attrs[top-offset];
       if (a != null && attrType.isAssignableFrom(a.getClass())){
         return (T) a;
       }      
@@ -510,24 +533,24 @@ public class StackFrame implements Constants, Cloneable {
 
 
 
-  public void setOperand (int offset, int v, boolean ref){
+  public void setOperand (int offset, int v, boolean isRefValue){
     int i = top-offset;
-    operands[i] = v;
-    isOperandRef[i] = ref;
+    slots[i] = v;
+    isRef.set(i, isRefValue);
   }
 
   // returns all
   public Object getLocalAttr (int index){
     // <2do> needs to handle composite
-    if ((index < locals.length) && (localAttr != null)){
-      return localAttr[index];
+    if ((index < stackBase) && (attrs != null)){
+      return attrs[index];
     } else {
       return null;
     }
   }
   public <T> T getLocalAttr (Class<T> attrType, int index){
-    if ((index < locals.length) && (localAttr != null)){
-      Object a = localAttr[index];
+    if ((index < stackBase) && (attrs != null)){
+      Object a = attrs[index];
       if (a != null && attrType.isAssignableFrom(a.getClass())){
         return (T) a;
       }
@@ -537,10 +560,11 @@ public class StackFrame implements Constants, Cloneable {
 
 
   public void setLocalVariable (int index, int v, boolean ref) {
-    boolean activateGc = (isLocalRef[index] && (locals[index] != -1));
+    // <2do> activateGc should be replaced by local refChanged
+    boolean activateGc = (isRef.get(index) && (slots[index] != -1));
 
-    locals[index] = v;
-    isLocalRef[index] = ref;
+    slots[index] = v;
+    isRef.set(index,ref);
 
     if (ref) {
       if (v != -1) activateGc = true;
@@ -552,7 +576,7 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public int getLocalVariable (int i) {
-    return locals[i];
+    return slots[i];
   }
 
   public int getLocalVariable (String name) {
@@ -565,7 +589,7 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public int getLocalVariableCount() {
-    return locals.length;
+    return stackBase;
   }
 
   public LocalVarInfo[] getLocalVars () {
@@ -578,7 +602,7 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public boolean isLocalVariableRef (int idx) {
-    return isLocalRef[idx];
+    return isRef.get(idx);
   }
 
   public String getLocalVariableType (String name) {
@@ -595,24 +619,27 @@ public class StackFrame implements Constants, Cloneable {
     return null;
   }
 
-  int[] getLocalVariables () {
-    return locals;
+  /**
+   * use with extreme care - don't modify
+   */
+  public int[] getSlots () {
+    return slots; // we should probably clone
   }
 
   public void setLongLocalVariable (int index, long v) {
     // WATCH OUT: apparently, slots can change type, so we have to
     // reset the reference flag (happened in JavaSeq)
 
-    locals[index] = Types.hiLong(v);
-    isLocalRef[index] = false;
+    slots[index] = Types.hiLong(v);
+    isRef.clear(index);
 
     index++;
-    locals[index] = Types.loLong(v);
-    isLocalRef[index] = false;
+    slots[index] = Types.loLong(v);
+    isRef.clear(index);
   }
 
   public long getLongLocalVariable (int i) {
-    return Types.intsToLong(locals[i + 1], locals[i]);
+    return Types.intsToLong(slots[i + 1], slots[i]);
   }
 
   public long getLongLocalVariable (String name) {
@@ -633,12 +660,12 @@ public class StackFrame implements Constants, Cloneable {
     return mi.getName();
   }
 
-  public boolean isOperandRef (int idx) {
-    return isOperandRef[top-idx];
+  public boolean isOperandRef (int offset) {
+    return isRef.get(top-offset);
   }
 
   public boolean isOperandRef () {
-    return isOperandRef[top];
+    return isRef.get(top);
   }
 
   //--- direct pc modification
@@ -700,7 +727,13 @@ public class StackFrame implements Constants, Cloneable {
 
   // stack operations
   public void clearOperandStack () {
-    top = -1;
+    if (attrs != null){
+      for (int i=stackBase; i<= top; i++){
+        attrs[i] = null;
+      }
+    }
+    
+    top = stackBase-1;
   }
 
   // this is a deep copy
@@ -708,16 +741,11 @@ public class StackFrame implements Constants, Cloneable {
     try {
       StackFrame sf = (StackFrame) super.clone();
 
-      sf.operands = operands.clone();
-      sf.isOperandRef = isOperandRef.clone();
-      if (operandAttr != null) {
-        sf.operandAttr = operandAttr.clone();
-      }
+      sf.slots = slots.clone();
+      sf.isRef = isRef.clone();
 
-      sf.locals = locals.clone();
-      sf.isLocalRef = isLocalRef.clone();
-      if (localAttr != null) {
-        sf.localAttr = localAttr.clone();
+      if (attrs != null){
+        sf.attrs = attrs.clone();
       }
 
       sf.changed = false; // has to be set explicitly
@@ -747,10 +775,11 @@ public class StackFrame implements Constants, Cloneable {
     int t= top;
 
     int td=t+1;
-    operands[td] = operands[t];
-    isOperandRef[td] = isOperandRef[t];
-    if (operandAttr != null){
-      operandAttr[td] = operandAttr[t];
+    slots[td] = slots[t];
+    isRef.set(td, isRef.get(t));
+
+    if (attrs != null){
+      attrs[td] = attrs[t];
     }
 
     top = td;
@@ -766,18 +795,18 @@ public class StackFrame implements Constants, Cloneable {
 
     // duplicate A
     td = t+1; ts = t-1;
-    operands[td] = operands[ts];
-    isOperandRef[td] = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = operandAttr[ts];
+    slots[td] = slots[ts];
+    isRef.set(td, isRef.get(ts));
+    if (attrs != null){
+      attrs[td] = attrs[ts];
     }
 
     // duplicate B
     td++; ts=t;
-    operands[td] = operands[ts];
-    isOperandRef[td] = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = operandAttr[ts];
+    slots[td] = slots[ts];
+    isRef.set(td, isRef.get(ts));
+    if (attrs != null){
+      attrs[td] = attrs[ts];
     }
 
     top = td;
@@ -796,44 +825,44 @@ public class StackFrame implements Constants, Cloneable {
 
     // duplicate C
     ts=t; td = t+2;                              // ts=top, td=top+2
-    operands[td] = c = operands[ts];
-    isOperandRef[td] = cRef = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = cAnn = operandAttr[ts];
+    slots[td] = c = slots[ts];
+    cRef = isRef.get(ts);
+    isRef.set(td,cRef);
+    if (attrs != null){
+      attrs[td] = cAnn = attrs[ts];
     }
-
 
     // duplicate B
     ts--; td--;                                  // ts=top-1, td=top+1
-    operands[td] = b = operands[ts];
-    isOperandRef[td] = bRef = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = bAnn = operandAttr[ts];
+    slots[td] = b = slots[ts];
+    bRef = isRef.get(ts);
+    isRef.set(td, bRef);
+    if (attrs != null){
+      attrs[td] = bAnn = attrs[ts];
     }
-
 
     // shuffle A
     ts=t-2; td=t;                                // ts=top-2, td=top
-    operands[td] = operands[ts];
-    isOperandRef[td] = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = operandAttr[ts];
+    slots[td] = slots[ts];
+    isRef.set(td, isRef.get(ts));
+    if (attrs != null){
+      attrs[td] = attrs[ts];
     }
 
     // shuffle B
     td = ts;                                     // td=top-2
-    operands[td] = b;
-    isOperandRef[td] = bRef;
-    if (operandAttr != null){
-      operandAttr[td] = bAnn;
+    slots[td] = b;
+    isRef.set(td, bRef);
+    if (attrs != null){
+      attrs[td] = bAnn;
     }
 
     // shuffle C
     td++;                                        // td=top-1
-    operands[td] = c;
-    isOperandRef[td] = cRef;
-    if (operandAttr != null){
-      operandAttr[td] = cAnn;
+    slots[td] = c;
+    isRef.set(td, cRef);
+    if (attrs != null){
+      attrs[td] = cAnn;
     }
 
     top += 2;
@@ -852,53 +881,53 @@ public class StackFrame implements Constants, Cloneable {
 
     // duplicate C
     ts = t-1; td = t+1;                          // ts=top-1, td=top+1
-    operands[td] = c = operands[ts];
-    isOperandRef[td] = cRef = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = cAnn = operandAttr[ts];
+    slots[td] = c = slots[ts];
+    cRef = isRef.get(ts);
+    isRef.set(td, cRef);
+    if (attrs != null){
+      attrs[td] = cAnn = attrs[ts];
     }
 
     // duplicate D
     ts=t; td++;                                  // ts=top, td=top+2
-    operands[td] = d = operands[ts];
-    isOperandRef[td] = dRef = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = dAnn = operandAttr[ts];
+    slots[td] = d = slots[ts];
+    dRef = isRef.get(ts);
+    isRef.set(td, dRef);
+    if (attrs != null){
+      attrs[td] = dAnn = attrs[ts];
     }
 
     // shuffle A
     ts = t-3; td = t-1;                          // ts=top-3, td=top-1
-    operands[td] = operands[ts];
-    isOperandRef[td] = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = operandAttr[ts];
+    slots[td] = slots[ts];
+    isRef.set( td, isRef.get(ts));
+    if (attrs != null){
+      attrs[td] = attrs[ts];
     }
 
     // shuffle B
     ts++; td = t;                                // ts = top-2
-    operands[td] = operands[ts];
-    isOperandRef[td] = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = operandAttr[ts];
+    slots[td] = slots[ts];
+    isRef.set( td, isRef.get(ts));
+    if (attrs != null){
+      attrs[td] = attrs[ts];
     }
 
     // shuffle D
     td = ts;                                     // td = top-2
-    operands[td] = d;
-    isOperandRef[td] = dRef;
-    if (operandAttr != null){
-      operandAttr[td] = dAnn;
+    slots[td] = d;
+    isRef.set( td, dRef);
+    if (attrs != null){
+      attrs[td] = dAnn;
     }
-
 
     // shuffle C
     td--;                                        // td = top-3
-    operands[td] = c;
-    isOperandRef[td] = cRef;
-    if (operandAttr != null){
-      operandAttr[td] = cAnn;
+    slots[td] = c;
+    isRef.set(td, cRef);
+    if (attrs != null){
+      attrs[td] = cAnn;
     }
-
 
     top += 2;
   }
@@ -916,26 +945,27 @@ public class StackFrame implements Constants, Cloneable {
 
     // duplicate B
     ts = t; td = t+1;
-    operands[td] = b = operands[ts];
-    isOperandRef[td] = bRef = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = bAnn = operandAttr[ts];
+    slots[td] = b = slots[ts];
+    bRef = isRef.get(ts);
+    isRef.set(td, bRef);
+    if (attrs != null){
+      attrs[td] = bAnn = attrs[ts];
     }
 
     // shuffle A
     ts--; td = t;       // ts=top-1, td = top
-    operands[td] = operands[ts];
-    isOperandRef[td] = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = operandAttr[ts];
+    slots[td] = slots[ts];
+    isRef.set( td, isRef.get(ts));
+    if (attrs != null){
+      attrs[td] = attrs[ts];
     }
 
     // shuffle B
     td = ts;            // td=top-1
-    operands[td] = b;
-    isOperandRef[td] = bRef;
-    if (operandAttr != null){
-      operandAttr[td] = bAnn;
+    slots[td] = b;
+    isRef.set( td, bRef);
+    if (attrs != null){
+      attrs[td] = bAnn;
     }
 
     top++;
@@ -954,34 +984,35 @@ public class StackFrame implements Constants, Cloneable {
 
     // duplicate C
     ts = t; td = t+1;
-    operands[td] = c = operands[ts];
-    isOperandRef[td] = cRef = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = cAnn = operandAttr[ts];
+    slots[td] = c = slots[ts];
+    cRef = isRef.get(ts);
+    isRef.set( td, cRef);
+    if (attrs != null){
+      attrs[td] = cAnn = attrs[ts];
     }
 
     // shuffle B
     td = ts; ts--;               // td=top, ts=top-1
-    operands[td] = operands[ts];
-    isOperandRef[td] = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = operandAttr[ts];
+    slots[td] = slots[ts];
+    isRef.set( td, isRef.get(ts));
+    if (attrs != null){
+      attrs[td] = attrs[ts];
     }
 
     // shuffle A
     td=ts; ts--;                 // td=top-1, ts=top-2
-    operands[td] = operands[ts];
-    isOperandRef[td] = isOperandRef[ts];
-    if (operandAttr != null){
-      operandAttr[td] = operandAttr[ts];
+    slots[td] = slots[ts];
+    isRef.set( td, isRef.get(ts));
+    if (attrs != null){
+      attrs[td] = attrs[ts];
     }
 
     // shuffle C
     td = ts;                     // td = top-2
-    operands[td] = c;
-    isOperandRef[td] = cRef;
-    if (operandAttr != null){
-      operandAttr[td] = cAnn;
+    slots[td] = c;
+    isRef.set(td, cRef);
+    if (attrs != null){
+      attrs[td] = cAnn;
     }
 
     top++;
@@ -990,113 +1021,67 @@ public class StackFrame implements Constants, Cloneable {
 
   // <2do> pcm - I assume this compares snapshots, not types. Otherwise it
   // would be pointless to compare stack/local values
-  public boolean equals (Object object) {
-    // casts to stack frame
-    if (object == null || !(object instanceof StackFrame)){
-      return false;
-    }
+  public boolean equals (Object o) {
+    if (o instanceof StackFrame){
+      StackFrame other = (StackFrame)o;
 
-    StackFrame sf = (StackFrame) object;
-
-    if (prev != sf.prev){
-      return false;
-    }
-
-    if (pc != sf.pc) {
-      return false;
-    }
-    if (mi != sf.mi) {
-      return false;
-    }
-
-
-    //--- compare the locals
-    int[] l = sf.locals;
-    boolean[] lr = sf.isLocalRef;
-    int   nlocals = locals.length;
-
-    if (nlocals != l.length) {
-      return false;
-    }
-    for (int idx = 0; idx < nlocals; idx++) {
-      if ((locals[idx] != l[idx]) || (isLocalRef[idx] != lr[idx])) {
+      if (prev != other.prev) {
         return false;
       }
-    }
-    if (!Misc.compare(nlocals,localAttr,sf.localAttr)){
-      return false;
-    }
-    
-    //--- compare the operand stacks
-    int[] o = sf.operands;
-    boolean[] or = sf.isOperandRef;
-
-    if (top != sf.top) {
-      return false;
-    }
-    for (int idx = 0; idx <= top; idx++) {
-      if ((operands[idx] != o[idx]) || (isOperandRef[idx] != or[idx]) ) {
+      if (pc != other.pc) {
         return false;
       }
-    }
-    if (!Misc.compare(top+1, operandAttr, sf.operandAttr)){
-      return false;
-    }
-
-
-    return true;
-  }
-  
-  public boolean hasAnyRef () {
-    for (int i=0; i<=top; i++) {
-      if (isOperandRef[i]) {
-        return true;
+      if (mi != other.mi) {
+        return false;
       }
-    }
-
-    for (int i = 0, l = locals.length; i < l; i++) {
-      if (isLocalRef[i]) {
-        return true;
+      if (top != other.top){
+        return false;
       }
+
+      int[] otherSlots = other.slots;
+      FixedBitSet otherIsRef = other.isRef;
+      for (int i=0; i<=top; i++){
+        if ( slots[i] != otherSlots[i]){
+          return false;
+        }
+        if ( isRef.get(i) != otherIsRef.get(i)){
+          return false;
+        }
+      }
+
+      if (!Misc.compare(top,attrs,other.attrs)){
+        return false;
+      }
+
+      return true;
     }
 
     return false;
   }
+  
+  public boolean hasAnyRef () {
+    return isRef.cardinality() > 0;
+  }
 
   protected void hash (HashData hd) {
-    // it's debatable if we add the attributes to the state, but whatever it
-    // is, it should be kept consistent with the Fields.hash()
-    Object[] attrs;
-    int[] v;
-    boolean[] r;
-
     if (prev != null){
       hd.add(prev.objectHashCode());
     }
     hd.add(mi.getGlobalId());
 
-    v = locals;
-    r = isLocalRef;
-    for (int i = 0, l = v.length; i < l; i++) {
-      hd.add(v[i]);
-      hd.add(r[i]);
-    }
-    attrs = localAttr;
-    if (attrs != null) {
-      for (int i=0, l=attrs.length; i < l; i++) {
-        hd.add(attrs[i]);
-      }
+    for (int i=0; i<=top; i++){
+      hd.add(slots[i]);
     }
 
-    v = operands;
-    r = isOperandRef;
-    for (int i=0; i<=top; i++) {
-      hd.add(v[i]);
-      hd.add(r[i]);
+    int ls = isRef.longSize();
+    for (int i=0; i<ls; i++){
+      hd.add(isRef.getLong(i));
     }
-    attrs = operandAttr;
-    if (attrs != null) {
-      for (int i=0, l=attrs.length; i < l; i++) {
+
+    // it's debatable if we add the attributes to the state, but whatever it
+    // is, it should be kept consistent with the Fields.hash()
+    if (attrs != null){
+      for (int i=0; i<=top; i++){
         hd.add(attrs[i]);
       }
     }
@@ -1107,9 +1092,7 @@ public class StackFrame implements Constants, Cloneable {
   // we need to redifine it to make the hash table work
   public int hashCode () {
     HashData hd = new HashData();
-
     hash(hd);
-
     return hd.getValue();
   }
 
@@ -1119,19 +1102,19 @@ public class StackFrame implements Constants, Cloneable {
    * Thread gc roots)
    */
   public void markThreadRoots (Heap heap, int tid) {
-    for (int i=0; i<= top; i++) {
-      if (isOperandRef[i]) {
-        int objref = operands[i];
-        if (objref != MJIEnv.NULL){
-          heap.markThreadRoot(objref, tid);
-        }
+
+    /**
+    for (int i = isRef.nextSetBit(0); i>=0 && i<=top; i = isRef.nextSetBit(i + 1)) {
+      int objref = slots[i];
+      if (objref != MJIEnv.NULL) {
+        heap.markThreadRoot(objref, tid);
       }
     }
-
-    for (int i = 0, l = locals.length; i < l; i++) {
-      if (isLocalRef[i]) {
-        int objref = locals[i];
-        if (objref != MJIEnv.NULL){
+    **/
+    for (int i = 0; i <= top; i++) {
+      if (isRef.get(i)) {
+        int objref = slots[i];
+        if (objref != MJIEnv.NULL) {
           heap.markThreadRoot(objref, tid);
         }
       }
@@ -1142,14 +1125,14 @@ public class StackFrame implements Constants, Cloneable {
 
   public void printOperands (PrintStream pw){
     pw.print("operands = [");
-    for (int i=0; i<top+1; i++){
+    for (int i=stackBase; i<=top; i++){
       if (i>0){
         pw.print(',');
       }
       if (isOperandRef(i)){
         pw.print('^');
       }
-      pw.print(operands[i]);
+      pw.print(slots[i]);
       Object a = getOperandAttr(top-i);
       if (a != null){
         pw.print(" {");
@@ -1175,28 +1158,26 @@ public class StackFrame implements Constants, Cloneable {
       pw.println();
     }
 
-    pw.println( "\t  Operand stack is:");
-
-    for (int i = 0; i <=top; i++) {
-      pw.print( "\t    ");
-
-      if (isOperandRef[i]) {
-        pw.print( "#");
+    pw.print("\t slots: ");
+    for (int i=0; i<=top; i++){
+      if (i == stackBase){
+        pw.println("\t      ----------- operand stack");
       }
 
-      pw.println( operands[i]);
-    }
+      pw.print( "\t    [");
+      pw.print(i);
+      pw.print("] ");
+      if (isRef.get(i)) {
+        pw.print( "@");
+      }
+      pw.print( slots[i]);
 
-    pw.println( "\t  Local variables are:");
-
-    for (int i = 0, l = locals.length; i < l; i++) {
-      pw.print( "\t    ");
-
-      if (isLocalRef[i]) {
-        pw.print( "#");
+      if (attrs != null){
+        pw.print("  attr=");
+        pw.print(attrs[i]);
       }
 
-      pw.println( "" + locals[i]);
+      pw.println();
     }
   }
 
@@ -1206,20 +1187,20 @@ public class StackFrame implements Constants, Cloneable {
 
   public void swap () {
     int t = top-1;
-    int v = operands[top];
-    boolean isRef = isOperandRef[top];
 
+    int v = slots[top];
+    boolean isTopRef = isRef.get(top);
 
-    operands[top] = operands[t];
-    isOperandRef[top] = isOperandRef[t];
+    slots[top] = slots[t];
+    isRef.set( top, isRef.get(t));
 
-    operands[t] = v;
-    isOperandRef[t] = isRef;
+    slots[t] = v;
+    isRef.set( t, isTopRef);
 
-    if (operandAttr != null){
-      Object attr = operandAttr[top];
-      operandAttr[top] = operandAttr[t];
-      operandAttr[t] = attr;
+    if (attrs != null){
+      Object a = attrs[top];
+      attrs[top] = attrs[t];
+      attrs[t] = a;
     }
   }
 
@@ -1229,50 +1210,31 @@ public class StackFrame implements Constants, Cloneable {
     pw.print(",mi=");
     pw.print( mi != null ? mi.getUniqueName() : "null");
     pw.print(",top="); pw.print(top);
-    pw.print(",operands=[");
+    pw.print(",slots=[");
 
     for (int i = 0; i <= top; i++) {
-      if (i != 0) {
-        pw.print(',');
+      if (i == stackBase){
+        pw.print("||");
+      } else {
+        if (i != 0) {
+          pw.print(',');
+        }
       }
 
-      pw.print(operands[i]);
+      if (isRef.get(i)){
+        pw.print('@');
+      }
+      pw.print(slots[i]);
 
-      if (operandAttr != null && operandAttr[i] != null) {
+      if (attrs != null && attrs[i] != null) {
         pw.print('(');
-        pw.print(operandAttr[i]);
-        pw.print(')');
-      }
-    }
-
-    pw.print("],locals=[");
-
-    for (int i = 0; i < locals.length; i++) {
-      if (i != 0) {
-        pw.print(',');
-      }
-
-      pw.print(locals[i]);
-      if ((localAttr != null) && (localAttr[i] != null)) {
-        pw.print('(');
-        pw.print(localAttr[i]);
+        pw.print(attrs[i]);
         pw.print(')');
       }
     }
 
     pw.print("],pc=");
     pw.print(pc != null ? pc.getPosition() : "null");
-    pw.print(",oRefs=");
-
-    for (int i = 0; i <= top; i++) {
-      pw.print(isOperandRef[i] ? 'R' : '-');
-    }
-
-    pw.print(",lRefs=");
-
-    for (int i = 0; i < locals.length; i++) {
-      pw.print(isLocalRef[i] ? 'R' : '-');
-    }
 
     pw.print(']');
 
@@ -1286,8 +1248,8 @@ public class StackFrame implements Constants, Cloneable {
     StringWriter sw = new StringWriter(128);
     PrintWriter pw = new PrintWriter(sw);
 
-    pw.print("StackFrame@");
-    pw.print(Integer.toHexString(objectHashCode()));
+    pw.print("StackFrame{");
+    //pw.print(Integer.toHexString(objectHashCode()));
     printContentsOn(pw);
     pw.print('}');
 
@@ -1295,12 +1257,12 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public long longPeek () {
-    return Types.intsToLong( operands[top], operands[top-1]);
+    return Types.intsToLong( slots[top], slots[top-1]);
   }
 
   public long longPeek (int n) {
     int i = top - n;
-    return Types.intsToLong( operands[i], operands[i-1]);
+    return Types.intsToLong( slots[i], slots[i-1]);
   }
 
   public void longPush (long v) {
@@ -1316,13 +1278,13 @@ public class StackFrame implements Constants, Cloneable {
   public double doublePop () {
     int i = top;
 
-    int lo = operands[i--];
-    int hi = operands[i--];
+    int lo = slots[i--];
+    int hi = slots[i--];
 
-    if (operandAttr != null){
+    if (attrs != null){
       i = top;
-      operandAttr[i--] = null; // not really required
-      operandAttr[i--] = null; // that's where the attribute should be
+      attrs[i--] = null; // not really required
+      attrs[i--] = null; // that's where the attribute should be
     }
 
     top = i;
@@ -1332,13 +1294,13 @@ public class StackFrame implements Constants, Cloneable {
   public long longPop () {
     int i = top;
 
-    int lo = operands[i--];
-    int hi = operands[i--];
+    int lo = slots[i--];
+    int hi = slots[i--];
 
-    if (operandAttr != null){
+    if (attrs != null){
       i = top;
-      operandAttr[i--] = null; // not really required
-      operandAttr[i--] = null; // that's where the attribute should be
+      attrs[i--] = null; // not really required
+      attrs[i--] = null; // that's where the attribute should be
     }
 
     top = i;
@@ -1346,25 +1308,29 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public int peek () {
-    return operands[top];
+    return slots[top];
   }
 
   public int peek (int offset) {
-    return operands[top-offset];
+    return slots[top-offset];
   }
 
   public void pop (int n) {
+    //assert (top >= stackBase) : "stack empty";
+
     int t = top - n;
+
+    // <2do> get rid of this !
     for (int i=top; i>t; i--) {
-      if (isOperandRef[i] && (operands[i] != -1)) {
+      if (isRef.get(i) && (slots[i] != -1)) {
         JVM.getVM().getSystemState().activateGC();
         break;
       }
     }
 
-    if (operandAttr != null){  // just to avoid memory leaks
+    if (attrs != null){  // just to avoid memory leaks
       for (int i=top; i>t; i--){
-        operandAttr[i] = null;
+        attrs[i] = null;
       }
     }
 
@@ -1372,16 +1338,19 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public int pop () {
-    int v = operands[top];
+    //assert (top >= stackBase) : "stack empty";
 
-    if (isOperandRef[top]) {
+    int v = slots[top];
+
+    // <2do> get rid of this
+    if (isRef.get(top)) {
       if (v != -1) {
         JVM.getVM().getSystemState().activateGC();
       }
     }
 
-    if (operandAttr != null){ // just to avoid memory leaks
-      operandAttr[top] = null;
+    if (attrs != null){ // just to avoid memory leaks
+      attrs[top] = null;
     }
 
     top--;
@@ -1395,37 +1364,37 @@ public class StackFrame implements Constants, Cloneable {
 
   public void pushLocal (int index) {
     top++;
-    operands[top] = locals[index];
-    isOperandRef[top] = isLocalRef[index];
+    slots[top] = slots[index];
+    isRef.set(top, isRef.get(index));
 
-    if (localAttr != null){
-      operandAttr[top] = localAttr[index];
+    if (attrs != null){
+      attrs[top] = attrs[index];
     }
   }
 
   public void pushLongLocal (int index){
     int t = top;
 
-    operands[++t] = locals[index];
-    isOperandRef[t] = false;
-    operands[++t] = locals[index+1];
-    isOperandRef[t] = false;
+    slots[++t] = slots[index];
+    isRef.clear(t);
+    slots[++t] = slots[index+1];
+    isRef.clear(t);
 
-    if (operandAttr != null){
-      operandAttr[t-1] = localAttr[index];
-      operandAttr[t] = null;
+    if (attrs != null){
+      attrs[t-1] = attrs[index];
+      attrs[t] = null;
     }
 
     top = t;
   }
 
   public void storeOperand (int index){
-    locals[index] = operands[top];
-    isLocalRef[index] = isOperandRef[top];
+    slots[index] = slots[top];
+    isRef.set( index, isRef.get(top));
 
-    if (localAttr != null){
-      localAttr[index] = operandAttr[top];
-      operandAttr[top] = null;
+    if (attrs != null){
+      attrs[index] = attrs[top];
+      attrs[top] = null;
     }
 
     top--;
@@ -1435,18 +1404,18 @@ public class StackFrame implements Constants, Cloneable {
     int t = top-1;
     int i = index;
 
-    locals[i] = operands[t];
-    isLocalRef[i] = false;
+    slots[i] = slots[t];
+    isRef.clear(i);
 
-    locals[++i] = operands[t+1];
-    isLocalRef[i] = false;
+    slots[++i] = slots[t+1];
+    isRef.clear(i);
 
-    if (localAttr != null){
-      localAttr[index] = operandAttr[t]; // its in the lower word
-      localAttr[i] = null;
+    if (attrs != null){
+      attrs[index] = attrs[t]; // its in the lower word
+      attrs[i] = null;
 
-      operandAttr[t] = null;
-      operandAttr[t+1] = null;
+      attrs[t] = null;
+      attrs[t+1] = null;
     }
 
     top -=2;
@@ -1454,21 +1423,21 @@ public class StackFrame implements Constants, Cloneable {
 
   public void push (int v){
     top++;
-    operands[top] = v;
-    isOperandRef[top] = false;
+    slots[top] = v;
+    isRef.clear(top);
 
-    //if (operandAttr != null){ // done on pop
-    //  operandAttr[top] = null;
+    //if (attrs != null){ // done on pop
+    //  attrs[top] = null;
     //}
   }
 
   public void pushRef (int ref){
     top++;
-    operands[top] = ref;
-    isOperandRef[top] = true;
+    slots[top] = ref;
+    isRef.set(top);
 
-    //if (operandAttr != null){ // done on pop
-    //  operandAttr[top] = null;
+    //if (attrs != null){ // done on pop
+    //  attrs[top] = null;
     //}
 
     if (ref != -1) {
@@ -1479,11 +1448,11 @@ public class StackFrame implements Constants, Cloneable {
   public void push (int v, boolean ref) {
 
     top++;
-    operands[top] = v;
-    isOperandRef[top] = ref;
+    slots[top] = v;
+    isRef.set(top, ref);
 
-    //if (operandAttr != null){ // done on pop
-    //  operandAttr[top] = null;
+    //if (attrs != null){ // done on pop
+    //  attrs[top] = null;
     //}
 
     if (ref && (v != -1)) {

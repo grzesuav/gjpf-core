@@ -30,24 +30,14 @@ package gov.nasa.jpf.jvm;
  * needs such return values, it has to do so via ThreadInfo.getReturnedDirectCall()
  *
  */
-public class DirectCallStackFrame extends DynamicStackFrame {
+public class DirectCallStackFrame extends StackFrame {
   
   public DirectCallStackFrame (MethodInfo stub) {
     super(stub, null);
   }
 
   public DirectCallStackFrame (MethodInfo stub, int nOperandSlots, int nLocalSlots) {
-    super(stub, null);
-
-    if (nOperandSlots > 0){
-      operands = new int[nOperandSlots];
-      isOperandRef = new boolean[nOperandSlots];
-    }
-
-    if (nLocalSlots > 0){
-      locals = new int[nLocalSlots];
-      isLocalRef = new boolean[nLocalSlots];
-    }
+    super(stub, nLocalSlots, nOperandSlots);
   }
 
 
