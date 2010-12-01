@@ -65,7 +65,7 @@ public class AnnotationInfo {
               }
 
               AnnotationDefault ad = (AnnotationDefault) a;
-              ElementValue val = (ElementValue) ad.getDefaultValue();
+              ElementValue val = ad.getDefaultValue();
 
               list.add(new Entry(m.getName(), getValueObject(val)));
             }
@@ -240,36 +240,36 @@ public class AnnotationInfo {
   }
   
   public String[] getValueAsStringArray() {
+    String a[] = null; 
     Object v = value();
     if (v != null && v instanceof Object[]) {
       Object[] va = (Object[])v;
-      String[] a = new String[va.length];
+      a = new String[va.length];
       for (int i=0; i<a.length; i++) {
         if (va[i] != null) {
           a[i] = va[i].toString();
         }
       }
-      return a;
     }
     
-    return null;    
+    return a;    
   }
   
   public String[] getValueAsStringArray (String key) {
     // <2do> not very efficient
+    String a[] = null; 
     Object v = getValue(key);
     if (v != null && v instanceof Object[]) {
       Object[] va = (Object[])v;
-      String[] a = new String[va.length];
+      a = new String[va.length];
       for (int i=0; i<a.length; i++) {
         if (va[i] != null) {
           a[i] = va[i].toString();
         }
       }
-      return a;
     }
     
-    return null;
+    return a;
   }
   
   public boolean getValueAsBoolean (String key){
