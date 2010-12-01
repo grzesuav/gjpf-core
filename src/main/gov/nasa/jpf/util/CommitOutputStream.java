@@ -31,7 +31,7 @@ public class CommitOutputStream extends OutputStream
    public CommitOutputStream(OutputStream sink)
    {
       if (sink == null)
-         throw new NullPointerException();
+         throw new NullPointerException("sink == null");
       
       m_sink   = sink;
       m_buffer = new byte[1024];
@@ -49,9 +49,6 @@ public class CommitOutputStream extends OutputStream
    {
       if (offset < 0)
          throw new IndexOutOfBoundsException("offset < 0 : " + offset);
-      
-      if (offset > buffer.length)
-         throw new IndexOutOfBoundsException("offset > buffer.length : " + offset + " > " + buffer.length);
       
       if (length < 0)
          throw new IndexOutOfBoundsException("length < 0 : " + length);

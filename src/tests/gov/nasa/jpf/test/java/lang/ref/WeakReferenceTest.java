@@ -19,7 +19,6 @@
 
 package gov.nasa.jpf.test.java.lang.ref;
 
-import gov.nasa.jpf.*;
 import gov.nasa.jpf.jvm.*;
 import org.junit.Test;
 import gov.nasa.jpf.util.test.TestJPF;

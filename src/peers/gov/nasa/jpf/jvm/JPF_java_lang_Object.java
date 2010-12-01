@@ -67,11 +67,14 @@ public class JPF_java_lang_Object {
   }
 
   public static int hashCode____I (MJIEnv env, int objref) {
+    env = null;  // Get rid of IDE warning
     return (objref ^ 0xABCD);
   }
 
   public static void registerNatives____V (MJIEnv env, int clsObjRef) {
     // let go un-noticed
+    env       = null;  // Get rid of IDE warning
+    clsObjRef = 0;
   }
 
   static void wait0(MJIEnv env, int objref, long timeout) {
@@ -117,7 +120,7 @@ public class JPF_java_lang_Object {
                              "un-synchronized wait");
           return;
         }
-        // releases all locks and sets BLOCKED threads to UNBLOCKED
+        // releases the lock and sets BLOCKED threads to UNBLOCKED
         ei.wait(ti, timeout);
 
         // note we pass in the timeout value, since this might determine the type of CG that is created
