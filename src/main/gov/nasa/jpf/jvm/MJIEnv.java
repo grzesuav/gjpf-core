@@ -338,7 +338,8 @@ public class MJIEnv {
   }
 
   public int getReferenceField (int objref, String fname) {
-    return getIntField(objref, fname);
+    ElementInfo ei = heap.get(objref);
+    return ei.getReferenceField(fname);
   }
 
   // we need this in case of a masked field
@@ -348,7 +349,7 @@ public class MJIEnv {
   }
 
   public String getStringField (int objref, String fname){
-    int ref = getIntField(objref, fname);
+    int ref = getReferenceField(objref, fname);
     return getStringObject(ref);
   }
 

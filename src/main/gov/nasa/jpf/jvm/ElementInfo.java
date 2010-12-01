@@ -518,6 +518,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   abstract protected FieldInfo getDeclaredFieldInfo(String clsBase, String fname);
 
+  // this is only 'this' in case of a DynamicElementInfo, which is flattened.
+  // for StaticElementInfos, a returned FieldInfo can actually refer to a super class
   abstract protected ElementInfo getElementInfo(ClassInfo ci);
 
   abstract protected FieldInfo getFieldInfo(String fname);
@@ -814,21 +816,13 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public int getDeclaredReferenceField(String fname, String clsBase) {
     FieldInfo fi = getDeclaredFieldInfo(clsBase, fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-
-    if (!fi.isReference()) {
-      throw new JPFException("not a reference field: " + fi.getName());
-    }
-    return ei.fields.getIntValue(fi.getStorageOffset());
+    return ei.getReferenceField( fi);
   }
 
   public int getReferenceField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-
-    if (!fi.isReference()) {
-      throw new JPFException("not a reference field: " + fi.getName());
-    }
-    return ei.fields.getIntValue(fi.getStorageOffset());
+    return ei.getReferenceField( fi);
   }
 
 
@@ -837,7 +831,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     // the FieldInfo might actually refer to another ClassInfo/StaticElementInfo
     FieldInfo fi = getDeclaredFieldInfo(clsBase, fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getIntValue(fi.getStorageOffset());
+    return ei.getIntField( fi);
   }
 
   public int getIntField(String fname) {
@@ -845,7 +839,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     // the FieldInfo might actually refer to another ClassInfo/StaticElementInfo
     FieldInfo fi = getFieldInfo(fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getIntValue(fi.getStorageOffset());
+    return ei.getIntField( fi);
   }
 
   public void setDeclaredLongField(String fname, String clsBase, long value) {
@@ -857,85 +851,85 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public long getDeclaredLongField(String fname, String clsBase) {
     FieldInfo fi = getDeclaredFieldInfo(clsBase, fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getLongValue(fi.getStorageOffset());
+    return ei.getLongField( fi);
   }
 
   public long getLongField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getLongValue(fi.getStorageOffset());
+    return ei.getLongField( fi);
   }
 
   public boolean getDeclaredBooleanField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getBooleanValue(fi.getStorageOffset());
+    return ei.getBooleanField( fi);
   }
 
   public boolean getBooleanField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getBooleanValue(fi.getStorageOffset());
+    return ei.getBooleanField( fi);
   }
 
   public byte getDeclaredByteField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getByteValue(fi.getStorageOffset());
+    return ei.getByteField( fi);
   }
 
   public byte getByteField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getByteValue(fi.getStorageOffset());
+    return ei.getByteField( fi);
   }
 
   public char getDeclaredCharField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getCharValue(fi.getStorageOffset());
+    return ei.getCharField( fi);
   }
 
   public char getCharField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getCharValue(fi.getStorageOffset());
+    return ei.getCharField( fi);
   }
 
   public double getDeclaredDoubleField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getDoubleValue(fi.getStorageOffset());
+    return ei.getDoubleField( fi);
   }
 
   public double getDoubleField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getDoubleValue(fi.getStorageOffset());
+    return ei.getDoubleField( fi);
   }
 
   public float getDeclaredFloatField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getFloatValue(fi.getStorageOffset());
+    return ei.getFloatField( fi);
   }
 
   public float getFloatField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getFloatValue(fi.getStorageOffset());
+    return ei.getFloatField( fi);
   }
 
   public short getDeclaredShortField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getShortValue(fi.getStorageOffset());
+    return ei.getShortField( fi);
   }
 
   public short getShortField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
     ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getShortValue(fi.getStorageOffset());
+    return ei.getShortField( fi);
   }
 
   /**
@@ -974,10 +968,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
   }
   public short getShortField(FieldInfo fi) {
-    if (fi.isCharField()){
+    if (fi.isShortField()){
       return fields.getShortValue(fi.getStorageOffset());
     } else {
-      throw new JPFException("not a short field: " + fi.getName());
+      throw new JPFException("not a short field: " + fi.getType() + " " + fi.getName());
     }
   }
   public int getIntField(FieldInfo fi) {
@@ -1253,7 +1247,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public String getStringField(String fname) {
-    int ref = getIntField(fname);
+    int ref = getReferenceField(fname);
 
     if (ref != -1) {
       ElementInfo ei = JVM.getVM().getHeap().get(ref);

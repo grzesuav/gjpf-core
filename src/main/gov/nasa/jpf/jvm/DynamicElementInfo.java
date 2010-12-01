@@ -130,7 +130,7 @@ public final class DynamicElementInfo extends ElementInfo implements Restorable<
       throw new JPFException("object is not of type java.lang.String");
     }
 
-    int vref = getDeclaredIntField("value", "java.lang.String");
+    int vref = getDeclaredReferenceField("value", "java.lang.String");
     int length = getDeclaredIntField("count", "java.lang.String");
     int offset = getDeclaredIntField("offset", "java.lang.String");
 
