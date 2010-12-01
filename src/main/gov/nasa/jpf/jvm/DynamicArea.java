@@ -70,11 +70,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   /** used to keep track of marked WeakRefs that might have to be updated */
   protected ArrayList<ElementInfo> weakRefs;
 
-  /**
-   * DynamicMap is a mapping table used to achieve heap symmetry,
-   * associating thread/pc specific DynamicMapIndex objects with their
-   * corresponding DynamicArea elements[] index.
-   */
+  // which elements are in use
   BitSet elementsMap = new BitSet(elements.length());
 
 

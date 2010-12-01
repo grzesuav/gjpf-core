@@ -32,7 +32,9 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
@@ -68,17 +70,34 @@ public class DeadlockAnalyzer extends ListenerAdapter {
     ThreadOp (JVM vm, OpType type) {
       ti = vm.getLastThreadInfo();
       ei = vm.getLastElementInfo();
-      insn = ti.getPC(); // we haven't had the executeInsn notification yet
+      insn = getReportInsn(ti); // we haven't had the executeInsn notification yet
       opType = type;
       
       prevOp = null;
     }
-    
+
+    Instruction getReportInsn(ThreadInfo ti){
+      StackFrame frame = ti.getTopFrame();
+      if (frame != null) {
+        Instruction insn = frame.getPC();
+        if (insn instanceof EXECUTENATIVE) {
+          frame = frame.getPrevious();
+          if (frame != null) {
+            insn = frame.getPC();
+          }
+        }
+
+        return insn;
+      } else {
+        return null;
+      }
+    }
+
     void printLocOn (PrintWriter pw) {
       pw.print(String.format("%6d", new Integer(stateId)));
       
       if (insn != null) {
-        pw.print(String.format(" %10.10s ", insn.getMnemonic()));        
+        pw.print(String.format(" %18.18s ", insn.getMnemonic()));
         pw.print(insn.getFileLocation());
         String line = insn.getSourceLine();
         if (line != null){
@@ -273,13 +292,13 @@ public class DeadlockAnalyzer extends ListenerAdapter {
     for (ThreadInfo ti : tlist){
       pw.print(String.format("  %1$2d    ", ti.getIndex()));
     }
-    pw.print(" trans    insn     loc");
+    pw.print(" trans      insn          loc                : stmt");
     pw.println();
         
     for (int i=0; i<tlist.size(); i++){
       pw.print("------- ");
     }
-    pw.print("-----------------------");
+    pw.print("---------------------------------------------------");
     pw.println();
   }
 

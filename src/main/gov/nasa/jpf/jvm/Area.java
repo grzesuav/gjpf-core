@@ -103,7 +103,10 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
         lastIndex = index;
 
         ei.cachedMemento = m;
-        e.set(index,ei);
+
+        // can't call elements.set() directly because our concrete area
+        // might have to do its own housekeeping (e.g. update bitsets)
+        area.set(index,ei);
       }
 
       if (index >= 0){

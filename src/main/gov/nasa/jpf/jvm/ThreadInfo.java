@@ -482,7 +482,7 @@ public class ThreadInfo
         // nothing. the notifyThreadStarted has to happen from
         // Thread.start(), since the thread could have been blocked
         // at the time with a sync run() method
-        assert lockRef == -1;
+       // assert lockRef == -1;
         break;
       case TERMINATED:
         vm.notifyThreadTerminated(this);
