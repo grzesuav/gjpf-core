@@ -40,8 +40,7 @@ public class LockedStackDepth extends ListenerAdapter
    private final HashMap<Integer, Integer>   m_state      = new HashMap<Integer, Integer>();
    private final HashMap<Operation, Integer> m_index      = new HashMap<Operation, Integer>();
    private final ArrayList<Operation>        m_apply      = new ArrayList<Operation>();
-   
-   private Operation m_current;
+   private       Operation                   m_current;
 
    public int getLockedStackDepth(ElementInfo lock)
    {
@@ -49,7 +48,7 @@ public class LockedStackDepth extends ListenerAdapter
       int lockIndex;
       
       lockIndex = lock.getIndex();
-      result    = m_state.get(lockIndex);
+      result    = m_state.get(makeKey(lock));
       
       if (s_logger.isLoggable(Level.INFO))
          s_logger.info("Depth = " + result + " | Lock Index = " + lockIndex + " | Lock = " + lock);
@@ -58,6 +57,37 @@ public class LockedStackDepth extends ListenerAdapter
          return(-1);
       
       assert result >= 0;
+      
+      return(result);
+   }
+   
+   public List<ElementInfo> getLockedInTopFrame(ThreadInfo thread)
+   {
+      ArrayList<ElementInfo> result;
+      ElementInfo lock;
+      int threadDepth;
+      
+      threadDepth = thread.getStackDepth();
+      result      = new ArrayList<ElementInfo>();
+      
+      for (Integer key : m_state.keySet())
+      {
+         if (key < 0)
+            continue;
+         
+         if (threadDepth != m_state.get(key))
+            continue;
+         
+         lock = thread.getElementInfo(key);
+         
+         if (lock == null)
+            continue;
+         
+         if (!lock.isLockedBy(thread))
+            continue;
+            
+         result.add(lock);
+      }
       
       return(result);
    }
@@ -70,6 +100,9 @@ public class LockedStackDepth extends ListenerAdapter
 
       lock   = vm.getLastElementInfo();
       thread = vm.getLastThreadInfo();
+
+      logStack(thread);
+
       depth  = new Operation(thread, null).getOldDepth();
 
       if (depth == null)
@@ -79,10 +112,10 @@ public class LockedStackDepth extends ListenerAdapter
       assert thread.getLockObject() == null;
       assert lock.isLockedBy(thread);
       
-      if (m_state.containsKey(lock.getIndex()))
-         assert !m_state.containsKey(lock.getIndex());
+      if (m_state.containsKey(makeKey(lock)))               // So that a breakpoint on the next line will only get hit if the assert will trigger.
+         assert !m_state.containsKey(makeKey(lock));
             
-      assert !m_state.containsKey(thread.getThreadObjectRef());
+      assert !m_state.containsKey(makeKey(thread));
       assert depth >= 0;
 
       new Operation(lock, depth);
@@ -95,11 +128,14 @@ public class LockedStackDepth extends ListenerAdapter
       Integer depth;
 
       thread = vm.getLastThreadInfo();
+
+      logStack(thread);
+
       lock   = vm.getLastElementInfo();
       depth  = new Operation(lock, null).getOldDepth();
 
-      assert !m_state.containsKey(lock.getIndex());
-      assert !m_state.containsKey(thread.getThreadObjectRef());
+      assert !m_state.containsKey(makeKey(lock));
+      assert !m_state.containsKey(makeKey(thread));
       assert depth >= 0;
 
       if (thread.isWaiting())
@@ -122,6 +158,7 @@ public class LockedStackDepth extends ListenerAdapter
    public void searchStarted(Search search)
    {
       m_operations.clear();
+      m_state.clear();
       
       m_current = null;
    }
@@ -231,7 +268,7 @@ public class LockedStackDepth extends ListenerAdapter
       Integer key, keys[], depth;
       int i;
       
-      if (!s_logger.isLoggable(Level.FINEST))
+      if (!s_logger.isLoggable(Level.FINER))
          return;
 
       message = new StringBuilder();
@@ -260,7 +297,25 @@ public class LockedStackDepth extends ListenerAdapter
          message.append(type);
       }
       
-      s_logger.finest(message.toString());
+      s_logger.finer(message.toString());
+   }
+   
+   private void logStack(ThreadInfo thread)
+   {
+      if (!s_logger.isLoggable(Level.FINEST))
+         return;
+      
+      s_logger.finest(thread.getStackTrace());
+   }
+   
+   private static int makeKey(ElementInfo lock)
+   {
+      return(lock.getIndex());
+   }
+   
+   private static int makeKey(ThreadInfo thread)
+   {
+      return(thread.getThreadObjectRef() ^ THREAD_FLAG);
    }
    
    private class Operation
@@ -272,12 +327,12 @@ public class LockedStackDepth extends ListenerAdapter
       
       public Operation(ElementInfo lock, Integer newDepth)
       {
-         this(lock.getIndex(), newDepth);
+         this(makeKey(lock), newDepth);
       }
       
       public Operation(ThreadInfo thread, Integer newDepth)
       {
-         this(thread.getThreadObjectRef() ^ THREAD_FLAG, newDepth);
+         this(makeKey(thread), newDepth);
       }
       
       private Operation(Integer key, Integer newDepth)
@@ -337,7 +392,7 @@ public class LockedStackDepth extends ListenerAdapter
          String message, subheader, depthStr, type;
          Integer depth;
          
-         if (!s_logger.isLoggable(Level.FINER))
+         if (!s_logger.isLoggable(Level.FINE))
             return;
 
          if (m_newDepth != null)
@@ -368,7 +423,7 @@ public class LockedStackDepth extends ListenerAdapter
          
          message = header + " " + subheader + " | Depth = " + depthStr + " | Key = " + (m_key & ~THREAD_FLAG) + " | " + type;
             
-         s_logger.finer(message);
+         s_logger.fine(message);
       }
    }
 }
