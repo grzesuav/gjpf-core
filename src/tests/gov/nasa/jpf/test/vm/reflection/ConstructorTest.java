@@ -30,8 +30,7 @@ public class ConstructorTest extends TestJPF {
 
   static class X {
 
-    public String a;
-    public Integer b;
+    private String a;
 
     public X(String x) {
       this.a = x;
@@ -47,6 +46,8 @@ public class ConstructorTest extends TestJPF {
         Constructor<X> ctor = cls.getDeclaredConstructor(new Class<?>[] { String.class });
 
         X x = ctor.newInstance("I'm an X");
+        
+        assertNotNull(x); 
       } catch (Throwable t){
         fail("ctor invocation failed: " + t);
       }
