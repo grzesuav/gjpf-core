@@ -100,6 +100,8 @@ public class MethodTest extends TestJPF
 
       if (verifyNoPropertyViolation())
       {
+         Class c;
+         
          Method m = getClass().getDeclaredMethod("privateStaticMethod");
 
          m.invoke(null);
@@ -126,6 +128,24 @@ public class MethodTest extends TestJPF
 
          m.setAccessible(true);
          m.invoke(null, 5, 3);
+      }
+   }
+   
+   @Test
+   public void getMethodCanFindNotify() throws NoSuchMethodException
+   {
+      if (verifyNoPropertyViolation())
+      {
+         Integer.class.getMethod("notify");
+      }
+   }
+
+   @Test
+   public void getDeclaredMethodCantFindNotify() throws NoSuchMethodException
+   {
+      if (verifyUnhandledException(NoSuchMethodException.class.getName()))
+      {
+         Integer.class.getDeclaredMethod("notify");
       }
    }
 
