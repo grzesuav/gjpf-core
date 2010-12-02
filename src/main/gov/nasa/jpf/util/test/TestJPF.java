@@ -119,7 +119,7 @@ public abstract class TestJPF implements JPFShell  {
 
   //--- internal methods
 
-  public void fail (String msg, String[] args, String cause){
+  public static void fail (String msg, String[] args, String cause){
     StringBuilder sb = new StringBuilder();
 
     sb.append(msg);
@@ -138,11 +138,11 @@ public abstract class TestJPF implements JPFShell  {
     fail(sb.toString());
   }
 
-  public void fail (){
+  public static void fail (){
     throw new AssertionError();
   }
 
-  public void fail (String msg){
+  public static void fail (String msg){
     throw new AssertionError(msg);
   }
 
@@ -791,65 +791,94 @@ public abstract class TestJPF implements JPFShell  {
   // required to run tests
 
   public static void assertEquals(String msg, Object expected, Object actual){
-    if (expected == null || actual == null){
-      assert expected == actual : msg;
-    } else {
-      assert expected.equals(actual) : msg;
+    if (expected == null && actual == null) { 
+      return; 
     }
+    
+    if (expected != null && expected.equals(actual)) {
+      return; 
+    }
+    
+    fail(msg);
   }
 
   public static void assertEquals(Object expected, Object actual){
-    if (expected == null || actual == null){
-      assert expected == actual;
-    } else {
-      assert expected.equals(actual);
+    assertEquals("", expected, actual); 
+  }
+
+  public static void assertEquals(int expected, int actual){
+    if (expected != actual) {
+      fail("expected != actual : " + expected + " != " + actual);    
     }
   }
-  public static void assertEquals(int expected, int actual){
-    assert expected == actual;
-  }
+
   public static void assertEquals(long expected, long actual){
-    assert expected == actual;
+    if (expected != actual) {
+      fail("expected != actual : " + expected + " != " + actual);
+    }
   }
+
   public static void assertEquals(double expected, double actual){
     expected = 0;  // Get rid of IDE warning
     actual   = 0;
-    assert false : "identity comparison of floating point values";
+    
+    fail("Identity comparison of floating point values");
   }
+
   public static void assertEquals(float expected, float actual){
     expected = 0; // Get rid of IDE warning
     actual   = 0;
-    assert false : "identity comparison of floating point values";
-  }
-  public static void assertEquals(double expected, double actual, double delta){
-    assert Math.abs(expected - actual) <= delta;
-  }
-  public static void assertEquals(float expected, float actual, float delta){
-    assert Math.abs(expected - actual) <= delta;
+    
+    fail("identity comparison of floating point values");
   }
 
+  public static void assertEquals(double expected, double actual, double delta){
+    if (Math.abs(expected - actual) > delta) {
+      fail("Math.abs(expected - actual) > delta : " + "Math.abs(" + expected + " - " + actual + ") > " + delta);
+    }
+  }
+
+  public static void assertEquals(float expected, float actual, float delta){
+    if (Math.abs(expected - actual) > delta) {
+      fail("Math.abs(expected - actual) > delta : " + "Math.abs(" + expected + " - " + actual + ") > " + delta);
+    }
+  }
 
   public static void assertNotNull(Object o){
-    assert o != null;
+    if (o == null) {
+      fail("o == null");
+    }
   }
+
   public static void assertNull(Object o){
-    assert o == null;
+    if (o != null) {
+      fail("o != null");
+    }
   }
+
   public static void assertSame(Object expected, Object actual){
-    assert expected == actual;
+    if (expected != actual) {
+      fail("expected != actual : " + expected + " != " + actual);
+    }
   }
 
   public static void assertFalse (String msg, boolean cond){
-    assert !cond : msg;
-  }
-  public static void assertFalse (boolean cond){
-    assert !cond;
-  }
-  public static void assertTrue (String msg, boolean cond){
-    assert cond : msg;
-  }
-  public static void assertTrue (boolean cond){
-    assert cond;
+    if (cond) { 
+      fail(msg);
+    }
   }
 
+  public static void assertFalse (boolean cond){
+    assertFalse("", cond);
+  }
+
+  public static void assertTrue (String msg, boolean cond){
+    if (!cond) {
+      fail(msg);
+    }
+  }
+
+  public static void assertTrue (boolean cond){
+    assertTrue("", cond);
+  }
 }
