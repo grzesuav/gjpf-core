@@ -196,6 +196,10 @@ public class NativeMethodInfo extends MethodInfo {
       return ti.createAndThrowException("java.lang.IllegalAccessException",
                                         "calling " + ci.getName() + '.' + getName());
     } catch (InvocationTargetException itx) {
+      if (itx.getTargetException() instanceof UncaughtException) {  // Native methods could 
+        throw (UncaughtException) itx.getTargetException();
+      } 
+       
       // this will catch all exceptions thrown by the native method execution
       // we don't try to hand them back to the application
       throw new JPFNativePeerException("exception in native method "
