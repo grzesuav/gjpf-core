@@ -1780,13 +1780,14 @@ public class JVM {
           //for debugging locks:  -peterd
           //ss.ks.heap.verifyLockInfo();
 
-          if (ss.isIgnored()) {
+          //if (ss.isIgnored()) {
             // do it again
-            backtracker.backtrackKernelState();
-            if (CHECK_CONSISTENCY) checkConsistency(false);
-            continue;
+            // Don't do this.  See VerifyTest.backtrackNotificationAfterIgnore()
+          //  backtracker.backtrackKernelState();
+          //  if (CHECK_CONSISTENCY) checkConsistency(false);
+          //  continue;
 
-          } else { // this is the normal forward that executed insns, and wasn't ignored
+          //} else { // this is the normal forward that executed insns, and wasn't ignored
             // runs the garbage collector (if necessary), which might change the
             // KernelState (DynamicArea). We need to do this before we hash the state to
             // find out if it is a new one
@@ -1803,7 +1804,7 @@ public class JVM {
 
             updatePath();
             break;
-          }
+          //}
 
         } else { // state was completely explored, no transition ocurred
           backtracker.popKernelState();
