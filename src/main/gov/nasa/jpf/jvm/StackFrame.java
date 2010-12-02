@@ -1484,13 +1484,4 @@ public class StackFrame implements Constants, Cloneable {
     return -1;
   }
 
-
-  //--- those are only in some of our subclasses
-  public void setReturnValue(Object ret){
-    throw new UnsupportedOperationException("no return value register in StackFrame");
-  }
-  public void setReturnAttr(Object attr){
-    throw new UnsupportedOperationException("no return value attribute register in StackFrame");
-  }
-
 }

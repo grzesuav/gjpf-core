@@ -170,9 +170,12 @@ public class NativeMethodInfo extends MethodInfo {
           return nativeFrame.getPC();
 
         } else {
+          // we don't have to do a ti.topClone() because the last insn left
+          // is NATIVERETURN. Even if a listener creates a CG on it, it won't
+          // modify its StackFrame, which is then popped anyways
 
-          ti.setReturnValue(ret);
-          ti.setReturnAttr(env.getReturnAttribute());
+          nativeFrame.setReturnValue(ret);
+          nativeFrame.setReturnAttr(env.getReturnAttribute());
 
           return nativeFrame.getPC().getNext(); // that should be the NATIVERETURN
         }

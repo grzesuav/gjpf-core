@@ -1227,15 +1227,6 @@ public class ThreadInfo
     topClone().setLongOperandAttr(attr);
   }
 
-
-  public void setReturnValue (Object ret){
-    topClone().setReturnValue(ret);
-  }
-
-  public void setReturnAttr (Object attr){
-    topClone().setReturnAttr(attr);
-  }
-
   /**
    * use this version if the value is also changed, which means we don't
    * have to clone here

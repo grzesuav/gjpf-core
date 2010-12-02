@@ -19,8 +19,10 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.NativeStackFrame;
 import gov.nasa.jpf.jvm.StackFrame;
+import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
@@ -34,6 +36,33 @@ public class NATIVERETURN extends ReturnInstruction {
   Object ret;
   Object retAttr;
   Byte retType;
+
+  // this is more simple thatn a normal ReturnInstruction because NativeMethodInfos
+  // are not synchronized, and NativeStackFrames are never the first frame in a thread
+  @Override
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    if (!ti.isFirstStepInsn()) {
+      mi.leave(ti);  // takes care of unlocking before potentially creating a CG
+      // NativeMethodInfo is never synchronized, so no thread CG here
+    }
+
+    storeReturnValue(ti);
+
+    // NativeStackFrame can never can be the first stack frame, so no thread CG
+
+    StackFrame top = ti.popFrame();
+
+    // remove args, push return value and continue with next insn
+    ti.removeArguments(mi);
+    pushReturnValue(ti);
+
+    if (retAttr != null) {
+      setReturnAttr(ti, retAttr);
+    }
+
+    return top.getPC().getNext();
+  }
+
 
   @Override
   public boolean isExtendedInstruction() {
@@ -55,6 +84,8 @@ public class NATIVERETURN extends ReturnInstruction {
   @Override
   protected void storeReturnValue(ThreadInfo ti) {
     NativeStackFrame nativeFrame = (NativeStackFrame)ti.getTopFrame();
+
+    returnFrame = nativeFrame;
 
     ret = nativeFrame.getReturnValue();
     retAttr = nativeFrame.getReturnAttr();
