@@ -26,7 +26,7 @@ import gov.nasa.jpf.search.heuristic.*;
 import java.util.logging.*;
 
 /**
- * A listener that tracks information about the stack depth of when a lock is acquired.
+ * A listener that tracks information about the stack depth of when a lock is first acquired.  If 
  *
  * Writing a test for this class is very difficult.  Hence, a lot of asserts are added.
  */
