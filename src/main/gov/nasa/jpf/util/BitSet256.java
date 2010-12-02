@@ -122,31 +122,31 @@ public class BitSet256 implements FixedBitSet, Cloneable {
 
   public void clear (int i){
     if ((i & INDEX_MASK) == 0) {
-      long bitPattern = ~(1L << i);
+      long bitPattern = (1L << i);
 
       switch (i >> 6) {
         case 0:
           if ((l0 & bitPattern) != 0L) {
             cardinality--;
-            l0 &= bitPattern;
+            l0 &= ~bitPattern;
           }
           break;
         case 1:
           if ((l1 & bitPattern) != 0L) {
             cardinality--;
-            l1 &= bitPattern;
+            l1 &= ~bitPattern;
           }
           break;
         case 2:
           if ((l2 & bitPattern) != 0L) {
             cardinality--;
-            l2 &= bitPattern;
+            l2 &= ~bitPattern;
           }
           break;
         case 3:
           if ((l3 & bitPattern) != 0L) {
             cardinality--;
-            l3 &= bitPattern;
+            l3 &= ~bitPattern;
           }
       }
     } else {
@@ -246,7 +246,8 @@ public class BitSet256 implements FixedBitSet, Cloneable {
       return -1;
 
     } else {
-      throw new IndexOutOfBoundsException("BitSet256 index out of range: " + fromIdx);
+      //throw new IndexOutOfBoundsException("BitSet256 index out of range: " + fromIdx);
+      return -1;
     }
   }
 
@@ -277,7 +278,8 @@ public class BitSet256 implements FixedBitSet, Cloneable {
       return -1;
 
     } else {
-      throw new IndexOutOfBoundsException("BitSet256 index out of range: " + fromIdx);
+      //throw new IndexOutOfBoundsException("BitSet256 index out of range: " + fromIdx);
+      return -1;
     }
   }
 

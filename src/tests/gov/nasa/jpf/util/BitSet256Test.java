@@ -81,6 +81,12 @@ public class BitSet256Test extends TestJPF {
 
     assert b.cardinality() == 6;
     assert b.length() == 193;
+
+    b = new BitSet256();
+    b.set(4);
+    b.set(4,false);
+    assert !b.get(4);
+
   }
 
   @Test

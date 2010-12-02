@@ -1446,7 +1446,6 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public void push (int v, boolean ref) {
-
     top++;
     slots[top] = v;
     isRef.set(top, ref);

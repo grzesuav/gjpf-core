@@ -74,7 +74,12 @@ public class BitSet64Test extends TestJPF {
     b.clear(31);
 
     assert b.cardinality() == 4;
-    assert b.length() == 64;
+    assert b.length() == 64 : " wrong length: " + b.length();
+
+    b = new BitSet64();
+    b.set(4);
+    b.set(4,false);
+    assert !b.get(4);
   }
 
   @Test

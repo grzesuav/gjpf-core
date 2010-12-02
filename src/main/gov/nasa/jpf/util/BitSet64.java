@@ -84,10 +84,10 @@ public class BitSet64 implements FixedBitSet, Cloneable {
 
   public void clear (int i){
     if ((i & INDEX_MASK) == 0){
-      long bitPattern = ~(1L << i);
-      if ((l0 & bitPattern) != 0L) {
+      long bitPattern = (1L << i);
+      if ((l0 & bitPattern) != 0L) { // bit is set
         cardinality--;
-        l0 &= bitPattern;
+        l0 &= ~bitPattern;
       }
     } else {
       throw new IndexOutOfBoundsException("BitSet64 index out of range: " + i);
@@ -147,7 +147,8 @@ public class BitSet64 implements FixedBitSet, Cloneable {
         return -1;
       }
     } else {
-      throw new IndexOutOfBoundsException("BitSet64 index out of range: " + fromIdx);
+      //throw new IndexOutOfBoundsException("BitSet64 index out of range: " + fromIdx);
+      return -1;
     }
   }
 
@@ -160,7 +161,8 @@ public class BitSet64 implements FixedBitSet, Cloneable {
         return -1;
       }
     } else {
-      throw new IndexOutOfBoundsException("BitSet64 index out of range: " + fromIdx);
+      //throw new IndexOutOfBoundsException("BitSet64 index out of range: " + fromIdx);
+      return -1;
     }
   }
 
