@@ -222,7 +222,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public String toString() {
-    return (getClassInfo().getName() + '@' + Integer.toHexString(index));
+    return ((ci != null ? ci.getName() : "ElementInfo") + '@' + Integer.toHexString(index));
   }
 
   public FieldLockInfo getFieldLockInfo (FieldInfo fi) {
