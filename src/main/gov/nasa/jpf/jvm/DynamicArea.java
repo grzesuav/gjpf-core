@@ -455,8 +455,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     if (e == null || !checkInternStringEntry(e)) { // not seen or new state branch
       ref = newString(str,ti);
       ElementInfo ei = get(ref);
-      ei.intern();
-      pinDown(ref); // that's important, interns don't get recycled
+      ei.incPinDown();
 
       int vref = ei.getReferenceField("value");
       ElementInfo eiValues = get(vref);
@@ -506,12 +505,14 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     super.removeRange(fromIdx,toIdx);
   }
 
+  public void registerPinDown(int objref){
+    ElementInfo ei = elements.get(objref);
+    ei.incPinDown();
+  }
 
-
-  public void pinDown (int objRef) {
-    ElementInfo ei = elements.get(objRef);
-    ei.pinDown(true);
-    markChanged(objRef);
+  public void releasePinDown(int objref){
+    ElementInfo ei = elements.get(objref);
+    ei.decPinDown();
   }
 
   public void registerWeakReference (ElementInfo ei) {

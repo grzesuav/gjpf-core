@@ -285,7 +285,9 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
       cf.setCharValues(str.toCharArray());
 
       if (isIntern){
-        e.intern();
+        // we know it's not in the pinDown list yet, this is a new object
+        e.incPinDown();
+        addToPinDownList(index);
       }
 
       return index;
@@ -309,9 +311,6 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
         attributes |= ATTR_INTERN_CHANGED;
       }
       internStrings.add(str, objref);
-
-      // we know it has not been pinned down yet
-      pinDown0(objref);
 
       return objref;
 
@@ -346,20 +345,41 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     // we shouldn't have any
   }
 
-  private void pinDown0 (int objRef){
+  protected void addToPinDownList (int objref){
     if ((attributes & ATTR_PINDOWN_CHANGED) == 0) {
       pinDownList = pinDownList.clone();
       attributes |= ATTR_PINDOWN_CHANGED;
     }
-    pinDownList.add(objRef);
-
-    ElementInfo ei = get(objRef);
-    ei.pinDown(true);
+    pinDownList.add(objref);
+  }
+  
+  protected void removeFromPinDownList (int objref){
+    if ((attributes & ATTR_PINDOWN_CHANGED) == 0) {
+      pinDownList = pinDownList.clone();
+      attributes |= ATTR_PINDOWN_CHANGED;
+    }
+    pinDownList.removeFirst(objref);    
   }
 
-  public void pinDown(int objRef) {
-    if (!pinDownList.contains(objRef)) {
-      pinDown0(objRef);
+  public void registerPinDown(int objref){
+    ElementInfo ei = get(objref);
+    if (ei != null) {
+      if (ei.incPinDown()){
+        addToPinDownList(objref);
+      }
+    } else {
+      throw new JPFException("pinDown reference not a live object: " + objref);
+    }
+  }
+
+  public void releasePinDown(int objref){
+    ElementInfo ei = get(objref);
+    if (ei != null) {
+      if (ei.decPinDown()){
+        removeFromPinDownList(objref);
+      }
+    } else {
+      throw new JPFException("pinDown reference not a live object: " + objref);
     }
   }
 

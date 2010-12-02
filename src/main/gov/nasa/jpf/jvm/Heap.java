@@ -57,7 +57,9 @@ public interface Heap {
 
   void markStaticRoot (int objRef);
 
-  void pinDown (int objRef);
+  // these update per-object counters - object will be gc'ed if it goes to zero
+  void registerPinDown (int objRef);
+  void releasePinDown (int objRef);
 
   void unmarkAll();
 

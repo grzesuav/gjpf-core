@@ -36,24 +36,22 @@ import java.lang.ref.SoftReference;
  */
 public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> {
 
-  //--- the lower 2 bytes of the attribute field are sticky (state stored)
+
+  //--- the lower 2 bytes of the attribute field are sticky (state stored/restored)
 
   // object attribute flag values
-  public static final int   ATTR_NONE          = 0x0000;
+
+  // the first 8 bits constitute an unsigned pinDown count
+  public static final int   ATTR_PINDOWN_MASK = 0xff;
+
 
   // object doesn't change value
-  public static final int   ATTR_IMMUTABLE     = 0x0001;
-
-  // don't reycle this object as long as the flag is set
-  public static final int   ATTR_PINDOWN       = 0x0002;
-
-  // this is a identity-managed object
-  public static final int   ATTR_INTERN        = 0x0004;
+  public static final int   ATTR_IMMUTABLE     = 0x1000;
 
   // The constructor for the object has returned.  Final fields can no longer break POR
   // This attribute is set in gov.nasa.jpf.jvm.bytecode.RETURN.execute().
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
-  public static final int   ATTR_CONSTRUCTED   = 0x0010;
+  public static final int   ATTR_CONSTRUCTED   = 0x2000;
 
 
 
@@ -1716,34 +1714,58 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   /**
-   * object is kept alive regardless of references
+   * updates a pinDown counter. If it is > 0 the object is kept alive regardless
+   * if it is reachable from live objects or not.
+   * @return true if the new counter is 1, i.e. the object just became pinned down
+   *
    * NOTE - this is not a public method, pinning down an object is now
-   * done through the Heap API, which sets this flag here, but might or might not
-   * use it. Just setting this flag directly does not guarantee the Heap will
-   * treat this object as pinned down
+   * done through the Heap API, which updates the counter here, but might also
+   * have to update internal caches
    */
-  void pinDown(boolean keepAlive) {
-    if (keepAlive) {
-      attributes |= (ATTR_PINDOWN | ATTR_ATTRIBUTE_CHANGED);
+  boolean incPinDown() {
+    int pdCount = (attributes & ATTR_PINDOWN_MASK);
+
+    pdCount++;
+    if ((pdCount & ~ATTR_PINDOWN_MASK) != 0){
+      throw new JPFException("pinDown limit exceeded: " + this);
     } else {
-      attributes &= (~ATTR_PINDOWN | ATTR_ATTRIBUTE_CHANGED);
+      int a = (attributes & ~ATTR_PINDOWN_MASK);
+      a |= pdCount;
+      a |= ATTR_ATTRIBUTE_CHANGED;
+      attributes = a;
+
+      return (pdCount == 1);
     }
   }
 
-  public boolean isPinnedDown() {
-    return (attributes & ATTR_PINDOWN) != 0;
-  }
-
   /**
-   * set the identity managed flag. Same as ATTR_PINDOWN - this has to be done
-   * from the Heap in order to have an effect
+   * see incPinDown
+   *
+   * @return true if the counter becomes 0, i.e. the object just ceased to be
+   * pinned down
    */
-  void intern (){
-    attributes |= (ATTR_INTERN | ATTR_ATTRIBUTE_CHANGED);
+  boolean decPinDown() {
+    int pdCount = (attributes & ATTR_PINDOWN_MASK);
+
+    if (pdCount > 0){
+      pdCount--;
+      int a = (attributes & ~ATTR_PINDOWN_MASK);
+      a |= pdCount;
+      a |= ATTR_ATTRIBUTE_CHANGED;
+      attributes = a;
+
+      return (pdCount == 0);
+    } else {
+      return false;
+    }
   }
 
-  public boolean isIntern () {
-    return (attributes & ATTR_INTERN) != 0;
+  public int getPinDownCount() {
+    return (attributes & ATTR_PINDOWN_MASK);
+  }
+
+  public boolean isPinnedDown() {
+    return (attributes & ATTR_PINDOWN_MASK) != 0;
   }
 
 

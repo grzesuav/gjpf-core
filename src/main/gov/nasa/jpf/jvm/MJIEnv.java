@@ -967,8 +967,12 @@ public class MJIEnv {
     ei.notifiesAll();
   }
 
-  public void pinDown (int objref, boolean keepAlive) {
-    vm.getHeap().pinDown(objref);
+  public void registerPinDown(int objref){
+    vm.getHeap().registerPinDown(objref);
+  }
+
+  public void releasePinDown(int objref){
+    vm.getHeap().releasePinDown(objref);
   }
   
   /**

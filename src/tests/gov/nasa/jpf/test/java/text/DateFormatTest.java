@@ -28,12 +28,13 @@ public class DateFormatTest extends TestJPF {
         System.out.print("re-parsed date is: ");
         System.out.println(d2);
 
-        long t1 = d1.getTime();
-        long t2 = d2.getTime();
+        long t1 = d1.getTime(); // in ms
+        long t2 = d2.getTime(); // in ms
         long delta = Math.abs(t2 - t1);
 
         // since we loose the ms in String conversion, d2.after(d1) does not necessarily hold
-        assert delta < 2000 : "difference too big";
+        // some locales don't format the seconds, to we might loose them in the re-conversion
+        assert delta <= 60000 : "difference > 1min";
 
       } catch (ParseException x) {
         assert false : "output did not parse: " + x;
