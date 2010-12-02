@@ -462,10 +462,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
   public MethodInfo createReflectionCallStub() {
     return createCallStub("[reflection]", REFLECTION_CALL);
   }
-  boolean isReflectionCallStub() {
+  
+  public boolean isReflectionCallStub() {
     return (globalId == REFLECTION_CALL);
   }
-
 
   public boolean isSyncRelevant () {
     return (name.charAt(0) != '<');

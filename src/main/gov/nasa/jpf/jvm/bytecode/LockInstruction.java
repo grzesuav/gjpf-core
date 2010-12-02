@@ -47,7 +47,7 @@ public abstract class LockInstruction extends Instruction {
    * For example, all but the last monitorexit for the object.
    */
   protected boolean isLastUnlock(ElementInfo ei) {
-    return ei.getLockCount() == 1;
+    return ei.getLockCount() == 0;
   }
   
   /**

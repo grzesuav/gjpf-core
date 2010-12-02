@@ -18,17 +18,12 @@
 //
 package java.lang;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
+import java.lang.reflect.*;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Vector;
-
 import sun.reflect.ConstantPool;
 import sun.reflect.annotation.AnnotationType;
 
@@ -47,11 +42,13 @@ import sun.reflect.annotation.AnnotationType;
  * Java assertion support
  */
 @SuppressWarnings("unused")  // native peer uses
-public final class Class<T> {
+public final class Class<T> implements Serializable, GenericDeclaration, Type, AnnotatedElement {
 
-  // we init this on demand (from MJIEnv) since it's not used too often
+  /** don't use serialVersionUID from JDK 1.1 for interoperability */
+  private static final long serialVersionUID = 3206093459760846163L + 1;
+
+   // we init this on demand (from MJIEnv) since it's not used too often
   private static Annotation[] emptyAnnotations; // = new Annotation[0];
-
   
   private String name;
 
@@ -65,9 +62,10 @@ public final class Class<T> {
    * to be set during <clinit> of the corresponding class
    */
   private boolean isPrimitive;
+  
+  private Class() {}
 
   public native boolean isArray ();
-
 
   public native Annotation[] getAnnotations();
 
@@ -76,7 +74,6 @@ public final class Class<T> {
   // those are from Java 6
   public native boolean isAnnotation ();
   public native boolean isAnnotationPresent(Class<? extends Annotation> annotationClass);
-
 
   public native Class<?> getComponentType ();
 
@@ -108,6 +105,7 @@ public final class Class<T> {
   }
 
   public URL getResource (String name) {
+    name = null;  // Get rid of IDE warning
     // <2do> if we support getResourceAsStream, we need to support this as well
     throw new UnsupportedOperationException("Class.getResource() not yet supported in JPF");
   }
@@ -140,10 +138,10 @@ public final class Class<T> {
   T[] getEnumConstantsShared() {
     return getEnumConstants();
   }
-
+  
   // lazy initialized map for field name -> Enum constants
   // <2do> we should move this to the native side, since Enum constants don't change
-  private Map<String, T> enumConstantDirectory = null;
+  private transient Map<String, T> enumConstantDirectory = null;
 
   // package private helper for Enum.valueOf()
   Map<String,T> enumConstantDirectory() {
@@ -161,7 +159,7 @@ public final class Class<T> {
   }
 
 
-  public native Constructor<?> getDeclaredConstructor (Class<?>... paramTypes)
+  public native Constructor<T> getDeclaredConstructor (Class<?>... paramTypes)
               throws NoSuchMethodException, SecurityException;
 
   public native Field getField (String fieldName) throws NoSuchFieldException,
@@ -173,7 +171,7 @@ public final class Class<T> {
 
   public native boolean isInterface();
 
-  public native Constructor<T> getConstructor (Class<?>[] argTypes) throws NoSuchMethodException;
+  public native Constructor<T> getConstructor (Class<?>... argTypes) throws NoSuchMethodException, SecurityException;
 
   public native int getModifiers();
 
@@ -189,26 +187,28 @@ public final class Class<T> {
     return name.substring(idx+1);
   }
 
-  public static native Class<?> getPrimitiveClass (String clsName);
+  static native Class getPrimitiveClass (String clsName);
 
-  /**
-   * this one is in JPF reflection land, it's 'native' for us
-   */
+   /**
+    * this one is in JPF reflection land, it's 'native' for us
+    */
   public static native Class<?> forName (String clsName)
                                throws ClassNotFoundException;
 
   public static Class<?> forName (String clsName, boolean initialize, ClassLoader loader)
       throws ClassNotFoundException {
     // deferred init and loaders are not supported yet
+    initialize = false;  // Get rid of IDE warnings
+    loader     = null;     
+    
     return forName(clsName);
   }
-
 
   public boolean isPrimitive () {
     return isPrimitive;
   }
 
-  public native Class<?> getSuperclass ();
+  public native Class<? super T> getSuperclass ();
 
   public native T newInstance () throws InstantiationException,
                                       IllegalAccessException;
@@ -222,10 +222,10 @@ public final class Class<T> {
     if (o != null && !isInstance(o)) throw new ClassCastException();
     return (T) o;
   }
-
+  
   public <U> Class<? extends U> asSubclass(Class<U> clazz) {
     if (clazz.isAssignableFrom(this)) {
-      return (Class<? extends U>)this;
+      return (Class<? extends U>) this;
     } else {
       throw new ClassCastException("" + this + " is not a " + clazz);
     }
@@ -241,5 +241,89 @@ public final class Class<T> {
 
   native AnnotationType getAnnotationType();
 
+  public boolean isSynthetic() {
+    throw new UnsupportedOperationException();
+  }
+  
+  public TypeVariable<Class<T>>[] getTypeParameters() {
+    throw new UnsupportedOperationException();
+  }
+  
+  public Type getGenericSuperclass() {
+    throw new UnsupportedOperationException();
+  }
+  
+  public Type[] getGenericInterfaces() {
+    throw new UnsupportedOperationException();
+  }
 
+  public Object[] getSigners() {
+    throw new UnsupportedOperationException();
+  }
+
+  void setSigners(Object[] signers) {
+    signers = null;  // Get rid of IDE warning 
+    throw new UnsupportedOperationException();
+  }
+  
+  public Method getEnclosingMethod() {
+    throw new UnsupportedOperationException();
+  }
+
+  public Constructor<?> getEnclosingConstructor() {
+    throw new UnsupportedOperationException();
+  }
+
+  public Class<?> getDeclaringClass() {
+    throw new UnsupportedOperationException();
+  }
+
+  public Class<?> getEnclosingClass() {
+    throw new UnsupportedOperationException();
+  }
+  
+  public String getCanonicalName() {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean isAnonymousClass() {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean isLocalClass() {
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean isMemberClass() {
+    throw new UnsupportedOperationException();
+  }
+
+  public Class<?>[] getClasses() {
+    throw new UnsupportedOperationException();
+  }
+
+  public Field[] getFields() throws SecurityException {
+    throw new UnsupportedOperationException();
+  }
+  
+  public Class<?>[] getDeclaredClasses() throws SecurityException {
+    throw new UnsupportedOperationException();
+  }
+  
+  public java.security.ProtectionDomain getProtectionDomain() {
+    throw new UnsupportedOperationException();
+  }
+
+  void setProtectionDomain0(java.security.ProtectionDomain pd) {
+    pd = null;  // Get rid of IDE warning 
+    throw new UnsupportedOperationException();
+  }
+
+  public boolean isEnum() {
+    throw new UnsupportedOperationException();
+  }
+  
+  public Annotation[] getDeclaredAnnotations() {
+    throw new UnsupportedOperationException();
+  }
 }
