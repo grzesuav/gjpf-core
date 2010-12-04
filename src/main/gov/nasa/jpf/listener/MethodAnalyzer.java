@@ -29,12 +29,10 @@ import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
 import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
-import gov.nasa.jpf.jvm.bytecode.VirtualInvocation;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
@@ -298,6 +296,7 @@ public class MethodAnalyzer extends ListenerAdapter {
     }
   }
 
+
   //--- VMlistener interface
   
   public void instructionExecuted (JVM vm) {
@@ -358,6 +357,10 @@ public class MethodAnalyzer extends ListenerAdapter {
 
     if (firstOp == null && lastTransition != null){ // do this just once
       firstOp = revertAndFlatten(lastTransition);
+    }
+
+    if (firstOp == null){
+      return;
     }
 
     PrintWriter pw = publisher.getOut();

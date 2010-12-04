@@ -63,7 +63,6 @@ public class NATIVERETURN extends ReturnInstruction {
     return top.getPC().getNext();
   }
 
-
   @Override
   public boolean isExtendedInstruction() {
     return true;

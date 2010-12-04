@@ -231,7 +231,11 @@ public class JPF_java_lang_reflect_Method {
     long rawValue;
     int i, nArgs, passedCount, sourceRef;
     byte sourceType, destTypes[];
-     
+
+    if (argsRef == MJIEnv.NULL){
+      return false;
+    }
+
     destTypes     = mi.getArgumentTypes();
     destTypeNames = mi.getArgumentTypeNames();
     nArgs         = destTypeNames.length;

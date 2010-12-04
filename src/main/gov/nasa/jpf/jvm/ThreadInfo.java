@@ -765,9 +765,10 @@ public class ThreadInfo
     int i = stackDepth-1;
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
       if (frame.isInvoked()){
-        list.set(i--, frame);
+        list.add( frame);
       }
     }
+    Collections.reverse(list);
 
     return list;
   }
