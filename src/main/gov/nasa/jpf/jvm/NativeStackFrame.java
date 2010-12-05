@@ -20,6 +20,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.jvm.bytecode.NATIVERETURN;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Misc;
 import java.io.PrintWriter;
@@ -118,11 +119,16 @@ public class NativeStackFrame extends StackFrame {
   }
 
   public void markThreadRoots (Heap heap, int tid) {
-    super.markThreadRoots( heap, tid);
+    // what if some listener creates a CG post-EXECUTENATIVE or pre-NATIVERETURN?
+    // and the native method returned an object?
+    // on the other hand, we have to make sure we don't mark a return value from
+    // a previous transition
 
-    if (ret != null && ret instanceof Integer && mi.isReferenceReturnType()){
-      int ref = ((Integer)ret).intValue();
-      heap.markThreadRoot(ref, tid);
+    if (pc instanceof NATIVERETURN){
+      if (ret != null && ret instanceof Integer && mi.isReferenceReturnType()) {
+        int ref = ((Integer) ret).intValue();
+        heap.markThreadRoot(ref, tid);
+      }
     }
   }
 

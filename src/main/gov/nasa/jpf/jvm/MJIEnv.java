@@ -209,11 +209,11 @@ public class MJIEnv {
 
   // the instance field setters
   public void setBooleanField (int objref, String fname, boolean val) {
-    setIntField(objref, fname, Types.booleanToInt(val));
+    heap.get(objref).setBooleanField(fname, val);
   }
 
   public boolean getBooleanField (int objref, String fname) {
-    return Types.intToBoolean(getIntField(objref, fname));
+    return heap.get(objref).getBooleanField(fname);
   }
 
   public boolean getBooleanArrayElement (int objref, int index) {

@@ -243,20 +243,10 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
     heap.unmarkAll();
   }
 
-
-  //--- our main purpose in life
-
-  @Override
-  protected int[] computeStoringData() {
-    buf.clear();
-
-    initReferenceQueue();
-
+  protected void serializeThreads() {
     ThreadList tl = ks.getThreadList();
     int tlen = tl.length();
-    heap = ks.getHeap();
 
-    //--- serialize the threads
     for (int j=0; j<tlen; j++){
       ThreadInfo t = tl.get(j);
       if (!t.isAlive()) {
@@ -299,42 +289,48 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
 
       buf.set(frameCountPos, frameCount);
     }
+  }
 
-    //--- the static fields
+  protected void serializeStatics(){
     StaticArea statics = ks.getStaticArea();
     buf.add(statics.getLength());
-    for (StaticElementInfo s : statics) {
-      if (s == null) {
-        buf.add(-1);
-      } else {
-        buf.add(s.getStatus());
 
-        Fields fields = s.getFields();
-        ClassInfo ci = s.getClassInfo();
-        FinalBitSet filtered = getStaticFilterMask(ci);
-        FinalBitSet refs = getStaticRefMask(ci);
-        int max = ci.getStaticDataSize();
-        for (int i = 0; i < max; i++) {
-          if (! filtered.get(i)) {
-            int v = fields.getIntValue(i);
-            if (refs.get(i)) {
-              addObjRef( v);
-            } else {
-              buf.add(v);
-            }
+    for (StaticElementInfo s : statics) {
+      buf.add(s.getStatus());
+
+      Fields fields = s.getFields();
+      ClassInfo ci = s.getClassInfo();
+      FinalBitSet filtered = getStaticFilterMask(ci);
+      FinalBitSet refs = getStaticRefMask(ci);
+      int max = ci.getStaticDataSize();
+      for (int i = 0; i < max; i++) {
+        if (!filtered.get(i)) {
+          int v = fields.getIntValue(i);
+          if (refs.get(i)) {
+            addObjRef(v);
+          } else {
+            buf.add(v);
           }
         }
       }
     }
+  }
+
+  //--- our main purpose in life
+
+  @Override
+  protected int[] computeStoringData() {
+
+    buf.clear();
+    heap = ks.getHeap();
+    initReferenceQueue();
+
+    serializeThreads();
+    serializeStatics();
 
     processReferenceQueue();
 
-//int[] data = buf.toArray();
-//long hash = JenkinsStateSet.longLookup3Hash(data);
-
-//System.out.println("@@@@ buf-size: " + buf.size() + ", hash= " + hash);
     return buf.toArray();
   }
-
 
 }

@@ -19,16 +19,20 @@
 
 package gov.nasa.jpf.jvm.serialize;
 
+import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.StaticArea;
+import gov.nasa.jpf.jvm.StaticElementInfo;
 
 /**
  * a bounded canonicalizing & filtering serializer.
  *
- * This came to bear by accidentally discovering that most of the known JPF
- * applications find targeted errors by just serializing the thread states,
- * statics, and the heap objects referenced from the thread states. This must
- * be caused by a high probability that threads more likely reference what
- * they change
+ * This came to bear by accidentally discovering that JPF finds the defects
+ * of most known concurrency applications by just serializing the thread
+ * stacks and the objects directly referenced from there. This seems too
+ * aggressive if data CGs are involved, or if the application directly uses
+ * sun.misc.Unsafe.park()/unpark(), but in all other cases there is a high
+ * probability that relevant states have different stacks
  */
 public class BCFSerializer extends CFSerializer {
 
@@ -53,5 +57,22 @@ public class BCFSerializer extends CFSerializer {
   protected void processReferenceQueue() {
     traverseObjects = false;
     refQueue.process(this);
+  }
+
+  //@Override
+  protected void serializeStatics(){
+    // only serialize class status and esp. class objects, because those might
+    // not be on the stack when doing synchronized invoke_statics
+    StaticArea statics = ks.getStaticArea();
+    buf.add(statics.getLength());
+
+    for (StaticElementInfo sei : statics) {
+      ClassInfo ci = sei.getClassInfo();
+
+      buf.add(ci.getUniqueId());
+      buf.add(sei.getStatus());
+      
+      addObjRef( sei.getClassObjectRef());
+    }
   }
 }
