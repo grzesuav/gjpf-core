@@ -23,6 +23,9 @@ import java.util.Iterator;
 
 /**
  * a hash map that holds int values
+ * this is a straight forward linked list hashmap
+ *
+ * note: this does deep copy clones, which can be quite expensive
  */
 public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable{
   static final int INIT_TBL_POW = 7;
@@ -46,10 +49,28 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
     size = 0;
   }
 
+  // this is a deep copy (needs to be because entries are reused when growing the table)
   public IntTable<E> clone() {
     try {
       IntTable t = (IntTable)super.clone();
-      t.table = table.clone();
+      ObjArray<Entry<E>> tbl = table.clone();
+      t.table = tbl;
+
+      // clone entries
+      int len = tbl.length();
+      for (int i=0; i<len; i++){
+        Entry<E> eFirst = tbl.get(i);
+        if (eFirst != null){
+          eFirst = eFirst.clone();
+          Entry<E> ePrev = eFirst;
+          for (Entry<E> e = eFirst.next; e != null; e = e.next){
+            e = e.clone();
+            ePrev.next = e;
+            ePrev = e;
+          }
+          tbl.set(i, eFirst);
+        }
+      }
 
       return t;
 
@@ -84,7 +105,7 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
   }
   
   private void addList(Entry<E> e) {
-	Entry<E> cur = e;
+    Entry<E> cur = e;
     while (cur != null) {
       Entry<E> tmp = cur;
       cur = cur.next;
@@ -231,14 +252,22 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
    * encapsulates an Entry in the table.  changes to val will be reflected
    * in the table.
    */  
-  public static class Entry<E> {
+  public static class Entry<E> implements Cloneable {
     public    final E  key;
     public    int      val;
     protected Entry<E> next;
     
     protected Entry(E k, int v) { key = k; val = v; next = null; }
     protected Entry(E k, int v, Entry<E> n) { key = k; val = v; next = n; }
-    
+
+    public Entry<E> clone() {
+      try {
+        return (Entry<E>)super.clone();
+      } catch (CloneNotSupportedException x){
+        throw new JPFException("clone failed");
+      }
+    }
+
     public String toString() {
       return key.toString() + " => " + val;
     }
