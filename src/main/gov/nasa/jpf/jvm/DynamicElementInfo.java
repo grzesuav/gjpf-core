@@ -134,10 +134,15 @@ public final class DynamicElementInfo extends ElementInfo implements Restorable<
     int length = getDeclaredIntField("count", "java.lang.String");
     int offset = getDeclaredIntField("offset", "java.lang.String");
 
-    ElementInfo eVal = JVM.getVM().getHeap().get(vref);
-
-    char[] value = eVal.asCharArray();
-    return new String(value,offset,length);
+    if (vref != -1){
+      ElementInfo eVal = JVM.getVM().getHeap().get(vref);
+      char[] value = eVal.asCharArray();
+      return new String(value, offset, length);
+    } else {
+      // can happen if 'asString' is called during the String construction itself
+      // (e.g. from a careless listener)
+      return "";
+    }
   }
 
   /**
