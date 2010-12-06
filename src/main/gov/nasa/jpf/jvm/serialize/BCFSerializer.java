@@ -19,10 +19,7 @@
 
 package gov.nasa.jpf.jvm.serialize;
 
-import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.StaticArea;
-import gov.nasa.jpf.jvm.StaticElementInfo;
 
 /**
  * a bounded canonicalizing & filtering serializer.
@@ -59,20 +56,9 @@ public class BCFSerializer extends CFSerializer {
     refQueue.process(this);
   }
 
-  //@Override
+  @Override
   protected void serializeStatics(){
-    // only serialize class status and esp. class objects, because those might
-    // not be on the stack when doing synchronized invoke_statics
-    StaticArea statics = ks.getStaticArea();
-    buf.add(statics.getLength());
-
-    for (StaticElementInfo sei : statics) {
-      ClassInfo ci = sei.getClassInfo();
-
-      buf.add(ci.getUniqueId());
-      buf.add(sei.getStatus());
-      
-      addObjRef( sei.getClassObjectRef());
-    }
+    // we skip this - assuming that this is only relevant if there is
+    // a class object lock, which is covered by the thread lock info
   }
 }

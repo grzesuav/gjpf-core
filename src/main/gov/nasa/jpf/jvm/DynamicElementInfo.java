@@ -148,11 +148,11 @@ public final class DynamicElementInfo extends ElementInfo implements Restorable<
       return false;
     }
 
-    int value = getDeclaredIntField("value", "java.lang.String");
+    int vref = getDeclaredReferenceField("value", "java.lang.String");
     int length = getDeclaredIntField("count", "java.lang.String");
     int offset = getDeclaredIntField("offset", "java.lang.String");
 
-    ElementInfo e = JVM.getVM().getHeap().get(value);
+    ElementInfo e = JVM.getVM().getHeap().get(vref);
     CharArrayFields cf = (CharArrayFields)e.getFields();
 
     return cf.asString(offset,length).equals(s);

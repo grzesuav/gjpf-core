@@ -955,6 +955,10 @@ public class ThreadInfo
     lockRef = -1;
   }
 
+  public int getLockRef() {
+    return lockRef;
+  }
+
   public ElementInfo getLockObject () {
     if (lockRef == -1) {
       return null;

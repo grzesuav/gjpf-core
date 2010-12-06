@@ -60,6 +60,7 @@ public abstract class Search {
   protected boolean isEndState = false;
   protected boolean isNewState = true;
   protected boolean isIgnoredState = false;
+  protected boolean isErrorState = false;
 
   protected boolean matchDepth;
   protected long    minFreeMemory;
@@ -121,8 +122,9 @@ public abstract class Search {
     return list;
   }
 
+  // check for property violation, return true if not done
   protected boolean hasPropertyTermination () {
-    if (isPropertyViolated()) {
+    if (isErrorState) {
       if (done) {
         return true;
       }
@@ -131,7 +133,8 @@ public abstract class Search {
     return false;
   }
 
-  public boolean isPropertyViolated () {
+  // this should only be called once per transition, otherwise it keeps adding the same error
+  protected boolean checkPropertyViolation () {
     for (Property p : properties) {
       if (!p.check(this, vm)) {
         error(p, vm.getClonedPath(), vm.getThreadList());
@@ -158,6 +161,10 @@ public abstract class Search {
     return errors;
   }
 
+  public int getNumberOfErrors(){
+    return errors.size();
+  }
+
   public String getLastSearchContraint() {
     return lastSearchConstraint;
   }
@@ -179,8 +186,12 @@ public abstract class Search {
     return isEndState;
   }
 
+  public boolean isErrorState(){
+    return isErrorState;
+  }
+
   public boolean hasNextState () {
-    return !isEndState();
+    return !isEndState;
   }
 
   public boolean isNewState () {
@@ -415,6 +426,8 @@ public abstract class Search {
 
     isIgnoredState = false; // only set by search listener
     isEndState = vm.isEndState();
+
+    isErrorState = checkPropertyViolation();
 
     return ret;
   }

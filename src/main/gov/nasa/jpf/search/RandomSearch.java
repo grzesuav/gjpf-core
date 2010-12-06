@@ -72,7 +72,7 @@ public class RandomSearch extends Search {
         if (depth >= maxDepth) {
           notifySearchConstraintHit(QUEUE_CONSTRAINT);
         }
-        isPropertyViolated();
+        checkPropertyViolation();
         done = (paths >= path_limit);
         paths++;
         System.out.println("paths = " + paths);

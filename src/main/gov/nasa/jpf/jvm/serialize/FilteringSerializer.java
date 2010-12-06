@@ -185,6 +185,9 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
     }
   }
 
+
+  //--- those are the methods that can be overridden by subclasses to implement abstractions
+
   protected void addObjRef(int objref) {
     if (objref >= 0) {
       ElementInfo ei = heap.get(objref);
@@ -197,8 +200,8 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
     buf.add(objref);
   }
 
+  // needs to be public because of ReferenceProcessor interface
   public void processReference(ElementInfo ei) {
-
     Fields fields = ei.getFields();
     ClassInfo ci = ei.getClassInfo();
     buf.add(ci.getUniqueId());
@@ -237,57 +240,54 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
   protected void processReferenceQueue () {
     refQueue.process(this);
     
-    // this sucks, but we can't do the 'isMarkedOrLive' trick used in gc here
+    // this sucks, but we can'ti do the 'isMarkedOrLive' trick used in gc here
     // because gc depends on live bit integrity, and we only mark non-filtered live
-    // objects here, i.e. we can't just set the Heap liveBitValue subsequently.
+    // objects here, i.e. we can'ti just set the Heap liveBitValue subsequently.
     heap.unmarkAll();
   }
 
   protected void serializeThreads() {
     ThreadList tl = ks.getThreadList();
-    int tlen = tl.length();
 
-    for (int j=0; j<tlen; j++){
-      ThreadInfo t = tl.get(j);
-      if (!t.isAlive()) {
-        continue;
+    for (ThreadInfo ti : tl) {
+      if (ti.isAlive()) {
+        serializeThread(ti);
       }
+    }
+  }
 
-      addObjRef( t.getThreadObjectRef());
-      buf.add(t.getState().ordinal());
+  protected void serializeThread(ThreadInfo ti){
+    addObjRef(ti.getThreadObjectRef());
 
-      int frameCountPos = buf.size();
-      buf.add(0); // placeholder
-      int frameCount = 0;
+    buf.add(ti.getState().ordinal()); // maybe that's enough for locking ?
+    buf.add(ti.getStackDepth());
 
-      for (StackFrame f : t) {
-        frameCount++;
-        MethodInfo mi = f.getMethodInfo();
-        FramePolicy policy = getFramePolicy(mi);
-        int pc;
-        if (policy.includePC) {
-          pc = f.getPC().getOffset();
-        } else {
-          pc = -1;
-        }
-        buf.add(mi.getGlobalId(), pc);
+    // locking state
+    addObjRef(ti.getLockRef());
+    for (ElementInfo ei: ti.getLockedObjects()){
+      addObjRef(ei.getIndex());
+    }
 
-        int len = f.getTopPos();
-        buf.add(len);
+    for (StackFrame frame : ti) {
+      serializeFrame(frame);
+    }
+  }
 
-        // this looks like something we can push into the frame
-        int[] slots = f.getSlots();
-        for (int i=0; i<len; i++){
-          if (f.isReferenceSlot(i)){
-            addObjRef(slots[i]);
-          } else {
-            buf.add(slots[i]);
-          }
-        }
-        if (!policy.recurse) break;
+  protected void serializeFrame(StackFrame frame){
+    buf.add(frame.getMethodInfo().getGlobalId());
+    buf.add(frame.getPC().getOffset());
+
+    int len = frame.getTopPos();
+    buf.add(len);
+
+    // this looks like something we can push into the frame
+    int[] slots = frame.getSlots();
+    for (int i = 0; i < len; i++) {
+      if (frame.isReferenceSlot(i)) {
+        addObjRef(slots[i]);
+      } else {
+        buf.add(slots[i]);
       }
-
-      buf.set(frameCountPos, frameCount);
     }
   }
 
@@ -295,27 +295,32 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
     StaticArea statics = ks.getStaticArea();
     buf.add(statics.getLength());
 
-    for (StaticElementInfo s : statics) {
-      buf.add(s.getStatus());
+    for (StaticElementInfo sei : statics) {
+      serializeClass(sei);
+    }
+  }
 
-      Fields fields = s.getFields();
-      ClassInfo ci = s.getClassInfo();
-      FinalBitSet filtered = getStaticFilterMask(ci);
-      FinalBitSet refs = getStaticRefMask(ci);
-      int max = ci.getStaticDataSize();
-      for (int i = 0; i < max; i++) {
-        if (!filtered.get(i)) {
-          int v = fields.getIntValue(i);
-          if (refs.get(i)) {
-            addObjRef(v);
-          } else {
-            buf.add(v);
-          }
+  protected void serializeClass (StaticElementInfo sei){
+    buf.add(sei.getStatus());
+
+    Fields fields = sei.getFields();
+    ClassInfo ci = sei.getClassInfo();
+    FinalBitSet filtered = getStaticFilterMask(ci);
+    FinalBitSet refs = getStaticRefMask(ci);
+    int max = ci.getStaticDataSize();
+    for (int i = 0; i < max; i++) {
+      if (!filtered.get(i)) {
+        int v = fields.getIntValue(i);
+        if (refs.get(i)) {
+          addObjRef(v);
+        } else {
+          buf.add(v);
         }
       }
     }
   }
 
+  
   //--- our main purpose in life
 
   @Override

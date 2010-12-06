@@ -68,7 +68,7 @@ public class Simulation extends Search {
 
         // <2do> we could check for more things here. If the last insn wasn't
         // the main return, or a System.exit() call, we could flag a JPFException
-        isPropertyViolated();
+        checkPropertyViolation();
         done = true;
       }
     }
