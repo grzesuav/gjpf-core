@@ -22,9 +22,11 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.Error;
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.Property;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.ExceptionInfo;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
@@ -39,11 +41,20 @@ import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
+import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
+import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.LockInstruction;
 import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
 import gov.nasa.jpf.jvm.bytecode.PUTSTATIC;
+import gov.nasa.jpf.jvm.bytecode.StaticFieldInstruction;
+import gov.nasa.jpf.report.ConsolePublisher;
+import gov.nasa.jpf.report.Publisher;
+import gov.nasa.jpf.util.FileUtils;
+import gov.nasa.jpf.util.Misc;
+import java.io.File;
 import java.util.HashSet;
 
 /**
@@ -60,35 +71,72 @@ import java.util.HashSet;
  *
  * we only render one backtrack edge per from-state
  *
- * <2do> the GraphViz attributes should be initialized through config
  * <2do> GraphViz doesn't seem to handle color or fontname for head/tail labels correctly
  */
 public class SimpleDot extends ListenerAdapter {
 
-  JVM vm;
-  String app;
-  PrintWriter pw;
+  static final String GRAPH_ATTRS = "pad=0.5";
+  static final String GENERIC_NODE_ATTRS = "shape=circle,style=filled,fillcolor=white";
+  static final String GENERIC_EDGE_ATTRS = "fontsize=10,fontname=Helvetica,fontcolor=blue,color=cadetblue,style=\"setlinewidth(0.5)\",arrowhead=empty,arrowsize=0.5";
+  static final String START_NODE_ATTRS = "fillcolor=green";
+  static final String END_NODE_ATTRS = "shape=doublecircle,fillcolor=cyan";
+  static final String ERROR_NODE_ATTRS = "color=red,fillcolor=yellow";
+  static final String BACKTRACK_EDGE_ATTRS = "color=gray";
 
-  int lastId; // where we come from
+
+  //--- configurable Graphviz attributes
+  protected String graphAttrs;
+  protected String genericNodeAttrs;
+  protected String genericEdgeAttrs;
+  protected String startNodeAttrs;
+  protected String endNodeAttrs;
+  protected String errorNodeAttrs;
+  protected String backtrackEdgeAttrs;
+
+  protected boolean showTarget;
+  protected boolean printFile;
+
+  protected JVM vm;
+  protected String app;
+  protected File file;
+  protected PrintWriter pw;
+
+  protected int lastId = -1;    // where we come from
+  protected ElementInfo lastEi;
+  protected ThreadInfo lastTi;  // the last started thread
 
   // helper because GraphViz cannot eliminate duplicate edges
   HashSet<Integer> seenBacktracks;
 
-  public SimpleDot( Config config){
+  public SimpleDot( Config config, JPF jpf){
     app = config.getTarget();
 
     String fname = config.getString("dot.file");
     if (fname == null){
-      fname = stripToLastDot(app);
+      fname = Misc.stripToLastDot(app);
       fname += ".dot";
     }
 
+    graphAttrs = config.getString("dot.graph_attr", GRAPH_ATTRS);
+    genericNodeAttrs = config.getString("dot.node_attr", GENERIC_NODE_ATTRS);
+    genericEdgeAttrs = config.getString("dot.edge_attr", GENERIC_EDGE_ATTRS);
+    startNodeAttrs = config.getString("dot.start_node_attr", START_NODE_ATTRS);
+    endNodeAttrs = config.getString("dot.end_node_attr", END_NODE_ATTRS);
+    errorNodeAttrs = config.getString("dot.error_node_attr", ERROR_NODE_ATTRS);
+    backtrackEdgeAttrs = config.getString("dot.bt_edge_attr", BACKTRACK_EDGE_ATTRS);
+
+    printFile = config.getBoolean("dot.print_file", false);
+    showTarget = config.getBoolean("dot.show_target", false);
+
     try {
-      FileWriter fw = new FileWriter(fname);
+      file = new File(fname);
+      FileWriter fw = new FileWriter(file);
       pw = new PrintWriter(fw);
     } catch (IOException iox){
       throw new JPFConfigException("unable to open SimpleDot output file: " + fname);
     }
+
+    jpf.addPublisherExtension(ConsolePublisher.class, this);
   }
 
   //--- the listener interface
@@ -99,13 +147,13 @@ public class SimpleDot extends ListenerAdapter {
     seenBacktracks = new HashSet<Integer>();
 
     printHeader();
-    printStartState("0");
+    printStartState("S");
   }
 
   @Override
   public void stateAdvanced(Search search){
     int id = search.getStateId();
-    if (id == 0){
+    if (id <0){
       return; // skip the root state and property violations (reported separately)
     }
 
@@ -115,10 +163,12 @@ public class SimpleDot extends ListenerAdapter {
       printErrorState(eid);
 
     } else if (search.isNewState()) {
-      printTransition(getStateId(lastId), getStateId(id), getLastChoice(), getNextCG());
 
       if (search.isEndState()) {
+        printTransition(getStateId(lastId), getStateId(id), getLastChoice(), "return");
         printEndState(getStateId(id));
+      } else {
+        printTransition(getStateId(lastId), getStateId(id), getLastChoice(), getNextCG());
       }
 
     } else { // already visited state
@@ -147,10 +197,34 @@ public class SimpleDot extends ListenerAdapter {
     pw.close();
   }
 
+  @Override
+  public void threadStarted (JVM vm){
+    lastTi = vm.getLastThreadInfo();
+  }
+
+  @Override
+  public void objectWait (JVM vm){
+    lastEi = vm.getLastElementInfo();
+  }
+
+  @Override
+  public void publishFinished (Publisher publisher) {
+    PrintWriter ppw = publisher.getOut();
+    publisher.publishTopicStart("SimpleDot");
+
+    ppw.println("dot file generated: " + file.getPath());
+
+    if (printFile){
+      ppw.println();
+      FileUtils.printFile(ppw,file);
+    }
+  }
+
+
   //--- data collection
 
   protected String getStateId (int id){
-    return Integer.toString(id);
+    return id < 0 ? "S" : Integer.toString(id);
   }
 
   protected String getLastChoice() {
@@ -165,33 +239,103 @@ public class SimpleDot extends ListenerAdapter {
     }
   }
 
+  // this is the only method that's more tricky - we have to find a balance
+  // between beeing conscious enough to not clutter the graph, and expressive
+  // enough to understand it.
+  // <2do> this doesn't deal well with custom or data CGs yet
   protected String getNextCG(){
-    ChoiceGenerator<?> cg = vm.getChoiceGenerator(); // that's the next one
+    ChoiceGenerator<?> cg = vm.getNextChoiceGenerator(); // that's the next one
     Instruction insn = cg.getInsn();
 
     if (insn instanceof EXECUTENATIVE) {
-      MethodInfo mi = ((EXECUTENATIVE) insn).getExecutedMethod();
-      return mi.getName();
-    } else if (insn instanceof FieldInstruction) {
-      String varId = stripToLastDot(((FieldInstruction)insn).getVariableId());
+      return getNativeExecCG((EXECUTENATIVE)insn);
 
-      if (insn instanceof PUTFIELD) {
-        return "put " + varId; // maybe add field name
-      } else if (insn instanceof GETFIELD) {
-        return "get " + varId; // maybe add field name
-      } else if (insn instanceof PUTSTATIC) {
-        return "sput " + varId;
-      } else if (insn instanceof GETSTATIC) {
-        return "sget " + varId;
-      }
-    } else if (insn instanceof LockInstruction){
-      return "sync"; // maybe object
-    } else if (insn instanceof InvokeInstruction){
-      MethodInfo mi = ((InvokeInstruction) insn).getInvokedMethod();
-      return mi.getName() + "()";
+    } else if (insn instanceof FieldInstruction) { // shared object field access
+      return getFieldAccessCG((FieldInstruction)insn);
+
+    } else if (insn instanceof LockInstruction){ // monitor_enter
+      return getLockCG((LockInstruction)insn);
+
+    } else if (insn instanceof InvokeInstruction){ // sync method invoke
+      return getInvokeCG((InvokeInstruction)insn);
     }
 
-    return insn.getMnemonic(); // our fallback
+    return insn.getMnemonic(); // our generic fallback
+  }
+
+  protected String getNativeExecCG (EXECUTENATIVE insn){
+    MethodInfo mi = insn.getExecutedMethod();
+    String s = mi.getName();
+
+    if (s.equals("start")) {
+      s = "T" + lastTi.getIndex() + ".start";
+    } else if (s.equals("wait")) {
+      s = "T" + lastTi.getIndex() + ".wait";
+    }
+
+    return s;
+  }
+
+  protected String getFieldAccessCG (FieldInstruction insn){
+    String s;
+
+    if (insn instanceof InstanceFieldInstruction) {
+
+      if (insn instanceof PUTFIELD) {
+        s = "put";
+      } else /* if (insn instanceof GETFIELD) */ {
+        s = "get";
+      }
+
+      if (showTarget){
+        int ref = ((InstanceFieldInstruction) insn).getLastThis();
+        s = getInstanceRef(ref) + '.' + s;
+      }
+
+    } else /* if (insn instanceof StaticFieldInstruction) */ {
+      if (insn instanceof PUTSTATIC) {
+        s = "put";
+      } else /* if (insn instanceof GETSTATIC) */ {
+        s = "get";
+      }
+
+      String clsName = ((StaticFieldInstruction) insn).getLastClassName();
+      s = Misc.stripToLastDot(clsName) + '.' + s;
+    }
+
+    String varId = Misc.stripToLastDot(((FieldInstruction) insn).getVariableId());
+    s = s + ' ' + varId;
+
+    return s;
+  }
+
+  protected String getLockCG(LockInstruction insn){
+    String s = "sync";
+
+    if (showTarget){
+      int ref = insn.getLastLockRef();
+      s = getInstanceRef(ref) + '.' + s;
+    }
+
+    return s;
+  }
+
+  protected String getInvokeCG (InvokeInstruction insn){
+    MethodInfo mi = insn.getInvokedMethod();
+    String s = mi.getName() + "()";
+
+    if (showTarget){
+      if (insn instanceof InstanceInvocation) {
+        int ref = ((InstanceInvocation) insn).getLastObjRef();
+        s = getInstanceRef(ref) + '.' + s;
+
+      } else if (insn instanceof INVOKESTATIC) {
+        String clsName = ((INVOKESTATIC) insn).getInvokedClassName();
+        s = Misc.stripToLastDot(clsName) + '.' + s;
+      }
+    }
+
+    return s;
   }
 
   protected String getError (Search search){
@@ -201,31 +345,39 @@ public class SimpleDot extends ListenerAdapter {
 
     if (prop instanceof NoUncaughtExceptionsProperty){
       ExceptionInfo xi = ((NoUncaughtExceptionsProperty)prop).getUncaughtExceptionInfo();
-      return stripToLastDot(xi.getExceptionClassname());
+      return Misc.stripToLastDot(xi.getExceptionClassname());
 
     } else if (prop instanceof NotDeadlockedProperty){
       return "deadlock";
     }
 
     // fallback
-    return stripToLastDot(prop.getClass().getName());
+    return Misc.stripToLastDot(prop.getClass().getName());
   }
 
-  protected static String stripToLastDot (String s){
-    int i = s.lastIndexOf('.');
-    if (i>=0){
-      return s.substring(i+1);
-    } else {
-      return s;
-    }
+  protected static String getInstanceRef (int ref){
+    return "@" + Integer.toHexString(ref).toUpperCase();
+  }
+
+  protected static String getClassObjectRef (int ref){
+    return "#" + Integer.toHexString(ref).toUpperCase();
   }
 
   //--- dot file stuff
 
   protected void printHeader(){
     pw.println("digraph {");
-    pw.println("node [shape=circle,style=filled,fillcolor=white]");
-    pw.println("edge [fontsize=10,fontname=Helvetica,fontcolor=blue,color=cadetblue,style=\"setlinewidth(0.5)\",arrowhead=empty,arrowsize=0.5]");
+
+    pw.print("node [");
+    pw.print(genericNodeAttrs);
+    pw.println(']');
+
+    pw.print("edge [");
+    pw.print(genericEdgeAttrs);
+    pw.println(']');
+
+    pw.println(graphAttrs);
+
     pw.println();
     pw.print("label=");
     pw.println(app);
@@ -245,7 +397,7 @@ public class SimpleDot extends ListenerAdapter {
       pw.print(cgCause);
       pw.print('"');
     }
-    pw.println("]");
+    pw.println(']');
   }
 
   protected void printBacktrack (String fromState, String toState){
@@ -253,21 +405,41 @@ public class SimpleDot extends ListenerAdapter {
     pw.print(fromState);
     pw.print(" -> ");
     pw.print( toState);
-    pw.println(" [color=gray]");
+
+    pw.print(" [");
+    pw.print(backtrackEdgeAttrs);
+    pw.print(']');
+
+    pw.println("  // backtrack");
   }
 
   protected void printStartState(String stateId){
     pw.print(stateId);
-    pw.println(" [fillcolor=green]");
+
+    pw.print(" [");
+    pw.print(startNodeAttrs);
+    pw.print(']');
+
+    pw.println("  // start state");
   }
 
   protected void printEndState(String stateId){
     pw.print(stateId);
-    pw.println(" [shape=doublecircle,fillcolor=cyan]");
+
+    pw.print(" [");
+    pw.print(endNodeAttrs);
+    pw.print(']');
+
+    pw.println("  // end state");
   }
 
   protected void printErrorState(String error){
     pw.print(error);
-    pw.println(" [color=red,fillcolor=yellow]");
+
+    pw.print(" [");
+    pw.print(errorNodeAttrs);
+    pw.print(']');
+
+    pw.println("  // error state");
   }
 }

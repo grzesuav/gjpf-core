@@ -474,6 +474,15 @@ public class Misc {
     return true;
   }
 
+  public static String stripToLastDot (String s){
+    int i = s.lastIndexOf('.');
+    if (i>=0){
+      return s.substring(i+1);
+    } else {
+      return s;
+    }
+  }
+
 
   /*=================== PRIVATE STUFF ===================*/
 

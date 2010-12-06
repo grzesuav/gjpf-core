@@ -1457,6 +1457,10 @@ public class JVM {
     return ss.getChoiceGenerator();
   }
 
+  public ChoiceGenerator<?> getNextChoiceGenerator() {
+    return ss.getNextChoiceGenerator();
+  }
+
   /**
    * return the latest registered ChoiceGenerator used in this transition
    * that matches the provided 'id' and is of 'cgType'.

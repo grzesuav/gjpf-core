@@ -18,7 +18,11 @@
 //
 package gov.nasa.jpf.util;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
@@ -338,6 +342,22 @@ public class FileUtils {
     return p;
   }
 
+  public static void printFile (PrintWriter pw, File file){
+    try {
+      FileReader fr = new FileReader(file);
+      BufferedReader r = new BufferedReader(fr);
+
+      String line;
+      while ((line = r.readLine()) != null){
+        pw.println(line);
+      }
+
+      r.close();
+
+    } catch (IOException iox){
+      pw.println("!! error printing file: " + file.getPath());
+    }
+  }
 
 
   //--- test & debug

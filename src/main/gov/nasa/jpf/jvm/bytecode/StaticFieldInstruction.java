@@ -56,8 +56,18 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     return getLastElementInfo();
   }
 
-  public ElementInfo getLastElementInfo() {
+  public StaticElementInfo getLastElementInfo() {
     return getFieldInfo().getClassInfo().getStaticElementInfo();
+  }
+
+  // this can be different than ci - the field might be in one of its
+  // superclasses
+  public ClassInfo getLastClassInfo(){
+    return getFieldInfo().getClassInfo();
+  }
+
+  public String getLastClassName() {
+    return getLastClassInfo().getName();
   }
 
   protected boolean isNewPorFieldBoundary (ThreadInfo ti) {

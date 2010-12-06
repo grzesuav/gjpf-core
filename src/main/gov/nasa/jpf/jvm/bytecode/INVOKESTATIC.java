@@ -24,6 +24,7 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.StaticElementInfo;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -49,8 +50,12 @@ public class INVOKESTATIC extends InvokeInstruction {
     return 0xB8;
   }
 
-  public ElementInfo getStaticElementInfo (){
+  public StaticElementInfo getStaticElementInfo (){
     return getClassInfo().getStaticElementInfo();
+  }
+
+  public int getClassObjectRef(){
+    return getClassInfo().getStaticElementInfo().getClassObjectRef();
   }
 
   public boolean isExecutable (SystemState ss, KernelState ks, ThreadInfo ti) {
@@ -141,6 +146,15 @@ public class INVOKESTATIC extends InvokeInstruction {
     return invokedMethod;
   }
   
+  // can be different thatn the ci - method can be in a superclass
+  public ClassInfo getInvokedClassInfo(){
+    return getInvokedMethod().getClassInfo();
+  }
+
+  public String getInvokedClassName(){
+    return getInvokedClassInfo().getName();
+  }
+
   public int getArgSize () {
     if (argSize < 0) {
       argSize = Types.getArgumentsSize(signature);

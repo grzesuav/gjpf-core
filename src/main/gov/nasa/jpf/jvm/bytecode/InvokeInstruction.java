@@ -68,6 +68,11 @@ public abstract class InvokeInstruction extends Instruction {
     return 3; // opcode, index1, index2
   }
 
+  // only useful from post-exec notifications
+  public int getLastObjRef() {
+    return lastObj;
+  }
+
   /**
    * this is for explicit initialization (not BCEL)
    */
