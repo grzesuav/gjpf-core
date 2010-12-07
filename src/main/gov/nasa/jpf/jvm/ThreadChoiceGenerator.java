@@ -56,7 +56,8 @@ public abstract class ThreadChoiceGenerator extends ChoiceGenerator<ThreadInfo> 
   public ThreadChoiceGenerator randomize () {
     return this;
   }
-  
+
+  @Override
   public boolean isSchedulingPoint () {
     return isSchedulingPoint;
   }

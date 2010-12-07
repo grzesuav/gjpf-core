@@ -181,14 +181,12 @@ public class SimpleDot extends ListenerAdapter {
   @Override
   public void stateBacktracked(Search search){
     int id = search.getStateId();
-    ChoiceGenerator<?> cg = vm.getChoiceGenerator();
-    if (cg.hasMoreChoices() && !cg.isDone()){
-      if (!seenBacktracks.contains(lastId)){
-        printBacktrack(getStateId(lastId),getStateId(id));
-        seenBacktracks.add(lastId);
-      }
-      lastId = id;
+
+    if (!seenBacktracks.contains(lastId)) {
+      printBacktrack(getStateId(lastId), getStateId(id));
+      seenBacktracks.add(lastId);
     }
+    lastId = id;
   }
 
   @Override
@@ -299,8 +297,10 @@ public class SimpleDot extends ListenerAdapter {
         s = "get";
       }
 
-      String clsName = ((StaticFieldInstruction) insn).getLastClassName();
-      s = Misc.stripToLastDot(clsName) + '.' + s;
+      if (showTarget){
+        String clsName = ((StaticFieldInstruction) insn).getLastClassName();
+        s = Misc.stripToLastDot(clsName) + '.' + s;
+      }
     }
 
     String varId = Misc.stripToLastDot(((FieldInstruction) insn).getVariableId());

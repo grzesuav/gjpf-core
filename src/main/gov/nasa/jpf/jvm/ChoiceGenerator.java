@@ -114,6 +114,10 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     this.id = id;
   }
 
+  public boolean isSchedulingPoint(){
+    return false;
+  }
+
   //--- the getters and setters for the CG creation info
   public void setThreadInfo (ThreadInfo ti) {
     this.ti = ti;
