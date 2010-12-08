@@ -66,14 +66,13 @@ public class AdaptiveSerializer extends CFSerializer {
       addObjRef(ei.getIndex());
     }
 
-    if (isSchedulingPoint){
-      // only serialize the top frame, assuming that we have CGs on all relevant insns
-      serializeFrame(ti.getTopFrame());
-    } else {
-      // serialize all frames
-      for (StackFrame frame : ti) {
-        serializeFrame(frame);
-      }
+    // serialize all frames (in most cases the top frame would do, but
+    // the scheduling point might be in a frame that is called from a loop, and
+    // doesn't have any change itself
+    // Note: don't try to be too smart and do anything that is not symmetric because
+    // it can actually cause more states
+    for (StackFrame frame : ti) {
+      serializeFrame(frame);
     }
   }
 

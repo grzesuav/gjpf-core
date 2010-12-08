@@ -468,8 +468,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     fields.hash(hd);
     monitor.hash(hd);
     hd.add(refTid);
-    
-    // attributes ?
+    hd.add(attributes & ATTR_STORE_MASK);
   }
 
   @Override
@@ -490,7 +489,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
         return false;
       }
 
-      if (attributes != other.attributes){ // ??
+      if ((attributes & ATTR_STORE_MASK) != (other.attributes & ATTR_STORE_MASK)){
         return false;
       }
       if (!fields.equals(other.fields)) {
