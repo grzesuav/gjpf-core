@@ -31,6 +31,7 @@ import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Reflection;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.lang.annotation.Annotation;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -302,7 +303,7 @@ public abstract class TestJPF implements JPFShell  {
           try {
             Method m = testCls.getDeclaredMethod(test);
 
-            if (!m.isAnnotationPresent(org.junit.Test.class)) {
+            if (!hasProperAnnotation(m)) {
               throw new RuntimeException("test method does not have @Test annotation: " + test);
             }
             if (!Modifier.isPublic(m.getModifiers())) {
@@ -328,7 +329,7 @@ public abstract class TestJPF implements JPFShell  {
       for (Method m : testCls.getDeclaredMethods()) {
         int mod = m.getModifiers();
         if (m.getParameterTypes().length == 0
-                && m.isAnnotationPresent(org.junit.Test.class)
+                && hasProperAnnotation(m)
                 && Modifier.isPublic(mod) && !Modifier.isStatic(mod)) {
           testMethods.add(m);
         }
@@ -336,6 +337,16 @@ public abstract class TestJPF implements JPFShell  {
     }
 
     return testMethods;
+  }
+
+  protected static boolean hasProperAnnotation(Method m) {
+      Annotation[] annotations = m.getAnnotations();
+      for(int i=0;i<annotations.length;i++) {
+          String annotType = annotations[i].annotationType().getName();
+          if(annotType.equals("org.junit.Test")) return true;
+          if(annotType.equals("org.testng.annotations.Test")) return true;
+      }
+      return false;
   }
 
   protected static void reportTestStart(String mthName){
