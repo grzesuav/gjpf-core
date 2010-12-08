@@ -618,7 +618,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public void setBooleanField (String fname, boolean value) {
-    setIntField( getFieldInfo(fname), value ? 1 : 0);
+    setBooleanField( getFieldInfo(fname), value);
   }
   public void setByteField (String fname, byte value) {
     setByteField( getFieldInfo(fname), value);
@@ -1227,11 +1227,11 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public ElementInfo getDeclaredObjectField(String fname, String referenceType) {
-    return JVM.getVM().getHeap().get(getDeclaredIntField(fname, referenceType));
+    return JVM.getVM().getHeap().get(getDeclaredReferenceField(fname, referenceType));
   }
 
   public ElementInfo getObjectField(String fname) {
-    return JVM.getVM().getHeap().get(getIntField(fname));
+    return JVM.getVM().getHeap().get(getReferenceField(fname));
   }
 
 
