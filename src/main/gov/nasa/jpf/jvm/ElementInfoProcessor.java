@@ -16,12 +16,13 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
+
 package gov.nasa.jpf.jvm;
 
 /**
- * a generic interface to process reference values
+ * interface for processing ElementInfo collections
  */
-public interface ReferenceVisitor {
+public interface ElementInfoProcessor {
 
-  void visit (int ref);
+  void processElementInfo (ElementInfo ei);
 }

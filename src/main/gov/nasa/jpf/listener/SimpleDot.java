@@ -81,7 +81,9 @@ public class SimpleDot extends ListenerAdapter {
   static final String START_NODE_ATTRS = "fillcolor=green";
   static final String END_NODE_ATTRS = "shape=doublecircle,fillcolor=cyan";
   static final String ERROR_NODE_ATTRS = "color=red,fillcolor=yellow";
-  static final String BACKTRACK_EDGE_ATTRS = "color=gray";
+  static final String BACKTRACK_EDGE_ATTRS = "arrowhead=onormal,color=gray,style=\"dotted\"";
+  static final String NEW_EDGE_ATTRS = "arrowhead=normal";
+  static final String VISITED_EDGE_ATTRS = "arrowhead=vee";
 
 
   //--- configurable Graphviz attributes
@@ -91,6 +93,8 @@ public class SimpleDot extends ListenerAdapter {
   protected String startNodeAttrs;
   protected String endNodeAttrs;
   protected String errorNodeAttrs;
+  protected String newEdgeAttrs;
+  protected String visitedEdgeAttrs;
   protected String backtrackEdgeAttrs;
 
   protected boolean showTarget;
@@ -106,7 +110,7 @@ public class SimpleDot extends ListenerAdapter {
   protected ThreadInfo lastTi;  // the last started thread
 
   // helper because GraphViz cannot eliminate duplicate edges
-  HashSet<Integer> seenBacktracks;
+  HashSet<Long> seenEdges;
 
   public SimpleDot( Config config, JPF jpf){
     app = config.getTarget();
@@ -120,6 +124,8 @@ public class SimpleDot extends ListenerAdapter {
     graphAttrs = config.getString("dot.graph_attr", GRAPH_ATTRS);
     genericNodeAttrs = config.getString("dot.node_attr", GENERIC_NODE_ATTRS);
     genericEdgeAttrs = config.getString("dot.edge_attr", GENERIC_EDGE_ATTRS);
+    newEdgeAttrs = config.getString("dot.new_edge_attr", NEW_EDGE_ATTRS);
+    visitedEdgeAttrs = config.getString("dot.visited_edge_attr", VISITED_EDGE_ATTRS);
     startNodeAttrs = config.getString("dot.start_node_attr", START_NODE_ATTRS);
     endNodeAttrs = config.getString("dot.end_node_attr", END_NODE_ATTRS);
     errorNodeAttrs = config.getString("dot.error_node_attr", ERROR_NODE_ATTRS);
@@ -144,7 +150,7 @@ public class SimpleDot extends ListenerAdapter {
   @Override
   public void searchStarted(Search search){
     vm = search.getVM();
-    seenBacktracks = new HashSet<Integer>();
+    seenEdges = new HashSet<Long>();
 
     printHeader();
     printStartState("S");
@@ -153,9 +159,12 @@ public class SimpleDot extends ListenerAdapter {
   @Override
   public void stateAdvanced(Search search){
     int id = search.getStateId();
-    if (id <0){
+    long edgeId = ((long)lastId << 32) | id;
+
+    if (id <0 || seenEdges.contains(edgeId)){
       return; // skip the root state and property violations (reported separately)
     }
+
 
     if (search.isErrorState()) {
       String eid = "e" + search.getNumberOfErrors();
@@ -175,16 +184,26 @@ public class SimpleDot extends ListenerAdapter {
       printTransition(getStateId(lastId), getStateId(id), getLastChoice(), null);
     }
 
+    seenEdges.add(edgeId);
     lastId = id;
   }
 
-  @Override
+  //@Override
+  public void _stateBacktracked(Search search){
+    if (!search.isProcessedState()){
+      int id = search.getStateId();
+      printBacktrack(getStateId(lastId), getStateId(id));
+      lastId = id;
+    }
+  }
+
   public void stateBacktracked(Search search){
     int id = search.getStateId();
+    long edgeId = ((long)lastId << 32) | id;
 
-    if (!seenBacktracks.contains(lastId)) {
+    if (!seenEdges.contains(edgeId)) {
       printBacktrack(getStateId(lastId), getStateId(id));
-      seenBacktracks.add(lastId);
+      seenEdges.add(edgeId);
     }
     lastId = id;
   }
@@ -389,13 +408,16 @@ public class SimpleDot extends ListenerAdapter {
     pw.print(fromState);
     pw.print(" -> ");
     pw.print( toState);
-    pw.print(" [taillabel=\"");
+    pw.print(" [label=\"");
     pw.print(choiceVal);
     pw.print('"');
     if (cgCause != null){
+      pw.print(NEW_EDGE_ATTRS);
       pw.print(",headlabel=\"");
       pw.print(cgCause);
       pw.print('"');
+    } else {
+      pw.print(VISITED_EDGE_ATTRS);
     }
     pw.println(']');
   }

@@ -62,12 +62,13 @@ public class CFSerializer extends FilteringSerializer {
     }
   }
 
+  // might be overriden in subclasses to conditionally queue objects
   protected void queueReference(ElementInfo ei){
     refQueue.add(ei);
   }
 
   @Override
-  protected void addObjRef(int objref) {
+  public void processReference(int objref) {
     if (objref < 0) {
       buf.add(-1);
 

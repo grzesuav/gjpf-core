@@ -275,6 +275,10 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     isDone = true;
   }
 
+  public boolean isProcessed(){
+    return isDone || hasMoreChoices();
+  }
+
   /**
    *  this has to reset the CG to its initial state, which includes resetting
    * 'isDone'

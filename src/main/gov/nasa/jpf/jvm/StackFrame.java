@@ -461,12 +461,12 @@ public class StackFrame implements Constants, Cloneable {
   /**
    * generic visitor for reference arguments
    */
-  public void processRefArguments (MethodInfo miCallee, ReferenceVisitor visitor){
+  public void processRefArguments (MethodInfo miCallee, ReferenceProcessor visitor){
     int nArgSlots = miCallee.getArgumentsSize();
 
     for (int i=top-1; i>=top-nArgSlots; i--){
       if (isRef.get(i)){
-        visitor.visit(slots[i]);
+        visitor.processReference(slots[i]);
       }
     }
   }
@@ -624,6 +624,12 @@ public class StackFrame implements Constants, Cloneable {
    */
   public int[] getSlots () {
     return slots; // we should probably clone
+  }
+
+  public void visitReferenceSlots (ReferenceProcessor visitor){
+    for (int i=isRef.nextSetBit(0); i>=0 && i<=top; i=isRef.nextSetBit(i+1)){
+      visitor.processReference(slots[i]);
+    }
   }
 
   public void setLongLocalVariable (int index, long v) {

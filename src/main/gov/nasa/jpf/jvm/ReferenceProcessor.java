@@ -16,13 +16,12 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-
 package gov.nasa.jpf.jvm;
 
 /**
- * interface for ReferenceQueue processors
+ * a generic interface to process reference values
  */
 public interface ReferenceProcessor {
 
-  void processReference (ElementInfo ei);
+  void processReference (int ref);
 }

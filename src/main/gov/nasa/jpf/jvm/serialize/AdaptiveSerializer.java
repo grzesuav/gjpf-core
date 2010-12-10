@@ -25,19 +25,15 @@ import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
- * a CG type adaptive, canonicalizing & filtering serializer.
+ * a CG type adaptive, canonicalizing & filtering serializer that is an
+ * under-approximation mostly aimed at finding data races and deadlocks in programs
+ * with a large number of scheduling points (= thread choices)
  *
- * This came to bear by accidentally discovering that JPF seems to finds
+ * This came to bear by accidentally discovering that JPF often seems to finds
  * concurrency defects by just serializing the thread states, their topmost stack
  * frames and the objects directly referenced from there.
- *
- * for non-scheduling points, we just fall back to serializing statics, all thread
+ * For non-scheduling points, we just fall back to serializing statics, all thread
  * stacks and all the data reachable from there
- *
- * <2do> this seems too conservative, we can probably at least reduce the set
- * of statics to serialize to what is used from within this thread, which can
- * be determined at class load time (e.g. by a listener looking for GET/PUTSTATIC
- * targets)
  */
 public class AdaptiveSerializer extends CFSerializer {
 
@@ -55,15 +51,15 @@ public class AdaptiveSerializer extends CFSerializer {
 
   //@Override
   protected void serializeThread(ThreadInfo ti){
-    addObjRef(ti.getThreadObjectRef());
+    processReference(ti.getThreadObjectRef());
 
     buf.add(ti.getState().ordinal()); // maybe that's enough for locking ?
     buf.add(ti.getStackDepth());
 
     // locking state
-    addObjRef(ti.getLockRef());
+    processReference(ti.getLockRef());
     for (ElementInfo ei: ti.getLockedObjects()){
-      addObjRef(ei.getIndex());
+      processReference(ei.getIndex());
     }
 
     // serialize all frames (in most cases the top frame would do, but

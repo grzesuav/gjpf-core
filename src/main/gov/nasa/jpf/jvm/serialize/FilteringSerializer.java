@@ -28,7 +28,7 @@ import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.ReferenceProcessor;
+import gov.nasa.jpf.jvm.ElementInfoProcessor;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.StaticArea;
 import gov.nasa.jpf.jvm.StaticElementInfo;
@@ -39,6 +39,7 @@ import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.jvm.ReferenceQueue;
+import gov.nasa.jpf.jvm.ReferenceProcessor;
 
 
 /**
@@ -46,7 +47,7 @@ import gov.nasa.jpf.jvm.ReferenceQueue;
  *
  * <2do> rework filter policies
  */
-public class FilteringSerializer extends AbstractSerializer implements ReferenceProcessor {
+public class FilteringSerializer extends AbstractSerializer implements ElementInfoProcessor, ReferenceProcessor {
 
   // indexed by method globalId
   final ObjVector<FramePolicy> methodCache    = new ObjVector<FramePolicy>();
@@ -188,7 +189,9 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
 
   //--- those are the methods that can be overridden by subclasses to implement abstractions
 
-  protected void addObjRef(int objref) {
+  // needs to be public because of ReferenceProcessor interface
+  @Override
+  public void processReference(int objref) {
     if (objref >= 0) {
       ElementInfo ei = heap.get(objref);
       if (!ei.isMarked()) { // only add objects once
@@ -200,8 +203,9 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
     buf.add(objref);
   }
 
-  // needs to be public because of ReferenceProcessor interface
-  public void processReference(ElementInfo ei) {
+  // needs to be public because of ElementInfoProcessor interface
+  @Override
+  public void processElementInfo(ElementInfo ei) {
     Fields fields = ei.getFields();
     ClassInfo ci = ei.getClassInfo();
     buf.add(ci.getUniqueId());
@@ -213,7 +217,7 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
       if (afields.isReferenceArray()){
         int[] values = afields.asReferenceArray();
         for (int i = 0; i < values.length; i++) {
-          addObjRef(values[i]);
+          processReference(values[i]);
         }
       } else {
         afields.appendTo(buf);
@@ -223,12 +227,16 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
       FinalBitSet filtered = getInstanceFilterMask(ci);
       FinalBitSet refs = getInstanceRefMask(ci);
 
+      // using a block operation probably doesn't buy us much here since
+      // we would have to blank the filtered slots and then visit the
+      // non-filtered reference slots, i.e. do two iterations over
+      // the mask bit sets
       int[] values = fields.asFieldSlots();
       for (int i = 0; i < values.length; i++) {
         if (!filtered.get(i)) {
           int v = values[i];
           if (refs.get(i)) {
-            addObjRef(v);
+            processReference(v);
           } else {
             buf.add(v);
           }
@@ -257,15 +265,15 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
   }
 
   protected void serializeThread(ThreadInfo ti){
-    addObjRef(ti.getThreadObjectRef());
+    processReference(ti.getThreadObjectRef());
 
     buf.add(ti.getState().ordinal()); // maybe that's enough for locking ?
     buf.add(ti.getStackDepth());
 
     // locking state
-    addObjRef(ti.getLockRef());
+    processReference(ti.getLockRef());
     for (ElementInfo ei: ti.getLockedObjects()){
-      addObjRef(ei.getIndex());
+      processReference(ei.getIndex());
     }
 
     for (StackFrame frame : ti) {
@@ -273,23 +281,40 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
     }
   }
 
-  protected void serializeFrame(StackFrame frame){
+  /** more generic, but less efficient because it can't use block operations
+  protected void _serializeFrame(StackFrame frame){
     buf.add(frame.getMethodInfo().getGlobalId());
     buf.add(frame.getPC().getOffset());
 
-    int len = frame.getTopPos();
+    int len = frame.getTopPos()+1;
     buf.add(len);
 
     // this looks like something we can push into the frame
     int[] slots = frame.getSlots();
     for (int i = 0; i < len; i++) {
       if (frame.isReferenceSlot(i)) {
-        addObjRef(slots[i]);
+        processReference(slots[i]);
       } else {
         buf.add(slots[i]);
       }
     }
   }
+  **/
+
+  protected void serializeFrame(StackFrame frame){
+    buf.add(frame.getMethodInfo().getGlobalId());
+    buf.add(frame.getPC().getOffset());
+
+    int len = frame.getTopPos()+1;
+    buf.add(len);
+
+    // this adds reference slot values twice
+    int[] slots = frame.getSlots();
+    buf.append(slots,0,len);
+
+    frame.visitReferenceSlots(this);
+  }
+
 
   protected void serializeStatics(){
     StaticArea statics = ks.getStaticArea();
@@ -312,7 +337,7 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
       if (!filtered.get(i)) {
         int v = fields.getIntValue(i);
         if (refs.get(i)) {
-          addObjRef(v);
+          processReference(v);
         } else {
           buf.add(v);
         }

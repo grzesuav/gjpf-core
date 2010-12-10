@@ -71,9 +71,9 @@ public class ReferenceQueue {
     markEnd = e;
   }
 
-  public void process( ReferenceProcessor proc) {
+  public void process( ElementInfoProcessor proc) {
     for (Entry e = markHead; e != null; ) {
-      proc.processReference( e.refEi);
+      proc.processElementInfo( e.refEi);
 
       e.refEi = null; // avoid memory leaks
 

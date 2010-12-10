@@ -55,7 +55,7 @@ public class InvMapFilteringSerializer extends FilteringSerializer {
   }
 
   @Override
-  protected void addObjRef(int objref) {
+  public void processReference(int objref) {
     if (objref < 0) {
       buf.add(-1);
 
@@ -76,7 +76,7 @@ public class InvMapFilteringSerializer extends FilteringSerializer {
     for (int i=1; i<invHeapMap.size(); i++){
       int objref = invHeapMap.get(i);
       ElementInfo ei = heap.get(objref);
-      processReference(ei);
+      processElementInfo(ei);
     }
   }
 }

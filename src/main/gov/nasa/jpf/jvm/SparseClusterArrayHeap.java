@@ -31,7 +31,7 @@ import java.util.ArrayList;
 /**
  * a Heap implementation that is based on the SparseClusterArray
  */
-public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> implements Heap, Restorable<Heap>, ReferenceProcessor {
+public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> implements Heap, Restorable<Heap>, ElementInfoProcessor {
 
   public static final int MAX_THREADS = MAX_CLUSTERS; // 256
   public static final int MAX_THREAD_ALLOC = MAX_CLUSTER_ENTRIES;  // 16,777,215
@@ -472,7 +472,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
 
   // called from ReferenceQueue during processing of queued references
   // note that all queued references are alread marked as live
-  public void processReference (ElementInfo ei) {
+  public void processElementInfo (ElementInfo ei) {
     ei.markRecursive( this); // this might in turn call queueMark
   }
 

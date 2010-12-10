@@ -214,6 +214,10 @@ public abstract class Search {
     return !isNewState();
   }
 
+  public boolean isProcessedState(){
+    return vm.getChoiceGenerator().isProcessed();
+  }
+
   public int getDepth () {
     return depth;
   }

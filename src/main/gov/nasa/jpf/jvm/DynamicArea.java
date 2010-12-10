@@ -31,7 +31,7 @@ import java.util.NoSuchElementException;
  * DynamicArea is used to model the heap (dynamic memory), idx.e. the area were all
  * objects created by NEW insn live. Hence the garbage collection mechanism resides here
  */
-public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Restorable<Heap>, ReferenceProcessor {
+public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Restorable<Heap>, ElementInfoProcessor {
 
   protected class LiveIterator<E> implements Iterator<E>, Iterable<E> {
     int idx = elementsMap.nextSetBit(0);
@@ -263,7 +263,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
 
   // called from ReferenceQueue during processing of queued references
   // note that all queued references are alread marked as live
-  public void processReference (ElementInfo ei) {
+  public void processElementInfo (ElementInfo ei) {
     ei.markRecursive( this); // this might in turn call queueMark
   }
 
