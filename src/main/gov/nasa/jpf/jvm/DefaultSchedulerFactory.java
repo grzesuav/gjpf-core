@@ -360,4 +360,9 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   public ChoiceGenerator<ThreadInfo> createThreadResumeCG () {
     return getRunnableCG("resume");
   }
+
+  public ChoiceGenerator<ThreadInfo> createThreadStopCG () {
+    return null; // left mover, there will be still a terminateCG
+    //return getRunnableCG("stop");
+  }
 }

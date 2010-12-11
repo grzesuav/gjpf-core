@@ -279,7 +279,45 @@ public class MethodInfo extends InfoObject implements Cloneable {
   
     return "";
   }
-  
+
+  Instruction createSyntheticReturnInsn(){
+    ReturnInstruction insn = null;
+
+    switch (getReturnType()){
+      case Types.T_BOOLEAN:
+      case Types.T_BYTE:
+      case Types.T_CHAR:
+      case Types.T_SHORT:
+      case Types.T_INT:
+        insn = insnFactory.create(null, IRETURN.class);
+        break;
+
+      case Types.T_LONG:
+        insn = insnFactory.create(null, LRETURN.class);
+        break;
+
+      case Types.T_FLOAT:
+        insn = insnFactory.create(null, FRETURN.class);
+        break;
+
+      case Types.T_DOUBLE:
+        insn = insnFactory.create(null, DRETURN.class);
+        break;
+
+      case Types.T_ARRAY:
+      case Types.T_REFERENCE:
+        insn = insnFactory.create(null, ARETURN.class);
+        break;
+
+      case Types.T_VOID:
+        insn = insnFactory.create(null, RETURN.class);
+        break;
+    }
+
+    insn.setMethodInfo(this);
+    return insn;
+  }
+
   protected void loadParameterAnnotations (Method m){
 
     for (Attribute a : m.getAttributes()){
@@ -820,7 +858,12 @@ public class MethodInfo extends InfoObject implements Cloneable {
   public int getNumberOfCallerStackSlots () {
     return Types.getNumberOfStackSlots(signature, isStatic()); // includes return type
   }
-  
+
+  public Instruction getLastInsn() {
+    Instruction insn = code[code.length-1];
+    return insn;
+  }
+
   /**
    * do we return Object references?
    */

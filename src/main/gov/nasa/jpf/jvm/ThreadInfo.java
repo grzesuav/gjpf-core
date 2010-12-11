@@ -25,6 +25,7 @@ import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.RETURN;
 import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.jvm.choice.BreakGenerator;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
@@ -128,17 +129,17 @@ public class ThreadInfo
     }
   }
 
-
+  // transient, not state stored
   protected ExceptionInfo pendingException;
 
-  /** backtrack-relevant Information about the thread */
+  // state managed data that is copy-on-first-write
   protected ThreadData threadData;
 
 
-  /** the top stack frame */
+  // the top stack frame
   protected StackFrame top = null;
 
-  /** the current stack depth (number of frames) */
+  // the current stack depth (number of frames)
   protected int stackDepth;
 
   /**
@@ -147,18 +148,28 @@ public class ThreadInfo
    */
   protected ThreadList list;
 
-  /** thread list index */
+  // thread list index
   protected int index;
 
+  // which attributes are stored/restored
+  static final int   ATTR_STORE_MASK = 0x0000ffff;
 
-  static final int ATTR_DATA_CHANGED  = 0x1000000;
-  static final int ATTR_STACK_CHANGED = 0x2000000;
-  static final int ATTR_HAS_CHANGED_BEFORE = 0x400000;
+  //--- the transient (un(re)stored) attributes
+  static final int ATTR_DATA_CHANGED       = 0x10000;
+  static final int ATTR_STACK_CHANGED      = 0x20000;
+  static final int ATTR_ATTRIBUTE_CHANGED  = 0x80000;
 
-  static final int ATTR_ANY_CHANGED = (ATTR_DATA_CHANGED | ATTR_STACK_CHANGED);
-  static final int ATTR_SET_DATA_CHANGED = (ATTR_DATA_CHANGED | ATTR_HAS_CHANGED_BEFORE);
-  static final int ATTR_SET_STACK_CHANGED = (ATTR_STACK_CHANGED | ATTR_HAS_CHANGED_BEFORE);
-  static final int ATTR_CHANGESET = ATTR_DATA_CHANGED | ATTR_STACK_CHANGED | ATTR_HAS_CHANGED_BEFORE;
+
+  //--- state stored/restored part
+
+  // this is a typical "orthogonal" thread state we have to remember, but
+  // that should not affect any locking, blocking, notifying or such
+  static final int ATTR_STOPPED = 0x0001;
+
+  //--- change sets
+  static final int ATTR_ANY_CHANGED = (ATTR_DATA_CHANGED | ATTR_STACK_CHANGED | ATTR_ATTRIBUTE_CHANGED);
+
+  static final int ATTR_SET_STOPPED = (ATTR_STOPPED | ATTR_ATTRIBUTE_CHANGED);
 
   protected int attributes;
 
@@ -223,12 +234,14 @@ public class ThreadInfo
     ThreadData threadData;
     StackFrame top;
     int stackDepth;
+    int attributes;
 
     TiMemento (ThreadInfo ti){
       this.ti = ti;
       threadData = ti.threadData;  // no need to clone - it's copy on first write
       top = ti.top; // likewise
       stackDepth = ti.stackDepth; // we just copy this for efficiency reasons
+      attributes = (ti.attributes & ATTR_STORE_MASK);
 
       for (StackFrame frame = top; frame != null && frame.hasChanged(); frame = frame.getPrevious()){
         frame.setChanged(false);
@@ -242,6 +255,7 @@ public class ThreadInfo
       ti.threadData = threadData;
       ti.top = top;
       ti.stackDepth = stackDepth;
+      ti.attributes = attributes;
 
       ti.markUnchanged();
 
@@ -362,7 +376,7 @@ public class ThreadInfo
     lockedObjects = new LinkedList<ElementInfo>();
 
     markUnchanged();
-    attributes |= ATTR_SET_DATA_CHANGED;
+    attributes |= ATTR_DATA_CHANGED;
   }
 
   /**
@@ -655,6 +669,62 @@ public class ThreadInfo
     setState(State.RUNNING);
   }
 
+  public void setStopped(int throwableRef){
+    if (isTerminated()){
+      // no need to kill twice
+      return;
+    }
+
+    attributes |= ATTR_SET_STOPPED;
+
+    if (!hasBeenStarted()){
+      // that one is easy - just remember the state so that a subsequent start()
+      // does nothing
+      return;
+    }
+
+    // for all other cases, we need to have a proper stopping Throwable that does not
+    // fall victim to GC, and that does not cause NoUncaughtExcceptionsProperty violations
+    if (throwableRef == MJIEnv.NULL){
+      // if no throwable was provided (the normal case), throw a ThreadDeath
+      ClassInfo cix = ClassInfo.getInitializedClassInfo("java.lang.ThreadDeath", this);
+      throwableRef = createException(cix, null, MJIEnv.NULL);
+    }
+
+    // this exception does not trigger a NoUncaughtExceptionsProperty violation
+    ElementInfo eix = getElementInfo(throwableRef);
+    eix.setBooleanField("canBeUncaught", true);
+
+    // now the tricky part - this thread is alive but might be in a native method
+    // and might be blocked, notified or waiting. In any case, exception action
+    // should not take place before the thread becomes scheduled again, which
+    // means we are not allowed to fiddle with its state in any way that changes
+    // scheduling/locking behavior. On the other hand, if this is the currently
+    // executing thread, take immediate action
+
+    if (isCurrentThread()){ // we are suicidal
+      if (isInNativeMethod()){
+        // remember the exception to be thrown when we return from the native method
+        env.throwException(throwableRef);
+      } else {
+        Instruction nextPc = throwException(throwableRef);
+        setNextPC(nextPc);
+      }
+
+    } else { // this thread is not currently running, this is an external kill
+
+      // remember there was a pending exception that has to be thrown the next
+      // time this gets scheduled, and make sure the exception object does
+      // not get GCed prematurely
+      ElementInfo eit = getElementInfo(threadData.objref);
+      eit.setReferenceField("stopException", throwableRef);
+    }
+  }
+
+  public boolean isCurrentThread(){
+    return this == currentThread;
+  }
+
   /**
    * An alive thread is anything but TERMINATED or NEW
    */
@@ -693,6 +763,19 @@ public class ThreadInfo
   public boolean isBlockedOrNotified() {
     State state = threadData.state;
     return (state == State.BLOCKED) || (state == State.NOTIFIED);
+  }
+
+  // this is just a state attribute
+  public boolean isStopped() {
+    return (attributes & ATTR_STOPPED) != 0;
+  }
+
+  public boolean isInNativeMethod(){
+    return top != null && top.isNative();
+  }
+
+  public boolean hasBeenStarted(){
+    return (threadData.state != State.NEW);
   }
 
   public String getStateName () {
@@ -1188,6 +1271,10 @@ public class ThreadInfo
     return threadData.objref;
   }
 
+  public ElementInfo getThreadObject(){
+    return getElementInfo(threadData.objref);
+  }
+
   public ElementInfo getObjectReturnValue () {
     return vm.getElementInfo(peek());
   }
@@ -1642,6 +1729,11 @@ public class ThreadInfo
           mthName = mi.getName();
 
           fileName = mi.getStackTraceSource();
+          if (pcOffset < 0){
+            // See ThreadStopTest.threadDeathWhileRunstart
+            // <2do> remove when RUNSTART is gone
+            pcOffset = 0;
+          }
           line = mi.getLineNumber(mi.getInstruction(pcOffset));
 
         } else { // this sounds like a bug
@@ -1830,20 +1922,25 @@ public class ThreadInfo
   }
 
   /**
-   * execute a step using on-the-fly partial order reduction
+   * execute instructions until there is none left or somebody breaks
+   * the transition (e.g. by registering a CG)
    */
-  protected boolean executeStep (SystemState ss) throws JPFException {
+  protected void executeTransition (SystemState ss) throws JPFException {
     Instruction pc = getPC();
     Instruction nextPc = null;
 
     currentThread = this;
+    isFirstStepInsn = true; // so that potential CG generators know
+
+    if (isStopped()){
+      pc = throwStopException();
+    }
 
     // this constitutes the main transition loop. It gobbles up
     // insns until there either is none left anymore in this thread,
     // or it didn't execute (which indicates the insn registered a CG for
     // subsequent invocation)
-    isFirstStepInsn = true; // so that potential CG generators know
-    do {
+    while (pc != null) {
       nextPc = executeInstruction();
 
       if (ss.breakTransition()) {
@@ -1855,10 +1952,7 @@ public class ThreadInfo
       }
 
       isFirstStepInsn = false;
-
-    } while (pc != null);
-
-    return true;
+    }
   }
 
 
@@ -2472,6 +2566,30 @@ public class ThreadInfo
     return false;
   }
 
+  Instruction throwStopException (){
+
+    // <2do> maybe we should do a little sanity check first
+    ElementInfo ei = getThreadObject();
+
+    int xRef = ei.getReferenceField("stopException");
+    ei.setReferenceField("stopException", MJIEnv.NULL);
+
+    Instruction insn = getPC();
+    if (insn instanceof EXECUTENATIVE){
+      // we only get here if there was a CG in a native method and we might
+      // have to reacquire a lock to go on
+
+      // <2do> it would be better if we could avoid to execute the native method
+      // since it might have side effects like overwriting the exception or
+      // doing roundtrips in its bottom half, but we don't know which lock that
+      // is (lockRef might be already reset)
+
+      env.throwException(xRef);
+      return insn;
+    }
+
+    return throwException(xRef);
+  }
 
   /**
    * unwind stack frames until we find a matching handler for the exception object
@@ -2548,13 +2666,25 @@ public class ThreadInfo
     }
 
     if (handlerFrame == null) {
-      // no handler -> uncaught exception
-      // Note - the stack has not been modified yet, it is still in the same state
-      // where the exception was thrown
-      NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
-      throw new UncaughtException(this, exceptionObjRef);
+      if (canBeUncaughtException(exceptionObjRef)){
+        // don't bail with a property violation, make waiter runnable and gracefully exit
+        StackFrame frame = unwindToFirstFrame(); // this will take care of notifying, setting CGs and the like
+        insn = getRunReturnInsn(frame);
+        setPC(insn);
+        
+        pendingException = null;
+        return insn;
+
+      } else {
+        // no handler -> uncaught exception -> NoUncaughtExcpetionsProperty violation
+        // Note - the stack has not been modified yet, it is still in the same state
+        // where the exception was thrown
+        NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
+        throw new UncaughtException(this, exceptionObjRef);
+      }
 
     } else { // we found a matching handler
+
       unwindTo(handlerFrame);
 
       // according to the VM spec, before transferring control to the handler we have
@@ -2578,12 +2708,36 @@ public class ThreadInfo
   }
 
   private void unwindTo (StackFrame newTopFrame){
-    for (StackFrame frame = top; frame != newTopFrame; frame = frame.getPrevious()) {
+    for (StackFrame frame = top; (frame != null) && (frame != newTopFrame); frame = frame.getPrevious()) {
       MethodInfo mi = frame.getMethodInfo();
       mi.leave(this); // that takes care of releasing locks
       vm.notifyExceptionBailout(this); // notify before we pop the frame
       popFrame();
     }
+  }
+
+  private StackFrame unwindToFirstFrame(){
+    StackFrame frame;
+
+    for (frame = top; frame.getPrevious() != null; frame = frame.getPrevious()) {
+      MethodInfo mi = frame.getMethodInfo();
+      mi.leave(this); // that takes care of releasing locks
+      vm.notifyExceptionBailout(this); // notify before we pop the frame
+      popFrame();
+    }
+
+    return frame;
+  }
+
+  // this is wicked - the run() method might actually not have a return, or it
+  // might not be the last insn. We just create ourselves a synthetic one
+  private Instruction getRunReturnInsn (StackFrame frame){
+    MethodInfo mi = frame.getMethodInfo();
+    Instruction insn = mi.createSyntheticReturnInsn();
+
+    assert insn instanceof RETURN;
+
+    return insn;
   }
 
   public ExceptionInfo getPendingException () {
@@ -2597,6 +2751,11 @@ public class ThreadInfo
   public void clearPendingException () {
     NoUncaughtExceptionsProperty.setExceptionInfo(null);
     pendingException = null;
+  }
+
+  public boolean canBeUncaughtException (int throwableRef){
+    ElementInfo eix = getElementInfo(throwableRef);
+    return eix.getBooleanField("canBeUncaught");
   }
 
   /**
@@ -2701,12 +2860,12 @@ public class ThreadInfo
   protected void markTfChanged(StackFrame frame) {
     frame.setChanged(true);
 
-    attributes |= ATTR_SET_STACK_CHANGED;
+    attributes |= ATTR_STACK_CHANGED;
     list.ks.changed();
   }
 
   protected void markTdChanged() {
-    attributes |= ATTR_SET_DATA_CHANGED;
+    attributes |= ATTR_DATA_CHANGED;
     list.ks.changed();
   }
 
@@ -2728,10 +2887,6 @@ public class ThreadInfo
 
   public boolean hasChanged() {
     return (attributes & ATTR_ANY_CHANGED) != 0;
-  }
-
-  public boolean isNewOrChanged() {
-    return (attributes & ATTR_CHANGESET) != ATTR_HAS_CHANGED_BEFORE;
   }
 
   /**

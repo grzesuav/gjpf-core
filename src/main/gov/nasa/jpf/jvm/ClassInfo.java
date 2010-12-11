@@ -1708,6 +1708,25 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return false;
   }
 
+  /**
+   * this one is for clients that need to synchronously get an initialized classinfo.
+   * NOTE: we don't handle clinits here. If there is one, this will throw
+   * an exception. NO STATIC BLOCKS / FIELDS ALLOWED
+   */
+  public static ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+
+    ci.registerClass(ti); // this is safe to call on already loaded classes
+
+    if (!ci.isInitialized()) {
+      if (ci.initializeClass(ti)) {
+        throw new JPFException(clsName + " can not have a static initializer");
+      }
+    }
+
+    return ci;
+  }
+
   // Note: JVM.registerStartupClass() must be kept in sync
   public void registerClass (ThreadInfo ti){
     // ti might be null if we are still in main thread creation

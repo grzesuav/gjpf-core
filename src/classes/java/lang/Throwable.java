@@ -32,7 +32,8 @@ import java.io.PrintWriter;
  */
 public class Throwable {
 
-  int[] snapshot; // this is an array of { globalMethodId, pcOffset } pairs
+  int[] snapshot; // this is an internal array of { globalMethodId, pcOffset } pairs
+  boolean canBeUncaught; // if this is set (by native), it will NOT trigger a NoUncaughtExceptionsProperty if its not handled
   
   protected Throwable cause; // in case this is a wrapper exception (like InvocationTargetException)
   

@@ -71,4 +71,7 @@ public interface SchedulerFactory {
 
   /** used by Thread.resume() */
   ChoiceGenerator<ThreadInfo> createThreadResumeCG ();
+
+  /** used by Thread.stop() */
+  ChoiceGenerator<ThreadInfo> createThreadStopCG ();
 }

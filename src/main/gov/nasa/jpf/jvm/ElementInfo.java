@@ -142,7 +142,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
       this.ref = ei.index;
       this.ci = ei.ci;
-      this.attributes = ei.attributes;
+      this.attributes = (ei.attributes & ATTR_STORE_MASK);
       this.fields = ei.fields;
       this.monitor = ei.monitor;
       this.refTid = ei.refTid;
@@ -1248,10 +1248,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
     if (ref != -1) {
       ElementInfo ei = JVM.getVM().getHeap().get(ref);
-      if (ei == null) {
-        System.out.println("OUTCH: " + ref + ", this: " + index);
-        throw new NullPointerException(); // gets rid of null warning -pcd
-      }
       return ei.asString();
     } else {
       return "null";
@@ -1586,7 +1582,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
     } else {
       // Ok, this is the non-deterministic case
-      ThreadChoiceGenerator cg = ss.getCurrentSchedulingPoint();
+      ThreadChoiceGenerator cg = ss.getCurrentChoiceGeneratorOfType(ThreadChoiceGenerator.class);
 
       assert (cg != null) : "no ThreadChoiceGenerator in notify";
 
@@ -1594,7 +1590,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
 
     ti.getVM().notifyObjectNotifies(ti, this);
-
   }
 
   /**

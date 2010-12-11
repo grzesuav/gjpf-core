@@ -132,7 +132,6 @@ public class NativeMethodInfo extends MethodInfo {
   public Instruction executeNative (ThreadInfo ti) {
     Object   ret = null;
     Object[] args = null;
-    String   exception;
     MJIEnv   env = ti.getMJIEnv();
     NativeStackFrame nativeFrame = (NativeStackFrame)ti.getTopFrame();
 
@@ -149,17 +148,13 @@ public class NativeMethodInfo extends MethodInfo {
       // this is the reflection call into the native peer
       ret = mth.invoke(peer.getPeerClass(), args);
 
-      // these are our non-standard returns
-      exception = env.getException();
-      if (exception != null) {
-        String details = env.getExceptionDetails();
-
+      if (env.hasException()) {
         // even though we should prefer throwing normal exceptions,
         // sometimes it might be better/required to explicitly throw
         // something that's not wrapped into a InvocationTargetException
         // (e.g. InterruptedException), which is why there still is a
         // MJIEnv.throwException()
-        return ti.createAndThrowException(exception, details);
+        return ti.throwException( env.popException());
       }
 
       StackFrame top = ti.getTopFrame();

@@ -52,7 +52,7 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
         ThreadInfo ti = threads[i];
         Memento<ThreadInfo> m = null;
 
-        if (!ti.isNewOrChanged()){
+        if (!ti.hasChanged()){
           m = ti.cachedMemento;
         }
         if (m == null){

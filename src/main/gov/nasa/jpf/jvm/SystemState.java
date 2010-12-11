@@ -578,7 +578,7 @@ public class SystemState {
    * state was already completely processed
    *
    * This is one of the key methods of the JPF execution
-   * engine (together with VM.forward() and ThreadInfo.executeStep(),executeInstruction()
+   * engine (together with VM.forward() and ThreadInfo.executeTransition(),executeInstruction()
    *
    */
   public boolean nextSuccessor (JVM vm) throws JPFException {
@@ -620,7 +620,7 @@ public class SystemState {
     trail = new Transition(curCg, execThread);
     entryAtomicLevel = atomicLevel; // store before we start to execute
 
-    execThread.executeStep(this);
+    execThread.executeTransition(this);
 
     return true;
   }

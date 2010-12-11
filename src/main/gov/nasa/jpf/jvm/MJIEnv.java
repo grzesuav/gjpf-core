@@ -65,8 +65,11 @@ public class MJIEnv {
   // used correctly, so we don't have to be afraid to overwrite any of these
   boolean                 repeat;
   Object                  returnAttr;
-  String                  exception;
-  String                  exceptionDetails;
+
+  // exception to be thrown upon return from native method
+  // NOTE: this is only transient - don't expect this to be preserved over
+  // transition boundaries
+  int                     exceptionRef;
 
   MJIEnv (ThreadInfo ti) {
     this.ti = ti;
@@ -77,6 +80,8 @@ public class MJIEnv {
     vm = ti.getVM();
     heap = vm.getHeap();
     sa = vm.getStaticArea();
+
+    exceptionRef = NULL;
   }
 
   public JVM getVM () {
@@ -1013,38 +1018,43 @@ public class MJIEnv {
     return returnAttr;
   }
 
-  public void throwException (String classname) {
-    exception = Types.asTypeName(classname);
+  // if any of the next methods is called from the bottom
+  // half of a CG method, you might want to check if another thread
+  // or a listener has already set an exception you don't want to override
+  // (this is for instance used in Thread.stop())
+
+  public void throwException (int xRef){
+    assert isInstanceOf(xRef, "java.lang.Throwable");
+    exceptionRef = xRef;
   }
 
-  public void throwException (String classname, String details) {
-    exception = Types.asTypeName(classname);
-    exceptionDetails = details;
+  public void throwException (String clsName) {
+    ClassInfo ciX = ClassInfo.getInitializedClassInfo(clsName, ti);
+    assert ciX.isInstanceOf("java.lang.Throwable");
+    exceptionRef = ti.createException(ciX, null, NULL);
+  }
+
+  public void throwException (String clsName, String details) {
+    ClassInfo ciX = ClassInfo.getInitializedClassInfo(clsName, ti);
+    assert ciX.isInstanceOf("java.lang.Throwable");
+    exceptionRef = ti.createException(ciX, details, NULL);
   }
 
   public void throwAssertion (String details) {
     throwException("java.lang.AssertionError", details);
   }
 
-
-  public String getPendingException(){
-    return exception;
-  }
-
-  public String getPendingExceptionDetails(){
-    return exceptionDetails;
-  }
-
-  public boolean hasPendingException(){
-    return (exception != null);
-  }
-
-  public boolean hasPendingInterrupt(){
-    return (exception != null && "java.lang.InterruptedException".equals(exception));
-  }
-
   public void throwInterrupt(){
     throwException("java.lang.InterruptedException");
+  }
+
+  public void stopThread(){
+    stopThreadWithException(MJIEnv.NULL);
+  }
+
+  public void stopThreadWithException (int xRef){
+    // this will call throwException(xRef) with the proper Throwable
+    ti.setStopped(xRef);
   }
 
   void setCallEnvironment (MethodInfo mi) {
@@ -1058,9 +1068,12 @@ public class MJIEnv {
     }
 
     repeat = false;
-    exception = null;
-    exceptionDetails = null;
     returnAttr = null;
+
+    // we should NOT reset exceptionRef here because it might have been set
+    // at the beginning of the transition. It gets reset upon return from the
+    // native method
+    //exceptionRef = NULL;
   }
 
   void clearCallEnvironment () {
@@ -1113,12 +1126,26 @@ public class MJIEnv {
     return JVM.getVM().getStateId();
   }
 
-  String getException () {
-    return exception;
+  void clearException(){
+    exceptionRef = MJIEnv.NULL;
   }
 
-  String getExceptionDetails () {
-    return exceptionDetails;
+  public int peekException () {
+    return exceptionRef;
+  }
+
+  public int popException () {
+    int ret = exceptionRef;
+    exceptionRef = NULL;
+    return ret;
+  }
+
+  public boolean hasException(){
+    return (exceptionRef != NULL);
+  }
+
+  public boolean hasPendingInterrupt(){
+    return (exceptionRef != NULL && isInstanceOf(exceptionRef, "java.lang.InterruptedException"));
   }
 
   //--- those are not public since they refer to JPF internals

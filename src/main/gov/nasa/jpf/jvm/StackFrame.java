@@ -1075,6 +1075,10 @@ public class StackFrame implements Constants, Cloneable {
     }
     hd.add(mi.getGlobalId());
 
+    if (pc != null){
+      hd.add(pc.getOffset());
+    }
+
     for (int i=0; i<=top; i++){
       hd.add(slots[i]);
     }

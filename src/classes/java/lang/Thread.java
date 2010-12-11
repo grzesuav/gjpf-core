@@ -18,6 +18,7 @@
 //
 package java.lang;
 
+import java.util.concurrent.Callable;
 import sun.nio.ch.Interruptible;
 
 /**
@@ -59,6 +60,9 @@ public class Thread implements Runnable {
   // referenced by java.util.concurrent.locks.LockSupport via sun.misc.Unsafe
   // DON'T CHANGE THIS NAME
   volatile Object parkBlocker;
+
+  // used to store Thread.stop() exceptions
+  Throwable stopException;
 
   public enum State { BLOCKED, NEW, RUNNABLE, TERMINATED, TIMED_WAITING, WAITING }
 
@@ -259,14 +263,13 @@ public class Thread implements Runnable {
   public static native void sleep (long millis, int nanos)
                             throws InterruptedException;
 
-  public native void start ();
-
-  public void stop () {
-    // deprecated, <NSY>
-  }
+  public native void start();
+  public native void stop();
+  public native void stop(Throwable obj);
 
   public native void suspend();
   public native void resume();
+
 
   public String toString () {
     return ("Thread[" + name + ',' + priority + ',' + (group == null ? "" : group.getName()) + ']');
@@ -331,4 +334,5 @@ public class Thread implements Runnable {
   // some Java 6 mojo
   // <2do> not implemented yet
   native void blockedOn (Interruptible b);
+
 }
