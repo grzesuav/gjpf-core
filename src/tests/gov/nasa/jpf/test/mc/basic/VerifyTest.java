@@ -19,7 +19,9 @@
 package gov.nasa.jpf.test.mc.basic;
 
 
+import gov.nasa.jpf.*;
 import gov.nasa.jpf.jvm.Verify;
+import gov.nasa.jpf.search.*;
 import gov.nasa.jpf.util.test.*;
 import org.junit.Test;
 
@@ -101,6 +103,42 @@ public class VerifyTest extends TestJPF {
       
       assert value == !falseFirst;
     }
+  }
+  
+  /**
+   * This test ensures that stateBacktracked() is called even if the transistion 
+   * is ignored.  This is important for listeners that keep a state that must 
+   * match the JVM's state exactly and the state is updated in the middle of 
+   * transitions.  This is not possible if a backtrack happens on an ignored 
+   * transition and the stateBacktracked is not called.
+   */
+  @Test
+  public void backtrackNotificationAfterIgnore()
+  {
+     if (verifyNoPropertyViolation("+listener+=," + CountBacktrack.class.getName()))
+     {
+        if (Verify.getBoolean(false))
+           Verify.ignoreIf(true);
+     }
+     else
+     {
+        assertEquals(2, CountBacktrack.getBacktrackedCount());
+     }
+  }
+  
+  public static class CountBacktrack extends ListenerAdapter
+  {
+     private static int m_backtrackedCount;
+
+     public void stateBacktracked(Search search)
+     {
+        m_backtrackedCount++;
+     }
+     
+     public static int getBacktrackedCount()
+     {
+        return(m_backtrackedCount);
+     }
   }
    
   //... and many more to come
