@@ -32,6 +32,10 @@ public class ExceptionInfo {
     ei = xEi;
   }
   
+  public ElementInfo getException() {
+    return ei;
+  }
+  
   public int getExceptionReference () {
     return ei.getIndex();
   }
