@@ -26,7 +26,7 @@ package java.text;
  * peer side by forwarding to the real classes
  */
 
-public class DecimalFormat extends NumberFormat {
+public class DecimalFormat extends NumberFormat implements Cloneable{
   private static final long serialVersionUID = 1L;
 
   /*
@@ -90,6 +90,41 @@ public class DecimalFormat extends NumberFormat {
     // intercepted by native peer
     return null;
   }
-  
+
+  public DecimalFormatSymbols getDecimalFormatSymbols() {
+      return new DecimalFormatSymbols();
+  }
+
+  public String getPositivePrefix() {
+      return "";
+  }
+
+  public String getNegativePrefix() {
+      return "-";
+  }
+
+  public String getPositiveSuffix() {
+      return "";
+  }
+
+  public String getNegativeSuffix() {
+      return "";
+  }
+
+  public boolean isGroupingUsed() {
+      return false;
+  }
+
+  public void setGroupingUsed(boolean newValue) {
+    // intercepted by native peer
+  }
+
+  public boolean isParseIntegerOnly() {
+      return false;
+  }
+
+  public void setParseIntegerOnly(boolean value) {
+      // intercepted by native peer
+  }
   // and probably a lot missing
 }

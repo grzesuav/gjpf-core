@@ -118,4 +118,33 @@ public class JPF_java_text_DecimalFormat {
     return MJIEnv.NULL;
   }
 
+  public static void setParseIntegerOnly__Z__V(MJIEnv env, int objref, boolean value) {
+    NumberFormat fmt = getInstance(env,objref);
+    if (fmt != null) {
+      fmt.setParseIntegerOnly(value);
+    }
+  }
+
+  public static boolean isParseIntegerOnly____Z(MJIEnv env, int objref) {
+    NumberFormat fmt = getInstance(env,objref);
+    if (fmt != null) {
+      return fmt.isParseIntegerOnly();
+    }
+    return false;
+  }
+
+  public static void setGroupingUsed__Z__V(MJIEnv env, int objref, boolean newValue) {
+    NumberFormat fmt = getInstance(env,objref);
+    if (fmt != null) {
+      fmt.setGroupingUsed(newValue);
+    }
+  }
+
+  public static boolean isGroupingUsed____Z(MJIEnv env, int objref) {
+    NumberFormat fmt = getInstance(env,objref);
+    if (fmt != null) {
+      return fmt.isGroupingUsed();
+    }
+    return false;
+  }
 }

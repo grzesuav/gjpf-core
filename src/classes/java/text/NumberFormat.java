@@ -63,6 +63,22 @@ public abstract class NumberFormat extends Format {
     return parse(source,pos);
   }
 
+  public void setParseIntegerOnly(boolean value) {
+      // intercepted by native peer
+  }
+
+  public boolean isParseIntegerOnly() {
+      // intercepted by native peer
+      return false;
+  }
+
+  public boolean isGroupingUsed() {
+      return false;
+  }
+
+  public void setGroupingUsed(boolean newValue) {
+    // intercepted by native peer
+  }
 
   public abstract Number parse(String source,ParsePosition pos);
 
