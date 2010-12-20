@@ -427,8 +427,13 @@ public abstract class Search {
     } else {
       isNewState = false;
     }
-
-    isIgnoredState = false; // only set by search listener
+    
+    // if the transition sets system state as ignored
+    // need to account for it here cannot rely simply on listener
+    if(vm.getSystemState().isIgnored()) {
+    	isIgnoredState = true;
+    } else 
+    	isIgnoredState = false; 
     isEndState = vm.isEndState();
 
     isErrorState = checkPropertyViolation();
