@@ -22,6 +22,7 @@ package gov.nasa.jpf.jvm;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.NumberFormat;
+import java.text.ParsePosition;
 
 // NOTE - this only works because DecimalFormat is a Format subclass, i.e.
 // the java.text.Format native peer will be initialized first
@@ -147,4 +148,42 @@ public class JPF_java_text_DecimalFormat {
     }
     return false;
   }
+
+  public static int parse__Ljava_lang_String_2Ljava_text_ParsePosition_2__Ljava_lang_Number_2(MJIEnv env, int objref,int sourceRef,int parsePositionRef) {
+    String source = env.getStringObject(sourceRef);
+    ParsePosition parsePosition = createParsePositionFromRef(env,parsePositionRef);
+    NumberFormat fmt = getInstance(env,objref);
+    Number number = null;
+    if (fmt != null) {
+      number = fmt.parse(source,parsePosition);
+    }
+    updateParsePositionRef(env,parsePositionRef, parsePosition);
+    return createNumberRefFromNumber(env,number);
+  }
+
+  private static ParsePosition createParsePositionFromRef(MJIEnv env,int parsePositionRef) {
+    int index = env.getIntField(parsePositionRef, "index");
+    int errorIndex = env.getIntField(parsePositionRef, "errorIndex");
+    ParsePosition ps = new ParsePosition(index);
+    ps.setErrorIndex(errorIndex);
+    return ps;
+  }
+
+  private static void updateParsePositionRef(MJIEnv env,int parsePositionRef, ParsePosition parsePosition) {
+    env.setIntField(parsePositionRef, "index", parsePosition.getIndex());
+    env.setIntField(parsePositionRef, "errorIndex", parsePosition.getErrorIndex());
+  }
+
+  private static int createNumberRefFromNumber(MJIEnv env,Number number) {
+    int numberRef = MJIEnv.NULL;
+    if(number instanceof Double) {
+      numberRef = env.newObject("java.lang.Double");
+      env.setDoubleField(numberRef, "value", number.doubleValue());
+    } else if(number instanceof Long) {
+      numberRef = env.newObject("java.lang.Long");
+      env.setLongField(numberRef, "value", number.longValue());
+    }
+    return numberRef;
+  }
+
 }

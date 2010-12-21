@@ -5,6 +5,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 import java.text.DecimalFormat;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
+import java.text.ParsePosition;
 import org.junit.Test;
 
 /**
@@ -72,4 +73,47 @@ public class DecimalFormatTest extends TestJPF {
       assertTrue(s.length() == 9);
     }
   }
+
+  @Test
+  public void testParseDouble() {
+
+    if (verifyNoPropertyViolation()) {
+      DecimalFormat dFormat = new DecimalFormat();
+      ParsePosition ps = new ParsePosition(0);
+      Number nb = dFormat.parse("10,10",ps);
+      assertTrue(nb instanceof Double);
+      assertTrue(nb.doubleValue() == 10.10d);
+      assertTrue(ps.getErrorIndex() == -1);
+      assertTrue(ps.getIndex() == 5);
+    }
+  }
+
+  @Test
+  public void testParseInt() {
+
+    if (verifyNoPropertyViolation()) {
+      DecimalFormat dFormat = new DecimalFormat();
+      ParsePosition ps = new ParsePosition(0);
+      Number nb = dFormat.parse("10",ps);
+      assertTrue(nb instanceof Long);
+      assertTrue(nb.doubleValue() == 10l);
+      assertTrue(ps.getErrorIndex() == -1);
+      assertTrue(ps.getIndex() == 2);
+    }
+  }
+
+  @Test
+  public void testParseError() {
+
+    if (verifyNoPropertyViolation()) {
+      DecimalFormat dFormat = new DecimalFormat();
+      int parsePos = 1;
+      ParsePosition ps = new ParsePosition(parsePos);
+      Number nb = dFormat.parse("^^10",ps);
+      assertEquals(nb,null);
+      assertEquals(ps.getIndex(), parsePos);
+      assertEquals(ps.getErrorIndex(), parsePos);
+    }
+  }
 }
+
