@@ -3,6 +3,7 @@ package gov.nasa.jpf.test.java.text;
 
 import gov.nasa.jpf.util.test.TestJPF;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
@@ -78,9 +79,10 @@ public class DecimalFormatTest extends TestJPF {
   public void testParseDouble() {
 
     if (verifyNoPropertyViolation()) {
+      DecimalFormatSymbols dfs = new DecimalFormatSymbols();
       DecimalFormat dFormat = new DecimalFormat();
       ParsePosition ps = new ParsePosition(0);
-      Number nb = dFormat.parse("10,10",ps);
+      Number nb = dFormat.parse("10" + dfs.getDecimalSeparator() + "10",ps);
       assertTrue(nb instanceof Double);
       assertTrue(nb.doubleValue() == 10.10d);
       assertTrue(ps.getErrorIndex() == -1);
