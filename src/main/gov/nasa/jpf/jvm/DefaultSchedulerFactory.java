@@ -36,12 +36,14 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   protected JVM vm;
   protected SystemState ss;
 
+  //--- those are configured
   boolean breakStart;
   boolean breakYield;
   boolean breakSleep;
   boolean breakArrayAccess;
   boolean breakSingleChoice;
 
+  // <2do> move this into a listener
   StringSetMatcher monitorBoundariesNever;
   StringSetMatcher monitorBoundariesBreak;
   boolean breakMonitorBoundariesPublicMethod;
@@ -57,6 +59,8 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     breakArrayAccess = config.getBoolean("cg.threads.break_arrays", false);
     breakSingleChoice = config.getBoolean("cg.break_single_choice");
 
+
+    // <2do> move this into a listener
     // filter monitor_enters and non-public sync method invokes for selected classes
     // (be careful with this!)
     String[] set = config.getStringArray("vm.por.monitor_boundaries.never");
@@ -96,13 +100,19 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     return getRunnableCG(id);
   }
 
+
+  // <2do> these methods will be replaced when we support general contention based locking.
+  // Overriding locks based on packages is not safe and can only used in an
+  // application specific context, in which case this should be a listener that skips
+  // onitor_enter/_exit
+
   protected boolean matchesMethodAndElement(StringSetMatcher matcher,
                                             String packageOfMethod,
                                             String packageOfElement) {
     return (matcher == null) ? false
         : (matcher.matchesAny(packageOfMethod) && matcher.matchesAny(packageOfElement));
   }
-  
+
   protected boolean isNeverBreakMonitorBoundaries(ElementInfo ei, ThreadInfo ti, boolean isMethodCall) {
     MethodInfo mi = ti.getMethod();
     // <clinit>
@@ -193,6 +203,13 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   }
 
   public ChoiceGenerator<ThreadInfo> createMonitorExitCG (ElementInfo ei, ThreadInfo ti) {
+
+    /**
+    if (!ss.isAtomic()){
+      return getSyncCG( "monitorExit", ei, ti);
+    }
+    **/
+
     return null; // nothing, left mover
   }
 

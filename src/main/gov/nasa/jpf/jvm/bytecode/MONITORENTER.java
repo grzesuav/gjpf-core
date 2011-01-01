@@ -55,7 +55,8 @@ public class MONITORENTER extends LockInstruction {
         }
       }
     }
-    
+
+    // this is only executed in the bottom half
     ti.pop();
     ei.lock(ti);  // Still have to increment the lockCount
     

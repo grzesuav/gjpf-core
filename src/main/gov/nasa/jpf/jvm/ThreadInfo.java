@@ -173,7 +173,6 @@ public class ThreadInfo
 
   protected int attributes;
 
-
   /** the first insn in the current transition */
   protected boolean isFirstStepInsn;
 

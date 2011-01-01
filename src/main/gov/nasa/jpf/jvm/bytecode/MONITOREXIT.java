@@ -41,33 +41,25 @@ public class MONITOREXIT extends LockInstruction {
     lastLockRef = objref;
     ElementInfo ei = ks.heap.get(objref);
 
-    ei.unlock(ti);                              // Do this before potentially creating the CG, but don't pop yet, since then we've lost the lock object (also in RETURN)
+    if (ei.getLockCount() == 1){ // this is about to unlock
+      if (isShared(ti,ei)){
+        ChoiceGenerator cg = ss.getSchedulerFactory().createMonitorExitCG(ei, ti);
+        if (cg != null){
+          ss.setNextChoiceGenerator(cg);
+          return this;
+        }
+      }
 
-    if (isLastUnlock(ei))                       // If this is the last release, then consider a choice point
-      if (isShared(ti, ei))                     // If the object is shared, then consider a choice point
-        if (!ti.isFirstStepInsn())              // First time around - reexecute if the scheduling policy gives us a choice point
-          if (executeChoicePoint(ss, ti, ei))
-            return this;                        // Repeat execution.  Keep instruction on the stack.
-    
+    }
+
+    // this is only executed in the bottom half
+    ei.unlock(ti);
     ti.pop();                                   // Now we can safely purge the lock object, the unlocking already is done above.
 
     return getNext(ti);
   }
-  
-  private boolean executeChoicePoint(SystemState ss, ThreadInfo ti, ElementInfo ei) {
-    
-    ChoiceGenerator cg = ss.getSchedulerFactory().createMonitorExitCG(ei, ti);
-        
-    if (cg == null) {
-      return false; 
-    }
-    
-    ss.setNextChoiceGenerator(cg);
-    //ti.skipInstructionLogging();
 
-    return true;
-  }
-  
+
   public int getByteCode () {
     return 0xC3;
   }

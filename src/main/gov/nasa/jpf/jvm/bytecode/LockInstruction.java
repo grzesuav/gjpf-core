@@ -43,14 +43,6 @@ public abstract class LockInstruction extends Instruction {
   }
   
   /**
-   * If the object will still be owned, then the current thread can go on.
-   * For example, all but the last monitorexit for the object.
-   */
-  protected boolean isLastUnlock(ElementInfo ei) {
-    return ei.getLockCount() == 0;
-  }
-  
-  /**
    * If the object isn't shared, then the current thread can go on.
    * For example, this object isn't reachable by other threads.
    */
