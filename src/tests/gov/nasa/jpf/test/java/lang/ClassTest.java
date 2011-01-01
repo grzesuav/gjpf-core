@@ -319,4 +319,24 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
       }
     }
   }
+
+  private static class NestedClass {}
+
+  @Test 
+  public void testGetEnclosingClassExist() {
+    if (verifyNoPropertyViolation()) {
+      Class<?> clz = NestedClass.class;
+      Class<?> enclosingClass = clz.getEnclosingClass();
+      assert enclosingClass == ClassTest.class;
+    }
+  }
+
+  @Test
+  public void testGetEnclosingClassNotExist() {
+    if (verifyNoPropertyViolation()) {
+      Class<?> clz = this.getClass();
+      Class<?> enclosingClass = clz.getEnclosingClass();
+      assert enclosingClass == null;
+    }
+  }
 }

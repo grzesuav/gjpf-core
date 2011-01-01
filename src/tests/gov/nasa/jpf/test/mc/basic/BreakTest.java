@@ -139,7 +139,7 @@ public class BreakTest extends TestJPF {
         if ("foo()V".equals(call.getInvokedMethodName())) {
           System.out.println("# breaking & pruning after: " + insn);
           System.out.println("# registered (ignored) CG: " + vm.getSystemState().getNextChoiceGenerator());
-          ti.breakTransition();
+          ti.breakTransition(); // not required since we ignore
           ss.setIgnored(true);
         }
       }

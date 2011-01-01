@@ -206,6 +206,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    */
   protected ClassInfo  superClass;
 
+  protected String enclosingClassName;
+
   /** direct interfaces implemented by this class */
   protected Set<String> interfaceNames;
 
@@ -428,6 +430,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     isClass = jc.isClass();
     superClass = loadSuperClass(jc);
+    enclosingClassName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
 
     interfaceNames = loadInterfaces(jc);
     packageName = jc.getPackageName();
@@ -1212,6 +1215,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     }
   }
 
+  public ClassInfo getEnclosingClassInfo() {
+    return (enclosingClassName == null ? null : getResolvedClassInfo(enclosingClassName));
+  }
 
   /**
    * Returns true if the class is a system class.

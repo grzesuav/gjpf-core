@@ -352,13 +352,15 @@ public class JPF implements Runnable {
   
   void addListeners () {
 
-    // first, our system listeners
     Class<?>[] argTypes = { Config.class, JPF.class };
     Object[] args = { config, this };
 
+    // although the Reporter will always be notified last, this has to be set
+    // first so that it can register utility listeners like Statistics that
+    // can be used by configured listeners
     reporter = config.getInstance("report.class", Reporter.class, argTypes, args);
     if (reporter != null){
-      addListener(reporter);
+      search.setReporter(reporter);
     }
 
     // now everything that's user configured

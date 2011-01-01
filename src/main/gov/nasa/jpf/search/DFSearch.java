@@ -59,17 +59,19 @@ public class DFSearch extends Search {
    */
   public void search () {
     int maxDepth = getMaxSearchDepth();
+    boolean depthLimitReached = false;
 
     depth = 0;
 
     notifySearchStarted();
 
     while (!done) {
-      if ( !isNewState || isEndState || isIgnoredState) {
+      if (!isNewState() || isEndState() || isIgnoredState() || depthLimitReached) {
         if (!backtrack()) { // backtrack not possible, done
           break;
         }
 
+        depthLimitReached = false;
         depth--;
         notifyStateBacktracked();
       }
@@ -78,23 +80,27 @@ public class DFSearch extends Search {
         depth++;
         notifyStateAdvanced();
 
-        if (hasPropertyTermination()) {
-          break;
-        }
+        if (currentError != null){
+          notifyPropertyViolated();
 
-        if (isNewState) {
-          if (depth >= maxDepth) {
-            isEndState = true;
-            notifySearchConstraintHit(DEPTH_CONSTRAINT + ": " + maxDepth);
-          }
-
-          if (!checkStateSpaceLimit()) {
-            notifySearchConstraintHit(FREE_MEMORY_CONSTRAINT + ": " + minFreeMemory );
-            // can't go on, we exhausted our memory
+          if (hasPropertyTermination()) {
             break;
           }
         }
-      } else { // state was processed
+
+        if (depth >= maxDepth) {
+          depthLimitReached = true;
+          notifySearchConstraintHit(DEPTH_CONSTRAINT + ": " + maxDepth);
+          continue;
+        }
+
+        if (!checkStateSpaceLimit()) {
+          notifySearchConstraintHit(FREE_MEMORY_CONSTRAINT + ": " + minFreeMemory);
+          // can't go on, we exhausted our memory
+          break;
+        }
+
+      } else { // forward did not execute any instructions
         notifyStateProcessed();
       }
     }

@@ -117,7 +117,6 @@ public class IterativeContextBounding extends Search {
 
         ThreadChoiceFromSet tcg = w.getCG();
         vm.getSystemState().setNextChoiceGenerator(tcg);
-        isNewState = true;
 
         searchWithoutPreemptions();
 
@@ -154,32 +153,38 @@ public class IterativeContextBounding extends Search {
 
   private void searchWithoutPreemptions() {
     boolean isCurrentThreadEnabled = false;
+    boolean depthLimitReached = false;
 
     while (!done) {
-      if (!isNewState || isEndState || isIgnoredState) {
+      if (!isNewState() || isEndState() || isIgnoredState() || depthLimitReached) {
         if (!backtrack()) { // backtrack not possible, done
           return;
         }
 
+        depthLimitReached = false;
         depth--;
-
         notifyStateBacktracked();
       }
 
       if (forward()) {
         notifyStateAdvanced();
 
-        if (hasPropertyTermination()) {
-          done = true;
-          return;
+        if (currentError != null){
+          notifyPropertyViolated();
+
+          if (hasPropertyTermination()) {
+            done = true;
+            return;
+          }
         }
 
         depth++;
 
-        if (isNewState) {
+        if (isNewState()) {
           if (depth >= maxDepth) {
-            isEndState = true;
+            depthLimitReached = true;
             notifySearchConstraintHit(DEPTH_CONSTRAINT + ": " + maxDepth);
+            continue;
           }
 
           if (!checkStateSpaceLimit()) {
@@ -192,10 +197,9 @@ public class IterativeContextBounding extends Search {
 
           // We do not need to process the next choice generator if the state
           // is an end state or if it will be ignored.
-          if (!isEndState && !isIgnoredState) {
+          if (!isEndState() && !isIgnoredState()) {
             VMState currVMState = vm.getState();
-            ChoiceGenerator<?> gen = vm.getSystemState()
-                .getNextChoiceGenerator();
+            ChoiceGenerator<?> gen = vm.getNextChoiceGenerator();
 
             // If the next choice generator is a thread choice set, we
             // process it. Otherwise, we continue executing without changes.

@@ -24,7 +24,6 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import java.lang.reflect.Array;
 
 
 /**
@@ -422,20 +421,8 @@ public class SystemState {
    *
    * calling setIgnored() also breaks the current transition, i.e. no further
    * instructions are executed within this step
-   *
-   * NOTE: this reverts any previous or future setNextChoiceGenerator() call
-   * during this transition
    */
   public void setIgnored (boolean b) {
-
-    if (nextCg != null) {
-      // Umm, that's kinky - can only happen if somebody first explicitly sets
-      // a CG from a listener, only to decide afterwards to dump this whole
-      // transition alltogether. Gives us problems because ignored transitions
-      // are not handed back to the search, i.e. are not normally backtracked
-      // causes a ClassCastException in nextSuccessor (D&C's bug)
-      nextCg = null;
-    }
     isIgnored = b;
 
     if (b){
@@ -570,6 +557,87 @@ public class SystemState {
     pw.flush();
   }
 
+  /**
+   * reset the SystemState and initialize the next CG. This gets called
+   * *before* the restorer computes the KernelState snapshot, i.e. it is *not*
+   * allowed to change anything in the program state. The reason for splitting
+   * CG initialization from transition execution is to avoid KernelState storage
+   * in case the initialization does not produce a next choice and we have to
+   * backtrack.
+   *
+   * @see JVM.forward()
+   * 
+   * @return 'true' if there is a next choice, i.e. a next transition to execute.
+   * 'false' if there is no next choice and the system has to backtrack
+   */
+  public boolean initializeNextTransition(JVM vm) {
+
+    // set this before any choiceGeneratorSet or choiceGeneratorAdvanced
+    // notification (which can override it)
+    if (!retainAttributes){
+      isIgnored = false;
+      isForced = false;
+      isInteresting = false;
+      isBoring = false;
+    }
+
+    // 'nextCg' got set at the end of the previous transition (or a preceding
+    // choiceGeneratorSet() notification).
+    // Be aware of that 'nextCg' is only the *last* CG that was registered, i.e.
+    // there can be any number of CGs between the previous 'curCg' and 'nextCg'
+    // that were registered for the same insn.
+    while (nextCg != null) {
+      curCg = nextCg;
+      nextCg = null;
+
+      // Hmm, that's a bit late (could be in setNextCG), but we keep it here
+      // for the sake of locality, and it's more consistent if it just refers
+      // to curCg, i.e. the CG that is actually going to be used
+      notifyChoiceGeneratorSet(vm, curCg);
+    }
+
+    assert (curCg != null) : "transition without choice generator";
+
+    return advanceCurCg(vm);
+  }
+
+  /**
+   * execute all instructions that constitute the next transition.
+   *
+   * Note this gets called *after* storing the KernelState, i.e. is allowed to
+   * modify thread states and fields
+   *
+   * @see JVM.forward()
+   */
+  public void executeNextTransition (JVM vm){
+     // do we have a thread context switch? (this sets execThread)
+    setExecThread( vm);
+
+    assert execThread.isRunnable() : "next transition thread not runnable: " + execThread.getStateDescription();
+
+    trail = new Transition(curCg, execThread);
+    entryAtomicLevel = atomicLevel; // store before we start to execute
+
+    execThread.executeTransition(this);    
+  }
+
+  protected void setExecThread( JVM vm){
+    ThreadChoiceGenerator tcg = getCurrentSchedulingPoint();
+    if (tcg != null){
+      ThreadInfo tiNext = tcg.getNextChoice();
+      if (tiNext != execThread) {
+        vm.notifyThreadScheduled(tiNext);
+        execThread = tiNext;
+      }
+    }
+
+    if (execThread.isTimeoutWaiting()) {
+      execThread.setTimedOut();
+    }
+  }
+
+
+
 
   /**
    * Compute next program state
@@ -682,7 +750,7 @@ public class SystemState {
     ChoiceGenerator<?> parent = cg.getCascadedParent();
 
     if (cg.hasMoreChoices()){
-      // check if this is the first time, when we also have to advance our parents
+      // check if this is the first time, for which we also have to advance our parents
       if (parent != null && parent.getProcessedNumberOfChoices() == 0){
         advanceAllCascadedParents(vm,parent);
       }
@@ -710,17 +778,6 @@ public class SystemState {
       notifyChoiceGeneratorSet(vm, parent);
     }
     vm.notifyChoiceGeneratorSet(cg); // notify top down
-  }
-
-  protected void setExecThread( JVM vm){
-    ThreadChoiceGenerator tcg = getCurrentSchedulingPoint();
-    if (tcg != null){
-      ThreadInfo tiNext = tcg.getNextChoice();
-      if (tiNext != execThread) {
-        vm.notifyThreadScheduled(tiNext);
-        execThread = tiNext;
-      }
-    }
   }
 
 

@@ -66,11 +66,15 @@ public class PathSearch extends Search {
       // isVisitedState is never true, because we don't really search, just replay
       notifyStateAdvanced();
 
-      if (hasPropertyTermination()) {
-        break;
+      if (currentError != null){
+        notifyPropertyViolated();
+
+        if (hasPropertyTermination()) {
+          break;
+        }
       }
 
-      if (isEndState) {
+      if (isEndState()) {
         break;
       }
 

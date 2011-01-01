@@ -292,8 +292,7 @@ public class Perturbator extends ListenerAdapter {
           ChoiceGenerator<?> cg = e.perturbator.createChoiceGenerator("perturbReturn", ti.getTopFrame(), 0);
           if (cg != null) {
             ss.setNextChoiceGenerator(cg);
-            ti.setNextPC(insn); // reexecute
-            ti.skipInstruction();
+            ti.skipInstruction(insn);
           }
 
         } else {

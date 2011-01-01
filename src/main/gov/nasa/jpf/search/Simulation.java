@@ -29,19 +29,19 @@ import gov.nasa.jpf.util.Debug;
  * all (i.e. it doesn't backtrack), but just behaves like a 'normal' VM,
  * going forward() until there is no next state
  *
- * <2do> pcm - of course it doesn't quite behave like a normal VM, since it
+ * <2do> of course it doesn't quite behave like a normal VM, since it
  * doesn't honor thread priorities yet (needs a special scheduler)
  *
- * <?> pcm - it's not really clear to me how this differs from a 'PathSearch'
+ * <2do> it's not really clear to me how this differs from a 'PathSearch'
  * other than using a different scheduler. Looks like there should be just one
+ *
+ * <2do> this needs to be updated & tested
  *
  */
 public class Simulation extends Search {
   
   public Simulation (Config config, JVM vm) {
     super(config, vm);
-
-    Debug.println(Debug.WARNING, "Simulation Search");
   }
 
   public void search () {
@@ -56,14 +56,18 @@ public class Simulation extends Search {
     notifySearchStarted();
     
     while (!done) {
-      boolean next = vm.forward();
+      if (forward()) {
 
-      if (next) {
-        if (hasPropertyTermination()) {
-          return;
+        if (currentError != null){
+          notifyPropertyViolated();
+
+          if (hasPropertyTermination()) {
+            return;
+          }
         }
 
         depth++;
+
       } else { // no next state
 
         // <2do> we could check for more things here. If the last insn wasn't

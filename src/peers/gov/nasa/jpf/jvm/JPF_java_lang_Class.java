@@ -570,4 +570,14 @@ public class JPF_java_lang_Class {
     // We put this buffer into the JPF JVM.
     return env.newByteArray(content);
   }
+
+  public static int getEnclosingClass(MJIEnv env, int robj) {
+    ClassInfo enclosingClassInfo = getReferredClassInfo(env, robj).getEnclosingClassInfo();
+    if (enclosingClassInfo == null)
+      return MJIEnv.NULL;
+    if (!enclosingClassInfo.isRegistered())
+      enclosingClassInfo.registerClass(env.getThreadInfo());
+    return enclosingClassInfo.getClassObjectRef();
+  }
+
 }

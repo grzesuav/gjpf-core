@@ -34,81 +34,62 @@ import org.junit.Test;
  * listener+=,gov.nasa.jpf.listener.LockedStackDepth to take advantage of the 
  * various tests.
  */
-public class LockedStackDepthTest extends TestJPF
-{
-   private static final String LISTENER = "+listener+=," + LockedStackDepth.class.getName();
-   
-   @Test
-   public void recursiveLock()
-   {
-      if (verifyNoPropertyViolation(LISTENER))
-      {
-         synchronized (this)
-         {
-            synchronized (this)
-            {
-            }
-         }
-      }
-   }
-   
-   @Test
-   public void waitRetainsDepth() throws InterruptedException
-   {
-      if (verifyNoPropertyViolation(LISTENER))
-      {
-         synchronized (this)
-         {
-            synchronized (this)
-            {
-               wait(1);
-            }
-         }
-      }
-   }
-   
-   @Test
-   public void breadthFirstSearch() throws InterruptedException
-   {
-      if (verifyNoPropertyViolation(LISTENER, "+search.class=gov.nasa.jpf.search.heuristic.BFSHeuristic"))
-      {
-         synchronized (this)
-         {
-            synchronized (this)
-            {
-               wait(1);
-            }
-         }
-      }
-   }
+public class LockedStackDepthTest extends TestJPF {
 
-   @Test
-   public void randomHeuristicSearch() throws InterruptedException
-   {
-      if (verifyNoPropertyViolation(LISTENER, "+search.class=gov.nasa.jpf.search.heuristic.RandomHeuristic"))
-      {
-         synchronized (this)
-         {
-            synchronized (this)
-            {
-               wait(1);
-            }
-         }
+  private static final String LISTENER = "+listener+=," + LockedStackDepth.class.getName();
+
+  @Test
+  public void recursiveLock() {
+    if (verifyNoPropertyViolation(LISTENER)) {
+      synchronized (this) {
+        synchronized (this) {
+        }
       }
-   }
-   
-   @Test
-   public void hitSameStateThroughDifferentSearchPaths()
-   {
-      if (verifyNoPropertyViolation(LISTENER))
-      {
-         Verify.getBoolean();
-         
-         synchronized (this)
-         {
-         }
-         
-         Verify.getBoolean();
+    }
+  }
+
+  @Test
+  public void waitRetainsDepth() throws InterruptedException {
+    if (verifyNoPropertyViolation(LISTENER)) {
+      synchronized (this) {
+        synchronized (this) {
+          wait(1);
+        }
       }
-   }
+    }
+  }
+
+  @Test
+  public void breadthFirstSearch() throws InterruptedException {
+    if (verifyNoPropertyViolation(LISTENER, "+search.class=gov.nasa.jpf.search.heuristic.BFSHeuristic")) {
+      synchronized (this) {
+        synchronized (this) {
+          wait(1);
+        }
+      }
+    }
+  }
+
+  @Test
+  public void randomHeuristicSearch() throws InterruptedException {
+    if (verifyNoPropertyViolation(LISTENER, "+search.class=gov.nasa.jpf.search.heuristic.RandomHeuristic")) {
+      synchronized (this) {
+        synchronized (this) {
+          wait(1);
+        }
+      }
+    }
+  }
+
+  @Test
+  public void hitSameStateThroughDifferentSearchPaths() {
+    if (verifyNoPropertyViolation(LISTENER)) {
+      Verify.getBoolean();
+
+      synchronized (this) {
+      }
+
+      Verify.getBoolean();
+    }
+  }
 }

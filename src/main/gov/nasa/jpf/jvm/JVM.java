@@ -26,6 +26,7 @@ import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
+import gov.nasa.jpf.util.Misc;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -111,6 +112,7 @@ public class JVM {
   /** the repository we use to find out if we already have seen a state */
   protected StateSet stateSet;
 
+  /** this was the last stateId - note this is also used for stateless model checking */
   protected int newStateId;
 
   /** the structure responsible for storing and restoring backtrack info */
@@ -122,17 +124,22 @@ public class JVM {
   /** optional serializer to support stateSet */
   protected StateSerializer serializer;
 
-  /** potential execution listeners */
-  //protected VMListener    listener;
+  /** potential execution listeners. We keep them in a simple array to avoid
+   creating objects on each notification */
   protected VMListener[] listeners = new VMListener[0];
-  
+
+  /** did we get a new transition */
+  protected boolean transitionOccurred;
+
+
   /** the selected time model to use */
   protected TimeModel timeModel;
-  
+ 
   /** for the constant time models return these values */
   protected long milliTime;
   protected long nanoTime;
 
+  
   protected Config config; // that's for the options we use only once
 
   // JVM options we use frequently
@@ -189,6 +196,8 @@ public class JVM {
     if (stateSet != null) stateSet.attach(this);
     backtracker = config.getEssentialInstance("vm.backtracker.class", Backtracker.class);
     backtracker.attach(this);
+
+    newStateId = -1;
   }
 
   protected void initSubsystems (Config config) {
@@ -337,6 +346,8 @@ public class JVM {
     if (!pathOutput) { // don't override if explicitly requested
       pathOutput = hasToRecordPathOutput();
     }
+
+    transitionOccurred = true;
   }
 
   /**
@@ -534,37 +545,15 @@ public class JVM {
   }
 
   public void addListener (VMListener newListener) {
-    //listener = VMListenerMulticaster.add(listener, newListener);
-    
-    int len = listeners.length;
-    VMListener[] a = new VMListener[len+1];
-    System.arraycopy(listeners, 0, a, 0, len);
-    a[len] = newListener;
-    listeners = a;
+    listeners = Misc.appendElement(listeners, newListener);
   }
 
   public boolean hasListenerOfType (Class<?> listenerCls) {
-    //return VMListenerMulticaster.containsType(listener,listenerCls);
-
-    for (int i=0; i<listeners.length; i++){
-      if (listenerCls.isInstance(listeners[i])){
-        return true;
-      }
-    }
-    return false;
+    return Misc.hasElementOfType(listeners, listenerCls);
   }
 
   public void removeListener (VMListener removeListener) {
-    //listener = VMListenerMulticaster.remove(listener,removeListener);
-
-    for (int i=0; i<listeners.length; i++){
-      if (listeners[i] == removeListener){
-        VMListener[] a = new VMListener[listeners.length-1];
-        System.arraycopy(listeners, 0, a, 0, i);
-        System.arraycopy(listeners, i+1, a, i, listeners.length-i-1);
-        listeners = a;
-      }
-    }
+    listeners = Misc.removeElement(listeners, removeListener);
   }
 
   public void setTraceReplay (boolean isReplay) {
@@ -1213,35 +1202,6 @@ public class JVM {
     }
   }
 
-  public boolean isBoringState () {
-    return ss.isBoring();
-  }
-
-  public StaticElementInfo getClassReference (String name) {
-    return ss.ks.statics.get(name);
-  }
-
-  public boolean hasPendingException () {
-    return (ThreadInfo.currentThread.pendingException != null);
-  }
-
-  public boolean isDeadlocked () {
-    return ss.isDeadlocked();
-  }
-
-  public boolean isEndState () {
-    // note this uses 'alive', not 'runnable', hence isEndStateProperty won't
-    // catch deadlocks - but that would be NoDeadlockProperty anyway
-    return ss.isEndState();
-  }
-
-  public Exception getException () {
-    return ss.getUncaughtException();
-  }
-
-  public boolean isInterestingState () {
-    return ss.isInteresting();
-  }
 
   public Step getLastStep () {
     Transition trail = ss.getTrail();
@@ -1482,8 +1442,8 @@ public class JVM {
     return ss.getChoiceGeneratorsOfType(cgType);
   }
 
-  public boolean isTerminated () {
-    return ss.ks.isTerminated();
+  public StaticElementInfo getClassReference (String name) {
+    return ss.ks.statics.get(name);
   }
 
   public void print (String s) {
@@ -1716,6 +1676,8 @@ public class JVM {
    * and restoring the second one)
    */
   public boolean backtrack () {
+    transitionOccurred = false;
+
     boolean success = backtracker.backtrack();
     if (success) {
       if (CHECK_CONSISTENCY) checkConsistency(false);
@@ -1757,93 +1719,140 @@ public class JVM {
   }
 
   /**
-   * try to advance the state
+   * advance the program state
+   *
    * forward() and backtrack() are the two primary interfaces towards the Search
-   * driver
-   * return 'true' if there was an un-executed sequence out of the current state,
+   * driver. note that the caller still has to check if there is a next state,
+   * and if the executed instruction sequence led into a new or already visited state
+   *
+   * @return 'true' if there was an un-executed sequence out of the current state,
    * 'false' if it was completely explored
-   * note that the caller still has to check if there is a next state, and if
-   * the executed instruction sequence led into a new or already visited state
+   *
    */
   public boolean forward () {
-    while (true) { // loop until we find a state that isn't ignored
+
+    // the reason we split up CG initialization and transition execution
+    // is that program state storage is not required if the CG initialization
+    // does not produce a new choice since we have to backtrack in that case
+    // anyways. This can be caused by complete enumeration of CGs and/or by
+    // CG listener intervention (i.e. not just after backtracking). For a large
+    // number of matched or end states and ignored transitions this can be a
+    // huge saving.
+    // The downside is that CG notifications are NOT allowed anymore to change the
+    // KernelState (modify fields or thread states) since those changes would
+    // happen before storing the KernelState, and hence would make backtracking
+    // inconsistent. This is advisable anyways since all program state changes
+    // should take place during transitions, but the real snag is that this
+    // cannot be easily enforced.
+
+    // actually, it hasn't occurred yet, but will
+    transitionOccurred = ss.initializeNextTransition(this);
+    
+    if (transitionOccurred){
+      if (CHECK_CONSISTENCY) {
+        checkConsistency(true); // don't push an inconsistent state
+      }
+
+      backtracker.pushKernelState();
+
+      // cache this before we execute (and increment) the next insn(s)
+      lastTrailInfo = path.getLast();
+
       try {
-        if (CHECK_CONSISTENCY) checkConsistency(true); // don't push an inconsistent state
-        
-        // saves the current state for backtracking purposes of depth first
-        // searches and state observers. If there is a previously cached
-        // kernelstate, use that one
-        backtracker.pushKernelState();
-
-        // cache this before we execute (and increment) the next insn(s)
-        lastTrailInfo = path.getLast();
-
-        // execute the instruction(s) to get to the next state
-        // this changes the SystemState (e.g. finds the next thread to run)
-        if (ss.nextSuccessor(this)) {
-          //for debugging locks:  -peterd
-          //ss.ks.heap.verifyLockInfo();
-
-          //if (ss.isIgnored()) {
-            // do it again
-            // Don't do this.  See VerifyTest.backtrackNotificationAfterIgnore()
-          //  backtracker.backtrackKernelState();
-          //  if (CHECK_CONSISTENCY) checkConsistency(false);
-          //  continue;
-
-          //} else { // this is the normal forward that executed insns, and wasn't ignored
-            // runs the garbage collector (if necessary), which might change the
-            // KernelState (DynamicArea). We need to do this before we hash the state to
-            // find out if it is a new one
-            // Note that we don't collect if there is a pending exception, since
-            // we want to preserve as much state as possible for debug purposes
-            if (runGc && !hasPendingException()) {
-              ss.gcIfNeeded();
-            }
-
-            // saves the backtrack information. Unfortunately, we cannot cache
-            // this (except of the optional lock graph) because it is changed
-            // by the subsequent operations (before we return from forward)
-            backtracker.pushSystemState();
-
-            updatePath();
-            break;
-          //}
-
-        } else { // state was completely explored, no transition ocurred
-          backtracker.popKernelState();
-          return false;
-        }
+        ss.executeNextTransition(jvm);
 
       } catch (UncaughtException e) {
-        backtracker.pushSystemState(); // we need this in case we backtrack (multiple_errors)
-        updatePath(); // or we loose the last transition
-        // something blew up, so we definitely executed something (hence return true)
-        return true;
-      } catch (RuntimeException e) {
-        throw e;
-        //throw new JPFException(e);
+        // we don't pass this up since it means there were insns executed and we are
+        // in a consistent state
+      } // every other exception goes upwards
+
+      backtracker.pushSystemState();
+      updatePath();
+
+      if (!isIgnoredState()) {
+        // if this is ignored we are going to backtrack anyways
+        // matching states out of ignored transitions is also not a good idea
+        // because this transition is usually incomplete
+
+        if (runGc && !hasPendingException()) {
+          ss.gcIfNeeded();
+        }
+
+        if (stateSet != null) {
+          newStateId = stateSet.size();
+          int id = stateSet.addCurrent();
+          ss.setId(id);
+
+        } else { // this is 'state-less' model checking, i.e. we don't match states
+          ss.setId(++newStateId); // but we still should have states numbered in case listeners use the id
+        }
+      }
+      
+      return true;
+
+    } else {
+
+      return false;  // no transition occurred
+    }
+  }
+
+  /**
+   * advance the program state
+   *
+   * forward() and backtrack() are the two primary interfaces towards the Search
+   * driver. note that the caller still has to check if there is a next state,
+   * and if the executed instruction sequence led into a new or already visited state
+   *
+   * @return 'true' if there was an un-executed sequence out of the current state,
+   * 'false' if it was completely explored
+   *
+   */
+  public boolean forward0 () {
+    if (CHECK_CONSISTENCY) {
+      checkConsistency(true); // don't push an inconsistent state
+    }
+
+    backtracker.pushKernelState(); // <<< don't do this for processed CGs
+
+    // cache this before we execute (and increment) the next insn(s)
+    lastTrailInfo = path.getLast();
+
+    try {
+      transitionOccurred = ss.nextSuccessor(this);
+      if (!transitionOccurred) {
+        // state was fully explored, no insns executed => backtrack
+        backtracker.popKernelState();
+        return false;
+      }
+    } catch (UncaughtException e) {
+      // we don't pass this up since it means there were insns executed and we are
+      // in a consistent state
+    } // every other exception goes upwards
+
+    backtracker.pushSystemState();
+    updatePath();
+
+    if (!isIgnoredState()){
+      // if this is ignored we are going to backtrack anyways
+      // matching states out of ignored transitions is also not a good idea
+      // because this transition is incomplete
+
+      if (runGc && !hasPendingException()) {
+        ss.gcIfNeeded();
+      }
+
+      if (stateSet != null) {
+        newStateId = stateSet.size();
+        int id = stateSet.addCurrent();
+        ss.setId(id);
+
+      } else { // this is 'state-less' model checking, i.e. we don't match states
+        ss.setId(++newStateId); // but we still should have states numbered in case listeners use the id
       }
     }
 
-    if (stateSet != null) {
-      newStateId = stateSet.size();
-      int id = stateSet.addCurrent();
-      ss.setId(id);
-    } else { // this is 'state-less' model checking, i.e. we don't match states
-      ss.setId(newStateId++); // but we still should have states numbered in case listeners use the id
-    }
-
-    // the idea is that search objects or observers can query the state
-    // *after* forward/backtrack was called, and that all changes of the
-    // System/KernelStates happen from *within* forward/backtrack, i.e. the
-    // (expensive) getBacktrack/storingData operations can be cached and used
-    // w/o re-computation in the next forward pushXState()
-    //cacheKernelState(); // for subsequent getState() and the next forward()
-
     return true;
   }
-
 
   /**
    * Prints the current stack trace. Just for debugging purposes
@@ -1869,6 +1878,9 @@ public class JVM {
     ss.activateGC();
   }
 
+
+  //--- various state attribute getters and setters (mostly forwarding to SystemState)
+
   public void retainStateAttributes (boolean isRetained){
     ss.retainAttributes(isRetained);
   }
@@ -1882,8 +1894,12 @@ public class JVM {
    * the heap or stacks.
    * use this with care, since it prunes whole search subtrees
    */
-  public void ignoreState () {
-    ss.setIgnored(true);
+  public void ignoreState (boolean cond) {
+    ss.setIgnored(cond);
+  }
+
+  public void ignoreState(){
+    ignoreState(true);
   }
 
   /**
@@ -1894,24 +1910,80 @@ public class JVM {
     ti.breakTransition();
   }
 
+  public boolean transitionOccurred(){
+    return transitionOccurred;
+  }
+
   /**
    * answers if the current state already has been visited. This is mainly
    * used by the searches (to control backtracking), but could also be useful
    * for observers to build up search graphs (based on the state ids)
+   *
+   * this returns true if no state has been produced yet, and false if
+   * no transition occurred after a forward call
    */
   public boolean isNewState() {
+    if (newStateId == -1){ // we haven't had a transition yet
+      return true;
+    }
+
+    if (!transitionOccurred){
+      return false;
+    }
+
     if (stateSet != null) {
       if (ss.isForced()){
         return true;
       } else if (ss.isIgnored()){
         return false;
       } else {
-        return newStateId == ss.getId();
+        return (newStateId == ss.getId());
       }
-    } else {
+
+    } else { // stateless model checking - each transition leads to a new state
       return true;
     }
   }
+
+  public boolean isEndState () {
+    // note this uses 'alive', not 'runnable', hence isEndStateProperty won't
+    // catch deadlocks - but that would be NoDeadlockProperty anyway
+    return ss.isEndState();
+  }
+
+  public boolean isVisitedState(){
+    return !isNewState();
+  }
+
+  public boolean isIgnoredState(){
+    return ss.isIgnored();
+  }
+
+  public boolean isInterestingState () {
+    return ss.isInteresting();
+  }
+
+  public boolean isBoringState () {
+    return ss.isBoring();
+  }
+
+  public boolean hasPendingException () {
+    return (ThreadInfo.currentThread.pendingException != null);
+  }
+
+  public boolean isDeadlocked () {
+    return ss.isDeadlocked();
+  }
+
+  public boolean isTerminated () {
+    return ss.ks.isTerminated();
+  }
+
+  public Exception getException () {
+    return ss.getUncaughtException();
+  }
+
+
 
   /**
    * get the numeric id for the current state

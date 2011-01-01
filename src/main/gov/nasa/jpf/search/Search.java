@@ -29,8 +29,9 @@ import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.Path;
 import gov.nasa.jpf.jvm.ThreadList;
 import gov.nasa.jpf.jvm.Transition;
+import gov.nasa.jpf.report.Reporter;
 import gov.nasa.jpf.util.IntVector;
-import gov.nasa.jpf.util.ObjArray;
+import gov.nasa.jpf.util.Misc;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +50,8 @@ public abstract class Search {
   public static final String QUEUE_CONSTRAINT = "Search Queue Size";
   public static final String FREE_MEMORY_CONSTRAINT = "Free Memory Limit";
 
+  /** error encountered during last transition, null otherwise */
+  protected Error currentError = null;
   protected ArrayList<Error> errors = new ArrayList<Error>();
 
   protected int       depth = 0;
@@ -56,22 +59,25 @@ public abstract class Search {
 
   protected ArrayList<Property> properties;
 
-  // the forward() attributes, e.g. used by the listeners
-  protected boolean isEndState = false;
-  protected boolean isNewState = true;
-  protected boolean isIgnoredState = false;
-  protected boolean isErrorState = false;
-
   protected boolean matchDepth;
   protected long    minFreeMemory;
   protected int     depthLimit;
+  protected boolean getAllErrors;
 
   protected String lastSearchConstraint;
 
   // these states control the search loop
   protected boolean done = false;
   protected boolean doBacktrack = false;
-  protected SearchListener     listener;
+
+
+  /** search listeners. We keep them in a simple array to avoid
+   creating objects on each notification */
+  protected SearchListener[] listeners = new SearchListener[0];
+
+  /** this is a special SearchListener that is always notified last, so that
+   * PublisherExtensions can be sure the notification has been processed by all listeners */
+  protected Reporter reporter;
 
   protected final Config config; // to later-on access settings that are only used once (not ideal)
 
@@ -91,6 +97,8 @@ public abstract class Search {
     if (properties.isEmpty()) {
       log.severe("no property");
     }
+
+    getAllErrors = config.getBoolean("search.multiple_errors");
   }
 
   public Config getConfig() {
@@ -98,6 +106,23 @@ public abstract class Search {
   }
   
   public abstract void search ();
+
+  public void setReporter(Reporter reporter){
+    this.reporter = reporter;
+  }
+
+  public void addListener (SearchListener newListener) {
+    listeners = Misc.appendElement(listeners, newListener);
+  }
+
+  public boolean hasListenerOfType (Class<?> listenerCls) {
+    return Misc.hasElementOfType(listeners, listenerCls);
+  }
+
+  public void removeListener (SearchListener removeListener) {
+    listeners = Misc.removeElement(listeners, removeListener);
+  }
+
 
   public void addProperty (Property newProperty) {
     properties.add(newProperty);
@@ -124,13 +149,7 @@ public abstract class Search {
 
   // check for property violation, return true if not done
   protected boolean hasPropertyTermination () {
-    if (isErrorState) {
-      if (done) {
-        return true;
-      }
-    }
-
-    return false;
+    return (currentError != null) && done;
   }
 
   // this should only be called once per transition, otherwise it keeps adding the same error
@@ -145,18 +164,6 @@ public abstract class Search {
     return false;
   }
 
-  public void addListener (SearchListener newListener) {
-    listener = SearchListenerMulticaster.add(listener, newListener);
-  }
-
-  public boolean hasListenerOfType (Class<?> type) {
-    return SearchListenerMulticaster.containsType(listener,type);
-  }
-  
-  public void removeListener (SearchListener removeListener) {
-    listener = SearchListenerMulticaster.remove(listener,removeListener);
-  }
-
   public List<Error> getErrors () {
     return errors;
   }
@@ -169,6 +176,13 @@ public abstract class Search {
     return lastSearchConstraint;
   }
 
+  /**
+   * @return error encountered during *last* transition (null otherwise)
+   */
+  public Error getCurrentError(){
+    return currentError;
+  }
+
   public Error getLastError() {
     int i=errors.size()-1;
     if (i >=0) {
@@ -178,20 +192,28 @@ public abstract class Search {
     }
   }
 
+  public boolean hasErrors(){
+    return !errors.isEmpty();
+  }
+
   public JVM getVM() {
     return vm;
   }
 
   public boolean isEndState () {
-    return isEndState;
+    return vm.isEndState();
   }
 
   public boolean isErrorState(){
-    return isErrorState;
+    return (currentError != null);
   }
 
   public boolean hasNextState () {
-    return !isEndState;
+    return !isEndState();
+  }
+
+  public boolean transitionOccurred(){
+    return vm.transitionOccurred();
   }
 
   public boolean isNewState () {
@@ -214,8 +236,16 @@ public abstract class Search {
     return !isNewState();
   }
 
+  public boolean isIgnoredState(){
+    return vm.isIgnoredState();
+  }
+
   public boolean isProcessedState(){
     return vm.getChoiceGenerator().isProcessed();
+  }
+
+  public boolean isDone(){
+    return done;
   }
 
   public int getDepth () {
@@ -280,177 +310,181 @@ public abstract class Search {
 
   protected void error (Property property, Path path, ThreadList threadList) {
 
-    boolean getAllErrors = config.getBoolean("search.multiple_errors");
-
     if (getAllErrors) {
       path = path.clone(); // otherwise we are going to overwrite it
       threadList = (ThreadList)threadList.clone(); // this makes it a snapshot (deep) clone
-    }
-    Error error = new Error(errors.size()+1, property, path, threadList);
-
-    String fname = config.getString("search.error_path");
-    if (fname != null) {
-      if (getAllErrors) {
-        int i = fname.lastIndexOf('.');
-
-        if (i >= 0) {
-          fname = fname.substring(0, i) + '-' + errors.size() +
-                  fname.substring(i);
-        }
-      }
-    }
-
-    errors.add(error);
-
-    if (getAllErrors) {
       done = false;
-      isIgnoredState = true;
     } else {
       done = true;
     }
 
-    notifyPropertyViolated();
+    currentError = new Error(errors.size()+1, property, path, threadList);
 
-    if (getAllErrors){
-      // do this AFTER we notified listeners (one of the listeners might
-      // be actually the property, and it might get confused if it's already rest)
-      property.reset();
+    errors.add(currentError);
+
+    // we should not reset the property until listeners have been notified
+    // (the listener might be the property itself, in which case it could get
+    // confused if propertyViolated() notifications happen after a reset)
+  }
+
+  public void resetProperties(){
+    for (Property p : properties) {
+      p.reset();
     }
   }
 
   protected void notifyStateAdvanced () {
-    if (listener != null) {
-      try {
-        listener.stateAdvanced(this);
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during stateAdvanced() notification", t);
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].stateAdvanced(this);
       }
+      if (reporter != null){
+        // reporter always comes last to ensure all listeners have been notified
+        reporter.stateAdvanced(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during stateAdvanced() notification", t);
     }
   }
 
-  protected void notifyStateProcessed () {
-    if (listener != null) {
-      try {
-        listener.stateProcessed(this);
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during stateProcessed() notification", t);
+  protected void notifyStateProcessed() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].stateProcessed(this);
       }
+      if (reporter != null){
+        reporter.stateProcessed(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during stateProcessed() notification", t);
     }
   }
 
-  protected void notifyStateStored () {
-    if (listener != null) {
-      try {
-        listener.stateStored(this);
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during stateStored() notification", t);
+  protected void notifyStateStored() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].stateStored(this);
       }
+      if (reporter != null){
+        reporter.stateStored(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during stateStored() notification", t);
     }
   }
 
-  protected void notifyStateRestored () {
-    if (listener != null) {
-      try {
-        listener.stateRestored(this);
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during stateRestored() notification", t);
+  protected void notifyStateRestored() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].stateRestored(this);
       }
+      if (reporter != null){
+        reporter.stateRestored(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during stateRestored() notification", t);
     }
   }
 
-  protected void notifyStateBacktracked () {
-    if (listener != null) {
-      try {
-        listener.stateBacktracked(this);
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during stateBacktracked() notification", t);
+  protected void notifyStateBacktracked() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].stateBacktracked(this);
       }
+      if (reporter != null){
+        reporter.stateBacktracked(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during stateBacktracked() notification", t);
     }
   }
 
-  protected void notifyStatePurged () {
-    if (listener != null) {
-      try {
-        listener.statePurged(this);
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during statePurged() notification", t);
+  protected void notifyStatePurged() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].statePurged(this);
       }
+      if (reporter != null){
+        reporter.statePurged(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during statePurged() notification", t);
     }
   }
 
-  protected void notifyPropertyViolated () {
-    if (listener != null) {
-      try {
-        listener.propertyViolated(this);
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during propertyViolated() notification", t);
+  protected void notifyPropertyViolated() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].propertyViolated(this);
       }
+      if (reporter != null){
+        reporter.propertyViolated(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during propertyViolated() notification", t);
+    }
+
+    // reset properties if getAllErrors is set
+    if (getAllErrors){
+      resetProperties();
     }
   }
 
-  protected void notifySearchStarted () {
-    if (listener != null) {
-      try {
-        listener.searchStarted(this);
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during searchStarted() notification", t);
+  protected void notifySearchStarted() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].searchStarted(this);
       }
+      if (reporter != null){
+        reporter.searchStarted(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during searchStarted() notification", t);
     }
   }
 
-  public void notifySearchConstraintHit (String constraintId) {
-    if (listener != null) {
-      try {
-        lastSearchConstraint = constraintId;
-        listener.searchConstraintHit(this);
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during searchConstraintHit() notification", t);
+  public void notifySearchConstraintHit(String constraintId) {
+    try {
+      lastSearchConstraint = constraintId;
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].searchConstraintHit(this);
       }
+      if (reporter != null){
+        reporter.searchConstraintHit(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during searchConstraintHit() notification", t);
     }
   }
 
-  protected void notifySearchFinished () {
-    if (listener != null) {
-      try {
-        listener.searchFinished(this);
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during searchFinished() notification", t);
+  protected void notifySearchFinished() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].searchFinished(this);
       }
+      if (reporter != null){
+        reporter.searchFinished(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during searchFinished() notification", t);
     }
   }
 
   protected boolean forward () {
+    currentError = null;
+
     boolean ret = vm.forward();
 
-    if (ret) {
-      isNewState = isNewState();
-    } else {
-      isNewState = false;
-    }
-    
-    // if the transition sets system state as ignored
-    // need to account for it here cannot rely simply on listener
-    if(vm.getSystemState().isIgnored()) {
-    	isIgnoredState = true;
-    } else 
-    	isIgnoredState = false; 
-    isEndState = vm.isEndState();
-
-    isErrorState = checkPropertyViolation();
-
+    checkPropertyViolation();
     return ret;
   }
 
   protected boolean backtrack () {
-    isNewState = false;
-    isEndState = false;
-    isIgnoredState = false;
-
     return vm.backtrack();
   }
 
-  public void setIgnoredState (boolean b) {
-    isIgnoredState = b;
+  public void setIgnoredState (boolean cond) {
+    vm.ignoreState(cond);
   }
 
   protected void restoreState (State state) {

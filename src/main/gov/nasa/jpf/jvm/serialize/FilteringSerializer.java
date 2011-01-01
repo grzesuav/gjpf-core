@@ -40,6 +40,7 @@ import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.jvm.ReferenceQueue;
 import gov.nasa.jpf.jvm.ReferenceProcessor;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 
 /**
@@ -303,7 +304,15 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
 
   protected void serializeFrame(StackFrame frame){
     buf.add(frame.getMethodInfo().getGlobalId());
-    buf.add(frame.getPC().getOffset());
+
+    // there can be (rare) cases where a listener sets a null nextPc in
+    // a frame that is still on the stack
+    Instruction pc = frame.getPC();
+    if (pc != null){
+      buf.add(pc.getOffset());
+    } else {
+      buf.add(-1);
+    }
 
     int len = frame.getTopPos()+1;
     buf.add(len);

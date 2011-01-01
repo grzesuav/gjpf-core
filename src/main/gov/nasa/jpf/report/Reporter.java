@@ -18,13 +18,7 @@
 //
 package gov.nasa.jpf.report;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,12 +29,11 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFListener;
-import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.Path;
 import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.util.ObjArray;
+import gov.nasa.jpf.search.SearchListenerAdapter;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -51,7 +44,7 @@ import java.util.Properties;
  * have to add it explicitly
  */
 
-public class Reporter extends ListenerAdapter {
+public class Reporter extends SearchListenerAdapter {
 
   public static Logger log = JPF.getLogger("gov.nasa.jpf.report");
 

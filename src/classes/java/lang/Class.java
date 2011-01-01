@@ -278,9 +278,7 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
     throw new UnsupportedOperationException();
   }
 
-  public Class<?> getEnclosingClass() {
-    throw new UnsupportedOperationException();
-  }
+  public native Class<?> getEnclosingClass();
   
   public String getCanonicalName() {
     throw new UnsupportedOperationException();

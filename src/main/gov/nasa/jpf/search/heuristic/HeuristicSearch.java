@@ -118,11 +118,17 @@ public abstract class HeuristicSearch extends Search {
       depth++;
       notifyStateAdvanced();
 
-      if (hasPropertyTermination()) { // ?? multiple_errors == true ??
-        return false;
+      if (currentError != null){
+        notifyPropertyViolated();
+
+        if (hasPropertyTermination()) { // ?? multiple_errors == true ??
+          return false;
+        }
       }
       
-      if (!isEndState && !isIgnoredState) {
+      if (!isEndState() && !isIgnoredState()) {
+        boolean isNewState = isNewState();
+
         if (isNewState && depth >= maxDepth) {
           // we can't do this before we actually generated the VM child state
           // since we don't want to report DEPTH_CONSTRAINTs for parents

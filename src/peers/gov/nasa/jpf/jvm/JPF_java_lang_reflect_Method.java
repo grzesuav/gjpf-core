@@ -262,7 +262,7 @@ public class JPF_java_lang_reflect_Method {
 
       source      = env.getElementInfo(sourceRef);
       sourceClass = source.getClassInfo();
-      sourceType  = getClassType(sourceClass);
+      sourceType  = getClassType(sourceClass, !isBoxedPrimitive(destTypeNames[i]));
        
       if (!isCompatible(sourceType, destTypes[i], sourceClass, destTypeNames[i])) {
         env.throwException(IllegalArgumentException.class.getName(), "Wrong argument type at index " + i + ".  Source Class = " + sourceClass.getName() + ".  Dest Class = " + destTypeNames[i]);
@@ -278,40 +278,50 @@ public class JPF_java_lang_reflect_Method {
     return true;
   }
   
-  private static byte getClassType(ClassInfo clazz) {
+  private static boolean isBoxedPrimitive(String className) {
+    return (className.equals("java.lang.Byte")
+        || className.equals("java.lang.Short")
+        || className.equals("java.lang.Integer")
+        || className.equals("java.lang.Long")
+        || className.equals("java.lang.Float")
+        || className.equals("java.lang.Double")
+        || className.equals("java.lang.Boolean") || className.equals("java.lang.Character"));
+  }
+
+  private static byte getClassType(ClassInfo clazz, boolean unbox) {
     String className;
     
     className = clazz.getName();
     
-    if (className.equals("java.lang.Byte")) {
+    if (className.equals("java.lang.Byte") && unbox) {
       return Types.T_BYTE; 
     }
 
-    if (className.equals("java.lang.Short")) {
+    if (className.equals("java.lang.Short") && unbox) {
       return Types.T_SHORT; 
     }
 
-    if (className.equals("java.lang.Integer")) {
+    if (className.equals("java.lang.Integer") && unbox) {
       return Types.T_INT; 
     }
 
-    if (className.equals("java.lang.Long")) {
+    if (className.equals("java.lang.Long") && unbox) {
       return Types.T_LONG; 
     }
 
-    if (className.equals("java.lang.Float")) {
+    if (className.equals("java.lang.Float") && unbox) {
       return Types.T_FLOAT; 
     }
 
-    if (className.equals("java.lang.Double")) {
+    if (className.equals("java.lang.Double") && unbox) {
       return Types.T_DOUBLE; 
     }
 
-    if (className.equals("java.lang.Boolean")) {
+    if (className.equals("java.lang.Boolean") && unbox) {
       return Types.T_BOOLEAN; 
     }
 
-    if (className.equals("java.lang.Character")) {
+    if (className.equals("java.lang.Character") && unbox) {
       return Types.T_CHAR; 
     }
 

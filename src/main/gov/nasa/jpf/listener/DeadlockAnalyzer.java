@@ -179,6 +179,7 @@ public class DeadlockAnalyzer extends ListenerAdapter {
       op.prevOp = lastOp;
       lastOp = op;
     }
+System.out.println("@@ lastOp: " + lastOp);
   }
   
   void printRawOps (PrintWriter pw) {
@@ -404,7 +405,25 @@ public class DeadlockAnalyzer extends ListenerAdapter {
     
     return false;
   }
-    
+
+  void storeLastTransition(){
+    if (lastOp != null) {
+      int stateId = search.getStateId();
+      ThreadInfo ti = lastOp.ti;
+
+      for (ThreadOp op = lastOp; op != null; op = op.prevOp) {
+        assert op.stateId == 0;
+
+        op.stateId = stateId;
+      }
+
+      lastOp.prevTransition = lastTransition;
+      lastTransition = lastOp;
+
+      lastOp = null;
+    }
+  }
+
   //--- VM listener interface
   
   public void objectLocked (JVM vm) {
@@ -440,26 +459,17 @@ public class DeadlockAnalyzer extends ListenerAdapter {
   }
   
   //--- SearchListener interface
-  
+
   public void stateAdvanced (Search search){
-    
-    if (search.isNewState() && (lastOp != null)) {
-      int stateId = search.getStateId();
-      ThreadInfo ti = lastOp.ti;
-      
-      for (ThreadOp op=lastOp; op != null; op=op.prevOp) {
-        assert op.stateId == 0;
-        
-        op.stateId = stateId;
-      }
-      
-      lastOp.prevTransition = lastTransition;
-      lastTransition = lastOp;
+    if (search.isNewState()) {
+      storeLastTransition();
     }
-    
-    lastOp = null;
   }
-  
+
+  public void propertyViolated (Search search){
+    storeLastTransition();      
+  }
+
   public void stateBacktracked (Search search){
     int stateId = search.getStateId();
     while ((lastTransition != null) && (lastTransition.stateId > stateId)){

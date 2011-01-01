@@ -153,17 +153,26 @@ public interface VMListener extends JPFListener {
   void choiceGeneratorRegistered (JVM vm);
 
   /**
-   * a new ChoiceGenerator was set, which means we are at the beginning of a new transition
+   * a new ChoiceGenerator was set, which means we are at the beginning of a new transition.
+   *
+   * NOTE - this notification happens before the KernelState is stored, i.e. listeners are NOT
+   * allowed to alter the KernelState (e.g. by changing field values or thread states)
    */
   void choiceGeneratorSet (JVM vm);
   
   /**
    * the next choice was requested from a previously registered ChoiceGenerator
+   *
+   * NOTE - this notification happens before the KernelState is stored, i.e. listeners are NOT
+   * allowed to alter the KernelState (e.g. by changing field values or thread states)
    */
   void choiceGeneratorAdvanced (JVM vm);
   
   /**
    * a ChoiceGnerator has returned all his choices
+   *
+   * NOTE - this notification happens before the KernelState is stored, i.e. listeners are NOT
+   * allowed to alter the KernelState (e.g. by changing field values or thread states)
    */
   void choiceGeneratorProcessed (JVM vm);
 

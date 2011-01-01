@@ -276,7 +276,7 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   }
 
   public boolean isProcessed(){
-    return isDone || hasMoreChoices();
+    return isDone || !hasMoreChoices();
   }
 
   /**

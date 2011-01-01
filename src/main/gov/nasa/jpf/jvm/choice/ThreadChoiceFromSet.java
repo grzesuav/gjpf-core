@@ -64,29 +64,9 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
    * <2do> this should be in SystemState.nextSuccessor - there might be
    * other ThreadChoiceGenerators, and we should handle this consistently
    */
-  public void advance () {
-    
-    if (count >= 0) {
-      ThreadInfo ti = values[count]; // this was the previous choice
-
-      if (ti.isTimedOut()) {
-        // we've temporarily set this to TIMEDOUT in the previous choice, now
-        // set it to TIMEOUT_WAITING again before we run the next choice, i.e.
-        // all subsequent transitions will see this as TIMEOUT_WAITING (until
-        // it gets notified)
-        ti.resetTimedOut();
-      }
-    }
-    
+  public void advance () {    
     if (count < values.length-1) { // at least one choice left
       count++;
-
-      ThreadInfo ti = values[count];
-      if (ti.isTimeoutWaiting()) {
-        // first time we see a TIMEOUT_WAITING thread, we change its status
-        // to TIMEDOUT and run it.
-        ti.setTimedOut();
-      }
     }
   }
 

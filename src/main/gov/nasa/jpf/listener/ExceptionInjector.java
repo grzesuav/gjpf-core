@@ -369,8 +369,7 @@ public class ExceptionInjector extends ListenerAdapter {
 
     if (e != null){
       Instruction nextInsn = ti.createAndThrowException(e.getExceptionClassInfo(), e.getExceptionDetails());
-      ti.setNextPC(nextInsn);
-      ti.skipInstruction();
+      ti.skipInstruction(nextInsn);
       return;
     }
   }

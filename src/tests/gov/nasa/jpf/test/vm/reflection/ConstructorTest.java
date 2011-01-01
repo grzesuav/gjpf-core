@@ -53,4 +53,29 @@ public class ConstructorTest extends TestJPF {
       }
     }
   }
+
+  static class I {
+    private Integer i;
+
+    public I(Integer i) {
+      this.i = i;
+    }
+  }
+
+  @Test
+  public void testConstructorCallInteger() {
+    if (verifyNoPropertyViolation()) {
+      try {
+        Class<I> cls = I.class;
+        Constructor<I> ctor = cls.getDeclaredConstructor(new Class<?>[] {Integer.class });
+
+        I obj = ctor.newInstance(42);
+        assertNotNull(obj);
+        assertEquals(new Integer(42), obj.i);
+      } catch (Throwable t) {
+        fail("ctor invocation with Integer failed: " + t);
+      }
+    }
+  }
+
 }

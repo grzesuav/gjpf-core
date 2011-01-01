@@ -2051,10 +2051,23 @@ public class ThreadInfo
 
   /**
    * skip the next bytecode. To be used by listeners to on-the-fly replace
-   * instructions. Note that you have to explicitly call setNextPc() in this case
+   * instructions
    */
-  public void skipInstruction () {
+  public void skipInstruction (Instruction nextInsn) {
     skipInstruction = true;
+    
+    assert nextInsn != null;
+    nextPc = nextInsn;
+  }
+
+  /**
+   * skip and continue with the following instruction. This is deprecated because
+   * callers should explicitly provide the next instruction (depending on the
+   * skipped insn)
+   */
+  @Deprecated
+  public void skipInstruction(){
+    skipInstruction(getPC().getNext());
   }
 
   public boolean isInstructionSkipped() {
@@ -2818,8 +2831,8 @@ public class ThreadInfo
     SystemState ss = vm.getSystemState();
 
     if (!ss.isIgnored()){
-      // isIgnored is not a normal backtrack, so we shouldn't set a CG
-      // (this is used quite often in conjunction
+      // no need to set a CG if this transition is already marked as ignored
+      // (which will also break executeTransition)
       BreakGenerator cg = new BreakGenerator( "breakTransition", this, false);
       ss.setNextChoiceGenerator(cg); // this breaks the transition
     }

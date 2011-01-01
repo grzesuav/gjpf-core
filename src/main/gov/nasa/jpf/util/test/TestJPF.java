@@ -495,7 +495,9 @@ public abstract class TestJPF implements JPFShell  {
 
     if (globalArgs != null){
       for (GlobalArg ga : globalArgs){
-        conf.put( ga.key, ga.val);
+        String key = ga.key;
+        String val = ga.val;
+        conf.put( key, val);
       }
     }
 

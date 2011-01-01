@@ -372,6 +372,45 @@ public class Misc {
     }
   }
 
+  public static <T> T[] appendElement (T[] base, T newElement){
+    int len = base.length;
+
+    Class<?> componentType = base.getClass().getComponentType();
+    T[] a = (T[]) Array.newInstance(componentType, len + 1);
+    System.arraycopy(base, 0, a, 0, len);
+    a[len] = newElement;
+
+    return a;
+  }
+
+  public static <T> T[] removeElement (T[] base, T element) {
+    int len = base.length;
+
+    for (int i=0; i<len; i++){
+      if (base[i] == element){
+        Class<?> componentType = base.getClass().getComponentType();
+        T[] a = (T[]) Array.newInstance(componentType, len -1);
+        System.arraycopy(base, 0, a, 0, i);
+        System.arraycopy(base, i+1, a, i, len-i-1);
+        return a;
+      }
+    }
+
+    return base;
+  }
+
+  public static <T> boolean hasElementOfType (T[] base, Class<? extends T> elemType){
+    int len = base.length;
+    for (int i=0; i<len; i++){
+      if (elemType.isInstance(base[i])){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+
   public static String[] arrayWithoutFirst(String[] base, int nElements){
     String[] a = new String[base.length-1];
     if (a.length > 0){

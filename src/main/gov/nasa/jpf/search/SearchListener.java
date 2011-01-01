@@ -28,6 +28,8 @@ public interface SearchListener extends JPFListener {
   
   /**
    * got the next state
+   * Note - this will be notified before any potential propertyViolated, in which
+   * case the currentError will be already set
    */
   void stateAdvanced (Search search);
   
@@ -58,7 +60,8 @@ public interface SearchListener extends JPFListener {
   void stateRestored (Search search);
   
   /**
-   * JPF encountered a property violation
+   * JPF encountered a property violation.
+   * Note - this is always preceeded by a stateAdvanced
    */
   void propertyViolated (Search search);
   
