@@ -466,10 +466,6 @@ System.out.println("@@ lastOp: " + lastOp);
     }
   }
 
-  public void propertyViolated (Search search){
-    storeLastTransition();      
-  }
-
   public void stateBacktracked (Search search){
     int stateId = search.getStateId();
     while ((lastTransition != null) && (lastTransition.stateId > stateId)){
