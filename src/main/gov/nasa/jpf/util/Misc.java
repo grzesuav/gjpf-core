@@ -399,7 +399,7 @@ public class Misc {
     return base;
   }
 
-  public static <T> boolean hasElementOfType (T[] base, Class<? extends T> elemType){
+  public static <T> boolean hasElementOfType (T[] base, Class<?> elemType){
     int len = base.length;
     for (int i=0; i<len; i++){
       if (elemType.isInstance(base[i])){
