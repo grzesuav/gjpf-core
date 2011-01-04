@@ -469,7 +469,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
       } else {
         call = insnFactory.create(null, INVOKESTATIC.class);
       }
-    } else if (name.equals("<init>")){
+    } else if (name.equals("<init>") || isPrivate()){
       call = insnFactory.create(null, INVOKESPECIAL.class);
     } else {
       call = insnFactory.create(null, INVOKEVIRTUAL.class);
