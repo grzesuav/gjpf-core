@@ -182,6 +182,9 @@ public class ThreadInfo
   /** store the last executed insn in the path */
   protected boolean logInstruction;
 
+  /** shall we skip the next lock acquisition (if we can - this is not guaranteed) */
+  protected boolean skipNextLock;
+
 
   /** the last returned direct call frame */
   protected DirectCallStackFrame returnedDirectCall;
@@ -2089,6 +2092,41 @@ public class ThreadInfo
     nextPc = insn;
   }
 
+  /**
+   * this can be used from listeners to indicate that certain monitorEnter/Exit,
+   * and invoke/return instructions should not acquire/release locks or create
+   * associated CGs (i.e. break transitions). This is mostly meant to
+   * be a hook for listener based state space optimizations.
+   * 
+   * NOTE - using this can compromise program integrity. This should only be
+   * used in the context of specific applications.
+   * 
+   * NOTE - there are situations where skipping is not permitted (e.g. if the thread
+   * would block upon monitorEnter), there is no guarantee the lock operation
+   * will be skipped.
+   */
+  public void skipNextLock(boolean cond) {
+    skipNextLock = cond;
+  }
+
+  /**
+   * NOTE - this is only a recommendation, if a lock acquisition would block,
+   * skipping is not possible
+   * 
+   * @return if 'skipNextLock' flag is set
+   */
+  public boolean shouldSkipNextLock() {
+    return skipNextLock;
+  }
+
+  public boolean checkAndResetSkipNextLock() {
+    if (skipNextLock){
+      skipNextLock = false;
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   /**
    * Executes a method call. Be aware that it executes the whole method as one atomic

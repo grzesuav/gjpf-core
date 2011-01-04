@@ -101,30 +101,10 @@ public class INVOKESTATIC extends InvokeInstruction {
     }
 
     if (callee.isSynchronized()) {
-      ElementInfo ei = ti.getElementInfo( clsInfo.getClassObjectRef());
-
-      if (ei.getLockingThread() != ti) { // not a recursive lock
-    
-        // first time around - reexecute if the scheduling policy gives us a choice point
-        if (!ti.isFirstStepInsn()) {
-
-          if (!ei.canLock(ti)) {
-            // block first, so that we don't get this thread in the list of CGs
-            ei.block(ti);
-          }
-      
-          ChoiceGenerator cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
-          if (cg != null) { // Ok, break here
-            if (!ti.isBlocked()) {
-              // record that this thread would lock the object upon next execution
-              ei.registerLockContender(ti);
-            }
-            ss.setNextChoiceGenerator(cg);
-            return this;   // repeat exec, keep insn on stack    
-          }
-      
-          assert !ti.isBlocked() : "scheduling policy did not return ChoiceGenerator for blocking INVOKE";
-        }
+      ChoiceGenerator<?> cg = getSyncCG(clsInfo.getClassObjectRef(), ss, ks, ti);
+      if (cg != null) {
+        ss.setNextChoiceGenerator(cg);
+        return this;   // repeat exec, keep insn on stack
       }
     }
         

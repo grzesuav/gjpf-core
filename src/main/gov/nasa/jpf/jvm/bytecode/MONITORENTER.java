@@ -66,6 +66,10 @@ public class MONITORENTER extends LockInstruction {
   private boolean executeChoicePoint(SystemState ss, ThreadInfo ti, ElementInfo ei) {
     if (!ei.canLock(ti)){
       ei.block(ti);          // block first, so that we don't get this thread in the list of CG choices
+    } else {
+      if (ti.checkAndResetSkipNextLock()){
+        return false;
+      }
     }
 
     ChoiceGenerator<?> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);

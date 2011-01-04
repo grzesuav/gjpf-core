@@ -43,11 +43,6 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   boolean breakArrayAccess;
   boolean breakSingleChoice;
 
-  // <2do> move this into a listener
-  StringSetMatcher monitorBoundariesNever;
-  StringSetMatcher monitorBoundariesBreak;
-  boolean breakMonitorBoundariesPublicMethod;
-
   public DefaultSchedulerFactory (Config config, JVM vm, SystemState ss) {
     this.vm = vm;
     this.ss = ss;
@@ -58,20 +53,6 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
 
     breakArrayAccess = config.getBoolean("cg.threads.break_arrays", false);
     breakSingleChoice = config.getBoolean("cg.break_single_choice");
-
-
-    // <2do> move this into a listener
-    // filter monitor_enters and non-public sync method invokes for selected classes
-    // (be careful with this!)
-    String[] set = config.getStringArray("vm.por.monitor_boundaries.never");
-    if (set != null){
-      monitorBoundariesNever = new StringSetMatcher(set);
-    }
-    set = config.getStringArray("vm.por.monitor_boundaries.break");
-    if (set != null){
-      monitorBoundariesBreak = new StringSetMatcher(set);
-    }
-    breakMonitorBoundariesPublicMethod = config.getBoolean("vm.por.monitor_boundaries.break.public_method", true);
   }
 
   /*************************************** internal helpers *****************/
@@ -100,38 +81,6 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     return getRunnableCG(id);
   }
 
-
-  // <2do> these methods will be replaced when we support general contention based locking.
-  // Overriding locks based on packages is not safe and can only used in an
-  // application specific context, in which case this should be a listener that skips
-  // onitor_enter/_exit
-
-  protected boolean matchesMethodAndElement(StringSetMatcher matcher,
-                                            String packageOfMethod,
-                                            String packageOfElement) {
-    return (matcher == null) ? false
-        : (matcher.matchesAny(packageOfMethod) && matcher.matchesAny(packageOfElement));
-  }
-
-  protected boolean isNeverBreakMonitorBoundaries(ElementInfo ei, ThreadInfo ti, boolean isMethodCall) {
-    MethodInfo mi = ti.getMethod();
-    // <clinit>
-    if (mi.getClassInfo() == null)
-      return false;
-
-    String packageOfMethod = mi.getClassInfo().getPackageName();
-    String packageOfElement = ei.getClassInfo().getPackageName();
-
-    if (matchesMethodAndElement(monitorBoundariesBreak, packageOfMethod, packageOfElement)){
-      return false;
-    }
-
-    if (matchesMethodAndElement(monitorBoundariesNever, packageOfMethod, packageOfElement)){
-      return isMethodCall ? !(breakMonitorBoundariesPublicMethod && mi.isPublic()) : true;
-    }
-
-    return false;
-  }
 
   /**************************************** our choice acquisition methods ***/
 
@@ -194,7 +143,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       return new ThreadChoiceFromSet("monitorEnter", getRunnables(), true);
 
     } else {
-      if (ss.isAtomic() || isNeverBreakMonitorBoundaries(ei, ti, isMethodCall)) {
+      if (ss.isAtomic()) {
         return null;
       }
 

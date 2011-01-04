@@ -317,14 +317,13 @@ public abstract class InvokeInstruction extends Instruction {
   /**
    * NOTE this makes only sense for synchronized methods, don't call it otherwise
    */
-  protected ChoiceGenerator<?> getSyncCG (int objRef, MethodInfo mi,
-                                          SystemState ss, KernelState ks, ThreadInfo ti) {
-    ElementInfo ei = ks.heap.get(objRef);
+  protected ChoiceGenerator<?> getSyncCG (int objRef, SystemState ss, KernelState ks, ThreadInfo ti) {
+    ElementInfo ei = ti.getElementInfo(objRef);
 
     if (ei.getLockingThread() == ti) {
       assert ei.getLockCount() > 0;
       // a little optimization - recursive locks are always left movers
-      return  null;
+      return null;
     }
 
     // first time around - reexecute if the scheduling policy gives us a choice point
@@ -333,6 +332,10 @@ public abstract class InvokeInstruction extends Instruction {
       if (!ei.canLock(ti)) {
         // block first, so that we don't get this thread in the list of CGs
         ei.block(ti);
+      } else {
+        if (ti.checkAndResetSkipNextLock()) {
+          return null;
+        }
       }
 
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);

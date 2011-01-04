@@ -57,7 +57,7 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     if (mi.isSynchronized()) {
       if (!isLockOwner(ti, ei)) {                          // If the object isn't already owned by this thread, then consider a choice point
         if (isShared(ti, ei)) {                            // If the object is shared, then consider a choice point
-          ChoiceGenerator<?> cg = getSyncCG(objRef, mi, ss, ks, ti);
+          ChoiceGenerator<?> cg = getSyncCG(objRef, ss, ks, ti);
           if (cg != null) {
             ss.setNextChoiceGenerator(cg);
             return this;   // repeat exec, keep insn on stack
