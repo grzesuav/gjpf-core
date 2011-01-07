@@ -31,7 +31,7 @@ public abstract class InfoObject {
 
   // he number of annotations per class/method/field is usually
   // small enough so that simple arrays are more efficient than HashMaps
-  AnnotationInfo[] annotations;
+  protected AnnotationInfo[] annotations;
 
   protected void loadAnnotations (AnnotationEntry[] ae){
     

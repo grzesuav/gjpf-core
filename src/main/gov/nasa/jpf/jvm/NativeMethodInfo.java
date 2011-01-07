@@ -62,6 +62,8 @@ public class NativeMethodInfo extends MethodInfo {
     thrownExceptionClassNames = mi.thrownExceptionClassNames;
     parameterAnnotations = mi.parameterAnnotations;
 
+    annotations = mi.annotations;
+    
     // what about maxLocals and maxStack?
 
     this.peer = peer;
