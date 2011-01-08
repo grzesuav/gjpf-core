@@ -38,6 +38,22 @@ public class MethodTest extends TestJPF
       static int d = 4200;
    }
 
+   static class SupC
+   {
+     private int privateMethod()
+     {
+       return -42;
+     }
+   }
+
+   static class SubC extends SupC
+   {
+     public int privateMethod()
+     {
+       return 42;
+     }
+   }
+
    public Boo getBoo()
    {
       return null;
@@ -131,6 +147,17 @@ public class MethodTest extends TestJPF
       }
    }
    
+   @Test
+   public void invokePrivateSuperclass() throws SecurityException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
+   {
+     if (verifyNoPropertyViolation())
+     {
+       Method aMethod = SupC.class.getDeclaredMethod("privateMethod");
+       aMethod.setAccessible(true);
+       assert ((Integer) aMethod.invoke(new SubC()) == -42) : "must call method from superclass";
+     }
+   }
+
    @Test
    public void getMethodCanFindNotify() throws NoSuchMethodException
    {
