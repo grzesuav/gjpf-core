@@ -101,10 +101,9 @@ public class INVOKESTATIC extends InvokeInstruction {
     }
 
     if (callee.isSynchronized()) {
-      ChoiceGenerator<?> cg = getSyncCG(clsInfo.getClassObjectRef(), ss, ks, ti);
-      if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
-        return this;   // repeat exec, keep insn on stack
+      ElementInfo ei = clsInfo.getClassObject();
+      if (checkSyncCG(ei, ss, ti)){
+        return this;
       }
     }
         

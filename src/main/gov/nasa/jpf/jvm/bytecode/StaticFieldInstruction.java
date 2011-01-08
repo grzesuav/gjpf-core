@@ -114,8 +114,13 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
       }
 
       ElementInfo ei = fi.getClassInfo().getStaticElementInfo();
-      boolean isSchedulingRelevant = ei.checkUpdatedSchedulingRelevance(ti);
-      if (!isSchedulingRelevant || isLockProtected(ti, ei)) {
+      if (ei.isImmutable()){
+        return false;
+      }
+      if (!ei.checkUpdatedSharedness(ti)){
+        return false;
+      }
+      if (isLockProtected(ti, ei)) {
         return false;
       }
     }

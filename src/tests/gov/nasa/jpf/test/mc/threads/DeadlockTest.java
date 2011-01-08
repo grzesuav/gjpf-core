@@ -133,11 +133,11 @@ public class DeadlockTest extends TestJPF {
     }
 
     public void run() {
-      while (true) {
+      //while (true) {
         synchronized (this) {
           other.doSomething();
         }
-      }
+      //}
     }
   }
 
@@ -151,9 +151,9 @@ public class DeadlockTest extends TestJPF {
     }
 
     public synchronized void run() {
-      while (true) {
+      //while (true) {
         other.doSomething();
-      }
+      //}
     }
   }
   static Object lock1 = new Object();

@@ -722,7 +722,7 @@ public class MJIEnv {
 
   public boolean isSchedulingRelevantObject(int objref){
     if (objref != NULL){
-      return heap.get(objref).checkUpdatedSchedulingRelevance(ti);
+      return heap.get(objref).checkUpdatedSharedness(ti);
     }
 
     return false;

@@ -85,7 +85,7 @@ public abstract class ArrayInstruction extends Instruction {
     //return false;
 
     // ei is the array object
-    return (!ti.checkPorFieldBoundary() && ei.checkUpdatedSchedulingRelevance(ti));
+    return (!ti.checkPorFieldBoundary() && ei.checkUpdatedSharedness(ti));
   }
 
   /**

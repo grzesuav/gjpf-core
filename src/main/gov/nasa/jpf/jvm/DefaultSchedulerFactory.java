@@ -297,6 +297,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       if (ss.isAtomic()) {
         return null;
       }
+
       // we treat this as a simple reschedule
       return getRunnableCG("sleep");
 

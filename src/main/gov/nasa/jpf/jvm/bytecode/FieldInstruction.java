@@ -206,9 +206,10 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
   protected boolean createAndSetFieldCG ( SystemState ss, ElementInfo ei, ThreadInfo ti) {
     ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSharedFieldAccessCG(ei, ti);
     if (cg != null) {
-      ss.setNextChoiceGenerator(cg);
-      ti.skipInstructionLogging();
-      return true;
+      if (ss.setNextChoiceGenerator(cg)){
+        ti.skipInstructionLogging(); // <2do> Hmm, might be more confusing not to see it
+        return true;
+      }
     }
 
     return false;

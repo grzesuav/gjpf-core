@@ -41,20 +41,27 @@ public class MONITOREXIT extends LockInstruction {
     lastLockRef = objref;
     ElementInfo ei = ks.heap.get(objref);
 
-    if (ei.getLockCount() == 1){ // this is about to unlock
-      if (isShared(ti,ei)){
-        ChoiceGenerator cg = ss.getSchedulerFactory().createMonitorExitCG(ei, ti);
-        if (cg != null){
-          ss.setNextChoiceGenerator(cg);
-          return this;
+    if (!ti.isFirstStepInsn()){
+      int lockCount = ei.getLockCount();
+      // unlock before registering any potential CG so that unblocked threads
+      // can be considered too. Make sure this is only executed in the top half
+      if (lockCount > 0){ // maybe lock acquisition was skipped
+        ei.unlock(ti);
+
+        if (lockCount == 1) { // this is about to unlock
+          if (ei.isShared()) { // the monitor_enter should have set it shared
+            ChoiceGenerator cg = ss.getSchedulerFactory().createMonitorExitCG(ei, ti);
+            if (cg != null) {
+              if (ss.setNextChoiceGenerator(cg)){
+                return this;
+              }
+            }
+          }
         }
       }
-
     }
 
-    // this is only executed in the bottom half
-    ei.unlock(ti);
-    ti.pop();                                   // Now we can safely purge the lock object, the unlocking already is done above.
+    ti.pop();
 
     return getNext(ti);
   }

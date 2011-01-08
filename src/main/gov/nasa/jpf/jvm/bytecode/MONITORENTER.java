@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
@@ -45,12 +46,35 @@ public class MONITORENTER extends LockInstruction {
 
     lastLockRef = objref;
     ElementInfo ei = ks.heap.get(objref);
-    
-    if (!isLockOwner(ti, ei)){           // If the object isn't already owned by this thread, then consider a choice point
-      if (isShared(ti, ei)){             // If the object is shared, then consider a choice point
-        if (!ti.isFirstStepInsn()){      // First time around - reexecute if the scheduling policy gives us a choice point
-          if (executeChoicePoint(ss, ti, ei)){
-            return this;                // Repeat execution.  Keep instruction on the stack.
+
+    if (!ti.isFirstStepInsn()){ // check if we have a choicepoint
+      if (!isLockOwner(ti, ei)){  // maybe its a recursive lock
+
+        if (ei.canLock(ti)) { // we can lock the object, the CG is optional
+          if (ei.checkUpdatedSharedness(ti)) { // is this a shared object?
+            ChoiceGenerator<?> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
+            if (cg != null) {
+              if (ss.setNextChoiceGenerator(cg)) {
+                ei.registerLockContender(ti);  // Record that this thread would lock the object upon next execution
+                return this;
+              }
+            }
+          }
+
+        } else { // already locked by another thread, we have to block and therefore need a CG
+          ei.updateRefTidWith(ti.getIndex()); // Ok, now we know its shared
+
+          ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
+
+          ChoiceGenerator<?> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
+          if (cg != null) {
+            if (ss.setNextChoiceGenerator(cg)) {
+              return this;
+            } else {
+              throw new JPFException("listener did override ChoiceGenerator for blocking MONITOR_ENTER");
+            }
+          } else {
+            throw new JPFException("scheduling policy did not return ChoiceGenerator for blocking MONITOR_ENTER");
           }
         }
       }
@@ -62,31 +86,6 @@ public class MONITORENTER extends LockInstruction {
     
     return getNext(ti);
   }  
-  
-  private boolean executeChoicePoint(SystemState ss, ThreadInfo ti, ElementInfo ei) {
-    if (!ei.canLock(ti)){
-      ei.block(ti);          // block first, so that we don't get this thread in the list of CG choices
-    } else {
-      if (ti.checkAndResetSkipNextLock()){
-        return false;
-      }
-    }
-
-    ChoiceGenerator<?> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
-
-    if (cg == null) {                   // Ok, break here
-      assert !ti.isBlocked() : "scheduling policy did not return ChoiceGenerator for blocking MONITOR_ENTER";
-      return(false);
-    }
-
-    if (!ti.isBlocked()){
-      ei.registerLockContender(ti);  // Record that this thread would lock the object upon next execution
-    }
- 
-    ss.setNextChoiceGenerator(cg);
-    
-    return(true);
-  }
 
   public int getByteCode () {
     return 0xC2;

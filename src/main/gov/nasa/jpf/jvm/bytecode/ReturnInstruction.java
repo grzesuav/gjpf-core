@@ -73,9 +73,10 @@ public abstract class ReturnInstruction extends Instruction {
 
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createSyncMethodExitCG(ei, ti);
         if (cg != null) {
-          ss.setNextChoiceGenerator(cg);
-          ti.skipInstructionLogging();
-          return this; // re-execute
+          if (ss.setNextChoiceGenerator(cg)){
+            ti.skipInstructionLogging();
+            return this; // re-execute
+          }
         }
       }
     }

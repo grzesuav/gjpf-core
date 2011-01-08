@@ -182,9 +182,6 @@ public class ThreadInfo
   /** store the last executed insn in the path */
   protected boolean logInstruction;
 
-  /** shall we skip the next lock acquisition (if we can - this is not guaranteed) */
-  protected boolean skipNextLock;
-
 
   /** the last returned direct call frame */
   protected DirectCallStackFrame returnedDirectCall;
@@ -297,7 +294,6 @@ public class ThreadInfo
    */
   static boolean porSyncDetection;
 
-  static boolean porSkipLocalSync;
 
   static int checkBudgetCount;
 
@@ -312,7 +308,6 @@ public class ThreadInfo
     porFieldBoundaries = porInEffect && config.getBoolean("vm.por.field_boundaries");
     porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
     checkBudgetCount = config.getInt("vm.budget.check_count", 9999);
-    porSkipLocalSync = config.getBoolean("vm.por.skip_local_sync", false);
 
     return true;
   }
@@ -2031,10 +2026,6 @@ public class ThreadInfo
     return nextPc;
   }
 
-  public boolean skipLocalSync(){
-    return porSkipLocalSync;
-  }
-
   /**
    * is this after calling Instruction.execute()
    * used by instructions and listeners
@@ -2090,42 +2081,6 @@ public class ThreadInfo
    */
   public void setNextPC (Instruction insn) {
     nextPc = insn;
-  }
-
-  /**
-   * this can be used from listeners to indicate that certain monitorEnter/Exit,
-   * and invoke/return instructions should not acquire/release locks or create
-   * associated CGs (i.e. break transitions). This is mostly meant to
-   * be a hook for listener based state space optimizations.
-   * 
-   * NOTE - using this can compromise program integrity. This should only be
-   * used in the context of specific applications.
-   * 
-   * NOTE - there are situations where skipping is not permitted (e.g. if the thread
-   * would block upon monitorEnter), there is no guarantee the lock operation
-   * will be skipped.
-   */
-  public void skipNextLock(boolean cond) {
-    skipNextLock = cond;
-  }
-
-  /**
-   * NOTE - this is only a recommendation, if a lock acquisition would block,
-   * skipping is not possible
-   * 
-   * @return if 'skipNextLock' flag is set
-   */
-  public boolean shouldSkipNextLock() {
-    return skipNextLock;
-  }
-
-  public boolean checkAndResetSkipNextLock() {
-    if (skipNextLock){
-      skipNextLock = false;
-      return true;
-    } else {
-      return false;
-    }
   }
 
   /**

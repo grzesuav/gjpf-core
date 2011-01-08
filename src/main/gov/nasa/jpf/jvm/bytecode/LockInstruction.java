@@ -42,18 +42,6 @@ public abstract class LockInstruction extends Instruction {
     return ei.getLockingThread() == ti;
   }
   
-  /**
-   * If the object isn't shared, then the current thread can go on.
-   * For example, this object isn't reachable by other threads.
-   */
-  protected boolean isShared(ThreadInfo ti, ElementInfo ei) {
-    if (!ti.skipLocalSync()) {
-      return true;
-    }
-    
-    return ei.isShared();
-  }
-
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

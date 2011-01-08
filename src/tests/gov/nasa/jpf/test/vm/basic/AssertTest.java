@@ -34,7 +34,7 @@ public class AssertTest extends TestJPF {
   }
 
   @Test public void testNoAssertionViolation () {
-    if (verifyNoPropertyViolation("+vm.enable_assertions=")){
+    if (verifyNoPropertyViolation("+vm.disable_assertions=*AssertTest")){
       int i = 1;
       assert i == 0 : "oops, assertion failed";
     }

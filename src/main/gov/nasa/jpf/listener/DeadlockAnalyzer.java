@@ -179,7 +179,6 @@ public class DeadlockAnalyzer extends ListenerAdapter {
       op.prevOp = lastOp;
       lastOp = op;
     }
-System.out.println("@@ lastOp: " + lastOp);
   }
   
   void printRawOps (PrintWriter pw) {

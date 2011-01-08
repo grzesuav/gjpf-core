@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
@@ -55,14 +56,8 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     ElementInfo ei = ks.heap.get(objRef);
     
     if (mi.isSynchronized()) {
-      if (!isLockOwner(ti, ei)) {                          // If the object isn't already owned by this thread, then consider a choice point
-        if (isShared(ti, ei)) {                            // If the object is shared, then consider a choice point
-          ChoiceGenerator<?> cg = getSyncCG(objRef, ss, ks, ti);
-          if (cg != null) {
-            ss.setNextChoiceGenerator(cg);
-            return this;   // repeat exec, keep insn on stack
-          }
-        }
+      if (checkSyncCG(ei, ss, ti)){
+        return this;
       }
     }
 
@@ -85,17 +80,6 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     return ei.getLockCount() == 1;
   }
 
-  /**
-   * If the object isn't shared, then the current thread can go on.
-   * For example, this object isn't reachable by other threads.
-   */
-  protected boolean isShared(ThreadInfo ti, ElementInfo ei) {
-    if (!ti.skipLocalSync()){
-      return true;
-    }
-    //return ei.isShared();
-    return ei.checkUpdatedSchedulingRelevance(ti);
-  }
 
   public MethodInfo getInvokedMethod(ThreadInfo ti){
     int objRef;

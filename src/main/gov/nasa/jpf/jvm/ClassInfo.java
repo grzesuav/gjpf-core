@@ -32,6 +32,7 @@ import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.util.Source;
+import gov.nasa.jpf.util.StringSetMatcher;
 import java.io.ByteArrayInputStream;
 
 import java.io.File;
@@ -235,7 +236,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   /** Source file associated with the class.*/
   protected Source source;
 
-  static String[] assertionPatterns;
+
+  static StringSetMatcher enabledAssertionPatterns;
+  static StringSetMatcher disabledAssertionPatterns;
+
   boolean enableAssertions;
 
   static boolean init (Config config) {
@@ -253,7 +257,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     fieldsFactory = config.getEssentialInstance("vm.fields_factory.class",
                                                 FieldsFactory.class);
 
-    assertionPatterns = config.getStringArray("vm.enable_assertions");
+    enabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.enable_assertions"));
+    disabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.disable_assertions"));
+
 
     autoloadAnnotations = config.getNonEmptyStringSet("listener.autoload");
     if (autoloadAnnotations != null) {
@@ -604,19 +610,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
   boolean getAssertionStatus () {
-    if ((assertionPatterns == null) || (assertionPatterns.length == 0)){
-      return false;
-    } else if ("*".equals(assertionPatterns[0])) {
-      return true;
-    } else {
-      for (int i=0; i<assertionPatterns.length; i++) {
-        if (name.matches(assertionPatterns[i])) { // Ok, not very efficient
-          return true;
-        }
-      }
-
-      return false;
-    }
+    return StringSetMatcher.isMatch(name, enabledAssertionPatterns, disabledAssertionPatterns);
   }
   
   public String getGenericSignature() {
@@ -877,6 +871,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
   public boolean hasInstanceFields () {
     return (instanceDataSize > 0);
+  }
+
+  public ElementInfo getClassObject(){
+    if (sei != null){
+      int objref = sei.getClassObjectRef();
+      return JVM.getVM().getElementInfo(objref);
+    }
+
+    return null;
   }
 
   public int getClassObjectRef () {

@@ -58,15 +58,11 @@ public class INVOKESPECIAL extends InstanceInvocation {
 
     ElementInfo ei = ks.heap.get(objRef);
 
-    if (mi.isSynchronized())
-      if (!isLockOwner(ti, ei))           // If the object isn't already owned by this thread, then consider a choice point
-        if (isShared(ti, ei)) {           // If the object is shared, then consider a choice point
-          ChoiceGenerator<?> cg = getSyncCG(objRef, ss, ks, ti);
-          if (cg != null) {
-            ss.setNextChoiceGenerator(cg);
-            return this;   // repeat exec, keep insn on stack
-          }
-        }
+    if (mi.isSynchronized()){
+      if (checkSyncCG(ei, ss, ti)){
+        return this;
+      }
+    }
 
     return mi.execute(ti);
   }
@@ -85,18 +81,6 @@ public class INVOKESPECIAL extends InstanceInvocation {
    */
   protected boolean isLastUnlock(ElementInfo ei) {
     return ei.getLockCount() == 1;
-  }
-
-  /**
-   * If the object isn't shared, then the current thread can go on.
-   * For example, this object isn't reachable by other threads.
-   */
-  protected boolean isShared(ThreadInfo ti, ElementInfo ei) {
-    if (!ti.skipLocalSync())
-      return true;
-
-    //return ei.isShared();
-    return ei.checkUpdatedSchedulingRelevance(ti);
   }
 
   /**

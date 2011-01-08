@@ -393,17 +393,13 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return ((attributes & ATTR_IMMUTABLE) != 0);
   }
 
-  public boolean checkUpdatedSchedulingRelevance (ThreadInfo ti) {
+  public boolean checkUpdatedSharedness (ThreadInfo ti) {
     // only mutable, shared objects are relevant
     //return ((attributes & (ATTR_TSHARED | ATTR_IMMUTABLE)) == ATTR_TSHARED);
 
     int tid = ti.getIndex();
     updateRefTidWith(tid);
     
-    if ((attributes & ATTR_IMMUTABLE) != 0){
-      return false;
-    }
-
     int nThreadRefs = refTid.cardinality();
     if (nThreadRefs > 1){
 

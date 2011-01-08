@@ -363,12 +363,12 @@ public class SystemState {
   /**
    * set the ChoiceGenerator to be used in the next transition
    */
-  public void setNextChoiceGenerator (ChoiceGenerator<?> cg) {
+  public boolean setNextChoiceGenerator (ChoiceGenerator<?> cg) {
     if (isIgnored){
       // if this transition is already marked as ignored, we are not allowed
       // to set nextCg because 'isIgnored' results in a shortcut backtrack that
       // is not handed back to the Search (its solely in JVM forward)
-      return;
+      return false;
     }
 
     // first, check if we have to randomize it (might create a new one)
@@ -390,7 +390,29 @@ public class SystemState {
 
     nextCg = cg;
 
-    execThread.getVM().notifyChoiceGeneratorRegistered(cg); // <2do> we need a better way to get the vm
+    execThread.getVM().notifyChoiceGeneratorRegistered(cg, execThread); // <2do> we need a better way to get the vm
+
+    // a choiceGeneratorRegistered listener might have removed this CG
+    return (nextCg != null);
+  }
+
+  /**
+   * remove the current 'nextCg'
+   * Note this has to be called in a loop if all cascaded CGs have to be removed 
+   */
+  public void removeNextChoiceGenerator (){
+    if (nextCg != null){
+      nextCg = nextCg.getPreviousChoiceGenerator();
+    }
+  }
+
+  /**
+   * remove the whole chain of currently registered nextCGs
+   */
+  public void removeAllNextChoiceGenerators(){
+    while (nextCg != null){
+      nextCg = nextCg.getPreviousChoiceGenerator();
+    }
   }
 
   
@@ -636,62 +658,6 @@ public class SystemState {
     }
   }
 
-
-
-
-  /**
-   * Compute next program state
-   *
-   * return 'true' if we actually executed instructions, 'false' if this
-   * state was already completely processed
-   *
-   * This is one of the key methods of the JPF execution
-   * engine (together with VM.forward() and ThreadInfo.executeTransition(),executeInstruction()
-   *
-   */
-  public boolean nextSuccessor (JVM vm) throws JPFException {
-
-    if (!retainAttributes){
-      isIgnored = false;
-      isForced = false;
-      isInteresting = false;
-      isBoring = false;
-    }
-
-    // 'nextCg' got set at the end of the previous transition (or a preceding
-    // choiceGeneratorSet() notification).
-    // Be aware of that 'nextCg' is only the *last* CG that was registered, i.e.
-    // there can be any number of CGs between the previous 'curCg' and 'nextCg'
-    // that were registered for the same insn.
-    while (nextCg != null) {
-      curCg = nextCg;
-      nextCg = null;
-
-      // Hmm, that's a bit late (could be in setNextCG), but we keep it here
-      // for the sake of locality, and it's more consistent if it just refers
-      // to curCg, i.e. the CG that is actually going to be used
-      notifyChoiceGeneratorSet(vm, curCg);
-    }
-
-    assert (curCg != null) : "transition without choice generator";
-
-    if (!advanceCurCg( vm)){
-      return false;
-    }
-
-    // do we have a thread context switch
-    setExecThread( vm);
-
-    assert execThread.isRunnable() : "current thread not runnable: " + execThread.getStateDescription();
-
-
-    trail = new Transition(curCg, execThread);
-    entryAtomicLevel = atomicLevel; // store before we start to execute
-
-    execThread.executeTransition(this);
-
-    return true;
-  }
 
   // the number of advanced choice generators in this step
   protected int nAdvancedCGs;

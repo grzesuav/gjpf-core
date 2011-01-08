@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.*;
 
 import org.apache.bcel.classfile.ConstantPool;
@@ -314,44 +315,42 @@ public abstract class InvokeInstruction extends Instruction {
     return null;
   }
 
-  /**
-   * NOTE this makes only sense for synchronized methods, don't call it otherwise
-   */
-  protected ChoiceGenerator<?> getSyncCG (int objRef, SystemState ss, KernelState ks, ThreadInfo ti) {
-    ElementInfo ei = ti.getElementInfo(objRef);
+  protected boolean checkSyncCG (ElementInfo ei, SystemState ss, ThreadInfo ti){
+    if (ei.getLockingThread() != ti) {  // maybe its a recursive lock
 
-    if (ei.getLockingThread() == ti) {
-      assert ei.getLockCount() > 0;
-      // a little optimization - recursive locks are always left movers
-      return null;
-    }
+      if (ei.canLock(ti)) { // we can lock the object, check if we need a CG
+        if (ei.checkUpdatedSharedness(ti)) { // is this a shared object?
+          ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
+          if (cg != null) {
+            if (ss.setNextChoiceGenerator(cg)) {
+              ei.registerLockContender(ti);  // Record that this thread would lock the object upon next execution
+              return true;
+            }
+          }
+        }
 
-    // first time around - reexecute if the scheduling policy gives us a choice point
-    if (!ti.isFirstStepInsn()) {
+      } else { // already locked by another thread, we have to block and therefore need a CG
+        ei.updateRefTidWith(ti.getIndex()); // Ok, now we know it is shared
 
-      if (!ei.canLock(ti)) {
-        // block first, so that we don't get this thread in the list of CGs
-        ei.block(ti);
-      } else {
-        if (ti.checkAndResetSkipNextLock()) {
-          return null;
+        ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
+
+        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
+        if (cg != null) {
+          if (ss.setNextChoiceGenerator(cg)) {
+            return true;
+          } else {
+            throw new JPFException("listener did override ChoiceGenerator for blocking INVOKE");
+          }
+        } else {
+          throw new JPFException("scheduling policy did not return ChoiceGenerator for blocking INVOKE");
         }
       }
-
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
-      if (cg != null) { // Ok, break here
-        if (!ti.isBlocked()) {
-          // record that this thread would lock the object upon next execution
-          ei.registerLockContender(ti);
-        }
-        return cg;
-      }
-
-      assert !ti.isBlocked() : "scheduling policy did not return ChoiceGenerator for blocking INVOKE";
     }
 
-    return null;
+    return false;
   }
+
+
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);

@@ -589,564 +589,512 @@ public class JVM {
     }
   }
 
-  protected void notifyChoiceGeneratorRegistered (ChoiceGenerator<?>cg) {
-    //if (listener != null) {
-      try {
-        lastChoiceGenerator = cg;
-        //listener.choiceGeneratorRegistered(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].choiceGeneratorRegistered(this);
-        }
-        lastChoiceGenerator = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during choiceGeneratorRegistered() notification", t);
+  protected void notifyChoiceGeneratorRegistered (ChoiceGenerator<?>cg, ThreadInfo ti) {
+    try {
+      lastThreadInfo = ti;
+      lastInstruction = ti.getPC();
+      lastChoiceGenerator = cg;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].choiceGeneratorRegistered(this);
       }
-    //}
+      lastChoiceGenerator = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during choiceGeneratorRegistered() notification", t);
+    }
   }
 
   protected void notifyChoiceGeneratorSet (ChoiceGenerator<?>cg) {
-    //if (listener != null) {
-      try {
-        lastChoiceGenerator = cg;
-        //listener.choiceGeneratorSet(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].choiceGeneratorSet(this);
-        }
-        lastChoiceGenerator = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during choiceGeneratorSet() notification", t);
+    try {
+      lastChoiceGenerator = cg;
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].choiceGeneratorSet(this);
       }
-    //}
+      lastChoiceGenerator = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during choiceGeneratorSet() notification", t);
+    }
   }
 
   protected void notifyChoiceGeneratorAdvanced (ChoiceGenerator<?>cg) {
-    //if (listener != null) {
-      try {
-        lastChoiceGenerator = cg;
-        //listener.choiceGeneratorAdvanced(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].choiceGeneratorAdvanced(this);
-        }
-        lastChoiceGenerator = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during choiceGeneratorAdvanced() notification", t);
+    try {
+      lastChoiceGenerator = cg;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].choiceGeneratorAdvanced(this);
       }
-    //}
+      lastChoiceGenerator = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during choiceGeneratorAdvanced() notification", t);
+    }
   }
 
   protected void notifyChoiceGeneratorProcessed (ChoiceGenerator<?>cg) {
-    //if (listener != null) {
-      try {
-        lastChoiceGenerator = cg;
-        //listener.choiceGeneratorProcessed(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].choiceGeneratorProcessed(this);
-        }
-        lastChoiceGenerator = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during choiceGeneratorProcessed() notification", t);
+    try {
+      lastChoiceGenerator = cg;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].choiceGeneratorProcessed(this);
       }
-    //}
+      lastChoiceGenerator = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during choiceGeneratorProcessed() notification", t);
+    }
   }
 
   protected void notifyExecuteInstruction (ThreadInfo ti, Instruction insn) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        lastInstruction = insn;
+    try {
+      lastThreadInfo = ti;
+      lastInstruction = insn;
 
-        //listener.executeInstruction(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].executeInstruction(this);
-        }
-
-        //nextInstruction = null;
-        //lastInstruction = null;
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during executeInstruction() notification", t);
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].executeInstruction(this);
       }
-    //}
+
+      //nextInstruction = null;
+      //lastInstruction = null;
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during executeInstruction() notification", t);
+    }
   }
 
   protected void notifyInstructionExecuted (ThreadInfo ti, Instruction insn, Instruction nextInsn) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        lastInstruction = insn;
-        nextInstruction = nextInsn;
+    try {
+      lastThreadInfo = ti;
+      lastInstruction = insn;
+      nextInstruction = nextInsn;
 
-        //listener.instructionExecuted(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].instructionExecuted(this);
-        }
-
-        //nextInstruction = null;
-        //lastInstruction = null;
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during instructionExecuted() notification", t);
+      //listener.instructionExecuted(this);
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].instructionExecuted(this);
       }
 
-    //}
+      //nextInstruction = null;
+      //lastInstruction = null;
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during instructionExecuted() notification", t);
+    }
   }
 
   protected void notifyThreadStarted (ThreadInfo ti) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        //listener.threadStarted(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].threadStarted(this);
-        }
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during threadStarted() notification", t);
+    try {
+      lastThreadInfo = ti;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].threadStarted(this);
       }
-    //}
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during threadStarted() notification", t);
+    }
   }
 
   // NOTE: the supplied ThreadInfo does NOT have to be the running thread, as this
   // notification can occur as a result of a lock operation in the current thread
   protected void notifyThreadBlocked (ThreadInfo ti) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        lastElementInfo = ti.getLockObject();
-        //listener.threadBlocked(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].threadBlocked(this);
-        }
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during threadBlocked() notification", t);
+    try {
+      lastThreadInfo = ti;
+      lastElementInfo = ti.getLockObject();
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].threadBlocked(this);
       }
-    //}
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during threadBlocked() notification", t);
+    }
   }
 
   protected void notifyThreadWaiting (ThreadInfo ti) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        //listener.threadWaiting(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].threadWaiting(this);
-        }
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during threadWaiting() notification", t);
+    try {
+      lastThreadInfo = ti;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].threadWaiting(this);
       }
-    //}
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during threadWaiting() notification", t);
+    }
   }
 
   protected void notifyThreadNotified (ThreadInfo ti) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        //listener.threadNotified(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].threadNotified(this);
-        }
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during threadNotified() notification", t);
+    try {
+      lastThreadInfo = ti;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].threadNotified(this);
       }
-    //}
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during threadNotified() notification", t);
+    }
   }
 
   protected void notifyThreadInterrupted (ThreadInfo ti) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        //listener.threadInterrupted(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].threadInterrupted(this);
-        }
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during threadInterrupted() notification", t);
+    try {
+      lastThreadInfo = ti;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].threadInterrupted(this);
       }
-    //}
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during threadInterrupted() notification", t);
+    }
   }
 
   protected void notifyThreadTerminated (ThreadInfo ti) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        //listener.threadTerminated(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].threadTerminated(this);
-        }
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during threadTerminated() notification", t);
+    try {
+      lastThreadInfo = ti;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].threadTerminated(this);
       }
-    //}
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during threadTerminated() notification", t);
+    }
   }
 
   protected void notifyThreadScheduled (ThreadInfo ti) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        //listener.threadScheduled(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].threadScheduled(this);
-        }
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during threadScheduled() notification", t);
+    try {
+      lastThreadInfo = ti;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].threadScheduled(this);
       }
-    //}
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during threadScheduled() notification", t);
+    }
   }
 
-  protected void notifyClassLoaded (ClassInfo ci) {
-    //if (listener != null) {
-      try {
-        lastClassInfo = ci;
-        //listener.classLoaded(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].classLoaded(this);
-        }
-        //lastClassInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during classLoaded() notification", t);
+  protected void notifyClassLoaded(ClassInfo ci) {
+    try {
+      lastClassInfo = ci;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].classLoaded(this);
       }
-    //}
+      //lastClassInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during classLoaded() notification", t);
+    }
   }
 
-  protected void notifyObjectCreated (ThreadInfo ti, ElementInfo ei) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        lastElementInfo = ei;
+  protected void notifyObjectCreated(ThreadInfo ti, ElementInfo ei) {
+    try {
+      lastThreadInfo = ti;
+      lastElementInfo = ei;
 
-        //listener.objectCreated(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].objectCreated(this);
-        }
-
-        //lastElementInfo = null;
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during objectCreated() notification", t);
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].objectCreated(this);
       }
-    //}
+
+      //lastElementInfo = null;
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during objectCreated() notification", t);
+    }
   }
 
-  protected void notifyObjectReleased (ElementInfo ei) {
-    //if (listener != null) {
-      try {
-        lastElementInfo = ei;
-        //listener.objectReleased(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].objectReleased(this);
-        }
-        //lastElementInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during objectReleased() notification", t);
+  protected void notifyObjectReleased(ElementInfo ei) {
+    try {
+      lastElementInfo = ei;
+
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].objectReleased(this);
       }
-    //}
+      //lastElementInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during objectReleased() notification", t);
+    }
   }
 
-  protected void notifyObjectLocked (ThreadInfo ti, ElementInfo ei){
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        lastElementInfo = ei;
+  protected void notifyObjectLocked(ThreadInfo ti, ElementInfo ei) {
+    try {
+      lastThreadInfo = ti;
+      lastElementInfo = ei;
 
-        //listener.objectLocked(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].objectLocked(this);
-        }
-
-        //lastElementInfo = null;
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during objectLocked() notification", t);
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].objectLocked(this);
       }
-    //}
+
+      //lastElementInfo = null;
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during objectLocked() notification", t);
+    }
   }
 
-  protected void notifyObjectUnlocked (ThreadInfo ti, ElementInfo ei) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        lastElementInfo = ei;
+  protected void notifyObjectUnlocked(ThreadInfo ti, ElementInfo ei) {
+    try {
+      lastThreadInfo = ti;
+      lastElementInfo = ei;
 
-        //listener.objectUnlocked(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].objectUnlocked(this);
-        }
-
-        //lastElementInfo = null;
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during objectUnlocked() notification", t);
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].objectUnlocked(this);
       }
-    //}
+
+      //lastElementInfo = null;
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during objectUnlocked() notification", t);
+    }
   }
 
-  protected void notifyObjectWait (ThreadInfo ti, ElementInfo ei) {
-    //if (listener != null) {
-      try { 
-        lastThreadInfo = ti;
-        lastElementInfo = ei;
+  protected void notifyObjectWait(ThreadInfo ti, ElementInfo ei) {
+    try {
+      lastThreadInfo = ti;
+      lastElementInfo = ei;
 
-        //listener.objectWait(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].objectWait(this);
-        }
-
-        //lastElementInfo = null;
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during objectWait() notification", t);
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].objectWait(this);
       }
-    //}
+
+      //lastElementInfo = null;
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during objectWait() notification", t);
+    }
   }
 
-  protected void notifyObjectNotifies (ThreadInfo ti, ElementInfo ei) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        lastElementInfo = ei;
+  protected void notifyObjectNotifies(ThreadInfo ti, ElementInfo ei) {
+    try {
+      lastThreadInfo = ti;
+      lastElementInfo = ei;
 
-        //listener.objectNotify(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].objectNotify(this);
-        }
-
-        //lastElementInfo = null;
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during objectNotifies() notification", t);
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].objectNotify(this);
       }
-    //}
+
+      //lastElementInfo = null;
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during objectNotifies() notification", t);
+    }
   }
 
-  protected void notifyObjectNotifiesAll (ThreadInfo ti, ElementInfo ei) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        lastElementInfo = ei;
+  protected void notifyObjectNotifiesAll(ThreadInfo ti, ElementInfo ei) {
+    try {
+      lastThreadInfo = ti;
+      lastElementInfo = ei;
 
-        //listener.objectNotifyAll(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].objectNotifyAll(this);
-        }
-
-        //lastElementInfo = null;
-        //lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during objectNotifiesAll() notification", t);
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].objectNotifyAll(this);
       }
-    //}
+
+      //lastElementInfo = null;
+      //lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during objectNotifiesAll() notification", t);
+    }
   }
 
-  protected void notifyGCBegin () {
-    //if (listener != null) {
-      try {
-        //listener.gcBegin(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].gcBegin(this);
-        }
-
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during gcBegin() notification", t);
+  protected void notifyGCBegin() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].gcBegin(this);
       }
-    //}
+
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during gcBegin() notification", t);
+    }
   }
 
-  protected void notifyGCEnd () {
-    //if (listener != null) {
-      try {
-        //listener.gcEnd(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].gcEnd(this);
-        }
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during gcEnd() notification", t);
+  protected void notifyGCEnd() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].gcEnd(this);
       }
-    //}
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during gcEnd() notification", t);
+    }
   }
 
-  protected void notifyExceptionThrown (ThreadInfo ti, ElementInfo ei) {
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        lastElementInfo = ei;
+  protected void notifyExceptionThrown(ThreadInfo ti, ElementInfo ei) {
+    try {
+      lastThreadInfo = ti;
+      lastElementInfo = ei;
 
-        //listener.exceptionThrown(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].exceptionThrown(this);
-        }
-
-        lastElementInfo = null;
-        lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during exceptionThrown() notification", t);
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].exceptionThrown(this);
       }
-    //}
+
+      lastElementInfo = null;
+      lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during exceptionThrown() notification", t);
+    }
   }
 
-  protected void notifyExceptionBailout (ThreadInfo ti){
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        //listener.exceptionBailout(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].exceptionBailout(this);
-        }
-        lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during exceptionBailout() notification", t);
+  protected void notifyExceptionBailout(ThreadInfo ti) {
+    try {
+      lastThreadInfo = ti;
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].exceptionBailout(this);
       }
-    //}
+      lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during exceptionBailout() notification", t);
+    }
   }
 
-  protected void notifyExceptionHandled (ThreadInfo ti){
-    //if (listener != null) {
-      try {
-        lastThreadInfo = ti;
-        //listener.exceptionHandled(this);
-        for (int i=0; i<listeners.length; i++){
-          listeners[i].exceptionHandled(this);
-        }
-        lastThreadInfo = null;
-      } catch (UncaughtException x) {
-        throw x;
-      } catch (JPF.ExitException x) {
-        throw x;
-      } catch (Throwable t){
-        throw new JPFListenerException("exception during exceptionHandler() notification", t);
+  protected void notifyExceptionHandled(ThreadInfo ti) {
+    try {
+      lastThreadInfo = ti;
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].exceptionHandled(this);
       }
-    //}
+      lastThreadInfo = null;
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during exceptionHandled() notification", t);
+    }
   }
 
-  protected void notifyMethodEntered (ThreadInfo ti, MethodInfo mi){
-    //if (listener != null){
+  protected void notifyMethodEntered(ThreadInfo ti, MethodInfo mi) {
+    try {
       lastThreadInfo = ti;
       lastMethodInfo = mi;
-      //listener.methodEntered(this);
-      for (int i=0; i<listeners.length; i++){
+
+      for (int i = 0; i < listeners.length; i++) {
         listeners[i].methodEntered(this);
       }
       lastMethodInfo = null;
       lastThreadInfo = null;
-    //}
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during methodEntered() notification", t);
+    }
   }
 
-  protected void notifyMethodExited (ThreadInfo ti, MethodInfo mi){
-    //if (listener != null){
+  protected void notifyMethodExited(ThreadInfo ti, MethodInfo mi) {
+    try {
       lastThreadInfo = ti;
       lastMethodInfo = mi;
-      //listener.methodExited(this);
-      for (int i=0; i<listeners.length; i++){
+
+      for (int i = 0; i < listeners.length; i++) {
         listeners[i].methodExited(this);
       }
       lastMethodInfo = null;
       lastThreadInfo = null;
-    //}
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during methodExited() notification", t);
+    }
   }
 
 
@@ -1794,64 +1742,6 @@ public class JVM {
 
       return false;  // no transition occurred
     }
-  }
-
-  /**
-   * advance the program state
-   *
-   * forward() and backtrack() are the two primary interfaces towards the Search
-   * driver. note that the caller still has to check if there is a next state,
-   * and if the executed instruction sequence led into a new or already visited state
-   *
-   * @return 'true' if there was an un-executed sequence out of the current state,
-   * 'false' if it was completely explored
-   *
-   */
-  public boolean forward0 () {
-    if (CHECK_CONSISTENCY) {
-      checkConsistency(true); // don't push an inconsistent state
-    }
-
-    backtracker.pushKernelState(); // <<< don't do this for processed CGs
-
-    // cache this before we execute (and increment) the next insn(s)
-    lastTrailInfo = path.getLast();
-
-    try {
-      transitionOccurred = ss.nextSuccessor(this);
-      if (!transitionOccurred) {
-        // state was fully explored, no insns executed => backtrack
-        backtracker.popKernelState();
-        return false;
-      }
-    } catch (UncaughtException e) {
-      // we don't pass this up since it means there were insns executed and we are
-      // in a consistent state
-    } // every other exception goes upwards
-
-    backtracker.pushSystemState();
-    updatePath();
-
-    if (!isIgnoredState()){
-      // if this is ignored we are going to backtrack anyways
-      // matching states out of ignored transitions is also not a good idea
-      // because this transition is incomplete
-
-      if (runGc && !hasPendingException()) {
-        ss.gcIfNeeded();
-      }
-
-      if (stateSet != null) {
-        newStateId = stateSet.size();
-        int id = stateSet.addCurrent();
-        ss.setId(id);
-
-      } else { // this is 'state-less' model checking, i.e. we don't match states
-        ss.setId(++newStateId); // but we still should have states numbered in case listeners use the id
-      }
-    }
-
-    return true;
   }
 
   /**

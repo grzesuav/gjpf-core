@@ -199,8 +199,9 @@ public class JPF_java_lang_Thread {
         // now we have a new thread, create a CG for scheduling it
         ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG(tiNew);
         if (cg != null) {
-          ss.setNextChoiceGenerator(cg);
-          env.repeatInvocation();
+          if (ss.setNextChoiceGenerator(cg)){
+            env.repeatInvocation();
+          }
         }
       }
     }
@@ -213,8 +214,9 @@ public class JPF_java_lang_Thread {
     if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadYieldCG( ti);
       if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
-        env.repeatInvocation();
+        if (ss.setNextChoiceGenerator(cg)){
+          env.repeatInvocation();
+        }
       }
     } else {
       // nothing to do, this was just a forced reschedule
@@ -228,10 +230,10 @@ public class JPF_java_lang_Thread {
     if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSleepCG( ti, millis, nanos);
       if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
-        env.repeatInvocation();
-
-        ti.setSleeping();
+        if (ss.setNextChoiceGenerator(cg)){
+          env.repeatInvocation();
+          ti.setSleeping();
+        }
       }
     } else {
       // this seems asymmetric (since we only set it to sleeping when we register
@@ -255,9 +257,10 @@ public class JPF_java_lang_Thread {
     if (!operator.isFirstStepInsn()) {
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG();
       if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
-        env.repeatInvocation();
-        return;
+        if (ss.setNextChoiceGenerator(cg)){
+          env.repeatInvocation();
+          return;
+        }
       }
     }
 
@@ -286,9 +289,10 @@ public class JPF_java_lang_Thread {
     if (!operator.isFirstStepInsn()) {
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG();
       if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
-        env.repeatInvocation();
-        return;
+        if (ss.setNextChoiceGenerator(cg)){
+          env.repeatInvocation();
+          return;
+        }
       }
     }
 
@@ -350,8 +354,11 @@ public class JPF_java_lang_Thread {
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
 
         assert (cg != null) : "no choice generator for blocked join of " + ti;
-        ss.setNextChoiceGenerator(cg);
-        env.repeatInvocation();
+        if (ss.setNextChoiceGenerator(cg)){
+          env.repeatInvocation();
+        } else {
+          throw new JPFException("listener did override join CG");
+        }
 
       } else {
         // nothing to do, thread is already terminated
