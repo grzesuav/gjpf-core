@@ -235,8 +235,9 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     ThreadInfo[] list = new ThreadInfo[nRunnable];
 
     for (int i = 0, j=0; i < threads.length; i++) {
-      if (threads[i].isTimeoutRunnable()) {
-        list[j++] = threads[i];
+      ThreadInfo t = threads[i];
+      if (t.isTimeoutRunnable()) {
+        list[j++] = t;
         if (j == nRunnable) {
           break;
         }
@@ -251,8 +252,9 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     ThreadInfo[] list =  new ThreadInfo[ti.isRunnable() ? nRunnable : nRunnable+1];
 
     for (int i = 0, j=0; i < threads.length; i++) {
-      if (threads[i].isTimeoutRunnable() || (threads[i] == ti)) {
-        list[j++] = threads[i];
+      ThreadInfo t = threads[i];
+      if (t.isTimeoutRunnable() || (t == ti)) {
+        list[j++] = t;
         if (j == list.length) {
           break;
         }
@@ -271,8 +273,9 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     ThreadInfo[] list = new ThreadInfo[nRunnable];
 
     for (int i = 0, j=0; i < threads.length; i++) {
-      if (threads[i].isTimeoutRunnable() && (ti != threads[i])) {
-        list[j++] = threads[i];
+      ThreadInfo t = threads[i];
+      if (t.isTimeoutRunnable() && (ti != t)) {
+        list[j++] = t;
         if (j == nRunnable) {
           break;
         }
@@ -299,8 +302,9 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     int n = threads.length;
 
     for (int i=0; i<n; i++) {
-      if (threads[i] != ti) {
-        if (threads[i].isRunnable()) {
+      ThreadInfo t = threads[i];
+      if (t != ti) {
+        if (t.isRunnable()) {
           return true;
         }
       }
@@ -308,6 +312,22 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
 
     return false;
   }
+
+  boolean hasOtherNonDaemonRunnablesThan (ThreadInfo ti) {
+    int n = threads.length;
+
+    for (int i=0; i<n; i++) {
+      ThreadInfo t = threads[i];
+      if (t != ti) {
+        if (t.isRunnable() && !t.isDaemon()) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
 
 
   boolean isDeadlocked () {

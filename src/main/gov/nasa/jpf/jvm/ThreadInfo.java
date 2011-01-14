@@ -2854,6 +2854,10 @@ public class ThreadInfo
     return list.hasOtherRunnablesThan(this);
   }
 
+  public boolean hasOtherNonDaemonRunnables() {
+    return list.hasOtherNonDaemonRunnablesThan(this);
+  }
+
   protected void markUnchanged() {
     attributes &= ~ATTR_ANY_CHANGED;
 

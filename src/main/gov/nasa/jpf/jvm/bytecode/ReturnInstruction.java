@@ -119,7 +119,7 @@ public abstract class ReturnInstruction extends Instruction {
         ti.finish(); // cleanup
 
         ss.clearAtomic();
-        if (ti.hasOtherRunnables()){
+        if (ti.hasOtherNonDaemonRunnables()){
           ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(ti);
           ss.setMandatoryNextChoiceGenerator(cg, "thread terminated without CG: ");
         }
