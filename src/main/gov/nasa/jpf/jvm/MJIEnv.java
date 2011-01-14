@@ -994,8 +994,16 @@ public class MJIEnv {
   }
 
 
-  public void setNextChoiceGenerator (ChoiceGenerator<?> cg){
-    vm.getSystemState().setNextChoiceGenerator(cg);
+  public boolean setNextChoiceGenerator (ChoiceGenerator<?> cg){
+    return vm.getSystemState().setNextChoiceGenerator(cg);
+  }
+
+  public void setMandatoryNextChoiceGenerator(ChoiceGenerator<?> cg, String failMsg){
+    vm.getSystemState().setMandatoryNextChoiceGenerator(cg, failMsg);
+  }
+
+  public SchedulerFactory getSchedulerFactory(){
+    return vm.getSchedulerFactory();
   }
 
   public ChoiceGenerator<?> getChoiceGenerator () {

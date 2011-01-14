@@ -57,12 +57,11 @@ public abstract class SwitchInstruction extends Instruction {
     }
   }
 
-  
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  protected Instruction executeConditional (SystemState ss, KernelState ks, ThreadInfo ti){
     int value = ti.pop();
 
     lastIdx = DEFAULT;
-    
+
     for (int i = 0, l = matches.length; i < l; i++) {
       if (value == matches[i]) {
         lastIdx = i;
@@ -72,13 +71,24 @@ public abstract class SwitchInstruction extends Instruction {
 
     return mi.getInstructionAt(target);
   }
+  
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    // this can be overridden by subclasses, so we have to delegate the conditional execution
+    // to avoid getting recursive in executeAllBranches()
+    return executeConditional(ss,ks,ti);
+  }
 
   /** useful for symbolic execution modes */
   public Instruction executeAllBranches (SystemState ss, KernelState ks, ThreadInfo ti) {
     if (!ti.isFirstStepInsn()) {
       IntIntervalGenerator cg = new IntIntervalGenerator("switchAll", 0,matches.length);
-      ss.setNextChoiceGenerator(cg);
-      return this;
+      if (ss.setNextChoiceGenerator(cg)){
+        return this;
+
+      } else {
+        // listener did override CG, fall back to conditional execution
+        return executeConditional(ss,ks,ti);
+      }
       
     } else {
       IntIntervalGenerator cg = ss.getCurrentChoiceGenerator("switchAll", IntIntervalGenerator.class);

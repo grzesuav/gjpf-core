@@ -185,8 +185,9 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       return cg.getNextChoice();
 
     } else {
-      ss.setNextChoiceGenerator(cg);
-      env.repeatInvocation();
+      if (ss.setNextChoiceGenerator(cg)){
+        env.repeatInvocation();
+      }
     }
 
     return dummyVal;
@@ -206,9 +207,10 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
     if (!ti.isFirstStepInsn()) { // first time around
       cg = new BooleanChoiceGenerator(config, "verifyGetBoolean");
-      ss.setNextChoiceGenerator(cg);
-      env.repeatInvocation();
-      return true;  // not used anyways
+      if (ss.setNextChoiceGenerator(cg)){
+        env.repeatInvocation();
+      }
+      return true;  // not used if we repeat
 
     } else {  // this is what really returns results
       return getNextChoice(ss,"verifyGetBoolean", BooleanChoiceGenerator.class,Boolean.class);
@@ -222,9 +224,10 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
     if (!ti.isFirstStepInsn()) { // first time around
       cg = new BooleanChoiceGenerator( "verifyGetBoolean(Z)", falseFirst );
-      ss.setNextChoiceGenerator(cg);
-      env.repeatInvocation();
-      return true;  // not used anyways
+      if (ss.setNextChoiceGenerator(cg)){
+        env.repeatInvocation();
+      }
+      return true;  // not used if we repeat
 
     } else {  // this is what really returns results
       return getNextChoice(ss,"verifyGetBoolean(Z)", BooleanChoiceGenerator.class, Boolean.class);

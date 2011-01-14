@@ -335,15 +335,8 @@ public abstract class InvokeInstruction extends Instruction {
         ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
 
         ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
-        if (cg != null) {
-          if (ss.setNextChoiceGenerator(cg)) {
-            return true;
-          } else {
-            throw new JPFException("listener did override ChoiceGenerator for blocking INVOKE");
-          }
-        } else {
-          throw new JPFException("scheduling policy did not return ChoiceGenerator for blocking INVOKE");
-        }
+        ss.setMandatoryNextChoiceGenerator(cg, "blocking sync without CG");
+        return true;
       }
     }
 

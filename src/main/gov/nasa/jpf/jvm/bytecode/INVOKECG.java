@@ -56,8 +56,9 @@ public class INVOKECG extends Instruction {
     
     if (!ti.isFirstStepInsn()) {
       InvocationCG cg = new InvocationCG( "INVOKECG", invokes);
-      ss.setNextChoiceGenerator(cg);
-      return this;
+      if (ss.setNextChoiceGenerator(cg)){
+        return this;
+      }
       
     } else {
       InvocationCG cg = ss.getCurrentChoiceGenerator( "INVOKECG", InvocationCG.class);
@@ -80,6 +81,8 @@ public class INVOKECG extends Instruction {
       
       return realInvoke;
     }
+
+    return getNext();
   }
 
   void pushArguments (ThreadInfo ti, Object[] args, Object[] attrs){

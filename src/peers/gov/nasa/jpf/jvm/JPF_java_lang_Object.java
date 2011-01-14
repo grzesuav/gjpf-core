@@ -125,9 +125,7 @@ public class JPF_java_lang_Object {
 
         // note we pass in the timeout value, since this might determine the type of CG that is created
         ChoiceGenerator<?> cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
-        assert (cg != null) : "wait of " + ti.getName() + " on: " + ei + " created no choice generator";
-        ss.setNextChoiceGenerator(cg);
-
+        ss.setMandatoryNextChoiceGenerator(cg, "wait without CG");
         env.repeatInvocation(); // so that we can still see the wait on the callstack
       }
     }
@@ -153,8 +151,7 @@ public class JPF_java_lang_Object {
       ElementInfo ei = env.getElementInfo(objref);
       
       ChoiceGenerator cg = ss.getSchedulerFactory().createNotifyCG(ei, ti);
-      if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
+      if (ss.setNextChoiceGenerator(cg)){
         ti.skipInstructionLogging();
         env.repeatInvocation();
         return;
@@ -181,8 +178,7 @@ public class JPF_java_lang_Object {
       ElementInfo ei = env.getElementInfo(objref);
       
       ChoiceGenerator cg = ss.getSchedulerFactory().createNotifyAllCG(ei, ti);
-      if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
+      if (ss.setNextChoiceGenerator(cg)){
         ti.skipInstructionLogging();
         env.repeatInvocation();
         return;

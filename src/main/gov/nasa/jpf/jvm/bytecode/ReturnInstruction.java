@@ -21,8 +21,6 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.NativeMethodInfo;
-import gov.nasa.jpf.jvm.NativeStackFrame;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -68,14 +66,18 @@ public abstract class ReturnInstruction extends Instruction {
       mi.leave(ti);  // takes care of unlocking before potentially creating a CG
 
       if (mi.isSynchronized()) {
-        int objref = ti.getThis();
-        ElementInfo ei = ks.heap.get(objref);
+        int objref = mi.isStatic() ? mi.getClassInfo().getClassObjectRef() : ti.getThis();
+        ElementInfo ei = ti.getElementInfo(objref);
 
-        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createSyncMethodExitCG(ei, ti);
-        if (cg != null) {
-          if (ss.setNextChoiceGenerator(cg)){
-            ti.skipInstructionLogging();
-            return this; // re-execute
+        if (ei.getLockCount() == 0){
+          if (ei.checkUpdatedSharedness(ti)) {
+            ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createSyncMethodExitCG(ei, ti);
+            if (cg != null) {
+              if (ss.setNextChoiceGenerator(cg)) {
+                ti.skipInstructionLogging();
+                return this; // re-execute
+              }
+            }
           }
         }
       }
@@ -95,11 +97,11 @@ public abstract class ReturnInstruction extends Instruction {
         // block first, so that we don't get this thread in the list of CGs
         ei.block(ti);
 
+        // if we can't acquire the lock, it means there needs to be another thread alive,
+        // but it might not be runnable (deadlock) and we don't want to mask that error
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
-        if (cg != null) { // Ok, break here
-          ss.setNextChoiceGenerator(cg);
-        }
-        return this; // we have to come back later, when we can acquire the lock
+        ss.setMandatoryNextChoiceGenerator(cg, "blocking thread termination without CG: ");
+        return this;
 
       } else { // Ok, we can get the lock, time to die
         // notify waiters on thread termination
@@ -116,10 +118,10 @@ public abstract class ReturnInstruction extends Instruction {
 
         ti.finish(); // cleanup
 
-        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(ti);
-        if (cg != null) {
-          ss.clearAtomic();  // no carry over of atomic levels between threads
-          ss.setNextChoiceGenerator(cg);
+        ss.clearAtomic();
+        if (ti.hasOtherRunnables()){
+          ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(ti);
+          ss.setMandatoryNextChoiceGenerator(cg, "thread terminated without CG: ");
         }
 
         ti.popFrame(); // we need to do this *after* setting the CG (so that we still have a CG insn)

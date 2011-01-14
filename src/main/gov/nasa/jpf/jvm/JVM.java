@@ -339,7 +339,7 @@ public class JVM {
     // the first transition probably doesn't have much choice (unless there were
     // threads started in the static init), but we want to keep it uniformly anyways
     ChoiceGenerator<?> cg = new ThreadChoiceFromSet("root", getThreadList().getRunnableThreads(), true);
-    ss.setNextChoiceGenerator(cg);
+    ss.setMandatoryNextChoiceGenerator(cg, "no root CG");
 
     ss.recordSteps(hasToRecordSteps());
 
@@ -1317,6 +1317,10 @@ public class JVM {
 
   public Config getConfig() {
     return config;
+  }
+
+  public SchedulerFactory getSchedulerFactory(){
+    return ss.getSchedulerFactory();
   }
 
   public Backtracker getBacktracker() {

@@ -108,8 +108,7 @@ public class JPF_java_lang_Thread {
 
     } else {
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createInterruptCG( interruptedThread);
-      if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
+      if (ss.setNextChoiceGenerator(cg)){
         env.repeatInvocation();
       }
     }
@@ -198,10 +197,8 @@ public class JPF_java_lang_Thread {
 
         // now we have a new thread, create a CG for scheduling it
         ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG(tiNew);
-        if (cg != null) {
-          if (ss.setNextChoiceGenerator(cg)){
-            env.repeatInvocation();
-          }
+        if (ss.setNextChoiceGenerator(cg)) {
+          env.repeatInvocation();
         }
       }
     }
@@ -213,10 +210,8 @@ public class JPF_java_lang_Thread {
 
     if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadYieldCG( ti);
-      if (cg != null) {
-        if (ss.setNextChoiceGenerator(cg)){
-          env.repeatInvocation();
-        }
+      if (ss.setNextChoiceGenerator(cg)) {
+        env.repeatInvocation();
       }
     } else {
       // nothing to do, this was just a forced reschedule
@@ -229,11 +224,9 @@ public class JPF_java_lang_Thread {
 
     if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSleepCG( ti, millis, nanos);
-      if (cg != null) {
-        if (ss.setNextChoiceGenerator(cg)){
-          env.repeatInvocation();
-          ti.setSleeping();
-        }
+      if (ss.setNextChoiceGenerator(cg)) {
+        env.repeatInvocation();
+        ti.setSleeping();
       }
     } else {
       // this seems asymmetric (since we only set it to sleeping when we register
@@ -247,8 +240,10 @@ public class JPF_java_lang_Thread {
     ThreadInfo target = getThreadInfo(threadObjRef);
     SystemState ss = env.getSystemState();
 
-    // The first time through here, we need to let other threads (if any) have a chance to call suspend and resume.  Also, need to let the target thread have a chance to do some work.
-    // The second time through here, we need to suspend the target thread and remove it from execution (if transitioned from resumed to suspended).
+    // The first time through here, we need to let other threads (if any) have a chance
+    // to call suspend and resume.  Also, need to let the target thread have a chance to do some work.
+    // The second time, we need to suspend the target thread and remove it from execution
+    // (if transitioned from resumed to suspended).
 
     if (target.isTerminated()) {
       return;
@@ -256,19 +251,15 @@ public class JPF_java_lang_Thread {
 
     if (!operator.isFirstStepInsn()) {
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG();
-      if (cg != null) {
-        if (ss.setNextChoiceGenerator(cg)){
-          env.repeatInvocation();
-          return;
-        }
+      if (ss.setNextChoiceGenerator(cg)) {
+        env.repeatInvocation();
+        return;
       }
     }
 
     if (target.suspend()) {  // No sense in adding a CG if the thread didn't transition from suspended to resumed.
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG();
-      if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
-      }
+      ss.setNextChoiceGenerator(cg);
     }
   }
 
@@ -279,8 +270,10 @@ public class JPF_java_lang_Thread {
 
     assert operator != target : "A thread is calling resume on itself when it should have been suspended!";
 
-    // The first time through here, we need to let other threads (if any) have a chance to call suspend and resume.
-    // The second time through here, we need to get the target thread scheduled for execution (if transitioned from suspended to resumed).
+    // The first time through here, we need to let other threads (if any) have a chance
+    // to call suspend and resume.
+    // The second time through here, we need to get the target thread scheduled for execution
+    // (if transitioned from suspended to resumed).
 
     if (target.isTerminated()) {
       return;
@@ -288,19 +281,15 @@ public class JPF_java_lang_Thread {
 
     if (!operator.isFirstStepInsn()) {
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG();
-      if (cg != null) {
-        if (ss.setNextChoiceGenerator(cg)){
-          env.repeatInvocation();
-          return;
-        }
+      if (ss.setNextChoiceGenerator(cg)) {
+        env.repeatInvocation();
+        return;
       }
     }
 
     if (target.resume()) {  // No sense in adding a CG if the thread didn't transition from suspended to resumed.
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG();
-      if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
-      }
+      ss.setNextChoiceGenerator(cg);
     }
   }
 
@@ -353,12 +342,8 @@ public class JPF_java_lang_Thread {
         ei.wait(ti, timeout, false);
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
 
-        assert (cg != null) : "no choice generator for blocked join of " + ti;
-        if (ss.setNextChoiceGenerator(cg)){
-          env.repeatInvocation();
-        } else {
-          throw new JPFException("listener did override join CG");
-        }
+        env.setMandatoryNextChoiceGenerator(cg, "no CG for blocking join()");
+        env.repeatInvocation();
 
       } else {
         // nothing to do, thread is already terminated
@@ -441,9 +426,7 @@ public class JPF_java_lang_Thread {
 
       SystemState ss = env.getSystemState();
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStopCG();
-
-      if (cg != null) {
-        ss.setNextChoiceGenerator(cg);
+      if (ss.setNextChoiceGenerator(cg)) {
         env.repeatInvocation();
         return;
       }

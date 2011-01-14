@@ -362,6 +362,7 @@ public class SystemState {
 
   /**
    * set the ChoiceGenerator to be used in the next transition
+   * @return true if there is a nextCg set after registration and listener notification
    */
   public boolean setNextChoiceGenerator (ChoiceGenerator<?> cg) {
     if (isIgnored){
@@ -371,29 +372,37 @@ public class SystemState {
       return false;
     }
 
-    // first, check if we have to randomize it (might create a new one)
-    if (randomizeChoices){
-      cg = cg.randomize();
+    if (cg != null){
+      // first, check if we have to randomize it (might create a new one)
+      if (randomizeChoices) {
+        cg = cg.randomize();
+      }
+
+      // set its context (thread and insn)
+      cg.setContext(execThread);
+
+      // do we already have a nextCG, which means this one is a cascadet CG
+      if (nextCg != null) {
+        cg.setPreviousChoiceGenerator(nextCg);
+        nextCg.setCascaded(); // note the last registered CG is NOT set cascaded
+
+      } else {
+        cg.setPreviousChoiceGenerator(curCg);
+      }
+
+      nextCg = cg;
+
+      execThread.getVM().notifyChoiceGeneratorRegistered(cg, execThread); // <2do> we need a better way to get the vm
     }
-
-    // set its context (thread and insn)
-    cg.setContext(execThread);
-
-    // do we already have a nextCG, which means this one is a cascadet CG
-    if (nextCg != null){
-      cg.setPreviousChoiceGenerator( nextCg);
-      nextCg.setCascaded(); // note the last registered CG is NOT set cascaded
-
-    } else {
-      cg.setPreviousChoiceGenerator(curCg);
-    }
-
-    nextCg = cg;
-
-    execThread.getVM().notifyChoiceGeneratorRegistered(cg, execThread); // <2do> we need a better way to get the vm
 
     // a choiceGeneratorRegistered listener might have removed this CG
     return (nextCg != null);
+  }
+
+  public void setMandatoryNextChoiceGenerator (ChoiceGenerator<?> cg, String failMsg){
+    if (!setNextChoiceGenerator(cg)){
+      throw new JPFException(failMsg);
+    }
   }
 
   /**

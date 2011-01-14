@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.JPFException;
 import java.io.PrintWriter;
 
 /**
@@ -120,12 +121,11 @@ public class JPF_sun_misc_Unsafe {
         ei.wait(ti, timeout, false);
 
         assert ti.isWaiting();
-        
-        SystemState ss = env.getSystemState();
-        // note we pass in the timeout value, since this might determine the type of CG that is created
-        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
-        ss.setNextChoiceGenerator(cg);
 
+
+        // note we pass in the timeout value, since this might determine the type of CG that is created
+        ChoiceGenerator<?> cg = env.getSchedulerFactory().createWaitCG(ei, ti, timeout);
+        env.setMandatoryNextChoiceGenerator(cg, "no CG on blocking park()");
         env.repeatInvocation();
 
       } else {

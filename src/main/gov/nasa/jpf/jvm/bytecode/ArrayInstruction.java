@@ -60,15 +60,13 @@ public abstract class ArrayInstruction extends Instruction {
     // GET_FIELD already was a scheduling point (i.e. we can't cache it)
     
     ChoiceGenerator cg = ss.getSchedulerFactory().createSharedArrayAccessCG(ei, ti);
-    if (cg != null) {
-
+    if (ss.setNextChoiceGenerator(cg)){
       // we need to set the array access info (ref, index) before it is
       // lost from the insn cache (insn might get reexecuted later-on
       // on non-shared object
       //ArrayAccess aac = new ArrayAccess(aref,idx,isRead);
       //cg.setAttr(aac);
 
-      ss.setNextChoiceGenerator(cg);
       ti.skipInstructionLogging();
       return true;
     }

@@ -63,13 +63,12 @@ public class INVOKECLINIT extends INVOKESTATIC {
       }
       
       ChoiceGenerator cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
-      if (cg != null) { // Ok, break here
+      if (ss.setNextChoiceGenerator(cg)){
         if (!ti.isBlocked()) {
           // record that this thread would lock the object upon next execution
           ei.registerLockContender(ti);
         }
-        ss.setNextChoiceGenerator(cg);
-        return this;   // repeat exec, keep insn on stack    
+        return this;   // repeat exec, keep insn on stack
       }
       
       assert !ti.isBlocked() : "scheduling policy did not return ChoiceGenerator for blocking INVOKE";

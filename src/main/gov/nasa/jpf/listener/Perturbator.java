@@ -290,8 +290,7 @@ public class Perturbator extends ListenerAdapter {
           // note that we don't need to execute in order to get the perturbation base
           // value because its already on the operand stack
           ChoiceGenerator<?> cg = e.perturbator.createChoiceGenerator("perturbReturn", ti.getTopFrame(), 0);
-          if (cg != null) {
-            ss.setNextChoiceGenerator(cg);
+          if (ss.setNextChoiceGenerator(cg)){
             ti.skipInstruction(insn);
           }
 
@@ -329,10 +328,8 @@ public class Perturbator extends ListenerAdapter {
 
           } else { // first time around, create&set the CG and reexecute
             ChoiceGenerator<?> cg = p.perturbator.createChoiceGenerator( "perturbGetField", frame, 0);
-            if (cg != null) {
+            if (ss.setNextChoiceGenerator(cg)){
               assert savedFrame != null;
-
-              ss.setNextChoiceGenerator(cg);
               // we could more efficiently restore the stackframe
               // to pre-exec state from last 'this' or classobject ref, but then
               // we have to deal with different field value sizes
