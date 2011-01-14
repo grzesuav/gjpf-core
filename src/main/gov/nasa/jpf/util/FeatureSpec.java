@@ -28,7 +28,7 @@ public abstract class FeatureSpec {
 
   static class ParseData {
     boolean matchInverted;
-    boolean macthSuperTypes;
+    boolean matchSuperTypes;
     String typeSpec;
     String nameSpec;
   }

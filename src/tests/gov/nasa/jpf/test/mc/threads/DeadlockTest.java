@@ -355,4 +355,25 @@ public class DeadlockTest extends TestJPF {
       t2.start();
     }
   }
+
+  @Test
+  public void testTerminationDeadlock() {
+    if (verifyDeadlock()){
+      Thread t = new Thread(){
+        public void run(){
+          System.out.println("# t running");
+          synchronized(this){
+            System.out.println("# t waiting (forever)..");
+            try {
+              wait();
+            } catch (InterruptedException ix){
+              fail("t got unexpectedly interrupted");
+            }
+          }
+        }
+      };
+      t.start();
+      System.out.println("# main thread terminating");
+    }
+  }
 }
