@@ -31,9 +31,6 @@ import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.RunRegistry;
 
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -115,8 +112,12 @@ public class JPF implements Runnable {
     int options = RunJPF.getOptions(args);
 
     if (args.length == 0 || RunJPF.isOptionEnabled( RunJPF.HELP,options)) {
-      showUsage();
+      RunJPF.showUsage();
       return;
+    }
+
+    if (RunJPF.isOptionEnabled( RunJPF.BUILD,options)){
+      RunJPF.showBuild(RunJPF.class.getClassLoader());
     }
 
     if (RunJPF.isOptionEnabled( RunJPF.LOG,options)){
@@ -596,17 +597,6 @@ public class JPF implements Runnable {
 
     return true;
   }
-
-  static void showUsage() {
-    System.out.println("Usage: \"java [<vm-option>..] gov.nasa.jpf.JPF [<jpf-option>..] [<app> [<app-arg>..]]");
-    System.out.println("  <jpf-option> : -help  : print usage information");
-    System.out.println("               | -log   : print configuration initialization steps");
-    System.out.println("               | -show  : print configuration dictionary contents");
-    System.out.println("               | +<key>=<value>  : add or override key/value pair to config dictionary");
-    System.out.println("  <app>        : *.jpf application properties file pathname | fully qualified application class name");
-    System.out.println("  <app-arg>    : arguments passed into main() method of application class");
-  }
-
 
   public static void handleException(JPFException e) {
     logger.severe(e.getMessage());

@@ -20,15 +20,10 @@ package gov.nasa.jpf.tool;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFShell;
-import gov.nasa.jpf.util.FileUtils;
-import java.io.File;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * This class is a wrapper for loading JPF or a JPFShell through a classloader
@@ -44,9 +39,10 @@ import java.util.ArrayList;
  */
 public class RunJPF extends Run {
 
-  public static final int HELP = 1;
-  public static final int SHOW = 2;
-  public static final int LOG = 4;
+  public static final int HELP  = 1;
+  public static final int SHOW  = 2;
+  public static final int LOG   = 4;
+  public static final int BUILD = 8;
 
   static final String JPF_CLASSNAME = "gov.nasa.jpf.JPF";
 
@@ -58,6 +54,7 @@ public class RunJPF extends Run {
         showUsage();
         return;
       }
+
       if (isOptionEnabled(LOG, options)) {
         Config.enableLogging(true);
       }
@@ -69,6 +66,10 @@ public class RunJPF extends Run {
       }
 
       ClassLoader cl = conf.initClassLoader(RunJPF.class.getClassLoader());
+
+      if (isOptionEnabled(BUILD, options)) {
+        showBuild(cl);
+      }
 
       // using JPFShell is Ok since it is just a simple non-derived interface
       // note this uses a <init>(Config) ctor in the shell class if there is one
@@ -114,6 +115,10 @@ public class RunJPF extends Run {
         } else if ("-log".equals(a)){
           args[i] = null;
           mask |= LOG;
+
+        } else if ("-build".equals(a)){
+          args[i] = null;
+          mask |= BUILD;
         }
       }
     }
@@ -125,14 +130,45 @@ public class RunJPF extends Run {
     return ((mask & option) != 0);
   }
 
-  static void showUsage() {
+  public static void showUsage() {
     System.out.println("Usage: \"java [<vm-option>..] -jar ...RunJPF.jar [<jpf-option>..] [<app> [<app-arg>..]]");
-    System.out.println("  <jpf-option> : -help  : print usage information");
+    System.out.println("  <jpf-option> : -help  : print usage information and exit");
+    System.out.println("               | -build : print build information and exit");
     System.out.println("               | -log   : print configuration initialization steps");
     System.out.println("               | -show  : print configuration dictionary contents");
     System.out.println("               | +<key>=<value>  : add or override key/value pair to config dictionary");
     System.out.println("  <app>        : *.jpf application properties file pathname | fully qualified application class name");
     System.out.println("  <app-arg>    : arguments passed into main() method of application class");
+  }
+
+
+  // print out the build.properties settings
+  public static void showBuild(ClassLoader cl) {
+    try {
+
+      InputStream is = cl.getResourceAsStream("gov/nasa/jpf/build.properties");
+      if (is != null){
+        System.out.println("JPF build information:");
+
+        Properties buildProperties = new Properties();
+        buildProperties.load(is);
+
+        for (Map.Entry<Object, Object> e : buildProperties.entrySet()) {
+          System.out.print('\t');
+          System.out.print(e.getKey());
+          System.out.print(" = ");
+          System.out.println(e.getValue());
+        }
+
+        is.close();
+
+      } else {
+        System.out.println("no JPF build information available");
+      }
+
+    } catch (Throwable t){
+      System.err.println("error reading build information: " + t.getMessage());
+    }
   }
 
 }

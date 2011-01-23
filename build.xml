@@ -27,7 +27,7 @@
   <property name="debug"         value="on"/>
   <property name="deprecation"   value="on"/>
 
-  <property name="jpf.version"   value="5.0pre2"/>
+  <uptodate property="build_uptodate" targetfile="build/main/gov/nasa/jpf/build.properties" srcfile="build.properties"/>
 
 
   <!-- generic classpath settings -->
@@ -81,6 +81,7 @@
   <!-- public compile -->
   <target name="compile" depends="-init,-compile-annotations,-compile-main,-compile-peers,-compile-classes,-compile-tests,-compile-examples"
           description="compile all JPF core sources" >
+	  <copy file="build.properties" todir="build/main/gov/nasa/jpf" failonerror="false"/>
   </target>
 
   <target name="-compile-annotations" if="have_annotations">
@@ -95,7 +96,6 @@
            debug="${debug}" source="${src_level}" deprecation="${deprecation}"
            classpathref="lib.path"/>
 
-	  <copy file="build.properties" todir="build/main/gov/nasa/jpf" failonerror="false"/>
   </target>
   
   <target name="-compile-peers" if="have_peers" depends="-compile-main" >
@@ -163,7 +163,7 @@
   <!-- ======================= MISC SECTION ================================ -->
   
   <!-- build jars -->
-  <target name="build" depends="compile"
+  <target name="build" depends="-cond-clean,compile"
         description="generate the core JPF jar files" >
 
     <jar jarfile="build/jpf.jar" index="true">
@@ -260,7 +260,6 @@
   <!-- public clean: cleanup from previous tasks/builds -->
   <target name="clean"
           description="remove all build artifacts and temporary files">
-    <delete file="build.properties"/>
     <delete dir="build" />
     <delete>
       <fileset dir="." includes="jpf-fb-report.*"/>
@@ -270,12 +269,27 @@
     </delete>
   </target>
 
+  <target name="-cond-clean" unless="build_uptodate"
+          description="remove all build artifacts and temporaries if build.properties has been changed">
+    <antcall target="clean"/>
+  </target>
+
 
   <!-- generate buildinfo file  -->
   <target name="buildinfo" description="create buildinfo properties">
 
-    <!-- 2do : add a "hg status" summary -->
-
+    <!-- make this fail if there are uncommitted changes -->
+    <exec executable="hg" outputproperty="uncommitted_changes" failifexecutionfails="true">
+      <arg value="status"/>
+    </exec>
+    <condition property="have_uncommitted_changes">
+      <length string="${uncommitted_changes}" trim="true" when="greater" length="0"/>
+    </condition>
+<!--
+    <fail if="have_uncommitted_changes">hg status shows uncommitted changes:
+      ${uncommitted_changes}
+    </fail>
+-->
     <exec executable="hg" outputproperty="hg.tip.id" failifexecutionfails="false">
       <arg value="tip"/>
       <arg value="--template"/>
@@ -299,16 +313,23 @@
     <property name="hostname" value="${env.COMPUTERNAME}"/>  <!-- Windows doesn't have hostname -->
 
     <!-- it seems the 'propertyfile' task just appends -->
-    <delete file="build.properties"/>
+    <delete file="build.properties" failonerror="false"/>
 
-    <propertyfile file="build.properties" depends="build" comment="JPF core version info">
-      <entry key="date.build" type="date" value="now"/>
-      <entry key="date.tip" value="${hg.tip.date}"/>
-      <entry key="author" value="${hg.author}"/>
+    <propertyfile file="build.properties" comment="JPF core build info">
       <entry key="revision" value="${hg.tip.id}"/>
-      <entry key="host" value="${hostname}"/>
-      <entry key="basedir" value="${basedir}"/>
+      <entry key="date.tip" value="${hg.tip.date}"/>
+
+      <entry key="author" value="${hg.author}"/>
+      <entry key="repository" value="file://${hostname}${basedir}"/>
       <entry key="upstream" value="${hg.paths.default}"/>
+
+      <entry key="java.version" value="${java.version}"/>
+
+      <entry key="os.arch" value="${os.arch}"/>
+      <entry key="os.name" value="${os.name}"/>
+      <entry key="os.version" value="${os.version}"/>
+      <entry key="user.country" value="${user.country}"/>
+
     </propertyfile>
 
   </target>
