@@ -191,7 +191,6 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   //--- those are the methods that can be overridden by subclasses to implement abstractions
 
   // needs to be public because of ReferenceProcessor interface
-  @Override
   public void processReference(int objref) {
     if (objref >= 0) {
       ElementInfo ei = heap.get(objref);
@@ -205,7 +204,6 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   }
 
   // needs to be public because of ElementInfoProcessor interface
-  @Override
   public void processElementInfo(ElementInfo ei) {
     Fields fields = ei.getFields();
     ClassInfo ci = ei.getClassInfo();

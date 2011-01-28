@@ -110,7 +110,6 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     liveBitValue = false;
   }
 
-  @Override
   public Iterable<ElementInfo> liveObjects() {
     return new LiveIterator<ElementInfo>();
   }

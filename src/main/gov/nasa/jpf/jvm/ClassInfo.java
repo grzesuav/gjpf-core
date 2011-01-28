@@ -27,9 +27,13 @@ import gov.nasa.jpf.jvm.bytecode.ALOAD;
 import gov.nasa.jpf.jvm.bytecode.ARETURN;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.IRETURN;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.LRETURN;
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFLogger;
+import gov.nasa.jpf.util.LocationSpec;
+import gov.nasa.jpf.util.MethodSpec;
+import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.util.Source;
 import gov.nasa.jpf.util.StringSetMatcher;
@@ -40,11 +44,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -1691,6 +1697,46 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     MethodInfo[] a = new MethodInfo[methods.size()];
     methods.values().toArray(a);
     return a;
+  }
+
+  public Instruction[] getMatchingInstructions (LocationSpec lspec){
+    Instruction[] insns = null;
+
+    if (lspec.matchesFile(sourceFileName)){
+      for (MethodInfo mi : methods.values()) {
+        Instruction[] a = mi.getMatchingInstructions(lspec);
+        if (a != null){
+          if (insns != null) {
+            // not very efficient but probably rare
+            insns = Misc.appendArray(insns, a);
+          } else {
+            insns = a;
+          }
+
+          // little optimization
+          if (!lspec.isLineInterval()) {
+            break;
+          }
+        }
+      }
+    }
+
+    return insns;
+  }
+
+  public List<MethodInfo> getMatchingMethodInfos (MethodSpec mspec){
+    ArrayList<MethodInfo> list = null;
+    if (mspec.matchesClass(name)) {
+      for (MethodInfo mi : methods.values()) {
+        if (mspec.matches(mi)) {
+          if (list == null) {
+            list = new ArrayList<MethodInfo>();
+          }
+          list.add(mi);
+        }
+      }
+    }
+    return list;
   }
 
   public MethodInfo getFinalizer () {

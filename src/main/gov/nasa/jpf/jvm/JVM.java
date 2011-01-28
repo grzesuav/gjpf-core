@@ -96,7 +96,8 @@ public class JVM {
    * valid during notification
    *
    * <2do> get rid of the 'lasts' in favor of queries on the insn, the executing
-   * thread, and the VM
+   * thread, and the VM. This is superfluous work to for every notification
+   * (even if there are no listeners using it) that can easily lead to inconsistencies
    */
   protected Transition      lastTrailInfo;
   protected ClassInfo       lastClassInfo;
@@ -661,7 +662,8 @@ public class JVM {
   protected void notifyExecuteInstruction (ThreadInfo ti, Instruction insn) {
     try {
       lastThreadInfo = ti;
-      lastInstruction = insn;
+      nextInstruction = insn;
+      lastInstruction = insn; // <2do> debatable - we need to revisit the whole last... business (see header)
 
       for (int i = 0; i < listeners.length; i++) {
         listeners[i].executeInstruction(this);
@@ -1372,6 +1374,7 @@ public class JVM {
   public ChoiceGenerator<?> getNextChoiceGenerator() {
     return ss.getNextChoiceGenerator();
   }
+
 
   /**
    * return the latest registered ChoiceGenerator used in this transition

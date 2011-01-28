@@ -38,6 +38,7 @@ import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.InstructionList;
 
 import gov.nasa.jpf.jvm.bytecode.*;
+import gov.nasa.jpf.util.LocationSpec;
 import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.Attribute;
 import org.apache.bcel.classfile.ExceptionTable;
@@ -706,6 +707,55 @@ public class MethodInfo extends InfoObject implements Cloneable {
   public Instruction[] getInstructions () {
     return code;
   }
+
+  public boolean includesLine (int line){
+    int len = code.length;
+    return (code[0].getLineNumber() <= line) && (code[len].getLineNumber() >= line);
+  }
+
+  public Instruction[] getInstructionsForLine (int line){
+    return getInstructionsForLineInterval(line,line);
+  }
+
+  public Instruction[] getInstructionsForLineInterval (int l1, int l2){
+    int len = code.length;
+
+    if ((code[0].getLineNumber() > l2) || (code[len-1].getLineNumber() < l1)){
+      // no overlap
+      return null;
+    }
+
+    int i1 = -1;
+    int i2 = -1;
+    for (int i = 0; i < len; i++) {
+      int l = code[i].getLineNumber();
+      if ((l >= l1) && (l <= l2)) {
+        if (i1 < 0) {
+          i1 = i;
+        }
+        i2 = i;
+      } else if (l > l2) {
+        break;
+      }
+    }
+
+    if (i1 >= 0){
+      Instruction[] a = new Instruction[i2 - i1 + 1];
+      int j = 0;
+      for (int i = i1; i <= i2; i++) {
+        a[j++] = code[i];
+      }
+      return a;
+
+    } else {
+      return null; // no insn found for this line interval
+    }
+  }
+
+  public Instruction[] getMatchingInstructions (LocationSpec lspec){
+    return getInstructionsForLineInterval(lspec.getFromLine(), lspec.getToLine());
+  }
+
 
   /**
    * Returns the line number for a given position.

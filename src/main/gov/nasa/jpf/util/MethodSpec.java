@@ -201,6 +201,10 @@ public class MethodSpec extends FeatureSpec {
     return isMatch != matchInverted;
   }
 
+  public boolean matchesClass (String clsName){
+    return clsSpec.matches(clsName) != matchInverted;
+  }
+
   //--- testing & debugging
   public static void main (String[] args){
     MethodSpec ms = createMethodSpec("x.y.Foo.bar(java.lang.String,^float[])");

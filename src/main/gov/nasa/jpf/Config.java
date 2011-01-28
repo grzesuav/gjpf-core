@@ -1125,6 +1125,10 @@ public class Config extends Properties {
     return list.toArray(new String[list.size()]);
   }
 
+  public String[] getKeyComponents (String key){
+    return key.split("\\.");
+  }
+
   public int[] getIntArray (String key) throws JPFConfigException {
     String v = getProperty(key);
 

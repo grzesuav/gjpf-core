@@ -32,6 +32,7 @@ import java.io.File;
  *  FooBar.java:42-48     (file FooBar.java, lines 42 to 48)
  *  FooBar.java:42+3      (range of lines from 42 to 45)
  *  x/y/z/whatever:42+    (file with pathname x/y/z/whatever, lines 42 to end)
+ * 
  *
  * NOTE path names are given in Unix notation, to avoid the usual Java string
  * quoting problem with backslashes
@@ -178,7 +179,14 @@ public class LocationSpec {
     return fromLine;
   }
 
+  // note - this is < 0 if there was only a
   public int getToLine() {
+    if (toLine < 0){
+      if (fromLine >= 0){
+        return fromLine;
+      }
+    }
+
     return toLine;
   }
 
