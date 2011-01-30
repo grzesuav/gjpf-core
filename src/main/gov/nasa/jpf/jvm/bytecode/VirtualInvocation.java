@@ -49,7 +49,7 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     }
     
     ElementInfo ei = ks.heap.get(objRef);
-    
+
     if (mi.isSynchronized()) {
       if (checkSyncCG(ei, ss, ti)){
         return this;

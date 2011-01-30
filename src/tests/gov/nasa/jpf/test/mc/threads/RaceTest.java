@@ -398,7 +398,6 @@ public class RaceTest extends TestJPF {
       }
     }
   }
-
 }
 
 
