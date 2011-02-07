@@ -66,7 +66,7 @@ public class DFSearch extends Search {
     notifySearchStarted();
 
     while (!done) {
-      if (!isNewState() || isEndState() || isIgnoredState() || depthLimitReached) {
+      if (!isNewState() || isEndState() || isIgnoredState() || checkAndResetBacktrackRequest() || depthLimitReached ) {
         if (!backtrack()) { // backtrack not possible, done
           break;
         }
@@ -86,6 +86,8 @@ public class DFSearch extends Search {
           if (hasPropertyTermination()) {
             break;
           }
+          // for search.multiple_errors we go on and treat this as a new state
+          // but hasPropertyTermination() will issue a backtrack request
         }
 
         if (depth >= maxDepth) {

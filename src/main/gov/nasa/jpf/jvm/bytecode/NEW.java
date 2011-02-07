@@ -34,6 +34,7 @@ import org.apache.bcel.classfile.ConstantPool;
  */
 public class NEW extends Instruction {
   protected String cname;
+  protected int newObjRef = -1;
 
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     cname = cp.constantToString(cp.getConstant(
@@ -46,7 +47,7 @@ public class NEW extends Instruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    Heap da = ti.getHeap();
+    Heap heap = ti.getHeap();
     ClassInfo ci;
 
     try {
@@ -68,12 +69,13 @@ public class NEW extends Instruction {
       }
     }
 
-    if (da.isOutOfMemory()) { // simulate OutOfMemoryError
+    if (heap.isOutOfMemory()) { // simulate OutOfMemoryError
       return ti.createAndThrowException("java.lang.OutOfMemoryError",
                                         "trying to allocate new " + cname);
     }
 
-    int objRef = da.newObject(ci, ti);
+    int objRef = heap.newObject(ci, ti);
+    newObjRef = objRef;
 
     // pushes the return value onto the stack
     ti.push(objRef, true);
@@ -95,7 +97,16 @@ public class NEW extends Instruction {
 	  insVisitor.visit(this);
   }
 
+  public int getNewObjectRef() {
+    return newObjRef;
+  }
+
   public String toString() {
-    return "new " + cname;
+    if (newObjRef != -1){
+      return "new " + cname + '@' + newObjRef;
+
+    } else {
+      return "new " + cname;
+    }
   }
 }

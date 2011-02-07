@@ -149,7 +149,15 @@ public abstract class Search {
 
   // check for property violation, return true if not done
   protected boolean hasPropertyTermination () {
-    return (currentError != null) && done;
+    if (currentError != null){
+      if (done){
+        return true;
+      } else { // we search for multiple errors, so we ignore and go on
+        doBacktrack = true;
+      }
+    }
+
+    return false;
   }
 
   // this should only be called once per transition, otherwise it keeps adding the same error
@@ -268,12 +276,28 @@ public abstract class Search {
     return -1; // a lot of Searches don't purge any states
   }
 
+
+  /**
+   * this is somewhat redundant to SystemState.setIgnored(), but we don't
+   * want to mix the case of overriding state matching with backtracking when
+   * searching for multiple errors
+   */
   public boolean requestBacktrack () {
-    return false;
+    return doBacktrack = true;
+  }
+
+
+  protected boolean checkAndResetBacktrackRequest() {
+    if (doBacktrack){
+      doBacktrack = false;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   public boolean supportsBacktrack () {
-    return false;
+    return true;
   }
 
   public boolean supportsRestoreState () {

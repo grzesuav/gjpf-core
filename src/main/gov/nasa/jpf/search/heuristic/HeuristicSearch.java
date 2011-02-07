@@ -121,9 +121,12 @@ public abstract class HeuristicSearch extends Search {
       if (currentError != null){
         notifyPropertyViolated();
 
-        if (hasPropertyTermination()) { // ?? multiple_errors == true ??
+        if (hasPropertyTermination()) {
           return false;
         }
+
+        // for search.multiple_errors we go on and store/treat this as
+        // a new state, which will be state matched the next time we encounter it
       }
       
       if (!isEndState() && !isIgnoredState()) {
@@ -190,7 +193,12 @@ public abstract class HeuristicSearch extends Search {
     
     notifySearchFinished();
   }
-    
+
+  public boolean supportsBacktrack () {
+    // we don't do multi-level backtracks, but automatically do backtrackToParent()
+    // after each child state generation
+    return false;
+  }
 }
 
 
