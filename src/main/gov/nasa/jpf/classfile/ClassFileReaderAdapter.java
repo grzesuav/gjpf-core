@@ -128,6 +128,9 @@ public class ClassFileReaderAdapter implements ClassFileReader {
   public void setClassAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String typeName){}
 
+  public void setEnumAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex,
+          String elementName, int arrayIndex, String enumType, String enumValue){}
+
   public void setAnnotationValueElementCount(ClassFile cf, int annotationIndex, int valueIndex, int elementCount) {}
 
   public void setAnnotationValueElementsDone(ClassFile cf, int annotationIndex, int valueIndex) {}

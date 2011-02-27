@@ -60,9 +60,16 @@ public class ExecTracker extends ListenerAdapter {
   MethodInfo miMain; // just to make init skipping more efficient
   
   public ExecTracker (Config config) {
+    /** @jpfoption et.print_insn : boolean - print executed bytecode instructions (default=true). */
     printInsn = config.getBoolean("et.print_insn", true);
+
+    /** @jpfoption et.print_src : boolean - print source lines (default=true). */
     printSrc = config.getBoolean("et.print_src", true);
+
+    /** @jpfoption et.print_mth : boolean - print executed method names (default=false). */
     printMth = config.getBoolean("et.print_mth", false);
+
+    /** @jpfoption et.skip_init : boolean - do not log execution before entering main() (default=true). */
     skipInit = config.getBoolean("et.skip_init", true);
     
     if (skipInit) {

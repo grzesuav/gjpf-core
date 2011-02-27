@@ -400,6 +400,21 @@ public class ClassFilePrinter extends ClassFileReaderAdapter {
     }
   }
 
+  public void setEnumAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex,
+          String elementName, int arrayIndex, String enumType, String enumValue){
+    if (arrayIndex < 0){
+      pw.printf("%s[%d]: %s=%s.%s\n", indent, annotationIndex, elementName, enumType, enumValue);
+    } else {
+      if (arrayIndex==0) {
+        pw.printf("%s[%d]: %s={", indent, valueIndex, elementName);
+      }  else {
+        pw.print(',');
+      }
+      pw.printf("%s.%s", enumType, enumValue);
+    }
+  }
+
+
   public void setAnnotationValueElementCount(ClassFile cf, int annotationIndex, int valueIndex, int elementCount){
   }
   public void setAnnotationValueElementsDone(ClassFile cf, int annotationIndex, int valueIndex){

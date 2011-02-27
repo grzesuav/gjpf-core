@@ -78,5 +78,5 @@ case "`uname`" in
 esac
 
 # now run ant with this classpath
-java -classpath "$CP" org.apache.tools.ant.Main "$@"
+java $JVM_FLAGS -classpath "$CP" org.apache.tools.ant.Main "$@"
 

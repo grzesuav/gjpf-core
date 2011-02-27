@@ -147,6 +147,9 @@ public interface ClassFileReader {
 
   void setClassAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex, String elementName, int arrayIndex, String typeName);
 
+  void setEnumAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex, String elementName, int arrayIndex,
+          String enumType, String enumValue);
+
   void setAnnotationValueElementCount(ClassFile cf, int annotationIndex, int valueIndex, int elementCount);
 
   void setAnnotationValueElementsDone(ClassFile cf, int annotationIndex, int valueIndex);

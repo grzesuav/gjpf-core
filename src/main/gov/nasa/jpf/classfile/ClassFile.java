@@ -643,6 +643,13 @@ public class ClassFile {
     reader.setClassAnnotationValue( this, annotationIndex, valueIndex, elementName, arrayIndex, typeName);
     pos = p;
   }
+  private void setEnumAnnotationValue(ClassFileReader reader, int annotationIndex, int valueIndex,
+          String elementName, int arrayIndex, String enumType, String enumValue){
+    int p = pos;
+    reader.setEnumAnnotationValue( this, annotationIndex, valueIndex, elementName, arrayIndex, enumType, enumValue);
+    pos = p;
+  }
+
   private void setAnnotationValueElementCount(ClassFileReader reader, int annotationIndex, int valueIndex,
           int elementCount){
     int p = pos;
@@ -1216,7 +1223,7 @@ public class ClassFile {
         String enumTypeName = (String)cpValue[cpIdx];
         cpIdx = readU2();
         String enumConstName = (String)cpValue[cpIdx];
-
+        setEnumAnnotationValue(reader, annotationIndex, valueIndex, elementName, arrayIndex, enumTypeName, enumConstName);
         break;
 
       case 'c':
@@ -1315,18 +1322,6 @@ public class ClassFile {
    }
 
 
-
-
-//
-//   RuntimeVisibleParameterAnnotations_attribute {
-//     u2 attribute_name_index;
-//     u4 attribute_length;
-//     u1 num_parameters;
-//     {
-//       u2 num_annotations;
-//       annotation annotations[num_annotations];
-//     } parameter_annotations[num_parameters];
-//   }
 
 //    AnnotationDefault_attribute {
 //      u2 attribute_name_index;
