@@ -158,10 +158,15 @@ public class ClassFile {
   //--- standard method attributes
   public static final String CODE_ATTR = "Code";
   public static final String EXCEPTIONS_ATTR = "Exceptions";
+  public static final String RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR = "RuntimeInvisibleParameterAnnotations";
+  public static final String RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS_ATTR = "RuntimeVisibleParameterAnnotations";
 
   protected final static String[] stdMethodAttrs = { 
     CODE_ATTR, EXCEPTIONS_ATTR, SYNTHETIC_ATTR, DEPRECATED_ATTR,
-    RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR };
+    RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR,
+    RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR,
+    RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS_ATTR
+  };
 
 
   //--- standard code attributes
@@ -390,6 +395,11 @@ public class ClassFile {
     reader.setInterface( this, ifcIndex, ifcName);
     pos = p;
   }
+  private void setInterfacesDone(ClassFileReader reader){
+    int p = pos;
+    reader.setInterfacesDone( this);
+    pos = p;
+  }
 
 
   private void setFieldCount(ClassFileReader reader, int fieldCount){
@@ -411,6 +421,21 @@ public class ClassFile {
   private void setFieldAttribute(ClassFileReader reader, int fieldIndex, int attrIndex, String name, int attrLength){
     int p = pos + attrLength;
     reader.setFieldAttribute( this, fieldIndex, attrIndex, name, attrLength);
+    pos = p;
+  }
+  private void setFieldAttributesDone(ClassFileReader reader, int fieldIndex){
+    int p = pos;
+    reader.setFieldAttributesDone( this, fieldIndex);
+    pos = p;
+  }
+  private void setFieldDone(ClassFileReader reader, int fieldIndex){
+    int p = pos;
+    reader.setFieldDone( this, fieldIndex);
+    pos = p;
+  }
+  private void setFieldsDone(ClassFileReader reader){
+    int p = pos;
+    reader.setFieldsDone( this);
     pos = p;
   }
   private void setConstantValue(ClassFileReader reader, int fieldIndex, Object value){
@@ -439,9 +464,29 @@ public class ClassFile {
     reader.setMethodAttribute( this, methodIndex, attrIndex, name, attrLength);
     pos = p;
   }
+  private void setMethodAttributesDone(ClassFileReader reader, int methodIndex){
+    int p = pos;
+    reader.setMethodAttributesDone( this, methodIndex);
+    pos = p;
+  }
+  private void setMethodDone(ClassFileReader reader, int methodIndex){
+    int p = pos;
+    reader.setMethodDone( this, methodIndex);
+    pos = p;
+  }
+  private void setMethodsDone(ClassFileReader reader){
+    int p = pos;
+    reader.setMethodsDone( this);
+    pos = p;
+  }
   private void setExceptionCount(ClassFileReader reader, int methodIndex, int exceptionCount){
     int p = pos;
     reader.setExceptionCount( this, methodIndex, exceptionCount);
+    pos = p;
+  }
+  private void setExceptionsDone(ClassFileReader reader){
+    int p = pos;
+    reader.setExceptionsDone( this);
     pos = p;
   }
   private void setException(ClassFileReader reader, int methodIndex, int exceptionIndex, String exceptionType){
@@ -465,6 +510,12 @@ public class ClassFile {
     reader.setExceptionTableEntry( this, methodIndex, exceptionIndex, startPc, endPc, handlerPc, catchType);
     pos = p;
   }
+  private void setExceptionTableDone(ClassFileReader reader){
+    int p = pos;
+    reader.setExceptionTableDone( this);
+    pos = p;
+  }
+
   private void setCodeAttributeCount(ClassFileReader reader, int methodIndex, int attrCount){
     int p = pos;
     reader.setCodeAttributeCount( this, methodIndex, attrCount);
@@ -475,6 +526,12 @@ public class ClassFile {
     reader.setCodeAttribute( this, methodIndex, attrIndex, name, attrLength);
     pos = p;
   }
+  private void setCodeAttributesDone(ClassFileReader reader){
+    int p = pos;
+    reader.setCodeAttributesDone( this);
+    pos = p;
+  }
+          
   private void setLineNumberTableCount(ClassFileReader reader, int methodIndex, int lineNumberCount){
     int p = pos;
     reader.setLineNumberTableCount( this, methodIndex, lineNumberCount);
@@ -485,6 +542,12 @@ public class ClassFile {
     reader.setLineNumber( this, methodIndex, lineIndex, lineNumber, startPc);
     pos = p;
   }
+  private void setLineNumberTableDone(ClassFileReader reader){
+    int p = pos;
+    reader.setLineNumberTableDone( this);
+    pos = p;
+  }
+
   private void setLocalVarTableCount(ClassFileReader reader, int methodIndex, int localVarCount){
     int p = pos;
     reader.setLocalVarTableCount( this, methodIndex, localVarCount);
@@ -496,6 +559,12 @@ public class ClassFile {
     reader.setLocalVar( this, methodIndex, localVarIndex, varName, descriptor, scopeStartPc, scopeEndPc, slotIndex);
     pos = p;
   }
+  private void setLocalVarTableDone(ClassFileReader reader){
+    int p = pos;
+    reader.setLocalVarTableDone( this);
+    pos = p;
+  }
+
 
   private void setClassAttributeCount(ClassFileReader reader, int attrCount){
     int p = pos;
@@ -507,6 +576,12 @@ public class ClassFile {
     reader.setClassAttribute( this, attrIndex, name, attrLength);
     pos = p;
   }
+  private void setClassAttributesDone(ClassFileReader reader){
+    int p = pos;
+    reader.setClassAttributesDone(this);
+    pos = p;
+  }
+
   private void setSourceFile(ClassFileReader reader, String pathName){
     int p = pos;
     reader.setSourceFile( this, pathName);
@@ -523,20 +598,31 @@ public class ClassFile {
     reader.setInnerClass( this, innerClsIndex, outerName, innerName, innerSimpleName, accessFlags);
     pos = p;
   }
+  private void setInnerClassesDone(ClassFileReader reader){
+    int p = pos;
+    reader.setInnerClassesDone(this);
+    pos = p;
+  }
 
-  private void setRuntimeInvisibleAnnotationCount(ClassFileReader reader, int annotationCount){
+  private void setAnnotationCount(ClassFileReader reader, int annotationCount){
     int p = pos;
-    reader.setRuntimeInvisibleAnnotationCount( this, annotationCount);
+    reader.setAnnotationCount( this, annotationCount);
     pos = p;
   }
-  private void setRuntimeVisibleAnnotationCount(ClassFileReader reader, int annotationCount){
+  private void setAnnotationsDone(ClassFileReader reader){
     int p = pos;
-    reader.setRuntimeVisibleAnnotationCount( this, annotationCount);
+    reader.setAnnotationsDone(this);
     pos = p;
   }
-  private void setAnnotation(ClassFileReader reader, int annotationIndex, String annotationType, int nValuePairs){
+
+  private void setAnnotation(ClassFileReader reader, int annotationIndex, String annotationType){
     int p = pos;
-    reader.setAnnotation( this, annotationIndex, annotationType, nValuePairs);
+    reader.setAnnotation( this, annotationIndex, annotationType);
+    pos = p;
+  }
+  private void setAnnotationValueCount(ClassFileReader reader, int annotationIndex, int nValuePairs){
+    int p = pos;
+    reader.setAnnotationValueCount( this, annotationIndex, nValuePairs);
     pos = p;
   }
   private void setPrimitiveAnnotationValue(ClassFileReader reader, int annotationIndex, int valueIndex,
@@ -557,7 +643,34 @@ public class ClassFile {
     reader.setClassAnnotationValue( this, annotationIndex, valueIndex, elementName, arrayIndex, typeName);
     pos = p;
   }
+  private void setAnnotationValueElementCount(ClassFileReader reader, int annotationIndex, int valueIndex,
+          int elementCount){
+    int p = pos;
+    reader.setAnnotationValueElementCount(this, annotationIndex, valueIndex, elementCount);
+    pos = p;
+  }
+  private void setAnnotationValueElementsDone(ClassFileReader reader, int annotationIndex, int valueIndex){
+    int p = pos;
+    reader.setAnnotationValueElementsDone(this, annotationIndex, valueIndex);
+    pos = p;
+  }
 
+  public void setAnnotationValuesDone(ClassFileReader reader, int annotationIndex){
+    int p = pos;
+    reader.setAnnotationValuesDone(this, annotationIndex);
+    pos = p;
+  }
+
+  public void setParameterAnnotationCount(ClassFileReader reader, int parameterCount){
+    int p = pos;
+    reader.setParameterAnnotationCount(this, parameterCount);
+    pos = p;
+  }
+  public void setParameterAnnotationsDone(ClassFileReader reader){
+    int p = pos;
+    reader.setParameterAnnotationsDone(this);
+    pos = p;
+  }
 
 
   //--- parsing
@@ -624,22 +737,18 @@ public class ClassFile {
 
       // interfaces
       int ifcCount = readU2();
-      setInterfaceCount(reader, ifcCount);
       parseInterfaces(reader, ifcCount);
 
       // fields
       int fieldCount = readU2();
-      setFieldCount(reader, fieldCount);
       parseFields(reader, fieldCount);
 
       // methods
       int methodCount = readU2();
-      setMethodCount(reader, methodCount);
       parseMethods(reader, methodCount);
 
       // class attributes
       int classAttrCount = readU2();
-      setClassAttributeCount(reader, classAttrCount);
       parseClassAttributes(reader, classAttrCount);
 
     } catch (BailOut x){
@@ -776,14 +885,20 @@ public class ClassFile {
 
   protected void parseInterfaces(ClassFileReader reader, int ifcCount){
 
+    setInterfaceCount(reader, ifcCount);
+
     for (int i=0; i<ifcCount; i++){
       int cpIdx = readU2();
       setInterface(reader, i, classNameAt(cpIdx));
     }
+
+    setInterfacesDone(reader);
   }
 
   //--- fields
   protected void parseFields(ClassFileReader reader, int fieldCount) {
+
+    setFieldCount(reader, fieldCount);
 
     for (int i=0; i<fieldCount; i++){
       int accessFlags = readU2();
@@ -797,13 +912,16 @@ public class ClassFile {
       setField(reader, i, accessFlags, name, descriptor);
 
       int attrCount = readU2();
-      setFieldAttributeCount(reader, i, attrCount);
-
       parseFieldAttributes(reader, i, attrCount);
+
+      setFieldDone(reader, i);
     }
+
+    setFieldsDone(reader);
   }
 
   protected void parseFieldAttributes(ClassFileReader reader, int fieldIdx, int attrCount){
+    setFieldAttributeCount(reader, fieldIdx, attrCount);
 
     for (int i=0; i<attrCount; i++){
       int cpIdx = readU2();
@@ -814,6 +932,8 @@ public class ClassFile {
       int attrLength = readI4(); // actually U4, but we don't support 2GB attributes
       setFieldAttribute(reader, fieldIdx, i, name, attrLength);
     }
+
+    setFieldAttributesDone(reader, fieldIdx);
   }
 
   /**
@@ -831,6 +951,8 @@ public class ClassFile {
   //--- methods
   protected void parseMethods(ClassFileReader reader, int methodCount) {
 
+    setMethodCount(reader, methodCount);
+
     for (int i=0; i<methodCount; i++){
       int accessFlags = readU2();
 
@@ -843,13 +965,16 @@ public class ClassFile {
       setMethod(reader, i, accessFlags, name, descriptor);
 
       int attrCount = readU2();
-      setMethodAttributeCount(reader, i, attrCount);
-
       parseMethodAttributes(reader, i, attrCount);
+
+      setMethodDone(reader, i);
     }
+
+    setMethodsDone(reader);
   }
 
   protected void parseMethodAttributes(ClassFileReader reader, int methodIdx, int attrCount){
+    setMethodAttributeCount(reader, methodIdx, attrCount);
 
     for (int i=0; i<attrCount; i++){
       int cpIdx = readU2();
@@ -860,6 +985,8 @@ public class ClassFile {
       int attrLength = readI4(); // actually U4, but we don't support 2GB attributes
       setMethodAttribute(reader, methodIdx, i, name, attrLength);
     }
+
+    setMethodAttributesDone(reader, methodIdx);
   }
 
   public void parseExceptionAttr (ClassFileReader reader, int methodIdx){
@@ -871,6 +998,8 @@ public class ClassFile {
       String exceptionType = classNameAt(cpIdx);
       setException(reader, methodIdx, i, exceptionType);
     }
+
+    setExceptionsDone(reader);
   }
 
   /**
@@ -910,14 +1039,16 @@ public class ClassFile {
 
       setExceptionTableEntry(reader, methodIdx, i, startPc, endPc, handlerPc, catchType);
     }
+    setExceptionTableDone(reader);
 
     int attrCount = readU2();
-    setCodeAttributeCount(reader, methodIdx, attrCount);
     parseCodeAttrAttributes(reader, methodIdx, attrCount);
   }
 
 
   protected void parseCodeAttrAttributes(ClassFileReader reader, int methodIdx, int attrCount){
+
+    setCodeAttributeCount(reader, methodIdx, attrCount);
 
     for (int i=0; i<attrCount; i++){
       int cpIdx = readU2();
@@ -928,6 +1059,8 @@ public class ClassFile {
       int attrLength = readI4(); // actually U4, but we don't support 2GB attributes
       setCodeAttribute(reader, methodIdx, i, name, attrLength);
     }
+
+    setCodeAttributesDone(reader);
   }
 
   /**
@@ -946,6 +1079,8 @@ public class ClassFile {
       int lineNumber = readU2();
       setLineNumber(reader, methodIdx, i, lineNumber, startPc);
     }
+
+    setLineNumberTableDone(reader);
   }
 
   
@@ -971,10 +1106,14 @@ public class ClassFile {
       
       setLocalVar(reader, methodIdx, i, varName, descriptor, startPc, startPc+length, slotIndex );
     }
+
+    setLocalVarTableDone(reader);
   }
 
   //--- class
   protected void parseClassAttributes(ClassFileReader reader, int attrCount){
+
+    setClassAttributeCount(reader, attrCount);
 
     for (int i=0; i<attrCount; i++){
       int cpIdx = readU2();
@@ -985,6 +1124,8 @@ public class ClassFile {
       int attrLength = readI4(); // actually U4, but we don't support 2GB attributes
       setClassAttribute(reader, i, name, attrLength);
     }
+
+    setClassAttributesDone(reader);
   }
 
 
@@ -1025,6 +1166,8 @@ public class ClassFile {
 
       setInnerClass(reader, i, outerClsName, innerClsName, innerSimpleName, accessFlags);
     }
+
+    setInnerClassesDone(reader);
   }
 
 // those are as per http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf
@@ -1088,10 +1231,11 @@ public class ClassFile {
 
       case '[':
         int arrayLen = readU2();
-        // setAnnotationValueElementCount(arrayLen);
+        setAnnotationValueElementCount(reader, annotationIndex, valueIndex, arrayLen);
         for (int i=0; i<arrayLen; i++){
           parseAnnotationValue(reader, annotationIndex, valueIndex, elementName, i);
         }
+        setAnnotationValueElementsDone(reader, annotationIndex, valueIndex);
         break;
     }
   }
@@ -1109,53 +1253,67 @@ public class ClassFile {
   void parseAnnotation(ClassFileReader reader, int annotationIndex){
     int cpIdx = readU2();
     String annotationType = (String)cpValue[cpIdx];
-    int nValuePairs = readU2();
 
-    setAnnotation(reader, annotationIndex, annotationType, nValuePairs);
+    setAnnotation(reader, annotationIndex, annotationType);
+
+    int nValuePairs = readU2();
+    setAnnotationValueCount(reader, annotationIndex, nValuePairs);
 
     for (int i=0; i<nValuePairs; i++){
       cpIdx = readU2();
       String elementName = (String)cpValue[cpIdx];
-      parseAnnotationValue(reader, annotationIndex, i, elementName, 0);
+      parseAnnotationValue(reader, annotationIndex, i, elementName, -1);
     }
 
+    setAnnotationValuesDone(reader, annotationIndex);
   }
 
   /*
    * class, field, method annotation attributes (only one per target)
    *
-   *  RuntimeVisibleAnnotations_attribute {
+   *  Runtime[In]VisibleAnnotations_attribute {
    *     u2 attribute_name_index;
    *     u4 attribute_length;
    *     u2 num_annotations;        << pos
    *     annotation annotations[num_annotations];
    *   }
    */
-  public void parseRuntimeVisibleAnnotationsAttr(ClassFileReader reader){
+
+  void parseAnnotationsAttr (ClassFileReader reader){
+
     int numAnnotations = readU2();
-    setRuntimeVisibleAnnotationCount(reader, numAnnotations);
+    setAnnotationCount(reader, numAnnotations);
 
     for (int i=0; i<numAnnotations; i++){
       parseAnnotation(reader, i);
     }
+
+    setAnnotationsDone(reader);
   }
 
   /*
-   *   RuntimeInvisibleAnnotations_attribute {
+   *   RuntimeInvisibleParameterAnnotations_attribute {
    *     u2 attribute_name_index;
    *     u4 attribute_length;
-   *     u2 num_annotations;   << pos
-   *     annotation annotations[num_annotations];
+   *     u1 num_parameters; << pos
+   *     {
+   *       u2 num_annotations;
+   *       annotation annotations[num_annotations];
+   *     } parameter_annotations[num_parameters];
    *   }
    */
-  public void parseRuntimeInvisibleAnnotationsAttr(ClassFileReader reader){
-    int numAnnotations = readU2();
-    setRuntimeInvisibleAnnotationCount(reader, numAnnotations);
+   public void parseParameterAnnotationsAttr(ClassFileReader reader){
+     int numParameters = readU1();
+     setParameterAnnotationCount(reader, numParameters);
+     for (int i=0; i<numParameters; i++){
+       int numAnnotations = readU2();
+       for (int j=0; j<numAnnotations; j++){
+         parseAnnotation(reader, j);
+       }
+     }
+     setParameterAnnotationsDone(reader);
+   }
 
-    for (int i=0; i<numAnnotations; i++){
-      parseAnnotation(reader, i);
-    }
-  }
 
 
 
@@ -1169,15 +1327,7 @@ public class ClassFile {
 //       annotation annotations[num_annotations];
 //     } parameter_annotations[num_parameters];
 //   }
-//   RuntimeInvisibleParameterAnnotations_attribute {
-//     u2 attribute_name_index;
-//     u4 attribute_length;
-//     u1 num_parameters;
-//     {
-//       u2 num_annotations;
-//       annotation annotations[num_annotations];
-//     } parameter_annotations[num_parameters];
-//   }
+
 //    AnnotationDefault_attribute {
 //      u2 attribute_name_index;
 //      u4 attribute_length;

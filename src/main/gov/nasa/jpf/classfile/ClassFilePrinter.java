@@ -20,6 +20,7 @@
 package gov.nasa.jpf.classfile;
 
 import java.io.PrintWriter;
+import java.util.Stack;
 
 /**
  * simple tool to print contents of a classfile
@@ -29,6 +30,10 @@ import java.io.PrintWriter;
 public class ClassFilePrinter extends ClassFileReaderAdapter {
 
   PrintWriter pw;
+
+  int indentLevel = 0;
+  String indent = "";
+
 
   public static void main(String[] args){
     ClassFilePrinter printer = new ClassFilePrinter();
@@ -46,109 +51,130 @@ public class ClassFilePrinter extends ClassFileReaderAdapter {
     pw = new PrintWriter(System.out, true);
   }
 
+  void incIndent(){
+    indentLevel++;
+    indent = indent();
+  }
+
+  void decIndent(){
+    if (indentLevel > 0){
+      indentLevel--;
+      indent = indent();
+    }
+  }
+
+  void printSectionHeader(String id){
+    pw.print("--------------------------------------------------- ");
+    pw.println(id);
+  }
+
+  String indent(){
+    switch (indentLevel){
+      case 0: return "";
+      case 1: return "    ";
+      case 2: return "        ";
+      case 3: return "            ";
+      case 4: return "                ";
+      default:
+        StringBuilder sb = new StringBuilder();
+        for (int i=0; i<indentLevel; i++){
+          sb.append("    ");
+        }
+        return sb.toString();
+    }
+  }
+
   public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
-    pw.println( "--------------------------------------------------- constpool section");
+    printSectionHeader( "constpool");
     printCp(pw,cf);
 
-    pw.println( "--------------------------------------------------- class section");
-    pw.print( "  class=");
-    pw.println( clsName);
-    pw.print( "  superclass=");
-    pw.println( superClsName);
-    pw.print( "  flags=0x");
-    pw.println( Integer.toHexString(flags));
+    incIndent();
+    printSectionHeader( "class");
+    pw.printf("%sclass=%s\n", indent, clsName);
+    pw.printf("%ssuperclass=%s\n", indent, superClsName);
+    pw.printf("%sflags=0x%X\n", indent, flags);
   }
 
   //--- interfaces
   public void setInterfaceCount(ClassFile cf, int ifcCount) {
-    pw.print( "  interface count=");
-    pw.println( ifcCount);
+    pw.printf("%sinterface count=%d\n", indent, ifcCount);
+    incIndent();
   }
 
   public void setInterface(ClassFile cf, int ifcIndex, String ifcName) {
-    pw.print( "  [");
-    pw.print( ifcIndex);
-    pw.print( "]: name=");
-    pw.println( ifcName);
+    pw.printf("%s[%d]: %s\n", indent, ifcIndex, ifcName);
+  }
+
+  public void setInterfacesDone(ClassFile cf){
+    decIndent();
   }
 
   //--- fields
   public void setFieldCount(ClassFile cf, int fieldCount) {
-    pw.println( "--------------------------------------------------- field section");
-    pw.print( "  field count=");
-    pw.println(fieldCount);
+    printSectionHeader( "fields");
+    pw.printf( "%sfield count=%d\n", indent, fieldCount);
   }
 
   public void setField(ClassFile cf, int fieldIndex, int accessFlags, String name, String descriptor) {
-    pw.print( "  [");
-    pw.print( fieldIndex);
-    pw.print( "]: name=");
-    pw.print( name);
-    pw.print( ",descriptor=");
-    pw.print( descriptor);
-    pw.print( ",flags=0x");
-    pw.println(Integer.toHexString(accessFlags));
+    pw.printf("%s[%d]: %s, type=%s,flags=0x%X", indent, fieldIndex, name, descriptor, accessFlags);
   }
 
   public void setFieldAttributeCount(ClassFile cf, int fieldIndex, int attrCount) {
-    pw.print( "       field attr count=");
-    pw.println( attrCount);
+    pw.printf(", attr count=%d\n", attrCount);
+    incIndent();
   }
 
   public void setFieldAttribute(ClassFile cf, int fieldIndex, int attrIndex, String name, int attrLength) {
-    pw.print( "       [");
-    pw.print( attrIndex);
-    pw.print( "]: ");
+    pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
     if (name == ClassFile.CONST_VALUE_ATTR) {
       cf.parseConstValueAttr(this, fieldIndex);
 
     } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR){
-      cf.parseRuntimeVisibleAnnotationsAttr(this);
+      cf.parseAnnotationsAttr(this);
 
     } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR){
-      cf.parseRuntimeInvisibleAnnotationsAttr(this);
+      cf.parseAnnotationsAttr(this);
 
     } else {
-      pw.print(name);
-      pw.print(" data=[");
+      pw.printf(" ,length=%d,data=[",name,attrLength );
       printRawData(pw, cf, attrLength, 10);
       pw.println(']');
     }
   }
 
+  public void setFieldAttributesDone(ClassFile cf, int fieldIndex){
+    decIndent();
+  }
+
+  public void setFieldDone(ClassFile cf, int fieldIndex){
+    pw.println();
+  }
+
+  public void setFieldsDone(ClassFile cf){
+  }
+
   public void setConstantValue(ClassFile cf, int fieldIndex, Object value) {
-    pw.print("ConstantValue=");
-    pw.println(value);
+    pw.printf(" value=%s\n", value);
   }
 
   //--- methods
   public void setMethodCount(ClassFile cf, int methodCount) {
-    pw.println( "--------------------------------------------------- method section");
-    pw.print( "  method count=");
-    pw.println( methodCount);
+    printSectionHeader( "methods");
+    pw.printf( "%smethod count=%d\n", indent, methodCount);
   }
 
   public void setMethod(ClassFile cf, int methodIndex, int accessFlags, String name, String descriptor) {
-    pw.print( "  [");
-    pw.print( methodIndex);
-    pw.print( "]: name=");
-    pw.print( name);
-    pw.print( ",descriptor=");
-    pw.print( descriptor);
-    pw.print( ",flags=0x");
-    pw.println( Integer.toHexString(accessFlags));
+    pw.printf("%s[%d]: %s%s, flags=0x%X", indent, methodIndex, name, descriptor, accessFlags);
   }
 
   public void setMethodAttributeCount(ClassFile cf, int methodIndex, int attrCount) {
-    pw.print( "       method attr count=");
-    pw.println( attrCount);
+    pw.printf(", attr count=%d\n", attrCount);
+    incIndent();
   }
 
   public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
-    pw.print( "       [");
-    pw.print( attrIndex);
-    pw.print( "]: ");
+    pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
     if (name == ClassFile.CODE_ATTR) {
       cf.parseCodeAttr(this, methodIndex);
@@ -157,243 +183,241 @@ public class ClassFilePrinter extends ClassFileReaderAdapter {
       cf.parseExceptionAttr(this, methodIndex);
 
     } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR){
-      cf.parseRuntimeVisibleAnnotationsAttr(this);
+      cf.parseAnnotationsAttr(this);
 
     } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR){
-      cf.parseRuntimeInvisibleAnnotationsAttr(this);
+      cf.parseAnnotationsAttr(this);
+
+    } else if (name == ClassFile.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS_ATTR){
+      cf.parseParameterAnnotationsAttr(this);
+
+    } else if (name == ClassFile.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR){
+      cf.parseParameterAnnotationsAttr(this);
 
     } else {
-      pw.print(name);
-      pw.print(" data=[");
+      pw.printf(" ,length=%d,data=[", attrLength );
       printRawData(pw, cf, attrLength, 10);
       pw.println(']');
     }
+  }
+
+  public void setMethodAttributesDone(ClassFile cf, int methodIndex){
+    decIndent();
+  }
+
+  public void setMethodDone(ClassFile cf, int methodIndex){
+    pw.println();
+  }
+
+  public void setMethodsDone(ClassFile cf){
   }
 
   public void setExceptionCount(ClassFile cf, int methodIndex, int exceptionCount){
-    pw.print("Exceptions count=");
-    pw.println(exceptionCount);
+    pw.printf("exceptions count=%d\n", exceptionCount);
+    incIndent();
+  }
+  public void setException(ClassFile cf, int methodIndex, int exceptionIndex, String exceptionType){
+    pw.printf("%s[%d]: %s\n", indent, exceptionIndex, exceptionType);
+  }
+  public void setExceptionsDone(ClassFile cf){
+    decIndent();
   }
 
-  public void setException(ClassFile cf, int methodIndex, int exceptionIndex, String exceptionType){
-    pw.print( "            [");
-    pw.print( exceptionIndex);
-    pw.print( "]: ");
-    pw.print( "type=");
-    pw.println(exceptionType);
-  }
 
   public void setCode(ClassFile cf, int methodIndex, int maxStack, int maxLocals, int codeLength) {
-    pw.print("Code ");
-    pw.print( "maxStack=");
-    pw.print( maxStack);
-    pw.print( ",maxLocals=");
-    pw.print( maxLocals);
-    pw.print( ",length=");
-    pw.print( codeLength);
-    /**
-    pw.print( ",data=[");
-    printRawData(pw, cf, codeLength, 10);
-    pw.print(']');
-    **/
-    pw.println();
-    ByteCodePrinter bcPrinter = new ByteCodePrinter(pw, cf, "            ");
+    pw.printf(", maxStack=%d,maxLocals=%d,length=%d\n", maxStack, maxLocals,codeLength);
+    incIndent();
+    ByteCodePrinter bcPrinter = new ByteCodePrinter(pw, cf, indent);
     cf.parseBytecode(bcPrinter, methodIndex, codeLength);
+    decIndent();
   }
 
   public void setExceptionTableCount(ClassFile cf, int methodIndex, int exceptionTableCount) {
-    pw.print( "            exception table count=");
-    pw.println( exceptionTableCount);
+    pw.printf("%sexception table count=%d\n", indent, exceptionTableCount);
+    incIndent();
   }
-
   public void setExceptionTableEntry(ClassFile cf, int methodIndex, int exceptionIndex,
           int startPc, int endPc, int handlerPc, String catchType) {
-    pw.print( "            [");
-    pw.print( exceptionIndex);
-    pw.print( "]: ");
-    pw.print( "type=");
-    pw.print( catchType);
-    pw.print( ",startPc=");
-    pw.print( startPc);
-    pw.print( ",endPc=");
-    pw.print( endPc);
-    pw.print( ",handlerPc=");
-    pw.println( handlerPc);
+    pw.printf("%s[%d]: type=%s, range=[%d..%d], handler=%d\n", indent, exceptionIndex, catchType, startPc, endPc, handlerPc);
+  }
+  public void setExceptionTableDone(ClassFile cf){
+    decIndent();
   }
 
   public void setCodeAttributeCount(ClassFile cf, int methodIndex, int attrCount) {
-    pw.print( "            code attr count=");
-    pw.println( attrCount);
+    pw.printf("%scode attribute count=%d\n", indent, attrCount);
+    incIndent();
   }
-
   public void setCodeAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
-    pw.print( "            [");
-    pw.print( attrIndex);
-    pw.print( "]: ");
+    pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
     if (name == ClassFile.LINE_NUMBER_TABLE_ATTR) {
-      pw.println( "LineNumberTable");
       cf.parseLineNumberTableAttr(this, methodIndex);
 
     } else if (name == ClassFile.LOCAL_VAR_TABLE_ATTR) {
-      pw.println( "LocalVarTable");
       cf.parseLocalVarTableAttr(this, methodIndex);
 
     } else {  // generic
-      pw.print(name);
-      pw.print(" data=[");
+      pw.printf(" ,length=%d,data=[", attrLength );
       printRawData(pw, cf, attrLength, 10);
       pw.println(']');
     }
+  }
+  public void setCodeAttributesDone(ClassFile cf){
+    decIndent();
   }
 
   public void setLineNumberTableCount(ClassFile cf, int methodIndex, int lineNumberCount) {
-    pw.print( "                 linenumber table count=");
-    pw.println( lineNumberCount);
+    pw.printf(", linenumber count=%d\n", lineNumberCount);
+    incIndent();
   }
-
   public void setLineNumber(ClassFile cf, int methodIndex, int lineIndex, int lineNumber, int startPc) {
-    pw.print( "                 [");
-    pw.print( lineIndex);
-    pw.print( "]: ");
-    pw.print( "line=");
-    pw.print( lineNumber);
-    pw.print( ",startPc=");
-    pw.println( startPc);
+    pw.printf("%s[%d]: line=%d, pc=%d\n", indent, lineIndex, lineNumber, startPc);
+  }
+  public void setLineNumberTableDone(ClassFile cf){
+    decIndent();
   }
 
   public void setLocalVarTableCount(ClassFile cf, int methodIndex, int localVarCount) {
-    pw.print( "                 localvar table count=");
-    pw.println( localVarCount);
+    pw.printf(", localVar count=%d\n", localVarCount);
+    incIndent();
   }
-
   public void setLocalVar(ClassFile cf, int methodIndex, int localVarIndex,
           String varName, String descriptor, int scopeStartPc, int scopeEndPc, int slotIndex) {
-    pw.print( "                 [");
-    pw.print( localVarIndex);
-    pw.print( "]: ");
-    pw.print( "name=");
-    pw.print( varName);
-    pw.print( ",descriptor=");
-    pw.print( descriptor);
-    pw.print( ",startPc=");
-    pw.print( scopeStartPc);
-    pw.print( ",endPc=");
-    pw.print( scopeEndPc);
-    pw.print( ",slot=");
-    pw.println( slotIndex);
+    pw.printf("%s[%d]: %s, type=%s, scope=[%d..%d], slot=%d\n", indent, localVarIndex, varName, descriptor,
+            scopeStartPc, scopeEndPc, slotIndex);
   }
-
+  public void setLocalVarTableDone(ClassFile cf){
+    decIndent();
+  }
 
   //--- class attributes
   public void setClassAttributeCount(ClassFile cf, int attrCount) {
-    pw.println( "--------------------------------------------------- class attr section");
-    pw.println("  class attr count=" + attrCount);
+    printSectionHeader( "class attributes");
+    pw.printf("%sclass attribute count=%d\n", indent, attrCount);
+    incIndent();
   }
-
   public void setClassAttribute(ClassFile cf, int attrIndex, String name, int attrLength) {
-    pw.print( "  [");
-    pw.print( attrIndex);
-    pw.print( "]: ");
+    pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
     if (name == ClassFile.SOURCE_FILE_ATTR) {
-      pw.print("SourceFile file=");
       cf.parseSourceFileAttr(this);
 
     } else if (name == ClassFile.DEPRECATED_ATTR) {
-      pw.println("Deprecated");
 
     } else if (name == ClassFile.INNER_CLASSES_ATTR) {
-      pw.println("InnerClasses");
       cf.parseInnerClassesAttr(this);
 
     } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR){
-      cf.parseRuntimeVisibleAnnotationsAttr(this);
+      cf.parseAnnotationsAttr(this);
 
     } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR){
-      cf.parseRuntimeInvisibleAnnotationsAttr(this);
+      cf.parseAnnotationsAttr(this);
       
     } else {
-      pw.print(name);
-      pw.print(" data=[");
+      pw.printf(" ,length=%d,data=[", attrLength );
       printRawData(pw, cf, attrLength, 10);
       pw.println(']');
     }
   }
+  public void setClassAttributesDone(ClassFile cf){
+    decIndent();
+  }
 
   public void setSourceFile(ClassFile cf, String pathName){
-    pw.print( " path=");
-    pw.println(pathName);
+    pw.printf(", path=%s\n", pathName);
   }
 
   public void setInnerClassCount(ClassFile cf, int innerClsCount) {
-    pw.println( "       inner class count=" + innerClsCount);
+    pw.printf( "%sinner class count=%d\n", indent, innerClsCount);
+    incIndent();
   }
-
   public void setInnerClass(ClassFile cf, int innerClsIndex,
           String outerName, String innerName, String innerSimpleName, int accessFlags) {
-    pw.print( "       [");
-    pw.print( innerClsIndex);
-    pw.print( "]: inner=");
-    pw.print( innerName); 
-    pw.print( ",simpleName=");
-    pw.print( innerSimpleName);
-    pw.print( ",outer=");
-    pw.print( outerName); 
-    pw.print( ",flags=0x");
-    pw.println( Integer.toHexString(accessFlags));
+    pw.printf("%s[%d]: %s, fullName=%s, outerClass=%d, flags=0x%X\n", indent, innerSimpleName, innerName, outerName, accessFlags);
+  }
+  public void setInnerClassesDone(ClassFile cf){
+    decIndent();
   }
 
-  public void setRuntimeInvisibleAnnotationCount(ClassFile cf, int annotationCount){
-    pw.print( "RuntimeInvisibleAnnotations annotationCount=");
-    pw.println(annotationCount);
+
+  public void setAnnotationCount(ClassFile cf, int annotationCount){
+    pw.printf( " count=%d\n", annotationCount);
+    incIndent();
+  }
+  public void setAnnotationsDone(ClassFile cf){
+    decIndent();
   }
 
-  public void setRuntimeVisibleAnnotationCount(ClassFile cf, int annotationCount){
-    pw.print( "RuntimeVisibleAnnotations annotationCount=");
-    pw.println(annotationCount);
+  public void setAnnotation(ClassFile cf, int annotationIndex, String annotationType){
+    pw.printf("%s[%d]: %s", indent, annotationIndex, annotationType);
   }
 
-  public void setAnnotation(ClassFile cf, int annotationIndex, String annotationType, int nValuePairs){
-    pw.print( "            [");
-    pw.print( annotationIndex);
-    pw.print( "]: ");
-    pw.print(annotationType);
-    pw.print(" valueCount=");
-    pw.println(nValuePairs);
+  public void setAnnotationValueCount(ClassFile cf, int annotationIndex, int nValuePairs){
+    pw.printf(" valueCount=%d\n", nValuePairs);
+    incIndent();
   }
 
   public void setPrimitiveAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, Object val){
-    pw.print( "                 [");
-    pw.print( valueIndex);
-    pw.print( "]: ");
-    pw.print(elementName);
-    pw.print("=");
-    pw.println(val);
+    if (arrayIndex < 0){
+      pw.printf("%s[%d]: %s=%s\n", indent, annotationIndex, elementName, val);
+    } else {
+      if (arrayIndex==0) {
+        pw.printf("%s[%d]: %s={", indent, valueIndex, elementName);
+      }  else {
+        pw.print(',');
+      }
+      pw.print(val);
+    }
   }
 
   public void setStringAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String s){
-    pw.print( "                 [");
-    pw.print( valueIndex);
-    pw.print( "]: ");
-    pw.print(elementName);
-    pw.print("=\"");
-    pw.print(s);
-    pw.println("\"");
+    if (arrayIndex < 0){
+      pw.printf("%s[%d]: %s=\"%s\"\n", indent, annotationIndex, elementName, s);
+    } else {
+      if (arrayIndex==0) {
+        pw.printf("%s[%d]: %s={", indent, valueIndex, elementName);
+      }  else {
+        pw.print(',');
+      }
+      pw.printf("\"%s\"", s);
+    }
   }
 
   public void setClassAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String typeName){
-    pw.print( "                 [");
-    pw.print( valueIndex);
-    pw.print( "]: ");
-    pw.print(elementName);
-    pw.print("=class ");
-    pw.println(typeName);
+    if (arrayIndex < 0){
+      pw.printf("%s[%d]: %s=class %s\n", indent, annotationIndex, elementName, typeName);
+    } else {
+      if (arrayIndex==0) {
+        pw.printf("%s[%d]: %s={", indent, valueIndex, elementName);
+      }  else {
+        pw.print(',');
+      }
+      pw.printf("class %s", typeName);
+    }
   }
 
+  public void setAnnotationValueElementCount(ClassFile cf, int annotationIndex, int valueIndex, int elementCount){
+  }
+  public void setAnnotationValueElementsDone(ClassFile cf, int annotationIndex, int valueIndex){
+    pw.println("}");
+  }
+
+  public void setAnnotationValuesDone(ClassFile cf, int annotationIndex){
+    decIndent();
+  }
+
+  public void setParameterAnnotationCount(ClassFile cf, int parameterCount){
+    pw.printf(" parameterCount=%d\n", parameterCount);
+    incIndent();
+  }
+
+  public void setParameterAnnotationsDone(ClassFile cf){
+    decIndent();
+  }
 
   //--- internal stuff
 
