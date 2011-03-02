@@ -25,6 +25,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * class to read and dissect Java classfile contents (as specified by the Java VM
@@ -79,26 +83,53 @@ public class ClassFile {
   
   //--- ctors
   public ClassFile (File file) throws ClassFileException {
-    FileInputStream fis = null;
+    FileInputStream is = null;
     try {
-      fis = new FileInputStream(file);
+      is = new FileInputStream(file);
 
       long len = file.length();
-      if (len > Integer.MAX_VALUE || len <= 0){   // classfile of size > 2GB unlikely
+      if (len > Integer.MAX_VALUE || len <= 0){   // classfile of size > 2GB not supported
         error("cannot read file of size: " + len);
       }
       data = new byte[(int)len];
-      readData(fis);
+      readData(is);
 
     } catch (FileNotFoundException fnfx) {
       error("classfile not found: " + file.getPath());
 
     } finally {
-      if (fis != null) {
+      if (is != null) {
         try {
-          fis.close();
+          is.close();
         } catch (IOException iox) {
           error("failed to close file: " + file.getPath());
+        }
+      }
+    }
+  }
+
+  public ClassFile (JarFile jar, JarEntry jarEntry) throws ClassFileException {
+    InputStream is = null;
+
+    try {
+      long len = jarEntry.getSize();
+      if (len > Integer.MAX_VALUE || len <= 0){   // classfile of size > 2GB not supported
+        error("cannot read file of size: " + len);
+      }
+
+      is = jar.getInputStream(jarEntry);
+      data = new byte[(int)len];
+      readData(is);
+
+    } catch (IOException ex) {
+      error("error reading JarEntry " + jarEntry);
+
+    }  finally {
+      if (is != null) {
+        try {
+          is.close();
+        } catch (IOException iox) {
+          error("failed to close input stream for JarEntry: " + jarEntry);
         }
       }
     }
