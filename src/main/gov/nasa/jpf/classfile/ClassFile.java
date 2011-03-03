@@ -82,6 +82,10 @@ public class ClassFile {
 
   
   //--- ctors
+  public ClassFile (byte[] data){
+    this.data = data;
+  }
+
   public ClassFile (File file) throws ClassFileException {
     FileInputStream is = null;
     try {
