@@ -816,7 +816,7 @@ public class ByteCodePrinter implements ByteCodeReader {
 
   public void new_(int cpClassIndex) {
     pw.printf("%s%3d: %s @%d(\"%s\")\n", prefix, pc, "new",
-            cf.classNameAt(cpClassIndex));
+            cpClassIndex, cf.classNameAt(cpClassIndex));
   }
 
   public void newarray(int typeCode) {

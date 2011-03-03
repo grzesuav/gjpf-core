@@ -136,8 +136,11 @@ public class ClassFilePrinter extends ClassFileReaderAdapter {
     } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR){
       cf.parseAnnotationsAttr(this);
 
+    } else if (name == ClassFile.SIGNATURE_ATTR){
+      cf.parseSignatureAttr(this);
+
     } else {
-      pw.printf(" ,length=%d,data=[",name,attrLength );
+      pw.printf(" ,length=%d,data=[",attrLength );
       printRawData(pw, cf, attrLength, 10);
       pw.println(']');
     }
@@ -193,6 +196,9 @@ public class ClassFilePrinter extends ClassFileReaderAdapter {
 
     } else if (name == ClassFile.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR){
       cf.parseParameterAnnotationsAttr(this);
+
+    } else if (name == ClassFile.SIGNATURE_ATTR){
+      cf.parseSignatureAttr(this);
 
     } else {
       pw.printf(" ,length=%d,data=[", attrLength );
@@ -313,7 +319,10 @@ public class ClassFilePrinter extends ClassFileReaderAdapter {
 
     } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR){
       cf.parseAnnotationsAttr(this);
-      
+
+    } else if (name == ClassFile.SIGNATURE_ATTR){
+      cf.parseSignatureAttr(this);
+
     } else {
       pw.printf(" ,length=%d,data=[", attrLength );
       printRawData(pw, cf, attrLength, 10);
@@ -334,7 +343,8 @@ public class ClassFilePrinter extends ClassFileReaderAdapter {
   }
   public void setInnerClass(ClassFile cf, int innerClsIndex,
           String outerName, String innerName, String innerSimpleName, int accessFlags) {
-    pw.printf("%s[%d]: %s, fullName=%s, outerClass=%d, flags=0x%X\n", indent, innerSimpleName, innerName, outerName, accessFlags);
+    pw.printf("%s[%d]: %s, fullName=%s, outerClass=%s, flags=0x%X\n", indent, innerClsIndex,
+            innerSimpleName, innerName, outerName, accessFlags);
   }
   public void setInnerClassesDone(ClassFile cf){
     decIndent();
@@ -432,6 +442,10 @@ public class ClassFilePrinter extends ClassFileReaderAdapter {
 
   public void setParameterAnnotationsDone(ClassFile cf){
     decIndent();
+  }
+
+  public void setSignature(ClassFile cf, String signature){
+    pw.printf(" %s\n", signature);
   }
 
   //--- internal stuff
