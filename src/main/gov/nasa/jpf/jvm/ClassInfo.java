@@ -293,6 +293,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return ci == stringClassInfo;
   }
 
+  protected ClassInfo() {
+    // to be initialized excplicitly (e.g. by ClassInfoInitializer)
+  }
+
   /**
    * ClassInfo ctor used for builtin types (arrays and primitive types)
    * i.e. classes we don't have class files for
@@ -334,7 +338,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   /**
    * createAndInitialize a fully synthetic implementation of an Annotation proxy
    */
-  ClassInfo (ClassInfo annotationCls, String name, int uniqueId) {
+  ClassInfo(ClassInfo annotationCls, String name, int uniqueId) {
     this.name = name;
     isClass = true;
 
@@ -350,14 +354,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     sFields = new FieldInfo[0]; // none
     staticDataSize = 0;
 
-    methods = new HashMap<String,MethodInfo>();
+    methods = new HashMap<String, MethodInfo>();
     iFields = new FieldInfo[annotationCls.methods.size()];
     nInstanceFields = iFields.length;
 
     // all accessor methods of ours make it into iField/method combinations
     int idx = 0;
     int off = 0;  // no super class
-    for (MethodInfo mi : annotationCls.getDeclaredMethodInfos()){
+    for (MethodInfo mi : annotationCls.getDeclaredMethodInfos()) {
       String mname = mi.getName();
       String mtype = mi.getReturnTypeName();
       String genericSignature = mi.getGenericSignature();
@@ -380,7 +384,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       getfield.setField(mname, name);
       cb.append(getfield);
 
-      if (fi.isReference()){
+      if (fi.isReference()) {
         cb.append(insnFactory.create(this, ARETURN.class));
       } else {
         if (fi.getStorageSize() == 1) {
@@ -399,8 +403,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     instanceDataOffset = 0;
 
     this.uniqueId = uniqueId;
-    loadedClasses.set(uniqueId,this);
-   }
+    loadedClasses.set(uniqueId, this);
+  }
 
 
   protected ClassInfo (JavaClass jc, int uniqueId) {

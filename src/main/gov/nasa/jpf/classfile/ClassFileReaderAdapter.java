@@ -141,4 +141,5 @@ public class ClassFileReaderAdapter implements ClassFileReader {
 
   public void setParameterAnnotationsDone(ClassFile cf) {}
 
+  public void setSignature(ClassFile cf, String signature) {}
 }

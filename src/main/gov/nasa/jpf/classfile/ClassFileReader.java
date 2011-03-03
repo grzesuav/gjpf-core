@@ -160,4 +160,6 @@ public interface ClassFileReader {
 
   void setParameterAnnotationsDone(ClassFile cf);
 
+
+  void setSignature(ClassFile cf, String signature);
 }

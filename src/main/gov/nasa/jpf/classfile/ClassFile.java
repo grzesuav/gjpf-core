@@ -112,40 +112,8 @@ public class ClassFile {
     }
   }
 
-  public ClassFile (JarFile jar, JarEntry jarEntry) throws ClassFileException {
-    InputStream is = null;
-
-    try {
-      long len = jarEntry.getSize();
-      if (len > Integer.MAX_VALUE || len <= 0){   // classfile of size > 2GB not supported
-        error("cannot read file of size: " + len);
-      }
-
-      is = jar.getInputStream(jarEntry);
-      data = new byte[(int)len];
-      readData(is);
-
-    } catch (IOException ex) {
-      error("error reading JarEntry " + jarEntry);
-
-    }  finally {
-      if (is != null) {
-        try {
-          is.close();
-        } catch (IOException iox) {
-          error("failed to close input stream for JarEntry: " + jarEntry);
-        }
-      }
-    }
-  }
-
   public ClassFile (String pathName)  throws ClassFileException {
     this( new File(pathName));
-  }
-
-  public ClassFile (InputStream is, int length)  throws ClassFileException {
-    data = new byte[(int) length];
-    readData(is);
   }
 
 
@@ -179,6 +147,7 @@ public class ClassFile {
   //--- general attributes
   public static final String SYNTHETIC_ATTR = "Synthetic";
   public static final String DEPRECATED_ATTR = "Deprecated";
+  public static final String SIGNATURE_ATTR = "Signature";
   public static final String RUNTIME_INVISIBLE_ANNOTATIONS_ATTR = "RuntimeInvisibleAnnotations";
   public static final String RUNTIME_VISIBLE_ANNOTATIONS_ATTR = "RuntimeVisibleAnnotations";
 
@@ -186,7 +155,7 @@ public class ClassFile {
   public static final String CONST_VALUE_ATTR = "ConstantValue";
 
   protected final static String[] stdFieldAttrs = {
-    CONST_VALUE_ATTR, SYNTHETIC_ATTR, DEPRECATED_ATTR,
+    CONST_VALUE_ATTR, SYNTHETIC_ATTR, DEPRECATED_ATTR, SIGNATURE_ATTR,
     RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR };
 
 
@@ -197,7 +166,7 @@ public class ClassFile {
   public static final String RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS_ATTR = "RuntimeVisibleParameterAnnotations";
 
   protected final static String[] stdMethodAttrs = { 
-    CODE_ATTR, EXCEPTIONS_ATTR, SYNTHETIC_ATTR, DEPRECATED_ATTR,
+    CODE_ATTR, EXCEPTIONS_ATTR, SYNTHETIC_ATTR, DEPRECATED_ATTR, SIGNATURE_ATTR,
     RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR,
     RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR,
     RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS_ATTR
@@ -216,7 +185,7 @@ public class ClassFile {
   public static final String  INNER_CLASSES_ATTR = "InnerClasses";
 
   protected final static String[] stdClassAttrs = {
-    SOURCE_FILE_ATTR, DEPRECATED_ATTR, INNER_CLASSES_ATTR, DEPRECATED_ATTR,
+    SOURCE_FILE_ATTR, DEPRECATED_ATTR, INNER_CLASSES_ATTR, DEPRECATED_ATTR, SIGNATURE_ATTR,
     RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR };
 
 
@@ -714,6 +683,11 @@ public class ClassFile {
     pos = p;
   }
 
+  public void setSignature(ClassFileReader reader, String signature){
+    int p = pos;
+    reader.setSignature(this, signature);
+    pos = p;
+  }
 
   //--- parsing
 
@@ -1356,6 +1330,17 @@ public class ClassFile {
      setParameterAnnotationsDone(reader);
    }
 
+  /**
+   *  Signature_attribute {
+   *    u2 attribute_name_index;
+   *    u4 attr-length;
+   *    u2 signature-index << pos
+   *  }
+   */
+   public void parseSignatureAttr(ClassFileReader reader){
+     int cpIdx = readU2();
+     setSignature(reader,(String)utf8At(cpIdx));
+   }
 
 
 //    AnnotationDefault_attribute {
@@ -1385,11 +1370,6 @@ public class ClassFile {
 //     } local_variable_type_table[local_variable_type_table_length];
 //   }
 
-//   Signature_attribute {
-//     u2 attribute_name_index;
-//     u4 attr-length;
-//     u2 signature-index
-//   }
 
 
 
