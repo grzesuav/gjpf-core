@@ -76,63 +76,16 @@ public class ClassPath {
   static class DirElement extends PathElement {
     File dir;
 
-    HashMap<String,File> map = new HashMap<String,File>();
-
     DirElement (File dir){
       super(dir.getPath());
-
       this.dir = dir;
-      addClassFilesRecursive (dir, null);
     }
-
-    protected void addClassFilesRecursive(File dir, String pkgName) {
-      for (File f : dir.listFiles()) {
-        String fn = f.getName();
-
-        if (f.isFile()) {
-          if (fn.endsWith(".class")) {
-            String clsName;
-            if (pkgName != null) {
-              StringBuilder sb = new StringBuilder();
-              sb.append(pkgName);
-              sb.append('.');
-              sb.append(fn, 0, fn.length() - 6);
-              clsName = sb.toString();
-            } else {
-              clsName = fn.substring(0, fn.length() - 6);
-            }
-            map.put(clsName, f);
-          }
-
-        } else if (f.isDirectory()) {
-          String pkg;
-          if (pkgName == null) {
-            pkg = fn;
-          } else {
-            pkg = pkgName + '.' + fn;
-          }
-
-          addClassFilesRecursive(f, pkg);
-        }
-      }
-    }
-
-    File getFile (String clsName){
-      String pn = clsName.replace('.', File.separatorChar) + ".class";
-      File f = new File(dir,pn);
-      if (f.isFile()){
-        return f;
-      } else {
-        return null;
-      }
-    }
-
 
     public byte[] getClassData (String clsName) throws ClassFileException {
-      File f = map.get(clsName);
-      //File f = getFile(clsName);
+      String pn = clsName.replace('.', File.separatorChar) + ".class";
+      File f = new File(dir,pn);
 
-      if (f != null){
+      if (f.isFile()){
         FileInputStream fis = null;
 
         try {
@@ -166,39 +119,22 @@ public class ClassPath {
 
   static class JarElement extends PathElement {
     JarFile jar;
-    HashMap<String,JarEntry> map = new HashMap<String,JarEntry>();
 
     JarElement (File file) throws ClassFileException {
       super(file.getPath());
 
       try {
         jar = new JarFile(file);
-        addClassFiles();
+
       } catch (IOException iox){
         error("reading jar: " + name);
       }
     }
 
-    protected void addClassFiles (){
-      for (Enumeration<JarEntry> e = jar.entries(); e.hasMoreElements();){
-        JarEntry je = e.nextElement();
-        String jen = je.getName();
-        if (jen.endsWith(".class")){
-          String clsName = jen.substring(0, jen.length()-6).replace('/', '.');
-          map.put(clsName, je);
-        }
-      }
-    }
-
-    JarEntry getJarEntry(String clsName){
-      String pn = clsName.replace('.', File.separatorChar) + ".class";
-      JarEntry e = jar.getJarEntry(pn);
-      return e;
-    }
 
     public byte[] getClassData (String clsName) throws ClassFileException {
-      JarEntry e = map.get(clsName);
-      //JarEntry e = getJarEntry(clsName);
+      String pn = clsName.replace('.', File.separatorChar) + ".class";
+      JarEntry e = jar.getJarEntry(pn);
 
       if (e != null){
         InputStream is = null;
