@@ -21,10 +21,10 @@ package gov.nasa.jpf.jvm;
 
 import java.text.DateFormat;
 import java.text.Format;
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * this is just the minimal support for DateFormat.parse(String)
@@ -36,6 +36,15 @@ public class JPF_java_text_DateFormat {
     assert fmt instanceof SimpleDateFormat;
 
     return (DateFormat)fmt;
+  }
+
+  public static void setTimeZone__Ljava_util_TimeZone_2__V(MJIEnv env, int objref,int timeZoneRef) {
+    String timeZoneId = env.getStringField(timeZoneRef, "ID");
+    TimeZone timeZone = TimeZone.getTimeZone(timeZoneId);
+    DateFormat fmt = getInstance(env,objref);
+    fmt.setTimeZone(timeZone);
+    int calendarRef = env.getReferenceField(objref, "calendar");
+    env.setReferenceField(calendarRef, "zone", timeZoneRef);
   }
 
   public static int parse__Ljava_lang_String_2__Ljava_util_Date_2 (MJIEnv env, int objref, int strRef) {
