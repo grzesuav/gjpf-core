@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
+import gov.nasa.jpf.JPFException;
 
 /**
  * fieldinfo for slots holding chars
@@ -28,11 +28,21 @@ public class CharFieldInfo extends SingleSlotFieldInfo {
 
   char init;
 
-  public CharFieldInfo (String name, String type, String genericSignature, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-    super(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    init = (cv != null) ? cv.toString().charAt(0) : 0;
+  public CharFieldInfo (String name, int modifiers,
+                        ClassInfo ci, int idx, int off) {
+    super(name, "char", modifiers, ci, idx, off);
   }
+
+  public void setConstantValue(Object constValue){
+    if (constValue instanceof Integer){
+      cv = constValue;
+      init = (char) ((Integer)constValue).shortValue();
+
+    } else {
+      throw new JPFException("illegal char ConstValue=" + constValue);
+    }
+  }
+
 
   public void initialize (ElementInfo ei) {
     ei.getFields().setCharValue(storageOffset, init);

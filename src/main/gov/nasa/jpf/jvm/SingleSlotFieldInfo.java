@@ -26,9 +26,9 @@ import org.apache.bcel.classfile.ConstantValue;
  */
 public abstract class SingleSlotFieldInfo extends FieldInfo {
 
-    protected SingleSlotFieldInfo (String name, String type, String genericSignature, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-     super(name, type, genericSignature, modifiers, cv, ci, idx, off);
+    protected SingleSlotFieldInfo (String name, String type, int modifiers,
+                          ClassInfo ci, int idx, int off) {
+      super(name, type, modifiers, ci, idx, off);
     }
 
     public boolean is1SlotField(){

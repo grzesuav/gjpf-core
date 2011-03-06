@@ -18,7 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
+import gov.nasa.jpf.JPFException;
+
 
 
 /**
@@ -28,10 +29,19 @@ public class FloatFieldInfo extends SingleSlotFieldInfo {
   float init;
 
 
-  public FloatFieldInfo (String name, String type, String genericSignature, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-    super(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    init = (cv != null) ? Float.parseFloat(cv.toString()) : 0.0f;
+  public FloatFieldInfo (String name, int modifiers,
+                         ClassInfo ci, int idx, int off) {
+    super(name, "float", modifiers, ci, idx, off);
+  }
+
+  public void setConstantValue(Object constValue){
+    if (constValue instanceof Float){
+      cv = constValue;
+      init = (Float)constValue;
+
+    } else {
+      throw new JPFException("illegal float ConstValue=" + constValue);
+    }
   }
 
   public void initialize (ElementInfo ei) {

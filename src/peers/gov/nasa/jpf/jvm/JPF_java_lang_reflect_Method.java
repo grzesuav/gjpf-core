@@ -172,7 +172,7 @@ public class JPF_java_lang_reflect_Method {
   }
     
   static int createBoxedReturnValueObject (MJIEnv env, MethodInfo mi, StackFrame frame) {
-    byte rt = mi.getReturnType();
+    byte rt = mi.getReturnTypeCode();
     int ret = MJIEnv.NULL;
     ElementInfo rei;
     

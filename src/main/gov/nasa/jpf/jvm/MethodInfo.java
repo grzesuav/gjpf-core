@@ -184,7 +184,9 @@ public class MethodInfo extends InfoObject implements Cloneable {
     
     return true;
   }
-  
+
+
+
   /**
    * Creates a new method info.
    */
@@ -235,11 +237,11 @@ public class MethodInfo extends InfoObject implements Cloneable {
     // we don't want direct call methods in the mthTable (would be a memory leak)
   }
   
-  public MethodInfo (ClassInfo ci, String name, int maxLocals, int maxStack, int modifiers){
+  public MethodInfo (ClassInfo ci, String name, String signature, int maxLocals, int maxStack, int modifiers){
     this.ci = ci;
     this.name = name;
-    this.uniqueName = name;
-    this.signature = "()V";
+    this.signature = signature;
+    this.uniqueName = getUniqueName(name, signature);
     this.genericSignature = "";
     this.maxLocals = maxLocals;
     this.maxStack = maxStack;
@@ -268,7 +270,11 @@ public class MethodInfo extends InfoObject implements Cloneable {
   public static void setInstructionFactory (InstructionFactory newFactory){
     insnFactory = newFactory;
   }
-  
+
+  protected void setGenericSignature(String sig){
+    genericSignature = sig;
+  }
+
   protected static String computeGenericSignature(Method m) {
     Attribute attribs[] = m.getAttributes();
     for (int i = attribs.length; --i >= 0; ) {
@@ -284,7 +290,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   Instruction createSyntheticReturnInsn(){
     ReturnInstruction insn = null;
 
-    switch (getReturnType()){
+    switch (getReturnTypeCode()){
       case Types.T_BOOLEAN:
       case Types.T_BYTE:
       case Types.T_CHAR:
@@ -588,6 +594,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
     }
 
     return argSize;
+  }
+
+  public String getReturnType () {
+    return Types.getReturnType(signature);
   }
 
   public String getReturnTypeName () {
@@ -918,14 +928,14 @@ public class MethodInfo extends InfoObject implements Cloneable {
    * do we return Object references?
    */
   public boolean isReferenceReturnType () {
-    int r = getReturnType();
+    int r = getReturnTypeCode();
 
     return ((r == Types.T_REFERENCE) || (r == Types.T_ARRAY));
   }
 
-  public byte getReturnType () {
+  public byte getReturnTypeCode () {
     if (returnType < 0) {
-      returnType = Types.getReturnType(signature);
+      returnType = Types.getReturnTypeCode(signature);
     }
 
     return returnType;
@@ -936,7 +946,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
    */
   public int getReturnSize() {
     if (retSize == -1){
-      switch (getReturnType()) {
+      switch (getReturnTypeCode()) {
         case Types.T_VOID:
           retSize = 0;
           break;
@@ -956,7 +966,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
 
   public Class<? extends ChoiceGenerator<?>> getReturnChoiceGeneratorType (){
-    switch (getReturnType()){
+    switch (getReturnTypeCode()){
       case Types.T_BOOLEAN:
         return BooleanChoiceGenerator.class;
 

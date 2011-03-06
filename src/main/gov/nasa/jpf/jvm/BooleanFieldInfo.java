@@ -19,19 +19,28 @@
 
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
+import gov.nasa.jpf.JPFException;
 
 /**
  * fieldinfo for slots holding booleans
  */
 public class BooleanFieldInfo extends SingleSlotFieldInfo {
 
-  boolean init;
+  boolean init=false;
 
-  public BooleanFieldInfo (String name, String type, String genericSignature, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-     super(name, type, genericSignature, modifiers, cv, ci, idx, off);
-     init = (cv != null) ? Boolean.parseBoolean(cv.toString()) : false;
+  public BooleanFieldInfo (String name, int modifiers,
+                           ClassInfo ci, int idx, int off) {
+     super(name, "boolean", modifiers, ci, idx, off);
+  }
+
+  public void setConstantValue(Object constValue){
+    if (constValue instanceof Integer){
+      cv = constValue;
+      init = ((Integer)constValue).intValue() == 1;
+      
+    } else {
+      throw new JPFException("illegal boolean ConstValue=" + constValue);
+    }
   }
 
   public void initialize (ElementInfo ei) {

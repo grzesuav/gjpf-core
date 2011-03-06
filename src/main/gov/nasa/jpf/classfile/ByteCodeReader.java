@@ -24,6 +24,9 @@ package gov.nasa.jpf.classfile;
  */
 public interface ByteCodeReader {
 
+  void startCode(Object tag);
+  void endCode(Object tag);
+
   void setPc (int pc);
 
   void aconst_null();

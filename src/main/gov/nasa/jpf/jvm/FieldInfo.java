@@ -42,16 +42,20 @@ public abstract class FieldInfo extends InfoObject {
   
   protected final String name;
   protected final String type;
-  protected final String genericSignature;
   protected int storageSize;
 
   protected final ClassInfo ci; // class this field belongs to
-  protected final ConstantValue cv; // the optional initializer value for this field.
   final int fieldIndex; // declaration ordinal
 
   // where in the corresponding Fields object do we store the value
   // (note this works because of the wonderful single inheritance)
   final int storageOffset;
+
+  // optional initializer for this field, can't be final because it is set from
+  // classfile field_info attributes (i.e. after construction)
+  protected  Object cv;
+
+  protected String genericSignature;
 
   protected int modifiers;
 
@@ -71,61 +75,89 @@ public abstract class FieldInfo extends InfoObject {
   }
 
   /**
-    * factory method for the various concrete FieldInfos
-    */
+   * factory method for the various concrete FieldInfos
+   * THIS WILL BE REMOVED WHEN WE REPLACE BCEL
+   */
   public static FieldInfo create (Field f, ClassInfo ci, int idx, int off) {
     String name = f.getName();
-    String type = Types.getCanonicalTypeName(f.getType().toString());
+    String signature = f.getSignature();
     ConstantValue cv = f.getConstantValue();
     int modifiers = f.getModifiers();
-    String genericSignature = computeGenericSignature(f);
-    FieldInfo ret = create(name, type, genericSignature, modifiers, cv, ci, idx, off);
+
+    FieldInfo ret = create(name, signature, modifiers, ci, idx, off);
+    
+    // THIS IS BRAINDEAD - but it is going away as soon as we replace BCEL
+    if (cv != null){
+      String cvs = cv.toString();
+      Object v = null;
+      switch (signature.charAt(0)){
+        case 'Z':
+        case 'B':
+        case 'S':
+        case 'C':
+        case 'I':
+          v = new Integer(Integer.parseInt(cvs)); break;
+        case 'J':
+          v = new Long(Long.parseLong(cvs)); break;
+        case 'F':
+          v = new Float(Float.parseFloat(cvs)); break;
+        case 'D':
+          v = new Double(Double.parseDouble(cvs)); break;
+        default:
+          v = cvs;
+      }
+      ret.setConstantValue(v);
+    }
+
+    ret.setGenericSignature(computeGenericSignature(f));
+
     ret.loadAnnotations(f.getAnnotationEntries());
 
     return ret;
   }
 
   
-  public static FieldInfo create (String name, String type, String genericSignature, int modifiers,
-                                  ConstantValue cv, ClassInfo ci, int idx, int off){
-     
-    FieldInfo ret;
-
-    if ("boolean".equals(type)){
-      ret = new BooleanFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    } else if ("byte".equals(type)){
-      ret = new ByteFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    } else if ("char".equals(type)){
-      ret = new CharFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    } else if ("short".equals(type)){
-      ret = new ShortFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    } else if ("int".equals(type)){
-      ret = new IntegerFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    } else if ("long".equals(type)){
-      ret = new LongFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    } else if ("double".equals(type)){
-      ret = new DoubleFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    } else if ("float".equals(type)){
-      ret = new FloatFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    } else {
-      ret = new ReferenceFieldInfo(name, type, genericSignature, modifiers, cv, ci, idx, off);
+  public static FieldInfo create (String name, String signature, int modifiers,
+                                  ClassInfo ci, int idx, int off){
+    switch(signature.charAt(0)){
+      case 'Z':
+        return new BooleanFieldInfo(name, modifiers, ci, idx, off);
+      case 'B':
+        return new ByteFieldInfo(name, modifiers, ci, idx, off);
+      case 'S':
+        return new ShortFieldInfo(name, modifiers, ci, idx, off);
+      case 'C':
+        return new CharFieldInfo(name, modifiers, ci, idx, off);
+      case 'I':
+        return new IntegerFieldInfo(name, modifiers, ci, idx, off);
+      case 'J':
+        return new LongFieldInfo(name, modifiers, ci, idx, off);
+      case 'F':
+        return new FloatFieldInfo(name, modifiers, ci, idx, off);
+      case 'D':
+        return new DoubleFieldInfo(name, modifiers, ci, idx, off);
+      default:
+        return new ReferenceFieldInfo(name, Types.getTypeName(signature), modifiers, ci, idx, off);
     }
-
-    return ret;
   }
 
-  protected FieldInfo(String name, String type, String genericSignature, int modifiers, 
-                       ConstantValue cv, ClassInfo ci, int idx, int off) {
+  protected FieldInfo(String name, String type, int modifiers,
+                      ClassInfo ci, int idx, int off) {
     this.name = name;
     this.type = type;
     this.ci = ci;
-    this.cv = cv;
     this.fieldIndex = idx;
     this.storageOffset = off;
     this.modifiers = modifiers;
-    this.genericSignature = genericSignature;
   }
 
+  // those are set subsequently from classfile attributes
+  public void setConstantValue(Object constValue){
+    cv = constValue;
+  }
+  public void setGenericSignature(String gsig){
+    genericSignature = gsig;
+  }
 
   public abstract String valueToString (Fields f);
 
@@ -176,7 +208,7 @@ public abstract class FieldInfo extends InfoObject {
     return ci;
   }
 
-  public ConstantValue getConstantValue () {
+  public Object getConstantValue () {
     return cv;
   }
 

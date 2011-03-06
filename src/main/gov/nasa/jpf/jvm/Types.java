@@ -60,7 +60,7 @@ public class Types {
       String arg = signature.substring(i, end);
       i = end;
 
-      args[j] = getBaseType(arg);
+      args[j] = getBaseTypeCode(arg);
     }
 
     return args;
@@ -129,7 +129,7 @@ public class Types {
     return type.substring(1);
   }
 
-  public static byte getBaseType (String type) {
+  public static byte getBaseTypeCode (String type) {
     switch (type.charAt(0)) {
     case 'B':
       return T_BYTE;
@@ -457,15 +457,20 @@ public class Types {
   }
 
   public static boolean isReference (String type) {
-    int t = getBaseType(type);
+    int t = getBaseTypeCode(type);
 
     return (t == T_ARRAY) || (t == T_REFERENCE);
   }
 
-  public static byte getReturnType (String signature) {
+  public static byte getReturnTypeCode (String signature) {
     int i = signature.indexOf(')');
 
-    return getBaseType(signature.substring(i + 1));
+    return getBaseTypeCode(signature.substring(i + 1));
+  }
+
+  public static String getReturnType(String signature){
+    int i = signature.indexOf(')');
+    return signature.substring(i + 1);
   }
 
   public static String getReturnTypeName (String signature){
@@ -743,13 +748,13 @@ public class Types {
   }
 
   public static boolean instanceOf (String type, String ofType) {
-    int bType = getBaseType(type);
+    int bType = getBaseTypeCode(type);
 
     if ((bType == T_ARRAY) && ofType.equals("Ljava.lang.Object;")) {
       return true;
     }
 
-    int bOfType = getBaseType(ofType);
+    int bOfType = getBaseTypeCode(ofType);
 
     if (bType != bOfType) {
       return false;

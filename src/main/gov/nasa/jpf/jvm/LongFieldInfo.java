@@ -18,7 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
+import gov.nasa.jpf.JPFException;
+
 
 
 /**
@@ -27,10 +28,19 @@ import org.apache.bcel.classfile.ConstantValue;
 public class LongFieldInfo extends DoubleSlotFieldInfo {
   long init;
 
-  public LongFieldInfo (String name, String type, String genericSignature, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-    super(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    init = (cv != null) ? Long.parseLong(cv.toString()) : 0;
+  public LongFieldInfo (String name, int modifiers,
+                        ClassInfo ci, int idx, int off) {
+    super(name, "long", modifiers, ci, idx, off);
+  }
+
+  public void setConstantValue(Object constValue){
+    if (constValue instanceof Long){
+      cv = constValue;
+      init = (Long)constValue;
+
+    } else {
+      throw new JPFException("illegal long ConstValue=" + constValue);
+    }
   }
 
   public void initialize (ElementInfo ei) {

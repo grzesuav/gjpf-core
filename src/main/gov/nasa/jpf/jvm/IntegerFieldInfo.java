@@ -18,7 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
+import gov.nasa.jpf.JPFException;
+
 
 
 /**
@@ -27,15 +28,25 @@ import org.apache.bcel.classfile.ConstantValue;
 public class IntegerFieldInfo extends SingleSlotFieldInfo {
   int init;
 
-  public IntegerFieldInfo (String name, String type, String genericSignature, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-     super(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    init = (cv != null) ? Integer.parseInt(cv.toString()) : 0;
+  public IntegerFieldInfo (String name, int modifiers,
+                           ClassInfo ci, int idx, int off) {
+     super(name, "int", modifiers, ci, idx, off);
   }
 
   public void initialize (ElementInfo ei) {
     ei.getFields().setIntValue( storageOffset, init);
   }
+
+  public void setConstantValue(Object constValue){
+    if (constValue instanceof Integer){
+      cv = constValue;
+      init = (Integer)constValue;
+
+    } else {
+      throw new JPFException("illegal int ConstValue=" + constValue);
+    }
+  }
+
 
   public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType() {
     return IntChoiceGenerator.class;

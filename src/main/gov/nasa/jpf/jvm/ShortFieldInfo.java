@@ -19,7 +19,8 @@
 
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
+import gov.nasa.jpf.JPFException;
+
 
 /**
  * fieldinfo for slots holding booleans
@@ -28,11 +29,21 @@ public class ShortFieldInfo extends SingleSlotFieldInfo {
 
   short init;
 
-  public ShortFieldInfo (String name, String type, String genericSignature, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-    super(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    init = (cv != null) ? Short.parseShort(cv.toString()) : 0;
+  public ShortFieldInfo (String name, int modifiers,
+                         ClassInfo ci, int idx, int off) {
+    super(name, "short", modifiers, ci, idx, off);
   }
+
+  public void setConstantValue(Object constValue){
+    if (constValue instanceof Integer){
+      cv = constValue;
+      init = ((Integer)constValue).shortValue();
+
+    } else {
+      throw new JPFException("illegal short ConstValue=" + constValue);
+    }
+  }
+
 
   public void initialize (ElementInfo ei) {
     ei.getFields().setShortValue(storageOffset, init);

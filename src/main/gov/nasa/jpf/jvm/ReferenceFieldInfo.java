@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
 import gov.nasa.jpf.JPFException;
 
 
@@ -31,10 +30,9 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
                 // check if there are other non-object reference inits
 
   
-  public ReferenceFieldInfo (String name, String type, String genericSignature, int modifiers,
-                             ConstantValue cv, ClassInfo ci, int idx, int off) {
-    super(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    init = computeInitValue(cv);
+  public ReferenceFieldInfo (String name, String type, int modifiers,
+                             ClassInfo ci, int idx, int off) {
+    super(name, type, modifiers, ci, idx, off);
   }
 
   public String valueToString (Fields f) {
@@ -58,7 +56,7 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
     return ci.isArray;
   }
 
-  int computeInitValue (ConstantValue cv) {
+  public void setConstantValue (Object constValue){
     // <2do> pcm - check what other constants we might encounter, this is most
     // probably not just used for Strings.
     // Besides the type issue, there is an even bigger problem with identities.
@@ -70,23 +68,23 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
     // For the sake of progress, we ignore this for now, but have to come back
     // to it because it violates the VM spec
 
-    if (cv == null) return -1;
+    if (constValue instanceof String){
+      cv = constValue;
+      String v = (String)constValue;
+      // here the mess starts
+      //DynamicArea heap = DynamicArea.getHeap();
+      String s = v.toString();
 
-    // here the mess starts
-    //DynamicArea heap = DynamicArea.getHeap();
-    String s = cv.toString();
+      if (s.charAt(0) == '"') {
+        s = s.substring(1, s.length() - 1); // chop off the double quotes
+        sInit = s;
 
-    if (s.charAt(0) == '"') {
-      s = s.substring(1,s.length()-1); // chop off the double quotes
-      sInit = s;
-
-      //init = heap.newString(s, null);  // turn literal into a string object
-      // but how do we pin it down?
+        //init = heap.newString(s, null);  // turn literal into a string object
+        // but how do we pin it down?
+      }
     } else {
-      throw new JPFException ("unsupported reference initialization: " + s);
+      throw new JPFException ("unsupported reference initialization: " + constValue);
     }
-
-    return -1;
   }
 
   public void initialize (ElementInfo ei) {

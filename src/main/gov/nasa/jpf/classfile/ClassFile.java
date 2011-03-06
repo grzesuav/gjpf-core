@@ -442,9 +442,9 @@ public class ClassFile {
     reader.setFieldsDone( this);
     pos = p;
   }
-  private void setConstantValue(ClassFileReader reader, int fieldIndex, Object value){
+  private void setConstantValue(ClassFileReader reader, Object tag, Object value){
     int p = pos;
-    reader.setConstantValue( this, fieldIndex, value);
+    reader.setConstantValue( this, tag, value);
     pos = p;
   }
 
@@ -483,89 +483,89 @@ public class ClassFile {
     reader.setMethodsDone( this);
     pos = p;
   }
-  private void setExceptionCount(ClassFileReader reader, int methodIndex, int exceptionCount){
+  private void setExceptionCount(ClassFileReader reader, Object tag, int exceptionCount){
     int p = pos;
-    reader.setExceptionCount( this, methodIndex, exceptionCount);
+    reader.setExceptionCount( this, tag, exceptionCount);
     pos = p;
   }
-  private void setExceptionsDone(ClassFileReader reader){
+  private void setExceptionsDone(ClassFileReader reader, Object tag){
     int p = pos;
-    reader.setExceptionsDone( this);
+    reader.setExceptionsDone( this, tag);
     pos = p;
   }
-  private void setException(ClassFileReader reader, int methodIndex, int exceptionIndex, String exceptionType){
+  private void setException(ClassFileReader reader, Object tag, int exceptionIndex, String exceptionType){
     int p = pos;
-    reader.setException( this, methodIndex, exceptionIndex, exceptionType);
+    reader.setException( this, tag, exceptionIndex, exceptionType);
     pos = p;
   }
-  private void setCode(ClassFileReader reader, int methodIndex, int maxStack, int maxLocals, int codeLength){
+  private void setCode(ClassFileReader reader, Object tag, int maxStack, int maxLocals, int codeLength){
     int p = pos + codeLength;
-    reader.setCode( this, methodIndex, maxStack, maxLocals, codeLength);
+    reader.setCode( this, tag, maxStack, maxLocals, codeLength);
     pos = p;
   }
-  private void setExceptionTableCount(ClassFileReader reader, int methodIndex, int exceptionTableCount){
+  private void setExceptionTableCount(ClassFileReader reader, Object tag, int exceptionTableCount){
     int p = pos;
-    reader.setExceptionTableCount( this, methodIndex, exceptionTableCount);
+    reader.setExceptionTableCount( this, tag, exceptionTableCount);
     pos = p;
   }
-  private void setExceptionTableEntry(ClassFileReader reader, int methodIndex, int exceptionIndex,
+  private void setExceptionTableEntry(ClassFileReader reader, Object tag, int exceptionIndex,
           int startPc, int endPc, int handlerPc, String catchType){
     int p = pos;
-    reader.setExceptionTableEntry( this, methodIndex, exceptionIndex, startPc, endPc, handlerPc, catchType);
+    reader.setExceptionTableEntry( this, tag, exceptionIndex, startPc, endPc, handlerPc, catchType);
     pos = p;
   }
-  private void setExceptionTableDone(ClassFileReader reader){
+  private void setExceptionTableDone(ClassFileReader reader, Object tag){
     int p = pos;
-    reader.setExceptionTableDone( this);
+    reader.setExceptionTableDone( this, tag);
     pos = p;
   }
 
-  private void setCodeAttributeCount(ClassFileReader reader, int methodIndex, int attrCount){
+  private void setCodeAttributeCount(ClassFileReader reader, Object tag, int attrCount){
     int p = pos;
-    reader.setCodeAttributeCount( this, methodIndex, attrCount);
+    reader.setCodeAttributeCount( this, tag, attrCount);
     pos = p;
   }
-  private void setCodeAttribute(ClassFileReader reader, int methodIndex, int attrIndex, String name, int attrLength){
+  private void setCodeAttribute(ClassFileReader reader, Object tag, int attrIndex, String name, int attrLength){
     int p = pos + attrLength;
-    reader.setCodeAttribute( this, methodIndex, attrIndex, name, attrLength);
+    reader.setCodeAttribute( this, tag, attrIndex, name, attrLength);
     pos = p;
   }
-  private void setCodeAttributesDone(ClassFileReader reader){
+  private void setCodeAttributesDone(ClassFileReader reader, Object tag){
     int p = pos;
-    reader.setCodeAttributesDone( this);
+    reader.setCodeAttributesDone( this, tag);
     pos = p;
   }
           
-  private void setLineNumberTableCount(ClassFileReader reader, int methodIndex, int lineNumberCount){
+  private void setLineNumberTableCount(ClassFileReader reader, Object tag, int lineNumberCount){
     int p = pos;
-    reader.setLineNumberTableCount( this, methodIndex, lineNumberCount);
+    reader.setLineNumberTableCount( this, tag, lineNumberCount);
     pos = p;
   }
-  private void setLineNumber(ClassFileReader reader, int methodIndex, int lineIndex, int lineNumber, int startPc){
+  private void setLineNumber(ClassFileReader reader, Object tag, int lineIndex, int lineNumber, int startPc){
     int p = pos;
-    reader.setLineNumber( this, methodIndex, lineIndex, lineNumber, startPc);
+    reader.setLineNumber( this, tag, lineIndex, lineNumber, startPc);
     pos = p;
   }
-  private void setLineNumberTableDone(ClassFileReader reader){
+  private void setLineNumberTableDone(ClassFileReader reader, Object tag){
     int p = pos;
-    reader.setLineNumberTableDone( this);
+    reader.setLineNumberTableDone( this, tag);
     pos = p;
   }
 
-  private void setLocalVarTableCount(ClassFileReader reader, int methodIndex, int localVarCount){
+  private void setLocalVarTableCount(ClassFileReader reader, Object tag, int localVarCount){
     int p = pos;
-    reader.setLocalVarTableCount( this, methodIndex, localVarCount);
+    reader.setLocalVarTableCount( this, tag, localVarCount);
     pos = p;
   }
-  private void setLocalVar(ClassFileReader reader, int methodIndex, int localVarIndex, String varName, String descriptor,
+  private void setLocalVar(ClassFileReader reader, Object tag, int localVarIndex, String varName, String descriptor,
                       int scopeStartPc, int scopeEndPc, int slotIndex){
     int p = pos;
-    reader.setLocalVar( this, methodIndex, localVarIndex, varName, descriptor, scopeStartPc, scopeEndPc, slotIndex);
+    reader.setLocalVar( this, tag, localVarIndex, varName, descriptor, scopeStartPc, scopeEndPc, slotIndex);
     pos = p;
   }
-  private void setLocalVarTableDone(ClassFileReader reader){
+  private void setLocalVarTableDone(ClassFileReader reader, Object tag){
     int p = pos;
-    reader.setLocalVarTableDone( this);
+    reader.setLocalVarTableDone( this, tag);
     pos = p;
   }
 
@@ -586,106 +586,106 @@ public class ClassFile {
     pos = p;
   }
 
-  private void setSourceFile(ClassFileReader reader, String pathName){
+  private void setSourceFile(ClassFileReader reader, Object tag, String pathName){
     int p = pos;
-    reader.setSourceFile( this, pathName);
+    reader.setSourceFile( this, tag, pathName);
     pos = p;
   }
-  private void setInnerClassCount(ClassFileReader reader, int innerClsCount){
+  private void setInnerClassCount(ClassFileReader reader, Object tag, int innerClsCount){
     int p = pos;
-    reader.setInnerClassCount( this, innerClsCount);
+    reader.setInnerClassCount( this, tag, innerClsCount);
     pos = p;
   }
-  private void setInnerClass(ClassFileReader reader, int innerClsIndex, String outerName, String innerName,
+  private void setInnerClass(ClassFileReader reader, Object tag, int innerClsIndex, String outerName, String innerName,
           String innerSimpleName, int accessFlags){
     int p = pos;
-    reader.setInnerClass( this, innerClsIndex, outerName, innerName, innerSimpleName, accessFlags);
+    reader.setInnerClass( this, tag, innerClsIndex, outerName, innerName, innerSimpleName, accessFlags);
     pos = p;
   }
-  private void setInnerClassesDone(ClassFileReader reader){
+  private void setInnerClassesDone(ClassFileReader reader, Object tag){
     int p = pos;
-    reader.setInnerClassesDone(this);
+    reader.setInnerClassesDone(this, tag);
     pos = p;
   }
 
-  private void setAnnotationCount(ClassFileReader reader, int annotationCount){
+  private void setAnnotationCount(ClassFileReader reader, Object tag, int annotationCount){
     int p = pos;
-    reader.setAnnotationCount( this, annotationCount);
+    reader.setAnnotationCount( this, tag, annotationCount);
     pos = p;
   }
-  private void setAnnotationsDone(ClassFileReader reader){
+  private void setAnnotationsDone(ClassFileReader reader, Object tag){
     int p = pos;
-    reader.setAnnotationsDone(this);
+    reader.setAnnotationsDone(this, tag);
     pos = p;
   }
 
-  private void setAnnotation(ClassFileReader reader, int annotationIndex, String annotationType){
+  private void setAnnotation(ClassFileReader reader, Object tag, int annotationIndex, String annotationType){
     int p = pos;
-    reader.setAnnotation( this, annotationIndex, annotationType);
+    reader.setAnnotation( this, tag, annotationIndex, annotationType);
     pos = p;
   }
-  private void setAnnotationValueCount(ClassFileReader reader, int annotationIndex, int nValuePairs){
+  private void setAnnotationValueCount(ClassFileReader reader, Object tag, int annotationIndex, int nValuePairs){
     int p = pos;
-    reader.setAnnotationValueCount( this, annotationIndex, nValuePairs);
+    reader.setAnnotationValueCount( this, tag, annotationIndex, nValuePairs);
     pos = p;
   }
-  private void setPrimitiveAnnotationValue(ClassFileReader reader, int annotationIndex, int valueIndex,
+  private void setPrimitiveAnnotationValue(ClassFileReader reader, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, Object val){
     int p = pos;
-    reader.setPrimitiveAnnotationValue( this, annotationIndex, valueIndex, elementName, arrayIndex, val);
+    reader.setPrimitiveAnnotationValue( this, tag, annotationIndex, valueIndex, elementName, arrayIndex, val);
     pos = p;
   }
-  private void setStringAnnotationValue(ClassFileReader reader, int annotationIndex, int valueIndex,
+  private void setStringAnnotationValue(ClassFileReader reader, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String s){
     int p = pos;
-    reader.setStringAnnotationValue( this, annotationIndex, valueIndex, elementName, arrayIndex, s);
+    reader.setStringAnnotationValue( this, tag, annotationIndex, valueIndex, elementName, arrayIndex, s);
     pos = p;
   }
-  private void setClassAnnotationValue(ClassFileReader reader, int annotationIndex, int valueIndex,
+  private void setClassAnnotationValue(ClassFileReader reader, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String typeName){
     int p = pos;
-    reader.setClassAnnotationValue( this, annotationIndex, valueIndex, elementName, arrayIndex, typeName);
+    reader.setClassAnnotationValue( this, tag, annotationIndex, valueIndex, elementName, arrayIndex, typeName);
     pos = p;
   }
-  private void setEnumAnnotationValue(ClassFileReader reader, int annotationIndex, int valueIndex,
+  private void setEnumAnnotationValue(ClassFileReader reader, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String enumType, String enumValue){
     int p = pos;
-    reader.setEnumAnnotationValue( this, annotationIndex, valueIndex, elementName, arrayIndex, enumType, enumValue);
+    reader.setEnumAnnotationValue( this, tag, annotationIndex, valueIndex, elementName, arrayIndex, enumType, enumValue);
     pos = p;
   }
 
-  private void setAnnotationValueElementCount(ClassFileReader reader, int annotationIndex, int valueIndex,
+  private void setAnnotationValueElementCount(ClassFileReader reader, Object tag, int annotationIndex, int valueIndex,
           int elementCount){
     int p = pos;
-    reader.setAnnotationValueElementCount(this, annotationIndex, valueIndex, elementCount);
+    reader.setAnnotationValueElementCount(this, tag, annotationIndex, valueIndex, elementCount);
     pos = p;
   }
-  private void setAnnotationValueElementsDone(ClassFileReader reader, int annotationIndex, int valueIndex){
+  private void setAnnotationValueElementsDone(ClassFileReader reader, Object tag, int annotationIndex, int valueIndex){
     int p = pos;
-    reader.setAnnotationValueElementsDone(this, annotationIndex, valueIndex);
-    pos = p;
-  }
-
-  public void setAnnotationValuesDone(ClassFileReader reader, int annotationIndex){
-    int p = pos;
-    reader.setAnnotationValuesDone(this, annotationIndex);
+    reader.setAnnotationValueElementsDone(this, tag, annotationIndex, valueIndex);
     pos = p;
   }
 
-  public void setParameterAnnotationCount(ClassFileReader reader, int parameterCount){
+  public void setAnnotationValuesDone(ClassFileReader reader, Object tag, int annotationIndex){
     int p = pos;
-    reader.setParameterAnnotationCount(this, parameterCount);
-    pos = p;
-  }
-  public void setParameterAnnotationsDone(ClassFileReader reader){
-    int p = pos;
-    reader.setParameterAnnotationsDone(this);
+    reader.setAnnotationValuesDone(this, tag, annotationIndex);
     pos = p;
   }
 
-  public void setSignature(ClassFileReader reader, String signature){
+  public void setParameterAnnotationCount(ClassFileReader reader, Object tag, int parameterCount){
     int p = pos;
-    reader.setSignature(this, signature);
+    reader.setParameterAnnotationCount(this, tag, parameterCount);
+    pos = p;
+  }
+  public void setParameterAnnotationsDone(ClassFileReader reader, Object tag){
+    int p = pos;
+    reader.setParameterAnnotationsDone(this, tag);
+    pos = p;
+  }
+
+  public void setSignature(ClassFileReader reader, Object tag, String signature){
+    int p = pos;
+    reader.setSignature(this, tag, signature);
     pos = p;
   }
 
@@ -959,8 +959,8 @@ public class ClassFile {
    * 
    * pos is at constIndex
    */
-  public void parseConstValueAttr(ClassFileReader reader, int fieldIdx){
-    setConstantValue(reader, fieldIdx, cpValue[readU2()]);
+  public void parseConstValueAttr(ClassFileReader reader, Object tag){
+    setConstantValue(reader, tag, cpValue[readU2()]);
   }
 
 
@@ -1005,17 +1005,17 @@ public class ClassFile {
     setMethodAttributesDone(reader, methodIdx);
   }
 
-  public void parseExceptionAttr (ClassFileReader reader, int methodIdx){
+  public void parseExceptionAttr (ClassFileReader reader, Object tag){
     int exceptionCount = readU2();
-    setExceptionCount(reader, methodIdx, exceptionCount);
+    setExceptionCount(reader, tag, exceptionCount);
 
     for (int i=0; i<exceptionCount; i++){
       int cpIdx = readU2();
       String exceptionType = classNameAt(cpIdx);
-      setException(reader, methodIdx, i, exceptionType);
+      setException(reader, tag, i, exceptionType);
     }
 
-    setExceptionsDone(reader);
+    setExceptionsDone(reader, tag);
   }
 
   /**
@@ -1034,16 +1034,16 @@ public class ClassFile {
    *
    * pos is at max_stack
    */
-  public void parseCodeAttr (ClassFileReader reader, int methodIdx){
+  public void parseCodeAttr (ClassFileReader reader, Object tag){
     int maxStack = readU2();
     int maxLocals = readU2();
     int codeLength = readI4();  // no code length > 2GB supported
     int codeStartPos = pos;
 
-    setCode(reader, methodIdx, maxStack, maxLocals, codeLength);
+    setCode(reader, tag, maxStack, maxLocals, codeLength);
 
     int exceptionCount = readU2();
-    setExceptionTableCount(reader, methodIdx, exceptionCount);
+    setExceptionTableCount(reader, tag, exceptionCount);
 
     for (int i = 0; i < exceptionCount; i++) {
       int startPc = readU2();
@@ -1053,18 +1053,18 @@ public class ClassFile {
       int cpIdx = readU2();
       String catchType = (String) cpValue[cpIdx]; // a Constant_class
 
-      setExceptionTableEntry(reader, methodIdx, i, startPc, endPc, handlerPc, catchType);
+      setExceptionTableEntry(reader, tag, i, startPc, endPc, handlerPc, catchType);
     }
-    setExceptionTableDone(reader);
+    setExceptionTableDone(reader, tag);
 
     int attrCount = readU2();
-    parseCodeAttrAttributes(reader, methodIdx, attrCount);
+    parseCodeAttrAttributes(reader, tag, attrCount);
   }
 
 
-  protected void parseCodeAttrAttributes(ClassFileReader reader, int methodIdx, int attrCount){
+  protected void parseCodeAttrAttributes(ClassFileReader reader, Object tag, int attrCount){
 
-    setCodeAttributeCount(reader, methodIdx, attrCount);
+    setCodeAttributeCount(reader, tag, attrCount);
 
     for (int i=0; i<attrCount; i++){
       int cpIdx = readU2();
@@ -1073,10 +1073,10 @@ public class ClassFile {
       name = internStdAttrName(cpIdx, name, stdCodeAttrs);
 
       int attrLength = readI4(); // actually U4, but we don't support 2GB attributes
-      setCodeAttribute(reader, methodIdx, i, name, attrLength);
+      setCodeAttribute(reader, tag, i, name, attrLength);
     }
 
-    setCodeAttributesDone(reader);
+    setCodeAttributesDone(reader, tag);
   }
 
   /**
@@ -1086,17 +1086,17 @@ public class ClassFile {
    *                     { u2 startPc; u2 lineNumber; } [lineCount] };
    * pos is at lineCount
    */
-  public void parseLineNumberTableAttr(ClassFileReader reader, int methodIdx){
+  public void parseLineNumberTableAttr(ClassFileReader reader, Object tag){
     int lineCount = readU2();
-    setLineNumberTableCount(reader, methodIdx, lineCount);
+    setLineNumberTableCount(reader, tag, lineCount);
     
     for (int i=0; i<lineCount; i++){
       int startPc = readU2();
       int lineNumber = readU2();
-      setLineNumber(reader, methodIdx, i, lineNumber, startPc);
+      setLineNumber(reader, tag, i, lineNumber, startPc);
     }
 
-    setLineNumberTableDone(reader);
+    setLineNumberTableDone(reader, tag);
   }
 
   
@@ -1107,9 +1107,9 @@ public class ClassFile {
    *                        { u2 startPc; u2 lineNumber; } [lineCount] };
    * pos is at localVarCount
    */
-  public void parseLocalVarTableAttr(ClassFileReader reader, int methodIdx){
+  public void parseLocalVarTableAttr(ClassFileReader reader, Object tag){
     int localVarCount = readU2();
-    setLocalVarTableCount(reader, methodIdx, localVarCount);
+    setLocalVarTableCount(reader, tag, localVarCount);
     
     for (int i=0; i<localVarCount; i++){
       int startPc = readU2();
@@ -1120,10 +1120,10 @@ public class ClassFile {
       String descriptor = (String)  cpValue[cpIdx];
       int slotIndex = readU2();
       
-      setLocalVar(reader, methodIdx, i, varName, descriptor, startPc, startPc+length, slotIndex );
+      setLocalVar(reader, tag, i, varName, descriptor, startPc, startPc+length, slotIndex );
     }
 
-    setLocalVarTableDone(reader);
+    setLocalVarTableDone(reader, tag);
   }
 
   //--- class
@@ -1150,10 +1150,10 @@ public class ClassFile {
    *
    * InnerClass { u2 nameIdx<utf8>; u4 length; u2 sourceFile<utf8>; }
    */
-  public void parseSourceFileAttr(ClassFileReader reader){
+  public void parseSourceFileAttr(ClassFileReader reader, Object tag){
     int cpIdx = readU2();
     String pathName = utf8At(cpIdx);
-    setSourceFile(reader, pathName);
+    setSourceFile(reader, tag, pathName);
   }
 
   /**
@@ -1167,9 +1167,9 @@ public class ClassFile {
    *
    * pos is at classCount
    */
-  public void parseInnerClassesAttr(ClassFileReader reader){
+  public void parseInnerClassesAttr(ClassFileReader reader, Object tag){
     int innerClsCount = readU2();    
-    setInnerClassCount(reader, innerClsCount);
+    setInnerClassCount(reader, tag, innerClsCount);
 
     for (int i = 0; i < innerClsCount; i++) {
       int cpIdx = readU2();
@@ -1180,10 +1180,10 @@ public class ClassFile {
       String innerSimpleName = (cpIdx != 0) ? (String) cpValue[cpIdx] : null;
       int accessFlags = readU2();
 
-      setInnerClass(reader, i, outerClsName, innerClsName, innerSimpleName, accessFlags);
+      setInnerClass(reader, tag, i, outerClsName, innerClsName, innerSimpleName, accessFlags);
     }
 
-    setInnerClassesDone(reader);
+    setInnerClassesDone(reader, tag);
   }
 
 // those are as per http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf
@@ -1202,12 +1202,12 @@ public class ClassFile {
    *   valid tags are primitve type codes B,C,D,F,I,J,S,Z
    *   plus:   's'=String, 'e'=enum, 'c'=class, '@'=annotation, '['=array
    */
-  void parseAnnotationValue(ClassFileReader reader, int annotationIndex, int valueIndex, String elementName, int arrayIndex){
+  void parseAnnotationValue(ClassFileReader reader, Object tag, int annotationIndex, int valueIndex, String elementName, int arrayIndex){
     int cpIdx;
     Object val;
 
-    int tag = readU1();
-    switch (tag){
+    int t = readU1();
+    switch (t){
       case 'B':
       case 'C':
       case 'D':
@@ -1218,13 +1218,13 @@ public class ClassFile {
       case 'Z':
         cpIdx = readU2();
         val = cpValue[cpIdx];
-        setPrimitiveAnnotationValue(reader, annotationIndex, valueIndex, elementName, arrayIndex, val);
+        setPrimitiveAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, val);
         break;
 
       case 's':
         cpIdx = readU2();
         String s = (String) cpValue[cpIdx];
-        setStringAnnotationValue(reader, annotationIndex, valueIndex, elementName, arrayIndex, s);
+        setStringAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, s);
         break;
 
       case 'e':
@@ -1232,26 +1232,26 @@ public class ClassFile {
         String enumTypeName = (String)cpValue[cpIdx];
         cpIdx = readU2();
         String enumConstName = (String)cpValue[cpIdx];
-        setEnumAnnotationValue(reader, annotationIndex, valueIndex, elementName, arrayIndex, enumTypeName, enumConstName);
+        setEnumAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, enumTypeName, enumConstName);
         break;
 
       case 'c':
         cpIdx = readU2();
         String className = (String)cpValue[cpIdx];
-        setClassAnnotationValue(reader, annotationIndex, valueIndex, elementName, arrayIndex, className);
+        setClassAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, className);
         break;
 
       case '@':
-        parseAnnotation(reader, 0);  // getting recursive here
+        parseAnnotation(reader, tag, 0);  // getting recursive here
         break;
 
       case '[':
         int arrayLen = readU2();
-        setAnnotationValueElementCount(reader, annotationIndex, valueIndex, arrayLen);
+        setAnnotationValueElementCount(reader, tag, annotationIndex, valueIndex, arrayLen);
         for (int i=0; i<arrayLen; i++){
-          parseAnnotationValue(reader, annotationIndex, valueIndex, elementName, i);
+          parseAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, i);
         }
-        setAnnotationValueElementsDone(reader, annotationIndex, valueIndex);
+        setAnnotationValueElementsDone(reader, tag, annotationIndex, valueIndex);
         break;
     }
   }
@@ -1266,22 +1266,22 @@ public class ClassFile {
    *     } element_value_pairs[num_element_value_pairs]
    *   }
    */
-  void parseAnnotation(ClassFileReader reader, int annotationIndex){
+  void parseAnnotation(ClassFileReader reader, Object tag, int annotationIndex){
     int cpIdx = readU2();
     String annotationType = (String)cpValue[cpIdx];
 
-    setAnnotation(reader, annotationIndex, annotationType);
+    setAnnotation(reader, tag, annotationIndex, annotationType);
 
     int nValuePairs = readU2();
-    setAnnotationValueCount(reader, annotationIndex, nValuePairs);
+    setAnnotationValueCount(reader, tag, annotationIndex, nValuePairs);
 
     for (int i=0; i<nValuePairs; i++){
       cpIdx = readU2();
       String elementName = (String)cpValue[cpIdx];
-      parseAnnotationValue(reader, annotationIndex, i, elementName, -1);
+      parseAnnotationValue(reader, tag, annotationIndex, i, elementName, -1);
     }
 
-    setAnnotationValuesDone(reader, annotationIndex);
+    setAnnotationValuesDone(reader, tag, annotationIndex);
   }
 
   /*
@@ -1295,16 +1295,16 @@ public class ClassFile {
    *   }
    */
 
-  void parseAnnotationsAttr (ClassFileReader reader){
+  public void parseAnnotationsAttr (ClassFileReader reader, Object tag){
 
     int numAnnotations = readU2();
-    setAnnotationCount(reader, numAnnotations);
+    setAnnotationCount(reader, tag, numAnnotations);
 
     for (int i=0; i<numAnnotations; i++){
-      parseAnnotation(reader, i);
+      parseAnnotation(reader, tag, i);
     }
 
-    setAnnotationsDone(reader);
+    setAnnotationsDone(reader, tag);
   }
 
   /*
@@ -1318,16 +1318,16 @@ public class ClassFile {
    *     } parameter_annotations[num_parameters];
    *   }
    */
-   public void parseParameterAnnotationsAttr(ClassFileReader reader){
+   public void parseParameterAnnotationsAttr(ClassFileReader reader, Object tag){
      int numParameters = readU1();
-     setParameterAnnotationCount(reader, numParameters);
+     setParameterAnnotationCount(reader, tag, numParameters);
      for (int i=0; i<numParameters; i++){
        int numAnnotations = readU2();
        for (int j=0; j<numAnnotations; j++){
-         parseAnnotation(reader, j);
+         parseAnnotation(reader, tag, j);
        }
      }
-     setParameterAnnotationsDone(reader);
+     setParameterAnnotationsDone(reader, tag);
    }
 
   /**
@@ -1337,9 +1337,9 @@ public class ClassFile {
    *    u2 signature-index << pos
    *  }
    */
-   public void parseSignatureAttr(ClassFileReader reader){
+   public void parseSignatureAttr(ClassFileReader reader, Object tag){
      int cpIdx = readU2();
-     setSignature(reader,(String)utf8At(cpIdx));
+     setSignature(reader, tag, (String)utf8At(cpIdx));
    }
 
 
@@ -1373,7 +1373,7 @@ public class ClassFile {
 
 
 
-  public void parseBytecode(ByteCodeReader reader, int methodIdx, int codeLength){
+  public void parseBytecode(ByteCodeReader reader, Object tag, int codeLength){
     int localVarIndex;
     int cpIdx;
     int constVal;
@@ -1386,6 +1386,8 @@ public class ClassFile {
     int startPos = pos;
     int endPos = pos+codeLength;
     int nextPos;
+
+    reader.startCode(tag);
 
     while (pos < endPos){
       pc = pos - startPos;
@@ -2083,6 +2085,8 @@ public class ClassFile {
 
       isWide = false; // reset wide modifier
     }
+
+    reader.endCode(tag);
   }
 
   //--- those can only be called from within a ByteCodeReader.tableswitch() notification

@@ -18,7 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
+import gov.nasa.jpf.JPFException;
+
 
 
 /**
@@ -28,11 +29,21 @@ public class DoubleFieldInfo extends DoubleSlotFieldInfo {
   double init;
 
 
-  public DoubleFieldInfo (String name, String type, String genericSignature, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-    super(name, type, genericSignature, modifiers, cv, ci, idx, off);
-    init = (cv != null) ? Double.parseDouble(cv.toString()) : 0.0;
+  public DoubleFieldInfo (String name, int modifiers,
+                          ClassInfo ci, int idx, int off) {
+    super(name, "double", modifiers, ci, idx, off);
   }
+
+  public void setConstantValue(Object constValue){
+    if (constValue instanceof Double){
+      cv = constValue;
+      init = ((Double)constValue).doubleValue();
+
+    } else {
+      throw new JPFException("illegal boolean ConstValue=" + constValue);
+    }
+  }
+
 
   public void initialize (ElementInfo ei) {
     ei.getFields().setDoubleValue(storageOffset, init);

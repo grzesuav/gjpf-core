@@ -23,6 +23,9 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListener;
+import gov.nasa.jpf.classfile.ClassFile;
+import gov.nasa.jpf.classfile.ClassFileReader;
+import gov.nasa.jpf.classfile.ClassFileReaderAdapter;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
 import gov.nasa.jpf.jvm.bytecode.ARETURN;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
@@ -57,11 +60,16 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
+import org.apache.bcel.classfile.Attribute;
+import org.apache.bcel.classfile.ClassParser;
+import org.apache.bcel.classfile.ConstantPool;
+import org.apache.bcel.classfile.Field;
 
-import org.apache.bcel.classfile.*;
+import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.classfile.Method;
+import org.apache.bcel.classfile.Signature;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.util.ClassPath;
-import org.apache.bcel.util.ClassPath.ClassFile;
 
 
 /**
@@ -215,7 +223,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
   protected String enclosingClassName;
 
-  /** direct interfaces implemented by this class */
+  /** direct ifcSet implemented by this class */
   protected Set<String> interfaceNames;
 
   /** cache of all interfaceNames (parent interfaceNames and interface parents) - lazy eval */
@@ -227,7 +235,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   /** Name of the file which contains the source of this class. */
   protected String sourceFileName;
   
-  /** Generic signature of the class */
+  /** Generic type signatures of the class as per para. 4.4.4 of the revised VM spec
+   * NOTE - this can be a list of types, such as "Lx/y/Z<T>;Ljava/lang/Iterable<T>;"
+   */
   protected String genericSignature;
 
   /** A unique id associate with this class. */
@@ -293,8 +303,101 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return ci == stringClassInfo;
   }
 
-  protected ClassInfo() {
-    // to be initialized excplicitly (e.g. by ClassInfoInitializer)
+  class Initializer extends ClassFileReaderAdapter {
+
+    public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
+      name = Types.getTypeName(clsName);
+
+      // name derived fields
+      enclosingClassName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
+      int i = name.lastIndexOf('.');
+      packageName = (i>0) ? name.substring(0, i) : "";
+
+      superClass = loadSuperClass( Types.getTypeName(superClsName));
+
+      modifiers = flags;
+      isClass = ((flags & Modifier.INTERFACE) == 0);
+    }
+
+    //--- interfaces
+    Set<String> ifcSet = new HashSet<String>();
+
+    public void setInterface(ClassFile cf, int ifcIndex, String ifcName) {
+      ifcSet.add(Types.getTypeName(ifcName));
+    }
+    public void setInterfacesDone(ClassFile cf) {
+      loadInterfaceRec(null, ifcSet);
+      interfaceNames =  Collections.unmodifiableSet(ifcSet);
+    }
+
+    //--- fields
+    ArrayList<FieldInfo> instanceFields = new ArrayList<FieldInfo>();
+    ArrayList<FieldInfo> staticFields = new ArrayList<FieldInfo>();
+    int iOff, iIdx, sOff, sIdx;
+    FieldInfo curFi; // need to cache for attributes
+
+    public void setFieldCount(ClassFile cf, int nFields){
+      if (superClass != null) {
+        iOff = superClass.instanceDataSize;
+        iIdx = superClass.nInstanceFields;
+      }
+    }
+    public void setField(ClassFile cf, int fieldIndex, int accessFlags, String name, String descriptor) {
+      FieldInfo fi=null;
+
+      if ((accessFlags & Modifier.STATIC) == 0){ // instance field
+        fi = FieldInfo.create (name, descriptor, accessFlags, ClassInfo.this, iIdx, iOff);
+        instanceFields.add(fi);
+        iIdx++;
+        iOff += fi.getStorageSize();
+
+      } else {  // static field
+        fi = FieldInfo.create (name, descriptor, accessFlags, ClassInfo.this, iIdx, iOff);
+        staticFields.add(fi);
+        sIdx++;
+        sOff += fi.getStorageSize();
+      }
+
+      curFi = fi; // for attributes
+    }
+    public void setFieldAttribute(ClassFile cf, int fieldIndex, int attrIndex, String name, int attrLength) {
+      if (name == ClassFile.SIGNATURE_ATTR){
+        cf.parseSignatureAttr(this, curFi);
+      } else if (name == ClassFile.CONST_VALUE_ATTR){
+        cf.parseConstValueAttr(this, null);
+      }
+    }
+    public void setConstantValue(ClassFile cf, int fieldIndex, Object constVal){
+      curFi.setConstantValue(constVal);
+    }
+    public void setFieldsDone(ClassFile cf) {
+      iFields = instanceFields.toArray(new FieldInfo[instanceFields.size()]);
+      sFields = staticFields.toArray(new FieldInfo[staticFields.size()]);
+    }
+
+    //--- methods
+    MethodInfo curMi;
+    public void setMethod(ClassFile cf, int methodIndex, int accessFlags, String name, String signature) {
+      // maxLocals and maxStack will be set from the Code attribute
+      curMi = new MethodInfo( ClassInfo.this, name, signature, -1, -1, accessFlags);
+    }
+    public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
+      if (name == ClassFile.SIGNATURE_ATTR){
+        cf.parseSignatureAttr(this, curMi);
+      }
+    }
+
+    //--- common attrs
+    public void setSignature(ClassFile cf, Object tag, String signature){
+      if (tag == curFi){
+        curFi.setGenericSignature(signature);
+      } else if (tag == curMi){
+        curMi.setGenericSignature(signature);
+      }
+    }
+  }
+
+  protected ClassInfo(ClassFile cf) {
   }
 
   /**
@@ -363,17 +466,21 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     int off = 0;  // no super class
     for (MethodInfo mi : annotationCls.getDeclaredMethodInfos()) {
       String mname = mi.getName();
-      String mtype = mi.getReturnTypeName();
+      String mtype = mi.getReturnType();
       String genericSignature = mi.getGenericSignature();
 
       // createAndInitialize an instance field for it
-      FieldInfo fi = FieldInfo.create(mname, mtype, genericSignature, 0, null, this, idx, off);
+      FieldInfo fi = FieldInfo.create(mname, mtype, 0, this, idx, off);
       iFields[idx++] = fi;
       off += fi.getStorageSize();
 
+      fi.setGenericSignature(genericSignature);
+
       // now createAndInitialize a public accessor for this field
       InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
-      MethodInfo pmi = new MethodInfo(this, mi.getUniqueName(), 1, 2, Modifier.PUBLIC);
+      MethodInfo pmi = new MethodInfo(this, mname, mi.getSignature(), 1, 2, Modifier.PUBLIC);
+      pmi.setGenericSignature(genericSignature);
+
       MethodInfo.CodeBuilder cb = pmi.getCodeBuilder();
 
       ALOAD aload = insnFactory.create(this, ALOAD.class);
@@ -445,10 +552,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     modifiers = jc.getModifiers();
 
     isClass = jc.isClass();
-    superClass = loadSuperClass(jc);
+    superClass = loadSuperClass(jc.getSuperclassName());
     enclosingClassName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
 
-    interfaceNames = loadInterfaces(jc);
+    interfaceNames = loadInterfaces(jc.getInterfaceNames());
     packageName = jc.getPackageName();
 
     iFields = loadInstanceFields(jc);
@@ -799,7 +906,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     InputStream is = null;
     try {
-      ClassFile file = modelClassPath.getClassFile(slashName, ".class");
+       org.apache.bcel.util.ClassPath.ClassFile file = modelClassPath.getClassFile(slashName, ".class");
       if (file != null) {
 
         if (logger.isLoggable(Level.FINER)) {
@@ -1422,7 +1529,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   /**
    * Loads the ClassInfo for named class.
    * @param set a Set to which the interface names (String) are added
-   * @param interfaces class to find interfaceNames for.
+   * @param ifcSet class to find interfaceNames for.
    */
   void loadInterfaceRec (Set<String> set, Set<String> interfaces) throws NoClassInfoException {
     if (interfaces != null) {
@@ -1442,10 +1549,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   /**
    * get the direct interface names of this class
    */
-  protected Set<String> loadInterfaces (JavaClass jc) throws NoClassInfoException {
+  protected Set<String> loadInterfaces (String[] ifcNames) throws NoClassInfoException {
     Set<String> interfaces = new HashSet<String>();
 
-    for (String iname : jc.getInterfaceNames()){
+    for (String iname : ifcNames){
       interfaces.add(iname);
     }
 
@@ -2031,11 +2138,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   }
 
 
-  ClassInfo loadSuperClass (JavaClass jc) {
+  ClassInfo loadSuperClass (String superName) {
     if (this == objectClassInfo) {
       return null;
     } else {
-      String superName = jc.getSuperclassName();
 
       logger.finer("resolving superclass: ", superName, " of ", name);
 

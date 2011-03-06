@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
+import gov.nasa.jpf.JPFException;
 
 /**
  * fieldinfo for slots holding bytes
@@ -28,12 +28,21 @@ public class ByteFieldInfo extends SingleSlotFieldInfo {
 
   byte init;
 
-  public ByteFieldInfo (String name, String type, String genericSignature, int modifiers,
-                          ConstantValue cv, ClassInfo ci, int idx, int off) {
-     super(name, type, genericSignature, modifiers, cv, ci, idx, off);
-
-     init = (cv != null) ? Byte.parseByte(cv.toString()) : 0;
+  public ByteFieldInfo (String name, int modifiers,
+                        ClassInfo ci, int idx, int off) {
+     super(name, "byte", modifiers, ci, idx, off);
   }
+
+  public void setConstantValue(Object constValue){
+    if (constValue instanceof Integer){
+      cv = constValue;
+      init = ((Integer)constValue).byteValue();
+
+    } else {
+      throw new JPFException("illegal byte ConstValue=" + constValue);
+    }
+  }
+
 
   public void initialize (ElementInfo ei) {
     ei.getFields().setByteValue(storageOffset, init);

@@ -46,7 +46,7 @@ public class ClassFileReaderAdapter implements ClassFileReader {
 
   public void setFieldsDone(ClassFile cf) {}
 
-  public void setConstantValue(ClassFile cf, int fieldIndex, Object value) {}
+  public void setConstantValue(ClassFile cf, Object tag, Object value) {}
 
   public void setMethodCount(ClassFile cf, int methodCount) {}
 
@@ -62,39 +62,39 @@ public class ClassFileReaderAdapter implements ClassFileReader {
 
   public void setMethodsDone(ClassFile cf) {}
 
-  public void setExceptionCount(ClassFile cf, int methodIndex, int exceptionCount) {}
+  public void setExceptionCount(ClassFile cf, Object tag, int exceptionCount) {}
 
-  public void setException(ClassFile cf, int methodIndex, int exceptionIndex, String exceptionType) {}
+  public void setException(ClassFile cf, Object tag, int exceptionIndex, String exceptionType) {}
 
-  public void setExceptionsDone(ClassFile cf) {}
+  public void setExceptionsDone(ClassFile cf, Object tag) {}
 
-  public void setCode(ClassFile cf, int methodIndex, int maxStack, int maxLocals, int codeLength) {}
+  public void setCode(ClassFile cf, Object tag, int maxStack, int maxLocals, int codeLength) {}
 
-  public void setExceptionTableCount(ClassFile cf, int methodIndex, int exceptionTableCount) {}
+  public void setExceptionTableCount(ClassFile cf, Object tag, int exceptionTableCount) {}
 
-  public void setExceptionTableEntry(ClassFile cf, int methodIndex, int exceptionIndex,
+  public void setExceptionTableEntry(ClassFile cf, Object tag, int exceptionIndex,
           int startPc, int endPc, int handlerPc, String catchType) {}
 
-  public void setExceptionTableDone(ClassFile cf) {}
+  public void setExceptionTableDone(ClassFile cf, Object tag) {}
 
-  public void setCodeAttributeCount(ClassFile cf, int methodIndex, int attrCount) {}
+  public void setCodeAttributeCount(ClassFile cf, Object tag, int attrCount) {}
 
-  public void setCodeAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {}
+  public void setCodeAttribute(ClassFile cf, Object tag, int attrIndex, String name, int attrLength) {}
 
-  public void setCodeAttributesDone (ClassFile cf) {}
+  public void setCodeAttributesDone (ClassFile cf, Object tag) {}
 
-  public void setLineNumberTableCount(ClassFile cf, int methodIndex, int lineNumberCount) {}
+  public void setLineNumberTableCount(ClassFile cf, Object tag, int lineNumberCount) {}
 
-  public void setLineNumber(ClassFile cf, int methodIndex, int lineIndex, int lineNumber, int startPc) {}
+  public void setLineNumber(ClassFile cf, Object tag, int lineIndex, int lineNumber, int startPc) {}
 
-  public void setLineNumberTableDone(ClassFile cf) {}
+  public void setLineNumberTableDone(ClassFile cf, Object tag) {}
 
-  public void setLocalVarTableCount(ClassFile cf, int methodIndex, int localVarCount) {}
+  public void setLocalVarTableCount(ClassFile cf, Object tag, int localVarCount) {}
 
-  public void setLocalVar(ClassFile cf, int methodIndex, int localVarIndex,
+  public void setLocalVar(ClassFile cf, Object tag, int localVarIndex,
           String varName, String descriptor, int scopeStartPc, int scopeEndPc, int slotIndex) {}
 
-  public void setLocalVarTableDone (ClassFile cf) {}
+  public void setLocalVarTableDone (ClassFile cf, Object tag) {}
 
   public void setClassAttributeCount(ClassFile cf, int attrCount) {}
 
@@ -102,44 +102,44 @@ public class ClassFileReaderAdapter implements ClassFileReader {
 
   public void setClassAttributesDone(ClassFile cf) {}
 
-  public void setSourceFile(ClassFile cf, String pathName) {}
+  public void setSourceFile(ClassFile cf, Object tag, String pathName) {}
 
-  public void setInnerClassCount(ClassFile cf, int innerClsCount) {}
+  public void setInnerClassCount(ClassFile cf, Object tag, int innerClsCount) {}
 
-  public void setInnerClass(ClassFile cf, int innerClsIndex,
+  public void setInnerClass(ClassFile cf, Object tag, int innerClsIndex,
           String outerName, String innerName, String innerSimpleName, int accessFlags) {}
 
-  public void setInnerClassesDone(ClassFile cf) {}
+  public void setInnerClassesDone(ClassFile cf, Object tag) {}
 
-  public void setAnnotationCount(ClassFile cf, int annotationCount){}
+  public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){}
 
-  public void setAnnotationsDone(ClassFile cf) {}
+  public void setAnnotationsDone(ClassFile cf, Object tag) {}
 
-  public void setAnnotation(ClassFile cf, int annotationIndex, String annotationType){}
+  public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){}
 
-  public void setAnnotationValueCount(ClassFile cf, int annotationIndex, int annotationCount) {}
+  public void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int annotationCount) {}
 
-  public void setPrimitiveAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex,
+  public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, Object val){}
 
-  public void setStringAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex,
+  public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String s){}
 
-  public void setClassAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex,
+  public void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String typeName){}
 
-  public void setEnumAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex,
+  public void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String enumType, String enumValue){}
 
-  public void setAnnotationValueElementCount(ClassFile cf, int annotationIndex, int valueIndex, int elementCount) {}
+  public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex, int elementCount) {}
 
-  public void setAnnotationValueElementsDone(ClassFile cf, int annotationIndex, int valueIndex) {}
+  public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex) {}
 
-  public void setAnnotationValuesDone(ClassFile cf, int annotationIndex) {}
+  public void setAnnotationValuesDone(ClassFile cf, Object tag, int annotationIndex) {}
 
-  public void setParameterAnnotationCount(ClassFile cf, int parameterCount) {}
+  public void setParameterAnnotationCount(ClassFile cf, Object tag, int parameterCount) {}
 
-  public void setParameterAnnotationsDone(ClassFile cf) {}
+  public void setParameterAnnotationsDone(ClassFile cf, Object tag) {}
 
-  public void setSignature(ClassFile cf, String signature) {}
+  public void setSignature(ClassFile cf, Object tag, String signature) {}
 }

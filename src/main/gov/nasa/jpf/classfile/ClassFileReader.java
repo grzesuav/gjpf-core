@@ -22,6 +22,8 @@ package gov.nasa.jpf.classfile;
 /**
  * interface for classfile processors
  *
+ * NOTE - all types are given ss descriptors, i.e. "Lx/y/Z;" or type codes such as "I"
+ *
  * iteration groups always start with a
  *   setXCount(int xCount)
  *
@@ -60,8 +62,10 @@ public interface ClassFileReader {
 
 
   //--- standard field attributes
-  void setConstantValue(ClassFile cf, int fieldIndex, Object value);
+  void setConstantValue(ClassFile cf, Object tag, Object value);
 
+
+  //--- methods
   void setMethodCount(ClassFile cf, int methodCount);
 
   void setMethod(ClassFile cf, int methodIndex, int accessFlags, String name, String descriptor);
@@ -78,41 +82,41 @@ public interface ClassFileReader {
 
 
   //--- standard method attributes
-  void setExceptionCount (ClassFile cf, int methodIndex, int exceptionCount);
+  void setExceptionCount (ClassFile cf, Object tag, int exceptionCount);
 
-  void setException (ClassFile cf, int methodIndex, int exceptionIndex, String exceptionType);
+  void setException (ClassFile cf, Object tag, int exceptionIndex, String exceptionType);
 
-  void setExceptionsDone(ClassFile cf);
+  void setExceptionsDone(ClassFile cf, Object tag);
 
-  void setCode(ClassFile cf, int methodIndex, int maxStack, int maxLocals, int codeLength);
+  void setCode(ClassFile cf, Object tag, int maxStack, int maxLocals, int codeLength);
 
-  void setExceptionTableCount (ClassFile cf, int methodIndex, int exceptionTableCount);
+  void setExceptionTableCount (ClassFile cf, Object tag, int exceptionTableCount);
 
-  void setExceptionTableEntry(ClassFile cf, int methodIndex, int exceptionIndex, int startPc, int endPc, int handlerPc, String catchType);
+  void setExceptionTableEntry(ClassFile cf, Object tag, int exceptionIndex, int startPc, int endPc, int handlerPc, String catchType);
 
-  void setExceptionTableDone(ClassFile cf);
+  void setExceptionTableDone(ClassFile cf, Object tag);
 
-  void setCodeAttributeCount(ClassFile cf, int methodIndex, int attrCount);
+  void setCodeAttributeCount(ClassFile cf, Object tag, int attrCount);
 
-  void setCodeAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength);
+  void setCodeAttribute(ClassFile cf, Object tag, int attrIndex, String name, int attrLength);
 
-  void setCodeAttributesDone (ClassFile cf);
+  void setCodeAttributesDone (ClassFile cf, Object tag);
 
 
   //--- standard code attribute attributes (yes, attributes can be nested)
-  void setLineNumberTableCount(ClassFile cf, int methodIndex, int lineNumberCount);
+  void setLineNumberTableCount(ClassFile cf, Object tag, int lineNumberCount);
   
-  void setLineNumber(ClassFile cf, int methodIndex, int lineIndex, int lineNumber, int startPc);
+  void setLineNumber(ClassFile cf, Object tag, int lineIndex, int lineNumber, int startPc);
 
-  void setLineNumberTableDone(ClassFile cf);
+  void setLineNumberTableDone(ClassFile cf, Object tag);
 
 
-  void setLocalVarTableCount(ClassFile cf, int methodIndex, int localVarCount);
+  void setLocalVarTableCount(ClassFile cf, Object tag, int localVarCount);
 
-  void setLocalVar(ClassFile cf, int methodIndex, int localVarIndex, String varName, String descriptor,
+  void setLocalVar(ClassFile cf, Object tag, int localVarIndex, String varName, String descriptor,
                       int scopeStartPc, int scopeEndPc, int slotIndex);
 
-  void setLocalVarTableDone(ClassFile cf);
+  void setLocalVarTableDone(ClassFile cf, Object tag);
 
 
   void setClassAttributeCount(ClassFile cf, int attrCount);
@@ -123,43 +127,43 @@ public interface ClassFileReader {
 
 
   //--- standard class attributes
-  void setSourceFile(ClassFile cf, String pathName);
+  void setSourceFile(ClassFile cf, Object tag, String pathName);
 
-  void setInnerClassCount(ClassFile cf, int innerClsCount);
+  void setInnerClassCount(ClassFile cf, Object tag, int innerClsCount);
 
-  void setInnerClass(ClassFile cf, int innerClsIndex, String outerName, String innerName, String innerSimpleName, int accessFlags);
+  void setInnerClass(ClassFile cf, Object tag, int innerClsIndex, String outerName, String innerName, String innerSimpleName, int accessFlags);
 
-  void setInnerClassesDone (ClassFile cf);
+  void setInnerClassesDone (ClassFile cf, Object tag);
 
   //--- annotations
-  void setAnnotationCount(ClassFile cf, int annotationCount);
+  void setAnnotationCount(ClassFile cf, Object tag, int annotationCount);
 
-  void setAnnotationsDone(ClassFile cf);
+  void setAnnotationsDone(ClassFile cf, Object tag);
 
 
-  void setAnnotation(ClassFile cf, int annotationIndex, String annotationType);
+  void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType);
 
-  void setAnnotationValueCount(ClassFile cf, int annotationIndex, int nValuePairs);
+  void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int nValuePairs);
 
-  void setPrimitiveAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex, String elementName, int arrayIndex, Object val);
+  void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName, int arrayIndex, Object val);
 
-  void setStringAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex, String elementName, int arrayIndex, String s);
+  void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName, int arrayIndex, String s);
 
-  void setClassAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex, String elementName, int arrayIndex, String typeName);
+  void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName, int arrayIndex, String typeName);
 
-  void setEnumAnnotationValue(ClassFile cf, int annotationIndex, int valueIndex, String elementName, int arrayIndex,
+  void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName, int arrayIndex,
           String enumType, String enumValue);
 
-  void setAnnotationValueElementCount(ClassFile cf, int annotationIndex, int valueIndex, int elementCount);
+  void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex, int elementCount);
 
-  void setAnnotationValueElementsDone(ClassFile cf, int annotationIndex, int valueIndex);
+  void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex);
 
-  void setAnnotationValuesDone(ClassFile cf, int annotationIndex);
+  void setAnnotationValuesDone(ClassFile cf, Object tag, int annotationIndex);
 
-  void setParameterAnnotationCount(ClassFile cf, int parameterCount);
+  void setParameterAnnotationCount(ClassFile cf, Object tag, int parameterCount);
 
-  void setParameterAnnotationsDone(ClassFile cf);
+  void setParameterAnnotationsDone(ClassFile cf, Object tag);
 
 
-  void setSignature(ClassFile cf, String signature);
+  void setSignature(ClassFile cf, Object tag, String signature);
 }

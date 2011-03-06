@@ -292,7 +292,7 @@ public class VarRecorder extends ListenerAdapter {
      if (type.charAt(0) == '?')
        return(Types.T_OBJECT);
 
-     return(Types.getBaseType(type));
+     return(Types.getBaseTypeCode(type));
   }
 
   private String getName(JVM jvm, byte type) {

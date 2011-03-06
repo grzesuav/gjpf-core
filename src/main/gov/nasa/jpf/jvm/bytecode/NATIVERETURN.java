@@ -88,7 +88,7 @@ public class NATIVERETURN extends ReturnInstruction {
 
     ret = nativeFrame.getReturnValue();
     retAttr = nativeFrame.getReturnAttr();
-    retType = nativeFrame.getMethodInfo().getReturnType();
+    retType = nativeFrame.getMethodInfo().getReturnTypeCode();
   }
 
   @Override

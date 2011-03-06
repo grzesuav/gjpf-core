@@ -205,9 +205,9 @@ public class Config extends Properties {
 
     //--- at last, the (rest of the) command line properties
     loadArgs(a);
-    
-    // compute the global 'native_classpath', 'classpath', 'sourcepath' and 'peer_packages'
-    collectGlobalPaths();
+
+    // note that global path collection now happens from initClassLoader(), to
+    // accommodate for deferred project initialization when explicitly setting Config entries
 
     //printEntries();
   }
@@ -954,6 +954,19 @@ public class Config extends Properties {
 
   public JPFClassLoader initClassLoader( ClassLoader parent) {
     ArrayList<String> list = new ArrayList<String>();
+
+    // we prefer to call this here automatically instead of allowing
+    // explicit collectGlobalPath() calls because (a) this could not preserve
+    // initial path settings, and (b) setting it *after* the JPFClassLoader got
+    // installed won't work (would have to add URLs explicitly, or would have
+    // to create a new JPFClassLoader, which then conflicts with classes already
+    // defined by the previous one)
+    collectGlobalPaths();
+    if (log){
+      log("collected native_classpath=" + get("native_classpath"));
+      log("collected native_libraries=" + get("native_libraries"));
+    }
+
 
     String[] cp = getCompactStringArray("native_classpath");
     cp = FileUtils.expandWildcards(cp);
@@ -1942,8 +1955,14 @@ public class Config extends Properties {
   /**
    * collect all the <project>.{native_classpath,classpath,sourcepath,peer_packages,native_libraries}
    * and append them to the global settings
+   *
+   * NOTE - this is now called from within initClassLoader, which should only happen once and
+   * is the first time we really need the global paths.
+   *
+   * <2do> this is Ok for native_classpath and native_libraries, but we should probably do
+   * classpath, sourcepath and peer_packages separately (they can be collected later)
    */
-  void collectGlobalPaths() {
+  public void collectGlobalPaths() {
     // note - this is in the order of entry, i.e. reflects priorities
     // we have to process this in reverse order so that later entries are prioritized
     String[] keys = getEntrySequence();

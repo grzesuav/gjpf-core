@@ -38,6 +38,9 @@ public class ByteCodePrinter implements ByteCodeReader {
     this.prefix = prefix;
   }
 
+  public void startCode(Object tag){}
+  public void endCode(Object tag){}
+
   public void setPc (int pc){
     this.pc = pc;
   }
