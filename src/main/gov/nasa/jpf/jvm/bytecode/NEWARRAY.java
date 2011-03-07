@@ -46,7 +46,11 @@ public class NEWARRAY extends Instruction {
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     arrayLength = ti.pop();
     Heap heap = ti.getHeap();
-    
+
+    if (arrayLength < 0){
+      return ti.createAndThrowException("java.lang.NegativeArraySizeException");
+    }
+
     // there is no clinit for array classes, but we still have  to create a class object
     // since its a builtin class, we also don't have to bother with NoClassDefFoundErrors
     String clsName = "[" + type;
