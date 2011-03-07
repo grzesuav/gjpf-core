@@ -20,34 +20,16 @@ package gov.nasa.jpf.jvm;
 
 public class LocalVarInfo {
   private final String name;
-  private final String type;
-  private final String genericSignature;
+  private String type;       // lazy initialized FQN according to JLS 6.7 (e.g. "int", "x.Y[]")
+  private final String signature;  // e.g. "I", "[Lx/Y;"
+  private final String genericSignature;  // non-type erased generic signature(s)
   private final int    startPC;
   private final int    length;
     
-  public LocalVarInfo(String name, String type, String genericSignature, int startPC, int length) {
-    if (name == null) {
-      throw new NullPointerException("name == null"); 
-    }   
-
-    if (type == null) {
-      throw new NullPointerException("type == null"); 
-    }   
-      
-    if (genericSignature == null) {
-      throw new NullPointerException("genericSignature == null"); 
-    }   
-      
-    if (startPC < 0) {
-      throw new NullPointerException("startPC < 0 : " + startPC); 
-    }
-
-    if (length < 0) {
-      throw new NullPointerException("length < 0 : " + length);
-    }
+  public LocalVarInfo(String name, String signature, String genericSignature, int startPC, int length) {
    
     this.name             = name;
-    this.type             = type;
+    this.signature        = signature;
     this.genericSignature = genericSignature;
     this.startPC          = startPC;
     this.length           = length;
@@ -58,9 +40,16 @@ public class LocalVarInfo {
   }
 
   public String getType() {
+    if (type == null){
+      type = Types.asTypeName(signature);
+    }
     return type; 
   }
-  
+
+  public String getSignature() {
+    return signature;
+  }
+
   public String getGenericSignature() {
     return genericSignature;
   }

@@ -59,7 +59,7 @@ public class JPF_java_lang_reflect_Array {
     int n = env.getArrayLength(dimArrayRef);
     int i;
 
-    clsName = Types.getTypeCode(clsName, true);
+    clsName = Types.getTypeSignature(clsName, true);
     
     String arrayType = "[";
     for (i=2; i<n; i++) arrayType += '[';

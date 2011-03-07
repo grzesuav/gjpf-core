@@ -48,7 +48,7 @@ public class JPF_java_lang_Object {
         
         String componentType;
         if (cci.isPrimitive()){
-          componentType = Types.getTypeCode(cci.getName(),false);
+          componentType = Types.getTypeSignature(cci.getName(),false);
         } else {
           componentType = cci.getType();
         }

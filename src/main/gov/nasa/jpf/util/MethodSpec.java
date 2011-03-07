@@ -115,7 +115,7 @@ public class MethodSpec extends FeatureSpec {
           m.set(i);
           a = a.substring(1);
         }
-        String tc = Types.getTypeCode(a, false);
+        String tc = Types.getTypeSignature(a, false);
         sb.append(tc);
         i++;
 

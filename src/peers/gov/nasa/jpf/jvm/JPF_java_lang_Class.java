@@ -241,7 +241,7 @@ public class JPF_java_lang_Class {
       ClassInfo cit = getReferredClassInfo(env, cRef);
       String tname = cit.getName();
       String tcode = tname;
-      tcode = Types.getTypeCode(tcode, false);
+      tcode = Types.getTypeSignature(tcode, false);
       sb.append(tcode);
     }
     sb.append(')');

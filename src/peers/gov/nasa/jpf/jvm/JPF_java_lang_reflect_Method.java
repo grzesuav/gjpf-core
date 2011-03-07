@@ -251,7 +251,7 @@ public class JPF_java_lang_reflect_Method {
       sourceRef = env.getReferenceArrayElement(argsRef, i);
 
       if (sourceRef == MJIEnv.NULL) {
-        if ((destTypes[i] != Types.T_OBJECT) && (destTypes[i] != Types.T_ARRAY)) {
+        if ((destTypes[i] != Types.T_REFERENCE) && (destTypes[i] != Types.T_ARRAY)) {
           env.throwException(IllegalArgumentException.class.getName(), "Wrong argument type at index " + i + ".  Actual = (null).  Expected = " + destTypeNames[i]);
           return false;
         } 
@@ -333,7 +333,7 @@ public class JPF_java_lang_reflect_Method {
       return Types.T_ARRAY;
     }
     
-    return Types.T_OBJECT;
+    return Types.T_REFERENCE;
   }
   
   private static boolean isCompatible(byte sourceType, byte destType, ClassInfo sourceClass, String destClassName) {
@@ -376,7 +376,7 @@ public class JPF_java_lang_reflect_Method {
         return sourceType == Types.T_CHAR;
 
       case Types.T_ARRAY:
-      case Types.T_OBJECT:
+      case Types.T_REFERENCE:
         return sourceClass.isInstanceOf(destClassName);
 
       case Types.T_VOID:
@@ -397,7 +397,7 @@ public class JPF_java_lang_reflect_Method {
       case Types.T_BOOLEAN: return value.getBooleanField("value");
        
       case Types.T_ARRAY:
-      case Types.T_OBJECT:
+      case Types.T_REFERENCE:
         return value.getIndex();
 
       case Types.T_VOID:
@@ -422,7 +422,7 @@ public class JPF_java_lang_reflect_Method {
       case Types.T_BOOLEAN: return ((Boolean) value).booleanValue() ? 1 : 0;
 
       case Types.T_ARRAY:
-      case Types.T_OBJECT:
+      case Types.T_REFERENCE:
          return ((Integer) value).intValue();
 
       case Types.T_VOID:
@@ -448,7 +448,7 @@ public class JPF_java_lang_reflect_Method {
         break;
 
       case Types.T_ARRAY:
-      case Types.T_OBJECT:
+      case Types.T_REFERENCE:
         frame.pushRef((int) value);
         break;
 

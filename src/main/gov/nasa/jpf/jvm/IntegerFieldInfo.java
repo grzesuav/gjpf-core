@@ -30,7 +30,7 @@ public class IntegerFieldInfo extends SingleSlotFieldInfo {
 
   public IntegerFieldInfo (String name, int modifiers,
                            ClassInfo ci, int idx, int off) {
-     super(name, "int", modifiers, ci, idx, off);
+     super(name, "I", modifiers, ci, idx, off);
   }
 
   public void initialize (ElementInfo ei) {

@@ -26,9 +26,9 @@ import org.apache.bcel.classfile.ConstantValue;
  */
 public abstract class DoubleSlotFieldInfo extends FieldInfo {
 
-    protected DoubleSlotFieldInfo (String name, String type, int modifiers,
+    protected DoubleSlotFieldInfo (String name, String signature, int modifiers,
                           ClassInfo ci, int idx, int off) {
-     super(name, type, modifiers, ci, idx, off);
+     super(name, signature, modifiers, ci, idx, off);
     }
 
     public boolean is2SlotField(){

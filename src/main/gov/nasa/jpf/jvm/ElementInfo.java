@@ -964,7 +964,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     if (fi.isShortField()){
       return fields.getShortValue(fi.getStorageOffset());
     } else {
-      throw new JPFException("not a short field: " + fi.getType() + " " + fi.getName());
+      throw new JPFException("not a short field: " + fi.getName());
     }
   }
   public int getIntField(FieldInfo fi) {

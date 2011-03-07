@@ -314,7 +314,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   public int newArray (String elementType, int nElements, ThreadInfo ti) {
 
     //if (!Types.isTypeCode(elementType)) {
-    //  elementType = Types.getTypeCode(elementType, true);
+    //  elementType = Types.getTypeSignature(elementType, true);
     //}
 
     String type = "[" + elementType;

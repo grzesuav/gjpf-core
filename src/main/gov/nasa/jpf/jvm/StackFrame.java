@@ -1480,9 +1480,9 @@ public class StackFrame implements Constants, Cloneable {
         if (name.equals(localVar.getName())) {
           return offset;
         } else {
-          String type = localVar.getType();
-          if (type.charAt(0) != '?') { 
-            int typeSize = Types.getTypeSize(type); 
+          String sig = localVar.getSignature();
+          if (sig.charAt(0) != '?') {
+            int typeSize = Types.getTypeSize(sig);
             offset += typeSize;
             i += typeSize;
           }

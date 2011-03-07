@@ -128,7 +128,7 @@ public class AnnotationInfo {
   }
   
   public AnnotationInfo (AnnotationEntry ae){
-    name = Types.getCanonicalTypeName(ae.getAnnotationType()); // it's in slash-notation
+    name = Types.getClassNameFromTypeName(ae.getAnnotationType()); // it's in slash-notation
     ArrayList<Entry> list = new ArrayList<Entry>();
 
     // those are only the explicitly provided parameters

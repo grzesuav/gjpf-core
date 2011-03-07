@@ -822,7 +822,7 @@ public class MJIEnv {
 
   public int newObjectArray (String elementClsName, int size) {
     if (!elementClsName.endsWith(";")) {
-      elementClsName = Types.getTypeCode(elementClsName, false);
+      elementClsName = Types.getTypeSignature(elementClsName, false);
     }
 
     return heap.newArray(elementClsName, size, ti);

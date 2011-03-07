@@ -30,7 +30,7 @@ public class LongFieldInfo extends DoubleSlotFieldInfo {
 
   public LongFieldInfo (String name, int modifiers,
                         ClassInfo ci, int idx, int off) {
-    super(name, "long", modifiers, ci, idx, off);
+    super(name, "J", modifiers, ci, idx, off);
   }
 
   public void setConstantValue(Object constValue){

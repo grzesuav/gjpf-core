@@ -41,7 +41,8 @@ public abstract class FieldInfo extends InfoObject {
 
   
   protected final String name;
-  protected final String type;
+  private String type;  // lazy initialized fully qualified type name as per JLS 6.7 ("int", "x.Y[]")
+  protected final String signature; // "I", "[Lx/Y;" etc.
   protected int storageSize;
 
   protected final ClassInfo ci; // class this field belongs to
@@ -78,13 +79,13 @@ public abstract class FieldInfo extends InfoObject {
    * factory method for the various concrete FieldInfos
    * THIS WILL BE REMOVED WHEN WE REPLACE BCEL
    */
-  public static FieldInfo create (Field f, ClassInfo ci, int idx, int off) {
+  public static FieldInfo create (ClassInfo ci, Field f, int idx, int off) {
     String name = f.getName();
     String signature = f.getSignature();
     ConstantValue cv = f.getConstantValue();
     int modifiers = f.getModifiers();
 
-    FieldInfo ret = create(name, signature, modifiers, ci, idx, off);
+    FieldInfo ret = create(ci, name, signature, modifiers, idx, off);
     
     // THIS IS BRAINDEAD - but it is going away as soon as we replace BCEL
     if (cv != null){
@@ -117,8 +118,8 @@ public abstract class FieldInfo extends InfoObject {
   }
 
   
-  public static FieldInfo create (String name, String signature, int modifiers,
-                                  ClassInfo ci, int idx, int off){
+  public static FieldInfo create (ClassInfo ci, String name, String signature, int modifiers,
+                                  int idx, int off){
     switch(signature.charAt(0)){
       case 'Z':
         return new BooleanFieldInfo(name, modifiers, ci, idx, off);
@@ -137,14 +138,14 @@ public abstract class FieldInfo extends InfoObject {
       case 'D':
         return new DoubleFieldInfo(name, modifiers, ci, idx, off);
       default:
-        return new ReferenceFieldInfo(name, Types.getTypeName(signature), modifiers, ci, idx, off);
+        return new ReferenceFieldInfo(name, signature, modifiers, ci, idx, off);
     }
   }
 
-  protected FieldInfo(String name, String type, int modifiers,
+  protected FieldInfo(String name, String signature, int modifiers,
                       ClassInfo ci, int idx, int off) {
     this.name = name;
-    this.type = type;
+    this.signature = signature;
     this.ci = ci;
     this.fieldIndex = idx;
     this.storageOffset = off;
@@ -267,18 +268,26 @@ public abstract class FieldInfo extends InfoObject {
   }
 
   /**
-   * Returns the type of the field.
+   * Returns the type of the field as a fully qualified type name according to JLS 6.7
+   * ("int", "x.Y[]")
    */
   public String getType () {
+    if (type == null){
+      type = Types.getTypeName(signature);
+    }
     return type;
   }
-  
+
+  public String getSignature(){
+    return signature;
+  }
+
   public String getGenericSignature() {
     return genericSignature; 
   }
   
   public ClassInfo getTypeClassInfo () {
-    return ClassInfo.getResolvedClassInfo(type);
+    return ClassInfo.getResolvedClassInfo(getType());
   }
 
   public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType (){
@@ -305,7 +314,7 @@ public abstract class FieldInfo extends InfoObject {
     }
 
     //sb.append(Types.getTypeName(type));
-    sb.append(type);
+    sb.append(getType());
     sb.append(' ');
     sb.append(ci.getName());
     sb.append('.');

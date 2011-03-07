@@ -22,8 +22,8 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.util.Debug;
 
 import org.apache.bcel.Constants;
 import org.apache.bcel.classfile.Code;
@@ -38,6 +38,7 @@ import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.InstructionList;
 
 import gov.nasa.jpf.jvm.bytecode.*;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
 import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.Attribute;
@@ -51,6 +52,9 @@ import org.apache.bcel.classfile.ParameterAnnotations;
  * is represented by a MethodInfo object
  */
 public class MethodInfo extends InfoObject implements Cloneable {
+
+  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.MethodInfo");
+
 
   static final int INIT_MTH_SIZE = 4096;
   protected static final ArrayList<MethodInfo> mthTable = new ArrayList<MethodInfo>(INIT_MTH_SIZE);
@@ -597,7 +601,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
 
   public String getReturnType () {
-    return Types.getReturnType(signature);
+    return Types.getReturnTypeSignature(signature);
   }
 
   public String getReturnTypeName () {
@@ -935,7 +939,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
   public byte getReturnTypeCode () {
     if (returnType < 0) {
-      returnType = Types.getReturnTypeCode(signature);
+      returnType = Types.getReturnBuiltinType(signature);
     }
 
     return returnType;
@@ -1266,12 +1270,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
     if (lvt == null) {
       if (!warnedLocalInfo && !ci.isSystemClass()) {
-        Debug.println(Debug.WARNING);
-        Debug.println(Debug.WARNING, "No local variable information available");
-        Debug.println(Debug.WARNING, "for " + getCompleteName());
-        Debug.println(Debug.WARNING,
-                      "Recompile with -g to include this information");
-        Debug.println(Debug.WARNING);
+        logger.info("no local variable info for ", getCompleteName(), "(recompile with -g)");
         warnedLocalInfo = true;
       }
 
@@ -1284,10 +1283,21 @@ public class MethodInfo extends InfoObject implements Cloneable {
 
     for (int i = lv.length; --i >= 0; ) {
       LocalVariable var = lv[i];
+
+      String vname = var.getName();
+      String vsig = var.getSignature();
+      int vStartPc = var.getStartPC();
       int index = var.getIndex();
       int length = var.getLength();
-      maxLength = Math.max(length, length);
-      vars[index] = new LocalVarInfo(var.getName(), var.getSignature(), "", var.getStartPC(), length);  // <2do> Pass the generic signature when BCEL supports generic signatures for local variables
+
+      maxLength = Math.max(maxLength, length);
+
+      if (vname == null || vsig == null || vStartPc < 0){
+        throw new JPFException("illegal local variable entry: " + var);
+      }
+
+      // <2do> Pass the generic signature when BCEL supports generic signatures for local variables
+      vars[index] = new LocalVarInfo(vname, vsig, "", vStartPc, length);
     }
     
     LocalVarInfo temp = new LocalVarInfo("?", "?", "", 0, maxLength);

@@ -28,19 +28,26 @@ import org.apache.bcel.Constants;
 
 /**
  * various type mangling/demangling routines
+ *
+ * This reflects the general type id mess in Java. We support the following:
+ *
+ *  builtin type: byte - T_BOOLEAN and the like
+ *  type name: String - according to JLS 6.7 ("int", "x.Y[]")
+ *  type signature: String - like JNI ("I", "[Lx/Y;")
+ *  type classname: String - e.g. "int", "[I", "x.Y", "[Lx.Y;"
  */
-public class Types {  
-  public static final byte T_ARRAY     = Constants.T_ARRAY;
+public class Types {
+
   public static final byte T_BOOLEAN   = Constants.T_BOOLEAN;
   public static final byte T_BYTE      = Constants.T_BYTE;
   public static final byte T_CHAR      = Constants.T_CHAR;
-  public static final byte T_DOUBLE    = Constants.T_DOUBLE;
-  public static final byte T_FLOAT     = Constants.T_FLOAT;
+  public static final byte T_SHORT     = Constants.T_SHORT;
   public static final byte T_INT       = Constants.T_INT;
   public static final byte T_LONG      = Constants.T_LONG;
-  public static final byte T_OBJECT    = Constants.T_OBJECT;
+  public static final byte T_FLOAT     = Constants.T_FLOAT;
+  public static final byte T_DOUBLE    = Constants.T_DOUBLE;
   public static final byte T_REFERENCE = Constants.T_REFERENCE;
-  public static final byte T_SHORT     = Constants.T_SHORT;
+  public static final byte T_ARRAY     = Constants.T_ARRAY;  // <2do> do we need this in addition to T_REFERENCE?
   public static final byte T_VOID      = Constants.T_VOID;
 
   
@@ -60,7 +67,7 @@ public class Types {
       String arg = signature.substring(i, end);
       i = end;
 
-      args[j] = getBaseTypeCode(arg);
+      args[j] = getBuiltinTypeFromSignature(arg);
     }
 
     return args;
@@ -129,8 +136,8 @@ public class Types {
     return type.substring(1);
   }
 
-  public static byte getBaseTypeCode (String type) {
-    switch (type.charAt(0)) {
+  public static byte getBuiltinTypeFromSignature (String signature) {
+    switch (signature.charAt(0)) {
     case 'B':
       return T_BYTE;
 
@@ -150,7 +157,7 @@ public class Types {
       return T_LONG;
 
     case 'L':
-      return T_OBJECT; // T_REFERENCE is deprecated
+      return T_REFERENCE;
 
     case 'S':
       return T_SHORT;
@@ -165,7 +172,7 @@ public class Types {
       return T_ARRAY;
     }
 
-    throw new JPFException("invalid type string: " + type);
+    throw new JPFException("invalid type string: " + signature);
   }
 
   /**
@@ -457,18 +464,18 @@ public class Types {
   }
 
   public static boolean isReference (String type) {
-    int t = getBaseTypeCode(type);
+    int t = getBuiltinTypeFromSignature(type);
 
     return (t == T_ARRAY) || (t == T_REFERENCE);
   }
 
-  public static byte getReturnTypeCode (String signature) {
+  public static byte getReturnBuiltinType (String signature) {
     int i = signature.indexOf(')');
 
-    return getBaseTypeCode(signature.substring(i + 1));
+    return getBuiltinTypeFromSignature(signature.substring(i + 1));
   }
 
-  public static String getReturnType(String signature){
+  public static String getReturnTypeSignature(String signature){
     int i = signature.indexOf(')');
     return signature.substring(i + 1);
   }
@@ -478,7 +485,7 @@ public class Types {
     return getTypeName(signature.substring(i+1));
   }
   
-  public static String getTypeCode (String type, boolean dotNotation) {
+  public static String getTypeSignature (String type, boolean dotNotation) {
     String  t = null;
     int arrayDim = 0;
     
@@ -527,6 +534,34 @@ public class Types {
     return t;
   }
 
+  public static byte getBuiltinType(String typeName){
+      if (typeName.equals("byte")) {
+        return T_BYTE;
+      } else if (typeName.equals("char")) {
+        return T_CHAR;
+      } else if (typeName.equals("short")) {
+        return T_SHORT;
+      } else if (typeName.equals("int")) {
+        return T_INT;
+      } else if (typeName.equals("float")) {
+        return T_FLOAT;
+      } else if (typeName.equals("long")) {
+        return T_LONG;
+      } else if (typeName.equals("double")) {
+        return T_DOUBLE;
+      } else if (typeName.equals("boolean")) {
+        return T_BOOLEAN;
+      } else if (typeName.equals("void")) {
+        return T_VOID;
+      } else {
+        if (typeName.charAt(typeName.length()-1) == ']'){
+          return T_ARRAY;
+        } else {
+          return T_REFERENCE;
+        }
+      }
+  }
+
   /**
    * get the canonical representation of a type name, which happens to be
    *  (1) the name of the builtin type (e.g. "int")
@@ -538,7 +573,7 @@ public class Types {
    *  
    * no idea what's the logic behind this, but let's implement it
    */
-  public static String getCanonicalTypeName (String typeName) {
+  public static String getClassNameFromTypeName (String typeName) {
     typeName = typeName.replace('/','.');
     int n = typeName.length()-1;
     
@@ -562,7 +597,7 @@ public class Types {
       
       typeName = typeName.substring(0,i);
       if (isBasicType(typeName)){
-        sb.append( getTypeCode(typeName, true));
+        sb.append( getTypeSignature(typeName, true));
       } else {
         sb.append('L');
         sb.append(typeName);
@@ -610,10 +645,13 @@ public class Types {
         "short".equals(typeName) ||
         "float".equals(typeName));
   }
-  
-  public static String getTypeName (String type) {
-    int  len = type.length();
-    char c = type.charAt(0);
+
+  /**
+   * return the qualified signature name according to JLS 6.7 (e.g. "int", "x.Y[]")
+   */
+  public static String getTypeName (String signature) {
+    int  len = signature.length();
+    char c = signature.charAt(0);
 
     if (len == 1) {
       switch (c) {
@@ -647,22 +685,23 @@ public class Types {
     }
 
     if (c == '[') {
-      return getTypeName(type.substring(1)) + "[]";
+      return getTypeName(signature.substring(1)) + "[]";
     }
 
-    if (type.charAt(len - 1) == ';') {
-      return type.substring(1, type.indexOf(';')).replace('/', '.');
+    int len1 = len-1;
+    if (signature.charAt(len1) == ';') {
+      return signature.substring(1, len1).replace('/', '.');
     }
 
-    throw new JPFException("invalid type string: " + type);
+    throw new JPFException("invalid type string: " + signature);
   }
 
   /**
    * what would be the info size in bytes, not words
    * (we ignore 64bit machines for now)
    */
-  public static int getTypeSizeInBytes (String type) {
-    switch (type.charAt(0)) {
+  public static int getTypeSizeInBytes (String signature) {
+    switch (signature.charAt(0)) {
       case 'V':
         return 0;
         
@@ -685,11 +724,11 @@ public class Types {
         return 8;
     }
 
-    throw new JPFException("invalid type string: " + type);
+    throw new JPFException("invalid type string: " + signature);
   }
   
-  public static int getTypeSize (String typeCode) {
-    switch (typeCode.charAt(0)) {
+  public static int getTypeSize (String signature) {
+    switch (signature.charAt(0)) {
     case 'V':
       return 0;
 
@@ -708,11 +747,11 @@ public class Types {
       return 2;
     }
 
-    throw new JPFException("invalid type string: " + typeCode);
+    throw new JPFException("invalid type string: " + signature);
   }
 
-  public static int getTypeSize (byte typeCode){
-    if (typeCode == T_LONG || typeCode == T_DOUBLE){
+  public static int getTypeSize (byte typeCategory){
+    if (typeCategory == T_LONG || typeCategory == T_DOUBLE){
       return 2;
     } else {
       return 1;
@@ -748,13 +787,13 @@ public class Types {
   }
 
   public static boolean instanceOf (String type, String ofType) {
-    int bType = getBaseTypeCode(type);
+    int bType = getBuiltinTypeFromSignature(type);
 
     if ((bType == T_ARRAY) && ofType.equals("Ljava.lang.Object;")) {
       return true;
     }
 
-    int bOfType = getBaseTypeCode(ofType);
+    int bOfType = getBuiltinTypeFromSignature(ofType);
 
     if (bType != bOfType) {
       return false;
@@ -853,7 +892,7 @@ public class Types {
         sb.append(a[a.length-1]);
 
         if (a.length > 1){
-          retType = getTypeCode(a[a.length-2], false);
+          retType = getTypeSignature(a[a.length-2], false);
         }
       }
 
@@ -865,7 +904,7 @@ public class Types {
           if (!type.isEmpty()){
             type = type.trim();
             if (!type.isEmpty()){
-              sb.append( getTypeCode(type,false));
+              sb.append( getTypeSignature(type,false));
             }
           }
         }

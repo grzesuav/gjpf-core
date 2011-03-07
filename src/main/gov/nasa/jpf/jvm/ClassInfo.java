@@ -152,6 +152,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
   /**
    * Name of the class. e.g. "java.lang.String"
+   * NOTE - this is the expanded name for builtin types, e.g. "int", but NOT
+   * for arrays, which are for some reason in Ldot notation, e.g. "[Ljava.lang.String;" or "[I"
    */
   protected String name;
   
@@ -346,13 +348,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       FieldInfo fi=null;
 
       if ((accessFlags & Modifier.STATIC) == 0){ // instance field
-        fi = FieldInfo.create (name, descriptor, accessFlags, ClassInfo.this, iIdx, iOff);
+        fi = FieldInfo.create (ClassInfo.this, name, descriptor, accessFlags, iIdx, iOff);
         instanceFields.add(fi);
         iIdx++;
         iOff += fi.getStorageSize();
 
       } else {  // static field
-        fi = FieldInfo.create (name, descriptor, accessFlags, ClassInfo.this, iIdx, iOff);
+        fi = FieldInfo.create (ClassInfo.this, name, descriptor, accessFlags, iIdx, iOff);
         staticFields.add(fi);
         sIdx++;
         sOff += fi.getStorageSize();
@@ -470,7 +472,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       String genericSignature = mi.getGenericSignature();
 
       // createAndInitialize an instance field for it
-      FieldInfo fi = FieldInfo.create(mname, mtype, 0, this, idx, off);
+      FieldInfo fi = FieldInfo.create(this, mname, mtype, 0, idx, off);
       iFields[idx++] = fi;
       off += fi.getStorageSize();
 
@@ -803,7 +805,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return null;
     }
 
-    String typeName = Types.getCanonicalTypeName(className);
+    String typeName = Types.getClassNameFromTypeName(className);
 
     // <2do> this is BAD - fix it!
     int idx = JVM.getVM().getStaticArea().indexFor(typeName);
@@ -836,7 +838,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return null;   
     }
     
-    String typeName = Types.getCanonicalTypeName(className);
+    String typeName = Types.getClassNameFromTypeName(className);
     
     // <2do> this is BAD - fix it!
     int idx = JVM.getVM().getStaticArea().indexFor(typeName);
@@ -942,7 +944,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return null; 
     } 
     
-    String typeName = Types.getCanonicalTypeName(name);
+    String typeName = Types.getClassNameFromTypeName(name);
     JavaClass clazz = getJavaClass(typeName);
     
     return(clazz);
@@ -1229,13 +1231,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   
   public String getSignature() {
     if (signature == null) {
-      if (isPrimitive()) {
-        signature = name;
-      } else if (isArray()) {
-        signature = name.replaceAll("\\.", "/");
-      } else {
-        signature = "L" + name.replaceAll("\\.", "/") + ";";
-      }
+      signature = Types.getTypeSignature(name, false);
     }
     
     return signature;     
@@ -1431,7 +1427,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       return Types.getJNITypeCode(name).equals(cname);
 
     } else {
-      cname = Types.getCanonicalTypeName(cname);
+      cname = Types.getClassNameFromTypeName(cname);
 
       for (ClassInfo c = this; c != null; c = c.superClass) {
         if (c.name.equals(cname)) {
@@ -1576,7 +1572,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     for (i=0, j=0; i<fields.length; i++) {
       Field f = fields[i];
       if (!f.isStatic()) {
-        FieldInfo fi = FieldInfo.create(f, this, idx, off);
+        FieldInfo fi = FieldInfo.create(this, f, idx, off);
         ifa[j++] = fi;
         off += fi.getStorageSize();
         idx++;
@@ -1671,7 +1667,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     for (i=0; i<fields.length; i++) {
       Field f = fields[i];
       if (f.isStatic()) {
-        FieldInfo fi = FieldInfo.create(f, this, idx, off);
+        FieldInfo fi = FieldInfo.create(this, f, idx, off);
         sfa[idx] = fi;
         idx++;
         off += fi.getStorageSize();

@@ -299,20 +299,19 @@ public class JPF_java_lang_reflect_Field {
       } else if (fi instanceof IntegerFieldInfo){
         // this might actually represent a plethora of types
         int i = ei.getIntField(fi);
-        
-        // <2do> this still sucks - we need to split teh IntegerFieldInfo up
-        String cls = fi.getType();
-        if (cls.equals("int")){
-          return env.newInteger(i);
-        } else if (cls.equals("boolean")){
-          return env.newBoolean(i != 0);
-        } else if (cls.equals("byte")){
-          return env.newByte((byte)i);
-        } else if (cls.equals("short")){
-          return env.newShort((short)i);
-        } else if (cls.equals("char")){
-          return env.newCharacter((char)i);
-        }
+        return env.newInteger(i);
+      } else if (fi instanceof BooleanFieldInfo){
+        boolean b = ei.getBooleanField(fi);
+        return env.newBoolean(b);
+      } else if (fi instanceof ByteFieldInfo){
+        byte z = ei.getByteField(fi);
+        return env.newByte(z);
+      } else if (fi instanceof CharFieldInfo){
+        char c = ei.getCharField(fi);
+        return env.newCharacter(c);
+      } else if (fi instanceof ShortFieldInfo){
+        short s = ei.getShortField(fi);
+        return env.newShort(s);
       }
       
     } else { // it's a reference
@@ -453,7 +452,7 @@ public class JPF_java_lang_reflect_Field {
         if (value != MJIEnv.NULL) {
           String type = env.getTypeName(value);
           // this is an instance so the ClassInfo has to be registered
-          ClassInfo valueCI = ClassInfo.getResolvedClassInfo(Types.getTypeName(type));
+          ClassInfo valueCI = ClassInfo.getResolvedClassInfo(type);
           if (!valueCI.isInstanceOf(tci)) {
             return false;
           }

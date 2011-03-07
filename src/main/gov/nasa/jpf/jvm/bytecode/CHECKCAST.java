@@ -39,7 +39,7 @@ public class CHECKCAST extends Instruction {
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     String t = cp.constantToString(cp.getConstant(
                                      ((org.apache.bcel.generic.CHECKCAST) i).getIndex()));
-    type = Types.getCanonicalTypeName(t);
+    type = Types.getClassNameFromTypeName(t);
   }
 
   public String getTypeName() {

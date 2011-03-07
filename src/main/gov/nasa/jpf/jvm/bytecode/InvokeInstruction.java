@@ -268,11 +268,11 @@ public abstract class InvokeInstruction extends Instruction {
   }
 
   public int getReturnType() {
-    return Types.getReturnTypeCode(signature);
+    return Types.getReturnBuiltinType(signature);
   }
 
   public boolean isReferenceReturnType() {
-    int r = Types.getReturnTypeCode(signature);
+    int r = Types.getReturnBuiltinType(signature);
     return ((r == Types.T_REFERENCE) || (r == Types.T_ARRAY));
   }
 

@@ -212,32 +212,34 @@ public class VarRecorder extends ListenerAdapter {
     Instruction inst;
     String type;
 
-    ti    = jvm.getLastThreadInfo();
+    ti = jvm.getLastThreadInfo();
     frame = ti.getTopFrame();
-    if ((frame.getTopPos() >= 0) && (frame.isOperandRef()))
-      return(Types.T_OBJECT);
-
-    type  = null;
-    inst  = jvm.getLastInstruction();
-
-    if (((recordLocals) && (inst instanceof LocalVariableInstruction)) ||
-        ((recordFields) && (inst instanceof FieldInstruction)))
-    {
-       if (inst instanceof LocalVariableInstruction)
-         type = ((LocalVariableInstruction) inst).getLocalVariableType();
-       else {
-         fi   = ((FieldInstruction) inst).getFieldInfo();
-         type = fi.getType();
-       }
+    if ((frame.getTopPos() >= 0) && (frame.isOperandRef())) {
+      return (Types.T_REFERENCE);
     }
 
-    if ((recordArrays) && (inst instanceof ArrayInstruction))
-      return(getTypeFromInstruction(inst));
+    type = null;
+    inst = jvm.getLastInstruction();
 
-    if (type == null)
-      return(Types.T_VOID);
+    if (((recordLocals) && (inst instanceof LocalVariableInstruction))
+            || ((recordFields) && (inst instanceof FieldInstruction))) {
+      if (inst instanceof LocalVariableInstruction) {
+        type = ((LocalVariableInstruction) inst).getLocalVariableType();
+      } else {
+        fi = ((FieldInstruction) inst).getFieldInfo();
+        type = fi.getType();
+      }
+    }
 
-    return(decodeType(type));
+    if ((recordArrays) && (inst instanceof ArrayInstruction)) {
+      return (getTypeFromInstruction(inst));
+    }
+
+    if (type == null) {
+      return (Types.T_VOID);
+    }
+
+    return (decodeType(type));
   }
 
   private final static byte getTypeFromInstruction(Instruction inst) {
@@ -254,7 +256,7 @@ public class VarRecorder extends ListenerAdapter {
     name = name.substring(name.lastIndexOf('.') + 1);
 
     switch (name.charAt(0)) {
-      case 'A': return(Types.T_OBJECT);
+      case 'A': return(Types.T_REFERENCE);
       case 'B': return(Types.T_BYTE);      // Could be a boolean but it is better to assume a byte.
       case 'C': return(Types.T_CHAR);
       case 'F': return(Types.T_FLOAT);
@@ -275,7 +277,7 @@ public class VarRecorder extends ListenerAdapter {
       case Types.T_FLOAT:   return("F");
       case Types.T_INT:     return("I");
       case Types.T_LONG:    return("J");
-      case Types.T_OBJECT:  return("L");
+      case Types.T_REFERENCE:  return("L");
       case Types.T_SHORT:   return("S");
       case Types.T_VOID:    return("V");
       case Types.T_BOOLEAN: return("Z");
@@ -286,13 +288,11 @@ public class VarRecorder extends ListenerAdapter {
   }
 
   private final static byte decodeType(String type) {
-     if (type.length() != 1)
-       return(Types.T_OBJECT);
-
-     if (type.charAt(0) == '?')
-       return(Types.T_OBJECT);
-
-     return(Types.getBaseTypeCode(type));
+    if (type.charAt(0) == '?'){
+      return(Types.T_REFERENCE);
+    } else {
+      return Types.getBuiltinType(type);
+    }
   }
 
   private String getName(JVM jvm, byte type) {
@@ -408,7 +408,7 @@ public class VarRecorder extends ListenerAdapter {
       case Types.T_LONG:    return(String.valueOf(Types.intsToLong(lo, hi)));
       case Types.T_SHORT:   return(String.valueOf(lo));
 
-      case Types.T_OBJECT:
+      case Types.T_REFERENCE:
         ElementInfo ei = JVM.getVM().getHeap().get(lo);
         if (ei == null)
           return(null);
