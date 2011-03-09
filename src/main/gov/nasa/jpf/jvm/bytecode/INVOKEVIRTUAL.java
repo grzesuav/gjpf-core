@@ -27,7 +27,12 @@ import gov.nasa.jpf.jvm.MethodInfo;
  */
 public class INVOKEVIRTUAL extends VirtualInvocation {
   public INVOKEVIRTUAL () {}
-  
+
+  protected INVOKEVIRTUAL (String clsDescriptor, String methodName, String signature){
+    super(clsDescriptor, methodName, signature);
+  }
+
+
   public int getByteCode () {
     return 0xB6;
   }

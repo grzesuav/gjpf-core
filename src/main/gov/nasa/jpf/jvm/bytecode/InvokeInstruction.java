@@ -51,6 +51,12 @@ public abstract class InvokeInstruction extends Instruction {
 
   protected Object[] arguments; // temporary cache for arg values (for listeners)
 
+  protected InvokeInstruction (String clsDescriptor, String methodName, String signature){
+    this.cname = Types.getClassNameFromSignature(clsDescriptor);
+    this.signature = signature;
+    this.mname = MethodInfo.getUniqueName(mname, signature);
+  }
+
   protected InvokeInstruction () {}
 
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {

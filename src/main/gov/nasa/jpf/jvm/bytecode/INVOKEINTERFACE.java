@@ -26,7 +26,12 @@ import gov.nasa.jpf.jvm.MethodInfo;
  */
 public class INVOKEINTERFACE extends VirtualInvocation {
   public INVOKEINTERFACE () {}
-  
+
+  protected INVOKEINTERFACE (String clsDescriptor, String methodName, String signature){
+    super(clsDescriptor, methodName, signature);
+  }
+
+
   public int getLength() {
     return 5; // opcode, index1, index2, nargs, 0
   }

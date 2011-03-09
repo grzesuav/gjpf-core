@@ -27,8 +27,13 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Store long into local variable
  * ..., value => ...
  */
-public class LSTORE extends LocalVariableInstruction implements StoreInstruction
-{
+public class LSTORE extends LocalVariableInstruction implements StoreInstruction {
+
+  public LSTORE() {}
+
+  public LSTORE(int localVarIndex){
+    super(localVarIndex);
+  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     //th.setLongLocalVariable(index, th.longPop());

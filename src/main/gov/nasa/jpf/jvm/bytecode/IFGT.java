@@ -26,7 +26,14 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * ..., value => ...
  */
 public class IFGT extends IfInstruction {
-  
+
+  public IFGT() {}
+
+  public IFGT(int targetPc) {
+    super(targetPc);
+  }
+
+
   public boolean popConditionValue (ThreadInfo ti) {
     return (ti.pop() > 0);
   }

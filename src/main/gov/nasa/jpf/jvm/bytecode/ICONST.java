@@ -31,7 +31,13 @@ import org.apache.bcel.classfile.ConstantPool;
  */
 public class ICONST extends Instruction {
   private int value;
-  
+
+  public ICONST() {}
+
+  public ICONST(int value){
+    this.value = value;
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     value = ((org.apache.bcel.generic.ICONST) i).getValue().intValue();
   }

@@ -32,6 +32,12 @@ import org.apache.bcel.classfile.ConstantPool;
 public class BIPUSH extends Instruction {
   private int value;
 
+  public BIPUSH() {} // this is going away
+
+  public BIPUSH(int value){
+    this.value = value;
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     value = ((org.apache.bcel.generic.BIPUSH) i).getValue().byteValue();
   }

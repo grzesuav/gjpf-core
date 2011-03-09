@@ -32,7 +32,13 @@ public abstract class IfInstruction extends Instruction {
   protected Instruction target;  // jump target
   
   protected boolean conditionValue;  /** value of last evaluation of branch condition */
-  
+
+  protected IfInstruction() {}
+
+  protected IfInstruction(int targetPosition){
+    this.targetPosition = targetPosition;
+  }
+
   /**
    * return which branch was taken. Only useful after instruction got executed
    * WATCH OUT - 'true' means the jump condition is met, which logically is

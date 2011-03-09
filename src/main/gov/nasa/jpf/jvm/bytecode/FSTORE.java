@@ -27,8 +27,13 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Store float into local variable
  * ..., value => ...
  */
-public class FSTORE extends LocalVariableInstruction implements StoreInstruction
-{
+public class FSTORE extends LocalVariableInstruction implements StoreInstruction {
+
+  public FSTORE() {}
+
+  public FSTORE(int localVarIndex) {
+    super(localVarIndex);
+  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     //th.setLocalVariable(index, th.pop(), false);

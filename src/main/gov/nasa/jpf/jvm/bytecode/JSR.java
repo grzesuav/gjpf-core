@@ -32,6 +32,12 @@ import org.apache.bcel.classfile.ConstantPool;
 public class JSR extends Instruction {
   private int target;
 
+  public JSR() {}
+
+  public JSR(int targetPc){
+    target = targetPc;
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     target = ((org.apache.bcel.generic.JSR) i).getTarget().getPosition();
   }

@@ -38,6 +38,11 @@ public class INVOKESPECIAL extends InstanceInvocation {
 
   public INVOKESPECIAL () {}
 
+  protected INVOKESPECIAL (String clsDescriptor, String methodName, String signature){
+    super(clsDescriptor, methodName, signature);
+  }
+
+
   public int getByteCode () {
     return 0xB7;
   }

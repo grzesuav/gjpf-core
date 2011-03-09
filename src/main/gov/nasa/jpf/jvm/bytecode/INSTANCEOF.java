@@ -32,6 +32,12 @@ import org.apache.bcel.classfile.ConstantPool;
 public class INSTANCEOF extends Instruction {
   private String type;
 
+  public INSTANCEOF (){}
+
+  public INSTANCEOF (String descriptor){
+    type = descriptor;
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     type = cp.constantToString(cp.getConstant(
                                      ((org.apache.bcel.generic.INSTANCEOF) i).getIndex()))

@@ -36,6 +36,12 @@ import org.apache.bcel.classfile.ConstantPool;
 public class CHECKCAST extends Instruction {
   String type;
 
+  public CHECKCAST() {} // this is going away
+
+  public CHECKCAST(String signature){
+    type = Types.getTypeSignature(signature, true);
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     String t = cp.constantToString(cp.getConstant(
                                      ((org.apache.bcel.generic.CHECKCAST) i).getIndex()));

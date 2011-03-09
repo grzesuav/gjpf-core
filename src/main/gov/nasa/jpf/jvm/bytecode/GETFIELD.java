@@ -32,6 +32,12 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class GETFIELD extends InstanceFieldInstruction {
 
+  public GETFIELD (){}
+
+  public GETFIELD (String fieldName, String classType, String fieldDescriptor){
+    super(fieldName, classType, fieldDescriptor);
+  }
+
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int objRef = ti.peek(); // don't pop yet, we might re-execute
     lastThis = objRef;

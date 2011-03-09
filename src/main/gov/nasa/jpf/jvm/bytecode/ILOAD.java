@@ -29,6 +29,12 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class ILOAD extends LocalVariableInstruction {
 
+  public ILOAD() {}
+
+  public ILOAD(int localVarIndex){
+    super(localVarIndex);
+  }
+
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     //th.push(th.getLocalVariable(index), false);
     th.pushLocal(index);

@@ -38,7 +38,12 @@ public class INVOKESTATIC extends InvokeInstruction {
   ClassInfo ci;
   
   public INVOKESTATIC () {}
-  
+
+  protected INVOKESTATIC (String clsDescriptor, String methodName, String signature){
+    super(clsDescriptor, methodName, signature);
+  }
+
+
   protected ClassInfo getClassInfo () {
     if (ci == null) {
       ci = ClassInfo.getResolvedClassInfo(cname);

@@ -29,6 +29,11 @@ public abstract class InstanceInvocation extends InvokeInstruction {
 
   protected InstanceInvocation() {}
 
+  protected InstanceInvocation (String clsDescriptor, String methodName, String signature){
+    super(clsDescriptor, methodName, signature);
+  }
+
+
   public int getCalleeThis (ThreadInfo ti) {
     if (!ti.isPostExec()){
       // we have to dig out the 'this' reference from the callers stack

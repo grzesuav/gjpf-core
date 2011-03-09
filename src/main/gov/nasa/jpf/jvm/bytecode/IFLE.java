@@ -25,7 +25,14 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * ..., value => ...
  */
 public class IFLE extends IfInstruction {
-  
+
+  public IFLE() {}
+
+  public IFLE(int targetPc) {
+    super(targetPc);
+  }
+
+
   public boolean popConditionValue (ThreadInfo ti) {
     return (ti.pop() <= 0);
   }

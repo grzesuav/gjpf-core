@@ -37,6 +37,12 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
    */
   protected int lastThis = -1;
 
+  protected InstanceFieldInstruction() {}
+
+  protected InstanceFieldInstruction (String fieldName, String classType, String fieldDescriptor){
+    super(fieldName, classType, fieldDescriptor);
+  }
+
   public FieldInfo getFieldInfo () {
     if (fi == null) {
       ClassInfo ci = ClassInfo.getResolvedClassInfo(className);

@@ -40,32 +40,57 @@ import org.apache.bcel.generic.Type;
  * ... => ..., value
  */
 public class LDC extends Instruction {
-  
+
+  public enum Type {STRING, CLASS, INT, FLOAT};
+
+  Type type;
+
   protected String  string;  // the string value if Type.STRING, classname if Type.CLASS
   protected int     value;
-  protected Type    type;
+
+
+  public LDC() {}
+
+  public LDC (String s, boolean isClass){
+    this.string = s;
+    type = (isClass) ? Type.CLASS : Type.STRING;
+  }
+
+  public LDC (int v){
+    value = v;
+    type = Type.INT;
+  }
+
+  public LDC (float f){
+    value = Float.floatToIntBits(f);
+    type = Type.FLOAT;
+  }
+
 
 
   public void setPeer (org.apache.bcel.generic.Instruction insn, ConstantPool cp) {
     ConstantPoolGen cpg = ClassInfo.getConstantPoolGen(cp);
     org.apache.bcel.generic.LDC ldc = (org.apache.bcel.generic.LDC) insn;
     
-    type = ldc.getType(cpg);
+    org.apache.bcel.generic.Type t = ldc.getType(cpg);
     int index = ldc.getIndex();
 
-    if (type == Type.STRING) {
+    if (t == org.apache.bcel.generic.Type.STRING) {
+      type = Type.STRING;
       string = cp.constantToString(cp.getConstant(
                                      ((ConstantString) cp.getConstant(index)).getStringIndex()));
 
-    } else if (type == Type.INT) {
+    } else if (t == org.apache.bcel.generic.Type.INT) {
+      type = Type.INT;
       value = ((ConstantInteger) cp.getConstant(index)).getBytes();
 
-    } else if (type == Type.FLOAT) {
+    } else if (t == org.apache.bcel.generic.Type.FLOAT) {
+      type = Type.FLOAT;
       value = Types.floatToInt( ((ConstantFloat) cp.getConstant(index)).getBytes());
 
-    } else if (type == Type.CLASS) {
-    //} else if (type.getType() == Constants.T_REFERENCE) {
-      //type = Type.CLASS;
+    } else if (t == org.apache.bcel.generic.Type.CLASS) {
+    //} else if (t.getType() == Constants.T_REFERENCE) {
+      //t = Type.CLASS;
       /*
        * Java 1.5 silently introduced a class file change - LDCs can now directly reference class
        * constpool entries. To make it more interesting, BCEL 5.1 chokes on this with a hard exception.
@@ -74,7 +99,9 @@ public class LDC extends Instruction {
        * The current hack should compile with both BCEL 5.1 and svn, but only runs - when encountering
        * a Java 1.5 class file - if the BCEL svn jar is used
        */
-      
+
+      type = Type.CLASS;
+
       // that's kind of a hack - if this is a const class ref to the class that is
       // currently loaded, we don't have a corresponding object created yet, and
       // the StaticArea access methods might do a recursive class init. Our solution
@@ -87,33 +114,38 @@ public class LDC extends Instruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    if (type == Type.STRING) {
-      // too bad we can't cache it, since location might change between different paths
-      value = ti.getHeap().newInternString(string,ti);
-      ti.push(value, true);
+    switch (type){
+      case STRING:
+        // too bad we can't cache it, since location might change between different paths
+        value = ti.getHeap().newInternString(string, ti);
+        ti.push(value, true);
+        break;
 
-    } else if (type == Type.CLASS) {
-      try {
-        ClassInfo ci = ClassInfo.getResolvedClassInfo(string);
+      case INT:
+      case FLOAT:
+        ti.push(value, false);
+        break;
 
-        // LDC doesn't cause a <clinit> - we only register all required classes
-        // to make sure we have class objects. <clinit>s are called prior to
-        // GET/PUT or INVOKE
-        if (!ci.isRegistered()){
-          ci.registerClass(ti);
+      case CLASS:
+        try {
+          ClassInfo ci = ClassInfo.getResolvedClassInfo(string);
+
+          // LDC doesn't cause a <clinit> - we only register all required classes
+          // to make sure we have class objects. <clinit>s are called prior to
+          // GET/PUT or INVOKE
+          if (!ci.isRegistered()) {
+            ci.registerClass(ti);
+          }
+
+          ti.push(ci.getClassObjectRef(), true);
+
+        } catch (NoClassInfoException cx) {
+          // can be any inherited class or required interface
+          return ti.createAndThrowException("java.lang.NoClassDefFoundError", cx.getMessage());
         }
-
-        ti.push(ci.getClassObjectRef(), true);
-
-      } catch (NoClassInfoException cx){
-        // can be any inherited class or required interface
-        return ti.createAndThrowException("java.lang.NoClassDefFoundError", cx.getMessage());
-      }
-
-    } else {
-      ti.push(value, false);
+        break;
     }
-
+    
     return getNext(ti);
   }
 

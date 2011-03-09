@@ -25,6 +25,15 @@ public class JPF_java_lang_reflect_Array {
   
   public static int getLength__Ljava_lang_Object_2__I (MJIEnv env, int clsObjRef, 
                                                     int objRef) {
+    if (objRef == MJIEnv.NULL) {
+      env.throwException("java.lang.NullPointerException", "array argument is null");
+      return 0;
+    }
+    if (!env.isArray(objRef)) {
+      env.throwException("java.lang.IllegalArgumentException", "argument is not an array");
+      return 0;
+    }
+
     return env.getArrayLength(objRef);
   }
   

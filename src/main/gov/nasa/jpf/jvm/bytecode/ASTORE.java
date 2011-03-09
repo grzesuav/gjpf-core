@@ -27,8 +27,13 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Store reference into local variable
  * ..., objectref => ...
  */
-public class ASTORE extends LocalVariableInstruction implements StoreInstruction
-{
+public class ASTORE extends LocalVariableInstruction implements StoreInstruction {
+
+  public ASTORE(){} // this is going away
+
+  public ASTORE(int index){
+    super(index);
+  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     //** warning: an ASTORE should store an object reference. However **//

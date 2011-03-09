@@ -33,6 +33,13 @@ public class IINC extends Instruction {
   protected int index;
   protected int increment;
 
+  public IINC() {}
+
+  public IINC(int localVarIndex, int increment){
+    this.index = localVarIndex;
+    this.increment = increment;
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     index = ((org.apache.bcel.generic.IINC) i).getIndex();
     increment = ((org.apache.bcel.generic.IINC) i).getIncrement();

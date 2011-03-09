@@ -33,6 +33,13 @@ import org.apache.bcel.classfile.ConstantPool;
 public class FCONST extends Instruction {
   private int value;
 
+
+  public FCONST(){} // this is going away
+
+  public FCONST(float f){
+    value = Float.floatToIntBits(f);
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     value = Types.floatToInt(((org.apache.bcel.generic.FCONST) i).getValue()
                                                                .floatValue());

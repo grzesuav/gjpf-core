@@ -24,7 +24,14 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * DOCUMENT ME!
  */
 public class IFNULL extends IfInstruction {
-  
+
+  public IFNULL() {}
+
+  public IFNULL(int targetPc) {
+    super(targetPc);
+  }
+
+
   public boolean popConditionValue (ThreadInfo ti) {
     return (ti.pop() == -1);
   }

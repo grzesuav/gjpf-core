@@ -26,10 +26,14 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Store double into local variable
  * ..., value => ...
  */
-public class DSTORE extends LocalVariableInstruction
-  implements StoreInstruction
-{
-  
+public class DSTORE extends LocalVariableInstruction implements StoreInstruction  {
+
+  public DSTORE() {} // this is going away
+
+  public DSTORE(int localVarIndex) {
+    super(localVarIndex);
+  }
+
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     //th.setLongLocalVariable(index, th.longPop());
     th.storeLongOperand(index);

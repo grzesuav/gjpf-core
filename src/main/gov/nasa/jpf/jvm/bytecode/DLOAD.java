@@ -29,6 +29,12 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class DLOAD extends LocalVariableInstruction {
 
+  public DLOAD(){}  // this is going away
+
+  public DLOAD (int localVarIndex){
+    super(localVarIndex);
+  }
+
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     //th.longPush(th.getLongLocalVariable(index));
     th.pushLongLocal(index);

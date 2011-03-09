@@ -31,6 +31,12 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
 
   ClassInfo ci;
 
+  protected StaticFieldInstruction(){}
+
+  protected StaticFieldInstruction(String fieldName, String clsDescriptor, String fieldDescriptor){
+    super(fieldName, clsDescriptor, fieldDescriptor);
+  }
+
   public ClassInfo getClassInfo () {
     if (ci == null) {
       ci = ClassInfo.getResolvedClassInfo(className);

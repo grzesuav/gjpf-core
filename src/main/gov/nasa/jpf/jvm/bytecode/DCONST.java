@@ -33,6 +33,12 @@ import org.apache.bcel.classfile.ConstantPool;
 public class DCONST extends Instruction {
   private long value;
 
+  public DCONST() {} // this is going away
+
+  public DCONST (double d){
+    value = Double.doubleToLongBits(d);
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     value = Types.doubleToLong(((org.apache.bcel.generic.DCONST) i).getValue()
                                                                  .doubleValue());

@@ -25,6 +25,20 @@ package gov.nasa.jpf.jvm.bytecode;
  */
 public class LDC_W extends LDC {
 
+  public LDC_W() {}
+
+  public LDC_W (String s, boolean isClass){
+    super(s,isClass);
+  }
+
+  public LDC_W (int v){
+    super(v);
+  }
+
+  public LDC_W (float f){
+    super(f);
+  }
+
 
   public int getLength() {
     return 3; // opcode, index1, index2

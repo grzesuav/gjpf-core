@@ -35,6 +35,11 @@ public abstract class VirtualInvocation extends InstanceInvocation {
 
   protected VirtualInvocation () {}
 
+  protected VirtualInvocation (String clsDescriptor, String methodName, String signature){
+    super(clsDescriptor, methodName, signature);
+  }
+
+
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int objRef = ti.getCalleeThis(getArgSize());
 

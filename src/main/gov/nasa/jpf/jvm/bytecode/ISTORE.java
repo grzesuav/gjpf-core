@@ -27,8 +27,13 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Store int into local variable
  * ..., value => ...
  */
-public class ISTORE extends LocalVariableInstruction implements StoreInstruction
-{
+public class ISTORE extends LocalVariableInstruction implements StoreInstruction {
+
+  public ISTORE() {}
+
+  public ISTORE(int localVarIndex){
+    super(localVarIndex);
+  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     //th.setLocalVariable(index, th.pop(), false);

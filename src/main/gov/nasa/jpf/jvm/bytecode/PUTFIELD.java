@@ -36,6 +36,12 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
 {
   long lastValue;
 
+  public PUTFIELD() {}
+
+  public PUTFIELD(String fieldName, String clsDescriptor, String fieldDescriptor){
+    super(fieldName, clsDescriptor, fieldDescriptor);
+  }
+
   /**
    * only meaningful in instructionExecuted notification
    */

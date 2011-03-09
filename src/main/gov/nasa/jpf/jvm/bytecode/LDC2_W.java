@@ -36,8 +36,23 @@ import org.apache.bcel.generic.Type;
  * ... => ..., value
  */
 public class LDC2_W extends Instruction {
+
+  public enum Type {LONG, DOUBLE};
+
   protected Type type;
   protected long value;
+
+  public LDC2_W(long l){
+    value = l;
+    type = Type.LONG;
+  }
+
+  public LDC2_W(double d){
+    value = Double.doubleToLongBits(d);
+    type = Type.DOUBLE;
+  }
+
+  public LDC2_W() {}
 
   public void setPeer (org.apache.bcel.generic.Instruction insn, ConstantPool cp) {
     ConstantPoolGen cpg = ClassInfo.getConstantPoolGen(cp);
@@ -45,11 +60,14 @@ public class LDC2_W extends Instruction {
     org.apache.bcel.generic.LDC2_W ldc2_w = (org.apache.bcel.generic.LDC2_W) insn;
     int index = ldc2_w.getIndex();
     
-    type = ldc2_w.getType(cpg);
+    org.apache.bcel.generic.Type t = ldc2_w.getType(cpg);
 
-    if (type == Type.LONG) {
+    if (t == org.apache.bcel.generic.Type.LONG) {
+      type = Type.LONG;
       value = ((ConstantLong) cp.getConstant( index)).getBytes();
+
     } else {
+      type = Type.DOUBLE;
       value = Types.doubleToLong(((ConstantDouble) cp.getConstant( index)).getBytes());
     }
   }

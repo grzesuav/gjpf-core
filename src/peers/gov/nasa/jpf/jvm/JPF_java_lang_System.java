@@ -39,7 +39,7 @@ public class JPF_java_lang_System {
                                                                               int srcArrayRef, int srcIdx, 
                                                                               int dstArrayRef, int dstIdx,
                                                                               int length) {
-    if ((srcArrayRef == -1) || (dstArrayRef == -1)) {
+    if ((srcArrayRef == MJIEnv.NULL) || (dstArrayRef == MJIEnv.NULL)) {
       env.throwException("java.lang.NullPointerException");
       return;
     }
@@ -63,10 +63,12 @@ public class JPF_java_lang_System {
       int max = srcIdx + length;
       for (int i=srcIdx; i<max; i++){
         int eref = eiSrc.getReferenceElement(i);
-        ClassInfo srcElementCi = env.getClassInfo(eref);
-        if (!srcElementCi.isInstanceOf(dstElementCi)) {
-          env.throwException("java.lang.ArrayStoreException");
-          return;
+        if (eref != MJIEnv.NULL){
+          ClassInfo srcElementCi = env.getClassInfo(eref);
+          if (!srcElementCi.isInstanceOf(dstElementCi)) {
+            env.throwException("java.lang.ArrayStoreException");
+            return;
+          }
         }
       }
     }

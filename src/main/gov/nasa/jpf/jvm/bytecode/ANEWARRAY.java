@@ -30,10 +30,15 @@ import org.apache.bcel.classfile.ConstantPool;
 public class ANEWARRAY extends Instruction {
   protected String type;
 
+  public ANEWARRAY(){} // this is going away
+
+  public ANEWARRAY (String typeSignature){
+    type = Types.getTypeSignature(type, true);
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     type = cp.constantToString(cp.getConstant(
                                      ((org.apache.bcel.generic.ANEWARRAY) i).getIndex()));
-
     if (!type.startsWith("[")) {
       type = "L" + type + ";";
     }

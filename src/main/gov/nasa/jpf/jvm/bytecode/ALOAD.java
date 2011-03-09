@@ -29,6 +29,12 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class ALOAD extends LocalVariableInstruction {
 
+  public ALOAD() {} // this is going away
+
+  public ALOAD(int index){
+    super(index);
+  }
+
   /**
    * for explicit construction
    */

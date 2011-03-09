@@ -27,6 +27,13 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IFLT extends IfInstruction {
 
+  public IFLT() {}
+
+  public IFLT(int targetPc) {
+    super(targetPc);
+  }
+
+
   public boolean popConditionValue (ThreadInfo ti) {
     return (ti.pop() < 0);
   }

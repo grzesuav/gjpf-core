@@ -33,6 +33,7 @@ import org.apache.bcel.generic.Type;
 import org.apache.bcel.generic.ReferenceType;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.FieldLockInfo;
+import gov.nasa.jpf.jvm.Types;
 
 /**
  * parent class for PUT/GET FIELD/STATIC insns
@@ -69,7 +70,16 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
       skipConstructedFinals = config.getBoolean("vm.por.skip_constructed_finals", false);
     }
   }
-  
+
+  protected FieldInstruction() {}
+
+  protected FieldInstruction(String name, String classType, String fieldDescriptor){
+    fname = name;
+    className = Types.getClassNameFromSignature(classType);
+    isReferenceField = Types.isReferenceSignature(fieldDescriptor);
+    size = Types.getTypeSize(fieldDescriptor);
+  }
+
   public String getClassName()   // Needed for Java Race Finder
   {
      return(className);

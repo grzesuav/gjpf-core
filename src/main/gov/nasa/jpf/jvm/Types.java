@@ -463,6 +463,10 @@ public class Types {
     return n; // that would be a malformed signature
   }
 
+  public static boolean isReferenceSignature(String signature){
+    return signature.charAt(signature.length()-1) == ';';
+  }
+
   public static boolean isReference (String type) {
     int t = getBuiltinTypeFromSignature(type);
 
@@ -560,6 +564,26 @@ public class Types {
           return T_REFERENCE;
         }
       }
+  }
+
+  public static String getClassNameFromSignature (String signature){
+    if (signature.charAt(signature.length()-1) == ';'){ // reference
+      return signature.replace('/', '.');
+
+    } else { // builtin
+      switch (signature.charAt(0)){
+        case 'Z': return "boolean";
+        case 'B': return "byte";
+        case 'C': return "char";
+        case 'S': return "short";
+        case 'I': return "int";
+        case 'L': return "long";
+        case 'F': return "float";
+        case 'D': return "double";
+        default:
+          throw new JPFException("illegal type signature: " + signature);
+      }
+    }
   }
 
   /**

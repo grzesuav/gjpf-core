@@ -32,6 +32,12 @@ import org.apache.bcel.classfile.ConstantPool;
 public class LCONST extends Instruction {
   private long value;
 
+  public LCONST() {}
+
+  public LCONST(long value){
+    this.value = value;
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     value = ((org.apache.bcel.generic.LCONST) i).getValue().longValue();
   }

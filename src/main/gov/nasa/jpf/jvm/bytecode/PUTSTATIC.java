@@ -35,6 +35,13 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
 {
   protected long lastValue;
 
+  public PUTSTATIC() {}
+
+  public PUTSTATIC(String fieldName, String clsDescriptor, String fieldDescriptor){
+    super(fieldName, clsDescriptor, fieldDescriptor);
+  }
+
+  
   public long getLastValue() {
     return lastValue;
   }

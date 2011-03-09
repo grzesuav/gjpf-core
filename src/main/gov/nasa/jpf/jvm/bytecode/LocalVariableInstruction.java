@@ -30,7 +30,13 @@ public abstract class LocalVariableInstruction extends Instruction
 
   protected int index;
   protected String varId;
-  
+
+  protected LocalVariableInstruction(){} // this is going away
+
+  protected LocalVariableInstruction(int index){
+    this.index = index;
+  }
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     index = ((org.apache.bcel.generic.LocalVariableInstruction) i).getIndex();
   }
