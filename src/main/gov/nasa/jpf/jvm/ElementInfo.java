@@ -400,16 +400,18 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     int tid = ti.getIndex();
     updateRefTidWith(tid);
     
-    int nThreadRefs = refTid.cardinality();
+    int nThreadRefs = refTid.cardinality();    
     if (nThreadRefs > 1){
+      // <2do> problem with atomic sections (DiningPhil)
 
       // check if we have to cleanup the refTid set, or if some other accessors are not runnable
       ThreadList tl = JVM.getVM().getThreadList();
       for (int i=refTid.nextSetBit(0); i>=0; i = refTid.nextSetBit(i+1)){
         ThreadInfo tiRef = tl.get(i);
-        if (tiRef == null || tiRef.isTerminated()) {
+        if (tiRef == null || tiRef.isTerminated() ) {
           updateRefTidWithout(i);
           nThreadRefs--;
+          //return true; // do this only once (DiningPhil/atomic fix, but not good for AWT)
         } else if (!tiRef.isRunnable()){
           nThreadRefs--;
         }

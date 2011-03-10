@@ -28,7 +28,7 @@ public class AtomicTest extends TestJPF {
   static int data = 42;
   
   @Test public void testNoRace () {
-    if (verifyNoPropertyViolation()) {
+    if (verifyNoPropertyViolation("+cg.enable_atomic")) {
       Runnable r = new Runnable() {
 
         public void run() {
@@ -54,7 +54,7 @@ public class AtomicTest extends TestJPF {
   }
   
   @Test public void testDataCG () {
-    if (verifyNoPropertyViolation()) {
+    if (verifyNoPropertyViolation("+cg.enable_atomic")) {
       Runnable r = new Runnable() {
 
         public void run() {
@@ -76,7 +76,7 @@ public class AtomicTest extends TestJPF {
   }
 
   @Test public void testBlockedInAtomic () {
-    if (verifyDeadlock()){
+    if (verifyDeadlock("+cg.enable_atomic")){
       Runnable r = new Runnable() {
 
         public synchronized void run() {

@@ -67,6 +67,10 @@ public class RunAnt {
     // we let the InvocationTargetException pass
   }
 
+  static void warning(String msg){
+    System.err.println("WARNING: " + msg);
+  }
+
   static void abort (String msg){
     System.err.println("ERROR: " + msg);
     System.exit(1);
@@ -84,6 +88,7 @@ public class RunAnt {
       // on Linux and Windows it's in ${java.home}/lib/tools.jar
 
       if (javaHome.endsWith(sc + "jre")){
+        warning("this is a JRE, which does not come with tools.jar: " + javaHome);
         toolsJarPath = javaHome.substring(0, javaHome.length()-4) + sc + "lib" + sc + "tools.jar";
       } else {
         toolsJarPath = javaHome + sc + "lib" + sc + "tools.jar";

@@ -74,4 +74,8 @@ public interface SchedulerFactory {
 
   /** used by Thread.stop() */
   ChoiceGenerator<ThreadInfo> createThreadStopCG ();
+
+  ChoiceGenerator<ThreadInfo> createBeginAtomicCG (ThreadInfo ti);
+
+  ChoiceGenerator<ThreadInfo> createEndAtomicCG (ThreadInfo ti);
 }

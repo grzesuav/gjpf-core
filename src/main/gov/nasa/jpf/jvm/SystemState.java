@@ -137,6 +137,10 @@ public class SystemState {
    * but be aware of that it now reports a deadlock property violation in
    * case of a blocking op inside an atomic section
    * Data CGs however are now allowed to be inside atomic sections
+   *
+   * BEWARE - It is in the nature of atomic sections that they might loose paths that
+   * are relevant. This is esp. true for Thread.start() within AS if the starter
+   * runs to completion without further scheduling points (DiningPhil problem).
    */
   int atomicLevel;
   int entryAtomicLevel;

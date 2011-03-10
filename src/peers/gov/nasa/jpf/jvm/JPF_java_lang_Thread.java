@@ -18,15 +18,20 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.RUNSTART;
+import gov.nasa.jpf.util.JPFLogger;
 
 
 /**
  * MJI NativePeer class for java.lang.Thread library abstraction
  */
 public class JPF_java_lang_Thread {
+
+  static JPFLogger log = JPF.getLogger("gov.nasa.jpf.jvm.ThreadInfo");
+
 
   public static boolean isAlive____Z (MJIEnv env, int objref) {
     return getThreadInfo(objref).isAlive();
@@ -199,6 +204,9 @@ public class JPF_java_lang_Thread {
         ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG(tiNew);
         if (ss.setNextChoiceGenerator(cg)) {
           env.repeatInvocation();
+        } else {
+          Instruction insn = tiCurrent.getPC();
+          log.info(tiNew.getName(), " start not a scheduling point in ", insn.getMethodInfo().getFullName());
         }
       }
     }

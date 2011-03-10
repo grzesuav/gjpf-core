@@ -35,8 +35,10 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   static boolean isInitialized;
   static int[] counter;
+
   static boolean supportIgnorePath;
   static boolean breakSingleChoice;
+  static boolean enableAtomic;
 
   static Config config;  // we need to keep this around for CG creation
 
@@ -51,6 +53,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     if (!isInitialized){
       supportIgnorePath = conf.getBoolean("vm.verify.ignore_path");
       breakSingleChoice = conf.getBoolean("cg.break_single_choice");
+      enableAtomic = conf.getBoolean("cg.enable_atomic", true);
 
       counter = null;
       config = conf;
@@ -119,10 +122,35 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   // those are evil - use with extreme care
   public static void beginAtomic____V (MJIEnv env, int clsObjRef) {
-    env.getSystemState().incAtomic();
+    if (enableAtomic){
+      ThreadInfo tiAtomic = env.getThreadInfo();
+      if (!tiAtomic.isFirstStepInsn()){
+        SystemState ss = env.getSystemState();
+        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createBeginAtomicCG(tiAtomic);
+        if (ss.setNextChoiceGenerator(cg)) {
+          env.repeatInvocation();
+          return;
+        }
+      }
+
+      env.getSystemState().incAtomic();
+    }
   }
+  
   public static void endAtomic____V (MJIEnv env, int clsObjRef) {
-    env.getSystemState().decAtomic();
+    if (enableAtomic){
+      ThreadInfo tiAtomic = env.getThreadInfo();
+
+      if (!tiAtomic.isFirstStepInsn()){
+        env.getSystemState().decAtomic();
+
+        SystemState ss = env.getSystemState();
+        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createEndAtomicCG(tiAtomic);
+        if (ss.setNextChoiceGenerator(cg)) {
+          env.repeatInvocation();
+        }
+      }
+    }
   }
 
   public static void busyWait__J__V (MJIEnv env, int clsObjRef, long duration) {

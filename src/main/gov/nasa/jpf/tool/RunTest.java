@@ -21,6 +21,7 @@ package gov.nasa.jpf.tool;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFClassLoader;
+import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFSiteUtils;
 import java.lang.reflect.InvocationTargetException;
 
@@ -47,7 +48,10 @@ public class RunTest extends Run {
   }
 
   public static void main(String[] args){
+    String projectId = null;
+    String testCpKey = null;
     String testClsName = getTestClassName(args);
+
     if (testClsName != null) {
       testClsName = checkClassName(testClsName);
 
@@ -55,10 +59,19 @@ public class RunTest extends Run {
         config = new Config(args);
         JPFClassLoader cl = config.initClassLoader(RunTest.class.getClassLoader());
 
-        String projectId = JPFSiteUtils.getCurrentProjectId();
+        projectId = JPFSiteUtils.getCurrentProjectId();
         if (projectId != null) {
-          String testCpKey = projectId + ".test_classpath";
-          cl.addURL( config.getURL(testCpKey));
+          testCpKey = projectId + ".test_classpath";
+          String[] tcp = config.getCompactTrimmedStringArray(testCpKey);
+          if (tcp != null){
+            for (String pe : tcp){
+              try {
+                cl.addURL( FileUtils.getURL(pe));
+              } catch (Throwable x){
+                error("malformed test_classpath URL: " + pe);
+              }
+            }
+          }
         }
 
         Class<?> testJpfCls = cl.loadClass("gov.nasa.jpf.util.test.TestJPF");
@@ -83,7 +96,8 @@ public class RunTest extends Run {
         error("class did not resolve: " + ncfx.getMessage());
 
       } catch (ClassNotFoundException cnfx) {
-        error("class not found " + cnfx.getMessage());
+        error("class not found " + cnfx.getMessage() + ", check test_classpath in jpf.properties: " +
+                config.getString(testCpKey));
 
       } catch (InvocationTargetException ix) {
         Throwable cause = ix.getCause();

@@ -19,10 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.bytecode.ArrayInstruction;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.*;
-import gov.nasa.jpf.util.StringSetMatcher;
 
 
 /**
@@ -262,6 +259,9 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
 
     if (breakStart) {
       if (ss.isAtomic()) {
+        // this is dangerous - POR now depends on Thread.start() being a right mover
+        // If the current thread doesn't have a scheduling point before termination,
+        // we might loose paths (Thread.start() will warn about it)
         return null;
       }
       return getRunnableCG("start");
@@ -269,8 +269,16 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     } else {
       return null;
     }
-
   }
+
+  public ChoiceGenerator<ThreadInfo> createBeginAtomicCG (ThreadInfo atomicThread) {
+    return null;
+  }
+
+  public ChoiceGenerator<ThreadInfo> createEndAtomicCG (ThreadInfo atomicThread) {
+    return getRunnableCG("end atomic");
+  }
+
 
   public ChoiceGenerator<ThreadInfo> createThreadYieldCG (ThreadInfo yieldThread) {
     if (breakYield) {
