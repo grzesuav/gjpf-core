@@ -20,6 +20,7 @@
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.JPFException;
+import java.util.BitSet;
 
 /**
  *
@@ -189,8 +190,19 @@ public class BitSet64 implements FixedBitSet, Cloneable {
       BitSet64 other = (BitSet64)o;
       if (l0 != other.l0) return false;
       return true;
+    } else if (o instanceof BitSet) {
+      BitSet bs = (BitSet) o;
+      for (int i = 0; i < this.size(); i++) {
+        if (this.get(i) != bs.get(i))
+          return false;
+      }
+
+      // BitSet size can be more then 64, so check if there any bits set after 63d bit
+      if (bs.nextSetBit(64) >= 0)
+        return false;
+
+      return true;
     } else {
-      // <2do> we could compare to a normal java.util.BitSet here
       return false;
     }
   }
