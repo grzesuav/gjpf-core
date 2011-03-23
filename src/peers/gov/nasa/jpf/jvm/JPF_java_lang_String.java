@@ -98,6 +98,20 @@ public class JPF_java_lang_String {
     
     return -1;
   }
+
+  public static int indexOf__Ljava_lang_String_2__I(MJIEnv env, int objref, int str) {
+    String thisStr = env.getStringObject(objref);
+    String indexStr = env.getStringObject(str);
+
+    return thisStr.indexOf(indexStr);
+  }
+
+  public static int indexOf__Ljava_lang_String_2I__I(MJIEnv env, int objref, int str, int fromIndex) {
+    String thisStr = env.getStringObject(objref);
+    String indexStr = env.getStringObject(str);
+
+    return thisStr.indexOf(indexStr, fromIndex);
+  }
   
   public static int hashCode____I (MJIEnv env, int objref) {
     int h = env.getIntField(objref, "hash");
@@ -151,6 +165,11 @@ public class JPF_java_lang_String {
     String[] result=obj.split(s);
 
     return env.newStringArray(result);
+  }
+
+  public static int trim____Ljava_lang_String_2(MJIEnv env,int objRef) {
+    String str = env.getStringObject(objRef);
+    return env.newString(str.trim());
   }
 
 }
