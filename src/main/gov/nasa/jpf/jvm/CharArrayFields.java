@@ -38,6 +38,13 @@ public class CharArrayFields extends ArrayFields {
     return values;
   }
 
+  public char[] asCharArray (int offset, int length) {
+    char[] result = new char[length];
+    System.arraycopy(values, offset, result, 0, length);
+
+    return result;
+  }
+
   public Object getValues(){
     return values;
   }
