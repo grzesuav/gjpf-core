@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.util;
 
+import java.util.ResourceBundle;
 import java.util.logging.*;
 
 /**
@@ -30,7 +31,6 @@ import java.util.logging.*;
  * We provide a fat interface to avoid Object[] creation for ellipsis method
  * or auto boxing for Object arguments
  *
- * <2do> implement missing public methods
  */
 public class JPFLogger extends Logger {
 
@@ -41,7 +41,15 @@ public class JPFLogger extends Logger {
 
     this.logger = logger;
   }
-  
+
+  public ResourceBundle getResourceBundle() {
+    return logger.getResourceBundle();
+  }
+
+  public String getResourceBundleName() {
+    return logger.getResourceBundleName();
+  }
+
   public void setFilter(Filter newFilter) throws SecurityException {
     logger.setFilter(newFilter);
   }
@@ -207,6 +215,46 @@ public class JPFLogger extends Logger {
     logger.log(level, sb.toString());
   }
 
+  //--- the SEVERE
+  public void severe (Object s1, Object s2) {
+    if (isLoggable(Level.SEVERE)) {
+      logger.log(Level.SEVERE, s1.toString() + s2.toString());
+    }
+  }
+  // this is here to avoid auto boxing
+  public void severe (Object s1, int s2){
+    if (isLoggable(Level.SEVERE)) {
+         logger.log(Level.SEVERE, s1.toString() + s2);
+    }
+  }
+  public void severe (Object s1, Object s2, Object s3){
+    if (isLoggable(Level.SEVERE)) {
+      logger.log(Level.SEVERE, s1.toString() + s2.toString() + s3.toString());
+    }
+  }
+  public void severe (Object s1, Object s2, Object s3, Object s4){
+    if (isLoggable(Level.SEVERE)) {
+      logger.log(Level.SEVERE, s1.toString() + s2.toString() + s3.toString() + s4.toString());
+    }
+  }
+  public void severe (Object s1, int s2, Object s3, int s4){
+    if (isLoggable(Level.SEVERE)) {
+      logger.log(Level.SEVERE, s1.toString() + s2 + s3.toString() + s4);
+    }
+  }
+  public void severe (Object... args){
+    if (isLoggable(Level.SEVERE)) {
+      log(Level.SEVERE, args);
+    }
+  }
+  // note this still wraps args into a String array - overhead
+  public void fsevere (String format, String... args){
+    if (isLoggable(Level.SEVERE)) {
+      logger.log(Level.SEVERE, String.format(format, (Object)args));
+    }
+  }
+
+  //--- the WARNING
   public void warning (Object s1, Object s2) {
     if (isLoggable(Level.WARNING)) {
       logger.log(Level.WARNING, s1.toString() + s2.toString());
@@ -283,6 +331,45 @@ public class JPFLogger extends Logger {
     }
   }
 
+  //--- the CONFIG
+  public void config (Object s1, Object s2){
+    if (isLoggable(Level.CONFIG)) {
+      logger.log(Level.CONFIG, s1.toString() + s2.toString());
+    }
+  }
+  public void config (Object s1, int s2){
+    if (isLoggable(Level.CONFIG)) {
+      logger.log(Level.CONFIG, s1.toString() + s2);
+    }
+  }
+  public void config (Object s1, Object s2, Object s3){
+    if (isLoggable(Level.CONFIG)) {
+      logger.log(Level.CONFIG, s1.toString() + s2.toString() + s3.toString());
+    }
+  }
+  public void config (Object s1, Object s2, Object s3, Object s4){
+    if (isLoggable(Level.CONFIG)) {
+      logger.log(Level.CONFIG, s1.toString() + s2.toString() + s3.toString() + s4.toString());
+    }
+  }
+  public void config (Object s1, int s2, Object s3, int s4){
+    if (isLoggable(Level.CONFIG)) {
+      logger.log(Level.CONFIG, s1.toString() + s2 + s3.toString() + s4);
+    }
+  }
+  public void config (Object... args){
+    if (isLoggable(Level.CONFIG)) {
+      log(Level.CONFIG, args);
+    }
+  }
+  // note this still wraps args into a String array - overhead
+  public void fconfig (String format, String... args){
+    if (isLoggable(Level.CONFIG)) {
+      logger.log(Level.CONFIG, String.format(format, (Object)args));
+    }
+  }
+
+  //--- the FINE
   public void fine (Object s1, Object s2){
     if (isLoggable(Level.FINE)) {
       logger.log(Level.FINE, s1.toString() + s2.toString());
