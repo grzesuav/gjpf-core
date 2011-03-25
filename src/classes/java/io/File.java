@@ -74,18 +74,18 @@ public class File
       return null;
     }
   }
-
-  
-  public int compareTo(Object o) {
-    return compareTo((File)o);
-  }
   
   public int compareTo(File that) {
     return this.filename.compareTo(that.filename);
   }
   
   public boolean equals(Object o) {
-    return filename.equals(((File)o).filename);
+    if (!(o instanceof File))
+      return false;
+
+    File otherFile = (File) o;
+
+    return filename.equals(otherFile.filename);
   }
   
   public int hashCode() {

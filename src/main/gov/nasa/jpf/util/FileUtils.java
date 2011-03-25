@@ -359,6 +359,22 @@ public class FileUtils {
     }
   }
 
+  public static boolean removeRecursively(File file) {
+    if (file.exists()) {
+      File[] childs = file.listFiles();
+
+      for (File child : childs) {
+        if (child.isDirectory())
+          removeRecursively(child);
+        else
+          child.delete();
+      }
+
+      return file.delete();
+    }
+
+    return false;
+  }
 
   //--- test & debug
 

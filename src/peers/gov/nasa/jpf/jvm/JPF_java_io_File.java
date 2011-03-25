@@ -36,6 +36,23 @@ public class JPF_java_io_File {
     String fname = env.getStringObject(fnref);
     return new File(fname);
   }
+
+  static int createJPFFile(MJIEnv env, File file) {
+    int newFileRef = env.newObject("java.io.File");
+    ElementInfo fileEI = env.getElementInfo(newFileRef);
+
+    int fileNameRef = env.newString(file.getPath());
+    fileEI.setReferenceField("filename", fileNameRef);
+
+    return newFileRef;
+  }
+
+  public static int getParentFile____Ljava_io_File_2(MJIEnv env, int objref) {
+    File thisFile = getFile(env, objref);
+    File parent = thisFile.getParentFile();
+
+    return createJPFFile(env, parent);
+  }
   
   public static int getAbsolutePath____Ljava_lang_String_2 (MJIEnv env, int objref) {
     String pn = getFile(env,objref).getAbsolutePath();
