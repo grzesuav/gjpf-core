@@ -24,6 +24,7 @@ import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.Types;
 
 import org.apache.bcel.classfile.ConstantPool;
 
@@ -36,6 +37,12 @@ public class MULTIANEWARRAY extends Instruction {
   protected String type;
   protected int dimensions;
 
+  public MULTIANEWARRAY (String typeName, int dimensions){
+    this.type = Types.getClassNameFromTypeName(typeName);
+    this.dimensions = dimensions;
+  }
+
+  public MULTIANEWARRAY() {}
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     type = cp.constantToString(cp.getConstant(
                                      ((org.apache.bcel.generic.MULTIANEWARRAY) i).getIndex()));

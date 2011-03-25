@@ -228,41 +228,42 @@ public class StackFrame implements Constants, Cloneable {
 
   public Object getLocalOrFieldValue (String id) {
     // try locals first
-    LocalVarInfo localVars[] = mi.getLocalVars();
-    for (int i=0; i<stackBase; i++) {
-      if (localVars[i].getName().equals(id)) {
-        return getLocalValueObject(i);
-      }
+    LocalVarInfo lv = mi.getLocalVar(id, pc.getPosition());
+    if (lv != null){
+      return getLocalValueObject(lv);
     }
 
     // then fields
     return getFieldValue(id);
   }
 
-  public Object getLocalValueObject (int i) {
-    LocalVarInfo localVars[] = mi.getLocalVars();
-    if (localVars != null) { // might not have been compiled with debug info
-      String type = localVars[i].getType();
-      if ("Z".equals(type)) {
-        return slots[i] != 0 ? Boolean.TRUE : Boolean.FALSE;
-      } else if ("B".equals(type)) {
-        return new Byte((byte)slots[i]);
-      } else if ("C".equals(type)) {
-        return new Character((char)slots[i]);
-      } else if ("S".equals(type)) {
-        return new Short((short)slots[i]);
-      } else if ("I".equals(type)) {
-        return new Integer(slots[i]);
-      } else if ("F".equals(type)) {
-        return new Float( Float.intBitsToFloat(slots[i]));
-      } else if ("J".equals(type)) {
-        return new Long ( Types.intsToLong(slots[i], slots[i+1]) );
-      } else if ("D".equals(type)) {
-        return new Double( Double.longBitsToDouble(Types.intsToLong(slots[i], slots[i+1])));
-      } else { // reference or unknown ('?')
-        if (slots[i] != -1) {
-          return JVM.getVM().getHeap().get(slots[i]);
-        }
+  public Object getLocalValueObject (LocalVarInfo lv) {
+    if (lv != null) { // might not have been compiled with debug info
+      String sig = lv.getSignature();
+      int slotIdx = lv.getSlotIndex();
+      int v = slots[slotIdx];
+
+      switch (sig.charAt(0)) {
+        case 'Z':
+          return Boolean.valueOf(v != 0);
+        case 'B':
+          return new Byte((byte) v);
+        case 'C':
+          return new Character((char) v);
+        case 'S':
+          return new Short((short) v);
+        case 'I':
+          return new Integer((int) v);
+        case 'L':
+          return new Long(Types.intsToLong(v, slots[slotIdx + 1]));
+        case 'F':
+          return new Float(Float.intBitsToFloat(v));
+        case 'D':
+          return new Double(Double.longBitsToDouble(Types.intsToLong(v, slots[slotIdx + 1])));
+        default:  // reference
+          if (v >= 0) {
+            return JVM.getVM().getHeap().get(v);
+          }
       }
     }
 
@@ -580,7 +581,7 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public int getLocalVariable (String name) {
-    int idx = getLocalVariableOffset(name);
+    int idx = getLocalVariableSlotIndex(name);
     if (idx >= 0) {
       return getLocalVariable(idx);
     } else {
@@ -592,28 +593,22 @@ public class StackFrame implements Constants, Cloneable {
     return stackBase;
   }
 
+  /**
+   * <2do> - this should return only LocalVarInfo for the current pc
+   */
   public LocalVarInfo[] getLocalVars () {
     return mi.getLocalVars();
   }
 
-  @Deprecated  // Use getLocalVars() instead
-  public String[] getLocalVariableNames() {
-    return mi.getLocalVariableNames();
-  }
 
   public boolean isLocalVariableRef (int idx) {
     return isRef.get(idx);
   }
 
   public String getLocalVariableType (String name) {
-    LocalVarInfo localVars[] = mi.getLocalVars();
-    
-    if (localVars != null) {
-      for (int i = 0; i < localVars.length; i++) {
-        if (name.equals(localVars[i].getName())) {
-          return localVars[i].getType(); 
-        }   
-      }
+    LocalVarInfo lv = mi.getLocalVar(name, pc.getPosition());
+    if (lv != null){
+      return lv.getType();
     }
 
     return null;
@@ -649,7 +644,7 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public long getLongLocalVariable (String name) {
-    int idx = getLocalVariableOffset(name);
+    int idx = getLocalVariableSlotIndex(name);
 
     if (idx >= 0) {
       return getLongLocalVariable(idx);
@@ -685,7 +680,7 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   public void advancePC() {
-    int i = pc.getOffset() + 1;
+    int i = pc.getInstructionIndex() + 1;
     if (i < mi.getNumberOfInstructions()) {
       pc = mi.getInstruction(i);
     } else {
@@ -1076,7 +1071,7 @@ public class StackFrame implements Constants, Cloneable {
     hd.add(mi.getGlobalId());
 
     if (pc != null){
-      hd.add(pc.getOffset());
+      hd.add(pc.getInstructionIndex());
     }
 
     for (int i=0; i<=top; i++){
@@ -1470,24 +1465,11 @@ public class StackFrame implements Constants, Cloneable {
   }
 
   // return the value of a variable given the name
-  public int getLocalVariableOffset (String name) {
-    LocalVarInfo localVars[] = mi.getLocalVars();
-    int offset = 0;
+  public int getLocalVariableSlotIndex (String name) {
+    LocalVarInfo lv = mi.getLocalVar(name, pc.getPosition());
 
-    if (localVars != null) {
-      for (int i = 0; i < localVars.length; ) {
-        LocalVarInfo localVar = localVars[i];
-        if (name.equals(localVar.getName())) {
-          return offset;
-        } else {
-          String sig = localVar.getSignature();
-          if (sig.charAt(0) != '?') {
-            int typeSize = Types.getTypeSize(sig);
-            offset += typeSize;
-            i += typeSize;
-          }
-        }
-      }
+    if (lv != null){
+      return lv.getSlotIndex();
     }
 
     return -1;

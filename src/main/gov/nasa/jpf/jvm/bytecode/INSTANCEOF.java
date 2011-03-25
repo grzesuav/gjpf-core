@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.Types;
 
 import org.apache.bcel.classfile.ConstantPool;
 
@@ -34,8 +35,8 @@ public class INSTANCEOF extends Instruction {
 
   public INSTANCEOF (){}
 
-  public INSTANCEOF (String descriptor){
-    type = descriptor;
+  public INSTANCEOF (String typeName){
+    type = Types.getClassNameFromTypeName(typeName);
   }
 
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {

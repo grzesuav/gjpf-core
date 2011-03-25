@@ -122,6 +122,21 @@ public class AnnotationInfo {
   Entry[] entries;
 
 
+  protected AnnotationInfo(String name){
+    this.name = name;
+    // entries will follow later, so this object is only partially initialized
+  }
+
+  protected void startEntries (int count){
+    entries = new Entry[count];
+  }
+
+  protected void setValue(int index, String key, Object value){
+    entries[index] = new Entry(key,value);
+  }
+
+
+
   public AnnotationInfo (String name, Entry[] entries){
     this.name = name;
     this.entries = entries;
@@ -159,7 +174,6 @@ public class AnnotationInfo {
     }
     
     entries = list.toArray(new Entry[list.size()]);
-
   }
   
   /**

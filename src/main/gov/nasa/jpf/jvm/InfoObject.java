@@ -45,6 +45,18 @@ public abstract class InfoObject {
     }
   }
 
+  protected void startAnnotations(int count){
+    annotations = new AnnotationInfo[count];
+  }
+
+  protected void setAnnotation(int index, AnnotationInfo ai){
+    annotations[index] = ai;
+  }
+
+  
+
+
+
   public void addAnnotation (AnnotationInfo newAnnotation){
     AnnotationInfo[] ai = annotations;
     if (ai != null){

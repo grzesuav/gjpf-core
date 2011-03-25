@@ -75,7 +75,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   //--- various JPF method attributes
   static final int  EXEC_ATOMIC = 0x10000; // method executed atomically
   static final int  EXEC_HIDDEN = 0x20000; // method hidden from path
-  static final int  FIREWALL    = 0x40000; // firewall any unhandled exceptions
+  static final int  FIREWALL    = 0x40000; // firewall any unhandled exceptionHandlers
                                            // (turn into UnhandledException throws)
   static final int  IS_CLINIT   = 0x80000;
   static final int  IS_INIT     = 0x100000;
@@ -130,12 +130,18 @@ public class MethodInfo extends InfoObject implements Cloneable {
   protected Instruction[] code;
 
   /** JPFConfigException handlers */
-  protected ExceptionHandler[] exceptions;
+  protected ExceptionHandler[] exceptionHandlers;
 
-  /** classnames of checked exceptions thrown by the method */
+  /** classnames of checked exception thrown by the method */
   protected String[] thrownExceptionClassNames;
 
-  /** Table used for line numbers */
+  /** Table used for line numbers 
+   * this assigns a line number to every instruction index, instead of 
+   * using an array of ranges. Assuming we have 2-3 insns per line on average,
+   * this should still require less memory than a reference array with associated
+   * range objects, and allows faster access of instruction line numbers, which
+   * we might need for location specs
+   */
   protected int[] lineNumbers;
   
   /** Local variable information */
@@ -201,7 +207,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     ci = c;
 
     code = loadCode(m);
-    exceptions = loadExceptions(m);
+    exceptionHandlers = loadExceptions(m);
     thrownExceptionClassNames = loadThrownExceptionClassNames(m);
     lineNumbers = loadLineNumbers(m);
     maxLocals = getMaxLocals(m);
@@ -210,7 +216,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     modifiers = m.getModifiers();
         
     // clinits are automatically synchronized on the class object,
-    // and they don't let unhandled exceptions through
+    // and they don't let unhandled exceptionHandlers through
     if (name.equals("<clinit>")) {
       modifiers |= Modifier.SYNCHRONIZED;
       attrs |= IS_CLINIT | FIREWALL;
@@ -252,12 +258,24 @@ public class MethodInfo extends InfoObject implements Cloneable {
     this.modifiers = modifiers;
 
     this.lineNumbers = null;
-    this.exceptions = null;
+    this.exceptionHandlers = null;
     this.thrownExceptionClassNames = null;
-        
+
+    // set attributes we can deduce from the name and the ClassInfo
+    if (name.equals("<init>")) {
+      attrs |= IS_INIT;
+    } else if (name.equals("<clinit>")) {
+      modifiers |= Modifier.SYNCHRONIZED;
+      attrs |= IS_CLINIT | FIREWALL;
+    }
+    if (ci.isInterface()){ // all interface methods are public
+      modifiers |= Modifier.PUBLIC;
+    }
+
     this.globalId = mthTable.size();
     mthTable.add(this);
   }
+
   
   public static MethodInfo getMethodInfo (int globalId){
     if (globalId >=0 && globalId <mthTable.size()){
@@ -422,10 +440,10 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
   
   /**
-   * turn unhandled exceptions at the JPF execution level
+   * turn unhandled exceptionHandlers at the JPF execution level
    * into UnhandledException throws at the host VM level
    * this is useful to implement firewalls for direct calls
-   * which should not let exceptions permeate into bytecode/
+   * which should not let exceptionHandlers permeate into bytecode/
    * application code
    */
   public void setFirewall (boolean isFirewalled) {
@@ -464,7 +482,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
     mi.maxStack = getNumberOfCallerStackSlots();  // <2do> cache for optimization
     mi.localVars = EMPTY;
     mi.lineNumbers = null;
-    mi.exceptions = null;
+    mi.exceptionHandlers = null;
     mi.thrownExceptionClassNames = null;
     mi.uniqueName = mi.name;
 
@@ -781,7 +799,8 @@ public class MethodInfo extends InfoObject implements Cloneable {
       else
         return pc.getPosition();
     }
-    int idx = pc.getOffset();
+
+    int idx = pc.getInstructionIndex();
     if (idx < 0) idx = 0;
     return lineNumbers[idx];
   }
@@ -826,36 +845,47 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
 
   public ExceptionHandler[] getExceptions () {
-    return exceptions;
+    return exceptionHandlers;
   }
 
   public String[] getThrownExceptionClassNames () {
     return thrownExceptionClassNames;
   }
-  
+
+
+  public LocalVarInfo getLocalVar(String name, int pc){
+    LocalVarInfo[] vars = localVars;
+
+    for (int i=0; i<vars.length; i++){
+      LocalVarInfo lv = vars[i];
+      if (lv.matches(name, pc)){
+        return lv;
+      }
+    }
+
+    return null;
+
+  }
+
   public LocalVarInfo[] getLocalVars() {
     return localVars; 
   }
 
-  @Deprecated  // Use getLocalVars() instead
+
+  /**
+   * note that this might contain duplicates for variables with multiple
+   * scope entries
+   */
   public String[] getLocalVariableNames() {
-    String[] result = new String[localVars.length];
-    for (int i = localVars.length; --i >= 0; ) {
-      result[i] = localVars[i].getName(); 
+    String[] names = new String[localVars.length];
+
+    for (int i=0; i<localVars.length; i++){
+      names[i] = localVars[i].getName();
     }
-    
-    return result;
+
+    return names;
   }
 
-  @Deprecated  // Use getLocalVars() instead
-  public String[] getLocalVariableTypes() {
-    String[] result = new String[localVars.length];
-    for (int i = localVars.length; --i >= 0; ) {
-      result[i] = localVars[i].getType(); 
-    }
-     
-    return result;
-  }
 
   public MethodInfo getOverriddenMethodInfo(){
     MethodInfo smi = null;
@@ -1175,7 +1205,7 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
 
   /**
-   * Returns the exceptions of the method.
+   * Returns the exceptionHandlers of the method.
    */
   protected ExceptionHandler[] loadExceptions (Method m) {
     Code c = m.getCode();
@@ -1209,11 +1239,12 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
 
   /**
-   * Returns the classnames of checked exceptions thrown by the method.
+   * Returns the classnames of checked exceptionHandlers thrown by the method.
    */
   protected String[] loadThrownExceptionClassNames(Method m) {
     ExceptionTable et = m.getExceptionTable();
     if (et != null){
+for (String s : et.getExceptionNames()) System.out.println("@@ " + s);
       return et.getExceptionNames();
     } else {
       return null;
@@ -1224,31 +1255,111 @@ public class MethodInfo extends InfoObject implements Cloneable {
    * Loads the line numbers for the method.
    */
   protected int[] loadLineNumbers (Method m) {
+    int[] ln = null;
     Code c = m.getCode();
 
-    if (c == null) {
-      return null;
-    }
+    if (c != null){
+      LineNumberTable lnt = c.getLineNumberTable();
+      if (lnt != null) {
+        int length = code.length;
+        ln = new int[length];
 
-    LineNumberTable lnt = c.getLineNumberTable();
-
-    int             length = code.length;
-    int[]           ln = new int[length];
-
-    if (lnt == null) {
-      // no line information
-      return null;
-    } else {
-      for (int i = 0; i < length; i++) {
-        try { //annoying bug when BCEL don't seem to find linenumber - pos match
+        for (int i = 0; i < length; i++) {
           ln[i] = lnt.getSourceLine(code[i].getPosition());
-        } catch (RuntimeException e) {
-          System.out.print("^");
         }
       }
     }
 
     return ln;
+  }
+
+  //--- parameter annotations
+  protected void startParameterAnnotations(int annotationCount){
+    parameterAnnotations = new AnnotationInfo[annotationCount][];
+  }
+
+  protected void setParameterAnnotation(int index, AnnotationInfo ai){
+  }
+
+  //--- thrown exceptions
+
+  protected void startTrownExceptions (int exceptionCount){
+    thrownExceptionClassNames = new String[exceptionCount];
+  }
+
+  protected void setException (int index, String exceptionType){
+    thrownExceptionClassNames[index] = Types.getClassNameFromTypeName(exceptionType);
+  }
+
+  protected void finishThrownExceptions(){
+    // nothing
+  }
+
+
+  //--- exception handler table initialization
+
+  protected void startExceptionHandlerTable (int handlerCount){
+    exceptionHandlers = new ExceptionHandler[handlerCount];
+  }
+
+  protected void setExceptionHandler (int index, int startPc, int endPc, int handlerPc, String catchType){
+    exceptionHandlers[index] = new ExceptionHandler(catchType, startPc, endPc, handlerPc);
+  }
+
+  protected void finishExceptionHandlerTable(){
+    // nothing
+  }
+
+  //--- local var table initialization
+
+  protected void startLocalVarTable (int localVarCount){
+    localVars = new LocalVarInfo[localVarCount];
+  }
+
+  protected void setLocalVar(int index, String varName, String descriptor, int scopeStartPc, int scopeEndPc, int slotIndex){
+    localVars[index] = new LocalVarInfo(varName, descriptor, "", scopeStartPc, scopeEndPc, slotIndex);
+  }
+
+  protected void finishLocalVarTable(){
+    // nothing to do
+  }
+
+  //--- line number table initialization
+
+  protected void startLineNumberTable(int lineNumberCount){
+    int len = code.length;
+    int[] ln = new int[len];
+
+    lineNumbers = ln;
+  }
+
+  protected void setLineNumber(int index, int lineNumber, int startPc){
+    int len = code.length;
+    int[] ln = lineNumbers;
+
+    for (int i=0; i<len; i++){
+      Instruction insn = code[i];
+      int pc = insn.getPosition();
+
+      if (pc == startPc){ // this is the first insn with this line number
+        ln[i] = lineNumber;
+        return;
+      }
+    }
+  }
+
+  protected void finishLineNumberTable (){
+    int len = code.length;
+    int[] ln = lineNumbers;
+    int lastLine = ln[0];
+
+    for (int i=1; i<len; i++){
+      if (ln[i] == 0){
+        ln[i] = lastLine;
+      } else {
+        lastLine = ln[i];
+      }
+    }
   }
 
   /**
@@ -1278,34 +1389,18 @@ public class MethodInfo extends InfoObject implements Cloneable {
     }
 
     LocalVariable[] lv = lvt.getLocalVariableTable();
-    LocalVarInfo[]  vars = new LocalVarInfo[c.getMaxLocals()];
-    int             maxLength = 0;
+    LocalVarInfo[] vars = new LocalVarInfo[lv.length];
 
-    for (int i = lv.length; --i >= 0; ) {
+    for (int i=0; i<lv.length; i++){
       LocalVariable var = lv[i];
 
       String vname = var.getName();
       String vsig = var.getSignature();
       int vStartPc = var.getStartPC();
-      int index = var.getIndex();
+      int slotIndex = var.getIndex(); // that's the stackframe locals slot
       int length = var.getLength();
 
-      maxLength = Math.max(maxLength, length);
-
-      if (vname == null || vsig == null || vStartPc < 0){
-        throw new JPFException("illegal local variable entry: " + var);
-      }
-
-      // <2do> Pass the generic signature when BCEL supports generic signatures for local variables
-      vars[index] = new LocalVarInfo(vname, vsig, "", vStartPc, length);
-    }
-    
-    LocalVarInfo temp = new LocalVarInfo("?", "?", "", 0, maxLength);
-
-    for (int i = vars.length; --i >= 0; ) {
-      if (vars[i] == null) {
-        vars[i] = temp;
-      }
+      vars[i] = new LocalVarInfo(vname, vsig, "", vStartPc, vStartPc + length-1, slotIndex);
     }
 
     return vars;

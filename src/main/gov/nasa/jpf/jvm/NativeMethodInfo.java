@@ -151,7 +151,7 @@ public class NativeMethodInfo extends MethodInfo {
       ret = mth.invoke(peer.getPeerClass(), args);
 
       if (env.hasException()) {
-        // even though we should prefer throwing normal exceptions,
+        // even though we should prefer throwing normal exceptionHandlers,
         // sometimes it might be better/required to explicitly throw
         // something that's not wrapped into a InvocationTargetException
         // (e.g. InterruptedException), which is why there still is a
@@ -197,7 +197,7 @@ public class NativeMethodInfo extends MethodInfo {
         throw (UncaughtException) itx.getTargetException();
       } 
        
-      // this will catch all exceptions thrown by the native method execution
+      // this will catch all exceptionHandlers thrown by the native method execution
       // we don't try to hand them back to the application
       throw new JPFNativePeerException("exception in native method "
           + ci.getName() + '.' + getName(), itx.getTargetException());

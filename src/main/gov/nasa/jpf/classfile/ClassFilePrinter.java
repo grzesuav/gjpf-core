@@ -219,7 +219,7 @@ public class ClassFilePrinter implements ClassFileReader {
   }
 
   public void setExceptionCount(ClassFile cf, Object tag, int exceptionCount){
-    pw.printf("exceptions count=%d\n", exceptionCount);
+    pw.printf(", count=%d\n", exceptionCount);
     incIndent();
   }
   public void setException(ClassFile cf, Object tag, int exceptionIndex, String exceptionType){
@@ -238,15 +238,15 @@ public class ClassFilePrinter implements ClassFileReader {
     decIndent();
   }
 
-  public void setExceptionTableCount(ClassFile cf, Object tag, int exceptionTableCount) {
+  public void setExceptionHandlerTableCount(ClassFile cf, Object tag, int exceptionTableCount) {
     pw.printf("%sexception table count=%d\n", indent, exceptionTableCount);
     incIndent();
   }
-  public void setExceptionTableEntry(ClassFile cf, Object tag, int exceptionIndex,
+  public void setExceptionHandler(ClassFile cf, Object tag, int exceptionIndex,
           int startPc, int endPc, int handlerPc, String catchType) {
     pw.printf("%s[%d]: type=%s, range=[%d..%d], handler=%d\n", indent, exceptionIndex, catchType, startPc, endPc, handlerPc);
   }
-  public void setExceptionTableDone(ClassFile cf, Object tag){
+  public void setExceptionHandlerTableDone(ClassFile cf, Object tag){
     decIndent();
   }
 
@@ -438,6 +438,10 @@ public class ClassFilePrinter implements ClassFileReader {
   public void setParameterAnnotationCount(ClassFile cf, Object tag, int parameterCount){
     pw.printf(" parameterCount=%d\n", parameterCount);
     incIndent();
+  }
+
+  public void setParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){
+    pw.printf("%s[%d]: %s", indent, annotationIndex, annotationType);
   }
 
   public void setParameterAnnotationsDone(ClassFile cf, Object tag){

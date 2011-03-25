@@ -22,21 +22,29 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ByteCodeReader;
 import gov.nasa.jpf.classfile.ClassFile;
+import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.NativeMethodInfo;
+import gov.nasa.jpf.util.Invocation;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
  */
 public class ByteCodeFactory implements ByteCodeReader {
 
-  ClassFile cf;
-  MethodInfo mi;
+  protected ClassFile cf;
+  protected MethodInfo mi;
 
-  ArrayList<Instruction> code;
-  int pc;
-  int idx;
-  
+  // have to cache this to set switch entries
+  protected SwitchInstruction switchInsn;
+
+  protected ArrayList<Instruction> code;
+  protected int pc;
+  protected int idx;
+
+
   public ByteCodeFactory (ClassFile cf, MethodInfo mi, int codeLength){
     this.cf = cf;
     this.mi = mi;
@@ -49,7 +57,7 @@ public class ByteCodeFactory implements ByteCodeReader {
   protected void add(Instruction insn){
     insn.setMethodInfo(mi);
     insn.setLocation(idx++, pc);
-    add(insn);
+    code.add(insn);
   }
   
   //--- the context
@@ -61,6 +69,8 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void endCode(Object tag) {
+    Instruction[] c = code.toArray(new Instruction[code.size()]);
+    mi.setCode(c);
   }
 
 
@@ -395,26 +405,26 @@ public class ByteCodeFactory implements ByteCodeReader {
 
   public void getfield(int cpFieldRefIndex) {
     String fieldName = cf.fieldNameAt(cpFieldRefIndex);
-    String clsDescriptor = cf.fieldClassNameAt(cpFieldRefIndex);
+    String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
     String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
 
-    add( new GETFIELD(fieldName, clsDescriptor, fieldDescriptor));
+    add( new GETFIELD(fieldName, clsName, fieldDescriptor));
   }
 
   public void getstatic(int cpFieldRefIndex) {
     String fieldName = cf.fieldNameAt(cpFieldRefIndex);
-    String clsDescriptor = cf.fieldClassNameAt(cpFieldRefIndex);
+    String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
     String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
 
-    add( new GETSTATIC(fieldName, clsDescriptor, fieldDescriptor));
+    add( new GETSTATIC(fieldName, clsName, fieldDescriptor));
   }
 
   public void goto_(int pcOffset) {
-    add( new ACONST_NULL());
+    add( new GOTO(pc + pcOffset));
   }
 
   public void goto_w(int pcOffset) {
-    add( new ACONST_NULL());
+    add( new GOTO_W(pc + pcOffset));
   }
 
   public void i2b() {
@@ -490,67 +500,67 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void if_acmpeq(int pcOffset) {
-    add( new IF_ACMPEQ(pcOffset));
+    add( new IF_ACMPEQ(pc + pcOffset));
   }
 
   public void if_acmpne(int pcOffset) {
-    add( new IF_ACMPNE(pcOffset));
+    add( new IF_ACMPNE(pc + pcOffset));
   }
 
   public void if_icmpeq(int pcOffset) {
-    add( new IF_ICMPEQ(pcOffset));
+    add( new IF_ICMPEQ(pc + pcOffset));
   }
 
   public void if_icmpne(int pcOffset) {
-    add( new IF_ICMPNE(pcOffset));
+    add( new IF_ICMPNE(pc + pcOffset));
   }
 
   public void if_icmplt(int pcOffset) {
-    add( new IF_ICMPLT(pcOffset));
+    add( new IF_ICMPLT(pc + pcOffset));
   }
 
   public void if_icmpge(int pcOffset) {
-    add( new IF_ICMPGE(pcOffset));
+    add( new IF_ICMPGE(pc + pcOffset));
   }
 
   public void if_icmpgt(int pcOffset) {
-    add( new IF_ICMPGT(pcOffset));
+    add( new IF_ICMPGT(pc + pcOffset));
   }
 
   public void if_icmple(int pcOffset) {
-    add( new IF_ICMPLE(pcOffset));
+    add( new IF_ICMPLE(pc + pcOffset));
   }
 
   public void ifeq(int pcOffset) {
-    add( new IFEQ(pcOffset));
+    add( new IFEQ(pc + pcOffset));
   }
 
   public void ifne(int pcOffset) {
-    add( new IFNE(pcOffset));
+    add( new IFNE(pc + pcOffset));
   }
 
   public void iflt(int pcOffset) {
-    add( new IFLT(pcOffset));
+    add( new IFLT(pc + pcOffset));
   }
 
   public void ifge(int pcOffset) {
-    add( new IFGE(pcOffset));
+    add( new IFGE(pc + pcOffset));
   }
 
   public void ifgt(int pcOffset) {
-    add( new IFGT(pcOffset));
+    add( new IFGT(pc + pcOffset));
   }
 
   public void ifle(int pcOffset) {
-    add( new IFLE(pcOffset));
+    add( new IFLE(pc + pcOffset));
   }
 
   public void ifnonnull(int pcOffset) {
-    add( new IFNONNULL(pcOffset));
+    add( new IFNONNULL(pc + pcOffset));
   }
 
   public void ifnull(int pcOffset) {
-    add( new IFNULL(pcOffset));
+    add( new IFNULL(pc + pcOffset));
   }
 
   public void iinc(int localVarIndex, int incConstant) {
@@ -590,35 +600,35 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void invokeinterface(int cpInterfaceMethodRefIndex, int count, int zero) {
-    String clsDescriptor = cf.interfaceMethodClassNameAt(cpInterfaceMethodRefIndex);
+    String clsName = cf.interfaceMethodClassNameAt(cpInterfaceMethodRefIndex);
     String methodName = cf.interfaceMethodNameAt(cpInterfaceMethodRefIndex);
     String methodSignature = cf.interfaceMethodDescriptorAt(cpInterfaceMethodRefIndex);
 
-    add( new INVOKEINTERFACE(clsDescriptor, methodName, methodSignature));
+    add( new INVOKEINTERFACE(clsName, methodName, methodSignature));
   }
 
   public void invokespecial(int cpMethodRefIndex) {
-    String clsDescriptor = cf.methodClassNameAt(cpMethodRefIndex);
+    String clsName = cf.methodClassNameAt(cpMethodRefIndex);
     String methodName = cf.methodNameAt(cpMethodRefIndex);
     String methodSignature = cf.methodDescriptorAt(cpMethodRefIndex);
 
-    add( new INVOKEINTERFACE(clsDescriptor, methodName, methodSignature));
+    add( new INVOKESPECIAL(clsName, methodName, methodSignature));
   }
 
   public void invokestatic(int cpMethodRefIndex) {
-    String clsDescriptor = cf.methodClassNameAt(cpMethodRefIndex);
+    String clsName = cf.methodClassNameAt(cpMethodRefIndex);
     String methodName = cf.methodNameAt(cpMethodRefIndex);
     String methodSignature = cf.methodDescriptorAt(cpMethodRefIndex);
 
-    add( new INVOKESTATIC(clsDescriptor, methodName, methodSignature));
+    add( new INVOKESTATIC(clsName, methodName, methodSignature));
   }
 
   public void invokevirtual(int cpMethodRefIndex) {
-    String clsDescriptor = cf.methodClassNameAt(cpMethodRefIndex);
+    String clsName = cf.methodClassNameAt(cpMethodRefIndex);
     String methodName = cf.methodNameAt(cpMethodRefIndex);
     String methodSignature = cf.methodDescriptorAt(cpMethodRefIndex);
 
-    add( new INVOKEVIRTUAL(clsDescriptor, methodName, methodSignature));
+    add( new INVOKEVIRTUAL(clsName, methodName, methodSignature));
   }
 
   public void ior() {
@@ -674,11 +684,11 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void jsr(int pcOffset) {
-    add( new JSR(pcOffset));
+    add( new JSR(pc + pcOffset));
   }
 
   public void jsr_w(int pcOffset) {
-    add( new JSR_W(pcOffset));
+    add( new JSR_W(pc + pcOffset));
   }
 
   public void l2d() {
@@ -794,12 +804,14 @@ public class ByteCodeFactory implements ByteCodeReader {
     add( new LNEG());
   }
 
-  public void lookupswitch(int defaultPcOffset, int nEntries) {
-    add( new ACONST_NULL());
-  }
 
+  public void lookupswitch(int defaultPcOffset, int nEntries) {
+    add( (switchInsn = new LOOKUPSWITCH(pc + defaultPcOffset, nEntries)));
+
+    cf.parseLookupSwitchEntries(this, nEntries);
+  }
   public void lookupswitchEntry(int index, int match, int pcOffset) {
-    add( new ACONST_NULL());
+    ((LOOKUPSWITCH)switchInsn).setTarget(index, match, pc + pcOffset);
   }
 
   public void lor() {
@@ -863,15 +875,15 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void multianewarray(int cpClassIndex, int dimensions) {
-    add( new ACONST_NULL());
+    add( new MULTIANEWARRAY(cf.classNameAt(cpClassIndex), dimensions));
   }
 
   public void new_(int cpClassIndex) {
-    add( new ACONST_NULL());
+    add( new NEW(cf.classNameAt(cpClassIndex)));
   }
 
   public void newarray(int typeCode) {
-    add( new ACONST_NULL());
+    add( new NEWARRAY(typeCode));
   }
 
   public void nop() {
@@ -888,22 +900,22 @@ public class ByteCodeFactory implements ByteCodeReader {
 
   public void putfield(int cpFieldRefIndex) {
     String fieldName = cf.fieldNameAt(cpFieldRefIndex);
-    String clsDescriptor = cf.fieldClassNameAt(cpFieldRefIndex);
+    String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
     String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
 
-    add( new PUTFIELD(fieldName, clsDescriptor, fieldDescriptor));
+    add( new PUTFIELD(fieldName, clsName, fieldDescriptor));
   }
 
   public void putstatic(int cpFieldRefIndex) {
     String fieldName = cf.fieldNameAt(cpFieldRefIndex);
-    String clsDescriptor = cf.fieldClassNameAt(cpFieldRefIndex);
+    String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
     String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
 
-    add( new PUTSTATIC(fieldName, clsDescriptor, fieldDescriptor));
+    add( new PUTSTATIC(fieldName, clsName, fieldDescriptor));
   }
 
   public void ret(int localVarIndex) {
-    add( new ACONST_NULL());
+    add( new RET(localVarIndex));
   }
 
   public void return_() {
@@ -919,7 +931,7 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void sipush(int val) {
-    add( new ACONST_NULL());
+    add( new SIPUSH(val));
   }
 
   public void swap() {
@@ -927,11 +939,13 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void tableswitch(int defaultPcOffset, int low, int high) {
-    add( new ACONST_NULL());
+    add( (switchInsn = new TABLESWITCH(pc + defaultPcOffset, low, high)));
+
+    cf.parseTableSwitchEntries(this, low, high);
   }
 
-  public void tableswitchEntry(int index, int pcOffset) {
-    add( new ACONST_NULL());
+  public void tableswitchEntry(int value, int pcOffset) {
+    ((TABLESWITCH)switchInsn).setTarget(value, pc + pcOffset);
   }
 
   public void wide() {
@@ -941,5 +955,29 @@ public class ByteCodeFactory implements ByteCodeReader {
   public void unknown(int bytecode) {
     throw new JPFException("unknown bytecode: " + Integer.toHexString(bytecode));
   }
+
+  
+  //--- the JPF specific ones (only used in synthetic methods)
+  public void invokecg(List<Invocation> invokes) {
+    add (new INVOKECG(invokes));
+  }
+
+  public void invokeclinit(ClassInfo ci) {
+    add( new INVOKECLINIT(ci));
+  }
+
+  public void directcallreturn(){
+    add( new DIRECTCALLRETURN());
+  }
+
+  public void executenative(NativeMethodInfo mi){
+    add( new EXECUTENATIVE(mi));
+  }
+
+  // this is never part of MethodInfo stored code
+  public Instruction createRunStartInsn(MethodInfo miRun){
+    return new RUNSTART(miRun);
+  }
+
 
 }

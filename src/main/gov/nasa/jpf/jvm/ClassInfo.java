@@ -24,10 +24,12 @@ import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListener;
 import gov.nasa.jpf.classfile.ClassFile;
+import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassFileReader;
 import gov.nasa.jpf.classfile.ClassFileReaderAdapter;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
 import gov.nasa.jpf.jvm.bytecode.ARETURN;
+import gov.nasa.jpf.jvm.bytecode.ByteCodeFactory;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.IRETURN;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
@@ -308,14 +310,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   class Initializer extends ClassFileReaderAdapter {
 
     public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
-      name = Types.getTypeName(clsName);
+      name = Types.getClassNameFromTypeName(clsName);
 
       // name derived fields
       enclosingClassName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
       int i = name.lastIndexOf('.');
       packageName = (i>0) ? name.substring(0, i) : "";
 
-      superClass = loadSuperClass( Types.getTypeName(superClsName));
+      //superClass = loadSuperClass( Types.getClassNameFromTypeName(superClsName));
 
       modifiers = flags;
       isClass = ((flags & Modifier.INTERFACE) == 0);
@@ -325,10 +327,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     Set<String> ifcSet = new HashSet<String>();
 
     public void setInterface(ClassFile cf, int ifcIndex, String ifcName) {
-      ifcSet.add(Types.getTypeName(ifcName));
+      ifcSet.add(Types.getClassNameFromTypeName(ifcName));
     }
     public void setInterfacesDone(ClassFile cf) {
-      loadInterfaceRec(null, ifcSet);
+      //loadInterfaceRec(null, ifcSet);
       interfaceNames =  Collections.unmodifiableSet(ifcSet);
     }
 
@@ -379,15 +381,176 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     //--- methods
     MethodInfo curMi;
+
+    public void setMethodCount(ClassFile cf, int methodCount){
+      methods = new LinkedHashMap<String,MethodInfo>(methodCount);
+    }
+
     public void setMethod(ClassFile cf, int methodIndex, int accessFlags, String name, String signature) {
       // maxLocals and maxStack will be set from the Code attribute
       curMi = new MethodInfo( ClassInfo.this, name, signature, -1, -1, accessFlags);
     }
+
+    public void setMethodDone(ClassFile cf, int methodIndex){
+      methods.put(curMi.getUniqueName(), curMi);
+    }
+
+
     public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
-      if (name == ClassFile.SIGNATURE_ATTR){
+      if (name == ClassFile.CODE_ATTR){
+        cf.parseCodeAttr(this, curMi);
+
+      } else if (name == ClassFile.SIGNATURE_ATTR){
         cf.parseSignatureAttr(this, curMi);
+
+      } else if (name == ClassFile.EXCEPTIONS_ATTR) {
+        cf.parseExceptionAttr(this, curMi);
+
+      } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR) {
+        cf.parseAnnotationsAttr(this, curMi);
+
+      } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR) {
+        cf.parseAnnotationsAttr(this, curMi);
+
+      } else if (name == ClassFile.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS_ATTR) {
+        cf.parseParameterAnnotationsAttr(this, curMi);
+
+      } else if (name == ClassFile.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR) {
+        cf.parseParameterAnnotationsAttr(this, curMi);
       }
     }
+
+    public void setExceptionCount(ClassFile cf, Object tag, int exceptionCount) {
+      curMi.startTrownExceptions(exceptionCount);
+    }
+
+    public void setException(ClassFile cf, Object tag, int exceptionIndex, String exceptionType) {
+      curMi.setException(exceptionIndex, exceptionType);
+    }
+
+    public void setExceptionsDone(ClassFile cf, Object tag) {
+      curMi.finishThrownExceptions();
+    }
+
+
+    public void setCode(ClassFile cf, Object tag, int maxStack, int maxLocals, int codeLength){
+      ByteCodeFactory bcf = new ByteCodeFactory(cf, curMi, codeLength);
+      cf.parseBytecode(bcf, tag, codeLength);
+    }
+
+    public void setExceptionHandlerTableCount(ClassFile cf, Object tag, int exceptionTableCount) {
+      curMi.startExceptionHandlerTable(exceptionTableCount);
+    }
+
+    public void setExceptionHandler(ClassFile cf, Object tag, int handlerIndex,
+            int startPc, int endPc, int handlerPc, String catchType) {
+      curMi.setExceptionHandler(handlerIndex, startPc, endPc, handlerPc, catchType);
+    }
+
+    public void setExceptionHandlerTableDone(ClassFile cf, Object tag) {
+      curMi.finishExceptionHandlerTable();
+    }
+
+    public void setCodeAttributeCount(ClassFile cf, Object tag, int attrCount) {
+    }
+
+    public void setCodeAttribute(ClassFile cf, Object tag, int attrIndex, String name, int attrLength) {
+      if (name == ClassFile.LINE_NUMBER_TABLE_ATTR) {
+        cf.parseLineNumberTableAttr(this, tag);
+
+      } else if (name == ClassFile.LOCAL_VAR_TABLE_ATTR) {
+        cf.parseLocalVarTableAttr(this, tag);
+      }
+    }
+
+    public void setCodeAttributesDone(ClassFile cf, Object tag) {
+    }
+
+    public void setLineNumberTableCount(ClassFile cf, Object tag, int lineNumberCount) {
+      curMi.startLineNumberTable(lineNumberCount);
+    }
+
+    public void setLineNumber(ClassFile cf, Object tag, int lineIndex, int lineNumber, int startPc) {
+      curMi.setLineNumber(lineIndex, lineNumber, startPc);
+    }
+
+    public void setLineNumberTableDone(ClassFile cf, Object tag) {
+      curMi.finishLineNumberTable();
+    }
+
+    public void setLocalVarTableCount(ClassFile cf, Object tag, int localVarCount) {
+      curMi.startLocalVarTable(localVarCount);
+    }
+
+    public void setLocalVar(ClassFile cf, Object tag, int localVarIndex,
+            String varName, String descriptor, int scopeStartPc, int scopeEndPc, int slotIndex) {
+      curMi.setLocalVar(localVarIndex, varName, descriptor, scopeStartPc, scopeEndPc, slotIndex);
+    }
+
+    public void setLocalVarTableDone(ClassFile cf, Object tag) {
+      curMi.finishLocalVarTable();
+    }
+
+
+    //--- annotations
+
+    AnnotationInfo curAi;
+
+    public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){
+      if (tag instanceof InfoObject){
+        ((InfoObject)tag).startAnnotations(annotationCount);
+      }
+    }
+
+    public void setAnnotationsDone(ClassFile cf, Object tag){
+    }
+
+    public void setParameterAnnotationCount(ClassFile cf, Object tag, int parameterCount){
+    }
+
+    public void setParameterAnnotationsDone(ClassFile cf, Object tag){
+    }
+
+
+    public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
+      if (tag instanceof InfoObject){
+        curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+        ((InfoObject)tag).setAnnotation(annotationIndex, curAi);
+      }
+    }
+
+    public void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int nValuePairs){
+      curAi.startEntries(nValuePairs);
+    }
+
+    public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, Object val){
+      curAi.setValue(valueIndex, elementName, val);
+    }
+
+    public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, String s){
+      curAi.setValue(valueIndex, elementName, s);
+    }
+
+    public void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName,
+            int arrayIndex, String typeName){
+    }
+
+    public void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, String enumType, String enumValue){
+    }
+
+    public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            int elementCount){
+    }
+
+    public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex){
+    }
+
+    public void setAnnotationValuesDone(ClassFile cf, Object tag, int annotationIndex){
+    }
+
 
     //--- common attrs
     public void setSignature(ClassFile cf, Object tag, String signature){
@@ -399,7 +562,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     }
   }
 
-  protected ClassInfo(ClassFile cf) {
+  public ClassInfo(ClassFile cf) throws ClassFileException {
+    Initializer reader = new Initializer();
+    cf.parse(reader);
   }
 
   /**

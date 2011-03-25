@@ -457,7 +457,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       frame.setLocalAttr(0, new Integer(attr)); // only for instance methods of course
 
     } else {
-      int slotIdx = frame.getLocalVariableOffset(slotName);
+      int slotIdx = frame.getLocalVariableSlotIndex(slotName);
       if (slotIdx >= 0) {
         frame.setLocalAttr(slotIdx, new Integer(attr));
       } else {
@@ -471,7 +471,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = env.getCallerStackFrame();
 
-    int slotIdx = frame.getLocalVariableOffset(slotName);
+    int slotIdx = frame.getLocalVariableSlotIndex(slotName);
     if (slotIdx >= 0) {
       Object val = frame.getLocalAttr(slotIdx);
       if (val instanceof Integer) {

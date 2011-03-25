@@ -244,7 +244,7 @@ public interface ByteCodeReader {
   void swap();
 
   void tableswitch(int defaultPcOffset, int low, int high);
-  void tableswitchEntry(int index, int pcOffset);
+  void tableswitchEntry(int value, int pcOffset);
 
   void wide ();
 

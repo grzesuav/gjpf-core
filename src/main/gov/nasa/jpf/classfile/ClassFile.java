@@ -505,18 +505,18 @@ public class ClassFile {
   }
   private void setExceptionTableCount(ClassFileReader reader, Object tag, int exceptionTableCount){
     int p = pos;
-    reader.setExceptionTableCount( this, tag, exceptionTableCount);
+    reader.setExceptionHandlerTableCount( this, tag, exceptionTableCount);
     pos = p;
   }
   private void setExceptionTableEntry(ClassFileReader reader, Object tag, int exceptionIndex,
           int startPc, int endPc, int handlerPc, String catchType){
     int p = pos;
-    reader.setExceptionTableEntry( this, tag, exceptionIndex, startPc, endPc, handlerPc, catchType);
+    reader.setExceptionHandler( this, tag, exceptionIndex, startPc, endPc, handlerPc, catchType);
     pos = p;
   }
   private void setExceptionTableDone(ClassFileReader reader, Object tag){
     int p = pos;
-    reader.setExceptionTableDone( this, tag);
+    reader.setExceptionHandlerTableDone( this, tag);
     pos = p;
   }
 
@@ -672,12 +672,17 @@ public class ClassFile {
     pos = p;
   }
 
-  public void setParameterAnnotationCount(ClassFileReader reader, Object tag, int parameterCount){
+  private void setParameterAnnotationCount(ClassFileReader reader, Object tag, int parameterCount){
     int p = pos;
     reader.setParameterAnnotationCount(this, tag, parameterCount);
     pos = p;
   }
-  public void setParameterAnnotationsDone(ClassFileReader reader, Object tag){
+  private void setParameterAnnotation(ClassFileReader reader, Object tag, int annotationIndex, String annotationType){
+    int p = pos;
+    reader.setParameterAnnotation( this, tag, annotationIndex, annotationType);
+    pos = p;
+  }
+  private void setParameterAnnotationsDone(ClassFileReader reader, Object tag){
     int p = pos;
     reader.setParameterAnnotationsDone(this, tag);
     pos = p;
@@ -1242,7 +1247,7 @@ public class ClassFile {
         break;
 
       case '@':
-        parseAnnotation(reader, tag, 0);  // getting recursive here
+        parseAnnotation(reader, tag, 0, false);  // getting recursive here
         break;
 
       case '[':
@@ -1266,11 +1271,15 @@ public class ClassFile {
    *     } element_value_pairs[num_element_value_pairs]
    *   }
    */
-  void parseAnnotation(ClassFileReader reader, Object tag, int annotationIndex){
+  void parseAnnotation(ClassFileReader reader, Object tag, int annotationIndex, boolean isParameterAnnotation){
     int cpIdx = readU2();
     String annotationType = (String)cpValue[cpIdx];
 
-    setAnnotation(reader, tag, annotationIndex, annotationType);
+    if (isParameterAnnotation){
+      setParameterAnnotation(reader, tag, annotationIndex, annotationType);
+    } else {
+      setAnnotation(reader, tag, annotationIndex, annotationType);
+    }
 
     int nValuePairs = readU2();
     setAnnotationValueCount(reader, tag, annotationIndex, nValuePairs);
@@ -1301,7 +1310,7 @@ public class ClassFile {
     setAnnotationCount(reader, tag, numAnnotations);
 
     for (int i=0; i<numAnnotations; i++){
-      parseAnnotation(reader, tag, i);
+      parseAnnotation(reader, tag, i, false);
     }
 
     setAnnotationsDone(reader, tag);
@@ -1323,9 +1332,12 @@ public class ClassFile {
      setParameterAnnotationCount(reader, tag, numParameters);
      for (int i=0; i<numParameters; i++){
        int numAnnotations = readU2();
+
+       //setAnnotationCount(reader, tag, numAnnotations);
        for (int j=0; j<numAnnotations; j++){
-         parseAnnotation(reader, tag, j);
+         parseAnnotation(reader, tag, j, true);
        }
+       //setAnnotationsDone(reader, tag);
      }
      setParameterAnnotationsDone(reader, tag);
    }

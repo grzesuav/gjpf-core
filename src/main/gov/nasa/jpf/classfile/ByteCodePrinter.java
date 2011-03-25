@@ -814,7 +814,7 @@ public class ByteCodePrinter implements ByteCodeReader {
 
   public void multianewarray(int cpClassIndex, int dimensions) {
     pw.printf("%s%3d: %s @%d(\"%s\") dim: %d\n", prefix, pc, "multianewarray",
-            cf.classNameAt(cpClassIndex), dimensions);
+            cpClassIndex, cf.classNameAt(cpClassIndex), dimensions);
   }
 
   public void new_(int cpClassIndex) {

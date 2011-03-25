@@ -28,11 +28,18 @@ import org.apache.bcel.classfile.ConstantPool;
 /**
  * Branch always
  * No change
+ *
+ * <2do> store this as code insnIndex, not as bytecode position
  */
 public class GOTO extends Instruction {
   protected int targetPosition;
   Instruction target;
 
+  public GOTO (int targetPosition){
+    this.targetPosition = targetPosition;
+  }
+
+  public GOTO() {}
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     targetPosition = ((org.apache.bcel.generic.GOTO) i).getTarget().getPosition();
   }
@@ -62,7 +69,7 @@ public class GOTO extends Instruction {
   
   public String toString () {
     if (asString == null) {
-      asString = getMnemonic() + " " + getTarget().getOffset();
+      asString = getMnemonic() + " " + getTarget().getInstructionIndex();
     }
     return asString;
   }

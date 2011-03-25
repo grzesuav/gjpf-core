@@ -39,6 +39,11 @@ public class NEWARRAY extends Instruction {
 
   int arrayLength = -1;
 
+  public NEWARRAY(int typeCode) {
+    type = Types.getElementDescriptorOfType(typeCode);
+  }
+
+  public NEWARRAY() {}
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     type = Constants.SHORT_TYPE_NAMES[((org.apache.bcel.generic.NEWARRAY) i).getTypecode()];
   }

@@ -26,7 +26,7 @@ import org.apache.bcel.classfile.ConstantPool;
 
 
 /**
- * Jump subroutine (wide index)
+ * Jump subroutine (wide insnIndex)
  * ... => ..., address
  */
 public class JSR_W extends Instruction {

@@ -90,11 +90,11 @@ public interface ClassFileReader {
 
   void setCode(ClassFile cf, Object tag, int maxStack, int maxLocals, int codeLength);
 
-  void setExceptionTableCount (ClassFile cf, Object tag, int exceptionTableCount);
+  void setExceptionHandlerTableCount (ClassFile cf, Object tag, int exceptionTableCount);
 
-  void setExceptionTableEntry(ClassFile cf, Object tag, int exceptionIndex, int startPc, int endPc, int handlerPc, String catchType);
+  void setExceptionHandler(ClassFile cf, Object tag, int exceptionIndex, int startPc, int endPc, int handlerPc, String catchType);
 
-  void setExceptionTableDone(ClassFile cf, Object tag);
+  void setExceptionHandlerTableDone(ClassFile cf, Object tag);
 
   void setCodeAttributeCount(ClassFile cf, Object tag, int attrCount);
 
@@ -161,6 +161,8 @@ public interface ClassFileReader {
   void setAnnotationValuesDone(ClassFile cf, Object tag, int annotationIndex);
 
   void setParameterAnnotationCount(ClassFile cf, Object tag, int parameterCount);
+
+  void setParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType);
 
   void setParameterAnnotationsDone(ClassFile cf, Object tag);
 

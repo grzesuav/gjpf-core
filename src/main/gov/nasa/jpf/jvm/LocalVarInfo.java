@@ -24,15 +24,17 @@ public class LocalVarInfo {
   private final String signature;  // e.g. "I", "[Lx/Y;"
   private final String genericSignature;  // non-type erased generic signature(s)
   private final int    startPC;
-  private final int    length;
+  private final int    endPC;
+  private final int slotIndex;
     
-  public LocalVarInfo(String name, String signature, String genericSignature, int startPC, int length) {
+  public LocalVarInfo(String name, String signature, String genericSignature, int startPC, int endPC, int slotIndex) {
    
     this.name             = name;
     this.signature        = signature;
     this.genericSignature = genericSignature;
     this.startPC          = startPC;
-    this.length           = length;
+    this.endPC            = endPC;
+    this.slotIndex        = slotIndex;
   }
     
   public String getName() {
@@ -59,7 +61,15 @@ public class LocalVarInfo {
   }
      
   public int getLength() {
-    return length; 
+    return endPC - startPC +1;
+  }
+
+  public int getSlotIndex() {
+    return slotIndex;
+  }
+
+  public boolean matches (String name, int pc){
+    return (startPC <= pc && endPC >= pc && this.name.equals(name));
   }
 }
 

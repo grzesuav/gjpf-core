@@ -51,8 +51,8 @@ public abstract class InvokeInstruction extends Instruction {
 
   protected Object[] arguments; // temporary cache for arg values (for listeners)
 
-  protected InvokeInstruction (String clsDescriptor, String methodName, String signature){
-    this.cname = Types.getClassNameFromSignature(clsDescriptor);
+  protected InvokeInstruction (String clsName, String methodName, String signature){
+    this.cname = Types.getClassNameFromTypeName(clsName);
     this.signature = signature;
     this.mname = MethodInfo.getUniqueName(mname, signature);
   }
@@ -151,6 +151,8 @@ public abstract class InvokeInstruction extends Instruction {
    * a 'Double' object).
    * It goes without saying that this method can only be called during an executeInstruction()
    * or instructionExecuted() notification for the corresponding InvokeInstruction
+   * We use the caller frame to retrieve the arguments (instead of the locals of
+   * the callee) since that works for both pre- and post-exec notification
    */
   public Object[] getArgumentValues (ThreadInfo ti) {
     MethodInfo callee = getInvokedMethod(ti);
@@ -205,6 +207,9 @@ public abstract class InvokeInstruction extends Instruction {
   }
 
 
+  // we get this from the caller because this works both for pre- and post-exec
+  // notifications, whereas retrieval from the callee frame of course only works
+  // post-exec
   Object[] getArgsFromCaller (ThreadInfo ti, StackFrame frame, MethodInfo callee){
     int n = callee.getNumberOfArguments();
     Object[] args = new Object[n];
@@ -298,6 +303,12 @@ public abstract class InvokeInstruction extends Instruction {
 
   public abstract Object getFieldValue (String id, ThreadInfo ti);
 
+
+  /**
+   * <2do> - this relies on same order of arguments and LocalVariableTable entries, which
+   * seems to hold for javac, but is not required by the JVM spec, which only
+   * says that arguments are stored in consecutive slots starting at 0
+   */
   public Object getArgumentValue (String id, ThreadInfo ti){
     MethodInfo mi = getInvokedMethod();
     LocalVarInfo localVars[] = mi.getLocalVars();
@@ -310,16 +321,13 @@ public abstract class InvokeInstruction extends Instruction {
         Object a = args[i];
         if (id.equals(localVars[j].getName())){
           return a;
-        } else {
-          if (a instanceof Long || a instanceof Double){
-            j++;
-          }
         }
       }
     }
 
     return null;
   }
+
 
   protected boolean checkSyncCG (ElementInfo ei, SystemState ss, ThreadInfo ti){
     if (!ti.isFirstStepInsn()) {

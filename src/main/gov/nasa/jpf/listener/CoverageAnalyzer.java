@@ -142,7 +142,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
         covered[idx] = new BitSet(mi.getInstructions().length);
       }
 
-      int off = insn.getOffset();
+      int off = insn.getInstructionIndex();
       covered[idx].set(off);
 
       if (showBranchCoverage && (insn instanceof IfInstruction)) {
@@ -164,7 +164,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
       BitSet bb = getBasicBlocks();
       Instruction next = insn.getNext();
       if (next != null) { // insn might be a sync return
-        bb.set(next.getOffset());
+        bb.set(next.getInstructionIndex());
       }
     }
 
@@ -282,7 +282,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
       if (handler != null) {
         for (int i = 0; i < handler.length; i++) {
           Instruction hs = mi.getInstructionAt(handler[i].getHandler());
-          b.set(hs.getOffset());
+          b.set(hs.getInstructionIndex());
         }
       }
 
@@ -306,7 +306,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
             if (insn instanceof GOTO) {
               GOTO gotoInsn = (GOTO) insn;
               if (!gotoInsn.isBackJump() && hs.get(i + 1)) { // jump around handler
-                int handlerEnd = gotoInsn.getTarget().getOffset();
+                int handlerEnd = gotoInsn.getTarget().getInstructionIndex();
                 for (i++; i < handlerEnd; i++) {
                   b.set(i);
                 }
@@ -360,19 +360,19 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
             IfInstruction ifInsn = (IfInstruction) insn;
 
             Instruction tgt = ifInsn.getTarget();
-            bb.set(tgt.getOffset());
+            bb.set(tgt.getInstructionIndex());
 
             tgt = ifInsn.getNext();
-            bb.set(tgt.getOffset());
+            bb.set(tgt.getInstructionIndex());
           } else if (insn instanceof GOTO) {
             Instruction tgt = ((GOTO) insn).getTarget();
-            bb.set(tgt.getOffset());
+            bb.set(tgt.getInstructionIndex());
           } else if (insn instanceof InvokeInstruction) {
             // hmm, this might be a bit too conservative, but who says we
             // don't jump out of a caller into a handler, or even that we
             // ever return from the call?
             Instruction tgt = insn.getNext();
-            bb.set(tgt.getOffset());
+            bb.set(tgt.getInstructionIndex());
           }
         }
 
@@ -381,7 +381,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
         if (handlers != null) {
           for (int i = 0; i < handlers.length; i++) {
             Instruction tgt = mi.getInstructionAt(handlers[i].getHandler());
-            bb.set(tgt.getOffset());
+            bb.set(tgt.getInstructionIndex());
           }
         }
 

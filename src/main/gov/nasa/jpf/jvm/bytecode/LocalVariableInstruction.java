@@ -46,20 +46,18 @@ public abstract class LocalVariableInstruction extends Instruction
   }
   
   public String getLocalVariableName () {
-    LocalVarInfo[] localVars = mi.getLocalVars();
-    
-    if (localVars != null && index < localVars.length) {
-      return localVars[index].getName();
+    LocalVarInfo lv = mi.getLocalVar(varId, position);
+    if (lv != null){
+      return lv.getName();
     } else {
       return "?";
     }
   }
   
   public String getLocalVariableType () {
-    LocalVarInfo[] localVars = mi.getLocalVars();
-    
-    if (localVars != null && index < localVars.length) {
-      return localVars[index].getType();
+    LocalVarInfo lv = mi.getLocalVar(varId, position);
+    if (lv != null){
+      return lv.getType();
     } else {
       return "?";
     }
