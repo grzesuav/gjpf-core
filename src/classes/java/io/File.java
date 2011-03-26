@@ -44,6 +44,9 @@ public class File
   private String filename;
 
   public File(String filename) {
+    if (filename == null)
+      throw new NullPointerException();
+    
     this.filename = filename;
   }
 
@@ -100,17 +103,18 @@ public class File
   //--- native peer intercepted (hopefully)
   
   int getPrefixLength() { return 0; }
-  public File getParentFile() { return null; }
-  public String getPath() { return null; }
-  public boolean isAbsolute() { return false; }
-  public String getAbsolutePath() { return null; }
-  public File getAbsoluteFile() { return null; }
-  public String getCanonicalPath() throws java.io.IOException {
-    return null; // intercepted by native peer
+  public native File getParentFile();
+  
+  public String getPath() {
+    return filename;
   }
-  public File getCanonicalFile() throws java.io.IOException {
-    return new File(getCanonicalPath());
-  }
+
+  public native boolean isAbsolute();
+  public native String getAbsolutePath();
+  public native File getAbsoluteFile();
+  public native String getCanonicalPath();
+
+  public native File getCanonicalFile() throws java.io.IOException;
 
   private native String getURLSpec();
   public java.net.URL toURL() throws java.net.MalformedURLException {
@@ -149,7 +153,7 @@ public class File
   public boolean setLastModified(long t)  { return false; }
   public boolean setReadOnly()  { return false; }
   
-  public static File[] listRoots()  { return null; }
+  public static native File[] listRoots();
   
   public static File createTempFile(String prefix, String suffix, File dir) throws IOException  {
     if (prefix == null){
