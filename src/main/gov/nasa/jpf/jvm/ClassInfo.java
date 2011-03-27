@@ -495,6 +495,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     //--- annotations
 
     AnnotationInfo curAi;
+    AnnotationInfo[] curPai;
+    Object[] values;
 
     public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){
       if (tag instanceof InfoObject){
@@ -505,10 +507,31 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     public void setAnnotationsDone(ClassFile cf, Object tag){
     }
 
-    public void setParameterAnnotationCount(ClassFile cf, Object tag, int parameterCount){
+    public void setParameterCount(ClassFile cf, Object tag, int parameterCount){
+      if (tag == curMi){
+        curMi.startParameterAnnotations(parameterCount);
+      }
     }
 
-    public void setParameterAnnotationsDone(ClassFile cf, Object tag){
+    public void setParameterAnnotationCount(ClassFile cf, Object tag, int paramIndex, int annotationCount){
+      if (tag == curMi){
+        curPai = new AnnotationInfo[annotationCount];
+        curMi.setParameterAnnotations(paramIndex, curPai);
+      }
+    }
+
+    public void setParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
+      if (tag == curMi){
+        curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+        curPai[annotationIndex] = curAi;
+      }
+    }
+    
+    public void setParameterAnnotationsDone(ClassFile cf, Object tag, int paramIndex){
+      curMi.finishParameterAnnotations();
+    }
+
+    public void setParametersDone(ClassFile cf, Object tag){
     }
 
 
@@ -525,12 +548,20 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int arrayIndex, Object val){
-      curAi.setValue(valueIndex, elementName, val);
+      if (arrayIndex >= 0){
+        values[arrayIndex] = val;
+      } else {
+        curAi.setValue(valueIndex, elementName, val);
+      }
     }
 
     public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int arrayIndex, String s){
-      curAi.setValue(valueIndex, elementName, s);
+            String elementName, int arrayIndex, String val){
+      if (arrayIndex >= 0){
+        values[arrayIndex] = val;
+      } else {
+        curAi.setValue(valueIndex, elementName, val);
+      }
     }
 
     public void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName,
@@ -542,10 +573,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     }
 
     public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            int elementCount){
+            String elementName, int elementCount){
+      values = new Object[elementCount];
     }
 
-    public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex){
+    public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName){
+      curAi.setValue(valueIndex, elementName, values);
     }
 
     public void setAnnotationValuesDone(ClassFile cf, Object tag, int annotationIndex){

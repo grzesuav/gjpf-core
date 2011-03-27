@@ -1278,11 +1278,15 @@ for (String s : et.getExceptionNames()) System.out.println("@@ " + s);
     parameterAnnotations = new AnnotationInfo[annotationCount][];
   }
 
-  protected void setParameterAnnotation(int index, AnnotationInfo ai){
+  protected void setParameterAnnotations(int index, AnnotationInfo[] ai){
+    parameterAnnotations[index] = ai;
+  }
+
+  protected void finishParameterAnnotations(){
+    // nothing
   }
 
   //--- thrown exceptions
-
   protected void startTrownExceptions (int exceptionCount){
     thrownExceptionClassNames = new String[exceptionCount];
   }
@@ -1297,7 +1301,6 @@ for (String s : et.getExceptionNames()) System.out.println("@@ " + s);
 
 
   //--- exception handler table initialization
-
   protected void startExceptionHandlerTable (int handlerCount){
     exceptionHandlers = new ExceptionHandler[handlerCount];
   }
@@ -1311,7 +1314,6 @@ for (String s : et.getExceptionNames()) System.out.println("@@ " + s);
   }
 
   //--- local var table initialization
-
   protected void startLocalVarTable (int localVarCount){
     localVars = new LocalVarInfo[localVarCount];
   }

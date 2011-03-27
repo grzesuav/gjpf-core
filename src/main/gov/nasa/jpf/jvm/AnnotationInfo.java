@@ -18,6 +18,11 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.classfile.ClassFile;
+import gov.nasa.jpf.classfile.ClassFileException;
+import gov.nasa.jpf.classfile.ClassFileReaderAdapter;
+import gov.nasa.jpf.classfile.ClassPath;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.bcel.classfile.AnnotationDefault;
@@ -48,6 +53,116 @@ public class AnnotationInfo {
   // exotic, so we save some time by not creating a ClassInfo (which would hold
   // the default vals as method annotations) and directly store the default values here
   static HashMap<String,Entry[]> defaultEntries = new HashMap<String,Entry[]>();
+
+  static class DefaultValueCollector extends ClassFileReaderAdapter {
+    String annotationName;
+
+    String key;
+    Object[] valElements;
+    ArrayList<Entry> entries;
+
+    Entry[] getDefaultValueEntries() {
+      if (entries == null){
+        return NONE;
+      } else {
+        return entries.toArray(new Entry[entries.size()]);
+      }
+    }
+
+    public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
+      entries = null;
+      annotationName = Types.getClassNameFromTypeName(clsName);
+      if (!"java/lang/Object".equals(superClsName)){
+        throw new JPFException("illegal annotation superclass of: " + annotationName + " is " + superClsName);
+      }
+    }
+
+    public void setInterface(ClassFile cf, int ifcIndex, String ifcName) {
+      if (!"java/lang/annotation/Annotation".equals(ifcName)){
+        throw new JPFException("illegal annotation interface of: " + annotationName + " is " + ifcName);
+      }
+    }
+
+    public void setMethod(ClassFile cf, int methodIndex, int accessFlags, String name, String descriptor) {
+      key = name;
+    }
+
+    public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
+      if (name == ClassFile.ANNOTATIONDEFAULT_ATTR){
+        if (entries == null){
+          entries = new ArrayList<Entry>();
+        }
+        cf.parseAnnotationDefaultAttr(this, key);
+      }
+    }
+
+    public void setMethodsDone(ClassFile cf) {
+      cf.stopParsing();
+    }
+
+    public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, Object val) {
+      if (arrayIndex >=0){
+        valElements[arrayIndex] = val;
+      } else {
+        entries.add(new Entry(key,val));
+      }
+    }
+
+    public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, String val) {
+      if (arrayIndex >=0){
+        valElements[arrayIndex] = val;
+      } else {
+        entries.add(new Entry(key,val));
+      }
+    }
+
+    public void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, String typeName) {
+    }
+
+    public void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, String enumType, String enumValue) {
+    }
+
+    public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int elementCount) {
+      valElements = new Object[elementCount];
+    }
+
+    public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName) {
+      entries.add( new Entry(key, valElements));
+    }
+
+  }
+
+  static DefaultValueCollector valueCollector = new DefaultValueCollector();
+
+  public static Entry[] getDefaultEntries (ClassPath locator, String annotationType){
+
+    Entry[] def = defaultEntries.get(annotationType);
+
+    if (def == null){ // Annotation not seen yet - we have to dig it out from the classfile
+      try {
+        byte[] data = locator.getClassData(annotationType);
+        ClassFile cf = new ClassFile(data);
+        cf.parse(valueCollector);
+
+        def = valueCollector.getDefaultValueEntries();
+        defaultEntries.put(annotationType, def);
+
+      } catch (ClassFileException cfx){
+        throw new JPFException("malformed annotation classfile");
+      }
+
+    }
+
+    return def;
+  }
+
+
 
   static Entry[] getDefaultEntries (String annotationType){
 
@@ -88,6 +203,7 @@ public class AnnotationInfo {
 
     return def;
   }
+
 
 
   public static class Enum {

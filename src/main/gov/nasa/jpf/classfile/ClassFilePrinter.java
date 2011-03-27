@@ -425,9 +425,11 @@ public class ClassFilePrinter implements ClassFileReader {
   }
 
 
-  public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex, int elementCount){
+  public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+          String elementName, int elementCount){
   }
-  public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex){
+  public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+          String elementName){
     pw.println("}");
   }
 
@@ -435,8 +437,13 @@ public class ClassFilePrinter implements ClassFileReader {
     decIndent();
   }
 
-  public void setParameterAnnotationCount(ClassFile cf, Object tag, int parameterCount){
+  public void setParameterCount(ClassFile cf, Object tag, int parameterCount){
     pw.printf(" parameterCount=%d\n", parameterCount);
+    incIndent();
+  }
+
+  public void setParameterAnnotationCount(ClassFile cf, Object tag, int paramIndex, int annotationCount){
+    pw.printf("%s[%d] count: %d\n", indent, paramIndex, annotationCount);
     incIndent();
   }
 
@@ -444,9 +451,14 @@ public class ClassFilePrinter implements ClassFileReader {
     pw.printf("%s[%d]: %s", indent, annotationIndex, annotationType);
   }
 
-  public void setParameterAnnotationsDone(ClassFile cf, Object tag){
+  public void setParameterAnnotationsDone(ClassFile cf, Object tag, int paramIndex){
     decIndent();
   }
+
+  public void setParametersDone(ClassFile cf, Object tag){
+    decIndent();
+  }
+
 
   public void setSignature(ClassFile cf, Object tag, String signature){
     pw.printf(" %s\n", signature);

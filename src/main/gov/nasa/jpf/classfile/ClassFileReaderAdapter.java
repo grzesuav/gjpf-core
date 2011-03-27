@@ -131,17 +131,23 @@ public class ClassFileReaderAdapter implements ClassFileReader {
   public void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String enumType, String enumValue){}
 
-  public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex, int elementCount) {}
+  public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex, 
+          String elementName, int elementCount) {}
 
-  public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex) {}
+  public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+          String elementName) {}
 
   public void setAnnotationValuesDone(ClassFile cf, Object tag, int annotationIndex) {}
 
-  public void setParameterAnnotationCount(ClassFile cf, Object tag, int parameterCount) {}
+  public void setParameterCount(ClassFile cf, Object tag, int parameterCount) {}
 
-  public void setParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){}
+  public void setParameterAnnotationCount(ClassFile cf, Object tag, int paramIndex, int annotationCount) {}
 
-  public void setParameterAnnotationsDone(ClassFile cf, Object tag) {}
+  public void setParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {}
+
+  public void setParameterAnnotationsDone(ClassFile cf, Object tag, int paramIndex) {}
+
+  public void setParametersDone(ClassFile cf, Object tag) {}
 
   public void setSignature(ClassFile cf, Object tag, String signature) {}
 }
