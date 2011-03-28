@@ -18,11 +18,24 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.State;
+import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
+import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.search.SearchListener;
+import gov.nasa.jpf.search.SearchListenerAdapter;
+import gov.nasa.jpf.util.Pair;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * intercept and forward some of the filesystem access methods. This is very
@@ -104,10 +117,6 @@ public class JPF_java_io_File {
     return env.newString(uri.toString());
   }
 
-  public static boolean exists____Z (MJIEnv env, int objref) {
-    return getFile(env,objref).exists();
-  }
-
   public static boolean isAbsolute____Z (MJIEnv env, int objref) {
     return getFile(env, objref).isAbsolute();
   }
@@ -132,8 +141,27 @@ public class JPF_java_io_File {
     return getFile(env,objref).canRead();
   }
 
+  public static boolean canWrite____Z (MJIEnv env, int objref) {
+    return getFile(env,objref).canWrite();
+  }
+
+  public static boolean exists____Z (MJIEnv env, int objref) {
+    return getFile(env,objref).exists();
+  }
+
+  public static boolean createNewFile____Z(MJIEnv env, int objref) {
+    File fileToCreate = getFile(env, objref);
+    try {
+      return fileToCreate.createNewFile();
+
+    } catch (IOException iox) {
+      env.throwException("java.io.IOException", iox.getMessage());
+      return false;
+    }
+  }
+
   public static int list_____3Ljava_lang_String_2(MJIEnv env, int objref){
-	  File f=getFile(env,objref);
+    File f=getFile(env,objref);
     if (f.isDirectory()){
       String[] farr=f.list();
       return env.newStringArray(farr);

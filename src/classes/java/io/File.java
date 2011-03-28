@@ -130,16 +130,15 @@ public class File
     }
   }
 
-  public boolean canRead() { return false; }
-  public boolean canWrite() { return false; }
-  public boolean exists() { return false; }
+  public native boolean canRead();
+  public native boolean canWrite();
+  public native boolean exists();
   public boolean isDirectory() { return false; }
   public boolean isFile() { return false; }
   public boolean isHidden() { return false; }
   public long lastModified() { return -1L; }
   public long length() { return -1; }
-  public boolean createNewFile() throws java.io.IOException
-   { return false; }
+  public native boolean createNewFile() throws java.io.IOException;
   public boolean delete()  { return false; }
   public void deleteOnExit() {}
   public String[] list()  { return null; }
