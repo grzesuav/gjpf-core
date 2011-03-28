@@ -41,7 +41,7 @@ import org.apache.bcel.classfile.SimpleElementValue;
  * the JPF counterpart for Java Annotations
  * 
  * we could just store the bcel constructs, but for consistencies sake, we
- * introduce our own type here (like we do for classes, methods, fields etc)
+ * introduce our own enumClassName here (like we do for classes, methods, fields etc)
  */
 public class AnnotationInfo {
 
@@ -206,13 +206,46 @@ public class AnnotationInfo {
 
 
 
-  public static class Enum {
-    String type, field;
+  public static class EnumValue {
+    String eClassName;
+    String eConst;
     
-    Enum (String t, String f){
-      type = t;
-      field = f;
+    EnumValue (String clsName, String constName){
+      eClassName = clsName;
+      eConst = constName;
     }
+    public String getEnumClassName(){
+      return eClassName;
+    }
+    public String getEnumConstName(){
+      return eConst;
+    }
+    public String toString(){
+      return eClassName + '.' + eConst;
+    }
+  }
+
+  public static class ClassValue {
+    String name;
+
+    ClassValue (String cn){
+      name = cn;
+    }
+
+    public String getName(){
+      return name;
+    }
+    public String toString(){
+      return name;
+    }
+  }
+
+  public static Object getEnumValue(String eType, String eConst){
+    return new EnumValue( Types.getClassNameFromTypeName(eType), eConst);
+  }
+
+  public static Object getClassValue(String type){
+    return new ClassValue( Types.getClassNameFromTypeName(type));
   }
 
   
@@ -293,7 +326,7 @@ public class AnnotationInfo {
   }
   
   /**
-   * get the ElementValue object, which is either a boxed type for a simple
+   * get the ElementValue object, which is either a boxed enumClassName for a simple
    * value, a String, a static FieldInfo for enum constants, a ClassInfo
    * for classes, or arrays of all all of the above 
    */
@@ -327,19 +360,14 @@ public class AnnotationInfo {
       
     case ElementValue.ENUM_CONSTANT:
       EnumElementValue eev = (EnumElementValue)ev;
-      String etype = Types.getTypeName(eev.getEnumTypeString());
+      String etype = Types.getClassNameFromTypeName(eev.getEnumTypeString());
       String eval = eev.getEnumValueString();
-      
-      ClassInfo eci = ClassInfo.getResolvedClassInfo(etype);
-      FieldInfo efi = eci.getStaticField(eval);
-      
-      return efi;
+      return getEnumValue(etype, eval);
       
     case ElementValue.CLASS:
       ClassElementValue cev = (ClassElementValue)ev;
-      String cname = Types.getTypeName(cev.getClassString());
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(cname);
-      return ci;
+      String cname = Types.getClassNameFromTypeName(cev.getClassString());
+      return getClassValue(cname);
       
     default:
       return ev.stringifyValue();        

@@ -566,10 +566,22 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     public void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName,
             int arrayIndex, String typeName){
+      Object val = AnnotationInfo.getClassValue(typeName);
+      if (arrayIndex >= 0){
+        values[arrayIndex] = val;
+      } else {
+        curAi.setValue(valueIndex, elementName, val);
+      }
     }
 
     public void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int arrayIndex, String enumType, String enumValue){
+      Object val = AnnotationInfo.getEnumValue(enumType, enumValue);
+      if (arrayIndex >= 0){
+        values[arrayIndex] = val;
+      } else {
+        curAi.setValue(valueIndex, elementName, val);
+      }
     }
 
     public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,

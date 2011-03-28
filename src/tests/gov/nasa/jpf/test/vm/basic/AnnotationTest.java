@@ -190,14 +190,67 @@ public class AnnotationTest extends TestJPF {
   }
 
   @Test
-  public void loadedClass() throws ClassNotFoundException, NoSuchMethodException {
+  public void testAnnotationClass() throws ClassNotFoundException, NoSuchMethodException {
     if (verifyNoPropertyViolation()) { 
-      Class clazz = Class.forName("gov.nasa.jpf.test.vm.basic.ArrayTest");  // Any class outside of this file will do.
-      Method method = clazz.getDeclaredMethod("test2DArray");               // Any method with an annotation will do.
+      Class clazz = Class.forName("gov.nasa.jpf.test.vm.basic.AnnotationTest");
+      Method method = clazz.getDeclaredMethod("testAnnotationClass");
       Annotation annotations[] = method.getAnnotations();
       assertEquals(1, annotations.length);
       assertNotNull(annotations[0]);
-      assertTrue(annotations[0] instanceof Test);                           // Any annotation will do.
+
+      assertTrue(annotations[0] instanceof Test);
     }
   }
+
+  //--------------------------------------------------------------------
+
+  public enum MyEnum {
+    ONE, TWO
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface A7 {
+    MyEnum value();
+  }
+
+  @Test
+  @A7(MyEnum.ONE)
+  public void testEnumValue() throws ClassNotFoundException, NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Class clazz = Class.forName("gov.nasa.jpf.test.vm.basic.AnnotationTest");  // Any class outside of this file will do.
+      Method method = clazz.getDeclaredMethod("testEnumValue");               // Any method with an annotation will do.
+      Annotation annotations[] = method.getAnnotations();
+
+      assertEquals(2, annotations.length);
+      assertNotNull(annotations[1]);
+
+      assertTrue(annotations[1] instanceof A7);
+      A7 ann = (A7)annotations[1];
+      assertTrue( ann.value() == MyEnum.ONE);
+    }
+  }
+
+  //--------------------------------------------------------------------
+
+  @interface A8 {
+    Class value();
+  }
+
+  @Test
+  @A8(AnnotationTest.class)
+  public void testClassValue() throws ClassNotFoundException, NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Class clazz = Class.forName("gov.nasa.jpf.test.vm.basic.AnnotationTest");  // Any class outside of this file will do.
+      Method method = clazz.getDeclaredMethod("testClassValue");               // Any method with an annotation will do.
+      Annotation annotations[] = method.getAnnotations();
+
+      assertEquals(2, annotations.length);
+      assertNotNull(annotations[1]);
+
+      assertTrue(annotations[1] instanceof A8);
+      A8 ann = (A8)annotations[1];
+      assertTrue( ann.value() == AnnotationTest.class);
+    }
+  }
+
 }
