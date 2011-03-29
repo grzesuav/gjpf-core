@@ -48,6 +48,10 @@ public class BIPUSH extends Instruction {
     return getNext(th);
   }
   
+  public int getValue(){
+	  return value;
+  }
+  
   public int getLength() {
     return 2; // opcode, byte
   }

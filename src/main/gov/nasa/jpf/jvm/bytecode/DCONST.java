@@ -49,6 +49,10 @@ public class DCONST extends Instruction {
 
     return getNext(th);
   }
+  
+  public long getValue(){
+	  return value;
+  }
 
   public int getByteCode () {
     return 0x0E;  // ? DCONST_0 0x0E , DCONST_1 0x0F

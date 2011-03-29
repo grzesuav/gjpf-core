@@ -76,6 +76,10 @@ public class ANEWARRAY extends Instruction {
     
     return getNext(ti);
   }
+  
+  public String getType(){
+	  return type;
+  }
 
   public int getLength () {
     return 3; // opcode, index1, index2
