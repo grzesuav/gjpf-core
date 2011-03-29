@@ -80,4 +80,67 @@ public class StringTest extends TestJPF {
       assert i2 == -1;
     }
   }
+
+  @Test
+  public void testCompareTo() {
+    if (verifyNoPropertyViolation()) {
+      String a = "aaa";
+      String b = "bbb";
+
+      assert a.compareTo(b) < 0;
+      assert b.compareTo(a) > 0;
+      assert a.compareTo(a) == 0;
+
+      String longer = "aaaaaa";
+
+      assert a.compareTo(longer) < 0;
+    }
+  }
+
+  @Test
+  public void testStartsWith() {
+    if (verifyNoPropertyViolation()) {
+      String str = "TestString";
+
+      assert str.startsWith("Test") == true;
+      assert str.startsWith("String", 4) == true;
+      assert str.startsWith("StringString", 4) == false;
+      assert str.startsWith("StrUng", 4) == false;
+      assert str.startsWith("Test", -5) == false;
+    }
+  }
+
+  @Test
+  public void testEndsWith() {
+    if (verifyNoPropertyViolation()) {
+      String str = "TestString";
+
+      assert str.endsWith("String") == true;
+      assert str.endsWith("") == true;
+      assert str.endsWith("StrUng") == false;
+    }
+  }
+
+  @Test
+  public void testTrim() {
+    if (verifyNoPropertyViolation()) {
+      assert "   Test    ".trim().equals("Test");
+      assert "   Test".trim().equals("Test");
+      assert "Test    ".trim().equals("Test");
+      assert "Test".trim().equals("Test");
+      assert "       ".trim().equals("");
+
+    }
+  }
+
+  @Test
+  public void testReplace() {
+    if (verifyNoPropertyViolation()) {
+     assert "hello".replace('l', 'a').equals("heaao") == true;
+     assert "".replace('l', 'a').equals("") == true;
+     assert "hello".replace('f', 'a').equals("hello") == true;
+     assert "eve".replace('e', 'a').equals("ava") == true;
+    }
+  }
+
 }
