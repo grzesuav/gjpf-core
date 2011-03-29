@@ -52,7 +52,7 @@ public abstract class ArrayFields extends Fields {
   }
   public byte getByteValue (int pos) {
     // overridden by subclass
-    throw new JPFException( "not a byte[] " + getClass().getName());
+    throw new JPFException( "not a byte[]");
   }
   public char getCharValue (int pos) {
     // overridden by subclass

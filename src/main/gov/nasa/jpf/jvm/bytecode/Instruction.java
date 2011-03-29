@@ -299,7 +299,7 @@ public abstract class Instruction implements InstructionVisit {
       ci.registerClass(ti);
     }
 
-    if (!ci.isInitialized()) {
+    if (ci.needsInitialization()) {
       if (ci.initializeClass(ti)) {
         //ti.skipInstructionLogging();
         return true; // there are new <clinit> frames on the stack, execute them

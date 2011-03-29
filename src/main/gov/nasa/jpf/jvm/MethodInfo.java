@@ -1244,7 +1244,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
   protected String[] loadThrownExceptionClassNames(Method m) {
     ExceptionTable et = m.getExceptionTable();
     if (et != null){
-for (String s : et.getExceptionNames()) System.out.println("@@ " + s);
       return et.getExceptionNames();
     } else {
       return null;
