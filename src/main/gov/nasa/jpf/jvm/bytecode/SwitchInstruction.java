@@ -124,4 +124,16 @@ public abstract class SwitchInstruction extends Instruction {
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
+
+  public int getTarget() {
+	return target;
+  }
+
+  public int[] getTargets() {
+	return targets;
+  }
+
+  public int[] getMatches() {
+	return matches;
+  }
 }

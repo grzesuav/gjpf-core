@@ -53,4 +53,8 @@ public class SIPUSH extends Instruction {
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
+
+  public int getValue() {
+	return value;
+  }
 }

@@ -60,4 +60,9 @@ public class JSR_W extends Instruction {
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
+ 
+  public int getTarget() {
+	return target;
+  }
+
 }
