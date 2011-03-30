@@ -100,12 +100,12 @@ class SvnRepositoryEntryFactory implements RepositoryEntryFactory {
     File f = new File(fullFileName);
     String fname = f.getName();
     String dName = f.getParent();
-
+    
     File fEntries = new File(dName + File.separatorChar + ".svn" + File.separatorChar + "entries");
     if (fEntries.exists()) {
       String repository = "?";
       String revision = "?";
-
+      
       Pattern pName = Pattern.compile(" *name=\"([a-zA-Z0-9.]+)\"");
       Pattern pRep = Pattern.compile(" *url=\"([a-zA-Z0-9.:/\\-]+)\"");
       Pattern pRev = Pattern.compile(" *committed-rev=\"([0-9]+)\"");
@@ -130,7 +130,7 @@ class SvnRepositoryEntryFactory implements RepositoryEntryFactory {
         }
       } catch (Throwable t) {}
     }
-
+    
     return null;
   }
 }
@@ -182,7 +182,7 @@ class HgRepositoryEntryFactory implements RepositoryEntryFactory {
 
     return null;
   }
-  
+
 }
 
 class GitRepositoryEntryFactory implements RepositoryEntryFactory {

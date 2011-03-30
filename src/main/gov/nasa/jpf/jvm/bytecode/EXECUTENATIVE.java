@@ -48,6 +48,12 @@ public class EXECUTENATIVE extends Instruction {
     return OPCODE;
   }
 
+  public EXECUTENATIVE (){}
+
+  public EXECUTENATIVE (NativeMethodInfo mi){
+    executedMethod = mi;
+  }
+
   public void setExecutedMethod (NativeMethodInfo mi){
     executedMethod = mi;
   }

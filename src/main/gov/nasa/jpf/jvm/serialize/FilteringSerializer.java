@@ -283,7 +283,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   /** more generic, but less efficient because it can't use block operations
   protected void _serializeFrame(StackFrame frame){
     buf.add(frame.getMethodInfo().getGlobalId());
-    buf.add(frame.getPC().getOffset());
+    buf.add(frame.getPC().getInstructionIndex());
 
     int len = frame.getTopPos()+1;
     buf.add(len);
@@ -307,7 +307,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     // a frame that is still on the stack
     Instruction pc = frame.getPC();
     if (pc != null){
-      buf.add(pc.getOffset());
+      buf.add(pc.getInstructionIndex());
     } else {
       buf.add(-1);
     }

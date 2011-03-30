@@ -32,6 +32,12 @@ import org.apache.bcel.classfile.ConstantPool;
 public class RET extends Instruction {
   private int index;
 
+  public RET( int index){
+    this.index = index;
+  }
+
+  public RET(){}
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     index = ((org.apache.bcel.generic.RET) i).getIndex();
   }
@@ -41,7 +47,7 @@ public class RET extends Instruction {
   }
 
   public int getLength() {
-    return 2; // opcode, index
+    return 2; // opcode, insnIndex
   }
   
   public int getByteCode () {
@@ -50,5 +56,9 @@ public class RET extends Instruction {
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+
+  public int getIndex() {
+	return index;
   }
 }

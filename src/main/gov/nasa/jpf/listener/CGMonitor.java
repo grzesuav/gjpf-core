@@ -79,7 +79,7 @@ public class CGMonitor extends ListenerAdapter {
       System.out.print(" (in ");
       System.out.print(insn.getMethodInfo().getFullName());
       System.out.print(":");
-      System.out.print(insn.getOffset());
+      System.out.print(insn.getInstructionIndex());
       System.out.println(')');
       
       isFirstInsn = false;

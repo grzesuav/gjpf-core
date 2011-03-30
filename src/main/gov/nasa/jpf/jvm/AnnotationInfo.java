@@ -18,6 +18,11 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.classfile.ClassFile;
+import gov.nasa.jpf.classfile.ClassFileException;
+import gov.nasa.jpf.classfile.ClassFileReaderAdapter;
+import gov.nasa.jpf.classfile.ClassPath;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.bcel.classfile.AnnotationDefault;
@@ -36,7 +41,7 @@ import org.apache.bcel.classfile.SimpleElementValue;
  * the JPF counterpart for Java Annotations
  * 
  * we could just store the bcel constructs, but for consistencies sake, we
- * introduce our own type here (like we do for classes, methods, fields etc)
+ * introduce our own enumClassName here (like we do for classes, methods, fields etc)
  */
 public class AnnotationInfo {
 
@@ -48,6 +53,116 @@ public class AnnotationInfo {
   // exotic, so we save some time by not creating a ClassInfo (which would hold
   // the default vals as method annotations) and directly store the default values here
   static HashMap<String,Entry[]> defaultEntries = new HashMap<String,Entry[]>();
+
+  static class DefaultValueCollector extends ClassFileReaderAdapter {
+    String annotationName;
+
+    String key;
+    Object[] valElements;
+    ArrayList<Entry> entries;
+
+    Entry[] getDefaultValueEntries() {
+      if (entries == null){
+        return NONE;
+      } else {
+        return entries.toArray(new Entry[entries.size()]);
+      }
+    }
+
+    public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
+      entries = null;
+      annotationName = Types.getClassNameFromTypeName(clsName);
+      if (!"java/lang/Object".equals(superClsName)){
+        throw new JPFException("illegal annotation superclass of: " + annotationName + " is " + superClsName);
+      }
+    }
+
+    public void setInterface(ClassFile cf, int ifcIndex, String ifcName) {
+      if (!"java/lang/annotation/Annotation".equals(ifcName)){
+        throw new JPFException("illegal annotation interface of: " + annotationName + " is " + ifcName);
+      }
+    }
+
+    public void setMethod(ClassFile cf, int methodIndex, int accessFlags, String name, String descriptor) {
+      key = name;
+    }
+
+    public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
+      if (name == ClassFile.ANNOTATIONDEFAULT_ATTR){
+        if (entries == null){
+          entries = new ArrayList<Entry>();
+        }
+        cf.parseAnnotationDefaultAttr(this, key);
+      }
+    }
+
+    public void setMethodsDone(ClassFile cf) {
+      cf.stopParsing();
+    }
+
+    public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, Object val) {
+      if (arrayIndex >=0){
+        valElements[arrayIndex] = val;
+      } else {
+        entries.add(new Entry(key,val));
+      }
+    }
+
+    public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, String val) {
+      if (arrayIndex >=0){
+        valElements[arrayIndex] = val;
+      } else {
+        entries.add(new Entry(key,val));
+      }
+    }
+
+    public void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, String typeName) {
+    }
+
+    public void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int arrayIndex, String enumType, String enumValue) {
+    }
+
+    public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName, int elementCount) {
+      valElements = new Object[elementCount];
+    }
+
+    public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
+            String elementName) {
+      entries.add( new Entry(key, valElements));
+    }
+
+  }
+
+  static DefaultValueCollector valueCollector = new DefaultValueCollector();
+
+  public static Entry[] getDefaultEntries (ClassPath locator, String annotationType){
+
+    Entry[] def = defaultEntries.get(annotationType);
+
+    if (def == null){ // Annotation not seen yet - we have to dig it out from the classfile
+      try {
+        byte[] data = locator.getClassData(annotationType);
+        ClassFile cf = new ClassFile(data);
+        cf.parse(valueCollector);
+
+        def = valueCollector.getDefaultValueEntries();
+        defaultEntries.put(annotationType, def);
+
+      } catch (ClassFileException cfx){
+        throw new JPFException("malformed annotation classfile");
+      }
+
+    }
+
+    return def;
+  }
+
+
 
   static Entry[] getDefaultEntries (String annotationType){
 
@@ -90,13 +205,47 @@ public class AnnotationInfo {
   }
 
 
-  public static class Enum {
-    String type, field;
+
+  public static class EnumValue {
+    String eClassName;
+    String eConst;
     
-    Enum (String t, String f){
-      type = t;
-      field = f;
+    EnumValue (String clsName, String constName){
+      eClassName = clsName;
+      eConst = constName;
     }
+    public String getEnumClassName(){
+      return eClassName;
+    }
+    public String getEnumConstName(){
+      return eConst;
+    }
+    public String toString(){
+      return eClassName + '.' + eConst;
+    }
+  }
+
+  public static class ClassValue {
+    String name;
+
+    ClassValue (String cn){
+      name = cn;
+    }
+
+    public String getName(){
+      return name;
+    }
+    public String toString(){
+      return name;
+    }
+  }
+
+  public static Object getEnumValue(String eType, String eConst){
+    return new EnumValue( Types.getClassNameFromTypeName(eType), eConst);
+  }
+
+  public static Object getClassValue(String type){
+    return new ClassValue( Types.getClassNameFromTypeName(type));
   }
 
   
@@ -120,6 +269,21 @@ public class AnnotationInfo {
   
   String name;
   Entry[] entries;
+
+
+  protected AnnotationInfo(String name){
+    this.name = name;
+    // entries will follow later, so this object is only partially initialized
+  }
+
+  protected void startEntries (int count){
+    entries = new Entry[count];
+  }
+
+  protected void setValue(int index, String key, Object value){
+    entries[index] = new Entry(key,value);
+  }
+
 
 
   public AnnotationInfo (String name, Entry[] entries){
@@ -159,11 +323,10 @@ public class AnnotationInfo {
     }
     
     entries = list.toArray(new Entry[list.size()]);
-
   }
   
   /**
-   * get the ElementValue object, which is either a boxed type for a simple
+   * get the ElementValue object, which is either a boxed enumClassName for a simple
    * value, a String, a static FieldInfo for enum constants, a ClassInfo
    * for classes, or arrays of all all of the above 
    */
@@ -197,19 +360,14 @@ public class AnnotationInfo {
       
     case ElementValue.ENUM_CONSTANT:
       EnumElementValue eev = (EnumElementValue)ev;
-      String etype = Types.getTypeName(eev.getEnumTypeString());
+      String etype = Types.getClassNameFromTypeName(eev.getEnumTypeString());
       String eval = eev.getEnumValueString();
-      
-      ClassInfo eci = ClassInfo.getResolvedClassInfo(etype);
-      FieldInfo efi = eci.getStaticField(eval);
-      
-      return efi;
+      return getEnumValue(etype, eval);
       
     case ElementValue.CLASS:
       ClassElementValue cev = (ClassElementValue)ev;
-      String cname = Types.getTypeName(cev.getClassString());
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(cname);
-      return ci;
+      String cname = Types.getClassNameFromTypeName(cev.getClassString());
+      return getClassValue(cname);
       
     default:
       return ev.stringifyValue();        

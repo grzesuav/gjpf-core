@@ -32,8 +32,8 @@ public class ANEWARRAY extends Instruction {
 
   public ANEWARRAY(){} // this is going away
 
-  public ANEWARRAY (String typeSignature){
-    type = Types.getTypeSignature(type, true);
+  public ANEWARRAY (String typeDescriptor){
+    type = Types.getTypeSignature(typeDescriptor, true);
   }
 
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
@@ -75,6 +75,10 @@ public class ANEWARRAY extends Instruction {
     ss.checkGC(); // has to happen after we push the new object ref
     
     return getNext(ti);
+  }
+  
+  public String getType(){
+	  return type;
   }
 
   public int getLength () {

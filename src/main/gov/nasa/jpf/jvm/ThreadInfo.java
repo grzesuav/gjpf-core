@@ -276,7 +276,7 @@ public class ThreadInfo
   // basis
 
   /** do we halt on each throw, i.e. don't look for an exception handler?
-   * Useful to find empty handler blocks, or misusd exceptions
+   * Useful to find empty handler blocks, or misusd exceptionHandlers
    */
   static String[] haltOnThrow;
 
@@ -1062,10 +1062,6 @@ public class ThreadInfo
     return top.getLocalVars();
   }
   
-  @Deprecated  // Use getLocalVars() instead
-  public String[] getLocalNames () {
-    return top.getLocalVariableNames();
-  }
 
   /**
    * Sets the value of a local variable.
@@ -1401,7 +1397,7 @@ public class ThreadInfo
    * get the current stack trace of this thread
    * this is called during creation of a Throwable, hence we should skip
    * all throwable ctors in here
-   * <2do> this is only a partial solution,since we don't catch exceptions
+   * <2do> this is only a partial solution,since we don't catch exceptionHandlers
    * in Throwable ctors yet
    */
   public String getStackTrace () {
@@ -1600,7 +1596,7 @@ public class ThreadInfo
 
     for (; frame != null; frame = frame.getPrevious()){
       snap[j++] = frame.getMethodInfo().getGlobalId();
-      snap[j++] = frame.getPC().getOffset();
+      snap[j++] = frame.getPC().getInstructionIndex();
     }
 
     return snap;
@@ -1807,8 +1803,8 @@ public class ThreadInfo
   /**
    * <2do> pcm - this is not correct! We have to call a proper ctor
    * for the Throwable (for now, we just explicitly set the details)
-   * but since this is not used with user defined exceptions (it's only
-   * called from within the VM, i.e. with standard exceptions), we for
+   * but since this is not used with user defined exceptionHandlers (it's only
+   * called from within the VM, i.e. with standard exceptionHandlers), we for
    * now skip the hassle of doing direct calls that would change the
    * call stack
    */
@@ -2644,7 +2640,7 @@ public class ThreadInfo
 
       ExceptionHandler[] exceptions = mi.getExceptions();
       if (exceptions != null) {
-        // checks the exceptions caught (in order of handler definitions)
+        // checks the exceptionHandlers caught (in order of handler definitions)
         for (ExceptionHandler handler : exceptions){
           // checks if it falls in the right range
           if ((position >= handler.getBegin()) && (position < handler.getEnd())) {
@@ -2660,7 +2656,7 @@ public class ThreadInfo
       }
 
       if ((handlerFrame == null) && mi.isFirewall()) {
-        // this method should not let exceptions pass into lower level stack frames
+        // this method should not let exceptionHandlers pass into lower level stack frames
         // (e.g. for <clinit>, or hidden direct calls)
         // <2do> if this is a <clinit>, we should probably turn into an
         // ExceptionInInitializerError first

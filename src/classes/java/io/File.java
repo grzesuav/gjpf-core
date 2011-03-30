@@ -44,8 +44,9 @@ public class File
   private String filename;
 
   public File(String filename) {
-    if (filename == null)
+    if (filename == null){
       throw new NullPointerException();
+    }
     
     this.filename = filename;
   }
@@ -83,12 +84,12 @@ public class File
   }
   
   public boolean equals(Object o) {
-    if (!(o instanceof File))
+    if (o instanceof File){
+      File otherFile = (File) o;
+      return filename.equals(otherFile.filename);
+    } else {
       return false;
-
-    File otherFile = (File) o;
-
-    return filename.equals(otherFile.filename);
+    }
   }
   
   public int hashCode() {

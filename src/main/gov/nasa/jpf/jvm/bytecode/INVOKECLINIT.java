@@ -46,7 +46,11 @@ public class INVOKECLINIT extends INVOKESTATIC {
 
   public INVOKECLINIT () {
   }
-  
+
+  public INVOKECLINIT (ClassInfo ci){
+    super(ci.getSignature(), "<clinit>", "()V");
+  }
+
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     
     MethodInfo callee = getInvokedMethod(ti);

@@ -43,7 +43,7 @@ public class RUNSTART extends Instruction {
 
   public RUNSTART (MethodInfo runMth) {
     this.mi = runMth;
-    this.offset = -1;
+    this.insnIndex = -1;
     this.position = -1;
   }
 

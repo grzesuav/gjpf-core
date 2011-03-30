@@ -497,6 +497,7 @@ public class Types {
     
     if ((type.charAt(0) == '[') || (type.endsWith(";"))) {  // [[[L...;
       t = type;
+      
     } else {
       
       while (type.endsWith("[]")) { // type[][][]
@@ -718,6 +719,21 @@ public class Types {
     }
 
     throw new JPFException("invalid type string: " + signature);
+  }
+
+  /** thoses are according to the arrayType codes of the newarray JVMS definition */
+  public static String getElementDescriptorOfType (int arrayType){
+    switch (arrayType){
+      case 4: return "Z";
+      case 5: return "C";
+      case 6: return "F";
+      case 7: return "D";
+      case 8: return "B";
+      case 9: return "S";
+      case 10: return "I";
+      case 11: return "J";
+    }
+    return null;
   }
 
   /**

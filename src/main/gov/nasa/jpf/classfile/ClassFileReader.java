@@ -90,11 +90,11 @@ public interface ClassFileReader {
 
   void setCode(ClassFile cf, Object tag, int maxStack, int maxLocals, int codeLength);
 
-  void setExceptionTableCount (ClassFile cf, Object tag, int exceptionTableCount);
+  void setExceptionHandlerTableCount (ClassFile cf, Object tag, int exceptionTableCount);
 
-  void setExceptionTableEntry(ClassFile cf, Object tag, int exceptionIndex, int startPc, int endPc, int handlerPc, String catchType);
+  void setExceptionHandler(ClassFile cf, Object tag, int exceptionIndex, int startPc, int endPc, int handlerPc, String catchType);
 
-  void setExceptionTableDone(ClassFile cf, Object tag);
+  void setExceptionHandlerTableDone(ClassFile cf, Object tag);
 
   void setCodeAttributeCount(ClassFile cf, Object tag, int attrCount);
 
@@ -154,15 +154,21 @@ public interface ClassFileReader {
   void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName, int arrayIndex,
           String enumType, String enumValue);
 
-  void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex, int elementCount);
+  void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName, int elementCount);
 
-  void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex);
+  void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName);
 
   void setAnnotationValuesDone(ClassFile cf, Object tag, int annotationIndex);
 
-  void setParameterAnnotationCount(ClassFile cf, Object tag, int parameterCount);
+  void setParameterCount(ClassFile cf, Object tag, int parameterCount);
 
-  void setParameterAnnotationsDone(ClassFile cf, Object tag);
+  void setParameterAnnotationCount(ClassFile cf, Object tag, int paramIndex, int annotationCount);
+
+  void setParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType);
+
+  void setParameterAnnotationsDone(ClassFile cf, Object tag, int paramIndex);
+
+  void setParametersDone(ClassFile cf, Object tag);
 
 
   void setSignature(ClassFile cf, Object tag, String signature);

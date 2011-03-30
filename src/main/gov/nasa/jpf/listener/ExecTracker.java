@@ -212,7 +212,7 @@ public class ExecTracker extends ListenerAdapter {
       out.print( linePrefix);
       
       out.print('[');
-      out.print(insn.getOffset());
+      out.print(insn.getInstructionIndex());
       out.print("] ");
       
       out.print(insn);

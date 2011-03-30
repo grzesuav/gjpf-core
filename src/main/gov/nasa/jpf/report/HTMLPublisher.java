@@ -1104,7 +1104,7 @@ public class HTMLPublisher extends Publisher {
       output.print(' ');
       output.print(localVars[i].getName());
       output.print(" = ");
-      output.print(frame.getLocalValueObject(i));
+      output.print(frame.getLocalValueObject(localVars[i]));
 
       attr = frame.getLocalAttr(i);
       if (attr != null) {

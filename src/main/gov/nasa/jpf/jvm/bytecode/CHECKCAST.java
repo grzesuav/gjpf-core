@@ -38,8 +38,8 @@ public class CHECKCAST extends Instruction {
 
   public CHECKCAST() {} // this is going away
 
-  public CHECKCAST(String signature){
-    type = Types.getTypeSignature(signature, true);
+  public CHECKCAST(String typeName){
+    type = Types.getClassNameFromTypeName(typeName);
   }
 
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {

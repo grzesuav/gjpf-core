@@ -1214,20 +1214,24 @@ public class MJIEnv {
     } else if (v instanceof Double){
       setDoubleField(proxyRef, fname, ((Double)v).doubleValue());
 
-    } else if (v instanceof FieldInfo){ // an enum constant
-      FieldInfo efi = (FieldInfo)v;
-      ClassInfo  eci = efi.getClassInfo();
+    } else if (v instanceof AnnotationInfo.EnumValue){ // an enum constant
+      AnnotationInfo.EnumValue ev = (AnnotationInfo.EnumValue)v;
+      String eCls = ev.getEnumClassName();
+      String eConst = ev.getEnumConstName();
 
+      ClassInfo eci = ClassInfo.tryGetResolvedClassInfo(eCls);
       if (!eci.isInitialized()){
         throw new ClinitRequired(eci);
       }
 
-      StaticElementInfo sei = sa.get(eci.getName());
-      int eref = sei.getIntField(efi.getName());
+      StaticElementInfo sei = eci.getStaticElementInfo();
+      int eref = sei.getReferenceField(eConst);
       setReferenceField(proxyRef, fname, eref);
 
-    } else if (v instanceof ClassInfo){ // a class
-      ClassInfo cci = (ClassInfo)v;
+    } else if (v instanceof AnnotationInfo.ClassValue){ // a class
+      String clsName = v.toString();
+      ClassInfo cci = ClassInfo.tryGetResolvedClassInfo(clsName);
+      // <2do> should throw ClassNotFoundError here if cci is null
 
       if (!cci.isInitialized()){
         throw new ClinitRequired(cci);

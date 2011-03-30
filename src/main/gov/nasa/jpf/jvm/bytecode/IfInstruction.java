@@ -28,7 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * abstraction for all comparison instructions
  */
 public abstract class IfInstruction extends Instruction {
-  protected int targetPosition;  // insn position at jump offset
+  protected int targetPosition;  // insn position at jump insnIndex
   protected Instruction target;  // jump target
   
   protected boolean conditionValue;  /** value of last evaluation of branch condition */
@@ -123,7 +123,7 @@ public abstract class IfInstruction extends Instruction {
   
   public String toString () {
     if (asString == null) {
-      asString = getMnemonic() + " " + getTarget().getOffset();
+      asString = getMnemonic() + " " + getTarget().getInstructionIndex();
     }
     return asString;
   }

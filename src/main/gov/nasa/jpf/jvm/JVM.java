@@ -1216,7 +1216,7 @@ public class JVM {
   /**
    * answer the Object that was most recently created or collected
    * part of the VMListener state acqusition (only valid from inside of
-   * notification)
+   * object related notification, such as notifyObjectCreated)
    */
   public ElementInfo getLastElementInfo () {
     return lastElementInfo;

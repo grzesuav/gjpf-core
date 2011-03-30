@@ -45,7 +45,11 @@ public class INVOKECG extends Instruction {
 
   List<Invocation>  invokes;
   InvokeInstruction realInvoke;
-  
+
+  public INVOKECG(List<Invocation> invokes){
+    this.invokes = invokes;
+  }
+
   public INVOKECG() {}
 
   public void setInvokes(List<Invocation> invokes) {
@@ -73,7 +77,7 @@ public class INVOKECG extends Instruction {
       } else {
         realInvoke = insnFactory.create(null, INVOKEVIRTUAL.class);
       }
-      realInvoke.init(mi, offset, position);
+      realInvoke.init(mi, insnIndex, position);
       realInvoke.setInvokedMethod( callee.getClassInfo().getName(),
                                    callee.getName(), callee.getSignature());
       

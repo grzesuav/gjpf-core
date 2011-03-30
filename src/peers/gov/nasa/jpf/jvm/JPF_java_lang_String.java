@@ -208,20 +208,6 @@ public class JPF_java_lang_String {
     return thisStr.lastIndexOf(ch, fromIndex);
   }
 
-  public static int lastIndexOf__Ljava_lang_String_2__I(MJIEnv env, int objref, int strRef) {
-    String thisStr = env.getStringObject(objref);
-    String str = env.getStringObject(strRef);
-
-    return thisStr.lastIndexOf(str);
-  }
-
-  public static int lastIndexOf__Ljava_lang_String_2I__I(MJIEnv env, int objref, int strRef, int fromIndex) {
-    String thisStr = env.getStringObject(objref);
-    String str = env.getStringObject(strRef);
-
-    return thisStr.lastIndexOf(str, fromIndex);
-  }
-
   public static int hashCode____I (MJIEnv env, int objref) {
     int h = env.getIntField(objref, "hash");
     
@@ -270,6 +256,7 @@ public class JPF_java_lang_String {
 
     return env.newString(new String(resultChars));
   }
+
 
   public static int replace__CC__Ljava_lang_String_2(MJIEnv env, int objRef, char oldChar, char newChar) {
     if (oldChar != newChar) {

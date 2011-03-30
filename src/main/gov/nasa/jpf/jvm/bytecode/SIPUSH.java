@@ -32,6 +32,11 @@ import org.apache.bcel.classfile.ConstantPool;
 public class SIPUSH extends Instruction {
   private int value;
 
+  public SIPUSH(int value){
+    this.value = value;
+  }
+
+  public SIPUSH() {}
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     value = ((org.apache.bcel.generic.SIPUSH) i).getValue().shortValue();
   }
@@ -52,5 +57,9 @@ public class SIPUSH extends Instruction {
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+
+  public int getValue() {
+	return value;
   }
 }

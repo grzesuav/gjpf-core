@@ -22,8 +22,6 @@ package gov.nasa.jpf.jvm.bytecode;
 import org.apache.bcel.classfile.ConstantPool;
 import org.apache.bcel.generic.InstructionHandle;
 
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.IntChoiceGenerator;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -31,6 +29,9 @@ import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 
 /**
  * common root class for LOOKUPSWITCH and TABLESWITCH insns
+ *
+ * <2do> this is inefficient. First, we should store targets as instruction indexes
+ * to avoid execution() looping. Second, there are no matches for a TABLESWITCH
  */
 public abstract class SwitchInstruction extends Instruction {
 
@@ -41,7 +42,19 @@ public abstract class SwitchInstruction extends Instruction {
   protected int[] matches;  // branch consts
 
   protected int lastIdx;
-  
+
+  protected SwitchInstruction (int defaultTarget, int numberOfTargets){
+    target = defaultTarget;
+    targets = new int[numberOfTargets];
+    matches = new int[numberOfTargets];
+  }
+
+  public int getNumberOfEntries() {
+    return targets.length;
+  }
+
+  protected SwitchInstruction() {}
+
   public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
     target = ((org.apache.bcel.generic.Select) i).getTarget()
                                                      .getPosition();
@@ -123,5 +136,17 @@ public abstract class SwitchInstruction extends Instruction {
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+
+  public int getTarget() {
+	return target;
+  }
+
+  public int[] getTargets() {
+	return targets;
+  }
+
+  public int[] getMatches() {
+	return matches;
   }
 }

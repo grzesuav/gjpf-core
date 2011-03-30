@@ -38,9 +38,10 @@ import org.apache.bcel.generic.InstructionHandle;
 public abstract class Instruction implements InstructionVisit {
 
   protected static final List<String> unimplemented = new ArrayList<String>();
-  protected int position; // accumulated position (prev pos + prev bc-length)
-  protected int offset;   // consecutive index of instruction
-  protected MethodInfo mi;        // the method this insn belongs to
+  
+  protected int insnIndex;        // code[] index of instruction
+  protected int position;     // accumulated bytecode position (prev pos + prev bc-length)
+  protected MethodInfo mi;    // the method this insn belongs to
   protected String asString;  // on demand string representation
 
   abstract public int getByteCode();
@@ -54,7 +55,7 @@ public abstract class Instruction implements InstructionVisit {
    * is this the first instruction in a method
    */
   public boolean isFirstInstruction() {
-    return (offset == 0);
+    return (insnIndex == 0);
   }
 
 
@@ -93,15 +94,15 @@ public abstract class Instruction implements InstructionVisit {
   }
 
   /**
-   * this returns the instruction at the following code offset within the same
+   * this returns the instruction at the following code insnIndex within the same
    * method, which might or might not be the next one to execute (branches, overlay calls etc.).
    */
   public Instruction getNext() {
-    return mi.getInstruction(offset + 1);
+    return mi.getInstruction(insnIndex + 1);
   }
 
-  public int getOffset() {
-    return offset;
+  public int getInstructionIndex() {
+    return insnIndex;
   }
 
   public int getPosition() {
@@ -109,7 +110,7 @@ public abstract class Instruction implements InstructionVisit {
   }
 
   public void setLocation(int off, int pos) {
-    offset = off;
+    insnIndex = off;
     position = pos;
   }
 
@@ -122,8 +123,8 @@ public abstract class Instruction implements InstructionVisit {
   }
 
   public Instruction getPrev() {
-    if (offset > 0) {
-      return mi.getInstruction(offset - 1);
+    if (insnIndex > 0) {
+      return mi.getInstruction(insnIndex - 1);
     } else {
       return null;
     }
@@ -275,7 +276,7 @@ public abstract class Instruction implements InstructionVisit {
   public void init(InstructionHandle h, int off, MethodInfo m,
           ConstantPool cp) {
     position = h.getPosition();
-    offset = off;
+    insnIndex = off;
     mi = m;
     //asString = h.getInstruction().toString(cp);
     setPeer(h.getInstruction(), cp);
@@ -283,7 +284,7 @@ public abstract class Instruction implements InstructionVisit {
 
   public void init(MethodInfo mi, int offset, int position) {
     this.mi = mi;
-    this.offset = offset;
+    this.insnIndex = offset;
     this.position = position;
   }
 
@@ -298,7 +299,7 @@ public abstract class Instruction implements InstructionVisit {
       ci.registerClass(ti);
     }
 
-    if (!ci.isInitialized()) {
+    if (ci.needsInitialization()) {
       if (ci.initializeClass(ti)) {
         //ti.skipInstructionLogging();
         return true; // there are new <clinit> frames on the stack, execute them

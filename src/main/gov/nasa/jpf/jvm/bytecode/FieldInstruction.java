@@ -73,9 +73,9 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
 
   protected FieldInstruction() {}
 
-  protected FieldInstruction(String name, String classType, String fieldDescriptor){
+  protected FieldInstruction(String name, String clsName, String fieldDescriptor){
     fname = name;
-    className = Types.getClassNameFromSignature(classType);
+    className = Types.getClassNameFromTypeName(clsName);
     isReferenceField = Types.isReferenceSignature(fieldDescriptor);
     size = Types.getTypeSize(fieldDescriptor);
   }
@@ -192,7 +192,7 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
    */
   protected boolean isMonitorEnterPrologue () {
     Instruction[] code = mi.getInstructions();
-    int off = offset+1;
+    int off = insnIndex+1;
 
     if (off < code.length-3) {
       // we don't reach out further than 3 instructions

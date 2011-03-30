@@ -24,7 +24,23 @@ package gov.nasa.jpf.jvm.bytecode;
  *   ..., index  ...
  */
 public class TABLESWITCH extends SwitchInstruction {
-  
+
+  int min, max;
+
+  public TABLESWITCH() {}
+
+  public TABLESWITCH(int defaultTarget, int min, int max){
+    super(defaultTarget, (max - min));
+  }
+
+  public void setTarget (int value, int target){
+    int i = value-min;
+
+    if (i>=0 && i<targets.length){
+      targets[i] = target;
+    }
+  }
+
   public int getLength() {
     return 13 + 2*(matches.length); // <2do> NOT RIGHT: padding!!
   }

@@ -364,10 +364,11 @@ public class FileUtils {
       File[] childs = file.listFiles();
 
       for (File child : childs) {
-        if (child.isDirectory())
+        if (child.isDirectory()){
           removeRecursively(child);
-        else
+        } else {
           child.delete();
+        }
       }
 
       return file.delete();

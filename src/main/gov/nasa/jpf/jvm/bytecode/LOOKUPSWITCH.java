@@ -24,7 +24,19 @@ package gov.nasa.jpf.jvm.bytecode;
  * ..., key => ...
  */
 public class LOOKUPSWITCH extends SwitchInstruction {
-  
+
+  public LOOKUPSWITCH () {}
+
+  public LOOKUPSWITCH (int defaultTarget, int numberOfTargets) {
+    super(defaultTarget, numberOfTargets);
+  }
+
+  public void setTarget (int index, int target, int match){
+    targets[index] = target;
+    matches[index] = match;
+  }
+
+
   public int getLength() {
     return 10 + 2*(matches.length); // <2do> NOT RIGHT: padding!!
   }

@@ -52,8 +52,13 @@ public class LDC extends Instruction {
   public LDC() {}
 
   public LDC (String s, boolean isClass){
-    this.string = s;
-    type = (isClass) ? Type.CLASS : Type.STRING;
+    if (isClass){
+      string = Types.getClassNameFromTypeName(s);
+      type = Type.CLASS;
+    } else {
+      string = s;
+      type = Type.STRING;
+    }
   }
 
   public LDC (int v){
