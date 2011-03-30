@@ -169,13 +169,22 @@ public class LDC extends Instruction {
     return (type == Type.STRING);
   }
   
-  public String getStringValue() { // if it is a String
+  public String getStringValue() { // if it is a String (not acquired from the class const pool)
     if (type == Type.STRING) {
       return string;
     } else {
       return null;
     }
   }
+  
+  public String getClassValue() { // if it is the name of a Class (acquired from the class const pool)
+	    if (type == Type.CLASS) {
+	      return string;
+	    } else {
+	      return null;
+	    }
+	  }
+
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
