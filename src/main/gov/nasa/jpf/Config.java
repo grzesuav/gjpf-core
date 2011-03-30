@@ -1179,7 +1179,7 @@ public class Config extends Properties {
             int n = Integer.parseInt(a[i]);
             d += m*n;
           } catch (NumberFormatException nfx) {
-            return defValue;
+            throw new JPFConfigException("illegal duration element in '" + key + "' = \"" + v + '"');
           }
         }
 
@@ -1187,7 +1187,7 @@ public class Config extends Properties {
         try {
           d = Long.parseLong(v);
         } catch (NumberFormatException nfx) {
-          return defValue;
+          throw new JPFConfigException("illegal duration element in '" + key + "' = \"" + v + '"');
         }
       }
 
@@ -1207,7 +1207,7 @@ public class Config extends Properties {
       try {
         return Integer.parseInt(v);
       } catch (NumberFormatException nfx) {
-        return defValue;
+        throw new JPFConfigException("illegal int element in '" + key + "' = \"" + v + '"');
       }
     }
 
@@ -1224,7 +1224,7 @@ public class Config extends Properties {
       try {
         return Long.parseLong(v);
       } catch (NumberFormatException nfx) {
-        return defValue;
+        throw new JPFConfigException("illegal long element in '" + key + "' = \"" + v + '"');
       }
     }
 
@@ -1262,7 +1262,7 @@ public class Config extends Properties {
       try {
         return Double.parseDouble(v);
       } catch (NumberFormatException nfx) {
-        return defValue;
+        throw new JPFConfigException("illegal double element in '" + key + "' = \"" + v + '"');
       }
     }
 
@@ -1339,7 +1339,7 @@ public class Config extends Properties {
         }
 
       } catch (NumberFormatException nfx) {
-        return defValue;
+        throw new JPFConfigException("illegal memory size element in '" + key + "' = \"" + v + '"');
       }
     }
 

@@ -44,6 +44,10 @@ public class File
   private String filename;
 
   public File(String filename) {
+    if (filename == null){
+      throw new NullPointerException();
+    }
+    
     this.filename = filename;
   }
 
@@ -74,18 +78,18 @@ public class File
       return null;
     }
   }
-
-  
-  public int compareTo(Object o) {
-    return compareTo((File)o);
-  }
   
   public int compareTo(File that) {
     return this.filename.compareTo(that.filename);
   }
   
   public boolean equals(Object o) {
-    return filename.equals(((File)o).filename);
+    if (o instanceof File){
+      File otherFile = (File) o;
+      return filename.equals(otherFile.filename);
+    } else {
+      return false;
+    }
   }
   
   public int hashCode() {
@@ -100,17 +104,18 @@ public class File
   //--- native peer intercepted (hopefully)
   
   int getPrefixLength() { return 0; }
-  public File getParentFile() { return null; }
-  public String getPath() { return null; }
-  public boolean isAbsolute() { return false; }
-  public String getAbsolutePath() { return null; }
-  public File getAbsoluteFile() { return null; }
-  public String getCanonicalPath() throws java.io.IOException {
-    return null; // intercepted by native peer
+  public native File getParentFile();
+  
+  public String getPath() {
+    return filename;
   }
-  public File getCanonicalFile() throws java.io.IOException {
-    return new File(getCanonicalPath());
-  }
+
+  public native boolean isAbsolute();
+  public native String getAbsolutePath();
+  public native File getAbsoluteFile();
+  public native String getCanonicalPath();
+
+  public native File getCanonicalFile() throws java.io.IOException;
 
   private native String getURLSpec();
   public java.net.URL toURL() throws java.net.MalformedURLException {
@@ -126,16 +131,15 @@ public class File
     }
   }
 
-  public boolean canRead() { return false; }
-  public boolean canWrite() { return false; }
-  public boolean exists() { return false; }
+  public native boolean canRead();
+  public native boolean canWrite();
+  public native boolean exists();
   public boolean isDirectory() { return false; }
   public boolean isFile() { return false; }
   public boolean isHidden() { return false; }
   public long lastModified() { return -1L; }
   public long length() { return -1; }
-  public boolean createNewFile() throws java.io.IOException
-   { return false; }
+  public native boolean createNewFile() throws java.io.IOException;
   public boolean delete()  { return false; }
   public void deleteOnExit() {}
   public String[] list()  { return null; }
@@ -149,7 +153,7 @@ public class File
   public boolean setLastModified(long t)  { return false; }
   public boolean setReadOnly()  { return false; }
   
-  public static File[] listRoots()  { return null; }
+  public static native File[] listRoots();
   
   public static File createTempFile(String prefix, String suffix, File dir) throws IOException  {
     if (prefix == null){
