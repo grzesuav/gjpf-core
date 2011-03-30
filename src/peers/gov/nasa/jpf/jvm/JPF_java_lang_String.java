@@ -268,11 +268,14 @@ public class JPF_java_lang_String {
       CharArrayFields thisFields = (CharArrayFields) env.getHeap().get(thisStr.getReferenceField("value")).getFields();
       char newChars[] = thisFields.asCharArray(thisOffset, thisLength);
 
+      boolean replaced = false;
       for (int i = 0; i < newChars.length; i++)
-        if (newChars[i] == oldChar)
+        if (newChars[i] == oldChar) {
           newChars[i] = newChar;
+          replaced = true;
+        }
 
-      return env.newString(new String(newChars));
+      return (replaced) ? env.newString(new String(newChars)) : objRef;
 
     }
     return objRef;
@@ -292,7 +295,7 @@ public class JPF_java_lang_String {
     String replacementStr = env.getStringObject(replacementRef);
 
     String result = thisStr.replaceFirst(regexStr, replacementStr);
-    return env.newString(result);
+    return (result != thisStr) ? env.newString(result) : objRef;
   }
 
   public static int replaceAll__Ljava_lang_String_2Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int objRef, int regexRef, int replacementRef) {
@@ -301,7 +304,7 @@ public class JPF_java_lang_String {
     String replacementStr = env.getStringObject(replacementRef);
 
     String result = thisStr.replaceAll(regexStr, replacementStr);
-    return env.newString(result);
+    return (result != thisStr) ? env.newString(result) : objRef;
   }
 
   // <2do> we also need startsWith, endsWith, indexOf etc. - all not relevant from

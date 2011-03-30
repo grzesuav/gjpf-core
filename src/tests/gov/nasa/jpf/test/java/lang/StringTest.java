@@ -140,6 +140,13 @@ public class StringTest extends TestJPF {
      assert "".replace('l', 'a').equals("") == true;
      assert "hello".replace('f', 'a').equals("hello") == true;
      assert "eve".replace('e', 'a').equals("ava") == true;
+
+     // Now check if no replacement happened replace methods should return
+     // same string reference
+     String orig = "string";
+     assert orig == orig.replace('1', '2');
+     assert orig == orig.replaceAll("notExist", "o");
+     assert orig == orig.replaceFirst("notExist", "o");
     }
   }
 
