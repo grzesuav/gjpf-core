@@ -51,6 +51,10 @@ public class FCONST extends Instruction {
     return getNext(th);
   }
 
+  public int getValue(){
+	  return value;
+  }
+  
   public int getByteCode () {
     return 0x0B; // ?? FCONST_0, _1, _2
   }

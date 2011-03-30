@@ -97,4 +97,12 @@ public class MULTIANEWARRAY extends Instruction {
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
+
+  public String getType() {
+	return type;
+  }
+
+  public int getDimensions() {
+	return dimensions;
+  }
 }

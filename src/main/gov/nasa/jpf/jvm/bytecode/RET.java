@@ -57,4 +57,8 @@ public class RET extends Instruction {
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
+
+  public int getIndex() {
+	return index;
+  }
 }
