@@ -30,10 +30,8 @@ public final class Method extends AccessibleObject implements Member {
   String name; // deferred set by the NativePeer getName()
 
   public native String getName();
-  public String toGenericString() {
-	  // TODO: return real generic string
-	  return toString();
-  }
+  public native String toGenericString();
+
   public native Object invoke (Object object, Object... args)
         throws IllegalAccessException, InvocationTargetException;
 
