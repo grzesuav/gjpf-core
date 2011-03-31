@@ -145,8 +145,7 @@ public class StringTest extends TestJPF {
      // same string reference
      String orig = "string";
      assert orig == orig.replace('1', '2');
-     assert orig == orig.replaceAll("notExist", "o");
-     assert orig == orig.replaceFirst("notExist", "o");
+     assert orig == orig.replaceAll("notExist", "o");     
     }
   }
 

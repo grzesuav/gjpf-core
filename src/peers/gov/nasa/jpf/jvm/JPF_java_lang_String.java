@@ -269,11 +269,12 @@ public class JPF_java_lang_String {
       char newChars[] = thisFields.asCharArray(thisOffset, thisLength);
 
       boolean replaced = false;
-      for (int i = 0; i < newChars.length; i++)
+      for (int i = 0; i < newChars.length; i++) {
         if (newChars[i] == oldChar) {
           newChars[i] = newChar;
           replaced = true;
         }
+      }
 
       return (replaced) ? env.newString(new String(newChars)) : objRef;
 
