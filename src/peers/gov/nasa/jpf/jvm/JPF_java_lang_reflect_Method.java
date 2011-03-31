@@ -629,8 +629,9 @@ public class JPF_java_lang_reflect_Method {
 
     for (int i = 0; i < parametrs.size(); i++) {
       sb.append(parametrs.get(i));
-      if (i != parametrs.size() - 1)
+      if (i != parametrs.size() - 1) {
         sb.append(", ");
+      }
     }
 
     sb.append(");");
@@ -672,10 +673,12 @@ public class JPF_java_lang_reflect_Method {
         int genericLevel = 0;
         // Generic type can extends another generic type, so just avoid it
         while (methodGenerics.charAt(i) != ';' || genericLevel != 0) {
-          if (methodGenerics.charAt(i) == '<')
+          if (methodGenerics.charAt(i) == '<') {
             genericLevel++;
-          else if (methodGenerics.charAt(i) == '>')
+          }
+          else if (methodGenerics.charAt(i) == '>') {
             genericLevel--;
+          }
 
           i++;
         }
@@ -753,8 +756,9 @@ public class JPF_java_lang_reflect_Method {
 
     // If signature consist of primitive types it doesn't end with ';' so some part
     // of the string left unsplited
-    if (inputStrChars[i - 1] != ';')
+    if (inputStrChars[i - 1] != ';') {
       splited.add(inputStr.substring(start, i));
+    }
 
     ArrayList<String> result = new ArrayList<String>();
     for (String type : splited) {
@@ -828,8 +832,9 @@ public class JPF_java_lang_reflect_Method {
 
     for (int i = 0; i < list.size(); i++) {
       result += list.get(i);
-      if (i != list.size() - 1)
+      if (i != list.size() - 1) {
         result += ", ";
+      }
     }
 
     return "<" + result + ">";
@@ -881,9 +886,4 @@ public class JPF_java_lang_reflect_Method {
 
     return getTypesList(parametrs);
   }
-
-
-
-
-
 }
