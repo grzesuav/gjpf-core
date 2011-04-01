@@ -636,7 +636,7 @@ public class JPF_java_lang_reflect_Method {
 
     sb.append(");");
 
-    return env.newString(sb.toString() + "\n\t" + mi.name + signature);
+    return env.newString(sb.toString());
   }
 
   /**
