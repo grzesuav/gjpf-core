@@ -563,6 +563,34 @@ public class JPF_java_lang_reflect_Method {
     }
   }
 
+  public static boolean isSynthetic____Z(MJIEnv env, int objRef) throws Exception {
+    MethodInfo mi = getMethodInfo(env, objRef);
+
+    int syntheticFlag = getModifierFlag("SYNTHETIC");
+    return (mi.modifiers & syntheticFlag) != 0;
+  }
+
+  public static boolean isBridge____Z(MJIEnv env, int objRef) throws Exception {
+    MethodInfo mi = getMethodInfo(env, objRef);
+
+    int bridgeFlag = getModifierFlag("BRIDGE");
+    return (mi.modifiers & bridgeFlag) != 0;
+  }
+
+  public static boolean isVarArgs____Z(MJIEnv env, int objRef) throws Exception {
+    MethodInfo mi = getMethodInfo(env, objRef);
+
+    int varArgsFlag = getModifierFlag("VARARGS");
+    return (mi.modifiers & varArgsFlag) != 0;
+  }
+
+  private static int getModifierFlag(String flagName) throws Exception {
+    Field f = Modifier.class.getDeclaredField(flagName);
+    f.setAccessible(true);
+
+    return f.getInt(null);
+  }
+
   public static int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){
     StringBuilder sb = new StringBuilder();
     
@@ -886,4 +914,5 @@ public class JPF_java_lang_reflect_Method {
 
     return getTypesList(parametrs);
   }
+
 }
