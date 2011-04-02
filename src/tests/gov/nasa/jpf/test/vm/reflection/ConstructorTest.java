@@ -78,4 +78,70 @@ public class ConstructorTest extends TestJPF {
     }
   }
 
+  static class C {
+    public C(int i) {
+    }
+
+    public C(int... i) {
+
+    }
+  }
+
+  @Test
+  public void testIfVarArgs() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()) {
+      Constructor c1 = C.class.getConstructor(int.class);
+      Constructor c2 = C.class.getConstructor(int[].class);
+
+      assert c1.isVarArgs() == false;
+      assert c2.isVarArgs() == true;
+    }
+  }
+
+  static class Ex {
+    public Ex(int i) throws NullPointerException, RuntimeException, NoSuchMethodException {
+
+    }
+  }
+
+  @Test
+  public void testGetExceptionTypes() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()) {
+      Class<?> expectedExceptions[] = {NullPointerException.class,
+                                       RuntimeException.class,
+                                       NoSuchMethodException.class};
+
+      Class<?> resultExceptions[] = Ex.class.getConstructor(int.class).getExceptionTypes();
+
+      assert resultExceptions.length == expectedExceptions.length;
+
+      for (int i = 0; i < resultExceptions.length; i++)
+        assert resultExceptions[i].equals(expectedExceptions[i]);
+    }
+  }
+
+  static class C1 {
+    public C1(int i) {}
+    public C1(int i, byte b) {}
+  }
+
+  static class C2 {
+    public C2(int i) {}
+  }
+
+  @Test
+  public void testConstructorsEquals() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()) {
+      Constructor c11 = C1.class.getConstructor(int.class);
+      Constructor c11new = C1.class.getConstructor(int.class);
+      Constructor c12 = C1.class.getConstructor(int.class, byte.class);
+      Constructor c2 = C2.class.getConstructor(int.class);
+
+      assert c11.equals(c11) == true;
+      assert c11.equals(c11new) == true;
+      assert c11.equals(c12) == false;
+      assert c11.equals(c2) == false;
+      assert c11.equals(null) == false;
+    }
+  }
 }

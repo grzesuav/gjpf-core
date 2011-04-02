@@ -112,40 +112,8 @@ public class JPF_java_lang_reflect_Method {
     return getParameterTypes(env, getMethodInfo(env, objRef));
   }
   
-  static int getExceptionTypes(MJIEnv env, MethodInfo mi) {
-    try {
-      ThreadInfo ti = env.getThreadInfo();
-      String[] exceptionNames = mi.getThrownExceptionClassNames();
-       
-      if (exceptionNames == null) {
-        exceptionNames = new String[0];
-      }
-       
-      int[] ar = new int[exceptionNames.length];
-       
-      for (int i = 0; i < exceptionNames.length; i++) {
-        ClassInfo ci = ClassInfo.getResolvedClassInfo(exceptionNames[i]);
-        if (!ci.isRegistered()) {
-          ci.registerClass(ti);
-        }
-         
-        ar[i] = ci.getClassObjectRef();
-      }
-       
-      int aRef = env.newObjectArray("Ljava/lang/Class;", exceptionNames.length);
-      for (int i = 0; i < exceptionNames.length; i++) {
-        env.setReferenceArrayElement(aRef, i, ar[i]);
-      }
-       
-      return aRef;
-    } catch (NoClassInfoException cx) {
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
-      return MJIEnv.NULL;
-    }
-  }
-  
   public static int getExceptionTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef) {
-    return getExceptionTypes(env, getMethodInfo(env, objRef));
+    return MethodUtils.getExceptionTypes(env, getMethodInfo(env, objRef));
   }
   
   public static int getReturnType____Ljava_lang_Class_2 (MJIEnv env, int objRef){
@@ -516,32 +484,28 @@ public class JPF_java_lang_reflect_Method {
   
   public static int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef, int annotationClsRef) {
     MethodInfo mi = getMethodInfo(env,mthRef);
-    ClassInfo aci = JPF_java_lang_Class.getReferredClassInfo(env,annotationClsRef);
-    
-    AnnotationInfo ai = mi.getAnnotation(aci.getName());
-    if (ai != null){
-      ClassInfo aciProxy = ClassInfo.getAnnotationProxy(aci);
-      try {
-        return env.newAnnotationProxy(aciProxy, ai);
-      } catch (ClinitRequired x){
-        env.handleClinitRequest(x.getRequiredClassInfo());
-        return MJIEnv.NULL;
-      }
-    }
-    
-    return MJIEnv.NULL;
+    return MethodUtils.getAnnotation(env, mi, annotationClsRef);
   }
   
-  public static int getAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
-    MethodInfo mi = getMethodInfo(env,mthRef);
-    AnnotationInfo[] ai = mi.getAnnotations();
+  public static int getAnnotations_____3Ljava_lang_annotation_Annotation_2(MJIEnv env, int mthRef){
+    MethodInfo mi = getMethodInfo(env, mthRef);
+    return MethodUtils.getAnnotations(env, mi);
+  }
+  
 
-    try {
-      return env.newAnnotationProxies(ai);
-    } catch (ClinitRequired x){
-      env.handleClinitRequest(x.getRequiredClassInfo());
-      return MJIEnv.NULL;
-    }
+  public static boolean isSynthetic____Z(MJIEnv env, int objRef) throws Exception {
+    MethodInfo mi = getMethodInfo(env, objRef);
+    return MethodUtils.isMethodInfoFlagSet(mi, "SYNTHETIC");
+  }
+
+  public static boolean isBridge____Z(MJIEnv env, int objRef) throws Exception {
+    MethodInfo mi = getMethodInfo(env, objRef);   
+    return MethodUtils.isMethodInfoFlagSet(mi, "BRIDGE");
+  }
+
+  public static boolean isVarArgs____Z(MJIEnv env, int objRef) throws Exception {
+    MethodInfo mi = getMethodInfo(env, objRef);
+    return MethodUtils.isMethodInfoFlagSet(mi, "VARARGS");
   }
 
   private static void appendMethodModifiers(MethodInfo mi, StringBuilder sb) {
@@ -563,60 +527,10 @@ public class JPF_java_lang_reflect_Method {
     }
   }
 
-  public static boolean isSynthetic____Z(MJIEnv env, int objRef) throws Exception {
+  public static int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){       
     MethodInfo mi = getMethodInfo(env, objRef);
 
-    int syntheticFlag = getModifierFlag("SYNTHETIC");
-    return (mi.modifiers & syntheticFlag) != 0;
-  }
-
-  public static boolean isBridge____Z(MJIEnv env, int objRef) throws Exception {
-    MethodInfo mi = getMethodInfo(env, objRef);
-
-    int bridgeFlag = getModifierFlag("BRIDGE");
-    return (mi.modifiers & bridgeFlag) != 0;
-  }
-
-  public static boolean isVarArgs____Z(MJIEnv env, int objRef) throws Exception {
-    MethodInfo mi = getMethodInfo(env, objRef);
-
-    int varArgsFlag = getModifierFlag("VARARGS");
-    return (mi.modifiers & varArgsFlag) != 0;
-  }
-
-  private static int getModifierFlag(String flagName) throws Exception {
-    Field f = Modifier.class.getDeclaredField(flagName);
-    f.setAccessible(true);
-
-    return f.getInt(null);
-  }
-
-  public static int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){
-    StringBuilder sb = new StringBuilder();
-    
-    MethodInfo mi = getMethodInfo(env, objRef);
-    appendMethodModifiers(mi, sb);
-
-    sb.append(mi.getReturnTypeName());
-    sb.append(' ');
-
-    sb.append(mi.getClassName());
-    sb.append('.');
-
-    sb.append(mi.getName());
-
-    sb.append('(');
-    
-    String[] at = mi.getArgumentTypeNames();
-    for (int i=0; i<at.length; i++){
-      if (i>0) sb.append(',');
-      sb.append(at[i]);
-    }
-    
-    sb.append(')');
-    
-    int sref = env.newString(sb.toString());
-    return sref;
+    return MethodUtils.toString(env, mi, mi.getName());
   }
 
   public static int toGenericString____Ljava_lang_String_2(MJIEnv env, int objRef) {
