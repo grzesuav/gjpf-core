@@ -30,8 +30,6 @@ import gov.nasa.jpf.util.Misc;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.apache.bcel.Constants;
-
 
 /**
  * Describes a stack frame.
@@ -51,7 +49,7 @@ import org.apache.bcel.Constants;
  *   slot[top]              : highest used operand slot
  *
  */
-public class StackFrame implements Constants, Cloneable {
+public class StackFrame implements Cloneable {
 
    /**
     * the previous StackFrame (usually the caller, null if first). To be set when

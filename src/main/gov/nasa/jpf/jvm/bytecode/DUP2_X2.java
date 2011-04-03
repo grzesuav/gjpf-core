@@ -22,16 +22,12 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Duplicate the top operand stack value and insert two or three values down
  * ... A B C D => ... C D.A B C D
  */
 public class DUP2_X2 extends Instruction {
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     th.dup2_x2();

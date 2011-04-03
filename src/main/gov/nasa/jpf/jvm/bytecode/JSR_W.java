@@ -22,8 +22,6 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Jump subroutine (wide insnIndex)
@@ -32,15 +30,8 @@ import org.apache.bcel.classfile.ConstantPool;
 public class JSR_W extends Instruction {
   private int target;
 
-  public JSR_W() {}
-
   public JSR_W(int targetPc){
     target = targetPc;
-  }
-
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    target = ((org.apache.bcel.generic.JSR_W) i).getTarget().getPosition();
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {

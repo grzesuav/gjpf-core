@@ -27,6 +27,7 @@ import gov.nasa.jpf.jvm.*;
 
 import gov.nasa.jpf.annotation.FilterField;
 import gov.nasa.jpf.tool.RunTest;
+import gov.nasa.jpf.util.JPFSiteUtils;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Reflection;
 import java.io.PrintStream;
@@ -93,23 +94,31 @@ public abstract class TestJPF implements JPFShell  {
   protected static ArrayList<GlobalArg> getGlobalArgs() {
     Config globalConf = RunTest.config;
     if (globalConf != null){
+      ArrayList<GlobalArg> list = new ArrayList<GlobalArg>();
+
+      //--- the "test.<key>" specs
       String[] testKeys = globalConf.getKeysStartingWith("test.");
       if (testKeys.length > 0){
-        ArrayList<GlobalArg> list = new ArrayList<GlobalArg>();
-
         for (String key : testKeys){
           String val = globalConf.getString(key);
           key = key.substring(5);
           list.add(new GlobalArg(key,val));
         }
-
-        return list;
       }
-    }
-    
-    ArrayList<GlobalArg> result = null;  // Get rid of IDE warning
 
-    return result;
+      //--- set the classpath from <projectId>.test_classpath
+      String projectId = JPFSiteUtils.getCurrentProjectId();
+      if (projectId != null){
+        String testCp = globalConf.getString(projectId + ".test_classpath");
+        if (testCp != null){
+          list.add(new GlobalArg("classpath", testCp));
+        }
+      }
+
+      return list;
+    }
+
+    return null;
   }
 
   static {

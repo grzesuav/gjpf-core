@@ -19,10 +19,8 @@
 
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
-
 /**
- *
+ * a double or long field
  */
 public abstract class DoubleSlotFieldInfo extends FieldInfo {
 

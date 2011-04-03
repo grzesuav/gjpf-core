@@ -198,35 +198,38 @@ public class JPFSiteUtils {
 
   static Pattern idPattern = Pattern.compile("^[ \t]*([^# \t][^ \t]*)[ \t]*=[ \t]*\\$\\{config_path\\}");
 
+  static String projectId;
+
   /**
    * look for a "<id> = ${config_path}" entry in current dir/jpf.properties
    * this looks recursively upwards
    * @return null if no jpf.properties found
    */
   public static String getCurrentProjectId (){
-    File propFile = getCurrentProjectProperties();
+    if (projectId == null) {
+      File propFile = getCurrentProjectProperties();
 
-    if (propFile != null){
-      try {
-        FileReader fr = new FileReader(propFile);
-        BufferedReader br = new BufferedReader(fr);
+      if (propFile != null) {
+        try {
+          FileReader fr = new FileReader(propFile);
+          BufferedReader br = new BufferedReader(fr);
 
-        for (String line = br.readLine(); line != null; line = br.readLine()) {
-          Matcher m = idPattern.matcher(line);
-          if (m.matches()) {
-            String key = m.group(1);
-            return key;
+          for (String line = br.readLine(); line != null; line = br.readLine()) {
+            Matcher m = idPattern.matcher(line);
+            if (m.matches()) {
+              projectId = m.group(1);
+            }
           }
-        }
-        br.close();
+          br.close();
 
-      } catch (FileNotFoundException fnfx) {
-        return null;
-      } catch (IOException iox) {
-        return null;
+        } catch (FileNotFoundException fnfx) {
+          return null;
+        } catch (IOException iox) {
+          return null;
+        }
       }
     }
 
-    return null;
+    return projectId;
   }
 }

@@ -696,12 +696,12 @@ public class ByteCodePrinter implements ByteCodeReader {
     pw.printf("%s%3d: %s\n", prefix, pc, "lconst_1");
   }
 
-  public void ldc(int cpIntOrFloatOrStringIndex) {
+  public void ldc_(int cpIntOrFloatOrStringIndex) {
     pw.printf("%s%3d: %s @%d(%s)\n", prefix, pc, "ldc", cpIntOrFloatOrStringIndex,
             cf.getCpValue(cpIntOrFloatOrStringIndex));
   }
 
-  public void ldc_w(int cpIntOrFloatOrStringIndex) {
+  public void ldc_w_(int cpIntOrFloatOrStringIndex) {
     pw.printf("%s%3d: %s @%d(%s)\n", prefix, pc, "ldc_w", cpIntOrFloatOrStringIndex,
             cf.getCpValue(cpIntOrFloatOrStringIndex));
   }

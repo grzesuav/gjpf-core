@@ -22,16 +22,12 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Pop the top operand stack value
  * ..., value => ...
  */
 public class POP extends Instruction {
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     // just discards an element from the stack

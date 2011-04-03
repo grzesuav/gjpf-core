@@ -26,14 +26,6 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.NoClassInfoException;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.Constants;
-import org.apache.bcel.classfile.ConstantFloat;
-import org.apache.bcel.classfile.ConstantInteger;
-import org.apache.bcel.classfile.ConstantPool;
-import org.apache.bcel.classfile.ConstantString;
-import org.apache.bcel.generic.ConstantPoolGen;
-import org.apache.bcel.generic.Type;
-
 
 /**
  * Push item from runtime constant pool
@@ -71,52 +63,6 @@ public class LDC extends Instruction {
     type = Type.FLOAT;
   }
 
-
-
-  public void setPeer (org.apache.bcel.generic.Instruction insn, ConstantPool cp) {
-    ConstantPoolGen cpg = ClassInfo.getConstantPoolGen(cp);
-    org.apache.bcel.generic.LDC ldc = (org.apache.bcel.generic.LDC) insn;
-    
-    org.apache.bcel.generic.Type t = ldc.getType(cpg);
-    int index = ldc.getIndex();
-
-    if (t == org.apache.bcel.generic.Type.STRING) {
-      type = Type.STRING;
-      string = cp.constantToString(cp.getConstant(
-                                     ((ConstantString) cp.getConstant(index)).getStringIndex()));
-
-    } else if (t == org.apache.bcel.generic.Type.INT) {
-      type = Type.INT;
-      value = ((ConstantInteger) cp.getConstant(index)).getBytes();
-
-    } else if (t == org.apache.bcel.generic.Type.FLOAT) {
-      type = Type.FLOAT;
-      value = Types.floatToInt( ((ConstantFloat) cp.getConstant(index)).getBytes());
-
-    } else if (t == org.apache.bcel.generic.Type.CLASS) {
-    //} else if (t.getType() == Constants.T_REFERENCE) {
-      //t = Type.CLASS;
-      /*
-       * Java 1.5 silently introduced a class file change - LDCs can now directly reference class
-       * constpool entries. To make it more interesting, BCEL 5.1 chokes on this with a hard exception.
-       * As of Aug 2004, this was fixed in the BCEL Subversion repository, but there is no new
-       * release out yet. In order to compile this code with BCEL 5.1, we can't even use Type.CLASS.
-       * The current hack should compile with both BCEL 5.1 and svn, but only runs - when encountering
-       * a Java 1.5 class file - if the BCEL svn jar is used
-       */
-
-      type = Type.CLASS;
-
-      // that's kind of a hack - if this is a const class ref to the class that is
-      // currently loaded, we don't have a corresponding object created yet, and
-      // the StaticArea access methods might do a recursive class init. Our solution
-      // is to cache the name, and resolve the reference when we get executed
-      string = cp.constantToString(index, Constants.CONSTANT_Class);
-
-    } else {
-      throw new JPFException("invalid type of constant");
-    }
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     switch (type){

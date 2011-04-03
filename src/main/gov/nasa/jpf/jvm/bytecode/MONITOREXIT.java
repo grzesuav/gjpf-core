@@ -19,17 +19,12 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.*;
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Exit monitor for object 
  * ..., objectref => ... 
  */
 public class MONITOREXIT extends LockInstruction {
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int objref = ti.peek();

@@ -23,16 +23,12 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Remainder float
  * ..., value1, value2 => ..., result
  */
 public class FREM extends Instruction {
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     float v1 = Types.intToFloat(th.pop());

@@ -23,16 +23,12 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Convert float to double
  * ..., value  => ..., result
  */
 public class F2D extends Instruction {
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     th.longPush(Types.doubleToLong(/*(double)*/ Types.intToFloat(th.pop())));

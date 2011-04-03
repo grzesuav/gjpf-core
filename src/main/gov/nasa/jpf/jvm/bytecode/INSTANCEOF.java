@@ -23,8 +23,6 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Determine if object is of given type
@@ -33,20 +31,12 @@ import org.apache.bcel.classfile.ConstantPool;
 public class INSTANCEOF extends Instruction {
   private String type;
 
-  public INSTANCEOF (){}
 
+  /**
+   * typeName is of a/b/C notation
+   */
   public INSTANCEOF (String typeName){
-    type = Types.getClassNameFromTypeName(typeName);
-  }
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    type = cp.constantToString(cp.getConstant(
-                                     ((org.apache.bcel.generic.INSTANCEOF) i).getIndex()))
-             .replace('.', '/');
-
-    if (!type.startsWith("[")) {
-      type = "L" + type + ";";
-    }
+    type = Types.getTypeSignature(typeName, false);
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {

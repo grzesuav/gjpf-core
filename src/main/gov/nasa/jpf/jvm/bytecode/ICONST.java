@@ -22,8 +22,6 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Push int constant
@@ -32,14 +30,8 @@ import org.apache.bcel.classfile.ConstantPool;
 public class ICONST extends Instruction {
   private int value;
 
-  public ICONST() {}
-
   public ICONST(int value){
     this.value = value;
-  }
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    value = ((org.apache.bcel.generic.ICONST) i).getValue().intValue();
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {

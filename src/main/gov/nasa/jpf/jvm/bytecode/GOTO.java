@@ -22,8 +22,6 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Branch always
@@ -37,11 +35,6 @@ public class GOTO extends Instruction {
 
   public GOTO (int targetPosition){
     this.targetPosition = targetPosition;
-  }
-
-  public GOTO() {}
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    targetPosition = ((org.apache.bcel.generic.GOTO) i).getTarget().getPosition();
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {

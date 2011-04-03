@@ -25,8 +25,6 @@ package gov.nasa.jpf.jvm.bytecode;
  */
 public class LOOKUPSWITCH extends SwitchInstruction {
 
-  public LOOKUPSWITCH () {}
-
   public LOOKUPSWITCH (int defaultTarget, int numberOfTargets) {
     super(defaultTarget, numberOfTargets);
   }

@@ -168,34 +168,66 @@ public class ClassPath {
   }
 
 
+  public ClassPath(){
+    pathElements = new ArrayList<PathElement>();
+  }
+
   public ClassPath (String[] pathNames) {
     pathElements = new ArrayList<PathElement>();
 
     for (String e : pathNames){
-      File f = new File(e);
-      PathElement pe = null;
+      addPathName(e);
+    }
+  }
 
-      if (f.isDirectory()){
-        pe = new DirElement(f);
+  public void addPathName(String pathName){
+    File f = new File(pathName);
+    PathElement pe = null;
 
-      } else {
-        if (f.isFile()){
-          if (e.endsWith(".jar")){
-            try {
-              pe = new JarElement(f);
-            } catch (ClassFileException cfx){
-              // issue a warning
-            }
+    if (f.isDirectory()) {
+      pe = new DirElement(f);
+
+    } else {
+      if (f.isFile()) {
+        if (pathName.endsWith(".jar")) {
+          try {
+            pe = new JarElement(f);
+          } catch (ClassFileException cfx) {
+            // issue a warning
           }
         }
       }
+    }
 
-      if (pe != null){
-        pathElements.add(pe);
-      } else {
-        logger.warning("illegal classpath element ", e);
+    if (pe != null) {
+      pathElements.add(pe);
+    } else {
+      logger.info("illegal classpath element ", pathName);
+    }
+  }
+
+  public String[] getPathNames(){
+    String[] pn = new String[pathElements.size()];
+
+    for (int i=0; i<pn.length; i++){
+      pn[i] = pathElements.get(i).getName();
+    }
+
+    return pn;
+  }
+
+  public String toString(){
+    StringBuilder sb = new StringBuilder();
+    int len = pathElements.size();
+    int i=0;
+
+    for (PathElement e : pathElements){
+      sb.append(e.getName());
+      if (++i < len){
+        sb.append(File.pathSeparator);
       }
     }
+    return sb.toString();
   }
 
   protected static void error(String msg) throws ClassFileException {

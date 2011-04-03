@@ -23,16 +23,12 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Negate double
  * ..., value => ..., result
  */
 public class DNEG extends Instruction {
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     th.longPush(Types.doubleToLong(-Types.longToDouble(th.longPop())));

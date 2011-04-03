@@ -29,8 +29,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class LSTORE extends LocalVariableInstruction implements StoreInstruction {
 
-  public LSTORE() {}
-
   public LSTORE(int localVarIndex){
     super(localVarIndex);
   }

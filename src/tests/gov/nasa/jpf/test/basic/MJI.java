@@ -54,7 +54,7 @@ public class MJI {
         case 'k' : test.testHiddenRoundtrip(); break;
         case 'l' : test.testHiddenRoundtripException(); break;
         default:
-          throw new RuntimeException("unknown test method");
+          throw new RuntimeException("unknown test method: " + arg);
       }
     }
   }
@@ -144,7 +144,7 @@ public class MJI {
   public void testNativeInstanceMethod () {
     int res = nativeInstanceMethod(2.0, '?', true, 40);
 
-    assert (res == 42) : "native instance method failed";
+    assert (res == 42) : "native instance method failed: " + res;
   }
 
   public void testNativeStaticMethod () {

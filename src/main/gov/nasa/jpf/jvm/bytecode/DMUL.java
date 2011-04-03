@@ -23,16 +23,12 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Multiply double
  * ..., value1, value2 => ..., result
  */
 public class DMUL extends Instruction {
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     double v1 = Types.longToDouble(th.longPop());

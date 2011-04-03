@@ -21,12 +21,9 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
-
-import org.apache.bcel.classfile.ConstantPool;
 
 /**
  * this is an artificial instruction that is automatically prepended to
@@ -70,10 +67,6 @@ public class RUNSTART extends Instruction {
 
   public boolean isExtendedInstruction() {
     return true;
-  }
-
-  protected void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    // nothing - this is initialized explicitly, not from BCEL loaded insns
   }
 
   public void accept(InstructionVisitor insVisitor) {

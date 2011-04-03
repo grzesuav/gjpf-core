@@ -692,9 +692,9 @@ public class ThreadInfo
     ElementInfo eix = getElementInfo(throwableRef);
     eix.setBooleanField("canBeUncaught", true);
 
-    // now the tricky part - this thread is alive but might be in a native method
-    // and might be blocked, notified or waiting. In any case, exception action
-    // should not take place before the thread becomes scheduled again, which
+    // now the tricky part - this thread is alive but might be blocked, notified
+    // or waiting. In any case, exception action should not take place before
+    // the thread becomes scheduled again, which
     // means we are not allowed to fiddle with its state in any way that changes
     // scheduling/locking behavior. On the other hand, if this is the currently
     // executing thread, take immediate action
@@ -2176,18 +2176,53 @@ public class ThreadInfo
     return heap.get(ref);
   }
 
-  // we get our last stackframe popped, so it's time to close down
-  // NOTE: it's the callers responsibility to do the notification on the thread object
-  public void finish () {
-    setState(State.TERMINATED);
-
-    int     objref = getThreadObjectRef();
+  public Instruction exitRunMethod(){
+    int objref = getThreadObjectRef();
     ElementInfo ei = getElementInfo(objref);
-    cleanupThreadObject(ei);
+    SystemState ss = vm.getSystemState();
 
-    // stack is gone, so reachability might change
-    vm.activateGC();
+    // beware - this notifies all waiters on this thread (e.g. in a join())
+    // hence it has to be able to acquire the lock
+    if (!ei.canLock(this)) {
+      // block first, so that we don't get this thread in the list of CGs
+      ei.block(this);
+
+      // if we can't acquire the lock, it means there needs to be another thread alive,
+      // but it might not be runnable (deadlock) and we don't want to mask that error
+      ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, this);
+      ss.setMandatoryNextChoiceGenerator(cg, "blocking thread termination without CG: ");
+
+      return getPC(); // come back once we can obtain the lock to notify our waiters
+
+    } else { // Ok, we can get the lock, time to die
+      // notify waiters on thread termination
+
+      if (!holdsLock(ei)) {
+        // we only need to increase the lockcount if we don't own the lock yet,
+        // as is the case for synchronized run() in anonymous threads (otherwise
+        // we have a lockcount > 1 and hence do not unlock upon return)
+        ei.lock(this);
+      }
+
+      ei.notifiesAll();
+      ei.unlock(this);
+
+      setState(State.TERMINATED);
+
+      ss.clearAtomic();
+      cleanupThreadObject(ei);
+      vm.activateGC();  // stack is gone, so reachability might change
+
+      if (hasOtherNonDaemonRunnables()) {
+        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(this);
+        ss.setMandatoryNextChoiceGenerator(cg, "thread terminated without CG: ");
+      }
+
+      popFrame(); // we need to do this *after* setting the CG (so that we still have a CG insn)
+      return null;
+    }
   }
+
 
   void cleanupThreadObject (ElementInfo ei) {
     // ideally, this should be done by calling Thread.exit(), but this
@@ -2669,12 +2704,10 @@ public class ThreadInfo
     if (handlerFrame == null) {
       if (canBeUncaughtException(exceptionObjRef)){
         // don't bail with a property violation, make waiter runnable and gracefully exit
-        StackFrame frame = unwindToFirstFrame(); // this will take care of notifying, setting CGs and the like
-        insn = getRunReturnInsn(frame);
-        setPC(insn);
+        unwindToFirstFrame(); // this will take care of notifying, setting CGs and the like
         
         pendingException = null;
-        return insn;
+        return exitRunMethod();
 
       } else {
         // no handler -> uncaught exception -> NoUncaughtExcpetionsProperty violation
@@ -2730,16 +2763,6 @@ public class ThreadInfo
     return frame;
   }
 
-  // this is wicked - the run() method might actually not have a return, or it
-  // might not be the last insn. We just create ourselves a synthetic one
-  private Instruction getRunReturnInsn (StackFrame frame){
-    MethodInfo mi = frame.getMethodInfo();
-    Instruction insn = mi.createSyntheticReturnInsn();
-
-    assert insn instanceof RETURN;
-
-    return insn;
-  }
 
   public ExceptionInfo getPendingException () {
     return pendingException;

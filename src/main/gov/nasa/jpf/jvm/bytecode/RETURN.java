@@ -20,15 +20,12 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.*;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Return void from method
  *   ...  [empty]
  */
 public class RETURN extends ReturnInstruction {
-  public RETURN () {}
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
 
@@ -53,9 +50,6 @@ public class RETURN extends ReturnInstruction {
     }
 
     return super.execute(ss, ks, ti);
-  }
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
   }
 
   public Object getReturnAttr (ThreadInfo ti){

@@ -23,8 +23,6 @@ import gov.nasa.jpf.JPFException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-import org.apache.bcel.Constants;
-
 
 /**
  * various type mangling/demangling routines
@@ -38,17 +36,18 @@ import org.apache.bcel.Constants;
  */
 public class Types {
 
-  public static final byte T_BOOLEAN   = Constants.T_BOOLEAN;
-  public static final byte T_BYTE      = Constants.T_BYTE;
-  public static final byte T_CHAR      = Constants.T_CHAR;
-  public static final byte T_SHORT     = Constants.T_SHORT;
-  public static final byte T_INT       = Constants.T_INT;
-  public static final byte T_LONG      = Constants.T_LONG;
-  public static final byte T_FLOAT     = Constants.T_FLOAT;
-  public static final byte T_DOUBLE    = Constants.T_DOUBLE;
-  public static final byte T_REFERENCE = Constants.T_REFERENCE;
-  public static final byte T_ARRAY     = Constants.T_ARRAY;  // <2do> do we need this in addition to T_REFERENCE?
-  public static final byte T_VOID      = Constants.T_VOID;
+  // these have the same values as the BCEL Constants since we don't want to break compiled code
+  public static final byte T_BOOLEAN   = 4;
+  public static final byte T_BYTE      = 8;
+  public static final byte T_CHAR      = 5;
+  public static final byte T_SHORT     = 9;
+  public static final byte T_INT       = 10;
+  public static final byte T_LONG      = 11;
+  public static final byte T_FLOAT     = 6;
+  public static final byte T_DOUBLE    = 7;
+  public static final byte T_REFERENCE = 14;
+  public static final byte T_ARRAY     = 13;  // <2do> do we need this in addition to T_REFERENCE?
+  public static final byte T_VOID      = 12;
 
   
   public static byte[] getArgumentTypes (String signature) {

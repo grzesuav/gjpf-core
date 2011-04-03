@@ -20,8 +20,6 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ThreadInfo;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Return long from method
@@ -37,9 +35,6 @@ public class LRETURN extends ReturnInstruction {
 
   public void setReturnAttr (ThreadInfo ti, Object attr){
     ti.setLongOperandAttrNoClone(attr);
-  }
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
   }
 
   protected void storeReturnValue (ThreadInfo th) {

@@ -86,6 +86,12 @@ public class ClassFile {
     this.data = data;
   }
 
+  public ClassFile (byte[] data, int offset){
+    this.data = data;
+    pos = offset;
+  }
+
+
   public ClassFile (File file) throws ClassFileException {
     FileInputStream is = null;
     try {
@@ -313,6 +319,10 @@ public class ClassFile {
 
   public Object getCpValue (int i){
     return cpValue[i];
+  }
+
+  public int getCpTag (int i){
+    return data[cpPos[i]];
   }
 
   /**
@@ -844,7 +854,7 @@ public class ClassFile {
         case CONSTANT_LONG:  // Long_info { u1 tag; u4 high_bytes; u4 low_bytes; }
           dataIdx[i] = j++;
 
-          int lVal =  (data[j++]&0xff)<<56 | (data[j++]&0xff)<<48 | (data[j++]&0xff)<<40 | (data[j++]&0xff)<<32
+          long lVal =  (data[j++]&0xffL)<<56 | (data[j++]&0xffL)<<48 | (data[j++]&0xffL)<<40 | (data[j++]&0xffL)<<32
                     | (data[j++]&0xff)<<24 | (data[j++]&0xff)<<16 | (data[j++]&0xff)<<8 | (data[j++]&0xff);
           values[i] = new Long(lVal);
 
@@ -854,7 +864,7 @@ public class ClassFile {
         case CONSTANT_DOUBLE:  // Double_info  { u1 tag; u4 high_bytes; u4 low_bytes; }
           dataIdx[i] = j++;
 
-          int lBits = (data[j++]&0xff)<<56 | (data[j++]&0xff)<<48 | (data[j++]&0xff)<<40 | (data[j++]&0xff)<<32
+          long lBits = (data[j++]&0xffL)<<56 | (data[j++]&0xffL)<<48 | (data[j++]&0xffL)<<40 | (data[j++]&0xffL)<<32
                     | (data[j++]&0xff)<<24 | (data[j++]&0xff)<<16 | (data[j++]&0xff)<<8 | (data[j++]&0xff);
           double dVal = Double.longBitsToDouble(lBits);
           values[i] = new Double(dVal);
@@ -911,6 +921,8 @@ public class ClassFile {
     //--- second pass: store values of delegating constant values
     for (int i=1; i<cpCount; i++){
       Object v = cpValue[i];
+
+      // we store string and class constants as their utf8 string values
       if (v == CpInfo.ConstantClass || v == CpInfo.ConstantString){
          cpValue[i] = cpValue[u2(cpPos[i]+1)];
       }
@@ -1483,11 +1495,11 @@ public class ClassFile {
           break;
         case 18: // ldc
           cpIdx = readU1();
-          reader.ldc(cpIdx);
+          reader.ldc_(cpIdx);
           break;
         case 19: // ldc_w
           cpIdx = readU2();
-          reader.ldc_w(cpIdx);
+          reader.ldc_w_(cpIdx);
           break;
         case 20: // ldc2_w
           cpIdx = readU2();

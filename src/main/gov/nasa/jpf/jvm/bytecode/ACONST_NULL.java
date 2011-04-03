@@ -22,17 +22,13 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Push null
  * ... => ..., null
  */
 public class ACONST_NULL extends Instruction {
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
-
+  
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     // pushes a null onto the stack
     th.push(-1, true);

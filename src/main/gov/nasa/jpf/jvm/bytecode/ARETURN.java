@@ -20,8 +20,6 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ThreadInfo;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Return reference from method
@@ -30,9 +28,6 @@ import org.apache.bcel.classfile.ConstantPool;
 public class ARETURN extends ReturnInstruction {
   int ret;
   
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
-
   protected void storeReturnValue (ThreadInfo th) {
     ret = th.pop();
   }

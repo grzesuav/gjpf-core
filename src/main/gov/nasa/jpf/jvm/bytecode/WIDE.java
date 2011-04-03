@@ -22,7 +22,6 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
-import org.apache.bcel.classfile.ConstantPool;
 
 /**
  * modifies following insn, no stack manipulation
@@ -46,12 +45,6 @@ public class WIDE extends Instruction {
   public Instruction execute(SystemState ss, KernelState ks, ThreadInfo ti) {
     // nothing, BCEL doesn't even pass this on;
     return getNext(ti);
-  }
-
-  @Override
-  protected void setPeer(org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    // nothing, BCEL handles this transparently
-    //isWide = true;
   }
 
   public void accept(InstructionVisitor insVisitor) {

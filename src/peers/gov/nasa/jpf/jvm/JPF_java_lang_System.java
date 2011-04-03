@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.Map;
 
-import org.apache.bcel.util.ClassPath;
+import gov.nasa.jpf.classfile.ClassPath;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFConfigException;

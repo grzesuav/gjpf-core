@@ -30,9 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * this is the new InstructionFactory
  */
-public class ByteCodeFactory implements ByteCodeReader {
+public class InstructionFactory implements ByteCodeReader {
 
   protected ClassFile cf;
   protected MethodInfo mi;
@@ -44,22 +44,57 @@ public class ByteCodeFactory implements ByteCodeReader {
   protected int pc;
   protected int idx;
 
+  public InstructionFactory(){
+    // nothing here
+  }
 
-  public ByteCodeFactory (ClassFile cf, MethodInfo mi, int codeLength){
+  public InstructionFactory (ClassFile cf, MethodInfo mi, int codeLength){
+    initialize(cf, mi, codeLength);
+  }
+
+  public void initialize (ClassFile cf, MethodInfo mi, int codeLength){
     this.cf = cf;
     this.mi = mi;
     
     // codeLength is always greater than the number of instructions
     code =  new ArrayList<Instruction>(codeLength);
     idx = 0;
+    pc = 0;
   }
-  
+
+  public void initialize (MethodInfo mi){
+    this.cf = null;
+    this.mi = mi;
+
+    code =  new ArrayList<Instruction>();
+    idx = 0;
+    pc = 0;
+  }
+
+  public void initialize (MethodInfo mi, int idx, int pc){
+    this.cf = null;
+    this.mi = mi;
+
+    code =  new ArrayList<Instruction>();
+    this.idx = 0;
+    this.pc = 0;
+  }
+
   protected void add(Instruction insn){
     insn.setMethodInfo(mi);
     insn.setLocation(idx++, pc);
     code.add(insn);
   }
-  
+
+  public Instruction getLastInstruction(){
+    int len = code.size();
+    if (len > 0){
+      return code.get(len-1);
+    } else {
+      return null;
+    }
+  }
+
   //--- the context
   public void startCode(Object tag) {
   }
@@ -132,7 +167,10 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void anewarray(int cpClassIndex) {
-    add( new ANEWARRAY(cf.classNameAt(cpClassIndex)));
+    anewarray(cf.classNameAt(cpClassIndex));
+  }
+  public void anewarray(String clsName){
+    add( new ANEWARRAY(clsName));
   }
 
   public void arraylength() {
@@ -164,7 +202,10 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void checkcast(int cpClassIndex) {
-    add( new CHECKCAST(cf.classNameAt(cpClassIndex)));  // ??
+    checkcast(cf.classNameAt(cpClassIndex));  // ??
+  }
+  public void checkcast(String clsName){
+    add( new CHECKCAST(clsName));
   }
 
   public void d2f() {
@@ -408,6 +449,9 @@ public class ByteCodeFactory implements ByteCodeReader {
     String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
     String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
 
+    getfield(fieldName, clsName, fieldDescriptor);
+  }
+  public void getfield(String fieldName, String clsName, String fieldDescriptor){
     add( new GETFIELD(fieldName, clsName, fieldDescriptor));
   }
 
@@ -416,8 +460,12 @@ public class ByteCodeFactory implements ByteCodeReader {
     String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
     String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
 
+    getStatic(fieldName, clsName, fieldDescriptor);
+  }
+  public void getStatic(String fieldName, String clsName, String fieldDescriptor){
     add( new GETSTATIC(fieldName, clsName, fieldDescriptor));
   }
+
 
   public void goto_(int pcOffset) {
     add( new GOTO(pc + pcOffset));
@@ -596,7 +644,10 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void instanceof_(int cpClassIndex) {
-    add( new INSTANCEOF(cf.classNameAt(cpClassIndex)));
+    instanceof_(cf.classNameAt(cpClassIndex));
+  }
+  public void instanceof_(String clsName){
+    add( new INSTANCEOF(clsName));
   }
 
   public void invokeinterface(int cpInterfaceMethodRefIndex, int count, int zero) {
@@ -604,14 +655,21 @@ public class ByteCodeFactory implements ByteCodeReader {
     String methodName = cf.interfaceMethodNameAt(cpInterfaceMethodRefIndex);
     String methodSignature = cf.interfaceMethodDescriptorAt(cpInterfaceMethodRefIndex);
 
+    invokeinterface(clsName, methodName, methodSignature);
+  }
+  public void invokeinterface(String clsName, String methodName, String methodSignature){
     add( new INVOKEINTERFACE(clsName, methodName, methodSignature));
   }
+
 
   public void invokespecial(int cpMethodRefIndex) {
     String clsName = cf.methodClassNameAt(cpMethodRefIndex);
     String methodName = cf.methodNameAt(cpMethodRefIndex);
     String methodSignature = cf.methodDescriptorAt(cpMethodRefIndex);
 
+    invokespecial(clsName, methodName, methodSignature);
+  }
+  public void invokespecial(String clsName, String methodName, String methodSignature){
     add( new INVOKESPECIAL(clsName, methodName, methodSignature));
   }
 
@@ -620,6 +678,9 @@ public class ByteCodeFactory implements ByteCodeReader {
     String methodName = cf.methodNameAt(cpMethodRefIndex);
     String methodSignature = cf.methodDescriptorAt(cpMethodRefIndex);
 
+    invokestatic(clsName, methodName, methodSignature);
+  }
+  public void invokestatic(String clsName, String methodName, String methodSignature){
     add( new INVOKESTATIC(clsName, methodName, methodSignature));
   }
 
@@ -628,8 +689,12 @@ public class ByteCodeFactory implements ByteCodeReader {
     String methodName = cf.methodNameAt(cpMethodRefIndex);
     String methodSignature = cf.methodDescriptorAt(cpMethodRefIndex);
 
+    invokevirtual(clsName, methodName, methodSignature);
+  }
+  public void invokevirtual(String clsName, String methodName, String methodSignature){
     add( new INVOKEVIRTUAL(clsName, methodName, methodSignature));
   }
+
 
   public void ior() {
     add( new IOR());
@@ -731,45 +796,68 @@ public class ByteCodeFactory implements ByteCodeReader {
     add( new LCONST(1L));
   }
 
-  public void ldc(int cpIntOrFloatOrStringIndex) {
-    Instruction insn;
-    Object v = cf.getCpValue(cpIntOrFloatOrStringIndex);
-    if (v instanceof String){
-      insn = new LDC((String)v, false);
-    } else if (v instanceof Integer){
-      insn = new LDC((Integer)v);
-    } else if (v instanceof Float){
-      insn = new LDC((Float)v);
-    } else {
-      insn = new LDC(cf.classNameAt(cpIntOrFloatOrStringIndex), true);
+// class constants don't work!!
+
+  public void ldc_(int cpIntOrFloatOrStringOrClassIndex) {
+    Object v = cf.getCpValue(cpIntOrFloatOrStringOrClassIndex);
+    switch (cf.getCpTag(cpIntOrFloatOrStringOrClassIndex)){
+      case ClassFile.CONSTANT_INTEGER:
+        ldc((Integer)v); break;
+      case ClassFile.CONSTANT_FLOAT:
+        ldc((Float)v); break;
+      case ClassFile.CONSTANT_STRING:
+        ldc((String)v, false); break;
+      case ClassFile.CONSTANT_CLASS:
+        ldc((String)v, true); break;
     }
-    add( insn);
+  }
+  public void ldc(int v){
+    add( new LDC(v));
+  }
+  public void ldc(float v){
+    add( new LDC(v));
+  }
+  public void ldc(String v, boolean isClass){
+    add( new LDC(v, isClass));
   }
 
-  public void ldc_w(int cpIntOrFloatOrStringIndex) {
-    Instruction insn;
-    Object v = cf.getCpValue(cpIntOrFloatOrStringIndex);
-    if (v instanceof String){
-      insn = new LDC_W((String)v, false);
-    } else if (v instanceof Integer){
-      insn = new LDC_W((Integer)v);
-    } else if (v instanceof Float){
-      insn = new LDC_W((Float)v);
-    } else {
-      insn = new LDC_W(cf.classNameAt(cpIntOrFloatOrStringIndex), true);
+
+  public void ldc_w_(int cpIntOrFloatOrStringOrClassIndex) {
+    Object v = cf.getCpValue(cpIntOrFloatOrStringOrClassIndex);
+    switch (cf.getCpTag(cpIntOrFloatOrStringOrClassIndex)){
+      case ClassFile.CONSTANT_INTEGER:
+        ldc_w((Integer)v); break;
+      case ClassFile.CONSTANT_FLOAT:
+        ldc_w((Float)v); break;
+      case ClassFile.CONSTANT_STRING:
+        ldc_w((String)v, false); break;
+      case ClassFile.CONSTANT_CLASS:
+        ldc_w((String)v, true); break;
     }
-    add( insn);
+  }
+  public void ldc_w(int v){
+    add( new LDC_W(v));
+  }
+  public void ldc_w(float v){
+    add( new LDC_W(v));
+  }
+  public void ldc_w(String v, boolean isClass){
+    add( new LDC_W(v, isClass));
   }
 
   public void ldc2_w(int cpLongOrDoubleIndex) {
-    Instruction insn;
     Object v = cf.getCpValue(cpLongOrDoubleIndex);
     if (v instanceof Long){
-      insn = new LDC2_W((Long)v);
+      ldc2_w((Long)v);
     } else {
-      insn = new LDC2_W((Integer)v);
+      ldc2_w((Double)v);
     }
-    add( insn);
+  }
+  public void ldc2_w(long v){
+    add( new LDC2_W(v));
+  }
+  public void ldc2_w(double v){
+    add( new LDC2_W(v));
   }
 
   public void ldiv() {
@@ -808,7 +896,9 @@ public class ByteCodeFactory implements ByteCodeReader {
   public void lookupswitch(int defaultPcOffset, int nEntries) {
     add( (switchInsn = new LOOKUPSWITCH(pc + defaultPcOffset, nEntries)));
 
-    cf.parseLookupSwitchEntries(this, nEntries);
+    if (cf != null){
+      cf.parseLookupSwitchEntries(this, nEntries);
+    }
   }
   public void lookupswitchEntry(int index, int match, int pcOffset) {
     ((LOOKUPSWITCH)switchInsn).setTarget(index, match, pc + pcOffset);
@@ -875,7 +965,10 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void multianewarray(int cpClassIndex, int dimensions) {
-    add( new MULTIANEWARRAY(cf.classNameAt(cpClassIndex), dimensions));
+    multianewarray(cf.classNameAt(cpClassIndex), dimensions);
+  }
+  public void multianewarray(String clsName, int dimensions){
+    add( new MULTIANEWARRAY(clsName, dimensions));
   }
 
   public void new_(int cpClassIndex) {
@@ -903,6 +996,9 @@ public class ByteCodeFactory implements ByteCodeReader {
     String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
     String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
 
+    putfield(fieldName, clsName, fieldDescriptor);
+  }
+  public void putfield(String fieldName, String clsName, String fieldDescriptor){
     add( new PUTFIELD(fieldName, clsName, fieldDescriptor));
   }
 
@@ -911,6 +1007,9 @@ public class ByteCodeFactory implements ByteCodeReader {
     String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
     String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
 
+    putstatic(fieldName, clsName, fieldDescriptor);
+  }
+  public void putstatic(String fieldName, String clsName, String fieldDescriptor){
     add( new PUTSTATIC(fieldName, clsName, fieldDescriptor));
   }
 
@@ -939,9 +1038,12 @@ public class ByteCodeFactory implements ByteCodeReader {
   }
 
   public void tableswitch(int defaultPcOffset, int low, int high) {
-    add( (switchInsn = new TABLESWITCH(pc + defaultPcOffset, low, high)));
+    switchInsn = new TABLESWITCH(pc + defaultPcOffset, low, high);
+    add( switchInsn);
 
-    cf.parseTableSwitchEntries(this, low, high);
+    if (cf != null){
+      cf.parseTableSwitchEntries(this, low, high);
+    }
   }
 
   public void tableswitchEntry(int value, int pcOffset) {
@@ -972,6 +1074,10 @@ public class ByteCodeFactory implements ByteCodeReader {
 
   public void executenative(NativeMethodInfo mi){
     add( new EXECUTENATIVE(mi));
+  }
+
+  public void nativereturn(){
+    add( new NATIVERETURN());
   }
 
   // this is never part of MethodInfo stored code

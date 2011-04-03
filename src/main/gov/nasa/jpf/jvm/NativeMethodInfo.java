@@ -69,16 +69,13 @@ public class NativeMethodInfo extends MethodInfo {
     this.peer = peer;
     this.mth = mth;
 
-    CodeBuilder cb = getCodeBuilder();
+    insnFactory.initialize(this);
+    insnFactory.startCode(this);
+ 
+    insnFactory.executenative(this);
+    insnFactory.nativereturn();
 
-    // just two insns in here, both synthetic
-    EXECUTENATIVE exec = insnFactory.create(null, EXECUTENATIVE.class);
-    exec.setExecutedMethod(this);
-    cb.append(exec);
-
-    cb.append( insnFactory.create(null, NATIVERETURN.class));
-
-    cb.setCode();
+    insnFactory.endCode(this);
   }
 
   public void replace( MethodInfo mi){

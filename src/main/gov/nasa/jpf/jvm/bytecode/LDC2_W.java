@@ -24,12 +24,6 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantDouble;
-import org.apache.bcel.classfile.ConstantLong;
-import org.apache.bcel.classfile.ConstantPool;
-import org.apache.bcel.generic.ConstantPoolGen;
-import org.apache.bcel.generic.Type;
-
 
 /**
  * Push long or double from runtime constant pool (wide index)
@@ -53,24 +47,6 @@ public class LDC2_W extends Instruction {
   }
 
   public LDC2_W() {}
-
-  public void setPeer (org.apache.bcel.generic.Instruction insn, ConstantPool cp) {
-    ConstantPoolGen cpg = ClassInfo.getConstantPoolGen(cp);
-    
-    org.apache.bcel.generic.LDC2_W ldc2_w = (org.apache.bcel.generic.LDC2_W) insn;
-    int index = ldc2_w.getIndex();
-    
-    org.apache.bcel.generic.Type t = ldc2_w.getType(cpg);
-
-    if (t == org.apache.bcel.generic.Type.LONG) {
-      type = Type.LONG;
-      value = ((ConstantLong) cp.getConstant( index)).getBytes();
-
-    } else {
-      type = Type.DOUBLE;
-      value = Types.doubleToLong(((ConstantDouble) cp.getConstant( index)).getBytes());
-    }
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     th.longPush(value);

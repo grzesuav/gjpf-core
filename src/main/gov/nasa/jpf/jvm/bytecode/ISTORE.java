@@ -29,8 +29,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class ISTORE extends LocalVariableInstruction implements StoreInstruction {
 
-  public ISTORE() {}
-
   public ISTORE(int localVarIndex){
     super(localVarIndex);
   }

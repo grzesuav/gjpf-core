@@ -21,9 +21,6 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.*;
 
-import org.apache.bcel.classfile.ConstantPool;
-import org.apache.bcel.generic.ConstantPoolGen;
-
 
 /**
  * abstraction for all invoke instructions
@@ -54,22 +51,11 @@ public abstract class InvokeInstruction extends Instruction {
   protected InvokeInstruction (String clsName, String methodName, String signature){
     this.cname = Types.getClassNameFromTypeName(clsName);
     this.signature = signature;
-    this.mname = MethodInfo.getUniqueName(mname, signature);
+    this.mname = MethodInfo.getUniqueName(methodName, signature);
   }
 
   protected InvokeInstruction () {}
 
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    org.apache.bcel.generic.InvokeInstruction ii;
-    ConstantPoolGen cpg;
-
-    cpg = ClassInfo.getConstantPoolGen(cp);
-    ii = (org.apache.bcel.generic.InvokeInstruction) i;
-
-    cname = ii.getReferenceType(cpg).toString();
-    signature = ii.getSignature(cpg);
-    mname = MethodInfo.getUniqueName(ii.getMethodName(cpg), signature);
-  }
 
   public int getLength() {
     return 3; // opcode, index1, index2
