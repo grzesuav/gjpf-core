@@ -57,6 +57,7 @@ public /*final*/ class Constructor <T> extends AccessibleObject implements Membe
   public native boolean isVarArgs();
   
   public native String toString();
+  public native String toGenericString();
 
   public boolean equals(Object obj) {
     if (obj instanceof Constructor) {

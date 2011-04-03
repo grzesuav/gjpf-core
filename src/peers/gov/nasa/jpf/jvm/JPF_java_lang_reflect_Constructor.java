@@ -157,6 +157,12 @@ public class JPF_java_lang_reflect_Constructor {
   public static int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){    
     MethodInfo mi = getMethodInfo(env, objRef);
 
-    return MethodUtils.toString(env, mi, mi.getClassName());
+    return MethodUtils.toString(env, mi, mi.getClassName(), false);
+  }
+
+  public static int toGenericString____Ljava_lang_String_2 (MJIEnv env, int objRef){
+    MethodInfo mi = getMethodInfo(env, objRef);
+
+    return MethodUtils.toGenericString(env, mi, mi.getClassName(), false);
   }
 }
