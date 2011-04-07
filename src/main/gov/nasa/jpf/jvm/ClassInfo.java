@@ -2138,7 +2138,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return new HashMap<String, MethodInfo>(0);
   }
 
-  ClassInfo loadSuperClass (String superName) {
+  protected ClassInfo loadSuperClass (String superName) {
     if (this == objectClassInfo) {
       return null;
     } else {
