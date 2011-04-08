@@ -45,7 +45,7 @@ public class ArrayListTest extends TestJPF {
   }
 
   @Test
-  public void toArray() {
+  public void testToArray() {
     if (verifyNoPropertyViolation()) {
       ArrayList<Integer> al = new ArrayList<Integer>();
       int length = 5;
@@ -60,6 +60,93 @@ public class ArrayListTest extends TestJPF {
       for (int i = 0; i < length; i++) {
         assert ints[i].equals(new Integer(i)) == true;
       }
+    }
+  }
+
+  @Test
+  public void testRemoveNullWhenNotExists() {
+    if (verifyNoPropertyViolation()) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(3);
+      }};
+
+      assert al.remove(null) == false;
+      Integer[] expected = {new Integer(1), new Integer(2), new Integer(3)};
+      assertList(al, expected);
+    }
+  }
+
+  @Test
+  public void testRemoveNullWhenExists() {
+    if (verifyNoPropertyViolation()) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(null); add(3);
+      }};
+
+      assert al.remove(null) == true;      
+      Integer[] expected = {new Integer(1), new Integer(2), new Integer(3)};
+      assertList(al, expected);
+    }
+  }
+
+  private void assertList(ArrayList<Integer> al, Integer[] expected) {
+    assert al.size() == expected.length;
+
+    for (int i = 0; i < expected.length; i++) {
+      Integer listI = al.get(i);
+      assert listI.equals(expected[i]) == true;
+    }
+  }
+
+  @Test
+  public void testRemoveFromBegining() {
+    if (verifyNoPropertyViolation()) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(3);
+      }};
+
+      assert al.remove(new Integer(1)) == true;
+      Integer[] expected = {new Integer(2), new Integer(3)};
+      assertList(al, expected);
+    }
+  }
+
+  @Test
+  public void testRemoveInTheMiddle() {
+    if (verifyNoPropertyViolation()) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(3);
+      }};
+
+      assert al.remove(new Integer(2)) == true;
+      Integer[] expected = {new Integer(1), new Integer(3)};
+      assertList(al, expected);
+    }
+  }
+
+  @Test
+  public void testRemoveAtTheEnd() {
+    if (verifyNoPropertyViolation()) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(3);
+      }};
+
+      assert al.remove(new Integer(3)) == true;
+      Integer[] expected = {new Integer(1), new Integer(2)};
+      assertList(al, expected);
+    }
+  }
+
+  @Test
+  public void testRemoveWhenNotExists() {
+    if (verifyNoPropertyViolation()) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(3);
+      }};
+
+      assert al.remove(new Integer(4)) == false;
+      Integer[] expected = {new Integer(1), new Integer(2), new Integer(3)};
+      assertList(al, expected);
     }
   }
 }

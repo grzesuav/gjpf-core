@@ -18,7 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.util.Arrays;
+import gov.nasa.jpf.util.InvocationDataStack;
+import gov.nasa.jpf.util.InvocationData;
 
 /**
  *
@@ -128,6 +129,110 @@ public class JPF_java_util_ArrayList {
     return cloneElementsRef;
   }
 
+  private static InvocationDataStack ids = new InvocationDataStack();
+
+  public static boolean remove__Ljava_lang_Object_2__Z(MJIEnv env, int thisRef, int objRef) {
+    if (objRef == MJIEnv.NULL) {
+      // No need to call equals method. Special case.
+      return removeNULL(env, thisRef);
+    }
+
+    ThreadInfo ti = env.getThreadInfo();
+    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+
+    InvocationData id = ids.get();
+    int elementRef = -1;
+
+    // We calculated equals and now can check it result value
+    if (frame != null && id.isRepetetiveCall(frame.getPrevious())) {
+      int result = frame.pop();
+      RemoveInvocationData rid = (RemoveInvocationData) id;
+
+      // Found object to delete
+      if (result != 0) {
+        internalRemove(env, rid.alEI, rid.size, rid.elementsRefs, rid.pos);
+        ids.remove();
+        return true;
+      }
+
+      if (rid.pos < rid.size) {
+        rid.pos++;
+        elementRef = rid.elementsRefs[rid.pos];
+      }
+      else {
+        return false;
+      }
+    }
+    // First call, or non-native method called remove
+    else {
+      ElementInfo alEI = env.getElementInfo(thisRef);
+      int size = alEI.getIntField("size");
+
+      // Empty array. Nothing to delete
+      if (size == 0) {
+        return false;
+      }
+
+      int elementsRef = alEI.getReferenceField("elementData");
+      Fields fields = env.getHeap().get(elementsRef).getFields();
+      int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
+      StackFrame topFrame = ti.getTopFrame();
+
+      // Cache for higher performance
+      RemoveInvocationData rid = new RemoveInvocationData(topFrame, alEI, elementReferences, size, 0);
+      ids.add(rid);
+
+      elementRef = elementReferences[0];
+    }
+
+
+    // Create equals method stub and call it
+    ClassInfo objCI = env.getClassInfo(objRef);
+    MethodInfo mi = objCI.getMethod("equals(Ljava/lang/Object;)Z", true);
+    MethodInfo stub = mi.createReflectionCallStub();
+    frame = new DirectCallStackFrame(stub, stub.getMaxStack(), stub.getMaxLocals());
+
+    frame.push(objRef, true);
+    frame.push(elementRef, true);
+
+    ti.pushFrame(frame);
+
+    return false;
+
+  }
+
+  private static boolean removeNULL(MJIEnv env, int thisRef) {
+    ElementInfo alEI = env.getElementInfo(thisRef);
+    int size = alEI.getIntField("size");
+
+    int elementsRef = alEI.getReferenceField("elementData");
+    Fields fields = env.getHeap().get(elementsRef).getFields();
+    int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
+
+    for (int i = 0; i < size; i++) {
+      if (elementReferences[i] == MJIEnv.NULL) {
+        internalRemove(env, alEI, size, elementReferences, i);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private static void internalRemove(MJIEnv env, ElementInfo alEI, int size, int elementReferences[], int pos) {
+    incModCount(alEI);
+    int numMoved = size - pos - 1;
+
+    if (numMoved > 0) {
+      System.arraycopy(elementReferences, pos + 1, elementReferences, pos, numMoved);
+    }
+
+    --size;
+    elementReferences[size] = MJIEnv.NULL;
+
+    alEI.setIntField("size", size);
+  }
+
   // modCount is used by list iterator to check if there were any modifications
   // of list between iterator methods calls
   private static void incModCount(ElementInfo alEI) {
@@ -135,4 +240,21 @@ public class JPF_java_util_ArrayList {
     alEI.setIntField("modCount", modCount + 1);
   }
 
+}
+
+class RemoveInvocationData extends InvocationData {
+
+  ElementInfo alEI;
+  int elementsRefs[];
+  int size;
+  int pos;
+
+  public RemoveInvocationData(StackFrame currentStackFrame, ElementInfo alEI, int elementsRefs[], int size, int pos) {
+    super(currentStackFrame);
+
+    this.alEI = alEI;
+    this.elementsRefs = elementsRefs;
+    this.size = size;
+    this.pos = pos;
+  }
 }
