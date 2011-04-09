@@ -21,20 +21,31 @@ package gov.nasa.jpf.util;
 import gov.nasa.jpf.jvm.StackFrame;
 
 /**
- *
+ * This class is used to save native data methods data between repetetive calls.
+ * Native method can call non-native methods during it's execution. In this case
+ * native method would be called again after non-native method finished. But non-native
+ * method can call another methods and one of them can be previously called
+ * native method.
+ * Each InvocationData object holds link on data that was saved by not finished native
+ * method that was called before.
  * @author Ivan Mushketik
  */
 public abstract class InvocationData {
 
   // top stack frame during first native method invocation
-  StackFrame currentStackFrame;
-  InvocationData prev;
+  protected StackFrame currentStackFrame;
+  protected InvocationData prev;
 
-  protected InvocationData(StackFrame currentStackFrame) {
+  protected InvocationData(StackFrame currentStackFrame, InvocationData prev) {
     this.currentStackFrame = currentStackFrame;
+    this.prev = prev;
   }
 
-  public boolean isRepetetiveCall(StackFrame newStackFrame) {
-    return currentStackFrame == newStackFrame;
+  public boolean isRepetetiveCall(StackFrame prevStackFrame) {
+    return currentStackFrame.equals(prevStackFrame);
+  }
+
+  public InvocationData getPrev() {
+    return prev;
   }
 }

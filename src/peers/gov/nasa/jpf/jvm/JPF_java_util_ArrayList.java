@@ -18,14 +18,44 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.util.InvocationDataStack;
+import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.search.SearchListener;
+import gov.nasa.jpf.search.SearchListenerAdapter;
 import gov.nasa.jpf.util.InvocationData;
+import java.util.HashMap;
 
 /**
  *
  * @author Ivan Mushketik
  */
 public class JPF_java_util_ArrayList {
+
+  private final static HashMap<Integer, InvocationData> topTable = new HashMap<Integer, InvocationData>();
+
+  private final static SearchListener modelListener = new SearchListenerAdapter() {
+
+    @Override
+    public void stateAdvanced(Search search) {
+      int stateId = JVM.getVM().getSystemState().getId();
+      topTable.put(stateId, top);
+    }
+
+    @Override
+    public void stateBacktracked(Search search) {
+      int stateId = JVM.getVM().getSystemState().getId();
+      top = topTable.get(stateId);
+    }
+
+    @Override
+    public void stateRestored(Search search) {
+      int stateId = JVM.getVM().getSystemState().getId();
+      top = topTable.get(stateId);
+    }
+  };
+
+  static {
+    JVM.getVM().getJPF().addListener(modelListener);
+  }
 
   public static void $init__I__V(MJIEnv env, int thisRef, int initialCapacity) {
     if (initialCapacity < 0) {
@@ -129,7 +159,7 @@ public class JPF_java_util_ArrayList {
     return cloneElementsRef;
   }
 
-  private static InvocationDataStack ids = new InvocationDataStack();
+  private static InvocationData top = null;
 
   public static boolean remove__Ljava_lang_Object_2__Z(MJIEnv env, int thisRef, int objRef) {
     if (objRef == MJIEnv.NULL) {
@@ -140,26 +170,28 @@ public class JPF_java_util_ArrayList {
     ThreadInfo ti = env.getThreadInfo();
     DirectCallStackFrame frame = ti.getReturnedDirectCall();
 
-    InvocationData id = ids.get();
     int elementRef = -1;
 
     // We calculated equals and now can check it result value
-    if (frame != null && id.isRepetetiveCall(frame.getPrevious())) {
+    if (top != null && top.isRepetetiveCall(frame.getPrevious())) {
       int result = frame.pop();
-      RemoveInvocationData rid = (RemoveInvocationData) id;
+      RemoveInvocationData rid = (RemoveInvocationData) top;
 
       // Found object to delete
       if (result != 0) {
         internalRemove(env, rid.alEI, rid.size, rid.elementsRefs, rid.pos);
-        ids.remove();
+        top = top.getPrev();
         return true;
       }
 
-      if (rid.pos < rid.size) {
+      if (rid.pos < rid.size - 1) {
+        rid = new RemoveInvocationData(rid);
         rid.pos++;
+        top = rid;
         elementRef = rid.elementsRefs[rid.pos];
       }
       else {
+        top = top.getPrev();
         return false;
       }
     }
@@ -179,8 +211,7 @@ public class JPF_java_util_ArrayList {
       StackFrame topFrame = ti.getTopFrame();
 
       // Cache for higher performance
-      RemoveInvocationData rid = new RemoveInvocationData(topFrame, alEI, elementReferences, size, 0);
-      ids.add(rid);
+      top = new RemoveInvocationData(topFrame, top, alEI, elementReferences, size, 0);
 
       elementRef = elementReferences[0];
     }
@@ -249,12 +280,27 @@ class RemoveInvocationData extends InvocationData {
   int size;
   int pos;
 
-  public RemoveInvocationData(StackFrame currentStackFrame, ElementInfo alEI, int elementsRefs[], int size, int pos) {
-    super(currentStackFrame);
+  public RemoveInvocationData(StackFrame currentStackFrame, InvocationData prev, ElementInfo alEI, int elementsRefs[], int size, int pos) {
+    super(currentStackFrame, prev);
 
     this.alEI = alEI;
     this.elementsRefs = elementsRefs;
     this.size = size;
     this.pos = pos;
   }
+
+  public RemoveInvocationData(RemoveInvocationData rid) {
+    super(rid.currentStackFrame, rid.prev);
+
+    this.alEI = rid.alEI;
+    this.elementsRefs = rid.elementsRefs;
+    this.pos = rid.pos;
+    this.size = rid.size;
+  }
+
+  @Override
+  public String toString() {
+    return "RemoveInvocationData{" + "alEI=" + alEI + "elementsRefs=" + elementsRefs + "size=" + size + "pos=" + pos + '}';
+  }
+
 }
