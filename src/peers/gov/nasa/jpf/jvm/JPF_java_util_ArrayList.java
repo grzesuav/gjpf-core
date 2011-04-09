@@ -18,12 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.search.SearchListener;
-import gov.nasa.jpf.search.SearchListenerAdapter;
-import gov.nasa.jpf.util.InvocationData;
-import java.util.HashMap;
-
 /**
  *
  * @author Ivan Mushketik
@@ -109,9 +103,10 @@ public class JPF_java_util_ArrayList {
     Fields fields = env.getHeap().get(ref).getFields();
     int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
 
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < size; i++) {
       elementReferences[i] = MJIEnv.NULL;
-
+    }
+    
     alEI.setIntField("size", 0);
   }
 
@@ -132,16 +127,134 @@ public class JPF_java_util_ArrayList {
     return cloneElementsRef;
   }
 
-  private static void internalRemove(MJIEnv env, ElementInfo alEI, int size, int elementReferences[], int pos) {
-    incModCount(alEI);
-    int numMoved = size - pos - 1;
+  public static int toArray___3Ljava_lang_Object_2___3Ljava_lang_Object_2(MJIEnv env, int thisRef, int arrayRef) {
+    ElementInfo alEI = env.getElementInfo(thisRef);
+    int size = alEI.getIntField("size");
 
-    if (numMoved > 0) {
-      System.arraycopy(elementReferences, pos + 1, elementReferences, pos, numMoved);
+    int elementsRef = alEI.getReferenceField("elementData");
+    Fields fields = env.getHeap().get(elementsRef).getFields();
+    int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
+
+    Fields arrayFields = env.getHeap().get(arrayRef).getFields();
+    int arrayReferences[] = ((ReferenceArrayFields) arrayFields).asReferenceArray();
+
+    if (size <= arrayReferences.length) {
+      System.arraycopy(elementReferences, 0, arrayReferences, 0, size);
+
+      return arrayRef;
     }
 
-    --size;
-    elementReferences[size] = MJIEnv.NULL;
+
+    ElementInfo arrEI = env.getElementInfo(arrayRef);
+    String typeName = arrEI.getArrayType();
+
+    int newArrayRef = env.newObjectArray(typeName, size);
+    Fields newArrayFields = env.getHeap().get(newArrayRef).getFields();
+    int newArrayReferences[] = ((ReferenceArrayFields) newArrayFields).asReferenceArray();
+
+    System.arraycopy(elementReferences, 0, newArrayReferences, 0, size);
+
+    return newArrayRef;
+  }
+
+  public static int get__I__Ljava_lang_Object_2(MJIEnv env, int thisRef, int index) {
+    ElementInfo alEI = env.getElementInfo(thisRef);
+    int size = alEI.getIntField("size");
+
+    int elementsRef = alEI.getReferenceField("elementData");
+    Fields fields = env.getHeap().get(elementsRef).getFields();
+    int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
+
+    if (checkRange(env, size, index)) {
+      return elementReferences[index];
+    }
+    return MJIEnv.NULL;
+  }
+
+  public static int set__ILjava_lang_Object_2__Ljava_lang_Object_2(MJIEnv env, int thisRef, int index, int newObjRef) {
+    ElementInfo alEI = env.getElementInfo(thisRef);
+    int size = alEI.getIntField("size");
+
+    int elementsRef = alEI.getReferenceField("elementData");
+    Fields fields = env.getHeap().get(elementsRef).getFields();
+    int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
+
+    if (checkRange(env, size, index)) {
+      int oldRef = elementReferences[index];
+      elementReferences[index] = newObjRef;
+
+      return oldRef;
+    }
+    return MJIEnv.NULL;
+  }
+
+  public static boolean add__Ljava_lang_Object_2__Z(MJIEnv env, int thisRef, int newObjRef) {
+    ElementInfo alEI = env.getElementInfo(thisRef);
+    int size = alEI.getIntField("size");
+
+    ensureCapacity__I__V(env, thisRef, size + 1);
+
+    int elementsRef = alEI.getReferenceField("elementData");
+    Fields fields = env.getHeap().get(elementsRef).getFields();
+    int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
+    
+    elementReferences[size++] = newObjRef;
+
+    alEI.setIntField("size", size);
+
+    return true;
+  }
+
+  public static void add__ILjava_lang_Object_2__V(MJIEnv env, int thisRef, int index, int newObjRef) {
+    ElementInfo alEI = env.getElementInfo(thisRef);
+    int size = alEI.getIntField("size");
+
+    if (checkRange(env, size + 1, index)) {
+      incModCount(alEI);
+      ensureCapacity__I__V(env, thisRef, size + 1);
+
+      int elementsRef = alEI.getReferenceField("elementData");
+      Fields fields = env.getHeap().get(elementsRef).getFields();
+      int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
+
+      int toMove = size - index;
+      if (toMove > 0) {
+        System.arraycopy(elementReferences, index, elementReferences, index + 1, toMove);
+      }
+      elementReferences[index] = newObjRef;
+      size++;
+
+      alEI.setIntField("size", size);
+    }
+  }
+
+  public static int remove__I__Ljava_lang_Object_2(MJIEnv env, int thisRef, int index) {
+    ElementInfo alEI = env.getElementInfo(thisRef);
+    int size = alEI.getIntField("size");
+
+    int elementsRef = alEI.getReferenceField("elementData");
+    Fields fields = env.getHeap().get(elementsRef).getFields();
+    int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
+
+    if (checkRange(env, size, index)) {
+      int oldRef = elementReferences[index];
+      internalRemove(env, alEI, size, elementReferences, index);
+
+      return oldRef;
+    }
+
+    return MJIEnv.NULL;
+  }
+
+  private static void internalRemove(MJIEnv env, ElementInfo alEI, int size, int elementReferences[], int index) {
+    incModCount(alEI);
+    int numMoved = size - index - 1;
+
+    if (numMoved > 0) {
+      System.arraycopy(elementReferences, index + 1, elementReferences, index, numMoved);
+    }
+    
+    elementReferences[--size] = MJIEnv.NULL;
 
     alEI.setIntField("size", size);
   }
@@ -151,6 +264,15 @@ public class JPF_java_util_ArrayList {
   private static void incModCount(ElementInfo alEI) {
     int modCount = alEI.getIntField("modCount");
     alEI.setIntField("modCount", modCount + 1);
+  }
+
+  private static boolean checkRange(MJIEnv env, int size, int index) {
+    if (index < size && index >= 0) {
+      return true;
+    }
+    env.throwException("java.lang.IndexOutOfBoundsException",
+            "Index: " + index + ", Size: " + size);
+    return false;
   }
 
 }

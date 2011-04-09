@@ -61,30 +61,64 @@ public class ArrayListTest extends TestJPF {
         assert ints[i].equals(new Integer(i)) == true;
       }
     }
-  }
+  }  
 
   @Test
-  public void testRemoveNullWhenNotExists() {
+  public void testGetFromListRange() {
     if (verifyNoPropertyViolation()) {
       ArrayList<Integer> al = new ArrayList<Integer>() {{
         add(1); add(2); add(3);
       }};
 
-      assert al.remove(null) == false;
-      Integer[] expected = {new Integer(1), new Integer(2), new Integer(3)};
-      assertList(al, expected);
+      assert al.get(1) == 2;
     }
   }
 
   @Test
-  public void testRemoveNullWhenExists() {
-    if (verifyNoPropertyViolation()) {
+  public void testGetOutOfRange() {
+    if (verifyUnhandledException("java.lang.IndexOutOfBoundsException")) {
       ArrayList<Integer> al = new ArrayList<Integer>() {{
-        add(1); add(2); add(null); add(3);
+        add(1); add(2); add(3);
       }};
 
-      assert al.remove(null) == true;      
-      Integer[] expected = {new Integer(1), new Integer(2), new Integer(3)};
+      al.get(3);
+    }
+  }
+
+  @Test
+  public void testSetFromListRange() {
+    if (verifyNoPropertyViolation()) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(3);
+      }};
+
+      assert al.set(1, 5) == 2;
+
+      assert al.get(1) == 5;
+    }
+  }
+
+  @Test
+  public void testSetOutOfRange() {
+    if (verifyUnhandledException("java.lang.IndexOutOfBoundsException")) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(3);
+      }};
+
+      al.set(3, 5);
+    }
+  }
+
+  @Test
+  public void testAdd() {
+    if (verifyNoPropertyViolation()) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(3);
+      }};
+
+      assert al.add(4) == true;
+      Integer[] expected = {1, 2, 3, 4};
+
       assertList(al, expected);
     }
   }
@@ -99,54 +133,98 @@ public class ArrayListTest extends TestJPF {
   }
 
   @Test
-  public void testRemoveFromBegining() {
+  public void testRemove() {
     if (verifyNoPropertyViolation()) {
       ArrayList<Integer> al = new ArrayList<Integer>() {{
         add(1); add(2); add(3);
       }};
 
-      assert al.remove(new Integer(1)) == true;
-      Integer[] expected = {new Integer(2), new Integer(3)};
+      assert al.remove(1) == 2;
+      Integer[] expected = {1, 3};
+
       assertList(al, expected);
     }
   }
 
   @Test
-  public void testRemoveInTheMiddle() {
+  public void testRemoveOutOfRange() {
+    if (verifyUnhandledException("java.lang.IndexOutOfBoundsException")) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(3);
+      }};
+
+      al.remove(10);
+    }
+  }
+
+  @Test
+  public void testAddToIndex() {
     if (verifyNoPropertyViolation()) {
       ArrayList<Integer> al = new ArrayList<Integer>() {{
         add(1); add(2); add(3);
       }};
 
-      assert al.remove(new Integer(2)) == true;
-      Integer[] expected = {new Integer(1), new Integer(3)};
+      al.add(2, 4);
+      Integer[] expected = {1, 2, 4, 3};
+
       assertList(al, expected);
     }
   }
 
   @Test
-  public void testRemoveAtTheEnd() {
-    if (verifyNoPropertyViolation()) {
+  public void testAddToIndexOutOfBounds() {
+    if (verifyUnhandledException("java.lang.IndexOutOfBoundsException")) {
       ArrayList<Integer> al = new ArrayList<Integer>() {{
         add(1); add(2); add(3);
       }};
 
-      assert al.remove(new Integer(3)) == true;
-      Integer[] expected = {new Integer(1), new Integer(2)};
-      assertList(al, expected);
+      al.add(4, 4);
     }
   }
 
   @Test
-  public void testRemoveWhenNotExists() {
+  public void testToArrayEnoughSize() {
     if (verifyNoPropertyViolation()) {
       ArrayList<Integer> al = new ArrayList<Integer>() {{
         add(1); add(2); add(3);
       }};
 
-      assert al.remove(new Integer(4)) == false;
-      Integer[] expected = {new Integer(1), new Integer(2), new Integer(3)};
-      assertList(al, expected);
+      Integer place[] = new Integer[3];
+      Integer[] res = al.toArray(place);
+
+      assert res == place;
+
+      Integer expected[] = {1, 2, 3};
+
+      assertArraysEquals(expected, res);
     }
   }
+
+  private void assertArraysEquals(Integer[] expected, Integer[] res) {
+    assert expected.length == res.length;
+
+    for (int i = 0; i < expected.length; i++) {     
+
+      assert expected[i].equals(res[i]);
+    }
+  }
+
+  @Test
+  public void testToArrayNotEnoughSize() {
+    if (verifyNoPropertyViolation()) {
+      ArrayList<Integer> al = new ArrayList<Integer>() {{
+        add(1); add(2); add(3);
+      }};
+
+      Integer place[] = new Integer[1];
+      Integer[] res = al.toArray(place);
+
+      assert res != place;
+
+      Integer expected[] = {1, 2, 3};
+
+      assertArraysEquals(expected, res);
+    }
+  }
+
 }
