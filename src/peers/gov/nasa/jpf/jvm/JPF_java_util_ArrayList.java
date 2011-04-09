@@ -30,33 +30,6 @@ import java.util.HashMap;
  */
 public class JPF_java_util_ArrayList {
 
-  private final static HashMap<Integer, InvocationData> topTable = new HashMap<Integer, InvocationData>();
-
-  private final static SearchListener modelListener = new SearchListenerAdapter() {
-
-    @Override
-    public void stateAdvanced(Search search) {
-      int stateId = JVM.getVM().getSystemState().getId();
-      topTable.put(stateId, top);
-    }
-
-    @Override
-    public void stateBacktracked(Search search) {
-      int stateId = JVM.getVM().getSystemState().getId();
-      top = topTable.get(stateId);
-    }
-
-    @Override
-    public void stateRestored(Search search) {
-      int stateId = JVM.getVM().getSystemState().getId();
-      top = topTable.get(stateId);
-    }
-  };
-
-  static {
-    JVM.getVM().getJPF().addListener(modelListener);
-  }
-
   public static void $init__I__V(MJIEnv env, int thisRef, int initialCapacity) {
     if (initialCapacity < 0) {
       env.throwException("java.lang.IllegalArgumentException", "Illegal capacity + " + initialCapacity);
@@ -159,97 +132,6 @@ public class JPF_java_util_ArrayList {
     return cloneElementsRef;
   }
 
-  private static InvocationData top = null;
-
-  public static boolean remove__Ljava_lang_Object_2__Z(MJIEnv env, int thisRef, int objRef) {
-    if (objRef == MJIEnv.NULL) {
-      // No need to call equals method. Special case.
-      return removeNULL(env, thisRef);
-    }
-
-    ThreadInfo ti = env.getThreadInfo();
-    DirectCallStackFrame frame = ti.getReturnedDirectCall();
-
-    int elementRef = -1;
-
-    // We calculated equals and now can check it result value
-    if (top != null && top.isRepetetiveCall(frame.getPrevious())) {
-      int result = frame.pop();
-      RemoveInvocationData rid = (RemoveInvocationData) top;
-
-      // Found object to delete
-      if (result != 0) {
-        internalRemove(env, rid.alEI, rid.size, rid.elementsRefs, rid.pos);
-        top = top.getPrev();
-        return true;
-      }
-
-      if (rid.pos < rid.size - 1) {
-        rid = new RemoveInvocationData(rid);
-        rid.pos++;
-        top = rid;
-        elementRef = rid.elementsRefs[rid.pos];
-      }
-      else {
-        top = top.getPrev();
-        return false;
-      }
-    }
-    // First call, or non-native method called remove
-    else {
-      ElementInfo alEI = env.getElementInfo(thisRef);
-      int size = alEI.getIntField("size");
-
-      // Empty array. Nothing to delete
-      if (size == 0) {
-        return false;
-      }
-
-      int elementsRef = alEI.getReferenceField("elementData");
-      Fields fields = env.getHeap().get(elementsRef).getFields();
-      int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
-      StackFrame topFrame = ti.getTopFrame();
-
-      // Cache for higher performance
-      top = new RemoveInvocationData(topFrame, top, alEI, elementReferences, size, 0);
-
-      elementRef = elementReferences[0];
-    }
-
-
-    // Create equals method stub and call it
-    ClassInfo objCI = env.getClassInfo(objRef);
-    MethodInfo mi = objCI.getMethod("equals(Ljava/lang/Object;)Z", true);
-    MethodInfo stub = mi.createReflectionCallStub();
-    frame = new DirectCallStackFrame(stub, stub.getMaxStack(), stub.getMaxLocals());
-
-    frame.push(objRef, true);
-    frame.push(elementRef, true);
-
-    ti.pushFrame(frame);
-
-    return false;
-
-  }
-
-  private static boolean removeNULL(MJIEnv env, int thisRef) {
-    ElementInfo alEI = env.getElementInfo(thisRef);
-    int size = alEI.getIntField("size");
-
-    int elementsRef = alEI.getReferenceField("elementData");
-    Fields fields = env.getHeap().get(elementsRef).getFields();
-    int elementReferences[] = ((ReferenceArrayFields) fields).asReferenceArray();
-
-    for (int i = 0; i < size; i++) {
-      if (elementReferences[i] == MJIEnv.NULL) {
-        internalRemove(env, alEI, size, elementReferences, i);
-        return true;
-      }
-    }
-
-    return false;
-  }
-
   private static void internalRemove(MJIEnv env, ElementInfo alEI, int size, int elementReferences[], int pos) {
     incModCount(alEI);
     int numMoved = size - pos - 1;
@@ -269,38 +151,6 @@ public class JPF_java_util_ArrayList {
   private static void incModCount(ElementInfo alEI) {
     int modCount = alEI.getIntField("modCount");
     alEI.setIntField("modCount", modCount + 1);
-  }
-
-}
-
-class RemoveInvocationData extends InvocationData {
-
-  ElementInfo alEI;
-  int elementsRefs[];
-  int size;
-  int pos;
-
-  public RemoveInvocationData(StackFrame currentStackFrame, InvocationData prev, ElementInfo alEI, int elementsRefs[], int size, int pos) {
-    super(currentStackFrame, prev);
-
-    this.alEI = alEI;
-    this.elementsRefs = elementsRefs;
-    this.size = size;
-    this.pos = pos;
-  }
-
-  public RemoveInvocationData(RemoveInvocationData rid) {
-    super(rid.currentStackFrame, rid.prev);
-
-    this.alEI = rid.alEI;
-    this.elementsRefs = rid.elementsRefs;
-    this.pos = rid.pos;
-    this.size = rid.size;
-  }
-
-  @Override
-  public String toString() {
-    return "RemoveInvocationData{" + "alEI=" + alEI + "elementsRefs=" + elementsRefs + "size=" + size + "pos=" + pos + '}';
   }
 
 }
