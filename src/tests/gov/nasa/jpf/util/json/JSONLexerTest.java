@@ -121,4 +121,22 @@ public class JSONLexerTest extends TestJPF {
 
     assertTokenSequence(expectedTokens, lexer);
   }
+
+  @Test
+  public void testArrayTokens() {
+    String json = "{ "
+            + "[ ]"
+            + "}";
+    JSONLexer lexer = new JSONLexer(new StringReader(json));
+
+    Token expectedTokens[] = {
+      new Token(Token.Type.ObjectStart, "{"),
+      new Token(Token.Type.ArrayStart, "["),
+      new Token(Token.Type.ArrayEnd, "]"),
+      new Token(Token.Type.ObjectEnd, "}"),
+      new Token(Token.Type.DocumentEnd, null)
+    };
+
+    assertTokenSequence(expectedTokens, lexer);
+  }
 }

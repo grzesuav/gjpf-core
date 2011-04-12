@@ -81,7 +81,7 @@ public class JSONLexer {
       return new Token(Token.Type.ArrayStart, "[");
     }
 
-    if (c == '[') {
+    if (c == ']') {
       return new Token(Token.Type.ArrayEnd, "]");
     }
 
