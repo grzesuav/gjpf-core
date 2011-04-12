@@ -398,8 +398,9 @@ public class SimpleDot extends ListenerAdapter {
     pw.println(graphAttrs);
 
     pw.println();
-    pw.print("label=");
-    pw.println(app);
+    pw.print("label=\"");
+    pw.print(app);
+    pw.print("\"");
     pw.println();
   }
 
