@@ -19,7 +19,6 @@
 package gov.nasa.jpf.util.json;
 
 import gov.nasa.jpf.JPFException;
-import java.util.ArrayList;
 
 /**
  * JSON parser. Read tokenized stream from JSONTokenizer and returns root JSON
@@ -112,37 +111,9 @@ public class JSONParser {
       while (true) {
         Token key = consume(Token.Type.String);
         consume(Token.Type.KeyValueSeparator);
+        Value val = parseValue();
 
-        t = next();
-        switch (t.getType()) {
-          case Number:
-            pn.addValue(key.getValue(), new DoubleValue(t.getValue()));
-            break;
-
-          case String:
-            pn.addValue(key.getValue(), new StringValue(t.getValue()));
-            break;
-
-          case ArrayStart:
-            back();
-            pn.addArray(key.getValue(), parseArray());
-            break;
-
-          case ObjectStart:
-            back();
-            parseObject();
-            break;
-
-          case Identificator:
-            back();
-            pn.addValue(key.getValue(), parseIdentificator());
-            break;
-
-          default:
-            error("Unexpected token");
-            break;
-        }
-        
+        pn.addValue(key.getValue(), val);
 
         t = next();
         // If next token is comma there is one more key-value pair to read
@@ -160,15 +131,15 @@ public class JSONParser {
    * Parse array of JSON objects
    * @return parsed array of JSON objects
    */
-  private JSONObject[] parseArray() {
+  private ArrayValue parseArray() {
     consume(Token.Type.ArrayStart);
-    ArrayList<JSONObject> arrList = new ArrayList<JSONObject>();
+    ArrayValue arrayValue = new ArrayValue();
     Token t = next();
     if (t.getType() != Token.Type.ArrayEnd) {
       back();
       while (true) {
-        JSONObject n = parseObject();
-        arrList.add(n);
+        Value val = parseValue();
+        arrayValue.addValue(val);
 
         t = next();
         // If next token is comma there is one more object to parse
@@ -182,9 +153,8 @@ public class JSONParser {
       back();
     }
     consume(Token.Type.ArrayEnd);
-
-    JSONObject nodes[] = new JSONObject[arrList.size()];
-    return arrList.toArray(nodes);
+    
+    return arrayValue;
   }
 
   /**
@@ -213,5 +183,33 @@ public class JSONParser {
   // <2do> add explainable error
   private void error(String string) {
     throw new JPFException(string);
+  }
+
+  private Value parseValue() {
+    Token t = next();
+    switch (t.getType()) {
+      case Number:
+        return new DoubleValue(t.getValue());
+        
+      case String:
+        return new StringValue(t.getValue());
+        
+      case ArrayStart:
+        back();
+        return parseArray();
+        
+      case ObjectStart:
+        back();
+        return new JSONObjectValue(parseObject());
+        
+      case Identificator:
+        back();
+        return parseIdentificator();
+        
+      default:
+        error("Unexpected token");
+        return null;
+    }
+    
   }
 }

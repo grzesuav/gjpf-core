@@ -19,37 +19,40 @@
 package gov.nasa.jpf.util.json;
 
 import gov.nasa.jpf.JPFException;
+import java.util.ArrayList;
 
 /**
- * Boolean value from JSON document
+ * Array parsed from JSON document
  * @author Ivan Mushketik
  */
-class BooleanValue implements Value {
+public class ArrayValue implements Value {
 
-  Boolean value;
-
-  public BooleanValue(boolean b) {
-    value = b;
-  }
+  ArrayList<Value> values = new ArrayList<Value>();
 
   public String getString() {
-    throw new JPFException("Can't convert boolean to string");
+    throw new JPFException("Can't convert array to string");
   }
 
   public Double getDouble() {
-    throw new JPFException("Can't convert boolean to double");
-  }
-
-  public Boolean getBoolean() {
-    return value;
+    throw new JPFException("Can't convert array to double");
   }
 
   public JSONObject getObject() {
-    throw new JPFException("Can't convert boolean to JSON object");
+    throw new JPFException("Can't convert array to object");
   }
 
   public Value[] getArray() {
-    throw new JPFException("Can't convert boolean to array");
+    Value[] result = new Value[values.size()];
+
+    return values.toArray(result);
+  }
+
+  public Boolean getBoolean() {
+    throw new JPFException("Can't convert array to boolean");
+  }
+
+  void addValue(Value value) {
+    values.add(value);
   }
 
 }

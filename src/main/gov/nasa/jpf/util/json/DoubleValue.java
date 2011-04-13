@@ -44,4 +44,12 @@ public class DoubleValue implements Value {
     throw new JPFException("Can't convert number to boolean");
   }
 
+  public JSONObject getObject() {
+    throw new JPFException("Can't convert number to object");
+  }
+
+  public Value[] getArray() {
+    throw new JPFException("Can't convert number to array");
+  }
+
 }

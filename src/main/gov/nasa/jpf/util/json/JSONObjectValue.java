@@ -21,35 +21,35 @@ package gov.nasa.jpf.util.json;
 import gov.nasa.jpf.JPFException;
 
 /**
- * Boolean value from JSON document
+ *
  * @author Ivan Mushketik
  */
-class BooleanValue implements Value {
+class JSONObjectValue implements Value {
 
-  Boolean value;
+  JSONObject object;
 
-  public BooleanValue(boolean b) {
-    value = b;
+  public JSONObjectValue(JSONObject parseObject) {
+    object = parseObject;
   }
 
   public String getString() {
-    throw new JPFException("Can't convert boolean to string");
+    throw new JPFException("Can't convert JSON object to string");
   }
 
   public Double getDouble() {
-    throw new JPFException("Can't convert boolean to double");
-  }
-
-  public Boolean getBoolean() {
-    return value;
+    throw new JPFException("Can't convert JSON object to double");
   }
 
   public JSONObject getObject() {
-    throw new JPFException("Can't convert boolean to JSON object");
+    return object;
   }
 
   public Value[] getArray() {
-    throw new JPFException("Can't convert boolean to array");
+    throw new JPFException("Can't convert JSON object to array");
+  }
+
+  public Boolean getBoolean() {
+    throw new JPFException("Can't convert JSON object to boolean");
   }
 
 }

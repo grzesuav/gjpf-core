@@ -44,4 +44,12 @@ public class StringValue implements Value {
     throw new JPFException("Can't convert string value to boolean");
   }
 
+  public JSONObject getObject() {
+    throw new JPFException("Can't convert string value to JSON object");
+  }
+
+  public Value[] getArray() {
+    throw new JPFException("Can't convert string value to array");
+  }
+
 }

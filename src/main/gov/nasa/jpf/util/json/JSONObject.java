@@ -38,13 +38,6 @@ public class JSONObject{
     keyValues.put(key, value);
   }
 
-  void addArray(String key, JSONObject[] nodes) {
-    if (keyValues.containsKey(key)) {
-      throw new JPFException("Attempt to add two arrays with the same key in JSON node");
-    }
-    keyArrays.put(key, nodes);
-  }
-
   /**
    * Get value read from JSON document with specified key.
    * @param key - value's key.
@@ -52,22 +45,5 @@ public class JSONObject{
    */
   public Value getValue(String key) {
     return keyValues.get(key);
-  }
-
-  /**
-   * Get array from JSON document with specified key
-   * @param key - array's key
-   * @return read array
-   */
-  public JSONObject[] getArray(String key) {
-    JSONObject[] n = keyArrays.get(key);
-    if (n == null) {
-      return null;
-    }
-
-    JSONObject[] res = new JSONObject[n.length];
-    System.arraycopy(n, 0, res, 0, n.length);
-
-    return res;
   }
 }

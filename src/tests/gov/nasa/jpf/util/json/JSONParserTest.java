@@ -42,13 +42,6 @@ public class JSONParserTest extends TestJPF {
     assert key2.getDouble() == 123;
   }
 
-  private JSONObject parseJSON(String json) {
-    JSONLexer lexer = new JSONLexer(json);
-    JSONParser parser = new JSONParser(lexer);
-    JSONObject o = parser.parse();
-    return o;
-  }
-
   @Test
   public void testEmptyObject() {
     String json = "{}";
@@ -66,9 +59,9 @@ public class JSONParserTest extends TestJPF {
             + "}";
     JSONObject o = parseJSON(json);
 
-    JSONObject objects[] = o.getArray("key");
-    assert objects[0].getValue("key1").getDouble() == 123;
-    assert objects[1].getValue("key2").getString().equals("str");
+    Value objects[] = o.getValue("key").getArray();
+    assert objects[0].getObject().getValue("key1").getDouble() == 123;
+    assert objects[1].getObject().getValue("key2").getString().equals("str") == true;
   }
 
   @Test
@@ -76,7 +69,7 @@ public class JSONParserTest extends TestJPF {
     String json = "{ \"emptyArr\" : [] }";
     JSONObject o = parseJSON(json);
 
-    assert o.getArray("noArray") == null;
+    assert o.getValue("noArray") == null;
   }
 
   @Test
@@ -91,5 +84,13 @@ public class JSONParserTest extends TestJPF {
     assert o.getValue("Null").getString() == null;
     assert o.getValue("True").getBoolean() == true;
     assert o.getValue("False").getBoolean() == false;
+  }
+
+
+  private JSONObject parseJSON(String json) {
+    JSONLexer lexer = new JSONLexer(json);
+    JSONParser parser = new JSONParser(lexer);
+    JSONObject o = parser.parse();
+    return o;
   }
 }

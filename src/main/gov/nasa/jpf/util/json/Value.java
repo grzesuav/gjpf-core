@@ -40,6 +40,18 @@ public interface Value {
   public Double getDouble();
 
   /**
+   * Get JSON object.
+   * @return JSON object value read from JSON document
+   */
+  public JSONObject getObject();
+
+  /**
+   * Get array value.
+   * @return array value read from JSON document
+   */
+  public Value[] getArray();
+
+  /**
    * Get boolean value.
    * @return boolean value read from JSON document.
    */

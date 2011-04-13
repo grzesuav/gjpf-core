@@ -39,4 +39,12 @@ class NullValue implements Value {
     return null;
   }
 
+  public JSONObject getObject() {
+    return null;
+  }
+
+  public Value[] getArray() {
+    return null;
+  }
+
 }
