@@ -141,5 +141,83 @@ public class VerifyTest extends TestJPF {
      }
   }
    
-  //... and many more to come
+  // <2do>... and many more to come
+
+  private String getInternalClassName(String className) {
+    return className;
+  }
+
+  private Object getFilledObject(Class<?> clazz, String jsonString) {
+    return Verify.createFromJSON(getInternalClassName(clazz.getName()), jsonString);
+  }
+
+  class MySup {
+    int j;
+  }
+
+
+  @Test
+  public void testFillFromJSONSingleClass() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"j\" : 123"
+              + "}";
+      MySup sup = (MySup) getFilledObject(MySup.class, json);
+      
+      assert sup.j == 123;
+    }
+  }
+
+  class MyClass extends MySup {
+    int i;
+  }
+
+  @Test
+  public void testFillFromJSONInheritance() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"j\" : 123,"
+              + "\"i\" : 321"
+              + "}";
+      MyClass sup = (MyClass) getFilledObject(MyClass.class, json);
+
+      assert sup.j == 123;
+      assert sup.i == 321;
+    }
+  }
+
+  class Primitives {
+    boolean z;
+    byte b;
+    short s;
+    int i;
+    long l;
+    float f;
+    double d;
+  }
+
+  @Test
+  public void testFillPrivimitivesFromJSON() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"z\" : true,"
+              + "\"b\" : 10,"
+              + "\"s\" : 1000,"
+              + "\"i\" : 321,"
+              + "\"l\" : 123456,"
+              + "\"f\" : 12.34,"
+              + "\"d\" : 23.45"
+              + "}";
+      Primitives p = (Primitives) getFilledObject(Primitives.class, json);
+
+      assert p.z == true;
+      assert p.b == 10;
+      assert p.s == 1000;
+      assert p.i == 321;
+      assert p.l == 123456;
+      assertEquals(12.34, p.f, 0.001);
+      assertEquals(12.34, p.f, 0.001);
+    }
+  }
+
 }

@@ -20,11 +20,17 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
+import gov.nasa.jpf.util.json.JSONLexer;
+import gov.nasa.jpf.util.json.JSONObject;
+import gov.nasa.jpf.util.json.JSONParser;
+import gov.nasa.jpf.util.json.Value;
+import java.util.HashMap;
 
 /**
  * native peer class for programmatic JPF interface (that can be used inside
@@ -653,5 +659,119 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
 
     System.out.println("~~~~~~~~~~~~~~~~~~~~~~~ end path output");
+  }
+
+  public static int createFromJSON__Ljava_lang_String_2Ljava_lang_String_2__Ljava_lang_Object_2(
+          MJIEnv env, int clsObjRef, int typeNameRef, int jsonStringRef) {
+
+    String typeName = env.getStringObject(typeNameRef);
+    String jsonString = env.getStringObject(jsonStringRef);
+
+    JSONLexer lexer = new JSONLexer(jsonString);
+    JSONParser parser = new JSONParser(lexer);
+    JSONObject jsonObject = parser.parse();
+    int newObjRef = env.newObject(typeName);
+    ElementInfo ei = env.getHeap().get(newObjRef);
+
+    if (ei != null) {
+      fillObject(ei, jsonObject);
+      return newObjRef;
+    }
+    else {
+      throw new JPFException("No such class " + typeName);
+    }
+  }
+
+  private static void fillObject(ElementInfo ei, JSONObject jsonObject) {
+    ClassInfo ci = ei.getClassInfo();
+    
+    while (ci != null) {
+      FieldInfo[] fields = ci.getDeclaredInstanceFields();
+
+      for (FieldInfo fi : fields) {
+        String fieldName = fi.getName();
+        Value val = jsonObject.getValue(fieldName);
+        if (val != null) {
+          String fieldTypeName = fi.getType();
+          Setter setter = SettersFactory.getSetter(fieldTypeName);
+
+          if (setter != null) {
+            setter.setValue(ei, fi, val);
+          } else {
+            throw new RuntimeException("Not implemented yet");
+          }
+
+        }
+      }
+      
+      ci = ci.getSuperClass();
+    }
+  }
+}
+
+class SettersFactory {
+
+  static private final HashMap<String, Setter> settersTable = new HashMap<String, Setter>();
+
+  static {
+    settersTable.put("boolean", new BoolSetter());
+    settersTable.put("byte", new ByteSetter());
+    settersTable.put("short", new ShortSetter());
+    settersTable.put("int", new IntSetter());
+    settersTable.put("long", new LongSetter());
+    settersTable.put("float", new FloatSetter());
+    settersTable.put("double", new DoubleSetter());
+  }
+
+  public static Setter getSetter(String fieldTypeName) {
+    return settersTable.get(fieldTypeName);
+  }
+}
+
+interface Setter {
+  public void setValue(ElementInfo ei, FieldInfo fi, Value value);
+}
+
+class BoolSetter implements Setter {
+
+  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+    ei.setBooleanField(fi.getName(), value.getBoolean());
+  }
+}
+
+class ByteSetter implements Setter {
+  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+    ei.setByteField(fi.getName(), (byte) value.getDouble().intValue());
+  }
+}
+
+class ShortSetter implements Setter {
+  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+    ei.setShortField(fi.getName(), (short) value.getDouble().intValue());
+  }
+}
+
+class IntSetter implements Setter {
+
+  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+    ei.setIntField(fi.getName(), value.getDouble().intValue());
+  }
+}
+
+class LongSetter implements Setter {
+  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+    ei.setLongField(fi.getName(), value.getDouble().longValue());
+  }
+}
+
+class FloatSetter implements Setter {
+  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+    ei.setFloatField(fi.getName(), value.getDouble().floatValue());
+  }
+}
+
+class DoubleSetter implements Setter {
+  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+    ei.setDoubleField(fi.getName(), value.getDouble());
   }
 }

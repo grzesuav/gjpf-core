@@ -412,4 +412,8 @@ public class Verify {
     // native
     return null;
   }
+
+  public static Object createFromJSON(String typeName, String json) {
+    return null;
+  }
 }
