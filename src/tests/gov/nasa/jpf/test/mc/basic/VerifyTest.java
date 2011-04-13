@@ -220,4 +220,22 @@ public class VerifyTest extends TestJPF {
     }
   }
 
+  class IntArr {
+    int ints[];
+  }
+
+  @Test
+  public void testFillIntArrayFromJSON() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"ints\" : [1, 2, 3]"
+              + "}";
+      IntArr ia = (IntArr) getFilledObject(IntArr.class, json);
+
+      assert ia.ints[0] == 1;
+      assert ia.ints[1] == 2;
+      assert ia.ints[2] == 3;      
+    }
+  }
+
 }

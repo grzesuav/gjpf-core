@@ -674,7 +674,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     ElementInfo ei = env.getHeap().get(newObjRef);
 
     if (ei != null) {
-      fillObject(ei, jsonObject);
+      fillObject(env, ei, jsonObject);
       return newObjRef;
     }
     else {
@@ -682,7 +682,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
   }
 
-  private static void fillObject(ElementInfo ei, JSONObject jsonObject) {
+  private static void fillObject(MJIEnv env, ElementInfo ei, JSONObject jsonObject) {
     ClassInfo ci = ei.getClassInfo();
     
     while (ci != null) {
@@ -691,12 +691,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       for (FieldInfo fi : fields) {
         String fieldName = fi.getName();
         Value val = jsonObject.getValue(fieldName);
-        if (val != null) {
-          String fieldTypeName = fi.getType();
-          Setter setter = SettersFactory.getSetter(fieldTypeName);
+        if (val != null) {          
+          Setter setter = SettersFactory.getSetter(fi);
 
           if (setter != null) {
-            setter.setValue(ei, fi, val);
+            setter.setValue(env, ei, fi, val);
           } else {
             throw new RuntimeException("Not implemented yet");
           }
@@ -723,55 +722,84 @@ class SettersFactory {
     settersTable.put("double", new DoubleSetter());
   }
 
-  public static Setter getSetter(String fieldTypeName) {
-    return settersTable.get(fieldTypeName);
+  public static Setter getSetter(FieldInfo fi) {
+    if (fi.getTypeClassInfo().isArray()) {
+      return new ArraySetter();
+    }
+
+    return settersTable.get(fi.getType());
   }
 }
 
 interface Setter {
-  public void setValue(ElementInfo ei, FieldInfo fi, Value value);
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value);
+}
+
+class ArraySetter implements Setter {
+
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+    Value vals[] = value.getArray();
+    String typeName = fi.getType();
+
+    if (typeName.equals("int[]")) {
+      int arrayRef = env.newIntArray(vals.length);
+      ElementInfo arrayEI = env.getHeap().get(arrayRef);
+      int[] ints = arrayEI.asIntArray();
+
+      for (int i = 0; i < vals.length; i++) {
+        ints[i] = vals[i].getDouble().intValue();
+      }
+
+      ei.setReferenceField(fi, arrayRef);
+    }
+    else {
+      throw new JPFException("Not yet implemented");
+    }
+    
+  }
+
 }
 
 class BoolSetter implements Setter {
 
-  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setBooleanField(fi.getName(), value.getBoolean());
   }
 }
 
 class ByteSetter implements Setter {
-  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setByteField(fi.getName(), (byte) value.getDouble().intValue());
   }
 }
 
 class ShortSetter implements Setter {
-  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setShortField(fi.getName(), (short) value.getDouble().intValue());
   }
 }
 
 class IntSetter implements Setter {
 
-  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setIntField(fi.getName(), value.getDouble().intValue());
   }
 }
 
 class LongSetter implements Setter {
-  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setLongField(fi.getName(), value.getDouble().longValue());
   }
 }
 
 class FloatSetter implements Setter {
-  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setFloatField(fi.getName(), value.getDouble().floatValue());
   }
 }
 
 class DoubleSetter implements Setter {
-  public void setValue(ElementInfo ei, FieldInfo fi, Value value) {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setDoubleField(fi.getName(), value.getDouble());
   }
 }
