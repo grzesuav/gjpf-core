@@ -274,4 +274,58 @@ public class VerifyTest extends TestJPF {
       assertEquals(23.45, p.d, 0.001);
     }
   }
+
+  class PrimitiveArrays {
+    boolean bools[];
+    byte bytes[];
+    short shorts[];
+    int ints[];
+    long longs[];
+    float floats[];
+    double doubles[];
+  }
+
+  @Test
+  public void testFillPrimitiveArrays() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"bools\" : [true, false, true],"
+              + "\"bytes\" : [-40, -30, -20],"
+              + "\"shorts\" : [2, 3, 4],"
+              + "\"ints\" : [1, 2, 3],"
+              + "\"longs\" : [1000, 2000, 3000],"
+              + "\"floats\" : [12.34, 23.45, 34.56],"
+              + "\"doubles\" : [-12.34, -23.45, -34.56]"
+              + "}";
+      PrimitiveArrays p = (PrimitiveArrays) getFilledObject(PrimitiveArrays.class, json);
+
+      assert p.bools[0] == true;
+      assert p.bools[1] == false;
+      assert p.bools[2] == true;
+
+      assert p.bytes[0] == -40;
+      assert p.bytes[1] == -30;
+      assert p.bytes[2] == -20;
+
+      assert p.shorts[0] == 2;
+      assert p.shorts[1] == 3;
+      assert p.shorts[2] == 4;
+
+      assert p.ints[0] == 1;
+      assert p.ints[1] == 2;
+      assert p.ints[2] == 3;
+
+      assert p.longs[0] == 1000;
+      assert p.longs[1] == 2000;
+      assert p.longs[2] == 3000;
+
+      assertEquals(12.34, p.floats[0], 0.0001);
+      assertEquals(23.45, p.floats[1], 0.0001);
+      assertEquals(34.56, p.floats[2], 0.0001);
+
+      assertEquals(-12.34, p.doubles[0], 0.0001);
+      assertEquals(-23.45, p.doubles[1], 0.0001);
+      assertEquals(-34.56, p.doubles[2], 0.0001);
+    }
+  }
 }

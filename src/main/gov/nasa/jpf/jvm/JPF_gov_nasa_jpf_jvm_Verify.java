@@ -748,21 +748,76 @@ class ArraySetter implements Setter {
   public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     Value vals[] = value.getArray();
     String typeName = fi.getType();
+    int arrayRef;
 
-    if (typeName.equals("int[]")) {
-      int arrayRef = env.newIntArray(vals.length);
+    if (typeName.equals("boolean[]")) {
+       arrayRef = env.newBooleanArray(vals.length);
+       ElementInfo arrayEI = env.getHeap().get(arrayRef);
+       boolean bools[] = arrayEI.asBooleanArray();
+
+       for (int i = 0; i < vals.length; i++) {
+        bools[i] = vals[i].getBoolean();
+      }
+    }
+    else if (typeName.equals("byte[]")) {
+       arrayRef = env.newByteArray(vals.length);
+       ElementInfo arrayEI = env.getHeap().get(arrayRef);
+       byte bytes[] = arrayEI.asByteArray();
+
+       for (int i = 0; i < vals.length; i++) {
+        bytes[i] = vals[i].getDouble().byteValue();
+      }
+    }
+    else if (typeName.equals("short[]")) {
+       arrayRef = env.newShortArray(vals.length);
+       ElementInfo arrayEI = env.getHeap().get(arrayRef);
+       short shorts[] = arrayEI.asShortArray();
+
+       for (int i = 0; i < vals.length; i++) {
+        shorts[i] = vals[i].getDouble().shortValue();
+      }
+    }
+    else if (typeName.equals("int[]")) {
+      arrayRef = env.newIntArray(vals.length);
       ElementInfo arrayEI = env.getHeap().get(arrayRef);
       int[] ints = arrayEI.asIntArray();
 
       for (int i = 0; i < vals.length; i++) {
         ints[i] = vals[i].getDouble().intValue();
-      }
+      }      
+    }
+    else if (typeName.equals("long[]")) {
+      arrayRef = env.newLongArray(vals.length);
+      ElementInfo arrayEI = env.getHeap().get(arrayRef);
+      long[] longs = arrayEI.asLongArray();
 
-      ei.setReferenceField(fi, arrayRef);
+      for (int i = 0; i < vals.length; i++) {
+        longs[i] = vals[i].getDouble().longValue();
+      }
+    }
+    else if (typeName.equals("float[]")) {
+      arrayRef = env.newFloatArray(vals.length);
+      ElementInfo arrayEI = env.getHeap().get(arrayRef);
+      float[] floats = arrayEI.asFloatArray();
+
+      for (int i = 0; i < vals.length; i++) {
+        floats[i] = vals[i].getDouble().floatValue();
+      }
+    }
+    else if (typeName.equals("double[]")) {
+      arrayRef = env.newDoubleArray(vals.length);
+      ElementInfo arrayEI = env.getHeap().get(arrayRef);
+      double[] doubles = arrayEI.asDoubleArray();
+
+      for (int i = 0; i < vals.length; i++) {
+        doubles[i] = vals[i].getDouble();
+      }
     }
     else {
       throw new JPFException("Not yet implemented");
     }
+
+    ei.setReferenceField(fi, arrayRef);
     
   }
 
