@@ -216,7 +216,7 @@ public class VerifyTest extends TestJPF {
       assert p.i == 321;
       assert p.l == 123456;
       assertEquals(12.34, p.f, 0.001);
-      assertEquals(12.34, p.f, 0.001);
+      assertEquals(23.45, p.d, 0.001);
     }
   }
 
@@ -238,4 +238,40 @@ public class VerifyTest extends TestJPF {
     }
   }
 
+  class Boxed {
+    Boolean t;
+    Boolean f;
+    Byte b;
+    Short s;
+    Integer i;
+    Long l;
+    Float fl;
+    Double d;
+  }
+
+  @Test
+  public void testFillBoxedPrimitivesFromJSON() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"t\" : true,"
+              + "\"f\" : false,"
+              + "\"b\" : 10,"
+              + "\"s\" : 1000,"
+              + "\"i\" : 321,"
+              + "\"l\" : 123456,"
+              + "\"fl\" : 12.34,"
+              + "\"d\" : 23.45"
+              + "}";
+      Boxed p = (Boxed) getFilledObject(Boxed.class, json);
+
+      assert p.t == true;
+      assert p.f == false;
+      assert p.b == 10;
+      assert p.s == 1000;
+      assert p.i == 321;
+      assert p.l == 123456;
+      assertEquals(12.34, p.fl, 0.001);
+      assertEquals(23.45, p.d, 0.001);
+    }
+  }
 }

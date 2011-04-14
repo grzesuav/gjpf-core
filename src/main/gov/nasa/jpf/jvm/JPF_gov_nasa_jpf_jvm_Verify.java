@@ -720,6 +720,14 @@ class SettersFactory {
     settersTable.put("long", new LongSetter());
     settersTable.put("float", new FloatSetter());
     settersTable.put("double", new DoubleSetter());
+
+    settersTable.put("java.lang.Boolean", new BoxedBoolSetter());
+    settersTable.put("java.lang.Byte", new BoxedByteSetter());
+    settersTable.put("java.lang.Short", new BoxedShortSetter());
+    settersTable.put("java.lang.Integer", new BoxedIntSetter());
+    settersTable.put("java.lang.Long", new BoxedLongSetter());
+    settersTable.put("java.lang.Float", new BoxedFloatSetter());
+    settersTable.put("java.lang.Double", new BoxedDoubleSetter());
   }
 
   public static Setter getSetter(FieldInfo fi) {
@@ -767,15 +775,60 @@ class BoolSetter implements Setter {
   }
 }
 
+class BoxedBoolSetter implements Setter {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+    Boolean read = value.getBoolean();
+    int boolRef = MJIEnv.NULL;
+
+    if (read != null) {
+      boolRef = env.newObject("java.lang.Boolean");
+      ElementInfo intEI = env.getElementInfo(boolRef);
+      intEI.setIntField("value", (read == true) ? 1 : 0);
+    }
+
+    ei.setReferenceField(fi.getName(), boolRef);
+  }
+}
+
 class ByteSetter implements Setter {
   public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setByteField(fi.getName(), (byte) value.getDouble().intValue());
   }
 }
 
+class BoxedByteSetter implements Setter {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+    Double read = value.getDouble();
+    int byteRef = MJIEnv.NULL;
+
+    if (read != null) {
+      byteRef = env.newObject("java.lang.Byte");
+      ElementInfo intEI = env.getElementInfo(byteRef);
+      intEI.setIntField("value", read.byteValue());
+    }
+
+    ei.setReferenceField(fi.getName(), byteRef);
+  }
+}
+
 class ShortSetter implements Setter {
   public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setShortField(fi.getName(), (short) value.getDouble().intValue());
+  }
+}
+
+class BoxedShortSetter implements Setter {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+    Double read = value.getDouble();
+    int shortRef = MJIEnv.NULL;
+
+    if (read != null) {
+      shortRef = env.newObject("java.lang.Short");
+      ElementInfo intEI = env.getElementInfo(shortRef);
+      intEI.setIntField("value", read.shortValue());
+    }
+
+    ei.setReferenceField(fi.getName(), shortRef);
   }
 }
 
@@ -786,9 +839,39 @@ class IntSetter implements Setter {
   }
 }
 
+class BoxedIntSetter implements Setter {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+    Double read = value.getDouble();
+    int intRef = MJIEnv.NULL;
+
+    if (read != null) {
+      intRef = env.newObject("java.lang.Integer");
+      ElementInfo intEI = env.getElementInfo(intRef);
+      intEI.setIntField("value", read.intValue());
+    }
+
+    ei.setReferenceField(fi.getName(), intRef);
+  }
+}
+
 class LongSetter implements Setter {
   public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setLongField(fi.getName(), value.getDouble().longValue());
+  }
+}
+
+class BoxedLongSetter implements Setter {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+    Double read = value.getDouble();
+    int longRef = MJIEnv.NULL;
+
+    if (read != null) {
+      longRef = env.newObject("java.lang.Long");
+      ElementInfo intEI = env.getElementInfo(longRef);
+      intEI.setLongField("value", read.longValue());
+    }
+
+    ei.setReferenceField(fi.getName(), longRef);
   }
 }
 
@@ -798,8 +881,42 @@ class FloatSetter implements Setter {
   }
 }
 
+class BoxedFloatSetter implements Setter {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+    Double read = value.getDouble();
+    int floatRef = MJIEnv.NULL;
+
+    if (read != null) {
+      floatRef = env.newObject("java.lang.Float");
+      ElementInfo intEI = env.getElementInfo(floatRef);
+
+      Float flt = read.floatValue();
+
+
+      intEI.setIntField("value", flt.floatToIntBits(flt));
+    }
+
+    ei.setReferenceField(fi.getName(), floatRef);
+  }
+}
+
 class DoubleSetter implements Setter {
   public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
     ei.setDoubleField(fi.getName(), value.getDouble());
+  }
+}
+
+class BoxedDoubleSetter implements Setter {
+  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+    Double read = value.getDouble();
+    int doubleRef = MJIEnv.NULL;
+
+    if (read != null) {
+      doubleRef = env.newObject("java.lang.Double");
+      ElementInfo intEI = env.getElementInfo(doubleRef);
+      intEI.setDoubleField("value", read.doubleValue());
+    }
+
+    ei.setReferenceField(fi.getName(), doubleRef);
   }
 }
