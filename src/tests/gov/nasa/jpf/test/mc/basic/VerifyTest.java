@@ -262,16 +262,16 @@ public class VerifyTest extends TestJPF {
               + "\"fl\" : 12.34,"
               + "\"d\" : 23.45"
               + "}";
-      Boxed p = (Boxed) getFilledObject(Boxed.class, json);
+      Boxed b = (Boxed) getFilledObject(Boxed.class, json);
 
-      assert p.t == true;
-      assert p.f == false;
-      assert p.b == 10;
-      assert p.s == 1000;
-      assert p.i == 321;
-      assert p.l == 123456;
-      assertEquals(12.34, p.fl, 0.001);
-      assertEquals(23.45, p.d, 0.001);
+      assert b.t == true;
+      assert b.f == false;
+      assert b.b == 10;
+      assert b.s == 1000;
+      assert b.i == 321;
+      assert b.l == 123456;
+      assertEquals(12.34, b.fl, 0.001);
+      assertEquals(23.45, b.d, 0.001);
     }
   }
 
@@ -297,35 +297,177 @@ public class VerifyTest extends TestJPF {
               + "\"floats\" : [12.34, 23.45, 34.56],"
               + "\"doubles\" : [-12.34, -23.45, -34.56]"
               + "}";
-      PrimitiveArrays p = (PrimitiveArrays) getFilledObject(PrimitiveArrays.class, json);
+      PrimitiveArrays pa = (PrimitiveArrays) getFilledObject(PrimitiveArrays.class, json);
 
-      assert p.bools[0] == true;
-      assert p.bools[1] == false;
-      assert p.bools[2] == true;
+      assert pa.bools[0] == true;
+      assert pa.bools[1] == false;
+      assert pa.bools[2] == true;
 
-      assert p.bytes[0] == -40;
-      assert p.bytes[1] == -30;
-      assert p.bytes[2] == -20;
+      assert pa.bytes[0] == -40;
+      assert pa.bytes[1] == -30;
+      assert pa.bytes[2] == -20;
 
-      assert p.shorts[0] == 2;
-      assert p.shorts[1] == 3;
-      assert p.shorts[2] == 4;
+      assert pa.shorts[0] == 2;
+      assert pa.shorts[1] == 3;
+      assert pa.shorts[2] == 4;
 
-      assert p.ints[0] == 1;
-      assert p.ints[1] == 2;
-      assert p.ints[2] == 3;
+      assert pa.ints[0] == 1;
+      assert pa.ints[1] == 2;
+      assert pa.ints[2] == 3;
 
-      assert p.longs[0] == 1000;
-      assert p.longs[1] == 2000;
-      assert p.longs[2] == 3000;
+      assert pa.longs[0] == 1000;
+      assert pa.longs[1] == 2000;
+      assert pa.longs[2] == 3000;
 
-      assertEquals(12.34, p.floats[0], 0.0001);
-      assertEquals(23.45, p.floats[1], 0.0001);
-      assertEquals(34.56, p.floats[2], 0.0001);
+      assertEquals(12.34, pa.floats[0], 0.0001);
+      assertEquals(23.45, pa.floats[1], 0.0001);
+      assertEquals(34.56, pa.floats[2], 0.0001);
 
-      assertEquals(-12.34, p.doubles[0], 0.0001);
-      assertEquals(-23.45, p.doubles[1], 0.0001);
-      assertEquals(-34.56, p.doubles[2], 0.0001);
+      assertEquals(-12.34, pa.doubles[0], 0.0001);
+      assertEquals(-23.45, pa.doubles[1], 0.0001);
+      assertEquals(-34.56, pa.doubles[2], 0.0001);
+    }
+  }
+
+  class InnerClass {
+    int i;
+  }
+
+  class OuterClass {
+    long l;
+    InnerClass ic;
+  }
+
+  @Test
+  public void testInnerClassFilling() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"l\" : 1234,"
+              + "\"ic\" : {"
+                  + "\"i\" : 4321"
+                  + "}"
+              + "}";
+
+      OuterClass oc = (OuterClass) getFilledObject(OuterClass.class, json);
+
+      assert oc.l == 1234;
+      assert oc.ic.i == 4321;
+    }
+  }
+
+  class MultiArray {
+    int intsInts[][];
+  }
+
+  @Test
+  public void testMultiArrayFilling() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"intsInts\" : [[1, 2, 3], [4, 5, 6]]"
+              + "}";
+
+      MultiArray ma = (MultiArray) getFilledObject(MultiArray.class, json);
+
+      assert ma.intsInts[0][0] == 1;
+      assert ma.intsInts[0][1] == 2;
+      assert ma.intsInts[0][2] == 3;
+
+      assert ma.intsInts[1][0] == 4;
+      assert ma.intsInts[1][1] == 5;
+      assert ma.intsInts[1][2] == 6;
+    }
+  }
+
+  class BoxIntsArr {
+    Integer ints[];
+  }
+
+  @Test
+  public void testBoxedTypesArrayFilling() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"ints\" : [1, 2, 3]"
+              + "}";
+
+      BoxIntsArr bia = (BoxIntsArr) getFilledObject(BoxIntsArr.class, json);
+
+      assert bia.ints[0] == 1;
+      assert bia.ints[1] == 2;
+      assert bia.ints[2] == 3;
+    }
+  }
+
+  class IC {
+    int i;
+  }
+
+  class ArrayOfObjects {
+    IC cls[];
+  }
+
+  @Test
+  public void testArrayOfObjectsFilling() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"cls\" : [{\"i\" : 1}, {\"i\" : 2}, {\"i\" : 3}]"
+              + "}";
+
+      ArrayOfObjects aoo = (ArrayOfObjects) getFilledObject(ArrayOfObjects.class, json);
+
+      assert aoo.cls[0].i == 1;
+      assert aoo.cls[1].i == 2;
+      assert aoo.cls[2].i == 3;
+    }
+  }
+
+  class MultObjectsArr {
+    IC cls[][];
+  }
+
+  @Test
+  public void testFillingMultArrayOfObjects() {
+      if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"cls\" : ["
+              + "[{\"i\" : 1}, {\"i\" : 2}, {\"i\" : 3}],"
+              + "[{\"i\" : 4}, {\"i\" : 5}, {\"i\" : 6}],"
+              + "[{\"i\" : 7}, {\"i\" : 8}, {\"i\" : 9}]"
+              + "]"
+              + "}";
+
+      MultObjectsArr moa = (MultObjectsArr) getFilledObject(MultObjectsArr.class, json);
+
+      assert moa.cls[0][0].i == 1;
+      assert moa.cls[0][1].i == 2;
+      assert moa.cls[0][2].i == 3;
+
+      assert moa.cls[1][0].i == 4;
+      assert moa.cls[1][1].i == 5;
+      assert moa.cls[1][2].i == 6;
+
+      assert moa.cls[2][0].i == 7;
+      assert moa.cls[2][1].i == 8;
+      assert moa.cls[2][2].i == 9;
+    }
+  }
+
+  class ClassWithString {
+    String s1;
+    String s2;
+  }
+
+  @Test
+  public void testFillStringValue() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"s1\" : \"val\","
+              + "\"s2\" : null"
+              + "}";
+
+      ClassWithString cws = (ClassWithString) getFilledObject(ClassWithString.class, json);
+
+      assert cws.s1.equals("val") == true;
+      assert cws.s2 == null;
     }
   }
 }

@@ -86,7 +86,6 @@ public class JSONParserTest extends TestJPF {
     assert o.getValue("False").getBoolean() == false;
   }
 
-
   private JSONObject parseJSON(String json) {
     JSONLexer lexer = new JSONLexer(json);
     JSONParser parser = new JSONParser(lexer);

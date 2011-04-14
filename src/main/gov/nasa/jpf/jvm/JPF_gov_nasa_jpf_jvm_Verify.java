@@ -682,75 +682,126 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
   }
 
-  private static void fillObject(MJIEnv env, ElementInfo ei, JSONObject jsonObject) {
+  protected static void fillObject(MJIEnv env, ElementInfo ei, JSONObject jsonObject) {
     ClassInfo ci = ei.getClassInfo();
-    
+
+    // Fill all fields for this class until it has a super class
     while (ci != null) {
       FieldInfo[] fields = ci.getDeclaredInstanceFields();
 
       for (FieldInfo fi : fields) {
         String fieldName = fi.getName();
         Value val = jsonObject.getValue(fieldName);
-        if (val != null) {          
-          Setter setter = SettersFactory.getSetter(fi);
 
-          if (setter != null) {
-            setter.setValue(env, ei, fi, val);
-          } else {
-            throw new RuntimeException("Not implemented yet");
+        // If a value was defined in JSON document
+        if (val != null) {
+          // Handle primitive types
+          if (!fi.isReference()) {
+            fillPrimitive(ei, fi, val);
           }
+          else {
+            // Field is not of the primitive type, try to handle special classes
+            Creator creator = CreatorsFactory.getCreator(fi.getType());
 
+            if (creator != null) {
+              int newObjRef = creator.create(env, fi.getType(), val);
+              ei.setReferenceField(fi, newObjRef);
+            // Not a special case. Fill it recursively
+            } else {
+              String typeName = fi.getType();
+              int fieldRef = env.newObject(typeName);
+              ElementInfo fieldEI = env.getElementInfo(fieldRef);
+
+              fillObject(env, fieldEI, val.getObject());
+              ei.setReferenceField(fi.getName(), fieldRef);
+            }
+          }
         }
       }
       
       ci = ci.getSuperClass();
     }
   }
+
+  private static void fillPrimitive(ElementInfo ei, FieldInfo fi, Value val) {
+    String primitiveName = fi.getType();
+
+    if (primitiveName.equals("boolean")) {
+      ei.setBooleanField(fi, val.getBoolean());
+    }
+    else if (primitiveName.equals("byte")) {
+      ei.setByteField(fi, val.getDouble().byteValue());
+    }
+    else if (primitiveName.equals("short")) {
+      ei.setShortField(fi, val.getDouble().shortValue());
+    }
+    else if (primitiveName.equals("int")) {
+      ei.setIntField(fi, val.getDouble().intValue());
+    }
+    else if (primitiveName.equals("long")) {
+      ei.setLongField(fi, val.getDouble().longValue());
+    }
+    else if (primitiveName.equals("float")) {
+      ei.setFloatField(fi, val.getDouble().floatValue());
+    }
+    else if (primitiveName.equals("double")) {
+      ei.setDoubleField(fi, val.getDouble());
+    }
+
+    
+  }
 }
 
-class SettersFactory {
+class CreatorsFactory {
 
-  static private final HashMap<String, Setter> settersTable = new HashMap<String, Setter>();
+  static private final HashMap<String, Creator> creatorsTable = new HashMap<String, Creator>();
 
   static {
-    settersTable.put("boolean", new BoolSetter());
-    settersTable.put("byte", new ByteSetter());
-    settersTable.put("short", new ShortSetter());
-    settersTable.put("int", new IntSetter());
-    settersTable.put("long", new LongSetter());
-    settersTable.put("float", new FloatSetter());
-    settersTable.put("double", new DoubleSetter());
-
-    settersTable.put("java.lang.Boolean", new BoxedBoolSetter());
-    settersTable.put("java.lang.Byte", new BoxedByteSetter());
-    settersTable.put("java.lang.Short", new BoxedShortSetter());
-    settersTable.put("java.lang.Integer", new BoxedIntSetter());
-    settersTable.put("java.lang.Long", new BoxedLongSetter());
-    settersTable.put("java.lang.Float", new BoxedFloatSetter());
-    settersTable.put("java.lang.Double", new BoxedDoubleSetter());
+    creatorsTable.put("java.lang.Boolean", new BoxedBoolCreator());
+    creatorsTable.put("java.lang.Byte", new BoxedByteCreator());
+    creatorsTable.put("java.lang.Short", new BoxedShortCreator());
+    creatorsTable.put("java.lang.Integer", new BoxedIntCreator());
+    creatorsTable.put("java.lang.Long", new BoxedLongCreator());
+    creatorsTable.put("java.lang.Float", new BoxedFloatCreator());
+    creatorsTable.put("java.lang.Double", new BoxedDoubleCreator());
+    creatorsTable.put("java.lang.String", new StringCreator());
   }
 
-  public static Setter getSetter(FieldInfo fi) {
-    if (fi.getTypeClassInfo().isArray()) {
+  public static Creator getCreator(String typeName) {
+    if (typeName.lastIndexOf('[') >= 0) {
       return new ArraySetter();
     }
 
-    return settersTable.get(fi.getType());
+    return creatorsTable.get(typeName);
   }
 }
 
-interface Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value);
+/**
+ * Creates new JPF from JSON value.
+ * @author Ivan Mushketik
+ */
+interface Creator {
+  /**
+   * Create new object, according to read value.
+   * @param env - MJI environment
+   * @param typeName - name of the new object's type
+   * @param value - value read from JSON document
+   * @return reference to the new object
+   */
+  public int create(MJIEnv env, String typeName, Value value);
 }
 
-class ArraySetter implements Setter {
+class ArraySetter implements Creator {
 
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
-    Value vals[] = value.getArray();
-    String typeName = fi.getType();
+  public int create(MJIEnv env, String typeName, Value value) {
+    Value vals[] = value.getArray();    
+
+    // Get name of array's elements types
+    String arrayElementType = typeName.substring(0, typeName.lastIndexOf('['));
     int arrayRef;
 
-    if (typeName.equals("boolean[]")) {
+    // Handle arrays of primitive types
+    if (arrayElementType.equals("boolean")) {
        arrayRef = env.newBooleanArray(vals.length);
        ElementInfo arrayEI = env.getHeap().get(arrayRef);
        boolean bools[] = arrayEI.asBooleanArray();
@@ -759,7 +810,7 @@ class ArraySetter implements Setter {
         bools[i] = vals[i].getBoolean();
       }
     }
-    else if (typeName.equals("byte[]")) {
+    else if (arrayElementType.equals("byte")) {
        arrayRef = env.newByteArray(vals.length);
        ElementInfo arrayEI = env.getHeap().get(arrayRef);
        byte bytes[] = arrayEI.asByteArray();
@@ -768,7 +819,7 @@ class ArraySetter implements Setter {
         bytes[i] = vals[i].getDouble().byteValue();
       }
     }
-    else if (typeName.equals("short[]")) {
+    else if (arrayElementType.equals("short")) {
        arrayRef = env.newShortArray(vals.length);
        ElementInfo arrayEI = env.getHeap().get(arrayRef);
        short shorts[] = arrayEI.asShortArray();
@@ -777,16 +828,16 @@ class ArraySetter implements Setter {
         shorts[i] = vals[i].getDouble().shortValue();
       }
     }
-    else if (typeName.equals("int[]")) {
+    else if (arrayElementType.equals("int")) {
       arrayRef = env.newIntArray(vals.length);
       ElementInfo arrayEI = env.getHeap().get(arrayRef);
       int[] ints = arrayEI.asIntArray();
 
       for (int i = 0; i < vals.length; i++) {
         ints[i] = vals[i].getDouble().intValue();
-      }      
+      }
     }
-    else if (typeName.equals("long[]")) {
+    else if (arrayElementType.equals("long")) {
       arrayRef = env.newLongArray(vals.length);
       ElementInfo arrayEI = env.getHeap().get(arrayRef);
       long[] longs = arrayEI.asLongArray();
@@ -795,7 +846,7 @@ class ArraySetter implements Setter {
         longs[i] = vals[i].getDouble().longValue();
       }
     }
-    else if (typeName.equals("float[]")) {
+    else if (arrayElementType.equals("float")) {
       arrayRef = env.newFloatArray(vals.length);
       ElementInfo arrayEI = env.getHeap().get(arrayRef);
       float[] floats = arrayEI.asFloatArray();
@@ -804,7 +855,7 @@ class ArraySetter implements Setter {
         floats[i] = vals[i].getDouble().floatValue();
       }
     }
-    else if (typeName.equals("double[]")) {
+    else if (arrayElementType.equals("double")) {
       arrayRef = env.newDoubleArray(vals.length);
       ElementInfo arrayEI = env.getHeap().get(arrayRef);
       double[] doubles = arrayEI.asDoubleArray();
@@ -813,25 +864,37 @@ class ArraySetter implements Setter {
         doubles[i] = vals[i].getDouble();
       }
     }
+    // Not an array of primitive types
     else {
-      throw new JPFException("Not yet implemented");
+      arrayRef = env.newObjectArray(arrayElementType, vals.length);
+      ElementInfo arrayEI = env.getElementInfo(arrayRef);
+
+      Fields fields = arrayEI.getFields();     
+
+      Creator creator = CreatorsFactory.getCreator(arrayElementType);
+      for (int i = 0; i < vals.length; i++) {
+        
+        int newObjRef;
+        if (creator != null) {
+          newObjRef = creator.create(env, arrayElementType, vals[i]);
+        }
+        else{
+          newObjRef = env.newObject(arrayElementType);
+          ElementInfo newObjEI = env.getElementInfo(newObjRef);
+          JPF_gov_nasa_jpf_jvm_Verify.fillObject(env, newObjEI, vals[i].getObject());
+        }
+
+        fields.setReferenceValue(i, newObjRef);
+      }
+
     }
 
-    ei.setReferenceField(fi, arrayRef);
-    
-  }
-
-}
-
-class BoolSetter implements Setter {
-
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
-    ei.setBooleanField(fi.getName(), value.getBoolean());
+    return arrayRef;
   }
 }
 
-class BoxedBoolSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+class BoxedBoolCreator implements Creator {
+  public int create(MJIEnv env, String typeName, Value value) {
     Boolean read = value.getBoolean();
     int boolRef = MJIEnv.NULL;
 
@@ -841,18 +904,12 @@ class BoxedBoolSetter implements Setter {
       intEI.setIntField("value", (read == true) ? 1 : 0);
     }
 
-    ei.setReferenceField(fi.getName(), boolRef);
+    return boolRef;
   }
 }
 
-class ByteSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
-    ei.setByteField(fi.getName(), (byte) value.getDouble().intValue());
-  }
-}
-
-class BoxedByteSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+class BoxedByteCreator implements Creator {
+  public int create(MJIEnv env, String typeName, Value value) {
     Double read = value.getDouble();
     int byteRef = MJIEnv.NULL;
 
@@ -862,18 +919,12 @@ class BoxedByteSetter implements Setter {
       intEI.setIntField("value", read.byteValue());
     }
 
-    ei.setReferenceField(fi.getName(), byteRef);
+    return byteRef;
   }
 }
 
-class ShortSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
-    ei.setShortField(fi.getName(), (short) value.getDouble().intValue());
-  }
-}
-
-class BoxedShortSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+class BoxedShortCreator implements Creator {
+  public int create(MJIEnv env, String typeName, Value value) {
     Double read = value.getDouble();
     int shortRef = MJIEnv.NULL;
 
@@ -883,19 +934,12 @@ class BoxedShortSetter implements Setter {
       intEI.setIntField("value", read.shortValue());
     }
 
-    ei.setReferenceField(fi.getName(), shortRef);
+    return shortRef;
   }
 }
 
-class IntSetter implements Setter {
-
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
-    ei.setIntField(fi.getName(), value.getDouble().intValue());
-  }
-}
-
-class BoxedIntSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+class BoxedIntCreator implements Creator {
+  public int create(MJIEnv env, String typeName, Value value) {
     Double read = value.getDouble();
     int intRef = MJIEnv.NULL;
 
@@ -905,18 +949,12 @@ class BoxedIntSetter implements Setter {
       intEI.setIntField("value", read.intValue());
     }
 
-    ei.setReferenceField(fi.getName(), intRef);
+    return intRef;
   }
 }
 
-class LongSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
-    ei.setLongField(fi.getName(), value.getDouble().longValue());
-  }
-}
-
-class BoxedLongSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+class BoxedLongCreator implements Creator {
+  public int create(MJIEnv env, String typeName, Value value) {
     Double read = value.getDouble();
     int longRef = MJIEnv.NULL;
 
@@ -926,18 +964,12 @@ class BoxedLongSetter implements Setter {
       intEI.setLongField("value", read.longValue());
     }
 
-    ei.setReferenceField(fi.getName(), longRef);
+    return longRef;
   }
 }
 
-class FloatSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
-    ei.setFloatField(fi.getName(), value.getDouble().floatValue());
-  }
-}
-
-class BoxedFloatSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+class BoxedFloatCreator implements Creator {
+  public int create(MJIEnv env, String typeName, Value value) {
     Double read = value.getDouble();
     int floatRef = MJIEnv.NULL;
 
@@ -951,18 +983,12 @@ class BoxedFloatSetter implements Setter {
       intEI.setIntField("value", flt.floatToIntBits(flt));
     }
 
-    ei.setReferenceField(fi.getName(), floatRef);
+    return floatRef;
   }
 }
 
-class DoubleSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
-    ei.setDoubleField(fi.getName(), value.getDouble());
-  }
-}
-
-class BoxedDoubleSetter implements Setter {
-  public void setValue(MJIEnv env, ElementInfo ei, FieldInfo fi, Value value) {
+class BoxedDoubleCreator implements Creator {
+  public int create(MJIEnv env, String typeName, Value value) {
     Double read = value.getDouble();
     int doubleRef = MJIEnv.NULL;
 
@@ -972,6 +998,21 @@ class BoxedDoubleSetter implements Setter {
       intEI.setDoubleField("value", read.doubleValue());
     }
 
-    ei.setReferenceField(fi.getName(), doubleRef);
+    return doubleRef;
   }
+}
+
+class StringCreator implements Creator {
+
+  public int create(MJIEnv env, String typeName, Value value) {
+    String strVal = value.getString();
+    int stringRef = MJIEnv.NULL;
+
+    if (strVal != null) {
+      stringRef = env.newString(strVal);      
+    }
+
+    return stringRef;
+  }
+
 }
