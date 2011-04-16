@@ -136,6 +136,10 @@ public class AnnotationInfo {
     if (def == null){ // Annotation not seen yet - we have to dig it out from the classfile
       try {
         byte[] data = locator.getClassData(annotationType);
+        if (data == null){
+          throw new JPFException("annotation class not found: " + annotationType);
+        }
+
         ClassFile cf = new ClassFile(data);
         cf.parse(valueCollector);
 
@@ -194,7 +198,8 @@ public class AnnotationInfo {
     return new ClassValue( Types.getClassNameFromTypeName(type));
   }
 
-  
+  // NOTE - never modify an Entry object since it might be shared between
+  // different instances of the same annotation type
   static class Entry {
     String key;
     Object value;
@@ -236,8 +241,43 @@ public class AnnotationInfo {
     this.name = name;
     this.entries = entries;
   }
-  
-  
+
+  /**
+   * check if this AnnotationInfo instance has not-yet-specified default
+   * values, which we have to load from the annotation classfile itself
+   *
+   * NOTE - this is set AFTER we got the explicitly specified values from
+   * the annotation expression
+   */
+  public void checkDefaultValues(ClassPath contextCp){
+    Entry[] defEntries = getDefaultEntries(contextCp, name);
+    int elen = entries.length;
+    
+    outer:
+    for (int i=0; i<defEntries.length; i++){
+      Entry de = defEntries[i];
+
+      // check if we already have an explicitly specified value for this entry
+      for (int j=0; j<elen; j++){
+        if (entries[j].key.equals(de.key)){
+          continue outer;
+        }
+      }
+
+      // add the default value
+      if (elen == 0){
+        entries = defEntries.clone(); // just set them all at once
+        return;
+
+      } else {
+        Entry[] newEntries = new Entry[elen + 1];
+        System.arraycopy(entries,0, newEntries,0, elen);
+        newEntries[elen] = de;
+        entries = newEntries;
+      }
+    }
+  }
+
   public String getName() {
     return name;
   }

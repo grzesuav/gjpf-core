@@ -72,15 +72,12 @@ public class INVOKECG extends Instruction {
       String mthName = callee.getName();
       String signature = callee.getSignature();
 
-      insnFactory.initialize(mi, insnIndex, position);
-      insnFactory.startCode(callee);
-
+      InvokeInstruction realInvoke;
       if (callee.isStatic()){
-        insnFactory.invokestatic(clsName, mthName, signature);
+        realInvoke = insnFactory.invokestatic(clsName, mthName, signature);
       } else {
-        insnFactory.invokevirtual(clsName, mthName, signature);
+        realInvoke = insnFactory.invokevirtual(clsName, mthName, signature);
       }
-      InvokeInstruction realInvoke = (InvokeInstruction)insnFactory.getLastInstruction();
       
       pushArguments(ti, call.getArguments(), call.getAttrs());
       

@@ -27,8 +27,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IF_ACMPEQ extends IfInstruction {
 
-  public IF_ACMPEQ() {}
-
   public IF_ACMPEQ(int targetPc) {
     super(targetPc);
   }

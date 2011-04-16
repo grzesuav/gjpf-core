@@ -118,14 +118,20 @@ public class ClassInfoTest extends TestJPF {
     protected ClassInfo loadSuperClass (String superName) {
       return null;
     }
+
+    protected CodeBuilder createCodeBuilder(){
+      InstructionFactory insnFactory = new InstructionFactory();
+      return new CodeBuilder(insnFactory, null, null);
+    }
+
+    protected void checkAnnotationDefaultValues(AnnotationInfo ai){
+      // nothing - we don't want annotation types to be resolved
+    }
   }
 
   @Test
   public void testClassFileInitialization() {
     File file = new File("build/tests/gov/nasa/jpf/jvm/ClassInfoTest$MyClass.class");
-
-    InstructionFactory ifact = new InstructionFactory();
-    MethodInfo.setInstructionFactory(ifact);
 
     try {
       ClassFile cf = new ClassFile(file);

@@ -27,8 +27,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IFEQ extends IfInstruction {
 
-  public IFEQ() {}
-
   public IFEQ(int targetPc) {
     super(targetPc);
   }

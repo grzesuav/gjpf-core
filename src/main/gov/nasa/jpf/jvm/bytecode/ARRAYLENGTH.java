@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -36,8 +37,9 @@ public class ARRAYLENGTH extends Instruction {
       return th.createAndThrowException("java.lang.NullPointerException",
                                         "array length of null object");
     }
-    
-    th.push(ks.heap.get(objref).arrayLength(), false);
+
+    ElementInfo ei = ks.heap.get(objref);
+    th.push(ei.arrayLength(), false);
 
     return getNext(th);
   }

@@ -27,6 +27,7 @@ import gov.nasa.jpf.jvm.*;
 
 import gov.nasa.jpf.annotation.FilterField;
 import gov.nasa.jpf.tool.RunTest;
+import gov.nasa.jpf.util.ClassSpec;
 import gov.nasa.jpf.util.JPFSiteUtils;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Reflection;
@@ -89,10 +90,15 @@ public abstract class TestJPF implements JPFShell  {
     }
   }
 
+  // it seems wrong to pull globalArgs here instead of setting it from
+  // RunTest, but RunTest has to make sure TestJPF is loaded through the
+  // JPFClassLoader, i.e. cannot directly reference this class.
+
   @FilterField static ArrayList<GlobalArg> globalArgs;
 
   protected static ArrayList<GlobalArg> getGlobalArgs() {
-    Config globalConf = RunTest.config;
+    // NOTE - this is only set if we execute tests from build.xml
+    Config globalConf = RunTest.getConfig();
     if (globalConf != null){
       ArrayList<GlobalArg> list = new ArrayList<GlobalArg>();
 
@@ -103,15 +109,6 @@ public abstract class TestJPF implements JPFShell  {
           String val = globalConf.getString(key);
           key = key.substring(5);
           list.add(new GlobalArg(key,val));
-        }
-      }
-
-      //--- set the classpath from <projectId>.test_classpath
-      String projectId = JPFSiteUtils.getCurrentProjectId();
-      if (projectId != null){
-        String testCp = globalConf.getString(projectId + ".test_classpath");
-        if (testCp != null){
-          list.add(new GlobalArg("classpath", testCp));
         }
       }
 
@@ -497,11 +494,15 @@ public abstract class TestJPF implements JPFShell  {
     runTests(testClass, testMethods);
   }
 
+  /**
+   * this is never executed under JPF
+   */
   protected JPF createAndRunJPF (String[] args){
     JPF jpf = null;
 
     Config conf = new Config(args);
 
+    //--- add global args (if we run under RunTest)
     if (globalArgs != null){
       for (GlobalArg ga : globalArgs){
         String key = ga.key;
@@ -510,7 +511,16 @@ public abstract class TestJPF implements JPFShell  {
       }
     }
 
-    // if we have any specific test property overrides, do so
+    //--- initialize the classpath from <projectId>.test_classpath
+    String projectId = JPFSiteUtils.getCurrentProjectId();
+    if (projectId != null) {
+      String testCp = conf.getString(projectId + ".test_classpath");
+      if (testCp != null) {
+        conf.append("classpath", testCp, ",");
+      }
+    }
+
+    //--- if we have any specific test property overrides, do so
     conf.promotePropertyCategory("test.");
 
     if (conf.getTarget() != null) {
@@ -699,13 +709,23 @@ public abstract class TestJPF implements JPFShell  {
 
     return jpf;
   }
-  protected boolean verifyJPFException (Class<? extends Throwable> xCls, String... args){
+  protected boolean verifyJPFException (ClassSpec xClsSpec, String... args){
     if (runDirectly) {
       return true;
+
     } else {
-      StackTraceElement caller = Reflection.getCallerElement();
-      args = appendTestClass(args, caller);
-      jpfException(xCls, args);
+      try {
+        Class<? extends Throwable> xCls = xClsSpec.asSubclass(Throwable.class);
+
+        StackTraceElement caller = Reflection.getCallerElement();
+        args = appendTestClass(args, caller);
+        jpfException(xCls, args);
+
+      } catch (ClassCastException ccx){
+        fail("not a property type: " + xClsSpec);
+      } catch (ClassNotFoundException cnfx){
+        fail("property class not found: " + xClsSpec);
+      }
       return false;
     }
   }
@@ -740,13 +760,22 @@ public abstract class TestJPF implements JPFShell  {
     fail("JPF failed to detect error: " + propertyCls.getName());
     return jpf;
   }
-  protected boolean verifyPropertyViolation (Class<? extends Property> propertyCls, String... args){
+  protected boolean verifyPropertyViolation (ClassSpec propertyClsSpec, String... args){
     if (runDirectly) {
       return true;
+
     } else {
-      StackTraceElement caller = Reflection.getCallerElement();
-      args = appendTestClass(args, caller);
-      propertyViolation(propertyCls, args);
+      try {
+        Class<? extends Property> propertyCls = propertyClsSpec.asSubclass(Property.class);
+        StackTraceElement caller = Reflection.getCallerElement();
+        args = appendTestClass(args, caller);
+        propertyViolation(propertyCls, args);
+
+      } catch (ClassCastException ccx){
+        fail("not a property type: " + propertyClsSpec);
+      } catch (ClassNotFoundException cnfx){
+        fail("property class not found: " + propertyClsSpec);
+      }
       return false;
     }
   }
@@ -803,7 +832,8 @@ public abstract class TestJPF implements JPFShell  {
     if (hasMain) {
       args = Misc.appendArray(args, className, methodName);
     } else {
-      args = Misc.appendArray(args, TestJPFHelper.class.getName(), className, methodName);  
+      // don't cause TestJPFHelper to be loaded when executing under JPF
+      args = Misc.appendArray(args, "gov.nasa.jpf.util.test.TestJPFHelper", className, methodName);
     }
     
     return args;
@@ -863,6 +893,19 @@ public abstract class TestJPF implements JPFShell  {
   public static void assertEquals(float expected, float actual, float delta){
     if (Math.abs(expected - actual) > delta) {
       fail("Math.abs(expected - actual) > delta : " + "Math.abs(" + expected + " - " + actual + ") > " + delta);
+    }
+  }
+
+  public static void assertArrayEquals(byte[] expected, byte[] actual){
+    if (((expected == null) != (actual == null)) ||
+        (expected.length != actual.length)){
+      fail("array sizes different");
+    }
+
+    for (int i=0; i<expected.length; i++){
+      if (expected[i] != actual[i]){
+        fail("array element" + i + " different, expected " + expected[i] + ", actual " + actual[i]);
+      }
     }
   }
 

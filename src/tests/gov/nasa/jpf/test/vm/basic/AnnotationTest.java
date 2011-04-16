@@ -162,7 +162,6 @@ public class AnnotationTest extends TestJPF {
     String b();
   }
 
-  @Deprecated
   @Test //----------------------------------------------------------------------
   @A6
   public void testSingleDefaultParamOk () {
@@ -171,7 +170,7 @@ public class AnnotationTest extends TestJPF {
         java.lang.reflect.Method method =
                 AnnotationTest.class.getMethod("testSingleDefaultParamOk");
         A6 annotation = method.getAnnotation(A6.class);
-
+        
         assert ("whatever".equals(annotation.value()));
 
         System.out.println(annotation);
@@ -232,6 +231,7 @@ public class AnnotationTest extends TestJPF {
 
   //--------------------------------------------------------------------
 
+  @Retention(RetentionPolicy.RUNTIME)
   @interface A8 {
     Class value();
   }

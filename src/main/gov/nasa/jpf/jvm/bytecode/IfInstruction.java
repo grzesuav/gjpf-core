@@ -33,8 +33,6 @@ public abstract class IfInstruction extends Instruction {
   
   protected boolean conditionValue;  /** value of last evaluation of branch condition */
 
-  protected IfInstruction() {}
-
   protected IfInstruction(int targetPosition){
     this.targetPosition = targetPosition;
   }
@@ -55,12 +53,7 @@ public abstract class IfInstruction extends Instruction {
   public boolean isBackJump () { 
     return (conditionValue) && (targetPosition <= position);
   }
-  
-  public void setPeer (org.apache.bcel.generic.Instruction insn,
-                       org.apache.bcel.classfile.ConstantPool cp) {
-    targetPosition = ((org.apache.bcel.generic.BranchInstruction) insn).getTarget().getPosition();
-  }
-  
+    
   /** 
    * retrieve value of jump condition from operand stack
    * (not ideal to have this public, but some listeners might need it for
@@ -71,6 +64,9 @@ public abstract class IfInstruction extends Instruction {
   public Instruction getTarget() {
     if (target == null) {
       target = mi.getInstructionAt(targetPosition);
+if (target == null){
+System.out.println("@@@ no target at: " + targetPosition);
+}
     }
     return target;
   }
@@ -123,7 +119,7 @@ public abstract class IfInstruction extends Instruction {
   
   public String toString () {
     if (asString == null) {
-      asString = getMnemonic() + " " + getTarget().getInstructionIndex();
+      asString = getMnemonic() + " " + targetPosition;
     }
     return asString;
   }

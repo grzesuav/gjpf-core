@@ -115,7 +115,7 @@ public class VerifyTest extends TestJPF {
   @Test
   public void backtrackNotificationAfterIgnore()
   {
-     if (verifyNoPropertyViolation("+listener+=," + CountBacktrack.class.getName()))
+     if (verifyNoPropertyViolation("+listener+=,gov.nasa.jpf.test.mc.basic.VerifyTest$CountBacktrack"))
      {
         if (Verify.getBoolean(false))
            Verify.ignoreIf(true);

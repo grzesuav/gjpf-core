@@ -184,7 +184,7 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
                                   int propClsRef, int jpfArgsRef){
     return MJIEnv.NULL;
   }
-  public static boolean verifyPropertyViolation__Ljava_lang_Class_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
+  public static boolean verifyPropertyViolation__Lgov_nasa_jpf_util_ClassSpec_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                   int propClsRef, int jpfArgsRef){
     return true;
   }
@@ -194,7 +194,7 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
                                   int xClsRef, int jpfArgsRef){
     return MJIEnv.NULL;
   }
-  public static boolean verifyJPFException__Ljava_lang_Class_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
+  public static boolean verifyJPFException__Lgov_nasa_jpf_util_ClassSpec_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                   int xClsRef, int jpfArgsRef){
     return true;
   }

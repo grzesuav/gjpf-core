@@ -41,7 +41,8 @@ public class JPF_java_lang_Class {
   }
   
   public static boolean isArray____Z (MJIEnv env, int robj) {
-    return getReferredClassInfo(env, robj).isArray();
+    ClassInfo ci = getReferredClassInfo(env, robj);
+    return ci.isArray();
   }
 
   public static int getComponentType____Ljava_lang_Class_2 (MJIEnv env, int robj) {
@@ -81,7 +82,7 @@ public class JPF_java_lang_Class {
 
     ElementInfo sei2 = env.getClassElementInfo(r1);
     ClassInfo   ci2 = sei2.getClassInfo();
-    
+
     return ci2.isInstanceOf( ci1.getName());
   }
   

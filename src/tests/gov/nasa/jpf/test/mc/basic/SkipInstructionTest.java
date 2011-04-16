@@ -55,7 +55,7 @@ public class SkipInstructionTest extends TestJPF {
   
   @Test public void testGETFIELD () {
 
-    if (verifyNoPropertyViolation("+listener=" + Listener.class.getName())){
+    if (verifyNoPropertyViolation("+listener=gov.nasa.jpf.test.mc.basic.SkipInstructionTest$Listener")){
       int i = answer; // to be intercepted by listener
     
       System.out.println(i);

@@ -69,13 +69,12 @@ public class NativeMethodInfo extends MethodInfo {
     this.peer = peer;
     this.mth = mth;
 
-    insnFactory.initialize(this);
-    insnFactory.startCode(this);
+    CodeBuilder cb = createCodeBuilder();
  
-    insnFactory.executenative(this);
-    insnFactory.nativereturn();
+    cb.executenative(this);
+    cb.nativereturn();
 
-    insnFactory.endCode(this);
+    cb.installCode();
   }
 
   public void replace( MethodInfo mi){

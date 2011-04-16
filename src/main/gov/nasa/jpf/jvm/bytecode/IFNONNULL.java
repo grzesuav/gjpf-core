@@ -27,8 +27,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IFNONNULL extends IfInstruction {
 
-  public IFNONNULL() {}
-
   public IFNONNULL(int targetPc) {
     super(targetPc);
   }

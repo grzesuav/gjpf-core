@@ -62,7 +62,7 @@ public class GOTO extends Instruction {
   
   public String toString () {
     if (asString == null) {
-      asString = getMnemonic() + " " + getTarget().getInstructionIndex();
+      asString = getMnemonic() + " " + targetPosition;
     }
     return asString;
   }

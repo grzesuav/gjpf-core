@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.classfile.ClassFile;
 
 import gov.nasa.jpf.jvm.bytecode.*;
 import gov.nasa.jpf.util.JPFLogger;
@@ -200,13 +201,11 @@ public class MethodInfo extends InfoObject implements Cloneable {
   }
   
   public static InstructionFactory getInstructionFactory() {
-    return insnFactory;
+    // we clone so that instruction factories could have state
+    // (although factories normally shouldn't)
+    return (InstructionFactory) insnFactory.clone();
   }
   
-  public static void setInstructionFactory (InstructionFactory newFactory){
-    insnFactory = newFactory;
-  }
-
   protected void setGenericSignature(String sig){
     genericSignature = sig;
   }
@@ -326,29 +325,38 @@ public class MethodInfo extends InfoObject implements Cloneable {
     mi.thrownExceptionClassNames = null;
     mi.uniqueName = mi.name;
 
-    insnFactory.initialize(mi);
-    insnFactory.startCode(mi);
+    CodeBuilder cb = mi.createCodeBuilder();
 
     if (isStatic()){
       mi.modifiers |= Modifier.STATIC;
 
       if (isClinit()) {
-        insnFactory.invokeclinit(ci);
+        cb.invokeclinit(ci);
       } else {
-        insnFactory.invokestatic(cname, name, signature);
+        cb.invokestatic(cname, name, signature);
       }
     } else if (name.equals("<init>") || isPrivate()){
-      insnFactory.invokespecial(cname, name, signature);
+      cb.invokespecial(cname, name, signature);
     } else {
-      insnFactory.invokevirtual(cname, name, signature);
+      cb.invokevirtual(cname, name, signature);
     }
 
-    insnFactory.directcallreturn();
-    insnFactory.endCode(mi);
+    cb.directcallreturn();
+    cb.installCode();
 
     return mi;
   }
-  
+
+  public CodeBuilder createCodeBuilder(){
+    InstructionFactory ifact = getInstructionFactory();
+    return new CodeBuilder(ifact, null, this);
+  }
+
+  public CodeBuilder createCodeBuilder(ClassFile cf){
+    InstructionFactory ifact = getInstructionFactory();
+    return new CodeBuilder(ifact, cf, this);
+  }
+
   /**
    * NOTE - this only works in conjunction with a special StackFrame,
    * the caller has to make sure the right operands are pushed for the call arguments!
@@ -563,6 +571,8 @@ public class MethodInfo extends InfoObject implements Cloneable {
         return code[i];
       }
     }
+
+dump();
 
     throw new JPFException("instruction not found");
   }
@@ -1082,4 +1092,13 @@ public class MethodInfo extends InfoObject implements Cloneable {
   public String toString() {
     return "MethodInfo[" + getFullName() + ']';
   }
+
+  // for debugging purposes
+  public void dump(){
+    System.out.println("@@--- " + this);
+    for (int i = 0; i < code.length; i++) {
+      System.out.printf("%2d [%d]: %s\n", i, code[i].getPosition(), code[i].toString());
+    }
+  }
+
 }

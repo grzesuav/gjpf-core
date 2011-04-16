@@ -51,14 +51,18 @@ public class TABLESWITCH extends SwitchInstruction {
   protected Instruction executeConditional (SystemState ss, KernelState ks, ThreadInfo ti){
     int value = ti.pop();
     int i = value-min;
+    int pc;
 
     if (i>=0 && i<targets.length){
       lastIdx = i;
+      pc = targets[i];
     } else {
-      lastIdx = i = target;
+      lastIdx = -1;
+      pc = target;
     }
 
-    return mi.getInstructionAt(targets[i]);
+    // <2do> this is BAD - we should compute the target insns just once
+    return mi.getInstructionAt(pc);
   }
 
 

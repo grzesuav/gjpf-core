@@ -27,8 +27,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IFGT extends IfInstruction {
 
-  public IFGT() {}
-
   public IFGT(int targetPc) {
     super(targetPc);
   }

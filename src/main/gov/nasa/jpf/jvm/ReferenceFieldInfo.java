@@ -70,18 +70,7 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
 
     if (constValue instanceof String){
       cv = constValue;
-      String v = (String)constValue;
-      // here the mess starts
-      //DynamicArea heap = DynamicArea.getHeap();
-      String s = v.toString();
-
-      if (s.charAt(0) == '"') {
-        s = s.substring(1, s.length() - 1); // chop off the double quotes
-        sInit = s;
-
-        //init = heap.newString(s, null);  // turn literal into a string object
-        // but how do we pin it down?
-      }
+      sInit = (String)constValue;
     } else {
       throw new JPFException ("unsupported reference initialization: " + constValue);
     }

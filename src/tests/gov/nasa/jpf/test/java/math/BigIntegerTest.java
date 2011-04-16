@@ -32,10 +32,11 @@ public class BigIntegerTest extends TestJPF {
 
       BigInteger big = new BigInteger("4200000000000000000");
       BigInteger o = new BigInteger("100000000000000");
-      BigInteger noSoBig = new BigInteger("1");
+      BigInteger notSoBig = new BigInteger("1");
 
-      BigInteger x = big.add(noSoBig);
+      BigInteger x = big.add(notSoBig);
       String s = x.toString();
+      System.out.println("x = " + s);
       assert s.equals("4200000000000000001");
 
       x = big.divide(o);

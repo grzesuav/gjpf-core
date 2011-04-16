@@ -26,8 +26,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IFLE extends IfInstruction {
 
-  public IFLE() {}
-
   public IFLE(int targetPc) {
     super(targetPc);
   }

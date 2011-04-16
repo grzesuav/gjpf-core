@@ -27,8 +27,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IFLT extends IfInstruction {
 
-  public IFLT() {}
-
   public IFLT(int targetPc) {
     super(targetPc);
   }

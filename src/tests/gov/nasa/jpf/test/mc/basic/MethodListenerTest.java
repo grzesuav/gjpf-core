@@ -32,8 +32,9 @@ import org.junit.Test;
  */
 public class MethodListenerTest extends TestJPF {
 
-  static String CLSNAME = MethodListenerTest.class.getName();
-  static String LISTENER = "+listener=" + Listener.class.getName();
+  // avoid loading JPF classes when running under JPF (specify classnames explicitly)
+  static String CLSNAME = "gov.nasa.jpf.test.mc.basic.MethodListenerTest";
+  static String LISTENER = "+listener=gov.nasa.jpf.test.mc.basic.MethodListenerTest$Listener";
 
   public static class Listener extends ListenerAdapter {
     String startMthName;

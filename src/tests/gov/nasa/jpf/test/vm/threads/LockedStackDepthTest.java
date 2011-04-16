@@ -36,7 +36,7 @@ import org.junit.Test;
  */
 public class LockedStackDepthTest extends TestJPF {
 
-  private static final String LISTENER = "+listener+=," + LockedStackDepth.class.getName();
+  private static final String LISTENER = "+listener+=,.listener.LockedStackDepth";
 
   @Test
   public void recursiveLock() {

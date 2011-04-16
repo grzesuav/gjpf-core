@@ -46,8 +46,6 @@ public class LDC2_W extends Instruction {
     type = Type.DOUBLE;
   }
 
-  public LDC2_W() {}
-
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     th.longPush(value);
 

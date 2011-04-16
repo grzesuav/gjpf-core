@@ -20,1068 +20,876 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.classfile.ByteCodeReader;
-import gov.nasa.jpf.classfile.ClassFile;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.NativeMethodInfo;
 import gov.nasa.jpf.util.Invocation;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * this is the new InstructionFactory
  */
-public class InstructionFactory implements ByteCodeReader {
-
-  protected ClassFile cf;
-  protected MethodInfo mi;
-
-  // have to cache this to set switch entries
-  protected SwitchInstruction switchInsn;
-
-  protected ArrayList<Instruction> code;
-  protected int pc;
-  protected int idx;
+public class InstructionFactory implements Cloneable {
 
   public InstructionFactory(){
     // nothing here
   }
 
-  public InstructionFactory (ClassFile cf, MethodInfo mi, int codeLength){
-    initialize(cf, mi, codeLength);
-  }
-
-  public void initialize (ClassFile cf, MethodInfo mi, int codeLength){
-    this.cf = cf;
-    this.mi = mi;
-    
-    // codeLength is always greater than the number of instructions
-    code =  new ArrayList<Instruction>(codeLength);
-    idx = 0;
-    pc = 0;
-  }
-
-  public void initialize (MethodInfo mi){
-    this.cf = null;
-    this.mi = mi;
-
-    code =  new ArrayList<Instruction>();
-    idx = 0;
-    pc = 0;
-  }
-
-  public void initialize (MethodInfo mi, int idx, int pc){
-    this.cf = null;
-    this.mi = mi;
-
-    code =  new ArrayList<Instruction>();
-    this.idx = 0;
-    this.pc = 0;
-  }
-
-  protected void add(Instruction insn){
-    insn.setMethodInfo(mi);
-    insn.setLocation(idx++, pc);
-    code.add(insn);
-  }
-
-  public Instruction getLastInstruction(){
-    int len = code.size();
-    if (len > 0){
-      return code.get(len-1);
-    } else {
-      return null;
+  public Object clone() {
+    try {
+      return super.clone();
+    } catch (CloneNotSupportedException cnsx){
+      throw new JPFException("InstructionFactory " + this.getClass().getName() + " does not support cloning");
     }
   }
-
-  //--- the context
-  public void startCode(Object tag) {
-  }
-
-  public void setPc(int pc) {
-    this.pc = pc;
-  }
-
-  public void endCode(Object tag) {
-    Instruction[] c = code.toArray(new Instruction[code.size()]);
-    mi.setCode(c);
-  }
-
 
   //--- the factory methods
-  public void aconst_null() {
-    add( new ACONST_NULL());
+  public ACONST_NULL aconst_null() {
+    return new ACONST_NULL();
   }
 
-  public void aload(int localVarIndex) {
-    add( new ALOAD(localVarIndex));
+  public ALOAD aload(int localVarIndex) {
+    return new ALOAD(localVarIndex);
   }
 
-  public void aload_0() {
-    add( new ALOAD(0));
+  public ALOAD aload_0() {
+    return new ALOAD(0);
   }
 
-  public void aload_1() {
-    add( new ALOAD(1));
+  public ALOAD aload_1() {
+    return new ALOAD(1);
   }
 
-  public void aload_2() {
-    add( new ALOAD(2));
+  public ALOAD aload_2() {
+    return new ALOAD(2);
   }
 
-  public void aload_3() {
-    add( new ALOAD(3));
+  public ALOAD aload_3() {
+    return new ALOAD(3);
   }
 
-  public void aaload() {
-    add( new AALOAD());
+  public AALOAD aaload() {
+    return new AALOAD();
   }
 
-  public void astore(int localVarIndex) {
-    add( new ASTORE(localVarIndex));
+  public ASTORE astore(int localVarIndex) {
+    return new ASTORE(localVarIndex);
   }
 
-  public void astore_0() {
-    add( new ASTORE(0));
+  public ASTORE astore_0() {
+    return new ASTORE(0);
   }
 
-  public void astore_1() {
-    add( new ASTORE(1));
+  public ASTORE astore_1() {
+    return new ASTORE(1);
   }
 
-  public void astore_2() {
-    add( new ASTORE(2));
+  public ASTORE astore_2() {
+    return new ASTORE(2);
   }
 
-  public void astore_3() {
-    add( new ASTORE(3));
+  public ASTORE astore_3() {
+    return new ASTORE(3);
   }
 
-  public void aastore() {
-    add( new AASTORE());
+  public AASTORE aastore() {
+    return new AASTORE();
   }
 
-  public void areturn() {
-    add( new ARETURN());
+  public ARETURN areturn() {
+    return new ARETURN();
   }
 
-  public void anewarray(int cpClassIndex) {
-    anewarray(cf.classNameAt(cpClassIndex));
+  public ANEWARRAY anewarray(String clsName){
+    return new ANEWARRAY(clsName);
   }
-  public void anewarray(String clsName){
-    add( new ANEWARRAY(clsName));
-  }
 
-  public void arraylength() {
-    add( new ARRAYLENGTH());
+  public ARRAYLENGTH arraylength() {
+    return new ARRAYLENGTH();
   }
 
-  public void athrow() {
-    add( new ATHROW());
+  public ATHROW athrow() {
+    return new ATHROW();
   }
 
-  public void baload() {
-    add( new BALOAD());
+  public BALOAD baload() {
+    return new BALOAD();
   }
 
-  public void bastore() {
-    add( new BASTORE());
+  public BASTORE bastore() {
+    return new BASTORE();
   }
 
-  public void bipush(int b) {
-    add( new BIPUSH(b));
+  public BIPUSH bipush(int b) {
+    return new BIPUSH(b);
   }
 
-  public void caload() {
-    add( new CALOAD());
+  public CALOAD caload() {
+    return new CALOAD();
   }
 
-  public void castore() {
-    add( new CASTORE());
+  public CASTORE castore() {
+    return new CASTORE();
   }
 
-  public void checkcast(int cpClassIndex) {
-    checkcast(cf.classNameAt(cpClassIndex));  // ??
-  }
-  public void checkcast(String clsName){
-    add( new CHECKCAST(clsName));
+  public CHECKCAST checkcast(String clsName){
+    return new CHECKCAST(clsName);
   }
 
-  public void d2f() {
-    add( new D2F());
+  public D2F d2f() {
+    return new D2F();
   }
 
-  public void d2i() {
-    add( new D2I());
+  public D2I d2i() {
+    return new D2I();
   }
 
-  public void d2l() {
-    add( new D2L());
+  public D2L d2l() {
+    return new D2L();
   }
 
-  public void dadd() {
-    add( new DADD());
+  public DADD dadd() {
+    return new DADD();
   }
 
-  public void daload() {
-    add( new DALOAD());
+  public DALOAD daload() {
+    return new DALOAD();
   }
 
-  public void dastore() {
-    add( new DASTORE());
+  public DASTORE dastore() {
+    return new DASTORE();
   }
 
-  public void dcmpg() {
-    add( new DCMPG());
+  public DCMPG dcmpg() {
+    return new DCMPG();
   }
 
-  public void dcmpl() {
-    add( new DCMPL());
+  public DCMPL dcmpl() {
+    return new DCMPL();
   }
 
-  public void dconst_0() {
-    add( new DCONST(0.0));
+  public DCONST dconst_0() {
+    return new DCONST(0.0);
   }
 
-  public void dconst_1() {
-    add( new DCONST(1.0));
+  public DCONST dconst_1() {
+    return new DCONST(1.0);
   }
 
-  public void ddiv() {
-    add( new DDIV());
+  public DDIV ddiv() {
+    return new DDIV();
   }
 
-  public void dload(int localVarIndex) {
-    add( new DLOAD(localVarIndex));
+  public DLOAD dload(int localVarIndex) {
+    return new DLOAD(localVarIndex);
   }
 
-  public void dload_0() {
-    add( new DLOAD(0));
+  public DLOAD dload_0() {
+    return new DLOAD(0);
   }
 
-  public void dload_1() {
-    add( new DLOAD(1));
+  public DLOAD dload_1() {
+    return new DLOAD(1);
   }
 
-  public void dload_2() {
-    add( new DLOAD(2));
+  public DLOAD dload_2() {
+    return new DLOAD(2);
   }
 
-  public void dload_3() {
-    add( new DLOAD(3));
+  public DLOAD dload_3() {
+    return new DLOAD(3);
   }
 
-  public void dmul() {
-    add( new DMUL());
+  public DMUL dmul() {
+    return new DMUL();
   }
 
-  public void dneg() {
-    add( new DNEG());
+  public DNEG dneg() {
+    return new DNEG();
   }
 
-  public void drem() {
-    add( new DREM());
+  public DREM drem() {
+    return new DREM();
   }
 
-  public void dreturn() {
-    add( new DRETURN());
+  public DRETURN dreturn() {
+    return new DRETURN();
   }
 
-  public void dstore(int localVarIndex) {
-    add( new DSTORE(localVarIndex));
+  public DSTORE dstore(int localVarIndex) {
+    return new DSTORE(localVarIndex);
   }
 
-  public void dstore_0() {
-    add( new DSTORE(0));
+  public DSTORE dstore_0() {
+    return new DSTORE(0);
   }
 
-  public void dstore_1() {
-    add( new DSTORE(1));
+  public DSTORE dstore_1() {
+    return new DSTORE(1);
   }
 
-  public void dstore_2() {
-    add( new DSTORE(2));
+  public DSTORE dstore_2() {
+    return new DSTORE(2);
   }
 
-  public void dstore_3() {
-    add( new DSTORE(3));
+  public DSTORE dstore_3() {
+    return new DSTORE(3);
   }
 
-  public void dsub() {
-    add( new DSUB());
+  public DSUB dsub() {
+    return new DSUB();
   }
 
-  public void dup() {
-    add( new DUP());
+  public DUP dup() {
+    return new DUP();
   }
 
-  public void dup_x1() {
-    add( new DUP_X1());
+  public DUP_X1 dup_x1() {
+    return new DUP_X1();
   }
 
-  public void dup_x2() {
-    add( new DUP_X2());
+  public DUP_X2 dup_x2() {
+    return new DUP_X2();
   }
 
-  public void dup2() {
-    add( new DUP2());
+  public DUP2 dup2() {
+    return new DUP2();
   }
 
-  public void dup2_x1() {
-    add( new DUP2_X1());
+  public DUP2_X1 dup2_x1() {
+    return new DUP2_X1();
   }
 
-  public void dup2_x2() {
-    add( new DUP2_X2());
+  public DUP2_X2 dup2_x2() {
+    return new DUP2_X2();
   }
 
-  public void f2d() {
-    add( new F2D());
+  public F2D f2d() {
+    return new F2D();
   }
 
-  public void f2i() {
-    add( new F2I());
+  public F2I f2i() {
+    return new F2I();
   }
 
-  public void f2l() {
-    add( new F2L());
+  public F2L f2l() {
+    return new F2L();
   }
 
-  public void fadd() {
-    add( new FADD());
+  public FADD fadd() {
+    return new FADD();
   }
 
-  public void faload() {
-    add( new FALOAD());
+  public FALOAD faload() {
+    return new FALOAD();
   }
 
-  public void fastore() {
-    add( new FASTORE());
+  public FASTORE fastore() {
+    return new FASTORE();
   }
 
-  public void fcmpg() {
-    add( new FCMPG());
+  public FCMPG fcmpg() {
+    return new FCMPG();
   }
 
-  public void fcmpl() {
-    add( new FCMPL());
+  public FCMPL fcmpl() {
+    return new FCMPL();
   }
 
-  public void fconst_0() {
-    add( new FCONST(0.0f));
+  public FCONST fconst_0() {
+    return new FCONST(0.0f);
   }
 
-  public void fconst_1() {
-    add( new FCONST(1.0f));
+  public FCONST fconst_1() {
+    return new FCONST(1.0f);
   }
 
-  public void fconst_2() {
-    add( new FCONST(2.0f));
+  public FCONST fconst_2() {
+    return new FCONST(2.0f);
   }
 
-  public void fdiv() {
-    add( new FDIV());
+  public FDIV fdiv() {
+    return new FDIV();
   }
 
-  public void fload(int localVarIndex) {
-    add( new FLOAD(localVarIndex));
+  public FLOAD fload(int localVarIndex) {
+    return new FLOAD(localVarIndex);
   }
 
-  public void fload_0() {
-    add( new FLOAD(0));
+  public FLOAD fload_0() {
+    return new FLOAD(0);
   }
 
-  public void fload_1() {
-    add( new FLOAD(1));
+  public FLOAD fload_1() {
+    return new FLOAD(1);
   }
 
-  public void fload_2() {
-    add( new FLOAD(2));
+  public FLOAD fload_2() {
+    return new FLOAD(2);
   }
 
-  public void fload_3() {
-    add( new FLOAD(3));
+  public FLOAD fload_3() {
+    return new FLOAD(3);
   }
 
-  public void fmul() {
-    add( new FMUL());
+  public FMUL fmul() {
+    return new FMUL();
   }
 
-  public void fneg() {
-    add( new FNEG());
+  public FNEG fneg() {
+    return new FNEG();
   }
 
-  public void frem() {
-    add( new FREM());
+  public FREM frem() {
+    return new FREM();
   }
 
-  public void freturn() {
-    add( new FRETURN());
+  public FRETURN freturn() {
+    return new FRETURN();
   }
 
-  public void fstore(int localVarIndex) {
-    add( new FSTORE(localVarIndex));
+  public FSTORE fstore(int localVarIndex) {
+    return new FSTORE(localVarIndex);
   }
 
-  public void fstore_0() {
-    add( new FSTORE(0));
+  public FSTORE fstore_0() {
+    return new FSTORE(0);
   }
 
-  public void fstore_1() {
-    add( new FSTORE(1));
+  public FSTORE fstore_1() {
+    return new FSTORE(1);
   }
 
-  public void fstore_2() {
-    add( new FSTORE(2));
+  public FSTORE fstore_2() {
+    return new FSTORE(2);
   }
 
-  public void fstore_3() {
-    add( new FSTORE(3));
+  public FSTORE fstore_3() {
+    return new FSTORE(3);
   }
 
-  public void fsub() {
-    add( new FSUB());
+  public FSUB fsub() {
+    return new FSUB();
   }
 
-  public void getfield(int cpFieldRefIndex) {
-    String fieldName = cf.fieldNameAt(cpFieldRefIndex);
-    String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
-    String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
-
-    getfield(fieldName, clsName, fieldDescriptor);
-  }
-  public void getfield(String fieldName, String clsName, String fieldDescriptor){
-    add( new GETFIELD(fieldName, clsName, fieldDescriptor));
+  public GETFIELD getfield(String fieldName, String clsName, String fieldDescriptor){
+    return new GETFIELD(fieldName, clsName, fieldDescriptor);
   }
 
-  public void getstatic(int cpFieldRefIndex) {
-    String fieldName = cf.fieldNameAt(cpFieldRefIndex);
-    String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
-    String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
-
-    getStatic(fieldName, clsName, fieldDescriptor);
-  }
-  public void getStatic(String fieldName, String clsName, String fieldDescriptor){
-    add( new GETSTATIC(fieldName, clsName, fieldDescriptor));
+  public GETSTATIC getstatic(String fieldName, String clsName, String fieldDescriptor){
+    return new GETSTATIC(fieldName, clsName, fieldDescriptor);
   }
 
 
-  public void goto_(int pcOffset) {
-    add( new GOTO(pc + pcOffset));
+  public GOTO goto_(int targetPc) {
+    return new GOTO(targetPc);
   }
 
-  public void goto_w(int pcOffset) {
-    add( new GOTO_W(pc + pcOffset));
+  public GOTO_W goto_w(int targetPc) {
+    return new GOTO_W(targetPc);
   }
 
-  public void i2b() {
-    add( new I2B());
+  public I2B i2b() {
+    return new I2B();
   }
 
-  public void i2c() {
-    add( new I2C());
+  public I2C i2c() {
+    return new I2C();
   }
 
-  public void i2d() {
-    add( new I2D());
+  public I2D i2d() {
+    return new I2D();
   }
 
-  public void i2f() {
-    add( new I2F());
+  public I2F i2f() {
+    return new I2F();
   }
 
-  public void i2l() {
-    add( new I2L());
+  public I2L i2l() {
+    return new I2L();
   }
 
-  public void i2s() {
-    add( new I2S());
+  public I2S i2s() {
+    return new I2S();
   }
 
-  public void iadd() {
-    add( new IADD());
+  public IADD iadd() {
+    return new IADD();
   }
 
-  public void iaload() {
-    add( new IALOAD());
+  public IALOAD iaload() {
+    return new IALOAD();
   }
 
-  public void iand() {
-    add( new IAND());
+  public IAND iand() {
+    return new IAND();
   }
 
-  public void iastore() {
-    add( new IASTORE());
+  public IASTORE iastore() {
+    return new IASTORE();
   }
 
-  public void iconst_m1() {
-    add( new ICONST(-1));
+  public ICONST iconst_m1() {
+    return new ICONST(-1);
   }
 
-  public void iconst_0() {
-    add( new ICONST(0));
+  public ICONST iconst_0() {
+    return new ICONST(0);
   }
 
-  public void iconst_1() {
-    add( new ICONST(1));
+  public ICONST iconst_1() {
+    return new ICONST(1);
   }
 
-  public void iconst_2() {
-    add( new ICONST(2));
+  public ICONST iconst_2() {
+    return new ICONST(2);
   }
 
-  public void iconst_3() {
-    add( new ICONST(3));
+  public ICONST iconst_3() {
+    return new ICONST(3);
   }
 
-  public void iconst_4() {
-    add( new ICONST(4));
+  public ICONST iconst_4() {
+    return new ICONST(4);
   }
 
-  public void iconst_5() {
-    add( new ICONST(5));
+  public ICONST iconst_5() {
+    return new ICONST(5);
   }
 
-  public void idiv() {
-    add( new IDIV());
+  public IDIV idiv() {
+    return new IDIV();
   }
 
-  public void if_acmpeq(int pcOffset) {
-    add( new IF_ACMPEQ(pc + pcOffset));
+  public IF_ACMPEQ if_acmpeq(int targetPc) {
+    return new IF_ACMPEQ(targetPc);
   }
 
-  public void if_acmpne(int pcOffset) {
-    add( new IF_ACMPNE(pc + pcOffset));
+  public IF_ACMPNE if_acmpne(int targetPc) {
+    return new IF_ACMPNE(targetPc);
   }
 
-  public void if_icmpeq(int pcOffset) {
-    add( new IF_ICMPEQ(pc + pcOffset));
+  public IF_ICMPEQ if_icmpeq(int targetPc) {
+    return new IF_ICMPEQ(targetPc);
   }
 
-  public void if_icmpne(int pcOffset) {
-    add( new IF_ICMPNE(pc + pcOffset));
+  public IF_ICMPNE if_icmpne(int targetPc) {
+    return new IF_ICMPNE(targetPc);
   }
 
-  public void if_icmplt(int pcOffset) {
-    add( new IF_ICMPLT(pc + pcOffset));
+  public IF_ICMPLT if_icmplt(int targetPc) {
+    return new IF_ICMPLT(targetPc);
   }
 
-  public void if_icmpge(int pcOffset) {
-    add( new IF_ICMPGE(pc + pcOffset));
+  public IF_ICMPGE if_icmpge(int targetPc) {
+    return new IF_ICMPGE(targetPc);
   }
 
-  public void if_icmpgt(int pcOffset) {
-    add( new IF_ICMPGT(pc + pcOffset));
+  public IF_ICMPGT if_icmpgt(int targetPc) {
+    return new IF_ICMPGT(targetPc);
   }
 
-  public void if_icmple(int pcOffset) {
-    add( new IF_ICMPLE(pc + pcOffset));
+  public IF_ICMPLE if_icmple(int targetPc) {
+    return new IF_ICMPLE(targetPc);
   }
 
-  public void ifeq(int pcOffset) {
-    add( new IFEQ(pc + pcOffset));
+  public IFEQ ifeq(int targetPc) {
+    return new IFEQ(targetPc);
   }
 
-  public void ifne(int pcOffset) {
-    add( new IFNE(pc + pcOffset));
+  public IFNE ifne(int targetPc) {
+    return new IFNE(targetPc);
   }
 
-  public void iflt(int pcOffset) {
-    add( new IFLT(pc + pcOffset));
+  public IFLT iflt(int targetPc) {
+    return new IFLT(targetPc);
   }
 
-  public void ifge(int pcOffset) {
-    add( new IFGE(pc + pcOffset));
+  public IFGE ifge(int targetPc) {
+    return new IFGE(targetPc);
   }
 
-  public void ifgt(int pcOffset) {
-    add( new IFGT(pc + pcOffset));
+  public IFGT ifgt(int targetPc) {
+    return new IFGT(targetPc);
   }
 
-  public void ifle(int pcOffset) {
-    add( new IFLE(pc + pcOffset));
+  public IFLE ifle(int targetPc) {
+    return new IFLE(targetPc);
   }
 
-  public void ifnonnull(int pcOffset) {
-    add( new IFNONNULL(pc + pcOffset));
+  public IFNONNULL ifnonnull(int targetPc) {
+    return new IFNONNULL(targetPc);
   }
 
-  public void ifnull(int pcOffset) {
-    add( new IFNULL(pc + pcOffset));
+  public IFNULL ifnull(int targetPc) {
+    return new IFNULL(targetPc);
   }
 
-  public void iinc(int localVarIndex, int incConstant) {
-    add( new IINC(localVarIndex, incConstant));
+  public IINC iinc(int localVarIndex, int incConstant) {
+    return new IINC(localVarIndex, incConstant);
   }
 
-  public void iload(int localVarIndex) {
-    add( new ILOAD(localVarIndex));
+  public ILOAD iload(int localVarIndex) {
+    return new ILOAD(localVarIndex);
   }
 
-  public void iload_0() {
-    add( new ILOAD(0));
+  public ILOAD iload_0() {
+    return new ILOAD(0);
   }
 
-  public void iload_1() {
-    add( new ILOAD(1));
+  public ILOAD iload_1() {
+    return new ILOAD(1);
   }
 
-  public void iload_2() {
-    add( new ILOAD(2));
+  public ILOAD iload_2() {
+    return new ILOAD(2);
   }
 
-  public void iload_3() {
-    add( new ILOAD(3));
+  public ILOAD iload_3() {
+    return new ILOAD(3);
   }
 
-  public void imul() {
-    add( new IMUL());
+  public IMUL imul() {
+    return new IMUL();
   }
 
-  public void ineg() {
-    add( new INEG());
+  public INEG ineg() {
+    return new INEG();
   }
 
-  public void instanceof_(int cpClassIndex) {
-    instanceof_(cf.classNameAt(cpClassIndex));
+  public INSTANCEOF instanceof_(String clsName){
+    return new INSTANCEOF(clsName);
   }
-  public void instanceof_(String clsName){
-    add( new INSTANCEOF(clsName));
-  }
-
-  public void invokeinterface(int cpInterfaceMethodRefIndex, int count, int zero) {
-    String clsName = cf.interfaceMethodClassNameAt(cpInterfaceMethodRefIndex);
-    String methodName = cf.interfaceMethodNameAt(cpInterfaceMethodRefIndex);
-    String methodSignature = cf.interfaceMethodDescriptorAt(cpInterfaceMethodRefIndex);
 
-    invokeinterface(clsName, methodName, methodSignature);
+  public INVOKEINTERFACE invokeinterface(String clsName, String methodName, String methodSignature){
+    return new INVOKEINTERFACE(clsName, methodName, methodSignature);
   }
-  public void invokeinterface(String clsName, String methodName, String methodSignature){
-    add( new INVOKEINTERFACE(clsName, methodName, methodSignature));
-  }
-
 
-  public void invokespecial(int cpMethodRefIndex) {
-    String clsName = cf.methodClassNameAt(cpMethodRefIndex);
-    String methodName = cf.methodNameAt(cpMethodRefIndex);
-    String methodSignature = cf.methodDescriptorAt(cpMethodRefIndex);
-
-    invokespecial(clsName, methodName, methodSignature);
-  }
-  public void invokespecial(String clsName, String methodName, String methodSignature){
-    add( new INVOKESPECIAL(clsName, methodName, methodSignature));
+  public INVOKESPECIAL invokespecial(String clsName, String methodName, String methodSignature){
+    return new INVOKESPECIAL(clsName, methodName, methodSignature);
   }
 
-  public void invokestatic(int cpMethodRefIndex) {
-    String clsName = cf.methodClassNameAt(cpMethodRefIndex);
-    String methodName = cf.methodNameAt(cpMethodRefIndex);
-    String methodSignature = cf.methodDescriptorAt(cpMethodRefIndex);
-
-    invokestatic(clsName, methodName, methodSignature);
-  }
-  public void invokestatic(String clsName, String methodName, String methodSignature){
-    add( new INVOKESTATIC(clsName, methodName, methodSignature));
+  public INVOKESTATIC invokestatic(String clsName, String methodName, String methodSignature){
+    return new INVOKESTATIC(clsName, methodName, methodSignature);
   }
 
-  public void invokevirtual(int cpMethodRefIndex) {
-    String clsName = cf.methodClassNameAt(cpMethodRefIndex);
-    String methodName = cf.methodNameAt(cpMethodRefIndex);
-    String methodSignature = cf.methodDescriptorAt(cpMethodRefIndex);
-
-    invokevirtual(clsName, methodName, methodSignature);
-  }
-  public void invokevirtual(String clsName, String methodName, String methodSignature){
-    add( new INVOKEVIRTUAL(clsName, methodName, methodSignature));
+  public INVOKEVIRTUAL invokevirtual(String clsName, String methodName, String methodSignature){
+    return new INVOKEVIRTUAL(clsName, methodName, methodSignature);
   }
 
 
-  public void ior() {
-    add( new IOR());
+  public IOR ior() {
+    return new IOR();
   }
 
-  public void irem() {
-    add( new IREM());
+  public IREM irem() {
+    return new IREM();
   }
 
-  public void ireturn() {
-    add( new IRETURN());
+  public IRETURN ireturn() {
+    return new IRETURN();
   }
 
-  public void ishl() {
-    add( new ISHL());
+  public ISHL ishl() {
+    return new ISHL();
   }
 
-  public void ishr() {
-    add( new ISHR());
+  public ISHR ishr() {
+    return new ISHR();
   }
 
-  public void istore(int localVarIndex) {
-    add( new ISTORE(localVarIndex));
+  public ISTORE istore(int localVarIndex) {
+    return new ISTORE(localVarIndex);
   }
 
-  public void istore_0() {
-    add( new ISTORE(0));
+  public ISTORE istore_0() {
+    return new ISTORE(0);
   }
 
-  public void istore_1() {
-    add( new ISTORE(1));
+  public ISTORE istore_1() {
+    return new ISTORE(1);
   }
 
-  public void istore_2() {
-    add( new ISTORE(2));
+  public ISTORE istore_2() {
+    return new ISTORE(2);
   }
 
-  public void istore_3() {
-    add( new ISTORE(3));
+  public ISTORE istore_3() {
+    return new ISTORE(3);
   }
 
-  public void isub() {
-    add( new ISUB());
+  public ISUB isub() {
+    return new ISUB();
   }
 
-  public void iushr() {
-    add( new IUSHR());
+  public IUSHR iushr() {
+    return new IUSHR();
   }
 
-  public void ixor() {
-    add( new IXOR());
+  public IXOR ixor() {
+    return new IXOR();
   }
 
-  public void jsr(int pcOffset) {
-    add( new JSR(pc + pcOffset));
+  public JSR jsr(int targetPc) {
+    return new JSR(targetPc);
   }
 
-  public void jsr_w(int pcOffset) {
-    add( new JSR_W(pc + pcOffset));
+  public JSR_W jsr_w(int targetPc) {
+    return new JSR_W(targetPc);
   }
 
-  public void l2d() {
-    add( new L2D());
+  public L2D l2d() {
+    return new L2D();
   }
 
-  public void l2f() {
-    add( new L2F());
+  public L2F l2f() {
+    return new L2F();
   }
 
-  public void l2i() {
-    add( new L2I());
+  public L2I l2i() {
+    return new L2I();
   }
 
-  public void ladd() {
-    add( new LADD());
+  public LADD ladd() {
+    return new LADD();
   }
 
-  public void laload() {
-    add( new LALOAD());
+  public LALOAD laload() {
+    return new LALOAD();
   }
 
-  public void land() {
-    add( new LAND());
+  public LAND land() {
+    return new LAND();
   }
 
-  public void lastore() {
-    add( new LASTORE());
+  public LASTORE lastore() {
+    return new LASTORE();
   }
 
-  public void lcmp() {
-    add( new LCMP());
+  public LCMP lcmp() {
+    return new LCMP();
   }
 
-  public void lconst_0() {
-    add( new LCONST(0));
+  public LCONST lconst_0() {
+    return new LCONST(0);
   }
 
-  public void lconst_1() {
-    add( new LCONST(1L));
+  public LCONST lconst_1() {
+    return new LCONST(1L);
   }
 
-// class constants don't work!!
-
-  public void ldc_(int cpIntOrFloatOrStringOrClassIndex) {
-    Object v = cf.getCpValue(cpIntOrFloatOrStringOrClassIndex);
-    switch (cf.getCpTag(cpIntOrFloatOrStringOrClassIndex)){
-      case ClassFile.CONSTANT_INTEGER:
-        ldc((Integer)v); break;
-      case ClassFile.CONSTANT_FLOAT:
-        ldc((Float)v); break;
-      case ClassFile.CONSTANT_STRING:
-        ldc((String)v, false); break;
-      case ClassFile.CONSTANT_CLASS:
-        ldc((String)v, true); break;
-    }
-  }
-  public void ldc(int v){
-    add( new LDC(v));
+  public LDC ldc(int v){
+    return new LDC(v);
   }
-  public void ldc(float v){
-    add( new LDC(v));
+  public LDC ldc(float v){
+    return new LDC(v);
   }
-  public void ldc(String v, boolean isClass){
-    add( new LDC(v, isClass));
+  public LDC ldc(String v, boolean isClass){
+    return new LDC(v, isClass);
   }
 
-
-  public void ldc_w_(int cpIntOrFloatOrStringOrClassIndex) {
-    Object v = cf.getCpValue(cpIntOrFloatOrStringOrClassIndex);
-    switch (cf.getCpTag(cpIntOrFloatOrStringOrClassIndex)){
-      case ClassFile.CONSTANT_INTEGER:
-        ldc_w((Integer)v); break;
-      case ClassFile.CONSTANT_FLOAT:
-        ldc_w((Float)v); break;
-      case ClassFile.CONSTANT_STRING:
-        ldc_w((String)v, false); break;
-      case ClassFile.CONSTANT_CLASS:
-        ldc_w((String)v, true); break;
-    }
-  }
-  public void ldc_w(int v){
-    add( new LDC_W(v));
-  }
-  public void ldc_w(float v){
-    add( new LDC_W(v));
-  }
-  public void ldc_w(String v, boolean isClass){
-    add( new LDC_W(v, isClass));
-  }
 
-  public void ldc2_w(int cpLongOrDoubleIndex) {
-    Object v = cf.getCpValue(cpLongOrDoubleIndex);
-    if (v instanceof Long){
-      ldc2_w((Long)v);
-    } else {
-      ldc2_w((Double)v);
-    }
+  public LDC_W ldc_w(int v){
+    return new LDC_W(v);
   }
-  public void ldc2_w(long v){
-    add( new LDC2_W(v));
+  public LDC_W ldc_w(float v){
+    return new LDC_W(v);
   }
-  public void ldc2_w(double v){
-    add( new LDC2_W(v));
+  public LDC_W ldc_w(String v, boolean isClass){
+    return new LDC_W(v, isClass);
   }
 
-  public void ldiv() {
-    add( new LDIV());
+  public LDC2_W ldc2_w(long v){
+    return new LDC2_W(v);
   }
-
-  public void lload(int localVarIndex) {
-    add( new LLOAD(localVarIndex));
+  public LDC2_W ldc2_w(double v){
+    return new LDC2_W(v);
   }
 
-  public void lload_0() {
-    add( new LLOAD(0));
+  public LDIV ldiv() {
+    return new LDIV();
   }
 
-  public void lload_1() {
-    add( new LLOAD(1));
+  public LLOAD lload(int localVarIndex) {
+    return new LLOAD(localVarIndex);
   }
 
-  public void lload_2() {
-    add( new LLOAD(2));
+  public LLOAD lload_0() {
+    return new LLOAD(0);
   }
 
-  public void lload_3() {
-    add( new LLOAD(3));
+  public LLOAD lload_1() {
+    return new LLOAD(1);
   }
 
-  public void lmul() {
-    add( new LMUL());
+  public LLOAD lload_2() {
+    return new LLOAD(2);
   }
 
-  public void lneg() {
-    add( new LNEG());
+  public LLOAD lload_3() {
+    return new LLOAD(3);
   }
 
-
-  public void lookupswitch(int defaultPcOffset, int nEntries) {
-    add( (switchInsn = new LOOKUPSWITCH(pc + defaultPcOffset, nEntries)));
-
-    if (cf != null){
-      cf.parseLookupSwitchEntries(this, nEntries);
-    }
+  public LMUL lmul() {
+    return new LMUL();
   }
-  public void lookupswitchEntry(int index, int match, int pcOffset) {
-    ((LOOKUPSWITCH)switchInsn).setTarget(index, match, pc + pcOffset);
-  }
 
-  public void lor() {
-    add( new LOR());
+  public LNEG lneg() {
+    return new LNEG();
   }
 
-  public void lrem() {
-    add( new LREM());
+  public LOOKUPSWITCH lookupswitch(int defaultTargetPc, int nEntries) {
+    return new LOOKUPSWITCH(defaultTargetPc, nEntries);
   }
 
-  public void lreturn() {
-    add( new LRETURN());
+  public LOR lor() {
+    return new LOR();
   }
 
-  public void lshl() {
-    add( new LSHL());
+  public LREM lrem() {
+    return new LREM();
   }
 
-  public void lshr() {
-    add( new LSHR());
+  public LRETURN lreturn() {
+    return new LRETURN();
   }
 
-  public void lstore(int localVarIndex) {
-    add( new LSTORE(localVarIndex));
+  public LSHL lshl() {
+    return new LSHL();
   }
 
-  public void lstore_0() {
-    add( new LSTORE(0));
+  public LSHR lshr() {
+    return new LSHR();
   }
 
-  public void lstore_1() {
-    add( new LSTORE(1));
+  public LSTORE lstore(int localVarIndex) {
+    return new LSTORE(localVarIndex);
   }
 
-  public void lstore_2() {
-    add( new LSTORE(2));
+  public LSTORE lstore_0() {
+    return new LSTORE(0);
   }
 
-  public void lstore_3() {
-    add( new LSTORE(3));
+  public LSTORE lstore_1() {
+    return new LSTORE(1);
   }
 
-  public void lsub() {
-    add( new LSUB());
+  public LSTORE lstore_2() {
+    return new LSTORE(2);
   }
 
-  public void lushr() {
-    add( new LUSHR());
+  public LSTORE lstore_3() {
+    return new LSTORE(3);
   }
 
-  public void lxor() {
-    add( new LXOR());
+  public LSUB lsub() {
+    return new LSUB();
   }
 
-  public void monitorenter() {
-    add( new MONITORENTER());
+  public LUSHR lushr() {
+    return new LUSHR();
   }
 
-  public void monitorexit() {
-    add( new MONITOREXIT());
+  public LXOR lxor() {
+    return new LXOR();
   }
 
-  public void multianewarray(int cpClassIndex, int dimensions) {
-    multianewarray(cf.classNameAt(cpClassIndex), dimensions);
-  }
-  public void multianewarray(String clsName, int dimensions){
-    add( new MULTIANEWARRAY(clsName, dimensions));
+  public MONITORENTER monitorenter() {
+    return new MONITORENTER();
   }
 
-  public void new_(int cpClassIndex) {
-    add( new NEW(cf.classNameAt(cpClassIndex)));
+  public MONITOREXIT monitorexit() {
+    return new MONITOREXIT();
   }
 
-  public void newarray(int typeCode) {
-    add( new NEWARRAY(typeCode));
+  public MULTIANEWARRAY multianewarray(String clsName, int dimensions){
+    return new MULTIANEWARRAY(clsName, dimensions);
   }
 
-  public void nop() {
-    add( new NOP());
+  public NEW new_(String clsName) {
+    return new NEW(clsName);
   }
 
-  public void pop() {
-    add( new POP());
+  public NEWARRAY newarray(int typeCode) {
+    return new NEWARRAY(typeCode);
   }
 
-  public void pop2() {
-    add( new POP2());
+  public NOP nop() {
+    return new NOP();
   }
 
-  public void putfield(int cpFieldRefIndex) {
-    String fieldName = cf.fieldNameAt(cpFieldRefIndex);
-    String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
-    String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
-
-    putfield(fieldName, clsName, fieldDescriptor);
-  }
-  public void putfield(String fieldName, String clsName, String fieldDescriptor){
-    add( new PUTFIELD(fieldName, clsName, fieldDescriptor));
+  public POP pop() {
+    return new POP();
   }
 
-  public void putstatic(int cpFieldRefIndex) {
-    String fieldName = cf.fieldNameAt(cpFieldRefIndex);
-    String clsName = cf.fieldClassNameAt(cpFieldRefIndex);
-    String fieldDescriptor = cf.fieldDescriptorAt(cpFieldRefIndex);
-
-    putstatic(fieldName, clsName, fieldDescriptor);
+  public POP2 pop2() {
+    return new POP2();
   }
-  public void putstatic(String fieldName, String clsName, String fieldDescriptor){
-    add( new PUTSTATIC(fieldName, clsName, fieldDescriptor));
-  }
 
-  public void ret(int localVarIndex) {
-    add( new RET(localVarIndex));
+  public PUTFIELD putfield(String fieldName, String clsName, String fieldDescriptor){
+    return new PUTFIELD(fieldName, clsName, fieldDescriptor);
   }
 
-  public void return_() {
-    add( new RETURN());
+  public PUTSTATIC putstatic(String fieldName, String clsName, String fieldDescriptor){
+    return new PUTSTATIC(fieldName, clsName, fieldDescriptor);
   }
 
-  public void saload() {
-    add( new SALOAD());
+  public RET ret(int localVarIndex) {
+    return new RET(localVarIndex);
   }
 
-  public void sastore() {
-    add( new SASTORE());
+  public RETURN return_() {
+    return new RETURN();
   }
 
-  public void sipush(int val) {
-    add( new SIPUSH(val));
+  public SALOAD saload() {
+    return new SALOAD();
   }
 
-  public void swap() {
-    add( new SWAP());
+  public SASTORE sastore() {
+    return new SASTORE();
   }
-
-  public void tableswitch(int defaultPcOffset, int low, int high) {
-    switchInsn = new TABLESWITCH(pc + defaultPcOffset, low, high);
-    add( switchInsn);
 
-    if (cf != null){
-      cf.parseTableSwitchEntries(this, low, high);
-    }
+  public SIPUSH sipush(int val) {
+    return new SIPUSH(val);
   }
 
-  public void tableswitchEntry(int value, int pcOffset) {
-    ((TABLESWITCH)switchInsn).setTarget(value, pc + pcOffset);
+  public SWAP swap() {
+    return new SWAP();
   }
 
-  public void wide() {
-    add( new WIDE());
+  public TABLESWITCH tableswitch(int defaultTargetPc, int low, int high) {
+    return new TABLESWITCH(defaultTargetPc, low, high);
   }
 
-  public void unknown(int bytecode) {
-    throw new JPFException("unknown bytecode: " + Integer.toHexString(bytecode));
+  public WIDE wide() {
+    return new WIDE();
   }
 
   
   //--- the JPF specific ones (only used in synthetic methods)
-  public void invokecg(List<Invocation> invokes) {
-    add (new INVOKECG(invokes));
+  public INVOKECG invokecg(List<Invocation> invokes) {
+    return new INVOKECG(invokes);
   }
 
-  public void invokeclinit(ClassInfo ci) {
-    add( new INVOKECLINIT(ci));
+  public INVOKECLINIT invokeclinit(ClassInfo ci) {
+    return new INVOKECLINIT(ci);
   }
 
-  public void directcallreturn(){
-    add( new DIRECTCALLRETURN());
+  public DIRECTCALLRETURN directcallreturn(){
+    return new DIRECTCALLRETURN();
   }
 
-  public void executenative(NativeMethodInfo mi){
-    add( new EXECUTENATIVE(mi));
+  public EXECUTENATIVE executenative(NativeMethodInfo mi){
+    return new EXECUTENATIVE(mi);
   }
 
-  public void nativereturn(){
-    add( new NATIVERETURN());
+  public NATIVERETURN nativereturn(){
+    return new NATIVERETURN();
   }
 
   // this is never part of MethodInfo stored code
-  public Instruction createRunStartInsn(MethodInfo miRun){
+  public RUNSTART runstart(MethodInfo miRun){
     return new RUNSTART(miRun);
   }
 

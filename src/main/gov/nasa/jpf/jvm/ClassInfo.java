@@ -292,6 +292,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
   class Initializer extends ClassFileReaderAdapter {
 
+    @Override
     public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
       name = Types.getClassNameFromTypeName(clsName);
 
@@ -312,12 +313,23 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     }
 
+    @Override
     public void setClassAttribute(ClassFile cf, int attrIndex, String name, int attrLength) {
       if (name == ClassFile.SOURCE_FILE_ATTR) {
         cf.parseSourceFileAttr(this, null);
+
+      } else if (name == ClassFile.SIGNATURE_ATTR){
+        cf.parseSignatureAttr(this, ClassInfo.this);
+
+      } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR) {
+        cf.parseAnnotationsAttr(this, ClassInfo.this);
+
+      } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR) {
+        //cf.parseAnnotationsAttr(this, ClassInfo.this);
       }
     }
 
+    @Override
     public void setSourceFile(ClassFile cf, Object tag, String pathName) {
       sourceFileName = pathName;
     }
@@ -326,9 +338,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     //--- interfaces
     Set<String> ifcSet = new HashSet<String>();
 
+    @Override
     public void setInterface(ClassFile cf, int ifcIndex, String ifcName) {
       ifcSet.add(Types.getClassNameFromTypeName(ifcName));
     }
+
+    @Override
     public void setInterfacesDone(ClassFile cf) {
       //loadInterfaceRec(null, ifcSet);
       interfaceNames =  Collections.unmodifiableSet(ifcSet);
@@ -340,12 +355,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     int iOff, iIdx, sOff, sIdx;
     FieldInfo curFi; // need to cache for attributes
 
+    @Override
     public void setFieldCount(ClassFile cf, int nFields){
       if (superClass != null) {
         iOff = superClass.instanceDataSize;
         iIdx = superClass.nInstanceFields;
       }
     }
+
+    @Override
     public void setField(ClassFile cf, int fieldIndex, int accessFlags, String name, String descriptor) {
       FieldInfo fi=null;
 
@@ -356,7 +374,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
         iOff += fi.getStorageSize();
 
       } else {  // static field
-        fi = FieldInfo.create (ClassInfo.this, name, descriptor, accessFlags, iIdx, sOff);
+        fi = FieldInfo.create (ClassInfo.this, name, descriptor, accessFlags, sIdx, sOff);
         staticFields.add(fi);
         sIdx++;
         sOff += fi.getStorageSize();
@@ -368,28 +386,44 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
         attributor.setFieldInfoAttributes(curFi);
       }
     }
+
+    @Override
     public void setFieldAttribute(ClassFile cf, int fieldIndex, int attrIndex, String name, int attrLength) {
       if (name == ClassFile.SIGNATURE_ATTR){
         cf.parseSignatureAttr(this, curFi);
+
       } else if (name == ClassFile.CONST_VALUE_ATTR){
-        cf.parseConstValueAttr(this, null);
+        cf.parseConstValueAttr(this, curFi);
+
+      } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR) {
+        cf.parseAnnotationsAttr(this, curFi);
+
+      } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR) {
+        //cf.parseAnnotationsAttr(this, curFi);
       }
     }
-    public void setConstantValue(ClassFile cf, int fieldIndex, Object constVal){
+
+    @Override
+    public void setConstantValue(ClassFile cf, Object tag, Object constVal){
       curFi.setConstantValue(constVal);
     }
+
+    @Override
     public void setFieldsDone(ClassFile cf) {
       iFields = instanceFields.toArray(new FieldInfo[instanceFields.size()]);
       sFields = staticFields.toArray(new FieldInfo[staticFields.size()]);
     }
 
     //--- methods
+    CodeBuilder cb;
     MethodInfo curMi;
 
+    @Override
     public void setMethodCount(ClassFile cf, int methodCount){
       methods = new LinkedHashMap<String,MethodInfo>(methodCount);
     }
 
+    @Override
     public void setMethod(ClassFile cf, int methodIndex, int accessFlags, String name, String signature) {
       // maxLocals and maxStack will be set from the Code attribute
       curMi = new MethodInfo( ClassInfo.this, name, signature, -1, -1, accessFlags);
@@ -399,11 +433,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     }
 
+    @Override
     public void setMethodDone(ClassFile cf, int methodIndex){
       methods.put(curMi.getUniqueName(), curMi);
     }
 
-
+    @Override
     public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
       if (name == ClassFile.CODE_ATTR){
         cf.parseCodeAttr(this, curMi);
@@ -418,55 +453,67 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
         cf.parseAnnotationsAttr(this, curMi);
 
       } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR) {
-        cf.parseAnnotationsAttr(this, curMi);
+        //cf.parseAnnotationsAttr(this, curMi);
 
       } else if (name == ClassFile.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS_ATTR) {
         cf.parseParameterAnnotationsAttr(this, curMi);
 
       } else if (name == ClassFile.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR) {
-        cf.parseParameterAnnotationsAttr(this, curMi);
+        //cf.parseParameterAnnotationsAttr(this, curMi);
       }
     }
 
+    @Override
     public void setExceptionCount(ClassFile cf, Object tag, int exceptionCount) {
       curMi.startTrownExceptions(exceptionCount);
     }
 
+    @Override
     public void setException(ClassFile cf, Object tag, int exceptionIndex, String exceptionType) {
       curMi.setException(exceptionIndex, exceptionType);
     }
 
+    @Override
     public void setExceptionsDone(ClassFile cf, Object tag) {
       curMi.finishThrownExceptions();
     }
 
 
+    @Override
     public void setCode(ClassFile cf, Object tag, int maxStack, int maxLocals, int codeLength){
       curMi.setMaxLocals(maxLocals);
       curMi.setMaxStack(maxStack);
 
-      InstructionFactory bcf = MethodInfo.getInstructionFactory();
-      bcf.initialize(cf, curMi, codeLength);
-      
-      cf.parseBytecode(bcf, tag, codeLength);
+      if (cb == null){
+        cb = createCodeBuilder();
+      }
+      cb.initialize(cf, curMi);
+
+      cf.parseBytecode(cb, tag, codeLength);
+      cb.installCode();
     }
 
+    @Override
     public void setExceptionHandlerTableCount(ClassFile cf, Object tag, int exceptionTableCount) {
       curMi.startExceptionHandlerTable(exceptionTableCount);
     }
 
+    @Override
     public void setExceptionHandler(ClassFile cf, Object tag, int handlerIndex,
             int startPc, int endPc, int handlerPc, String catchType) {
       curMi.setExceptionHandler(handlerIndex, startPc, endPc, handlerPc, catchType);
     }
 
+    @Override
     public void setExceptionHandlerTableDone(ClassFile cf, Object tag) {
       curMi.finishExceptionHandlerTable();
     }
 
+    @Override
     public void setCodeAttributeCount(ClassFile cf, Object tag, int attrCount) {
     }
 
+    @Override
     public void setCodeAttribute(ClassFile cf, Object tag, int attrIndex, String name, int attrLength) {
       if (name == ClassFile.LINE_NUMBER_TABLE_ATTR) {
         cf.parseLineNumberTableAttr(this, tag);
@@ -476,30 +523,37 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     }
 
+    @Override
     public void setCodeAttributesDone(ClassFile cf, Object tag) {
     }
 
+    @Override
     public void setLineNumberTableCount(ClassFile cf, Object tag, int lineNumberCount) {
       curMi.startLineNumberTable(lineNumberCount);
     }
 
+    @Override
     public void setLineNumber(ClassFile cf, Object tag, int lineIndex, int lineNumber, int startPc) {
       curMi.setLineNumber(lineIndex, lineNumber, startPc);
     }
 
+    @Override
     public void setLineNumberTableDone(ClassFile cf, Object tag) {
       curMi.finishLineNumberTable();
     }
 
+    @Override
     public void setLocalVarTableCount(ClassFile cf, Object tag, int localVarCount) {
       curMi.startLocalVarTable(localVarCount);
     }
 
+    @Override
     public void setLocalVar(ClassFile cf, Object tag, int localVarIndex,
             String varName, String descriptor, int scopeStartPc, int scopeEndPc, int slotIndex) {
       curMi.setLocalVar(localVarIndex, varName, descriptor, scopeStartPc, scopeEndPc, slotIndex);
     }
 
+    @Override
     public void setLocalVarTableDone(ClassFile cf, Object tag) {
       curMi.finishLocalVarTable();
     }
@@ -511,21 +565,25 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     AnnotationInfo[] curPai;
     Object[] values;
 
+    @Override
     public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){
       if (tag instanceof InfoObject){
         ((InfoObject)tag).startAnnotations(annotationCount);
       }
     }
 
+    @Override
     public void setAnnotationsDone(ClassFile cf, Object tag){
     }
 
+    @Override
     public void setParameterCount(ClassFile cf, Object tag, int parameterCount){
       if (tag == curMi){
         curMi.startParameterAnnotations(parameterCount);
       }
     }
 
+    @Override
     public void setParameterAnnotationCount(ClassFile cf, Object tag, int paramIndex, int annotationCount){
       if (tag == curMi){
         curPai = new AnnotationInfo[annotationCount];
@@ -533,6 +591,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     }
 
+    @Override
     public void setParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
       if (tag == curMi){
         curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
@@ -540,14 +599,17 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     }
     
+    @Override
     public void setParameterAnnotationsDone(ClassFile cf, Object tag, int paramIndex){
       curMi.finishParameterAnnotations();
     }
 
+    @Override
     public void setParametersDone(ClassFile cf, Object tag){
     }
 
 
+    @Override
     public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
       if (tag instanceof InfoObject){
         curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
@@ -555,10 +617,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     }
 
+    @Override
     public void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int nValuePairs){
       curAi.startEntries(nValuePairs);
     }
 
+    @Override
     public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int arrayIndex, Object val){
       if (arrayIndex >= 0){
@@ -568,6 +632,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     }
 
+    @Override
     public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int arrayIndex, String val){
       if (arrayIndex >= 0){
@@ -577,6 +642,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     }
 
+    @Override
     public void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName,
             int arrayIndex, String typeName){
       Object val = AnnotationInfo.getClassValue(typeName);
@@ -587,6 +653,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     }
 
+    @Override
     public void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int arrayIndex, String enumType, String enumValue){
       Object val = AnnotationInfo.getEnumValue(enumType, enumValue);
@@ -597,21 +664,26 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       }
     }
 
+    @Override
     public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int elementCount){
       values = new Object[elementCount];
     }
 
+    @Override
     public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName){
       curAi.setValue(valueIndex, elementName, values);
     }
 
+    @Override
     public void setAnnotationValuesDone(ClassFile cf, Object tag, int annotationIndex){
+      checkAnnotationDefaultValues(curAi);
     }
 
 
     //--- common attrs
+    @Override
     public void setSignature(ClassFile cf, Object tag, String signature){
       if (tag == curFi){
         curFi.setGenericSignature(signature);
@@ -621,7 +693,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     }
   }
 
-  public ClassInfo(ClassFile cf) throws ClassFileException {
+  protected ClassInfo(ClassFile cf) throws ClassFileException {
     Initializer reader = new Initializer();
     cf.parse(reader);
   }
@@ -651,6 +723,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
 
     source = null;
 
+    // we need to set the cached ci's before checking WeakReferences and Enums
+    updateCachedClassInfos(this);
+
     isWeakReference = isWeakReference0();
     finalizer = getFinalizer0();
     isAbstract = (modifiers & Modifier.ABSTRACT) != 0;
@@ -661,7 +736,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     processJPFConfigAnnotation();
     loadAnnotationListeners();
 
-    updateCachedClassInfos(this);
     loadedClasses.set(uniqueId, this);
 
     // the 'sei' field gets initialized during registerClass(ti), since
@@ -755,23 +829,21 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
       MethodInfo pmi = new MethodInfo(this, mname, mi.getSignature(), 1, 2, Modifier.PUBLIC);
       pmi.setGenericSignature(genericSignature);
 
-      InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
-      insnFactory.initialize(pmi);
-      insnFactory.startCode(pmi);
+      CodeBuilder cb = pmi.createCodeBuilder();
 
-      insnFactory.aload(0);
-      insnFactory.getfield(mname, name, mtype);
+      cb.aload(0);
+      cb.getfield(mname, name, mtype);
       if (fi.isReference()) {
-        insnFactory.areturn();
+        cb.areturn();
       } else {
         if (fi.getStorageSize() == 1) {
-          insnFactory.ireturn();
+          cb.ireturn();
         } else {
-          insnFactory.lreturn();
+          cb.lreturn();
         }
       }
 
-      insnFactory.endCode(pmi);
+      cb.installCode();
 
       methods.put(pmi.getUniqueName(), pmi);
     }
@@ -802,6 +874,25 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     }
   }
 
+  /**
+   * this is called from the annotated ClassInfo - the annotation type would
+   * have to be resolved through the same classpath
+   *
+   * override this in case resolving annotation types is not wanted (e.g. for unit tests)
+   */
+  protected void checkAnnotationDefaultValues(AnnotationInfo ai){
+    ai.checkDefaultValues(cp);
+  }
+
+  /**
+   * this returns a CodeBuilder that still needs to be initialized. It is here
+   * to allow overriding it in derived classes, e.g. to facilitate unit tests
+   * or specialized instruction factories
+   */
+  protected CodeBuilder createCodeBuilder(){
+    InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
+    return new CodeBuilder(insnFactory, null, null);
+  }
 
   void checkUnresolvedNativeMethods(){
     for (MethodInfo mi : methods.values()){
@@ -1567,6 +1658,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     return(classes);
   }
 
+  public  ClassPath getClassPath(){
+    // <2do> this is only a hack - it needs to support a classloader chain
+    return cp;
+  }
 
   public static String[] getClassPathElements() {
     return cp.getPathNames();
