@@ -24,7 +24,7 @@ import java.lang.reflect.Modifier;
 /**
  * type, name and attribute information of a field.
  */
-public abstract class FieldInfo extends InfoObject {
+public abstract class FieldInfo extends InfoObject implements GenericSignatureHolder {
 
   //--- FieldInfo attributes
   // don't break transitions on get/putXX insns of this field, even if shared
@@ -96,9 +96,6 @@ public abstract class FieldInfo extends InfoObject {
   // those are set subsequently from classfile attributes
   public void setConstantValue(Object constValue){
     cv = constValue;
-  }
-  public void setGenericSignature(String gsig){
-    genericSignature = gsig;
   }
 
   public abstract String valueToString (Fields f);
@@ -226,7 +223,11 @@ public abstract class FieldInfo extends InfoObject {
   public String getGenericSignature() {
     return genericSignature; 
   }
-  
+
+  public void setGenericSignature(String sig){
+    genericSignature = sig;
+  }
+
   public ClassInfo getTypeClassInfo () {
     return ClassInfo.getResolvedClassInfo(getType());
   }

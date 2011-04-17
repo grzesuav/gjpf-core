@@ -29,7 +29,6 @@ public class ByteCodePrinter implements ByteCodeReader {
   PrintWriter pw;
   ClassFile cf; // need this to get the constpool entries
 
-  int pc; // code index
   String prefix;
 
   public ByteCodePrinter (PrintWriter pw, ClassFile cf, String prefix){
@@ -38,537 +37,530 @@ public class ByteCodePrinter implements ByteCodeReader {
     this.prefix = prefix;
   }
 
-  public void startCode(Object tag){}
-  public void endCode(Object tag){}
-
-  public void setPc (int pc){
-    this.pc = pc;
-  }
-
   public void aconst_null() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "aconst_null");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "aconst_null");
   }
 
   public void aload(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "aload", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "aload", localVarIndex);
   }
 
   public void aload_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "aload_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "aload_0");
   }
 
   public void aload_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "aload_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "aload_1");
   }
 
   public void aload_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "aload_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "aload_2");
   }
 
   public void aload_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "aload_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "aload_3");
   }
 
   public void aaload() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "aaload");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "aaload");
   }
 
   public void astore(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "astore", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "astore", localVarIndex);
   }
 
   public void astore_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "astore_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "astore_0");
   }
 
   public void astore_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "astore_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "astore_1");
   }
 
   public void astore_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "astore_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "astore_2");
   }
 
   public void astore_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "astore_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "astore_3");
   }
 
   public void aastore() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "aastore");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "aastore");
   }
 
   public void areturn() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "areturn");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "areturn");
   }
 
   public void anewarray(int cpClassIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\")\n", prefix, pc, "anewarray", cpClassIndex, cf.classNameAt(cpClassIndex));
+    pw.printf("%s%3d: %s @%d(\"%s\")\n", prefix, cf.getPc(), "anewarray", cpClassIndex, cf.classNameAt(cpClassIndex));
   }
 
   public void arraylength() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "arraylength");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "arraylength");
   }
 
   public void athrow() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "athrow");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "athrow");
   }
 
   public void baload() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "baload");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "baload");
   }
 
   public void bastore() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "bastore");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "bastore");
   }
 
   public void bipush(int b) {
-    pw.printf("%s%3d: %s %d\n", prefix, pc, "bipush", b);
+    pw.printf("%s%3d: %s %d\n", prefix, cf.getPc(), "bipush", b);
   }
 
   public void caload() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "caload");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "caload");
   }
 
   public void castore() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "castore");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "castore");
   }
 
   public void checkcast(int cpClassIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\")\n", prefix, pc, "checkcast", cpClassIndex, cf.classNameAt(cpClassIndex));
+    pw.printf("%s%3d: %s @%d(\"%s\")\n", prefix, cf.getPc(), "checkcast", cpClassIndex, cf.classNameAt(cpClassIndex));
   }
 
   public void d2f() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "d2f");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "d2f");
   }
 
   public void d2i() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "d2i");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "d2i");
   }
 
   public void d2l() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "d2l");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "d2l");
   }
 
   public void dadd() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dadd");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dadd");
   }
 
   public void daload() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "daload");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "daload");
   }
 
   public void dastore() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dastore");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dastore");
   }
 
   public void dcmpg() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dcmpg");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dcmpg");
   }
 
   public void dcmpl() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dcmpl");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dcmpl");
   }
 
   public void dconst_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dconst_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dconst_0");
   }
 
   public void dconst_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dcont_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dcont_1");
   }
 
   public void ddiv() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "ddiv");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "ddiv");
   }
 
   public void dload(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "dload", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "dload", localVarIndex);
   }
 
   public void dload_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dload_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dload_0");
   }
 
   public void dload_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dload_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dload_1");
   }
 
   public void dload_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dload_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dload_2");
   }
 
   public void dload_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dload_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dload_3");
   }
 
   public void dmul() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dmul");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dmul");
   }
 
   public void dneg() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dneg");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dneg");
   }
 
   public void drem() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "drem");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "drem");
   }
 
   public void dreturn() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dreturn");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dreturn");
   }
 
   public void dstore(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "dstore", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "dstore", localVarIndex);
   }
 
   public void dstore_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dstore_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dstore_0");
   }
 
   public void dstore_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dstore_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dstore_1");
   }
 
   public void dstore_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dstore_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dstore_2");
   }
 
   public void dstore_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dstore_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dstore_3");
   }
 
   public void dsub() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dsub");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dsub");
   }
 
   public void dup() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dup");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dup");
   }
 
   public void dup_x1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dup_x1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dup_x1");
   }
 
   public void dup_x2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dup_x2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dup_x2");
   }
 
   public void dup2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dup2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dup2");
   }
 
   public void dup2_x1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dup2_x1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dup2_x1");
   }
 
   public void dup2_x2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "dup2_x2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "dup2_x2");
   }
 
   public void f2d() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "f2d");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "f2d");
   }
 
   public void f2i() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "f2i");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "f2i");
   }
 
   public void f2l() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "f2l");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "f2l");
   }
 
   public void fadd() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fadd");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fadd");
   }
 
   public void faload() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "faload");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "faload");
   }
 
   public void fastore() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fastore");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fastore");
   }
 
   public void fcmpg() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fcmpg");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fcmpg");
   }
 
   public void fcmpl() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fcmpl");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fcmpl");
   }
 
   public void fconst_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fconst_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fconst_0");
   }
 
   public void fconst_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fconst_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fconst_1");
   }
 
   public void fconst_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fconst_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fconst_2");
   }
 
   public void fdiv() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fdiv");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fdiv");
   }
 
   public void fload(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "fload", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "fload", localVarIndex);
   }
 
   public void fload_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fload_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fload_0");
   }
 
   public void fload_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fload_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fload_1");
   }
 
   public void fload_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fload_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fload_2");
   }
 
   public void fload_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fload_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fload_3");
   }
 
   public void fmul() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fmul");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fmul");
   }
 
   public void fneg() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fneg");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fneg");
   }
 
   public void frem() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "frem");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "frem");
   }
 
   public void freturn() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "freturn");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "freturn");
   }
 
   public void fstore(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "fstore", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "fstore", localVarIndex);
   }
 
   public void fstore_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fstore_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fstore_0");
   }
 
   public void fstore_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fstore_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fstore_1");
   }
 
   public void fstore_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fstore_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fstore_2");
   }
 
   public void fstore_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fstore_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fstore_3");
   }
 
   public void fsub() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "fsub");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "fsub");
   }
 
   public void getfield(int cpFieldRefIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, pc, "getfield", cpFieldRefIndex,
+    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, cf.getPc(), "getfield", cpFieldRefIndex,
             cf.fieldClassNameAt(cpFieldRefIndex),
             cf.fieldNameAt(cpFieldRefIndex),
             cf.fieldDescriptorAt(cpFieldRefIndex));
   }
 
   public void getstatic(int cpFieldRefIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, pc, "getstatic", cpFieldRefIndex,
+    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, cf.getPc(), "getstatic", cpFieldRefIndex,
             cf.fieldClassNameAt(cpFieldRefIndex),
             cf.fieldNameAt(cpFieldRefIndex),
             cf.fieldDescriptorAt(cpFieldRefIndex));
   }
 
   public void goto_(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "goto", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "goto", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void goto_w(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "goto_w", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "goto_w", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void i2b() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "i2b");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "i2b");
   }
 
   public void i2c() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "i2c");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "i2c");
   }
 
   public void i2d() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "i2d");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "i2d");
   }
 
   public void i2f() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "i2f");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "i2f");
   }
 
   public void i2l() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "i2l");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "i2l");
   }
 
   public void i2s() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "i2s");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "i2s");
   }
 
   public void iadd() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iadd");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iadd");
   }
 
   public void iaload() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iaload");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iaload");
   }
 
   public void iand() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iand");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iand");
   }
 
   public void iastore() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iastore");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iastore");
   }
 
   public void iconst_m1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iconst_m1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iconst_m1");
   }
 
   public void iconst_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iconst_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iconst_0");
   }
 
   public void iconst_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iconst_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iconst_1");
   }
 
   public void iconst_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iconst_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iconst_2");
   }
 
   public void iconst_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iconst_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iconst_3");
   }
 
   public void iconst_4() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iconst_4");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iconst_4");
   }
 
   public void iconst_5() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iconst_5");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iconst_5");
   }
 
   public void idiv() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "idiv");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "idiv");
   }
 
   public void if_acmpeq(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "if_acmpeq", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "if_acmpeq", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void if_acmpne(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "if_acmpne", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "if_acmpne", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void if_icmpeq(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "if_icmpeq", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "if_icmpeq", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void if_icmpne(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "if_icmpne", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "if_icmpne", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void if_icmplt(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "if_icmplt", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "if_icmplt", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void if_icmpge(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "if_icmpge", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "if_icmpge", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void if_icmpgt(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "if_icmpgt", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "if_icmpgt", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void if_icmple(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "if_icmple", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "if_icmple", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void ifeq(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "ifeq", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "ifeq", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void ifne(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "ifne", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "ifne", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void iflt(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "iflt", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "iflt", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void ifge(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "ifge", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "ifge", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void ifgt(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "ifgt", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "ifgt", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void ifle(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "ifle", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "ifle", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void ifnonnull(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "ifnonnull", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "ifnonnull", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void ifnull(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "ifnull", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "ifnull", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void iinc(int localVarIndex, int incConstant) {
-    pw.printf("%s%3d: %s [%d] %+d\n", prefix, pc, "iinc", localVarIndex, incConstant);
+    pw.printf("%s%3d: %s [%d] %+d\n", prefix, cf.getPc(), "iinc", localVarIndex, incConstant);
   }
 
   public void iload(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "iload", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "iload", localVarIndex);
   }
 
   public void iload_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iload_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iload_0");
   }
 
   public void iload_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iload_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iload_1");
   }
 
   public void iload_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iload_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iload_2");
   }
 
   public void iload_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iload_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iload_3");
   }
 
   public void imul() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "imul");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "imul");
   }
 
   public void ineg() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "ineg");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "ineg");
   }
 
   public void instanceof_(int cpClassIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\")\n", prefix, pc, "instanceof", cpClassIndex, cf.classNameAt(cpClassIndex));
+    pw.printf("%s%3d: %s @%d(\"%s\")\n", prefix, cf.getPc(), "instanceof", cpClassIndex, cf.classNameAt(cpClassIndex));
   }
 
   public void invokeinterface(int cpInterfaceMethodRefIndex, int count, int zero) {
-    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\") %d\n", prefix, pc, "invokeinterface", cpInterfaceMethodRefIndex,
+    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\") %d\n", prefix, cf.getPc(), "invokeinterface", cpInterfaceMethodRefIndex,
             cf.methodClassNameAt(cpInterfaceMethodRefIndex),
             cf.methodNameAt(cpInterfaceMethodRefIndex),
             cf.methodDescriptorAt(cpInterfaceMethodRefIndex),
@@ -576,320 +568,320 @@ public class ByteCodePrinter implements ByteCodeReader {
   }
 
   public void invokespecial(int cpMethodRefIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, pc, "invokespecial", cpMethodRefIndex,
+    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, cf.getPc(), "invokespecial", cpMethodRefIndex,
             cf.methodClassNameAt(cpMethodRefIndex),
             cf.methodNameAt(cpMethodRefIndex),
             cf.methodDescriptorAt(cpMethodRefIndex));
   }
 
   public void invokestatic(int cpMethodRefIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, pc, "invokestatic", cpMethodRefIndex,
+    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, cf.getPc(), "invokestatic", cpMethodRefIndex,
             cf.methodClassNameAt(cpMethodRefIndex),
             cf.methodNameAt(cpMethodRefIndex),
             cf.methodDescriptorAt(cpMethodRefIndex));
   }
 
   public void invokevirtual(int cpMethodRefIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, pc, "invokevirtual", cpMethodRefIndex,
+    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, cf.getPc(), "invokevirtual", cpMethodRefIndex,
             cf.methodClassNameAt(cpMethodRefIndex),
             cf.methodNameAt(cpMethodRefIndex),
             cf.methodDescriptorAt(cpMethodRefIndex));
   }
 
   public void ior() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "ior");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "ior");
   }
 
   public void irem() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "irem");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "irem");
   }
 
   public void ireturn() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "ireturn");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "ireturn");
   }
 
   public void ishl() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "ishl");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "ishl");
   }
 
   public void ishr() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "ishr");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "ishr");
   }
 
   public void istore(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "istore", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "istore", localVarIndex);
   }
 
   public void istore_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "istore_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "istore_0");
   }
 
   public void istore_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "istore_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "istore_1");
   }
 
   public void istore_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "istore_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "istore_2");
   }
 
   public void istore_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "istore_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "istore_3");
   }
 
   public void isub() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "isub");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "isub");
   }
 
   public void iushr() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "iushr");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "iushr");
   }
 
   public void ixor() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "ixor");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "ixor");
   }
 
   public void jsr(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "jsr", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "jsr", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void jsr_w(int pcOffset) {
-    pw.printf("%s%3d: %s %+d (%d)\n", prefix, pc, "jsr_w", pcOffset, (pc + pcOffset));
+    pw.printf("%s%3d: %s %+d (%d)\n", prefix, cf.getPc(), "jsr_w", pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void l2d() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "l2d");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "l2d");
   }
 
   public void l2f() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "l2f");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "l2f");
   }
 
   public void l2i() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "l2i");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "l2i");
   }
 
   public void ladd() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "ladd");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "ladd");
   }
 
   public void laload() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "laload");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "laload");
   }
 
   public void land() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "land");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "land");
   }
 
   public void lastore() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lastore");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lastore");
   }
 
   public void lcmp() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lcmp");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lcmp");
   }
 
   public void lconst_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lconst_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lconst_0");
   }
 
   public void lconst_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lconst_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lconst_1");
   }
 
   public void ldc_(int cpIntOrFloatOrStringIndex) {
-    pw.printf("%s%3d: %s @%d(%s)\n", prefix, pc, "ldc", cpIntOrFloatOrStringIndex,
+    pw.printf("%s%3d: %s @%d(%s)\n", prefix, cf.getPc(), "ldc", cpIntOrFloatOrStringIndex,
             cf.getCpValue(cpIntOrFloatOrStringIndex));
   }
 
   public void ldc_w_(int cpIntOrFloatOrStringIndex) {
-    pw.printf("%s%3d: %s @%d(%s)\n", prefix, pc, "ldc_w", cpIntOrFloatOrStringIndex,
+    pw.printf("%s%3d: %s @%d(%s)\n", prefix, cf.getPc(), "ldc_w", cpIntOrFloatOrStringIndex,
             cf.getCpValue(cpIntOrFloatOrStringIndex));
   }
 
   public void ldc2_w(int cpLongOrDoubleIndex) {
-    pw.printf("%s%3d: %s @%d(%s)\n", prefix, pc, "ldc2_w", cpLongOrDoubleIndex,
+    pw.printf("%s%3d: %s @%d(%s)\n", prefix, cf.getPc(), "ldc2_w", cpLongOrDoubleIndex,
             cf.getCpValue(cpLongOrDoubleIndex));
   }
 
   public void ldiv() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "ldiv");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "ldiv");
   }
 
   public void lload(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "lload", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "lload", localVarIndex);
   }
 
   public void lload_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lload_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lload_0");
   }
 
   public void lload_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lload_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lload_1");
   }
 
   public void lload_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lload_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lload_2");
   }
 
   public void lload_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lload_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lload_3");
   }
 
   public void lmul() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lmul");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lmul");
   }
 
   public void lneg() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lneg");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lneg");
   }
 
   public void lookupswitch(int defaultPcOffset, int nEntries) {
-    pw.printf("%s%3d: %s default:%+d\n", prefix, pc, "lookupswitch", defaultPcOffset);
+    pw.printf("%s%3d: %s default:%+d\n", prefix, cf.getPc(), "lookupswitch", defaultPcOffset);
     cf.parseLookupSwitchEntries(this, nEntries);
   }
   public void lookupswitchEntry(int index, int match, int pcOffset){
-    pw.printf("%s      %d : %+d (%d)\n", prefix, match, pcOffset, (pc + pcOffset));
+    pw.printf("%s      %d : %+d (%d)\n", prefix, match, pcOffset, (cf.getPc() + pcOffset));
   }
 
 
   public void lor() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lor");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lor");
   }
 
   public void lrem() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lrem");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lrem");
   }
 
   public void lreturn() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lreturn");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lreturn");
   }
 
   public void lshl() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lshl");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lshl");
   }
 
   public void lshr() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lshr");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lshr");
   }
 
   public void lstore(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "lstore", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "lstore", localVarIndex);
   }
 
   public void lstore_0() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lstore_0");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lstore_0");
   }
 
   public void lstore_1() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lstore_1");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lstore_1");
   }
 
   public void lstore_2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lstore_2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lstore_2");
   }
 
   public void lstore_3() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lstore_3");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lstore_3");
   }
 
   public void lsub() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lsub");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lsub");
   }
 
   public void lushr() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lushr");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lushr");
   }
 
   public void lxor() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "lxor");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "lxor");
   }
 
   public void monitorenter() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "monitorenter");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "monitorenter");
   }
 
   public void monitorexit() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "monitorexit");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "monitorexit");
   }
 
   public void multianewarray(int cpClassIndex, int dimensions) {
-    pw.printf("%s%3d: %s @%d(\"%s\") dim: %d\n", prefix, pc, "multianewarray",
+    pw.printf("%s%3d: %s @%d(\"%s\") dim: %d\n", prefix, cf.getPc(), "multianewarray",
             cpClassIndex, cf.classNameAt(cpClassIndex), dimensions);
   }
 
   public void new_(int cpClassIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\")\n", prefix, pc, "new",
+    pw.printf("%s%3d: %s @%d(\"%s\")\n", prefix, cf.getPc(), "new",
             cpClassIndex, cf.classNameAt(cpClassIndex));
   }
 
   public void newarray(int typeCode) {
-    pw.printf("%s%3d: %s %s[]\n", prefix, pc, "newarray", cf.getTypeName(typeCode));
+    pw.printf("%s%3d: %s %s[]\n", prefix, cf.getPc(), "newarray", cf.getTypeName(typeCode));
   }
 
   public void nop() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "nop");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "nop");
   }
 
   public void pop() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "pop");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "pop");
   }
 
   public void pop2() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "pop2");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "pop2");
   }
 
   public void putfield(int cpFieldRefIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, pc, "putfield", cpFieldRefIndex,
+    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, cf.getPc(), "putfield", cpFieldRefIndex,
             cf.fieldClassNameAt(cpFieldRefIndex),
             cf.fieldNameAt(cpFieldRefIndex),
             cf.fieldDescriptorAt(cpFieldRefIndex));
   }
 
   public void putstatic(int cpFieldRefIndex) {
-    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, pc, "putstatic", cpFieldRefIndex,
+    pw.printf("%s%3d: %s @%d(\"%s\",\"%s\",\"%s\")\n", prefix, cf.getPc(), "putstatic", cpFieldRefIndex,
             cf.fieldClassNameAt(cpFieldRefIndex),
             cf.fieldNameAt(cpFieldRefIndex),
             cf.fieldDescriptorAt(cpFieldRefIndex));
   }
 
   public void ret(int localVarIndex) {
-    pw.printf("%s%3d: %s [%d]\n", prefix, pc, "ret", localVarIndex);
+    pw.printf("%s%3d: %s [%d]\n", prefix, cf.getPc(), "ret", localVarIndex);
   }
 
   public void return_() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "return");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "return");
   }
 
   public void saload() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "saload");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "saload");
   }
 
   public void sastore() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "sastore");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "sastore");
   }
 
   public void sipush(int val) {
-    pw.printf("%s%3d: %s %d\n", prefix, pc, "sipush", val);
+    pw.printf("%s%3d: %s %d\n", prefix, cf.getPc(), "sipush", val);
   }
 
   public void swap() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "swap");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "swap");
   }
 
   public void tableswitch(int defaultPcOffset, int low, int high) {
-    pw.printf("%s%3d: %s [%d..%d] default: %+d\n", prefix, pc, "tableswitch", low, high, defaultPcOffset);
+    pw.printf("%s%3d: %s [%d..%d] default: %+d\n", prefix, cf.getPc(), "tableswitch", low, high, defaultPcOffset);
     cf.parseTableSwitchEntries(this, low, high);
   }
   public void tableswitchEntry(int val, int pcOffset){
-    pw.printf("%s      %d: %+d (%d)\n", prefix, val, pcOffset, (pc + pcOffset));
+    pw.printf("%s      %d: %+d (%d)\n", prefix, val, pcOffset, (cf.getPc() + pcOffset));
   }
 
   public void wide() {
-    pw.printf("%s%3d: %s\n", prefix, pc, "wide");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "wide");
   }
 
   public void unknown(int bytecode) {
-    pw.printf("%s%3d: %s\n", prefix, pc, "");
+    pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "");
   }
 
 

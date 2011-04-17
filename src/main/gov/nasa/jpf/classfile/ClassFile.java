@@ -79,6 +79,7 @@ public class ClassFile {
   Object[] cpValue; // cpValue[i] hold the String/Integer/Float/Double associated with corresponding cp_entries
 
   int pos; // temp index value during parsing
+  int pc; // bytecode pos relative to method code start
 
   
   //--- ctors
@@ -309,6 +310,14 @@ public class ClassFile {
       default:
         return "<unknown>";
     }
+  }
+
+  public int getPos(){
+    return pos;
+  }
+
+  public int getPc(){
+    return pc;
   }
 
   //--- traverse/analyze the const pool (this is rather exotic)
@@ -1429,6 +1438,7 @@ public class ClassFile {
 
 
     while (pos < endPos){
+      pc = pos - startPos;
 
       int opcode = readU1();
       switch (opcode){
@@ -1982,10 +1992,7 @@ public class ClassFile {
           reader.ret(localVarIndex);
           break;
         case 170: // tableswitch
-          offset = (pos-startPos)%4;
-          if (offset > 0){
-            pos += (4-offset);
-          }
+          pos = (((pc+4)>>2)<<2)+startPos; // skip over padding
 
           defaultOffset = readI4();
           int low = readI4();
@@ -1997,10 +2004,7 @@ public class ClassFile {
           pos = nextPos;
           break;
         case 171: // lookupswitch
-          offset = (pos-startPos)%4;
-          if (offset > 0){
-            pos += (4-offset);
-          }
+          pos = (((pc+4)>>2)<<2)+startPos; // skip over padding
 
           defaultOffset = readI4();
           int nPairs = readI4();

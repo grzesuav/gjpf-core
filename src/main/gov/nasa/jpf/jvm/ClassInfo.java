@@ -61,7 +61,7 @@ import java.util.logging.Level;
  * static and dynamic fields, methods, and information relevant to the
  * class.
  */
-public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
+public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, GenericSignatureHolder {
 
   //--- ClassInfo states, in chronological order
   // note the somewhat strange, decreasing values - >= 0 (=thread-id) means 
@@ -141,10 +141,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
    */
   protected String name;
   
-  /**
-   * Signature of the class. e.g. "Ljava/lang/String;"
-   */
-  private String signature;
+  /** type erased signature of the class. e.g. "Ljava/lang/String;" */
+  protected String signature;
+
+  /** Generic type signatures of the class as per para. 4.4.4 of the revised VM spec */
+  protected String genericSignature;
+
 
   // various class attributes
   protected boolean      isClass = true;
@@ -221,10 +223,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   /** Name of the file which contains the source of this class. */
   protected String sourceFileName;
   
-  /** Generic type signatures of the class as per para. 4.4.4 of the revised VM spec
-   * NOTE - this can be a list of types, such as "Lx/y/Z<T>;Ljava/lang/Iterable<T>;"
-   */
-  protected String genericSignature;
 
   /** A unique id associate with this class. */
   protected int uniqueId;
@@ -685,10 +683,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
     //--- common attrs
     @Override
     public void setSignature(ClassFile cf, Object tag, String signature){
-      if (tag == curFi){
-        curFi.setGenericSignature(signature);
-      } else if (tag == curMi){
-        curMi.setGenericSignature(signature);
+      if (tag instanceof GenericSignatureHolder){
+        ((GenericSignatureHolder)tag).setGenericSignature(signature);
       }
     }
   }
@@ -979,6 +975,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo> {
   
   public String getGenericSignature() {
     return genericSignature;
+  }
+
+  public void setGenericSignature(String sig){
+    genericSignature = sig;
   }
   
   public boolean isArray () {

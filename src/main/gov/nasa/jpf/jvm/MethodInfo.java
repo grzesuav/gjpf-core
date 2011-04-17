@@ -35,7 +35,7 @@ import gov.nasa.jpf.util.LocationSpec;
  * information associated with a method. Each method in JPF
  * is represented by a MethodInfo object
  */
-public class MethodInfo extends InfoObject implements Cloneable {
+public class MethodInfo extends InfoObject implements Cloneable, GenericSignatureHolder  {
 
   static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.MethodInfo");
 
@@ -206,10 +206,6 @@ public class MethodInfo extends InfoObject implements Cloneable {
     return (InstructionFactory) insnFactory.clone();
   }
   
-  protected void setGenericSignature(String sig){
-    genericSignature = sig;
-  }
-
   public boolean hasParameterAnnotations() {
     return (parameterAnnotations != null);
   }
@@ -862,7 +858,11 @@ dump();
   public String getGenericSignature() {
     return genericSignature;
   }
-  
+
+  public void setGenericSignature(String sig){
+    genericSignature = sig;
+  }
+
   /**
    * Returns true if the method is static.
    */
