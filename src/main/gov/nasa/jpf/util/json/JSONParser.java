@@ -105,7 +105,7 @@ public class JSONParser {
     Token t = next();
 
     if (t.getType() != type) {
-      throw new JPFException("Unexpected token " + t + " expected " + type);
+      error("Unexpected token '" + t.getValue() + "' expected " + type);
     }
 
     return t;
@@ -189,16 +189,15 @@ public class JSONParser {
    * Parse identifier. Identifier can be "null", "true" or "false"
    * @return appropriate value object
    */
-  // <2do> add ChoiseGenerator call
   private Value parseIdentificator() {
     Token id = consume(Token.Type.Identificator);
 
     String val = id.getValue();
     if (val.equals("true")) {
-      return new BooleanValue(true);
+      return new BooleanValue(true, "true");
     }
     else if (val.equals("false")) {
-      return new BooleanValue(false);
+      return new BooleanValue(false, "false");
     }
     else if (val.equals("null")) {
       return new NullValue();
@@ -208,9 +207,8 @@ public class JSONParser {
     return null;
   }
 
-  // <2do> add explainable error
   private void error(String string) {
-    throw new JPFException(string);
+    throw new JPFException(string + "(" + lexer.getLineNumber() + ":" + lexer.getCurrentPos() + ")");
   }
 
   private Value parseValue() {
@@ -235,14 +233,14 @@ public class JSONParser {
         return parseIdentificator();
         
       default:
-        error("Unexpected token");
+        error("Unexpected token '" + t.getValue() + "' during parsing JSON value");
         return null;
     }
     
   }
 
   /**
-   * Parse Choise Generator call
+   * Parse Choice Generator call
    * @param cgName - name of called Choice Generator.
    * @return parsed object with info about Choice Generator call
    */

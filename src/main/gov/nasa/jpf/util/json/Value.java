@@ -26,7 +26,7 @@ package gov.nasa.jpf.util.json;
  * JSON document to the requested one.
  * @author Ivan Mushketik
  */
-public interface Value {
+public interface  Value {
   /**
    * Get string value.
    * @return string value read from JSON document
@@ -56,4 +56,5 @@ public interface Value {
    * @return boolean value read from JSON document.
    */
   public Boolean getBoolean();
+
 }

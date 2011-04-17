@@ -18,38 +18,22 @@
 //
 package gov.nasa.jpf.util.json;
 
-import gov.nasa.jpf.JPFException;
-
 /**
  * String value from JSON document
  * @author Ivan Mushketik
  */
-public class StringValue implements Value {
+public class StringValue extends  AbstractValue {
 
   String value;
 
   public StringValue(String str) {
+    super(str);
     value = str;
   }
 
+  @Override
   public String getString() {
     return value;
-  }
-
-  public Double getDouble() {
-    throw new JPFException("Can't convert string value to double");
-  }
-
-  public Boolean getBoolean() {
-    throw new JPFException("Can't convert string value to boolean");
-  }
-
-  public JSONObject getObject() {
-    throw new JPFException("Can't convert string value to JSON object");
-  }
-
-  public Value[] getArray() {
-    throw new JPFException("Can't convert string value to array");
   }
 
 }

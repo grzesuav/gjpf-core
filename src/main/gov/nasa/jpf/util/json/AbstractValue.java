@@ -18,21 +18,41 @@
 //
 package gov.nasa.jpf.util.json;
 
+import gov.nasa.jpf.JPFException;
+
 /**
- * Boolean value from JSON document
+ * Implementation of all Value methods. Classes that inherits this class should
+ * only override methods they can handle. Other methods will throw exceptions with
+ * error description.
+ *
  * @author Ivan Mushketik
  */
-class BooleanValue extends AbstractValue {
+public class AbstractValue implements Value {
 
-  Boolean value;
+  String read;
 
-  public BooleanValue(boolean b, String read) {
-    super(read);
-    value = b;
+  protected AbstractValue(String read) {
+    this.read = read;
   }
 
-  @Override
+  public String getString() {
+    throw new JPFException("Can't convert '" + read + " to String");
+  }
+
+  public Double getDouble() {
+    throw new JPFException("Can't convert '" + read + "' to Double");
+  }
+
+  public JSONObject getObject() {
+    throw new JPFException("Can't convert '" + read + "' to JSON object");
+  }
+
+  public Value[] getArray() {
+    throw new JPFException("Can't convert '" + read + "' to Array");
+  }
+
   public Boolean getBoolean() {
-    return value;
+    throw new JPFException("Can't convert '" + read + "' to Boolean");
   }
+
 }

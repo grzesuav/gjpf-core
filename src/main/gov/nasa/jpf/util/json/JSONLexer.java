@@ -352,4 +352,12 @@ public class JSONLexer {
   private boolean hexadecimalChar(int i) {
     return Character.isDigit(i) || (i <= 'F' && i >= 'A') || (i <= 'f' && i >= 'a');
   }
+
+  int getLineNumber() {
+    return lineNumber;
+  }
+
+  int getCurrentPos() {
+    return symbolNumberInLine;
+  }
 }

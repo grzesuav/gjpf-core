@@ -32,24 +32,24 @@ class JSONObjectValue implements Value {
     object = parseObject;
   }
 
-  public String getString() {
-    throw new JPFException("Can't convert JSON object to string");
-  }
-
-  public Double getDouble() {
-    throw new JPFException("Can't convert JSON object to double");
-  }
-
+  @Override
   public JSONObject getObject() {
     return object;
   }
 
+  public String getString() {
+    throw new JPFException("Can't convert JSON object to String");
+  }
+
+  public Double getDouble() {
+    throw new JPFException("Can't convert JSON object to Double");
+  }
+
   public Value[] getArray() {
-    throw new JPFException("Can't convert JSON object to array");
+    throw new JPFException("Can't convert JSON object to Array");
   }
 
   public Boolean getBoolean() {
-    throw new JPFException("Can't convert JSON object to boolean");
+    throw new JPFException("Can't convert JSON object to Boolean");
   }
-
 }

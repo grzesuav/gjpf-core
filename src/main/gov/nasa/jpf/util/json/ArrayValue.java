@@ -29,6 +29,8 @@ public class ArrayValue implements Value {
 
   ArrayList<Value> values = new ArrayList<Value>();
 
+
+
   public String getString() {
     throw new JPFException("Can't convert array to string");
   }

@@ -18,38 +18,21 @@
 //
 package gov.nasa.jpf.util.json;
 
-import gov.nasa.jpf.JPFException;
-
 /**
  * Double value from JSON document
  * @author Ivan Mushketik
  */
-public class DoubleValue implements Value {
+public class DoubleValue extends AbstractValue {
 
   Double value;
 
   public DoubleValue(String strValue) {
+    super(strValue);
     value = Double.parseDouble(strValue);
   }
 
-  public String getString() {
-    throw new JPFException("Can't convert number to string");
-  }
-
+  @Override
   public Double getDouble() {
     return value;
   }
-
-  public Boolean getBoolean() {
-    throw new JPFException("Can't convert number to boolean");
-  }
-
-  public JSONObject getObject() {
-    throw new JPFException("Can't convert number to object");
-  }
-
-  public Value[] getArray() {
-    throw new JPFException("Can't convert number to array");
-  }
-
 }
