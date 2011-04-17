@@ -23,6 +23,9 @@ import gov.nasa.jpf.JPFException;
 /**
  * JSON parser. Read tokenized stream from JSONTokenizer and returns root JSON
  * node.
+ * Parser read extended JSON grammar (http://json.org).
+ * Standard grammar was extended by ability to set Choice Generator call as a
+ * value in JSON object.
  * @author Ivan Mushketik
  */
 public class JSONParser {
@@ -30,8 +33,10 @@ public class JSONParser {
   JSONLexer lexer;
   // Last token returned by lexer
   Token lastReadToken;
+  
+  Token prevReadToken;
   // true if parser bactracked to previous token
-  boolean backtrack;
+  int backtrack;
 
   public JSONParser(JSONLexer lexer) {
     this.lexer = lexer;
@@ -55,11 +60,17 @@ public class JSONParser {
       return lastReadToken;
     }
 
-    if (backtrack) {
-      backtrack = false;
+    if (backtrack == 1) {
+      backtrack--;
       return lastReadToken;
     }
 
+    if (backtrack == 2) {
+      backtrack--;
+      return prevReadToken;
+    }
+
+    prevReadToken = lastReadToken;
     lastReadToken = lexer.getNextToken();
 
     return lastReadToken;
@@ -69,15 +80,19 @@ public class JSONParser {
    * Backtrack to previous token
    */
   private void back() {
-    if (backtrack == true) {
-      throw new JPFException("Attempt to bactrack twice. Posibly an error. Please report");
+    if (backtrack == 2) {
+      throw new JPFException("Attempt to bactrack three times. Posibly an error. Please report");
     }
 
     if (lastReadToken == null) {
       throw new JPFException("Attempt to backtrack before starting to read token stream. Please report");
     }
 
-    backtrack = true;
+    if (backtrack == 1 && prevReadToken == null) {
+      throw new JPFException("Attempt to backtrack twice when less then two tokens read. Please report");
+    }
+
+    backtrack++;
   }
 
   /**
@@ -111,9 +126,22 @@ public class JSONParser {
       while (true) {
         Token key = consume(Token.Type.String);
         consume(Token.Type.KeyValueSeparator);
-        Value val = parseValue();
+        
 
-        pn.addValue(key.getValue(), val);
+        Token posibleId = next();
+        t = next();
+
+        if (posibleId.getType() == Token.Type.Identificator &&
+            t.getType() == Token.Type.CGCallParamsStart) {
+            CGCall cg = parseCGCall(posibleId.getValue());
+            pn.addCGCall(key.getValue(), cg);
+        }
+        else {
+          back();
+          back();
+          Value v = parseValue();
+          pn.addValue(key.getValue(), v);
+        }
 
         t = next();
         // If next token is comma there is one more key-value pair to read
@@ -211,5 +239,38 @@ public class JSONParser {
         return null;
     }
     
+  }
+
+  /**
+   * Parse Choise Generator call
+   * @param cgName - name of called Choice Generator.
+   * @return parsed object with info about Choice Generator call
+   */
+  private CGCall parseCGCall(String cgName) {
+    
+    CGCall parsedCG = new CGCall(cgName);
+    Token t = next();
+
+    if (t.getType() != Token.Type.CGCallParamsEnd) {
+      back();
+      while (true) {
+        Value v = parseValue();
+        parsedCG.addParam(v);
+
+        t = next();
+        if (t.getType() == Token.Type.CGCallParamsEnd) {
+          back();
+          break;
+        }
+        back();
+        consume(Token.Type.Comma);
+      }
+    } else {
+      back();
+    }
+
+    consume(Token.Type.CGCallParamsEnd);
+
+    return parsedCG;
   }
 }

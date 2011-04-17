@@ -19,45 +19,37 @@
 
 package gov.nasa.jpf.util.json;
 
-import gov.nasa.jpf.JPFException;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
- * Object parsed from JSON document.
+ *
  * @author Ivan Mushketik
  */
-public class JSONObject{
+public class CGCall {
 
-  private HashMap<String, Value> keyValues = new HashMap<String, Value>();
-  private HashMap<String, CGCall> cgCalls = new HashMap<String, CGCall>();
+  private ArrayList<Value> params = new ArrayList<Value>();
+  private String name;
 
-  void addValue(String key, Value value) {
-    if (keyValues.containsKey(key)) {
-      throw new JPFException("Attempt to add two nodes with the same key in JSON object");
+  public CGCall(String name) {
+    this.name = name;
+  }
+
+  void addParam(Value value) {
+    if (value == null) {
+      throw new NullPointerException("Null value added to CGCall");
     }
 
-    keyValues.put(key, value);
+    params.add(value);
   }
 
-  /**
-   * Get value read from JSON document with specified key.
-   * @param key - value's key.
-   * @return read value.
-   */
-  public Value getValue(String key) {
-    return keyValues.get(key);
+  public Value[] getValues() {
+    Value paramsArr[] = new Value[params.size()];
+    params.toArray(paramsArr);
+
+    return paramsArr;
   }
 
-  public void addCGCall(String key, CGCall cgCall) {
-    if (cgCalls.containsKey(key)) {
-      throw new JPFException("Attempt to add two CG with the same key in JSON object");
-    }
-
-    cgCalls.put(key, cgCall);
+  public String getName() {
+    return name;
   }
-
-  public CGCall getCGCall(String key) {
-    return cgCalls.get(key);
-  }
-
 }

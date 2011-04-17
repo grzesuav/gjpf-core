@@ -139,4 +139,28 @@ public class JSONLexerTest extends TestJPF {
 
     assertTokenSequence(expectedTokens, lexer);
   }
+
+  @Test
+  public void testCGCallTokens() {
+    String json = "{ "
+            + "\"i\" : MyCG(1, \"str\")"
+            + "}";
+    JSONLexer lexer = new JSONLexer(new StringReader(json));
+
+    Token expectedTokens[] = {
+      new Token(Token.Type.ObjectStart, "{"),
+      new Token(Token.Type.String, "i"),
+      new Token(Token.Type.KeyValueSeparator, ":"),
+      new Token(Token.Type.Identificator, "MyCG"),
+      new Token(Token.Type.CGCallParamsStart, "("),
+      new Token(Token.Type.Number, "1"),
+      new Token(Token.Type.Comma, ","),
+      new Token(Token.Type.String, "str"),
+      new Token(Token.Type.CGCallParamsEnd, ")"),
+      new Token(Token.Type.ObjectEnd, "}"),
+      new Token(Token.Type.DocumentEnd, null)
+    };
+
+    assertTokenSequence(expectedTokens, lexer);
+  }
 }

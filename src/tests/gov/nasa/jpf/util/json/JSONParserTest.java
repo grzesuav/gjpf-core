@@ -86,6 +86,25 @@ public class JSONParserTest extends TestJPF {
     assert o.getValue("False").getBoolean() == false;
   }
 
+  @Test
+  public void testCGCallParsing() {
+    String json = "{"
+            + "\"id\" : CGName(1, \"str\", true, false, null)"
+            + "}";
+
+    JSONObject o = parseJSON(json);
+    CGCall cgCall = o.getCGCall("id");
+
+    assert cgCall.getName().equals("CGName") == true;
+    Value params[] = cgCall.getValues();
+
+    assertEquals(1d, params[0].getDouble(), 0.0001);
+    assert params[1].getString().equals("str") == true;
+    assert params[2].getBoolean() == true;
+    assert params[3].getBoolean() == false;
+    assert params[4].getDouble() == null;
+  }
+
   private JSONObject parseJSON(String json) {
     JSONLexer lexer = new JSONLexer(json);
     JSONParser parser = new JSONParser(lexer);

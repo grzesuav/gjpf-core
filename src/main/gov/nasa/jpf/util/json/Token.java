@@ -29,6 +29,7 @@ public class Token {
     DocumentEnd,
     ObjectStart, ObjectEnd,
     ArrayStart, ArrayEnd,
+    CGCallParamsStart, CGCallParamsEnd,
     Comma,
     KeyValueSeparator,
     Number,

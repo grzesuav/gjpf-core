@@ -93,6 +93,14 @@ public class JSONLexer {
       return new Token(Token.Type.Comma, ",");
     }
 
+    if (c == '(') {
+      return new Token(Token.Type.CGCallParamsStart, "(");
+    }
+
+    if (c == ')') {
+      return new Token(Token.Type.CGCallParamsEnd, ")");
+    }
+
     if (c == '\"') {
       return parseString();
     }
