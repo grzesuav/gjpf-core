@@ -355,6 +355,21 @@ public class VerifyTest extends TestJPF {
     }
   }
 
+  @Test
+  public void testFillingWhenInnerClassIsNull() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "\"l\" : 1234,"
+              + "\"ic\" : null"
+              + "}";
+
+      OuterClass oc = (OuterClass) getFilledObject(OuterClass.class, json);
+
+      assert oc.l == 1234;
+      assert oc.ic == null;
+    }
+  }
+
   class MultiArray {
     int intsInts[][];
   }

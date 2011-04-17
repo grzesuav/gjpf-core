@@ -670,19 +670,22 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     JSONLexer lexer = new JSONLexer(jsonString);
     JSONParser parser = new JSONParser(lexer);
     JSONObject jsonObject = parser.parse();
+    
+    return fillObject(env, typeName, jsonObject);    
+  }
+
+  protected static int fillObject(MJIEnv env, String typeName, JSONObject jsonObject) {
+    if (jsonObject == null) {
+      return MJIEnv.NULL;
+    }
+
     int newObjRef = env.newObject(typeName);
     ElementInfo ei = env.getHeap().get(newObjRef);
 
-    if (ei != null) {
-      fillObject(env, ei, jsonObject);
-      return newObjRef;
-    }
-    else {
+    if (ei == null) {
       throw new JPFException("No such class " + typeName);
     }
-  }
 
-  protected static void fillObject(MJIEnv env, ElementInfo ei, JSONObject jsonObject) {
     ClassInfo ci = ei.getClassInfo();
 
     // Fill all fields for this class until it has a super class
@@ -704,15 +707,13 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
             Creator creator = CreatorsFactory.getCreator(fi.getType());
 
             if (creator != null) {
-              int newObjRef = creator.create(env, fi.getType(), val);
-              ei.setReferenceField(fi, newObjRef);
+              int newSubObjRef = creator.create(env, fi.getType(), val);
+              ei.setReferenceField(fi, newSubObjRef);
             // Not a special case. Fill it recursively
             } else {
-              String typeName = fi.getType();
-              int fieldRef = env.newObject(typeName);
-              ElementInfo fieldEI = env.getElementInfo(fieldRef);
-
-              fillObject(env, fieldEI, val.getObject());
+              String subTypeName = fi.getType();
+              int fieldRef = fillObject(env, subTypeName, val.getObject());
+              
               ei.setReferenceField(fi.getName(), fieldRef);
             }
           }
@@ -721,6 +722,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       
       ci = ci.getSuperClass();
     }
+
+    return newObjRef;
   }
 
   private static void fillPrimitive(ElementInfo ei, FieldInfo fi, Value val) {
@@ -879,9 +882,8 @@ class ArraySetter implements Creator {
           newObjRef = creator.create(env, arrayElementType, vals[i]);
         }
         else{
-          newObjRef = env.newObject(arrayElementType);
-          ElementInfo newObjEI = env.getElementInfo(newObjRef);
-          JPF_gov_nasa_jpf_jvm_Verify.fillObject(env, newObjEI, vals[i].getObject());
+          newObjRef = JPF_gov_nasa_jpf_jvm_Verify.fillObject(env, arrayElementType, vals[i].getObject());
+          
         }
 
         fields.setReferenceValue(i, newObjRef);
