@@ -412,4 +412,8 @@ public class Verify {
     // native
     return null;
   }
+
+  public static <T> T createFromJSON(Class<T> clazz, String json){
+    return null;
+  }
 }

@@ -20,11 +20,17 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
+import gov.nasa.jpf.util.json.JSONLexer;
+import gov.nasa.jpf.util.json.JSONObject;
+import gov.nasa.jpf.util.json.JSONParser;
+import gov.nasa.jpf.util.json.Value;
+import java.util.HashMap;
 
 /**
  * native peer class for programmatic JPF interface (that can be used inside
@@ -654,4 +660,27 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
     System.out.println("~~~~~~~~~~~~~~~~~~~~~~~ end path output");
   }
+
+
+  //--- the JSON object initialization
+
+
+  public static int createFromJSON__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
+          MJIEnv env, int clsObjRef, int newObjClsRef, int jsonStringRef) {
+    
+    int typeNameRef = env.getReferenceField(newObjClsRef, "name");
+    String typeName = env.getStringObject(typeNameRef);
+    String jsonString = env.getStringObject(jsonStringRef);
+
+    JSONLexer lexer = new JSONLexer(jsonString);
+    JSONParser parser = new JSONParser(lexer);
+    JSONObject jsonObject = parser.parse();
+
+    if (jsonObject != null){
+      return jsonObject.fillObject(env, typeName);
+    } else {
+      return MJIEnv.NULL;
+    }
+  }
+
 }
