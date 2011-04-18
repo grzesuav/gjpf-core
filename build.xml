@@ -146,7 +146,7 @@
               output="xml"
               jvmargs="-Xmx1024m"
               outputFile="jpf-fb-report.xml" >
-      <auxClasspath path="lib/bcel.jar" />
+      <auxClasspath path="tools/bcel.jar" />
       <sourcePath path="src/main;src/peers" />
       <class location="build/jpf.jar" />
     </findbugs>

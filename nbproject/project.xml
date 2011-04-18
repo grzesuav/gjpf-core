@@ -241,12 +241,12 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>src/main</package-root>
-                <classpath mode="compile">build/annotations:lib/bcel.jar:lib/junit-4.6.jar</classpath>
+                <classpath mode="compile">build/annotations:lib/junit-4.6.jar</classpath>
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/peers</package-root>
-                <classpath mode="compile">build/main:lib/bcel.jar</classpath>
+                <classpath mode="compile">build/main</classpath>
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>
