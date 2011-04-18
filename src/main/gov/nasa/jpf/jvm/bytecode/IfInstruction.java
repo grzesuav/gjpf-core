@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -64,9 +63,6 @@ public abstract class IfInstruction extends Instruction {
   public Instruction getTarget() {
     if (target == null) {
       target = mi.getInstructionAt(targetPosition);
-if (target == null){
-System.out.println("@@@ no target at: " + targetPosition);
-}
     }
     return target;
   }

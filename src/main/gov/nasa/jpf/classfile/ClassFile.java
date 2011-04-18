@@ -25,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -835,8 +836,12 @@ public class ClassFile {
           dataIdx[i] = j++;
 
           int len = ((data[j++]&0xff) <<8) | (data[j++]&0xff);
-          String s = new String( data, j, len);
-          values[i] = s;
+          try {
+            String s = new String( data, j, len, "UTF-8");
+            values[i] = s;
+          } catch (UnsupportedEncodingException uex){
+            throw new ClassFileException("UTF-8 not supported "); // oh, really?
+          }
 
           j += len;
           break;

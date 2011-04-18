@@ -239,6 +239,7 @@ public class ClassPath {
     for (PathElement e : pathElements){
       byte[] data = e.getClassData(clsName);
       if (data != null){
+        logger.fine("loading ", clsName, " from ", e.getName());
         return data;
       }
     }

@@ -695,7 +695,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public ClassInfo(ClassFile cf, int uniqueId) throws ClassFileException {
-    logger.log(Level.FINE, "loading class: ", name);
 
     Initializer reader = new Initializer();
     cf.parse(reader);

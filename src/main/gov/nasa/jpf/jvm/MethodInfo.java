@@ -1095,7 +1095,7 @@ dump();
 
   // for debugging purposes
   public void dump(){
-    System.out.println("@@--- " + this);
+    System.out.println("--- " + this);
     for (int i = 0; i < code.length; i++) {
       System.out.printf("%2d [%d]: %s\n", i, code[i].getPosition(), code[i].toString());
     }
