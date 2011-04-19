@@ -27,8 +27,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IFNE extends IfInstruction {
 
-  public IFNE() {}
-
   public IFNE(int targetPc) {
     super(targetPc);
   }

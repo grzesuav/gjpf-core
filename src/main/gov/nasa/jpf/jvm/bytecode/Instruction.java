@@ -29,8 +29,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.bcel.classfile.ConstantPool;
-import org.apache.bcel.generic.InstructionHandle;
 
 /**
  * common root of all JPF bytecode instruction classes 
@@ -267,19 +265,6 @@ public abstract class Instruction implements InstructionVisit {
     } else {
       return null;
     }
-  }
-
-  protected void setPeer(org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    // nothing here
-  }
-
-  public void init(InstructionHandle h, int off, MethodInfo m,
-          ConstantPool cp) {
-    position = h.getPosition();
-    insnIndex = off;
-    mi = m;
-    //asString = h.getInstruction().toString(cp);
-    setPeer(h.getInstruction(), cp);
   }
 
   public void init(MethodInfo mi, int offset, int position) {

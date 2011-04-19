@@ -23,9 +23,8 @@
 
 package gov.nasa.jpf.test.mc.threads;
 
-import gov.nasa.jpf.Property;
 import gov.nasa.jpf.util.test.TestJPF;
-import gov.nasa.jpf.listener.PreciseRaceDetector;
+import gov.nasa.jpf.util.ClassSpec;
 import org.junit.Test;
 
 class SharedObject {
@@ -36,8 +35,8 @@ class SharedObject {
 
 public class RaceTest extends TestJPF {
 
-  static final Class<? extends Property>  PROPERTY = PreciseRaceDetector.class;
-  static final String LISTENER = "+listener=" + PROPERTY.getName();
+  static final ClassSpec PROPERTY = new ClassSpec("gov.nasa.jpf.listener.PreciseRaceDetector");
+  static final String LISTENER = "+listener=gov.nasa.jpf.listener.PreciseRaceDetector";
 
   static int staticField;
 

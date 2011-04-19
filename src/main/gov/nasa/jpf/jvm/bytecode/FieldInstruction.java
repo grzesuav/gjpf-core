@@ -27,10 +27,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.SystemState;
 
-import org.apache.bcel.classfile.ConstantPool;
-import org.apache.bcel.generic.ConstantPoolGen;
-import org.apache.bcel.generic.Type;
-import org.apache.bcel.generic.ReferenceType;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.FieldLockInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -83,24 +79,6 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
   public String getClassName()   // Needed for Java Race Finder
   {
      return(className);
-  }
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    org.apache.bcel.generic.FieldInstruction fi;
-    ConstantPoolGen                          cpg;
-
-    fi = (org.apache.bcel.generic.FieldInstruction) i;
-    cpg = ClassInfo.getConstantPoolGen(cp);
-
-    fname = fi.getFieldName(cpg);
-    className = fi.getReferenceType(cpg).toString();
-
-    Type ft = fi.getFieldType(cpg);
-    if (ft instanceof ReferenceType) {
-      isReferenceField = true;
-    }
-
-    size = ft.getSize();
   }
 
   public abstract boolean isRead();

@@ -25,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -79,12 +80,19 @@ public class ClassFile {
   Object[] cpValue; // cpValue[i] hold the String/Integer/Float/Double associated with corresponding cp_entries
 
   int pos; // temp index value during parsing
+  int pc; // bytecode pos relative to method code start
 
   
   //--- ctors
   public ClassFile (byte[] data){
     this.data = data;
   }
+
+  public ClassFile (byte[] data, int offset){
+    this.data = data;
+    pos = offset;
+  }
+
 
   public ClassFile (File file) throws ClassFileException {
     FileInputStream is = null;
@@ -305,6 +313,14 @@ public class ClassFile {
     }
   }
 
+  public int getPos(){
+    return pos;
+  }
+
+  public int getPc(){
+    return pc;
+  }
+
   //--- traverse/analyze the const pool (this is rather exotic)
 
   public int getNumberOfCpEntries(){
@@ -313,6 +329,10 @@ public class ClassFile {
 
   public Object getCpValue (int i){
     return cpValue[i];
+  }
+
+  public int getCpTag (int i){
+    return data[cpPos[i]];
   }
 
   /**
@@ -816,8 +836,12 @@ public class ClassFile {
           dataIdx[i] = j++;
 
           int len = ((data[j++]&0xff) <<8) | (data[j++]&0xff);
-          String s = new String( data, j, len);
-          values[i] = s;
+          try {
+            String s = new String( data, j, len, "UTF-8");
+            values[i] = s;
+          } catch (UnsupportedEncodingException uex){
+            throw new ClassFileException("UTF-8 not supported "); // oh, really?
+          }
 
           j += len;
           break;
@@ -830,7 +854,6 @@ public class ClassFile {
 
           int iVal = (data[j++]&0xff)<<24 | (data[j++]&0xff)<<16 | (data[j++]&0xff)<<8 | (data[j++]&0xff);
           values[i] = new Integer(iVal);
-
           break;
 
         case CONSTANT_FLOAT:  // Float_info  { u1 tag; u4 bytes; }
@@ -843,9 +866,8 @@ public class ClassFile {
 
         case CONSTANT_LONG:  // Long_info { u1 tag; u4 high_bytes; u4 low_bytes; }
           dataIdx[i] = j++;
-
-          int lVal =  (data[j++]&0xff)<<56 | (data[j++]&0xff)<<48 | (data[j++]&0xff)<<40 | (data[j++]&0xff)<<32
-                    | (data[j++]&0xff)<<24 | (data[j++]&0xff)<<16 | (data[j++]&0xff)<<8 | (data[j++]&0xff);
+          long lVal =  (data[j++]&0xffL)<<56 | (data[j++]&0xffL)<<48 | (data[j++]&0xffL)<<40 | (data[j++]&0xffL)<<32
+                    | (data[j++]&0xffL)<<24 | (data[j++]&0xffL)<<16 | (data[j++]&0xffL)<<8 | (data[j++]&0xffL);
           values[i] = new Long(lVal);
 
           dataIdx[++i] = -1;  // 8 byte cpValue occupy 2 index slots
@@ -854,8 +876,8 @@ public class ClassFile {
         case CONSTANT_DOUBLE:  // Double_info  { u1 tag; u4 high_bytes; u4 low_bytes; }
           dataIdx[i] = j++;
 
-          int lBits = (data[j++]&0xff)<<56 | (data[j++]&0xff)<<48 | (data[j++]&0xff)<<40 | (data[j++]&0xff)<<32
-                    | (data[j++]&0xff)<<24 | (data[j++]&0xff)<<16 | (data[j++]&0xff)<<8 | (data[j++]&0xff);
+          long lBits = (data[j++]&0xffL)<<56 | (data[j++]&0xffL)<<48 | (data[j++]&0xffL)<<40 | (data[j++]&0xffL)<<32
+                    | (data[j++]&0xffL)<<24 | (data[j++]&0xffL)<<16 | (data[j++]&0xffL)<<8 | (data[j++]&0xffL);
           double dVal = Double.longBitsToDouble(lBits);
           values[i] = new Double(dVal);
 
@@ -911,6 +933,8 @@ public class ClassFile {
     //--- second pass: store values of delegating constant values
     for (int i=1; i<cpCount; i++){
       Object v = cpValue[i];
+
+      // we store string and class constants as their utf8 string values
       if (v == CpInfo.ConstantClass || v == CpInfo.ConstantString){
          cpValue[i] = cpValue[u2(cpPos[i]+1)];
       }
@@ -978,7 +1002,8 @@ public class ClassFile {
    * pos is at constIndex
    */
   public void parseConstValueAttr(ClassFileReader reader, Object tag){
-    setConstantValue(reader, tag, cpValue[readU2()]);
+    int cpIdx = readU2();
+    setConstantValue(reader, tag, cpValue[cpIdx]);
   }
 
 
@@ -1412,16 +1437,13 @@ public class ClassFile {
 
     boolean isWide = false; // modifier for Xload,Xstore,ret and iinc
 
-    int pc;
     int startPos = pos;
     int endPos = pos+codeLength;
     int nextPos;
 
-    reader.startCode(tag);
 
     while (pos < endPos){
       pc = pos - startPos;
-      reader.setPc(pc);
 
       int opcode = readU1();
       switch (opcode){
@@ -1483,11 +1505,11 @@ public class ClassFile {
           break;
         case 18: // ldc
           cpIdx = readU1();
-          reader.ldc(cpIdx);
+          reader.ldc_(cpIdx);
           break;
         case 19: // ldc_w
           cpIdx = readU2();
-          reader.ldc_w(cpIdx);
+          reader.ldc_w_(cpIdx);
           break;
         case 20: // ldc2_w
           cpIdx = readU2();
@@ -1975,7 +1997,8 @@ public class ClassFile {
           reader.ret(localVarIndex);
           break;
         case 170: // tableswitch
-          pos += 4-((pos-startPos)%4);  // skip the word boundary from beginning of code (0-3 bytes)
+          pos = (((pc+4)>>2)<<2)+startPos; // skip over padding
+
           defaultOffset = readI4();
           int low = readI4();
           int high = readI4();
@@ -1986,9 +2009,11 @@ public class ClassFile {
           pos = nextPos;
           break;
         case 171: // lookupswitch
-          pos += 4-((pos-startPos)%4);  // skip the word boundary from beginning of code (0-3 bytes)
+          pos = (((pc+4)>>2)<<2)+startPos; // skip over padding
+
           defaultOffset = readI4();
           int nPairs = readI4();
+
           nextPos = pos + (nPairs*8);
           reader.lookupswitch(defaultOffset, nPairs);
           pos = nextPos;
@@ -2087,7 +2112,7 @@ public class ClassFile {
           //  istore,fstore,astore,lstore,dstore
           //  ret
           reader.wide();
-          break;
+          continue;
         case 197: // multianewarray
           cpIdx = readU2();
           int dimensions = readU1();
@@ -2116,7 +2141,6 @@ public class ClassFile {
       isWide = false; // reset wide modifier
     }
 
-    reader.endCode(tag);
   }
 
   //--- those can only be called from within a ByteCodeReader.tableswitch() notification
@@ -2159,5 +2183,14 @@ public class ClassFile {
       }
     }
     return defaultOffset;
+  }
+
+  //--- debugging
+  void dumpData (int startPos, int nBytes){
+    System.out.printf("%d +%d: [", startPos, nBytes);
+    for (int i=0; i<nBytes; i++){
+      System.out.printf("%02X ", data[startPos+i]);
+    }
+    System.out.println(']');
   }
 }

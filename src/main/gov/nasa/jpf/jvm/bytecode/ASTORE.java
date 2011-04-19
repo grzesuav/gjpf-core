@@ -29,8 +29,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class ASTORE extends LocalVariableInstruction implements StoreInstruction {
 
-  public ASTORE(){} // this is going away
-
   public ASTORE(int index){
     super(index);
   }

@@ -29,8 +29,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class LLOAD extends LocalVariableInstruction {
 
-  public LLOAD() {}
-
   public LLOAD(int localVarIndex){
     super(localVarIndex);
   }

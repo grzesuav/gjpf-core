@@ -26,8 +26,6 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Create new object
@@ -38,13 +36,7 @@ public class NEW extends Instruction {
   protected int newObjRef = -1;
 
   public NEW (String clsDescriptor){
-    cname = Types.getClassNameFromSignature(clsDescriptor);
-  }
-
-  public NEW () {}
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    cname = cp.constantToString(cp.getConstant(
-                                      ((org.apache.bcel.generic.NEW) i).getIndex()));
+    cname = Types.getClassNameFromTypeName(clsDescriptor);
   }
   
   public String getClassName()    // Needed for Java Race Finder

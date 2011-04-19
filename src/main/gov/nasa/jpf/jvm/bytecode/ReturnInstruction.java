@@ -88,45 +88,7 @@ public abstract class ReturnInstruction extends Instruction {
     storeReturnValue(ti);
 
     if (ti.getStackDepth() == 1) { // done - last stackframe in this thread
-      int objref = ti.getThreadObjectRef();
-      ElementInfo ei = ks.heap.get(objref);
-
-      // beware - this notifies all waiters on this thread (e.g. in a join())
-      // hence it has to be able to acquire the lock
-      if (!ei.canLock(ti)) {
-        // block first, so that we don't get this thread in the list of CGs
-        ei.block(ti);
-
-        // if we can't acquire the lock, it means there needs to be another thread alive,
-        // but it might not be runnable (deadlock) and we don't want to mask that error
-        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
-        ss.setMandatoryNextChoiceGenerator(cg, "blocking thread termination without CG: ");
-        return this;
-
-      } else { // Ok, we can get the lock, time to die
-        // notify waiters on thread termination
-
-        if (!ti.holdsLock(ei)){
-          // we only need to increase the lockcount if we don't own the lock yet,
-          // as is the case for synchronized run() in anonymous threads (otherwise
-          // we have a lockcount > 1 and hence do not unlock upon return)
-          ei.lock(ti);
-        }
-
-        ei.notifiesAll();
-        ei.unlock(ti);
-
-        ti.finish(); // cleanup
-
-        ss.clearAtomic();
-        if (ti.hasOtherNonDaemonRunnables()){
-          ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(ti);
-          ss.setMandatoryNextChoiceGenerator(cg, "thread terminated without CG: ");
-        }
-
-        ti.popFrame(); // we need to do this *after* setting the CG (so that we still have a CG insn)
-        return null;
-      }
+      return ti.exitRunMethod();
 
     } else { // there are still frames on the stack
       StackFrame top = ti.popFrame();

@@ -25,8 +25,6 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Enter monitor for object
@@ -34,8 +32,6 @@ import org.apache.bcel.classfile.ConstantPool;
  */
 public class MONITORENTER extends LockInstruction {
 
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int objref = ti.peek();      // Don't pop yet before we know we really execute

@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassFile;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassPath;
+import gov.nasa.jpf.jvm.bytecode.InstructionFactory;
 import gov.nasa.jpf.util.test.TestJPF;
 import java.io.File;
 import org.junit.Test;
@@ -109,13 +110,51 @@ public class ClassInfoTest extends TestJPF {
     }
   }
 
+  static class NonResolvedClassInfo extends ClassInfo {
+    NonResolvedClassInfo (ClassFile cf) throws ClassFileException {
+      super(cf);
+    }
+
+    protected ClassInfo loadSuperClass (String superName) {
+      return null;
+    }
+
+    protected CodeBuilder createCodeBuilder(){
+      InstructionFactory insnFactory = new InstructionFactory();
+      return new CodeBuilder(insnFactory, null, null);
+    }
+
+    protected void checkAnnotationDefaultValues(AnnotationInfo ai){
+      // nothing - we don't want annotation types to be resolved
+    }
+  }
+
   @Test
   public void testClassFileInitialization() {
     File file = new File("build/tests/gov/nasa/jpf/jvm/ClassInfoTest$MyClass.class");
 
     try {
       ClassFile cf = new ClassFile(file);
-      ClassInfo ci = new ClassInfo(cf);
+      ClassInfo ci = new NonResolvedClassInfo(cf);
+
+      assert ci.getName().equals("gov.nasa.jpf.jvm.ClassInfoTest$MyClass");
+
+      System.out.println("-- declared instance fields");
+      for (FieldInfo fi : ci.getDeclaredInstanceFields()){
+        System.out.print(fi.getType());
+        System.out.print(' ');
+        System.out.println(fi.getName());
+      }
+
+      assert ci.getNumberOfDeclaredInstanceFields() == 1;
+      assert ci.getNumberOfStaticFields() == 1;
+
+      System.out.println();
+      System.out.println("-- methods");
+      for (MethodInfo mi : ci){
+        System.out.println(mi.getUniqueName());
+      }
+
 
     } catch (ClassFileException cfx){
       //cfx.printStackTrace();

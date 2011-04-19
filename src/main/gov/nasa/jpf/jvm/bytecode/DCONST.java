@@ -23,8 +23,6 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Push double
@@ -37,11 +35,6 @@ public class DCONST extends Instruction {
 
   public DCONST (double d){
     value = Double.doubleToLongBits(d);
-  }
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    value = Types.doubleToLong(((org.apache.bcel.generic.DCONST) i).getValue()
-                                                                 .doubleValue());
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {

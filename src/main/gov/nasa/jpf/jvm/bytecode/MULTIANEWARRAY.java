@@ -26,8 +26,6 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Create new multidimensional array
@@ -40,13 +38,6 @@ public class MULTIANEWARRAY extends Instruction {
   public MULTIANEWARRAY (String typeName, int dimensions){
     this.type = Types.getClassNameFromTypeName(typeName);
     this.dimensions = dimensions;
-  }
-
-  public MULTIANEWARRAY() {}
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    type = cp.constantToString(cp.getConstant(
-                                     ((org.apache.bcel.generic.MULTIANEWARRAY) i).getIndex()));
-    dimensions = ((org.apache.bcel.generic.MULTIANEWARRAY) i).getDimensions();
   }
 
   public static int allocateArray (Heap heap, String type, int[] dim, ThreadInfo ti, int d) {

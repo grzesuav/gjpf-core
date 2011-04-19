@@ -19,9 +19,6 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import org.apache.bcel.classfile.ConstantPool;
-import org.apache.bcel.generic.InstructionHandle;
-
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -51,23 +48,6 @@ public abstract class SwitchInstruction extends Instruction {
 
   public int getNumberOfEntries() {
     return targets.length;
-  }
-
-  protected SwitchInstruction() {}
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    target = ((org.apache.bcel.generic.Select) i).getTarget()
-                                                     .getPosition();
-    matches = ((org.apache.bcel.generic.Select) i).getMatchs();
-
-    int length = matches.length;
-    targets = new int[length];
-
-    InstructionHandle[] ih = ((org.apache.bcel.generic.Select) i).getTargets();
-
-    for (int j = 0; j < length; j++) {
-      targets[j] = ih[j].getPosition();
-    }
   }
 
   protected Instruction executeConditional (SystemState ss, KernelState ks, ThreadInfo ti){

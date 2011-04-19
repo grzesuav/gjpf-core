@@ -23,8 +23,6 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Push float
@@ -38,11 +36,6 @@ public class FCONST extends Instruction {
 
   public FCONST(float f){
     value = Float.floatToIntBits(f);
-  }
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    value = Types.floatToInt(((org.apache.bcel.generic.FCONST) i).getValue()
-                                                               .floatValue());
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {

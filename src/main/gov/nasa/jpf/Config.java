@@ -883,7 +883,7 @@ public class Config extends Properties {
     return super.remove(k);
   }
 
-  protected String prepend (String key, String value, String separator) {
+  public String prepend (String key, String value, String separator) {
     String oldValue = getProperty(key);
     value = normalize( expandString(key, value));
 
@@ -892,7 +892,7 @@ public class Config extends Properties {
     return oldValue;
   }
 
-  protected String append (String key, String value, String separator) {
+  public String append (String key, String value, String separator) {
     String oldValue = getProperty(key);
     value = normalize( expandString(key, value));
 

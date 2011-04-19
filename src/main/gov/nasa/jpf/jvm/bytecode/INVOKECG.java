@@ -21,11 +21,8 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import java.util.List;
 
-import org.apache.bcel.classfile.ConstantPool;
-import org.apache.bcel.Constants;
 
 import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.InstructionFactory;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.Ref;
@@ -50,7 +47,6 @@ public class INVOKECG extends Instruction {
     this.invokes = invokes;
   }
 
-  public INVOKECG() {}
 
   public void setInvokes(List<Invocation> invokes) {
     this.invokes = invokes;
@@ -72,14 +68,16 @@ public class INVOKECG extends Instruction {
       MethodInfo callee = call.getMethodInfo();
       InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
 
+      String clsName = callee.getClassInfo().getName();
+      String mthName = callee.getName();
+      String signature = callee.getSignature();
+
+      InvokeInstruction realInvoke;
       if (callee.isStatic()){
-        realInvoke = insnFactory.create(null, INVOKESTATIC.class);
+        realInvoke = insnFactory.invokestatic(clsName, mthName, signature);
       } else {
-        realInvoke = insnFactory.create(null, INVOKEVIRTUAL.class);
+        realInvoke = insnFactory.invokevirtual(clsName, mthName, signature);
       }
-      realInvoke.init(mi, insnIndex, position);
-      realInvoke.setInvokedMethod( callee.getClassInfo().getName(),
-                                   callee.getName(), callee.getSignature());
       
       pushArguments(ti, call.getArguments(), call.getAttrs());
       

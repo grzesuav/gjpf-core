@@ -18,13 +18,10 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.ArrayAccess;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
-
-import org.apache.bcel.classfile.ConstantPool;
 
 
 /**
@@ -36,11 +33,6 @@ public abstract class ArrayInstruction extends Instruction {
   int index;
 
   public ArrayInstruction () {
-  }
-
-  /* define this here since none of the array instructions need to set a
-   * peer. */
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
   }
 
 

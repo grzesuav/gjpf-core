@@ -2,12 +2,12 @@
 // Copyright (C) 2006 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
-// 
+//
 // This software is distributed under the NASA Open Source Agreement
 // (NOSA), version 1.3.  The NOSA has been approved by the Open Source
 // Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
 // directory tree for the complete NOSA document.
-// 
+//
 // THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
 // KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
 // LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
@@ -22,7 +22,7 @@ package gov.nasa.jpf.jvm;
  * MJI NativePeer class for java.lang.String library abstraction
  */
 public class JPF_java_lang_String {
-  
+
   public static int intern____Ljava_lang_String_2 (MJIEnv env, int robj) {
     // <2do> Replace this with a JPF space HashSet once we have a String model
     Heap   heap = env.getHeap();
@@ -32,11 +32,11 @@ public class JPF_java_lang_String {
 
     return robj;
   }
-  
+
   public static boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int argRef) {
     if (argRef == MJIEnv.NULL){
       return false;
-      
+
     }
 
     Heap   heap = env.getHeap();
@@ -46,15 +46,15 @@ public class JPF_java_lang_String {
     if (!env.isInstanceOf(argRef,"java.lang.String")) {
       return false;
     }
-    
+
     Fields f1 = heap.get( s1.getReferenceField("value")).getFields();
     int o1 = s1.getIntField("offset");
     int l1 = s1.getIntField("count");
-    
+
     Fields f2 = heap.get( s2.getReferenceField("value")).getFields();
     int o2 = s2.getIntField("offset");
     int l2 = s2.getIntField("count");
-    
+
     if (l1 != l2) {
       return false;
     }
@@ -166,16 +166,16 @@ public class JPF_java_lang_String {
     int vref = env.getReferenceField(objref, "value");
     int off = env.getIntField(objref, "offset");
     int len = env.getIntField(objref, "count");
-    
+
     int cref = env.newCharArray(len);
-    
+
     for (int i=0, j=off; i<len; i++, j++){
       env.setCharArrayElement(cref, i, env.getCharArrayElement(vref, j));
     }
-    
+
     return cref;
   }
-  
+
   public static int indexOf__I__I (MJIEnv env, int objref, int c) {
     String thisStr = env.getStringObject(objref);
 
@@ -210,7 +210,7 @@ public class JPF_java_lang_String {
 
   public static int hashCode____I (MJIEnv env, int objref) {
     int h = env.getIntField(objref, "hash");
-    
+
     if (h == 0){
       int vref = env.getReferenceField(objref, "value");
       int off = env.getIntField(objref, "offset");
@@ -224,9 +224,9 @@ public class JPF_java_lang_String {
         h = 31*h + values[off];
       }
       env.setIntField(objref, "hash", h);
-      
-    }    
-    
+
+    }
+
     return h;
   }
 
@@ -245,7 +245,7 @@ public class JPF_java_lang_String {
     int thisOffset = thisStr.getIntField("offset");
     CharArrayFields thisFields = (CharArrayFields) heap.get(thisStr.getReferenceField("value")).getFields();
     char thisChars[] = thisFields.asCharArray();
-    
+
     int otherOffset = otherStr.getIntField("offset");
     CharArrayFields otherFields = (CharArrayFields) heap.get(otherStr.getReferenceField("value")).getFields();
     char otherChars[] = otherFields.asCharArray();
@@ -310,20 +310,20 @@ public class JPF_java_lang_String {
 
   // <2do> we also need startsWith, endsWith, indexOf etc. - all not relevant from
   // a model checking perspective (unless we want to compute execution budgets)
-  
-    
+
+
   public static int format__Ljava_lang_String_2_3Ljava_lang_Object_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef,
                                                                                            int fmtRef, int argRef){
     return env.newString(env.format(fmtRef,argRef));
   }
-  
+
   //
   public static int getBytes__Ljava_lang_String_2___3B(MJIEnv env, int ObjRef, int str) {
     String string = env.getStringObject(str);
     byte[] b = string.getBytes();
     return env.newByteArray(b);
   }
-  
+
   public static int split__Ljava_lang_String_2I___3Ljava_lang_String_2(MJIEnv env, int clsObjRef, int strRef, int limit) {
     String s = env.getStringObject(strRef);
     String obj = env.getStringObject(clsObjRef);

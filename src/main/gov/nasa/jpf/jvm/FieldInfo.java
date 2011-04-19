@@ -20,16 +20,11 @@ package gov.nasa.jpf.jvm;
 
 import java.lang.reflect.Modifier;
 
-import org.apache.bcel.classfile.ConstantValue;
-import org.apache.bcel.classfile.Attribute;
-import org.apache.bcel.classfile.Signature;
-import org.apache.bcel.classfile.Field;
-
 
 /**
  * type, name and attribute information of a field.
  */
-public abstract class FieldInfo extends InfoObject {
+public abstract class FieldInfo extends InfoObject implements GenericSignatureHolder {
 
   //--- FieldInfo attributes
   // don't break transitions on get/putXX insns of this field, even if shared
@@ -62,60 +57,6 @@ public abstract class FieldInfo extends InfoObject {
 
   // those might relate to sticky ElementInto.ATTR_*
   int attributes;
-
-  protected static String computeGenericSignature(Field f) {
-    Attribute attribs[] = f.getAttributes();
-    for (int i = attribs.length; --i >= 0; ) {
-      if (attribs[i] instanceof Signature) {
-        Signature signature = (Signature) attribs[i];
-        return signature.getSignature();
-      }
-    }
-     
-    return "";
-  }
-
-  /**
-   * factory method for the various concrete FieldInfos
-   * THIS WILL BE REMOVED WHEN WE REPLACE BCEL
-   */
-  public static FieldInfo create (ClassInfo ci, Field f, int idx, int off) {
-    String name = f.getName();
-    String signature = f.getSignature();
-    ConstantValue cv = f.getConstantValue();
-    int modifiers = f.getModifiers();
-
-    FieldInfo ret = create(ci, name, signature, modifiers, idx, off);
-    
-    // THIS IS BRAINDEAD - but it is going away as soon as we replace BCEL
-    if (cv != null){
-      String cvs = cv.toString();
-      Object v = null;
-      switch (signature.charAt(0)){
-        case 'Z':
-        case 'B':
-        case 'S':
-        case 'C':
-        case 'I':
-          v = new Integer(Integer.parseInt(cvs)); break;
-        case 'J':
-          v = new Long(Long.parseLong(cvs)); break;
-        case 'F':
-          v = new Float(Float.parseFloat(cvs)); break;
-        case 'D':
-          v = new Double(Double.parseDouble(cvs)); break;
-        default:
-          v = cvs;
-      }
-      ret.setConstantValue(v);
-    }
-
-    ret.setGenericSignature(computeGenericSignature(f));
-
-    ret.loadAnnotations(f.getAnnotationEntries());
-
-    return ret;
-  }
 
   
   public static FieldInfo create (ClassInfo ci, String name, String signature, int modifiers,
@@ -155,9 +96,6 @@ public abstract class FieldInfo extends InfoObject {
   // those are set subsequently from classfile attributes
   public void setConstantValue(Object constValue){
     cv = constValue;
-  }
-  public void setGenericSignature(String gsig){
-    genericSignature = gsig;
   }
 
   public abstract String valueToString (Fields f);
@@ -285,7 +223,11 @@ public abstract class FieldInfo extends InfoObject {
   public String getGenericSignature() {
     return genericSignature; 
   }
-  
+
+  public void setGenericSignature(String sig){
+    genericSignature = sig;
+  }
+
   public ClassInfo getTypeClassInfo () {
     return ClassInfo.getResolvedClassInfo(getType());
   }
@@ -325,6 +267,10 @@ public abstract class FieldInfo extends InfoObject {
 
   void setAttributes (int a) {
     attributes = a;
+  }
+
+  public void addAttribute (int a){
+    attributes |= a;
   }
 
   public int getAttributes () {

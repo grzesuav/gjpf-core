@@ -27,8 +27,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IF_ICMPNE extends IfInstruction {
 
-  public IF_ICMPNE() {}
-
   public IF_ICMPNE(int targetPc) {
     super(targetPc);
   }

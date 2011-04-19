@@ -26,8 +26,6 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Check whether object is of given type
@@ -40,12 +38,6 @@ public class CHECKCAST extends Instruction {
 
   public CHECKCAST(String typeName){
     type = Types.getClassNameFromTypeName(typeName);
-  }
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    String t = cp.constantToString(cp.getConstant(
-                                     ((org.apache.bcel.generic.CHECKCAST) i).getIndex()));
-    type = Types.getClassNameFromTypeName(t);
   }
 
   public String getTypeName() {

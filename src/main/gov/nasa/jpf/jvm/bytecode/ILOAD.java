@@ -29,8 +29,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class ILOAD extends LocalVariableInstruction {
 
-  public ILOAD() {}
-
   public ILOAD(int localVarIndex){
     super(localVarIndex);
   }

@@ -37,7 +37,7 @@ public class NATIVERETURN extends ReturnInstruction {
   Object retAttr;
   Byte retType;
 
-  // this is more simple thatn a normal ReturnInstruction because NativeMethodInfos
+  // this is more simple than a normal ReturnInstruction because NativeMethodInfos
   // are not synchronized, and NativeStackFrames are never the first frame in a thread
   @Override
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {

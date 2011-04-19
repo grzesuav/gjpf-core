@@ -25,17 +25,6 @@ import gov.nasa.jpf.classfile.ClassFileReaderAdapter;
 import gov.nasa.jpf.classfile.ClassPath;
 import java.util.ArrayList;
 import java.util.HashMap;
-import org.apache.bcel.classfile.AnnotationDefault;
-import org.apache.bcel.classfile.AnnotationEntry;
-import org.apache.bcel.classfile.ArrayElementValue;
-import org.apache.bcel.classfile.Attribute;
-import org.apache.bcel.classfile.ClassElementValue;
-import org.apache.bcel.classfile.ElementValue;
-import org.apache.bcel.classfile.ElementValuePair;
-import org.apache.bcel.classfile.EnumElementValue;
-import org.apache.bcel.classfile.JavaClass;
-import org.apache.bcel.classfile.Method;
-import org.apache.bcel.classfile.SimpleElementValue;
 
 /**
  * the JPF counterpart for Java Annotations
@@ -147,6 +136,10 @@ public class AnnotationInfo {
     if (def == null){ // Annotation not seen yet - we have to dig it out from the classfile
       try {
         byte[] data = locator.getClassData(annotationType);
+        if (data == null){
+          throw new JPFException("annotation class not found: " + annotationType);
+        }
+
         ClassFile cf = new ClassFile(data);
         cf.parse(valueCollector);
 
@@ -161,49 +154,6 @@ public class AnnotationInfo {
 
     return def;
   }
-
-
-
-  static Entry[] getDefaultEntries (String annotationType){
-
-    Entry[] def = defaultEntries.get(annotationType);
-
-    if (def == null){ // Annotation not seen yet - we have to dig it out from the classfile
-      JavaClass acls = ClassInfo.getJavaClass(annotationType);
-      if (acls != null){
-        ArrayList<Entry> list = null;
-        for (Method m : acls.getMethods()) {
-          for (Attribute a : m.getAttributes()) {
-            if ("AnnotationDefault".equals(a.getName())) {
-              if (list == null) {
-                list = new ArrayList<Entry>();
-              }
-
-              AnnotationDefault ad = (AnnotationDefault) a;
-              ElementValue val = ad.getDefaultValue();
-
-              list.add(new Entry(m.getName(), getValueObject(val)));
-            }
-          }
-        }
-        if (list != null && !list.isEmpty()) {
-          def = list.toArray(new Entry[list.size()]);
-        } else {
-          def = NONE;
-        }
-        defaultEntries.put(annotationType, def);
-
-      } else {
-        // <2do> maybe we should raise an exception, but apparently simple
-        // occurrence of an annotation doesn't load the class in a normal VM
-        ClassInfo.logger.warning("annotation type not found: " + annotationType);
-        def = NONE;
-      }
-    }
-
-    return def;
-  }
-
 
 
   public static class EnumValue {
@@ -248,7 +198,8 @@ public class AnnotationInfo {
     return new ClassValue( Types.getClassNameFromTypeName(type));
   }
 
-  
+  // NOTE - never modify an Entry object since it might be shared between
+  // different instances of the same annotation type
   static class Entry {
     String key;
     Object value;
@@ -290,90 +241,43 @@ public class AnnotationInfo {
     this.name = name;
     this.entries = entries;
   }
-  
-  public AnnotationInfo (AnnotationEntry ae){
-    name = Types.getClassNameFromTypeName(ae.getAnnotationType()); // it's in slash-notation
-    ArrayList<Entry> list = new ArrayList<Entry>();
 
-    // those are only the explicitly provided parameters
-    ElementValuePair[] evp = ae.getElementValuePairs();
+  /**
+   * check if this AnnotationInfo instance has not-yet-specified default
+   * values, which we have to load from the annotation classfile itself
+   *
+   * NOTE - this is set AFTER we got the explicitly specified values from
+   * the annotation expression
+   */
+  public void checkDefaultValues(ClassPath contextCp){
+    Entry[] defEntries = getDefaultEntries(contextCp, name);
+    int elen = entries.length;
     
-    for (int i = 0; i < evp.length; i++) {
-      String key = evp[i].getNameString();
-      ElementValue eval = evp[i].getValue();
-      Object val = getValueObject(eval);
+    outer:
+    for (int i=0; i<defEntries.length; i++){
+      Entry de = defEntries[i];
 
-      list.add(new Entry(key, val));
-    }
-
-    // now we have to check if there are any default parameters that are not overridden
-    for (Entry d : getDefaultEntries(name)){
-      boolean overridden = false;
-      int n = list.size();
-      for (int j=0; j<n; j++){
-        Entry e = list.get(j);
-        if (e.key.equals(d.key)){
-          overridden = true;
-          break;
+      // check if we already have an explicitly specified value for this entry
+      for (int j=0; j<elen; j++){
+        if (entries[j].key.equals(de.key)){
+          continue outer;
         }
       }
-      if (!overridden){
-        list.add(d);
+
+      // add the default value
+      if (elen == 0){
+        entries = defEntries.clone(); // just set them all at once
+        return;
+
+      } else {
+        Entry[] newEntries = new Entry[elen + 1];
+        System.arraycopy(entries,0, newEntries,0, elen);
+        newEntries[elen] = de;
+        entries = newEntries;
       }
     }
-    
-    entries = list.toArray(new Entry[list.size()]);
   }
-  
-  /**
-   * get the ElementValue object, which is either a boxed enumClassName for a simple
-   * value, a String, a static FieldInfo for enum constants, a ClassInfo
-   * for classes, or arrays of all all of the above 
-   */
-  static Object getValueObject (ElementValue ev){
-    switch (ev.getElementValueType()){
-    case ElementValue.PRIMITIVE_INT:
-      return new Integer(((SimpleElementValue)ev).getValueInt());
-    case ElementValue.PRIMITIVE_LONG:
-      return new Long(((SimpleElementValue)ev).getValueLong());
-    case ElementValue.PRIMITIVE_DOUBLE:
-      return new Double(((SimpleElementValue)ev).getValueDouble());
-    case ElementValue.PRIMITIVE_FLOAT:
-      return new Float(((SimpleElementValue)ev).getValueFloat());
-    case ElementValue.PRIMITIVE_SHORT:
-      return new Short(((SimpleElementValue)ev).getValueShort());
-    case ElementValue.PRIMITIVE_CHAR:
-      return new Character(((SimpleElementValue)ev).getValueChar());
-    case ElementValue.PRIMITIVE_BYTE:
-      return new Byte(((SimpleElementValue)ev).getValueByte());
-    case ElementValue.PRIMITIVE_BOOLEAN:
-      return Boolean.valueOf(((SimpleElementValue)ev).getValueBoolean());
-    case ElementValue.STRING:
-      return ((SimpleElementValue)ev).getValueString();
-    case ElementValue.ARRAY:
-      ElementValue[] a = ((ArrayElementValue)ev).getElementValuesArray();
-      Object[] arr = new Object[a.length];
-      for (int i=0; i<a.length; i++){
-        arr[i] = getValueObject(a[i]);
-      }
-      return arr;
-      
-    case ElementValue.ENUM_CONSTANT:
-      EnumElementValue eev = (EnumElementValue)ev;
-      String etype = Types.getClassNameFromTypeName(eev.getEnumTypeString());
-      String eval = eev.getEnumValueString();
-      return getEnumValue(etype, eval);
-      
-    case ElementValue.CLASS:
-      ClassElementValue cev = (ClassElementValue)ev;
-      String cname = Types.getClassNameFromTypeName(cev.getClassString());
-      return getClassValue(cname);
-      
-    default:
-      return ev.stringifyValue();        
-    }
-  }
-  
+
   public String getName() {
     return name;
   }

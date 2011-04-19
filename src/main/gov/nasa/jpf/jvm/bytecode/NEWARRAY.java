@@ -23,8 +23,6 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
-import org.apache.bcel.Constants;
-import org.apache.bcel.classfile.ConstantPool;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.Types;
 
@@ -41,11 +39,6 @@ public class NEWARRAY extends Instruction {
 
   public NEWARRAY(int typeCode) {
     type = Types.getElementDescriptorOfType(typeCode);
-  }
-
-  public NEWARRAY() {}
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    type = Constants.SHORT_TYPE_NAMES[((org.apache.bcel.generic.NEWARRAY) i).getTypecode()];
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {

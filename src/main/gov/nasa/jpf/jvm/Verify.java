@@ -413,7 +413,7 @@ public class Verify {
     return null;
   }
 
-  public static Object createFromJSON(String typeName, String json) {
+  public static <T> T createFromJSON(Class<T> clazz, String json){
     return null;
   }
 }

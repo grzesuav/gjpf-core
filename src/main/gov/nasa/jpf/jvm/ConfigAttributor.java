@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.bcel.classfile.JavaClass;
-import org.apache.bcel.classfile.Method;
 
 /**
  * A configuration file-driven attributor so that we can tailor JPF's
@@ -63,17 +61,18 @@ public class ConfigAttributor extends DefaultAttributor {
     }
   }
 
-  public boolean isMethodAtomic (JavaClass jc, Method mth, String uniqueName) {
-    String cls = jc.getClassName();
+  public void setMethodInfoAttributes (MethodInfo mi) {
+    ClassInfo ci = mi.getClassInfo();
+    String cls = ci.getName();
+    String uniqueName = mi.getUniqueName();
+
+    super.setMethodInfoAttributes(mi);
+
     for (NameRule rule : atomic_rules) {
       if (rule.isMatch(cls, uniqueName)) {
-        System.out.println("Found atomic rule for " + cls + ":" +
-                             uniqueName);
-        return rule.getResult() == 1;
+        mi.setAtomic(rule.getResult() == 1);
       }
     }
-    // if no rules matched, use the default rules
-    return super.isMethodAtomic(jc, mth, uniqueName);
   }
 
 

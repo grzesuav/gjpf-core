@@ -18,11 +18,10 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
-
-import org.apache.bcel.classfile.ConstantPool;
 
 
 /**
@@ -30,9 +29,7 @@ import org.apache.bcel.classfile.ConstantPool;
  * ..., arrayref => ..., length
  */
 public class ARRAYLENGTH extends Instruction {
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-  }
-
+  
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     int objref = th.pop();
 
@@ -40,8 +37,9 @@ public class ARRAYLENGTH extends Instruction {
       return th.createAndThrowException("java.lang.NullPointerException",
                                         "array length of null object");
     }
-    
-    th.push(ks.heap.get(objref).arrayLength(), false);
+
+    ElementInfo ei = ks.heap.get(objref);
+    th.push(ei.arrayLength(), false);
 
     return getNext(th);
   }

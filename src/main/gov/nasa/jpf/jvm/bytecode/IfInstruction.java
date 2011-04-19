@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -32,8 +31,6 @@ public abstract class IfInstruction extends Instruction {
   protected Instruction target;  // jump target
   
   protected boolean conditionValue;  /** value of last evaluation of branch condition */
-
-  protected IfInstruction() {}
 
   protected IfInstruction(int targetPosition){
     this.targetPosition = targetPosition;
@@ -55,12 +52,7 @@ public abstract class IfInstruction extends Instruction {
   public boolean isBackJump () { 
     return (conditionValue) && (targetPosition <= position);
   }
-  
-  public void setPeer (org.apache.bcel.generic.Instruction insn,
-                       org.apache.bcel.classfile.ConstantPool cp) {
-    targetPosition = ((org.apache.bcel.generic.BranchInstruction) insn).getTarget().getPosition();
-  }
-  
+    
   /** 
    * retrieve value of jump condition from operand stack
    * (not ideal to have this public, but some listeners might need it for
@@ -123,7 +115,7 @@ public abstract class IfInstruction extends Instruction {
   
   public String toString () {
     if (asString == null) {
-      asString = getMnemonic() + " " + getTarget().getInstructionIndex();
+      asString = getMnemonic() + " " + targetPosition;
     }
     return asString;
   }

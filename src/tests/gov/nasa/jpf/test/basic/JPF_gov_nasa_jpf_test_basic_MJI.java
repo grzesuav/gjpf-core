@@ -98,7 +98,8 @@ public class JPF_gov_nasa_jpf_test_basic_MJI {
 
   public static int nativeInstanceMethod (MJIEnv env, int robj, double d,
                                           char c, boolean b, int i) {
-    System.out.println("# entering nativeInstanceMethod()");
+    System.out.println("# entering nativeInstanceMethod() d=" + d +
+            ", c=" + c + ", b=" + b + ", i=" + i);
 
     if ((d == 2.0) && (c == '?') && b) {
       return i + 2;

@@ -19,8 +19,6 @@
 
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.ConstantValue;
-
 /**
  * field type that requires a single slot (all but long and double)
  */

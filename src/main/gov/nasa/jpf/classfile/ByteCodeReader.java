@@ -24,11 +24,6 @@ package gov.nasa.jpf.classfile;
  */
 public interface ByteCodeReader {
 
-  void startCode(Object tag);
-  void endCode(Object tag);
-
-  void setPc (int pc);
-
   void aconst_null();
   void aload(int localVarIndex);
   void aload_0();
@@ -195,8 +190,8 @@ public interface ByteCodeReader {
   void lcmp();
   void lconst_0();
   void lconst_1();
-  void ldc(int cpIntOrFloatOrStringIndex);
-  void ldc_w(int cpIntOrFloatOrStringIndex);
+  void ldc_(int cpIntOrFloatOrStringIndex);
+  void ldc_w_(int cpIntOrFloatOrStringIndex);
   void ldc2_w(int cpLongOrDoubleIndex);
   void ldiv();
   void lload(int localVarIndex);

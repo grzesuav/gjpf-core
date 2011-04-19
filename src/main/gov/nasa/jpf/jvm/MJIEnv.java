@@ -647,6 +647,10 @@ public class MJIEnv {
     return new Character(getCharField(objref, "value"));
   }
 
+  public Short getShortObject (int objref){
+    return new Short(getShortField(objref, "value"));
+  }
+
   public Integer getIntegerObject (int objref){
     return new Integer(getIntField(objref, "value"));
   }
@@ -879,8 +883,12 @@ public class MJIEnv {
       String clsName = getClassName(ref);
       if (clsName.equals("java.lang.String")){
         arg[i] = getStringObject(ref);
+      } else if (clsName.equals("java.lang.Byte")){
+        arg[i] = getByteObject(ref);
       } else if (clsName.equals("java.lang.Char")){
         arg[i] = getCharObject(ref);
+      } else if (clsName.equals("java.lang.Short")){
+        arg[i] = getShortObject(ref);
       } else if (clsName.equals("java.lang.Integer")){
         arg[i] = getIntegerObject(ref);
       } else if (clsName.equals("java.lang.Long")){

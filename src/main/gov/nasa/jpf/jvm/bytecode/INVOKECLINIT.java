@@ -44,9 +44,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class INVOKECLINIT extends INVOKESTATIC {
 
-  public INVOKECLINIT () {
-  }
-
   public INVOKECLINIT (ClassInfo ci){
     super(ci.getSignature(), "<clinit>", "()V");
   }

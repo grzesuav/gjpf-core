@@ -32,8 +32,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class GETFIELD extends InstanceFieldInstruction {
 
-  public GETFIELD (){}
-
   public GETFIELD (String fieldName, String classType, String fieldDescriptor){
     super(fieldName, classType, fieldDescriptor);
   }

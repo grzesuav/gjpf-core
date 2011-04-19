@@ -20,8 +20,6 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.*;
 
-import org.apache.bcel.classfile.ConstantPool;
-
 
 /**
  * Create new array of reference
@@ -34,14 +32,6 @@ public class ANEWARRAY extends Instruction {
 
   public ANEWARRAY (String typeDescriptor){
     type = Types.getTypeSignature(typeDescriptor, true);
-  }
-
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    type = cp.constantToString(cp.getConstant(
-                                     ((org.apache.bcel.generic.ANEWARRAY) i).getIndex()));
-    if (!type.startsWith("[")) {
-      type = "L" + type + ";";
-    }
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {

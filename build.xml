@@ -146,7 +146,7 @@
               output="xml"
               jvmargs="-Xmx1024m"
               outputFile="jpf-fb-report.xml" >
-      <auxClasspath path="lib/bcel.jar" />
+      <auxClasspath path="tools/bcel.jar" />
       <sourcePath path="src/main;src/peers" />
       <class location="build/jpf.jar" />
     </findbugs>
@@ -183,6 +183,17 @@
     <jar jarfile="build/jpf-classes.jar">
       <fileset dir="build/classes"/>
       <fileset dir="build/annotations"/>
+
+      <fileset dir="build/main">
+          <!-- we need this one in case a SUT uses the Verify API -->
+          <include name="gov/nasa/jpf/jvm/Verify.class"/>
+
+          <!-- these are required if we run TestJPF derived test classes -->
+          <include name="gov/nasa/jpf/JPFShell.class"/>
+          <include name="gov/nasa/jpf/util/ClassSpec.class"/>
+          <include name="gov/nasa/jpf/util/test/TestJPF.class"/>
+          <include name="gov/nasa/jpf/util/test/TestJPFHelper.class"/>
+      </fileset>
     </jar>
 
     <!-- optional jar that contains annotations to be used in non-JPF dependent apps -->
@@ -204,8 +215,8 @@
         <include name="gov/nasa/jpf/util/JPFSiteUtils.class"/>
         <include name="gov/nasa/jpf/util/FileUtils.class"/>
         <include name="gov/nasa/jpf/util/StringMatcher.class"/>
-
       </fileset>
+      
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Implementation-Vendor" value="NASA Ames Research Center"/>
@@ -373,10 +384,6 @@
         <fileset dir="build/tests">
           <exclude name="**/JPF_*.class"/>
           <include name="**/*Test.class"/>
-
-          <!-- temporary disabled -->
-          <exclude name="**/PorSkipLocalSyncTest.class"/>
-
         </fileset>
       </batchtest>
 

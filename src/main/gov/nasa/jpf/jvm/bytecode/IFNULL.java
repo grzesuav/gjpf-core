@@ -25,8 +25,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IFNULL extends IfInstruction {
 
-  public IFNULL() {}
-
   public IFNULL(int targetPc) {
     super(targetPc);
   }

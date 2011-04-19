@@ -18,17 +18,11 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import org.apache.bcel.classfile.ConstantPool;
 
 public class GOTO_W extends GOTO {
 
   public GOTO_W(int targetPos){
     super(targetPos);
-  }
-
-  public GOTO_W() {}
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    targetPosition = ((org.apache.bcel.generic.GOTO_W) i).getTarget().getPosition();
   }
 
   public int getLength() {

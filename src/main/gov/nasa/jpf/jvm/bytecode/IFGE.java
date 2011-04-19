@@ -27,8 +27,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IFGE extends IfInstruction {
 
-  public IFGE() {}
-
   public IFGE(int targetPc) {
     super(targetPc);
   }

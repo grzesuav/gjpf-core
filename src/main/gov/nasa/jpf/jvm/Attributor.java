@@ -18,17 +18,14 @@
 //
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.JavaClass;
-import org.apache.bcel.classfile.Method;
-import org.apache.bcel.classfile.Field;
-
 /**
  * interface to configure various method and field attributes at class
  * load time
  */
 public interface Attributor {
-  boolean isMethodAtomic (JavaClass jc, Method m, String uniqueName);
-  int getObjectAttributes (JavaClass jc);
-  int getFieldAttributes (JavaClass jc, Field f);
+
+  void setMethodInfoAttributes(MethodInfo mi);
+  void setFieldInfoAttributes(FieldInfo fi);
+  void setElementInfoAttributes(ClassInfo ci);
 }
 

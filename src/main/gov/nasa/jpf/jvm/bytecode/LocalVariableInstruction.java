@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.*;
-import org.apache.bcel.classfile.ConstantPool;
 
 /**
  * class abstracting instructions that access local variables, to keep
@@ -31,16 +30,11 @@ public abstract class LocalVariableInstruction extends Instruction
   protected int index;
   protected String varId;
 
-  protected LocalVariableInstruction(){} // this is going away
 
   protected LocalVariableInstruction(int index){
     this.index = index;
   }
 
-  public void setPeer (org.apache.bcel.generic.Instruction i, ConstantPool cp) {
-    index = ((org.apache.bcel.generic.LocalVariableInstruction) i).getIndex();
-  }
-  
   public int getLocalVariableIndex() {
     return index;
   }

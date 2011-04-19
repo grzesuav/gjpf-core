@@ -27,8 +27,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IF_ICMPLT extends IfInstruction {
 
-  public IF_ICMPLT() {}
-
   public IF_ICMPLT(int targetPc) {
     super(targetPc);
   }

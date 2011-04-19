@@ -101,8 +101,8 @@ public class JSONLexer {
       return new Token(Token.Type.CGCallParamsEnd, ")");
     }
 
-    if (c == '\"') {
-      return parseString();
+    if (c == '\"' || c == '\'') {
+      return parseString(c);
     }
 
     if (Character.isDigit(c) || c == '-') {
@@ -165,11 +165,11 @@ public class JSONLexer {
   }
 
   // Scaner doesn't backtrack before call this method
-  private Token parseString() {
+  private Token parseString(int delimiter) {
     StringBuilder result = new StringBuilder();
     int c;
 
-    while((c = next()) != '\"') {
+    while((c = next()) != delimiter) {
       if (c == '\\') {
           result.append((char) readEscapedSymbol());
       }

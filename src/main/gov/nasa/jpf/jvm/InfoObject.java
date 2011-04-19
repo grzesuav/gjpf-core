@@ -19,7 +19,6 @@
 
 package gov.nasa.jpf.jvm;
 
-import org.apache.bcel.classfile.AnnotationEntry;
 
 /**
  * common root for ClassInfo, MethodInfo, FieldInfo (and maybe more to follow)
@@ -33,18 +32,6 @@ public abstract class InfoObject {
   // small enough so that simple arrays are more efficient than HashMaps
   protected AnnotationInfo[] annotations;
 
-  protected void loadAnnotations (AnnotationEntry[] ae){
-    
-    if ((ae != null) && (ae.length > 0)){
-      AnnotationInfo[] ai = new AnnotationInfo[ae.length];
-      for (int i=0; i<ae.length; i++){
-        ai[i] = new AnnotationInfo(ae[i]);
-      }
-      
-      annotations = ai;
-    }
-  }
-
   protected void startAnnotations(int count){
     annotations = new AnnotationInfo[count];
   }
@@ -52,10 +39,6 @@ public abstract class InfoObject {
   protected void setAnnotation(int index, AnnotationInfo ai){
     annotations[index] = ai;
   }
-
-  
-
-
 
   public void addAnnotation (AnnotationInfo newAnnotation){
     AnnotationInfo[] ai = annotations;

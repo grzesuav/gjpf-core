@@ -34,8 +34,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class GETSTATIC extends StaticFieldInstruction {
 
-  public GETSTATIC() {}
-
   public GETSTATIC(String fieldName, String clsDescriptor, String fieldDescriptor){
     super(fieldName, clsDescriptor, fieldDescriptor);
   }

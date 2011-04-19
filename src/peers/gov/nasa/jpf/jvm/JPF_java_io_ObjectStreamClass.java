@@ -31,9 +31,15 @@ public class JPF_java_io_ObjectStreamClass {
   }
 
   // just a little accelerator
-  static int getDeclaredSUID__Ljava_lang_Class_2__Ljava_lang_Long_2 (MJIEnv env, int objRef, int clsRef){
+  public static int getDeclaredSUID__Ljava_lang_Class_2__Ljava_lang_Long_2 (MJIEnv env, int objRef, int clsRef){
     ClassInfo ci = JPF_java_lang_Class.getReferredClassInfo(env, clsRef);
-    long l = env.getStaticLongField(clsRef, "serialVersionUID");
-    return env.newLong(l);
+    FieldInfo fi = ci.getDeclaredStaticField("serialVersionUID");
+    if (fi != null){
+      ElementInfo ei = ci.getStaticElementInfo();
+      long l = ei.getLongField(fi);
+      return env.newLong(l);
+    } else {
+      return MJIEnv.NULL;
+    }
   }
 }
