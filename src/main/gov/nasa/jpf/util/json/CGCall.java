@@ -19,7 +19,10 @@
 
 package gov.nasa.jpf.util.json;
 
+import gov.nasa.jpf.jvm.ChoiceGenerator;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  *
@@ -51,5 +54,56 @@ public class CGCall {
 
   public String getName() {
     return name;
+  }
+
+  /**
+   * This method go through JSON object and finds all CGs to set in a current state.
+   * It also gives each CG it's a unique id. Each id is calculated in a following way:
+   * <li> If CG call is in the root of JSON object it's id will be equals to it's key in JSON
+   * <li> If CG call isn't in a root object it's id will be concatenated keys of
+   * all parent objects + key of CG.
+   * <li> If CG call is in an object that is an element of array CG's id will be
+   * concatenated keys of all parent array + "[i" (where i is a pos of parent object
+   * of CG in array + CG's key)
+   *
+   * This id also used in JSONObject.fillObject() to find CG to use when field that
+   * should be set with CG is found.
+   *
+   * @param jsonObject - parsed JSON object
+   * @param CGCreators - hash of factories to create Choice Generators
+   * @return
+   */
+  public static List<ChoiceGenerator> createCGList(JSONObject jsonObject, HashMap<String, CGCreator> CGCreators) {
+    List<ChoiceGenerator> result = new ArrayList<ChoiceGenerator>();
+    createCGs(jsonObject, "", CGCreators, result);
+
+    return result;
+  }
+
+  private static void createCGs(JSONObject jsonObject, String prefix, HashMap<String, CGCreator> CGCreators, List<ChoiceGenerator> result) {
+    for (String cgKey : jsonObject.getCGCallsKeys()) {
+      CGCall cgCall = jsonObject.getCGCall(cgKey);
+      CGCreator creator = CGCreators.get(cgCall.getName());
+
+      ChoiceGenerator newCG = creator.createCG(prefix + cgKey, cgCall.getValues());
+      result.add(newCG);
+    }
+
+    for (String valueKey : jsonObject.getValuesKeys()) {
+      Value v = jsonObject.getValue(valueKey);
+
+      if (v instanceof JSONObjectValue) {
+        createCGs(v.getObject(), prefix + valueKey, CGCreators, result);
+      }
+      else if (v instanceof ArrayValue) {
+        Value[] values = v.getArray();
+
+        for (int i = 0; i < values.length; i++) {
+          if (values[i] instanceof JSONObjectValue) {
+            createCGs(values[i].getObject(), prefix + valueKey + "[" + i, CGCreators, result);
+          }
+        }
+      }
+    }
   }
 }

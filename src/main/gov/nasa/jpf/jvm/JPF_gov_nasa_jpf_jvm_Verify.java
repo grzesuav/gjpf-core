@@ -24,19 +24,29 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
+import gov.nasa.jpf.util.json.CGCall;
 import gov.nasa.jpf.util.json.JSONLexer;
 import gov.nasa.jpf.util.json.JSONObject;
 import gov.nasa.jpf.util.json.JSONParser;
 import gov.nasa.jpf.util.json.Value;
+import gov.nasa.jpf.util.json.BoolCGCreator;
+import gov.nasa.jpf.util.json.CGCreator;
+import gov.nasa.jpf.util.json.IntFromSetCGCreator;
 import java.util.HashMap;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * native peer class for programmatic JPF interface (that can be used inside
  * of apps to verify - if you are aware of the danger that comes with it)
  */
 public class JPF_gov_nasa_jpf_jvm_Verify {
+
+  private static final JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.JPF_gov_nases_jpf_jvm_Verify");
+
   static final int MAX_COUNTERS = 10;
 
   static boolean isInitialized;
@@ -661,10 +671,15 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     System.out.println("~~~~~~~~~~~~~~~~~~~~~~~ end path output");
   }
 
+  // Hash where key is a name that user can use in JSON document to set a
+  // ChoiceGenerator and value is creator of ChoiceGenerator that uses Values[]
+  // from JSON to creat CG
+  static HashMap<String, CGCreator> cgTable = new HashMap<String, CGCreator>() {{
+    put("TrueFalse", new BoolCGCreator());
+    put("IntSet", new IntFromSetCGCreator());
+  }};  
 
   //--- the JSON object initialization
-
-
   public static int createFromJSON__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
           MJIEnv env, int clsObjRef, int newObjClsRef, int jsonStringRef) {
     
@@ -676,12 +691,59 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     JSONParser parser = new JSONParser(lexer);
     JSONObject jsonObject = parser.parse();
 
-    if (jsonObject != null){
-      return jsonObject.fillObject(env, typeName);
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+    ChoiceGenerator[] CGs = null;
+
+    if (jsonObject != null) {
+      // First call - we need to set Choice generators
+      if (!ti.isFirstStepInsn()) {
+
+        List<ChoiceGenerator> cgList = CGCall.createCGList(jsonObject, cgTable);
+
+        for (ChoiceGenerator cg : cgList) {
+          if (ss.setNextChoiceGenerator(cg)) {
+            env.repeatInvocation();
+          }
+          logger.finer("Added CG in Verify.createFromJSON(): " + cg.getId());
+        }
+        CGs = new ChoiceGenerator[cgList.size()];
+        cgList.toArray(CGs);
+      }
+
+      if (CGs == null) {
+        CGs = ss.getChoiceGenerators();
+      }
+
+      logger.finer("Verify.createFromJSON() call. Curent CG values.");
+      for (ChoiceGenerator cg : ss.getChoiceGenerators()) {
+        logger.finer("CGName: ", cg.getId(), " value ", cg.getNextChoice());        
+      }
+
+      return jsonObject.fillObject(env, typeName, CGs, "");
+
     } else {
       return MJIEnv.NULL;
-    }  
+    }
   }
 
+  public static int testCGCall____I(MJIEnv env, int clsObjRef) {
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+    if (!ti.isFirstStepInsn()) { // first time around
+      
+      BooleanChoiceGenerator cg = new BooleanChoiceGenerator( "verifyGetBoolean(Z)", true );
+      if (ss.setNextChoiceGenerator(cg)){
+        env.repeatInvocation();
+      }
 
+      System.out.println("FSI " + ss.getId());
+
+      return -1;  // not used if we repeat
+
+    } else {  // this is what really returns results
+      System.out.println("CGCall " + ss.getId());
+      return (ss.getCurrentChoiceGenerator("verifyGetBoolean(Z)", BooleanChoiceGenerator.class).getNextChoice() == true)? 1 : 0;
+    }
+  }
 }

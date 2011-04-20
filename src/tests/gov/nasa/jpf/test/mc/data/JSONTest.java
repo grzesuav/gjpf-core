@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.test.mc.data;
 
+import gov.nasa.jpf.annotation.FilterField;
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
@@ -338,4 +339,37 @@ public class JSONTest extends TestJPF {
       assert cws.s2 == null;
     }
   }
+
+  // --- CG Tests
+
+  class Bool {
+    boolean b;
+  }
+
+  @FilterField
+  boolean bArr[];
+
+  @FilterField
+  int i1;
+
+//  @Test
+//  public void testSetBoolFromCG() {
+//
+//    if (verifyNoPropertyViolation()) {
+//      bArr = new boolean[2];
+//      String json = "{"
+//              + "'b' : TrueFalse()"
+//              + "}";
+//
+//      Bool bb = Verify.createFromJSON(Bool.class, json);
+//      bArr[i1] = bb.b;
+//      i1++;
+//
+//      if (i1 == 2) {
+//        assert (bArr[0] == true && bArr[1] == false) &&
+//               (bArr[0] == false && bArr[1] == true);
+//      }
+//
+//    }
+//  }
 }
