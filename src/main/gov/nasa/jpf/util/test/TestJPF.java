@@ -70,9 +70,9 @@ public abstract class TestJPF implements JPFShell  {
   public static final String UNNAMED_PACKAGE = "";
   public static final String SAME_PACKAGE = null;
 
-
-
   //--- those are only used outside of JPF execution
+  @FilterField protected static boolean globalRunDirectly, globalShowConfig;
+
   @FilterField protected static boolean runDirectly; // don't run test methods through JPF, invoke it directly
   @FilterField protected static boolean stopOnFailure; // stop as soon as we encounter a failed test or error
   @FilterField protected static boolean showConfig; // for debugging purposes
@@ -259,10 +259,10 @@ public abstract class TestJPF implements JPFShell  {
 
 
   protected static void getOptions (String[] args){
-    runDirectly = false;
-    showConfig = false;
-    stopOnFailure = false;
-    hideSummary = false;
+    runDirectly = globalRunDirectly;
+    showConfig = globalShowConfig;
+
+    // hideSummary and stopOnFailure only make sense as global options anyways
 
     if (args != null){
       for (int i=0; i<args.length; i++){
@@ -401,6 +401,9 @@ public abstract class TestJPF implements JPFShell  {
     List<String> results = null;
 
     getOptions(args);
+    globalRunDirectly = runDirectly;
+    globalShowConfig = showConfig;
+    boolean globalStopOnFailure = stopOnFailure;
 
     try {
       List<Method> testMethods = getTestMethods(testCls, args);
@@ -431,7 +434,7 @@ public abstract class TestJPF implements JPFShell  {
             result += ": Error";
           }
 
-          if (stopOnFailure){
+          if (globalStopOnFailure){
             break;
           }
         }
