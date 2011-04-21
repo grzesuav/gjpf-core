@@ -35,6 +35,7 @@ import gov.nasa.jpf.util.json.Value;
 import gov.nasa.jpf.util.json.BoolCGCreator;
 import gov.nasa.jpf.util.json.CGCreator;
 import gov.nasa.jpf.util.json.IntFromSetCGCreator;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -63,6 +64,9 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   // this is our cache for ChoiceGenerator ctor parameters
   static Object[] cgArgs = { null, null };
 
+  static BitSet[] bitSets;
+  static int nextBitSet;
+  static final int MAX_BIT_SETS = 2;
 
   public static void init (Config conf) {
 
@@ -113,6 +117,38 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
 
     return ++counter[counterId];
+  }
+
+  public static int createBitSet____I(MJIEnv env, int clsObjRef) {
+    if (bitSets == null) {
+      bitSets = new BitSet[clsObjRef];
+    }
+
+    if (nextBitSet >= bitSets.length) {
+      BitSet[] newBitSets = new BitSet[bitSets.length * 2];
+      System.arraycopy(bitSets, 0, newBitSets, 0, bitSets.length);
+      bitSets = newBitSets;
+    }
+    
+    bitSets[nextBitSet] = new BitSet();
+
+    return nextBitSet++;
+  }
+
+  public static void setBitInBitSet__IIZ__V(MJIEnv env, int clsObjRef, int id, int bitNum, boolean value) {
+    if (id < 0 || id >= nextBitSet) {
+      throw new JPFException("Illegal BitSet id");
+    }
+
+    bitSets[id].set(bitNum, value);
+  }
+
+  public static boolean getBitInBitSet__II__Z(MJIEnv env, int clsObjRef, int id, int bitNum) {
+    if (id < 0 || id >= nextBitSet) {
+      throw new JPFException("Illegal BitSet id");
+    }
+
+    return bitSets[id].get(bitNum);
   }
 
   public static final long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
