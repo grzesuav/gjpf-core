@@ -30,6 +30,8 @@ import org.junit.Test;
  * @author Ivan Mushketik
  */
 public class JSONTest extends TestJPF {
+
+
   
   class MySup {
     int j;
@@ -343,33 +345,181 @@ public class JSONTest extends TestJPF {
   // --- CG Tests
 
   class Bool {
+    Bool(boolean b) {this.b = b;}
     boolean b;
+
+    public boolean equals(Object o) {
+      Bool bool = (Bool) o;
+      return this.b == bool.b;
+    }
   }
 
-  @FilterField
-  boolean bArr[];
+  private void checkValue(Object[] expected, Object curVal, int BSid) {
+    for (int i = 0; i < expected.length; i++) {
+      if (curVal.equals(expected[i])) {
+        Verify.setBitInBitSet(BSid, i, true);
+        break;
+      }
+    }
 
-  @FilterField
-  int i1;
+    Verify.incrementCounter(0);
 
-//  @Test
-//  public void testSetBoolFromCG() {
-//
-//    if (verifyNoPropertyViolation()) {
-//      bArr = new boolean[2];
-//      String json = "{"
-//              + "'b' : TrueFalse()"
-//              + "}";
-//
-//      Bool bb = Verify.createFromJSON(Bool.class, json);
-//      bArr[i1] = bb.b;
-//      i1++;
-//
-//      if (i1 == 2) {
-//        assert (bArr[0] == true && bArr[1] == false) &&
-//               (bArr[0] == false && bArr[1] == true);
-//      }
-//
-//    }
-//  }
+    if (Verify.getCounter(0) == expected.length) {
+      for (int i = 0; i < expected.length; i++) {
+        assert Verify.getBitInBitSet(BSid, i) == true;
+      }
+    }
+  }
+
+  @Test
+  public void testSetBoolFromCG() {
+    if (verifyNoPropertyViolation()) {      
+      String json = "{"
+              + "'b' : TrueFalse()"
+              + "}";
+
+      Object[] expected = {
+        new Bool(true),
+        new Bool(false)
+      };
+      int BSid = Verify.createBitSet();
+      Bool bb = Verify.createFromJSON(Bool.class, json);      
+      checkValue(expected, bb, BSid);
+    }
+  }
+
+  class ByteShortIntLong {
+
+    public ByteShortIntLong(int b, int s, int i, long l) {
+      this.b = (byte) b; this.s = (short) s; this.i = i; this.l = l;
+    }
+
+    byte b; short s; int i; long l;
+
+    public boolean equals(Object o) {
+      ByteShortIntLong bs = (ByteShortIntLong) o;
+
+      return bs.b == b && bs.s == s && bs.i == i && bs.l == l;
+    }
+  }
+
+  @Test
+  public void testSetByteShortIntFromCG() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "'b' : IntSet(1, 2),"
+              + "'s' : 2,"
+              + "'i' : IntSet(3, 4, 5),"
+              + "'l' : IntSet(8)"
+              + "}";
+
+      Object[] expected = {
+        new ByteShortIntLong(1, 2, 3, 8), new ByteShortIntLong(2, 2, 3, 8),
+        new ByteShortIntLong(1, 2, 4, 8), new ByteShortIntLong(2, 2, 4, 8),
+        new ByteShortIntLong(1, 2, 5, 8), new ByteShortIntLong(2, 2, 5, 8),
+      };
+      int BSid = Verify.createBitSet();
+      ByteShortIntLong bsil = Verify.createFromJSON(ByteShortIntLong.class, json);
+      checkValue(expected, bsil, BSid);
+    }
+  }
+
+  @Test
+  public void testFillWithIntevalCG() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "'b' : 1,"
+              + "'s' : IntInterval(1, 3),"
+              + "'i' : 1,"
+              + "'l' : IntInterval(8, 10)"
+              + "}";
+
+      Object[] expected = {
+        new ByteShortIntLong(1, 1, 1, 8), new ByteShortIntLong(1, 2, 1, 8), new ByteShortIntLong(1, 3, 1, 8),
+        new ByteShortIntLong(1, 1, 1, 9), new ByteShortIntLong(1, 2, 1, 9), new ByteShortIntLong(1, 3, 1, 9),
+        new ByteShortIntLong(1, 1, 1, 10), new ByteShortIntLong(1, 2, 1, 10), new ByteShortIntLong(1, 3, 1, 10),};
+      int BSid = Verify.createBitSet();
+      ByteShortIntLong bsil = Verify.createFromJSON(ByteShortIntLong.class, json);
+      checkValue(expected, bsil, BSid);
+    }
+  }
+
+  class I {
+    int i;
+  }
+
+  class O {
+    I inner;
+    public O(int i) {
+      inner = new I();
+      inner.i = i;
+    }
+
+    public boolean equals(Object o) {
+      O outer = (O) o;
+
+      return outer.inner.i == this.inner.i;
+    }
+  }
+
+  @Test
+  public void testFillInnerClassCG() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "'inner' : {"
+                + "'i' : IntSet(3, 4, 5)"
+                + "}"
+              + "}";
+
+      Object[] expected = {
+        new O(3), new O(4), new O(5),
+      };
+      int BSid = Verify.createBitSet();
+      O bsil = Verify.createFromJSON(O.class, json);
+      checkValue(expected, bsil, BSid);
+    }
+  }
+
+  class ArrI {
+    I[] arr;
+
+    ArrI(int... ints) {
+      arr = new I[ints.length];
+      for (int i = 0; i < ints.length; i++) {arr[i] = new I(); arr[i].i = ints[i];}
+    }
+
+    public boolean equals(Object o) {
+      ArrI other = (ArrI) o;
+
+      if (other.arr.length != this.arr.length) {
+        return false;
+      }
+      for (int i = 0; i < this.arr.length; i++) {
+        if (this.arr[i].i != other.arr[i].i) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+
+  @Test
+  public void testFillingObjectInArrayWithCG() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "'arr' : [ {'i' : IntSet(1, 2, 3)}, {'i' : IntSet(4, 5, 6)}]"
+              + "}";
+
+      Object[] expected = {
+        new ArrI(1, 4), new ArrI(2, 4), new ArrI(3, 4),
+        new ArrI(1, 5), new ArrI(2, 5), new ArrI(3, 5),
+        new ArrI(1, 6), new ArrI(2, 6), new ArrI(3, 6),
+      };
+      int BSid = Verify.createBitSet();
+      ArrI arri = Verify.createFromJSON(ArrI.class, json);
+      checkValue(expected, arri, BSid);
+    }
+  }
 }
+
+

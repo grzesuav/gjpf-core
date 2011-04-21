@@ -428,8 +428,4 @@ public class Verify {
   public static <T> T createFromJSON(Class<T> clazz, String json){
     return null;
   }
-
-  public static int testCGCall() {
-    return 0;
-  }
 }

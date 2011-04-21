@@ -35,6 +35,7 @@ import gov.nasa.jpf.util.json.Value;
 import gov.nasa.jpf.util.json.BoolCGCreator;
 import gov.nasa.jpf.util.json.CGCreator;
 import gov.nasa.jpf.util.json.IntFromSetCGCreator;
+import gov.nasa.jpf.util.json.IntIntervalCGCreator;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
@@ -713,6 +714,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   static HashMap<String, CGCreator> cgTable = new HashMap<String, CGCreator>() {{
     put("TrueFalse", new BoolCGCreator());
     put("IntSet", new IntFromSetCGCreator());
+    put("IntInterval", new IntIntervalCGCreator());
   }};  
 
   //--- the JSON object initialization
@@ -753,33 +755,13 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
       logger.finer("Verify.createFromJSON() call. Curent CG values.");
       for (ChoiceGenerator cg : ss.getChoiceGenerators()) {
-        logger.finer("CGName: ", cg.getId(), " value ", cg.getNextChoice());        
+        logger.finer("CGName: " + cg.getId() + " value " + cg.getNextChoice());
       }
 
       return jsonObject.fillObject(env, typeName, CGs, "");
 
     } else {
       return MJIEnv.NULL;
-    }
-  }
-
-  public static int testCGCall____I(MJIEnv env, int clsObjRef) {
-    ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
-    if (!ti.isFirstStepInsn()) { // first time around
-      
-      BooleanChoiceGenerator cg = new BooleanChoiceGenerator( "verifyGetBoolean(Z)", true );
-      if (ss.setNextChoiceGenerator(cg)){
-        env.repeatInvocation();
-      }
-
-      System.out.println("FSI " + ss.getId());
-
-      return -1;  // not used if we repeat
-
-    } else {  // this is what really returns results
-      System.out.println("CGCall " + ss.getId());
-      return (ss.getCurrentChoiceGenerator("verifyGetBoolean(Z)", BooleanChoiceGenerator.class).getNextChoice() == true)? 1 : 0;
     }
   }
 }
