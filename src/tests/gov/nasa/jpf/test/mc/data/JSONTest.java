@@ -20,6 +20,7 @@
 package gov.nasa.jpf.test.mc.data;
 
 import gov.nasa.jpf.annotation.FilterField;
+import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
@@ -518,6 +519,72 @@ public class JSONTest extends TestJPF {
       int BSid = Verify.createBitSet();
       ArrI arri = Verify.createFromJSON(ArrI.class, json);
       checkValue(expected, arri, BSid);
+    }
+  }
+
+  class BoxedInteger {
+    Integer bi;
+
+    BoxedInteger(Integer newI) {
+      bi = newI;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      BoxedInteger bic = (BoxedInteger) obj;
+      return this.bi.equals(bic.bi);
+    }
+  }
+
+  @Test
+  public void testObjectFromCG() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "'bi' : IntSet(1, 2, 3)"
+              + "}";
+
+      Object[] expected = {
+        new BoxedInteger(1), new BoxedInteger(2), new BoxedInteger(3),
+      };
+      int BSid = Verify.createBitSet();
+      BoxedInteger bi = Verify.createFromJSON(BoxedInteger.class, json);
+      checkValue(expected, bi, BSid);
+    }
+  }
+
+  class BoxedDouble {
+    Double d;
+
+    public BoxedDouble(Double d) {
+      this.d = d;
+    }
+
+    public boolean equals(Object o) {
+      BoxedDouble bd = (BoxedDouble) o;
+
+      return doublesEqual(bd.d, this.d);
+    }
+
+    boolean doublesEqual(double d1, double d2) {
+      double diff = 0.001;
+
+      return Math.abs(d1 - d2) <= diff;
+    }
+  }
+
+  @Test
+  public void testBoxedDoubleFromCG() {
+    if (verifyNoPropertyViolation()) {
+      String json = "{"
+              + "'d' : DoubleSet(1.1, 2.2, 3.3)"
+              + "}";
+
+      Object[] expected = {
+        new BoxedDouble(1.1), new BoxedDouble(2.2), new BoxedDouble(3.3),
+      };
+      int BSid = Verify.createBitSet();
+      BoxedDouble bd = Verify.createFromJSON(BoxedDouble.class, json);
+      checkValue(expected, bd, BSid);
     }
   }
 }

@@ -71,19 +71,19 @@ public class CGCall {
    *
    * @param jsonObject - parsed JSON object
    * @param CGCreators - hash of factories to create Choice Generators
-   * @return
+   * @return list of choice generators that should be set in a current state.
    */
-  public static List<ChoiceGenerator> createCGList(JSONObject jsonObject, HashMap<String, CGCreator> CGCreators) {
+  public static List<ChoiceGenerator> createCGList(JSONObject jsonObject) {
     List<ChoiceGenerator> result = new ArrayList<ChoiceGenerator>();
-    createCGs(jsonObject, "", CGCreators, result);
+    createCGs(jsonObject, "", result);
 
     return result;
   }
 
-  private static void createCGs(JSONObject jsonObject, String prefix, HashMap<String, CGCreator> CGCreators, List<ChoiceGenerator> result) {
+  private static void createCGs(JSONObject jsonObject, String prefix, List<ChoiceGenerator> result) {
     for (String cgKey : jsonObject.getCGCallsKeys()) {
       CGCall cgCall = jsonObject.getCGCall(cgKey);
-      CGCreator creator = CGCreators.get(cgCall.getName());
+      CGCreator creator = CGCreatorFactory.getFactory().getCGCreator(cgCall.getName());
 
       ChoiceGenerator newCG = creator.createCG(prefix + cgKey, cgCall.getValues());
       result.add(newCG);
@@ -93,14 +93,14 @@ public class CGCall {
       Value v = jsonObject.getValue(valueKey);
 
       if (v instanceof JSONObjectValue) {
-        createCGs(v.getObject(), prefix + valueKey, CGCreators, result);
+        createCGs(v.getObject(), prefix + valueKey, result);
       }
       else if (v instanceof ArrayValue) {
         Value[] values = v.getArray();
 
         for (int i = 0; i < values.length; i++) {
           if (values[i] instanceof JSONObjectValue) {
-            createCGs(values[i].getObject(), prefix + valueKey + "[" + i, CGCreators, result);
+            createCGs(values[i].getObject(), prefix + valueKey + "[" + i, result);
           }
         }
       }

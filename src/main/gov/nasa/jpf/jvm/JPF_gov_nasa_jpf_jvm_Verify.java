@@ -31,15 +31,8 @@ import gov.nasa.jpf.util.json.CGCall;
 import gov.nasa.jpf.util.json.JSONLexer;
 import gov.nasa.jpf.util.json.JSONObject;
 import gov.nasa.jpf.util.json.JSONParser;
-import gov.nasa.jpf.util.json.Value;
-import gov.nasa.jpf.util.json.BoolCGCreator;
-import gov.nasa.jpf.util.json.CGCreator;
-import gov.nasa.jpf.util.json.IntFromSetCGCreator;
-import gov.nasa.jpf.util.json.IntIntervalCGCreator;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * native peer class for programmatic JPF interface (that can be used inside
@@ -708,15 +701,6 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     System.out.println("~~~~~~~~~~~~~~~~~~~~~~~ end path output");
   }
 
-  // Hash where key is a name that user can use in JSON document to set a
-  // ChoiceGenerator and value is creator of ChoiceGenerator that uses Values[]
-  // from JSON to creat CG
-  static HashMap<String, CGCreator> cgTable = new HashMap<String, CGCreator>() {{
-    put("TrueFalse", new BoolCGCreator());
-    put("IntSet", new IntFromSetCGCreator());
-    put("IntInterval", new IntIntervalCGCreator());
-  }};  
-
   //--- the JSON object initialization
   public static int createFromJSON__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
           MJIEnv env, int clsObjRef, int newObjClsRef, int jsonStringRef) {
@@ -737,27 +721,25 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       // First call - we need to set Choice generators
       if (!ti.isFirstStepInsn()) {
 
-        List<ChoiceGenerator> cgList = CGCall.createCGList(jsonObject, cgTable);
+        // Get list of choice generators that should be set according to
+        // a JSON object
+        List<ChoiceGenerator> cgList = CGCall.createCGList(jsonObject);
 
         for (ChoiceGenerator cg : cgList) {
           if (ss.setNextChoiceGenerator(cg)) {
             env.repeatInvocation();
           }
-          logger.finer("Added CG in Verify.createFromJSON(): " + cg.getId());
         }
         CGs = new ChoiceGenerator[cgList.size()];
         cgList.toArray(CGs);
       }
 
+      // If this is method is called twice choice generator has already been set
+      // let's just take them from current state
       if (CGs == null) {
         CGs = ss.getChoiceGenerators();
       }
-
-      logger.finer("Verify.createFromJSON() call. Curent CG values.");
-      for (ChoiceGenerator cg : ss.getChoiceGenerators()) {
-        logger.finer("CGName: " + cg.getId() + " value " + cg.getNextChoice());
-      }
-
+      
       return jsonObject.fillObject(env, typeName, CGs, "");
 
     } else {

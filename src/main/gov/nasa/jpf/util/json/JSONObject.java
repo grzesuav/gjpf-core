@@ -27,6 +27,7 @@ import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.SystemState;
+import gov.nasa.jpf.util.ObjectTransformer;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -110,6 +111,7 @@ public class JSONObject{
         if (val != null) {
           fillFromValue(fi, ei, val, env, CGs, prefix);
         }
+        // Value of this field should be taken from CG
         else if (cgCall != null) {
           ChoiceGenerator cg = getCGByID(CGs, prefix + fieldName);
           Object cgResult = cg.getNextChoice();
@@ -117,7 +119,8 @@ public class JSONObject{
             convertPrimititve(ei, fi, cgResult);
           }
           else {
-            throw new RuntimeException("Converting CG result to not primitive objects isn't implemented yet");
+            int newFieldRef = ObjectTransformer.JPFObjectFromJavaObject(env, cgResult);
+            ei.setReferenceField(fi, newFieldRef);
           }
         }
       }
@@ -294,6 +297,12 @@ public class JSONObject{
     return typeName.lastIndexOf('[') >= 0;
   }
 
+  /**
+   * This is method is used to set field of primitive type from CG result object
+   * @param ei - ElementInfo to set field in
+   * @param fi - FieldInfo of a field we want to set
+   * @param cgResult - result of CG call
+   */
   private void convertPrimititve(ElementInfo ei, FieldInfo fi, Object cgResult) {
     String primitiveName = fi.getType();
 
@@ -323,12 +332,22 @@ public class JSONObject{
         ei.setDoubleField(fi, number.doubleValue());
       }
     }
+    else if (cgResult instanceof Character) {
+      Character c = (Character) cgResult;
+      ei.setCharField(fi, c);
+    }
     else {
       throw new JPFException("Can't convert " + cgResult.getClass().getCanonicalName() +
                              " to " + primitiveName);
     }
   }
 
+  /**
+   * Get CG from current state CG list by it's ID
+   * @param CGs array of CG from current state
+   * @param id - id of the CG that we search for
+   * @return - CG with a specified id or null if no id with such name found
+   */
   private ChoiceGenerator getCGByID(ChoiceGenerator[] CGs, String id) {
 
     for (int i = 0; i < CGs.length; i++) {
