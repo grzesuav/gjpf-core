@@ -37,18 +37,22 @@ public class ReferenceArrayFields extends ArrayFields {
     }
   }
 
+  @Override
   public int[] asReferenceArray() {
     return values;
   }
 
+  @Override
   public Object getValues(){
     return values;
   }
 
+  @Override
   public int arrayLength() {
     return values.length;
   }
 
+  @Override
   public boolean isReferenceArray() {
     return true;
   }

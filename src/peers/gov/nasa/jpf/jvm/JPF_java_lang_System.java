@@ -45,58 +45,14 @@ public class JPF_java_lang_System {
     }
 
     ElementInfo eiSrc = env.getElementInfo(srcArrayRef);
-    if (!eiSrc.isArray()){
-      env.throwException("java.lang.ArrayStoreException", "source not an array: " + eiSrc);
-      return;      
-    }
     ElementInfo eiDst = env.getElementInfo(dstArrayRef);
-    if (!eiDst.isArray()){
-      env.throwException("java.lang.ArrayStoreException", "destination not an array: " + eiDst);
-      return;      
-    }
-    
-    // for references, we have to check the >>concrete<< element type compatibility ourselves
-    // since refs are stored as ints. THIS IS A JAVA SUCKER!!
-    if (eiDst.isReferenceArray() || eiSrc.isReferenceArray()){
-      ClassInfo dstElementCi = eiDst.getClassInfo().getComponentClassInfo();
-
-      int max = srcIdx + length;
-      for (int i=srcIdx; i<max; i++){
-        int eref = eiSrc.getReferenceElement(i);
-        if (eref != MJIEnv.NULL){
-          ClassInfo srcElementCi = env.getClassInfo(eref);
-          if (!srcElementCi.isInstanceOf(dstElementCi)) {
-            env.throwException("java.lang.ArrayStoreException");
-            return;
-          }
-        }
-      }
-    }
-
-    Object src = ((ArrayFields)eiSrc.getFields()).getValues();
-    Object dst = ((ArrayFields)eiDst.getFields()).getValues();
     
     try {
-      System.arraycopy(src,srcIdx, dst,dstIdx, length);
+      eiDst.copyElements( env.getThreadInfo(), eiSrc ,srcIdx, dstIdx, length);
     } catch (IndexOutOfBoundsException iobx){
       env.throwException("java.lang.IndexOutOfBoundsException", iobx.getMessage());
     } catch (ArrayStoreException asx){
       env.throwException("java.lang.ArrayStoreException", asx.getMessage());      
-    }
-
-    // take care of the attributes
-    if (env.hasFieldAttrs(srcArrayRef)){
-      if (srcArrayRef == dstArrayRef && srcIdx < dstIdx) { // self copy
-        for (int i = length - 1; i >= 0; i--) {
-          Object a = env.getElementAttr(srcArrayRef, srcIdx+i);
-          env.setElementAttr(dstArrayRef, dstIdx+i, a);
-        }
-      } else {
-        for (int i = 0; i < length; i++) {
-          Object a = env.getElementAttr(srcArrayRef, srcIdx+i);
-          env.setElementAttr(dstArrayRef, dstIdx+i, a);
-        }
-      }
     }
   }
 
