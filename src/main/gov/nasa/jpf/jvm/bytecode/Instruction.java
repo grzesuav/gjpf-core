@@ -236,12 +236,17 @@ public abstract class Instruction implements InstructionVisit {
    * this returns a "filename:line" string
    */
   public String getFilePos() {
+    String file = null;
+    int line = -1;
     ClassInfo ci = mi.getClassInfo();
-    int line = mi.getLineNumber(this);
-    String file = ci.getSourceFileName();
-    int i = file.lastIndexOf(File.separatorChar);
-    if (i >= 0) {
-      file = file.substring(i + 1);
+
+    if (ci != null){
+      line = mi.getLineNumber(this);
+      file = ci.getSourceFileName();
+      int i = file.lastIndexOf(File.separatorChar);
+      if (i >= 0) {
+        file = file.substring(i + 1);
+      }
     }
 
     if (file != null) {
