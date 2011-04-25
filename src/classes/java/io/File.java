@@ -113,7 +113,7 @@ public class File
   public native boolean isAbsolute();
   public native String getAbsolutePath();
   public native File getAbsoluteFile();
-  public native String getCanonicalPath();
+  public native String getCanonicalPath() throws java.io.IOException;
 
   public native File getCanonicalFile() throws java.io.IOException;
 
