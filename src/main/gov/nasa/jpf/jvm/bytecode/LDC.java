@@ -39,7 +39,7 @@ public class LDC extends Instruction {
 
   protected String  string;  // the string value if Type.STRING, classname if Type.CLASS
   protected int     value;
-
+  protected float floatValue;
 
   public LDC() {}
 
@@ -59,6 +59,7 @@ public class LDC extends Instruction {
   }
 
   public LDC (float f){
+	floatValue=f;
     value = Float.floatToIntBits(f);
     type = Type.FLOAT;
   }
@@ -120,6 +121,13 @@ public class LDC extends Instruction {
     return (type == Type.STRING);
   }
   
+  public float getFloatValue(){
+	  if(type!=Type.FLOAT){
+		throw new IllegalStateException();
+	 }
+	  return floatValue;
+	}
+
   public String getStringValue() { // if it is a String (not acquired from the class const pool)
     if (type == Type.STRING) {
       return string;

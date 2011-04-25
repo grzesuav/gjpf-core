@@ -35,6 +35,7 @@ public class LDC2_W extends Instruction {
 
   protected Type type;
   protected long value;
+  protected double doubleValue;
 
   public LDC2_W(long l){
     value = l;
@@ -42,6 +43,7 @@ public class LDC2_W extends Instruction {
   }
 
   public LDC2_W(double d){
+    doubleValue=d;
     value = Double.doubleToLongBits(d);
     type = Type.DOUBLE;
   }
@@ -62,6 +64,13 @@ public class LDC2_W extends Instruction {
   
   public Type getType() {
     return type;
+  }
+  
+  public double getDoubleValue(){
+	  if(type!=Type.DOUBLE){
+		  throw new IllegalStateException();
+	  }
+	  return doubleValue;
   }
   
   public long getValue() {
