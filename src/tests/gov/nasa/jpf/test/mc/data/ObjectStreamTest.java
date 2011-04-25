@@ -139,4 +139,69 @@ public class ObjectStreamTest extends TestJPF {
       assert al.get(2).equals(3);
     }
   }
+
+  static class MultiDimArr implements Serializable {
+    int arr [][];
+  }
+
+  @Test
+  public void tsetWriteReadObjectWithMultiDimArray() {
+    if (!isJPFRun()) {
+      MultiDimArr mda = new MultiDimArr();
+      mda.arr = new int[2][];
+      mda.arr[0] = new int[3];
+      mda.arr[1] = new int[3];
+
+      mda.arr[0][0] = 1;
+      mda.arr[0][1] = 2;
+      mda.arr[0][2] = 3;
+
+      mda.arr[1][0] = 4;
+      mda.arr[1][1] = 5;
+      mda.arr[1][2] = 6;
+
+      Verify.writeObjectToFile(mda, osFileName);
+    }
+
+    if (verifyNoPropertyViolation(";+classpath={jpf-core}/build/tests")) {
+      MultiDimArr mda = Verify.readObjectFromFile(MultiDimArr.class, osFileName);
+
+      assert mda.arr[0][0] == 1;
+      assert mda.arr[0][1] == 2;
+      assert mda.arr[0][2] == 3;
+
+      assert mda.arr[1][0] == 4;
+      assert mda.arr[1][1] == 5;
+      assert mda.arr[1][2] == 6;
+    }
+  }
+
+  static class Inner implements Serializable {
+    int i;
+  }
+
+  static class Outer implements Serializable {
+    Inner inner;
+    int o;
+  }
+
+
+  @Test
+  public void testReadWriteObjectWithReference() {
+    if (!isJPFRun()) {
+      Outer out = new Outer();
+      out.o = 1;
+      out.inner = new Inner();
+      out.inner.i = 2;
+
+      Verify.writeObjectToFile(out, osFileName);
+    }
+
+    if (verifyNoPropertyViolation(";+classpath={jpf-core}/build/tests")) {
+      Outer out = Verify.readObjectFromFile(Outer.class, osFileName);
+
+      assert out.o == 1;
+      assert out.inner.i == 2;
+    }
+  }
 }

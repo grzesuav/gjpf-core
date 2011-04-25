@@ -27,15 +27,18 @@ import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.MJIEnv;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Object transformer from Java objects to JPF objects
  * @author Ivan Mushketik
  */
 public class ObjectConverter {
-  // <2do> add support for arrays, and fields of reference types
+  /**
+   * Create JPF object from Java object
+   * @param env - MJI environment
+   * @param javaObject - java object that is used to created JPF object from
+   * @return reference to new JPF object
+   */
   public static int JPFObjectFromJavaObject(MJIEnv env, Object javaObject) {
     try {
       Class<?> javaClass = javaObject.getClass();
@@ -44,14 +47,26 @@ public class ObjectConverter {
       ElementInfo newObjEI = env.getElementInfo(newObjRef);
 
       ClassInfo ci = env.getClassInfo(newObjRef);
+
       while (ci != null) {
         for (FieldInfo fi : ci.getDeclaredInstanceFields()) {
           if (!fi.isReference()) {
             setJPFPrimitive(newObjEI, fi, javaObject);
           }
-          else if (isArrayField(fi)) {
-            int arrRef = getJPFArrayRef(env, fi, javaObject);
-            newObjEI.setReferenceField(fi, arrRef);
+          else {
+            Field arrField = getField(fi.getName(), javaClass);
+            arrField.setAccessible(true);
+            Object fieldJavaObj = arrField.get(javaObject);
+
+            int fieldJPFObjRef;
+            if (isArrayField(fi)) {
+              fieldJPFObjRef = getJPFArrayRef(env, fieldJavaObj);
+            }
+            else {
+              fieldJPFObjRef = JPFObjectFromJavaObject(env, fieldJavaObj);
+            }
+
+            newObjEI.setReferenceField(fi, fieldJPFObjRef);
           }
         }
 
@@ -106,8 +121,10 @@ public class ObjectConverter {
         Field field = javaClass.getDeclaredField(fieldName);
         return field;
       } catch (NoSuchFieldException ex) {
+        // Try to search this field in a super class
         javaClass = javaClass.getSuperclass();
 
+        // No more super class. Wrong field
         if (javaClass == null) {
           throw ex;
         }
@@ -116,15 +133,10 @@ public class ObjectConverter {
 
   }
 
-  private static int getJPFArrayRef(MJIEnv env, FieldInfo fi, Object javaObject) throws NoSuchFieldException, IllegalAccessException {
-    String fieldName = fi.getName();
+  private static int getJPFArrayRef(MJIEnv env, Object javaArr) throws NoSuchFieldException, IllegalAccessException {
+        
+    Class arrayElementClass = javaArr.getClass().getComponentType();
 
-    Class javaClass = javaObject.getClass();
-    Field javaFiled = javaClass.getDeclaredField(fieldName);
-    Class arrayElementClass = javaFiled.getType().getComponentType();
-    javaFiled.setAccessible(true);
-
-    Object javaArr = javaFiled.get(javaObject);
     int javaArrLength = Array.getLength(javaArr);
     int arrRef;
 
@@ -202,7 +214,12 @@ public class ObjectConverter {
         Object javaArrEl = Array.get(javaArr, i);        
         
         if (javaArrEl != null) {
-          newArrElRef = JPFObjectFromJavaObject(env, javaArrEl);
+          if (javaArrEl.getClass().isArray()) {
+            newArrElRef = getJPFArrayRef(env, javaArrEl);
+          }
+          else {
+            newArrElRef = JPFObjectFromJavaObject(env, javaArrEl);
+          }
         }
         else {
           newArrElRef = MJIEnv.NULL;
