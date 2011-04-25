@@ -23,9 +23,12 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
+import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.MJIEnv;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Object transformer from Java objects to JPF objects
@@ -44,10 +47,11 @@ public class ObjectConverter {
       while (ci != null) {
         for (FieldInfo fi : ci.getDeclaredInstanceFields()) {
           if (!fi.isReference()) {
-            setJPFPrimitive(newObjEI, fi, javaClass.getDeclaredField(fi.getName()), javaObject);
+            setJPFPrimitive(newObjEI, fi, javaObject);
           }
           else if (isArrayField(fi)) {
-            setJPFArray(env, newObjEI, fi, javaObject);
+            int arrRef = getJPFArrayRef(env, fi, javaObject);
+            newObjEI.setReferenceField(fi, arrRef);
           }
         }
 
@@ -61,9 +65,12 @@ public class ObjectConverter {
     }
   }
 
-  private static void setJPFPrimitive(ElementInfo newObjEI, FieldInfo fi, Field javaField, Object javaObject) {
+  private static void setJPFPrimitive(ElementInfo newObjEI, FieldInfo fi, Object javaObject) {
     try {
+
       String jpfTypeName = fi.getType();
+      Class javaClass = javaObject.getClass();
+      Field javaField = getField(fi.getName(), javaClass);
       javaField.setAccessible(true);
 
       if (jpfTypeName.equals("char")) {
@@ -93,7 +100,23 @@ public class ObjectConverter {
     }
   }
 
-  private static void setJPFArray(MJIEnv env, ElementInfo newObjEI, FieldInfo fi, Object javaObject) throws NoSuchFieldException, IllegalAccessException {
+  private static Field getField(String fieldName, Class javaClass) throws NoSuchFieldException {
+    while (true) {
+      try {
+        Field field = javaClass.getDeclaredField(fieldName);
+        return field;
+      } catch (NoSuchFieldException ex) {
+        javaClass = javaClass.getSuperclass();
+
+        if (javaClass == null) {
+          throw ex;
+        }
+      }
+    }
+
+  }
+
+  private static int getJPFArrayRef(MJIEnv env, FieldInfo fi, Object javaObject) throws NoSuchFieldException, IllegalAccessException {
     String fieldName = fi.getName();
 
     Class javaClass = javaObject.getClass();
@@ -169,10 +192,27 @@ public class ObjectConverter {
       }
     }
     else {
-      throw new JPFException("not yet implemented");
+      arrRef = env.newObjectArray(arrayElementClass.getCanonicalName(), javaArrLength);
+      ElementInfo arrayEI = env.getElementInfo(arrRef);
+
+      Fields fields = arrayEI.getFields();
+
+      for (int i = 0; i < javaArrLength; i++) {
+        int newArrElRef;
+        Object javaArrEl = Array.get(javaArr, i);        
+        
+        if (javaArrEl != null) {
+          newArrElRef = JPFObjectFromJavaObject(env, javaArrEl);
+        }
+        else {
+          newArrElRef = MJIEnv.NULL;
+        }
+
+        fields.setReferenceValue(i, newArrElRef);
+      }
     }
 
-    newObjEI.setReferenceField(fi, arrRef);
+    return arrRef;
   }
 
   // Do we need this??

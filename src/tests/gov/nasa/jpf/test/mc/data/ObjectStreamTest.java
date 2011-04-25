@@ -21,6 +21,8 @@ package gov.nasa.jpf.test.mc.data;
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
 import java.io.File;
+import java.io.Serializable;
+import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,6 +66,77 @@ public class ObjectStreamTest extends TestJPF {
     if (verifyNoPropertyViolation()) {
       String s = Verify.readObjectFromFile(String.class, osFileName);
       assert s.equals("hello");
+    }
+  }
+  
+  static class Sup implements Serializable {
+    int s;
+  }
+  
+  static class Inherited extends Sup{
+    int i;
+  }
+  
+  @Test
+  public void testWriteReadInheritedClass() {
+    if (!isJPFRun()) {
+      Inherited inh = new Inherited();
+      inh.s = 1;
+      inh.i = 2;
+
+      Verify.writeObjectToFile(inh, osFileName);
+    }
+
+    if (verifyNoPropertyViolation(";+classpath={jpf-core}/build/tests")) {
+      Inherited inh = Verify.readObjectFromFile(Inherited.class, osFileName);
+
+      assert inh.s == 1;
+      assert inh.i == 2;
+    }
+
+  }
+
+  static class WithTransient {
+    int i;
+    transient int t;
+  }
+
+  @Test
+  public void testWriteReadTransientField() {
+    if (!isJPFRun()) {
+      WithTransient wt = new WithTransient();
+      wt.i = 10;
+      wt.t = 10;
+    }
+
+    if (verifyNoPropertyViolation(";+classpath={jpf-core}/build/tests")) {
+      WithTransient wt = Verify.readObjectFromFile(WithTransient.class, osFileName);
+
+      assert wt.i == 10;
+      // t is transient
+      assert wt.t == 0;
+    }
+  }
+
+  class SerializableArrayList<T> extends ArrayList<T> implements Serializable {}
+
+  @Test
+  public void testWriteReadArrayList() {
+    if (!isJPFRun()) {
+      ArrayList<Integer> al = new ArrayList<Integer>();
+      al.add(1);
+      al.add(2);
+      al.add(3);
+      Verify.writeObjectToFile(al, osFileName);
+    }
+
+    if (verifyNoPropertyViolation()) {
+      ArrayList al = Verify.readObjectFromFile(ArrayList.class, osFileName);
+
+      assert al.size() == 3;
+      assert al.get(0).equals(1);
+      assert al.get(1).equals(2);
+      assert al.get(2).equals(3);
     }
   }
 }
