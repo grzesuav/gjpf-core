@@ -27,7 +27,7 @@ import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.SystemState;
-import gov.nasa.jpf.util.ObjectTransformer;
+import gov.nasa.jpf.util.ObjectConverter;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -119,7 +119,7 @@ public class JSONObject{
             convertPrimititve(ei, fi, cgResult);
           }
           else {
-            int newFieldRef = ObjectTransformer.JPFObjectFromJavaObject(env, cgResult);
+            int newFieldRef = ObjectConverter.JPFObjectFromJavaObject(env, cgResult);
             ei.setReferenceField(fi, newFieldRef);
           }
         }

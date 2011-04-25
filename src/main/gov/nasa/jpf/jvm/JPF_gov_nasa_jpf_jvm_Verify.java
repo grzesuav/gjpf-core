@@ -25,12 +25,17 @@ import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.util.JPFLogger;
+import gov.nasa.jpf.util.ObjectConverter;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
 import gov.nasa.jpf.util.json.CGCall;
 import gov.nasa.jpf.util.json.JSONLexer;
 import gov.nasa.jpf.util.json.JSONObject;
 import gov.nasa.jpf.util.json.JSONParser;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.BitSet;
 import java.util.List;
 
@@ -745,5 +750,31 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     } else {
       return MJIEnv.NULL;
     }
+  }
+  
+  public static int readObjectFromFile__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
+          MJIEnv env, int clsObjRef, int newObjClsRef, int fileNameRef) {
+    int typeNameRef = env.getReferenceField(newObjClsRef, "name");
+    String typeName = env.getStringObject(typeNameRef);
+    String fileName = env.getStringObject(fileNameRef);
+
+    try {
+
+      FileInputStream fis = new FileInputStream(fileName);
+      ObjectInputStream ois = new ObjectInputStream(fis);
+      Object javaObject = ois.readObject();
+      String readObjectTypeName = javaObject.getClass().getCanonicalName();
+      if (!readObjectTypeName.equals(typeName)) {
+        throw new JPFException("Expected type " + typeName + " but read " + readObjectTypeName);
+      }
+
+      int readObjRef = ObjectConverter.JPFObjectFromJavaObject(env, javaObject);
+
+      return readObjRef;
+    }
+    catch (Exception ex) {
+      throw new JPFException(ex);
+    }
+    
   }
 }
