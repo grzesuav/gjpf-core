@@ -18,11 +18,9 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.Types;
 
 
 /**
@@ -62,6 +60,14 @@ public class LDC2_W extends Instruction {
   
   public Type getType() {
     return type;
+  }
+  
+  public double getDoubleValue(){
+	  if(type!=Type.DOUBLE){
+		  throw new IllegalStateException();
+	  }
+    
+	  return Double.longBitsToDouble(value);
   }
   
   public long getValue() {

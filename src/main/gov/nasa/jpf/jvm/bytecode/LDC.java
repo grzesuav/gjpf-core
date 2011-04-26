@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -39,7 +38,6 @@ public class LDC extends Instruction {
 
   protected String  string;  // the string value if Type.STRING, classname if Type.CLASS
   protected int     value;
-
 
   public LDC() {}
 
@@ -120,6 +118,14 @@ public class LDC extends Instruction {
     return (type == Type.STRING);
   }
   
+  public float getFloatValue(){
+	  if(type!=Type.FLOAT){
+      throw new IllegalStateException();
+	  }
+    
+	  return Float.intBitsToFloat(value);
+	}
+
   public String getStringValue() { // if it is a String (not acquired from the class const pool)
     if (type == Type.STRING) {
       return string;
