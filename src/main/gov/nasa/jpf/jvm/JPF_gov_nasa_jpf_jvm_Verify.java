@@ -118,34 +118,29 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     return ++counter[counterId];
   }
 
-  public static int createBitSet____I(MJIEnv env, int clsObjRef) {
+  private static void checkBitSetId(int id) {
     if (bitSets == null) {
-      bitSets = new BitSet[clsObjRef];
+      bitSets = new BitSet[(id < MAX_BIT_SETS) ? id + 1 : MAX_BIT_SETS];
     }
-
-    if (nextBitSet >= bitSets.length) {
-      BitSet[] newBitSets = new BitSet[bitSets.length * 2];
+    else if (id >= bitSets.length) {
+      BitSet[] newBitSets = new BitSet[id + 1];
       System.arraycopy(bitSets, 0, newBitSets, 0, bitSets.length);
       bitSets = newBitSets;
     }
-    
-    bitSets[nextBitSet] = new BitSet();
 
-    return nextBitSet++;
+    if (bitSets[id] == null) {
+      bitSets[id] = new BitSet();
+    }
   }
 
   public static void setBitInBitSet__IIZ__V(MJIEnv env, int clsObjRef, int id, int bitNum, boolean value) {
-    if (id < 0 || id >= nextBitSet) {
-      throw new JPFException("Illegal BitSet id");
-    }
+    checkBitSetId(id);
 
     bitSets[id].set(bitNum, value);
   }
 
   public static boolean getBitInBitSet__II__Z(MJIEnv env, int clsObjRef, int id, int bitNum) {
-    if (id < 0 || id >= nextBitSet) {
-      throw new JPFException("Illegal BitSet id");
-    }
+    checkBitSetId(id);
 
     return bitSets[id].get(bitNum);
   }

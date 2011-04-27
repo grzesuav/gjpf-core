@@ -146,15 +146,13 @@ public class VerifyTest extends TestJPF {
 
   @Test
   public void testBitSet() {
-    if (verifyNoPropertyViolation()) {
-      int BSid = Verify.createBitSet();
+    if (verifyNoPropertyViolation()) {      
+      Verify.setBitInBitSet(0, 3, true);
+      Verify.setBitInBitSet(0, 1, true);
       
-      Verify.setBitInBitSet(BSid, 3, true);
-      Verify.setBitInBitSet(BSid, 1, true);
-      
-      assert Verify.getBitInBitSet(BSid, 1) == true;
-      assert Verify.getBitInBitSet(BSid, 2) == false;
-      assert Verify.getBitInBitSet(BSid, 3) == true;
+      assert Verify.getBitInBitSet(0, 1) == true;
+      assert Verify.getBitInBitSet(0, 2) == false;
+      assert Verify.getBitInBitSet(0, 3) == true;
 
 
     }

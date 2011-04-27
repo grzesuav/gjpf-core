@@ -71,9 +71,8 @@ static class TestBoolCGCreator implements CGCreator {
         new B(true), new B(false)
       };
 
-      int BSid = Verify.createBitSet();
       B b = Verify.createFromJSON(B.class, json);
-      JSONTest.checkValue(expected, b, BSid);
+      JSONTest.checkValue(expected, b);
     }
   }
 }

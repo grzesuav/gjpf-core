@@ -19,11 +19,7 @@
 
 package gov.nasa.jpf.test.mc.data;
 
-import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.Verify;
-import gov.nasa.jpf.util.json.CGCreator;
-import gov.nasa.jpf.util.json.Value;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 
@@ -357,10 +353,10 @@ public class JSONTest extends TestJPF {
     }
   }
 
-  static void checkValue(Object[] expected, Object curVal, int BSid) {
+  static void checkValue(Object[] expected, Object curVal) {
     for (int i = 0; i < expected.length; i++) {
       if (curVal.equals(expected[i])) {
-        Verify.setBitInBitSet(BSid, i, true);
+        Verify.setBitInBitSet(0, i, true);
         break;
       }
     }
@@ -369,7 +365,7 @@ public class JSONTest extends TestJPF {
 
     if (Verify.getCounter(0) == expected.length) {
       for (int i = 0; i < expected.length; i++) {
-        assert Verify.getBitInBitSet(BSid, i) == true;
+        assert Verify.getBitInBitSet(0, i) == true;
       }
     }
   }
@@ -385,9 +381,8 @@ public class JSONTest extends TestJPF {
         new Bool(true),
         new Bool(false)
       };
-      int BSid = Verify.createBitSet();
       Bool bb = Verify.createFromJSON(Bool.class, json);      
-      checkValue(expected, bb, BSid);
+      checkValue(expected, bb);
     }
   }
 
@@ -421,9 +416,8 @@ public class JSONTest extends TestJPF {
         new ByteShortIntLong(1, 2, 4, 8), new ByteShortIntLong(2, 2, 4, 8),
         new ByteShortIntLong(1, 2, 5, 8), new ByteShortIntLong(2, 2, 5, 8),
       };
-      int BSid = Verify.createBitSet();
       ByteShortIntLong bsil = Verify.createFromJSON(ByteShortIntLong.class, json);
-      checkValue(expected, bsil, BSid);
+      checkValue(expected, bsil);
     }
   }
 
@@ -441,9 +435,8 @@ public class JSONTest extends TestJPF {
         new ByteShortIntLong(1, 1, 1, 8), new ByteShortIntLong(1, 2, 1, 8), new ByteShortIntLong(1, 3, 1, 8),
         new ByteShortIntLong(1, 1, 1, 9), new ByteShortIntLong(1, 2, 1, 9), new ByteShortIntLong(1, 3, 1, 9),
         new ByteShortIntLong(1, 1, 1, 10), new ByteShortIntLong(1, 2, 1, 10), new ByteShortIntLong(1, 3, 1, 10),};
-      int BSid = Verify.createBitSet();
       ByteShortIntLong bsil = Verify.createFromJSON(ByteShortIntLong.class, json);
-      checkValue(expected, bsil, BSid);
+      checkValue(expected, bsil);
     }
   }
 
@@ -477,9 +470,8 @@ public class JSONTest extends TestJPF {
       Object[] expected = {
         new O(3), new O(4), new O(5),
       };
-      int BSid = Verify.createBitSet();
       O bsil = Verify.createFromJSON(O.class, json);
-      checkValue(expected, bsil, BSid);
+      checkValue(expected, bsil);
     }
   }
 
@@ -518,9 +510,8 @@ public class JSONTest extends TestJPF {
         new ArrI(1, 5), new ArrI(2, 5), new ArrI(3, 5),
         new ArrI(1, 6), new ArrI(2, 6), new ArrI(3, 6),
       };
-      int BSid = Verify.createBitSet();
       ArrI arri = Verify.createFromJSON(ArrI.class, json);
-      checkValue(expected, arri, BSid);
+      checkValue(expected, arri);
     }
   }
 
@@ -548,9 +539,8 @@ public class JSONTest extends TestJPF {
       Object[] expected = {
         new BoxedInteger(1), new BoxedInteger(2), new BoxedInteger(3),
       };
-      int BSid = Verify.createBitSet();
       BoxedInteger bi = Verify.createFromJSON(BoxedInteger.class, json);
-      checkValue(expected, bi, BSid);
+      checkValue(expected, bi);
     }
   }
 
@@ -584,9 +574,8 @@ public class JSONTest extends TestJPF {
       Object[] expected = {
         new BoxedDouble(1.1), new BoxedDouble(2.2), new BoxedDouble(3.3),
       };
-      int BSid = Verify.createBitSet();
       BoxedDouble bd = Verify.createFromJSON(BoxedDouble.class, json);
-      checkValue(expected, bd, BSid);
+      checkValue(expected, bd);
     }
   }
 

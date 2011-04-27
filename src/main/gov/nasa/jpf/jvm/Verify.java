@@ -116,10 +116,6 @@ public class Verify {
 
   //  Backwards compatibility END
 
-  public static int createBitSet() {
-    return 0;
-  }
-
   public static void setBitInBitSet(int id, int bit, boolean value) {
 
   }
