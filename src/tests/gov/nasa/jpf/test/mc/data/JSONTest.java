@@ -19,9 +19,11 @@
 
 package gov.nasa.jpf.test.mc.data;
 
-import gov.nasa.jpf.annotation.FilterField;
+import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.Verify;
+import gov.nasa.jpf.util.json.CGCreator;
+import gov.nasa.jpf.util.json.Value;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 
@@ -355,7 +357,7 @@ public class JSONTest extends TestJPF {
     }
   }
 
-  private void checkValue(Object[] expected, Object curVal, int BSid) {
+  static void checkValue(Object[] expected, Object curVal, int BSid) {
     for (int i = 0; i < expected.length; i++) {
       if (curVal.equals(expected[i])) {
         Verify.setBitInBitSet(BSid, i, true);
@@ -587,6 +589,8 @@ public class JSONTest extends TestJPF {
       checkValue(expected, bd, BSid);
     }
   }
+
+  
 }
 
 

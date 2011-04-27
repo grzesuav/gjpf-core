@@ -19,13 +19,18 @@
 
 package gov.nasa.jpf.util.json;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Singleton factory for creating CGCreators.
@@ -34,6 +39,8 @@ import java.util.HashMap;
 public class CGCreatorFactory {
 
   private static CGCreatorFactory factory;
+
+  ClassLoader loader = CGCreatorFactory.class.getClassLoader();
 
   // Hash where key is a name that user can use in JSON document to set a
   // ChoiceGenerator and value is creator of ChoiceGenerator that uses Values[]
@@ -46,6 +53,21 @@ public class CGCreatorFactory {
   }};
 
   private CGCreatorFactory() {
+    Config config = JVM.getVM().getConfig();
+    String[] cgCreators = config.getStringArray("cg-creators");
+
+    // If user specified names for additional CG creators, lets add them
+    if (cgCreators != null) {
+      for (String creator : cgCreators) {
+        String[] nameClassPair = creator.split(":");
+        String cgName = nameClassPair[0];
+        String cgCreatorClassName = nameClassPair[1];
+
+        CGCreator cgCreator = createCGCreator(cgCreatorClassName);
+
+        addCGCreator(cgName, cgCreator);
+      }
+    }
   }
 
   public static CGCreatorFactory getFactory() {
@@ -58,6 +80,27 @@ public class CGCreatorFactory {
 
   public CGCreator getCGCreator(String key) {
     return cgTable.get(key);
+  }
+
+  public void addCGCreator(String cgName, CGCreator cgCreator) {
+    if (cgTable.containsKey(cgName)) {
+      throw new JPFException("CGCreator with name '" + cgName + "' already exists");
+    }
+
+    cgTable.put(cgName, cgCreator);
+  }
+
+  private CGCreator createCGCreator(String cgCreatorClassName) {
+    try {
+      Class cgCreatorClass = loader.loadClass(cgCreatorClassName);
+      // We search for a constructor with no parameters
+      Constructor ctor = cgCreatorClass.getDeclaredConstructor();
+      ctor.setAccessible(true);
+      return (CGCreator) ctor.newInstance();
+    } catch (Exception ex) {
+      throw new JPFException(ex);
+    }
+
   }
 }
 

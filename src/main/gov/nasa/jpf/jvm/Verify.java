@@ -455,13 +455,9 @@ public class Verify {
       ObjectInputStream ois = new ObjectInputStream(fis);
 
       Object read = ois.readObject();
-      if (clazz.isInstance(read)) {
-        return (T) read;
-      }
-      else {
-        throw new JPFException("Expected object of type " + clazz.getCanonicalName() +
-                " but read object of type " + read.getClass().getCanonicalName());
-      }
+      
+      return (T) read;
+      
     }
     catch (Exception ex) {
       throw new JPFException(ex);

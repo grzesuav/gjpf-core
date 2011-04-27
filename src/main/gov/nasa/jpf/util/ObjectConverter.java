@@ -42,7 +42,7 @@ public class ObjectConverter {
   public static int JPFObjectFromJavaObject(MJIEnv env, Object javaObject) {
     try {
       Class<?> javaClass = javaObject.getClass();
-      String typeName = javaClass.getCanonicalName();
+      String typeName = javaClass.getName();
       int newObjRef = env.newObject(typeName);
       ElementInfo newObjEI = env.getElementInfo(newObjRef);
 
@@ -78,6 +78,10 @@ public class ObjectConverter {
     catch (Exception ex) {
       throw new JPFException(ex);
     }
+  }
+
+  private Object createObject(String className) {
+    return null;
   }
 
   private static void setJPFPrimitive(ElementInfo newObjEI, FieldInfo fi, Object javaObject) {

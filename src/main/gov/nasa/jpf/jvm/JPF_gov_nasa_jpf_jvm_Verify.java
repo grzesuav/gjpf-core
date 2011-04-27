@@ -764,10 +764,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       ObjectInputStream ois = new ObjectInputStream(fis);
       Object javaObject = ois.readObject();
       String readObjectTypeName = javaObject.getClass().getCanonicalName();
-      if (!readObjectTypeName.equals(typeName)) {
-        throw new JPFException("Expected type " + typeName + " but read " + readObjectTypeName);
-      }
-
+      
       int readObjRef = ObjectConverter.JPFObjectFromJavaObject(env, javaObject);
 
       return readObjRef;

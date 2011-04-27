@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -35,6 +34,7 @@ public class ObjectStreamTest extends TestJPF {
   String osFileName = "file";
   
   @Before
+  // Delete file with ObjectStream from previous test run
   public void beforeClass() {
     File osFile = new File(osFileName);
 
@@ -87,7 +87,7 @@ public class ObjectStreamTest extends TestJPF {
       Verify.writeObjectToFile(inh, osFileName);
     }
 
-    if (verifyNoPropertyViolation(";+classpath={jpf-core}/build/tests")) {
+    if (verifyNoPropertyViolation("+jpf-core.native_classpath+=;${jpf-core}/build/tests")) {
       Inherited inh = Verify.readObjectFromFile(Inherited.class, osFileName);
 
       assert inh.s == 1;
@@ -96,7 +96,7 @@ public class ObjectStreamTest extends TestJPF {
 
   }
 
-  static class WithTransient {
+  static class WithTransient implements Serializable {
     int i;
     transient int t;
   }
@@ -107,9 +107,10 @@ public class ObjectStreamTest extends TestJPF {
       WithTransient wt = new WithTransient();
       wt.i = 10;
       wt.t = 10;
+      Verify.writeObjectToFile(wt, osFileName);
     }
 
-    if (verifyNoPropertyViolation(";+classpath={jpf-core}/build/tests")) {
+    if (verifyNoPropertyViolation("+jpf-core.native_classpath+=;${jpf-core}/build/tests")) {
       WithTransient wt = Verify.readObjectFromFile(WithTransient.class, osFileName);
 
       assert wt.i == 10;
@@ -163,7 +164,7 @@ public class ObjectStreamTest extends TestJPF {
       Verify.writeObjectToFile(mda, osFileName);
     }
 
-    if (verifyNoPropertyViolation(";+classpath={jpf-core}/build/tests")) {
+    if (verifyNoPropertyViolation("+jpf-core.native_classpath+=;${jpf-core}/build/tests")) {
       MultiDimArr mda = Verify.readObjectFromFile(MultiDimArr.class, osFileName);
 
       assert mda.arr[0][0] == 1;
@@ -197,7 +198,7 @@ public class ObjectStreamTest extends TestJPF {
       Verify.writeObjectToFile(out, osFileName);
     }
 
-    if (verifyNoPropertyViolation(";+classpath={jpf-core}/build/tests")) {
+    if (verifyNoPropertyViolation("+jpf-core.native_classpath+=;${jpf-core}/build/tests")) {
       Outer out = Verify.readObjectFromFile(Outer.class, osFileName);
 
       assert out.o == 1;
