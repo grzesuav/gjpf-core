@@ -25,12 +25,12 @@ import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
+import gov.nasa.jpf.jvm.choice.DoubleThresholdGenerator;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
+import gov.nasa.jpf.jvm.choice.RandomIntIntervalGenerator;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Singleton factory for creating CGCreators.
@@ -50,6 +50,8 @@ public class CGCreatorFactory {
     put("IntSet", new IntFromSetCGCreator());
     put("IntInterval", new IntIntervalCGCreator());
     put("DoubleSet", new DoubleFromSetCGCreator());
+    put("DoubleThreshold", new DoubleThresholdGeneratorCGCreator());
+    put("RandomIntInerval", new RandomIntIntervalGeneratorCGCreator());
   }};
 
   private CGCreatorFactory() {
@@ -162,3 +164,37 @@ class DoubleFromSetCGCreator implements CGCreator {
   }
 
 }
+
+class DoubleThresholdGeneratorCGCreator implements CGCreator {
+
+  public ChoiceGenerator createCG(String id, Value[] params) {
+    if (params.length != 0) {
+      throw new JPFException("Double threshold generator requires empty parameters list");
+    }
+    Config config = JVM.getVM().getConfig();
+    return new DoubleThresholdGenerator(config, id);
+  }
+
+}
+
+class RandomIntIntervalGeneratorCGCreator implements CGCreator {
+
+  public ChoiceGenerator createCG(String id, Value[] params) {
+    int min = params[0].getDouble().intValue();
+    int max = params[1].getDouble().intValue();
+    int nChoices = params[2].getDouble().intValue();
+
+    if (params.length == 3) {
+      return new RandomIntIntervalGenerator(id, min, max, nChoices);
+    }
+    else if (params.length == 4) {
+      long seed = params[3].getDouble().longValue();
+
+      return new RandomIntIntervalGenerator(id, min, max, nChoices, seed);
+    }
+
+    throw new JPFException("Unexpected length of parameters list " + params.length);
+  }
+  
+}
+
