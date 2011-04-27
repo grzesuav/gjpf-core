@@ -45,7 +45,7 @@ public class Throwable {
     try {                                            // Use Class.forName() instead of new StackTraceElement() since the latter creates garbage.
       Class.forName("java.lang.StackTraceElement");  // Force this class to load here instead of in createStackTrace().
     } catch (ClassNotFoundException e) {
-      throw new JPFException("Unexpected exception from Class.forName(\"java.lang.StackTraceElement\")", e);
+      throw new NoClassDefFoundError("java.lang.StackTraceElement");
     }
      
     fillInStackTrace();
