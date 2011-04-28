@@ -19,7 +19,9 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.util.DynamicObjectArray;
+import gov.nasa.jpf.util.JPFLogger;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
@@ -31,6 +33,9 @@ import java.nio.channels.FileChannel;
  * restores (in which case a simple byte[] buffer would be more efficient)
  */
 public class JPF_java_io_FileDescriptor {
+
+  static JPFLogger logger = JPF.getLogger("java.io.FileDescriptor");
+
 
   // NOTE: keep those in sync with the model class
   static final int FD_READ = 0;
@@ -68,15 +73,19 @@ public class JPF_java_io_FileDescriptor {
       try {
         FileInputStream fis = new FileInputStream(file);
         fis.getChannel(); // just to allocate one
-                
+
         count++;
         content.set(count, fis);
+
+        logger.info("opening ", fname, " (read) => ", count);
 
         return count;
         
       } catch (IOException x) {
-        // should have some meaningful error reporting here
+        logger.warning("failed to open ", fname, " (read) : ", x);
       }
+    } else {
+      logger.info("cannot open ", fname, " (read) : file not found");
     }
     
     return -1;
@@ -91,10 +100,12 @@ public class JPF_java_io_FileDescriptor {
       count++;
       content.set(count, fos);
 
+      logger.info("opening ", fname, " (write) => ", count);
+
       return count;
         
     } catch (IOException x) {
-      // should have some meaningful error reporting here
+      logger.warning("failed to open ", fname, " (write) : ", x);
     }
     
     return -1;    
@@ -107,11 +118,15 @@ public class JPF_java_io_FileDescriptor {
       Object fs = content.get(fd);
       
       if (fs != null){
+        logger.info("closing ", fd);
+
         if (fs instanceof FileInputStream){
           ((FileInputStream)fs).close();
         } else {
           ((FileOutputStream)fs).close();          
         }
+      } else {
+        logger.warning("cannot close ", fd, " : no such stream");
       }
       content.set(fd, null);
       
