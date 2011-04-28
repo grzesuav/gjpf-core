@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.util.json;
 
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ClassInfo;
@@ -26,7 +27,7 @@ import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.MJIEnv;
-import gov.nasa.jpf.jvm.SystemState;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjectConverter;
 import java.util.HashMap;
 import java.util.Set;
@@ -36,6 +37,8 @@ import java.util.Set;
  * @author Ivan Mushketik
  */
 public class JSONObject{
+
+  private static final JPFLogger logger = JPF.getLogger("gov.nasa.jpf.util.json.JSONObject");
 
   private HashMap<String, Value> keyValues = new HashMap<String, Value>();
   private HashMap<String, CGCall> cgCalls = new HashMap<String, CGCall>();
@@ -126,6 +129,9 @@ public class JSONObject{
             int newFieldRef = ObjectConverter.JPFObjectFromJavaObject(env, cgResult);
             ei.setReferenceField(fi, newFieldRef);
           }
+        }
+        else {
+          logger.warning("Value for field " + fi.getFullName() + " isn't specified");
         }
       }
 
