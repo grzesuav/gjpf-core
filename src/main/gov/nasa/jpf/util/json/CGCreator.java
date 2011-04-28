@@ -40,5 +40,5 @@ public interface CGCreator {
    * @param params - params read from JSON file
    * @return new CG.
    */
-  public ChoiceGenerator createCG(String id, Value[] params);
+  public ChoiceGenerator<?> createCG(String id, Value[] params);
 }

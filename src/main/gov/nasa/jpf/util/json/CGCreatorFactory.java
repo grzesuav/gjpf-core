@@ -111,7 +111,7 @@ public class CGCreatorFactory {
  */
 class BoolCGCreator implements CGCreator {
 
-  public ChoiceGenerator createCG(String id, Value[] params) {
+  public ChoiceGenerator<?> createCG(String id, Value[] params) {
     return new BooleanChoiceGenerator(id);
   }
 }
@@ -123,7 +123,7 @@ class BoolCGCreator implements CGCreator {
 class IntFromSetCGCreator implements CGCreator {
 
   // <2do> add support from ctor with no params
-  public ChoiceGenerator createCG(String id, Value[] params) {
+  public ChoiceGenerator<?> createCG(String id, Value[] params) {
     int[] intSet = new int[params.length];
 
     for (int i = 0; i < intSet.length; i++) {
@@ -136,13 +136,12 @@ class IntFromSetCGCreator implements CGCreator {
 
 class IntIntervalCGCreator implements CGCreator {
 
-  public ChoiceGenerator createCG(String id, Value[] params) {
+  public ChoiceGenerator<?> createCG(String id, Value[] params) {
     int min = params[0].getDouble().intValue();
     int max = params[1].getDouble().intValue();
     if (params.length == 2) {
       return new IntIntervalGenerator(id, min, max);
-    }
-    else if (params.length == 3) {
+    } else if (params.length == 3) {
       int delta = params[2].getDouble().intValue();
       return new IntIntervalGenerator(id, min, max, delta);
     }
@@ -153,7 +152,7 @@ class IntIntervalCGCreator implements CGCreator {
 
 class DoubleFromSetCGCreator implements CGCreator {
 
-  public ChoiceGenerator createCG(String id, Value[] params) {
+  public ChoiceGenerator<?> createCG(String id, Value[] params) {
     double[] doubleSet = new double[params.length];
 
     for (int i = 0; i < doubleSet.length; i++) {
@@ -167,7 +166,7 @@ class DoubleFromSetCGCreator implements CGCreator {
 
 class DoubleThresholdGeneratorCGCreator implements CGCreator {
 
-  public ChoiceGenerator createCG(String id, Value[] params) {
+  public ChoiceGenerator<?> createCG(String id, Value[] params) {
     if (params.length != 0) {
       throw new JPFException("Double threshold generator requires empty parameters list");
     }
@@ -179,15 +178,14 @@ class DoubleThresholdGeneratorCGCreator implements CGCreator {
 
 class RandomIntIntervalGeneratorCGCreator implements CGCreator {
 
-  public ChoiceGenerator createCG(String id, Value[] params) {
+  public ChoiceGenerator<?> createCG(String id, Value[] params) {
     int min = params[0].getDouble().intValue();
     int max = params[1].getDouble().intValue();
     int nChoices = params[2].getDouble().intValue();
 
     if (params.length == 3) {
       return new RandomIntIntervalGenerator(id, min, max, nChoices);
-    }
-    else if (params.length == 4) {
+    } else if (params.length == 4) {
       long seed = params[3].getDouble().longValue();
 
       return new RandomIntIntervalGenerator(id, min, max, nChoices, seed);

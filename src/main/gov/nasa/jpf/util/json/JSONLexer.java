@@ -172,8 +172,7 @@ public class JSONLexer {
     while((c = next()) != delimiter) {
       if (c == '\\') {
           result.append((char) readEscapedSymbol());
-      }
-      else {
+      } else {
          result.append((char) c);
       }
     }
@@ -250,8 +249,7 @@ public class JSONLexer {
     // '-' symbol is not obligatory
     if (c == '-') {
       sb.append('-');
-    }
-    else {
+    } else {
       // We read unnecessary symbol, need to bactrack
       back();
     }
@@ -261,8 +259,7 @@ public class JSONLexer {
     // Integer part of digit is either '0' or '1'..'9' and digits
     if (c == '0') {
       sb.append('0');
-    }
-    else {
+    } else {
       back();
       sb.append(readDigits());
     }
@@ -273,8 +270,7 @@ public class JSONLexer {
     if (c == '.') {
       sb.append('.');
       sb.append(readDigits());
-    }
-    else {
+    } else {
       back();
     }
 
@@ -285,14 +281,12 @@ public class JSONLexer {
       c = next();
       if (c == '+' || c == '-') {
         sb.append((char) c);
-      }
-      else {
+      } else {
         back();
       }
 
       sb.append(readDigits());
-    }
-    else {
+    } else {
       back();
     }
 

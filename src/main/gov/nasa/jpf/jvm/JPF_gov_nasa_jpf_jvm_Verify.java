@@ -65,7 +65,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   static BitSet[] bitSets;
   static int nextBitSet;
-  static final int MAX_BIT_SETS = 2;
+  static final int INIT_BIT_SIZE = 2;
 
   public static void init (Config conf) {
 
@@ -120,9 +120,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   private static void checkBitSetId(int id) {
     if (bitSets == null) {
-      bitSets = new BitSet[(id < MAX_BIT_SETS) ? id + 1 : MAX_BIT_SETS];
-    }
-    else if (id >= bitSets.length) {
+      bitSets = new BitSet[(id < INIT_BIT_SIZE) ? id + 1 : INIT_BIT_SIZE];
+    } else if (id >= bitSets.length) {
       BitSet[] newBitSets = new BitSet[id + 1];
       System.arraycopy(bitSets, 0, newBitSets, 0, bitSets.length);
       bitSets = newBitSets;
@@ -715,7 +714,6 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
-    ChoiceGenerator[] CGs = null;
 
     if (jsonObject != null) {
       // Top half - get list of CGs we need to set to fill object's fields from JSON
@@ -724,10 +722,10 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
         // Get list of choice generators that should be set according to
         // a JSON object
-        List<ChoiceGenerator> cgList = CGCall.createCGList(jsonObject);
+        List<ChoiceGenerator<?>> cgList = CGCall.createCGList(jsonObject);
 
         boolean repeat = false;
-        for (ChoiceGenerator cg : cgList) {
+        for (ChoiceGenerator<?> cg : cgList) {
           repeat |= ss.setNextChoiceGenerator(cg);
         }
 
@@ -735,19 +733,15 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
           env.repeatInvocation();
           // This will not be returned to a caller
           return MJIEnv.NULL;
-        }
-        // No need to repeat this call. Just fill object without CGs
-        else {
+        } else {
+          // No need to repeat this call. Just fill object without CGs
           return jsonObject.fillObject(env, typeName, null, "");
         }
-      }
-      // Botom half - fill object with JSON and current values of CGs
-      else {
-        // If this is method is called twice choice generator has already been set
-        // let's just take them from current state
-        CGs = ss.getChoiceGenerators();
+      } else {
+        // Botom half - fill object with JSON and current values of CGs
+        ChoiceGenerator<?>[] cgs = ss.getChoiceGenerators();
 
-        return jsonObject.fillObject(env, typeName, CGs, "");
+        return jsonObject.fillObject(env, typeName, cgs, "");
       }
 
     } else {
@@ -771,8 +765,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       int readObjRef = ObjectConverter.JPFObjectFromJavaObject(env, javaObject);
 
       return readObjRef;
-    }
-    catch (Exception ex) {
+    } catch (Exception ex) {
       throw new JPFException(ex);
     }
     

@@ -73,19 +73,19 @@ public class CGCall {
    * @param CGCreators - hash of factories to create Choice Generators
    * @return list of choice generators that should be set in a current state.
    */
-  public static List<ChoiceGenerator> createCGList(JSONObject jsonObject) {
-    List<ChoiceGenerator> result = new ArrayList<ChoiceGenerator>();
+  public static List<ChoiceGenerator<?>> createCGList(JSONObject jsonObject) {
+    List<ChoiceGenerator<?>> result = new ArrayList<ChoiceGenerator<?>>();
     createCGs(jsonObject, "", result);
 
     return result;
   }
 
-  private static void createCGs(JSONObject jsonObject, String prefix, List<ChoiceGenerator> result) {
+  private static void createCGs(JSONObject jsonObject, String prefix, List<ChoiceGenerator<?>> result) {
     for (String cgKey : jsonObject.getCGCallsKeys()) {
       CGCall cgCall = jsonObject.getCGCall(cgKey);
       CGCreator creator = CGCreatorFactory.getFactory().getCGCreator(cgCall.getName());
 
-      ChoiceGenerator newCG = creator.createCG(prefix + cgKey, cgCall.getValues());
+      ChoiceGenerator<?> newCG = creator.createCG(prefix + cgKey, cgCall.getValues());
       result.add(newCG);
     }
 
@@ -94,8 +94,8 @@ public class CGCall {
 
       if (v instanceof JSONObjectValue) {
         createCGs(v.getObject(), prefix + valueKey, result);
-      }
-      else if (v instanceof ArrayValue) {
+        
+      } else if (v instanceof ArrayValue) {
         Value[] values = v.getArray();
 
         for (int i = 0; i < values.length; i++) {

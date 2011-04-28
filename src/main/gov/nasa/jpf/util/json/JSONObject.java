@@ -90,7 +90,7 @@ public class JSONObject{
 
 
   //--- the fillers
-  public int fillObject(MJIEnv env, String typeName, ChoiceGenerator[] CGs, String prefix) {
+  public int fillObject(MJIEnv env, String typeName, ChoiceGenerator<?>[] cgs, String prefix) {
 
     int newObjRef = env.newObject(typeName);
     ElementInfo ei = env.getHeap().get(newObjRef);
@@ -112,26 +112,23 @@ public class JSONObject{
 
         // If a value was defined in JSON document
         if (val != null) {
-          fillFromValue(fi, ei, val, env, CGs, prefix);
-        }
-        // Value of this field should be taken from CG
-        else if (cgCall != null) {
+          fillFromValue(fi, ei, val, env, cgs, prefix);
+        } else if (cgCall != null) {
+          // Value of this field should be taken from CG
           String cgId = prefix + fieldName;
-          ChoiceGenerator cg = getCGByID(CGs, cgId);          
+          ChoiceGenerator<?> cg = getCGByID(cgs, cgId);
           assert cg != null : "Expected CG with id " + cgId;
           
           Object cgResult = cg.getNextChoice();
 
           if (!fi.isReference()) {
             convertPrimititve(ei, fi, cgResult);
-          }
-          else {
+          } else {
             int newFieldRef = ObjectConverter.JPFObjectFromJavaObject(env, cgResult);
             ei.setReferenceField(fi, newFieldRef);
           }
-        }
-        else {
-          logger.warning("Value for field " + fi.getFullName() + " isn't specified");
+        } else {
+          logger.warning("Value for field ", fi.getFullName(), " isn't specified");
         }
       }
 
@@ -141,27 +138,29 @@ public class JSONObject{
     return newObjRef;
   }
 
-  private void fillFromValue(FieldInfo fi, ElementInfo ei, Value val, MJIEnv env, ChoiceGenerator[] CGs, String prefix) {
+  private void fillFromValue(FieldInfo fi, ElementInfo ei, Value val, MJIEnv env, ChoiceGenerator<?>[] cgs, String prefix) {
     String fieldName = fi.getName();
     // Handle primitive types
     if (!fi.isReference()) {
       fillPrimitive(ei, fi, val);
     } else {
       if (isArrayType(fi.getType())) {
-        int newArrRef = createArray(env, fi.getType(), val, CGs, prefix + fieldName);
+        int newArrRef = createArray(env, fi.getType(), val, cgs, prefix + fieldName);
         ei.setReferenceField(fi, newArrRef);
+
       } else {
         Creator creator = CreatorsFactory.getCreator(fi.getType());
         if (creator != null) {
           int newSubObjRef = creator.create(env, fi.getType(), val);
           ei.setReferenceField(fi, newSubObjRef);
-          // Not a special case. Fill it recursively
+          
         } else {
+          // Not a special case. Fill it recursively
           String subTypeName = fi.getType();
           JSONObject jsonObj = val.getObject();
           int fieldRef = MJIEnv.NULL;
           if (jsonObj != null) {
-            fieldRef = jsonObj.fillObject(env, subTypeName, CGs, prefix + fieldName);
+            fieldRef = jsonObj.fillObject(env, subTypeName, cgs, prefix + fieldName);
           }
           ei.setReferenceField(fi.getName(), fieldRef);
         }
@@ -175,28 +174,28 @@ public class JSONObject{
 
     if (primitiveName.equals("boolean")) {
       ei.setBooleanField(fi, val.getBoolean());
-    }
-    else if (primitiveName.equals("byte")) {
+
+    } else if (primitiveName.equals("byte")) {
       ei.setByteField(fi, val.getDouble().byteValue());
-    }
-    else if (primitiveName.equals("short")) {
+
+    } else if (primitiveName.equals("short")) {
       ei.setShortField(fi, val.getDouble().shortValue());
-    }
-    else if (primitiveName.equals("int")) {
+
+    } else if (primitiveName.equals("int")) {
       ei.setIntField(fi, val.getDouble().intValue());
-    }
-    else if (primitiveName.equals("long")) {
+
+    } else if (primitiveName.equals("long")) {
       ei.setLongField(fi, val.getDouble().longValue());
-    }
-    else if (primitiveName.equals("float")) {
+
+    } else if (primitiveName.equals("float")) {
       ei.setFloatField(fi, val.getDouble().floatValue());
-    }
-    else if (primitiveName.equals("double")) {
+
+    } else if (primitiveName.equals("double")) {
       ei.setDoubleField(fi, val.getDouble());
     }
   }
 
-  public int createArray(MJIEnv env, String typeName, Value value, ChoiceGenerator[] CGs, String prefix) {
+  public int createArray(MJIEnv env, String typeName, Value value, ChoiceGenerator<?>[] cgs, String prefix) {
     Value vals[] = value.getArray();
 
     // Get name of array's elements types
@@ -212,8 +211,7 @@ public class JSONObject{
        for (int i = 0; i < vals.length; i++) {
         bools[i] = vals[i].getBoolean();
       }
-    }
-    else if (arrayElementType.equals("byte")) {
+    } else if (arrayElementType.equals("byte")) {
        arrayRef = env.newByteArray(vals.length);
        ElementInfo arrayEI = env.getHeap().get(arrayRef);
        byte bytes[] = arrayEI.asByteArray();
@@ -221,8 +219,7 @@ public class JSONObject{
        for (int i = 0; i < vals.length; i++) {
         bytes[i] = vals[i].getDouble().byteValue();
       }
-    }
-    else if (arrayElementType.equals("short")) {
+    } else if (arrayElementType.equals("short")) {
        arrayRef = env.newShortArray(vals.length);
        ElementInfo arrayEI = env.getHeap().get(arrayRef);
        short shorts[] = arrayEI.asShortArray();
@@ -230,8 +227,7 @@ public class JSONObject{
        for (int i = 0; i < vals.length; i++) {
         shorts[i] = vals[i].getDouble().shortValue();
       }
-    }
-    else if (arrayElementType.equals("int")) {
+    } else if (arrayElementType.equals("int")) {
       arrayRef = env.newIntArray(vals.length);
       ElementInfo arrayEI = env.getHeap().get(arrayRef);
       int[] ints = arrayEI.asIntArray();
@@ -239,8 +235,7 @@ public class JSONObject{
       for (int i = 0; i < vals.length; i++) {
         ints[i] = vals[i].getDouble().intValue();
       }
-    }
-    else if (arrayElementType.equals("long")) {
+    } else if (arrayElementType.equals("long")) {
       arrayRef = env.newLongArray(vals.length);
       ElementInfo arrayEI = env.getHeap().get(arrayRef);
       long[] longs = arrayEI.asLongArray();
@@ -248,8 +243,7 @@ public class JSONObject{
       for (int i = 0; i < vals.length; i++) {
         longs[i] = vals[i].getDouble().longValue();
       }
-    }
-    else if (arrayElementType.equals("float")) {
+    } else if (arrayElementType.equals("float")) {
       arrayRef = env.newFloatArray(vals.length);
       ElementInfo arrayEI = env.getHeap().get(arrayRef);
       float[] floats = arrayEI.asFloatArray();
@@ -257,8 +251,7 @@ public class JSONObject{
       for (int i = 0; i < vals.length; i++) {
         floats[i] = vals[i].getDouble().floatValue();
       }
-    }
-    else if (arrayElementType.equals("double")) {
+    } else if (arrayElementType.equals("double")) {
       arrayRef = env.newDoubleArray(vals.length);
       ElementInfo arrayEI = env.getHeap().get(arrayRef);
       double[] doubles = arrayEI.asDoubleArray();
@@ -266,9 +259,8 @@ public class JSONObject{
       for (int i = 0; i < vals.length; i++) {
         doubles[i] = vals[i].getDouble();
       }
-    }
-    // Not an array of primitive types
-    else {
+    } else {
+      // Not an array of primitive types
       arrayRef = env.newObjectArray(arrayElementType, vals.length);
       ElementInfo arrayEI = env.getElementInfo(arrayRef);
 
@@ -280,14 +272,13 @@ public class JSONObject{
         int newObjRef;
         if (creator != null) {
           newObjRef = creator.create(env, arrayElementType, vals[i]);
-        }
-        else{
+        } else{
           if (isArrayType(arrayElementType)) {
-            newObjRef = createArray(env, arrayElementType, vals[i], CGs, prefix + "[" + i);
+            newObjRef = createArray(env, arrayElementType, vals[i], cgs, prefix + "[" + i);
           } else {
             JSONObject jsonObj = vals[i].getObject();
             if (jsonObj != null) {
-              newObjRef = jsonObj.fillObject(env, arrayElementType, CGs, prefix + "[" + i);
+              newObjRef = jsonObj.fillObject(env, arrayElementType, cgs, prefix + "[" + i);
             } else {
               newObjRef = MJIEnv.NULL;
             }
@@ -319,34 +310,32 @@ public class JSONObject{
     if (primitiveName.equals("boolean") && cgResult instanceof Boolean) {
       Boolean bool = (Boolean) cgResult;
       ei.setBooleanField(fi, bool.booleanValue());
-    }
-    else if (cgResult instanceof Number) {
+    } else if (cgResult instanceof Number) {
       Number number = (Number) cgResult;
 
       if (primitiveName.equals("byte")) {
         ei.setByteField(fi, number.byteValue());
-      }
-      else if (primitiveName.equals("short")) {
+
+      } else if (primitiveName.equals("short")) {
         ei.setShortField(fi, number.shortValue());
-      }
-      else if (primitiveName.equals("int")) {
+
+      } else if (primitiveName.equals("int")) {
         ei.setIntField(fi, number.intValue());
-      }
-      else if (primitiveName.equals("long")) {
+
+      } else if (primitiveName.equals("long")) {
         ei.setLongField(fi, number.longValue());
-      }
-      else if (primitiveName.equals("float")) {
+
+      } else if (primitiveName.equals("float")) {
         ei.setFloatField(fi, number.floatValue());
-      }
-      else if (primitiveName.equals("double")) {
+
+      } else if (primitiveName.equals("double")) {
         ei.setDoubleField(fi, number.doubleValue());
       }
-    }
-    else if (cgResult instanceof Character) {
+    } else if (cgResult instanceof Character) {
       Character c = (Character) cgResult;
       ei.setCharField(fi, c);
-    }
-    else {
+      
+    } else {
       throw new JPFException("Can't convert " + cgResult.getClass().getCanonicalName() +
                              " to " + primitiveName);
     }
@@ -354,18 +343,18 @@ public class JSONObject{
 
   /**
    * Get CG from current state CG list by it's ID
-   * @param CGs array of CG from current state
+   * @param cgs - array of CG from current state
    * @param id - id of the CG that we search for
    * @return - CG with a specified id or null if no id with such name found
    */
-  private ChoiceGenerator getCGByID(ChoiceGenerator[] CGs, String id) {
-    if (CGs == null) {
+  private ChoiceGenerator<?> getCGByID(ChoiceGenerator<?>[] cgs, String id) {
+    if (cgs == null) {
       return null;
     }
     
-    for (int i = 0; i < CGs.length; i++) {
-      if (CGs[i].getId().equals(id)) {
-        return CGs[i];
+    for (int i = 0; i < cgs.length; i++) {
+      if (cgs[i].getId().equals(id)) {
+        return cgs[i];
       }
     }
 
