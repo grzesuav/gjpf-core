@@ -718,29 +718,37 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     ChoiceGenerator[] CGs = null;
 
     if (jsonObject != null) {
-      // First call - we need to set Choice generators
+      // Top half - get list of CGs we need to set to fill object's fields from JSON
+      // and set if any
       if (!ti.isFirstStepInsn()) {
 
         // Get list of choice generators that should be set according to
         // a JSON object
         List<ChoiceGenerator> cgList = CGCall.createCGList(jsonObject);
 
+        boolean repeat = false;
         for (ChoiceGenerator cg : cgList) {
-          if (ss.setNextChoiceGenerator(cg)) {
-            env.repeatInvocation();
-          }
+          repeat |= ss.setNextChoiceGenerator(cg);
         }
-        CGs = new ChoiceGenerator[cgList.size()];
-        cgList.toArray(CGs);
-      }
 
-      // If this is method is called twice choice generator has already been set
-      // let's just take them from current state
-      if (CGs == null) {
-        CGs = ss.getChoiceGenerators();
+        if (repeat){
+          env.repeatInvocation();
+          // This will not be returned to a caller
+          return MJIEnv.NULL;
+        }
+        // No need to repeat this call. Just fill object without CGs
+        else {
+          return jsonObject.fillObject(env, typeName, null, "");
+        }
       }
-      
-      return jsonObject.fillObject(env, typeName, CGs, "");
+      // Botom half - fill object with JSON and current values of CGs
+      else {
+        // If this is method is called twice choice generator has already been set
+        // let's just take them from current state
+        CGs = ss.getChoiceGenerators();
+
+        return jsonObject.fillObject(env, typeName, CGs, "");
+      }
 
     } else {
       return MJIEnv.NULL;

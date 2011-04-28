@@ -113,8 +113,12 @@ public class JSONObject{
         }
         // Value of this field should be taken from CG
         else if (cgCall != null) {
-          ChoiceGenerator cg = getCGByID(CGs, prefix + fieldName);
+          String cgId = prefix + fieldName;
+          ChoiceGenerator cg = getCGByID(CGs, cgId);          
+          assert cg != null : "Expected CG with id " + cgId;
+          
           Object cgResult = cg.getNextChoice();
+
           if (!fi.isReference()) {
             convertPrimititve(ei, fi, cgResult);
           }
@@ -349,7 +353,10 @@ public class JSONObject{
    * @return - CG with a specified id or null if no id with such name found
    */
   private ChoiceGenerator getCGByID(ChoiceGenerator[] CGs, String id) {
-
+    if (CGs == null) {
+      return null;
+    }
+    
     for (int i = 0; i < CGs.length; i++) {
       if (CGs[i].getId().equals(id)) {
         return CGs[i];
