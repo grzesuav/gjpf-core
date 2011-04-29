@@ -18,6 +18,11 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.JPFException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Random;
 
 
@@ -110,6 +115,19 @@ public class Verify {
 
 
   //  Backwards compatibility END
+
+  public static void setBitInBitSet(int id, int bit, boolean value) {
+     // <2do> add standalone exec bitsets
+  }
+
+  public static boolean getBitInBitSet(int id, int bit) {
+    if (peer != null){
+      return JPF_gov_nasa_jpf_jvm_Verify.getBitInBitSet__II__Z(null, 0, id, bit);
+
+    } else {
+      return false; // <2do> add standalone exec bitsets
+    }
+  }
 
   /**
    * Adds a comment to the error trace, which will be printed and saved.
@@ -415,5 +433,36 @@ public class Verify {
 
   public static <T> T createFromJSON(Class<T> clazz, String json){
     return null;
+  }
+
+  public static void writeObjectToFile(Object object, String fileName) {
+    try {
+      FileOutputStream fso = new FileOutputStream(fileName);
+      ObjectOutputStream oos = new ObjectOutputStream(fso);
+      oos.writeObject(object);
+      oos.flush();
+      oos.close();
+
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+
+  }
+
+  public static <T> T readObjectFromFile(Class<T> clazz, String fileName) {
+    try
+    {
+      FileInputStream fis = new FileInputStream(fileName);
+      ObjectInputStream ois = new ObjectInputStream(fis);
+
+      Object read = ois.readObject();
+      
+      return (T) read;
+      
+    }
+    catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+
   }
 }

@@ -141,5 +141,21 @@ public class VerifyTest extends TestJPF {
      }
   }
    
-  //... and many more to come
+  // <2do>... and many more to come
+
+
+  @Test
+  public void testBitSet() {
+    if (verifyNoPropertyViolation()) {      
+      // JPF execution only
+      Verify.setBitInBitSet(0, 3, true);
+      Verify.setBitInBitSet(0, 1, true);
+      
+    } else {
+      // host VM execution only
+      assert Verify.getBitInBitSet(0, 1) == true;
+      assert Verify.getBitInBitSet(0, 2) == false;
+      assert Verify.getBitInBitSet(0, 3) == true;
+    }
+  }
 }

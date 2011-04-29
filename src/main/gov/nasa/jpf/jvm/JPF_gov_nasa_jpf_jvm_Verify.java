@@ -24,13 +24,19 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
+import gov.nasa.jpf.util.ObjectConverter;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
+import gov.nasa.jpf.util.json.CGCall;
 import gov.nasa.jpf.util.json.JSONLexer;
 import gov.nasa.jpf.util.json.JSONObject;
 import gov.nasa.jpf.util.json.JSONParser;
-import gov.nasa.jpf.util.json.Value;
-import java.util.HashMap;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.BitSet;
+import java.util.List;
 
 /**
  * native peer class for programmatic JPF interface (that can be used inside
@@ -53,6 +59,9 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   // this is our cache for ChoiceGenerator ctor parameters
   static Object[] cgArgs = { null, null };
 
+  static BitSet[] bitSets;
+  static int nextBitSet;
+  static final int INIT_BIT_SIZE = 2;
 
   public static void init (Config conf) {
 
@@ -103,6 +112,30 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
 
     return ++counter[counterId];
+  }
+
+  private static void checkBitSetId(int id) {
+    if (bitSets == null) {
+      bitSets = new BitSet[(id < INIT_BIT_SIZE) ? id + 1 : INIT_BIT_SIZE];
+    } else if (id >= bitSets.length) {
+      BitSet[] newBitSets = new BitSet[id + 1];
+      System.arraycopy(bitSets, 0, newBitSets, 0, bitSets.length);
+      bitSets = newBitSets;
+    }
+
+    if (bitSets[id] == null) {
+      bitSets[id] = new BitSet();
+    }
+  }
+
+  public static void setBitInBitSet__IIZ__V(MJIEnv env, int clsObjRef, int id, int bitNum, boolean value) {
+    checkBitSetId(id);
+    bitSets[id].set(bitNum, value);
+  }
+
+  public static boolean getBitInBitSet__II__Z(MJIEnv env, int clsObjRef, int id, int bitNum) {
+    checkBitSetId(id);
+    return bitSets[id].get(bitNum);
   }
 
   public static final long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
@@ -676,11 +709,62 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     JSONParser parser = new JSONParser(lexer);
     JSONObject jsonObject = parser.parse();
 
-    if (jsonObject != null){
-      return jsonObject.fillObject(env, typeName);
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+
+    if (jsonObject != null) {
+      // Top half - get list of CGs we need to set to fill object's fields from JSON
+      // and set if any
+      if (!ti.isFirstStepInsn()) {
+
+        // Get list of choice generators that should be set according to
+        // a JSON object
+        List<ChoiceGenerator<?>> cgList = CGCall.createCGList(jsonObject);
+
+        boolean repeat = false;
+        for (ChoiceGenerator<?> cg : cgList) {
+          repeat |= ss.setNextChoiceGenerator(cg);
+        }
+
+        if (repeat){
+          env.repeatInvocation();
+          // This will not be returned to a caller
+          return MJIEnv.NULL;
+        } else {
+          // No need to repeat this call. Just fill object without CGs
+          return jsonObject.fillObject(env, typeName, null, "");
+        }
+      } else {
+        // Botom half - fill object with JSON and current values of CGs
+        ChoiceGenerator<?>[] cgs = ss.getChoiceGenerators();
+
+        return jsonObject.fillObject(env, typeName, cgs, "");
+      }
+
     } else {
       return MJIEnv.NULL;
     }
   }
+  
+  public static int readObjectFromFile__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
+          MJIEnv env, int clsObjRef, int newObjClsRef, int fileNameRef) {
+    int typeNameRef = env.getReferenceField(newObjClsRef, "name");
+    String typeName = env.getStringObject(typeNameRef);
+    String fileName = env.getStringObject(fileNameRef);
 
+    try {
+
+      FileInputStream fis = new FileInputStream(fileName);
+      ObjectInputStream ois = new ObjectInputStream(fis);
+      Object javaObject = ois.readObject();
+      String readObjectTypeName = javaObject.getClass().getCanonicalName();
+      
+      int readObjRef = ObjectConverter.JPFObjectFromJavaObject(env, javaObject);
+
+      return readObjRef;
+    } catch (Exception ex) {
+      throw new JPFException(ex);
+    }
+    
+  }
 }

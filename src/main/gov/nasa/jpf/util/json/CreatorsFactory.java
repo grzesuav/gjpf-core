@@ -40,119 +40,11 @@ public class CreatorsFactory {
   }
 
   public static Creator getCreator(String typeName) {
-    if (typeName.lastIndexOf('[') >= 0) {
-      return new ArraySetter();
-    }
 
     return creatorsTable.get(typeName);
   }
 }
 
-
-class ArraySetter implements Creator {
-
-  public int create(MJIEnv env, String typeName, Value value) {
-    Value vals[] = value.getArray();
-
-    // Get name of array's elements types
-    String arrayElementType = typeName.substring(0, typeName.lastIndexOf('['));
-    int arrayRef;
-
-    // Handle arrays of primitive types
-    if (arrayElementType.equals("boolean")) {
-       arrayRef = env.newBooleanArray(vals.length);
-       ElementInfo arrayEI = env.getHeap().get(arrayRef);
-       boolean bools[] = arrayEI.asBooleanArray();
-
-       for (int i = 0; i < vals.length; i++) {
-        bools[i] = vals[i].getBoolean();
-      }
-    }
-    else if (arrayElementType.equals("byte")) {
-       arrayRef = env.newByteArray(vals.length);
-       ElementInfo arrayEI = env.getHeap().get(arrayRef);
-       byte bytes[] = arrayEI.asByteArray();
-
-       for (int i = 0; i < vals.length; i++) {
-        bytes[i] = vals[i].getDouble().byteValue();
-      }
-    }
-    else if (arrayElementType.equals("short")) {
-       arrayRef = env.newShortArray(vals.length);
-       ElementInfo arrayEI = env.getHeap().get(arrayRef);
-       short shorts[] = arrayEI.asShortArray();
-
-       for (int i = 0; i < vals.length; i++) {
-        shorts[i] = vals[i].getDouble().shortValue();
-      }
-    }
-    else if (arrayElementType.equals("int")) {
-      arrayRef = env.newIntArray(vals.length);
-      ElementInfo arrayEI = env.getHeap().get(arrayRef);
-      int[] ints = arrayEI.asIntArray();
-
-      for (int i = 0; i < vals.length; i++) {
-        ints[i] = vals[i].getDouble().intValue();
-      }
-    }
-    else if (arrayElementType.equals("long")) {
-      arrayRef = env.newLongArray(vals.length);
-      ElementInfo arrayEI = env.getHeap().get(arrayRef);
-      long[] longs = arrayEI.asLongArray();
-
-      for (int i = 0; i < vals.length; i++) {
-        longs[i] = vals[i].getDouble().longValue();
-      }
-    }
-    else if (arrayElementType.equals("float")) {
-      arrayRef = env.newFloatArray(vals.length);
-      ElementInfo arrayEI = env.getHeap().get(arrayRef);
-      float[] floats = arrayEI.asFloatArray();
-
-      for (int i = 0; i < vals.length; i++) {
-        floats[i] = vals[i].getDouble().floatValue();
-      }
-    }
-    else if (arrayElementType.equals("double")) {
-      arrayRef = env.newDoubleArray(vals.length);
-      ElementInfo arrayEI = env.getHeap().get(arrayRef);
-      double[] doubles = arrayEI.asDoubleArray();
-
-      for (int i = 0; i < vals.length; i++) {
-        doubles[i] = vals[i].getDouble();
-      }
-    }
-    // Not an array of primitive types
-    else {
-      arrayRef = env.newObjectArray(arrayElementType, vals.length);
-      ElementInfo arrayEI = env.getElementInfo(arrayRef);
-
-      Fields fields = arrayEI.getFields();
-
-      Creator creator = CreatorsFactory.getCreator(arrayElementType);
-      for (int i = 0; i < vals.length; i++) {
-
-        int newObjRef;
-        if (creator != null) {
-          newObjRef = creator.create(env, arrayElementType, vals[i]);
-        }
-        else{
-          JSONObject jsonObj =  vals[i].getObject();
-          if (jsonObj != null){
-            newObjRef = jsonObj.fillObject(env, arrayElementType);
-          } else {
-            newObjRef = MJIEnv.NULL;
-          }
-        }
-
-        fields.setReferenceValue(i, newObjRef);
-      }
-
-    }
-
-    return arrayRef;
-  }
-}
 
 class BoxedBoolCreator implements Creator {
   public int create(MJIEnv env, String typeName, Value value) {

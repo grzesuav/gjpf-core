@@ -31,7 +31,6 @@ import java.util.logging.*;
  * We provide a fat interface to avoid Object[] creation for ellipsis method
  * or auto boxing for Object arguments
  *
- * <2do> implement missing public methods
  */
 public class JPFLogger extends Logger {
 

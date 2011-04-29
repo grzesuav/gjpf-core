@@ -135,8 +135,7 @@ public class JSONParser {
             t.getType() == Token.Type.CGCallParamsStart) {
             CGCall cg = parseCGCall(posibleId.getValue());
             pn.addCGCall(key.getValue(), cg);
-        }
-        else {
+        } else {
           back();
           back();
           Value v = parseValue();
@@ -176,8 +175,7 @@ public class JSONParser {
           break;
         }
       }
-    }
-    else {
+    } else {
       back();
     }
     consume(Token.Type.ArrayEnd);
@@ -195,11 +193,11 @@ public class JSONParser {
     String val = id.getValue();
     if (val.equals("true")) {
       return new BooleanValue(true, "true");
-    }
-    else if (val.equals("false")) {
+
+    } else if (val.equals("false")) {
       return new BooleanValue(false, "false");
-    }
-    else if (val.equals("null")) {
+      
+    } else if (val.equals("null")) {
       return new NullValue();
     }
 
