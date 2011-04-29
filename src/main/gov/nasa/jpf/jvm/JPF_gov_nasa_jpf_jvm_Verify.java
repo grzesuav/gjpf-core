@@ -61,7 +61,6 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   static BitSet[] bitSets;
   static int nextBitSet;
-  static final int INIT_BIT_SIZE = 2;
 
   public static void init (Config conf) {
 
@@ -116,7 +115,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   private static void checkBitSetId(int id) {
     if (bitSets == null) {
-      bitSets = new BitSet[(id < INIT_BIT_SIZE) ? id + 1 : INIT_BIT_SIZE];
+      bitSets = new BitSet[id + 1];
     } else if (id >= bitSets.length) {
       BitSet[] newBitSets = new BitSet[id + 1];
       System.arraycopy(bitSets, 0, newBitSets, 0, bitSets.length);
