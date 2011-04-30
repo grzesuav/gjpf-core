@@ -66,7 +66,7 @@ public class DFSearch extends Search {
     notifySearchStarted();
 
     while (!done) {
-      if (!isNewState() || isEndState() || isIgnoredState() || checkAndResetBacktrackRequest() || depthLimitReached ) {
+      if (checkAndResetBacktrackRequest() || !isNewState() || isEndState() || isIgnoredState() || depthLimitReached ) {
         if (!backtrack()) { // backtrack not possible, done
           break;
         }

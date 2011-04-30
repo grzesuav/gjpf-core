@@ -70,4 +70,35 @@ public class SearchMultipleTest extends TestJPF {
     }
   }
 
+  @Test
+  public void testDeadlock(){
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+    }
+
+    if (verifyDeadlock("+search.multiple_errors", "+cg.boolean.false_first")){
+      Object lock = new Object();
+      boolean b = Verify.getBoolean();
+      boolean c = Verify.getBoolean();
+      System.out.println("b=" + b + ", c=" + c);
+
+      if (!b){
+        synchronized(lock){
+          try {
+            System.out.println("now deadlocking");
+            lock.wait(); // this should always deadlock
+          } catch (InterruptedException ix){
+            System.out.println("got interrupted");
+          }
+        }
+      }
+
+      System.out.println("should get here for b=true");
+      Verify.incrementCounter(0);
+    }
+
+    if (!isJPFRun()){
+      assertTrue( Verify.getCounter(0) == 2);
+    }
+  }
 }
