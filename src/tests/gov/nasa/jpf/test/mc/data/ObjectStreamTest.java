@@ -23,7 +23,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
-import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -31,11 +31,10 @@ import org.junit.Test;
  * @author Ivan Mushketik
  */
 public class ObjectStreamTest extends TestJPF {
-  String osFileName = "file";
-  
-  @Before
-  // Delete file with ObjectStream from previous test run
-  public void beforeClass() {
+  static String osFileName = "file";
+
+  @After
+  public void deleteFile(){
     File osFile = new File(osFileName);
 
     if (osFile.exists()) {
