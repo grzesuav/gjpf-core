@@ -39,7 +39,12 @@ public class INVOKEINTERFACE extends VirtualInvocation {
   public int getByteCode () {
     return 0xB9;
   }
-  
+
+  public String toString() {
+    // methodInfo not set outside real call context (requires target object)
+    return "invokeinterface " + cname + '.' + mname;
+  }
+
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

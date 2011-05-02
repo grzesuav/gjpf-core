@@ -51,7 +51,7 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     
     if (mi == null) {
       String cname = ti.getClassInfo(objRef).getName();
-      return ti.createAndThrowException("java.lang.NoSuchMethodError", cname + "." + mname);
+      return ti.createAndThrowException("java.lang.NoSuchMethodError", cname + '.' + mname);
     }
     
     ElementInfo ei = ks.heap.get(objRef);

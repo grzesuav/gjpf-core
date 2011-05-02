@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 
-import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
@@ -147,7 +146,8 @@ public class INVOKESTATIC extends InvokeInstruction {
 
   
   public String toString() {
-    return "invokestatic " + getInvokedMethod().getFullName();
+    // methodInfo not set outside real call context (requires target object)
+    return "invokestatic " + cname + '.' + mname;
   }
 
   public Object getFieldValue (String id, ThreadInfo ti) {
