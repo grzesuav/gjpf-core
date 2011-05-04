@@ -886,6 +886,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   protected CodeBuilder createCodeBuilder(){
     InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
+    insnFactory.setClassInfoContext(this);
+
     return new CodeBuilder(insnFactory, null, null);
   }
 

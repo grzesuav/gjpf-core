@@ -202,7 +202,6 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   
   public static InstructionFactory getInstructionFactory() {
     // we clone so that instruction factories could have state
-    // (although factories normally shouldn't)
     return (InstructionFactory) insnFactory.clone();
   }
   

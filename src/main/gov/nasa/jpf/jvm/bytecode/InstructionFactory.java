@@ -35,6 +35,10 @@ public class InstructionFactory implements Cloneable {
     // nothing here
   }
 
+  public void setClassInfoContext( ClassInfo ci){
+    // nothing, we keep this stateless
+  }
+
   public Object clone() {
     try {
       return super.clone();
