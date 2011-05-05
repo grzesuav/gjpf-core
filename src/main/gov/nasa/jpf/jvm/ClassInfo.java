@@ -710,8 +710,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     enclosingClassName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
 
     if (sourceFileName == null){
-      // this is just a guess, but the SourceFile attribute is optional
-      sourceFileName = name.replace('.', '/') + ".java";
+      // might not be set yet since the SourceFile attribute is optional
+      sourceFileName = computeSourceFileName();
     }
 
     staticDataSize = computeStaticDataSize();
@@ -878,6 +878,31 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     } else if ((enumClassInfo == null) && name.equals("java.lang.Enum")){
       enumClassInfo = ci;
     }
+  }
+
+  /**
+   * deduce relative source pathname from class name
+   */
+  protected String computeSourceFileName(){
+    String sfn = null;
+
+    if (enclosingClassName != null){
+      // unfortunately we can't take the enclosingClassName directly since the nesting
+      // might be deeper
+      int i = enclosingClassName.indexOf('$');
+      if (i> 0){
+        sfn = enclosingClassName.substring(0, i);
+      } else {
+        sfn = enclosingClassName;
+      }
+    } else {
+      sfn = name;
+    }
+
+    sfn = sfn.replace('.', '/'); // Source will take care of proper separatorChars
+    sfn += ".java";
+
+    return sfn;
   }
 
   /**
