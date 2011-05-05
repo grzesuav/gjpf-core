@@ -86,6 +86,7 @@ public class ClassLoader {
       try {
         return foundResource.openStream();
       } catch (IOException e) {
+        System.err.println("cannot open resource " + name);
       }
     }
     return null;

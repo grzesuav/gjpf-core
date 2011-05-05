@@ -32,7 +32,6 @@ public class JPF_java_lang_ClassLoader {
     String resourceName = env.getStringObject(resRef);
     
     String resourcePath = ClassInfo.findResource(resourceName);
-    
     return env.newString(resourcePath);
   }
 }

@@ -65,6 +65,10 @@ public class Source {
     }
 
     InputStream getInputStream (String fname) {
+      if (File.separatorChar != '/'){
+        fname = fname.replace('/', File.separatorChar);
+      }
+
       File f = new File(path, fname);
       if (f.exists()) {
         try {
@@ -244,8 +248,8 @@ public class Source {
     }
   }
 
-  public static Source getSource (String fname) {
-    Source s = sources.get(fname);
+  public static Source getSource (String relPathName) {
+    Source s = sources.get(relPathName);
 
     if (s == noSource) {
        return null;
@@ -253,17 +257,17 @@ public class Source {
 
     if (s == null) {
       for (SourceRoot root : sourceRoots) {
-        InputStream is = root.getInputStream(fname);
+        InputStream is = root.getInputStream(relPathName);
         if (is != null) {
           try {
-          s = new Source(root,fname);
+          s = new Source(root,relPathName);
           s.loadLines(is);
           is.close();
 
-          sources.put(fname, s);
+          sources.put(relPathName, s);
           return s;
           } catch (IOException iox) {
-            logger.warning("error reading " + fname + " from" + root);
+            logger.warning("error reading " + relPathName + " from" + root);
             return null;
           }
         }
@@ -272,7 +276,7 @@ public class Source {
       return s;
     }
 
-    sources.put(fname, noSource);
+    sources.put(relPathName, noSource);
 
     return null;
   }

@@ -328,8 +328,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
 
     @Override
-    public void setSourceFile(ClassFile cf, Object tag, String pathName) {
-      sourceFileName = pathName;
+    public void setSourceFile(ClassFile cf, Object tag, String fileName) {
+      // we already know the package, so we just prepend it
+      if (packageName.length() > 0){
+        // Source will take care of proper separator chars later
+        sourceFileName = packageName.replace('.', '/') + '/' + fileName;
+      } else {
+        sourceFileName = fileName;
+      }
     }
 
 
@@ -702,7 +708,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     this.uniqueId = uniqueId;
     
     enclosingClassName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
-    
+
+    if (sourceFileName == null){
+      // this is just a guess, but the SourceFile attribute is optional
+      sourceFileName = name.replace('.', '/') + ".java";
+    }
+
     staticDataSize = computeStaticDataSize();
     instanceDataSize = computeInstanceDataSize();
     instanceDataOffset = computeInstanceDataOffset();
