@@ -139,29 +139,34 @@ public class JPF_java_lang_Class {
     ClassInfo ci = getReferredClassInfo(env,robj);
     return ci.areAssertionsEnabled();
   }
-  
-  public static int forName__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
-                                                                       int rcls,
-                                                                       int stringRef) {
+
+  public static int getClassObject (MJIEnv env, ClassInfo ci){
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
-    String            clsName = env.getStringObject(stringRef);
-    
-    ClassInfo         ci = ClassInfo.tryGetResolvedClassInfo(clsName);
-    if (ci == null){
-      env.throwException("java.lang.ClassNotFoundException", clsName);
-      return MJIEnv.NULL;
-    }
-    
+
     if (insn.requiresClinitCalls(ti, ci)) {
       env.repeatInvocation();
       return MJIEnv.NULL;
     }
 
-    StaticElementInfo ei = env.getStaticArea().get(clsName);
-    int               ref = ei.getClassObjectRef();
+    StaticElementInfo ei = ci.getStaticElementInfo();
+    int ref = ei.getClassObjectRef();
 
     return ref;
+  }
+  
+  public static int forName__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
+                                                                       int rcls,
+                                                                       int clsNameRef) {
+    String            clsName = env.getStringObject(clsNameRef);
+    
+    ClassInfo ci = ClassInfo.tryGetResolvedClassInfo(clsName);
+    if (ci == null){
+      env.throwException("java.lang.ClassNotFoundException", clsName);
+      return MJIEnv.NULL;
+    }
+    
+    return getClassObject(env, ci);
   }
 
   /**

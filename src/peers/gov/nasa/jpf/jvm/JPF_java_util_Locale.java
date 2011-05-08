@@ -23,6 +23,9 @@ import java.util.Locale;
 public class JPF_java_util_Locale {
 
   static Locale getLocale (MJIEnv env, int locref) {
+
+    //--- check first if it's one of the standard locales (ci is obviously loaded at this point
+
     String country = env.getStringObject(env.getReferenceField(locref, "country"));
     String language = env.getStringObject(env.getReferenceField(locref, "language"));
     String variant = env.getStringObject(env.getReferenceField(locref, "variant"));

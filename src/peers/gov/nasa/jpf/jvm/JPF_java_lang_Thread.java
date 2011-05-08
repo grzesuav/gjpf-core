@@ -42,6 +42,10 @@ public class JPF_java_lang_Thread {
     ti.setDaemon(isDaemon);
   }
 
+  public static void dumpStack____V (MJIEnv env, int clsObjRef){
+    ThreadInfo ti = env.getThreadInfo();
+    ti.printStackTrace(); // this is not correct, we should go through JVM.print
+  }
 
   public static void setName0__Ljava_lang_String_2__V (MJIEnv env, int objref, int nameRef) {
     // it bails if you try to set a null name

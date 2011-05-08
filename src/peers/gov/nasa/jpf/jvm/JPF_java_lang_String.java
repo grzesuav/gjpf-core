@@ -18,6 +18,9 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Locale;
+
 /**
  * MJI NativePeer class for java.lang.String library abstraction
  */
@@ -138,10 +141,18 @@ public class JPF_java_lang_String {
   }
   
   //
-  public static int getBytes__Ljava_lang_String_2___3B(MJIEnv env, int ObjRef, int str){
-	  String string=env.getStringObject(str);
-	  byte[] b=string.getBytes();
-	  return env.newByteArray(b);
+  public static int getBytes__Ljava_lang_String_2___3B(MJIEnv env, int objRef, int charSetRef){
+	  String string = env.getStringObject(objRef);
+    String charset = env.getStringObject(charSetRef);
+
+    try {
+      byte[] b=string.getBytes(charset);
+  	  return env.newByteArray(b);
+
+    } catch (UnsupportedEncodingException uex){
+      env.throwException(uex.getClass().getName(), uex.getMessage());
+      return MJIEnv.NULL;
+    }
   }
   
   public static int split__Ljava_lang_String_2___3Ljava_lang_String_2(MJIEnv env,int clsObjRef,int strRef){
@@ -152,5 +163,40 @@ public class JPF_java_lang_String {
 
     return env.newStringArray(result);
   }
+
+
+  public static int toUpperCase____Ljava_lang_String_2 (MJIEnv env, int objRef){
+    String s = env.getStringObject(objRef);
+    String upper = s.toUpperCase();
+
+    return (s == upper) ? objRef : env.newString(upper);
+  }
+
+  public static int toLowerCase____Ljava_lang_String_2 (MJIEnv env, int objRef){
+    String s = env.getStringObject(objRef);
+    String lower = s.toLowerCase();
+
+    return (s == lower) ? objRef : env.newString(lower);
+  }
+
+
+  public static int toUpperCase__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int locRef){
+    String s = env.getStringObject(objRef);
+    Locale loc = JPF_java_util_Locale.getLocale(env, locRef);
+
+    String upper = s.toUpperCase(loc);
+
+    return (s == upper) ? objRef : env.newString(upper);
+  }
+
+  public static int toLowerCase__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int locRef){
+    String s = env.getStringObject(objRef);
+    Locale loc = JPF_java_util_Locale.getLocale(env, locRef);
+
+    String lower = s.toLowerCase(loc);
+
+    return (s == lower) ? objRef : env.newString(lower);
+  }
+
 
 }

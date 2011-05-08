@@ -172,7 +172,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       if (o instanceof EIMemento){
         EIMemento other = (EIMemento)o;
         if (ref != other.ref) return false;
-     *  if (ci != other.ci) return false;
+     *  if (ciMth != other.ciMth) return false;
         if (fields != other.fields) return false;
         if (monitor != other.monitor) return false;
         if (refTid != other.refTid) return false;

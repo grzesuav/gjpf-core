@@ -271,7 +271,8 @@
   <!-- public clean: cleanup from previous tasks/builds -->
   <target name="clean"
           description="remove all build artifacts and temporary files">
-    <delete dir="build" />
+    <delete dir="build" failonerror="false"/>
+    <delete dir="tmp" failonerror="false"/>
     <delete>
       <fileset dir="." includes="jpf-fb-report.*"/>
       <fileset dir="." includes="**/*~" defaultexcludes="no" />
