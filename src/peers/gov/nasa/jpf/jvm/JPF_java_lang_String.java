@@ -73,7 +73,16 @@ public class JPF_java_lang_String {
 
     return true;
   }
-  
+
+  public static boolean equalsIgnoreCase__Ljava_lang_String_2__Z(MJIEnv env, int objref, int anotherString) {
+    String thisString = env.getStringObject(objref);
+    if (anotherString != MJIEnv.NULL){
+      return thisString.equalsIgnoreCase(env.getStringObject(anotherString));
+    } else {
+      return false;
+    }
+  }
+
   public static int toCharArray_____3C (MJIEnv env, int objref){
     int vref = env.getReferenceField(objref, "value");
     int off = env.getIntField(objref, "offset");
@@ -87,14 +96,52 @@ public class JPF_java_lang_String {
     
     return cref;
   }
-  
-  public static int indexOf__I__I (MJIEnv env, int objref, int c) {
+
+  public static int indexOf__II__I (MJIEnv env, int objref, int c, int fromIndex) {
     int vref = env.getReferenceField(objref, "value");
     int off = env.getIntField(objref, "offset");
     int len = env.getIntField(objref, "count");
+
+    if (fromIndex >= len){
+      return -1;
+    }
+    if (fromIndex < 0){
+      fromIndex = 0;
+    }
+
+    ElementInfo ei = env.getElementInfo(vref);
+    char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
+
+    for (int i=fromIndex; i<len; i++){
+      if (values[i+off] == c){
+        return i;
+      }
+    }
     
-    for (int i=0, j=off; i<len; i++, j++){
-      if ((int)env.getCharArrayElement(vref, j) == c) {
+    return -1;
+  }
+
+  public static int indexOf__I__I (MJIEnv env, int objref, int c) {
+    return indexOf__II__I(env,objref,c,0);
+  }
+
+  public static int lastIndexOf__II__I (MJIEnv env, int objref, int c, int fromIndex) {
+    int vref = env.getReferenceField(objref, "value");
+    int off = env.getIntField(objref, "offset");
+    int len = env.getIntField(objref, "count");
+
+    if (fromIndex < 0){
+      return -1;
+    }
+    if (fromIndex > len-1){
+      fromIndex = len-1;
+    }
+    
+    ElementInfo ei = env.getElementInfo(vref);
+    char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
+
+    for (int i=fromIndex; i>0; i--){
+      if (values[i+off] == c){
         return i;
       }
     }
@@ -102,6 +149,25 @@ public class JPF_java_lang_String {
     return -1;
   }
   
+  public static int lastIndexOf__I__I (MJIEnv env, int objref, int c) {
+    return lastIndexOf__II__I(env,objref,c,Integer.MAX_VALUE);
+  }
+
+  public static int indexOf__Ljava_lang_String_2__I(MJIEnv env, int objref, int str) {
+    String thisStr = env.getStringObject(objref);
+    String indexStr = env.getStringObject(str);
+
+    return thisStr.indexOf(indexStr);
+  }
+
+  public static int indexOf__Ljava_lang_String_2I__I(MJIEnv env, int objref, int str, int fromIndex) {
+    String thisStr = env.getStringObject(objref);
+    String indexStr = env.getStringObject(str);
+
+    return thisStr.indexOf(indexStr, fromIndex);
+  }
+
+
   public static int hashCode____I (MJIEnv env, int objref) {
     int h = env.getIntField(objref, "hash");
     
@@ -155,15 +221,6 @@ public class JPF_java_lang_String {
     }
   }
   
-  public static int split__Ljava_lang_String_2___3Ljava_lang_String_2(MJIEnv env,int clsObjRef,int strRef){
-    String s=env.getStringObject(strRef);
-    String obj=env.getStringObject(clsObjRef);
-
-    String[] result=obj.split(s);
-
-    return env.newStringArray(result);
-  }
-
 
   public static int toUpperCase____Ljava_lang_String_2 (MJIEnv env, int objRef){
     String s = env.getStringObject(objRef);
@@ -196,6 +253,142 @@ public class JPF_java_lang_String {
     String lower = s.toLowerCase(loc);
 
     return (s == lower) ? objRef : env.newString(lower);
+  }
+
+
+  public static int split__Ljava_lang_String_2I___3Ljava_lang_String_2(MJIEnv env, int clsObjRef, int strRef, int limit) {
+    String s = env.getStringObject(strRef);
+    String obj = env.getStringObject(clsObjRef);
+
+    String[] result = obj.split(s, limit);
+
+    return env.newStringArray(result);
+  }
+
+  public static int split__Ljava_lang_String_2___3Ljava_lang_String_2(MJIEnv env,int clsObjRef,int strRef){
+    String s=env.getStringObject(strRef);
+    String obj=env.getStringObject(clsObjRef);
+
+    String[] result=obj.split(s);
+
+    return env.newStringArray(result);
+  }
+
+
+  public static int trim____Ljava_lang_String_2(MJIEnv env,int objRef) {
+    Heap heap = env.getHeap();
+    ElementInfo thisStr = heap.get(objRef);
+
+    CharArrayFields thisFields = (CharArrayFields) heap.get(thisStr.getReferenceField("value")).getFields();
+    int thisLength = thisStr.getIntField("count");
+    int thisOffset = thisStr.getIntField("offset");
+    char thisChars[] = thisFields.asCharArray();
+
+    int start = thisOffset;
+    int end = thisOffset + thisLength;
+
+    while ((start < end) && (thisChars[start] == ' ')){
+      start++;
+    }
+
+    while ((start < end) && (thisChars[end - 1] == ' ')){
+      end--;
+    }
+
+    if (start == thisOffset && end == thisOffset + thisLength){
+      // if there was no white space, return the string itself
+      return objRef;
+    }
+
+    String result = new String(thisChars, start, end - start);
+    return env.newString(result);
+  }
+
+  public static int concat__Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int objRef, int strRef) {
+    Heap heap = env.getHeap();
+
+    ElementInfo thisStr = heap.get(objRef);
+    ElementInfo otherStr = heap.get(strRef);
+
+    int thisLength = thisStr.getIntField("count");
+    int otherLength = otherStr.getIntField("count");
+
+    if (otherLength == 0)
+      return objRef;
+
+    int thisOffset = thisStr.getIntField("offset");
+    CharArrayFields thisFields = (CharArrayFields) heap.get(thisStr.getReferenceField("value")).getFields();
+    char thisChars[] = thisFields.asCharArray();
+
+    int otherOffset = otherStr.getIntField("offset");
+    CharArrayFields otherFields = (CharArrayFields) heap.get(otherStr.getReferenceField("value")).getFields();
+    char otherChars[] = otherFields.asCharArray();
+
+    char resultChars[] = new char[thisLength + otherLength];
+    System.arraycopy(thisChars, thisOffset, resultChars, 0, thisLength);
+    System.arraycopy(otherChars, otherOffset, resultChars, thisLength, otherLength);
+
+    return env.newString(new String(resultChars));
+  }
+
+  //--- the various replaces
+
+  public static int replace__CC__Ljava_lang_String_2(MJIEnv env, int objRef, char oldChar, char newChar) {
+
+    if (oldChar == newChar) { // nothing to replace
+      return objRef;
+    }
+
+    int vref = env.getReferenceField(objRef, "value");
+    int off = env.getIntField(objRef, "offset");
+    int len = env.getIntField(objRef, "count");
+
+    ElementInfo ei = env.getElementInfo(vref);
+    char[] values = ((CharArrayFields) ei.getFields()).asCharArray();
+    char[] newValues = null;
+
+    for (int i = off, j = 0; j<len; i++, j++) {
+      char c = values[i];
+      if (c == oldChar) {
+        if (newValues == null) {
+          newValues = new char[len];
+          if (j>0){
+            System.arraycopy(values, off, newValues, 0, j);
+          }
+        }
+        newValues[j] = newChar;
+      } else {
+        if (newValues != null) {
+          newValues[j] = c;
+        }
+      }
+    }
+
+    if (newValues != null) {
+      String s = new String(newValues);
+      return env.newString(s);
+
+    } else { // oldChar not found, return the original string
+      return objRef;
+    }
+  }
+
+  public static int replaceFirst__Ljava_lang_String_2Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int objRef, int regexRef, int replacementRef) {
+    String thisStr = env.getStringObject(objRef);
+    String regexStr = env.getStringObject(regexRef);
+    String replacementStr = env.getStringObject(replacementRef);
+
+    String result = thisStr.replaceFirst(regexStr, replacementStr);
+    return (result != thisStr) ? env.newString(result) : objRef;
+  }
+
+  public static int replaceAll__Ljava_lang_String_2Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int objRef, int regexRef, int replacementRef) {
+    String thisStr = env.getStringObject(objRef);
+    String regexStr = env.getStringObject(regexRef);
+    String replacementStr = env.getStringObject(replacementRef);
+
+    String result = thisStr.replaceAll(regexStr, replacementStr);
+    return (result != thisStr) ? env.newString(result) : objRef;
   }
 
 

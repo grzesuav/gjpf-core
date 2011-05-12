@@ -25,8 +25,6 @@ import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
-import gov.nasa.jpf.jvm.bytecode.RETURN;
-import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.jvm.choice.BreakGenerator;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
 import gov.nasa.jpf.util.HashData;
@@ -36,7 +34,6 @@ import gov.nasa.jpf.util.SparseObjVector;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -55,6 +52,8 @@ import java.util.logging.Logger;
  * Note that we preserve identities according to their associated java.lang.Thread object
  * (threadData.objref). This esp. means along the same path, a ThreadInfo reference
  * is kept invariant
+ *
+ * <2do> remove EXECUTENATIVE,INVOKESTATIC .bytecode dependencies
  */
 public class ThreadInfo
      implements Iterable<StackFrame>, Comparable<ThreadInfo>, Cloneable, Restorable<ThreadInfo> {
