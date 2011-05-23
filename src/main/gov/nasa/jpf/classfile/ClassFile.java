@@ -1163,7 +1163,7 @@ public class ClassFile {
       String descriptor = (String)  cpValue[cpIdx];
       int slotIndex = readU2();
       
-      setLocalVar(reader, tag, i, varName, descriptor, startPc, startPc+length, slotIndex );
+      setLocalVar(reader, tag, i, varName, descriptor, startPc, startPc+length-1, slotIndex );
     }
 
     setLocalVarTableDone(reader, tag);

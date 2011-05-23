@@ -687,6 +687,19 @@ dump();
 
   }
 
+  public LocalVarInfo getLocalVar (int slotIdx, int pc){
+    LocalVarInfo[] vars = localVars;
+
+    for (int i=0; i<vars.length; i++){
+      LocalVarInfo lv = vars[i];
+      if (lv.matches(slotIdx, pc)){
+        return lv;
+      }
+    }
+
+    return null;
+  }
+
   public LocalVarInfo[] getLocalVars() {
     return localVars; 
   }

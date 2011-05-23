@@ -643,12 +643,12 @@ public class Config extends Properties {
     v = v.trim();
     
     // true/false
-    if ("true".equalsIgnoreCase(v) || "t".equalsIgnoreCase(v)
-        || "yes".equalsIgnoreCase(v) || "y".equalsIgnoreCase(v)
+    if ("true".equalsIgnoreCase(v)
+        || "yes".equalsIgnoreCase(v)
         || "on".equalsIgnoreCase(v)) {
       v = TRUE;
-    } else if ("false".equalsIgnoreCase(v) || "f".equalsIgnoreCase(v)
-        || "no".equalsIgnoreCase(v) || "n".equalsIgnoreCase(v)
+    } else if ("false".equalsIgnoreCase(v)
+        || "no".equalsIgnoreCase(v)
         || "off".equalsIgnoreCase(v)) {
       v = FALSE;
     }

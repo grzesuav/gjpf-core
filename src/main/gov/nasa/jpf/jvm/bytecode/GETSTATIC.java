@@ -70,17 +70,17 @@ public class GETSTATIC extends StaticFieldInstruction {
       }
     }
    
-    switch (size) {
-      case 1:
-        int ival = ei.get1SlotField(fieldInfo);
-        ti.push(ival, fieldInfo.isReference());
-        break;
-      case 2:
-        long lval = ei.get2SlotField(fieldInfo);
-        ti.longPush(lval);
-        break;
-      default:
-        throw new JPFException("invalid field type");
+    if (size == 1) {
+      int ival = ei.get1SlotField(fieldInfo);
+      lastValue = ival;
+
+      ti.push(ival, fieldInfo.isReference());
+
+    } else {
+      long lval = ei.get2SlotField(fieldInfo);
+      lastValue = lval;
+      
+      ti.longPush(lval);
     }
     
     Object attr = ei.getFieldAttr(fieldInfo);

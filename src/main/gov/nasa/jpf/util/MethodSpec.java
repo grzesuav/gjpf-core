@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.Types;
 import java.util.BitSet;
+import java.util.HashSet;
 
 /**
  * utility class that can match methods/args against specs.
@@ -48,7 +49,6 @@ public class MethodSpec extends FeatureSpec {
 
   String  sigSpec;  // this is only the argument part, including parenthesis
   BitSet  markedArgs;
-
 
   /**
    * factory method that includes the parser
@@ -180,8 +180,8 @@ public class MethodSpec extends FeatureSpec {
 
   public boolean matches (MethodInfo mi){
     boolean isMatch = false;
-    ClassInfo ci = mi.getClassInfo();
 
+    ClassInfo ci = mi.getClassInfo();
     if (isMatchingType(ci)){
       if (nameSpec.matches(mi.getName())){
         if (sigSpec != null){
@@ -193,7 +193,7 @@ public class MethodSpec extends FeatureSpec {
       }
     }
 
-    return isMatch != matchInverted;
+    return (isMatch != matchInverted);
   }
 
   public boolean matches (String clsName, String mthName){
@@ -203,37 +203,5 @@ public class MethodSpec extends FeatureSpec {
 
   public boolean matchesClass (String clsName){
     return clsSpec.matches(clsName) != matchInverted;
-  }
-
-  //--- testing & debugging
-  public static void main (String[] args){
-    MethodSpec ms = createMethodSpec("x.y.Foo.bar(java.lang.String,^float[])");
-    System.out.println(ms);
-
-    ms = createMethodSpec("x.y.Foo+.*");
-    System.out.println(ms);
-
-    ms = createMethodSpec("*.foo(^int, ^double)");
-    System.out.println(ms);
-
-    ms = createMethodSpec("( ^int, ^double)");
-    System.out.println(ms);
-
-    ms = createMethodSpec(".foo");
-    System.out.println(ms);
-
-    System.out.println("---- those should produce null");
-
-    ms = createMethodSpec(".(bla)");
-    System.out.println(ms);
-
-    ms = createMethodSpec("*.foo(^int, ^double");
-    System.out.println(ms);
-
-    ms = createMethodSpec("!java.*.*");
-    System.out.println(ms);
-    System.out.println("matches (java.lang.Object,*): " +
-            ms.matches("java.lang.Object", "*"));
-
   }
 }

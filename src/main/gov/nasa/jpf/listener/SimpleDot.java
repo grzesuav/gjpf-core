@@ -188,15 +188,7 @@ public class SimpleDot extends ListenerAdapter {
     lastId = id;
   }
 
-  //@Override
-  public void _stateBacktracked(Search search){
-    if (!search.isProcessedState()){
-      int id = search.getStateId();
-      printBacktrack(getStateId(lastId), getStateId(id));
-      lastId = id;
-    }
-  }
-
+  @Override
   public void stateBacktracked(Search search){
     int id = search.getStateId();
     long edgeId = ((long)lastId << 32) | id;
@@ -385,7 +377,9 @@ public class SimpleDot extends ListenerAdapter {
   //--- dot file stuff
 
   protected void printHeader(){
-    pw.println("digraph {");
+    pw.print("digraph ");
+    pw.print(app);
+    pw.println(" {");
 
     pw.print("node [");
     pw.print(genericNodeAttrs);

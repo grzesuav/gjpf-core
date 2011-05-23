@@ -63,4 +63,7 @@ public class ByteFieldInfo extends SingleSlotFieldInfo {
     return new Byte((byte)i);
   }
 
+  public boolean isNumericField(){
+    return true;
+  }
 }

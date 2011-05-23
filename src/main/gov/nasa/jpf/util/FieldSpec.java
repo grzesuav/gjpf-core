@@ -21,6 +21,7 @@ package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
+import java.util.HashSet;
 
 /**
  * utility class that can match FieldInfos against specs.
@@ -69,11 +70,11 @@ public class FieldSpec extends FeatureSpec {
   }
 
   public boolean matches (FieldInfo fi){
-    ClassInfo ci = fi.getClassInfo();
 
+    ClassInfo ci = fi.getClassInfo();
     if (isMatchingType(ci)) {
-      if (nameSpec.matches(fi.getName())) {
-        return !matchInverted;
+      if (nameSpec.matches(fi.getName()) != matchInverted) {
+        return true;
       }
     }
 

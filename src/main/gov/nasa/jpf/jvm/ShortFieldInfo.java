@@ -53,6 +53,10 @@ public class ShortFieldInfo extends SingleSlotFieldInfo {
     return true;
   }
 
+  public boolean isNumericField(){
+    return true;
+  }
+
   public Object getValueObject (Fields f){
     int i = f.getIntValue(storageOffset);
     return new Short((short)i);

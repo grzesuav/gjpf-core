@@ -31,19 +31,12 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Set static field in class
  * ..., value => ...
  */
-public class PUTSTATIC extends StaticFieldInstruction implements StoreInstruction
-{
-  protected long lastValue;
+public class PUTSTATIC extends StaticFieldInstruction implements StoreInstruction {
 
   public PUTSTATIC() {}
 
   public PUTSTATIC(String fieldName, String clsDescriptor, String fieldDescriptor){
     super(fieldName, clsDescriptor, fieldDescriptor);
-  }
-
-  
-  public long getLastValue() {
-    return lastValue;
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
@@ -78,30 +71,25 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
 
     Object attr = null; // attr handling has to be consistent with PUTFIELD
 
-    switch (fi.getStorageSize()) {
-      case 1:
-        attr = ti.getOperandAttr();
+    if (fi.getStorageSize() == 1) {
+      attr = ti.getOperandAttr();
 
-        int ival = ti.pop();
-        lastValue = ival;
+      int ival = ti.pop();
+      lastValue = ival;
 
-        if (fi.isReference()) {
-          ei.setReferenceField(fi, ival);
-        } else {
-          ei.set1SlotField(fi, ival);
-        }
-        break;
+      if (fi.isReference()) {
+        ei.setReferenceField(fi, ival);
+      } else {
+        ei.set1SlotField(fi, ival);
+      }
 
-      case 2:
-        attr = ti.getLongOperandAttr();
+    } else {
+      attr = ti.getLongOperandAttr();
 
-        long lval = ti.longPop();
-        lastValue = lval;
+      long lval = ti.longPop();
+      lastValue = lval;
 
-        ei.set2SlotField(fi, lval);
-        break;
-      default:
-        throw new JPFException("invalid field type");
+      ei.set2SlotField(fi, lval);
     }
 
     // this is kind of policy, but it seems more natural to overwrite

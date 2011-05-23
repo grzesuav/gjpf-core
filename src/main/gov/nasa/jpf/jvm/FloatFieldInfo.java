@@ -65,4 +65,12 @@ public class FloatFieldInfo extends SingleSlotFieldInfo {
   public boolean isFloatField(){
     return true;
   }
+
+  public boolean isNumericField(){
+    return true;
+  }
+
+  public boolean isFloatingPointField(){
+    return true;
+  }
 }

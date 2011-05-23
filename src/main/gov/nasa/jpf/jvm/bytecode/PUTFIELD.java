@@ -32,9 +32,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  *
  * Hmm, this is at the upper level of complexity because of the unified CG handling
  */
-public class PUTFIELD extends InstanceFieldInstruction implements StoreInstruction
-{
-  long lastValue;
+public class PUTFIELD extends InstanceFieldInstruction implements StoreInstruction {
 
   public PUTFIELD() {}
 
@@ -45,9 +43,6 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
   /**
    * only meaningful in instructionExecuted notification
    */
-  public long getLastValue() {
-    return lastValue;
-  }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
 
@@ -78,33 +73,25 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     // start the real execution by getting the value from the operand stack
     Object attr = null; // attr handling has to be consistent with PUTSTATIC
 
-    switch (storageSize) {
-      case 1:
-        attr = ti.getOperandAttr();
+    if (storageSize == 1){
+      attr = ti.getOperandAttr();
 
-        int ival = ti.pop();
-        lastValue = ival;
+      int ival = ti.pop();
+      lastValue = ival;
 
-        if (fi.isReference()){
-          ei.setReferenceField(fi, ival);
-        } else {
-          ei.set1SlotField(fi, ival);
-        }
+      if (fi.isReference()) {
+        ei.setReferenceField(fi, ival);
+      } else {
+        ei.set1SlotField(fi, ival);
+      }
 
-        break;
-
-      case 2:
+    } else {
         attr = ti.getLongOperandAttr();
 
         long lval = ti.longPop();
         lastValue = lval;
 
         ei.set2SlotField(fi, lval);
-
-        break;
-
-      default:
-        throw new JPFException("invalid field type");
     }
 
     // this is kind of policy, but it seems more natural to overwrite

@@ -135,30 +135,6 @@
            classpathref="lib.path"/>
   </target>
 
-  <!-- ======================= CHECK SECTION =============================== -->
-
-  <target name="check" depends="build" unless="have_fb_report"
-          description="run analyzers on jpf-core">
-    <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
-
-    <findbugs home="tools"
-              debug="false"
-              output="xml"
-              jvmargs="-Xmx1024m"
-              outputFile="jpf-fb-report.xml" >
-      <auxClasspath path="tools/bcel.jar" />
-      <sourcePath path="src/main;src/peers" />
-      <class location="build/jpf.jar" />
-    </findbugs>
-
-  </target>
-
-  <target name="show-check" depends="check"
-            description="interactively browse check report">
-    <java jar="tools/findbugs.jar" fork="true" spawn="true">
-      <arg value="jpf-fb-report.xml"/>
-    </java>
-  </target>
   
   <!-- ======================= MISC SECTION ================================ -->
   
