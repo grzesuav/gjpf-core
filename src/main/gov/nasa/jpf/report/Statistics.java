@@ -52,8 +52,8 @@ public class Statistics extends ListenerAdapter implements Cloneable {
   
   public long maxUsed = 0;
   public long newStates = 0;
-  public int backtracked = 0;
-  public int restored = 0;
+  public long backtracked = 0;
+  public long restored = 0;
   public int processed = 0;
   public int constraints = 0;
   public long visitedStates = 0;
@@ -61,14 +61,14 @@ public class Statistics extends ListenerAdapter implements Cloneable {
   public int maxDepth = 0;
   
   public int gcCycles = 0;
-  public int insns = 0;
+  public long insns = 0;
   public int threadCGs = 0;
   public int sharedAccessCGs = 0;
   public int monitorCGs = 0;
   public int signalCGs = 0;
   public int dataCGs = 0;
-  public int nNewObjects = 0;
-  public int nReleasedObjects = 0;
+  public long nNewObjects = 0;
+  public long nReleasedObjects = 0;
   public int maxLiveObjects = 0;
 
   public synchronized Statistics clone() {

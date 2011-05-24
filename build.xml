@@ -339,9 +339,8 @@
 
   <target name="test" depends="build"
           description="run core regression tests" if="have_tests">
-
     <property name="junit.usefile" value="true"/>
-
+    
     <junit printsummary="on" showoutput="off" haltonfailure="yes"
            fork="yes" forkmode="perTest" maxmemory="1024m" outputtoformatters="true">
       <formatter type="plain" usefile="${junit.usefile}"/>
