@@ -272,10 +272,12 @@ public class NumericValueChecker extends PropertyListenerAdapter {
     return (error == null);
   }
 
+  @Override
   public void reset () {
     error = null;
   }
 
+  @Override
   public String getErrorMessage(){
     return error;
   }
