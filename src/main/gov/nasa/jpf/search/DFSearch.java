@@ -58,7 +58,6 @@ public class DFSearch extends Search {
    * we backtrack to the state where they were introduced.
    */
   public void search () {
-    int maxDepth = getMaxSearchDepth();
     boolean depthLimitReached = false;
 
     depth = 0;
@@ -90,14 +89,14 @@ public class DFSearch extends Search {
           // but hasPropertyTermination() will issue a backtrack request
         }
 
-        if (depth >= maxDepth) {
+        if (depth >= depthLimit) {
           depthLimitReached = true;
-          notifySearchConstraintHit(DEPTH_CONSTRAINT + ": " + maxDepth);
+          notifySearchConstraintHit("depth limit reached: " + depthLimit);
           continue;
         }
 
         if (!checkStateSpaceLimit()) {
-          notifySearchConstraintHit(FREE_MEMORY_CONSTRAINT + ": " + minFreeMemory);
+          notifySearchConstraintHit("memory limit reached: " + minFreeMemory);
           // can't go on, we exhausted our memory
           break;
         }

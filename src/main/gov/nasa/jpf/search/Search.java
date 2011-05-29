@@ -46,10 +46,6 @@ public abstract class Search {
 
   protected static Logger log = JPF.getLogger("gov.nasa.jpf.search");
   
-  public static final String DEPTH_CONSTRAINT = "Search Depth";
-  public static final String QUEUE_CONSTRAINT = "Search Queue Size";
-  public static final String FREE_MEMORY_CONSTRAINT = "Free Memory Limit";
-
   /** error encountered during last transition, null otherwise */
   protected Error currentError = null;
   protected ArrayList<Error> errors = new ArrayList<Error>();
@@ -64,6 +60,7 @@ public abstract class Search {
   protected int     depthLimit;
   protected boolean getAllErrors;
 
+  // message explaining the last search constraint hit
   protected String lastSearchConstraint;
 
   // these states control the search loop
@@ -89,7 +86,7 @@ public abstract class Search {
     this.vm = vm;
     this.config = config;
 
-    depthLimit = config.getInt("search.depth_limit", -1);
+    depthLimit = config.getInt("search.depth_limit", Integer.MAX_VALUE);
     matchDepth = config.getBoolean("search.match_depth");
     minFreeMemory = config.getMemorySize("search.min_free", 1024<<10);
 
@@ -305,22 +302,12 @@ public abstract class Search {
     return false;
   }
 
-  protected int getMaxSearchDepth () {
-    int searchDepth = Integer.MAX_VALUE;
-
-    if (depthLimit > 0) {
-      int initialDepth = vm.getPathLength();
-
-      if ((Integer.MAX_VALUE - initialDepth) > depthLimit) {
-        searchDepth = depthLimit + initialDepth;
-      }
-    }
-
-    return searchDepth;
-  }
-
   public int getDepthLimit () {
     return depthLimit;
+  }
+  
+  public void setDepthLimit(int limit){
+    depthLimit = limit;
   }
 
   protected SearchState getSearchState () {
@@ -467,9 +454,9 @@ public abstract class Search {
     }
   }
 
-  public void notifySearchConstraintHit(String constraintId) {
+  public void notifySearchConstraintHit(String details) {
     try {
-      lastSearchConstraint = constraintId;
+      lastSearchConstraint = details;
       for (int i = 0; i < listeners.length; i++) {
         listeners[i].searchConstraintHit(this);
       }

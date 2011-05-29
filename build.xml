@@ -339,9 +339,14 @@
 
   <target name="test" depends="build"
           description="run core regression tests" if="have_tests">
-    <property name="junit.usefile" value="true"/>
+    <condition property="junit.usefile">
+      <!-- don't set if this is running from within an IDE that collects output -->
+      <not>
+        <isset property="netbeans.home"/>  
+      </not>
+    </condition>
     
-    <junit printsummary="on" showoutput="off" haltonfailure="yes"
+    <junit printsummary="on" showoutput="off" haltonfailure="yes" dir="${basedir}"
            fork="yes" forkmode="perTest" maxmemory="1024m" outputtoformatters="true">
       <formatter type="plain" usefile="${junit.usefile}"/>
 

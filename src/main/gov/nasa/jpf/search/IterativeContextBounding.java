@@ -74,7 +74,6 @@ public class IterativeContextBounding extends Search {
   public static final String PREEMPTION_CONSTRAINT = "Preemptive Context Switch Limit";
 
   private int preemptionLimit;
-  int maxDepth;
   private LinkedList<WorkItem> workQueue = new LinkedList<WorkItem>();
   private LinkedList<WorkItem> nextWorkQueue = new LinkedList<WorkItem>();
 
@@ -90,7 +89,6 @@ public class IterativeContextBounding extends Search {
 
   public void search() {
 
-    maxDepth = getMaxSearchDepth();
 
     ThreadInfo currentThread = vm.getCurrentThread();
     ThreadChoiceFromSet initialCG = new ThreadChoiceFromSet( "icbSearch",
@@ -181,15 +179,14 @@ public class IterativeContextBounding extends Search {
         depth++;
 
         if (isNewState()) {
-          if (depth >= maxDepth) {
+          if (depth >= depthLimit) {
             depthLimitReached = true;
-            notifySearchConstraintHit(DEPTH_CONSTRAINT + ": " + maxDepth);
+          notifySearchConstraintHit("depth limit reached: " + depthLimit);
             continue;
           }
 
           if (!checkStateSpaceLimit()) {
-            notifySearchConstraintHit(FREE_MEMORY_CONSTRAINT + ": "
-                + minFreeMemory);
+          notifySearchConstraintHit("memory limit reached: " + minFreeMemory);
             // can't continue, we exhausted our memory
             done = true;
             return;
