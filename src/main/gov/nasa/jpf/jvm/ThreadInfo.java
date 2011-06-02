@@ -363,6 +363,7 @@ public class ThreadInfo
     threadData.target = MJIEnv.NULL;
     threadData.lockCount = 0;
     threadData.suspendCount = 0;
+    
     // this is nasty - 'priority', 'name', 'target' and 'group' are not taken
     // from the object, but set within the java.lang.Thread ctors
 
@@ -1098,6 +1099,37 @@ public class ThreadInfo
     return top.getLocalVariableType(name);
   }
 
+  
+  //--- suspend/resume modeling
+  // modeling this with a count is an approximation. In reality it behaves
+  // rather like a race that /sometimes/ causes the resume to fail, but its
+  // Ok if we overapproximate on the safe side, since suspend/resume is such
+  // an inherently unsafe thing. What we *do* want to preserve faithfully is 
+  // that locks held by the suspended thread are not released
+  
+  /**
+   * set suspension status
+   * @return true if thread was not suspended
+   */
+  public boolean suspend() {
+    return threadDataClone().suspendCount++ == 0;
+  }
+
+  /**
+   * unset suspension status
+   * @return true if thread was suspended
+   */
+  public boolean resume() {
+    return (threadData.suspendCount > 0) && (--threadDataClone().suspendCount == 0);
+  }
+  
+  public boolean isSuspended() {
+    return threadData.suspendCount > 0;
+  }
+
+
+  //--- locks
+  
   /**
    * Sets the number of locks held at the time of a wait.
    */
@@ -1113,27 +1145,7 @@ public class ThreadInfo
   public int getLockCount () {
     return threadData.lockCount;
   }
-    
-  /**
-    * Increments the suspend counter.
-    * @return true if the suspend counter was 0 before this call (e.g. the thread was just suspended)
-    */
-  public boolean suspend() {
-    return threadDataClone().suspendCount++ == 0;
-  }
-
-  /**
-    * Decrements the suspend counter if > 0.
-    * @return true if the suspend counter was 1 before the call (e.g. the thread was just resumed)
-    */
-  public boolean resume() {
-    return (threadData.suspendCount > 0) && (--threadDataClone().suspendCount == 0);
-  }
   
-  public boolean isSuspended() {
-    return threadData.suspendCount > 0;
-  }
-
   public LinkedList<ElementInfo> getLockedObjects () {
     return lockedObjects;
   }

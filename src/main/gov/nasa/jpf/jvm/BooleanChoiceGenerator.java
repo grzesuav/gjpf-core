@@ -26,10 +26,10 @@ import gov.nasa.jpf.Config;
 public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
 
   // do we evaluate [false, true] or [true, false]
-  boolean falseFirst = true;
+  protected boolean falseFirst = true;
 
-  int count = -1;
-  boolean next;
+  protected int count = -1;
+  protected boolean next;
   
   public BooleanChoiceGenerator(Config conf, String id) {
     super(id);

@@ -248,60 +248,47 @@ public class JPF_java_lang_Thread {
   }
 
   public static void suspend____ (MJIEnv env, int threadObjRef) {
-    ThreadInfo operator = env.getThreadInfo();
+    ThreadInfo currentThread = env.getThreadInfo();
     ThreadInfo target = getThreadInfo(threadObjRef);
     SystemState ss = env.getSystemState();
-
-    // The first time through here, we need to let other threads (if any) have a chance
-    // to call suspend and resume.  Also, need to let the target thread have a chance to do some work.
-    // The second time, we need to suspend the target thread and remove it from execution
-    // (if transitioned from resumed to suspended).
 
     if (target.isTerminated()) {
       return;
     }
 
-    if (!operator.isFirstStepInsn()) {
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG();
-      if (ss.setNextChoiceGenerator(cg)) {
-        env.repeatInvocation();
-        return;
+    if (!currentThread.isFirstStepInsn()) {
+      if (target.suspend()){
+        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG();
+        if (ss.setNextChoiceGenerator(cg)) {
+          env.repeatInvocation();
+          return;
+        }
       }
-    }
-
-    if (target.suspend()) {  // No sense in adding a CG if the thread didn't transition from suspended to resumed.
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG();
-      ss.setNextChoiceGenerator(cg);
     }
   }
 
   public static void resume____ (MJIEnv env, int threadObjRef) {
-    ThreadInfo operator = env.getThreadInfo();
+    ThreadInfo currentThread = env.getThreadInfo();
     ThreadInfo target = getThreadInfo(threadObjRef);
     SystemState ss = env.getSystemState();
 
-    assert operator != target : "A thread is calling resume on itself when it should have been suspended!";
-
-    // The first time through here, we need to let other threads (if any) have a chance
-    // to call suspend and resume.
-    // The second time through here, we need to get the target thread scheduled for execution
-    // (if transitioned from suspended to resumed).
+    if (currentThread == target){
+      // no self resume prior to suspension
+      return;
+    }
 
     if (target.isTerminated()) {
       return;
     }
 
-    if (!operator.isFirstStepInsn()) {
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG();
-      if (ss.setNextChoiceGenerator(cg)) {
-        env.repeatInvocation();
-        return;
+    if (!currentThread.isFirstStepInsn()) {
+      if (target.resume()){
+        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG();
+        if (ss.setNextChoiceGenerator(cg)) {
+          env.repeatInvocation();
+          return;
+        }
       }
-    }
-
-    if (target.resume()) {  // No sense in adding a CG if the thread didn't transition from suspended to resumed.
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG();
-      ss.setNextChoiceGenerator(cg);
     }
   }
 
