@@ -514,7 +514,7 @@ public class JPF_java_lang_reflect_Method {
   
   public static int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef, int annotationClsRef) {
     MethodInfo mi = getMethodInfo(env,mthRef);
-    ClassInfo aci = JPF_java_lang_Class.getReferredClassInfo(env,annotationClsRef);
+    ClassInfo aci = env.getReferredClassInfo(annotationClsRef);
     
     AnnotationInfo ai = mi.getAnnotation(aci.getName());
     if (ai != null){

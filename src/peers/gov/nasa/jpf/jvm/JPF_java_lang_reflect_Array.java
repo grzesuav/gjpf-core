@@ -39,7 +39,7 @@ public class JPF_java_lang_reflect_Array {
   
   public static int newArray__Ljava_lang_Class_2I__Ljava_lang_Object_2 (MJIEnv env, int clsRef,
                                                                         int componentTypeRef, int length) {
-    ClassInfo ci = JPF_java_lang_Class.getReferredClassInfo(env, componentTypeRef);
+    ClassInfo ci = env.getReferredClassInfo(componentTypeRef);
     String clsName = ci.getName();
     
     return createNewArray( env, clsName, length);
@@ -63,7 +63,7 @@ public class JPF_java_lang_reflect_Array {
   public static int multiNewArray__Ljava_lang_Class_2_3I__Ljava_lang_Object_2 (MJIEnv env, int clsRef,
                                                                                int componentTypeRef,
                                                                                int dimArrayRef) {
-    ClassInfo ci = JPF_java_lang_Class.getReferredClassInfo(env, componentTypeRef);
+    ClassInfo ci = env.getReferredClassInfo(componentTypeRef);
     String clsName = ci.getName();
     int n = env.getArrayLength(dimArrayRef);
     int i;

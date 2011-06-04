@@ -41,7 +41,7 @@ public class JPF_java_lang_Class {
   }
   
   public static boolean isArray____Z (MJIEnv env, int robj) {
-    ClassInfo ci = getReferredClassInfo(env, robj);
+    ClassInfo ci = env.getReferredClassInfo( robj);
     return ci.isArray();
   }
 
@@ -49,7 +49,7 @@ public class JPF_java_lang_Class {
     if (isArray____Z(env, robj)) {
       ThreadInfo ti = env.getThreadInfo();
       Instruction insn = ti.getPC();
-      ClassInfo ci = getReferredClassInfo(env, robj).getComponentClassInfo();
+      ClassInfo ci = env.getReferredClassInfo( robj).getComponentClassInfo();
 
       if (insn.requiresClinitCalls(ti, ci)) {
         env.repeatInvocation();
@@ -71,7 +71,7 @@ public class JPF_java_lang_Class {
   }
 
   public static boolean isInterface____Z (MJIEnv env, int robj){
-    ClassInfo ci = getReferredClassInfo(env, robj);
+    ClassInfo ci = env.getReferredClassInfo( robj);
     return ci.isInterface();
   }
   
@@ -87,7 +87,7 @@ public class JPF_java_lang_Class {
   }
   
   public static int getAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj){    
-    ClassInfo ci = getReferredClassInfo(env, robj);
+    ClassInfo ci = env.getReferredClassInfo( robj);
     AnnotationInfo[] ai = ci.getAnnotations();
 
     try {
@@ -100,8 +100,8 @@ public class JPF_java_lang_Class {
   
   public static int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj,
                                                                                 int annoClsRef){
-    ClassInfo ci = getReferredClassInfo(env, robj);
-    ClassInfo aci = JPF_java_lang_Class.getReferredClassInfo(env,annoClsRef);
+    ClassInfo ci = env.getReferredClassInfo( robj);
+    ClassInfo aci = env.getReferredClassInfo(annoClsRef);
     
     AnnotationInfo ai = ci.getAnnotation(aci.getName());
     if (ai != null){
@@ -136,7 +136,7 @@ public class JPF_java_lang_Class {
   }
 
   public static boolean desiredAssertionStatus____Z (MJIEnv env, int robj) {
-    ClassInfo ci = getReferredClassInfo(env,robj);
+    ClassInfo ci = env.getReferredClassInfo(robj);
     return ci.areAssertionsEnabled();
   }
 
@@ -183,7 +183,7 @@ public class JPF_java_lang_Class {
       return frame.pop();
 
     } else {
-      ClassInfo ci = getReferredClassInfo(env,robj);   // what are we
+      ClassInfo ci = env.getReferredClassInfo(robj);   // what are we
 
       if(ci.isAbstract()){ // not allowed to instantiate
         env.throwException("java.lang.InstantiationException");
@@ -218,7 +218,7 @@ public class JPF_java_lang_Class {
   }
   
   public static int getSuperclass____Ljava_lang_Class_2 (MJIEnv env, int robj) {
-    ClassInfo ci = getReferredClassInfo(env, robj);
+    ClassInfo ci = env.getReferredClassInfo( robj);
     ClassInfo sci = ci.getSuperClass();
     if (sci != null) {
       return sci.getClassObjectRef();
@@ -237,14 +237,14 @@ public class JPF_java_lang_Class {
   static int getMethod (MJIEnv env, int clsRef, String mname, int argTypesRef,
                         boolean isRecursiveLookup, boolean publicOnly) {
 
-    ClassInfo ci = getReferredClassInfo(env, clsRef);
+    ClassInfo ci = env.getReferredClassInfo( clsRef);
     
     StringBuilder sb = new StringBuilder(mname);
     sb.append('(');
     int nParams = argTypesRef != MJIEnv.NULL ? env.getArrayLength(argTypesRef) : 0;
     for (int i=0; i<nParams; i++) {
       int cRef = env.getReferenceArrayElement(argTypesRef, i);
-      ClassInfo cit = getReferredClassInfo(env, cRef);
+      ClassInfo cit = env.getReferredClassInfo( cRef);
       String tname = cit.getName();
       String tcode = tname;
       tcode = Types.getTypeSignature(tcode, false);
@@ -316,7 +316,7 @@ public class JPF_java_lang_Class {
   }
 
   public static int getMethods_____3Ljava_lang_reflect_Method_2 (MJIEnv env, int objref) {
-    ClassInfo ci = getReferredClassInfo(env,objref);
+    ClassInfo ci = env.getReferredClassInfo(objref);
 
     // collect all the public, non-ctor instance methods
     if (!ci.isPrimitive()) {
@@ -340,7 +340,7 @@ public class JPF_java_lang_Class {
   }
   
   public static int getDeclaredMethods_____3Ljava_lang_reflect_Method_2 (MJIEnv env, int objref) {
-    ClassInfo ci = getReferredClassInfo(env,objref);
+    ClassInfo ci = env.getReferredClassInfo(objref);
     MethodInfo[] methodInfos = ci.getDeclaredMethodInfos();
     
     // we have to filter out the ctors and the static init
@@ -365,7 +365,7 @@ public class JPF_java_lang_Class {
   }
   
   static int getConstructors (MJIEnv env, int objref, boolean publicOnly){
-    ClassInfo ci = getReferredClassInfo(env,objref);
+    ClassInfo ci = env.getReferredClassInfo(objref);
     ArrayList<MethodInfo> ctors = new ArrayList<MethodInfo>();
     
     // we have to filter out the ctors and the static init
@@ -413,7 +413,7 @@ public class JPF_java_lang_Class {
     }
 
     
-    ClassInfo ci = getReferredClassInfo(env,objRef);
+    ClassInfo ci = env.getReferredClassInfo(objRef);
     int nInstance = ci.getNumberOfDeclaredInstanceFields();
     int nStatic = ci.getNumberOfStaticFields();
     int aref = env.newObjectArray("Ljava/lang/reflect/Field;", nInstance + nStatic);
@@ -444,7 +444,7 @@ public class JPF_java_lang_Class {
   }
   
   static int getField (MJIEnv env, int clsRef, int nameRef, boolean isRecursiveLookup) {
-    ClassInfo ci = getReferredClassInfo(env, clsRef);
+    ClassInfo ci = env.getReferredClassInfo( clsRef);
     String fname = env.getStringObject(nameRef);
     FieldInfo fi = null;
     
@@ -492,12 +492,12 @@ public class JPF_java_lang_Class {
   }
 
   public static int getModifiers____I (MJIEnv env, int clsRef){
-    ClassInfo ci = getReferredClassInfo(env,clsRef);
+    ClassInfo ci = env.getReferredClassInfo(clsRef);
     return ci.getModifiers();
   }
   
   public static int getEnumConstants (MJIEnv env, int clsRef){
-    ClassInfo ci = getReferredClassInfo(env,clsRef);
+    ClassInfo ci = env.getReferredClassInfo(clsRef);
     if (ci.getSuperClass().getName().equals("java.lang.Enum")) {
       ArrayList<FieldInfo> list = new ArrayList<FieldInfo>();
       String cName = ci.getName();
@@ -519,13 +519,9 @@ public class JPF_java_lang_Class {
     
     return MJIEnv.NULL;
   }
-  
-  static ClassInfo getReferredClassInfo (MJIEnv env, int robj) {
-    return env.getReferredClassInfo(robj);
-  }
-  
+    
   static public int getInterfaces_____3Ljava_lang_Class_2 (MJIEnv env, int clsRef){
-    ClassInfo ci = getReferredClassInfo(env,clsRef);
+    ClassInfo ci = env.getReferredClassInfo(clsRef);
     int aref = MJIEnv.NULL;
     ThreadInfo ti = env.getThreadInfo();
     
@@ -578,7 +574,7 @@ public class JPF_java_lang_Class {
   }
 
   public static int getEnclosingClass(MJIEnv env, int robj) {
-    ClassInfo enclosingClassInfo = getReferredClassInfo(env, robj).getEnclosingClassInfo();
+    ClassInfo enclosingClassInfo = env.getReferredClassInfo( robj).getEnclosingClassInfo();
     if (enclosingClassInfo == null)
       return MJIEnv.NULL;
     if (!enclosingClassInfo.isRegistered())

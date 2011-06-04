@@ -332,12 +332,13 @@ public abstract class TestJPF implements JPFShell  {
     return false;
   }
 
-  protected static List<Method> getPerTestContextMethods(Class<? extends TestJPF> testCls, String annotation){
+  protected static List<Method> getContextMethods(Class<? extends TestJPF> testCls, 
+                                                  int setModifiers, int unsetModifiers, String annotation){
     String[] annotations = {annotation};
 
     List<Method> list = new ArrayList<Method>();
     for (Method m : testCls.getDeclaredMethods()){
-      if (isMatchingMethod(m, Modifier.PUBLIC, Modifier.STATIC, annotations)){
+      if (isMatchingMethod(m, setModifiers, unsetModifiers, annotations)){
         list.add(m);
       }
     }
@@ -345,13 +346,21 @@ public abstract class TestJPF implements JPFShell  {
   }
 
   protected static List<Method> getBeforeMethods(Class<? extends TestJPF> testCls){
-    return getPerTestContextMethods(testCls, "org.junit.Before");
+    return getContextMethods(testCls, Modifier.PUBLIC, Modifier.STATIC, "org.junit.Before");
   }
 
   protected static List<Method> getAfterMethods(Class<? extends TestJPF> testCls){
-    return getPerTestContextMethods(testCls, "org.junit.After");
+    return getContextMethods(testCls, Modifier.PUBLIC, Modifier.STATIC, "org.junit.After");
   }
 
+  protected static List<Method> getBeforeClassMethods(Class<? extends TestJPF> testCls){
+    return getContextMethods(testCls, Modifier.PUBLIC | Modifier.STATIC, 0, "org.junit.BeforeClass");
+  }
+  
+  protected static List<Method> getAfterClassMethods(Class<? extends TestJPF> testCls){
+    return getContextMethods(testCls, Modifier.PUBLIC | Modifier.STATIC, 0, "org.junit.AfterClass");
+  }
+  
   protected static List<Method> getTestMethods(Class<? extends TestJPF> testCls, String[] args){
     String[] testAnnotations = {"org.junit.Test", "org.testng.annotations.Test"};
 
@@ -454,9 +463,18 @@ public abstract class TestJPF implements JPFShell  {
 
       // check if we have JUnit style housekeeping methods (initialization and
       // cleanup should use the same mechanisms as JUnit)
+      
+      List<Method> beforeClassMethods = getBeforeClassMethods(testCls);
+      List<Method> afterClassMethods = getAfterClassMethods(testCls);
+            
       List<Method> beforeMethods = getBeforeMethods(testCls);
       List<Method> afterMethods = getAfterMethods(testCls);
 
+      for (Method initMethod : beforeClassMethods) {
+        reportTestInitialization(initMethod.getName());
+        initMethod.invoke(null);
+      }
+            
       for (Method testMethod : testMethods) {
         testMethodName = testMethod.getName();
         String result = testMethodName;
@@ -499,12 +517,24 @@ public abstract class TestJPF implements JPFShell  {
             break;
           }
         }
-
+        
         results.add(result);
         reportTestFinished(result);
       }
+      
+      for (Method cleanupMethod : afterClassMethods) {
+        reportTestCleanup( cleanupMethod.getName());
+        cleanupMethod.invoke(null);
+      }
+
 
     //--- those exceptions are unexpected and represent unrecoverable test harness errors
+    } catch (InvocationTargetException x) {
+      Throwable cause = x.getCause();
+      cause.printStackTrace();
+      nErrors++;
+      reportTestFinished("TEST ERROR: @BeforeClass,@AfterClass method failed: " + x.getMessage());
+      
     } catch (InstantiationException x) {
       nErrors++;
       reportTestFinished("TEST ERROR: cannot instantiate test class: " + x.getMessage());
