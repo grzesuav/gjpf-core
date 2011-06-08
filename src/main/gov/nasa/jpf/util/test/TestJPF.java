@@ -974,20 +974,28 @@ public abstract class TestJPF implements JPFShell  {
                    expected, actual);
   }
 
-  @Deprecated
   public static void assertEquals(double expected, double actual){
-    expected = 0;  // Get rid of IDE warning
-    actual   = 0;
-    
-    fail("Identity comparison of floating point values");
+    if (expected != actual){
+      fail("expected != actual : " + expected + " != " + actual);
+    }
   }
 
-  @Deprecated
+  public static void assertEquals(String msg, double expected, double actual){
+    if (expected != actual){
+      fail(msg);
+    }
+  }
+
   public static void assertEquals(float expected, float actual){
-    expected = 0; // Get rid of IDE warning
-    actual   = 0;
-    
-    fail("identity comparison of floating point values");
+    if (expected != actual){
+      fail("expected != actual : " + expected + " != " + actual);
+    }
+  }
+
+  public static void assertEquals(String msg, float expected, float actual){
+    if (expected != actual){
+      fail(msg);
+    }
   }
 
   public static void assertEquals(String msg, double expected, double actual, double delta){
