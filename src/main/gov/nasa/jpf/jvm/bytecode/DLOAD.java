@@ -62,10 +62,10 @@ public class DLOAD extends LocalVariableInstruction {
   public String getMnemonic() {
     String mnemonic = "dload";
     
-    if (index >=0) {
+    if (index <= 3) {
       return mnemonic + '_' + index;
     } else {
-      return mnemonic;
+      return mnemonic + " #" + index;
     }
   }
   

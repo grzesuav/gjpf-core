@@ -57,10 +57,10 @@ public class DSTORE extends LocalVariableInstruction implements StoreInstruction
   public String getMnemonic() {
     String mnemonic = "dstore";
     
-    if (index >=0) {
+    if (index <= 3) {
       return mnemonic + '_' + index;
     } else {
-      return mnemonic;
+      return mnemonic + " #" + index;
     }
   }
   

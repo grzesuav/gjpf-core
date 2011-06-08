@@ -62,11 +62,11 @@ public class ILOAD extends LocalVariableInstruction {
   public String getMnemonic() {
     String mnemonic = "iload";
     
-    if (index >= 0) {
+    if (index <= 3) {
       return mnemonic + '_' + index;
+    } else {
+      return mnemonic + " #" + index;
     }
-    
-    return mnemonic;
   }
   
   public void accept(InstructionVisitor insVisitor) {
