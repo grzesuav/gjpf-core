@@ -20,8 +20,11 @@ package gov.nasa.jpf.util;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -375,6 +378,36 @@ public class FileUtils {
     }
 
     return false;
+  }
+
+  public static byte[] getContents( File file) throws IOException {
+    if (file.isFile()){
+      long length = file.length();
+      byte[] data = new byte[(int)length];
+
+      FileInputStream is = new FileInputStream(file);
+      int nRead = 0;
+
+      while (nRead < data.length) {
+        int n = is.read(data, nRead, (data.length - nRead));
+        if (n < 0) {
+          throw new IOException("premature end of file: " + file);
+        }
+        nRead += n;
+      }
+
+      is.close();
+
+      return data;
+    }
+
+    return null;
+  }
+  
+  public static void setContents(File file, byte[] data) throws IOException {
+    FileOutputStream os = new FileOutputStream(file);
+    os.write(data);
+    os.close();
   }
 
   //--- test & debug

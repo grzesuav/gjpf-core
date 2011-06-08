@@ -643,12 +643,12 @@ public class Config extends Properties {
     v = v.trim();
     
     // true/false
-    if ("true".equalsIgnoreCase(v) || "t".equalsIgnoreCase(v)
-        || "yes".equalsIgnoreCase(v) || "y".equalsIgnoreCase(v)
+    if ("true".equalsIgnoreCase(v)
+        || "yes".equalsIgnoreCase(v)
         || "on".equalsIgnoreCase(v)) {
       v = TRUE;
-    } else if ("false".equalsIgnoreCase(v) || "f".equalsIgnoreCase(v)
-        || "no".equalsIgnoreCase(v) || "n".equalsIgnoreCase(v)
+    } else if ("false".equalsIgnoreCase(v)
+        || "no".equalsIgnoreCase(v)
         || "off".equalsIgnoreCase(v)) {
       v = FALSE;
     }
@@ -977,7 +977,6 @@ public class Config extends Properties {
 
     String[] nativeLibs = getCompactStringArray("native_libraries");
 
-    //URLClassLoader cl = URLClassLoader.newInstance(urls, parent);
     JPFClassLoader cl = new JPFClassLoader( urls, nativeLibs, parent);
 
     //for (URL url : urls) System.out.println("@@ " + url);
@@ -2040,7 +2039,10 @@ public class Config extends Properties {
    */
   public void promotePropertyCategory (String keyPrefix){
     int prefixLen = keyPrefix.length();
-
+    
+    // HashTable does not support adding elements while iterating over the entrySet 
+    ArrayList<Map.Entry<Object,Object>> promoted = null;
+    
     for (Map.Entry<Object,Object> e : entrySet()){
       Object k = e.getKey();
       if (k instanceof String){
@@ -2048,10 +2050,21 @@ public class Config extends Properties {
         if (key.startsWith(keyPrefix)){
           Object v = e.getValue();
           if (! IGNORE_VALUE.equals(v)){
-            String keySuffix = key.substring(prefixLen);
-            put(keySuffix, v);
+            if (promoted == null){
+              promoted = new ArrayList<Map.Entry<Object,Object>>();
+            }
+            promoted.add(e);
           }
         }
+      }
+    }
+    
+    if (promoted != null){
+      for (Map.Entry<Object, Object> e : promoted) {
+        String key = (String) e.getKey();
+        key = key.substring(prefixLen);
+
+        put(key, e.getValue());
       }
     }
   }

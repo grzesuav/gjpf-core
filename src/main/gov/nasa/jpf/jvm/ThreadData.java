@@ -65,8 +65,12 @@ public class ThreadData {
    */
   int lockCount;
 
-   /** The suspend count of the thread */
+  /**
+   * The suspend count of the thread. See ThreadInfo.suspend() for a discussion
+   * of how faithful this is (it is an over approximation)
+   */
   int suspendCount;
+
 
   public ThreadData clone () {
     ThreadData t = new ThreadData();

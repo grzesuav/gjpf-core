@@ -204,6 +204,7 @@ public class JVM {
   protected void initSubsystems (Config config) {
     ClassInfo.init(config);
     ThreadInfo.init(config);
+    ElementInfo.init(config);
     MethodInfo.init(config);
     NativePeer.init(config);
     FieldInstruction.init(config);

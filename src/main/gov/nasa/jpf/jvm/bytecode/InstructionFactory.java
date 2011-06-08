@@ -29,12 +29,18 @@ import java.util.List;
 /**
  * this is the new InstructionFactory
  */
-public class InstructionFactory implements Cloneable {
+public class InstructionFactory implements gov.nasa.jpf.jvm.InstructionFactory {
 
   public InstructionFactory(){
     // nothing here
   }
 
+  @Override
+  public void setClassInfoContext( ClassInfo ci){
+    // nothing, we keep this stateless
+  }
+
+  @Override
   public Object clone() {
     try {
       return super.clone();
@@ -44,852 +50,1064 @@ public class InstructionFactory implements Cloneable {
   }
 
   //--- the factory methods
-  public ACONST_NULL aconst_null() {
+  @Override
+  public Instruction aconst_null() {
     return new ACONST_NULL();
   }
 
-  public ALOAD aload(int localVarIndex) {
+  @Override
+  public Instruction aload(int localVarIndex) {
     return new ALOAD(localVarIndex);
   }
 
-  public ALOAD aload_0() {
+  @Override
+  public Instruction aload_0() {
     return new ALOAD(0);
   }
 
-  public ALOAD aload_1() {
+  @Override
+  public Instruction aload_1() {
     return new ALOAD(1);
   }
 
-  public ALOAD aload_2() {
+  @Override
+  public Instruction aload_2() {
     return new ALOAD(2);
   }
 
-  public ALOAD aload_3() {
+  @Override
+  public Instruction aload_3() {
     return new ALOAD(3);
   }
 
-  public AALOAD aaload() {
+  @Override
+  public Instruction aaload() {
     return new AALOAD();
   }
 
-  public ASTORE astore(int localVarIndex) {
+  @Override
+  public Instruction astore(int localVarIndex) {
     return new ASTORE(localVarIndex);
   }
 
-  public ASTORE astore_0() {
+  @Override
+  public Instruction astore_0() {
     return new ASTORE(0);
   }
 
-  public ASTORE astore_1() {
+  @Override
+  public Instruction astore_1() {
     return new ASTORE(1);
   }
 
-  public ASTORE astore_2() {
+  @Override
+  public Instruction astore_2() {
     return new ASTORE(2);
   }
 
-  public ASTORE astore_3() {
+  @Override
+  public Instruction astore_3() {
     return new ASTORE(3);
   }
 
-  public AASTORE aastore() {
+  @Override
+  public Instruction aastore() {
     return new AASTORE();
   }
 
-  public ARETURN areturn() {
+  @Override
+  public Instruction areturn() {
     return new ARETURN();
   }
 
-  public ANEWARRAY anewarray(String clsName){
+  @Override
+  public Instruction anewarray(String clsName){
     return new ANEWARRAY(clsName);
   }
 
-  public ARRAYLENGTH arraylength() {
+  @Override
+  public Instruction arraylength() {
     return new ARRAYLENGTH();
   }
 
-  public ATHROW athrow() {
+  @Override
+  public Instruction athrow() {
     return new ATHROW();
   }
 
-  public BALOAD baload() {
+  @Override
+  public Instruction baload() {
     return new BALOAD();
   }
 
-  public BASTORE bastore() {
+  @Override
+  public Instruction bastore() {
     return new BASTORE();
   }
 
-  public BIPUSH bipush(int b) {
+  @Override
+  public Instruction bipush(int b) {
     return new BIPUSH(b);
   }
 
-  public CALOAD caload() {
+  @Override
+  public Instruction caload() {
     return new CALOAD();
   }
 
-  public CASTORE castore() {
+  @Override
+  public Instruction castore() {
     return new CASTORE();
   }
 
-  public CHECKCAST checkcast(String clsName){
+  @Override
+  public Instruction checkcast(String clsName){
     return new CHECKCAST(clsName);
   }
 
-  public D2F d2f() {
+  @Override
+  public Instruction d2f() {
     return new D2F();
   }
 
-  public D2I d2i() {
+  @Override
+  public Instruction d2i() {
     return new D2I();
   }
 
-  public D2L d2l() {
+  @Override
+  public Instruction d2l() {
     return new D2L();
   }
 
-  public DADD dadd() {
+  @Override
+  public Instruction dadd() {
     return new DADD();
   }
 
-  public DALOAD daload() {
+  @Override
+  public Instruction daload() {
     return new DALOAD();
   }
 
-  public DASTORE dastore() {
+  @Override
+  public Instruction dastore() {
     return new DASTORE();
   }
 
-  public DCMPG dcmpg() {
+  @Override
+  public Instruction dcmpg() {
     return new DCMPG();
   }
 
-  public DCMPL dcmpl() {
+  @Override
+  public Instruction dcmpl() {
     return new DCMPL();
   }
 
-  public DCONST dconst_0() {
+  @Override
+  public Instruction dconst_0() {
     return new DCONST(0.0);
   }
 
-  public DCONST dconst_1() {
+  @Override
+  public Instruction dconst_1() {
     return new DCONST(1.0);
   }
 
-  public DDIV ddiv() {
+  @Override
+  public Instruction ddiv() {
     return new DDIV();
   }
 
-  public DLOAD dload(int localVarIndex) {
+  @Override
+  public Instruction dload(int localVarIndex) {
     return new DLOAD(localVarIndex);
   }
 
-  public DLOAD dload_0() {
+  @Override
+  public Instruction dload_0() {
     return new DLOAD(0);
   }
 
-  public DLOAD dload_1() {
+  @Override
+  public Instruction dload_1() {
     return new DLOAD(1);
   }
 
-  public DLOAD dload_2() {
+  @Override
+  public Instruction dload_2() {
     return new DLOAD(2);
   }
 
-  public DLOAD dload_3() {
+  @Override
+  public Instruction dload_3() {
     return new DLOAD(3);
   }
 
-  public DMUL dmul() {
+  @Override
+  public Instruction dmul() {
     return new DMUL();
   }
 
-  public DNEG dneg() {
+  @Override
+  public Instruction dneg() {
     return new DNEG();
   }
 
-  public DREM drem() {
+  @Override
+  public Instruction drem() {
     return new DREM();
   }
 
-  public DRETURN dreturn() {
+  @Override
+  public Instruction dreturn() {
     return new DRETURN();
   }
 
-  public DSTORE dstore(int localVarIndex) {
+  @Override
+  public Instruction dstore(int localVarIndex) {
     return new DSTORE(localVarIndex);
   }
 
-  public DSTORE dstore_0() {
+  @Override
+  public Instruction dstore_0() {
     return new DSTORE(0);
   }
 
-  public DSTORE dstore_1() {
+  @Override
+  public Instruction dstore_1() {
     return new DSTORE(1);
   }
 
-  public DSTORE dstore_2() {
+  @Override
+  public Instruction dstore_2() {
     return new DSTORE(2);
   }
 
-  public DSTORE dstore_3() {
+  @Override
+  public Instruction dstore_3() {
     return new DSTORE(3);
   }
 
-  public DSUB dsub() {
+  @Override
+  public Instruction dsub() {
     return new DSUB();
   }
 
-  public DUP dup() {
+  @Override
+  public Instruction dup() {
     return new DUP();
   }
 
-  public DUP_X1 dup_x1() {
+  @Override
+  public Instruction dup_x1() {
     return new DUP_X1();
   }
 
-  public DUP_X2 dup_x2() {
+  @Override
+  public Instruction dup_x2() {
     return new DUP_X2();
   }
 
-  public DUP2 dup2() {
+  @Override
+  public Instruction dup2() {
     return new DUP2();
   }
 
-  public DUP2_X1 dup2_x1() {
+  @Override
+  public Instruction dup2_x1() {
     return new DUP2_X1();
   }
 
-  public DUP2_X2 dup2_x2() {
+  @Override
+  public Instruction dup2_x2() {
     return new DUP2_X2();
   }
 
-  public F2D f2d() {
+  @Override
+  public Instruction f2d() {
     return new F2D();
   }
 
-  public F2I f2i() {
+  @Override
+  public Instruction f2i() {
     return new F2I();
   }
 
-  public F2L f2l() {
+  @Override
+  public Instruction f2l() {
     return new F2L();
   }
 
-  public FADD fadd() {
+  @Override
+  public Instruction fadd() {
     return new FADD();
   }
 
-  public FALOAD faload() {
+  @Override
+  public Instruction faload() {
     return new FALOAD();
   }
 
-  public FASTORE fastore() {
+  @Override
+  public Instruction fastore() {
     return new FASTORE();
   }
 
-  public FCMPG fcmpg() {
+  @Override
+  public Instruction fcmpg() {
     return new FCMPG();
   }
 
-  public FCMPL fcmpl() {
+  @Override
+  public Instruction fcmpl() {
     return new FCMPL();
   }
 
-  public FCONST fconst_0() {
+  @Override
+  public Instruction fconst_0() {
     return new FCONST(0.0f);
   }
 
-  public FCONST fconst_1() {
+  @Override
+  public Instruction fconst_1() {
     return new FCONST(1.0f);
   }
 
-  public FCONST fconst_2() {
+  @Override
+  public Instruction fconst_2() {
     return new FCONST(2.0f);
   }
 
-  public FDIV fdiv() {
+  @Override
+  public Instruction fdiv() {
     return new FDIV();
   }
 
-  public FLOAD fload(int localVarIndex) {
+  @Override
+  public Instruction fload(int localVarIndex) {
     return new FLOAD(localVarIndex);
   }
 
-  public FLOAD fload_0() {
+  @Override
+  public Instruction fload_0() {
     return new FLOAD(0);
   }
 
-  public FLOAD fload_1() {
+  @Override
+  public Instruction fload_1() {
     return new FLOAD(1);
   }
 
-  public FLOAD fload_2() {
+  @Override
+  public Instruction fload_2() {
     return new FLOAD(2);
   }
 
-  public FLOAD fload_3() {
+  @Override
+  public Instruction fload_3() {
     return new FLOAD(3);
   }
 
-  public FMUL fmul() {
+  @Override
+  public Instruction fmul() {
     return new FMUL();
   }
 
-  public FNEG fneg() {
+  @Override
+  public Instruction fneg() {
     return new FNEG();
   }
 
-  public FREM frem() {
+  @Override
+  public Instruction frem() {
     return new FREM();
   }
 
-  public FRETURN freturn() {
+  @Override
+  public Instruction freturn() {
     return new FRETURN();
   }
 
-  public FSTORE fstore(int localVarIndex) {
+  @Override
+  public Instruction fstore(int localVarIndex) {
     return new FSTORE(localVarIndex);
   }
 
-  public FSTORE fstore_0() {
+  @Override
+  public Instruction fstore_0() {
     return new FSTORE(0);
   }
 
-  public FSTORE fstore_1() {
+  @Override
+  public Instruction fstore_1() {
     return new FSTORE(1);
   }
 
-  public FSTORE fstore_2() {
+  @Override
+  public Instruction fstore_2() {
     return new FSTORE(2);
   }
 
-  public FSTORE fstore_3() {
+  @Override
+  public Instruction fstore_3() {
     return new FSTORE(3);
   }
 
-  public FSUB fsub() {
+  @Override
+  public Instruction fsub() {
     return new FSUB();
   }
 
-  public GETFIELD getfield(String fieldName, String clsName, String fieldDescriptor){
+  @Override
+  public Instruction getfield(String fieldName, String clsName, String fieldDescriptor){
     return new GETFIELD(fieldName, clsName, fieldDescriptor);
   }
 
-  public GETSTATIC getstatic(String fieldName, String clsName, String fieldDescriptor){
+  @Override
+  public Instruction getstatic(String fieldName, String clsName, String fieldDescriptor){
     return new GETSTATIC(fieldName, clsName, fieldDescriptor);
   }
 
 
-  public GOTO goto_(int targetPc) {
+  @Override
+  public Instruction goto_(int targetPc) {
     return new GOTO(targetPc);
   }
 
-  public GOTO_W goto_w(int targetPc) {
+  @Override
+  public Instruction goto_w(int targetPc) {
     return new GOTO_W(targetPc);
   }
 
-  public I2B i2b() {
+  @Override
+  public Instruction i2b() {
     return new I2B();
   }
 
-  public I2C i2c() {
+  @Override
+  public Instruction i2c() {
     return new I2C();
   }
 
-  public I2D i2d() {
+  @Override
+  public Instruction i2d() {
     return new I2D();
   }
 
-  public I2F i2f() {
+  @Override
+  public Instruction i2f() {
     return new I2F();
   }
 
-  public I2L i2l() {
+  @Override
+  public Instruction i2l() {
     return new I2L();
   }
 
-  public I2S i2s() {
+  @Override
+  public Instruction i2s() {
     return new I2S();
   }
 
-  public IADD iadd() {
+  @Override
+  public Instruction iadd() {
     return new IADD();
   }
 
-  public IALOAD iaload() {
+  @Override
+  public Instruction iaload() {
     return new IALOAD();
   }
 
-  public IAND iand() {
+  @Override
+  public Instruction iand() {
     return new IAND();
   }
 
-  public IASTORE iastore() {
+  @Override
+  public Instruction iastore() {
     return new IASTORE();
   }
 
-  public ICONST iconst_m1() {
+  @Override
+  public Instruction iconst_m1() {
     return new ICONST(-1);
   }
 
-  public ICONST iconst_0() {
+  @Override
+  public Instruction iconst_0() {
     return new ICONST(0);
   }
 
-  public ICONST iconst_1() {
+  @Override
+  public Instruction iconst_1() {
     return new ICONST(1);
   }
 
-  public ICONST iconst_2() {
+  @Override
+  public Instruction iconst_2() {
     return new ICONST(2);
   }
 
-  public ICONST iconst_3() {
+  @Override
+  public Instruction iconst_3() {
     return new ICONST(3);
   }
 
-  public ICONST iconst_4() {
+  @Override
+  public Instruction iconst_4() {
     return new ICONST(4);
   }
 
-  public ICONST iconst_5() {
+  @Override
+  public Instruction iconst_5() {
     return new ICONST(5);
   }
 
-  public IDIV idiv() {
+  @Override
+  public Instruction idiv() {
     return new IDIV();
   }
 
-  public IF_ACMPEQ if_acmpeq(int targetPc) {
+  @Override
+  public Instruction if_acmpeq(int targetPc) {
     return new IF_ACMPEQ(targetPc);
   }
 
-  public IF_ACMPNE if_acmpne(int targetPc) {
+  @Override
+  public Instruction if_acmpne(int targetPc) {
     return new IF_ACMPNE(targetPc);
   }
 
-  public IF_ICMPEQ if_icmpeq(int targetPc) {
+  @Override
+  public Instruction if_icmpeq(int targetPc) {
     return new IF_ICMPEQ(targetPc);
   }
 
-  public IF_ICMPNE if_icmpne(int targetPc) {
+  @Override
+  public Instruction if_icmpne(int targetPc) {
     return new IF_ICMPNE(targetPc);
   }
 
-  public IF_ICMPLT if_icmplt(int targetPc) {
+  @Override
+  public Instruction if_icmplt(int targetPc) {
     return new IF_ICMPLT(targetPc);
   }
 
-  public IF_ICMPGE if_icmpge(int targetPc) {
+  @Override
+  public Instruction if_icmpge(int targetPc) {
     return new IF_ICMPGE(targetPc);
   }
 
-  public IF_ICMPGT if_icmpgt(int targetPc) {
+  @Override
+  public Instruction if_icmpgt(int targetPc) {
     return new IF_ICMPGT(targetPc);
   }
 
-  public IF_ICMPLE if_icmple(int targetPc) {
+  @Override
+  public Instruction if_icmple(int targetPc) {
     return new IF_ICMPLE(targetPc);
   }
 
-  public IFEQ ifeq(int targetPc) {
+  @Override
+  public Instruction ifeq(int targetPc) {
     return new IFEQ(targetPc);
   }
 
-  public IFNE ifne(int targetPc) {
+  @Override
+  public Instruction ifne(int targetPc) {
     return new IFNE(targetPc);
   }
 
-  public IFLT iflt(int targetPc) {
+  @Override
+  public Instruction iflt(int targetPc) {
     return new IFLT(targetPc);
   }
 
-  public IFGE ifge(int targetPc) {
+  @Override
+  public Instruction ifge(int targetPc) {
     return new IFGE(targetPc);
   }
 
-  public IFGT ifgt(int targetPc) {
+  @Override
+  public Instruction ifgt(int targetPc) {
     return new IFGT(targetPc);
   }
 
-  public IFLE ifle(int targetPc) {
+  @Override
+  public Instruction ifle(int targetPc) {
     return new IFLE(targetPc);
   }
 
-  public IFNONNULL ifnonnull(int targetPc) {
+  @Override
+  public Instruction ifnonnull(int targetPc) {
     return new IFNONNULL(targetPc);
   }
 
-  public IFNULL ifnull(int targetPc) {
+  @Override
+  public Instruction ifnull(int targetPc) {
     return new IFNULL(targetPc);
   }
 
-  public IINC iinc(int localVarIndex, int incConstant) {
+  @Override
+  public Instruction iinc(int localVarIndex, int incConstant) {
     return new IINC(localVarIndex, incConstant);
   }
 
-  public ILOAD iload(int localVarIndex) {
+  @Override
+  public Instruction iload(int localVarIndex) {
     return new ILOAD(localVarIndex);
   }
 
-  public ILOAD iload_0() {
+  @Override
+  public Instruction iload_0() {
     return new ILOAD(0);
   }
 
-  public ILOAD iload_1() {
+  @Override
+  public Instruction iload_1() {
     return new ILOAD(1);
   }
 
-  public ILOAD iload_2() {
+  @Override
+  public Instruction iload_2() {
     return new ILOAD(2);
   }
 
-  public ILOAD iload_3() {
+  @Override
+  public Instruction iload_3() {
     return new ILOAD(3);
   }
 
-  public IMUL imul() {
+  @Override
+  public Instruction imul() {
     return new IMUL();
   }
 
-  public INEG ineg() {
+  @Override
+  public Instruction ineg() {
     return new INEG();
   }
 
-  public INSTANCEOF instanceof_(String clsName){
+  @Override
+  public Instruction instanceof_(String clsName){
     return new INSTANCEOF(clsName);
   }
 
-  public INVOKEINTERFACE invokeinterface(String clsName, String methodName, String methodSignature){
+  @Override
+  public Instruction invokeinterface(String clsName, String methodName, String methodSignature){
     return new INVOKEINTERFACE(clsName, methodName, methodSignature);
   }
 
-  public INVOKESPECIAL invokespecial(String clsName, String methodName, String methodSignature){
+  @Override
+  public Instruction invokespecial(String clsName, String methodName, String methodSignature){
     return new INVOKESPECIAL(clsName, methodName, methodSignature);
   }
 
-  public INVOKESTATIC invokestatic(String clsName, String methodName, String methodSignature){
+  @Override
+  public Instruction invokestatic(String clsName, String methodName, String methodSignature){
     return new INVOKESTATIC(clsName, methodName, methodSignature);
   }
 
-  public INVOKEVIRTUAL invokevirtual(String clsName, String methodName, String methodSignature){
+  @Override
+  public Instruction invokevirtual(String clsName, String methodName, String methodSignature){
     return new INVOKEVIRTUAL(clsName, methodName, methodSignature);
   }
 
 
-  public IOR ior() {
+  @Override
+  public Instruction ior() {
     return new IOR();
   }
 
-  public IREM irem() {
+  @Override
+  public Instruction irem() {
     return new IREM();
   }
 
-  public IRETURN ireturn() {
+  @Override
+  public Instruction ireturn() {
     return new IRETURN();
   }
 
-  public ISHL ishl() {
+  @Override
+  public Instruction ishl() {
     return new ISHL();
   }
 
-  public ISHR ishr() {
+  @Override
+  public Instruction ishr() {
     return new ISHR();
   }
 
-  public ISTORE istore(int localVarIndex) {
+  @Override
+  public Instruction istore(int localVarIndex) {
     return new ISTORE(localVarIndex);
   }
 
-  public ISTORE istore_0() {
+  @Override
+  public Instruction istore_0() {
     return new ISTORE(0);
   }
 
-  public ISTORE istore_1() {
+  @Override
+  public Instruction istore_1() {
     return new ISTORE(1);
   }
 
-  public ISTORE istore_2() {
+  @Override
+  public Instruction istore_2() {
     return new ISTORE(2);
   }
 
-  public ISTORE istore_3() {
+  @Override
+  public Instruction istore_3() {
     return new ISTORE(3);
   }
 
-  public ISUB isub() {
+  @Override
+  public Instruction isub() {
     return new ISUB();
   }
 
-  public IUSHR iushr() {
+  @Override
+  public Instruction iushr() {
     return new IUSHR();
   }
 
-  public IXOR ixor() {
+  @Override
+  public Instruction ixor() {
     return new IXOR();
   }
 
-  public JSR jsr(int targetPc) {
+  @Override
+  public Instruction jsr(int targetPc) {
     return new JSR(targetPc);
   }
 
-  public JSR_W jsr_w(int targetPc) {
+  @Override
+  public Instruction jsr_w(int targetPc) {
     return new JSR_W(targetPc);
   }
 
-  public L2D l2d() {
+  @Override
+  public Instruction l2d() {
     return new L2D();
   }
 
-  public L2F l2f() {
+  @Override
+  public Instruction l2f() {
     return new L2F();
   }
 
-  public L2I l2i() {
+  @Override
+  public Instruction l2i() {
     return new L2I();
   }
 
-  public LADD ladd() {
+  @Override
+  public Instruction ladd() {
     return new LADD();
   }
 
-  public LALOAD laload() {
+  @Override
+  public Instruction laload() {
     return new LALOAD();
   }
 
-  public LAND land() {
+  @Override
+  public Instruction land() {
     return new LAND();
   }
 
-  public LASTORE lastore() {
+  @Override
+  public Instruction lastore() {
     return new LASTORE();
   }
 
-  public LCMP lcmp() {
+  @Override
+  public Instruction lcmp() {
     return new LCMP();
   }
 
-  public LCONST lconst_0() {
+  @Override
+  public Instruction lconst_0() {
     return new LCONST(0);
   }
 
-  public LCONST lconst_1() {
+  @Override
+  public Instruction lconst_1() {
     return new LCONST(1L);
   }
 
-  public LDC ldc(int v){
+  @Override
+  public Instruction ldc(int v){
     return new LDC(v);
   }
-  public LDC ldc(float v){
+  @Override
+  public Instruction ldc(float v){
     return new LDC(v);
   }
-  public LDC ldc(String v, boolean isClass){
+  @Override
+  public Instruction ldc(String v, boolean isClass){
     return new LDC(v, isClass);
   }
 
 
-  public LDC_W ldc_w(int v){
+  @Override
+  public Instruction ldc_w(int v){
     return new LDC_W(v);
   }
-  public LDC_W ldc_w(float v){
+  @Override
+  public Instruction ldc_w(float v){
     return new LDC_W(v);
   }
-  public LDC_W ldc_w(String v, boolean isClass){
+  @Override
+  public Instruction ldc_w(String v, boolean isClass){
     return new LDC_W(v, isClass);
   }
 
-  public LDC2_W ldc2_w(long v){
+  @Override
+  public Instruction ldc2_w(long v){
     return new LDC2_W(v);
   }
-  public LDC2_W ldc2_w(double v){
+  @Override
+  public Instruction ldc2_w(double v){
     return new LDC2_W(v);
   }
 
-  public LDIV ldiv() {
+  @Override
+  public Instruction ldiv() {
     return new LDIV();
   }
 
-  public LLOAD lload(int localVarIndex) {
+  @Override
+  public Instruction lload(int localVarIndex) {
     return new LLOAD(localVarIndex);
   }
 
-  public LLOAD lload_0() {
+  @Override
+  public Instruction lload_0() {
     return new LLOAD(0);
   }
 
-  public LLOAD lload_1() {
+  @Override
+  public Instruction lload_1() {
     return new LLOAD(1);
   }
 
-  public LLOAD lload_2() {
+  @Override
+  public Instruction lload_2() {
     return new LLOAD(2);
   }
 
-  public LLOAD lload_3() {
+  @Override
+  public Instruction lload_3() {
     return new LLOAD(3);
   }
 
-  public LMUL lmul() {
+  @Override
+  public Instruction lmul() {
     return new LMUL();
   }
 
-  public LNEG lneg() {
+  @Override
+  public Instruction lneg() {
     return new LNEG();
   }
 
-  public LOOKUPSWITCH lookupswitch(int defaultTargetPc, int nEntries) {
+  @Override
+  public Instruction lookupswitch(int defaultTargetPc, int nEntries) {
     return new LOOKUPSWITCH(defaultTargetPc, nEntries);
   }
 
-  public LOR lor() {
+  @Override
+  public Instruction lor() {
     return new LOR();
   }
 
-  public LREM lrem() {
+  @Override
+  public Instruction lrem() {
     return new LREM();
   }
 
-  public LRETURN lreturn() {
+  @Override
+  public Instruction lreturn() {
     return new LRETURN();
   }
 
-  public LSHL lshl() {
+  @Override
+  public Instruction lshl() {
     return new LSHL();
   }
 
-  public LSHR lshr() {
+  @Override
+  public Instruction lshr() {
     return new LSHR();
   }
 
-  public LSTORE lstore(int localVarIndex) {
+  @Override
+  public Instruction lstore(int localVarIndex) {
     return new LSTORE(localVarIndex);
   }
 
-  public LSTORE lstore_0() {
+  @Override
+  public Instruction lstore_0() {
     return new LSTORE(0);
   }
 
-  public LSTORE lstore_1() {
+  @Override
+  public Instruction lstore_1() {
     return new LSTORE(1);
   }
 
-  public LSTORE lstore_2() {
+  @Override
+  public Instruction lstore_2() {
     return new LSTORE(2);
   }
 
-  public LSTORE lstore_3() {
+  @Override
+  public Instruction lstore_3() {
     return new LSTORE(3);
   }
 
-  public LSUB lsub() {
+  @Override
+  public Instruction lsub() {
     return new LSUB();
   }
 
-  public LUSHR lushr() {
+  @Override
+  public Instruction lushr() {
     return new LUSHR();
   }
 
-  public LXOR lxor() {
+  @Override
+  public Instruction lxor() {
     return new LXOR();
   }
 
-  public MONITORENTER monitorenter() {
+  @Override
+  public Instruction monitorenter() {
     return new MONITORENTER();
   }
 
-  public MONITOREXIT monitorexit() {
+  @Override
+  public Instruction monitorexit() {
     return new MONITOREXIT();
   }
 
-  public MULTIANEWARRAY multianewarray(String clsName, int dimensions){
+  @Override
+  public Instruction multianewarray(String clsName, int dimensions){
     return new MULTIANEWARRAY(clsName, dimensions);
   }
 
-  public NEW new_(String clsName) {
+  @Override
+  public Instruction new_(String clsName) {
     return new NEW(clsName);
   }
 
-  public NEWARRAY newarray(int typeCode) {
+  @Override
+  public Instruction newarray(int typeCode) {
     return new NEWARRAY(typeCode);
   }
 
-  public NOP nop() {
+  @Override
+  public Instruction nop() {
     return new NOP();
   }
 
-  public POP pop() {
+  @Override
+  public Instruction pop() {
     return new POP();
   }
 
-  public POP2 pop2() {
+  @Override
+  public Instruction pop2() {
     return new POP2();
   }
 
-  public PUTFIELD putfield(String fieldName, String clsName, String fieldDescriptor){
+  @Override
+  public Instruction putfield(String fieldName, String clsName, String fieldDescriptor){
     return new PUTFIELD(fieldName, clsName, fieldDescriptor);
   }
 
-  public PUTSTATIC putstatic(String fieldName, String clsName, String fieldDescriptor){
+  @Override
+  public Instruction putstatic(String fieldName, String clsName, String fieldDescriptor){
     return new PUTSTATIC(fieldName, clsName, fieldDescriptor);
   }
 
-  public RET ret(int localVarIndex) {
+  @Override
+  public Instruction ret(int localVarIndex) {
     return new RET(localVarIndex);
   }
 
-  public RETURN return_() {
+  @Override
+  public Instruction return_() {
     return new RETURN();
   }
 
-  public SALOAD saload() {
+  @Override
+  public Instruction saload() {
     return new SALOAD();
   }
 
-  public SASTORE sastore() {
+  @Override
+  public Instruction sastore() {
     return new SASTORE();
   }
 
-  public SIPUSH sipush(int val) {
+  @Override
+  public Instruction sipush(int val) {
     return new SIPUSH(val);
   }
 
-  public SWAP swap() {
+  @Override
+  public Instruction swap() {
     return new SWAP();
   }
 
-  public TABLESWITCH tableswitch(int defaultTargetPc, int low, int high) {
+  @Override
+  public Instruction tableswitch(int defaultTargetPc, int low, int high) {
     return new TABLESWITCH(defaultTargetPc, low, high);
   }
 
-  public WIDE wide() {
+  @Override
+  public Instruction wide() {
     return new WIDE();
   }
 
   
   //--- the JPF specific ones (only used in synthetic methods)
-  public INVOKECG invokecg(List<Invocation> invokes) {
+  @Override
+  public Instruction invokecg(List<Invocation> invokes) {
     return new INVOKECG(invokes);
   }
 
-  public INVOKECLINIT invokeclinit(ClassInfo ci) {
+  @Override
+  public Instruction invokeclinit(ClassInfo ci) {
     return new INVOKECLINIT(ci);
   }
 
-  public DIRECTCALLRETURN directcallreturn(){
+  @Override
+  public Instruction directcallreturn(){
     return new DIRECTCALLRETURN();
   }
 
-  public EXECUTENATIVE executenative(NativeMethodInfo mi){
+  @Override
+  public Instruction executenative(NativeMethodInfo mi){
     return new EXECUTENATIVE(mi);
   }
 
-  public NATIVERETURN nativereturn(){
+  @Override
+  public Instruction nativereturn(){
     return new NATIVERETURN();
   }
 
   // this is never part of MethodInfo stored code
-  public RUNSTART runstart(MethodInfo miRun){
+  @Override
+  public Instruction runstart(MethodInfo miRun){
     return new RUNSTART(miRun);
   }
 

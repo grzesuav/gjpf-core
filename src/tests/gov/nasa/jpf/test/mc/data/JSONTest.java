@@ -29,8 +29,6 @@ import org.junit.Test;
  * @author Ivan Mushketik
  */
 public class JSONTest extends TestJPF {
-
-
   
   class MySup {
     int j;

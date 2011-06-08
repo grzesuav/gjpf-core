@@ -18,6 +18,9 @@
 //
 package gov.nasa.jpf.util;
 
+/**
+ * utility class for JPF internal linked lists that are tail-immutable 
+ */
 public class StackNode<E> {
   public final E data;
   public final StackNode<E> next;

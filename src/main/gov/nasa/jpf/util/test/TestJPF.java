@@ -70,9 +70,9 @@ public abstract class TestJPF implements JPFShell  {
   public static final String UNNAMED_PACKAGE = "";
   public static final String SAME_PACKAGE = null;
 
-
-
   //--- those are only used outside of JPF execution
+  @FilterField protected static boolean globalRunDirectly, globalShowConfig;
+
   @FilterField protected static boolean runDirectly; // don't run test methods through JPF, invoke it directly
   @FilterField protected static boolean stopOnFailure; // stop as soon as we encounter a failed test or error
   @FilterField protected static boolean showConfig; // for debugging purposes
@@ -259,10 +259,10 @@ public abstract class TestJPF implements JPFShell  {
 
 
   protected static void getOptions (String[] args){
-    runDirectly = false;
-    showConfig = false;
-    stopOnFailure = false;
-    hideSummary = false;
+    runDirectly = globalRunDirectly;
+    showConfig = globalShowConfig;
+
+    // hideSummary and stopOnFailure only make sense as global options anyways
 
     if (args != null){
       for (int i=0; i<args.length; i++){
@@ -300,28 +300,84 @@ public abstract class TestJPF implements JPFShell  {
     return false;
   }
 
-  protected static List<Method> getTestMethods(Class<? extends TestJPF> testCls, String[] args){
-    List<Method> testMethods = new ArrayList<Method>();
+  protected static List<Method> getMatchingMethods(Class<? extends TestJPF> testCls,
+          int setModifiers, int unsetModifiers, String[] annotationNames){
+    List<Method> list = new ArrayList<Method>();
+    
+    for (Method m : testCls.getDeclaredMethods()){
+      if (isMatchingMethod(m, setModifiers, unsetModifiers, annotationNames)){
+        list.add(m);
+      }
+    }
+    
+    return list;
+  }
 
-    if (args != null && args.length > 0){
+  protected static boolean isMatchingMethod(Method m, int setModifiers, int unsetModifiers, String[] annotationNames) {
+    int mod = m.getModifiers();
+    if (((mod & setModifiers) != 0) && ((mod & unsetModifiers) == 0)) {
+      if (m.getParameterTypes().length == 0) {
+        Annotation[] annotations = m.getAnnotations();
+        for (int i = 0; i < annotations.length; i++) {
+          String annotType = annotations[i].annotationType().getName();
+          for (int j = 0; j < annotationNames.length; j++) {
+            if (annotType.equals(annotationNames[j])) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  protected static List<Method> getContextMethods(Class<? extends TestJPF> testCls, 
+                                                  int setModifiers, int unsetModifiers, String annotation){
+    String[] annotations = {annotation};
+
+    List<Method> list = new ArrayList<Method>();
+    for (Method m : testCls.getDeclaredMethods()){
+      if (isMatchingMethod(m, setModifiers, unsetModifiers, annotations)){
+        list.add(m);
+      }
+    }
+    return list;
+  }
+
+  protected static List<Method> getBeforeMethods(Class<? extends TestJPF> testCls){
+    return getContextMethods(testCls, Modifier.PUBLIC, Modifier.STATIC, "org.junit.Before");
+  }
+
+  protected static List<Method> getAfterMethods(Class<? extends TestJPF> testCls){
+    return getContextMethods(testCls, Modifier.PUBLIC, Modifier.STATIC, "org.junit.After");
+  }
+
+  protected static List<Method> getBeforeClassMethods(Class<? extends TestJPF> testCls){
+    return getContextMethods(testCls, Modifier.PUBLIC | Modifier.STATIC, 0, "org.junit.BeforeClass");
+  }
+  
+  protected static List<Method> getAfterClassMethods(Class<? extends TestJPF> testCls){
+    return getContextMethods(testCls, Modifier.PUBLIC | Modifier.STATIC, 0, "org.junit.AfterClass");
+  }
+  
+  protected static List<Method> getTestMethods(Class<? extends TestJPF> testCls, String[] args){
+    String[] testAnnotations = {"org.junit.Test", "org.testng.annotations.Test"};
+
+    if (args != null && args.length > 0){ // test methods specified as arguments
+      List<Method> list = new ArrayList<Method>();
+
       for (String test : args){
         if (test != null){
+
           try {
             Method m = testCls.getDeclaredMethod(test);
 
-            if (!hasProperAnnotation(m)) {
-              throw new RuntimeException("test method does not have @Test annotation: " + test);
+            if (isMatchingMethod(m, Modifier.PUBLIC, Modifier.STATIC, testAnnotations)){
+              list.add(m);
+            } else {
+              throw new RuntimeException("test method must be @Test annotated public instance method without arguments: " + test);
             }
-            if (!Modifier.isPublic(m.getModifiers())) {
-              throw new RuntimeException("test method not public: " + test);
-            }
-            if (Modifier.isStatic(m.getModifiers())) {
-              throw new RuntimeException("test method is static: " + test);
-            }
-            if (m.getParameterTypes().length > 0) {
-              throw new RuntimeException("test method requires arguments: " + test);
-            }
-            testMethods.add(m);
 
           } catch (NoSuchMethodException x) {
             throw new RuntimeException("method: " + test
@@ -329,36 +385,32 @@ public abstract class TestJPF implements JPFShell  {
           }
         }
       }
-    }
+      
+      return list;
 
-    if (testMethods.isEmpty()){
-      for (Method m : testCls.getDeclaredMethods()) {
-        int mod = m.getModifiers();
-        if (m.getParameterTypes().length == 0
-                && hasProperAnnotation(m)
-                && Modifier.isPublic(mod) && !Modifier.isStatic(mod)) {
-          testMethods.add(m);
-        }
-      }
+    } else { // no explicit test method specification, get all matches
+      return getMatchingMethods(testCls, Modifier.PUBLIC, Modifier.STATIC, testAnnotations);
     }
-
-    return testMethods;
   }
 
-  protected static boolean hasProperAnnotation(Method m) {
-      Annotation[] annotations = m.getAnnotations();
-      for(int i=0;i<annotations.length;i++) {
-          String annotType = annotations[i].annotationType().getName();
-          if(annotType.equals("org.junit.Test")) return true;
-          if(annotType.equals("org.testng.annotations.Test")) return true;
-      }
-      return false;
-  }
 
   protected static void reportTestStart(String mthName){
     System.out.println();
     System.out.print("......................................... testing ");
-    System.out.println(mthName);
+    System.out.print(mthName);
+    System.out.println("()");
+  }
+
+  protected static void reportTestInitialization(String mthName){
+    System.out.print(".... running test initialization: ");
+    System.out.print( mthName);
+    System.out.println("()");
+  }
+
+  protected static void reportTestCleanup(String mthName){
+    System.out.print(".... running test cleanup: ");
+    System.out.print( mthName);
+    System.out.println("()");
   }
 
   protected static void reportTestFinished(String msg){
@@ -401,11 +453,28 @@ public abstract class TestJPF implements JPFShell  {
     List<String> results = null;
 
     getOptions(args);
+    globalRunDirectly = runDirectly;
+    globalShowConfig = showConfig;
+    boolean globalStopOnFailure = stopOnFailure;
 
     try {
       List<Method> testMethods = getTestMethods(testCls, args);
       results = new ArrayList<String>(testMethods.size());
 
+      // check if we have JUnit style housekeeping methods (initialization and
+      // cleanup should use the same mechanisms as JUnit)
+      
+      List<Method> beforeClassMethods = getBeforeClassMethods(testCls);
+      List<Method> afterClassMethods = getAfterClassMethods(testCls);
+            
+      List<Method> beforeMethods = getBeforeMethods(testCls);
+      List<Method> afterMethods = getAfterMethods(testCls);
+
+      for (Method initMethod : beforeClassMethods) {
+        reportTestInitialization(initMethod.getName());
+        initMethod.invoke(null);
+      }
+            
       for (Method testMethod : testMethods) {
         testMethodName = testMethod.getName();
         String result = testMethodName;
@@ -415,8 +484,21 @@ public abstract class TestJPF implements JPFShell  {
           nTests++;
           reportTestStart( testMethodName);
 
+          // run per test initialization methods
+          for (Method initMethod : beforeMethods){
+            reportTestInitialization( initMethod.getName());
+            initMethod.invoke(testObject);
+          }
+
+          // now run the test method itself
           testMethod.invoke(testObject);
           result += ": Ok";
+
+          // run per test initialization methods
+          for (Method cleanupMethod : afterMethods){
+            reportTestCleanup( cleanupMethod.getName());
+            cleanupMethod.invoke(testObject);
+          }
 
         } catch (InvocationTargetException x) {
           Throwable cause = x.getCause();
@@ -431,16 +513,28 @@ public abstract class TestJPF implements JPFShell  {
             result += ": Error";
           }
 
-          if (stopOnFailure){
+          if (globalStopOnFailure){
             break;
           }
         }
-
+        
         results.add(result);
         reportTestFinished(result);
       }
+      
+      for (Method cleanupMethod : afterClassMethods) {
+        reportTestCleanup( cleanupMethod.getName());
+        cleanupMethod.invoke(null);
+      }
+
 
     //--- those exceptions are unexpected and represent unrecoverable test harness errors
+    } catch (InvocationTargetException x) {
+      Throwable cause = x.getCause();
+      cause.printStackTrace();
+      nErrors++;
+      reportTestFinished("TEST ERROR: @BeforeClass,@AfterClass method failed: " + x.getMessage());
+      
     } catch (InstantiationException x) {
       nErrors++;
       reportTestFinished("TEST ERROR: cannot instantiate test class: " + x.getMessage());
@@ -493,6 +587,7 @@ public abstract class TestJPF implements JPFShell  {
     Class<? extends TestJPF> testClass = Reflection.getCallerClass(TestJPF.class);
     runTests(testClass, testMethods);
   }
+
 
   /**
    * this is never executed under JPF

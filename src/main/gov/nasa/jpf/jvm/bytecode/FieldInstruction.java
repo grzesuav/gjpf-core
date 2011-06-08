@@ -56,6 +56,7 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
   protected int    size;  // is it a word or a double word field
   protected boolean isReferenceField;
 
+  protected long lastValue;
   
   public static void init (Config config) {
     if (config.getBoolean("vm.por") && config.getBoolean("vm.por.sync_detection")) {
@@ -76,11 +77,18 @@ public abstract class FieldInstruction extends Instruction implements VariableAc
     size = Types.getTypeSize(fieldDescriptor);
   }
 
-  public String getClassName()   // Needed for Java Race Finder
-  {
-     return(className);
+  public String getClassName(){
+     return className;
   }
 
+  /**
+   * only defined in instructionExecuted() notification context
+   */
+  public long getLastValue() {
+    return lastValue;
+  }
+
+  
   public abstract boolean isRead();
 
   public abstract FieldInfo getFieldInfo ();

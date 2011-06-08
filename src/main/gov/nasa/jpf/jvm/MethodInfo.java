@@ -25,8 +25,9 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassFile;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.ReturnInstruction;
 
-import gov.nasa.jpf.jvm.bytecode.*;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
 
@@ -202,7 +203,6 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   
   public static InstructionFactory getInstructionFactory() {
     // we clone so that instruction factories could have state
-    // (although factories normally shouldn't)
     return (InstructionFactory) insnFactory.clone();
   }
   
@@ -685,6 +685,19 @@ dump();
 
     return null;
 
+  }
+
+  public LocalVarInfo getLocalVar (int slotIdx, int pc){
+    LocalVarInfo[] vars = localVars;
+
+    for (int i=0; i<vars.length; i++){
+      LocalVarInfo lv = vars[i];
+      if (lv.matches(slotIdx, pc)){
+        return lv;
+      }
+    }
+
+    return null;
   }
 
   public LocalVarInfo[] getLocalVars() {

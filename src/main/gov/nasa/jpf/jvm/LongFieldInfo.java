@@ -68,5 +68,9 @@ public class LongFieldInfo extends DoubleSlotFieldInfo {
   public boolean isLongField(){
     return true;
   }
+
+  public boolean isNumericField(){
+    return true;
+  }
 }
 

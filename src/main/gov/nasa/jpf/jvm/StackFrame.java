@@ -612,6 +612,24 @@ public class StackFrame implements Cloneable {
     return null;
   }
 
+  public String getLocalVariableType (int idx){
+    LocalVarInfo lv = mi.getLocalVar(idx, pc.getPosition());
+    if (lv != null){
+      return lv.getType();
+    }
+
+    return null;
+  }
+
+  public LocalVarInfo getLocalVarInfo (String name){
+    return mi.getLocalVar(name, pc.getPosition());
+  }
+
+  public LocalVarInfo getLocalVarInfo (int idx){
+    return mi.getLocalVar(idx, pc.getPosition());
+  }
+
+
   /**
    * use with extreme care - don't modify
    */

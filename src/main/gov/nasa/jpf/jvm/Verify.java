@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.BitSet;
 import java.util.Random;
 
 
@@ -114,14 +115,47 @@ public class Verify {
   }
 
 
-  //  Backwards compatibility END
+  // same mechanism and purpose as the counters, but with BitSets, which is
+  // more convenient if we have a lot of different events to check
 
-  public static void setBitInBitSet(int id, int bit, boolean value) {
+  static BitSet[] bitSets;
 
+  private static void checkBitSetId(int id) {
+    if (bitSets == null) {
+      bitSets = new BitSet[id + 1];
+    } else if (id >= bitSets.length) {
+      BitSet[] newBitSets = new BitSet[id + 1];
+      System.arraycopy(bitSets, 0, newBitSets, 0, bitSets.length);
+      bitSets = newBitSets;
+    }
+
+    if (bitSets[id] == null) {
+      bitSets[id] = new BitSet();
+    }
   }
 
-  public static boolean getBitInBitSet(int id, int big) {
-    return false;
+
+  public static void setBitInBitSet(int id, int bit, boolean value) {
+    if (peer != null){
+      // this is executed if we did run JPF
+      JPF_gov_nasa_jpf_jvm_Verify.setBitInBitSet__IIZ__V(null, 0, id, bit, value);
+    } else {
+      // this is executed if we run this without previously executing JPF
+      checkBitSetId(id);
+      bitSets[id].set(bit, value);
+    }
+  }
+
+  public static boolean getBitInBitSet(int id, int bit) {
+    if (peer != null){
+      // this is executed if we did run JPF
+      return JPF_gov_nasa_jpf_jvm_Verify.getBitInBitSet__II__Z(null, 0, id, bit);
+
+    } else {
+      // this is executed if we run this without previously executing JPF
+      checkBitSetId(id);
+      return bitSets[id].get(bit);
+    }
   }
 
   /**
@@ -439,7 +473,7 @@ public class Verify {
       oos.close();
 
     } catch (Exception ex) {
-      throw new JPFException(ex);
+      throw new RuntimeException(ex);
     }
 
   }
@@ -456,7 +490,7 @@ public class Verify {
       
     }
     catch (Exception ex) {
-      throw new JPFException(ex);
+      throw new RuntimeException(ex);
     }
 
   }

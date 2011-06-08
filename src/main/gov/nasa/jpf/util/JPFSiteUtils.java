@@ -183,7 +183,6 @@ public class JPFSiteUtils {
    */
   public static File getCurrentProjectProperties() {
     File d = new File(System.getProperty("user.dir"));
-
     do {
       File f = new File(d, "jpf.properties");
       if (f.isFile()){

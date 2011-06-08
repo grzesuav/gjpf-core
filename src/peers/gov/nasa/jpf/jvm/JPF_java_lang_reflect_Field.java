@@ -175,7 +175,7 @@ public class JPF_java_lang_reflect_Field {
 
   public static int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int objRef, int annotationClsRef) {
     FieldInfo fi = getFieldInfo(env,objRef);
-    ClassInfo aci = JPF_java_lang_Class.getReferredClassInfo(env,annotationClsRef);
+    ClassInfo aci = env.getReferredClassInfo(annotationClsRef);
     
     AnnotationInfo ai = fi.getAnnotation(aci.getName());
     if (ai != null){

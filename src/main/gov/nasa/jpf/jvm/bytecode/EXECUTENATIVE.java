@@ -36,7 +36,7 @@ import java.lang.reflect.Method;
  */
 public class EXECUTENATIVE extends Instruction {
 
-  NativeMethodInfo executedMethod;
+  protected NativeMethodInfo executedMethod;
 
   public boolean isExtendedInstruction() {
     return true;

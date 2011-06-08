@@ -78,7 +78,7 @@ public class RunTest extends Run {
           call(testRunnerCls, "main", new Object[] {testRunnerArgs});
 
         } else {
-          error("not a gov.nasa.jpf.TestJPF derived class: " + testClsName);
+          error("not a gov.nasa.jpf.util.test.TestJPF derived class: " + testClsName);
         }
 
       } catch (NoClassDefFoundError ncfx) {

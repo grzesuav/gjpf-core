@@ -131,7 +131,7 @@ public class ClassPath {
 
 
     public byte[] getClassData (String clsName) throws ClassFileException {
-      String pn = clsName.replace('.', File.separatorChar) + ".class";
+      String pn = clsName.replace('.', '/') + ".class";
       JarEntry e = jar.getJarEntry(pn);
 
       if (e != null){

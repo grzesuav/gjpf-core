@@ -28,7 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Access jump table by index and jump
  *   ..., index  => ...
  */
-public class TABLESWITCH extends SwitchInstruction {
+public class TABLESWITCH extends SwitchInstruction implements gov.nasa.jpf.jvm.TableSwitchInstruction {
 
   int min, max;
 

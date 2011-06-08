@@ -71,5 +71,28 @@ public class LocalVarInfo {
   public boolean matches (String name, int pc){
     return (startPC <= pc && endPC >= pc && this.name.equals(name));
   }
+
+  public boolean matches (int slotIdx, int pc){
+    return (slotIdx == slotIndex) && (pc >= startPC) && (pc <= endPC);
+  }
+
+  public boolean isNumeric(){
+    char c = signature.charAt(0);
+    return (c == 'B' || c == 'S' || c == 'I' || c == 'J' || c == 'F' || c == 'D');
+  }
+
+  public int getSlotSize(){
+    char c = signature.charAt(0);
+    if (c == 'J' || c == 'D'){
+      return 2;
+    } else {
+      return 1;
+    }
+  }
+
+  public boolean isFloatingPoint(){
+    char c = signature.charAt(0);
+    return (c == 'F' || c == 'D');
+  }
 }
 

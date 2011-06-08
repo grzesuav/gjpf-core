@@ -105,7 +105,7 @@ public abstract class HeuristicSearch extends Search {
    * @returns false if this is cut short by a property termination or
    * explicit termination request
    */
-  protected boolean generateChildren (int maxDepth) {
+  protected boolean generateChildren () {
 
     childStates = new ArrayList<HeuristicState>();
     
@@ -132,16 +132,16 @@ public abstract class HeuristicSearch extends Search {
       if (!isEndState() && !isIgnoredState()) {
         boolean isNewState = isNewState();
 
-        if (isNewState && depth >= maxDepth) {
+        if (isNewState && depth >= depthLimit) {
           // we can't do this before we actually generated the VM child state
           // since we don't want to report DEPTH_CONSTRAINTs for parents
           // that have only visited or end state children
-          notifySearchConstraintHit(DEPTH_CONSTRAINT);
+          notifySearchConstraintHit("depth limit reached: " + depthLimit);
           
         } else if (isNewState || isPathSensitive) {
 
           if (isQueueLimitReached()) {
-            notifySearchConstraintHit( QUEUE_CONSTRAINT);
+            notifySearchConstraintHit("queue limit reached: " + getQueueSize());
           }
           
           HeuristicState newHState = queueCurrentState();
@@ -169,7 +169,6 @@ public abstract class HeuristicSearch extends Search {
   }
    
   public void search () {
-    int maxDepth = getMaxSearchDepth();
         
     queueCurrentState();
     notifyStateStored();
@@ -182,12 +181,12 @@ public abstract class HeuristicSearch extends Search {
     notifySearchStarted();
     
     if (!hasPropertyTermination()) {
-      generateChildren(maxDepth);
+      generateChildren();
 
       while (!done && (parentState = getNextQueuedState()) != null) {
         restoreState(parentState);
         
-        generateChildren(maxDepth);
+        generateChildren();
       }
     }
     

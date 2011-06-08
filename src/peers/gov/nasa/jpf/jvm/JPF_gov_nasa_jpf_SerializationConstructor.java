@@ -18,7 +18,7 @@ public class JPF_gov_nasa_jpf_SerializationConstructor {
 
     } else {
       int clsRef = env.getReferenceField(mthRef, "mdc");
-      ClassInfo ci = JPF_java_lang_Class.getReferredClassInfo(env, clsRef);
+      ClassInfo ci = env.getReferredClassInfo( clsRef);
 
       int superCtorRef = env.getReferenceField(mthRef, "firstNonSerializableCtor");
       MethodInfo mi = JPF_java_lang_reflect_Constructor.getMethodInfo(env,superCtorRef);

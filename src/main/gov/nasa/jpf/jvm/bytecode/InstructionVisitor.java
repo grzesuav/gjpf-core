@@ -63,6 +63,7 @@ public interface InstructionVisitor {
 	public void visit(DUP2_X1 ins);
 	public void visit(DUP2_X2 ins);
 	public void visit(DUP2 ins);
+  public void visit(EXECUTENATIVE ins);
 	public void visit(F2D ins);
 	public void visit(F2I ins);
 	public void visit(FADD ins);
@@ -126,7 +127,6 @@ public interface InstructionVisitor {
 	public void visit(INVOKESPECIAL ins);
 	public void visit(INVOKESTATIC ins);
 	public void visit(INVOKEVIRTUAL ins);
-  public void visit(EXECUTENATIVE ins);
 	public void visit(IOR ins);
 	public void visit(IREM ins);
 	public void visit(IRETURN ins);

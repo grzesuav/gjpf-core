@@ -30,8 +30,10 @@ public final class Method extends AccessibleObject implements Member {
   String name; // deferred set by the NativePeer getName()
 
   public native String getName();
-  public native String toGenericString();
-
+  public String toGenericString() {
+	  // TODO: return real generic string
+	  return toString();
+  }
   public native Object invoke (Object object, Object... args)
         throws IllegalAccessException, InvocationTargetException;
 
@@ -47,10 +49,10 @@ public final class Method extends AccessibleObject implements Member {
 
   public native <T extends Annotation> T getAnnotation( Class<T> annotationCls);
 
-  public native boolean isBridge();
-  public native boolean isVarArgs();
-
-  public native boolean isSynthetic ();
+  public boolean isSynthetic () {
+    // ?? don't know of others
+    return (name.startsWith("access$"));
+  }
 
   public native String toString();
 
@@ -59,14 +61,4 @@ public final class Method extends AccessibleObject implements Member {
   public Object getDefaultValue() {
     throw new UnsupportedOperationException("Method.getDefaultValue() not supported yet");
   }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj instanceof Method) {
-      Method m = (Method) obj;
-      return regIdx == m.regIdx;
-    }
-    return false;
-  }
-
 }

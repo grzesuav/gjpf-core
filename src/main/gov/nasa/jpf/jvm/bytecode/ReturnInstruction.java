@@ -29,7 +29,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 /**
  * abstraction for the various return instructions
  */
-public abstract class ReturnInstruction extends Instruction {
+public abstract class ReturnInstruction extends Instruction implements gov.nasa.jpf.jvm.ReturnInstruction {
 
   // to store where we came from
   protected StackFrame returnFrame;

@@ -146,15 +146,18 @@ public class VerifyTest extends TestJPF {
 
   @Test
   public void testBitSet() {
+    int id = 2;
+
     if (verifyNoPropertyViolation()) {      
-      Verify.setBitInBitSet(0, 3, true);
-      Verify.setBitInBitSet(0, 1, true);
+      // JPF execution only
+      Verify.setBitInBitSet(id, 3, true);
+      Verify.setBitInBitSet(id, 1, true);
       
-      assert Verify.getBitInBitSet(0, 1) == true;
-      assert Verify.getBitInBitSet(0, 2) == false;
-      assert Verify.getBitInBitSet(0, 3) == true;
-
-
+    } else {
+      // host VM execution only
+      assert Verify.getBitInBitSet(id, 1) == true;
+      assert Verify.getBitInBitSet(id, 2) == false;
+      assert Verify.getBitInBitSet(id, 3) == true;
     }
   }
 }

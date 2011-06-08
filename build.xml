@@ -135,30 +135,6 @@
            classpathref="lib.path"/>
   </target>
 
-  <!-- ======================= CHECK SECTION =============================== -->
-
-  <target name="check" depends="build" unless="have_fb_report"
-          description="run analyzers on jpf-core">
-    <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
-
-    <findbugs home="tools"
-              debug="false"
-              output="xml"
-              jvmargs="-Xmx1024m"
-              outputFile="jpf-fb-report.xml" >
-      <auxClasspath path="tools/bcel.jar" />
-      <sourcePath path="src/main;src/peers" />
-      <class location="build/jpf.jar" />
-    </findbugs>
-
-  </target>
-
-  <target name="show-check" depends="check"
-            description="interactively browse check report">
-    <java jar="tools/findbugs.jar" fork="true" spawn="true">
-      <arg value="jpf-fb-report.xml"/>
-    </java>
-  </target>
   
   <!-- ======================= MISC SECTION ================================ -->
   
@@ -271,7 +247,8 @@
   <!-- public clean: cleanup from previous tasks/builds -->
   <target name="clean"
           description="remove all build artifacts and temporary files">
-    <delete dir="build" />
+    <delete dir="build" failonerror="false"/>
+    <delete dir="tmp" failonerror="false"/>
     <delete>
       <fileset dir="." includes="jpf-fb-report.*"/>
       <fileset dir="." includes="**/*~" defaultexcludes="no" />
@@ -362,10 +339,14 @@
 
   <target name="test" depends="build"
           description="run core regression tests" if="have_tests">
-
-    <property name="junit.usefile" value="true"/>
-
-    <junit printsummary="on" showoutput="off" haltonfailure="yes"
+    <condition property="junit.usefile">
+      <!-- don't set if this is running from within an IDE that collects output -->
+      <not>
+        <isset property="netbeans.home"/>  
+      </not>
+    </condition>
+    
+    <junit printsummary="on" showoutput="off" haltonfailure="yes" dir="${basedir}"
            fork="yes" forkmode="perTest" maxmemory="1024m" outputtoformatters="true">
       <formatter type="plain" usefile="${junit.usefile}"/>
 

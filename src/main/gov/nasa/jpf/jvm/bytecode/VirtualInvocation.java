@@ -39,18 +39,19 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     super(clsDescriptor, methodName, signature);
   }
 
-
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     int objRef = ti.getCalleeThis(getArgSize());
 
     if (objRef == -1) {
+      lastObj = -1;
       return ti.createAndThrowException("java.lang.NullPointerException", "Calling '" + mname + "' on null object");
     }
 
     MethodInfo mi = getInvokedMethod(ti, objRef);
-    
+
     if (mi == null) {
-      return ti.createAndThrowException("java.lang.NoSuchMethodError", ti.getClassInfo(objRef).getName() + "." + mname);
+      String clsName = ti.getClassInfo(objRef).getName();
+      return ti.createAndThrowException("java.lang.NoSuchMethodError", clsName + '.' + mname);
     }
     
     ElementInfo ei = ks.heap.get(objRef);

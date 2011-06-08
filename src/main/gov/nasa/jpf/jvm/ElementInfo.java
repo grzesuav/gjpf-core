@@ -18,7 +18,9 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.BitSet256;
 import gov.nasa.jpf.util.BitSet64;
 import gov.nasa.jpf.util.Debug;
 import gov.nasa.jpf.util.FixedBitSet;
@@ -170,7 +172,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       if (o instanceof EIMemento){
         EIMemento other = (EIMemento)o;
         if (ref != other.ref) return false;
-     *  if (ci != other.ci) return false;
+     *  if (ciMth != other.ciMth) return false;
         if (fields != other.fields) return false;
         if (monitor != other.monitor) return false;
         if (refTid != other.refTid) return false;
@@ -186,18 +188,33 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     **/
   }
 
+  static int maxThreadRefs;
 
+  static boolean init (Config config) {
+
+    maxThreadRefs = config.getInt("vm.max_thread_refs", 64);
+
+    return true;
+  }
 
   protected ElementInfo(ClassInfo c, Fields f, Monitor m, int tid) {
     ci = c;
     fields = f;
     monitor = m;
 
-    // Ok, this is a hard limit, but for the time being a SUT with more
-    // than 64 threads is blowing us out of the water state-space-wise anyways
-    refTid = new BitSet64(tid);
+    refTid = createRefTid(tid);
 
     // attributes are set in the concrete type ctors
+  }
+
+  protected FixedBitSet createRefTid( int tid){
+    // Ok, this is a hard limit, but for the time being a SUT with more
+    // than 64 threads is usually blowing us out of the water state-space-wise anyways
+    if (maxThreadRefs <= 64){
+      return new BitSet64(tid);
+    } else {
+      return new BitSet256(tid);
+    }
   }
 
   protected ElementInfo() {
@@ -1036,6 +1053,84 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   public boolean isReferenceArray() {
     return getClassInfo().isReferenceArray();
+  }
+
+  /**
+   * this is the backend for System.arraycopy implementations, but since it only
+   * throws general exceptions it can also be used in other contexts that require
+   * type and index checking
+   *
+   * note that we have to do some additional type checking here because we store
+   * reference arrays as int[], i.e. for reference arrays we can't rely on
+   * System.arraycopy to do the element type checking for us
+   *
+   * @throws java.lang.ArrayIndexOutOfBoundsException
+   * @throws java.lang.ArrayStoreException
+   */
+  public void copyElements( ThreadInfo ti, ElementInfo eiSrc, int srcIdx, int dstIdx, int length){
+
+    if (!isArray()){
+      throw new ArrayStoreException("destination object not an array: " + ci.getName());
+    }
+    if (!eiSrc.isArray()){
+      throw new ArrayStoreException("source object not an array: " + eiSrc.getClassInfo().getName());
+    }
+
+    boolean isRefArray = isReferenceArray();
+    if (eiSrc.isReferenceArray() != isRefArray){
+      throw new ArrayStoreException("array types not compatible: " + eiSrc.getClassInfo().getName() + " and " + ci.getName());
+    }
+
+    // since the caller has to handle normal ArrayStoreExceptions and
+    // ArrayIndexOutOfBoundsExceptions, we don't have to explicitly check array length here
+
+    // if we copy reference arrays, we first have to check element type compatibility
+    // (the underlying Fields type is always int[], hence we have to do this explicitly)
+    if (isRefArray){
+      ClassInfo dstElementCi = ci.getComponentClassInfo();
+      int[] srcRefs = ((ArrayFields)eiSrc.fields).asReferenceArray();
+      int max = srcIdx + length;
+
+      for (int i=srcIdx; i<max; i++){
+        int eref = srcRefs[i];
+        if (eref != MJIEnv.NULL){
+          ClassInfo srcElementCi = ti.getClassInfo(eref);
+          if (!srcElementCi.isInstanceOf(dstElementCi)) {
+            throw new ArrayStoreException("incompatible reference array element type (required " + dstElementCi.getName() +
+                    ", found " + srcElementCi.getName());
+          }
+        }
+      }
+    }
+
+    // clone destination fields before we do the block copy
+    // NOTE - we have to clone the fields even in case System.arraycopy fails, since
+    // the caller might handle ArrayStore/IndexOutOfBounds, and partial changes
+    // have to be preserved
+    // note also this preserves values in case of a self copy
+    cloneFields();
+
+    Object srcVals = ((ArrayFields)eiSrc.getFields()).getValues();
+    Object dstVals = ((ArrayFields)fields).getValues();
+
+    // this might throw ArrayIndexOutOfBoundsExceptions and ArrayStoreExceptions
+    System.arraycopy(srcVals, srcIdx, dstVals, dstIdx, length);
+
+    // now take care of the attributes
+    // <2do> what in case arraycopy did throw - we should only copy the changed element attrs
+    if (eiSrc.hasFieldAttrs()){
+      if (eiSrc == this && srcIdx < dstIdx) { // self copy
+        for (int i = length - 1; i >= 0; i--) {
+          Object a = eiSrc.getElementAttr( srcIdx+i);
+          setElementAttr( dstIdx+i, a);
+        }
+      } else {
+        for (int i = 0; i < length; i++) {
+          Object a = eiSrc.getElementAttr(srcIdx+i);
+          setElementAttr( dstIdx+i, a);
+        }
+      }
+    }
   }
 
   public void setBooleanElement(int idx, boolean value){

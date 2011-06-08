@@ -56,7 +56,7 @@ public class INVOKESPECIAL extends InstanceInvocation {
     MethodInfo mi = getInvokedMethod(ti);
 
     if (mi == null){
-      return ti.createAndThrowException("java.lang.NoSuchMethodException", "Calling " + cname + "." + mname);
+      return ti.createAndThrowException("java.lang.NoSuchMethodException", "Calling " + cname + '.' + mname);
     }
 
     ElementInfo ei = ks.heap.get(objRef);
@@ -103,7 +103,7 @@ public class INVOKESPECIAL extends InstanceInvocation {
   }
 
   public String toString() {
-    return ("invokespecial " + cname + '.' + mname + signature);
+    return ("invokespecial " + cname + '.' + mname);
   }
 
   @Override

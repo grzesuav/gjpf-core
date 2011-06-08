@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.test.java.lang;
 
+import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 
@@ -75,6 +76,75 @@ public class SystemTest extends TestJPF {
 
       for (int i = 0; i < a.length; i++) {
         assert b[i] == i;
+      }
+    }
+  }
+
+  @Test
+  public void testSelfArrayCopy(){
+    if (verifyNoPropertyViolation()){
+      int[] a = {0, 1, 2, 3, 4, 5, 6, 7};
+
+      System.arraycopy(a, 3, a, 0, 5);
+
+      // the overwritten ones
+      assertTrue(a[0] == 3);
+      assertTrue(a[1] == 4);
+      assertTrue(a[2] == 5);
+      assertTrue(a[3] == 6);
+      assertTrue(a[4] == 7);
+
+      // the old ones
+      assertTrue(a[5] == 5);
+      assertTrue(a[6] == 6);
+      assertTrue(a[7] == 7);
+    }
+  }
+
+  @Test
+  public void testOverlappingSelfArrayCopy(){
+    if (verifyNoPropertyViolation()){
+      int[] a = {0, 1, 2, 3, 4, 5, 6, 7};
+
+      System.arraycopy(a, 0, a, 2, 3);
+
+      // copying should proceed as if using a temporary destination
+      assertTrue(a[0] == 0);
+      assertTrue(a[1] == 1);
+      assertTrue(a[2] == 0);
+      assertTrue(a[3] == 1);
+      assertTrue(a[4] == 2);
+      assertTrue(a[5] == 5);
+      assertTrue(a[6] == 6);
+      assertTrue(a[7] == 7);
+    }
+  }
+
+  @Test
+  public void testIncompatibleReferencesArrayCopy(){
+    if (verifyUnhandledException("java.lang.ArrayStoreException")){
+      String[] dst = new String[2];
+      Object[] src = { "one", new Integer(2) };
+
+      System.arraycopy(src,0,dst,0,src.length);
+    }
+  }
+
+  @Test
+  public void testRestoredArrayCopy(){
+    if (verifyNoPropertyViolation()){
+      Object[] src = { "one", "two" };
+      Object[] dst = new Object[2];
+
+      int n = Verify.getInt(0, 1);
+      System.out.println("processing choice: " + n);
+
+      if (n == 0){
+        System.out.println("copying array");
+        System.arraycopy(src,0,dst,0,src.length);
+      } else if (n == 1){
+        System.out.println("checking if non-copied dst[0] is still null");
+        assertTrue( dst[0] == null);
       }
     }
   }

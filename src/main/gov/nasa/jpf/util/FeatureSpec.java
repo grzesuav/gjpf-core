@@ -19,12 +19,15 @@
 
 package gov.nasa.jpf.util;
 
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.jvm.ClassInfo;
 
 /**
  * common base class for MethodSpec and FieldSpec
  */
 public abstract class FeatureSpec {
+
+  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.util");
 
   static class ParseData {
     boolean matchInverted;
@@ -68,7 +71,7 @@ public abstract class FeatureSpec {
 
       d.nameSpec = s.substring(i+1);
       if (d.nameSpec.length() == 0){
-        return null;
+        d.nameSpec = "*";
       }
 
     } else { // no name, all fields

@@ -195,8 +195,12 @@ public class MethodAnalyzer extends ListenerAdapter {
   }
 
   boolean isAnalyzedMethod (MethodInfo mi){
-    String mthName = mi.getFullName();
-    return StringSetMatcher.isMatch(mthName, includes, excludes);
+    if (mi != null){
+      String mthName = mi.getFullName();
+      return StringSetMatcher.isMatch(mthName, includes, excludes);
+    } else {
+      return false;
+    }
   }
 
   void printOn (PrintWriter pw) {

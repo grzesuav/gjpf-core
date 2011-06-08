@@ -45,26 +45,14 @@ public /*final*/ class Constructor <T> extends AccessibleObject implements Membe
   public native int getModifiers();
   public native Class<?> getReturnType();
   public native Class<?>[] getParameterTypes();
-  public native Class<?>[] getExceptionTypes();
   
   public native Class<T> getDeclaringClass();
   
-  public native Annotation[] getAnnotations();
-
   public native <T extends Annotation> T getAnnotation( Class<T> annotationCls);
   
-  public native boolean isSynthetic();
-  public native boolean isVarArgs();
-  
-  public native String toString();
-  public native String toGenericString();
-
-  public boolean equals(Object obj) {
-    if (obj instanceof Constructor) {
-      Constructor c = (Constructor) obj;
-
-      return regIdx == c.regIdx;
-    }
+  public boolean isSynthetic () {
     return false;
   }
+  
+  public native String toString();
 }

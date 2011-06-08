@@ -27,7 +27,6 @@ import gov.nasa.jpf.classfile.ClassFile;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassFileReaderAdapter;
 import gov.nasa.jpf.classfile.ClassPath;
-import gov.nasa.jpf.jvm.bytecode.InstructionFactory;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
@@ -328,8 +327,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
 
     @Override
-    public void setSourceFile(ClassFile cf, Object tag, String pathName) {
-      sourceFileName = pathName;
+    public void setSourceFile(ClassFile cf, Object tag, String fileName) {
+      // we already know the package, so we just prepend it
+      if (packageName.length() > 0){
+        // Source will take care of proper separator chars later
+        sourceFileName = packageName.replace('.', '/') + '/' + fileName;
+      } else {
+        sourceFileName = fileName;
+      }
     }
 
 
@@ -702,7 +707,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     this.uniqueId = uniqueId;
     
     enclosingClassName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
-    
+
+    if (sourceFileName == null){
+      // might not be set yet since the SourceFile attribute is optional
+      sourceFileName = computeSourceFileName();
+    }
+
     staticDataSize = computeStaticDataSize();
     instanceDataSize = computeInstanceDataSize();
     instanceDataOffset = computeInstanceDataOffset();
@@ -870,6 +880,31 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   /**
+   * deduce relative source pathname from class name
+   */
+  protected String computeSourceFileName(){
+    String sfn = null;
+
+    if (enclosingClassName != null){
+      // unfortunately we can't take the enclosingClassName directly since the nesting
+      // might be deeper
+      int i = enclosingClassName.indexOf('$');
+      if (i> 0){
+        sfn = enclosingClassName.substring(0, i);
+      } else {
+        sfn = enclosingClassName;
+      }
+    } else {
+      sfn = name;
+    }
+
+    sfn = sfn.replace('.', '/'); // Source will take care of proper separatorChars
+    sfn += ".java";
+
+    return sfn;
+  }
+
+  /**
    * this is called from the annotated ClassInfo - the annotation type would
    * have to be resolved through the same classpath
    *
@@ -886,6 +921,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   protected CodeBuilder createCodeBuilder(){
     InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
+    insnFactory.setClassInfoContext(this);
+
     return new CodeBuilder(insnFactory, null, null);
   }
 

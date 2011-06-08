@@ -43,7 +43,6 @@ public class RandomSearch extends Search {
   }
   
   public void search () {
-    int maxDepth = getMaxSearchDepth();
     int    depth = 0;
     int paths = 0;
     depth++;
@@ -57,7 +56,7 @@ public class RandomSearch extends Search {
     
     notifySearchStarted();
     while (!done) {
-      if ((depth < maxDepth) && forward()) {
+      if ((depth < depthLimit) && forward()) {
         notifyStateAdvanced();
 
         if (currentError != null){
@@ -77,8 +76,8 @@ public class RandomSearch extends Search {
       } else { // no next state or reached depth limit
         // <2do> we could check for more things here. If the last insn wasn't
         // the main return, or a System.exit() call, we could flag a JPFException
-        if (depth >= maxDepth) {
-          notifySearchConstraintHit(QUEUE_CONSTRAINT);
+        if (depth >= depthLimit) {
+          notifySearchConstraintHit("depth limit reached: " + depthLimit);
         }
         checkPropertyViolation();
         done = (paths >= path_limit);

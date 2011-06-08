@@ -26,254 +26,255 @@ import org.junit.*;
  * regression test for suspend/resume
  */
 @SuppressWarnings("deprecation")
-public class SuspendResumeTest extends TestJPF implements Runnable
-{
-   private final Object m_lock   = new Object();
-   private final Thread m_waiter = new Thread(this);
+public class SuspendResumeTest extends TestJPF {
+
+  static boolean isRunning;
+  static boolean pass = false;
+  
+  static class T1 extends Thread {
+    public void run(){
+      System.out.println("t1 running");
+      isRunning = true;
+      while (!pass){
+        Thread.yield();
+      }
+      System.out.println("t1 terminating");
+    }
+  }
+
+  @Test
+  public void testBasicSuspendDeadlock(){
+    if (verifyDeadlock("+cg.threads.break_yield")) {
+      Thread t1 = new T1();
+      t1.start();
+
+      while (!isRunning) {
+        Thread.yield();
+      }
+
+      t1.suspend();
+      assertTrue(t1.getState() == Thread.State.RUNNABLE);
+
+      pass = true;
       
-   public void run()
-   {
-      synchronized (m_lock)
-      {
-         try
-         {
-            m_lock.wait();
-         }
-         catch (InterruptedException e)
-         {
-            e.printStackTrace();
+      // without resuming, T1 should not be scheduled again, despite being in a RUNNABLE state
+      //t1.resume();
+    }
+  }
+  
+  @Test
+  public void testBasicSuspendResume(){
+    if (verifyNoPropertyViolation("+cg.threads.break_yield")) {
+      Thread t1 = new T1();
+      t1.start();
 
-            assert false;
-         }
+      while (!isRunning) {
+        Thread.yield();
       }
-   }
-   
-   @Before
-   public void before()
-   {
-      if (!Verify.isRunningInJPF())
-         return;
+
+      System.out.println("main suspending t1");
+      t1.suspend();
+      assertTrue(t1.getState() == Thread.State.RUNNABLE);
+
+      pass = true;
       
-      Verify.resetCounter(0);
+      System.out.println("main resuming t1");
+      t1.resume();
+      try {
+        System.out.println("main joining t1");
+        t1.join();
+      } catch (InterruptedException ix){
+        fail("t1.join got interrupted");
+      }
       
-      m_waiter.setDaemon(false);
-      m_waiter.setName("Waiter");
-      m_waiter.start();
-   }
-   
-   @After
-   public void after()
-   {
-      if (!Verify.isRunningInJPF())
-         return;
+      System.out.println("main terminating after t1.join");
+    }
+  }
 
-      Verify.ignoreIf(m_waiter.getState() != Thread.State.TERMINATED);
-
-      Verify.incrementCounter(0);
-
-      assert Verify.getCounter(0) == 1;
-   }
-   
-   @Test
-   public void suspendResumeUnlockLockNotify()
-   {
-      if (verifyNoPropertyViolation())
-      {
-         synchronized (m_lock)
-         {
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
-         
-            m_waiter.suspend();
-         
-            assert m_waiter.getState() == Thread.State.BLOCKED;
-         
-            m_waiter.resume();
-            
-            assert m_waiter.getState() == Thread.State.BLOCKED;
-         }
-         
-         Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-         
-         synchronized (m_lock)
-         {
-            assert m_waiter.getState() == Thread.State.WAITING;
-            
-            m_lock.notify();
-            
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
-         }
+  //---------------
+  // this is the main reason to model suspend/resume, since suspension does
+  // *not* give up any held locks, and hence is very prone to creating deadlocks
+  
+  static class T2 extends Thread {
+    public synchronized void run(){
+      System.out.println("t2 running with lock");
+      isRunning = true;
+      while (!pass){
+        Thread.yield();
       }
-   }
-   
-   @Test
-   public void suspendNotifyUnlockResume()
-   {
-      if (verifyNoPropertyViolation())
-      {
-         synchronized (m_lock)
-         {
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            
-            m_waiter.suspend();
-            
-            assert m_waiter.getState() == Thread.State.WAITING;
-            
-            m_lock.notify();
-            
-            assert m_waiter.getState() == Thread.State.WAITING;
-         }
-         
-         assert m_waiter.getState() == Thread.State.WAITING;
-         
-         m_waiter.resume();
+      System.out.println("t2 terminating");
+    }
+  }
+  
+  @Test
+  public void testLockholderSuspendDeadlock(){
+
+    if (verifyDeadlock("+cg.threads.break_yield")) {
+      Thread t2 = new T2();
+      t2.start();
+
+      while (!isRunning) {
+        Thread.yield();
       }
-   }
-   
-   @Test
-   public void suspendNotifyResumeUnlock()
-   {
-      if (verifyNoPropertyViolation())
-      {
-         synchronized (m_lock)
-         {
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            
-            m_waiter.suspend();
-            
-            assert m_waiter.getState() == Thread.State.WAITING;
-            
-            m_lock.notify();
-            
-            assert m_waiter.getState() == Thread.State.WAITING;
-            
-            m_waiter.resume();
-            
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
-         }
+
+      System.out.println("main suspending t2");
+      t2.suspend();
+      // now t2 should hold and never give up its lock 
+      
+      synchronized (t2){
+        fail("main should never get here");
       }
-   }
-   
-   @Test
-   public void suspendResumeNotifyUnlock()
-   {
-      if (verifyNoPropertyViolation())
-      {
-         synchronized (m_lock)
-         {
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            
-            m_waiter.suspend();
-            
-            assert m_waiter.getState() == Thread.State.WAITING;
-            
-            m_waiter.resume();
-            
-            assert m_waiter.getState() == Thread.State.WAITING;
-            
-            m_lock.notify();
-            
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
-         }
+    }
+  }
+  
+  //------------
+  
+  static class T3 extends Thread {
+    public synchronized void run(){
+      System.out.println("t3 running");
+      isRunning = true;
+      try {
+        wait();
+      } catch (InterruptedException ix){
+        fail("t3 got interrupted");
       }
-   }
-   
-   @Test
-   public void notifySuspendUnlockResumeWaiting()
-   {
-      if (verifyNoPropertyViolation())
-      {
-         synchronized (m_lock)
-         {
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            
-            m_lock.notify();
+      System.out.println("t3 terminating");
+    }
+  }
 
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            
-            m_waiter.suspend();
-            
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-         }
-         
-         assert m_waiter.getState() == Thread.State.WAITING;
+  @Test
+  public void testWaitingSuspendNotifyDeadlock(){
+    if (verifyDeadlock("+cg.threads.break_yield")) {
+      Thread t3 = new T3();
+      t3.start();
 
-         m_waiter.resume();
+      while (!isRunning) {
+        Thread.yield();
       }
-   }
-   
-   @Test
-   public void notifySuspendResumeWaitingBlockedUnlock()
-   {
-      if (verifyNoPropertyViolation())
-      {
-         synchronized (m_lock)
-         {
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            
-            m_lock.notify();
-
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            
-            m_waiter.suspend();
-            
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-
-            m_waiter.resume();
-
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
-         }
+      
+      synchronized (t3){
+        assertTrue( t3.getState() == Thread.State.WAITING);
+        
+        System.out.println("main suspending t3");
+        t3.suspend();
+        
+        System.out.println("main notifying t3");
+        t3.notify();
+        // t3 should be still suspended, despite being notified
       }
-   }
-   
-   @Test
-   public void notifyBlockedSuspendUnlockResume()
-   {
-      if (verifyNoPropertyViolation())
-      {
-         synchronized (m_lock)
-         {
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            
-            m_lock.notify();
+    }    
+  }
+  
+  @Test
+  public void testWaitingSuspendNotifyResume(){
+    if (verifyNoPropertyViolation("+cg.threads.break_yield")) {
+      Thread t3 = new T3();
+      t3.start();
 
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
-            
-            m_waiter.suspend();
-            
-            assert m_waiter.getState() == Thread.State.BLOCKED;
-         }
-         
-         assert m_waiter.getState() == Thread.State.BLOCKED;
-
-         m_waiter.resume();
+      while (!isRunning) {
+        Thread.yield();
       }
-   }
+      
+      synchronized (t3){
+        assertTrue( t3.getState() == Thread.State.WAITING);
+        
+        System.out.println("main suspending t3");
+        t3.suspend();
+        
+        System.out.println("main notifying t3");
+        t3.notify();
+        // t3 should be still suspended, despite being notified
+        
+        System.out.println("main resuming t3");
+        t3.resume();
+        try {
+          System.out.println("main joining t3");
+          t3.join();
+        } catch (InterruptedException ix) {
+          fail("t3.join got interrupted");
+        }
 
-   @Test
-   public void notifyBlockedSuspendResumeUnlock()
-   {
-      if (verifyNoPropertyViolation())
-      {
-         synchronized (m_lock)
-         {
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.WAITING);
-            
-            m_lock.notify();
-
-            Verify.ignoreIf(m_waiter.getState() != Thread.State.BLOCKED);
-            
-            m_waiter.suspend();
-            
-            assert m_waiter.getState() == Thread.State.BLOCKED;
-
-            m_waiter.resume();
-
-            assert m_waiter.getState() == Thread.State.BLOCKED;
-         }
+        System.out.println("main terminating after t3.join");
       }
-   }
+    }    
+  }
+  
+  
+  //----------------
+  
+  static class T4 extends Thread {
+    public void run(){
+      System.out.println("t4 running ");
+      isRunning = true;
+      while (!pass){
+        Thread.yield();
+      }
+      
+      System.out.println("t4 trying to obtain lock");      
+      synchronized (this){
+        System.out.println("t4 obtained lock");
+      }
+      System.out.println("t4 terminating");
+    }
+  }
+  
+  @Test
+  public void testBlockSuspendUnblockDeadlock(){
+    if (verifyDeadlock("+cg.threads.break_yield")) {
+      Thread t4 = new T4();
+      t4.start();
+
+      while (!isRunning) {
+        Thread.yield();
+      }
+      
+      synchronized (t4){
+        pass = true;
+        
+        while (t4.getState() != Thread.State.BLOCKED){
+          Thread.yield();
+        }
+        
+        System.out.println("main suspending t4");
+        t4.suspend();
+      }
+      System.out.println("main released t4 lock");
+    }
+  }
+
+  
+  @Test
+  public void testBlockSuspendUnblockResume(){
+    if (verifyNoPropertyViolation("+cg.threads.break_yield")) {
+      Thread t4 = new T4();
+      t4.start();
+
+      while (!isRunning) {
+        Thread.yield();
+      }
+      
+      synchronized (t4){
+        pass = true;
+        
+        while (t4.getState() != Thread.State.BLOCKED){
+          Thread.yield();
+        }
+        
+        System.out.println("main suspending t4");
+        t4.suspend();
+      }
+      System.out.println("main released t4 lock");
+
+      System.out.println("main resuming t4");
+      t4.resume();
+      try {
+        System.out.println("main joining t4");
+        t4.join();
+      } catch (InterruptedException ix) {
+        fail("t4.join got interrupted");
+      }
+
+      System.out.println("main terminating after t4.join");
+    }
+  }
 }

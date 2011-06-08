@@ -70,4 +70,12 @@ public class DoubleFieldInfo extends DoubleSlotFieldInfo {
   public boolean isDoubleField(){
     return true;
   }
+
+  public boolean isNumericField(){
+    return true;
+  }
+
+  public boolean isFloatingPointField(){
+    return true;
+  }
 }

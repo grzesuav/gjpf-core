@@ -23,15 +23,13 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ByteCodeReader;
 import gov.nasa.jpf.classfile.ClassFile;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.jvm.bytecode.InstructionFactory;
-import gov.nasa.jpf.jvm.bytecode.LOOKUPSWITCH;
-import gov.nasa.jpf.jvm.bytecode.TABLESWITCH;
 import gov.nasa.jpf.util.Invocation;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * a special ByteCodeReader implementation that builds code arrays for
+ * MethodInfos, setting index and pc on the fly
  */
 public class CodeBuilder implements ByteCodeReader {
 
@@ -41,8 +39,9 @@ public class CodeBuilder implements ByteCodeReader {
   protected MethodInfo mi;
 
   // have to cache these to set switch entries
-  protected TABLESWITCH tableswitchInsn;
-  protected LOOKUPSWITCH lookupswitchInsn;
+  // <2do> these should use interface types to avoid hardwiring our own instruction classes
+  protected TableSwitchInstruction tableswitchInsn;
+  protected LookupSwitchInstruction lookupswitchInsn;
 
   protected ArrayList<Instruction> code;
 
@@ -1048,8 +1047,10 @@ public class CodeBuilder implements ByteCodeReader {
 
 
   @Override public void lookupswitch(int defaultPcOffset, int nEntries) {
-    lookupswitchInsn = insnFactory.lookupswitch(pc + defaultPcOffset, nEntries);
-    add( lookupswitchInsn);
+    Instruction insn = insnFactory.lookupswitch(pc + defaultPcOffset, nEntries);
+    add( insn);
+
+    lookupswitchInsn = (LookupSwitchInstruction)insn;
 
     if (cf != null){
       cf.parseLookupSwitchEntries(this, nEntries);
@@ -1234,8 +1235,10 @@ public class CodeBuilder implements ByteCodeReader {
   }
 
   @Override public void tableswitch(int defaultPcOffset, int low, int high) {
-    tableswitchInsn = insnFactory.tableswitch(pc + defaultPcOffset, low, high);
-    add( tableswitchInsn);
+    Instruction insn = insnFactory.tableswitch(pc + defaultPcOffset, low, high);
+    add( insn);
+    
+    tableswitchInsn = (TableSwitchInstruction)insn;
 
     if (cf != null){
       cf.parseTableSwitchEntries(this, low, high);

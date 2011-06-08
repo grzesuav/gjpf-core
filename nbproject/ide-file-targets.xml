@@ -123,7 +123,6 @@
         <ant antfile="build.xml" inheritall="false" target="compile"/>
         <!-- -->
         <java classname="gov.nasa.jpf.JPF" failonerror="true" fork="true">
-            <arg value="-c"/>
             <arg value="${jpf.config}"/>
             <classpath>
                 <pathelement location="build/examples"/>
@@ -212,7 +211,6 @@
         <ant antfile="build.xml" inheritall="false" target="compile"/>
         <java classname="gov.nasa.jpf.JPF" failonerror="true" fork="true">
             <jvmarg value="-ea"/>
-            <arg value="-c"/>
             <arg value="${jpf.config}"/>
             <classpath>
                 <pathelement location="build/tests"/>

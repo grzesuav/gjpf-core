@@ -161,7 +161,7 @@ public class JPF_java_io_File {
   }
 
   public static int list_____3Ljava_lang_String_2(MJIEnv env, int objref){
-    File f=getFile(env,objref);
+	  File f=getFile(env,objref);
     if (f.isDirectory()){
       String[] farr=f.list();
       return env.newStringArray(farr);

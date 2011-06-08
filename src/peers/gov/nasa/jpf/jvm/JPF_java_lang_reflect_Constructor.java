@@ -66,22 +66,16 @@ public class JPF_java_lang_reflect_Constructor {
   
   public static int getName____Ljava_lang_String_2 (MJIEnv env, int objRef) {
     MethodInfo mi = getMethodInfo(env, objRef);
-
-    // Construtcor getName returns construcotr's class name
-    String className = mi.getClassInfo().getName();       
-    return env.newString(className);
+    
+    int nameRef = env.getReferenceField( objRef, "name");
+    if (nameRef == -1) {
+      nameRef = env.newString(mi.getName());
+      env.setReferenceField(objRef, "name", nameRef);
+    }
+   
+    return nameRef;
   }
-
-  public static boolean isSynthetic____Z(MJIEnv env, int objRef) throws Exception {
-    MethodInfo mi = getMethodInfo(env, objRef);
-    return MethodUtils.isMethodInfoFlagSet(mi, "SYNTHETIC");
-  }
-
-  public static boolean isVarArgs____Z(MJIEnv env, int objRef) throws Exception {
-    MethodInfo mi = getMethodInfo(env, objRef);
-    return MethodUtils.isMethodInfoFlagSet(mi, "VARARGS");
-  }
-
+  
   // <2do> .. and some more delegations to JPF_java_lang_Method
 
   
@@ -127,11 +121,6 @@ public class JPF_java_lang_reflect_Constructor {
     return JPF_java_lang_reflect_Method.getParameterTypes (env, getMethodInfo(env,objRef));
   }
 
-  public static int getExceptionTypes_____3Ljava_lang_Class_2(MJIEnv env, int objRef) {
-    MethodInfo mi = getMethodInfo(env, objRef);
-    return MethodUtils.getExceptionTypes(env, mi);
-  }
-
   public static int getModifiers____I (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);
     return mi.getModifiers();
@@ -144,25 +133,24 @@ public class JPF_java_lang_reflect_Constructor {
     return ci.getClassObjectRef();
   }
 
-  public static int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef, int annotationClsRef) {
-    MethodInfo mi = getMethodInfo(env,mthRef);
-    return MethodUtils.getAnnotation(env, mi, annotationClsRef);
-  }
-
-  public static int getAnnotations_____3Ljava_lang_annotation_Annotation_2(MJIEnv env, int mthRef){
-    MethodInfo mi = getMethodInfo(env, mthRef);
-    return MethodUtils.getAnnotations(env, mi);
-  }
-
-  public static int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){    
+  public static int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){
+    StringBuilder sb = new StringBuilder();
+    
     MethodInfo mi = getMethodInfo(env, objRef);
 
-    return MethodUtils.toString(env, mi, mi.getClassName(), false);
-  }
+    sb.append(mi.getName());
 
-  public static int toGenericString____Ljava_lang_String_2 (MJIEnv env, int objRef){
-    MethodInfo mi = getMethodInfo(env, objRef);
-
-    return MethodUtils.toGenericString(env, mi, mi.getClassName(), false);
+    sb.append('(');
+    
+    String[] at = mi.getArgumentTypeNames();
+    for (int i=0; i<at.length; i++){
+      if (i>0) sb.append(',');
+      sb.append(at[i]);
+    }
+    
+    sb.append(')');
+    
+    int sref = env.newString(sb.toString());
+    return sref;
   }
 }

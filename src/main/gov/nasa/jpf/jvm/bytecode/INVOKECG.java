@@ -66,13 +66,13 @@ public class INVOKECG extends Instruction {
 
       Invocation call = cg.getNextChoice();
       MethodInfo callee = call.getMethodInfo();
-      InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
+      gov.nasa.jpf.jvm.InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
 
       String clsName = callee.getClassInfo().getName();
       String mthName = callee.getName();
       String signature = callee.getSignature();
 
-      InvokeInstruction realInvoke;
+      Instruction realInvoke;
       if (callee.isStatic()){
         realInvoke = insnFactory.invokestatic(clsName, mthName, signature);
       } else {

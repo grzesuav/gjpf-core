@@ -43,7 +43,7 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
  * Note that MJIEnv objects are now per-ThreadInfo (i.e. the variable
  * call envionment only includes MethodInfo and ClassInfo), which means
  * MJIEnv can be used in non-native methods (but only carefully, if you
- * don't need mi or ci).
+ * don't need mi or ciMth).
  *
  * Note also this only works because we are not getting recursive in
  * native method calls. In fact, the whole DirectCallStackFrame / repeatTopInstruction
@@ -54,7 +54,7 @@ public class MJIEnv {
   public static final int NULL = -1;
 
   JVM                     vm;
-  ClassInfo               ci;
+  ClassInfo               ciMth;  // the ClassInfo of the method this is called from
   MethodInfo              mi;
   ThreadInfo              ti;
   Heap                    heap;
@@ -453,53 +453,54 @@ public class MJIEnv {
   public void setStaticBooleanField (String clsName, String fname,
                                      boolean value) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    sa.get(ci.getName()).setBooleanField(fname, value);  }
+    ci.getStaticElementInfo().setBooleanField(fname, value);  }
 
   public boolean getStaticBooleanField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    return sa.get(ci.getName()).getBooleanField(fname);
+    return ci.getStaticElementInfo().getBooleanField(fname);
   }
 
   public void setStaticByteField (String clsName, String fname, byte value) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    sa.get(ci.getName()).setByteField(fname, value);  }
+    ci.getStaticElementInfo().setByteField(fname, value);  }
 
   public byte getStaticByteField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    return sa.get(ci.getName()).getByteField(fname);
+    return ci.getStaticElementInfo().getByteField(fname);
   }
 
   public void setStaticCharField (String clsName, String fname, char value) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    sa.get(ci.getName()).setCharField(fname, value);  }
+    ci.getStaticElementInfo().setCharField(fname, value);  }
 
   public char getStaticCharField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    return sa.get(ci.getName()).getCharField(fname);
+    return ci.getStaticElementInfo().getCharField(fname);
   }
 
   public void setStaticDoubleField (String clsName, String fname, double val) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    sa.get(ci.getName()).setDoubleField(fname, val);
+    ci.getStaticElementInfo().setDoubleField(fname, val);
   }
 
   public double getStaticDoubleField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    return sa.get(ci.getName()).getDoubleField(fname);
+    return ci.getStaticElementInfo().getDoubleField(fname);
   }
 
   public void setStaticFloatField (String clsName, String fname, float val) {
-    sa.get(ci.getName()).setFloatField(fname, val);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    ci.getStaticElementInfo().setFloatField(fname, val);
   }
 
   public float getStaticFloatField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    return sa.get(ci.getName()).getFloatField(fname);
+    return ci.getStaticElementInfo().getFloatField(fname);
   }
 
   public void setStaticIntField (String clsName, String fname, int val) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    sa.get(ci.getName()).setIntField(fname, val);
+    ci.getStaticElementInfo().setIntField(fname, val);
   }
 
   public void setStaticIntField (int clsObjRef, String fname, int val) {
@@ -513,12 +514,12 @@ public class MJIEnv {
 
   public int getStaticIntField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    return sa.get(ci.getName()).getIntField(fname);
+    return ci.getStaticElementInfo().getIntField(fname);
   }
 
   public void setStaticLongField (String clsName, String fname, long value) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    sa.get(ci.getName()).setLongField(fname, value);
+    ci.getStaticElementInfo().setLongField(fname, value);
   }
 
   public long getStaticLongField (int clsRef, String fname) {
@@ -540,17 +541,21 @@ public class MJIEnv {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
 
     // <2do> - we should REALLY check for type compatibility here
-    sa.get(ci.getName()).setReferenceField(fname, objref);
+    ci.getStaticElementInfo().setReferenceField(fname, objref);
   }
 
   public int getStaticReferenceField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    return sa.get(ci.getName()).getReferenceField(fname);
+    return ci.getStaticElementInfo().getReferenceField(fname);
+  }
+
+  public int getStaticReferenceField (ClassInfo ci, String fname){
+    return ci.getStaticElementInfo().getReferenceField(fname);
   }
 
   public short getStaticShortField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    return sa.get(ci.getName()).getShortField(fname);
+    return ci.getStaticElementInfo().getShortField(fname);
   }
 
   /**
@@ -880,26 +885,28 @@ public class MJIEnv {
 
     for (int i=0; i<len; i++){
       int ref = getReferenceArrayElement(argRef,i);
-      String clsName = getClassName(ref);
-      if (clsName.equals("java.lang.String")){
-        arg[i] = getStringObject(ref);
-      } else if (clsName.equals("java.lang.Byte")){
-        arg[i] = getByteObject(ref);
-      } else if (clsName.equals("java.lang.Char")){
-        arg[i] = getCharObject(ref);
-      } else if (clsName.equals("java.lang.Short")){
-        arg[i] = getShortObject(ref);
-      } else if (clsName.equals("java.lang.Integer")){
-        arg[i] = getIntegerObject(ref);
-      } else if (clsName.equals("java.lang.Long")){
-        arg[i] = getLongObject(ref);
-      } else if (clsName.equals("java.lang.Float")){
-        arg[i] = getFloatObject(ref);
-      } else if (clsName.equals("java.lang.Double")){
-        arg[i] = getDoubleObject(ref);
-      } else {
-        // need a toString() here
-        arg[i] = "??";
+      if (ref != NULL) {
+        String clsName = getClassName(ref);
+        if (clsName.equals("java.lang.String")) {
+          arg[i] = getStringObject(ref);
+        } else if (clsName.equals("java.lang.Byte")) {
+          arg[i] = getByteObject(ref);
+        } else if (clsName.equals("java.lang.Char")) {
+          arg[i] = getCharObject(ref);
+        } else if (clsName.equals("java.lang.Short")) {
+          arg[i] = getShortObject(ref);
+        } else if (clsName.equals("java.lang.Integer")) {
+          arg[i] = getIntegerObject(ref);
+        } else if (clsName.equals("java.lang.Long")) {
+          arg[i] = getLongObject(ref);
+        } else if (clsName.equals("java.lang.Float")) {
+          arg[i] = getFloatObject(ref);
+        } else if (clsName.equals("java.lang.Double")) {
+          arg[i] = getDoubleObject(ref);
+        } else {
+          // need a toString() here
+          arg[i] = "??";
+        }
       }
     }
 
@@ -1077,9 +1084,9 @@ public class MJIEnv {
     this.mi = mi;
 
     if (mi != null){
-      ci = mi.getClassInfo();
+      ciMth = mi.getClassInfo();
     } else {
-      //ci = null;
+      //ciMth = null;
       //mi = null;
     }
 
@@ -1106,7 +1113,7 @@ public class MJIEnv {
   }
 
   ClassInfo getClassInfo () {
-    return ci;
+    return ciMth;
   }
 
   public ClassInfo getReferredClassInfo (int clsObjRef) {

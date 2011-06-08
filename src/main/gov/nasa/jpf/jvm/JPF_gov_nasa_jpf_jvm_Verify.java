@@ -24,7 +24,6 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
-import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjectConverter;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
@@ -44,9 +43,6 @@ import java.util.List;
  * of apps to verify - if you are aware of the danger that comes with it)
  */
 public class JPF_gov_nasa_jpf_jvm_Verify {
-
-  private static final JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.JPF_gov_nases_jpf_jvm_Verify");
-
   static final int MAX_COUNTERS = 10;
 
   static boolean isInitialized;
@@ -65,7 +61,6 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   static BitSet[] bitSets;
   static int nextBitSet;
-  static final int INIT_BIT_SIZE = 2;
 
   public static void init (Config conf) {
 
@@ -120,7 +115,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   private static void checkBitSetId(int id) {
     if (bitSets == null) {
-      bitSets = new BitSet[(id < INIT_BIT_SIZE) ? id + 1 : INIT_BIT_SIZE];
+      bitSets = new BitSet[id + 1];
     } else if (id >= bitSets.length) {
       BitSet[] newBitSets = new BitSet[id + 1];
       System.arraycopy(bitSets, 0, newBitSets, 0, bitSets.length);
@@ -134,13 +129,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
   public static void setBitInBitSet__IIZ__V(MJIEnv env, int clsObjRef, int id, int bitNum, boolean value) {
     checkBitSetId(id);
-
     bitSets[id].set(bitNum, value);
   }
 
   public static boolean getBitInBitSet__II__Z(MJIEnv env, int clsObjRef, int id, int bitNum) {
     checkBitSetId(id);
-
     return bitSets[id].get(bitNum);
   }
 
@@ -700,7 +693,10 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     System.out.println("~~~~~~~~~~~~~~~~~~~~~~~ end path output");
   }
 
+
   //--- the JSON object initialization
+
+
   public static int createFromJSON__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
           MJIEnv env, int clsObjRef, int newObjClsRef, int jsonStringRef) {
     

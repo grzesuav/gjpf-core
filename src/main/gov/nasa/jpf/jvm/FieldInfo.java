@@ -132,6 +132,14 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
     return false;
   }
 
+  public boolean isNumericField(){
+    return false;
+  }
+
+  public boolean isFloatingPointField(){
+    return false;
+  }
+
   public boolean isReference () {
     return false;
   }
