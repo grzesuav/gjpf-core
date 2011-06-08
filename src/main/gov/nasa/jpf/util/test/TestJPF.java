@@ -953,18 +953,28 @@ public abstract class TestJPF implements JPFShell  {
     assertEquals("", expected, actual); 
   }
 
-  public static void assertEquals(int expected, int actual){
+  public static void assertEquals(String msg, int expected, int actual){
     if (expected != actual) {
-      fail("expected != actual : " + expected + " != " + actual);    
+      fail(msg);
     }
   }
 
-  public static void assertEquals(long expected, long actual){
+  public static void assertEquals(int expected, int actual){    
+    assertEquals("expected != actual : " + expected + " != " + actual, expected, actual);
+  }  
+
+  public static void assertEquals(String msg, long expected, long actual){
     if (expected != actual) {
-      fail("expected != actual : " + expected + " != " + actual);
+      fail(msg);
     }
   }
 
+  public static void assertEquals(long expected, long actual){    
+      assertEquals("expected != actual : " + expected + " != " + actual,
+                   expected, actual);
+  }
+
+  @Deprecated
   public static void assertEquals(double expected, double actual){
     expected = 0;  // Get rid of IDE warning
     actual   = 0;
@@ -972,6 +982,7 @@ public abstract class TestJPF implements JPFShell  {
     fail("Identity comparison of floating point values");
   }
 
+  @Deprecated
   public static void assertEquals(float expected, float actual){
     expected = 0; // Get rid of IDE warning
     actual   = 0;
@@ -979,16 +990,26 @@ public abstract class TestJPF implements JPFShell  {
     fail("identity comparison of floating point values");
   }
 
-  public static void assertEquals(double expected, double actual, double delta){
+  public static void assertEquals(String msg, double expected, double actual, double delta){
     if (Math.abs(expected - actual) > delta) {
-      fail("Math.abs(expected - actual) > delta : " + "Math.abs(" + expected + " - " + actual + ") > " + delta);
+      fail(msg);
     }
   }
 
-  public static void assertEquals(float expected, float actual, float delta){
+  public static void assertEquals(double expected, double actual, double delta){    
+    assertEquals("Math.abs(expected - actual) > delta : " + "Math.abs(" + expected + " - " + actual + ") > " + delta,
+                 expected, actual, delta);
+  }
+
+  public static void assertEquals(String msg, float expected, float actual, float delta){
     if (Math.abs(expected - actual) > delta) {
-      fail("Math.abs(expected - actual) > delta : " + "Math.abs(" + expected + " - " + actual + ") > " + delta);
+      fail(msg);
     }
+  }
+
+  public static void assertEquals(float expected, float actual, float delta){    
+      assertEquals("Math.abs(expected - actual) > delta : " + "Math.abs(" + expected + " - " + actual + ") > " + delta,
+                   expected, actual, delta);
   }
 
   public static void assertArrayEquals(byte[] expected, byte[] actual){
@@ -1004,26 +1025,38 @@ public abstract class TestJPF implements JPFShell  {
     }
   }
 
-  public static void assertNotNull(Object o){
+  public static void assertNotNull(String msg, Object o) {
     if (o == null) {
-      fail("o == null");
+      fail(msg);
     }
   }
 
-  public static void assertNull(Object o){
+  public static void assertNotNull(Object o){
+    assertNotNull("o == null", o);
+  }
+
+  public static void assertNull(String msg, Object o){
     if (o != null) {
-      fail("o != null");
+      fail(msg);
+    }
+  }
+
+  public static void assertNull(Object o){    
+    assertNull("o != null", o);
+  }
+
+  public static void assertSame(String msg, Object expected, Object actual){
+    if (expected != actual) {
+      fail(msg);
     }
   }
 
   public static void assertSame(Object expected, Object actual){
-    if (expected != actual) {
-      fail("expected != actual : " + expected + " != " + actual);
-    }
+    assertSame("expected != actual : " + expected + " != " + actual, expected, actual);
   }
 
   public static void assertFalse (String msg, boolean cond){
-    if (cond) { 
+    if (cond) {
       fail(msg);
     }
   }
