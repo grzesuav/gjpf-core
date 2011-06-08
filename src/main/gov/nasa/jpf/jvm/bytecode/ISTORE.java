@@ -58,14 +58,8 @@ public class ISTORE extends LocalVariableInstruction implements StoreInstruction
     return 0x36; // ?? wide, ISTORE_n
   }
   
-  public String getMnemonic() {
-    String mnemonic = "istore";
-    
-    if (index <= 3) {
-      return mnemonic + '_' + index;
-    } else {
-      return mnemonic + " #" + index;
-    }
+  public String getBaseMnemonic() {
+    return "istore";
   }
   
   public void accept(InstructionVisitor insVisitor) {

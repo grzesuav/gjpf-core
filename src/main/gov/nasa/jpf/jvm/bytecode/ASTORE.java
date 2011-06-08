@@ -65,15 +65,11 @@ public class ASTORE extends LocalVariableInstruction implements StoreInstruction
     return 0x3A;  // ? wide versions ?
   }
   
-  public String getMnemonic() {
-    String mnemonic = "astore";
-    
-    if (index <= 3) {
-      return mnemonic + '_' + index;
-    } else {
-      return mnemonic + " #" + index;
-    }
+  public String getBaseMnemonic() {
+    return "astore";
   }
+  
+  
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);

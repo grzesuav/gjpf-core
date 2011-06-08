@@ -54,14 +54,8 @@ public class DSTORE extends LocalVariableInstruction implements StoreInstruction
     return 0x39; // ?? wide
   }
   
-  public String getMnemonic() {
-    String mnemonic = "dstore";
-    
-    if (index <= 3) {
-      return mnemonic + '_' + index;
-    } else {
-      return mnemonic + " #" + index;
-    }
+  public String getBaseMnemonic() {
+    return "dstore";
   }
   
   public void accept(InstructionVisitor insVisitor) {

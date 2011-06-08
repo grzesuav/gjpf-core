@@ -66,14 +66,8 @@ public class ALOAD extends LocalVariableInstruction {
     return 0x19;  // ? wide versions
   }
   
-  public String getMnemonic() {
-    String mnemonic = "aload";
-    
-    if (index <= 3) {
-      return mnemonic + '_' + index;
-    } else {
-      return mnemonic + " #" + index;
-    }
+  public String getBaseMnemonic() {
+    return "aload";
   }
   
   public void accept(InstructionVisitor insVisitor) {

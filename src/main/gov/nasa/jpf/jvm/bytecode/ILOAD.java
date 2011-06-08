@@ -59,14 +59,8 @@ public class ILOAD extends LocalVariableInstruction {
     return 0x15; // ?? wide
   }
   
-  public String getMnemonic() {
-    String mnemonic = "iload";
-    
-    if (index <= 3) {
-      return mnemonic + '_' + index;
-    } else {
-      return mnemonic + " #" + index;
-    }
+  public String getBaseMnemonic() {
+    return "iload";
   }
   
   public void accept(InstructionVisitor insVisitor) {

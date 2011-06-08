@@ -60,14 +60,8 @@ public class FLOAD extends LocalVariableInstruction {
     return 0x17; // ?? wide version
   }
   
-  public String getMnemonic() {
-    String mnemonic = "fload";
-    
-    if (index <= 3) {
-      return mnemonic + '_' + index;
-    } else {
-      return mnemonic + " #" + index;
-    }
+  public String getBaseMnemonic() {
+    return "fload";
   }
   
   public void accept(InstructionVisitor insVisitor) {

@@ -26,12 +26,9 @@ public interface Backtracker {
   void attach(JVM jvm);
   
   boolean backtrack ();
-  void backtrackKernelState();
 
-  void pushSystemState ();
- 
+  void pushSystemState (); 
   void pushKernelState ();
-  void popKernelState ();
   
   State getState();
   void restoreState (State bs);

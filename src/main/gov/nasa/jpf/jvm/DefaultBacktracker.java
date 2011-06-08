@@ -25,7 +25,7 @@ public class DefaultBacktracker<KState> implements Backtracker {
   /** where we keep the saved KernelState data */ 
   protected StackNode<KState> kstack;
    
-  /** and that adds the SystemState specifics (Scheduler) */
+  /** and that adds the SystemState specifics */
   protected StackNode<Object> sstack;
   
   protected SystemState ss;
@@ -36,14 +36,14 @@ public class DefaultBacktracker<KState> implements Backtracker {
     restorer = jvm.getRestorer();
   }
 
-  public void backtrackKernelState() {
+  protected void backtrackKernelState() {
     KState data = kstack.data;
     kstack = kstack.next;
     
     restorer.restore(data);
   }
 
-  public void backtrackSystemState() {
+  protected void backtrackSystemState() {
     Object o = sstack.data;
     sstack = sstack.next;
     ss.backtrackTo(o);
@@ -57,6 +57,7 @@ public class DefaultBacktracker<KState> implements Backtracker {
    * the stack, so we have to remove that one first (i.e. popping two states
    * and restoring the second one)
    */
+  @Override
   public boolean backtrack () {
     if (sstack != null) {
   
@@ -70,14 +71,10 @@ public class DefaultBacktracker<KState> implements Backtracker {
     }
   }
   
-  
-  public void popKernelState () {
-    kstack = kstack.next;
-  }
-
   /**
    * Saves the state of the system.
    */
+  @Override
   public void pushKernelState () {
     kstack = new StackNode<KState>(restorer.getRestorableData(),kstack);
   }
@@ -85,6 +82,7 @@ public class DefaultBacktracker<KState> implements Backtracker {
   /**
    * Saves the backtracking information.
    */
+  @Override
   public void pushSystemState () {
     sstack = new StackNode<Object>(ss.getBacktrackData(),sstack);
   }
@@ -109,10 +107,12 @@ public class DefaultBacktracker<KState> implements Backtracker {
     }
   }
   
+  @Override
   public void restoreState (State state) {
     ((StateImpl) state).restore();
   }
   
+  @Override
   public State getState() {
     return new StateImpl();
   }

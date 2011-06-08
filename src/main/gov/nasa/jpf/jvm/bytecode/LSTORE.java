@@ -58,14 +58,8 @@ public class LSTORE extends LocalVariableInstruction implements StoreInstruction
     return 0x37; // ?? wide, LSTORE_n
   }
   
-  public String getMnemonic() {
-    String mnemonic = "lstore";
-    
-    if (index >=0) {
-      return mnemonic + '_' + index;
-    } else {
-      return mnemonic;
-    }
+  public String getBaseMnemonic() {
+    return "lstore";
   }
   
   public void accept(InstructionVisitor insVisitor) {

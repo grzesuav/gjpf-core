@@ -59,14 +59,8 @@ public class FSTORE extends LocalVariableInstruction implements StoreInstruction
     return 0x38;  // ?? wide
   }
   
-  public String getMnemonic() {
-    String mnemonic = "fstore";
-    
-    if (index <= 3) {
-      return mnemonic + '_' + index;
-    } else {
-      return mnemonic + " #" + index;
-    }
+  public String getBaseMnemonic() {
+    return "fstore";
   }
   
   public void accept(InstructionVisitor insVisitor) {

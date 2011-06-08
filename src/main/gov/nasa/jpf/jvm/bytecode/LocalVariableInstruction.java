@@ -71,6 +71,28 @@ public abstract class LocalVariableInstruction extends Instruction
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
+  
+  public abstract String getBaseMnemonic();
+  
+  public String getMnemonic(){
+    String baseMnemonic = getBaseMnemonic();
+    
+    if (index <= 3){
+      return baseMnemonic + '_' + index;
+    } else {
+      return baseMnemonic;
+    }
+  }
+  
+  public String toString(){
+    String baseMnemonic = getBaseMnemonic();
+    
+    if (index <= 3){
+      return baseMnemonic + '_' + index;
+    } else {
+      return baseMnemonic + " " + index;
+    }
+  }
 }
 
 

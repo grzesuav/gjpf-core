@@ -59,14 +59,8 @@ public class LLOAD extends LocalVariableInstruction {
     return 0x16; // ?? wide
   }
   
-  public String getMnemonic() {
-    String mnemonic = "lload";
-    
-    if (index >=0) {
-      return mnemonic + '_' + index;
-    } else {
-      return mnemonic;
-    }
+  public String getBaseMnemonic() {
+    return "lload";
   }
   
   public void accept(InstructionVisitor insVisitor) {

@@ -59,14 +59,8 @@ public class DLOAD extends LocalVariableInstruction {
     return 0x18; // wide version?
   }
   
-  public String getMnemonic() {
-    String mnemonic = "dload";
-    
-    if (index <= 3) {
-      return mnemonic + '_' + index;
-    } else {
-      return mnemonic + " #" + index;
-    }
+  public String getBaseMnemonic() {
+    return "dload";
   }
   
   public void accept(InstructionVisitor insVisitor) {
