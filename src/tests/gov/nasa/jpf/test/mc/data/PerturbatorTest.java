@@ -30,6 +30,10 @@ public class PerturbatorTest extends TestJPF {
 
   int data = 42;
 
+  public static void main(String[] args) {
+    runTestsOfThisClass(args);
+  }
+
   @Test
   public void testIntFieldPerturbation() {
 
@@ -72,7 +76,7 @@ public class PerturbatorTest extends TestJPF {
                                   "+perturb.fields=data",
                                   "+perturb.data.class=.perturb.IntOverUnder",
                                   "+perturb.data.field=gov.nasa.jpf.test.mc.data.PerturbatorTest.data",
-                                  "+perturb.data.location=PerturbatorTest.java:83",
+                                  "+perturb.data.location=PerturbatorTest.java:87",
                                   "+perturb.data.delta=1")){
       System.out.println("instance field location perturbation test");
 
@@ -94,6 +98,10 @@ public class PerturbatorTest extends TestJPF {
   int foo (int i) {
     return i;
   }
+  
+  int bar (int i, boolean b) {
+  	return i-1;
+  }
 
   int bar (int i){
     return i-1;
@@ -101,7 +109,6 @@ public class PerturbatorTest extends TestJPF {
 
   @Test
   public void testIntReturnPerturbation() {
-
     if (!isJPFRun()){
       Verify.resetCounter(0);
       Verify.resetCounter(1);
@@ -112,11 +119,11 @@ public class PerturbatorTest extends TestJPF {
 
                                   "+perturb.foo.class=.perturb.IntOverUnder",
                                   "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foo(int)",
-                                  "+perturb.foo.location=PerturbatorTest.java:129",
+                                  "+perturb.foo.location=PerturbatorTest.java:136",
                                   "+perturb.foo.delta=1",
-                                  
+
                                   "+perturb.bar.class=.perturb.IntOverUnder",
-                                  "+perturb.bar.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.bar(int)",
+                                  "+perturb.bar.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.bar(int,boolean)",
                                   "+perturb.bar.delta=5")){
       int x, y;
 
@@ -126,7 +133,7 @@ public class PerturbatorTest extends TestJPF {
       System.out.print("foo() = ");
       System.out.println(x);
 
-      x = foo(42); // line 129 => this should be
+      x = foo(42); // line 136 => this should be
       System.out.print("foo() = ");
       System.out.println(x);
 
@@ -141,7 +148,7 @@ public class PerturbatorTest extends TestJPF {
       }
 
       if (x == 41){
-        y = bar(40); // this too (no location spec for 'bar')
+        y = bar(40, false); // this too (no location spec for 'bar')
         System.out.print("bar() = ");
         System.out.println(y);
 
@@ -161,5 +168,90 @@ public class PerturbatorTest extends TestJPF {
       assert Verify.getCounter(1) == 3;
     }
   }
+  
+  static void printParams(int i, boolean b) {
+  	System.out.println("(" + i + ", " + b + ")");
+  }
+  
+  static int zoo(int i, boolean b) {
+  	printParams(i, b);
+  	if (b)
+  		return -1 * i;
+  	else
+  		return i;
+  }
+  
+  void printParam(long i, double d) {
+  	System.out.println("(" + i + ", " + d + ")");
+  }
+  
+  double foobar(long i, double d) {
+  	printParam(i, d);
+  	long j = i;
+  	return d + (j % 10);
+  }
+  
+  @Test
+  public void testParamPerturbation() {
 
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+      Verify.resetCounter(1);
+    }
+
+    if (verifyNoPropertyViolation("+listener=.listener.Perturbator",
+                                  "+perturb.params=foo,zoo",
+                                  "+perturb.foo.class=.perturb.GenericDataAbstractor",
+                                  "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foobar(long,double)",
+                                  "+perturb.foo.location=PerturbatorTest.java:233",
+                                  "+perturb.zoo.class=.perturb.GenericDataAbstractor",
+                                  "+perturb.zoo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.zoo(int,boolean)"
+    )) {
+      System.out.println("parameters perturbation test");
+
+      int e = zoo(42, false);
+      System.out.print("zoo = ");
+      System.out.println(e);
+
+      Verify.incrementCounter(0);
+      switch (Verify.getCounter(0)){
+        case 1: assert e == 21; break;
+        case 2: assert e == -21; break;
+        case 3: assert e == 0; break;
+        case 4: assert e == 0; break;
+        case 5: assert e == -84; break;
+        case 6: assert e == 84; break;
+        default:
+          assert false : "wrong counter value: " + Verify.getCounter(0);
+      }
+    
+      if (e == 84) {
+      	double d = foobar(42, 0.0); // no perturbation
+      	System.out.print("foobar = ");
+      	System.out.println(d);
+
+      	d = foobar(42, 0.0); // yes perturbation
+      	System.out.print("foobar = ");
+      	System.out.println(d);
+
+      	Verify.incrementCounter(1);
+      	switch (Verify.getCounter(1)){
+      	case 1: assert Math.abs(d - 0.586) < 0.0001; break;
+      	case 2: assert d == 2; break;
+      	case 3: assert d == 5.141; break;
+      	case 4: assert d == -1.414; break;
+      	case 5: assert d == 0; break;
+      	case 6: assert d == 3.141; break;
+      	case 7: assert d == -1.414; break;
+      	case 8: assert d == 0; break;
+      	case 9: assert d == 3.141; break;
+      	default:
+      		assert false : "wrong counter value: " + Verify.getCounter(1);
+      	}
+      }
+    } else {
+      assert Verify.getCounter(0) == 6;
+      assert Verify.getCounter(1) == 9;
+    }
+  }
 }

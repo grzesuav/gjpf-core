@@ -24,6 +24,7 @@ import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.IntChoiceGenerator;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
+import gov.nasa.jpf.JPFException;
 
 /**
  * simple +/- delta perturbation of integer operand values
@@ -31,20 +32,19 @@ import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 public class IntOverUnder implements OperandPerturbator {
 
   protected int delta;
+  protected int offset;
 
-  public IntOverUnder (Config conf, String keyPrefix){
+  public IntOverUnder (Config conf, String keyPrefix) {
     delta = conf.getInt(keyPrefix + ".delta", 0);
+    offset = 0;
   }
 
   public IntOverUnder (int delta){
     this.delta = delta;
+    offset = 0;
   }
-
-  public Class<?> getCGType() {
-    return IntChoiceFromSet.class;
-  }
-
-  public ChoiceGenerator<?> createChoiceGenerator (String id, StackFrame frame, int offset){
+  
+  public ChoiceGenerator<?> createChoiceGenerator (String id, StackFrame frame, Object refObject){
     int val = frame.peek(offset);
 
     int[] values = new int[3];
@@ -52,17 +52,21 @@ public class IntOverUnder implements OperandPerturbator {
     values[0] = val + delta;
     values[1] = val;
     values[2] = val - delta;
+    
+    // set offset from refObject
+    offset = (Integer)refObject;
 
     return new IntChoiceFromSet(id, values);
   }
 
-  public void perturb(ChoiceGenerator<?>cg, StackFrame frame, int offset) {
-    assert cg instanceof IntChoiceGenerator : "wrong choice generator type for IntOverUnder: " + cg.getClass().getName();
+  public boolean perturb(ChoiceGenerator<?>cg, StackFrame frame) {
+  	assert cg instanceof IntChoiceGenerator : "wrong choice generator type for IntOverUnder: " + cg.getClass().getName();
 
     int val = ((IntChoiceGenerator)cg).getNextChoice();
-    frame.setOperand(offset, val, false);
+  	frame.setOperand(offset, val, false);
+  	return cg.hasMoreChoices();
   }
-
+  
   public Class<? extends ChoiceGenerator<?>> getChoiceGeneratorType(){
     return IntChoiceFromSet.class;
   }
