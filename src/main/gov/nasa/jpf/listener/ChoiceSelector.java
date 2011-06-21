@@ -23,6 +23,8 @@ import java.util.Random;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.annotation.JPFOptions;
+import gov.nasa.jpf.annotation.JPFOption;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ChoicePoint;
@@ -44,6 +46,15 @@ import gov.nasa.jpf.util.StringSetMatcher;
  * to turn on the search. If more than one condition is given, all have to be
  * satisfied
  */
+
+@JPFOptions({
+  @JPFOption(type = "Int", key = "choice.seed", defaultValue= "42", comment = ""),
+  @JPFOption(type = "StringArray", key = "choice.threads", defaultValue = "", comment="start search, when all threads in the set are active"),
+  @JPFOption(type = "StringArray", key = "choice.calls", defaultValue = "", comment = "start search, when any of the methods is called"),
+  @JPFOption(type = "Int", key = "choice.depth", defaultValue = "-1", comment = "start search, when reaching this depth"),
+  @JPFOption(type = "String", key = "choice.use_trace", defaultValue ="", comment = ""),
+  @JPFOption(type = "Boolean", key = "choice.search_after_trace", defaultValue = "true", comment="start search, when reaching the end of the stored trace")
+})
 public class ChoiceSelector extends ListenerAdapter {
 
   Random random;
