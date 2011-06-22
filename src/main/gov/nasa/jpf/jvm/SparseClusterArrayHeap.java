@@ -535,7 +535,9 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
 
 
   public void checkConsistency(boolean isStateStore) {
-    // <2do>
+    for (ElementInfo ei : this){
+      ei.checkConsistency();
+    }
   }
 
   /**

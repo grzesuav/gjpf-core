@@ -38,12 +38,11 @@ public class GenPeer {
   static final String INDENT = "  ";
   static final String METHOD_PREFIX = "public static";
   static final String ENV_ARG = "MJIEnv env";
-  static final String OBJ_ARG = "int robj";
-  static final String CLS_ARG = "int rcls";
+  static final String OBJ_ARG = "int objRef";
+  static final String CLS_ARG = "int clsObjRef";
   static final String REF_TYPE = "int";
   static final String NULL = "MJIEnv.NULL";
-  static final String EXEC_COND = "$isExecutable_";
-  static final String DETERM_COND = "$isDeterministic_";
+
   static String       clsName;
   static String[]     mths;
 
@@ -52,8 +51,6 @@ public class GenPeer {
   static boolean allMethods;
   static boolean mangleNames;
   static boolean clinit;
-  static boolean execCond;
-  static boolean determCond;
 
   public static void main (String[] args) {
     if ((args.length == 0) || !readOptions(args)) {
@@ -258,16 +255,6 @@ public class GenPeer {
       Method m = mths[i];
 
       if (isMJICandidate(m)) {
-        if (determCond) {
-          pw.println();
-          printMethodStub(DETERM_COND, m, pw);
-        }
-
-        if (execCond) {
-          pw.println();
-          printMethodStub(EXEC_COND, m, pw);
-        }
-
         pw.println();
         printMethodStub(null, m, pw);
       }
@@ -342,10 +329,6 @@ public class GenPeer {
         allMethods = true;
       } else if ("-ci".equals(arg)) {
         clinit = true;
-      } else if ("-dc".equals(arg)) {
-        determCond = true;
-      } else if ("-ec".equals(arg)) {
-        execCond = true;
       } else if (arg.charAt(0) != '-') {
         // rather simple
         if (clsName == null) {
@@ -371,12 +354,7 @@ public class GenPeer {
     System.out.println("options:  -s  : system peer class (gov.nasa.jpf.jvm)");
     System.out.println("          -ci : create <clinit> MJI method");
     System.out.println("          -m  : create mangled method names");
-    System.out.println(
-          "          -a  : create MJI methods for all target class methods");
-    System.out.println(
-          "          -dc : create isDeterministic condition methods");
-    System.out.println("          -de : create isExecutable condition methods");
-    System.out.println("          -nd : mark methods as non-deterministic");
+    System.out.println("          -a  : create MJI methods for all target class methods");
   }
 
   static String stripType (String s) {

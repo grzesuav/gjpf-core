@@ -90,6 +90,16 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     return counter[counterId];
   }
 
+  private static void ensureCounterCapacity (int counterId){
+    if (counter == null) {
+      counter = new int[(counterId >= MAX_COUNTERS) ? counterId+1 : MAX_COUNTERS];
+    } else if (counterId >= counter.length) {
+      int[] newCounter = new int[counterId+1];
+      System.arraycopy(counter, 0, newCounter, 0, counter.length);
+      counter = newCounter;
+    }    
+  }
+  
   public static final void resetCounter__I__V (MJIEnv env, int clsObjRef, int counterId) {
     if ((counter == null) || (counterId < 0) || (counterId >= counter.length)) {
       return;
@@ -97,19 +107,21 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     counter[counterId] = 0;
   }
 
+  public static final void setCounter__II__V (MJIEnv env, int clsObjRef, int counterId, int val) {
+    if (counterId < 0){
+      return;
+    }
+    
+    ensureCounterCapacity(counterId);
+    counter[counterId] = val;
+  }
+  
   public static final int incrementCounter__I__I (MJIEnv env, int clsObjRef, int counterId) {
     if (counterId < 0) {
       return 0;
     }
 
-    if (counter == null) {
-      counter = new int[(counterId >= MAX_COUNTERS) ? counterId+1 : MAX_COUNTERS];
-    } else if (counterId >= counter.length) {
-      int[] newCounter = new int[counterId+1];
-      System.arraycopy(counter, 0, newCounter, 0, counter.length);
-      counter = newCounter;
-    }
-
+    ensureCounterCapacity(counterId);
     return ++counter[counterId];
   }
 

@@ -113,6 +113,11 @@ public class JPF_sun_misc_Unsafe {
     } else { // first time
 
       if (ti.isInterrupted(false)) {
+        // there is no lock, so we go directly back to running and therefore
+        // have to remove ourself from the contender list
+        ei.setMonitorWithoutLocked(ti);
+        
+        // note that park() does not throw an InterruptedException
         return;
       }
 

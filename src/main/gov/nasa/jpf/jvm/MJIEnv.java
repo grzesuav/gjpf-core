@@ -1171,6 +1171,15 @@ public class MJIEnv {
     return (exceptionRef != NULL && isInstanceOf(exceptionRef, "java.lang.InterruptedException"));
   }
 
+  //-- time is managed by the VM
+  public long currentTimeMillis(){
+    return vm.currentTimeMillis();
+  }
+  
+  public long nanoTime(){
+    return vm.nanoTime();
+  }
+  
   //--- those are not public since they refer to JPF internals
   public KernelState getKernelState () {
     return JVM.getVM().getKernelState();
@@ -1183,7 +1192,7 @@ public class MJIEnv {
   Instruction getInstruction () {
     return ti.getPC();
   }
-
+  
   StaticArea getStaticArea () {
     return ti.getVM().getStaticArea();
   }

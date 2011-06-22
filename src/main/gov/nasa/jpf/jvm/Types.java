@@ -341,57 +341,80 @@ public class Types {
     }
   }
 
+  /**
+   * type is supposed to be Class.getName conforming, i.e.
+   * 
+   * int    -> int
+   * int[]  -> [I
+   * String -> java.lang.String
+   * String[] -> [Ljava.lang.String;
+   * String[][] -> [[Ljava.lang.String;
+   * 
+   * <2do> this is really not very efficient
+   */
   public static String getJNITypeCode (String type) {
     StringBuilder sb = new StringBuilder(32);
-    int           l = type.length() - 1;
+    int l = type.length() - 1;
+    int i;
 
+    // Class.getName arrays "[...type"
+    for ( i=0; type.charAt(i) == '['; i++){
+      sb.append("_3");
+    }
+    
+    // conventional arrays "type[]..."
     for (; type.charAt(l) == ']'; l -= 2) {
       sb.append("_3");
     }
 
-    type = type.substring(0, l + 1);
+    type = type.substring(i, l + 1);
 
-    if (type.equals("int")) {
+    if (type.equals("int") || type.equals("I")) {
       sb.append('I');
-    } else if (type.equals("long")) {
+    } else if (type.equals("long") || type.equals("J")) {
       sb.append('J');
-    } else if (type.equals("boolean")) {
+    } else if (type.equals("boolean") || type.equals("Z")) {
       sb.append('Z');
-    } else if (type.equals("char")) {
+    } else if (type.equals("char") || type.equals("C")) {
       sb.append('C');
-    } else if (type.equals("byte")) {
+    } else if (type.equals("byte")  || type.equals("B")) {
       sb.append('B');
-    } else if (type.equals("short")) {
+    } else if (type.equals("short") || type.equals("S")) {
       sb.append('S');
-    } else if (type.equals("double")) {
+    } else if (type.equals("double") || type.equals("D")) {
       sb.append('D');
-    } else if (type.equals("float")) {
+    } else if (type.equals("float") || type.equals("F")) {
       sb.append('F');
-    } else if (type.equals("void")) {  // for return types
+    } else if (type.equals("void") || type.equals("V")) {  // for return types
       sb.append('V');
-    } else {
-      sb.append('L');
+    } else { // reference type
+      if (type.charAt(0) != 'L'){
+        sb.append('L');
+      }
 
-      for (int i = 0; i < type.length(); i++) {
+      l = type.length();
+      for (i=0; i < l; i++) {
         char c = type.charAt(i);
 
         switch (c) {
         case '.':
           sb.append('_');
-
           break;
 
         case '_':
           sb.append("_1");
-
           break;
-
+          
+        case ';':
+          break;
+          
         default:
           sb.append(c);
         }
       }
 
       sb.append("_2");
+      
     }
 
     return sb.toString();

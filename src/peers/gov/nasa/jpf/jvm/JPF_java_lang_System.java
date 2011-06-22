@@ -34,7 +34,7 @@ import gov.nasa.jpf.jvm.choice.BreakGenerator;
  * MJI NativePeer class for java.lang.System library abstraction
  */
 public class JPF_java_lang_System {
-
+  
   public static void arraycopy__Ljava_lang_Object_2ILjava_lang_Object_2II__V (MJIEnv env, int clsObjRef,
                                                                               int srcArrayRef, int srcIdx, 
                                                                               int dstArrayRef, int dstIdx,
@@ -266,12 +266,12 @@ public class JPF_java_lang_System {
   // real time, but we could at least give some SystemState dependent
   // increment
   public static long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
-    return env.getVM().currentTimeMillis();
+    return env.currentTimeMillis();
   }
 
   // <2do> - likewise. Java 1.5's way to measure relative time
   public static long nanoTime____J (MJIEnv env, int clsObjRef) {
-    return env.getVM().nanoTime();
+    return env.nanoTime();
   }  
   
   // this works on the assumption that we sure break the transition, and

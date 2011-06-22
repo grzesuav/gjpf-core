@@ -89,7 +89,9 @@ public class Monitor {
   
   // for debugging purposes
   public void dump() {
-    printFields(new PrintWriter(System.out));
+    PrintWriter pw = new PrintWriter(System.out);
+    printFields(pw);
+    pw.flush();
   }
   
   Monitor cloneWithLocked (ThreadInfo ti) {
@@ -353,15 +355,37 @@ public class Monitor {
     
     return false;
   }
+
+  
+  static boolean containsLocked(ThreadInfo[] list, ThreadInfo ti){
+    int len = list.length;
+ 
+    for (int i=0; i<len; i++){
+      if (list[i] == ti){
+        return true;
+      }
+    }
+    
+    return false;
+  }
   
   static ThreadInfo[] add (ThreadInfo[] list, ThreadInfo ti) {
     int len = list.length;
-    ThreadInfo[] newList = new ThreadInfo[len+1];
     
+    //--- first, check if its already there
+    if (containsLocked(list, ti)){
+      // this is required because interrupted parks/joins can try to
+      // re-park/join from their respective handlers (they don't hold locks) 
+      return list;
+    }
+        
+    ThreadInfo[] newList = new ThreadInfo[len+1];
+
     int pos = 0;
     for (; pos < len && ti.compareTo(list[pos]) > 0; pos++) {
       newList[pos] = list[pos];
     }
+    
     newList[pos] = ti;
     for (; pos < len; pos++) {
       newList[pos+1] = list[pos];
@@ -387,6 +411,14 @@ public class Monitor {
         return list;
       }
     } else {
+      
+      //--- first, check if its already there
+      if (!containsLocked(list, ti)) {
+        // no known case yet, but we keep it symmetric
+        // <2do> maybe worth a warning
+        return list;
+      }
+      
       for (int i=0; i<len; i++) {
         if (list[i] == ti) {
           int newLen = len-1;

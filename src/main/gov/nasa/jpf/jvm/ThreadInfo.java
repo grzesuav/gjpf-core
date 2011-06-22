@@ -172,8 +172,8 @@ public class ThreadInfo
 
   protected int attributes;
 
-  /** the first insn in the current transition */
-  protected boolean isFirstStepInsn;
+  /** counter for executed instructions along current transition */
+  protected int executedInstructions;
 
   /** shall we skip the next insn */
   protected boolean skipInstruction;
@@ -429,10 +429,29 @@ public class ThreadInfo
     return vm;
   }
 
+  /**
+   * answers if is this the first instruction within the current transition.
+   * This is mostly used to tell the top- from the bottom-half of a native method
+   * or Instruction.execute(), so that only one (the top half) registers the CG
+   * 
+   * This can be used in both pre- and post-exec notification listeners, although
+   * the executedInstructions number is incremented before notifying
+   * instructionExecuted()
+   */
   public boolean isFirstStepInsn() {
-    return isFirstStepInsn;
+    int nInsn = executedInstructions;
+    return ( nInsn == 0 || (nextPc != null && nInsn == 1));
   }
 
+  /**
+   * get the number of instructions executed in the current transition. This
+   * gets incremented after calling Instruction.execute(), i.e. before
+   * notifying instructionExecuted() listeners
+   */
+  public int getExecutedInstructions(){
+    return executedInstructions;
+  }
+  
   /**
    * to be used from methods called from listeners, to find out if we are in a
    * pre- or post-exec notification
@@ -1934,7 +1953,7 @@ public class ThreadInfo
     Instruction nextPc = null;
 
     currentThread = this;
-    isFirstStepInsn = true; // so that potential CG generators know
+    executedInstructions = 0;
 
     if (isStopped()){
       pc = throwStopException();
@@ -1954,8 +1973,6 @@ public class ThreadInfo
       } else {
         pc = nextPc;
       }
-
-      isFirstStepInsn = false;
     }
   }
 
@@ -1987,6 +2004,9 @@ public class ThreadInfo
       // execute the next bytecode
       nextPc = pc.execute(ss, ks, this);
     }
+
+    // we also count the skipped ones
+    executedInstructions++;
 
     if (logInstruction) {
       ss.recordExecutionStep(pc);
@@ -2320,8 +2340,16 @@ public class ThreadInfo
       if (eiLock.canLock(this)) {
         resetLockRef();
         setState(State.UNBLOCKED);
-        eiLock.setMonitorWithoutLocked(this);
+        
+        // we cannot yet remove this thread from the Monitor lock contender list
+        // since it still has to re-acquire the lock before becoming runnable again
+        
+        // NOTE: this can lead to attempts to reenter the same thread to the 
+        // lock contender list if the interrupt handler of the interrupted thread
+        // tries to wait/block/park again
+        //eiLock.setMonitorWithoutLocked(this);
       }
+      
       break;
 
     case NEW:
@@ -2877,7 +2905,7 @@ public class ThreadInfo
 
 
   public boolean checkPorFieldBoundary () {
-    return isFirstStepInsn && porFieldBoundaries && list.hasOtherRunnablesThan(this);
+    return (executedInstructions == 0) && porFieldBoundaries && list.hasOtherRunnablesThan(this);
   }
 
   public boolean hasOtherRunnables () {

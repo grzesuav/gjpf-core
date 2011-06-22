@@ -163,7 +163,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       ei.sid = 0;
       ei.updateLockingInfo();
       ei.markUnchanged();
-
+      
       return ei;
     }
 
@@ -2026,9 +2026,9 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
   }
 
-
     
   public void checkConsistency() {
+/**
     ThreadInfo ti = monitor.getLockingThread();
     if (ti != null) {
       // object has to be in the lockedObjects list of this thread
@@ -2046,6 +2046,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       // in case an object is behind a FieldInfo shared-ness firewall (e.g. ThreadGroup.threads), or
       // is kept/used in native code (listener, peer)
     }
+**/
   }
   
   protected void checkAssertion(boolean cond, String failMsg){

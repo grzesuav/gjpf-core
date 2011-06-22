@@ -1,0 +1,378 @@
+//
+// Copyright (C) 2010 United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration
+// (NASA).  All Rights Reserved.
+//
+// This software is distributed under the NASA Open Source Agreement
+// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
+// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
+// directory tree for the complete NOSA document.
+//
+// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
+// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
+// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
+// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
+//
+package gov.nasa.jpf.util;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+/**
+ * a minimal container API that transparently handles Object lists which can
+ * degenerate to single values that are stored directly
+ * 
+ * Conversion between single objects and lists is done transparently.
+ * 
+ * We assume that attribute collections are small, otherwise retrieval and
+ * deletion with this API becomes rather inefficient
+ * 
+ * 
+ * usage:
+ *  Object attr;
+ *  ...
+ *    attr = AttrContainer.add( newAttr, attr);
+ * 
+ *    MyAttr a = AttrContainer.getNext( MyAttr.class, attr);
+ * 
+ *    attr = AttrContainer.remove( a, attr);
+ * 
+ *    for (MyAttr a = ObjectList.getFirst(MyAttr.class, attr); a != null;
+ *                a = ObjectList.getNext(MyAttr.class, attr, a)) {..}
+ * 
+ */
+public class ObjectList {
+  
+  private static class Node {
+    Object data;
+    Node next;
+
+    Node(Object data, Node next) {
+      this.data = data;
+      this.next = next;
+    }
+  }
+
+  static class Iterator implements java.util.Iterator<Object>, Iterable<Object> {
+    Object cur;
+    
+    Iterator (Object head){
+      cur = head;
+    }
+    
+    public boolean hasNext() {
+      return cur != null;      
+    }
+
+    public Object next() {
+      if (cur != null){
+        if (cur instanceof Node){
+          Node n = (Node)cur;
+          cur = n.next;
+          return n.data;
+          
+        } else { // single attr value
+          Object n = cur;
+          cur = null;
+          return n;
+        }
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+
+    public void remove() {
+      // we can't remove since that would have to change the head field in the client
+      throw new UnsupportedOperationException();
+    }
+    
+    public java.util.Iterator<Object> iterator(){
+      return this;
+    }
+  }
+  
+  static final Iterator emptyIterator = new Iterator(null);
+  
+  public static Iterator iterator (Object head){
+    if (head == null){
+      return emptyIterator;
+    } else {
+      return new Iterator(head);
+    }
+  }
+  
+  static class TypedIterator<A> implements java.util.Iterator<A>, Iterable<A> {
+    Object cur;
+    Class<A> type;
+    
+    TypedIterator (Object head, Class<A> type){
+      this.type = type;
+      this.cur = null;
+      
+      if (head instanceof Node){
+        for (Node n = (Node)head; n != null; n = n.next){
+          if (type.isAssignableFrom(n.data.getClass())) {
+            cur = n;
+            break;
+          }
+        }
+      } else if (head != null) {
+        if (type.isAssignableFrom(head.getClass())) {
+          cur = head;
+        }
+      }
+    }
+    
+    public boolean hasNext() {
+      return cur != null;      
+    }
+
+    public A next() {
+      
+      if (cur != null){
+        if (cur instanceof Node){
+          Node nCur = (Node)cur;
+          cur = null;
+          A d = (A)nCur.data;
+          
+          for (Node n=nCur.next; n != null; n=n.next){
+            if (type.isAssignableFrom(n.data.getClass())){
+              cur = n;
+              break;
+            }
+          }
+          
+          return d;
+          
+        } else { // single attr value
+          A d = (A)cur;
+          cur = null;
+          return d;
+        }
+        
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+
+    public void remove() {
+      // we can't remove since that would have to change the head field in the client
+      throw new UnsupportedOperationException();
+    }
+    
+    public java.util.Iterator<A> iterator(){
+      return this;
+    }
+  }
+  
+  static final TypedIterator<Object> emptyTypedIterator = new TypedIterator<Object>(null,Object.class);
+  
+  public static <A> TypedIterator<A> typedIterator (Object head, Class<A> type){
+    if (head == null){
+      return (TypedIterator<A>) emptyTypedIterator;
+    } else {
+      return new TypedIterator<A>(head, type);
+    }
+  }
+  
+    
+  public static Object add (Object head, Object data){
+    if (head == null){
+      return data;
+      
+    } else {
+      if (head instanceof Node){
+        return new Node(data, (Node)head);
+        
+      } else { // was single value -> turn into list
+        Node p = new Node(head,null);
+        return new Node(data, p);
+      }
+    }
+  }
+  
+  public static Object replace (Object head, Object oldData, Object newData){
+    if (head instanceof Node){
+      for (Node n = (Node)head; n != null; n = n.next){
+        if (n.data == oldData){
+          n.data = newData;
+        }
+      }
+      
+      return head;
+      
+    } else {
+      if (head == oldData){
+        return newData;
+      } else {
+        return head;
+      }
+    }
+  }
+  
+  public static Object remove(Object head, Object data){
+    if (head == null){
+      return null;
+      
+    } else {
+      if (head instanceof Node){
+        Node nh = (Node)head;
+        
+        if (nh.data == data){
+          nh = nh.next;
+          
+        } else {
+          Node n = nh;
+          while (true) {
+            Node nn = n.next;
+            if (nn != null){
+              if (nn.data == data){
+                n.next = nn.next;
+                break;
+              } else {
+                n = nn;
+              }
+              
+            } else { // end reached
+              break;
+            }
+          }
+        }
+        
+        if (nh.next == null){ // reduce list
+          return nh.data;
+        } else {
+          return nh;
+        }
+        
+      } else { // head not a node -> single value
+        if (data == head){
+          return null;
+        } else {
+          return head;
+        }
+      }
+    }
+  }
+  
+  
+  //--- assuming we only have few attributes, we can get along without an iterator
+
+  public static boolean isEmpty(Object head){
+    return head == null;
+  }
+  
+  public static int size(Object head){
+    int len = 0;
+    
+    if (head instanceof Node){
+      for (Node n = (Node) head; n != null; n = n.next) {
+        len++;
+      }    
+    } else {
+      if (head != null){
+        len = 1;
+      }
+    }
+    
+    return len;
+  }
+  
+  public static Object get (Object head, int idx){
+    if (head instanceof Node){
+      int i=0;
+      for (Node n = (Node) head; n != null; n = n.next) {
+        if (i++ == idx){
+          return n.data;
+        }
+      }    
+    } else {
+      if (idx == 0){
+        return head;
+      }
+    }
+    
+    return null;
+  }
+  
+  static Object getFirst(Object head){
+    if (head instanceof Node){
+      return ((Node)head).data;
+    } else {
+      return head;
+    }
+  }
+  
+  static Object getNext(Object head, Object prevData){
+    if (head instanceof Node){
+      Node n = (Node)head;
+      if (prevData != null){
+        for (; n != null && n.data != prevData; n=n.next);
+        if (n == null){
+          return null;
+        } else {
+          n = n.next;
+        }
+      }
+      
+      return n.data;
+      
+    } else {
+      if (prevData == null){
+        return head;
+      }
+    }
+    
+    return null;    
+  }
+  
+  public static <A> A getFirst (Object head, Class<A> type){
+    if (head != null){
+      if (type.isAssignableFrom(head.getClass())) {
+        return (A) head;
+      }
+
+      if (head instanceof Node) {
+        for (Node n = (Node) head; n != null; n = n.next) {
+          if (type.isAssignableFrom(n.data.getClass())) {
+            return (A) n.data;
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  public static <A> A getNext (Object head, Class<A> type, Object prevData){
+    if (head instanceof Node){
+      Node n = (Node)head;
+      if (prevData != null){
+        for (; n != null && n.data != prevData; n=n.next);
+        if (n == null){
+          return null;
+        } else {
+          n = n.next;
+        }
+      }
+      
+      for (; n != null; n = n.next) {
+        if (type.isAssignableFrom(n.data.getClass())) {
+          return (A) n.data;
+        }
+      }
+      
+    } else if (head != null) {
+      if (prevData == null){
+        if (type.isAssignableFrom(head.getClass())){
+          return (A)head;
+        }
+      }
+    }
+    
+    return null;
+  }
+}

@@ -22,9 +22,10 @@ import java.util.Random;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.util.ObjectList;
 import java.lang.reflect.Array;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Iterator;
+
 
 /**
 * abstract root class for configurable choice generators
@@ -57,7 +58,7 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   protected ThreadInfo ti;
 
   // free attributes (set on demand)
-  protected LinkedList<Object> attrs;
+  protected Object attr;
 
   // answer if this is a cascaded CG, i.e. we had more than one registered
   // within the same transition. Note this is NOT set for the last CG registered
@@ -292,54 +293,37 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
 
   //--- the generic attribute API (one attr per type)
 
+  /**
+   * replace all attrs set so far. Deprecated because it doesn't play well in
+   * a multi-attr scenario
+   */
+  @Deprecated
   public void setAttr(Object a){
-    if (a != null){
-      if (attrs == null) {
-        attrs = new LinkedList<Object>();
-        attrs.add(a);
-
-      } else {
-
-        // replace if we already have such a type
-        Class<?> aClass = a.getClass();
-        int nAttrs = attrs.size();
-        for (int i=0; i<nAttrs; i++){
-          Object aa = attrs.get(i);
-          if (aa.getClass() == aClass){
-            attrs.set(i, a);
-            return;
-          }
-        }
-
-        // add if there was none
-        attrs.add(a);
-      }
-    }
+    attr = a;
   }
 
-  public List<?> getAttrs(){
-    return attrs;
+  public void addAttr(Object a){
+    attr = ObjectList.add(attr, a);
+  }
+  
+  public Iterator attrIterator(){
+    return ObjectList.iterator(attr);
   }
 
-  public <T> T getAttr (Class<T> type){
-    if (attrs != null){
-      for (Object a : attrs){
-        if (a.getClass() == type) {
-          return (T) a;
-        }
-      }
-    }
-
-    return null;
+  public <T> Iterator<T> attrIterator(Class<T> type){
+    return ObjectList.typedIterator(attr, type);
+  }
+  
+  public <T> T getFirstAttr(Class<T> type){
+    return ObjectList.getFirst(attr, type);
+  }
+  
+  public <T> T getNextAttr(Class<T> type, Object prev){
+    return ObjectList.getNext(attr, type, prev);
   }
 
   public void removeAttr (Object a){
-    if (a != null && attrs != null){
-      int nAttrs = attrs.size();
-      for (int i = 0; i < nAttrs; i++) {
-        Object aa = attrs.get(i);
-      }
-    }
+    attr = ObjectList.remove(attr, a);
   }
 
 
@@ -354,10 +338,10 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     b.append(",isCascaded:");
     b.append(isCascaded);
 
-    if (attrs != null){
+    if (attr != null){
       b.append(",attrs:[");
       int i=0;
-      for (Object a: attrs){
+      for (Object a: ObjectList.iterator(attr)){
         if (i++ > 1){
           b.append(',');
         }

@@ -112,14 +112,19 @@ public class JPF_java_lang_Thread {
 
     ThreadInfo interruptedThread = getThreadInfo(objref);
 
-    if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
+    if (!ti.isFirstStepInsn()) {
       interruptedThread.interrupt();
-
-    } else {
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createInterruptCG( interruptedThread);
-      if (ss.setNextChoiceGenerator(cg)){
-        env.repeatInvocation();
+      
+      // the interrupted thread can re-acquire the lock and therefore is runnable again
+      // hence we should give it a chance to do so (Thread.interrupt() does not require
+      // holding a lock)
+      if (interruptedThread.isUnblocked()){
+        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createInterruptCG(interruptedThread);
+        if (ss.setNextChoiceGenerator(cg)) {
+          env.repeatInvocation();
+        }        
       }
+
     }
   }
 
@@ -296,12 +301,17 @@ public class JPF_java_lang_Thread {
    * this is here so that we don't have to break the transition on a synchronized call
    */
   static void join0 (MJIEnv env, int joineeRef, long timeout){
-    ThreadInfo ti = env.getThreadInfo(); // this is the CURRENT thread
+    ThreadInfo ti = env.getThreadInfo(); // this is the CURRENT thread (joiner)
     ElementInfo ei = env.getElementInfo(joineeRef); // the thread object to wait on
     boolean isAlive = getThreadInfo(joineeRef).isAlive();
     SystemState ss = env.getSystemState();
 
     if (ti.isInterrupted(true)){ // interrupt status is set, throw and bail
+      
+      // since we use lock-free joins, we need to remove ourselves from the
+      // lock contender list
+      ei.setMonitorWithoutLocked(ti);
+      
       // note that we have to throw even if the thread to join to is not alive anymore
       env.throwInterrupt();
       return;

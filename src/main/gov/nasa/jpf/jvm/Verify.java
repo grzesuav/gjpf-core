@@ -94,6 +94,17 @@ public class Verify {
     }
   }
 
+  public static void setCounter (int id, int val) {
+    if (peer != null){
+      JPF_gov_nasa_jpf_jvm_Verify.setCounter__II__V(null, 0, id, val);
+    } else {
+      if ((counter != null) && (id >= 0) && (id < counter.length)) {
+        counter[id] = val;
+      }
+    }
+  }
+
+  
   public static int incrementCounter (int id) {
     if (peer != null){
       return JPF_gov_nasa_jpf_jvm_Verify.incrementCounter__I__I(null, 0, id);
@@ -113,7 +124,6 @@ public class Verify {
       return 0;
     }
   }
-
 
   // same mechanism and purpose as the counters, but with BitSets, which is
   // more convenient if we have a lot of different events to check

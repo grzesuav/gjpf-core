@@ -49,8 +49,6 @@ public class JVM {
    */
   public static final boolean CHECK_CONSISTENCY = false;
   
-  private static enum TimeModel {ConstantZero, ConstantStartTime, ConstantConfig, SystemTime};
-
   protected static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.JVM");
 
   /**
@@ -132,14 +130,8 @@ public class JVM {
   /** did we get a new transition */
   protected boolean transitionOccurred;
 
-
-  /** the selected time model to use */
+  /** how we model execution time */
   protected TimeModel timeModel;
- 
-  /** for the constant time models return these values */
-  protected long milliTime;
-  protected long nanoTime;
-
   
   protected Config config; // that's for the options we use only once
 
@@ -213,43 +205,8 @@ public class JVM {
     // peer classes get initialized upon NativePeer creation
   }
 
-  protected void initTimeModel (Config config){
-    TimeModel[] timeModels = TimeModel.values();
-    String[] modelNames = new String[timeModels.length];
-
-    for (int i = 0; i < timeModels.length; i++){
-      modelNames[i] = timeModels[i].toString();
-    }
-
-    int timeModelIndex = config.getChoiceIndexIgnoreCase("vm.time.model", modelNames);
-
-    if (timeModelIndex != -1){
-      timeModel = timeModels[timeModelIndex];
-    } else {
-      timeModel = TimeModel.SystemTime;
-    }
-
-    switch (timeModel) {
-      case ConstantZero:
-      case SystemTime:
-        milliTime = 0;
-        nanoTime  = 0;
-        break;
-
-      case ConstantStartTime:
-        nanoTime  = System.nanoTime();
-        milliTime = System.currentTimeMillis();
-        nanoTime  = (nanoTime + System.nanoTime()) / 2;
-        break;
-
-      case ConstantConfig:
-        milliTime = config.getLong("vm.time.currentTimeMillis");
-        nanoTime  = config.getLong("vm.time.nanoTime");
-        break;
-
-      default:
-        throw new JPFConfigException("Unhandled time model: " + timeModel);
-    }
+  protected void initTimeModel (Config config){    
+    timeModel = config.getEssentialInstance("vm.time.class", TimeModel.class, this, config);
   }
 
   /**
@@ -340,7 +297,7 @@ public class JVM {
 
     // the first transition probably doesn't have much choice (unless there were
     // threads started in the static init), but we want to keep it uniformly anyways
-    ChoiceGenerator<?> cg = new ThreadChoiceFromSet("root", getThreadList().getRunnableThreads(), true);
+    ChoiceGenerator<?> cg = new ThreadChoiceFromSet("<root>", getThreadList().getRunnableThreads(), true);
     ss.setMandatoryNextChoiceGenerator(cg, "no root CG");
 
     ss.recordSteps(hasToRecordSteps());
@@ -1960,38 +1917,19 @@ public class JVM {
     return ss.ks.statics;
   }
 
+    
   /**
    * <2do> this is where we will hook in a better time model
    */
   public long currentTimeMillis () {
-    switch (timeModel) {
-       case ConstantZero:
-       case ConstantStartTime:
-       case ConstantConfig:
-         return(milliTime);
-       
-       case SystemTime:
-         return(System.currentTimeMillis());
-    }
-
-    throw new JPFException("Unhandled time model: " + timeModel);
+    return timeModel.currentTimeMillis();
   }
 
   /**
    * <2do> this is where we will hook in a better time model
    */
   public long nanoTime() {
-    switch (timeModel) {
-      case ConstantZero:
-      case ConstantStartTime:
-      case ConstantConfig:
-        return(nanoTime);
-
-      case SystemTime:
-        return(System.nanoTime());
-    }
-
-    throw new JPFException("Unhandled time model: " + timeModel);
+    return timeModel.nanoTime();
   }
 
   public void resetNextCG() {
