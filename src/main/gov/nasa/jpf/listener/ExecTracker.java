@@ -21,6 +21,7 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.annotation.JPFOption;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.search.Search;
@@ -44,11 +45,19 @@ import gov.nasa.jpf.util.Left;
  * ExecTracker is mostly a VMListener of 'instructionExecuted' and
  * a SearchListener of 'stateAdvanced' and 'statehBacktracked'
  */
+
 public class ExecTracker extends ListenerAdapter {
   
+  @JPFOption(type = "Boolean", key = "et.print_insn", defaultValue = "true", comment = "print executed bytecode instructions") 
   boolean printInsn = true;
+  
+  @JPFOption(type = "Boolean", key = "et.print_src", defaultValue = "true", comment = "print source lines")
   boolean printSrc = false;
+  
+  @JPFOption(type = "Boolean", key = "et.print_mth", defaultValue = "false", comment = "print executed method names")
   boolean printMth = false;
+  
+  @JPFOption(type = "Boolean", key = "et.skip_init", defaultValue = "true", comment = "do not log execution before entering main()")
   boolean skipInit = false;
   
   PrintWriter out;
