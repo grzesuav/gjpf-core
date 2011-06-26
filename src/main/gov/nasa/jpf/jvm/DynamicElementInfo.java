@@ -25,7 +25,7 @@ import gov.nasa.jpf.JPFException;
  * DynamicElementInfo objects represent heap objects
  * @see gov.nasa.jpf.jvm.ElementInfo
  */
-public final class DynamicElementInfo extends ElementInfo implements Restorable<ElementInfo> {
+public class DynamicElementInfo extends ElementInfo implements Restorable<ElementInfo> {
 
   // our default memento implementation
   static class DEIMemento extends EIMemento<DynamicElementInfo> {
