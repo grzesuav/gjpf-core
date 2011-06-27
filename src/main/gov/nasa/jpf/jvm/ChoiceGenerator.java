@@ -291,41 +291,67 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   public abstract int getProcessedNumberOfChoices ();
 
 
-  //--- the generic attribute API (one attr per type)
+  //--- the generic attribute API
+
+  public boolean hasAttr () {
+    return (attr != null);
+  }
+
+  public boolean hasAttr (Class<?> attrType){
+    return ObjectList.containsType(attr, attrType);
+  }
 
   /**
-   * replace all attrs set so far. Deprecated because it doesn't play well in
-   * a multi-attr scenario
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
    */
-  @Deprecated
-  public void setAttr(Object a){
-    attr = a;
+  public Object getAttr(){
+    return attr;
   }
 
-  public void addAttr(Object a){
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setAttr (Object a){
+    attr = a;    
+  }
+
+  public void addAttr (Object a){
     attr = ObjectList.add(attr, a);
-  }
-  
-  public Iterator attrIterator(){
-    return ObjectList.iterator(attr);
-  }
-
-  public <T> Iterator<T> attrIterator(Class<T> type){
-    return ObjectList.typedIterator(attr, type);
-  }
-  
-  public <T> T getFirstAttr(Class<T> type){
-    return ObjectList.getFirst(attr, type);
-  }
-  
-  public <T> T getNextAttr(Class<T> type, Object prev){
-    return ObjectList.getNext(attr, type, prev);
   }
 
   public void removeAttr (Object a){
     attr = ObjectList.remove(attr, a);
   }
 
+  public void replaceAttr (Object oldAttr, Object newAttr){
+    attr = ObjectList.replace(attr, oldAttr, newAttr);
+  }
+
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getAttr (Class<T> attrType) {
+    return ObjectList.getFirst(attr, attrType);
+  }
+
+  public <T> T getNextAttr (Class<T> attrType, Object prev) {
+    return ObjectList.getNext(attr, attrType, prev);
+  }
+
+  public ObjectList.Iterator attrIterator(){
+    return ObjectList.iterator(attr);
+  }
+  
+  public <T> ObjectList.TypedIterator<T> attrIterator(Class<T> attrType){
+    return ObjectList.typedIterator(attr, attrType);
+  }
+
+  // -- end attrs --
 
   public String toString () {
     StringBuilder b = new StringBuilder( getClass().getName());

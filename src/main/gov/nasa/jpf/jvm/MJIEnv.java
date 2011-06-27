@@ -135,9 +135,10 @@ public class MJIEnv {
   }
 
   //=== various attribute accessors ============================================
-  // <2do> not sure it adds much to have this here. The ref -> ElementInfo
-  // retrieval (i.e. hiding the heap) doesn't buy much and can actually slow
-  // things down considerably
+  // we only support some attribute APIs here, since MJIEnv adds little value
+  // other than hiding the ElementInfo access. If the client already has
+  // an ElementInfo reference, it should use that one to retrieve/enumerate/set
+  // attributes since this avoids repeated Heap.get() calls
   
   //--- object attributes
 
@@ -200,11 +201,6 @@ public class MJIEnv {
     ElementInfo ei = heap.get(objref);
     return ei.getObjectAttr(attrType);
   }
-  public <T> T getNextObjectAttr (int objref, Class<T> attrType, Object prev){
-    ElementInfo ei = heap.get(objref);
-    return ei.getNextObjectAttr(attrType, prev);
-  }
-
   
   //--- field attributes
 
@@ -276,16 +272,7 @@ public class MJIEnv {
       throw new JPFException("no such field: " + fname);
     }
   }
-  public <T> T getNextFieldAttr (int objref, String fname, Class<T> attrType, Object prev){
-    ElementInfo ei = heap.get(objref);
-    FieldInfo fi = ei.getFieldInfo(fname);
-    if (fi != null){
-      return ei.getNextFieldAttr(fi, attrType, prev);
-    } else {
-      throw new JPFException("no such field: " + fname);
-    }
-  }
-  
+
   
   //--- element attrs
 
@@ -344,13 +331,7 @@ public class MJIEnv {
     }
     return null;
   }
-  public <T> T getNextElementAttr (int objref, int idx, Class<T> attrType, Object prev){
-    if (objref != NULL){
-      ElementInfo ei = heap.get(objref);
-      return ei.getNextElementAttr(idx, attrType, prev);
-    }
-    return null;
-  }
+
   
 
   // == end attrs ==  

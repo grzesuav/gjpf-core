@@ -31,6 +31,8 @@ import gov.nasa.jpf.ListenerAdapter;
  */
 public class ConstInsnPathTime extends ListenerAdapter implements TimeModel {
 
+  // note - this class is not public since we want to make sure this listener
+  // is the only one using this type
   static class TimeVal {
     final long time;
     TimeVal (long t){
@@ -69,12 +71,13 @@ public class ConstInsnPathTime extends ListenerAdapter implements TimeModel {
     
     if (cg.isCascaded()){
       // there's got to be a previous one, and its associated with the same insn
-      tv = cgPrev.getFirstAttr(TimeVal.class);
+      tv = cgPrev.getAttr(TimeVal.class);
       
     } else {
       if (cgPrev != null){
-        TimeVal tvPrev = cgPrev.getFirstAttr(TimeVal.class);
+        TimeVal tvPrev = cgPrev.getAttr(TimeVal.class); // there has to be one
         tv = new TimeVal(tvPrev.time + t);
+             
       } else {
         tv = new TimeVal( t);
       }
@@ -86,7 +89,7 @@ public class ConstInsnPathTime extends ListenerAdapter implements TimeModel {
   @Override
   public void choiceGeneratorAdvanced(JVM vm){
     ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
-    TimeVal tv = cg.getFirstAttr(TimeVal.class);
+    TimeVal tv = cg.getAttr(TimeVal.class);
     if (tv != null){
       transitionStartTime = tv.time;
     } else {

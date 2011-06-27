@@ -26,12 +26,21 @@ import sun.nio.ch.Interruptible;
  */
 public class Thread implements Runnable {
 
+  public interface UncaughtExceptionHandler {
+    // note this doesn't stop the thread from being terminated
+    void uncaughtException (Thread t, Throwable x);
+  }
+  
   static int              threadNum;
 
   public static final int MIN_PRIORITY = 1;
   public static final int NORM_PRIORITY = 5;
   public static final int MAX_PRIORITY = 10;
 
+  // don't rename this - it's used by ThreadGoup.uncaughtException()
+  private static volatile UncaughtExceptionHandler defaultUncaughtExceptionHandler; // null by default
+
+  
   // initialized in init(), except of the main thread (which gets explicitly initialized by the VM)
   ThreadGroup         group;
   Runnable            target;
@@ -63,9 +72,21 @@ public class Thread implements Runnable {
 
   // used to store Thread.stop() exceptions
   Throwable stopException;
+  
+  private volatile UncaughtExceptionHandler uncaughtExceptionHandler; // null by default
 
+  
   public enum State { BLOCKED, NEW, RUNNABLE, TERMINATED, TIMED_WAITING, WAITING }
 
+  
+  public static void setDefaultUncaughtExceptionHandler(UncaughtExceptionHandler xh) {
+    defaultUncaughtExceptionHandler = xh;
+  }
+  
+  public static UncaughtExceptionHandler getDefaultUncaughtExceptionHandler(){
+    return defaultUncaughtExceptionHandler;
+  }
+  
   public Thread () {
     init(group, target, name, 0L);
   }
@@ -103,6 +124,10 @@ public class Thread implements Runnable {
     return 0;
   }
 
+  public void setUncaughtExceptionHandler(UncaughtExceptionHandler xh) {
+    uncaughtExceptionHandler = xh;
+  }
+  
   public void setContextClassLoader (ClassLoader cl) {
   }
 
