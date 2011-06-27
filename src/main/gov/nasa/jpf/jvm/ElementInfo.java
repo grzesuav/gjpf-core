@@ -25,9 +25,11 @@ import gov.nasa.jpf.util.BitSet64;
 import gov.nasa.jpf.util.Debug;
 import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.ObjectList;
 
 import java.io.PrintWriter;
 import java.lang.ref.SoftReference;
+import java.util.Iterator;
 
 /**
  * Describes an element of memory containing the field values of a class or an
@@ -419,7 +421,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     
     int nThreadRefs = refTid.cardinality();    
     if (nThreadRefs > 1){
-      // <2do> problem with atomic sections (DiningPhil)
 
       // check if we have to cleanup the refTid set, or if some other accessors are not runnable
       ThreadList tl = JVM.getVM().getThreadList();
@@ -428,7 +429,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
         if (tiRef == null || tiRef.isTerminated() ) {
           updateRefTidWithout(i);
           nThreadRefs--;
-          //return true; // do this only once (DiningPhil/atomic fix, but not good for AWT)
         } else if (!tiRef.isRunnable()){
           nThreadRefs--;
         }
@@ -536,97 +536,268 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   abstract protected FieldInfo getFieldInfo(String fname);
 
+  protected abstract int getNumberOfFieldsOrElements();
 
-  //--- attribute accessors
+  
+  //--- Object attribute accessors
 
+  public boolean hasObjectAttr(){
+    return fields.hasObjectAttr();
+  }
+  
   public boolean hasObjectAttr(Class<?> attrType) {
     return fields.hasObjectAttr(attrType);
   }
 
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getObjectAttr(){
+    return fields.getObjectAttr();
+  }
+  
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setObjectAttr (Object a){
+    cloneFields().setObjectAttr(a);
+  }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setObjectAttrNoClone (Object a){
+    fields.setObjectAttr(a);
+  }
+
+  
+  public void addObjectAttr(Object a){
+    cloneFields().addObjectAttr(a);
+  }
+  public void removeObjectAttr(Object a){
+    cloneFields().removeObjectAttr(a);
+  }
+  public void replaceObjectAttr(Object oldAttr, Object newAttr){
+    cloneFields().replaceObjectAttr(oldAttr, newAttr);
+  }
+
+  public void addObjectAttrNoClone(Object a){
+    fields.addObjectAttr(a);
+  }
+  public void removeObjectAttrNoClone(Object a){
+    fields.removeObjectAttr(a);
+  }
+  public void replaceObjectAttrNoClone(Object oldAttr, Object newAttr){
+    fields.replaceObjectAttr(oldAttr, newAttr);
+  }
+  
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
   public <T> T getObjectAttr (Class<T> attrType) {
     return fields.getObjectAttr(attrType);
   }
+  public <T> T getNextObjectAttr (Class<T> attrType, Object prev) {
+    return fields.getNextObjectAttr(attrType, prev);
+  }
+  public ObjectList.Iterator objectAttrIterator(){
+    return fields.objectAttrIterator();
+  }
+  public <T> ObjectList.TypedIterator<T> objectAttrIterator(Class<T> type){
+    return fields.objectAttrIterator(type);
+  }
+  
+  
 
-  // supposed to return all
-  public Object getObjectAttr () {
-    return fields.getObjectAttr();
+
+  
+  //--- field attribute accessors
+  
+  public boolean hasFieldAttr() {
+    return fields.hasFieldAttr();
+  }
+
+  public boolean hasFieldAttr (Class<?> attrType){
+    return fields.hasFieldAttr(attrType);
   }
 
   /**
-   * this sets an attribute for the whole object
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
    */
-  public void setObjectAttr (Object attr){
-    cloneFields().setObjectAttr(attr);
+  public Object getFieldAttr (FieldInfo fi){
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
+    return ei.fields.getFieldAttr(fi.getFieldIndex());
   }
-
-  public void setObjectAttrNoClone (Object attr){
-    fields.setObjectAttr(attr);
-  }
-
-  public boolean hasFieldAttrs() {
-    return fields.hasFieldAttrs();
-  }
-
-  public boolean hasFieldAttrs (Class<?> attrType){
-    return fields.hasFieldAttrs(attrType);
-  }
-
-  protected abstract int getNumberOfFieldsOrElements();
 
   /**
-   * use this version if only the attr has changed, since we won't be able
-   * to backtrack otherwise
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setFieldAttr (FieldInfo fi, Object attr){
     ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
     int nFields = getNumberOfFieldsOrElements();
-    ei.cloneFields().setFieldAttr( nFields, fi.getFieldIndex(), attr);
+    ei.cloneFields().setFieldAttr( nFields, fi.getFieldIndex(), attr);    
   }
 
   /**
-   * use this version if the concrete value is changed too, which means
-   * the fields will be cloned anyways (no use to do this twice)
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setFieldAttrNoClone (FieldInfo fi, Object attr){
     ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
     int nFields = getNumberOfFieldsOrElements();
-    ei.fields.setFieldAttr( nFields, fi.getFieldIndex(), attr);
+    ei.fields.setFieldAttr( nFields, fi.getFieldIndex(), attr);    
   }
 
-  public <T> T getFieldAttr (Class<T> attrType, FieldInfo fi){
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getFieldAttr(attrType,fi.getFieldIndex());
+  
+  public void addFieldAttr (FieldInfo fi, Object a){
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
+    int nFields = getNumberOfFieldsOrElements();    
+    ei.cloneFields().addFieldAttr( nFields, fi.getFieldIndex(), a);
+  }
+  public void removeFieldAttr (FieldInfo fi, Object a){
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
+    int nFields = getNumberOfFieldsOrElements();    
+    ei.cloneFields().removeFieldAttr(fi.getFieldIndex(), a);
+  }
+  public void replaceFieldAttr (FieldInfo fi, Object oldAttr, Object newAttr){
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
+    int nFields = getNumberOfFieldsOrElements();    
+    ei.cloneFields().replaceFieldAttr(fi.getFieldIndex(), oldAttr, newAttr);
   }
 
-  // supposed to return all
-  public Object getFieldAttr (FieldInfo fi){
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.fields.getFieldAttr(fi.getFieldIndex());
+  public void addFieldAttrNoClone (FieldInfo fi, Object a){
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
+    int nFields = getNumberOfFieldsOrElements();    
+    ei.fields.addFieldAttr( nFields, fi.getFieldIndex(), a);
+  }
+  public void removeFieldAttrNoClone (FieldInfo fi, Object a){
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
+    int nFields = getNumberOfFieldsOrElements();    
+    ei.fields.removeFieldAttr(fi.getFieldIndex(), a);
+  }
+  public void replaceFieldAttrNoClone (FieldInfo fi, Object oldAttr, Object newAttr){
+    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
+    int nFields = getNumberOfFieldsOrElements();    
+    ei.fields.replaceFieldAttr(fi.getFieldIndex(), oldAttr, newAttr);
+  }
+  
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getFieldAttr (FieldInfo fi, Class<T> attrType) {
+    return fields.getFieldAttr(fi.getFieldIndex(), attrType);
+  }
+  public <T> T getNextFieldAttr (FieldInfo fi, Class<T> attrType, Object prev) {
+    return fields.getNextFieldAttr(fi.getFieldIndex(), attrType, prev);
+  }
+  public ObjectList.Iterator fieldAttrIterator (FieldInfo fi){
+    return fields.fieldAttrIterator(fi.getFieldIndex());
+  }
+  public <T> ObjectList.TypedIterator<T> fieldAttrIterator (FieldInfo fi, Class<T> type){
+    return fields.fieldAttrIterator(fi.getFieldIndex(), type);
+  }
+  
+
+  
+  //--- element attribute accessors
+  
+  public boolean hasElementAttr() {
+    return fields.hasFieldAttr();
   }
 
+  public boolean hasElementAttr (Class<?> attrType){
+    return fields.hasFieldAttr(attrType);
+  }
+
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getElementAttr (int idx){
+    return fields.getFieldAttr(idx);
+  }
 
   /**
-   * this sets an attribute for the field with index 'idx'
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setElementAttr (int idx, Object attr){
     int nElements = getNumberOfFieldsOrElements();
     cloneFields().setFieldAttr( nElements, idx, attr);
   }
 
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
   public void setElementAttrNoClone (int idx, Object attr){
     int nElements = getNumberOfFieldsOrElements();
     fields.setFieldAttr(nElements,idx, attr);
   }
 
-  public <T> T getElementAttr (Class<T> attrType, int idx){
-    return fields.getFieldAttr(attrType, idx);
+  
+  public void addElementAttr (int idx, Object a){
+    int nElements = getNumberOfFieldsOrElements();   
+    cloneFields().addFieldAttr( nElements, idx, a);
+  }
+  public void removeElementAttr (int idx, Object a){
+    cloneFields().removeFieldAttr(idx, a);
+  }
+  public void replaceElementAttr (int idx, Object oldAttr, Object newAttr){
+    cloneFields().replaceFieldAttr(idx, oldAttr, newAttr);
   }
 
-  // this is supposed to return all attrs of the element
-  public Object getElementAttr (int idx){
-    return fields.getFieldAttr(idx);
+  public void addElementAttrNoClone (int idx, Object a){
+    int nElements = getNumberOfFieldsOrElements();   
+    fields.addFieldAttr( nElements, idx, a);
+  }
+  public void removeElementAttrNoClone (int idx, Object a){
+    fields.removeFieldAttr(idx, a);
+  }
+  public void replaceElementAttrNoClone (int idx, Object oldAttr, Object newAttr){
+    fields.replaceFieldAttr(idx, oldAttr, newAttr);
+  }
+  
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getElementAttr (int idx, Class<T> attrType) {
+    return fields.getFieldAttr(idx, attrType);
+  }
+  public <T> T getNextElementAttr (int idx, Class<T> attrType, Object prev) {
+    return fields.getNextFieldAttr(idx, attrType, prev);
+  }
+  public ObjectList.Iterator elementAttrIterator (int idx){
+    return fields.fieldAttrIterator(idx);
+  }
+  public <T> ObjectList.TypedIterator<T> elementAttrIterator (int idx, Class<T> type){
+    return fields.fieldAttrIterator(idx, type);
   }
 
+  // -- end attributes --
+  
+  
   public void setDeclaredIntField(String fname, String clsBase, int value) {
     setIntField(getDeclaredFieldInfo(clsBase, fname), value);
   }
@@ -1118,7 +1289,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
     // now take care of the attributes
     // <2do> what in case arraycopy did throw - we should only copy the changed element attrs
-    if (eiSrc.hasFieldAttrs()){
+    if (eiSrc.hasFieldAttr()){
       if (eiSrc == this && srcIdx < dstIdx) { // self copy
         for (int i = length - 1; i >= 0; i--) {
           Object a = eiSrc.getElementAttr( srcIdx+i);

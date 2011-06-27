@@ -122,6 +122,7 @@ public class JPF_sun_misc_Unsafe {
       }
 
       if (ei.getBooleanField("blockPark")) { // we have to wait, but don't need a lock
+
         // running -> waiting | timeout_waiting
         ei.wait(ti, timeout, false);
 
@@ -132,7 +133,7 @@ public class JPF_sun_misc_Unsafe {
         ChoiceGenerator<?> cg = env.getSchedulerFactory().createWaitCG(ei, ti, timeout);
         env.setMandatoryNextChoiceGenerator(cg, "no CG on blocking park()");
         env.repeatInvocation();
-
+  
       } else {
         ei.setBooleanField("blockPark", true); // next time
       }

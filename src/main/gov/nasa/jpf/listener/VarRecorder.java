@@ -158,11 +158,13 @@ public class VarRecorder extends ListenerAdapter {
     return(recordClass);
   }
 
+  // <2do> general purpose listeners should not use anonymous attribute types such as String
+  
   private final void saveVariableName(JVM jvm, String name) {
     ThreadInfo ti;
 
     ti = jvm.getLastThreadInfo();
-    ti.setOperandAttr(name);
+    ti.addOperandAttr(name);
   }
 
   private final void saveVariableType(JVM jvm, byte type) {
@@ -176,7 +178,7 @@ public class VarRecorder extends ListenerAdapter {
       return;
 
     str = encodeType(type);
-    frame.setOperandAttr(str);
+    frame.addOperandAttr(str);
   }
 
   private final boolean isArrayReference(JVM jvm) {
@@ -351,15 +353,16 @@ public class VarRecorder extends ListenerAdapter {
 
   private String getArrayName(JVM jvm, byte type, boolean store) {
     ThreadInfo ti;
-    Object attr;
+    String attr;
     int offset;
 
     ti     = jvm.getLastThreadInfo();
     offset = calcOffset(type, store) + 1;
-    attr   = ti.getOperandAttr(offset);
+    // <2do> String is really not a good attribute type to retrieve!
+    attr   = ti.getOperandAttr(offset, String.class); 
 
     if (attr != null)
-      return(attr.toString());
+      return(attr);
 
     return("?");
   }

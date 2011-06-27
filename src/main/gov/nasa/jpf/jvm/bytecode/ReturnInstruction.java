@@ -24,6 +24,7 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
+import java.util.Iterator;
 
 
 /**
@@ -49,17 +50,65 @@ public abstract class ReturnInstruction extends Instruction implements gov.nasa.
     returnFrame = frame;
   }
 
-  // override if this is a void or double word return
-  public Object getReturnAttr (ThreadInfo ti) {
+  
+  //--- attribute accessors
+  
+  // the accessors are here to save the client some effort regarding the
+  // return type (slot size)
+  
+  public boolean hasReturnAttr (ThreadInfo ti){
+    return ti.hasOperandAttr();
+  }
+  public boolean hasReturnAttr (ThreadInfo ti, Class<?> type){
+    return ti.hasOperandAttr(type);
+  }
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   * 
+   * obviously, this only makes sense from an instructionExecuted(), since
+   * the value is pushed during the execute(). Use ObjectList to access values
+   */
+  public Object getReturnAttr (ThreadInfo ti){
     return ti.getOperandAttr();
   }
 
-  public void setReturnAttr (ThreadInfo ti, Object attr){
-    if (attr != null){
-      ti.setOperandAttrNoClone(attr);
-    }
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   * 
+   * we don't clone since pushing a return value already changed the caller frame
+   */
+  public void setReturnAttr (ThreadInfo ti, Object a){
+    ti.setOperandAttrNoClone(a);
+  }
+  
+  public void addReturnAttr (ThreadInfo ti, Object attr){
+    ti.addOperandAttrNoClone(attr);
   }
 
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getReturnAttr (ThreadInfo ti, Class<T> type){
+    return ti.getOperandAttr(type);
+  }
+  public <T> T getNextReturnAttr (ThreadInfo ti, Class<T> type, Object prev){
+    return ti.getNextOperandAttr(type, prev);
+  }
+  public Iterator returnAttrIterator (ThreadInfo ti){
+    return ti.operandAttrIterator();
+  }
+  public <T> Iterator<T> returnAttrIterator (ThreadInfo ti, Class<T> type){
+    return ti.operandAttrIterator(type);
+  }
+  
+  // -- end attribute accessors --
+  
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
 
     if (!ti.isFirstStepInsn()) {

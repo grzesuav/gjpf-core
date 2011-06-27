@@ -21,6 +21,7 @@ package gov.nasa.jpf.test.mc.basic;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.*;
 import gov.nasa.jpf.jvm.bytecode.*;
+import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 
@@ -30,7 +31,13 @@ import org.junit.Test;
 public class AttrsTest extends TestJPF {
 
 //------------ this part we only need outside the JPF execution
-  static final String ATTR = "\"the answer to the ultimate question of life, the universe, and everything\"";
+  static class AttrType {
+    public String toString() {
+      return "<an AttrType>";
+    }
+  }
+  static final AttrType ATTR = new AttrType();
+  static final Class<?> ATTR_CLASS = ATTR.getClass();
 
   public static class IntListener extends ListenerAdapter {
 
@@ -50,11 +57,11 @@ public class AttrsTest extends TestJPF {
 
           if (localName.equals("i")){
             ti.setLocalAttr(localIndex, ATTR);
-            Object a = ti.getLocalAttr(localIndex);
+            Object a = ti.getLocalAttr(localIndex, ATTR_CLASS);
             System.out.println("'i' attribute set to: " + a);
 
           } else if (localName.equals("j")){
-            Object a = ti.getLocalAttr(localIndex);
+            Object a = ti.getLocalAttr(localIndex, ATTR_CLASS);
             System.out.println("'j' attribute: " + a);
 
             /** get's overwritten in the model class
@@ -87,7 +94,7 @@ public class AttrsTest extends TestJPF {
             ti.setLocalAttr(localIndex, ATTR);
 
           } else if (localName.equals("r")){
-            Object a = ti.getLocalAttr(localIndex);
+            Object a = ti.getLocalAttr(localIndex, ATTR_CLASS);
             System.out.println("'r' attribute: " + a);
             /** get's overwritten in the model class
             if (a != ATTR){
@@ -117,6 +124,9 @@ public class AttrsTest extends TestJPF {
           System.out.println("listener notified of: " + mName + "(), attributes= "
                              + a[0] + ',' + a[1] + ',' + a[2]);
 
+          // note - this is only acceptable if we know exactly there are just
+          // single attrs
+          
           assert a[0] instanceof Integer && a[1] instanceof Integer;
           assert (((Integer)a[0]).intValue() == 1) &&
                  (((Integer)a[1]).intValue() == 2) &&
@@ -368,6 +378,142 @@ public class AttrsTest extends TestJPF {
       int attr = Verify.getObjectAttribute(o);
       System.out.println("object attr = " + attr);
       assert attr == 42;
+    }
+  }
+  
+  //--- the multiple attributes tests
+  
+  @Test
+  public void testIntAttrList(){
+    if (verifyNoPropertyViolation()){
+      int var = 42;
+      Verify.addLocalAttribute("var", Integer.valueOf(var));
+      Verify.addLocalAttribute("var", Integer.valueOf(-var));
+      
+      int x = var;
+      int[] attrs = Verify.getLocalAttributes("x");
+      for (int i=0; i<attrs.length; i++){
+        System.out.printf("[%d] = %d\n", i, attrs[i]);
+      }
+      
+      assertTrue( attrs.length == 2);
+      assertTrue( attrs[0] == -var); // lifo
+      assertTrue( attrs[1] == var);
+    }
+  }
+  
+  
+  public static class MixedAttrTypeListener extends ListenerAdapter {
+    
+    public MixedAttrTypeListener() {}
+    
+    public void executeInstruction (JVM vm){
+      ThreadInfo ti = vm.getLastThreadInfo();
+      Instruction insn = vm.getLastInstruction();
+      
+      if (insn instanceof INVOKEVIRTUAL){
+        MethodInfo callee = ((INVOKEVIRTUAL)insn).getInvokedMethod();
+        if (callee.getUniqueName().equals("foo(J)J")){
+          System.out.println("--- pre-exec foo() invoke interception, setting arg attrs");
+          
+          // we are still in the caller stackframe
+          ti.addLongOperandAttr("foo-arg");
+          ti.addLongOperandAttr(Long.valueOf(ti.longPeek()));
+          
+          for (Object a: ti.longOperandAttrIterator()){
+            System.out.println(a);
+          }
+
+        }
+        
+      } else if (insn instanceof LRETURN){
+        MethodInfo mi = insn.getMethodInfo();
+        if (mi.getUniqueName().equals("foo(J)J")){
+          System.out.println("--- pre-exec foo() return interception");
+          StackFrame frame = ti.getTopFrame();
+          int varIdx = frame.getLocalVariableSlotIndex("x");
+          Object attr = frame.getLocalAttr(varIdx);
+
+          System.out.println("  got 'x' attributes");
+          for (Object a: frame.localAttrIterator(varIdx)){
+            System.out.println(a);
+          }                  
+          
+          assertTrue(attr.equals("foo-arg"));
+          
+          System.out.println("  setting lreturn operand attrs");
+          frame.addLongOperandAttr("returned");
+          
+          for (Object a: frame.longOperandAttrIterator()){
+            System.out.println(a);
+          }          
+        }
+      }
+    }
+    
+    public void instructionExecuted (JVM vm){
+      ThreadInfo ti = vm.getLastThreadInfo();
+      Instruction insn = vm.getLastInstruction();
+
+      if (insn instanceof INVOKEVIRTUAL){
+        MethodInfo callee = ((INVOKEVIRTUAL)insn).getInvokedMethod();
+        if (callee.getUniqueName().equals("foo(J)J")){
+          System.out.println("--- post-exec foo() invoke interception");
+ 
+          StackFrame frame = ti.getTopFrame(); // we are now in the callee
+          int varIdx = frame.getLocalVariableSlotIndex("x");
+
+          for (Object a: frame.localAttrIterator(varIdx)){
+            System.out.println(a);
+          }
+          
+          Object attrs = frame.getLocalAttr(varIdx);
+          assertTrue( ObjectList.size(attrs) == 2);
+          
+          Object sAttr = frame.getLocalAttr(varIdx, String.class);
+          assertTrue( sAttr != null && sAttr.equals("foo-arg"));
+          assertTrue( frame.getNextLocalAttr(varIdx, String.class, sAttr) == null);
+          
+          Object lAttr = frame.getLocalAttr(varIdx, Long.class);
+          assertTrue( lAttr != null && lAttr.equals( frame.getLongLocalVariable(varIdx)));
+          assertTrue( frame.getNextLocalAttr(varIdx, Long.class, lAttr) == null);
+          
+          frame.removeLocalAttr(varIdx, lAttr);
+          System.out.println("  removing " + lAttr);
+          for (Object a: frame.localAttrIterator(varIdx)){
+            System.out.println(a);
+          }
+        }
+        
+      } else if (insn instanceof LRETURN){
+        MethodInfo mi = insn.getMethodInfo();
+        if (mi.getUniqueName().equals("foo(J)J")){
+          System.out.println("--- post-exec foo() return interception");
+          for (Object a: ti.longOperandAttrIterator()){
+            System.out.println(a);
+          }
+          
+          String a = ti.getLongOperandAttr(String.class);
+          assertTrue( a.equals("returned"));
+          
+          a = ti.getNextLongOperandAttr(String.class, a);
+          assertTrue( a.equals("foo-arg"));
+          
+          a = ti.getNextLongOperandAttr(String.class, a);
+          assertTrue(a == null);
+        }        
+      }
+    }
+  }
+    
+  long foo (long x){
+    return x;
+  }
+  
+  @Test
+  public void testListenerMixedLongAttrLists(){
+    if (verifyNoPropertyViolation("+listener=.test.mc.basic.AttrsTest$MixedAttrTypeListener")){
+      foo(42);
     }
   }
 }

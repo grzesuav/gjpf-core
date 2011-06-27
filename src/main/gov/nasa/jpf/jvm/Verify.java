@@ -292,17 +292,32 @@ public class Verify {
    * supposed to be created at the native side, and hence can't be accessed from
    * the application
    */
+  
+  //--- use these if you know there are single attributes
   public static void setFieldAttribute (Object o, String fieldName, int val) {}
   public static int getFieldAttribute (Object o, String fieldName) { return 0; }
+  
+  //--- use these for multiple attributes
+  public static void addFieldAttribute (Object o, String fieldName, int val) {}
+  public static int[] getFieldAttributes (Object o, String fieldName) { return new int[0]; }
 
   public static void setLocalAttribute (String varName, int val) {}
   public static int getLocalAttribute (String varName) { return 0; }
 
+  public static void addLocalAttribute (String varName, int val) {}
+  public static int[] getLocalAttributes (String varName) { return new int[0]; }
+
   public static void setElementAttribute (Object arr, int idx, int val){}
   public static int getElementAttribute (Object arr, int idx) { return 0; }
+  
+  public static void addElementAttribute (Object arr, int idx, int val){}
+  public static int[] getElementAttributes (Object arr, int idx) { return new int[0]; }
 
   public static void setObjectAttribute (Object o, int val) {}
   public static int getObjectAttribute (Object o) { return 0; }
+  
+  public static void addObjectAttribute (Object o, int val) {}
+  public static int[] getObjectAttributes (Object o) { return new int[0]; }
 
   /**
    * this is the new boolean choice generator. Since there's no real

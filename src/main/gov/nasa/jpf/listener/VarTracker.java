@@ -156,6 +156,9 @@ public class VarTracker extends ListenerAdapter {
     queue.clear();
   }
   
+  
+  // <2do> - general purpose listeners should not use types such as String for storing
+  // attributes, there is no good way to make sure you retrieve your own attributes
       
   public void instructionExecuted(JVM jvm) {
     Instruction insn = jvm.getLastInstruction();
@@ -177,7 +180,7 @@ public class VarTracker extends ListenerAdapter {
           // <2do> unfortunately, we can't filter here because we don't know yet
           // how the array ref will be used (we would only need the attr for
           // subsequent xASTOREs)
-          ti.setOperandAttr( varId);
+          ti.addOperandAttr( varId);
         }
       }
     }
@@ -189,9 +192,10 @@ public class VarTracker extends ListenerAdapter {
       if (insn instanceof ArrayStoreInstruction) {
         // did we have a name for the array?
         // stack is ".. ref idx [l]value => .."
-        Object attr = ti.getOperandAttr(-1);
+        // <2do> String is not a good attribute type to retrieve
+        String attr = ti.getOperandAttr(1, String.class);
         if (attr != null) {
-          varId = attr.toString() + "[]";
+          varId = attr + "[]";
         } else {
           varId = "?[]";
         }

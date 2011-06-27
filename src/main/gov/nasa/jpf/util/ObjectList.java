@@ -23,9 +23,24 @@ import java.util.NoSuchElementException;
 
 /**
  * a minimal container API that transparently handles Object lists which can
- * degenerate to single values that are stored directly
+ * degenerate to single values that are stored directly. Value lists are
+ * implemented by means of a private Node type, which is transparently handled
+ * through the (static) ObjectList API 
  * 
- * Conversion between single objects and lists is done transparently.
+ * No null objects can be stored in the list. No list can only contain a single
+ * Node object
+ * 
+ * Conversion between single objects and lists is done transparently if you
+ * follow a pattern like:
+ * 
+ *  Object attr; // either a single value or a list
+ *  ..
+ *  attr = ObjectList.remove(attr, v);
+ * 
+ * If there is only one remaining value in a list, the corresponding Node will
+ * be replaced with this value. 
+ * 
+ * iterators are LIFO.
  * 
  * We assume that attribute collections are small, otherwise retrieval and
  * deletion with this API becomes rather inefficient
@@ -44,7 +59,10 @@ import java.util.NoSuchElementException;
  *                a = ObjectList.getNext(MyAttr.class, attr, a)) {..}
  * 
  */
-public class ObjectList {
+public abstract class ObjectList {
+  
+  // there are no instances, this class is only a static API
+  private ObjectList(){}
   
   private static class Node {
     Object data;
@@ -56,7 +74,7 @@ public class ObjectList {
     }
   }
 
-  static class Iterator implements java.util.Iterator<Object>, Iterable<Object> {
+  public static class Iterator implements java.util.Iterator<Object>, Iterable<Object> {
     Object cur;
     
     Iterator (Object head){
@@ -104,7 +122,7 @@ public class ObjectList {
     }
   }
   
-  static class TypedIterator<A> implements java.util.Iterator<A>, Iterable<A> {
+  public static class TypedIterator<A> implements java.util.Iterator<A>, Iterable<A> {
     Object cur;
     Class<A> type;
     
@@ -178,10 +196,43 @@ public class ObjectList {
     }
   }
   
+  /**
+   * this returns either the first value if there is only one element, or
+   * a Node list containing all the values in the order they are provided 
+   */
+  public static Object createList(Object... values){
+    if (values.length == 0){
+      return null;
+      
+    } else if (values.length == 1){
+      return values[0];
+      
+    } else {
+      Node node, prev = null, first = null;
+
+      for (Object v : values) {
+        node = new Node(v, null);
+        if (prev != null) {
+          prev.next = node;
+        } else {
+          first = node;
+        }
+      }
+
+      return first;
+    }
+  }
+  
+  public static Object valueOf (Object o){
+    return (o instanceof Node) ? ((Node)o).data : o;
+  }
     
   public static Object add (Object head, Object data){
     if (head == null){
       return data;
+      
+    } else if (data == null){
+      return head;
       
     } else {
       if (head instanceof Node){
@@ -195,9 +246,17 @@ public class ObjectList {
   }
   
   public static Object replace (Object head, Object oldData, Object newData){
+    
+    if (oldData == null){
+      return head;
+    }
+    if (newData == null){
+      return remove(head, oldData);
+    }
+    
     if (head instanceof Node){
       for (Node n = (Node)head; n != null; n = n.next){
-        if (n.data == oldData){
+        if (oldData.equals(n.data)){
           n.data = newData;
         }
       }
@@ -205,7 +264,7 @@ public class ObjectList {
       return head;
       
     } else {
-      if (head == oldData){
+      if (oldData.equals(head)){
         return newData;
       } else {
         return head;
@@ -217,11 +276,14 @@ public class ObjectList {
     if (head == null){
       return null;
       
+    } else if (data == null){
+      return head;
+      
     } else {
       if (head instanceof Node){
         Node nh = (Node)head;
         
-        if (nh.data == data){
+        if (data.equals(nh.data)){
           nh = nh.next;
           
         } else {
@@ -249,7 +311,7 @@ public class ObjectList {
         }
         
       } else { // head not a node -> single value
-        if (data == head){
+        if (data.equals(head)){
           return null;
         } else {
           return head;
@@ -258,9 +320,46 @@ public class ObjectList {
     }
   }
   
+  public static boolean contains (Object head, Object o){
+    if (head == null || o == null){
+      return false;
+      
+    } else if (head instanceof Node){
+      for (Node n = (Node)head; n != null; n = n.next){
+        if (o.equals(n.data)){
+          return true;
+        }
+      }
+      return false;
+            
+    } else {
+      return o.equals(head);
+    }
+  }
   
-  //--- assuming we only have few attributes, we can get along without an iterator
+  public static boolean containsType (Object head, Class<?> type){
+    if (head == null || type == null){
+      return false;
+      
+    } else if (head instanceof Node){
+      for (Node n = (Node)head; n != null; n = n.next){
+        if (type.isAssignableFrom(n.data.getClass())){
+          return true;
+        }
+      }
+      return false;
+            
+    } else {
+      return type.isAssignableFrom(head.getClass());
+    }
+  }
+  
+  //--- various qualifiers
 
+  public static boolean isList (Object head){
+    return (head instanceof Node);
+  }
+  
   public static boolean isEmpty(Object head){
     return head == null;
   }
@@ -281,6 +380,27 @@ public class ObjectList {
     return len;
   }
   
+  public static int numberOfInstances (Object head, Class<?> type){
+    int len = 0;
+    
+    if (head instanceof Node){
+      for (Node n = (Node) head; n != null; n = n.next) {
+        if (type.isInstance(n.data)){
+          len++;
+        }
+      }    
+    } else {
+      if (head != null){
+        if (type.isInstance(head)){
+          len = 1;
+        }
+      }
+    }
+    
+    return len;
+    
+  }
+  
   public static Object get (Object head, int idx){
     if (head instanceof Node){
       int i=0;
@@ -298,7 +418,7 @@ public class ObjectList {
     return null;
   }
   
-  static Object getFirst(Object head){
+  public static Object getFirst(Object head){
     if (head instanceof Node){
       return ((Node)head).data;
     } else {
@@ -306,7 +426,7 @@ public class ObjectList {
     }
   }
   
-  static Object getNext(Object head, Object prevData){
+  public static Object getNext(Object head, Object prevData){
     if (head instanceof Node){
       Node n = (Node)head;
       if (prevData != null){

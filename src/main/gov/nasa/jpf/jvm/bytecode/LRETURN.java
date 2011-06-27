@@ -25,25 +25,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Return long from method
  * ..., value => [empty]
  */
-public class LRETURN extends ReturnInstruction {
-
-  long ret;
-
-  public Object getReturnAttr (ThreadInfo ti) {
-    return ti.getLongOperandAttr();
-  }
-
-  public void setReturnAttr (ThreadInfo ti, Object attr){
-    ti.setLongOperandAttrNoClone(attr);
-  }
-
-  protected void storeReturnValue (ThreadInfo th) {
-    ret =  th.longPop();
-  }
-
-  protected void pushReturnValue (ThreadInfo th) {
-    th.longPush(ret);
-  }
+public class LRETURN extends LongReturn {
 
   public long getReturnValue () {
     return ret;

@@ -1120,7 +1120,13 @@ public class HTMLPublisher extends Publisher {
       attr = frame.getLocalAttr(i);
       if (attr != null) {
         output.print(" (");
-        output.print(attr);
+        int k=0;
+        for (Object a : ObjectList.iterator(attr)){
+          if (k++ > 0){
+            output.print(',');
+          }
+          output.print(a);
+        }
         output.print(')');
       }
 
@@ -1203,7 +1209,13 @@ public class HTMLPublisher extends Publisher {
       attr = frame.getOperandAttr(i);
       if (attr != null) {
         output.print(" (");
-        output.print(attr);
+        int k=0;
+        for (Object a : ObjectList.iterator(attr)){
+          if (k++ > 0){
+            output.print(',');
+          }
+          output.print(a);
+        }
         output.print(')');
       }
 

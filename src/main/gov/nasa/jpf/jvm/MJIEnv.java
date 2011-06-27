@@ -134,84 +134,229 @@ public class MJIEnv {
     return Types.getTypeSize(getArrayType(objref));
   }
 
-  public boolean hasFieldAttrs (int objref){
+  //=== various attribute accessors ============================================
+  // <2do> not sure it adds much to have this here. The ref -> ElementInfo
+  // retrieval (i.e. hiding the heap) doesn't buy much and can actually slow
+  // things down considerably
+  
+  //--- object attributes
+
+  public boolean hasObjectAttr (int objref){
     if (objref != NULL){
       ElementInfo ei = heap.get(objref);
-      return ei.hasFieldAttrs();
+      return ei.hasObjectAttr();
     }
 
     return false;
   }
 
+  public boolean hasObjectAttr (int objref, Class<?> type){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      return ei.hasObjectAttr(type);
+    }
 
-  // this returns all attrs, i.e. can be composite
-  // (use to copy all)
-  public Object getFieldAttr (int objref, String fname){
-    ElementInfo ei = heap.get(objref);
-    if (ei != null){
-      FieldInfo fi = ei.getFieldInfo(fname);
-      if (fi != null){
-        return ei.getFieldAttr(fi);
-      } else {
-        throw new JPFException("no such field: " + fname);
-      }
+    return false;    
+  }
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */  
+  public Object getObjectAttr (int objref){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      return ei.getObjectAttr();
     }
     return null;
   }
-  public <T> T getFieldAttr (int objref, String fname, Class<T> attrType){
-    ElementInfo ei = heap.get(objref);
-    if (ei != null){
-      FieldInfo fi = ei.getFieldInfo(fname);
-      if (fi != null){
-        return ei.getFieldAttr(attrType, fi);
-      } else {
-        throw new JPFException("no such field: " + fname);
-      }
-    }
-    return null;
-  }
-
-  // this returns all attrs, i.e. can be composite
-  // (use to copy all)
-  public Object getElementAttr (int objref, int idx){
-    ElementInfo ei = heap.get(objref);
-    if (ei != null){
-      return ei.getElementAttr(idx);
-    }
-    return null;
-  }
-  public <T> T getElementAttr (int objref, int idx, Class<T> attrType){
-    ElementInfo ei = heap.get(objref);
-    if (ei != null){
-      return ei.getElementAttr(attrType, idx);
-    }
-
-    return null;
-  }
-
-
-  public void setElementAttr (int objref, int idx, Object a){
-    ElementInfo ei = heap.get(objref);
-    if (ei != null){
-      ei.setElementAttr(idx, a);
-    }
-  }
-
+  
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
   public void setObjectAttr (int objref, Object a){
-    ElementInfo ei = heap.get(objref);
-    if (ei != null){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
       ei.setObjectAttr(a);
     }
   }
 
+  public void addObjectAttr (int objref, Object a){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      ei.addObjectAttr(a);
+    }
+  }
+
+  
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
   public <T> T getObjectAttr (int objref, Class<T> attrType){
     ElementInfo ei = heap.get(objref);
-    if (ei != null){
-      return ei.getObjectAttr(attrType);
+    return ei.getObjectAttr(attrType);
+  }
+  public <T> T getNextObjectAttr (int objref, Class<T> attrType, Object prev){
+    ElementInfo ei = heap.get(objref);
+    return ei.getNextObjectAttr(attrType, prev);
+  }
+
+  
+  //--- field attributes
+
+  public boolean hasFieldAttr (int objref){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      return ei.hasFieldAttr();
+    }
+
+    return false;
+  }
+  
+  public boolean hasFieldAttr (int objref, Class<?> type){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      return ei.hasFieldAttr(type);
+    }
+
+    return false;    
+  }
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */  
+  public Object getFieldAttr (int objref, String fname){
+    ElementInfo ei = heap.get(objref);
+    FieldInfo fi = ei.getFieldInfo(fname);
+    if (fi != null){
+      return ei.getFieldAttr(fi);
+    } else {
+      throw new JPFException("no such field: " + fname);
+    }
+  }
+  
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setFieldAttr (int objref, String fname, Object a){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      FieldInfo fi = ei.getFieldInfo(fname);
+      ei.setFieldAttr(fi, a);
+    }
+  }
+
+  public void addFieldAttr (int objref, String fname, Object a){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      FieldInfo fi = ei.getFieldInfo(fname);
+      ei.addFieldAttr(fi, a);
+    }
+  }
+
+  
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getFieldAttr (int objref, String fname, Class<T> attrType){
+    ElementInfo ei = heap.get(objref);
+    FieldInfo fi = ei.getFieldInfo(fname);
+    if (fi != null){
+      return ei.getFieldAttr(fi, attrType);
+    } else {
+      throw new JPFException("no such field: " + fname);
+    }
+  }
+  public <T> T getNextFieldAttr (int objref, String fname, Class<T> attrType, Object prev){
+    ElementInfo ei = heap.get(objref);
+    FieldInfo fi = ei.getFieldInfo(fname);
+    if (fi != null){
+      return ei.getNextFieldAttr(fi, attrType, prev);
+    } else {
+      throw new JPFException("no such field: " + fname);
+    }
+  }
+  
+  
+  //--- element attrs
+
+  public boolean hasElementdAttr (int objref){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      return ei.hasElementAttr();
+    }
+
+    return false;
+  }
+  
+  public boolean hasElementAttr (int objref, Class<?> type){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      return ei.hasElementAttr(type);
+    }
+
+    return false;    
+  }
+
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */  
+  public Object getElementAttr (int objref, int idx){
+    ElementInfo ei = heap.get(objref);
+    return ei.getElementAttr(idx);
+  }
+  
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setElementAttr (int objref, int idx, Object a){
+    ElementInfo ei = heap.get(objref);
+    ei.setElementAttr(idx, a);
+  }
+
+  public void addElementAttr (int objref, int idx, Object a){
+    ElementInfo ei = heap.get(objref);
+    ei.addElementAttr(idx, a);
+  }
+
+  
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getElementAttr (int objref, int idx, Class<T> attrType){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      return ei.getElementAttr(idx, attrType);
     }
     return null;
   }
+  public <T> T getNextElementAttr (int objref, int idx, Class<T> attrType, Object prev){
+    if (objref != NULL){
+      ElementInfo ei = heap.get(objref);
+      return ei.getNextElementAttr(idx, attrType, prev);
+    }
+    return null;
+  }
+  
 
+  // == end attrs ==  
+
+
+  
   // the instance field setters
   public void setBooleanField (int objref, String fname, boolean val) {
     heap.get(objref).setBooleanField(fname, val);
@@ -1030,8 +1175,13 @@ public class MJIEnv {
     returnAttr = attr;
   }
 
-  // NOTE - this can only be called from a native method context, since
-  // otherwise the top frame is the callee
+  /**
+   * return attr list of all arguments. Use ObjectList to retrieve values
+   * from this list
+   * 
+   * NOTE - this can only be called from a native method context, since
+   * otherwise the top frame is the callee
+   */
   public Object[] getArgAttributes () {
     StackFrame caller = getCallerStackFrame();
     return caller.getArgumentAttrs(mi);

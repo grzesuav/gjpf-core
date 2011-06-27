@@ -18,10 +18,11 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.ObjectList;
+import java.util.Iterator;
 
 
 /**
@@ -49,16 +50,16 @@ public abstract class Fields implements Cloneable {
 
   protected Fields() {}
 
-  public boolean hasFieldAttrs() {
+  public boolean hasFieldAttr() {
     return fieldAttrs != null;
   }
 
-  public boolean hasFieldAttrs (Class<?> attrType){
+  public boolean hasFieldAttr (Class<?> attrType){    
     Object[] fa = fieldAttrs;
     if (fa != null){
       for (int i=0; i<fa.length; i++){
         Object a = fa[i];
-        if (a != null && attrType.isAssignableFrom(a.getClass())){
+        if (a != null && ObjectList.containsType(a, attrType)){
           return true;
         }
       }
@@ -66,11 +67,23 @@ public abstract class Fields implements Cloneable {
     return false;
   }
 
+
   /**
-   * set the (optional) attribute for a field
-   *
-   * note that the provided fieldIndex is the ordinal of the field, not
-   * an index into values (a long field occupies two values slots)
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getFieldAttr(int fieldOrElementIndex){
+    if (fieldAttrs != null){
+      return fieldAttrs[fieldOrElementIndex];
+    }
+    return null;
+  }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setFieldAttr (int nFieldsOrElements, int fieldOrElementIndex, Object attr){
     if (fieldAttrs == null){
@@ -81,49 +94,123 @@ public abstract class Fields implements Cloneable {
     }
     fieldAttrs[fieldOrElementIndex] = attr;
   }
-
-  public <T> T getFieldAttr (Class<T> attrType, int fieldOrElementIndex){
-    if (fieldAttrs != null){
-      Object a = fieldAttrs[fieldOrElementIndex];
-      if (a != null && attrType.isAssignableFrom(a.getClass())){
-        return (T) a;
+  
+  public void addFieldAttr (int nFieldsOrElements, int fieldOrElementIndex, Object attr){
+    if (attr != null){
+      if (fieldAttrs == null) {
+        fieldAttrs = new Object[nFieldsOrElements];
       }
+      fieldAttrs[fieldOrElementIndex] = ObjectList.add(fieldAttrs[fieldOrElementIndex], attr);
     }
-
-    return null;
   }
-
-  // supposed to return all
-  public Object getFieldAttr (int fieldOrElementIndex){
+  
+  public void removeFieldAttr (int fieldOrElementIndex, Object attr){
     if (fieldAttrs != null){
-      return fieldAttrs[fieldOrElementIndex];
+     fieldAttrs[fieldOrElementIndex] = ObjectList.remove(fieldAttrs[fieldOrElementIndex], attr);
     }
-    return null;
+  }
+  
+  public void replaceFieldAttr (int fieldOrElementIndex, Object oldAttr, Object newAttr){
+    if (fieldAttrs != null){
+     fieldAttrs[fieldOrElementIndex] = ObjectList.replace(fieldAttrs[fieldOrElementIndex], oldAttr, newAttr);
+    }
+  }
+  
+  public boolean hasFieldAttr (int fieldOrElementIndex, Class<?> type){
+    if (fieldAttrs != null){
+     return ObjectList.containsType(fieldAttrs[fieldOrElementIndex], type);
+    }
+    return false;
   }
 
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getFieldAttr (int fieldOrElementIndex, Class<T> type){
+    if (fieldAttrs != null){
+     return ObjectList.getFirst(fieldAttrs[fieldOrElementIndex], type);
+    }
+    return null;    
+  }
+  
+  public <T> T getNextFieldAttr (int fieldOrElementIndex, Class<T> type, Object prev){
+    if (fieldAttrs != null){
+     return ObjectList.getNext(fieldAttrs[fieldOrElementIndex], type, prev);
+    }
+    return null;    
+  }
+  
+  public ObjectList.Iterator fieldAttrIterator(int fieldOrElementIndex){
+    Object a = (fieldAttrs != null) ? fieldAttrs[fieldOrElementIndex] : null;
+    return ObjectList.iterator(a);
+  }
+  
+  public <T> ObjectList.TypedIterator<T> fieldAttrIterator(int fieldOrElementIndex, Class<T> type){
+    Object a = (fieldAttrs != null) ? fieldAttrs[fieldOrElementIndex] : null;
+    return ObjectList.typedIterator(a, type);
+  }
+  
+
+  //--- object attributes
   public boolean hasObjectAttr () {
     return (objectAttr != null);
   }
 
   public boolean hasObjectAttr (Class<?> attrType){
-    return objectAttr != null && attrType.isAssignableFrom(objectAttr.getClass());
+    return ObjectList.containsType(objectAttr, attrType);
   }
 
-  public void setObjectAttr (Object attr){
-    objectAttr = attr;
-  }
-
-  public <T> T getObjectAttr (Class<T> attrType) {
-    if (objectAttr != null && attrType.isAssignableFrom(objectAttr.getClass())){
-      return (T)objectAttr;
-    }
-    return null;
-  }
-
-  // supposed to return all
-  public Object getObjectAttr () {
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getObjectAttr(){
     return objectAttr;
   }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setObjectAttr (Object attr){
+    objectAttr = attr;    
+  }
+
+  public void addObjectAttr (Object attr){
+    objectAttr = ObjectList.add(objectAttr, attr);
+  }
+
+  public void removeObjectAttr (Object attr){
+    objectAttr = ObjectList.remove(objectAttr, attr);
+  }
+
+  public void replaceObjectAttr (Object oldAttr, Object newAttr){
+    objectAttr = ObjectList.replace(objectAttr, oldAttr, newAttr);
+  }
+
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getObjectAttr (Class<T> attrType) {
+    return ObjectList.getFirst(objectAttr, attrType);
+  }
+
+  public <T> T getNextObjectAttr (Class<T> attrType, Object prev) {
+    return ObjectList.getNext(objectAttr, attrType, prev);
+  }
+
+  public ObjectList.Iterator objectAttrIterator(){
+    return ObjectList.iterator(objectAttr);
+  }
+  
+  public <T> ObjectList.TypedIterator<T> objectAttrIterator(Class<T> attrType){
+    return ObjectList.typedIterator(objectAttr, attrType);
+  }
+
 
   public abstract int[] asFieldSlots();
 

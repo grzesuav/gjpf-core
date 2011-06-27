@@ -117,9 +117,9 @@ public class INVOKECG extends Instruction {
 
         if (attrs != null && attrs[i] != null){
           if (isLong){
-            ti.setLongOperandAttr(attrs[i]);
+            ti.setLongOperandAttrNoClone(attrs[i]);
           } else {
-            ti.setOperandAttr(attrs[i]);
+            ti.setOperandAttrNoClone(attrs[i]);
           }
         }
       }

@@ -27,8 +27,10 @@ import gov.nasa.jpf.util.BitSet64;
 import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.ObjectList;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Iterator;
 
 
 /**
@@ -348,6 +350,413 @@ public class StackFrame implements Cloneable {
     return mi.getLineNumber(pc);
   }
 
+
+  /**
+   * generic visitor for reference arguments
+   */
+  public void processRefArguments (MethodInfo miCallee, ReferenceProcessor visitor){
+    int nArgSlots = miCallee.getArgumentsSize();
+
+    for (int i=top-1; i>=top-nArgSlots; i--){
+      if (isRef.get(i)){
+        visitor.processReference(slots[i]);
+      }
+    }
+  }
+
+  public int getSlot(int idx){
+    return slots[idx];
+  }
+  public boolean isReferenceSlot(int idx){
+    return isRef.get(idx);
+  }
+
+
+  public void setOperand (int offset, int v, boolean isRefValue){
+    int i = top-offset;
+    slots[i] = v;
+    isRef.set(i, isRefValue);
+  }
+
+  
+  //----------------------------- various attribute accessors
+
+  public boolean hasAttrs () {
+    return attrs != null;
+  }
+
+  
+  //--- the top single-slot operand attrs
+
+  public boolean hasOperandAttr(){
+    if ((top >= stackBase) && (attrs != null)){
+      return (attrs[top] != null);
+    }
+    return false;
+  }
+  public boolean hasOperandAttr(Class<?> type){
+    if ((top >= stackBase) && (attrs != null)){
+      return ObjectList.containsType(attrs[top], type);
+    }
+    return false;
+  }
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getOperandAttr () {
+    if ((top >= stackBase) && (attrs != null)){
+      return attrs[top];
+    }
+    return null;
+  }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setOperandAttr (Object a){
+    assert (top >= stackBase);
+    if (attrs == null) {
+      if (a == null) return;
+      attrs = new Object[slots.length];
+    }
+    attrs[top] = a;
+  }
+
+  
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getOperandAttr (Class<T> attrType){
+    assert (top >= stackBase);
+    
+    if ((attrs != null)){
+      return ObjectList.getFirst( attrs[top], attrType);
+    }
+    return null;
+  }
+  public <T> T getNextOperandAttr (Class<T> attrType, Object prev){
+    assert (top >= stackBase);
+    if (attrs != null){
+      return ObjectList.getNext( attrs[top], attrType, prev);
+    }
+    return null;
+  }
+  public Iterator operandAttrIterator(){
+    assert (top >= stackBase);
+    Object a = (attrs != null) ? attrs[top] : null;
+    return ObjectList.iterator(a);
+  }
+  public <T> Iterator<T> operandAttrIterator(Class<T> attrType){
+    assert (top >= stackBase);
+    Object a = (attrs != null) ? attrs[top] : null;
+    return ObjectList.typedIterator(a, attrType);
+  }
+  
+
+  public void addOperandAttr (Object a){
+    assert (top >= stackBase);
+    if (a != null){
+      if (attrs == null) {
+        attrs = new Object[slots.length];
+      }
+
+      attrs[top] = ObjectList.add(attrs[top], a);
+    }        
+  }
+  
+  public void removeOperandAttr (Object a){
+    assert (top >= stackBase) && (a != null);
+    if (attrs != null){
+      attrs[top] = ObjectList.remove(attrs[top], a);
+    }        
+  }
+  
+  public void replaceOperandAttr (Object oldAttr, Object newAttr){
+    assert (top >= stackBase) && (oldAttr != null) && (newAttr != null);
+    if (attrs != null){
+      attrs[top] = ObjectList.replace(attrs[top], oldAttr, newAttr);
+    }        
+  }
+  
+  
+  //--- offset operand attrs
+
+  public boolean hasOperandAttr(int offset){
+    int i = top-offset;
+    assert (i >= stackBase);
+    if (attrs != null){
+      return (attrs[top] != null);
+    }
+    return false;
+  }
+  public boolean hasOperandAttr(int offset, Class<?> type){
+    int i = top-offset;
+    assert (i >= stackBase);
+    if (attrs != null){
+      return ObjectList.containsType(attrs[top], type);
+    }
+    return false;
+  }
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getOperandAttr (int offset) {
+    int i = top-offset;
+    assert (i >= stackBase);
+    
+    if (attrs != null) {
+      return attrs[i];
+    }
+    return null;
+  }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */  
+  public void setOperandAttr (int offset, Object a){
+    int i = top-offset;
+    assert (i >= stackBase);
+
+    if (attrs == null) {
+      if (a == null) return;
+      attrs = new Object[slots.length];
+    }
+    attrs[i] = a;
+  }
+
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getOperandAttr (int offset, Class<T> attrType){
+    int i = top-offset;
+    assert (i >= stackBase);
+    if (attrs != null){
+      return ObjectList.getFirst( attrs[i], attrType);
+    }
+    return null;
+  }
+  public <T> T getNextOperandAttr (int offset, Class<T> attrType, Object prev){
+    int i = top-offset;
+    assert (i >= stackBase);
+    if (attrs != null){
+      return ObjectList.getNext( attrs[i], attrType, prev);
+    }
+    return null;
+  }
+  public ObjectList.Iterator operandAttrIterator(int offset){
+    int i = top-offset;
+    assert (i >= stackBase);
+    Object a = (attrs != null) ? attrs[i] : null;
+    return ObjectList.iterator(a);
+  }
+  public <T> ObjectList.TypedIterator<T> operandAttrIterator(int offset, Class<T> attrType){
+    int i = top-offset;
+    assert (i >= stackBase);
+    Object a = (attrs != null) ? attrs[i] : null;
+    return ObjectList.typedIterator(a, attrType);
+  }
+
+
+  public void addOperandAttr (int offset, Object a){
+    int i = top-offset;
+    assert (i >= stackBase);
+
+    if (a != null){
+      if (attrs == null) {
+        attrs = new Object[slots.length];
+      }
+      attrs[i] = ObjectList.add(attrs[i],a);
+    }    
+  }
+
+  public void removeOperandAttr (int offset, Object a){
+    int i = top-offset;
+    assert (i >= stackBase) && (a != null);
+    if (attrs != null){
+      attrs[i] = ObjectList.remove(attrs[i], a);
+    }        
+  }
+  
+  public void replaceOperandAttr (int offset, Object oldAttr, Object newAttr){
+    int i = top-offset;
+    assert (i >= stackBase) && (oldAttr != null) && (newAttr != null);
+    if (attrs != null){
+      attrs[i] = ObjectList.replace(attrs[i], oldAttr, newAttr);
+    }        
+  }
+  
+  
+  //--- top double-slot operand attrs
+  // we store attributes for double slot values at the local var index,
+  // which is the lower one. The ..LongOperand.. APIs are handling this offset
+ 
+  public boolean hasLongOperandAttr(){
+    return hasOperandAttr(1);
+  }
+  public boolean hasLongOperandAttr(Class<?> type){
+    return hasOperandAttr(1, type);
+  }
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getLongOperandAttr () {
+    return getOperandAttr(1);
+  }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */  
+  public void setLongOperandAttr (Object a){
+    setOperandAttr(1, a);
+  }
+  
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getLongOperandAttr (Class<T> attrType) {
+    return getOperandAttr(1, attrType);
+  }
+  public <T> T getNextLongOperandAttr (Class<T> attrType, Object prev) {
+    return getNextOperandAttr(1, attrType, prev);
+  }
+  public ObjectList.Iterator longOperandAttrIterator(){
+    return operandAttrIterator(1);
+  }
+  public <T> ObjectList.TypedIterator<T> longOperandAttrIterator(Class<T> attrType){
+    return operandAttrIterator(1, attrType);
+  }
+    
+  public void addLongOperandAttr (Object a){
+    addOperandAttr(1, a);
+  }
+
+  public void removeLongOperandAttr (Object a){
+    removeOperandAttr(1, a);
+  }
+
+  public void replaceLongOperandAttr (Object oldAttr, Object newAttr){
+    replaceOperandAttr(1, oldAttr, newAttr);
+  }
+
+
+  //--- local attrs
+  // single- or double-slot - you have to provide the var index anyways)
+  
+  public boolean hasLocalAttr(int index){
+    assert index < stackBase;
+    if (attrs != null){
+      return (attrs[index] != null);
+    }
+    return false;
+  }
+  public boolean hasLocalAttr(int index, Class<?> type){
+    assert index < stackBase;
+    if (attrs != null){
+      return ObjectList.containsType(attrs[index], type);
+    }
+    return false;
+  }
+
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getLocalAttr (int index){
+    assert index < stackBase;
+    if (attrs != null){
+      return attrs[index];
+    }
+    return null;
+  }
+      
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */  
+  public void setLocalAttr (int index, Object a) {
+    assert index < stackBase;
+    if (attrs == null){
+      if (a == null) return;
+      attrs = new Object[slots.length];
+    }
+    attrs[index] = a;
+  }
+
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getLocalAttr (int index, Class<T> attrType){
+    assert index < stackBase;
+    if (attrs != null){
+      return ObjectList.getFirst( attrs[index], attrType);
+    }
+    return null;
+  }
+  public <T> T getNextLocalAttr (int index, Class<T> attrType, Object prev){
+    assert index < stackBase;
+    if (attrs != null){
+      return ObjectList.getNext( attrs[index], attrType, prev);
+    }
+    return null;
+  }
+  public ObjectList.Iterator localAttrIterator(int index){
+    assert index < stackBase;
+    Object a = (attrs != null) ? attrs[index] : null;
+    return ObjectList.iterator(a);
+  }
+  public <T> ObjectList.TypedIterator<T> localAttrIterator(int index, Class<T> attrType){
+    assert index < stackBase;
+    Object a = (attrs != null) ? attrs[index] : null;
+    return ObjectList.typedIterator(a, attrType);
+  }
+  
+
+  public void addLocalAttr (int index, Object attr){
+    assert index < stackBase;
+    if (attrs == null){
+      if (attr == null) return;
+      attrs = new Object[slots.length];
+    }
+    attrs[index] = ObjectList.add(attrs[index], attr);
+  }
+  
+  public void removeLocalAttr (int index, Object attr){
+    assert index < stackBase && attr != null;
+    if (attr != null){
+      attrs[index] = ObjectList.remove(attrs[index], attr);    
+    }
+  }
+
+  public void replaceLocalAttr (int index, Object oldAttr, Object newAttr){
+    assert index < stackBase && oldAttr != null && newAttr != null;
+    if (attrs == null){
+      attrs[index] = ObjectList.replace(attrs[index], oldAttr, newAttr);    
+    }
+  }
+  
+  //--- various special attr accessors
+
   /**
    * helper to quickly find out if any of the locals slots holds
    * an attribute of the provided type
@@ -360,7 +769,7 @@ public class StackFrame implements Cloneable {
     if (attrs != null){
       for (int i=startIdx; i<stackBase; i++){
         Object a = attrs[i];
-        if (a != null && attrType.isInstance(a)){
+        if (ObjectList.containsType(a, attrType)){
           return i;
         }
       }
@@ -368,42 +777,16 @@ public class StackFrame implements Cloneable {
 
     return -1;
   }
-
-  public void setOperandAttr (Object attr) {
-    setOperandAttr(0, attr);
-  }
-
-  public void setOperandAttr (int offset, Object newAttr){
-    if (attrs == null && newAttr != null){
-      attrs = new Object[slots.length];
-    }
-
-    if (attrs != null){ // newAttr might be null, in which case we have to clear
-      // <2do> should cap at stackBase
-      attrs[top-offset] = newAttr;
-    }
-  }
-
-  public void setLongOperandAttr (Object attr){
-    setOperandAttr(1, attr);
-  }
-
-
-  public void setLocalAttr (int index, Object newAttr) {
-    if (index < stackBase){
-      if (attrs == null && newAttr != null){
-        attrs = new Object[slots.length];
-      }
-      if (attrs != null){
-        attrs[index] = newAttr;
-      }
-    }
-  }
-
-  // this is here (and not in ThreadInfo) because we might call it
-  // on a cached/cloned StackFrame (caller stack might be already
-  // modified, e.g. for a native method).
-  // to be used from listeners
+  
+  /**
+   * return an array of all argument attrs, which in turn can be lists. If
+   * you have to retrieve values, use the ObjectList APIs
+   * 
+   * this is here (and not in ThreadInfo) because we might call it
+   * on a cached/cloned StackFrame (caller stack might be already
+   * modified, e.g. for a native method).
+   * to be used from listeners.
+   */
   public Object[] getArgumentAttrs (MethodInfo miCallee) {
     if (attrs != null) {
       int nArgs = miCallee.getNumberOfArguments();
@@ -446,10 +829,8 @@ public class StackFrame implements Cloneable {
 
       for (int i=0; i<nArgSlots; i++){
         Object a = getOperandAttr(i);
-        if (a != null){
-          if (attrType.isAssignableFrom(a.getClass())){
-            return true;
-          }
+        if (ObjectList.containsType(a, attrType)){
+          return true;
         }
       }
     }
@@ -457,106 +838,9 @@ public class StackFrame implements Cloneable {
     return false;
   }
 
-  /**
-   * generic visitor for reference arguments
-   */
-  public void processRefArguments (MethodInfo miCallee, ReferenceProcessor visitor){
-    int nArgSlots = miCallee.getArgumentsSize();
-
-    for (int i=top-1; i>=top-nArgSlots; i--){
-      if (isRef.get(i)){
-        visitor.processReference(slots[i]);
-      }
-    }
-  }
-
-  public int getSlot(int idx){
-    return slots[idx];
-  }
-  public boolean isReferenceSlot(int idx){
-    return isRef.get(idx);
-  }
-
-
-  // we store long a at the local var index, which is the lower one
-  public Object getLongOperandAttr () {
-    return getOperandAttr(1);
-  }
-  public <T> T getLongOperandAttr (Class<T> attrType) {
-    return getOperandAttr(attrType,1);
-  }
-
-  public boolean hasAttrs () {
-    return attrs != null;
-  }
-
-  // returns all
-  public Object getOperandAttr () {
-    // <2do> needs to handle composite
-    if ((top >=0) && (attrs != null)){
-      return attrs[top];
-    } else {
-      return null;
-    }
-  }
-  public <T> T getOperandAttr (Class<T> attrType){
-    if ((top >=0) && (attrs != null)){
-      Object a = attrs[top];
-      if (a != null && attrType.isAssignableFrom(a.getClass())){
-        return (T) a;
-      }
-    }
-
-    return null;
-  }
-
-  public Object getOperandAttr (int offset) {
-    // <2do> needs to handle composite
-    // <2do> check for stackBase
-    if ((top >= offset) && (attrs != null)) {
-      return attrs[top-offset];
-    } else {
-      return null;
-    }
-  }
-  public <T> T getOperandAttr (Class<T> attrType, int offset){
-    if ((top >= offset) && (attrs != null)){
-      Object a = attrs[top-offset];
-      if (a != null && attrType.isAssignableFrom(a.getClass())){
-        return (T) a;
-      }      
-    }
-
-    return null;
-  }
-
-
-
-  public void setOperand (int offset, int v, boolean isRefValue){
-    int i = top-offset;
-    slots[i] = v;
-    isRef.set(i, isRefValue);
-  }
-
-  // returns all
-  public Object getLocalAttr (int index){
-    // <2do> needs to handle composite
-    if ((index < stackBase) && (attrs != null)){
-      return attrs[index];
-    } else {
-      return null;
-    }
-  }
-  public <T> T getLocalAttr (Class<T> attrType, int index){
-    if ((index < stackBase) && (attrs != null)){
-      Object a = attrs[index];
-      if (a != null && attrType.isAssignableFrom(a.getClass())){
-        return (T) a;
-      }
-    }
-    return null;
-  }
-
+  
+  // -- end attrs --
+  
 
   public void setLocalVariable (int index, int v, boolean ref) {
     // <2do> activateGc should be replaced by local refChanged

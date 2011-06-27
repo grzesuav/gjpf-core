@@ -155,7 +155,8 @@ public abstract class InvokeInstruction extends Instruction {
     assert frame != null : "can't find caller stackframe for: " + this;
     return frame.getArgumentAttrs(callee);
   }
-
+  
+  
   /**
    * check if there is any argument attr of the specified type
    * (use this before using any of the more expensive retrievers)
@@ -181,8 +182,7 @@ public abstract class InvokeInstruction extends Instruction {
       if (frame.isOperandRef(i)){
         ElementInfo ei = ti.getElementInfo(frame.peek(i));
         if (ei != null){
-          Object a = ei.getObjectAttr();
-          if (a != null && type.isAssignableFrom(a.getClass())){
+          if (ei.getObjectAttr(type) != null){
             return true;
           }
         }

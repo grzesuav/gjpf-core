@@ -29,6 +29,7 @@ import gov.nasa.jpf.jvm.choice.BreakGenerator;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
+import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.SparseObjVector;
 
 import java.io.File;
@@ -1302,75 +1303,290 @@ public class ThreadInfo
     return vm.getElementInfo(peek());
   }
 
-  // might return composite
+  //------------------- attribute accessors
+  
+  //--- top single-slot operand attr accessors
+  
+  public boolean hasOperandAttr(){
+    return top.hasOperandAttr();
+  }  
+  public boolean hasOperandAttr(Class<?> type){
+    return top.hasOperandAttr(type);
+  }
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
   public Object getOperandAttr () {
     return top.getOperandAttr();
   }
-  public <T> T getOperandAttr (Class<T> attrType){
-    return top.getOperandAttr(attrType);
-  }
-
-  // might return composite
-  public Object getLongOperandAttr () {
-    return top.getLongOperandAttr();
-  }
-  public <T> T getLongOperandAttr (Class<T> attrType){
-    return top.getLongOperandAttr(attrType);
-  }
-
-
-
-  // might return composite
-  public Object getOperandAttr (int opStackOffset) {
-    return top.getOperandAttr(opStackOffset);
-  }
-  public <T> T getOperandAttr( Class<T> attrType, int opStackOffset){
-    return top.getOperandAttr(attrType,opStackOffset);
-  }
-
-  // setting operand attributes assumes the operand is already on the stack
-
+  
   /**
-   * use this version if only the attr has changed, but not the value
-   * (otherwise state management won't work)
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setOperandAttr (Object attr) {
     topClone().setOperandAttr(attr);
   }
-
-  public void setLongOperandAttr (Object attr) {
-    topClone().setLongOperandAttr(attr);
-  }
-
-  /**
-   * use this version if the value is also changed, which means we don't
-   * have to clone here
-   */
   public void setOperandAttrNoClone (Object attr) {
     top.setOperandAttr(attr);
   }
 
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getOperandAttr (Class<T> attrType){
+    return top.getOperandAttr(attrType);
+  }
+  public <T> T getNextOperandAttr (Class<T> attrType, Object prev){
+    return top.getNextOperandAttr(attrType, prev);
+  }
+  public Iterator operandAttrIterator (){
+    return top.operandAttrIterator();
+  }
+  public <T> Iterator<T> operandAttrIterator (Class<T> attrType){
+    return top.operandAttrIterator(attrType);
+  }
+    
+  public void addOperandAttr (Object attr) {
+    topClone().addOperandAttr(attr);
+  }
+  public void addOperandAttrNoClone (Object attr) {
+    top.addOperandAttr(attr);
+  }
+
+  public void removeOperandAttr (Object attr) {
+    topClone().removeOperandAttr(attr);
+  }
+  public void removeOperandAttrNoClone (Object attr) {
+    top.removeOperandAttr(attr);
+  }
+  
+  public void replaceOperandAttr (Object oldAttr, Object newAttr) {
+    topClone().replaceOperandAttr(oldAttr, newAttr);
+  }
+  public void replaceOperandAttrNoClone (Object oldAttr, Object newAttr) {
+    top.replaceOperandAttr(oldAttr, newAttr);
+  }
+  
+
+  //--- offset operand attr accessors
+  
+  public boolean hasOperandAttr(int opStackOffset){
+    return top.hasOperandAttr(opStackOffset);
+  }  
+  public boolean hasOperandAttr(int opStackOffset, Class<?> type){
+    return top.hasOperandAttr(opStackOffset, type);
+  }
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getOperandAttr (int opStackOffset) {
+    return top.getOperandAttr(opStackOffset);
+  }
+  
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setOperandAttr (int opStackOffset, Object attr) {
+    topClone().setOperandAttr(opStackOffset, attr);
+  }
+  public void setOperandAttrNoClone (int opStackOffset, Object attr) {
+    top.setOperandAttr(opStackOffset, attr);
+  }
+
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getOperandAttr( int opStackOffset, Class<T> attrType){
+    return top.getOperandAttr( opStackOffset, attrType);
+  }
+  public <T> T getNextOperandAttr( int opStackOffset, Class<T> attrType, Object prev){
+    return top.getNextOperandAttr( opStackOffset, attrType, prev);
+  }
+  
+  public ObjectList.Iterator operandAttrIterator (int opStackOffset){
+    return top.operandAttrIterator(opStackOffset);
+  }
+  public <T> ObjectList.TypedIterator<T> operandAttrIterator (int opStackOffset, Class<T> attrType){
+    return top.operandAttrIterator(opStackOffset, attrType);
+  }
+    
+  public void addOperandAttr (int opStackOffset, Object attr) {
+    topClone().addOperandAttr(opStackOffset,attr);
+  }
+  public void addOperandAttrNoClone (int opStackOffset, Object attr) {
+    top.addOperandAttr(opStackOffset,attr);
+  }
+
+  public void removeOperandAttr (int opStackOffset, Object attr) {
+    topClone().removeOperandAttr(opStackOffset,attr);
+  }
+  public void removeOperandAttrNoClone (int opStackOffset, Object attr) {
+    top.removeOperandAttr(opStackOffset,attr);
+  }
+  
+  public void replaceOperandAttr (int opStackOffset, Object oldAttr, Object newAttr) {
+    topClone().replaceOperandAttr(opStackOffset,oldAttr, newAttr);
+  }
+  public void replaceOperandAttrNoClone (int opStackOffset, Object oldAttr, Object newAttr) {
+    top.replaceOperandAttr(opStackOffset,oldAttr, newAttr);
+  }
+  
+  
+  //--- top double-slot operand attr accessors
+
+  public boolean hasLongOperandAttr(){
+    return top.hasLongOperandAttr();
+  }  
+  public boolean hasLongOperandAttr(Class<?> type){
+    return top.hasLongOperandAttr(type);
+  }
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */  
+  public Object getLongOperandAttr () {
+    return top.getLongOperandAttr();
+  }
+  
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setLongOperandAttr (Object attr) {
+    topClone().setLongOperandAttr(attr);
+  }
   public void setLongOperandAttrNoClone (Object attr) {
     top.setLongOperandAttr(attr);
   }
-
-
-  public void setLocalAttr (int localIndex, Object attr){
-    topClone().setLocalAttr(localIndex, attr);
+  
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getLongOperandAttr (Class<T> attrType){
+    return top.getLongOperandAttr(attrType);
+  }
+  public <T> T getNextLongOperandAttr (Class<T> attrType, Object prev){
+    return top.getNextLongOperandAttr(attrType, prev);
   }
 
-  public void setLocalAttrNoClone (int localIndex, Object attr){
-    top.setLocalAttr(localIndex, attr);
+  public ObjectList.Iterator longOperandAttrIterator (){
+    return top.longOperandAttrIterator();
+  }
+  public <T> ObjectList.TypedIterator<T> longOperandAttrIterator (Class<T> attrType){
+    return top.longOperandAttrIterator(attrType);
+  }
+    
+  public void addLongOperandAttr (Object attr) {
+    topClone().addLongOperandAttr(attr);
+  }
+  public void addLongOperandAttrNoClone (Object attr) {
+    top.addLongOperandAttr(attr);
   }
 
-  // might return composite
-  public Object getLocalAttr (int localIndex){
+  public void removeLongOperandAttr (Object attr) {
+    topClone().removeLongOperandAttr(attr);
+  }
+  public void removeLongOperandAttrNoClone (Object attr) {
+    top.removeLongOperandAttr(attr);
+  }
+  
+  public void replaceLongOperandAttr (Object oldAttr, Object newAttr) {
+    topClone().replaceLongOperandAttr(oldAttr, newAttr);
+  }
+  public void replaceLongOperandAttrNoClone (Object oldAttr, Object newAttr) {
+    top.replaceLongOperandAttr(oldAttr, newAttr);
+  }
+  
+  
+  //--- local var attribute accessors
+
+  public boolean hasLocalAttr(int localIndex){
+    return top.hasLocalAttr(localIndex);
+  }
+  public boolean hasLocalAttr(int localIndex, Class<?> type){
+    return top.hasLocalAttr(localIndex, type);
+  }
+  
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */  
+  public Object getLocalAttr (int localIndex) {
     return top.getLocalAttr(localIndex);
   }
-  public <T> T getLocalAttr (Class<T> attrType, int localIndex){
-    return top.getLocalAttr(attrType, localIndex);
+  
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setLocalAttr (int localIndex, Object a){
+    topClone().setLocalAttr(localIndex, a);
+  }
+  public void setLocalAttrNoClone (int localIndex, Object a){
+    top.setLocalAttr(localIndex, a);
+  }
+  
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getLocalAttr( int localIndex, Class<T> attrType){
+    return top.getLocalAttr( localIndex, attrType);
+  }
+  public <T> T getNextLocalAttr( int localIndex, Class<T> attrType, Object prev){
+    return top.getNextLocalAttr( localIndex, attrType, prev);
+  }
+  
+  public ObjectList.Iterator localAttrIterator (int localIndex){
+    return top.localAttrIterator(localIndex);
+  }
+  public <T> ObjectList.TypedIterator<T> localAttrIterator (int localIndex, Class<T> attrType){
+    return top.localAttrIterator(localIndex, attrType);
+  }
+    
+  public void addLocalAttr (int localIndex, Object attr) {
+    topClone().addLocalAttr(localIndex,attr);
+  }
+  public void addLocalAttrNoClone (int localIndex, Object attr) {
+    top.addLocalAttr(localIndex,attr);
   }
 
+  public void removeLocalAttr (int localIndex, Object attr) {
+    topClone().removeLocalAttr(localIndex,attr);
+  }
+  public void removeLocalAttrNoClone (int localIndex, Object attr) {
+    top.removeLocalAttr(localIndex,attr);
+  }
+  
+  public void replaceLocalAttr (int localIndex, Object oldAttr, Object newAttr) {
+    topClone().replaceLocalAttr(localIndex,oldAttr, newAttr);
+  }
+  public void replaceLocalAttrNoClone (int localIndex, Object oldAttr, Object newAttr) {
+    top.replaceLocalAttr(localIndex,oldAttr, newAttr);
+  }
+  
+
+  // -- end attribute accessors --
+  
+  
   /**
    * Checks if the top operand is a reference.
    */

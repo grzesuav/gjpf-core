@@ -25,6 +25,7 @@ import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.util.ObjectConverter;
+import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
 import gov.nasa.jpf.util.json.CGCall;
@@ -434,25 +435,73 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   public static void println____V (MJIEnv env, int clsRef){
     System.out.println();
   }
-
-  public static void setObjectAttribute__Ljava_lang_Object_2I__V (MJIEnv env, int clsRef, int oRef, int attr){
-    if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getElementInfo(oRef);
-      ei.setObjectAttr(attr);
-    }
-  }
-
-  public static int getObjectAttribute__Ljava_lang_Object_2__I (MJIEnv env, int clsRef, int oRef){
-    if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getElementInfo(oRef);
-      Integer a = ei.getObjectAttr(Integer.class);
-      if (a != null){
-        return a.intValue();
+  
+  //--- various attribute test methods
+  
+  private static int getAttribute (MJIEnv env, Object a){
+    if (a != null) {
+      if (a instanceof Integer) {
+        return ((Integer) a).intValue();
+      } else {
+        env.throwException("java.lang.RuntimeException", "element attribute not an Integer: " + a);
       }
     }
 
     return 0;
   }
+  
+  private static int getAttributeList (MJIEnv env, Object a){
+    if (a != null) {
+      int l = ObjectList.size(a);
+      int[] attrs = new int[l];
+      int i = 0;
+      for (Integer v : ObjectList.typedIterator(a, Integer.class)) {
+        attrs[i++] = v;
+      }
+      if (i != l) {
+        env.throwException("java.lang.RuntimeException", "found non-Integer attributes");
+        return 0;
+      }
+
+      return env.newIntArray(attrs);
+      
+    } else {
+      return MJIEnv.NULL;
+    }
+  }
+  
+  public static void setObjectAttribute__Ljava_lang_Object_2I__V (MJIEnv env, int clsRef, int oRef, int attr){
+    if (oRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(oRef);
+      ei.setObjectAttr(Integer.valueOf(attr));
+    }
+  }
+  
+  public static int getObjectAttribute__Ljava_lang_Object_2__I (MJIEnv env, int clsRef, int oRef){
+    if (oRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(oRef);
+      return getAttribute( env, ei.getObjectAttr());
+    }
+
+    return 0;
+  }
+  
+  public static void addObjectAttribute__Ljava_lang_Object_2I__V (MJIEnv env, int clsRef, int oRef, int attr){
+    if (oRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(oRef);
+      ei.addObjectAttr(Integer.valueOf(attr));
+    }
+  }
+  
+  public static int getObjectAttributes__Ljava_lang_Object_2___3I (MJIEnv env, int clsRef, int oRef){
+    if (oRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(oRef);
+      return getAttributeList( env, ei.getObjectAttr());
+    }
+
+    return MJIEnv.NULL;
+  }
+  
 
   public static void setFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2I__V (MJIEnv env, int clsRef,
                                                                                     int oRef, int fnRef, int attr){
@@ -463,7 +512,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
         FieldInfo fi = ei.getFieldInfo(fname);
 
         if (fi != null) {
-          ei.setFieldAttr(fi, new Integer(attr));
+          ei.setFieldAttr(fi, Integer.valueOf(attr));
         } else {
           env.throwException("java.lang.NoSuchFieldException",
                   ei.getClassInfo().getName() + '.' + fname);
@@ -473,7 +522,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       }
     }
   }
-
+  
+  
   public static int getFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2__I (MJIEnv env, int clsRef,
                                                                                     int oRef, int fnRef){
     if (oRef != MJIEnv.NULL){
@@ -483,10 +533,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
         FieldInfo fi = ei.getFieldInfo(fname);
 
         if (fi != null) {
-          Integer a = ei.getFieldAttr(Integer.class, fi);
-          if (a != null){
-            return a.intValue();
-          }
+          return getAttribute( env, ei.getFieldAttr(fi));
         } else {
           env.throwException("java.lang.NoSuchFieldException",
                   ei.toString() + '.' + fname);
@@ -498,46 +545,115 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
     return 0;
   }
+  
+  public static void addFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2I__V (MJIEnv env, int clsRef,
+                                                                                    int oRef, int fnRef, int attr){
+    if (oRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(oRef);
+      if (ei != null){
+        String fname = env.getStringObject(fnRef);
+        FieldInfo fi = ei.getFieldInfo(fname);
 
-  public static void setLocalAttribute__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int snRef, int attr) {
-    String slotName = env.getStringObject(snRef);
+        if (fi != null) {
+          ei.addFieldAttr(fi, Integer.valueOf(attr));
+        } else {
+          env.throwException("java.lang.NoSuchFieldException",
+                  ei.getClassInfo().getName() + '.' + fname);
+        }
+      } else {
+        env.throwException("java.lang.RuntimeException", "illegal reference value: " + oRef);
+      }
+    }
+  }
+
+
+  public static int getFieldAttributes__Ljava_lang_Object_2Ljava_lang_String_2___3I (MJIEnv env, int clsRef,
+                                                                                    int oRef, int fnRef){
+    if (oRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(oRef);
+      if (ei != null){
+        String fname = env.getStringObject(fnRef);
+        FieldInfo fi = ei.getFieldInfo(fname);
+
+        if (fi != null) {
+          return getAttributeList( env, ei.getFieldAttr(fi));          
+        } else {
+          env.throwException("java.lang.NoSuchFieldException",
+                  ei.toString() + '.' + fname);
+        }
+      } else {
+        env.throwException("java.lang.RuntimeException", "illegal reference value: " + oRef);
+      }
+    }
+
+    return MJIEnv.NULL;
+  }
+
+  
+  public static void setLocalAttribute__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int varRef, int attr) {
+    String slotName = env.getStringObject(varRef);
     StackFrame frame = env.getCallerStackFrame(); // we are executing in a NativeStackFrame
 
     if (!frame.getMethodInfo().isStatic() &&  slotName.equals("this")) {
-      frame.setLocalAttr(0, new Integer(attr)); // only for instance methods of course
+      frame.setLocalAttr(0, Integer.valueOf(attr)); // only for instance methods of course
 
     } else {
       int slotIdx = frame.getLocalVariableSlotIndex(slotName);
       if (slotIdx >= 0) {
-        frame.setLocalAttr(slotIdx, new Integer(attr));
+        frame.setLocalAttr(slotIdx, Integer.valueOf(attr));
       } else {
         env.throwException("java.lang.RuntimeException", "local variable not found: " + slotName);
       }
     }
   }
 
-  public static int getLocalAttribute__Ljava_lang_String_2__I (MJIEnv env, int clsRef, int snRef) {
-    String slotName = env.getStringObject(snRef);
+  public static int getLocalAttribute__Ljava_lang_String_2__I (MJIEnv env, int clsRef, int varRef) {
+    String slotName = env.getStringObject(varRef);
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = env.getCallerStackFrame();
 
     int slotIdx = frame.getLocalVariableSlotIndex(slotName);
     if (slotIdx >= 0) {
-      Object val = frame.getLocalAttr(slotIdx);
-      if (val instanceof Integer) {
-        return (Integer)val;
-      } else {
-        env.throwException("java.lang.RuntimeException", "attribute for local var: "
-                           + slotName + " not an int: " + val);
-        return 0;
-      }
+      return getAttribute( env, frame.getLocalAttr(slotIdx));
     } else {
       env.throwException("java.lang.RuntimeException", "local variable not found: " + slotName);
       return 0;
     }
   }
 
+  public static void addLocalAttribute__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int varRef, int attr) {
+    String slotName = env.getStringObject(varRef);
+    StackFrame frame = env.getCallerStackFrame(); // we are executing in a NativeStackFrame
 
+    if (!frame.getMethodInfo().isStatic() &&  slotName.equals("this")) {
+      frame.addLocalAttr(0, Integer.valueOf(attr)); // only for instance methods of course
+
+    } else {
+      int slotIdx = frame.getLocalVariableSlotIndex(slotName);
+      if (slotIdx >= 0) {
+        frame.addLocalAttr(slotIdx, Integer.valueOf(attr));
+      } else {
+        env.throwException("java.lang.RuntimeException", "local variable not found: " + slotName);
+      }
+    }
+  }
+  
+  public static int getLocalAttributes__Ljava_lang_String_2___3I (MJIEnv env, int clsRef, int varRef) {
+    String slotName = env.getStringObject(varRef);
+    ThreadInfo ti = env.getThreadInfo();
+    StackFrame frame = env.getCallerStackFrame();
+
+    int slotIdx = frame.getLocalVariableSlotIndex(slotName);
+    if (slotIdx >= 0) {
+      return getAttributeList( env, frame.getLocalAttr(slotIdx));
+    } else {
+      env.throwException("java.lang.RuntimeException", "local variable not found: " + slotName);
+    }
+    
+    return MJIEnv.NULL;
+  }
+  
+  
   public static void setElementAttribute__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef,
                                                                     int oRef, int idx, int attr){
     if (oRef != MJIEnv.NULL){
@@ -546,7 +662,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       if (ei != null){
         if (ei.isArray()) {
           if (idx < ei.arrayLength()) {
-            ei.setElementAttr(idx, new Integer(attr));
+            ei.setElementAttr(idx, Integer.valueOf(attr));
           } else {
             env.throwException("java.lang.ArrayIndexOutOfBoundsException",
                     Integer.toString(idx));
@@ -569,10 +685,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       if (ei != null) {
         if (ei.isArray()) {
           if (idx < ei.arrayLength()) {
-            Integer a = ei.getElementAttr(Integer.class, idx);
-            if (a != null){
-              return a.intValue();
-            }
+            return getAttribute( env, ei.getElementAttr( idx));
           } else {
             env.throwException("java.lang.ArrayIndexOutOfBoundsException",
                     Integer.toString(idx));
@@ -589,7 +702,55 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     return 0;
   }
 
+  
+  public static void addElementAttribute__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef,
+                                                                    int oRef, int idx, int attr){
+    if (oRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(oRef);
 
+      if (ei != null){
+        if (ei.isArray()) {
+          if (idx < ei.arrayLength()) {
+            ei.addElementAttr(idx, Integer.valueOf(attr));
+          } else {
+            env.throwException("java.lang.ArrayIndexOutOfBoundsException",
+                    Integer.toString(idx));
+          }
+        } else {
+          env.throwException("java.lang.RuntimeException",
+                  "not an array: " + ei);
+        }
+      } else {
+        env.throwException("java.lang.RuntimeException", "illegal reference value: " + oRef);
+      }
+    }
+  }
+
+  public static int getElementAttributes__Ljava_lang_Object_2I___3I (MJIEnv env, int clsRef,
+                                                                        int oRef, int idx){
+    if (oRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(oRef);
+      if (ei != null) {
+        if (ei.isArray()) {
+          if (idx < ei.arrayLength()) {
+            return getAttributeList( env, ei.getElementAttr( idx));
+          } else {
+            env.throwException("java.lang.ArrayIndexOutOfBoundsException",
+                    Integer.toString(idx));
+          }
+        } else {
+          env.throwException("java.lang.RuntimeException",
+                  "not an array: " + ei);
+        }
+      } else {
+        env.throwException("java.lang.RuntimeException", "illegal reference value: " + oRef);
+      }
+    }
+
+    return MJIEnv.NULL;
+  }
+
+  
   /**
    *  deprecated, use getBoolean()
    */
