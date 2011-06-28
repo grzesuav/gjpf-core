@@ -129,6 +129,23 @@ public class ThreadInfo
     }
   }
 
+  protected static class UncaughtHandlerFrame extends DirectCallStackFrame {
+
+    ExceptionInfo exceptionInfo;
+    
+    
+    UncaughtHandlerFrame (ExceptionInfo xi, MethodInfo miHandler){
+      // we need three operands: handlerObject, thread and exception object
+      super(miHandler, 3, 0);
+      
+      exceptionInfo = xi;
+    }
+    
+    ExceptionInfo getExceptionInfo(){
+      return exceptionInfo;
+    }
+  }
+  
   // transient, not state stored
   protected ExceptionInfo pendingException;
 
@@ -280,6 +297,8 @@ public class ThreadInfo
    */
   static String[] haltOnThrow;
 
+  static boolean ignoreUncaughtHandlers;
+  
   /** is on-the-fly partial order in effect? */
   static boolean porInEffect;
 
@@ -304,6 +323,7 @@ public class ThreadInfo
     threadInfos.clear();
 
     haltOnThrow = config.getStringArray("vm.halt_on_throw");
+    ignoreUncaughtHandlers = config.getBoolean( "vm.ignore_uncaught_handler", false);
     porInEffect = config.getBoolean("vm.por");
     porFieldBoundaries = porInEffect && config.getBoolean("vm.por.field_boundaries");
     porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
@@ -2750,6 +2770,15 @@ public class ThreadInfo
     } else {
       top = null;
     }
+    
+    // if we return from a uncaughtException direct call, we still want to report
+    // this as a NoUncaughtExceptionsProperty violation
+    // <2do> is this true even if it isn't the default ThreadGroup.uncaughtException() ?
+    if (returnedDirectCall instanceof UncaughtHandlerFrame){
+      ExceptionInfo xi = ((UncaughtHandlerFrame)returnedDirectCall).getExceptionInfo();
+      NoUncaughtExceptionsProperty.setExceptionInfo( xi);
+      throw new UncaughtException(this, xi.getExceptionReference());
+    }
 
     return top;
   }
@@ -2965,7 +2994,14 @@ public class ThreadInfo
         return exitRunMethod();
 
       } else {
-        // no handler -> uncaught exception -> NoUncaughtExcpetionsProperty violation
+        
+        if (!ignoreUncaughtHandlers && !isInUncaughtHandler()){
+          // <2do> that's a hack - move this into ExceptionInfo
+          getHeap().registerPinDown(exceptionObjRef);
+          return getUncaughtHandler(pendingException);
+        }
+        
+        // end of the line: no handler so we have a NoUncaughtExcpetionsProperty violation
         // Note - the stack has not been modified yet, it is still in the same state
         // where the exception was thrown
         NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
@@ -2996,7 +3032,65 @@ public class ThreadInfo
     }
   }
 
-  private void unwindTo (StackFrame newTopFrame){
+  Instruction getUncaughtHandler (ExceptionInfo xi){
+    Instruction insn;
+    
+    // check if this thread has its own uncaughtExceptionHandler set. If not,
+    // hand it over to ThreadGroup.uncaughtException()
+    int  hRef = getInstanceUncaughtHandler();
+    if (hRef == MJIEnv.NULL){
+      hRef = getThreadGroupRef(); // there always is one, it it always is an UncaughtHandler
+      insn = callUncaughtHandler(xi, hRef, "[groupUncaughtHandler]");
+    } else {
+      insn = callUncaughtHandler(xi, hRef, "[threadUncaughtHandler]");
+    }
+        
+    return insn;
+  }
+
+  
+  protected boolean isInUncaughtHandler(){
+    for (StackFrame frame = top; frame.getPrevious() != null; frame = frame.getPrevious()) {
+      if (frame instanceof UncaughtHandlerFrame){
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  protected int getInstanceUncaughtHandler (){
+    ElementInfo ei = getElementInfo(threadData.objref);
+    int handlerRef = ei.getReferenceField("uncaughtExceptionHandler");
+    return handlerRef;
+  }
+  
+  protected int getThreadGroupRef() {
+    ElementInfo ei = getElementInfo(threadData.objref);
+    int groupRef = ei.getReferenceField("group");
+    return groupRef;
+  }
+  
+  protected Instruction callUncaughtHandler(ExceptionInfo xi, int handlerRef, String id){
+    ElementInfo eiHandler = getElementInfo(handlerRef);
+    ClassInfo ciHandler = eiHandler.getClassInfo();
+    MethodInfo miHandler = ciHandler.getMethod("uncaughtException(Ljava/lang/Thread;Ljava/lang/Throwable;)V", true);
+
+    MethodInfo stub = miHandler.createDirectCallStub(id);
+    StackFrame frame = new UncaughtHandlerFrame(xi, stub);
+
+    frame.pushRef(handlerRef);
+    frame.pushRef(threadData.objref);
+    frame.pushRef(xi.getExceptionReference());
+
+    pushFrame(frame);
+
+    return frame.getPC();
+  }
+  
+  
+  
+  protected void unwindTo (StackFrame newTopFrame){
     for (StackFrame frame = top; (frame != null) && (frame != newTopFrame); frame = frame.getPrevious()) {
       MethodInfo mi = frame.getMethodInfo();
       mi.leave(this); // that takes care of releasing locks
@@ -3005,7 +3099,7 @@ public class ThreadInfo
     }
   }
 
-  private StackFrame unwindToFirstFrame(){
+  protected StackFrame unwindToFirstFrame(){
     StackFrame frame;
 
     for (frame = top; frame.getPrevious() != null; frame = frame.getPrevious()) {
