@@ -142,10 +142,7 @@ public class JVM {
   protected boolean indentOutput;
 
   /**
-   * VM instances are another example of evil throw-up ctors, but this is
-   * justified by the fact that they are only created via (configured)
-   * reflection from within the safe confines of the JPF ctor - which
-   * shields clients against blowups
+   * be prepared this might throw JPFConfigExceptions
    */
   public JVM (JPF jpf, Config conf) {
     this.jpf = jpf; // so that we know who instantiated us
@@ -168,9 +165,11 @@ public class JVM {
     initFields(config);
   }
 
-  protected JVM (){
-    // just to support unit test mockups
-  }
+  /**
+   * just here for unit test mockups, don't use as implicit base ctor in
+   * JVM derived classes
+   */
+  protected JVM (){}
 
   public JPF getJPF() {
     return jpf;
@@ -205,8 +204,10 @@ public class JVM {
     // peer classes get initialized upon NativePeer creation
   }
 
-  protected void initTimeModel (Config config){    
-    timeModel = config.getEssentialInstance("vm.time.class", TimeModel.class, this, config);
+  protected void initTimeModel (Config config){
+    Class<?>[] argTypes = { JVM.class, Config.class };
+    Object[] args = { this, config };
+    timeModel = config.getEssentialInstance("vm.time.class", TimeModel.class, argTypes, args);
   }
 
   /**
@@ -1825,7 +1826,7 @@ public class JVM {
   }
 
   public boolean hasPendingException () {
-    return (ThreadInfo.currentThread.pendingException != null);
+    return (getPendingException() != null);
   }
 
   public boolean isDeadlocked () {

@@ -60,12 +60,8 @@ public class DIRECTCALLRETURN extends Instruction {
   @Override
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     // pop the current frame but do not advance the new top frame, and do
-    // touch its operand stack
-
-    //DirectCallStackFrame frame = (DirectCallStackFrame) ti.getTopFrame();
-
-    StackFrame frame = ti.popDirectCallFrame();
-
-    return frame.getPC();
+    // not touch its operand stack
+    
+    return ti.popDirectCallFrame();
   }
 }
