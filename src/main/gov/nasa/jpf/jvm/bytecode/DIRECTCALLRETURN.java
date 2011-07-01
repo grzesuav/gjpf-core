@@ -62,6 +62,17 @@ public class DIRECTCALLRETURN extends Instruction {
     // pop the current frame but do not advance the new top frame, and do
     // not touch its operand stack
     
-    return ti.popDirectCallFrame();
+    if (ti.getStackDepth() == 1){ // thread exit point (might be re-executed)
+    
+      if (!ti.exit()){
+        return this; // repeat, we couldn't get the lock
+      } else {
+        return null;
+      }      
+      
+    } else {
+      StackFrame frame = ti.popDirectCallFrame();
+      return frame.getPC();
+    }
   }
 }

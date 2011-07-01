@@ -27,14 +27,16 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
  * this is an artificial instruction that is automatically prepended to
- * a run() method. Comes in handy to avoid CG confusion if the first insn
- * otherwise is using a CG, and can also be used to grab the lock if this
- * is a synchronized run
- *
- * NOTE we can't do the full CG handling here because there is no way
- * telling if this is reexecuted - ThreadInfo.isFirstStepInsn() will always
- * return true, since this is always the first insn after a context switch.
- * thread starting is a bit weird
+ * a run()/main() method call.
+ * 
+ * The main purpose is to have a special instruction marking the beginning
+ * of a new thread execution which does not cause CGs or is otherwise subject
+ * to execution semantics that change the program state.
+ * 
+ * For instance, without it we would have to add a new ThreadInfo state to
+ * determine if the first instruction within this thread was re-executed or
+ * just happens to be the first transition we execute within this thread
+ * 
  */
 public class RUNSTART extends Instruction {
 
@@ -45,16 +47,7 @@ public class RUNSTART extends Instruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-
-    ti.setState(ThreadInfo.State.RUNNING);  // The thread is now running.  Need to update the thread state accordingly.
-
-    // if this is the first insn in a synchronized run(), we also have to
-    // grab the lock
-    if (mi.isSynchronized()) {
-      ElementInfo ei = ti.getElementInfo(ti.getThis());
-      ei.lock(ti);
-    }
-
+    // this insn is never stored in any MethodInfo
     return mi.getInstruction(0);
   }
 

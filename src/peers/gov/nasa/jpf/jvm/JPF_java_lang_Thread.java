@@ -21,7 +21,6 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.jvm.bytecode.RUNSTART;
 import gov.nasa.jpf.util.JPFLogger;
 
 
@@ -145,79 +144,70 @@ public class JPF_java_lang_Thread {
     ThreadInfo tiCurrent = env.getThreadInfo();
     SystemState ss = env.getSystemState();
     JVM vm = tiCurrent.getVM();
-    ThreadInfo tiNew = getThreadInfo(objref);
+    ThreadInfo tiStartee = getThreadInfo(objref);
 
-    if (tiNew.isStopped()){
-      // don't do anything but set it terminated - it hasn't acquired any resources yet.
-      // note that apparently host VMs don't schedule this thread, so it never
-      // gets a handler in its run() invoked
-      tiNew.setTerminated();
-      return;
-    }
 
     if (!tiCurrent.isFirstStepInsn()) { // first time we see this (may be the only time)
 
+      if (tiStartee.isStopped()) {
+        // don't do anything but set it terminated - it hasn't acquired any resources yet.
+        // note that apparently host VMs don't schedule this thread, so it never
+        // gets a handler in its miRun() invoked
+        tiStartee.setTerminated();
+        return;
+      }
+      
       // check if this thread was already started. If it is still running, this
       // is a IllegalThreadStateException. If it already terminated, it just gets
       // silently ignored in Java 1.4, but the 1.5 spec explicitly marks this
       // as illegal, so we adopt this by throwing an IllegalThreadState, too
-      if (! tiNew.isNew()) {
+      if (! tiStartee.isNew()) {
         env.throwException("java.lang.IllegalThreadStateException");
         return;
       }
 
       // Ouch - that's bad. we have to dig this out from the innards
       // of the java.lang.Thread class
-      int target = tiNew.getTarget();
+      int targetRef = tiStartee.getTarget();
 
-      if (target == -1) {
-        // note that we don't set the 'target' field, since java.lang.Thread doesn't
-        target = objref;
+      if (targetRef == -1) {
+        // note that we don't set the 'targetRef' field, since java.lang.Thread doesn't
+        targetRef = objref;
 
         // better late than never
-        tiNew.setTarget(target);
+        tiStartee.setTarget(targetRef);
       }
 
       // we don't do this during thread creation because the thread isn't in
       // the GC root set before it actually starts to execute. Until then,
       // it's just an ordinary object
 
-      vm.notifyThreadStarted(tiNew);
+      vm.notifyThreadStarted(tiStartee);
 
-      ElementInfo ei = env.getElementInfo(target);
-      ClassInfo   ci = ei.getClassInfo();
-      MethodInfo  run = ci.getMethod("run()V", true);
+      ElementInfo eiTarget = env.getElementInfo(targetRef);
+      ClassInfo   ci = eiTarget.getClassInfo();
+      MethodInfo  miRun = ci.getMethod("run()V", true);
 
-      StackFrame runFrame = new StackFrame(run,target);
-      // the first insn should be our own, to prevent confusion with potential
-      // CGs of the first insn in run() (e.g. Verify.getXX()) - we just support
-      // one CG per insn.
-      // the RUNSTART will also do the locking if the tiNew has a sync run()
-      runFrame.setPC(new RUNSTART(run));
-      tiNew.pushFrame(runFrame);
+      MethodInfo runStub = miRun.createDirectCallStub("[run]");
+      DirectCallStackFrame runFrame = new DirectCallStackFrame(runStub, 1, 0);
+      runFrame.pushRef(targetRef);
+      runFrame.setPC( MethodInfo.getInstructionFactory().runstart(runStub));
+      
+      tiStartee.pushFrame(runFrame);
+      tiStartee.setState(ThreadInfo.State.RUNNING);
 
-      if (run.isSynchronized()) {
-        if (!ei.canLock(tiNew)){
-          ei.block(tiNew);
-        } else {
-          ei.registerLockContender(tiNew);
-        }
+      
+      // now we have a new thread, create a CG for scheduling it
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG(tiStartee);
+      if (ss.setNextChoiceGenerator(cg)) {
+        env.repeatInvocation();
+      } else {
+        Instruction insn = tiCurrent.getPC();
+        log.info(tiStartee.getName(), " start not a scheduling point in ", insn.getMethodInfo().getFullName());
       }
-
-      if (!tiNew.isStopped()){
-        if (!tiNew.isBlocked()) {
-          tiNew.setState(ThreadInfo.State.RUNNING);
-        }
-
-        // now we have a new thread, create a CG for scheduling it
-        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG(tiNew);
-        if (ss.setNextChoiceGenerator(cg)) {
-          env.repeatInvocation();
-        } else {
-          Instruction insn = tiCurrent.getPC();
-          log.info(tiNew.getName(), " start not a scheduling point in ", insn.getMethodInfo().getFullName());
-        }
-      }
+      
+    } else {
+      // nothing to do in the bottom half
     }
   }
 

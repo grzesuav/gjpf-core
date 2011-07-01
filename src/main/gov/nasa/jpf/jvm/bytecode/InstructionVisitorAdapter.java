@@ -345,8 +345,6 @@ public abstract class InstructionVisitorAdapter
 	
 	public void visit(ReturnInstruction ins){}
 	
-	public void visit(RUNSTART ins){}
-	
 	public void visit(SALOAD ins){}
 	
 	public void visit(SASTORE ins){}

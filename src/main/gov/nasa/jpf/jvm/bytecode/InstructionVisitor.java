@@ -182,7 +182,6 @@ public interface InstructionVisitor {
 	public void visit(RET ins);
 	public void visit(RETURN ins);
 	public void visit(ReturnInstruction ins);
-	public void visit(RUNSTART ins);
 	public void visit(SALOAD ins);
 	public void visit(SASTORE ins);
 	public void visit(SIPUSH ins);

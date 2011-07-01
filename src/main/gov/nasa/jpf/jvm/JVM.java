@@ -286,7 +286,7 @@ public class JVM {
     createStartupClassObjects(clinitQueue, main);
 
     // pushClinit the call stack with the clinits we've picked up, followed by main()
-    pushMain(config);
+    pushMainEntry(config);
     pushClinits(clinitQueue, main);
 
     initSystemState(main);
@@ -481,29 +481,45 @@ public class JVM {
     }
   }
 
-  protected void pushMain (Config config) {
+  /**
+   * override this method if you want your main class entry to be anything else
+   * than "public static void main(String[] args)"
+   * 
+   * Note that we do a directcall here so that we always have a first frame that
+   * can't execute SUT code. That way, we can handle synchronized entry points
+   * via normal InvokeInstructions, and thread termination processing via
+   * DIRECTCALLRETURN
+   */
+  protected void pushMainEntry (Config config) {
     Heap heap = getHeap();
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(mainClassName);
-    MethodInfo mi = ci.getMethod("main([Ljava/lang/String;)V", false);
-    ThreadInfo ti = ss.getThreadInfo(0);
+    
+    ClassInfo ciMain = ClassInfo.getResolvedClassInfo(mainClassName);
+    MethodInfo miMain = ciMain.getMethod("main([Ljava/lang/String;)V", false);
+    ThreadInfo tiMain = ss.getThreadInfo(0);
 
-    if (mi == null || !mi.isStatic()) {
-      throw new JPFException("no main() method in " + ci.getName());
+    // do some sanity checks if this is a valid main()
+    if (miMain == null || !miMain.isStatic()) {
+      throw new JPFException("no main() method in " + ciMain.getName());
     }
 
-    StackFrame mainFrame = new StackFrame(mi, null);
-    ti.pushFrame(mainFrame);
-
-    int argsObjref = heap.newArray("Ljava/lang/String;", args.length, null);
-    ElementInfo argsElement = heap.get(argsObjref);
-
+    // create the args array object
+    int argsRef = heap.newArray("Ljava/lang/String;", args.length, null);
+    ElementInfo argsElement = heap.get(argsRef);
     for (int i = 0; i < args.length; i++) {
-      int stringObjref = heap.newString(args[i], null);
-      argsElement.setReferenceElement(i, stringObjref);
+      int aRef = heap.newString(args[i], tiMain);
+      argsElement.setReferenceElement(i, aRef);
     }
-    ti.setLocalVariable(0, argsObjref, true);
+    
+    // create the direct call stub
+    MethodInfo mainStub = miMain.createDirectCallStub("[main]");
+    DirectCallStackFrame frame = new DirectCallStackFrame(mainStub, 1, 0);
+    frame.pushRef(argsRef);
+    // <2do> set RUNSTART pc if we want to catch synchronized main() defects 
+    
+    tiMain.pushFrame(frame);
   }
 
+  
   public void addListener (VMListener newListener) {
     listeners = Misc.appendElement(listeners, newListener);
   }
@@ -1532,7 +1548,7 @@ public class JVM {
       if (ti.getStackDepth() > 0){
         n++;
         //pw.print("Thread: ");
-        //pw.print(ti.getName());
+        //pw.print(tiMain.getName());
         pw.println(ti.getStateDescription());
 
         LinkedList<ElementInfo> locks = ti.getLockedObjects();

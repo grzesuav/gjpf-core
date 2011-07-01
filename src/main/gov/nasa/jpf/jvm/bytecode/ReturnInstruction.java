@@ -136,23 +136,21 @@ public abstract class ReturnInstruction extends Instruction implements gov.nasa.
     Object attr = getReturnAttr(ti); // do this before we pop
     storeReturnValue(ti);
 
-    if (ti.getStackDepth() == 1) { // done - last stackframe in this thread
-      return ti.exitRunMethod();
+    
+    // note that this is never the first frame, since we start all threads (incl. main)
+    // through a direct call
+    StackFrame top = ti.popFrame();
 
-    } else { // there are still frames on the stack
-      StackFrame top = ti.popFrame();
+    // remove args, push return value and continue with next insn
+    // (DirectCallStackFrames don't use this)
+    ti.removeArguments(mi);
+    pushReturnValue(ti);
 
-      // remove args, push return value and continue with next insn
-      // (DirectCallStackFrames don't use this)
-      ti.removeArguments(mi);
-      pushReturnValue(ti);
-
-      if (attr != null) {
-        setReturnAttr(ti, attr);
-      }
-
-      return top.getPC().getNext();
+    if (attr != null) {
+      setReturnAttr(ti, attr);
     }
+
+    return top.getPC().getNext();
   }
   
   public void accept(InstructionVisitor insVisitor) {

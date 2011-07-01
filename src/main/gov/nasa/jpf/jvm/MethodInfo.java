@@ -577,16 +577,6 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   public Instruction[] getInstructions () {
     return code;
   }
-
-  public Instruction getReturnInstruction(){
-    Instruction[] code = this.code;
-    for (int i=code.length-1; i>= 0; i--){
-      if (code[i] instanceof gov.nasa.jpf.jvm.ReturnInstruction){
-        return code[i];
-      }
-    }
-    return null; // maybe this method never returns
-  }
   
   public boolean includesLine (int line){
     int len = code.length;

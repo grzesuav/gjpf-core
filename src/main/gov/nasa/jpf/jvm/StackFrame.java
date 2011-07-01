@@ -1644,7 +1644,7 @@ public class StackFrame implements Cloneable {
 
   public int pop () {
     //assert (top >= stackBase) : "stack empty";
-
+    
     int v = slots[top];
 
     // <2do> get rid of this

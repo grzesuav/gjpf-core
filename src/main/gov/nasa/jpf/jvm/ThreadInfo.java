@@ -178,7 +178,7 @@ public class ThreadInfo
 
 
   //--- state stored/restored part
-
+  
   // this is a typical "orthogonal" thread state we have to remember, but
   // that should not affect any locking, blocking, notifying or such
   static final int ATTR_STOPPED = 0x0001;
@@ -734,14 +734,10 @@ public class ThreadInfo
     // for all other cases, we need to have a proper stopping Throwable that does not
     // fall victim to GC, and that does not cause NoUncaughtExcceptionsProperty violations
     if (throwableRef == MJIEnv.NULL){
-      // if no throwable was provided (the normal case), throw a ThreadDeath
+      // if no throwable was provided (the normal case), throw a java.lang.ThreadDeath Error
       ClassInfo cix = ClassInfo.getInitializedClassInfo("java.lang.ThreadDeath", this);
       throwableRef = createException(cix, null, MJIEnv.NULL);
     }
-
-    // this exception does not trigger a NoUncaughtExceptionsProperty violation
-    ElementInfo eix = getElementInfo(throwableRef);
-    eix.setBooleanField("canBeUncaught", true);
 
     // now the tricky part - this thread is alive but might be blocked, notified
     // or waiting. In any case, exception action should not take place before
@@ -2204,6 +2200,7 @@ public class ThreadInfo
 
     if (isStopped()){
       pc = throwStopException();
+      setPC(pc);
     }
 
     // this constitutes the main transition loop. It gobbles up
@@ -2254,7 +2251,7 @@ public class ThreadInfo
 
     // we also count the skipped ones
     executedInstructions++;
-
+    
     if (logInstruction) {
       ss.recordExecutionStep(pc);
     }
@@ -2456,9 +2453,11 @@ public class ThreadInfo
 
 
   /**
-   * this should only called if the current PC is the run() RETURN insn 
+   * this should only be called from the top half of the last DIRECTCALLRETURN of
+   * a thread.
+   * @return true - if the thread is done, false - if instruction has to be re-executed
    */
-  public Instruction exitRunMethod(){
+  public boolean exit(){
     int objref = getThreadObjectRef();
     ElementInfo ei = getElementInfo(objref);
     SystemState ss = vm.getSystemState();
@@ -2474,7 +2473,7 @@ public class ThreadInfo
       ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, this);
       ss.setMandatoryNextChoiceGenerator(cg, "blocking thread termination without CG: ");
 
-      return getPC(); // come back once we can obtain the lock to notify our waiters
+      return false; // come back once we can obtain the lock to notify our waiters
 
     } else { // Ok, we can get the lock, time to die
       // notify waiters on thread termination
@@ -2501,7 +2500,7 @@ public class ThreadInfo
       }
 
       popFrame(); // we need to do this *after* setting the CG (so that we still have a CG insn)
-      return null;
+      return true;
     }
   }
 
@@ -2753,49 +2752,31 @@ public class ThreadInfo
     if (frame.hasAnyRef()) {
       vm.getSystemState().activateGC();
     }
-    //if (frame.modifiesState()){ // ?? move to special return insns?
-    //  markTfChanged();
-    //}
 
-    if (stackDepth > 0){
-      top = frame.getPrevious();
-      stackDepth--;
-    } else {
-      top = null;
-    }
+    // there always is one since we start all threads through directcalls
+    top = frame.getPrevious();
+    stackDepth--;
 
     return top;
   }
 
-  
   /**
    * removing DirectCallStackFrames is a bit different (only happens from
    * DIRECTCALLRETURN insns)
    */
-  public Instruction popDirectCallFrame() {
+  public StackFrame popDirectCallFrame() {
     assert top instanceof DirectCallStackFrame;
+
+    returnedDirectCall = (DirectCallStackFrame)top;
 
     if (top instanceof UncaughtHandlerFrame){
       return popUncaughtHandlerFrame();
-      
-    } else {
-      // we don't need to mark anything as changed because we didn't
-      // use references in this stackframe
-
-      returnedDirectCall = (DirectCallStackFrame) top;
-
-      if (stackDepth > 0) {
-        top = top.getPrevious();
-        stackDepth--;
-        
-        return top.getPC();
-        
-      } else {
-        top = null;
-        
-        return null;
-      }
     }
+    
+    top = top.getPrevious();
+    stackDepth--;
+
+    return top;
   }
 
   
@@ -3002,31 +2983,25 @@ public class ThreadInfo
     }
 
     if (handlerFrame == null) {
-      if (canBeUncaughtException(exceptionObjRef)){
-        // don't bail with a property violation, make waiter runnable and gracefully exit
-        // this happens with java.lang.ThreadDeath Errors that are thrown by Thread.stop()
-        unwindToFirstFrame();
-        setReturnPC();
-        
-        pendingException = null;
-        return exitRunMethod();
-
-      } else {
-        // we still have to check if there is a Thread.UncaughtExceptionHandler in effect,
-        // and if we already execute within one, in which case we don't reenter it
-        if (!ignoreUncaughtHandlers && !isUncaughtHandlerOnStack()){
-          insn = callUncaughtHandler(pendingException);
-          if (insn != null){
-            // we only do this if there is a UncaughtHandler other than the standard
-            // ThreadGroup, hence we have to check for the return value. If there is
-            // only ThreadGroup.uncaughtException(), we put the system out of its misery
-            return insn;
-          }
+      // we still have to check if there is a Thread.UncaughtExceptionHandler in effect,
+      // and if we already execute within one, in which case we don't reenter it
+      if (!ignoreUncaughtHandlers && !isUncaughtHandlerOnStack()) {
+        insn = callUncaughtHandler(pendingException);
+        if (insn != null) {
+          // we only do this if there is a UncaughtHandler other than the standard
+          // ThreadGroup, hence we have to check for the return value. If there is
+          // only ThreadGroup.uncaughtException(), we put the system out of its misery
+          return insn;
         }
-        
-        // end of the line: no overridden handler so we have a NoUncaughtExcpetionsProperty violation
-        // Note - the stack has not been modified yet, it is still in the same state
-        // where the exception was thrown
+      }
+
+      // there was no overridden uncaughtHandler, or we already executed it
+      if ("java.lang.ThreadDeath".equals(cname)) { // gracefully shut down
+        unwindToFirstFrame();
+        pendingException = null;
+        return top.getPC().getNext(); // the final DIRECTCALLRETURN
+
+      } else { // we have a NoUncaughtPropertyViolation
         NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
         throw new UncaughtException(this, exceptionObjRef);
       }
@@ -3129,7 +3104,7 @@ public class ThreadInfo
     ClassInfo ciGrp = eiGrp.getClassInfo();
     MethodInfo miHandler = ciGrp.getMethod("uncaughtException(Ljava/lang/Thread;Ljava/lang/Throwable;)V", true);
     ClassInfo ciHandler = miHandler.getClassInfo();
-    if (!ciHandler.getName().equals("java.lang.Thread")){
+    if (!ciHandler.getName().equals("java.lang.ThreadGroup")){
       return eiGrp.getIndex();
     }
     
@@ -3161,15 +3136,15 @@ public class ThreadInfo
     return frame.getPC();
   }
   
-  public Instruction popUncaughtHandlerFrame(){    
+  public StackFrame popUncaughtHandlerFrame(){    
     // we return from a overridden uncaughtException() direct call, but
     // its debatable if this counts as 'handled'
     if (passUncaughtHandler) {
       // gracefully shutdown this thread
       unwindToFirstFrame(); // this will take care of notifying
-      setReturnPC();
       pendingException = null;
-      return exitRunMethod();
+      top.advancePC();
+      return top;
 
     } else {
       // treat this still as an NoUncaughtExceptionProperty violation
@@ -3202,11 +3177,6 @@ public class ThreadInfo
     return frame;
   }
 
-  protected void setReturnPC (){
-    Instruction ret = top.getMethodInfo().getReturnInstruction();
-    setPC(ret);
-  }
-
   public ExceptionInfo getPendingException () {
     return pendingException;
   }
@@ -3218,11 +3188,6 @@ public class ThreadInfo
   public void clearPendingException () {
     NoUncaughtExceptionsProperty.setExceptionInfo(null);
     pendingException = null;
-  }
-
-  public boolean canBeUncaughtException (int throwableRef){
-    ElementInfo eix = getElementInfo(throwableRef);
-    return eix.getBooleanField("canBeUncaught");
   }
 
   /**
