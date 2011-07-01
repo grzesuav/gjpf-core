@@ -87,6 +87,7 @@ public class Thread implements Runnable {
     return defaultUncaughtExceptionHandler;
   }
   
+  
   public Thread () {
     init(group, target, name, 0L);
   }
@@ -126,6 +127,14 @@ public class Thread implements Runnable {
 
   public void setUncaughtExceptionHandler(UncaughtExceptionHandler xh) {
     uncaughtExceptionHandler = xh;
+  }
+  
+  public UncaughtExceptionHandler getUncaughtExceptionHandler(){
+    if (uncaughtExceptionHandler != null){
+      return uncaughtExceptionHandler;
+    } else {
+      return group;
+    }
   }
   
   public void setContextClassLoader (ClassLoader cl) {

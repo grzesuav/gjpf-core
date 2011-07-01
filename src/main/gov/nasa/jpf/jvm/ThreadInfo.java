@@ -2517,6 +2517,7 @@ public class ThreadInfo
     ei.setReferenceField("group", MJIEnv.NULL);
     ei.setReferenceField("threadLocals", MJIEnv.NULL);
     ei.setReferenceField("inheritableThreadLocals", MJIEnv.NULL);
+    ei.setReferenceField("uncaughtExceptionHandler", MJIEnv.NULL);
   }
 
   void cleanupThreadGroup (int grpRef, int threadRef) {
@@ -2986,6 +2987,10 @@ public class ThreadInfo
       // we still have to check if there is a Thread.UncaughtExceptionHandler in effect,
       // and if we already execute within one, in which case we don't reenter it
       if (!ignoreUncaughtHandlers && !isUncaughtHandlerOnStack()) {
+        // we use a direct call instead of exception handlers within the run()/main()
+        // direct call methods because we want to preserve the whole stack in case
+        // we treat returned (report-only) handlers as NoUncaughtExceptionProperty
+        // violations (passUncaughtHandler=false)
         insn = callUncaughtHandler(pendingException);
         if (insn != null) {
           // we only do this if there is a UncaughtHandler other than the standard
@@ -3032,8 +3037,12 @@ public class ThreadInfo
 
   
   /**
-   * this explicitly models the standard ThreadGroup.uncaughtException, but we want
-   * to save us a roundtrip if that's the only handler we got
+   * this explicitly models the standard ThreadGroup.uncaughtException(), but we want
+   * to save us a roundtrip if that's the only handler we got. If we would use
+   * a handler block in the run()/main() direct call stubs that just delegate to
+   * the standard ThreadGroup.uncaughtException(), we would have trouble mapping
+   * this to NoUncaughtExceptionProperty violations (which is just a normal
+   * printStackTrace() in there).
    */
   protected Instruction callUncaughtHandler (ExceptionInfo xi){
     Instruction insn = null;
@@ -3047,8 +3056,7 @@ public class ThreadInfo
     } else {
       // 2. check if any of the ThreadGroup chain has an overridden uncaughtException
       int grpRef = getThreadGroupRef();
-      ElementInfo eiGrp = getElementInfo(grpRef);
-      hRef = getThreadGroupUncaughtHandler(eiGrp);
+      hRef = getThreadGroupUncaughtHandler(grpRef);
       
       if (hRef != MJIEnv.NULL){
         insn = callUncaughtHandler(xi, hRef, "[threadGroupUncaughtHandler]");
@@ -3092,20 +3100,19 @@ public class ThreadInfo
     return groupRef;
   }
   
-  protected int getThreadGroupUncaughtHandler (ElementInfo eiGrp){
-    int pRef = eiGrp.getReferenceField("parent");
-    
-    // recursively check upwards in the parent chain
-    if (pRef != MJIEnv.NULL ){
-      return getThreadGroupUncaughtHandler( getElementInfo(pRef));
-    }
+  protected int getThreadGroupUncaughtHandler (int grpRef){
 
-    // check if there is an overridden uncaughtException()
-    ClassInfo ciGrp = eiGrp.getClassInfo();
-    MethodInfo miHandler = ciGrp.getMethod("uncaughtException(Ljava/lang/Thread;Ljava/lang/Throwable;)V", true);
-    ClassInfo ciHandler = miHandler.getClassInfo();
-    if (!ciHandler.getName().equals("java.lang.ThreadGroup")){
-      return eiGrp.getIndex();
+    // get the first overridden uncaughtException() implementation in the group chain
+    while (grpRef != MJIEnv.NULL){
+      ElementInfo eiGrp = getElementInfo(grpRef);
+      ClassInfo ciGrp = eiGrp.getClassInfo();
+      MethodInfo miHandler = ciGrp.getMethod("uncaughtException(Ljava/lang/Thread;Ljava/lang/Throwable;)V", true);
+      ClassInfo ciHandler = miHandler.getClassInfo();
+      if (!ciHandler.getName().equals("java.lang.ThreadGroup")) {
+        return eiGrp.getIndex();
+      }
+
+      grpRef = eiGrp.getReferenceField("parent");
     }
     
     // no overridden uncaughtHandler found
@@ -3136,9 +3143,14 @@ public class ThreadInfo
     return frame.getPC();
   }
   
-  public StackFrame popUncaughtHandlerFrame(){    
+  protected StackFrame popUncaughtHandlerFrame(){    
     // we return from a overridden uncaughtException() direct call, but
-    // its debatable if this counts as 'handled'
+    // its debatable if this counts as 'handled'. For handlers that just do
+    // reporting this is probably false and we want JPF to report the defect.
+    // If this is a fail-safe handler that tries to clean up so that other threads can
+    // take over, we want to be able to go on and properly shut down the 
+    // thread without property violation
+    
     if (passUncaughtHandler) {
       // gracefully shutdown this thread
       unwindToFirstFrame(); // this will take care of notifying
