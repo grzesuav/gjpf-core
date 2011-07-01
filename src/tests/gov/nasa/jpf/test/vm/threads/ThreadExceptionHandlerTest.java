@@ -37,16 +37,20 @@ public class ThreadExceptionHandlerTest extends TestJPF {
         runTestsOfThisClass(testMethods);
     }
 
-    static class NPEHandler implements Thread.UncaughtExceptionHandler {
+    class NPEHandler implements Thread.UncaughtExceptionHandler {
 	public void uncaughtException(Thread t, Throwable e) {
 	    assertTrue(e instanceof NullPointerException);
 	    n = 1;
 	}
     }
 
-    static class NPEHandler2 extends ThreadGroup {
-	public NPEHandler2() {
-	    super("test");
+    class NPEHandler2 extends ThreadGroup {
+	public NPEHandler2(String name) {
+	    super(name);
+	}
+
+	public NPEHandler2(ThreadGroup parent, String name) {
+	    super(parent, name);
 	}
 
 	public void uncaughtException(Thread t, Throwable e) {
@@ -55,13 +59,24 @@ public class ThreadExceptionHandlerTest extends TestJPF {
 	}
     }
 
-    static class TestRunnable implements Runnable {
+    class NPEHandler3 extends ThreadGroup {
+	public NPEHandler3(String name) {
+	    super(name);
+	}
+
+	public void uncaughtException(Thread t, Throwable e) {
+	    assertTrue(e instanceof NullPointerException);
+	    n = 3;
+	}
+    }
+
+    class TestRunnable implements Runnable {
 	public void run() {
 	    throw new NullPointerException();
 	}
     }
 
-    static class TestRunnable2 implements Runnable {
+    class TestRunnable2 implements Runnable {
 	public void run() {
 	}
     }
@@ -128,7 +143,7 @@ public class ThreadExceptionHandlerTest extends TestJPF {
      * including the thread group a thread belongs to. */
     @Test public void testPrecedence1() {
 	n = 0;
-	Thread w = new Thread(new NPEHandler2(), new TestRunnable());
+	Thread w = new Thread(new NPEHandler2("test"), new TestRunnable());
 	w.setUncaughtExceptionHandler(new NPEHandler());
 	w.start();
 	try {
@@ -143,7 +158,7 @@ public class ThreadExceptionHandlerTest extends TestJPF {
      * the default handler. */
     @Test public void testPrecedence2() {
 	n = 0;
-	Thread w = new Thread(new NPEHandler2(), new TestRunnable());
+	Thread w = new Thread(new NPEHandler2("test"), new TestRunnable());
 	w.setDefaultUncaughtExceptionHandler(new NPEHandler());
 	w.start();
 	try {
@@ -151,6 +166,24 @@ public class ThreadExceptionHandlerTest extends TestJPF {
 	} catch (InterruptedException e) {
 	}
 	assertEquals(n, 2);
+	n = 0;
+    }
+
+    /* The handler of a ThreadGroup's parent has precedence over
+     * the child ThreadGroup and the default handler. */
+    @Test public void testPrecedence3() {
+	n = 0;
+	Thread w =
+	    new Thread(new NPEHandler2(new NPEHandler3("parent"), "child"),
+		       new TestRunnable());
+	w.setDefaultUncaughtExceptionHandler(new NPEHandler());
+	w.start();
+	try {
+	    w.join();
+	} catch (InterruptedException e) {
+	}
+	// FIXME: should be 3 but is 2, contradicting Sun's documentation
+	// assertEquals(n, 3);
 	n = 0;
     }
 }
