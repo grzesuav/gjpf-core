@@ -33,6 +33,7 @@ import gov.nasa.jpf.util.LocationSpec;
 import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.ObjVector;
+import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.Source;
 import gov.nasa.jpf.util.StringSetMatcher;
 
@@ -236,6 +237,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected Source source;
 
 
+  /** user defined attribute objects */
+  protected Object attr;
+  
   static StringSetMatcher enabledAssertionPatterns;
   static StringSetMatcher disabledAssertionPatterns;
 
@@ -1640,6 +1644,16 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return ((elementInfoAttrs & ElementInfo.ATTR_IMMUTABLE) != 0);
   }
 
+  public boolean hasInstanceFieldInfoAttr (Class<?> type){
+    for (int i=0; i<nInstanceFields; i++){
+      if (getInstanceField(i).hasAttr(type)){
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
   public NativePeer getNativePeer () {
     return nativePeer;
   }
@@ -1866,6 +1880,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
+  public FieldInfo[] getInstanceFields(){
+    FieldInfo[] fields = new FieldInfo[nInstanceFields];
+    
+    for (int i=0; i<fields.length; i++){
+      fields[i] = getInstanceField(i);
+    }
+    
+    return fields;
+  }
 
   public int getStaticDataSize () {
     return staticDataSize;
@@ -2350,6 +2373,67 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return null;
   }
 
+  //--- the generic attribute API
+
+  public boolean hasAttr () {
+    return (attr != null);
+  }
+
+  public boolean hasAttr (Class<?> attrType){
+    return ObjectList.containsType(attr, attrType);
+  }
+
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getAttr(){
+    return attr;
+  }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setAttr (Object a){
+    attr = a;    
+  }
+
+  public void addAttr (Object a){
+    attr = ObjectList.add(attr, a);
+  }
+
+  public void removeAttr (Object a){
+    attr = ObjectList.remove(attr, a);
+  }
+
+  public void replaceAttr (Object oldAttr, Object newAttr){
+    attr = ObjectList.replace(attr, oldAttr, newAttr);
+  }
+
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getAttr (Class<T> attrType) {
+    return ObjectList.getFirst(attr, attrType);
+  }
+
+  public <T> T getNextAttr (Class<T> attrType, Object prev) {
+    return ObjectList.getNext(attr, attrType, prev);
+  }
+
+  public ObjectList.Iterator attrIterator(){
+    return ObjectList.iterator(attr);
+  }
+  
+  public <T> ObjectList.TypedIterator<T> attrIterator(Class<T> attrType){
+    return ObjectList.typedIterator(attr, attrType);
+  }
+
+  // -- end attrs --  
 }
 
 

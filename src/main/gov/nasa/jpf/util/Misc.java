@@ -522,6 +522,13 @@ public class Misc {
     }
   }
 
+  public int setBit (int val, int idx){
+    return (val | (1<<idx));
+  }
+  
+  public int clearBit (int val, int idx){
+    return (val & ~(1<<idx));
+  }
 
   /*=================== PRIVATE STUFF ===================*/
 

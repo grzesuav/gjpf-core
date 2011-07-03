@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.util.ObjectList;
 import java.lang.reflect.Modifier;
 
 
@@ -34,18 +35,21 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
   // (ignored if NEVER_BREAK is set)
   static final int BREAK_SHARED = 0x20000;
 
+  // those might relate to sticky ElementInto.ATTR_*
+  protected int attributes;
+
   
   protected final String name;
-  private String type;  // lazy initialized fully qualified type name as per JLS 6.7 ("int", "x.Y[]")
+  protected String type;  // lazy initialized fully qualified type name as per JLS 6.7 ("int", "x.Y[]")
   protected final String signature; // "I", "[Lx/Y;" etc.
   protected int storageSize;
 
   protected final ClassInfo ci; // class this field belongs to
-  final int fieldIndex; // declaration ordinal
+  protected final int fieldIndex; // declaration ordinal
 
   // where in the corresponding Fields object do we store the value
   // (note this works because of the wonderful single inheritance)
-  final int storageOffset;
+  protected final int storageOffset;
 
   // optional initializer for this field, can't be final because it is set from
   // classfile field_info attributes (i.e. after construction)
@@ -55,9 +59,8 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
 
   protected int modifiers;
 
-  // those might relate to sticky ElementInto.ATTR_*
-  int attributes;
-
+  // property/mode specific attributes
+  protected Object attr;
   
   public static FieldInfo create (ClassInfo ci, String name, String signature, int modifiers,
                                   int idx, int off){
@@ -272,6 +275,8 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
 
     return sb.toString();
   }
+  
+  //--- those are the JPF internal attribute flags (not to mix with free user attrs)
 
   void setAttributes (int a) {
     attributes = a;
@@ -301,7 +306,67 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
     return ci.getName() + '.' + name;
   }
 
-  public boolean isUntracked () {
-    return getAnnotation("gov.nasa.jpf.jvm.untracked.UntrackedField") != null;
+  
+  //--- the generic attribute API
+
+  public boolean hasAttr () {
+    return (attr != null);
   }
+
+  public boolean hasAttr (Class<?> attrType){
+    return ObjectList.containsType(attr, attrType);
+  }
+
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getAttr(){
+    return attr;
+  }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setAttr (Object a){
+    attr = a;    
+  }
+
+  public void addAttr (Object a){
+    attr = ObjectList.add(attr, a);
+  }
+
+  public void removeAttr (Object a){
+    attr = ObjectList.remove(attr, a);
+  }
+
+  public void replaceAttr (Object oldAttr, Object newAttr){
+    attr = ObjectList.replace(attr, oldAttr, newAttr);
+  }
+
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getAttr (Class<T> attrType) {
+    return ObjectList.getFirst(attr, attrType);
+  }
+
+  public <T> T getNextAttr (Class<T> attrType, Object prev) {
+    return ObjectList.getNext(attr, attrType, prev);
+  }
+
+  public ObjectList.Iterator attrIterator(){
+    return ObjectList.iterator(attr);
+  }
+  
+  public <T> ObjectList.TypedIterator<T> attrIterator(Class<T> attrType){
+    return ObjectList.typedIterator(attr, attrType);
+  }
+
+  // -- end attrs --
+
 }

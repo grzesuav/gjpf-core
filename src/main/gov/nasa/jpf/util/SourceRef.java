@@ -36,7 +36,7 @@ public class SourceRef {
   }
 
   public SourceRef (String spec){
-    int idx = spec.indexOf(":");
+    int idx = spec.indexOf(':');
     if (idx > 0){
       fileName = spec.substring(0, idx);
       line = Integer.parseInt(spec.substring(idx+1));

@@ -203,6 +203,41 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     buf.add(objref);
   }
 
+  
+  protected void processArrayFields (ArrayFields afields){
+    buf.add(afields.arrayLength());
+
+    if (afields.isReferenceArray()) {
+      int[] values = afields.asReferenceArray();
+      for (int i = 0; i < values.length; i++) {
+        processReference(values[i]);
+      }
+    } else {
+      afields.appendTo(buf);
+    }
+  }
+    
+  protected void processNamedFields (ClassInfo ci, Fields fields){
+    FinalBitSet filtered = getInstanceFilterMask(ci);
+    FinalBitSet refs = getInstanceRefMask(ci);
+
+    // using a block operation probably doesn't buy us much here since
+    // we would have to blank the filtered slots and then visit the
+    // non-filtered reference slots, i.e. do two iterations over
+    // the mask bit sets
+    int[] values = fields.asFieldSlots();
+    for (int i = 0; i < values.length; i++) {
+      if (!filtered.get(i)) {
+        int v = values[i];
+        if (refs.get(i)) {
+          processReference(v);
+        } else {
+          buf.add(v);
+        }
+      }
+    }
+  }
+
   // needs to be public because of ElementInfoProcessor interface
   public void processElementInfo(ElementInfo ei) {
     Fields fields = ei.getFields();
@@ -210,39 +245,13 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     buf.add(ci.getUniqueId());
 
     if (fields instanceof ArrayFields) { // not filtered
-      ArrayFields afields = (ArrayFields) fields;
-      buf.add(afields.arrayLength());
-
-      if (afields.isReferenceArray()){
-        int[] values = afields.asReferenceArray();
-        for (int i = 0; i < values.length; i++) {
-          processReference(values[i]);
-        }
-      } else {
-        afields.appendTo(buf);
-      }
+      processArrayFields((ArrayFields)fields);
 
     } else { // named fields, filtered
-      FinalBitSet filtered = getInstanceFilterMask(ci);
-      FinalBitSet refs = getInstanceRefMask(ci);
-
-      // using a block operation probably doesn't buy us much here since
-      // we would have to blank the filtered slots and then visit the
-      // non-filtered reference slots, i.e. do two iterations over
-      // the mask bit sets
-      int[] values = fields.asFieldSlots();
-      for (int i = 0; i < values.length; i++) {
-        if (!filtered.get(i)) {
-          int v = values[i];
-          if (refs.get(i)) {
-            processReference(v);
-          } else {
-            buf.add(v);
-          }
-        }
-      }
+      processNamedFields(ci, fields);
     }
   }
+  
 
   protected void processReferenceQueue () {
     refQueue.process(this);
