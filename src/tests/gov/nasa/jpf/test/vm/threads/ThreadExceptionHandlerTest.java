@@ -25,9 +25,6 @@ import gov.nasa.jpf.util.test.TestJPF;
 import static gov.nasa.jpf.util.test.TestJPF.*;
 
 /** Unit tests for the three levels of exception handlers that threads have. */
-/* TODO: These tests must be run inside JPF to test JPF itself.
- * However, that would currently fail because JPF does not yet support all
- * the methods needed. */
 public class ThreadExceptionHandlerTest extends TestJPF {
 
   static int n = 0;
