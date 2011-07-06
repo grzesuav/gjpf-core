@@ -76,6 +76,13 @@ public class ThreadExceptionHandlerTest extends TestJPF {
 
     // this one doesn't override uncaughtException()
   }
+
+  class NPEHandlerExc implements Thread.UncaughtExceptionHandler {
+
+    public void uncaughtException(Thread t, Throwable e) {
+      throw new NullPointerException("test");
+    }
+  }
   
   class TestRunnable implements Runnable {
 
@@ -218,6 +225,22 @@ public class ThreadExceptionHandlerTest extends TestJPF {
       }
       assertEquals(n, 3);
       n = 0;
+    }
+  }
+
+  /* Custom exception handler throws (unhandled) exception */
+  @Test
+  public void testHandlerThrowsExc() {
+    if (verifyUnhandledException("java.lang.NullPointerException",
+				 "+vm.ignore_uncaught_handler=false",
+                                 "+vm.pass_uncaught_handler")){
+      Thread w = new Thread(new TestRunnable());
+      w.setDefaultUncaughtExceptionHandler(new NPEHandlerExc());
+      w.start();
+      try {
+        w.join();
+      } catch (InterruptedException e) {
+      }
     }
   }
 }
