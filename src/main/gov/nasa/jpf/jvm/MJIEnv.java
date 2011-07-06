@@ -686,6 +686,13 @@ public class MJIEnv {
     ci.getStaticElementInfo().setReferenceField(fname, objref);
   }
 
+  public void setStaticReferenceField (int clsObjRef, String fname, int objref) {
+    ElementInfo cei = getClassElementInfo(clsObjRef);
+
+    // <2do> - we should REALLY check for type compatibility here
+    cei.setReferenceField(fname, objref);
+  }
+
   public int getStaticReferenceField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     return ci.getStaticElementInfo().getReferenceField(fname);

@@ -34,15 +34,26 @@ import java.util.HashMap;
  */
 public class AnnotationInfo {
 
-  static final Entry[] NONE = new Entry[0];
-  
-  // we have to jump through a lot of hoops to handle default annotation parameter values
-  // this is not ideal, since it causes the classfile to be re-read if the SUT
-  // uses annotation reflection (which creates a ClassInfo), but this is rather
-  // exotic, so we save some time by not creating a ClassInfo (which would hold
-  // the default vals as method annotations) and directly store the default values here
-  static HashMap<String,Entry[]> defaultEntries = new HashMap<String,Entry[]>();
+  // NOTE - never modify an Entry object since it might be shared between
+  // different instances of the same annotation type
+  static class Entry {
+    String key;
+    Object value;
+    
+    public String getKey() {
+      return key;
+    }
 
+    public Object getValue() {
+      return value;
+    }
+    
+    Entry (String key, Object value){
+      this.key = key;
+      this.value = value;
+    }
+  }
+  
   static class DefaultValueCollector extends ClassFileReaderAdapter {
     String annotationName;
 
@@ -127,35 +138,6 @@ public class AnnotationInfo {
 
   }
 
-  static DefaultValueCollector valueCollector = new DefaultValueCollector();
-
-  public static Entry[] getDefaultEntries (ClassPath locator, String annotationType){
-
-    Entry[] def = defaultEntries.get(annotationType);
-
-    if (def == null){ // Annotation not seen yet - we have to dig it out from the classfile
-      try {
-        byte[] data = locator.getClassData(annotationType);
-        if (data == null){
-          throw new JPFException("annotation class not found: " + annotationType);
-        }
-
-        ClassFile cf = new ClassFile(data);
-        cf.parse(valueCollector);
-
-        def = valueCollector.getDefaultValueEntries();
-        defaultEntries.put(annotationType, def);
-
-      } catch (ClassFileException cfx){
-        throw new JPFException("malformed annotation classfile");
-      }
-
-    }
-
-    return def;
-  }
-
-
   public static class EnumValue {
     String eClassName;
     String eConst;
@@ -190,6 +172,51 @@ public class AnnotationInfo {
     }
   }
 
+  
+  
+  static final Entry[] NONE = new Entry[0];
+  
+  // we have to jump through a lot of hoops to handle default annotation parameter values
+  // this is not ideal, since it causes the classfile to be re-read if the SUT
+  // uses annotation reflection (which creates a ClassInfo), but this is rather
+  // exotic, so we save some time by not creating a ClassInfo (which would hold
+  // the default vals as method annotations) and directly store the default values here
+  static HashMap<String,Entry[]> defaultEntries = new HashMap<String,Entry[]>();
+
+  static DefaultValueCollector valueCollector = new DefaultValueCollector();
+
+  
+  String name;
+  Entry[] entries;
+
+
+  
+  public static Entry[] getDefaultEntries (ClassPath locator, String annotationType){
+
+    Entry[] def = defaultEntries.get(annotationType);
+
+    if (def == null){ // Annotation not seen yet - we have to dig it out from the classfile
+      try {
+        byte[] data = locator.getClassData(annotationType);
+        if (data == null){
+          throw new JPFException("annotation class not found: " + annotationType);
+        }
+
+        ClassFile cf = new ClassFile(data);
+        cf.parse(valueCollector);
+
+        def = valueCollector.getDefaultValueEntries();
+        defaultEntries.put(annotationType, def);
+
+      } catch (ClassFileException cfx){
+        throw new JPFException("malformed annotation classfile");
+      }
+
+    }
+
+    return def;
+  }
+  
   public static Object getEnumValue(String eType, String eConst){
     return new EnumValue( Types.getClassNameFromTypeName(eType), eConst);
   }
@@ -198,28 +225,6 @@ public class AnnotationInfo {
     return new ClassValue( Types.getClassNameFromTypeName(type));
   }
 
-  // NOTE - never modify an Entry object since it might be shared between
-  // different instances of the same annotation type
-  static class Entry {
-    String key;
-    Object value;
-    
-    public String getKey() {
-      return key;
-    }
-
-    public Object getValue() {
-      return value;
-    }
-    
-    Entry (String key, Object value){
-      this.key = key;
-      this.value = value;
-    }
-  }
-  
-  String name;
-  Entry[] entries;
 
 
   protected AnnotationInfo(String name){
@@ -334,11 +339,61 @@ public class AnnotationInfo {
     return a;
   }
   
+  
+  public <T> T getValue (String key, Class<T> type){
+    Object v = getValue(key);
+    if (type.isInstance(v)){
+      return (T)v;
+    } else {
+      return null;
+    }
+  }
+  
   public boolean getValueAsBoolean (String key){
     Object v = getValue(key);
-    return (v != null && v instanceof Boolean) ? ((Boolean)v).booleanValue() : false;
-    
+    if (v instanceof Boolean){
+      return ((Boolean)v).booleanValue();
+    } else {
+      throw new JPFException("annotation element @" + name + '.' + key + "() not a boolean: " + v);
+    }
   }
+  
+  public int getValueAsInt (String key){
+    Object v = getValue(key);
+    if (v instanceof Integer){
+      return ((Integer)v).intValue();
+    } else {
+      throw new JPFException("annotation element @" + name + '.' + key + "() not an int: " + v);
+    }
+  }
+
+  public long getValueAsLong (String key){
+    Object v = getValue(key);
+    if (v instanceof Long){
+      return ((Long)v).longValue();
+    } else {
+      throw new JPFException("annotation element @" + name + '.' + key + "() not a long: " + v);
+    }
+  }
+
+  public float getValueAsFloat (String key){
+    Object v = getValue(key);
+    if (v instanceof Float){
+      return ((Float)v).floatValue();
+    } else {
+      throw new JPFException("annotation element @" + name + '.' + key + "() not a float: " + v);
+    }
+  }
+  
+  public double getValueAsDouble (String key){
+    Object v = getValue(key);
+    if (v instanceof Double){
+      return ((Double)v).doubleValue();
+    } else {
+      throw new JPFException("annotation element @" + name + '.' + key + "() not a double: " + v);
+    }
+  }
+
   
   public Object getValue (String key){
     for (int i=0; i<entries.length; i++){

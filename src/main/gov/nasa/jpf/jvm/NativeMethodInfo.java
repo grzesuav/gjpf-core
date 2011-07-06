@@ -58,7 +58,7 @@ public class NativeMethodInfo extends MethodInfo {
     genericSignature = mi.genericSignature;
     ci = mi.ci;
     modifiers = mi.modifiers;
-    attrs = mi.attrs;
+    attributes = mi.attributes;
     thrownExceptionClassNames = mi.thrownExceptionClassNames;
     parameterAnnotations = mi.parameterAnnotations;
 

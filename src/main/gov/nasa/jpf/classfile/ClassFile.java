@@ -1251,6 +1251,15 @@ public class ClassFile {
 
     int t = readU1();
     switch (t){
+      case 'Z':
+        // booleans have to be treated differently since there is no CONSTANT_Boolean, i.e. values are
+        // stored as CONSTANT_Integer in the constpool, i.e. the cpValue doesn't have the right type
+        cpIdx = readU2();
+        val = cpValue[cpIdx];
+        val = Boolean.valueOf((Integer)val == 1);
+        setPrimitiveAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, val);
+        break;        
+      
       case 'B':
       case 'C':
       case 'D':
@@ -1258,7 +1267,6 @@ public class ClassFile {
       case 'I':
       case 'J':
       case 'S':
-      case 'Z':
         cpIdx = readU2();
         val = cpValue[cpIdx];
         setPrimitiveAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, val);

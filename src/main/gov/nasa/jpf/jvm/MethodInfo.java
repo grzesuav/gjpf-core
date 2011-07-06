@@ -26,10 +26,10 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassFile;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.jvm.ReturnInstruction;
 
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
+import gov.nasa.jpf.util.ObjectList;
 
 
 /**
@@ -119,10 +119,10 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   //--- a batch of attributes
   
   /** the standard Java modifier attributes */
-  int modifiers;
+  protected int modifiers;
    
   /** a batch of execution related JPF attributes */
-  int attrs;
+  protected int attributes;
       
 
   //--- all the stuff we need for native methods
@@ -143,7 +143,9 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   /** used for native method parameter conversion (lazy evaluated) */
   protected byte[] argTypes = null;
 
-
+  
+  /** user defined attributes */
+  protected Object attr;
   
   static InstructionFactory insnFactory;
   
@@ -179,10 +181,10 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
 
     // set attributes we can deduce from the name and the ClassInfo
     if (name.equals("<init>")) {
-      attrs |= IS_INIT;
+      attributes |= IS_INIT;
     } else if (name.equals("<clinit>")) {
       this.modifiers |= Modifier.SYNCHRONIZED;
-      attrs |= IS_CLINIT | FIREWALL;
+      attributes |= IS_CLINIT | FIREWALL;
     }
     if (ci.isInterface()){ // all interface methods are public
       this.modifiers |= Modifier.PUBLIC;
@@ -254,24 +256,24 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
 
   void setAtomic (boolean isAtomic) {
     if (isAtomic) {
-      attrs |= EXEC_ATOMIC;
+      attributes |= EXEC_ATOMIC;
     } else {
-      attrs &= ~EXEC_ATOMIC;
+      attributes &= ~EXEC_ATOMIC;
     }
   }
   public boolean isAtomic () {
-    return ((attrs & EXEC_ATOMIC) != 0);
+    return ((attributes & EXEC_ATOMIC) != 0);
   }
   
   void setHidden (boolean isHidden) {
     if (isHidden) {
-      attrs |= EXEC_HIDDEN;
+      attributes |= EXEC_HIDDEN;
     } else {
-      attrs &= ~EXEC_HIDDEN;
+      attributes &= ~EXEC_HIDDEN;
     }
   }
   public boolean isHidden () {
-    return ((attrs & EXEC_HIDDEN) != 0);    
+    return ((attributes & EXEC_HIDDEN) != 0);    
   }
   
   /**
@@ -283,13 +285,13 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
    */
   public void setFirewall (boolean isFirewalled) {
     if (isFirewalled) {
-      attrs |= FIREWALL;
+      attributes |= FIREWALL;
     } else {
-      attrs &= ~FIREWALL;
+      attributes &= ~FIREWALL;
     }
   }
   public boolean isFirewall () {
-    return ((attrs & FIREWALL) != 0);    
+    return ((attributes & FIREWALL) != 0);    
   }
   
   
@@ -377,15 +379,15 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   }
   
   public boolean isClinit () {
-    return ((attrs & IS_CLINIT) != 0);
+    return ((attributes & IS_CLINIT) != 0);
   }
 
   public boolean isClinit (ClassInfo ci) {
-    return (((attrs & IS_CLINIT) != 0) && (this.ci == ci));
+    return (((attributes & IS_CLINIT) != 0) && (this.ci == ci));
   }
 
   public boolean isInit() {
-    return ((attrs & IS_INIT) != 0);
+    return ((attributes & IS_INIT) != 0);
   }
 
   /**
@@ -1104,6 +1106,70 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     return "MethodInfo[" + getFullName() + ']';
   }
 
+
+  //--- the generic attribute API
+
+  public boolean hasAttr () {
+    return (attr != null);
+  }
+
+  public boolean hasAttr (Class<?> attrType){
+    return ObjectList.containsType(attr, attrType);
+  }
+
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getAttr(){
+    return attr;
+  }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setAttr (Object a){
+    attr = a;    
+  }
+
+  public void addAttr (Object a){
+    attr = ObjectList.add(attr, a);
+  }
+
+  public void removeAttr (Object a){
+    attr = ObjectList.remove(attr, a);
+  }
+
+  public void replaceAttr (Object oldAttr, Object newAttr){
+    attr = ObjectList.replace(attr, oldAttr, newAttr);
+  }
+
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getAttr (Class<T> attrType) {
+    return ObjectList.getFirst(attr, attrType);
+  }
+
+  public <T> T getNextAttr (Class<T> attrType, Object prev) {
+    return ObjectList.getNext(attr, attrType, prev);
+  }
+
+  public ObjectList.Iterator attrIterator(){
+    return ObjectList.iterator(attr);
+  }
+  
+  public <T> ObjectList.TypedIterator<T> attrIterator(Class<T> attrType){
+    return ObjectList.typedIterator(attr, attrType);
+  }
+
+  // -- end attrs --
+
+  
   // for debugging purposes
   public void dump(){
     System.out.println("--- " + this);
