@@ -211,7 +211,7 @@ public abstract class Instruction implements InstructionVisit {
         }
       }
 
-      return "(" + file + ":" + line + ")"; // fallback
+      return "(" + file + ':' + line + ')'; // fallback
 
     } else {
       return "[synthetic] " + mi.getName();
@@ -226,7 +226,7 @@ public abstract class Instruction implements InstructionVisit {
     if (ci != null) {
       int line = mi.getLineNumber(this);
       String fname = ci.getSourceFileName();
-      return (fname + ":" + line);
+      return (fname + ':' + line);
     } else {
       return "[synthetic] " + mi.getName();
     }
@@ -243,7 +243,7 @@ public abstract class Instruction implements InstructionVisit {
     if (ci != null){
       line = mi.getLineNumber(this);
       file = ci.getSourceFileName();
-      int i = file.lastIndexOf(File.separatorChar);
+      int i = file.lastIndexOf('/'); // ClassInfo.sourceFileName is using '/'
       if (i >= 0) {
         file = file.substring(i + 1);
       }

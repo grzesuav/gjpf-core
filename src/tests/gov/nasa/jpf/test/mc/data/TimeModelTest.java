@@ -42,7 +42,7 @@ public class TimeModelTest extends TestJPF {
       long t3 = System.currentTimeMillis();
       System.out.printf("    t3 = %d\n", t3);
 
-      assertTrue((t3 > t2) && (t2 > t1));
+      assertTrue((t3 >= t2) && (t2 >= t1));
     }
   }
   

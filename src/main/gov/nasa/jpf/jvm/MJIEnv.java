@@ -614,6 +614,16 @@ public class MJIEnv {
     return ci.getStaticElementInfo().getDoubleField(fname);
   }
 
+  public double getStaticDoubleField (int clsObjRef, String fname) {
+    ElementInfo cei = getClassElementInfo(clsObjRef);
+    return cei.getDoubleField(fname);
+  }
+
+  public double getStaticDoubleField (ClassInfo ci, String fname) {
+    ElementInfo ei = ci.getStaticElementInfo();
+    return ei.getDoubleField(fname);
+  }
+  
   public void setStaticFloatField (String clsName, String fname, float val) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     ci.getStaticElementInfo().setFloatField(fname, val);
@@ -630,17 +640,23 @@ public class MJIEnv {
   }
 
   public void setStaticIntField (int clsObjRef, String fname, int val) {
-    try {
-      ElementInfo cei = getClassElementInfo(clsObjRef);
-      cei.setIntField(fname, val);
-    } catch (Throwable x) {
-      throw new JPFException("set static field failed: " + x.getMessage());
-    }
+    ElementInfo cei = getClassElementInfo(clsObjRef);
+    cei.setIntField(fname, val);
   }
 
   public int getStaticIntField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     return ci.getStaticElementInfo().getIntField(fname);
+  }
+  
+  public int getStaticIntField (int clsObjRef, String fname) {
+    ElementInfo cei = getClassElementInfo(clsObjRef);
+    return cei.getIntField(fname);
+  }
+
+  public int getStaticIntField (ClassInfo ci, String fname) {
+    ElementInfo ei = ci.getStaticElementInfo();
+    return ei.getIntField(fname);
   }
 
   public void setStaticLongField (String clsName, String fname, long value) {
@@ -659,7 +675,7 @@ public class MJIEnv {
   }
 
   public long getStaticLongField (ClassInfo ci, String fname){
-    StaticElementInfo ei = sa.get(ci.getName());
+    ElementInfo ei = ci.getStaticElementInfo();
     return ei.getLongField(fname);
   }
 
@@ -673,6 +689,11 @@ public class MJIEnv {
   public int getStaticReferenceField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     return ci.getStaticElementInfo().getReferenceField(fname);
+  }
+
+  public int getStaticReferenceField (int clsObjRef, String fname) {
+    ElementInfo cei = getClassElementInfo(clsObjRef);
+    return cei.getReferenceField(fname);
   }
 
   public int getStaticReferenceField (ClassInfo ci, String fname){

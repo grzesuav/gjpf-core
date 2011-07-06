@@ -42,7 +42,7 @@ public abstract class InfoObject {
 
   public void addAnnotation (AnnotationInfo newAnnotation){
     AnnotationInfo[] ai = annotations;
-    if (ai != null){
+    if (ai == null){
       ai = new AnnotationInfo[1];
       ai[0] = newAnnotation;
 

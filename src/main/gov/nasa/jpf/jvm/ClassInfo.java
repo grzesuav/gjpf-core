@@ -220,7 +220,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   /** Name of the package. */
   protected String packageName;
 
-  /** Name of the file which contains the source of this class. */
+  /** Name of the file which contains the source of this class (includes package path) */
   protected String sourceFileName;
   
 
