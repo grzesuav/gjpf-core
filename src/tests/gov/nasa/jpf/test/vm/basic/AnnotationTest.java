@@ -18,6 +18,12 @@
 //
 package gov.nasa.jpf.test.vm.basic;
 
+import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.AnnotationInfo;
+import gov.nasa.jpf.jvm.FieldInfo;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.bytecode.GETFIELD;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
 import java.lang.annotation.*;
 import gov.nasa.jpf.util.test.TestJPF;
 import java.lang.reflect.*;
@@ -253,4 +259,41 @@ public class AnnotationTest extends TestJPF {
     }
   }
 
+  //-------------------------------------------------------------------
+  static class MyClass {
+    @A1("the answer")
+    int data = 42;
+  }
+  
+  public static class DataListener extends ListenerAdapter {
+    public void executeInstruction(JVM vm){
+      Instruction insn = vm.getLastInstruction();
+      if (insn instanceof GETFIELD){
+        FieldInfo fi = ((GETFIELD)insn).getFieldInfo();
+        if (fi.getName().equals("data")){
+          AnnotationInfo ai = fi.getAnnotation("gov.nasa.jpf.test.vm.basic.AnnotationTest$A1");
+          System.out.println("annotation for " + fi.getFullName() + " = " + ai);
+          
+          if (ai != null){
+            String val = ai.getValueAsString("value");
+            System.out.println("   value = " + val);
+            
+            if (val == null || !val.equals("the answer")){
+              fail("wrong @A1 value = " + val);
+            }
+          } else {
+            fail("no @A1 annotation for field " + fi.getFullName());
+          }
+        }
+      }
+    }
+  }
+  
+  @Test
+  public void testFieldAnnotation(){
+    if (verifyNoPropertyViolation("+listener=.test.vm.basic.AnnotationTest$DataListener")){
+      MyClass obj = new MyClass();
+      int d = obj.data;
+    }
+  }
 }

@@ -119,4 +119,8 @@ public class Path implements Printable, Iterable<Transition>, Cloneable {
   public Iterator<Transition> iterator () {
     return stack.iterator();
   }
+  
+  public Iterator<Transition> descendingIterator() {
+    return stack.descendingIterator();
+  }
 }

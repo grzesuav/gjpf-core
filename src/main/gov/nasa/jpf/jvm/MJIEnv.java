@@ -882,7 +882,14 @@ public class MJIEnv {
 
     return a;
   }
+  
+  public int[] getReferenceArrayObject (int objref){
+    ElementInfo ei = getElementInfo(objref);
+    int[] a = ei.asReferenceArray();
 
+    return a;    
+  }
+  
   public boolean isSchedulingRelevantObject(int objref){
     if (objref != NULL){
       return heap.get(objref).checkUpdatedSharedness(ti);

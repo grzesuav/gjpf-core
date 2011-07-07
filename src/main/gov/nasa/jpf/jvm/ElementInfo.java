@@ -1485,6 +1485,14 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
   }
 
+  public int[] asReferenceArray() {
+    if (fields instanceof ArrayFields){
+      return ((ArrayFields)fields).asReferenceArray();
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
+  }
+    
   public boolean isNull() {
     return (index == -1);
   }

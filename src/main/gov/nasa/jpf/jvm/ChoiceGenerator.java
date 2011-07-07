@@ -170,7 +170,7 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   /**
    * returns the prev CG if it was registered for the same insn
    */
-  ChoiceGenerator<?> getCascadedParent (){
+  public ChoiceGenerator<?> getCascadedParent (){
     if (prev != null){
       if (prev.isCascaded){
         return prev;
@@ -183,7 +183,7 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   /**
    * return array with all cascaded parents and this CG, in registration order
    */
-  ChoiceGenerator<?>[] getCascade() {
+  public ChoiceGenerator<?>[] getCascade() {
     int n=0;
     for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.getCascadedParent()){
       n++;
@@ -201,7 +201,7 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   /**
    * return array with all parents and this CG, in registration order
    */
-  ChoiceGenerator<?>[] getAll() {
+  public ChoiceGenerator<?>[] getAll() {
     int n=0;
     for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev){
       n++;
