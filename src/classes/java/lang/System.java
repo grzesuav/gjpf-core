@@ -63,6 +63,9 @@ public class System {
     // <2do> - most if this isn't supported yet
     SharedSecrets.setJavaLangAccess( createJavaLangAccess());
 
+    // <2do> this is an approximation that isn't particularly safe since we don't
+    // initialize sun.misc.VM
+    //sun.misc.VM.booted();
   }
 
   static JavaLangAccess createJavaLangAccess () {

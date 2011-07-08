@@ -84,11 +84,13 @@ public class DateFormatTest extends TestJPF {
       df.setTimeZone(timeZone);
       Calendar calendar = new GregorianCalendar(timeZone);
       calendar.set(2010, 10, 10, 10, 10, 10);
-      String time = "10:10:10";
-      assertTrue(df.format(calendar.getTime()).contains(time));
+      String time = "10:10"; // some Locales don't include the seconds
+      String dft = df.format(calendar.getTime()); 
+      assertTrue(dft.contains(time));
       df.setTimeZone(TimeZone.getTimeZone("EST"));
-      time = "5:10:10";
-      assertTrue(df.format(calendar.getTime()).contains(time));
+      time = "5:10";  // some Locales don't include the seconds
+      dft = df.format(calendar.getTime());
+      assertTrue(dft.contains(time));
     }
   }
 }

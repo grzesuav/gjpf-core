@@ -579,8 +579,13 @@ public class MJIEnv {
   public void setStaticBooleanField (String clsName, String fname,
                                      boolean value) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-    ci.getStaticElementInfo().setBooleanField(fname, value);  }
-
+    ci.getStaticElementInfo().setBooleanField(fname, value);
+  }
+  public void setStaticBooleanField (int clsObjRef, String fname, boolean val) {
+    ElementInfo cei = getClassElementInfo(clsObjRef);
+    cei.setBooleanField(fname, val);
+  }
+  
   public boolean getStaticBooleanField (String clsName, String fname) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     return ci.getStaticElementInfo().getBooleanField(fname);
@@ -613,7 +618,7 @@ public class MJIEnv {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     return ci.getStaticElementInfo().getDoubleField(fname);
   }
-
+  
   public double getStaticDoubleField (int clsObjRef, String fname) {
     ElementInfo cei = getClassElementInfo(clsObjRef);
     return cei.getDoubleField(fname);
@@ -662,6 +667,11 @@ public class MJIEnv {
   public void setStaticLongField (String clsName, String fname, long value) {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
     ci.getStaticElementInfo().setLongField(fname, value);
+  }
+
+  public void setStaticLongField (int clsObjRef, String fname, long val) {
+    ElementInfo cei = getClassElementInfo(clsObjRef);
+    cei.setLongField(fname, val);
   }
 
   public long getStaticLongField (int clsRef, String fname) {
