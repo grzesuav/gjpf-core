@@ -114,10 +114,7 @@ public abstract class IfInstruction extends Instruction {
   }
   
   public String toString () {
-    if (asString == null) {
-      asString = getMnemonic() + " " + targetPosition;
-    }
-    return asString;
+    return getMnemonic() + " " + targetPosition;
   }
   
   public int getLength() {

@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.Source;
 
 import java.io.File;
@@ -40,8 +41,11 @@ public abstract class Instruction implements InstructionVisit {
   protected int insnIndex;        // code[] index of instruction
   protected int position;     // accumulated bytecode position (prev pos + prev bc-length)
   protected MethodInfo mi;    // the method this insn belongs to
-  protected String asString;  // on demand string representation
 
+  // property/mode specific attributes
+  protected Object attr;
+
+  
   abstract public int getByteCode();
 
   // to allow a classname and methodname context for each instruction
@@ -182,10 +186,7 @@ public abstract class Instruction implements InstructionVisit {
   }
 
   public String toString() {
-    if (asString == null) {
-      asString = getMnemonic();
-    }
-    return asString;
+    return getMnemonic();
   }
 
   public String getMnemonic() {
@@ -318,4 +319,67 @@ public abstract class Instruction implements InstructionVisit {
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
+
+  
+  //--- the generic attribute API
+
+  public boolean hasAttr () {
+    return (attr != null);
+  }
+
+  public boolean hasAttr (Class<?> attrType){
+    return ObjectList.containsType(attr, attrType);
+  }
+
+  /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getAttr(){
+    return attr;
+  }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setAttr (Object a){
+    attr = a;    
+  }
+
+  public void addAttr (Object a){
+    attr = ObjectList.add(attr, a);
+  }
+
+  public void removeAttr (Object a){
+    attr = ObjectList.remove(attr, a);
+  }
+
+  public void replaceAttr (Object oldAttr, Object newAttr){
+    attr = ObjectList.replace(attr, oldAttr, newAttr);
+  }
+
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getAttr (Class<T> attrType) {
+    return ObjectList.getFirst(attr, attrType);
+  }
+
+  public <T> T getNextAttr (Class<T> attrType, Object prev) {
+    return ObjectList.getNext(attr, attrType, prev);
+  }
+
+  public ObjectList.Iterator attrIterator(){
+    return ObjectList.iterator(attr);
+  }
+  
+  public <T> ObjectList.TypedIterator<T> attrIterator(Class<T> attrType){
+    return ObjectList.typedIterator(attr, attrType);
+  }
+
+  // -- end attrs --
 }

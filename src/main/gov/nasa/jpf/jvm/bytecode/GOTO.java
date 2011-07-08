@@ -61,10 +61,7 @@ public class GOTO extends Instruction {
   }
   
   public String toString () {
-    if (asString == null) {
-      asString = getMnemonic() + " " + targetPosition;
-    }
-    return asString;
+    return getMnemonic() + " " + targetPosition;
   }
   
   public void accept(InstructionVisitor insVisitor) {
