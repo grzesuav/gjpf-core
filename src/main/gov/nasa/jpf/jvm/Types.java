@@ -693,6 +693,48 @@ public class Types {
         "float".equals(typeName));
   }
 
+  public static byte getTypeCode (String signature){
+    char c = signature.charAt(0);
+
+    switch (c) {
+      case 'B':
+        return T_BYTE;
+
+      case 'C':
+        return T_CHAR;
+
+      case 'D':
+        return T_DOUBLE;
+
+      case 'F':
+        return T_FLOAT;
+
+      case 'I':
+        return T_INT;
+
+      case 'J':
+        return T_LONG;
+
+      case 'L':
+        return T_REFERENCE;
+
+      case 'S':
+        return T_SHORT;
+
+      case 'V':
+        return T_VOID;
+
+      case 'Z':
+        return T_BOOLEAN;
+
+      case '[':
+        return T_ARRAY;
+
+      default:
+        throw new JPFException("unknow typecode: " + signature);
+    }
+  }
+  
   /**
    * return the qualified signature name according to JLS 6.7 (e.g. "int", "x.Y[]")
    */

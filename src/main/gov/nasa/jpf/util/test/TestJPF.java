@@ -588,25 +588,36 @@ public abstract class TestJPF implements JPFShell  {
     runTests(testClass, testMethods);
   }
 
+  /**
+   * needs to be broken up into two methods for cases that do additional
+   * JPF initialization (jpf-inspector)
+   *
+   * this is never executed under JPF
+   */
+  protected JPF createAndRunJPF (String[] args) {
+    JPF jpf = createJPF(args);
+    runJPF(jpf);
+    return jpf;
+  }
 
   /**
    * this is never executed under JPF
    */
-  protected JPF createAndRunJPF (String[] args){
+  protected JPF createJPF (String[] args) {
     JPF jpf = null;
 
     Config conf = new Config(args);
 
-    //--- add global args (if we run under RunTest)
-    if (globalArgs != null){
-      for (GlobalArg ga : globalArgs){
+    // --- add global args (if we run under RunTest)
+    if (globalArgs != null) {
+      for (GlobalArg ga : globalArgs) {
         String key = ga.key;
         String val = ga.val;
-        conf.put( key, val);
+        conf.put(key, val);
       }
     }
 
-    //--- initialize the classpath from <projectId>.test_classpath
+    // --- initialize the classpath from <projectId>.test_classpath
     String projectId = JPFSiteUtils.getCurrentProjectId();
     if (projectId != null) {
       String testCp = conf.getString(projectId + ".test_classpath");
@@ -615,7 +626,7 @@ public abstract class TestJPF implements JPFShell  {
       }
     }
 
-    //--- if we have any specific test property overrides, do so
+    // --- if we have any specific test property overrides, do so
     conf.promotePropertyCategory("test.");
 
     if (conf.getTarget() != null) {
@@ -625,13 +636,22 @@ public abstract class TestJPF implements JPFShell  {
       if (showConfig) {
         conf.print(new PrintWriter(System.out));
       }
-
-      JPF_gov_nasa_jpf_util_test_TestJPF.init();
-
-      jpf.run();
     }
 
     return jpf;
+  }
+
+  protected void runJPF (JPF jpf) {
+    if (jpf == null) {
+      return;
+    }
+
+    Config conf = jpf.getConfig();
+
+    if (conf.getTarget() != null) {
+      JPF_gov_nasa_jpf_util_test_TestJPF.init();
+      jpf.run();
+    }
   }
 
 

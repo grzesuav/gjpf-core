@@ -30,6 +30,7 @@ public class DynamicAbstractionTest extends TestJPF {
   
   static class MyClass {
     int data;
+    double notAbstracted;
   }
   
   public static class MyClassDataAbstraction extends AbstractionAdapter {
@@ -67,5 +68,34 @@ public class DynamicAbstractionTest extends TestJPF {
     if (!isJPFRun()){
       assertTrue( Verify.getCounter(0) == 3);
     }    
+  }
+  
+  @Test
+  public void testMixedFields(){
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+    }
+    
+    if (verifyNoPropertyViolation("+listener=.listener.DynamicStateAbstractor",
+                                  "+vm.serializer.class=.listener.DynamicStateAbstractor$Serializer",
+                                  "+dabs.fields=data", 
+                                  "+dabs.data.field=*$MyClass.data",
+                                  "+dabs.data.abstraction=gov.nasa.jpf.test.mc.data.DynamicAbstractionTest$MyClassDataAbstraction")){
+      MyClass myClass = new MyClass();
+      myClass.data = Verify.getInt(0, 20);
+      
+      if (myClass.data % 4 == 0){
+        System.out.println("  notAbstracted=1");
+        myClass.notAbstracted = 1;
+      }
+      
+      Verify.breakTransition(); // matching point
+      System.out.println("new state for myClass.data = " + myClass.data + ", " + myClass.notAbstracted);
+      Verify.incrementCounter(0);
+    }
+    
+    if (!isJPFRun()){
+      assertTrue( Verify.getCounter(0) == 6);
+    }        
   }
 }

@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
+import gov.nasa.jpf.jvm.Types;
 import gov.nasa.jpf.util.FinalBitSet;
 import java.util.HashSet;
 
@@ -39,6 +40,7 @@ public class DynamicAbstractionSerializer extends CFSerializer {
   protected void processAbstractedNamedFields(ClassInfo ci, Fields fields){
     FinalBitSet filtered = getInstanceFilterMask(ci);
     int nFields = ci.getNumberOfInstanceFields();
+    int[] slotValues = fields.asFieldSlots(); // for non-attributed fields
     
     for (int i = 0; i < nFields; i++) {
       FieldInfo fi = ci.getInstanceField(i);
@@ -62,6 +64,19 @@ public class DynamicAbstractionSerializer extends CFSerializer {
             } else { // got to be double
               buf.add(a.getAbstractValue(fields.getDoubleValue(off)));
             }
+          }
+          
+        } else { // no abstraction, fall back to concrete values
+          if (fi.is1SlotField()){
+            if (fi.isReference()){
+              processReference(slotValues[off]);
+            } else {
+              buf.add(slotValues[off]);
+            }
+            
+          } else { // double or long
+            buf.add(slotValues[off]);
+            buf.add(slotValues[off+1]);            
           }
         }
       }
