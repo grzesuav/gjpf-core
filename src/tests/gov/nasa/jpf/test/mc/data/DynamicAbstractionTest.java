@@ -46,6 +46,8 @@ public class DynamicAbstractionTest extends TestJPF {
     }
   }
   
+  //---------------------------------------------------------------------------
+  
   @Test
   public void testMyClass() {
     if (!isJPFRun()){
@@ -57,11 +59,11 @@ public class DynamicAbstractionTest extends TestJPF {
                                   "+dabs.fields=data", 
                                   "+dabs.data.field=*$MyClass.data",
                                   "+dabs.data.abstraction=gov.nasa.jpf.test.mc.data.DynamicAbstractionTest$MyClassDataAbstraction")){
-      MyClass myClass = new MyClass();
-      myClass.data = Verify.getInt(0, 20);
+      MyClass matchedObject = new MyClass();
+      matchedObject.data = Verify.getInt(0, 20);
       
       Verify.breakTransition();
-      System.out.println("new state for myClass.data = " + myClass.data);
+      System.out.println("new state for myClass.data = " + matchedObject.data);
       Verify.incrementCounter(0);
     }
     
@@ -69,6 +71,9 @@ public class DynamicAbstractionTest extends TestJPF {
       assertTrue( Verify.getCounter(0) == 3);
     }    
   }
+
+  
+  //---------------------------------------------------------------------------
   
   @Test
   public void testMixedFields(){
@@ -81,21 +86,89 @@ public class DynamicAbstractionTest extends TestJPF {
                                   "+dabs.fields=data", 
                                   "+dabs.data.field=*$MyClass.data",
                                   "+dabs.data.abstraction=gov.nasa.jpf.test.mc.data.DynamicAbstractionTest$MyClassDataAbstraction")){
-      MyClass myClass = new MyClass();
-      myClass.data = Verify.getInt(0, 20);
+      MyClass matchedObject = new MyClass();
+      matchedObject.data = Verify.getInt(0, 20);
       
-      if (myClass.data % 4 == 0){
+      if (matchedObject.data % 4 == 0){
         System.out.println("  notAbstracted=1");
-        myClass.notAbstracted = 1;
+        matchedObject.notAbstracted = 1;
       }
       
       Verify.breakTransition(); // matching point
-      System.out.println("new state for myClass.data = " + myClass.data + ", " + myClass.notAbstracted);
+      System.out.println("new state for myClass.data = " + matchedObject.data + ", " + matchedObject.notAbstracted);
       Verify.incrementCounter(0);
     }
     
     if (!isJPFRun()){
       assertTrue( Verify.getCounter(0) == 6);
     }        
+  }
+
+  
+  //---------------------------------------------------------------------------
+  
+  static class SomeIgnoredClass {
+    int data;  // note that it is not @FilterField annotated
+  }
+  
+  @Test
+  public void testClassFilter() {
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+    }
+    
+    if (verifyNoPropertyViolation("+listener=.listener.DynamicStateAbstractor",
+                                  "+vm.serializer.class=.listener.DynamicStateAbstractor$Serializer",
+                                  "+dabs.classes.include=*$MyClass")){
+      MyClass matchedObject = new MyClass();
+      SomeIgnoredClass ignoredObject = new SomeIgnoredClass();
+      
+      matchedObject.data = Verify.getInt(0, 2); // 1st CG
+      System.out.println(" " + matchedObject.data);
+      
+      ignoredObject.data = Verify.getInt(0, 2);
+      System.out.println("    " + ignoredObject.data);
+      
+      Verify.breakTransition(); // matching point for someObject
+      System.out.printf("new state for matched=%d, ignored=%d\n", matchedObject.data ,ignoredObject.data);
+      Verify.incrementCounter(0);
+    }
+    
+    if (!isJPFRun()){
+      assertTrue( Verify.getCounter(0) == 3);
+    }
+  }
+  
+
+  //---------------------------------------------------------------------------
+
+  void matchThis() {
+    for (int i=0; i<2; i++){
+      System.out.printf("  matchThis() i=%d\n", i);
+    
+      Verify.breakTransition(); // 'i' has changed
+      System.out.println("    new state");
+      Verify.incrementCounter(0);
+    }
+  }
+  
+  @Test
+  public void testStackFrameFilter() {
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+    }
+
+    if (verifyNoPropertyViolation("+listener=.listener.DynamicStateAbstractor",
+                                  "+vm.serializer.class=.listener.DynamicStateAbstractor$Serializer",
+                                  "+dabs.methods.include=*DynamicAbstractionTest.matchThis(*)V")){
+      for (int i=0; i<10; i++){ // 'i' changes this frame..
+        System.out.printf("loop cycle %d\n", i);
+        matchThis(); // ..but not this one
+      }
+    }
+    
+    if (!isJPFRun()){
+      assertTrue( Verify.getCounter(0) == 2);
+    }
   }
 }

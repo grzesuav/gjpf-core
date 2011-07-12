@@ -23,6 +23,8 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
+import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.Types;
 import gov.nasa.jpf.util.FinalBitSet;
 import java.util.HashSet;
@@ -108,5 +110,17 @@ public class DynamicAbstractionSerializer extends CFSerializer {
 
   protected boolean isAbstractedClass(ClassInfo ci){
     return ci.hasInstanceFieldInfoAttr(Abstraction.class);
+  }
+  
+  protected void serializeFrame(StackFrame frame){
+    MethodInfo mi = frame.getMethodInfo();
+        
+    if (mi.hasAttr(Ignored.class)){
+      return;
+    }
+    
+    // <2do> should do frame abstraction here
+    
+    super.serializeFrame(frame);
   }
 }

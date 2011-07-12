@@ -60,6 +60,8 @@ public class StringMatcher {
       case '[' : sb.append("\\["); break;
       case ']' : sb.append("\\]"); break;
       case '*' : sb.append(".*"); break;
+      case '(' : sb.append("\\("); break;
+      case ')' : sb.append("\\)"); break; 
       // <2do> and probably more..
       default:   sb.append(c);
       }

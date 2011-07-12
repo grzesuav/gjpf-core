@@ -24,6 +24,7 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.serialize.Abstraction;
 import gov.nasa.jpf.jvm.serialize.DynamicAbstractionSerializer;
 import gov.nasa.jpf.jvm.serialize.Ignored;
@@ -64,6 +65,9 @@ public class DynamicStateAbstractor extends ListenerAdapter {
   StringSetMatcher includeClasses = null; //  means all
   StringSetMatcher excludeClasses = null; //  means none
   
+  StringSetMatcher includeMethods = null;
+  StringSetMatcher excludeMethods = null;
+  
   List<FieldAbstraction> fieldAbstractions = new LinkedList<FieldAbstraction>();
   
   
@@ -86,26 +90,42 @@ public class DynamicStateAbstractor extends ListenerAdapter {
       }
     }
     
+    // <2do> add stackframe abstractors 
+    
     includeClasses = StringSetMatcher.getNonEmpty(conf.getStringArray("dabs.classes.include"));
     excludeClasses = StringSetMatcher.getNonEmpty(conf.getStringArray("dabs.classes.exclude"));
+
+    includeMethods = StringSetMatcher.getNonEmpty(conf.getStringArray("dabs.methods.include"));
+    excludeMethods = StringSetMatcher.getNonEmpty(conf.getStringArray("dabs.methods.exclude"));
   }
   
   public void classLoaded (JVM vm){
     ClassInfo ci = vm.getLastClassInfo();
     String clsName = ci.getName();
     
+    if (includeMethods != null || excludeMethods != null) {
+      for (MethodInfo mi : ci.getDeclaredMethodInfos()) {
+        if (!StringSetMatcher.isMatch(mi.getFullName(), includeMethods, excludeMethods)) {
+          mi.addAttr(Ignored.IGNORED);
+        }
+      }
+    }
+    
     if (!StringSetMatcher.isMatch(clsName, includeClasses, excludeClasses)){
-      ci.setAttr(Ignored.IGNORED);
+      ci.addAttr(Ignored.IGNORED);
       
     } else {
     
+      // <2do> add stackframe abstractors 
+
+      
       if (!fieldAbstractions.isEmpty()) {
         for (FieldInfo fi : ci.getDeclaredInstanceFields()) {
           for (FieldAbstraction fabs : fieldAbstractions) {
             if (fabs.fspec.matches(fi)) {
               logger.info("setting instance field abstraction ", fabs.abstraction.getClass().getName(),
                       " for field ", fi.getFullName());
-              fi.setAttr(fabs.abstraction);
+              fi.addAttr(fabs.abstraction);
               if (!ci.hasAttr(FieldAbstraction.class)) {
                 ci.addAttr(fabs);
               }
@@ -118,7 +138,7 @@ public class DynamicStateAbstractor extends ListenerAdapter {
             if (fabs.fspec.matches(fi)) {
               logger.info("setting static field abstraction ", fabs.abstraction.getClass().getName(),
                       " for field ", fi.getFullName());
-              fi.setAttr(fabs.abstraction);
+              fi.addAttr(fabs.abstraction);
               if (!ci.hasAttr(FieldAbstraction.class)) {
                 ci.addAttr(fabs);
               }
