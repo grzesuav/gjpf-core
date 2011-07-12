@@ -114,13 +114,16 @@ public class DynamicAbstractionSerializer extends CFSerializer {
   
   protected void serializeFrame(StackFrame frame){
     MethodInfo mi = frame.getMethodInfo();
+    ClassInfo ci = mi.getClassInfo();
         
-    if (mi.hasAttr(Ignored.class)){
-      return;
+    if (mi.hasAttr(Ignored.class) || 
+            (ci != null && ci.hasAttr(Ignored.class))){
+      // we still should check all live objects (might be an option)
+      frame.visitReferenceSlots(this);
+      
+    } else {
+      // <2do> should do frame abstraction here
+      super.serializeFrame(frame);
     }
-    
-    // <2do> should do frame abstraction here
-    
-    super.serializeFrame(frame);
   }
 }
