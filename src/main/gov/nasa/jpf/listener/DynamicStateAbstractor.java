@@ -26,8 +26,10 @@ import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.serialize.Abstraction;
 import gov.nasa.jpf.jvm.serialize.DynamicAbstractionSerializer;
+import gov.nasa.jpf.jvm.serialize.Ignored;
 import gov.nasa.jpf.util.FieldSpec;
 import gov.nasa.jpf.util.JPFLogger;
+import gov.nasa.jpf.util.StringSetMatcher;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -59,6 +61,8 @@ public class DynamicStateAbstractor extends ListenerAdapter {
     }
   }
 
+  StringSetMatcher includeClasses = null; //  means all
+  StringSetMatcher excludeClasses = null; //  means none
   
   List<FieldAbstraction> fieldAbstractions = new LinkedList<FieldAbstraction>();
   
@@ -81,36 +85,46 @@ public class DynamicStateAbstractor extends ListenerAdapter {
         logger.warning("no field spec for id: " + id);
       }
     }
+    
+    includeClasses = StringSetMatcher.getNonEmpty(conf.getStringArray("dabs.classes.include"));
+    excludeClasses = StringSetMatcher.getNonEmpty(conf.getStringArray("dabs.classes.exclude"));
   }
   
   public void classLoaded (JVM vm){
     ClassInfo ci = vm.getLastClassInfo();
+    String clsName = ci.getName();
     
-    if (!fieldAbstractions.isEmpty()){
-      for (FieldInfo fi : ci.getDeclaredInstanceFields()){
-        for (FieldAbstraction fabs : fieldAbstractions){
-          if (fabs.fspec.matches(fi)){
-            logger.info("setting instance field abstraction ", fabs.abstraction.getClass().getName(),
-                    " for field ", fi.getFullName());
-            fi.setAttr(fabs.abstraction);
-            if (!ci.hasAttr(FieldAbstraction.class)){
-              ci.addAttr(fabs);
+    if (!StringSetMatcher.isMatch(clsName, includeClasses, excludeClasses)){
+      ci.setAttr(Ignored.IGNORED);
+      
+    } else {
+    
+      if (!fieldAbstractions.isEmpty()) {
+        for (FieldInfo fi : ci.getDeclaredInstanceFields()) {
+          for (FieldAbstraction fabs : fieldAbstractions) {
+            if (fabs.fspec.matches(fi)) {
+              logger.info("setting instance field abstraction ", fabs.abstraction.getClass().getName(),
+                      " for field ", fi.getFullName());
+              fi.setAttr(fabs.abstraction);
+              if (!ci.hasAttr(FieldAbstraction.class)) {
+                ci.addAttr(fabs);
+              }
             }
           }
         }
-      }
-      
-      for (FieldInfo fi : ci.getDeclaredStaticFields()){
-        for (FieldAbstraction fabs : fieldAbstractions){
-          if (fabs.fspec.matches(fi)){
-            logger.info("setting static field abstraction ", fabs.abstraction.getClass().getName(),
-                    " for field ", fi.getFullName());
-            fi.setAttr(fabs.abstraction);            
-            if (!ci.hasAttr(FieldAbstraction.class)){
-              ci.addAttr(fabs);
+
+        for (FieldInfo fi : ci.getDeclaredStaticFields()) {
+          for (FieldAbstraction fabs : fieldAbstractions) {
+            if (fabs.fspec.matches(fi)) {
+              logger.info("setting static field abstraction ", fabs.abstraction.getClass().getName(),
+                      " for field ", fi.getFullName());
+              fi.setAttr(fabs.abstraction);
+              if (!ci.hasAttr(FieldAbstraction.class)) {
+                ci.addAttr(fabs);
+              }
             }
           }
-        }        
+        }
       }
     }
   }

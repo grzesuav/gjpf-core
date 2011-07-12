@@ -194,16 +194,24 @@ public class AnnotationTest extends TestJPF {
     String value() default "whatever";
   }
 
+  @A6
   @Test
   public void testAnnotationClass() throws ClassNotFoundException, NoSuchMethodException {
     if (verifyNoPropertyViolation()) { 
       Class clazz = Class.forName("gov.nasa.jpf.test.vm.basic.AnnotationTest");
       Method method = clazz.getDeclaredMethod("testAnnotationClass");
       Annotation annotations[] = method.getAnnotations();
-      assertEquals(1, annotations.length);
+      
+      for (int i=0; i<annotations.length; i++){
+        System.out.printf("  a[%d] = %s\n", i, annotations[i].toString());
+      }
+      
+      assertEquals(2, annotations.length);
       assertNotNull(annotations[0]);
+      assertNotNull(annotations[1]);      
 
-      assertTrue(annotations[0] instanceof Test);
+      assertTrue(annotations[0] instanceof A6);
+      assertTrue(annotations[1] instanceof Test);
     }
   }
 

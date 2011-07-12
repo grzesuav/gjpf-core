@@ -89,16 +89,19 @@ public class DynamicAbstractionSerializer extends CFSerializer {
   public void processElementInfo(ElementInfo ei) {
     Fields fields = ei.getFields();
     ClassInfo ci = ei.getClassInfo();
-    buf.add(ci.getUniqueId());
+    
+    if (!ci.hasAttr(Ignored.class)){
+      buf.add(ci.getUniqueId());
 
-    if (fields instanceof ArrayFields) { // not filtered
-      processArrayFields( (ArrayFields)fields);
+      if (fields instanceof ArrayFields) { // not filtered
+        processArrayFields((ArrayFields) fields);
 
-    } else { // named fields, filtered & abstracted via attributes
-      if (isAbstractedClass(ci)){
-        processAbstractedNamedFields(ci, fields);
-      } else {
-        processNamedFields(ci, fields);
+      } else { // named fields, filtered & abstracted via attributes
+        if (isAbstractedClass(ci)) {
+          processAbstractedNamedFields(ci, fields);
+        } else {
+          processNamedFields(ci, fields);
+        }
       }
     }
   }
