@@ -38,13 +38,17 @@ import java.util.List;
  * listener that attaches state abstraction attributes to classes and fields, to
  * be used in combination with the DynamicAbstractionSerializer
  * 
- * <2do> extend towards stackframes
+ * <2do> extend towards stack frame abstraction
  */
 public class DynamicStateAbstractor extends ListenerAdapter {
   
   static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.DynamicStateAbstraction");
     
   public static class Serializer extends DynamicAbstractionSerializer {
+    
+    public Serializer(Config conf){
+      super(conf);
+    }
     
     protected boolean isAbstractedClass(ClassInfo ci){
       // this is more efficient than checking for any Abstraction object set in all fields

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.serialize;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.ArrayFields;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
@@ -37,7 +38,11 @@ import java.util.HashSet;
  */
 public class DynamicAbstractionSerializer extends CFSerializer {
   
-  HashSet<ClassInfo> monitoredClasses = new HashSet<ClassInfo>();
+  protected boolean processAllObjects;
+  
+  public DynamicAbstractionSerializer(Config conf){
+    processAllObjects = conf.getBoolean("dabs.all_objects", true);
+  }
   
   protected void processAbstractedNamedFields(ClassInfo ci, Fields fields){
     FinalBitSet filtered = getInstanceFilterMask(ci);
@@ -118,8 +123,9 @@ public class DynamicAbstractionSerializer extends CFSerializer {
         
     if (mi.hasAttr(Ignored.class) || 
             (ci != null && ci.hasAttr(Ignored.class))){
-      // we still should check all live objects (might be an option)
-      frame.visitReferenceSlots(this);
+      if (processAllObjects){
+        frame.visitReferenceSlots(this);
+      }
       
     } else {
       // <2do> should do frame abstraction here
