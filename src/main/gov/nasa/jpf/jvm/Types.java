@@ -600,7 +600,7 @@ public class Types {
         case 'C': return "char";
         case 'S': return "short";
         case 'I': return "int";
-        case 'L': return "long";
+        case 'J': return "long";
         case 'F': return "float";
         case 'D': return "double";
         default:

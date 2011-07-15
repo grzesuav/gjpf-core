@@ -28,6 +28,8 @@ import org.junit.Test;
  */
 public class DynamicAbstractionTest extends TestJPF {
   
+  static final String SERIALIZER_ARG = "+vm.serializer.class=.jvm.serialize.DynamicAbstractionSerializer";
+  
   static class MyClass {
     int data;
     double notAbstracted;
@@ -37,9 +39,9 @@ public class DynamicAbstractionTest extends TestJPF {
     
     @Override
     public int getAbstractValue (int data){
-      int cat = 0;
-      if (data > 5) cat = 1;
-      if (data > 10) cat = 2;
+      int cat = 1;
+      if (data > 5) cat = 2;
+      if (data > 10) cat = 3;
       
       System.out.println("abstracted value for " + data + " = " + cat);
       return cat;
@@ -54,11 +56,11 @@ public class DynamicAbstractionTest extends TestJPF {
       Verify.resetCounter(0);
     }
     
-    if (verifyNoPropertyViolation("+listener=.listener.DynamicStateAbstractor",
-                                  "+vm.serializer.class=.listener.DynamicStateAbstractor$Serializer",
-                                  "+dabs.fields=data", 
-                                  "+dabs.data.field=*$MyClass.data",
-                                  "+dabs.data.abstraction=gov.nasa.jpf.test.mc.data.DynamicAbstractionTest$MyClassDataAbstraction")){
+    if (verifyNoPropertyViolation(SERIALIZER_ARG,
+                                  "+das.classes.include=*$MyClass",
+                                  "+das.fields=data", 
+                                  "+das.data.field=*$MyClass.data",
+                                  "+das.data.abstraction=gov.nasa.jpf.test.mc.data.DynamicAbstractionTest$MyClassDataAbstraction")){
       MyClass matchedObject = new MyClass();
       matchedObject.data = Verify.getInt(0, 20);
       
@@ -81,11 +83,11 @@ public class DynamicAbstractionTest extends TestJPF {
       Verify.resetCounter(0);
     }
     
-    if (verifyNoPropertyViolation("+listener=.listener.DynamicStateAbstractor",
-                                  "+vm.serializer.class=.listener.DynamicStateAbstractor$Serializer",
-                                  "+dabs.fields=data", 
-                                  "+dabs.data.field=*$MyClass.data",
-                                  "+dabs.data.abstraction=gov.nasa.jpf.test.mc.data.DynamicAbstractionTest$MyClassDataAbstraction")){
+    if (verifyNoPropertyViolation(SERIALIZER_ARG,
+                                  "+das.classes.include=*$MyClass",
+                                  "+das.fields=data", 
+                                  "+das.data.field=*$MyClass.data",
+                                  "+das.data.abstraction=gov.nasa.jpf.test.mc.data.DynamicAbstractionTest$MyClassDataAbstraction")){
       MyClass matchedObject = new MyClass();
       matchedObject.data = Verify.getInt(0, 20);
       
@@ -117,25 +119,27 @@ public class DynamicAbstractionTest extends TestJPF {
       Verify.resetCounter(0);
     }
     
-    if (verifyNoPropertyViolation("+listener=.listener.DynamicStateAbstractor",
-                                  "+vm.serializer.class=.listener.DynamicStateAbstractor$Serializer",
-                                  "+dabs.classes.include=*$MyClass")){
+    if (verifyNoPropertyViolation(SERIALIZER_ARG,
+                                  "+das.classes.include=*$MyClass",
+                                  "+das.methods.exclude=*")){
       MyClass matchedObject = new MyClass();
       SomeIgnoredClass ignoredObject = new SomeIgnoredClass();
       
       matchedObject.data = Verify.getInt(0, 2); // 1st CG
       System.out.println(" " + matchedObject.data);
       
-      ignoredObject.data = Verify.getInt(0, 2);
-      System.out.println("    " + ignoredObject.data);
-      
-      Verify.breakTransition(); // matching point for someObject
-      System.out.printf("new state for matched=%d, ignored=%d\n", matchedObject.data ,ignoredObject.data);
-      Verify.incrementCounter(0);
+      for (int i=0; i<2; i++){
+        ignoredObject.data = i;
+        System.out.println("    " + ignoredObject.data);
+
+        Verify.breakTransition(); // matching point for someObject
+        System.out.printf("new state for matched=%d, ignored=%d\n", matchedObject.data, ignoredObject.data);
+        Verify.incrementCounter(0); // should be only reached once for matchedObject.data={1,2}
+      }
     }
     
     if (!isJPFRun()){
-      assertTrue( Verify.getCounter(0) == 3);
+      assertTrue( Verify.getCounter(0) == 2);
     }
   }
   
@@ -158,9 +162,8 @@ public class DynamicAbstractionTest extends TestJPF {
       Verify.resetCounter(0);
     }
 
-    if (verifyNoPropertyViolation("+listener=.listener.DynamicStateAbstractor",
-                                  "+vm.serializer.class=.listener.DynamicStateAbstractor$Serializer",
-                                  "+dabs.methods.include=*DynamicAbstractionTest.matchThis(*)V")){
+    if (verifyNoPropertyViolation(SERIALIZER_ARG,
+                                  "+das.methods.include=*DynamicAbstractionTest.matchThis(*)V")){
       for (int i=0; i<10; i++){ // 'i' changes this frame..
         System.out.printf("loop cycle %d\n", i);
         matchThis(); // ..but not this one

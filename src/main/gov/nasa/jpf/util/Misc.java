@@ -309,6 +309,26 @@ public class Misc {
     return sb.toString();
   }
 
+  public static String toString( int[] array, int start, int end, String prefix, String separator, String postfix){
+    StringBuilder sb = new StringBuilder();
+
+    if (prefix != null) {
+      sb.append(prefix);
+    }
+
+    for (int i=start; i<array.length && i < end; i++) {
+      if (i > 0) {
+        sb.append(separator);
+      }
+      sb.append(array[i]);
+    }
+
+    if (postfix != null) {
+      sb.append(postfix);
+    }
+
+    return sb.toString();    
+  }
 
   public static <T> T[] newArray (T... elements) {
     return elements;

@@ -39,5 +39,13 @@ public class AbstractionAdapter implements Abstraction {
     long l = Double.doubleToLongBits(v);
     return (int)(l^(l>>>32)); // Double.hashValue
   }
+
+  public int getAbstractObject(int ref) {
+    return ref;
+  }
+
+  public boolean traverseObject(int ref) {
+    return (ref != -1);
+  }
   
 }

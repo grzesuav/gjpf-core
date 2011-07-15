@@ -227,7 +227,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     }
     ei.setIndex(index);
     set(index, ei);
-
+    
     attributes |= ATTR_ELEMENTS_CHANGED;
 
     vm.notifyObjectCreated(ti, ei);

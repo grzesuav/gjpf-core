@@ -1150,7 +1150,14 @@ public class Config extends Properties {
       int i = 0;
       try {
         for (; i<sa.length; i++) {
-          a[i] = Integer.parseInt(sa[i]);
+          String s = sa[i];
+          int val;
+          if (s.startsWith("0x")){
+            val = Integer.parseInt(s.substring(2),16); 
+          } else {
+            val = Integer.parseInt(s);
+          }
+          a[i] = val;
         }
         return a;
       } catch (NumberFormatException nfx) {

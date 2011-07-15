@@ -794,6 +794,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     this.uniqueId = uniqueId;
     loadedClasses.set(uniqueId,this);
+    
+    JVM.getVM().notifyClassLoaded(this);
   }
 
   /**
@@ -862,6 +864,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     this.uniqueId = uniqueId;
     loadedClasses.set(uniqueId, this);
+    
+    JVM.getVM().notifyClassLoaded(this);
   }
 
 

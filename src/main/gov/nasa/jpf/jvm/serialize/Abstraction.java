@@ -28,5 +28,6 @@ public interface Abstraction {
   int getAbstractValue (long v);
   int getAbstractValue (double v);
   
-  // <2do> we still need a way to abstract whole objects
+  int getAbstractObject (int ref);
+  boolean traverseObject (int ref);
 }

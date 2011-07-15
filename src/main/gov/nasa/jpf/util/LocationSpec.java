@@ -194,23 +194,25 @@ public class LocationSpec {
    * 'pathName' has to use '/' as separators
    */
   public boolean matchesFile (String pathName){
-    pathName = pathName.replace('\\', '/');
-    int idx = pathName.lastIndexOf('/');
+    if (pathName != null){
+      pathName = pathName.replace('\\', '/');
+      int idx = pathName.lastIndexOf('/');
 
-    if (idx >= 0){
-      String fname = pathName.substring(idx+1);
+      if (idx >= 0) {
+        String fname = pathName.substring(idx + 1);
 
-      if (fileSpec.matches(fname)){
-        if (pathSpec != null){
-          String pname = idx > 0 ? pathName.substring(0, idx) : "/";
-          return pathSpec.matches(pname);
-        } else {
-          return true;
+        if (fileSpec.matches(fname)) {
+          if (pathSpec != null) {
+            String pname = idx > 0 ? pathName.substring(0, idx) : "/";
+            return pathSpec.matches(pname);
+          } else {
+            return true;
+          }
         }
-      }
 
-    } else { // no path
-      return fileSpec.matches(pathName);
+      } else { // no path
+        return fileSpec.matches(pathName);
+      }
     }
 
     return false;

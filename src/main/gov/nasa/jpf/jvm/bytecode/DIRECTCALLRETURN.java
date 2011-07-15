@@ -38,7 +38,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * that the ReturnInstruction of the called method does not have to handle
  * direct calls specifically
  */
-public class DIRECTCALLRETURN extends Instruction {
+public class DIRECTCALLRETURN extends Instruction implements gov.nasa.jpf.jvm.ReturnInstruction {
 
   @Override
   public boolean isExtendedInstruction() {

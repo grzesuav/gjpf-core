@@ -23,7 +23,7 @@ import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
- * base class for INVOKEVIRTUAL, INVOKESTATIC and INVOLEINTERFACE
+ * base class for INVOKEVIRTUAL, INVOKESPECIAL and INVOLEINTERFACE
  */
 public abstract class InstanceInvocation extends InvokeInstruction {
 

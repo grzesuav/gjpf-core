@@ -1854,7 +1854,7 @@ public class ThreadInfo
   public int[] getSnapshot (int xObjRef) {
     StackFrame frame = top;
     int n = stackDepth;
-
+    
     if (xObjRef != MJIEnv.NULL){ // filter out exception method frames
       for (;frame != null; frame = frame.getPrevious()){
         if (frame.getThis() != xObjRef){
@@ -2510,7 +2510,6 @@ public class ThreadInfo
     // does a ThreadGroup.remove(), which does a lot of sync stuff on the shared
     // ThreadGroup object, which might create lots of states. So we just nullify
     // the Thread fields and remove it from the ThreadGroup from here
-
     int grpRef = ei.getReferenceField("group");
     cleanupThreadGroup(grpRef, ei.getIndex());
 
@@ -2523,7 +2522,6 @@ public class ThreadInfo
   void cleanupThreadGroup (int grpRef, int threadRef) {
     if (grpRef != MJIEnv.NULL) {
       ElementInfo eiGrp = getElementInfo(grpRef);
-
       int threadsRef = eiGrp.getReferenceField("threads");
       if (threadsRef != MJIEnv.NULL) {
         ElementInfo eiThreads = getElementInfo(threadsRef);
@@ -3139,7 +3137,7 @@ public class ThreadInfo
     frame.pushRef(xi.getExceptionReference());
 
     pushFrame(frame);
-
+    
     return frame.getPC();
   }
   
@@ -3155,7 +3153,9 @@ public class ThreadInfo
       // gracefully shutdown this thread
       unwindToFirstFrame(); // this will take care of notifying
       pendingException = null;
-      top.advancePC();
+      
+      topClone().advancePC();
+      assert top.getPC() instanceof ReturnInstruction : "topframe PC not a ReturnInstruction: " + top.getPC();
       return top;
 
     } else {

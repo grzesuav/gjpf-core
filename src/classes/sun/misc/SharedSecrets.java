@@ -33,10 +33,10 @@ import java.io.File;
  * these packages that call the SharedSecrets setters
  * (except for JavaLangAccess and JavaNetAccess)
  *
- * Since this is used from within the tandard libraries of Java 6, we need
+ * Since this is used from within the standard libraries of Java 6, we need
  * some sort of support, but we don't want to break Java 1.5 yet by introducing
  * lots of Java 6 dependencies, which would force us to duplicate their code
- * even thoug it might be pure Java (like java.io.Console).
+ * even though it might be pure Java (like java.io.Console).
  *
  * This is a can of worms, which we only open partially to support
  * EnumSets for both Java 1.5 and 6. We make the cut at java.* packages -

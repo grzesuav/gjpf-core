@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
+import java.io.PrintWriter;
 
 /**
  * element values for short[] objects
@@ -96,4 +97,17 @@ public class ShortArrayFields extends ArrayFields {
     }
   }
 
+  // debugging
+  public void printOn(PrintWriter pw, int maxLength){    
+    for (int i=0; i<values.length; i++){
+      if (i == maxLength){
+        pw.print("...");
+        return;
+      }
+      if (i> 0){
+        pw.print(',');
+      }
+      pw.print(values[i]);
+    }
+  }
 }

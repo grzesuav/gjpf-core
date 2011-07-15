@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
+import java.io.PrintWriter;
 
 
 
@@ -166,4 +167,6 @@ public abstract class ArrayFields extends Fields {
     throw new JPFException("array has no field slots");
   }
 
+  // debugging
+  public abstract void printOn(PrintWriter pw, int maxLength);
 }
