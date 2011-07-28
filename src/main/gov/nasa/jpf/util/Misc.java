@@ -78,6 +78,26 @@ public class Misc {
     for (E e : src) target.add(e);
   }
 
+  public static <T> int indexOf (T[] array, Object elem){
+    for (int i=0; i<array.length; i++){
+      if (array[i].equals(elem)){
+        return i;
+      }
+    }
+    
+    return -1;
+  } 
+
+  public static <T> boolean contains (T[] array, Object elem){
+    for (int i=0; i<array.length; i++){
+      if (array[i].equals(elem)){
+        return true;
+      }
+    }
+    
+    return false;
+  } 
+  
   public static <T> T[] getAddedElements (T[] oldArray, T[] newArray) {
     
     if (newArray == null || newArray.length == 0) {

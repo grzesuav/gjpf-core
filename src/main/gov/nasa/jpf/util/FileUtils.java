@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -404,17 +405,59 @@ public class FileUtils {
     return null;
   }
   
+  public static String getContentsAsString( File file) throws IOException {
+    byte[] data = getContents(file);
+    return new String(data);
+  }
+  
   public static void setContents(File file, byte[] data) throws IOException {
     FileOutputStream os = new FileOutputStream(file);
     os.write(data);
     os.close();
   }
 
-  //--- test & debug
+  public static void setContents(File file, String data) throws IOException {
+    FileWriter fw = new FileWriter(file);
+    fw.append(data);
+    fw.close();
+  }
+  
+  
+  public static String asUnixPathName (File file){
+    String userHome = System.getProperty("user.home") + File.separatorChar;
+    int uhLen = userHome.length();
 
-  public static void main (String[] args) {
-    for (File f : findMatches(args[0])) {
-      System.out.println(f);
+    String pn = file.getAbsolutePath();
+    if (pn.startsWith(userHome)) {
+      pn = "~/" + pn.substring(uhLen).replace('\\', '/');
+    } else {
+      pn = pn.replace('\\', '/');
+    }
+    return pn;
+
+  }
+  
+  public static String unixToUserPathName (String unixPathName){
+    if (unixPathName.startsWith("~/")){
+      return "${user.home}" + unixPathName.substring(1);
+    } else {
+      String userHome = System.getProperty("user.home");
+      int len = userHome.length();
+      if (unixPathName.startsWith(userHome) && unixPathName.charAt(len) == '/'){
+        return "${user.home}" + unixPathName.substring(len);
+      } else {
+        return unixPathName;
+      }
     }
   }
+  
+  public static boolean ensureDirs (File file){
+    File dir = file.getParentFile();
+    if (!dir.isDirectory()){
+      return dir.mkdirs();
+    } else {
+      return true;
+    }
+  }
+  
 }

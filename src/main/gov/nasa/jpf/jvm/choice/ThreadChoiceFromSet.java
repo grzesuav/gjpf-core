@@ -31,6 +31,8 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
   public ThreadChoiceFromSet (String id, ThreadInfo[] set, boolean isSchedulingPoint) {
     super(id, isSchedulingPoint);
     
+    assert set.length > 0; // empty set would be a deadlock
+    
     values = set;
     count = -1;
   }

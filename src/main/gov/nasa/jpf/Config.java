@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
@@ -183,6 +184,10 @@ public class Config extends Properties {
   String[] args; // our original (non-nullified) command line args
 
 
+  /**
+   * the standard Config constructor that processes the whole properties stack
+   * @param args - usually command line args (incl. '+' options) 
+   */
   public Config (String[] args)  {
     this.args = args;
     String[] a = args.clone(); // we might nullify some of them
@@ -215,7 +220,23 @@ public class Config extends Properties {
   private Config() {
     // just interal, for reloading
   }
+  
+  /**
+   * single source Config constructor (does not process stack)
+   * @param fileName - single properties filename to initialize from 
+   */
+  public Config (String fileName){
+    loadProperties(fileName);
+  }
 
+  public Config (Reader in){
+    try {
+      load(in);
+    } catch (IOException iox){
+      exception("error reading data: " + iox);
+    }
+  }
+  
   public static void enableLogging (boolean enableLogging){
     log = enableLogging;
   }
@@ -235,6 +256,8 @@ public class Config extends Properties {
       // see if the first free arg is a *.jpf
       path = getAppArg(args);
     }
+    
+    put("jpf.app", path);
 
     return path;
   }
@@ -262,6 +285,8 @@ public class Config extends Properties {
         }
       }
     }
+    
+    put("jpf.site", path);
 
     return path;
   }
@@ -308,9 +333,8 @@ public class Config extends Properties {
         if (len > keyLen + 2){
           if (a.charAt(0) == '+' && a.charAt(keyLen+1) == '='){
             if (a.substring(1, keyLen+1).equals(key)){
-              args[i] = null; // processed
               String val = expandString(key, a.substring(keyLen+2));
-              setProperty(key, val);
+              args[i] = null; // processed
               return val;
             }
           }
@@ -336,7 +360,6 @@ public class Config extends Properties {
           default:
             if (a.endsWith(".jpf")){
               String val = expandString("jpf.app", a);
-              put("jpf.app", val);
               args[i] = null; // processed
               return val;
             }
