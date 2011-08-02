@@ -421,7 +421,16 @@ public class FileUtils {
     fw.append(data);
     fw.close();
   }
-  
+    
+  public static String asCanonicalUserPathName (String path){
+    String userHome = System.getProperty("user.home");
+    int len = userHome.length();
+    if (path.startsWith(userHome) && path.charAt(len) == '/') {
+      return "${user.home}" + path.substring(len).replace('\\', '/');
+    } else {
+      return path.replace('\\', '/');
+    }
+  }
   
   public static String asUnixPathName (File file){
     String userHome = System.getProperty("user.home") + File.separatorChar;
@@ -434,9 +443,8 @@ public class FileUtils {
       pn = pn.replace('\\', '/');
     }
     return pn;
-
   }
-  
+
   public static String unixToUserPathName (String unixPathName){
     if (unixPathName.startsWith("~/")){
       return "${user.home}" + unixPathName.substring(1);

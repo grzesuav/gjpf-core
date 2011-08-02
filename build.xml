@@ -191,6 +191,7 @@
         <include name="gov/nasa/jpf/util/JPFSiteUtils.class"/>
         <include name="gov/nasa/jpf/util/FileUtils.class"/>
         <include name="gov/nasa/jpf/util/StringMatcher.class"/>
+        <include name="gov/nasa/jpf/util/Pair.class"/>        
       </fileset>
       
       <manifest>

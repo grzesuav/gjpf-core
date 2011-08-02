@@ -115,8 +115,12 @@ public class JPF implements Runnable {
       RunJPF.showUsage();
       return;
     }
-
-    if (RunJPF.isOptionEnabled( RunJPF.BUILD,options)){
+    if (RunJPF.isOptionEnabled( RunJPF.ADD_PROJECT,options)){
+      RunJPF.addProject(args);
+      return;
+    }
+    
+    if (RunJPF.isOptionEnabled( RunJPF.BUILD_INFO,options)){
       RunJPF.showBuild(RunJPF.class.getClassLoader());
     }
 

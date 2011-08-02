@@ -20,6 +20,8 @@ package gov.nasa.jpf.tool;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFShell;
+import gov.nasa.jpf.util.JPFSiteUtils;
+import java.io.File;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -42,7 +44,8 @@ public class RunJPF extends Run {
   public static final int HELP  = 1;
   public static final int SHOW  = 2;
   public static final int LOG   = 4;
-  public static final int BUILD = 8;
+  public static final int BUILD_INFO = 8;
+  public static final int ADD_PROJECT = 16;
 
   static final String JPF_CLASSNAME = "gov.nasa.jpf.JPF";
 
@@ -55,6 +58,11 @@ public class RunJPF extends Run {
         return;
       }
 
+      if (isOptionEnabled(ADD_PROJECT, options)){
+        addProject(args);
+        return;
+      }
+      
       if (isOptionEnabled(LOG, options)) {
         Config.enableLogging(true);
       }
@@ -67,7 +75,7 @@ public class RunJPF extends Run {
 
       ClassLoader cl = conf.initClassLoader(RunJPF.class.getClassLoader());
 
-      if (isOptionEnabled(BUILD, options)) {
+      if (isOptionEnabled(BUILD_INFO, options)) {
         showBuild(cl);
       }
 
@@ -116,9 +124,13 @@ public class RunJPF extends Run {
           args[i] = null;
           mask |= LOG;
 
-        } else if ("-build".equals(a)){
+        } else if ("-buildinfo".equals(a)){
           args[i] = null;
-          mask |= BUILD;
+          mask |= BUILD_INFO;
+          
+        } else if ("-addproject".equals(a)){
+          args[i] = null;
+          mask |= ADD_PROJECT;
         }
       }
     }
@@ -132,15 +144,49 @@ public class RunJPF extends Run {
 
   public static void showUsage() {
     System.out.println("Usage: \"java [<vm-option>..] -jar ...RunJPF.jar [<jpf-option>..] [<app> [<app-arg>..]]");
-    System.out.println("  <jpf-option> : -help  : print usage information and exit");
-    System.out.println("               | -build : print build information and exit");
-    System.out.println("               | -log   : print configuration initialization steps");
-    System.out.println("               | -show  : print configuration dictionary contents");
+    System.out.println("  <jpf-option> : -help : print usage information and exit");
+    System.out.println("               | -buildinfo : print build information and exit");
+    System.out.println("               | -addproject [init] [<pathname>] : add project to site properties and exit");    
+    System.out.println("               | -log : print configuration initialization steps");
+    System.out.println("               | -show : print configuration dictionary contents");
     System.out.println("               | +<key>=<value>  : add or override key/value pair to config dictionary");
     System.out.println("  <app>        : *.jpf application properties file pathname | fully qualified application class name");
     System.out.println("  <app-arg>    : arguments passed into main() method of application class");
   }
-
+  
+  public static void addProject(String[] args){
+    boolean init = false;
+    int i=0;
+    String pn = null;
+    
+    // check if the first non-null arg is 'init', which means this project
+    // should be added to the 'extensions' list
+    for(; i<args.length; i++){
+      if (args[i] != null){
+        if ("init".equals(args[i])){
+          init = true;
+          continue;
+        } else {
+          pn = args[i];
+        }
+        break;
+      }
+    }
+    
+    File siteProps = pn == null ? JPFSiteUtils.getStandardSiteProperties() : new File(pn);
+    
+    File curDir = new File( System.getProperty("user.dir"));
+    String pid = JPFSiteUtils.getCurrentProjectId();
+    if (pid == null){
+      error("current dir not a valid JPF project: " + curDir);
+    }
+    
+    if (JPFSiteUtils.addProject( siteProps, pid, curDir, init)){
+      System.out.println("added project '" + pid + "' to site properties at: " + siteProps);
+    } else {
+      error("failed to add project: '" + pid + "' to site properties at: " + siteProps);
+    }
+  }
 
   // print out the build.properties settings
   public static void showBuild(ClassLoader cl) {

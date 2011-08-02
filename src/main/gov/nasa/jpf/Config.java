@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
@@ -1586,6 +1587,52 @@ public class Config extends Properties {
     }
 
     return null;
+  }
+  
+  /**
+   * this one is used to instantiate objects from a list of keys that share
+   * the same prefix, e.g.
+   * 
+   *  shell.panels = config,site
+   *  shell.panels.site = .shell.panels.SitePanel
+   *  shell.panels.config = .shell.panels.ConfigPanel
+   *  ...
+   * 
+   * note that we specify default class names, not classes, so that the classes
+   * get loaded through our own loader at call time (they might not be visible
+   * to our caller)
+   */
+  public <T> T[] getGroupInstances (String keyPrefix, String keyPostfix, Class<T> type, 
+          String... defaultClsNames) throws JPFConfigException {
+    
+    String[] ids = getCompactTrimmedStringArray(keyPrefix);
+    
+    if (ids.length > 0){
+      keyPrefix = keyPrefix + '.';
+      T[] arr = (T[]) Array.newInstance(type, ids.length);
+      
+      for(int i = 0; i < ids.length; i++){
+        String key = keyPrefix + ids[i];
+        if (keyPostfix != null){
+          key = key + keyPostfix;
+        }
+        arr[i] = getEssentialInstance(key, type);
+      }
+      
+      return arr;
+      
+    } else {
+      T[] arr = (T[]) Array.newInstance(type, defaultClsNames.length);
+              
+      for (int i=0; i<arr.length; i++){
+        arr[i] = getInstance((String)null, defaultClsNames[i], type);
+        if (arr[i] == null){
+          exception("cannot instantiate default type " + defaultClsNames[i]);
+        }
+      }
+      
+      return arr;
+    }
   }
   
   // <2do> - that's kind of kludged together, not very efficient
