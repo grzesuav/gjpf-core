@@ -92,6 +92,10 @@ public class MJIEnv {
     return vm.getJPF();
   }
 
+  public boolean isBigEndianPlatform(){
+    return vm.isBigEndianPlatform();
+  }
+  
   public void addListener (JPFListener l){
     vm.getJPF().addListener(l);
   }

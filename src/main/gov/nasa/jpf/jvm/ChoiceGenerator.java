@@ -155,12 +155,12 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     return isCascaded;
   }
 
-  public ChoiceGenerator<?> getPreviousChoiceGeneratorOfType(Class<?> cls) {
+  public <T extends ChoiceGenerator<?>> T getPreviousChoiceGeneratorOfType(Class<T> cls) {
     ChoiceGenerator<?> cg = prev;
 
     while (cg != null) {
       if (cls.isInstance(cg)){
-        return cg;
+        return (T)cg;
       }
       cg = cg.prev;
     }

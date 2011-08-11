@@ -32,23 +32,27 @@ public class AtomicTest extends TestJPF {
       Runnable r = new Runnable() {
 
         public void run() {
+          System.out.println("  enter run in Thread-0");
           assert data == 42;
           data += 1;
           assert data == 43;
           data -= 1;
           assert data == 42;
+          System.out.println("  exit run in Thread-0");
         }
       };
 
       Thread t = new Thread(r);
 
       Verify.beginAtomic();
+      System.out.println("enter atomic section in main");
       t.start();
       assert data == 42;
       data += 2;
       assert data == 44;
       data -= 2;
       assert data == 42;
+      System.out.println("exit atomic section in main");
       Verify.endAtomic();
     }
   }

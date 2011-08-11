@@ -142,20 +142,6 @@
   <target name="build" depends="-cond-clean,compile"
         description="generate the core JPF jar files" >
 
-    <jar jarfile="build/jpf.jar" index="true">
-      <fileset dir="build/main"/>
-      <fileset dir="build/peers"/>
-      <!-- this is redundant, but if JPF is executed from java.class.path it wouldn't find annotations -->
-      <fileset dir="build/annotations"/>
-      
-      <manifest>
-        <attribute name="Built-By" value="${user.name}"/>
-        <attribute name="Implementation-Vendor" value="NASA Ames Research Center"/>
-        <attribute name="Implementation-Title" value="Java Pathfinder core system"/>
-        <attribute name="Implementation-Version" value="${jpf.version}"/>
-      </manifest>
-    </jar>
-
     <jar jarfile="build/jpf-classes.jar">
       <fileset dir="build/classes"/>
       <fileset dir="build/annotations"/>
@@ -170,6 +156,23 @@
           <include name="gov/nasa/jpf/util/test/TestJPF.class"/>
           <include name="gov/nasa/jpf/util/test/TestJPFHelper.class"/>
       </fileset>
+    </jar>
+
+    <jar jarfile="build/jpf.jar" index="true">
+      <fileset dir="build/main"/>
+      <fileset dir="build/peers"/>
+      <!-- this is redundant, but if JPF is executed from java.class.path it wouldn't find annotations -->
+      <fileset dir="build/annotations"/>
+      
+      <!-- for single jar distribution -->
+      <zipfileset src="build/jpf-classes.jar" prefix="classes"/>      
+      
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Implementation-Vendor" value="NASA Ames Research Center"/>
+        <attribute name="Implementation-Title" value="Java Pathfinder core system"/>
+        <attribute name="Implementation-Version" value="${jpf.version}"/>
+      </manifest>
     </jar>
 
     <!-- optional jar that contains annotations to be used in non-JPF dependent apps -->

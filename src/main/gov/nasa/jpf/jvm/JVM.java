@@ -29,6 +29,7 @@ import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
 import gov.nasa.jpf.util.Misc;
 
 import java.io.PrintWriter;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -140,6 +141,9 @@ public class JVM {
   protected boolean treeOutput;
   protected boolean pathOutput;
   protected boolean indentOutput;
+  
+  // <2do> there are probably many places where this should be used
+  protected boolean isBigEndian;
 
   /**
    * be prepared this might throw JPFConfigExceptions
@@ -159,6 +163,8 @@ public class JVM {
     // we have to defer setting pathOutput until we have a reporter registered
     indentOutput = config.getBoolean("vm.indent_output",false);
 
+    isBigEndian = getPlatformEndianness(config);
+    
     initTimeModel(config);
 
     initSubsystems(config);
@@ -204,6 +210,24 @@ public class JVM {
     // peer classes get initialized upon NativePeer creation
   }
 
+  protected boolean getPlatformEndianness (Config config){
+    String endianness = config.getString("vm.endian");
+    if (endianness == null) {
+      return ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
+    } else if (endianness.equalsIgnoreCase("big")) {
+      return true;
+    } else if (endianness.equalsIgnoreCase("little")) {
+      return false;
+    } else {
+      config.exception("illegal vm.endian value: " + endianness);
+      return false; // doesn't matter
+    }
+  }
+  
+  public boolean isBigEndianPlatform(){
+    return isBigEndian;
+  }
+  
   protected void initTimeModel (Config config){
     Class<?>[] argTypes = { JVM.class, Config.class };
     Object[] args = { this, config };
@@ -1374,6 +1398,10 @@ public class JVM {
     return ss.getChoiceGeneratorsOfType(cgType);
   }
 
+  public <T extends ChoiceGenerator<?>> T getLastChoiceGeneratorOfType (Class<T> cgType){
+    return ss.getLastChoiceGeneratorOfType(cgType);
+  }
+  
   public StaticElementInfo getClassReference (String name) {
     return ss.ks.statics.get(name);
   }

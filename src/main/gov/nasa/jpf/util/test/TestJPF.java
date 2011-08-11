@@ -914,7 +914,7 @@ public abstract class TestJPF implements JPFShell  {
     }
   }
   
-  private String[] appendTestClass(String args[], StackTraceElement caller) {
+  protected String[] appendTestClass(String args[], StackTraceElement caller) {
     Class clazz;
     Method method;
     String className, methodName;

@@ -190,4 +190,41 @@ public class Unsafe {
   public native int arrayBaseOffset(Class<?> clazz);
 
   public native int arrayIndexScale(Class<?> clazz);
+  
+  
+  //--- java.nio finally breaks object boundaries  - hello, evil pointer arithmetic
+  
+  /**
+   * this is really a byte[] allocation (used by java.nio.Bits). Note that
+   * object has to be explicitly freed with freeMemory() (yikes!)
+   */
+  public native long allocateMemory (long bytes);
+  
+  /**
+   * to be used to free allocateMemory() allocated array objects
+   */
+  public native void freeMemory (long byteArrayRef);
+    
+  /**
+   * byte access of allocateMemory() objects. Note that 'address' has
+   * to point into such an object
+   */
+  public native byte getByte (long address);
+  public native void putByte (long address, byte val);
+  
+  public native char getChar (long address);
+  public native void putChar (long address, char val);
+  
+  public native int getInt (long address);
+  public native void putInt (long address, int val);
+  
+  public native long getLong (long address);
+  public native void putLong (long address, long val);
+
+  public native float getFloat (long address);
+  public native void putFloat (long address, float val);
+
+  public native double getDouble (long address);
+  public native void putDouble (long address, double val);
+  
 }

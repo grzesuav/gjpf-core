@@ -68,9 +68,6 @@ public abstract class Instruction implements InstructionVisit {
     return false;
   }
 
-  public boolean isDeterministic(SystemState ss, KernelState ks, ThreadInfo ti) {
-    return true;
-  }
 
   /**
    * is this one of our own, artificial insns?
@@ -79,9 +76,6 @@ public abstract class Instruction implements InstructionVisit {
     return false;
   }
 
-  public boolean isExecutable(SystemState ss, KernelState ks, ThreadInfo th) {
-    return true;
-  }
 
   public MethodInfo getMethodInfo() {
     return mi;
@@ -111,8 +105,8 @@ public abstract class Instruction implements InstructionVisit {
     return position;
   }
 
-  public void setLocation(int off, int pos) {
-    insnIndex = off;
+  public void setLocation(int insnIdx, int pos) {
+    insnIndex = insnIdx;
     position = pos;
   }
 

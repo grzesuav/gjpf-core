@@ -62,4 +62,5 @@ public abstract class ThreadChoiceGenerator extends ChoiceGenerator<ThreadInfo> 
     return isSchedulingPoint;
   }
 
+  public abstract boolean contains (ThreadInfo ti);
 }

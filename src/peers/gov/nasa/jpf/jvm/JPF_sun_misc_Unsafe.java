@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
 import java.io.PrintWriter;
+import java.util.LinkedList;
 
 /**
  * we don't want this class! This is a hodgepodge of stuff that shouldn't be in Java, but
@@ -410,6 +411,356 @@ public class JPF_sun_misc_Unsafe {
 
   private static FieldInfo getRegisteredFieldInfo(long fieldOffset) {
     return JPF_java_lang_reflect_Field.getRegisteredFieldInfo((int)fieldOffset);
+  }
+
+  
+  //--- the explicit memory buffer allocation/free + access methods - evil pointer arithmetic
+
+  /*
+   * we shy away from maintaining our own address table by means of knowing that
+   * the byte[] object stored in the ArrayFields will not be recycled, and hashCode() will
+   * return its address, so the start/endAdr pairs we get from that have to be
+   * non-overlapping. Of course that falls apart if  hashCode() would do something
+   * different, which is the case for any address that exceeds 32bit
+   */
+  
+  static class Alloc {
+    int objRef;
+    
+    int startAdr;
+    int endAdr;
+    
+    Alloc next;
+    
+    Alloc (MJIEnv env, int baRef, long length){
+      this.objRef = baRef;
+
+      ElementInfo ei = env.getElementInfo(baRef);
+      ArrayFields afi = (ArrayFields) ei.getFields();
+      byte[] mem = afi.asByteArray();
+
+      startAdr = mem.hashCode();
+      endAdr = startAdr + (int)length -1;
+    }
+    
+    public String toString(){
+      return String.format("Alloc[objRef=%x,startAdr=%x,endAdr=%x]", objRef, startAdr, endAdr);
+    }
+  }
+  
+  static Alloc firstAlloc;
+  
+  // for debugging purposes only
+  private static void dumpAllocs(){
+    System.out.println("Unsafe allocated memory blocks:{");
+    for (Alloc a = firstAlloc; a != null; a = a.next){
+      System.out.print("  ");
+      System.out.println(a);
+    }
+    System.out.println('}');
+  }
+  
+  private static void sortInAlloc(Alloc newAlloc){
+    int startAdr = newAlloc.startAdr;
+    
+    if (firstAlloc == null){
+      firstAlloc = newAlloc;
+      
+    } else {
+      Alloc prev = null;
+      for (Alloc a = firstAlloc; a != null; prev = a, a = a.next){
+        if (startAdr < a.startAdr){
+          newAlloc.next = a;
+          if (prev == null){
+            firstAlloc = newAlloc;
+          } else {
+            prev.next = newAlloc;
+          }
+        }
+      }
+    }
+  }
+  
+  private static Alloc getAlloc (int address){
+    for (Alloc a = firstAlloc; a != null; a = a.next){
+      if (address >= a.startAdr && address <= a.endAdr){
+        return a;
+      }
+    }
+    
+    return null;
+  }
+  
+  private static Alloc removeAlloc (int startAddress){
+    Alloc prev = null;
+    for (Alloc a = firstAlloc; a != null; prev = a, a = a.next) {
+      if (a.startAdr == startAddress){
+        if (prev == null){
+          firstAlloc = a.next;
+        } else {
+          prev.next = a.next;
+        }
+        
+        return a;
+      }
+    }
+    
+    return null;
+  }
+  
+  
+  public static long allocateMemory__J__J (MJIEnv env, int unsafeRef, long nBytes) {
+    if (nBytes < 0 || nBytes > Integer.MAX_VALUE) {
+      env.throwException("java.lang.IllegalArgumentException", "invalid memory block size: " + nBytes);
+      return 0;
+    }
+    
+    // <2do> we should probably also throw OutOfMemoryErrors on configured thresholds 
+    
+    int baRef = env.newByteArray((int) nBytes);
+    // the corresponding objects have to be freed explicitly
+    env.registerPinDown(baRef);
+    
+    Alloc alloc = new Alloc(env, baRef, nBytes);
+    sortInAlloc(alloc);
+    
+    return alloc.startAdr;
+  }
+  
+  public static void freeMemory__J__V (MJIEnv env, int unsafeRef, long startAddress) {
+    int addr = (int)startAddress;
+
+    if (startAddress != MJIEnv.NULL){
+      Alloc a = removeAlloc(addr);
+      if (a == null){
+        env.throwException("java.lang.IllegalArgumentException", "invalid memory address: " + Integer.toHexString(addr));
+      } else {
+        env.releasePinDown(a.objRef);
+      }
+    }
+  }
+  
+  public static byte getByte__J__B (MJIEnv env, int unsafeRef, long address) {
+    int addr = (int)address;
+    Alloc a = getAlloc(addr);
+    
+    if (a == null) {
+      env.throwException("java.lang.IllegalArgumentException", "invalid memory address: " + Integer.toHexString(addr));
+      return 0;
+    }
+    
+    ElementInfo ei = env.getElementInfo(a.objRef);
+    return ei.getByteElement(addr - a.startAdr);
+  }
+  public static void putByte__JB__V (MJIEnv env, int unsafeRef, long address, byte val) {
+    int addr = (int)address;
+    Alloc a = getAlloc(addr);
+    
+    if (a == null) {
+      env.throwException("java.lang.IllegalArgumentException", "invalid memory address: " + Integer.toHexString(addr));
+      return;
+    }
+    
+    ElementInfo ei = env.getElementInfo(a.objRef);
+    ei.setByteElement(addr - a.startAdr, val);
+  }
+  
+  public static char getChar__J__C (MJIEnv env, int unsafeRef, long address) {
+    int addr = (int)address;
+    Alloc a = getAlloc(addr);
+    
+    if (a == null) {
+      env.throwException("java.lang.IllegalArgumentException", "invalid memory address: " + Integer.toHexString(addr));
+      return 0;
+    }
+    
+    ElementInfo ei = env.getElementInfo(a.objRef);
+    byte[] ba = ei.asByteArray();
+    
+    byte b0 = ba[addr];
+    byte b1 = ba[addr+1];
+    
+    char val;
+    if (env.isBigEndianPlatform()){
+      val = (char) ((b0 << 8) | b1);
+    } else {
+      val = (char) ((b1 << 8) | b0);      
+    }
+    
+    return val;
+  }  
+  public static void putChar__JC__V (MJIEnv env, int unsafeRef, long address, char val) {
+    int addr = (int)address;
+    Alloc a = getAlloc(addr);
+    
+    if (a == null) {
+      env.throwException("java.lang.IllegalArgumentException", "invalid memory address: " + Integer.toHexString(addr));
+      return;
+    }
+        
+    byte b1 = (byte)(0xff & val);
+    byte b0 = (byte)(0xff & (val >>> 8));
+    
+    ElementInfo ei = env.getElementInfo(a.objRef);
+
+    if (env.isBigEndianPlatform()){
+      ei.setByteElement(addr,   b0);
+      ei.setByteElement(addr+1, b1);
+    } else {
+      ei.setByteElement(addr,   b1);
+      ei.setByteElement(addr+1, b0);      
+    }
+  }
+  
+  public static int getInt__J__I (MJIEnv env, int unsafeRef, long address) {
+    int addr = (int)address;
+    Alloc a = getAlloc(addr);
+    
+    if (a == null) {
+      env.throwException("java.lang.IllegalArgumentException", "invalid memory address: " + Integer.toHexString(addr));
+      return 0;
+    }
+    
+    ElementInfo ei = env.getElementInfo(a.objRef);
+    byte[] ba = ei.asByteArray();
+    
+    byte b0 = ba[addr];
+    byte b1 = ba[addr+1];
+    byte b2 = ba[addr+2];
+    byte b3 = ba[addr+3];
+    
+    int val;
+    if (env.isBigEndianPlatform()){
+      val = b0;
+      val = (val << 8) | b1;
+      val = (val << 8) | b2;
+      val = (val << 8) | b3;
+
+    } else {
+      val = b3;
+      val = (val << 8) | b2;
+      val = (val << 8) | b1;
+      val = (val << 8) | b0;
+    }
+    
+    return val;
+  }  
+  public static void putInt__JI__V (MJIEnv env, int unsafeRef, long address, int val) {
+    int addr = (int)address;
+    Alloc a = getAlloc(addr);
+    
+    if (a == null) {
+      env.throwException("java.lang.IllegalArgumentException", "invalid memory address: " + Integer.toHexString(addr));
+      return;
+    }
+        
+    byte b3 = (byte)(0xff & val);
+    byte b2 = (byte)(0xff & (val >>> 8));
+    byte b1 = (byte)(0xff & (val >>> 16));
+    byte b0 = (byte)(0xff & (val >>> 24));    
+    
+    ElementInfo ei = env.getElementInfo(a.objRef);
+
+    if (env.isBigEndianPlatform()){
+      ei.setByteElement(addr,   b0);
+      ei.setByteElement(addr+1, b1);
+      ei.setByteElement(addr+2, b2);
+      ei.setByteElement(addr+3, b3);
+    } else {
+      ei.setByteElement(addr,   b3);
+      ei.setByteElement(addr+1, b2);
+      ei.setByteElement(addr+2, b1);
+      ei.setByteElement(addr+3, b0);
+    }
+  }
+
+  public static long getLong__J__J (MJIEnv env, int unsafeRef, long address) {
+    int addr = (int)address;
+    Alloc a = getAlloc(addr);
+    
+    if (a == null) {
+      env.throwException("java.lang.IllegalArgumentException", "invalid memory address: " + Integer.toHexString(addr));
+      return 0;
+    }
+    
+    ElementInfo ei = env.getElementInfo(a.objRef);
+    byte[] ba = ei.asByteArray();
+    int offset = addr - a.startAdr;
+    
+    byte b0 = ba[offset];
+    byte b1 = ba[offset+1];
+    byte b2 = ba[offset+2];
+    byte b3 = ba[offset+3];
+    byte b4 = ba[offset+4];
+    byte b5 = ba[offset+5];
+    byte b6 = ba[offset+6];
+    byte b7 = ba[offset+7];
+    
+    int val;
+    if (env.isBigEndianPlatform()){
+      val = b0;
+      val = (val << 8) | b1;
+      val = (val << 8) | b2;
+      val = (val << 8) | b3;
+      val = (val << 8) | b4;
+      val = (val << 8) | b5;
+      val = (val << 8) | b6;
+      val = (val << 8) | b7;
+
+    } else {
+      val = b7;
+      val = (val << 8) | b6;
+      val = (val << 8) | b5;
+      val = (val << 8) | b4;
+      val = (val << 8) | b3;
+      val = (val << 8) | b2;
+      val = (val << 8) | b1;
+      val = (val << 8) | b0;
+    }
+    
+    return val;
+  }  
+  public static void putLong__JJ__V (MJIEnv env, int unsafeRef, long address, long val) {
+    int addr = (int)address;
+    Alloc a = getAlloc(addr);
+    
+    if (a == null) {
+      env.throwException("java.lang.IllegalArgumentException", "invalid memory address: " + Integer.toHexString(addr));
+      return;
+    }
+        
+    byte b7 = (byte)(0xff & val);
+    byte b6 = (byte)(0xff & (val >>> 8));
+    byte b5 = (byte)(0xff & (val >>> 16));
+    byte b4 = (byte)(0xff & (val >>> 24));    
+    byte b3 = (byte)(0xff & (val >>> 32));    
+    byte b2 = (byte)(0xff & (val >>> 40));    
+    byte b1 = (byte)(0xff & (val >>> 48));    
+    byte b0 = (byte)(0xff & (val >>> 56));    
+
+    ElementInfo ei = env.getElementInfo(a.objRef);
+    int offset = addr - a.startAdr;
+    
+    if (env.isBigEndianPlatform()){
+      ei.setByteElement(offset,   b0);
+      ei.setByteElement(offset+1, b1);
+      ei.setByteElement(offset+2, b2);
+      ei.setByteElement(offset+3, b3);
+      ei.setByteElement(offset+4, b4);
+      ei.setByteElement(offset+5, b5);
+      ei.setByteElement(offset+6, b6);
+      ei.setByteElement(offset+7, b7);
+      
+    } else {
+      ei.setByteElement(offset,   b7);
+      ei.setByteElement(offset+1, b6);
+      ei.setByteElement(offset+2, b5);
+      ei.setByteElement(offset+3, b4);
+      ei.setByteElement(offset+4, b3);
+      ei.setByteElement(offset+5, b2);
+      ei.setByteElement(offset+6, b1);
+      ei.setByteElement(offset+7, b0);
+    }
   }
 
 }

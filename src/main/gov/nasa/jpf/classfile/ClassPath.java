@@ -22,12 +22,7 @@ package gov.nasa.jpf.classfile;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.util.JPFLogger;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 /**
  * this is a lookup mechanism for class files that is based on an ordered
@@ -35,145 +30,27 @@ import java.util.jar.JarFile;
  */
 public class ClassPath {
 
+  public static class Match {
+    public final byte[] data;
+    public final ClassFileContainer container;
+    
+    Match (ClassFileContainer c, byte[] d){
+      container = c;
+      data = d;
+    }
+  }
+  
   static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.classfile");
-
-  ArrayList<PathElement> pathElements;
-
-
-  static abstract class PathElement {
-    String name;
-
-    protected PathElement(String name){
-      this.name = name;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public abstract byte[] getClassData (String clsName) throws ClassFileException;
-
-    protected void readFully(InputStream is, byte[] buf) throws ClassFileException {
-      try {
-        int nRead = 0;
-
-        while (nRead < buf.length) {
-          int n = is.read(buf, nRead, (buf.length - nRead));
-          if (n < 0) {
-            error("premature end of classfile: " + buf.length + '/' + nRead);
-          }
-          nRead += n;
-        }
-
-      } catch (IOException iox) {
-        error("failed to read classfile");
-      }
-    }
-  }
-
-  static class DirElement extends PathElement {
-    File dir;
-
-    DirElement (File dir){
-      super(dir.getPath());
-      this.dir = dir;
-    }
-
-    public byte[] getClassData (String clsName) throws ClassFileException {
-      String pn = clsName.replace('.', File.separatorChar) + ".class";
-      File f = new File(dir,pn);
-
-      if (f.isFile()){
-        FileInputStream fis = null;
-
-        try {
-          fis = new FileInputStream(f);
-          long len = f.length();
-          if (len > Integer.MAX_VALUE){
-            error("classfile too big: " + f.getPath());
-          }
-          byte[] data = new byte[(int)len];
-          readFully(fis, data);
-
-          return data;
-
-        } catch (IOException iox){
-          error("cannot read " + f.getPath());
-
-        } finally {
-          if (fis != null){
-            try {
-              fis.close();
-            } catch (IOException iox){
-              error("cannot close input stream for file " + f.getPath());
-            }
-          }
-        }
-      }
-
-      return null;
-    }
-  }
-
-  static class JarElement extends PathElement {
-    JarFile jar;
-
-    JarElement (File file) throws ClassFileException {
-      super(file.getPath());
-
-      try {
-        jar = new JarFile(file);
-
-      } catch (IOException iox){
-        error("reading jar: " + name);
-      }
-    }
-
-
-    public byte[] getClassData (String clsName) throws ClassFileException {
-      String pn = clsName.replace('.', '/') + ".class";
-      JarEntry e = jar.getJarEntry(pn);
-
-      if (e != null){
-        InputStream is = null;
-        try {
-          long len = e.getSize();
-          if (len > Integer.MAX_VALUE){
-            error("classfile too big: " + e.getName());
-          }
-
-          is = jar.getInputStream(e);
-
-          byte[] data = new byte[(int)len];
-          readFully(is, data);
-
-          return data;
-
-        } catch (IOException iox){
-          error("error reading jar entry " + e.getName());
-
-        } finally {
-          if (is != null){
-            try {
-              is.close();
-            } catch (IOException iox){
-              error("cannot close input stream for file " + e.getName());
-            }
-          }
-        }
-      }
-
-      return null;
-    }
-  }
+  
+  ArrayList<ClassFileContainer> pathElements;
 
 
   public ClassPath(){
-    pathElements = new ArrayList<PathElement>();
+    pathElements = new ArrayList<ClassFileContainer>();
   }
 
   public ClassPath (String[] pathNames) {
-    pathElements = new ArrayList<PathElement>();
+    pathElements = new ArrayList<ClassFileContainer>();
 
     for (String e : pathNames){
       addPathName(e);
@@ -181,27 +58,13 @@ public class ClassPath {
   }
 
   public void addPathName(String pathName){
-    File f = new File(pathName);
-    PathElement pe = null;
-
-    if (f.isDirectory()) {
-      pe = new DirElement(f);
-
-    } else {
-      if (f.isFile()) {
-        if (pathName.endsWith(".jar")) {
-          try {
-            pe = new JarElement(f);
-          } catch (ClassFileException cfx) {
-            // issue a warning
-          }
-        }
-      }
-    }
+    ClassFileContainer pe = ClassFileContainer.getClassFileContainer(pathName);
 
     if (pe != null) {
       pathElements.add(pe);
     } else {
+      // would like to turn this into a warning, but the java.class.path at least
+      // on OS X 10.6 contains non-existing elements
       logger.info("illegal classpath element ", pathName);
     }
   }
@@ -221,7 +84,7 @@ public class ClassPath {
     int len = pathElements.size();
     int i=0;
 
-    for (PathElement e : pathElements){
+    for (ClassFileContainer e : pathElements){
       sb.append(e.getName());
       if (++i < len){
         sb.append(File.pathSeparator);
@@ -234,9 +97,20 @@ public class ClassPath {
     throw new ClassFileException(msg);
   }
 
+  public Match findMatch (String clsName) throws ClassFileException {
+    for (ClassFileContainer e : pathElements){
+      byte[] data = e.getClassData(clsName);
+      if (data != null){
+        logger.fine("loading ", clsName, " from ", e.getName());
+        return new Match( e, data);
+      }
+    }
+
+    return null;    
+  }
 
   public byte[] getClassData(String clsName) throws ClassFileException {
-    for (PathElement e : pathElements){
+    for (ClassFileContainer e : pathElements){
       byte[] data = e.getClassData(clsName);
       if (data != null){
         logger.fine("loading ", clsName, " from ", e.getName());

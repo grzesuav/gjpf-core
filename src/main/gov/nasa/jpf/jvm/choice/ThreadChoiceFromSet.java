@@ -116,4 +116,13 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
 	  return values; 
   }
   
+  @Override
+  public boolean contains (ThreadInfo ti){
+    for (int i=0; i<values.length; i++){
+      if (values[i] == ti){
+        return true;
+      }
+    }
+    return false;
+  }
 }

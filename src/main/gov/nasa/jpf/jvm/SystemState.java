@@ -266,16 +266,24 @@ public class SystemState {
 
     return null;
   }
-
+  
   /**
    * return the whole stack of CGs of the current path
    */
   public ChoiceGenerator<?>[] getChoiceGenerators () {
-    return curCg.getAll();
+    if (curCg != null){
+      return curCg.getAll();
+    } else {
+      return null;
+    }
   }
 
   public <T extends ChoiceGenerator<?>> T[] getChoiceGeneratorsOfType (Class<T> cgType) {
-    return curCg.getAllOfType(cgType);
+    if (curCg != null){
+      return curCg.getAllOfType(cgType);
+    } else {
+      return null;
+    }
   }
 
 

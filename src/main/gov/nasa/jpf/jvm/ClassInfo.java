@@ -24,6 +24,7 @@ import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListener;
 import gov.nasa.jpf.classfile.ClassFile;
+import gov.nasa.jpf.classfile.ClassFileContainer;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassFileReaderAdapter;
 import gov.nasa.jpf.classfile.ClassPath;
@@ -223,6 +224,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   /** Name of the file which contains the source of this class (includes package path) */
   protected String sourceFileName;
   
+  /** from where the corresponding classfile was loaded (if this is not a builtin) */
+  protected ClassFileContainer container;
 
   /** A unique id associate with this class. */
   protected int uniqueId;
@@ -1119,14 +1122,17 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   private static ClassInfo loadClass(String typeName, int uniqueId){
     try {
-      byte[] data = cp.getClassData(typeName);
-      if (data == null){
+      ClassPath.Match match = cp.findMatch(typeName);
+      if (match == null){
         throw new NoClassInfoException(typeName);
       }
 
-      ClassFile cf = new ClassFile(data);
-      return new ClassInfo(cf, uniqueId);
+      ClassFile cf = new ClassFile(match.data);
+      ClassInfo ci = new ClassInfo(cf, uniqueId);
+      ci.setContainer(match.container);
 
+      return ci;
+      
     } catch (ClassFileException cfx){
       throw new JPFException("error reading class " + typeName, cfx);
     }
@@ -1231,6 +1237,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return (sei != null) ? sei.getClassObjectRef() : -1;
   }
 
+  public ClassFileContainer getContainer(){
+    return container;
+  }
+  
+  public void setContainer (ClassFileContainer c){
+    container = c;
+  }
+  
   public int getModifiers() {
     return modifiers;
   }

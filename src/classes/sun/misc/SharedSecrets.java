@@ -55,6 +55,7 @@ public class SharedSecrets {
   private static JavaIODeleteOnExitAccess javaIODeleteOnExitAccess;
   private static JavaNetAccess javaNetAccess;
   private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
+  private static JavaNioAccess javaNioAccess;
 
   // (required for EnumSet ops)
   public static JavaLangAccess getJavaLangAccess() {
@@ -100,6 +101,18 @@ public class SharedSecrets {
     return javaIOAccess;
   }
 
+  
+  public static void setJavaNioAccess(JavaNioAccess a) {
+    javaNioAccess = a;
+  }
+  public static JavaNioAccess getJavaNioAccess() {
+    if (javaNioAccess == null) {
+      throw new UnsupportedOperationException("sun.misc.SharedSecrets.getJavaNioAccess() not supported yet");
+    }
+    return javaNioAccess;
+  }
+
+  
   public static void setJavaIODeleteOnExitAccess(JavaIODeleteOnExitAccess jida) {
     javaIODeleteOnExitAccess = jida;
   }

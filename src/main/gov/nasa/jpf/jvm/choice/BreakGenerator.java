@@ -76,4 +76,8 @@ public class BreakGenerator extends ThreadChoiceGenerator {
     isDone = false;
   }
 
+  @Override
+  public boolean contains (ThreadInfo ti){
+    return this.ti == ti;
+  }
 }
