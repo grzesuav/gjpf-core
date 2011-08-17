@@ -71,7 +71,7 @@ public class Statistics extends ListenerAdapter implements Cloneable {
   public long nReleasedObjects = 0;
   public int maxLiveObjects = 0;
 
-  public synchronized Statistics clone() {
+  public Statistics clone() {
     try {
       return (Statistics)super.clone();
     } catch (CloneNotSupportedException e) {
@@ -79,7 +79,7 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     }
   }
   
-  public synchronized void gcBegin (JVM vm) {
+  public void gcBegin (JVM vm) {
     int heapSize = vm.getHeap().size();
     if (heapSize > maxLiveObjects){
       maxLiveObjects = heapSize;
@@ -88,11 +88,11 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     gcCycles++;
   }
   
-  public synchronized void instructionExecuted (JVM vm){
+  public void instructionExecuted (JVM vm){
     insns++;
   }
 
-  public synchronized void choiceGeneratorSet (JVM vm){
+  public void choiceGeneratorSet (JVM vm){
     ChoiceGenerator<?> cg = vm.getChoiceGenerator();
     if (cg instanceof ThreadChoiceGenerator){
       threadCGs++;
@@ -119,15 +119,15 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     }
   }
   
-  public synchronized void objectCreated (JVM vm){
+  public void objectCreated (JVM vm){
     nNewObjects++;
   }
   
-  public synchronized void objectReleased (JVM vm){
+  public void objectReleased (JVM vm){
     nReleasedObjects++;
   }
   
-  public synchronized void stateAdvanced (Search search){
+  public void stateAdvanced (Search search){
     long m = Runtime.getRuntime().totalMemory();
     if (m > maxUsed) {
       maxUsed = m;
@@ -147,19 +147,19 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     }
   }
   
-  public synchronized void stateBacktracked (Search search){
+  public void stateBacktracked (Search search){
     backtracked++;
   }
   
-  public synchronized void stateProcessed (Search search){
+  public void stateProcessed (Search search){
     processed++;
   }
 
-  public synchronized void stateRestored (Search search){
+  public void stateRestored (Search search){
     restored++;
   }
     
-  public synchronized void searchConstraintHit (Search search){
+  public void searchConstraintHit (Search search){
     constraints++;
   }
 

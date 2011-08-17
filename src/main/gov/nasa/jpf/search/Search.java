@@ -115,6 +115,11 @@ public abstract class Search {
   public boolean hasListenerOfType (Class<?> listenerCls) {
     return Misc.hasElementOfType(listeners, listenerCls);
   }
+  
+  public <T> T getNextListenerOfType(Class<T> type, T prev){
+    return Misc.getNextElementOfType(listeners, type, prev);
+  }
+
 
   public void removeListener (SearchListener removeListener) {
     listeners = Misc.removeElement(listeners, removeListener);

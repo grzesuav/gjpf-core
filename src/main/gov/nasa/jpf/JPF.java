@@ -306,6 +306,24 @@ public class JPF implements Runnable {
     }
   }
 
+  public <T> T getListenerOfType( Class<T> type){
+    if (search != null){
+      T listener = search.getNextListenerOfType(type, null);
+      if (listener != null){
+        return listener;
+      }
+    }
+    
+    if (vm != null){
+      T listener = vm.getNextListenerOfType(type, null);
+      if (listener != null){
+        return listener;
+      }
+    }
+    
+    return null;
+  }
+  
   public boolean addUniqueTypeListener (JPFListener l) {
     boolean addedListener = false;
     Class<?> cls = l.getClass();
@@ -329,6 +347,7 @@ public class JPF implements Runnable {
 
     return addedListener;
   }
+  
   
   public void removeListener (JPFListener l){
     if (l instanceof VMListener) {

@@ -62,7 +62,7 @@ public class Reporter extends SearchListenerAdapter {
     this.jpf = jpf;
     search = jpf.getSearch();
     vm = jpf.getVM();
-    boolean reportStats = false;
+    boolean reportStats = conf.getBoolean("report.statistics", false);
 
     started = new Date();
 
@@ -79,15 +79,28 @@ public class Reporter extends SearchListenerAdapter {
     }
 
     if (reportStats){
-      stat = conf.getInstance("report.statistics.class", Statistics.class);
-      if (stat == null){
-        stat = new Statistics();
-      }
-
-      jpf.addListener(stat);
+      getRegisteredStatistics();
     }
   }
 
+  public Statistics getRegisteredStatistics(){
+    
+    if (stat == null){ // none yet, initialize
+      // first, check if somebody registered one explicitly
+      stat = vm.getNextListenerOfType(Statistics.class, null);
+      if (stat == null){
+        stat = conf.getInstance("report.statistics.class@stat", Statistics.class);
+        if (stat == null) {
+          stat = new Statistics();
+        }
+        jpf.addListener(stat);
+      }
+    }
+    
+    return stat;
+  }
+  
+  
   Publisher[] createPublishers (Config conf) {
     String[] def = { "console" };
     ArrayList<Publisher> list = new ArrayList<Publisher>();
@@ -106,10 +119,6 @@ public class Reporter extends SearchListenerAdapter {
     }
 
     return list.toArray(new Publisher[list.size()]);
-  }
-
-  public void addListener (JPFListener listener) {
-    jpf.addListener(listener);
   }
 
   public Publisher[] getPublishers() {

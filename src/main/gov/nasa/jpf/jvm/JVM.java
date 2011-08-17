@@ -552,6 +552,10 @@ public class JVM {
     return Misc.hasElementOfType(listeners, listenerCls);
   }
 
+  public <T> T getNextListenerOfType(Class<T> type, T prev){
+    return Misc.getNextElementOfType(listeners, type, prev);
+  }
+  
   public void removeListener (VMListener removeListener) {
     listeners = Misc.removeElement(listeners, removeListener);
   }

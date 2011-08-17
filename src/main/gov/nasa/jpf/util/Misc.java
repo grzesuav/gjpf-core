@@ -450,6 +450,21 @@ public class Misc {
     return false;
   }
 
+  public static <T,E> E getNextElementOfType (T[] base, Class<E> elemType, T prev){
+    boolean prevSeen = (prev == null);
+    int len = base.length;
+    for (int i=0; i<len; i++){
+      if (elemType.isInstance(base[i])){
+        if (prevSeen){
+          return (E)base[i];
+        } else {
+          prevSeen = (base[i] == prev);
+        }
+      }
+    }
+    
+    return null;
+  }
 
   public static String[] arrayWithoutFirst(String[] base, int nElements){
     String[] a = new String[base.length-1];

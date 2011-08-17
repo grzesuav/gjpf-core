@@ -372,6 +372,15 @@ public class ClassFile {
     return ((data[dataIdx]&0xff) << 8) | (data[dataIdx+1]&0xff);
   }
 
+  public final int i1(int dataIdx) {
+    return data[dataIdx++];
+  }
+
+  public final int i2(int dataIdx) {
+    int idx = dataIdx;
+    return (data[idx++] << 8) | (data[idx]&0xff);
+  }
+  
   public final int readU1(){
     return data[pos++]&0xff;
   }
