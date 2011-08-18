@@ -180,14 +180,16 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     this.thrownExceptionClassNames = null;
 
     // set attributes we can deduce from the name and the ClassInfo
-    if (name.equals("<init>")) {
-      attributes |= IS_INIT;
-    } else if (name.equals("<clinit>")) {
-      this.modifiers |= Modifier.SYNCHRONIZED;
-      attributes |= IS_CLINIT | FIREWALL;
-    }
-    if (ci.isInterface()){ // all interface methods are public
-      this.modifiers |= Modifier.PUBLIC;
+    if (ci != null){
+      if (name.equals("<init>")) {
+        attributes |= IS_INIT;
+      } else if (name.equals("<clinit>")) {
+        this.modifiers |= Modifier.SYNCHRONIZED;
+        attributes |= IS_CLINIT | FIREWALL;
+      }
+      if (ci.isInterface()) { // all interface methods are public
+        this.modifiers |= Modifier.PUBLIC;
+      }
     }
 
     this.globalId = mthTable.size();
