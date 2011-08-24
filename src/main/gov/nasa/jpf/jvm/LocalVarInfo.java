@@ -37,6 +37,24 @@ public class LocalVarInfo {
     this.slotIndex        = slotIndex;
   }
     
+  public String toString(){
+    StringBuilder sb = new StringBuilder();
+    sb.append("LocalVarInfo[");
+    sb.append("name=\"");
+    sb.append(name);
+    sb.append("\",signature=\"");
+    sb.append(signature);
+    sb.append("\",startPC=");
+    sb.append(startPC);
+    sb.append(",endPC=");
+    sb.append(endPC);
+    sb.append(",slotIndex=");
+    sb.append(slotIndex);
+    sb.append("]");
+    
+    return sb.toString();
+  }
+  
   public String getName() {
     return name; 
   }

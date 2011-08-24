@@ -28,7 +28,7 @@ public abstract class LocalVariableInstruction extends Instruction
   implements VariableAccessor {
 
   protected int index;
-  protected String varId;
+  protected LocalVarInfo lv;
 
 
   protected LocalVariableInstruction(int index){
@@ -39,33 +39,29 @@ public abstract class LocalVariableInstruction extends Instruction
     return index;
   }
   
-  public String getLocalVariableName () {
-    LocalVarInfo lv = mi.getLocalVar(varId, position);
-    if (lv != null){
-      return lv.getName();
-    } else {
-      return "?";
+  public LocalVarInfo getLocalVarInfo(){
+    if (lv == null){
+     lv = mi.getLocalVar(index, position+1);
     }
+    return lv;
+  }
+  
+  public String getLocalVariableName () {
+    LocalVarInfo lv = getLocalVarInfo();
+    return (lv == null) ? "?" : lv.getName();
   }
   
   public String getLocalVariableType () {
-    LocalVarInfo lv = mi.getLocalVar(varId, position);
-    if (lv != null){
-      return lv.getType();
-    } else {
-      return "?";
-    }
+    LocalVarInfo lv = getLocalVarInfo();
+    return (lv == null) ? "?" : lv.getType();
   }
   
   /**
-   * just an on-demand set fully qualified class/method/var name
+   * return the fully qualified class/method/var name
+   * (don't use this for top-level filtering since it dynamically constructs the name)
    */
   public String getVariableId () {
-    if (varId == null) {
-      varId = mi.getClassInfo().getName() + '.' + mi.getUniqueName() + '.' + getLocalVariableName();
-    }
-    
-    return varId;
+    return mi.getClassInfo().getName() + '.' + mi.getUniqueName() + '.' + getLocalVariableName();
   }
   
   public void accept(InstructionVisitor insVisitor) {
