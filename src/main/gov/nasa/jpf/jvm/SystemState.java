@@ -526,16 +526,6 @@ public class SystemState {
     return ks.heap.get(reference);
   }
 
-  @Deprecated
-  public ThreadInfo getThread (int index) {
-    return ks.threads.get(index);
-  }
-
-  @Deprecated
-  public ThreadInfo getThread (ElementInfo reference) {
-    return getThread(reference.getIndex());
-  }
-
   public int getThreadCount () {
     return ks.threads.length();
   }
@@ -546,10 +536,6 @@ public class SystemState {
 
   public int getLiveThreadCount () {
     return ks.threads.getLiveThreadCount();
-  }
-
-  public ThreadInfo getThreadInfo (int idx) {
-    return ks.threads.get(idx);
   }
 
   public boolean isDeadlocked () {

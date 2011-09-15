@@ -139,7 +139,7 @@ public class IdleFilter extends PropertyListenerAdapter {
     Instruction insn = jvm.getLastInstruction();
     ThreadInfo ti = jvm.getLastThreadInfo();
 
-    int tid = ti.getIndex();
+    int tid = ti.getId();
     ts = threadStats.get(tid);
     if (ts == null) {
       ts = new ThreadStat(ti.getName());

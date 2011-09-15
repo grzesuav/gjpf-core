@@ -207,7 +207,7 @@ public class XMLPublisher extends Publisher {
     
     out.println("  <live-threads>");
     for (ThreadInfo ti : vm.getLiveThreads()) {
-      out.println("    <thread id=\"" + ti.getIndex() + "\" name=\"" + ti.getName()
+      out.println("    <thread id=\"" + ti.getId() + "\" name=\"" + ti.getName()
                   + "\" status=\"" + ti.getStateName() + "\">");
       // owned locks
       for (ElementInfo e : ti.getLockedObjects()) {

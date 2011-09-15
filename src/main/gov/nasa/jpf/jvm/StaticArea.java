@@ -154,7 +154,7 @@ public class StaticArea extends Area<StaticElementInfo> implements Restorable<St
    * a class object - the StaticElementInfo needs its reference value
    */
   public StaticElementInfo addClass (ClassInfo ci, ThreadInfo ti) {
-    int tid = ti == null ? 0 : ti.getIndex();
+    int tid = ti == null ? 0 : ti.getId();
     StaticElementInfo ei = createElementInfo(ci, tid, -1);
     int index = indexFor(ci.getName());
 

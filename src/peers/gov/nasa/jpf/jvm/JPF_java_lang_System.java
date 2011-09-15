@@ -278,13 +278,11 @@ public class JPF_java_lang_System {
   // then the search determines that it is an end state (all terminated)
   public static void exit__I__V (MJIEnv env, int clsObjRef, int ret) {
     SystemState ss = env.getSystemState();
-    ThreadList tl = env.getVM().getThreadList();
+    ThreadInfo[] liveThreads = env.getLiveThreads();
 
-    for (int i = 0; i < tl.length(); i++) {
-      ThreadInfo ti = tl.get(i);
-
+    for (int i = 0; i < liveThreads.length; i++) {
       // keep the stack frames around, so that we can inspect the snapshot
-      ti.setTerminated();
+      liveThreads[i].setTerminated();
     }
     
     ss.setMandatoryNextChoiceGenerator( new BreakGenerator("exit", env.getThreadInfo(), true), "exit without break CG");

@@ -46,17 +46,21 @@ public class DiningPhil {
     }
   }
   
-  static final int N = 6;
+  static int nPhilosophers = 6;
 
   public static void main(String[] args) {
-    Verify.beginAtomic();
-    Fork[] forks = new Fork[N];
-    for (int i = 0; i < N; i++) {
+    if (args.length > 0){
+      nPhilosophers = Integer.parseInt(args[0]);
+    }
+    
+    //Verify.beginAtomic();
+    Fork[] forks = new Fork[nPhilosophers];
+    for (int i = 0; i < nPhilosophers; i++) {
       forks[i] = new Fork();
     }
-    for (int i = 0; i < N; i++) {
-      new Philosopher(forks[i], forks[(i + 1) % N]);
+    for (int i = 0; i < nPhilosophers; i++) {
+      new Philosopher(forks[i], forks[(i + 1) % nPhilosophers]);
     }
-    Verify.endAtomic();
+    //Verify.endAtomic();
   }
 }

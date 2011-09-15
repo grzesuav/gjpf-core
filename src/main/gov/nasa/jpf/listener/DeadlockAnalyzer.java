@@ -290,7 +290,7 @@ public class DeadlockAnalyzer extends ListenerAdapter {
   
   void printHeader (PrintWriter pw, Collection<ThreadInfo> tlist){
     for (ThreadInfo ti : tlist){
-      pw.print(String.format("  %1$2d    ", ti.getIndex()));
+      pw.print(String.format("  %1$2d    ", ti.getId()));
     }
     pw.print(" trans      insn          loc                : stmt");
     pw.println();

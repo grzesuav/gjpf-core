@@ -58,7 +58,7 @@ public class MONITORENTER extends LockInstruction {
           }
 
         } else { // already locked by another thread, we have to block and therefore need a CG
-          ei.updateRefTidWith(ti.getIndex()); // Ok, now we know its shared
+          ei.updateRefTidWith(ti.getId()); // Ok, now we know its shared
 
           ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
 

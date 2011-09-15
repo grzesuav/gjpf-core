@@ -51,7 +51,7 @@ import java.util.logging.Logger;
  * in this data structure.
  *
  * Note that we preserve identities according to their associated java.lang.Thread object
- * (threadData.objref). This esp. means along the same path, a ThreadInfo reference
+ * (objRef). This esp. means along the same path, a ThreadInfo reference
  * is kept invariant
  *
  * <2do> remove EXECUTENATIVE,INVOKESTATIC .bytecode dependencies
@@ -76,6 +76,7 @@ public class ThreadInfo
     SLEEPING
   };
 
+  static int threadInfoCount; // the number of ThreadInfos created
 
   static final int[] emptyRefArray = new int[0];
 
@@ -152,21 +153,30 @@ public class ThreadInfo
   // state managed data that is copy-on-first-write
   protected ThreadData threadData;
 
-
+  
+  //<2do> Hmm, why are these not in ThreadData?
   // the top stack frame
   protected StackFrame top = null;
 
   // the current stack depth (number of frames)
   protected int stackDepth;
 
-  /**
-   * Reference of the thread list it is in.
-   * <2do> - bad cross ref (ThreadList should know about ThreadInfo, but not vice versa)
-   */
-  protected ThreadList list;
+  
+  //--- the invariants
 
-  // thread list index
-  protected int index;
+  // the id is only guaranteed to be unique along each path. We have the 
+  // additional requirement that it is the smallest number possible under this
+  // requirement, since it is used within the ElementInfo.refTid set and
+  // in the SparseClusteredArrayHeap. Using the objRef would be preferable, but
+  // would not work with these usages. The most natural id computation scheme therefore
+  // is to use the size of the ThreadList at the time of thread creation, but
+  // clients should not explicitly rely on the id being the ThreadList index
+  protected int id; 
+  
+  protected int objRef; // the java.lang.Thread object reference
+  protected ClassInfo ci; // the classinfo associated with the thread object
+  protected int targetRef; // the associated java.lang.Runnable
+  
 
   // which attributes are stored/restored
   static final int   ATTR_STORE_MASK = 0x0000ffff;
@@ -242,9 +252,7 @@ public class ThreadInfo
 
 
   static class TiMemento implements Memento<ThreadInfo> {
-    // we have to preserve ThreadInfo identities.
-    // If we ever want to avoid storing direct references, we would use
-    // ThreadInfo.getThreadInfo(threadData.objref) to retrieve the ThreadInfo
+    // note that we don't have to store the invariants (id, objRef, runnableRef, ci)
     ThreadInfo ti;
 
     ThreadData threadData;
@@ -279,12 +287,6 @@ public class ThreadInfo
     }
   }
 
-
-  /**
-   * this is where we keep ThreadInfos, indexed by their java.lang.Thread objRef, to
-   * enable us to keep ThreadInfo identities across backtracked and restored states
-   */
-  static final SparseObjVector<ThreadInfo> threadInfos = new SparseObjVector<ThreadInfo>();
 
   // the following parameters are configurable. Would be nice if we could keep
   // them on a per-instance basis, but there are a few locations
@@ -330,7 +332,7 @@ public class ThreadInfo
     currentThread = null;
     mainThread = null;
     
-    threadInfos.clear();
+    threadInfoCount = 0;
 
     haltOnThrow = config.getStringArray("vm.halt_on_throw");
     ignoreUncaughtHandlers = config.getBoolean( "vm.ignore_uncaught_handler", true);
@@ -344,12 +346,45 @@ public class ThreadInfo
   }
 
   /**
+   * <2do> this is going to be a configurable factory method
+   */
+  static ThreadInfo createThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef, long stackSize) {
+    return new ThreadInfo(vm, objRef, groupRef, runnableRef, nameRef, stackSize);
+  }
+  
+  /**
    * Creates a new thread info. It is associated with the object
    * passed and sets the target object as well.
    */
-  public ThreadInfo (JVM vm, int objRef) {
-    init( vm, objRef);
+  public ThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef, long stackSize) {
+    this.objRef = objRef;
+    targetRef = runnableRef;
+    id = threadInfoCount++;
+    
+    ElementInfo ei = vm.getElementInfo(objRef);
+    ci = ei.getClassInfo();
 
+    this.vm = vm;
+
+    threadData = new ThreadData();
+    threadData.state = State.NEW;
+    threadData.priority = Thread.NORM_PRIORITY;
+    threadData.isDaemon = false;
+    threadData.lockCount = 0;
+    threadData.suspendCount = 0;
+    threadData.name = vm.getElementInfo(nameRef).asString();
+    
+    
+    // this is nasty - 'priority', 'name', 'target' and 'group' are not taken
+    // from the object, but set within the java.lang.Thread ctors
+
+    top = null;
+    stackDepth = 0;
+
+    lockedObjects = new LinkedList<ElementInfo>();
+
+    markUnchanged();
+    attributes |= ATTR_DATA_CHANGED; 
     env = new MJIEnv(this);
     //threadInfos.set(objRef, this); // our ThreadInfo repository
 
@@ -358,8 +393,14 @@ public class ThreadInfo
       mainThread = this;
       currentThread = this;
     }
+        
+    // note that we have to register here so that subsequent native peer calls can use the objRef
+    // to lookup the ThreadInfo. This is a bit premature since the thread is not runnable yet,
+    // but chances are it will be started soon, so we don't waste another data structure to do the mapping
+    id = vm.registerThread(this);
   }
 
+  
   public Memento<ThreadInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
   }
@@ -381,68 +422,6 @@ public class ThreadInfo
   public static ThreadInfo getMainThread () {
     return mainThread;
   }
-
-  private void init (JVM vm, int objRef) {
-
-    ElementInfo ei = vm.getElementInfo(objRef);
-
-    this.vm = vm;
-
-    threadData = new ThreadData();
-    threadData.state = State.NEW;
-    threadData.ci = ei.getClassInfo();
-    threadData.objref = objRef;
-    threadData.target = MJIEnv.NULL;
-    threadData.lockCount = 0;
-    threadData.suspendCount = 0;
-    
-    // this is nasty - 'priority', 'name', 'target' and 'group' are not taken
-    // from the object, but set within the java.lang.Thread ctors
-
-    top = null;
-    stackDepth = 0;
-
-    lockedObjects = new LinkedList<ElementInfo>();
-
-    markUnchanged();
-    attributes |= ATTR_DATA_CHANGED;
-  }
-
-  /**
-   * if we already had a ThreadInfo object for this java.lang.Thread object, make
-   * sure we reset it. It will be restored to proper state afterwards
-   */
-  static ThreadInfo createThreadInfo (JVM vm, int objRef) {
-
-    // <2do> this relies on heap symmetry! fix it
-    ThreadInfo ti = threadInfos.get(objRef);
-
-    if (ti == null) {
-      ti = new ThreadInfo(vm, objRef);
-      threadInfos.set(objRef, ti);
-
-    } else {
-      ti.init(vm, objRef);
-    }
-
-    vm.addThread(ti);
-
-    return ti;
-  }
-
-  /**
-   * just retrieve the ThreadInfo object for this java.lang.Thread object. This method is
-   * only valid after the thread got created
-   */
-  public static ThreadInfo getThreadInfo(int objRef) {
-    if (objRef >= 0) { 
-      return threadInfos.get(objRef);
-    } else {
-      return null;
-    }
-  }
-
-
 
   public static ThreadInfo getCurrentThread() {
     return currentThread;
@@ -504,24 +483,6 @@ public class ThreadInfo
     return porSyncDetection;
   }
 
-  void setListInfo (ThreadList tl, int idx) {
-    list = tl;
-    index = idx;
-  }
-
-  /**
-   * Checks if the thread is waiting to execute a nondeterministic choice
-   * due to an abstraction, i.e. due to a Bandera.choose() call
-   *
-   * <2do> that's probably deprecated
-   */
-  public boolean isAbstractionNonDeterministic () {
-    if (getPC() == null) {
-      return false;
-    }
-
-    return getPC().examineAbstraction(vm.getSystemState(), vm.getKernelState(), this);
-  }
 
   //--- various thread state related methods
 
@@ -760,7 +721,7 @@ public class ThreadInfo
       // remember there was a pending exception that has to be thrown the next
       // time this gets scheduled, and make sure the exception object does
       // not get GCed prematurely
-      ElementInfo eit = getElementInfo(threadData.objref);
+      ElementInfo eit = getElementInfo(objRef);
       eit.setReferenceField("stopException", throwableRef);
     }
   }
@@ -1001,7 +962,7 @@ public class ThreadInfo
    * Returns the class information.
    */
   public ClassInfo getClassInfo () {
-    return threadData.ci;
+    return ci;
   }
 
   public double getDoubleLocal (String lname) {
@@ -1056,10 +1017,10 @@ public class ThreadInfo
   }
 
   /**
-   * return our internal thread number (order of creation)
+   * the unique id for this ThreadInfo
    */
-  public int getIndex () {
-    return index;
+  public int getId () {
+    return id;
   }
 
   /**
@@ -1319,11 +1280,11 @@ public class ThreadInfo
    * Returns the object reference.
    */
   public int getThreadObjectRef () {
-    return threadData.objref;
+    return objRef;
   }
 
   public ElementInfo getThreadObject(){
-    return getElementInfo(threadData.objref);
+    return getElementInfo(objRef);
   }
 
   public ElementInfo getObjectReturnValue () {
@@ -1719,19 +1680,10 @@ public class ThreadInfo
   }
 
   /**
-   * Sets the target of the thread.
-   */
-  public void setTarget (int t) {
-    if (threadData.target != t) {
-      threadDataClone().target = t;
-    }
-  }
-
-  /**
    * Returns the object reference of the target.
    */
-  public int getTarget () {
-    return threadData.target;
+  public int getRunnableRef () {
+    return targetRef;
   }
 
   /**
@@ -2489,6 +2441,9 @@ public class ThreadInfo
       ei.unlock(this);
 
       setState(State.TERMINATED);
+      
+      // we don't unregister threads in the current ThreadList implementation
+      //vm.unregisterThread(this);
 
       ss.clearAtomic();
       cleanupThreadObject(ei);
@@ -2500,6 +2455,7 @@ public class ThreadInfo
       }
 
       popFrame(); // we need to do this *after* setting the CG (so that we still have a CG insn)
+      
       return true;
     }
   }
@@ -2647,16 +2603,16 @@ public class ThreadInfo
   void markRoots (Heap heap) {
 
     // 1. mark the Thread object itself
-    heap.markThreadRoot(threadData.objref, index);
+    heap.markThreadRoot(objRef, id);
 
     // 2. and its runnable
-    if (threadData.target != -1) {
-      heap.markThreadRoot(threadData.target,index);
+    if (targetRef != MJIEnv.NULL) {
+      heap.markThreadRoot(targetRef,id);
     }
 
     // 3. now all references on the stack
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
-      frame.markThreadRoots(heap, index);
+      frame.markThreadRoots(heap, id);
     }
   }
 
@@ -2795,8 +2751,8 @@ public class ThreadInfo
 
 
   public String getStateDescription () {
-    StringBuilder sb = new StringBuilder("thread index=");
-    sb.append(index);
+    StringBuilder sb = new StringBuilder("thread id=");
+    sb.append(id);
     sb.append(',');
     sb.append(threadData.getFieldValues());
 
@@ -3087,13 +3043,13 @@ public class ThreadInfo
   }
   
   protected int getInstanceUncaughtHandler (){
-    ElementInfo ei = getElementInfo(threadData.objref);
+    ElementInfo ei = getElementInfo(objRef);
     int handlerRef = ei.getReferenceField("uncaughtExceptionHandler");
     return handlerRef;
   }
   
   protected int getThreadGroupRef() {
-    ElementInfo ei = getElementInfo(threadData.objref);
+    ElementInfo ei = getElementInfo(objRef);
     int groupRef = ei.getReferenceField("group");
     return groupRef;
   }
@@ -3118,7 +3074,7 @@ public class ThreadInfo
   }
   
   protected int getGlobalUncaughtHandler(){
-    ElementInfo ei = getElementInfo(threadData.objref);
+    ElementInfo ei = getElementInfo(objRef);
     ClassInfo ci = ei.getClassInfo();
     
     return ci.getStaticElementInfo().getReferenceField("defaultUncaughtExceptionHandler");
@@ -3133,7 +3089,7 @@ public class ThreadInfo
     StackFrame frame = new UncaughtHandlerFrame(xi, stub);
 
     frame.pushRef(handlerRef);
-    frame.pushRef(threadData.objref);
+    frame.pushRef(objRef);
     frame.pushRef(xi.getExceptionReference());
 
     pushFrame(frame);
@@ -3212,7 +3168,7 @@ public class ThreadInfo
     } else {
       // reset, so that next storage request would recompute tdIndex
       markTdChanged();
-      list.ks.changed();
+      vm.kernelStateChanged();
 
       threadData = threadData.clone();
     }
@@ -3239,7 +3195,7 @@ public class ThreadInfo
    * breakTransition(), which will continue with the same thread
    */
   public void reschedule (boolean forceBreak) {
-    ThreadInfo[] runnables = list.getRunnableThreads();
+    ThreadInfo[] runnables = vm.getRunnableThreads();
 
     if (forceBreak || (runnables.length > 1)) {
       ThreadChoiceGenerator cg = new ThreadChoiceFromSet("reschedule",runnables,true);
@@ -3286,15 +3242,15 @@ public class ThreadInfo
 
 
   public boolean checkPorFieldBoundary () {
-    return (executedInstructions == 0) && porFieldBoundaries && list.hasOtherRunnablesThan(this);
+    return (executedInstructions == 0) && porFieldBoundaries && vm.hasOtherRunnablesThan(this);
   }
 
   public boolean hasOtherRunnables () {
-    return list.hasOtherRunnablesThan(this);
+    return vm.hasOtherRunnablesThan(this);
   }
 
   public boolean hasOtherNonDaemonRunnables() {
-    return list.hasOtherNonDaemonRunnablesThan(this);
+    return vm.hasOtherNonDaemonRunnablesThan(this);
   }
 
   protected void markUnchanged() {
@@ -3309,12 +3265,12 @@ public class ThreadInfo
     frame.setChanged(true);
 
     attributes |= ATTR_STACK_CHANGED;
-    list.ks.changed();
+    vm.kernelStateChanged();
   }
 
   protected void markTdChanged() {
     attributes |= ATTR_DATA_CHANGED;
-    list.ks.changed();
+    vm.kernelStateChanged();
   }
 
   public StackFrame getCallerStackFrame() {
@@ -3373,7 +3329,7 @@ public class ThreadInfo
   }
 
   public String toString() {
-    return "ThreadInfo [name=" + getName() + ",index=" + index + ",state=" + getStateName() + ']';
+    return "ThreadInfo [name=" + getName() + ",id=" + id + ",state=" + getStateName() + ']';
   }
 
   void setDaemon (boolean isDaemon) {
@@ -3411,34 +3367,14 @@ public class ThreadInfo
     return threadData.priority;
   }
 
-  /**
-   * this is the method that factorizes common Thread object initialization
-   * (get's called by all ctors).
-   * BEWARE - it's hidden magic (undocumented), and should be replaced by our
-   * own Thread impl at some point
-   */
-  void init (int rGroup, int rRunnable, int rName, long stackSize,
-             boolean setPriority) {
-    rGroup = 0;            // Get rid fo IDE warnings
-    stackSize = 0;
-    setPriority = false;
-     
-    ElementInfo ei = vm.getElementInfo(rName);
 
-    threadDataClone();
-    threadData.name = ei.asString();
-    threadData.target = rRunnable;
-    //threadData.status = NEW; // should not be neccessary
-
-    // stackSize and setPriority are only used by native subsystems
-  }
 
 
   /**
    * Comparison for sorting based on index.
    */
   public int compareTo (ThreadInfo that) {
-    return this.index - that.index;
+    return this.id - that.id;
   }
   
   /**

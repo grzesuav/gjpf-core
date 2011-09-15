@@ -365,25 +365,33 @@ public class ConsolePublisher extends Publisher {
     }
   }
 
-  protected void publishStatistics() {
+  public static final String STATISTICS_TOPIC = "statistics";
+  
+  // this is useful if somebody wants to monitor progress from a specialized ConsolePublisher
+  public synchronized void printStatistics (PrintWriter pw){
     Statistics stat = reporter.getStatistics();
-    publishTopicStart("statistics");
-    out.println("elapsed time:       " + formatHMS(reporter.getElapsedTime()));
-    out.println("states:             new=" + stat.newStates + ", visited=" + stat.visitedStates
+    publishTopicStart( STATISTICS_TOPIC);
+    
+    pw.println("elapsed time:       " + formatHMS(reporter.getElapsedTime()));
+    pw.println("states:             new=" + stat.newStates + ", visited=" + stat.visitedStates
             + ", backtracked=" + stat.backtracked + ", end=" + stat.endStates);
-    out.println("search:             maxDepth=" + stat.maxDepth + ", constraints hit=" + stat.constraints);
-    out.println("choice generators:  thread=" + stat.threadCGs
+    pw.println("search:             maxDepth=" + stat.maxDepth + ", constraints hit=" + stat.constraints);
+    pw.println("choice generators:  thread=" + stat.threadCGs
             + " (signal=" + stat.signalCGs + ", lock=" + stat.monitorCGs + ", shared ref=" + stat.sharedAccessCGs
             + "), data=" + stat.dataCGs);
-    out.println("heap:               " + "new=" + stat.nNewObjects
+    pw.println("heap:               " + "new=" + stat.nNewObjects
             + ", released=" + stat.nReleasedObjects
             + ", max live=" + stat.maxLiveObjects
             + ", gc-cycles=" + stat.gcCycles);
-    out.println("instructions:       " + stat.insns);
-    out.println("max memory:         " + (stat.maxUsed >> 20) + "MB");
+    pw.println("instructions:       " + stat.insns);
+    pw.println("max memory:         " + (stat.maxUsed >> 20) + "MB");
 
-    out.println("loaded code:        classes=" + ClassInfo.getNumberOfLoadedClasses() + ", methods="
-            + MethodInfo.getNumberOfLoadedMethods());
+    pw.println("loaded code:        classes=" + ClassInfo.getNumberOfLoadedClasses() + ", methods="
+            + MethodInfo.getNumberOfLoadedMethods());    
+  }
+  
+  public void publishStatistics() {
+    printStatistics(out);
   }
 
 }

@@ -146,7 +146,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
   // internal stuff
 
   protected DynamicElementInfo createElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti){
-    int tid = ti == null ? 0 : ti.getIndex();
+    int tid = ti == null ? 0 : ti.getId();
     return new DynamicElementInfo(ci,f,m,tid);
   }
 
@@ -220,7 +220,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     Monitor  m = new Monitor();
     DynamicElementInfo ei = createElementInfo(ci, f, m, ti);
 
-    int tid = (ti != null) ? ti.getIndex() : 0;
+    int tid = (ti != null) ? ti.getId() : 0;
     int index = firstNullIndex(tid << S1, MAX_CLUSTER_ENTRIES);
     if (index < 0){
       throw new JPFException("per-thread heap limit exceeded");
@@ -244,7 +244,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     ElementInfo ei = createElementInfo(ci, f, m, ti);
 
     // get next free index into thread cluster
-    int tid = (ti != null) ? ti.getIndex() : 0;
+    int tid = (ti != null) ? ti.getId() : 0;
     int index = firstNullIndex(tid << S1, MAX_CLUSTER_ENTRIES);
     if (index < 0){
       throw new JPFException("per-thread heap limit exceeded");
@@ -438,7 +438,18 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
         ei.setAlive(liveBitValue);
         ei.cleanUp(this);
 
-      } else {
+      } else { // object is no longer reachable
+        
+        /**
+        MethodInfo mi = ei.getClassInfo().getFinalizer();
+        if (mi != null){
+          // add to finalizer queue, but keep alive until processed
+        } else {
+        }
+        **/
+        
+        ei.processReleaseActions();
+        
         // <2do> still have to process finalizers here, which might make the object live again
         vm.notifyObjectReleased(ei);
         set(ei.getIndex(), null);   // <2do> - do we need a separate remove?

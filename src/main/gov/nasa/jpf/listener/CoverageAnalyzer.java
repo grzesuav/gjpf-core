@@ -128,7 +128,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
     }
 
     void setExecuted(ThreadInfo ti, Instruction insn) {
-      int idx = ti.getIndex();
+      int idx = ti.getId();
 
       if (covered == null) {
         covered = new BitSet[idx + 1];

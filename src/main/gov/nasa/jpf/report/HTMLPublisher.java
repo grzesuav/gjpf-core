@@ -920,11 +920,11 @@ public class HTMLPublisher extends Publisher {
     output.println("           <tr>");
 
     output.print("              <td align=\"right\">");
-    output.print(thread.getIndex());
+    output.print(thread.getId());
     output.println("</td>");
 
     output.print("              <td align=\"left\"><a href=\"#\" onclick=\"doClick(this);\" rel=\"");
-    output.print(thread.getIndex());
+    output.print(thread.getId());
     output.print("\">");
     output.print(thread.getName());
     output.println("</a></td>");
@@ -1010,9 +1010,9 @@ public class HTMLPublisher extends Publisher {
 
     output.println("      <hr/>");
     output.print("      <p id=\"");
-    output.print(thread.getIndex());
+    output.print(thread.getId());
     output.print("\"><b>Thread #");
-    output.print(thread.getIndex());
+    output.print(thread.getId());
     output.print("</b> - ");
     output.print(thread.getName());
     output.println("</p>");
@@ -1027,7 +1027,7 @@ public class HTMLPublisher extends Publisher {
     }
 
     writeTableTreeBegin(output);
-    writeTableTreeNodeBegin(output, "thread" + thread.getIndex());
+    writeTableTreeNodeBegin(output, "thread" + thread.getId());
     output.println("            <td></td>");
     writeTableTreeNodeEnd(output);
 
@@ -1037,7 +1037,7 @@ public class HTMLPublisher extends Publisher {
         continue;
       }
 
-      frameID = "thread" + thread.getIndex() + "-frame" + i--;
+      frameID = "thread" + thread.getId() + "-frame" + i--;
 
       writeStackMethod(output, frame, frameID);
       writeLocalVariables(output, frame, frameID);
@@ -1308,9 +1308,9 @@ public class HTMLPublisher extends Publisher {
 
     output.println("      <hr/>");
     output.print("      <p id=\"");
-    output.print(thread.getIndex());
+    output.print(thread.getId());
     output.print("\"><b>Thread #");
-    output.print(thread.getIndex());
+    output.print(thread.getId());
     output.print("</b> - ");
     output.print(thread.getName());
     output.println("</p>");

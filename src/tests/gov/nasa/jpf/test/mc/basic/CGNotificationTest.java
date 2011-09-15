@@ -114,7 +114,7 @@ public class CGNotificationTest extends TestJPF {
       String[] expected = {
         "registered <root>",
         "set <root>",
-        "advance <root> ThreadInfo [name=main,index=0,state=RUNNING]",
+        "advance <root> ThreadInfo [name=main,id=0,state=RUNNING]",
         "registered verifyGetBoolean",
         "set verifyGetBoolean",
         "advance verifyGetBoolean false",
@@ -152,8 +152,9 @@ public class CGNotificationTest extends TestJPF {
 
       int i=0;
       for (String s : Sequencer.sequence){
-        assert expected[i++].equals(s);
+        assert expected[i].equals(s) : "\"" + expected[i] + "\" != \"" + s + "\"";
         //System.out.println("\"" + s + "\",");
+        i++;
       }
     }
   }

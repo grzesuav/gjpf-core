@@ -96,7 +96,7 @@ public class MethodAnalyzer extends ListenerAdapter {
     }
 
     void printOn(PrintWriter pw, MethodAnalyzer analyzer) {
-      pw.print(ti.getIndex());
+      pw.print(ti.getId());
       pw.print(": ");
       
       pw.print(type.code);
@@ -207,7 +207,7 @@ public class MethodAnalyzer extends ListenerAdapter {
     MethodOp start = firstOp;
     int lastStateId  = Integer.MIN_VALUE;
     int transition = skipInit ? 1 : 0;
-    int lastTid = start.ti.getIndex();
+    int lastTid = start.ti.getId();
     
     for (MethodOp op = start; op != null; op = op.p) {
 
@@ -218,7 +218,7 @@ public class MethodAnalyzer extends ListenerAdapter {
           pw.println(transition++);
         }
       } else {
-        int tid = op.ti.getIndex();
+        int tid = op.ti.getId();
         if (tid != lastTid) {
           lastTid = tid;
           pw.println("------------------------------------------");

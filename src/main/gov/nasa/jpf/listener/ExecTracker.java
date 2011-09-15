@@ -172,7 +172,7 @@ public class ExecTracker extends ListenerAdapter {
     int nNoSrc = 0;
     
     if (linePrefix == null) {
-      linePrefix = Integer.toString( ti.getIndex()) + " : ";
+      linePrefix = Integer.toString( ti.getId()) + " : ";
     }
     
     // that's pretty redundant to what is done in the ConsolePublisher, but we don't want 
@@ -254,13 +254,13 @@ public class ExecTracker extends ListenerAdapter {
   public void threadStarted(JVM jvm) {
     ThreadInfo ti = jvm.getLastThreadInfo();
 
-    out.println( "\t\t # thread started: " + ti.getName() + " index: " + ti.getIndex());
+    out.println( "\t\t # thread started: " + ti.getName() + " index: " + ti.getId());
   }
 
   public void threadTerminated(JVM jvm) {
     ThreadInfo ti = jvm.getLastThreadInfo();
     
-    out.println( "\t\t # thread terminated: " + ti.getName() + " index: " + ti.getIndex());
+    out.println( "\t\t # thread terminated: " + ti.getName() + " index: " + ti.getId());
   }
   
   public void notifyExceptionThrown (JVM jvm) {

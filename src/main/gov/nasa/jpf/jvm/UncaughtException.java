@@ -58,7 +58,7 @@ public class UncaughtException extends RuntimeException implements Printable {
   
   public String getMessage () {
     String s = "uncaught exception in thread " + thread.getName() +
-              " #" + thread.getIndex() + " : "
+              " #" + thread.getId() + " : "
               + xClsName;
     
     if (details != null) {
@@ -72,7 +72,7 @@ public class UncaughtException extends RuntimeException implements Printable {
     pw.print("uncaught exception in thread ");
     pw.print( thread.getName());
     pw.print(" #");
-    pw.print(thread.index);
+    pw.print(thread.getId());
     pw.print(" : ");
 
     thread.printStackTrace(pw, xObjRef);

@@ -116,7 +116,7 @@ public class OverlappingMethodAnalyzer extends MethodAnalyzer {
 
     int lastStateId  = Integer.MIN_VALUE;
     int transition = skipInit ? 1 : 0;
-    int lastTid = start.ti.getIndex();
+    int lastTid = start.ti.getId();
 
     for (MethodOp op = start; op != null; op = op.p) {
 
@@ -127,7 +127,7 @@ public class OverlappingMethodAnalyzer extends MethodAnalyzer {
           pw.println(transition++);
         }
       } else {
-        int tid = op.ti.getIndex();
+        int tid = op.ti.getId();
         if (tid != lastTid) {
           lastTid = tid;
           pw.println("------------------------------------------");

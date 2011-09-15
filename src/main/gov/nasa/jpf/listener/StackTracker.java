@@ -63,7 +63,7 @@ public class StackTracker extends ListenerAdapter {
 
     out.println();
     out.print("Thread: ");
-    out.print(ti.getIndex());
+    out.print(ti.getId());
     out.println(":");
 
     out.println(ti.getStackTrace());

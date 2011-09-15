@@ -75,7 +75,7 @@ public class SimpleIdleFilter extends ListenerAdapter {
 
 	    ThreadInfo ti = jvm.getLastThreadInfo();
 
-	    int tid = ti.getIndex();
+	    int tid = ti.getId();
 	    ts = threadStats.get(tid);
 	    if (ts == null) {
 	      ts = new ThreadStat(ti.getName());

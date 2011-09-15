@@ -18,10 +18,12 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.JPFLogger;
+import java.util.HashMap;
 
 
 /**
@@ -30,14 +32,29 @@ import gov.nasa.jpf.util.JPFLogger;
 public class JPF_java_lang_Thread {
 
   static JPFLogger log = JPF.getLogger("gov.nasa.jpf.jvm.ThreadInfo");
+  
+  
+  /**
+   * This method is the common initializer for all Thread ctors, and the only
+   * single location where we can init our ThreadInfo, but it is PRIVATE
+   */
+  public static void init0__Ljava_lang_ThreadGroup_2Ljava_lang_Runnable_2Ljava_lang_String_2J__V (MJIEnv env,
+                                                                                                  int objRef,
+                                                                                                  int groupRef,
+                                                                                                  int runnableRef,
+                                                                                                  int nameRef,
+                                                                                                  long stackSize) {
+    JVM vm = env.getVM();
+    ThreadInfo ti = ThreadInfo.createThreadInfo( vm, objRef, groupRef, runnableRef, nameRef, stackSize);
+  }
 
-
+  
   public static boolean isAlive____Z (MJIEnv env, int objref) {
-    return getThreadInfo(objref).isAlive();
+    return env.getThreadInfoForObjRef(objref).isAlive();
   }
 
   public static void setDaemon0__Z__V (MJIEnv env, int objref, boolean isDaemon) {
-    ThreadInfo ti = getThreadInfo(objref);
+    ThreadInfo ti = env.getThreadInfoForObjRef(objref);
     ti.setDaemon(isDaemon);
   }
 
@@ -62,18 +79,18 @@ public class JPF_java_lang_Thread {
     // to get the initial values into ThreadData, and gets inconsistent
     // if this method is called (just works because the 'name' field is only
     // directly accessed from within the Thread ctors)
-    ThreadInfo ti = getThreadInfo(objref);
+    ThreadInfo ti = env.getThreadInfoForObjRef(objref);
     ti.setName(env.getStringObject(nameRef));
   }
 
   public static void setPriority0__I__V (MJIEnv env, int objref, int prio) {
     // again, we have to cache this in ThreadData for performance reasons
-    ThreadInfo ti = getThreadInfo(objref);
+    ThreadInfo ti = env.getThreadInfoForObjRef(objref);
     ti.setPriority(prio);
   }
 
   public static int countStackFrames____I (MJIEnv env, int objref) {
-    return getThreadInfo(objref).countStackFrames();
+    return env.getThreadInfoForObjRef(objref).countStackFrames();
   }
 
   public static int currentThread____Ljava_lang_Thread_2 (MJIEnv env, int clsObjRef) {
@@ -89,27 +106,11 @@ public class JPF_java_lang_Thread {
     return ei.isLockedBy(ti);
   }
 
-  /**
-   * This method is the common initializer for all Thread ctors, and the only
-   * single location where we can init our ThreadInfo, but it is PRIVATE
-   */
-
-  // wow, that's almost like C++
-  public static void init0__Ljava_lang_ThreadGroup_2Ljava_lang_Runnable_2Ljava_lang_String_2J__V (MJIEnv env,
-                                                                                                  int objref,
-                                                                                                  int rGroup,
-                                                                                                  int rRunnable,
-                                                                                                  int rName,
-                                                                                                  long stackSize) {
-    ThreadInfo newThread = createThreadInfo(env, objref);
-    newThread.init(rGroup, rRunnable, rName, stackSize, true);
-  }
-
   public static void interrupt____V (MJIEnv env, int objref) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
 
-    ThreadInfo interruptedThread = getThreadInfo(objref);
+    ThreadInfo interruptedThread = env.getThreadInfoForObjRef(objref);
 
     if (!ti.isFirstStepInsn()) {
       interruptedThread.interrupt();
@@ -130,7 +131,7 @@ public class JPF_java_lang_Thread {
   // these could be in the model, but we keep it symmetric, which also saves
   // us the effort of avoiding unwanted shared object field access CGs
   public static boolean isInterrupted____Z (MJIEnv env, int objref) {
-    ThreadInfo ti = getThreadInfo(objref);
+    ThreadInfo ti = env.getThreadInfoForObjRef(objref);
     return ti.isInterrupted(false);
   }
 
@@ -144,7 +145,7 @@ public class JPF_java_lang_Thread {
     ThreadInfo tiCurrent = env.getThreadInfo();
     SystemState ss = env.getSystemState();
     JVM vm = tiCurrent.getVM();
-    ThreadInfo tiStartee = getThreadInfo(objref);
+    ThreadInfo tiStartee = env.getThreadInfoForObjRef(objref);
 
 
     if (!tiCurrent.isFirstStepInsn()) { // first time we see this (may be the only time)
@@ -166,25 +167,22 @@ public class JPF_java_lang_Thread {
         return;
       }
 
-      // Ouch - that's bad. we have to dig this out from the innards
-      // of the java.lang.Thread class
-      int targetRef = tiStartee.getTarget();
+      int runnableRef = tiStartee.getRunnableRef();
 
-      if (targetRef == -1) {
-        // note that we don't set the 'targetRef' field, since java.lang.Thread doesn't
-        targetRef = objref;
-
-        // better late than never
-        tiStartee.setTarget(targetRef);
+      if (runnableRef == MJIEnv.NULL) {
+        // note that we don't set the 'target' field, since java.lang.Thread doesn't
+        runnableRef = objref;
       }
 
+      //vm.registerThread(tiStartee);
+      
       // we don't do this during thread creation because the thread isn't in
       // the GC root set before it actually starts to execute. Until then,
       // it's just an ordinary object
 
       vm.notifyThreadStarted(tiStartee);
 
-      ElementInfo eiTarget = env.getElementInfo(targetRef);
+      ElementInfo eiTarget = env.getElementInfo(runnableRef);
       ClassInfo   ci = eiTarget.getClassInfo();
       MethodInfo  miRun = ci.getMethod("run()V", true);
 
@@ -193,7 +191,7 @@ public class JPF_java_lang_Thread {
       // a fail-safe UncaughtExceptionHandler set
       MethodInfo runStub = miRun.createDirectCallStub("[run]");
       DirectCallStackFrame runFrame = new DirectCallStackFrame(runStub, 1, 0);
-      runFrame.pushRef(targetRef);
+      runFrame.pushRef(runnableRef);
       // we need this in case of a synchronized run(), for which the invokes would
       // always be the firstStepInsn
       runFrame.setPC( MethodInfo.getInstructionFactory().runstart(runStub));
@@ -249,7 +247,7 @@ public class JPF_java_lang_Thread {
 
   public static void suspend____ (MJIEnv env, int threadObjRef) {
     ThreadInfo currentThread = env.getThreadInfo();
-    ThreadInfo target = getThreadInfo(threadObjRef);
+    ThreadInfo target = env.getThreadInfoForObjRef(threadObjRef);
     SystemState ss = env.getSystemState();
 
     if (target.isTerminated()) {
@@ -269,7 +267,7 @@ public class JPF_java_lang_Thread {
 
   public static void resume____ (MJIEnv env, int threadObjRef) {
     ThreadInfo currentThread = env.getThreadInfo();
-    ThreadInfo target = getThreadInfo(threadObjRef);
+    ThreadInfo target = env.getThreadInfoForObjRef(threadObjRef);
     SystemState ss = env.getSystemState();
 
     if (currentThread == target){
@@ -298,7 +296,7 @@ public class JPF_java_lang_Thread {
   static void join0 (MJIEnv env, int joineeRef, long timeout){
     ThreadInfo ti = env.getThreadInfo(); // this is the CURRENT thread (joiner)
     ElementInfo ei = env.getElementInfo(joineeRef); // the thread object to wait on
-    boolean isAlive = getThreadInfo(joineeRef).isAlive();
+    boolean isAlive = env.getThreadInfoForObjRef(joineeRef).isAlive();
     SystemState ss = env.getSystemState();
 
     if (ti.isInterrupted(true)){ // interrupt status is set, throw and bail
@@ -383,15 +381,12 @@ public class JPF_java_lang_Thread {
 
 
   public static long getId____J (MJIEnv env, int objref) {
-    // doc says it only has to be valid and unique during lifetime of thread, hence we just use
-    // the ThreadList index
-    ThreadInfo ti = getThreadInfo(objref);
-    return ti.getIndex();
+    return env.getThreadInfoForObjRef(objref).getId();
   }
 
   public static int getState0____I (MJIEnv env, int objref) {
     // return the state index with respect to one of the public Thread.States
-    ThreadInfo ti = getThreadInfo(objref);
+    ThreadInfo ti = env.getThreadInfoForObjRef(objref);
 
     switch (ti.getState()) {
     case NEW:                return 1;
@@ -416,7 +411,7 @@ public class JPF_java_lang_Thread {
   }
 
   public static void stop__Ljava_lang_Throwable_2__V(MJIEnv env, int threadRef, int throwableRef) {
-    ThreadInfo tiStop = getThreadInfo(threadRef);  // the thread to stop
+    ThreadInfo tiStop = env.getThreadInfoForObjRef(threadRef);  // the thread to stop
     ThreadInfo tiCurrent = env.getThreadInfo(); // the currently executing thread
 
     if (tiStop.isTerminated() || tiStop.isStopped()) {
@@ -437,13 +432,5 @@ public class JPF_java_lang_Thread {
     }
 
     tiStop.setStopped(throwableRef);
-  }
-
-  protected static ThreadInfo createThreadInfo (MJIEnv env, int objref) {
-    return ThreadInfo.createThreadInfo(env.getVM(), objref);
-  }
-  
-  static ThreadInfo getThreadInfo (int objref) {
-    return ThreadInfo.getThreadInfo(objref);     
   }
 }

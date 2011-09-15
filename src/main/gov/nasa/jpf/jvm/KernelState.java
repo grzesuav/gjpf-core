@@ -164,9 +164,6 @@ public class KernelState implements Restorable<KernelState> {
   public void hash (HashData hd) {
     heap.hash(hd);
     statics.hash(hd);
-
-    for (int i = 0, l = threads.length(); i < l; i++) {
-      threads.get(i).hash(hd);
-    }
+    threads.hash(hd);
   }
 }

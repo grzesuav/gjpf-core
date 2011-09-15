@@ -95,7 +95,7 @@ public class Transition implements Iterable<Step> { // <2do> cloneable
   }
 
   public int getThreadIndex () {
-    return ti.getIndex();
+    return ti.getId();
   }
 
   public ChoiceGenerator<?> getChoiceGenerator() {

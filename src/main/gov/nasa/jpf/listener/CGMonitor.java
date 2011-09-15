@@ -73,7 +73,7 @@ public class CGMonitor extends ListenerAdapter {
       //printPrefix(' ');
       
       System.out.print(" : [");
-      System.out.print(ti.getIndex());
+      System.out.print(ti.getId());
       System.out.print("] ");
       System.out.print(insn);
       System.out.print(" (in ");

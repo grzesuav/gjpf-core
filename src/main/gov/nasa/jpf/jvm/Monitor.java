@@ -146,13 +146,13 @@ public class Monitor {
 
   public void hash (HashData hd) {
     if (lockingThread != null) {
-      hd.add(lockingThread.getIndex());
+      hd.add(lockingThread.getId());
     }
     
     hd.add(lockCount);
     
     for (int i = 0; i < lockedThreads.length; i++) {
-      hd.add(lockedThreads[i].getIndex());
+      hd.add(lockedThreads[i].getId());
     }    
   }
 

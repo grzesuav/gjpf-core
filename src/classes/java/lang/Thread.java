@@ -31,7 +31,7 @@ public class Thread implements Runnable {
     void uncaughtException (Thread t, Throwable x);
   }
   
-  static int              threadNum;
+  static int nameThreadNum; // to construct the default thread name  
 
   public static final int MIN_PRIORITY = 1;
   public static final int NORM_PRIORITY = 5;
@@ -40,6 +40,11 @@ public class Thread implements Runnable {
   // don't rename this - it's used by ThreadGoup.uncaughtException()
   private static volatile UncaughtExceptionHandler defaultUncaughtExceptionHandler; // null by default
 
+  
+  // JPF internal identifier which is used to associate Thread objects with ThreadInfos
+  // set from native side (init0)
+  int id;
+  
   
   // initialized in init(), except of the main thread (which gets explicitly initialized by the VM)
   ThreadGroup         group;
@@ -89,38 +94,66 @@ public class Thread implements Runnable {
   
   
   public Thread () {
-    init(group, target, name, 0L);
+    this(null, null, null, 0L);
   }
 
   public Thread (Runnable target) {
-    init(group, target, name, 0L);
+    this(null, target, null, 0L);
   }
 
   public Thread (Runnable target, String name) {
-    init(group, target, name, 0L);
+    this(null, target, name, 0L);
   }
 
   public Thread (String name) {
-    init(group, target, name, 0L);
-  }
-
-  public Thread (ThreadGroup group, Runnable target) {
-    init(group, target, name, 0L);
-  }
-
-  public Thread (ThreadGroup group, Runnable target, String name) {
-    init(group, target, name, 0L);
-  }
-
-  public Thread (ThreadGroup group, Runnable target, String name,
-                 long stackSize) {
-    init(group, target, name, 0L);
+    this(null, null, name, 0L);
   }
 
   public Thread (ThreadGroup group, String name) {
-    init(group, target, name, 0L);
+    this(group, null, name, 0L);
+  }
+  
+  public Thread (ThreadGroup group, Runnable target) {
+    this(group, target, null, 0L);
   }
 
+  public Thread (ThreadGroup group, Runnable target, String name) {
+    this(group, target, name, 0L);
+  }
+
+  public Thread (ThreadGroup group, Runnable target, String name, long stackSize) {
+    Thread cur = currentThread();
+
+    if (group == null) {
+      this.group = cur.getThreadGroup();
+    } else {
+      this.group = group;
+    }
+
+    this.group.add(this);
+
+    if (name == null) {
+      this.name = "Thread-" + ++nameThreadNum;
+    } else {
+      this.name = name;
+    }
+
+    this.permit = new Permit();
+
+    // those are always inherited from the current thread
+    this.priority = cur.getPriority();
+    this.isDaemon = cur.isDaemon();
+
+    this.target = target;
+
+    // do our associated native init
+    init0(this.group, target, this.name, stackSize);
+  }
+
+
+  // this takes care of ThreadInfo initialization
+  native void init0 (ThreadGroup group, Runnable target, String name, long stackSize);
+  
   public static int activeCount () {
     return 0;
   }
@@ -317,37 +350,7 @@ public class Thread implements Runnable {
 
   native void setPriority0 (int priority);
 
-  void init (ThreadGroup group, Runnable target, String name, long stackSize) {
-    Thread cur = currentThread();
 
-    if (group == null) {
-      this.group = cur.getThreadGroup();
-    } else {
-      this.group = group;
-    }
-
-    this.group.add(this);
-
-    if (name == null) {
-      this.name = "Thread-" + threadNum++;
-    } else {
-      this.name = name;
-    }
-
-    this.permit = new Permit();
-
-    // those are always inherited from the current thread
-    this.priority = cur.getPriority();
-    this.isDaemon = cur.isDaemon();
-
-    this.target = target;
-
-    // do our associated native init
-    init0(this.group, target, this.name, stackSize);
-  }
-
-  native void init0 (ThreadGroup group, Runnable target, String name,
-                     long stackSize);
 
   /**
    * automatically called by system upon thread termination to clean up

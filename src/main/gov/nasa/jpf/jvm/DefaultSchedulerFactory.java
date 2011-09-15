@@ -206,10 +206,10 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       // <2do> CG sequence based POR should be optional
       ArrayInstruction ainsn = (ArrayInstruction)ti.getPC();
       boolean isRead = ainsn.isRead();
-      int aref = ei.getIndex();
+      int aref = ei.getThreadInfoForId();
 
       for (ChoiceGenerator<?> cg = ss.getChoiceGenerator(); cg != null; cg = cg.getPreviousChoiceGenerator()){
-      if (cg.getThreadInfo() != ti || cg.getChoiceType() != ThreadInfo.class){
+      if (cg.getThreadInfoForId() != ti || cg.getChoiceType() != ThreadInfo.class){
       break; // different thread or different choice type -> we need a CG
       }
 

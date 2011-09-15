@@ -70,7 +70,7 @@ implements PublisherExtension {
 				+ cg.getInsn().getSourceLine();
 			}
 			System.out.println( "--------------------------------------------------- Thread"
-					+ cg.getThreadInfo().getIndex() 
+					+ cg.getThreadInfo().getId() 
 					+ "\n "+ sourceLoc  
 			);
 		}catch(NullPointerException e){

@@ -50,7 +50,7 @@ public class MethodTracker extends ListenerAdapter {
   }
 
   void logMethodCall(ThreadInfo ti, MethodInfo mi, int stackDepth) {
-    out.print(ti.getIndex());
+    out.print(ti.getId());
     out.print(":");
 
     for (int i=0; i<stackDepth%80; i++) {

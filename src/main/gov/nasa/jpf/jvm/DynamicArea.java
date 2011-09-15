@@ -212,10 +212,13 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
       if (ei == null) continue;
       if (!ei.isMarked() && sweep) {
         // this object is garbage, toast it
+
+        ei.processReleaseActions();
+        
         count++;
         JVM.getVM().notifyObjectReleased(ei);
         remove(i, false);
-
+        
       } else {
         // for subsequent gc and serialization
         ei.setUnmarked();
@@ -555,7 +558,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   }
 
   protected DynamicElementInfo createElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti){
-    int tid = ti == null ? 0 : ti.getIndex();
+    int tid = ti == null ? 0 : ti.getId();
     return new DynamicElementInfo(ci,f,m,tid);
   }
 

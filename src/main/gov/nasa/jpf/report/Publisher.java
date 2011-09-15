@@ -144,7 +144,8 @@ public abstract class Publisher {
     return dtgFormatter.format(date);
   }
 
-  static public String formatHMS (long t) {
+  /**
+  static public String _formatHMS (long t) {
     t /= 1000; // convert to sec
 
     long s = t % 60;
@@ -166,7 +167,27 @@ public abstract class Publisher {
 
     return sb.toString();
   }
+  **/
 
+  static char[] tBuf = { '0', '0', ':', '0', '0', ':', '0', '0' };
+  
+  static synchronized public String formatHMS (long t) {
+    int h = (int) (t / 3600000);
+    int m = (int) ((t / 60000) % 60);
+    int s = (int) ((t / 1000) % 60);
+    
+    tBuf[0] = (char) ('0' + (h / 10));
+    tBuf[1] = (char) ('0' + (h % 10));
+    
+    tBuf[3] = (char) ('0' + (m / 10));
+    tBuf[4] = (char) ('0' + (m % 10));
+    
+    tBuf[6] = (char) ('0' + (s / 10));
+    tBuf[7] = (char) ('0' + (s % 10));
+    
+    return new String(tBuf);
+  }
+  
   public String getReportFileName (String key) {
     String fname = conf.getString(key);
     if (fname == null){

@@ -84,7 +84,7 @@ public class JVM {
 
 
   protected String mainClassName;
-  protected String[] args;  /** main() arguments */
+  protected String[] args;  /** tiMain() arguments */
 
   protected Path path;  /** execution path to current state */
   protected StringBuilder out;  /** buffer to store output along path execution */
@@ -267,9 +267,9 @@ public class JVM {
   /**
    * load and pushClinit startup classes, return 'true' if successful.
    *
-   * This loads a bunch of core library classes, initializes the main thread,
+   * This loads a bunch of core library classes, initializes the tiMain thread,
    * and then all the required startup classes, but excludes the static init of
-   * the main class. Note that whatever gets executed in here should NOT contain
+   * the tiMain class. Note that whatever gets executed in here should NOT contain
    * any non-determinism, since we are not backtrackable yet, i.e.
    * non-determinism in clinits should be constrained to the app class (and
    * classes used by it)
@@ -298,22 +298,22 @@ public class JVM {
       return false;
     }
 
-    // create the thread for the main class
-    // note this is incomplete for Java 1.3 where Thread ctors rely on main's
+    // create the thread for the tiMain class
+    // note this is incomplete for Java 1.3 where Thread ctors rely on tiMain's
     // 'inheritableThreadLocals' being set to 'Collections.EMPTY_SET', which
     // pulls in the whole Collections/Random smash, but we can't execute the
-    // Collections.<clinit> yet because there's no stack before we have a main
+    // Collections.<clinit> yet because there's no stack before we have a tiMain
     // thread. Let's hope none of the init classes creates threads in their <clinit>.
-    ThreadInfo main = createMainThread();
+    ThreadInfo tiMain = createMainThread();
 
-    // now that we have a main thread, we can finish the startup class init
-    createStartupClassObjects(clinitQueue, main);
+    // now that we have a tiMain thread, we can finish the startup class init
+    createStartupClassObjects(clinitQueue, tiMain);
 
-    // pushClinit the call stack with the clinits we've picked up, followed by main()
-    pushMainEntry(config);
-    pushClinits(clinitQueue, main);
+    // pushClinit the call stack with the clinits we've picked up, followed by tiMain()
+    pushMainEntry(tiMain);
+    pushClinits(clinitQueue, tiMain);
 
-    initSystemState(main);
+    initSystemState(tiMain);
     return true;
   }
 
@@ -344,14 +344,16 @@ public class JVM {
   protected ThreadInfo createMainThread () {
     Heap heap = getHeap();
 
-    // first we need a group for this baby (happens to be called "main")
+    // first we need a group for this baby (happens to be called "tiMain")
 
-    int tObjRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread"), null);
-    int grpObjref = createSystemThreadGroup(tObjRef);
+    int objRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread"), null);
+    int groupRef = createSystemThreadGroup(objRef);
+    int nameRef = heap.newString("main", null);
 
-    ElementInfo ei = heap.get(tObjRef);
-    ei.setReferenceField("group", grpObjref);
-    ei.setReferenceField("name", heap.newString("main", null));
+    //--- initialize the Thread object
+    ElementInfo ei = heap.get(objRef);
+    ei.setReferenceField("group", groupRef);
+    ei.setReferenceField("name", nameRef);
     ei.setIntField("priority", Thread.NORM_PRIORITY);
 
     int permitRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"),null);
@@ -359,12 +361,11 @@ public class JVM {
     eiPermitRef.setBooleanField("blockPark", true);
     ei.setReferenceField("permit", permitRef);
 
-    // we need to keep the attributes on the JPF side in sync here
-    // <2do> factor out the Thread/ThreadInfo creation so that it's less
-    // error prone (even so this is the only location it's required for)
-    ThreadInfo ti = ThreadInfo.createThreadInfo(this, tObjRef);
-    ti.setPriority(java.lang.Thread.NORM_PRIORITY);
-    ti.setName("main");
+    //--- create the ThreadInfo
+    ThreadInfo ti = ThreadInfo.createThreadInfo(this, objRef, groupRef, MJIEnv.NULL, nameRef, 0L);
+
+    //--- set it running
+    registerThread(ti);
     ti.setState(ThreadInfo.State.RUNNING);
 
     return ti;
@@ -506,22 +507,21 @@ public class JVM {
   }
 
   /**
-   * override this method if you want your main class entry to be anything else
-   * than "public static void main(String[] args)"
+   * override this method if you want your tiMain class entry to be anything else
+   * than "public static void tiMain(String[] args)"
    * 
    * Note that we do a directcall here so that we always have a first frame that
    * can't execute SUT code. That way, we can handle synchronized entry points
    * via normal InvokeInstructions, and thread termination processing via
    * DIRECTCALLRETURN
    */
-  protected void pushMainEntry (Config config) {
+  protected void pushMainEntry (ThreadInfo tiMain) {
     Heap heap = getHeap();
     
     ClassInfo ciMain = ClassInfo.getResolvedClassInfo(mainClassName);
     MethodInfo miMain = ciMain.getMethod("main([Ljava/lang/String;)V", false);
-    ThreadInfo tiMain = ss.getThreadInfo(0);
 
-    // do some sanity checks if this is a valid main()
+    // do some sanity checks if this is a valid tiMain()
     if (miMain == null || !miMain.isStatic()) {
       throw new JPFException("no main() method in " + ciMain.getName());
     }
@@ -538,7 +538,7 @@ public class JVM {
     MethodInfo mainStub = miMain.createDirectCallStub("[main]");
     DirectCallStackFrame frame = new DirectCallStackFrame(mainStub, 1, 0);
     frame.pushRef(argsRef);
-    // <2do> set RUNSTART pc if we want to catch synchronized main() defects 
+    // <2do> set RUNSTART pc if we want to catch synchronized tiMain() defects 
     
     tiMain.pushFrame(frame);
   }
@@ -1106,7 +1106,7 @@ public class JVM {
   // VMListener acquisition
   public int getThreadNumber () {
     if (lastThreadInfo != null) {
-      return lastThreadInfo.getIndex();
+      return lastThreadInfo.getId();
     } else {
       return -1;
     }
@@ -1123,22 +1123,6 @@ public class JVM {
   Instruction getInstruction () {
     ThreadInfo ti = ThreadInfo.getCurrentThread();
     return ti.getPC();
-  }
-
-
-  public int getAbstractionNonDeterministicThreadCount () {
-    int n = 0;
-    int imax = ss.getThreadCount();
-
-    for (int i = 0; i < imax; i++) {
-      ThreadInfo th = ss.getThreadInfo(i);
-
-      if (th.isAbstractionNonDeterministic()) {
-        n++;
-      }
-    }
-
-    return n;
   }
 
   public int getAliveThreadCount () {
@@ -1303,7 +1287,7 @@ public class JVM {
   public ThreadList getThreadList () {
     return getKernelState().getThreadList();
   }
-
+  
   /**
    * Bundles up the state of the system for export
    */
@@ -1322,6 +1306,10 @@ public class JVM {
     return ss.getKernelState();
   }
 
+  public void kernelStateChanged(){
+    ss.getKernelState().changed();
+  }
+  
   public Config getConfig() {
     return config;
   }
@@ -1385,7 +1373,7 @@ public class JVM {
    * return the latest registered ChoiceGenerator used in this transition
    * that matches the provided 'id' and is of 'cgType'.
    * 
-   * This should be the main getter for clients that are cascade aware
+   * This should be the tiMain getter for clients that are cascade aware
    */
   public <T extends ChoiceGenerator<?>> T getCurrentChoiceGenerator (String id, Class<T> cgType) {
     return ss.getCurrentChoiceGenerator(id,cgType);
@@ -1557,25 +1545,21 @@ public class JVM {
   }
 
   public ThreadInfo[] getLiveThreads () {
-    int n = ss.getThreadCount();
-    ThreadInfo[] list = new ThreadInfo[n];
-    for (int i=0; i<n; i++){
-      list[i] = ss.getThreadInfo(i);
-    }
-    return list;
+    return getThreadList().getThreads();
   }
 
   /**
    * print call stacks of all live threads
    * this is also used for debugging purposes, so we can't move it to the Reporter system
-   * (it's also using a bit too much internals for that)
+   * (it's also using a bit too many internals for that)
    */
   public void printLiveThreadStatus (PrintWriter pw) {
     int nThreads = ss.getThreadCount();
+    ThreadInfo[] threads = getThreadList().getThreads();
     int n=0;
 
     for (int i = 0; i < nThreads; i++) {
-      ThreadInfo ti = ss.getThreadInfo(i);
+      ThreadInfo ti = threads[i];
 
       if (ti.getStackDepth() > 0){
         n++;
@@ -1633,7 +1617,7 @@ public class JVM {
   }
 
   /**
-   * Moves one step backward. This method and forward() are the main methods
+   * Moves one step backward. This method and forward() are the tiMain methods
    * used by the search object.
    * Note this is called with the state that caused the backtrack still being on
    * the stack, so we have to remove that one first (i.e. popping two states
@@ -1904,25 +1888,6 @@ public class JVM {
     return newStateId;
   }
 
-  public void addThread (ThreadInfo ti) {
-    // link the new thread into the list
-    ThreadList tl = getThreadList();
-
-    int idx = tl.add(ti);
-    ti.setListInfo(tl, idx);  // link back the thread to the list
-
-    getKernelState().changed();
-  }
-
-
-  public ThreadInfo createThread (int objRef) {
-    ThreadInfo ti = ThreadInfo.createThreadInfo(this, objRef);
-
-    // we don't add this thread to the threadlist before it starts to execute
-    // since it would otherwise already be a root object
-
-    return ti;
-  }
 
   /**
    * <2do> this is a band aid to bundle all these legacy reference chains
@@ -1955,6 +1920,29 @@ public class JVM {
     return ThreadInfo.currentThread;
   }
 
+  ThreadInfo[] getRunnableThreads(){
+    return getThreadList().getRunnableThreads();
+  }
+  
+  public boolean hasOtherRunnablesThan (ThreadInfo ti){
+    return getThreadList().hasOtherRunnablesThan(ti);
+  }
+
+  public boolean hasOtherNonDaemonRunnablesThan (ThreadInfo ti){
+    return getThreadList().hasOtherNonDaemonRunnablesThan(ti);
+  }
+
+  public int registerThread (ThreadInfo ti){
+    return getThreadList().add(ti);    
+  }
+  
+  /**
+   * not used yet, we don't unregister
+   */
+  //public void unregisterThread (ThreadInfo ti){
+  //  getThreadList().remove(ti);
+  //}
+  
   public boolean isAtomic() {
     return ss.isAtomic();
   }

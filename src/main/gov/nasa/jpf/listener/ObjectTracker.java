@@ -148,7 +148,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
   }
   
   void log (ThreadInfo ti, String fmt, Object... args){
-    out.print(ti.getIndex());
+    out.print(ti.getId());
     out.print(": ");
     out.printf(fmt, args);
     out.println();

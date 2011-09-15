@@ -45,7 +45,7 @@ public class CallMonitor extends ListenerAdapter {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append(ti.getIndex());
+        sb.append(ti.getId());
         sb.append(": ");
 
         int d = ti.getStackDepth();

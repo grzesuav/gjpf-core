@@ -18,15 +18,53 @@
 //
 package gov.nasa.jpf.util;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 /**
  * utility class for JPF internal linked lists that are tail-immutable 
  */
-public class StackNode<E> {
-  public final E data;
-  public final StackNode<E> next;
+public class ImmutableList<E> implements Iterable<E> {
+
+  static class IteratorImpl<E> implements Iterator<E> {
+
+    private ImmutableList<E> next;
+    
+    private IteratorImpl(ImmutableList<E> list){
+      next = list;
+    }
+    
+    public boolean hasNext() {
+      return (next != null);
+    }
+
+    public E next() {
+      if (next != null){
+        E elem = next.head;
+        next = next.tail;
+        return elem;
+        
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+
+    public void remove() {
+      throw new UnsupportedOperationException("can't remove elements from ImmutableList");
+    }
+    
+  }
   
-  public StackNode(E data, StackNode<E> next) {
-    this.data = data;
-    this.next = next;
+  public final E head;
+  public final ImmutableList<E> tail;
+  
+  
+  public ImmutableList(E data, ImmutableList<E> tail) {
+    this.head = data;
+    this.tail = tail;
+  }
+  
+  public Iterator<E> iterator() {
+    return new IteratorImpl(this);
   }
 }

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -66,4 +67,19 @@ public class JPF_java_util_TimeZone {
     return tz.getRawOffset();
   }
 
+  // used from within the private setDefaultZone()
+  public static int getSystemGMTOffsetID____Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
+    // unfortunately this is private, so we have to use reflection
+    try {
+      Method m = TimeZone.class.getMethod("getSystemGMTOffsetID");
+      m.setAccessible(true);
+      String s = (String)m.invoke(null);
+      
+      return env.newString(s);
+      
+    } catch (Throwable t){
+      return MJIEnv.NULL;
+    }
+  }
 }
+

@@ -29,6 +29,7 @@ import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassFileReaderAdapter;
 import gov.nasa.jpf.classfile.ClassPath;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.util.ImmutableList;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
 import gov.nasa.jpf.util.MethodSpec;
@@ -112,20 +113,21 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   protected static FieldsFactory fieldsFactory;
 
-  /**
-   * here we get infinitely recursive, so keep it around for identity checks
-   */
-  static ClassInfo classClassInfo;
 
   /*
-   * some distinguished classInfos we keep around for efficiency reasons
+   * some distinguished ClassInfos we keep around for efficiency reasons
    */
+  static final int NUMBER_OF_CACHED_CLASSES = 7;
+  static int remainingSysCi; // we keep track how many we still have to initialize
   static ClassInfo objectClassInfo;
+  static ClassInfo classClassInfo;
   static ClassInfo stringClassInfo;
   static ClassInfo weakRefClassInfo;
   static ClassInfo refClassInfo;
   static ClassInfo enumClassInfo;
+  static ClassInfo threadClassInfo;
 
+  
   static FieldInfo[] emptyFields = new FieldInfo[0];
 
 
@@ -246,8 +248,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   static StringSetMatcher enabledAssertionPatterns;
   static StringSetMatcher disabledAssertionPatterns;
 
-  boolean enableAssertions;
+  protected boolean enableAssertions;
 
+  /** actions to be taken when an object of this type is gc'ed */
+  protected ImmutableList<ReleaseAction> releaseActions; 
+          
+  
   static boolean init (Config config) {
 
     ClassInfo.config = config;
@@ -726,13 +732,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     nInstanceFields = (superClass != null) ?
       superClass.nInstanceFields + iFields.length : iFields.length;
 
-    // Used to execute native methods (in JVM land).
-    // This needs to be initialized AFTER we get our
-    // MethodInfos, since it does a reverse lookup to determine which
-    // ones are handled by the peer (by means of setting MethodInfo attributes)
-    nativePeer = NativePeer.getNativePeer(this);
-    checkUnresolvedNativeMethods();
-
     source = null;
 
     // we need to set the cached ci's before checking WeakReferences and Enums
@@ -757,6 +756,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // be advised - we don't have fields initialized before initializeClass(ti,insn)
     // gets called
 
+    // Used to execute native methods (in JVM land).
+    // This needs to be initialized AFTER we get our
+    // MethodInfos, since it does a reverse lookup to determine which
+    // ones are handled by the peer (by means of setting MethodInfo attributes)
+    nativePeer = NativePeer.getNativePeer(this);
+    checkUnresolvedNativeMethods();
+    
     JVM.getVM().notifyClassLoaded(this);
   }
 
@@ -873,20 +879,32 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
 
   protected static void updateCachedClassInfos (ClassInfo ci) {
-    String name = ci.name;
 
-    if ((objectClassInfo == null) && name.equals("java.lang.Object")) {
-      objectClassInfo = ci;
-    } else if ((classClassInfo == null) && name.equals("java.lang.Class")) {
-      classClassInfo = ci;
-    } else if ((stringClassInfo == null) && name.equals("java.lang.String")) {
-      stringClassInfo = ci;
-    } else if ((weakRefClassInfo == null) && name.equals("java.lang.ref.WeakReference")) {
-      weakRefClassInfo = ci;
-    } else if ((refClassInfo == null) && name.equals("java.lang.ref.Reference")) {
-      refClassInfo = ci;
-    } else if ((enumClassInfo == null) && name.equals("java.lang.Enum")){
-      enumClassInfo = ci;
+    if (remainingSysCi > 0){
+      String name = ci.name;
+      
+      if ((objectClassInfo == null) && name.equals("java.lang.Object")) {
+        objectClassInfo = ci;
+        remainingSysCi--;
+      } else if ((classClassInfo == null) && name.equals("java.lang.Class")) {
+        classClassInfo = ci;
+        remainingSysCi--;
+      } else if ((stringClassInfo == null) && name.equals("java.lang.String")) {
+        stringClassInfo = ci;
+        remainingSysCi--;
+      } else if ((weakRefClassInfo == null) && name.equals("java.lang.ref.WeakReference")) {
+        weakRefClassInfo = ci;
+        remainingSysCi--;
+      } else if ((refClassInfo == null) && name.equals("java.lang.ref.Reference")) {
+        refClassInfo = ci;
+        remainingSysCi--;
+      } else if ((enumClassInfo == null) && name.equals("java.lang.Enum")) {
+        enumClassInfo = ci;
+        remainingSysCi--;
+      } else if ((threadClassInfo == null) && name.equals("java.lang.Thread")) {
+        threadClassInfo = ci;
+        remainingSysCi--;
+      }
     }
   }
 
@@ -1243,6 +1261,36 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   
   public void setContainer (ClassFileContainer c){
     container = c;
+  }
+  
+  
+  //--- type based object release actions
+  
+  public void addReleaseAction (ReleaseAction action){
+    // note - for performance reasons, this is flattened so that we don't
+    // have to traverse the inheritance chain each time an object is released
+    
+    ImmutableList<ReleaseAction> prevActions = null;
+    for (ClassInfo ci = this; ci != null; ci = ci.superClass) {
+      prevActions = ci.releaseActions;
+      if (prevActions != null) {
+        break;
+      }
+    }
+    
+    releaseActions = new ImmutableList<ReleaseAction>( action, prevActions);
+  }
+  
+  /**
+   * recursively process release actions registered for this type or any of
+   * its super types (only classes)
+   */
+  public void processReleaseActions (ElementInfo ei){
+    if (releaseActions != null){
+      for (ReleaseAction action : releaseActions){
+        action.release(ei);
+      }
+    }
   }
   
   public int getModifiers() {
@@ -1708,6 +1756,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public static void reset () {
     loadedClasses.clear();
 
+    remainingSysCi = NUMBER_OF_CACHED_CLASSES;
     classClassInfo = null;
     objectClassInfo = null;
     stringClassInfo = null;
@@ -2177,7 +2226,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public void setInitializing(ThreadInfo ti) {
-    sei.setStatus(ti.getIndex());
+    sei.setStatus(ti.getId());
   }
 
   public void setInitialized() {
@@ -2223,7 +2272,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     int stat = sei.getStatus();
     
     if (stat != INITIALIZED) {
-      if (stat != ti.getIndex()) {
+      if (stat != ti.getId()) {
         // even if it is already initializing - if it does not happen in the current thread
         // we have to sync, which we do by calling clinit
         MethodInfo mi = getMethod("<clinit>()V", false);

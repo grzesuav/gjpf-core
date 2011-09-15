@@ -55,7 +55,7 @@ public class Reporter extends SearchListenerAdapter {
 
   protected Date started, finished;
   protected Statistics stat; // the object that collects statistics
-  protected Publisher[] publishers;
+  protected List<Publisher> publishers = new ArrayList<Publisher>();
 
   public Reporter (Config conf, JPF jpf) {
     this.conf = conf;
@@ -66,7 +66,7 @@ public class Reporter extends SearchListenerAdapter {
 
     started = new Date();
 
-    publishers = createPublishers(conf);
+    addConfiguredPublishers(conf);
 
     for (Publisher publisher : publishers) {
       if (reportStats || publisher.hasToReportStatistics()) {
@@ -101,9 +101,8 @@ public class Reporter extends SearchListenerAdapter {
   }
   
   
-  Publisher[] createPublishers (Config conf) {
+  void addConfiguredPublishers (Config conf) {
     String[] def = { "console" };
-    ArrayList<Publisher> list = new ArrayList<Publisher>();
 
     Class<?>[] argTypes = { Config.class, Reporter.class };
     Object[] args = { conf, this };
@@ -112,16 +111,18 @@ public class Reporter extends SearchListenerAdapter {
       Publisher p = conf.getInstance("report." + id + ".class",
                                      Publisher.class, argTypes, args);
       if (p != null){
-        list.add(p);
+        publishers.add(p);
       } else {
         log.warning("could not instantiate publisher class: " + id);
       }
     }
-
-    return list.toArray(new Publisher[list.size()]);
   }
 
-  public Publisher[] getPublishers() {
+  public void addPublisher( Publisher newPublisher){
+    publishers.add(newPublisher);
+  }
+  
+  public List<Publisher> getPublishers() {
     return publishers;
   }
 

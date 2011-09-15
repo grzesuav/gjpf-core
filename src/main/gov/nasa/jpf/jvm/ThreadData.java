@@ -31,7 +31,7 @@ public class ThreadData {
   ThreadInfo.State state;
 
   /** the scheduler priority of this thread */
-  int priority = java.lang.Thread.NORM_PRIORITY;
+  int priority;
 
   /**
    * the name of this thread
@@ -41,22 +41,6 @@ public class ThreadData {
 
   /** is this a daemon thread */
   boolean isDaemon;
-
-  /**
-   * Class associated with the thread.
-   * <?> why is this here? that's supposed to be very invariant
-   */
-  ClassInfo ci;
-
-  /**
-   * The object reference that is the thread.
-   */
-  int objref;
-
-  /**
-   * The object reference of the target object (if any).
-   */
-  int target = -1;
 
   /**
    * The lock counter when the object got into a wait. This value
@@ -76,9 +60,6 @@ public class ThreadData {
     ThreadData t = new ThreadData();
 
     t.state = state;
-    t.ci = ci;
-    t.objref = objref;
-    t.target = target;
     t.lockCount = lockCount;
     t.suspendCount = suspendCount;
 
@@ -96,16 +77,16 @@ public class ThreadData {
 
     ThreadData t = (ThreadData) o;
 
-    return ((state == t.state) && (ci == t.ci) && (objref == t.objref) &&
-           (target == t.target) && (priority == t.priority) &&
-           (isDaemon == t.isDaemon) && (lockCount == t.lockCount) &&
-           (suspendCount == t.suspendCount) && (name.equals(t.name)));
+    return ((state == t.state) && 
+            (priority == t.priority) &&
+            (isDaemon == t.isDaemon) && 
+            (lockCount == t.lockCount) &&
+            (suspendCount == t.suspendCount) && 
+            (name.equals(t.name)));
   }
 
   public void hash (HashData hd) {
     hd.add(state);
-    hd.add(objref);
-    hd.add(target);
     hd.add(lockCount);
     hd.add(suspendCount);
     hd.add(priority);
@@ -122,7 +103,7 @@ public class ThreadData {
   }
 
   public String toString () {
-    return ("ThreadData [" + getFieldValues() + "]");
+    return ("ThreadData[" + getFieldValues() + ']');
   }
 
   public String getFieldValues () {
@@ -132,12 +113,6 @@ public class ThreadData {
     sb.append(name);
     sb.append(",status=");
     sb.append(state.name());
-    sb.append(",this=");
-    sb.append(heap.get(objref));
-    if (target != objref) {
-      sb.append(",target=");
-      sb.append(heap.get(target));
-    }
     sb.append(",priority=");
     sb.append(priority);
     sb.append(",lockCount=");
@@ -147,8 +122,6 @@ public class ThreadData {
 
     return sb.toString();
   }
-
-  public int getObjRef() { return objref; }
 
   public ThreadInfo.State getState() { return state; }
 }

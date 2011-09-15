@@ -93,8 +93,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   protected Monitor         monitor;
   
   // the set of referencing thread ids. Note that we need an implementation that
-  // is not depending on order of order of reference, or we effectively shoot
-  // heap symmetry
+  // is not depending on order of reference, or we effectively shootheap symmetry
   protected FixedBitSet     refTid;
 
   protected int             index;
@@ -255,6 +254,13 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     fLockInfo[fi.getFieldIndex()] = flInfo;
   }
 
+  /**
+   * object is recycled (after potential finalization)
+   */
+  public void processReleaseActions(){
+    // so far, we only support type based release actions
+    ci.processReleaseActions(this);
+  }
 
   /**
    * update all non-fields references used by this object. This is only called
@@ -416,7 +422,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     // only mutable, shared objects are relevant
     //return ((attributes & (ATTR_TSHARED | ATTR_IMMUTABLE)) == ATTR_TSHARED);
 
-    int tid = ti.getIndex();
+    int tid = ti.getId();
     updateRefTidWith(tid);
     
     int nThreadRefs = refTid.cardinality();    
@@ -425,8 +431,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       // check if we have to cleanup the refTid set, or if some other accessors are not runnable
       ThreadList tl = JVM.getVM().getThreadList();
       for (int i=refTid.nextSetBit(0); i>=0; i = refTid.nextSetBit(i+1)){
-        ThreadInfo tiRef = tl.get(i);
-        if (tiRef == null || tiRef.isTerminated() ) {
+        ThreadInfo tiRef = tl.getThreadInfoForId(i);
+        if (tiRef == null) { // it's terminated
           updateRefTidWithout(i);
           nThreadRefs--;
         } else if (!tiRef.isRunnable()){

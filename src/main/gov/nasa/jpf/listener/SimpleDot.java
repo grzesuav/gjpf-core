@@ -241,7 +241,7 @@ public class SimpleDot extends ListenerAdapter {
     Object choice = cg.getNextChoice();
 
     if (choice instanceof ThreadInfo){
-      int idx = ((ThreadInfo)choice).getIndex();
+      int idx = ((ThreadInfo)choice).getId();
       return "T"+idx;
     } else {
       return choice.toString(); // we probably want more here
@@ -277,9 +277,9 @@ public class SimpleDot extends ListenerAdapter {
     String s = mi.getName();
 
     if (s.equals("start")) {
-      s = "T" + lastTi.getIndex() + ".start";
+      s = "T" + lastTi.getId() + ".start";
     } else if (s.equals("wait")) {
-      s = "T" + lastTi.getIndex() + ".wait";
+      s = "T" + lastTi.getId() + ".wait";
     }
 
     return s;

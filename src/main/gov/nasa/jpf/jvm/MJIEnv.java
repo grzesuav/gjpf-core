@@ -1385,10 +1385,19 @@ public class MJIEnv {
     return ti;
   }
 
-  public ThreadInfo getThreadInfo (int threadObjRef){
-    return ThreadInfo.getThreadInfo(threadObjRef);
+  public ThreadInfo getThreadInfoForId (int id){
+    return vm.getThreadList().getThreadInfoForId(id);
   }
 
+  public ThreadInfo getThreadInfoForObjRef (int id){
+    return vm.getThreadList().getThreadInfoForObjRef(id);
+  }
+
+  
+  public ThreadInfo[] getLiveThreads(){
+    return getVM().getLiveThreads();
+  }
+  
   // <2do> - naming? not very intuitive
   void lockNotified (int objref) {
     ElementInfo ei = getElementInfo(objref);

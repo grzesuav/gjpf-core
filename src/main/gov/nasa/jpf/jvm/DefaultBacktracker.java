@@ -19,14 +19,14 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.util.StackNode;
+import gov.nasa.jpf.util.ImmutableList;
 
 public class DefaultBacktracker<KState> implements Backtracker {
-  /** where we keep the saved KernelState data */ 
-  protected StackNode<KState> kstack;
+  /** where we keep the saved KernelState head */ 
+  protected ImmutableList<KState> kstack;
    
   /** and that adds the SystemState specifics */
-  protected StackNode<Object> sstack;
+  protected ImmutableList<Object> sstack;
   
   protected SystemState ss;
   protected StateRestorer<KState> restorer;
@@ -37,15 +37,15 @@ public class DefaultBacktracker<KState> implements Backtracker {
   }
 
   protected void backtrackKernelState() {
-    KState data = kstack.data;
-    kstack = kstack.next;
+    KState data = kstack.head;
+    kstack = kstack.tail;
     
     restorer.restore(data);
   }
 
   protected void backtrackSystemState() {
-    Object o = sstack.data;
-    sstack = sstack.next;
+    Object o = sstack.head;
+    sstack = sstack.tail;
     ss.backtrackTo(o);
   }
 
@@ -76,7 +76,7 @@ public class DefaultBacktracker<KState> implements Backtracker {
    */
   @Override
   public void pushKernelState () {
-    kstack = new StackNode<KState>(restorer.getRestorableData(),kstack);
+    kstack = new ImmutableList<KState>(restorer.getRestorableData(),kstack);
   }
   
   /**
@@ -84,13 +84,13 @@ public class DefaultBacktracker<KState> implements Backtracker {
    */
   @Override
   public void pushSystemState () {
-    sstack = new StackNode<Object>(ss.getBacktrackData(),sstack);
+    sstack = new ImmutableList<Object>(ss.getBacktrackData(),sstack);
   }
 
   
   class StateImpl implements State {
-    final StackNode<KState> savedKstack;
-    final StackNode<Object> savedSstack;
+    final ImmutableList<KState> savedKstack;
+    final ImmutableList<Object> savedSstack;
     final KState kcur;
     final Object scur;
     StateImpl() {

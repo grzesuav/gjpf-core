@@ -20,15 +20,20 @@ package gov.nasa.jpf.jvm;
 
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.util.HashData;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Contains the list of all currently active threads.
+ * Contains the list of all currently active threads. We add a thread upon
+ * start() and remove it upon termination.
  *
- * Note that this list may both shrink or (re-) grow on backtrack. This imposes
- * a challenge for keeping ThreadInfo identities, which are otherwise nice for
- * directly storing ThreadInfo references in Monitors and/or listeners.
+ * Note that this list only grows along a path, we don't remove terminated
+ * ThreadInfos. One reason for this is to avoid having thread ids re-used 
+ * for different ThreadInfos along a path. To provide better snapshot inspection,
+ * we also want to keep the info which threads got terminated
+ * Since we therefore can have non-runnables in the list, we also register threads
+ * as soon as they get created, not just when they are started
  */
 public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<ThreadList> {
 
@@ -70,7 +75,7 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
         Memento<ThreadInfo> m = tiMementos[i];
         ThreadInfo ti = m.restore(null);
         ti.cachedMemento = m;
-        threads[ti.getIndex()] = ti;
+        threads[i] = ti;
       }
       tl.threads = threads;
 
@@ -114,21 +119,48 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     int n = threads.length;
 
     // check if it's already there
-    for (ThreadInfo t : threads) {
+    for (int i=0; i<n; i++) {
+      ThreadInfo t = threads[i];
       if (t == ti) {
-        return t.getIndex();
+        return t.getId();
       }
     }
 
     // append it
-    ThreadInfo[] newList = new ThreadInfo[n+1];
-    System.arraycopy(threads, 0, newList, 0, n);
-    newList[n] = ti;
-    threads = newList;
+    ThreadInfo[] newThreads = new ThreadInfo[n+1];
+    System.arraycopy(threads, 0, newThreads, 0, n);
+    newThreads[n] = ti;
+    threads = newThreads;
+    
+    ks.changed();
+    
     return n; // the index where we added
   }
 
-
+  public boolean remove (ThreadInfo ti){
+    int n = threads.length;
+    
+    for (int i=0; i<n; i++) {
+      if (ti == threads[i]){
+        int n1 = n-1;
+        ThreadInfo[] newThreads = new ThreadInfo[n1];
+        if (i>0){
+          System.arraycopy(threads, 0, newThreads, 0, i);
+        }
+        if (i<n1){
+          System.arraycopy(threads, i+1, newThreads, i, (n1-i));
+        }
+        
+        threads = newThreads;
+        ks.changed();
+        
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
   public boolean hasAnyAliveThread () {
     for (int i = 0, l = threads.length; i < l; i++) {
       if (threads[i].isAlive()) {
@@ -146,13 +178,35 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return threads.clone();
   }
 
-  /**
-   * Returns a specific thread.
-   */
-  public ThreadInfo get (int index) {
-    return threads[index];
+  public void hash (HashData hd) {
+    for (int i=0; i<threads.length; i++){
+      threads[i].hash(hd);
+    }
+  }
+  
+  public ThreadInfo getThreadInfoForId (int tid){
+    for (int i=0; i<threads.length; i++){
+      ThreadInfo ti = threads[i];
+      if (ti.getId() == tid){
+        return ti;
+      }
+    }
+    
+    return null;
   }
 
+  public ThreadInfo getThreadInfoForObjRef (int objRef){
+    for (int i=0; i<threads.length; i++){
+      ThreadInfo ti = threads[i];
+      if (ti.getThreadObjectRef() == objRef){
+        return ti;
+      }
+    }
+    
+    return null;
+  }
+
+  
   /**
    * Returns the length of the list.
    */
