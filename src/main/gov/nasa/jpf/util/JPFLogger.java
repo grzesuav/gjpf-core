@@ -248,9 +248,9 @@ public class JPFLogger extends Logger {
     }
   }
   // note this still wraps args into a String array - overhead
-  public void fsevere (String format, String... args){
+  public void fsevere (String format, Object... args){
     if (isLoggable(Level.SEVERE)) {
-      logger.log(Level.SEVERE, String.format(format, (Object)args));
+      logger.log(Level.SEVERE, String.format(format, args));
     }
   }
 
@@ -287,9 +287,9 @@ public class JPFLogger extends Logger {
     }
   }
   // note this still wraps args into a String array - overhead
-  public void fwarning (String format, String... args){
+  public void fwarning (String format, Object... args){
     if (isLoggable(Level.WARNING)) {
-      logger.log(Level.WARNING, String.format(format, (Object)args));
+      logger.log(Level.WARNING, String.format(format, args));
     }
   }
 
@@ -325,9 +325,9 @@ public class JPFLogger extends Logger {
     }
   }
   // note this still wraps args into a String array - overhead
-  public void finfo (String format, String... args){
+  public void finfo (String format, Object... args){
     if (isLoggable(Level.INFO)) {
-      logger.log(Level.INFO, String.format(format, (Object)args));
+      logger.log(Level.INFO, String.format(format, args));
     }
   }
 
@@ -401,9 +401,9 @@ public class JPFLogger extends Logger {
     }
   }
   // note this still wraps args into a String array - overhead
-  public void ffine (String format, String... args){
+  public void ffine (String format, Object... args){
     if (isLoggable(Level.FINE)) {
-      logger.log(Level.FINE, String.format(format, (Object)args));
+      logger.log(Level.FINE, String.format(format, args));
     }
   }
 
@@ -439,9 +439,9 @@ public class JPFLogger extends Logger {
     }
   }
   // note this still wraps args into a String array - overhead
-  public void ffiner (String format, String... args){
+  public void ffiner (String format, Object... args){
     if (isLoggable(Level.FINER)) {
-      logger.log(Level.FINER, String.format(format, (Object)args));
+      logger.log(Level.FINER, String.format(format, args));
     }
   }
 
@@ -477,9 +477,9 @@ public class JPFLogger extends Logger {
     }
   }
   // note this still wraps args into a String array - overhead
-  public void ffinest (String format, String... args){
+  public void ffinest (String format, Object... args){
     if (isLoggable(Level.FINEST)) {
-      logger.log(Level.FINEST, String.format(format, (Object)args));
+      logger.log(Level.FINEST, String.format(format, args));
     }
   }
 }
