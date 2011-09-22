@@ -759,7 +759,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       // Code
       publishPadding(levelCount);
       m_output.print("Code:  ");
-      m_output.println(instruction.getSourceLine().trim());
+      m_output.println(instruction.getSourceOrLocation().trim());
 
       // Instruction
       publishPadding(levelCount);
@@ -955,7 +955,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       MethodInfo mi;
       Instruction instruction;
       String fileName;
-      int line;
+      int lineNumber;
 
       instruction = node.getSampleGeneratorInstruction();
       mi = instruction.getMethodInfo();
@@ -974,8 +974,8 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
 
       // Line
       m_output.print("<td align=\"right\">");
-      line = mi.getLineNumber(instruction);
-      m_output.print(line > 0 ? line : "");
+      lineNumber = mi.getLineNumber(instruction);
+      m_output.print(lineNumber > 0 ? lineNumber : "");
 
       // Instruction
       m_output.print("<td>");
@@ -989,7 +989,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
 
       // Code
       m_output.print("<td>");
-      m_output.print(HTMLPublisher.escape(instruction.getSourceLine().trim()));
+      m_output.print(HTMLPublisher.escape(instruction.getSourceOrLocation().trim()));
       m_output.print("</td>");
 
       // Generator Class

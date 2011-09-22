@@ -5,7 +5,7 @@
 // 
 // This software is distributed under the NASA Open Source Agreement
 // (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
+// Initiative.  See the fileName NOSA-1.3-JPF at the top of the distribution
 // directory tree for the complete NOSA document.
 // 
 // THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
@@ -196,6 +196,28 @@ public abstract class Instruction implements InstructionVisit {
     ClassInfo ci = mi.getClassInfo();
     if (ci != null) {
       int line = mi.getLineNumber(this);
+      String fileName = ci.getSourceFileName();
+
+      Source src = Source.getSource(fileName);
+      if (src != null) {
+        String srcLine = src.getLine(line);
+        if (srcLine != null) {
+          return srcLine;
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * this is for debugging/logging if we always want something back telling
+   * us where this insn came from
+   */
+  public String getSourceOrLocation(){
+    ClassInfo ci = mi.getClassInfo();
+    if (ci != null) {
+      int line = mi.getLineNumber(this);
       String file = ci.getSourceFileName();
 
       Source src = Source.getSource(file);
@@ -212,7 +234,8 @@ public abstract class Instruction implements InstructionVisit {
       return "[synthetic] " + mi.getName();
     }
   }
-
+  
+  
   /**
    * this returns a "pathname:line" string
    */

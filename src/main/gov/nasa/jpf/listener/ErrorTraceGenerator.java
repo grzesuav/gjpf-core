@@ -34,6 +34,8 @@ import gov.nasa.jpf.search.Search;
  * A lightweight listener to generate the error trace by printing
  * the program instructions at POR boundaries (where there is more than
  * one choice to explore)
+ * 
+ * <2do> this does not implement a PublisherExtension, fix it
  **/
 public class ErrorTraceGenerator extends PropertyListenerAdapter 
 implements PublisherExtension {

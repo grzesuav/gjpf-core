@@ -51,7 +51,7 @@ public class ExecTracker extends ListenerAdapter {
   @JPFOption(type = "Boolean", key = "et.print_insn", defaultValue = "true", comment = "print executed bytecode instructions") 
   boolean printInsn = true;
   
-  @JPFOption(type = "Boolean", key = "et.print_src", defaultValue = "true", comment = "print source lines")
+  @JPFOption(type = "Boolean", key = "et.print_src", defaultValue = "false", comment = "print source lines")
   boolean printSrc = false;
   
   @JPFOption(type = "Boolean", key = "et.print_mth", defaultValue = "false", comment = "print executed method names")
@@ -61,7 +61,7 @@ public class ExecTracker extends ListenerAdapter {
   boolean skipInit = false;
   
   PrintWriter out;
-  Step lastStep;
+  String lastLine;
   MethodInfo lastMi;
   String linePrefix;
   
@@ -72,8 +72,8 @@ public class ExecTracker extends ListenerAdapter {
     /** @jpfoption et.print_insn : boolean - print executed bytecode instructions (default=true). */
     printInsn = config.getBoolean("et.print_insn", true);
 
-    /** @jpfoption et.print_src : boolean - print source lines (default=true). */
-    printSrc = config.getBoolean("et.print_src", true);
+    /** @jpfoption et.print_src : boolean - print source lines (default=false). */
+    printSrc = config.getBoolean("et.print_src", false);
 
     /** @jpfoption et.print_mth : boolean - print executed method names (default=false). */
     printMth = config.getBoolean("et.print_mth", false);
@@ -124,7 +124,7 @@ public class ExecTracker extends ListenerAdapter {
     
     out.println();
     
-    lastStep = null; // in case we report by source line
+    lastLine = null; // in case we report by source line
     lastMi = null;
     linePrefix = null;
   }
@@ -138,7 +138,7 @@ public class ExecTracker extends ListenerAdapter {
   public void stateBacktracked(Search search) {
     int id = search.getStateId();
 
-    lastStep = null;
+    lastLine = null;
     lastMi = null;
 
     out.println("----------------------------------- [" +
@@ -177,33 +177,31 @@ public class ExecTracker extends ListenerAdapter {
     
     // that's pretty redundant to what is done in the ConsolePublisher, but we don't want 
     // presentation functionality in Step anymore
+    Instruction insn = jvm.getLastInstruction();
     if (printSrc) {
-      Step s = jvm.getLastStep(); // might have been skipped
-      if ((s != null) && !s.equals(lastStep)) {
-        String line = s.getLineString();
-        if (line != null) {
-          if (nNoSrc > 0){
-            out.println("      [" + nNoSrc + " insn w/o sources]");
-          }
-          
-          if (!s.sameSourceLocation(lastStep)){
-            out.print("        ");
-            out.print(Left.format(s.getLocationString(),30));
-            out.print(" : ");
-            out.println(line.trim());
-          }
-          nNoSrc = 0;
-          
-        } else { // no source
-          nNoSrc++;
+      String line = insn.getSourceLine();
+      if (line != null){
+        if (nNoSrc > 0) {
+          out.println("            [" + nNoSrc + " insn w/o sources]");
         }
+
+        if (!line.equals(lastLine)) {
+          out.print("            [");
+          out.print(insn.getFileLocation());
+          out.print("] : ");
+          out.println(line.trim());
+        }
+        
+        nNoSrc = 0;
+        
+      } else { // no source
+        nNoSrc++;
       }
-      lastStep = s;
+      
+      lastLine = line;
     }
     
-    if (printInsn) {
-      Instruction insn = jvm.getLastInstruction();
-      
+    if (printInsn) {      
       if (printMth) {
         MethodInfo mi = insn.getMethodInfo();
         if (mi != lastMi){

@@ -69,7 +69,10 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
       pw.print( ti1.getName());
       pw.print(" at ");
       pw.println(insn1.getSourceLocation());
-      pw.print("\t\t\"" + insn1.getSourceLine().trim());
+      String line = insn1.getSourceLine();
+      if (line != null){
+        pw.print("\t\t\"" + line.trim());
+      }
       pw.print("\"  : ");
       pw.println(insn1);
 
@@ -78,7 +81,10 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
         pw.print(ti2.getName());
         pw.print(" at ");
         pw.println(insn2.getSourceLocation());
-        pw.print("\t\t\"" + insn2.getSourceLine().trim());
+        line = insn2.getSourceLine();
+        if (line != null){
+          pw.print("\t\t\"" + line.trim());
+        }
         pw.print("\"  : ");
         pw.println(insn2);
       }

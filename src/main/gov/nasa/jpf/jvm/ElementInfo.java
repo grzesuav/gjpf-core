@@ -303,13 +303,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public boolean hasRefField (int objRef) {
     return ci.hasRefField( objRef, fields);
   }
-  /**
-   * BEWARE - never change the returned object without knowing about the
-   * ElementInfo change status, this field is state managed!
-   */
-  public FixedBitSet getRefTid() {
-    return refTid;
-  }
+
 
   public boolean hasMultipleReferencingThreads() {
     return refTid.cardinality() > 1;
@@ -427,7 +421,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     
     int nThreadRefs = refTid.cardinality();    
     if (nThreadRefs > 1){
-
       // check if we have to cleanup the refTid set, or if some other accessors are not runnable
       ThreadList tl = JVM.getVM().getThreadList();
       for (int i=refTid.nextSetBit(0); i>=0; i = refTid.nextSetBit(i+1)){
@@ -439,6 +432,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
           nThreadRefs--;
         }
       }
+      
       return (nThreadRefs > 1);
 
     } else { // only one referencing thread
