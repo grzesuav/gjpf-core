@@ -36,7 +36,7 @@ public class AnnotationInfo {
 
   // NOTE - never modify an Entry object since it might be shared between
   // different instances of the same annotation type
-  static class Entry {
+  public static class Entry {
     String key;
     Object value;
     
@@ -48,7 +48,7 @@ public class AnnotationInfo {
       return value;
     }
     
-    Entry (String key, Object value){
+    public Entry (String key, Object value){
       this.key = key;
       this.value = value;
     }
