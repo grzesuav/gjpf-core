@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import sun.misc.VM;
+
 /**
  * this is just a placeholder for now, we don't support its functionality
  */
