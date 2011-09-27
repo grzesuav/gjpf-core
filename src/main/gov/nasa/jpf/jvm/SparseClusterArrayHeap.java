@@ -258,7 +258,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     ci.initializeInstanceData(ei);
 
     vm.notifyObjectCreated(ti, ei);
-
+    
     // note that we don't return -1 if 'outOfMemory' (which is handled in
     // the NEWxx bytecode) because our allocs are used from within the
     // exception handling of the resulting OutOfMemoryError (and we would

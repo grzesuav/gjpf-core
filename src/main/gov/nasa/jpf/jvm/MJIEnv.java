@@ -1385,14 +1385,41 @@ public class MJIEnv {
     return ti;
   }
 
+  /**
+   * NOTE - callers have to be prepared this might return null in case
+   * the thread got already terminated
+   */
   public ThreadInfo getThreadInfoForId (int id){
     return vm.getThreadList().getThreadInfoForId(id);
   }
 
+  public ThreadInfo getLiveThreadInfoForId (int id){
+    ThreadInfo ti = vm.getThreadList().getThreadInfoForId(id);
+    if (ti != null && ti.isAlive()){
+      return ti;
+    }
+    
+    return null;
+  }
+  
+  /**
+   * NOTE - callers have to be prepared this might return null in case
+   * the thread got already terminated
+   */
   public ThreadInfo getThreadInfoForObjRef (int id){
     return vm.getThreadList().getThreadInfoForObjRef(id);
   }
+  
+  public ThreadInfo getLiveThreadInfoForObjRef (int id){
+    ThreadInfo ti = vm.getThreadList().getThreadInfoForObjRef(id);
+    if (ti != null && ti.isAlive()){
+      return ti;
+    }
+    
+    return null;
+  }
 
+  
   
   public ThreadInfo[] getLiveThreads(){
     return getVM().getLiveThreads();

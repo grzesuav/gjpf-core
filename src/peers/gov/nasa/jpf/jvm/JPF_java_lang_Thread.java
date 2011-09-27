@@ -50,12 +50,19 @@ public class JPF_java_lang_Thread {
 
   
   public static boolean isAlive____Z (MJIEnv env, int objref) {
-    return env.getThreadInfoForObjRef(objref).isAlive();
+    ThreadInfo ti = env.getThreadInfoForObjRef(objref);
+    if (ti != null){
+      return env.getThreadInfoForObjRef(objref).isAlive();      
+    }
+    
+    return false;
   }
 
   public static void setDaemon0__Z__V (MJIEnv env, int objref, boolean isDaemon) {
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
-    ti.setDaemon(isDaemon);
+    if (ti != null){
+      ti.setDaemon(isDaemon);
+    }
   }
 
   public static void dumpStack____V (MJIEnv env, int clsObjRef){
@@ -86,11 +93,18 @@ public class JPF_java_lang_Thread {
   public static void setPriority0__I__V (MJIEnv env, int objref, int prio) {
     // again, we have to cache this in ThreadData for performance reasons
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
-    ti.setPriority(prio);
+    if (ti != null){
+      ti.setPriority(prio);
+    }
   }
 
   public static int countStackFrames____I (MJIEnv env, int objref) {
-    return env.getThreadInfoForObjRef(objref).countStackFrames();
+    ThreadInfo ti = env.getThreadInfoForObjRef(objref);
+    if (ti != null){
+      return env.getThreadInfoForObjRef(objref).countStackFrames();
+    }
+    
+    return 0;
   }
 
   public static int currentThread____Ljava_lang_Thread_2 (MJIEnv env, int clsObjRef) {
@@ -112,7 +126,7 @@ public class JPF_java_lang_Thread {
 
     ThreadInfo interruptedThread = env.getThreadInfoForObjRef(objref);
 
-    if (!ti.isFirstStepInsn()) {
+    if (interruptedThread != null && !ti.isFirstStepInsn()) {
       interruptedThread.interrupt();
       
       // the interrupted thread can re-acquire the lock and therefore is runnable again
@@ -132,7 +146,11 @@ public class JPF_java_lang_Thread {
   // us the effort of avoiding unwanted shared object field access CGs
   public static boolean isInterrupted____Z (MJIEnv env, int objref) {
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
-    return ti.isInterrupted(false);
+    if (ti != null){
+      return ti.isInterrupted(false);
+    }
+    
+    return false;
   }
 
   public static boolean interrupted____Z (MJIEnv env, int clsObjRef) {
@@ -150,6 +168,9 @@ public class JPF_java_lang_Thread {
 
     if (!tiCurrent.isFirstStepInsn()) { // first time we see this (may be the only time)
 
+//System.out.println("@@ " + tiStartee + " => " + objref);
+
+      
       if (tiStartee.isStopped()) {
         // don't do anything but set it terminated - it hasn't acquired any resources yet.
         // note that apparently host VMs don't schedule this thread, so it never
@@ -163,6 +184,7 @@ public class JPF_java_lang_Thread {
       // silently ignored in Java 1.4, but the 1.5 spec explicitly marks this
       // as illegal, so we adopt this by throwing an IllegalThreadState, too
       if (! tiStartee.isNew()) {
+//vm.getThreadList().dump();
         env.throwException("java.lang.IllegalThreadStateException");
         return;
       }
@@ -250,7 +272,7 @@ public class JPF_java_lang_Thread {
     ThreadInfo target = env.getThreadInfoForObjRef(threadObjRef);
     SystemState ss = env.getSystemState();
 
-    if (target.isTerminated()) {
+    if (target == null || target.isTerminated()) {
       return;
     }
 
@@ -275,7 +297,7 @@ public class JPF_java_lang_Thread {
       return;
     }
 
-    if (target.isTerminated()) {
+    if (target == null || target.isTerminated()) {
       return;
     }
 
@@ -294,16 +316,19 @@ public class JPF_java_lang_Thread {
    * this is here so that we don't have to break the transition on a synchronized call
    */
   static void join0 (MJIEnv env, int joineeRef, long timeout){
-    ThreadInfo ti = env.getThreadInfo(); // this is the CURRENT thread (joiner)
-    ElementInfo ei = env.getElementInfo(joineeRef); // the thread object to wait on
-    boolean isAlive = env.getThreadInfoForObjRef(joineeRef).isAlive();
-    SystemState ss = env.getSystemState();
+    ThreadInfo tiJoiner = env.getThreadInfo(); // this is the CURRENT thread (joiner)
+    
+    ThreadInfo tiJoinee = env.getThreadInfoForObjRef(joineeRef);
+    boolean isAlive = (tiJoinee != null) ? tiJoinee.isAlive() : false;
 
-    if (ti.isInterrupted(true)){ // interrupt status is set, throw and bail
+    SystemState ss = env.getSystemState();
+    ElementInfo ei = env.getElementInfo(joineeRef); // the thread object to wait on
+
+    if (tiJoiner.isInterrupted(true)){ // interrupt status is set, throw and bail
       
       // since we use lock-free joins, we need to remove ourselves from the
       // lock contender list
-      ei.setMonitorWithoutLocked(ti);
+      ei.setMonitorWithoutLocked(tiJoiner);
       
       // note that we have to throw even if the thread to join to is not alive anymore
       env.throwInterrupt();
@@ -311,22 +336,22 @@ public class JPF_java_lang_Thread {
     }
 
     //--- the join
-    if (ti.isFirstStepInsn()) { // re-execution, we already have a CG
+    if (tiJoiner.isFirstStepInsn()) { // re-execution, we already have a CG
 
-      switch (ti.getState()){
+      switch (tiJoiner.getState()){
         case UNBLOCKED:
           // Thread was owning the lock when it joined - we have to wait until
           // we can reacquire it
-          ei.lockNotified(ti);
+          ei.lockNotified(tiJoiner);
           break;
 
         case TIMEDOUT:
-          ei.resumeNonlockedWaiter(ti);
+          ei.resumeNonlockedWaiter(tiJoiner);
           break;
 
         case RUNNING:
           if (isAlive) { // we still need to wait
-            ei.wait(ti, timeout, false); // no need for a new CG
+            ei.wait(tiJoiner, timeout, false); // no need for a new CG
             env.repeatInvocation();
           }
           break;
@@ -341,8 +366,8 @@ public class JPF_java_lang_Thread {
 
       if (isAlive) {
 
-        ei.wait(ti, timeout, false);
-        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
+        ei.wait(tiJoiner, timeout, false);
+        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createWaitCG(ei, tiJoiner, timeout);
 
         env.setMandatoryNextChoiceGenerator(cg, "no CG for blocking join()");
         env.repeatInvocation();
@@ -388,20 +413,37 @@ public class JPF_java_lang_Thread {
     // return the state index with respect to one of the public Thread.States
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
 
-    switch (ti.getState()) {
-    case NEW:                return 1;
-    case RUNNING:            return 2;
-    case BLOCKED:            return 0;
-    case UNBLOCKED:          return 2;
-    case WAITING:            return 5;
-    case TIMEOUT_WAITING:    return 4;
-    case SLEEPING:           return 4;
-    case NOTIFIED:           return 0;
-    case INTERRUPTED:        return 0;
-    case TIMEDOUT:           return 2;
-    case TERMINATED:         return 3;
-    default:
-      throw new JPFException("illegal thread state: " + ti.getState());
+    if (ti != null){
+      switch (ti.getState()) {
+        case NEW:
+          return 1;
+        case RUNNING:
+          return 2;
+        case BLOCKED:
+          return 0;
+        case UNBLOCKED:
+          return 2;
+        case WAITING:
+          return 5;
+        case TIMEOUT_WAITING:
+          return 4;
+        case SLEEPING:
+          return 4;
+        case NOTIFIED:
+          return 0;
+        case INTERRUPTED:
+          return 0;
+        case TIMEDOUT:
+          return 2;
+        case TERMINATED:
+          return 3;
+        default:
+          throw new JPFException("illegal thread state: " + ti.getState());
+      }
+      
+    } else {
+      // <2do> this is questionable - we treat this as terminated (for reorganizing ThreadLists)
+      return 3; 
     }
   }
 
@@ -414,7 +456,7 @@ public class JPF_java_lang_Thread {
     ThreadInfo tiStop = env.getThreadInfoForObjRef(threadRef);  // the thread to stop
     ThreadInfo tiCurrent = env.getThreadInfo(); // the currently executing thread
 
-    if (tiStop.isTerminated() || tiStop.isStopped()) {
+    if (tiStop == null || tiStop.isTerminated() || tiStop.isStopped()) {
       // no need to kill it twice
       return;
     }

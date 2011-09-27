@@ -76,7 +76,7 @@ public class KernelState implements Restorable<KernelState> {
 
     statics = config.getEssentialInstance("vm.static.class", StaticArea.class, argTypes, args);
     heap = config.getEssentialInstance("vm.heap.class", Heap.class, argTypes, args);
-    threads = config.getEssentialInstance("vm.threads.class", ThreadList.class, argTypes, args);
+    threads = config.getEssentialInstance("vm.threadlist.class", ThreadList.class, argTypes, args);
   }
 
   public Memento<KernelState> getMemento(MementoFactory factory) {

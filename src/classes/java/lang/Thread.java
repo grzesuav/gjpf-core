@@ -23,6 +23,9 @@ import sun.nio.ch.Interruptible;
 
 /**
  * MJI model class for java.lang.Thread library abstraction
+ * 
+ * <2do> this should not require the JPF ThreadList to retrieve corresponding ThreadInfos
+ * (the ThreadList might not store terminated threads)
  */
 public class Thread implements Runnable {
 
@@ -41,8 +44,9 @@ public class Thread implements Runnable {
   private static volatile UncaughtExceptionHandler defaultUncaughtExceptionHandler; // null by default
 
   
-  // JPF internal identifier which is used to associate Thread objects with ThreadInfos
-  // set from native side (init0)
+  // JPF internal identifier - according to the Java specs, thread ids can be reused
+  // and therefore are only useful to lookup alive ThreadInfos. Once the thread is terminated,
+  // the id is invalidated to ensure it doesn't resolve to a valid ThreadInfo
   int id;
   
   

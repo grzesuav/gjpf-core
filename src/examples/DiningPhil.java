@@ -33,7 +33,7 @@ public class DiningPhil {
     public Philosopher(Fork left, Fork right) {
       this.left = left;
       this.right = right;
-      start();
+      //start();
     }
 
     public void run() {
@@ -59,7 +59,8 @@ public class DiningPhil {
       forks[i] = new Fork();
     }
     for (int i = 0; i < nPhilosophers; i++) {
-      new Philosopher(forks[i], forks[(i + 1) % nPhilosophers]);
+      Philosopher p = new Philosopher(forks[i], forks[(i + 1) % nPhilosophers]);
+      p.start();
     }
     //Verify.endAtomic();
   }

@@ -232,14 +232,12 @@ public class JPF_java_lang_reflect_Method {
     int i, nArgs, passedCount, sourceRef;
     byte sourceType, destTypes[];
 
-    if (argsRef == MJIEnv.NULL){
-      return false;
-    }
-
     destTypes     = mi.getArgumentTypes();
     destTypeNames = mi.getArgumentTypeNames();
     nArgs         = destTypeNames.length;
-    passedCount   = env.getArrayLength(argsRef);
+    
+    // according to the API docs, passing null instead of an empty array is allowed for no args
+    passedCount   = (argsRef != MJIEnv.NULL) ? env.getArrayLength(argsRef) : 0;
     
     if (nArgs != passedCount) {
       env.throwException(IllegalArgumentException.class.getName(), "Wrong number of arguments passed.  Actual = " + passedCount + ".  Expected = " + nArgs);

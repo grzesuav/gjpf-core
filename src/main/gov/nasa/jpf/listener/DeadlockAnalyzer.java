@@ -46,6 +46,9 @@ import gov.nasa.jpf.search.Search;
  * it's own transition stack.
  * this is still work in progress, analyzing the trace can be much more
  * elaborate (we just dump up to a max history size for now)
+ * 
+ * <2do> DeadlockAnalyzer output can be confusing if a reorganizing
+ * ThreadList is used (which reassigns thread ids) 
  */
 public class DeadlockAnalyzer extends ListenerAdapter {
 

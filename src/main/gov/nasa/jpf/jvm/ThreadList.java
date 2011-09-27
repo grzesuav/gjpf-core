@@ -34,14 +34,18 @@ import java.util.NoSuchElementException;
  * we also want to keep the info which threads got terminated
  * Since we therefore can have non-runnables in the list, we also register threads
  * as soon as they get created, not just when they are started
+ * 
+ * This implementation assumes there are no holes (null elements) in our
+ * threads[] array.
+ * 
+ * If a reorganization is required (e.g. because the SUT uses lots of short-living
+ * threads), you have to subcless ThreadList and implement unregisterThread(ti). In
+ * this case, ids should also be reassigned
  */
 public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<ThreadList> {
 
   /** all threads (including terminated ones) */
   protected ThreadInfo[] threads;
-
-  /** reference of the kernel state this thread list belongs to */
-  public KernelState ks;  // <2do> bad backlink, remove!
 
 
   static class TListMemento implements Memento<ThreadList> {
@@ -92,7 +96,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
    * Creates a new empty thread list.
    */
   public ThreadList (Config config, KernelState ks) {
-    this.ks = ks;
     threads = new ThreadInfo[0];
   }
 
@@ -105,7 +108,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
 
   public Object clone() {
     ThreadList other = new ThreadList();
-    other.ks = ks;
     other.threads = new ThreadInfo[threads.length];
 
     for (int i=0; i<threads.length; i++) {
@@ -132,32 +134,13 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     newThreads[n] = ti;
     threads = newThreads;
     
-    ks.changed();
-    
     return n; // the index where we added
   }
 
-  public boolean remove (ThreadInfo ti){
-    int n = threads.length;
-    
-    for (int i=0; i<n; i++) {
-      if (ti == threads[i]){
-        int n1 = n-1;
-        ThreadInfo[] newThreads = new ThreadInfo[n1];
-        if (i>0){
-          System.arraycopy(threads, 0, newThreads, 0, i);
-        }
-        if (i<n1){
-          System.arraycopy(threads, i+1, newThreads, i, (n1-i));
-        }
-        
-        threads = newThreads;
-        ks.changed();
-        
-        return true;
-      }
-    }
-    
+  
+  public boolean unregister (ThreadInfo ti){
+    // this ThreadList implementation never removes threads, we keep terminated
+    // threads in the list
     return false;
   }
   

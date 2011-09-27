@@ -1933,15 +1933,19 @@ public class JVM {
   }
 
   public int registerThread (ThreadInfo ti){
+    getKernelState().changed();
     return getThreadList().add(ti);    
   }
   
   /**
-   * not used yet, we don't unregister
+   * note its still up to the ThreadList to decide if it really removes this
+   * thread, or just keeps it in the list as terminated
    */
-  //public void unregisterThread (ThreadInfo ti){
-  //  getThreadList().remove(ti);
-  //}
+  public void unregisterThread (ThreadInfo ti){
+    if (getThreadList().unregister(ti)){
+      getKernelState().changed();    
+    }
+  }
   
   public boolean isAtomic() {
     return ss.isAtomic();

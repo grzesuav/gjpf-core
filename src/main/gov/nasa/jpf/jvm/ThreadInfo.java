@@ -325,9 +325,7 @@ public class ThreadInfo
    */
   static boolean porSyncDetection;
 
-
-  static int checkBudgetCount;
-
+  
   static boolean init (Config config) {
     currentThread = null;
     mainThread = null;
@@ -340,8 +338,7 @@ public class ThreadInfo
     porInEffect = config.getBoolean("vm.por");
     porFieldBoundaries = porInEffect && config.getBoolean("vm.por.field_boundaries");
     porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
-    checkBudgetCount = config.getInt("vm.budget.check_count", 9999);
-
+    
     return true;
   }
 
@@ -2442,8 +2439,7 @@ public class ThreadInfo
 
       setState(State.TERMINATED);
       
-      // we don't unregister threads in the current ThreadList implementation
-      //vm.unregisterThread(this);
+      vm.unregisterThread(this);
 
       ss.clearAtomic();
       cleanupThreadObject(ei);
@@ -2460,7 +2456,29 @@ public class ThreadInfo
     }
   }
 
+  /**
+   * optionally to be called by ThreadList implementations that recycle thread ids
+   * 
+   * Note - this can be expensive since it has to walk over all live objects before
+   * we even know if they survive GC.
+   * 
+   * The alternative would be to move this to the GC, or to have an iteration
+   * outside of the GC with configured actions (of which the GC sweep would be one),
+   * but this would make the loop body less efficient and also couple otherwise
+   * unrelated functions. Assuming thread termination is rare compared to normal
+   * GC cycles, we just do our separate iteration here
+   */
+  public void cleanupReferencedObjects(){
+    int id = this.id;
+    for (ElementInfo ei : getHeap().liveObjects()){
+      ei.updateRefTidWithout(id);
+    }
+  }
 
+  /**
+   * this is called upon ThreadInfo.exit(), i.e. the Thread object can be still
+   * around for a while
+   */
   void cleanupThreadObject (ElementInfo ei) {
     // ideally, this should be done by calling Thread.exit(), but this
     // does a ThreadGroup.remove(), which does a lot of sync stuff on the shared
@@ -2473,8 +2491,11 @@ public class ThreadInfo
     ei.setReferenceField("threadLocals", MJIEnv.NULL);
     ei.setReferenceField("inheritableThreadLocals", MJIEnv.NULL);
     ei.setReferenceField("uncaughtExceptionHandler", MJIEnv.NULL);
+    
+    ei.setIntField("id", -1); // means its terminated
   }
 
+  
   void cleanupThreadGroup (int grpRef, int threadRef) {
     if (grpRef != MJIEnv.NULL) {
       ElementInfo eiGrp = getElementInfo(grpRef);

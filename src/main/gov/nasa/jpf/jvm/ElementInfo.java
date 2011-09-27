@@ -93,7 +93,16 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   protected Monitor         monitor;
   
   // the set of referencing thread ids. Note that we need an implementation that
-  // is not depending on order of reference, or we effectively shootheap symmetry
+  // is not depending on order of reference, or we effectively shoot heap symmetry.
+  // There are two more implications with using a bit set for reference tracking:
+  // (1) thread ids should be "dense", i.e. cannot be arbitrary hash values
+  // (2) SUTs that use a lot of short living, dynamically created threads are a problem
+  // If the SUT does not have a fixed, small number of threads (e.g. from a pool),
+  // a reorganizing ThreadList implementation has to be used (which recycles thread ids).
+  // Since Java threads are expensive and hence are usually limited, this shouldn't be
+  // a problem for most SUTs
+  // The alternative would be to directly store ThreadInfo references, but this
+  // would have an impact on state matching efficiency and memory consumption
   protected FixedBitSet     refTid;
 
   protected int             index;
@@ -425,7 +434,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       ThreadList tl = JVM.getVM().getThreadList();
       for (int i=refTid.nextSetBit(0); i>=0; i = refTid.nextSetBit(i+1)){
         ThreadInfo tiRef = tl.getThreadInfoForId(i);
-        if (tiRef == null) { // it's terminated
+        if (tiRef == null || tiRef.isTerminated()) { // it's terminated
           updateRefTidWithout(i);
           nThreadRefs--;
         } else if (!tiRef.isRunnable()){
@@ -440,6 +449,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
   }
 
+  
   /**
    * this is called before the system attempts to reclaim the object. If
    * we return 'false', the object will *not* be removed

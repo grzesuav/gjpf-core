@@ -67,14 +67,11 @@ public class JPF_java_lang_Object {
   }
 
   public static int hashCode____I (MJIEnv env, int objref) {
-    env = null;  // Get rid of IDE warning
     return (objref ^ 0xABCD);
   }
 
   public static void registerNatives____V (MJIEnv env, int clsObjRef) {
-    // let go un-noticed
-    env       = null;  // Get rid of IDE warning
-    clsObjRef = 0;
+    // nothing to do, we just intercept
   }
 
   static void wait0(MJIEnv env, int objref, long timeout) {
