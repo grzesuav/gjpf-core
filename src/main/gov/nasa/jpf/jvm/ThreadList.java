@@ -21,30 +21,37 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.HashData;
+import java.util.BitSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Contains the list of all currently active threads. We add a thread upon
- * start() and remove it upon termination.
+ * Contains the list of all ThreadInfos for live java.lang.Thread objects
+ * 
+ * We add a thread upon creation (within the ThreadInfo ctor), and remove it
+ * when the corresponding java.lang.Thread object gets recycled by JPF. This means
+ * that:
+ *   (a) the thread list can contain terminated threads in it
+ *   (b) the list can shrink along a given path
+ *   (c) thread ids don't have to correspond with storing order !!
+ *   (d) thread ids can be re-used
  *
- * Note that this list only grows along a path, we don't remove terminated
- * ThreadInfos. One reason for this is to avoid having thread ids re-used 
- * for different ThreadInfos along a path. To provide better snapshot inspection,
- * we also want to keep the info which threads got terminated
- * Since we therefore can have non-runnables in the list, we also register threads
- * as soon as they get created, not just when they are started
+ * Thread ids are re-used in order to be packed (which is required to efficiently
+ * keep track of referencing threads in ElementInfo reftids)
  * 
- * This implementation assumes there are no holes (null elements) in our
- * threads[] array.
+ * NOTE - this ThreadList implementation doubles up as a thread object -> ThreadInfo
+ * map, which is for instance heavily used by the JPF_java_lang_Thread peer.
  * 
- * If a reorganization is required (e.g. because the SUT uses lots of short-living
- * threads), you have to subcless ThreadList and implement unregisterThread(ti). In
- * this case, ids should also be reassigned
+ * This implies that ThreadList is still not fully re-organized in case something
+ * keeps terminated thread objects alive. We could avoid this by having a separate
+ * map for live threads<->ThreadInfos, but this would also have to be a backrackable
+ * container that is highly redundant to ThreadList (the only difference being
+ * that terminated threads could be removed from ThreadList).
+ * 
  */
 public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<ThreadList> {
 
-  /** all threads (including terminated ones) */
+  /** ThreadInfos for all live Thread objects (including terminated ones) */
   protected ThreadInfo[] threads;
 
 
@@ -117,15 +124,21 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return other;
   }
 
+  BitSet ids = new BitSet();
+  
   public int add (ThreadInfo ti) {
     int n = threads.length;
 
+    ids.clear();
+    
     // check if it's already there
     for (int i=0; i<n; i++) {
       ThreadInfo t = threads[i];
       if (t == ti) {
         return t.getId();
       }
+      
+      ids.set( t.getId());
     }
 
     // append it
@@ -134,13 +147,28 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     newThreads[n] = ti;
     threads = newThreads;
     
-    return n; // the index where we added
+    return ids.nextClearBit(0);
   }
-
   
-  public boolean unregister (ThreadInfo ti){
-    // this ThreadList implementation never removes threads, we keep terminated
-    // threads in the list
+  public boolean remove (ThreadInfo ti){
+    int n = threads.length;
+    
+    for (int i=0; i<n; i++) {
+      if (ti == threads[i]){
+        int n1 = n-1;
+        ThreadInfo[] newThreads = new ThreadInfo[n1];
+        if (i>0){
+          System.arraycopy(threads, 0, newThreads, 0, i);
+        }
+        if (i<n1){
+          System.arraycopy(threads, i+1, newThreads, i, (n1-i));
+        }
+        
+        threads = newThreads;        
+        return true;
+      }
+    }
+    
     return false;
   }
   

@@ -168,10 +168,11 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // elements, and not use the elementsMap, which indicates that objects
     // are reasonably packed at this point
 
+    JVM vm = JVM.getVM();
     int length = elements.size();
     weakRefs = null;
 
-    JVM.getVM().notifyGCBegin();
+    vm.notifyGCBegin();
 
     markQueue.clear();
     liveBitValue = !liveBitValue; // toggle it
@@ -216,7 +217,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
         ei.processReleaseActions();
         
         count++;
-        JVM.getVM().notifyObjectReleased(ei);
+        vm.notifyObjectReleased(ei);
         remove(i, false);
         
       } else {
@@ -231,7 +232,8 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
       checkWeakRefs(); // for potential nullification
     }
 
-    JVM.getVM().notifyGCEnd();
+    vm.processPostGcActions();
+    vm.notifyGCEnd();
   }
 
 

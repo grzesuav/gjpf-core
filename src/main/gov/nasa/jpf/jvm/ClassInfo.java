@@ -763,6 +763,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     nativePeer = NativePeer.getNativePeer(this);
     checkUnresolvedNativeMethods();
     
+    if (superClass != null){
+    // flatten so that it becomes more efficient to process at sweep time
+      releaseActions = superClass.releaseActions;
+    }
+    
     JVM.getVM().notifyClassLoaded(this);
   }
 
@@ -1266,28 +1271,22 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   
   //--- type based object release actions
   
+  /**
+   * NOTE - this can only be set *before* subclasses are loaded (e.g. from classLoaded() notification) 
+   */
   public void addReleaseAction (ReleaseAction action){
-    // note - for performance reasons, this is flattened so that we don't
-    // have to traverse the inheritance chain each time an object is released
-    
-    ImmutableList<ReleaseAction> prevActions = null;
-    for (ClassInfo ci = this; ci != null; ci = ci.superClass) {
-      prevActions = ci.releaseActions;
-      if (prevActions != null) {
-        break;
-      }
-    }
-    
-    releaseActions = new ImmutableList<ReleaseAction>( action, prevActions);
+    // flattened in ctor to super releaseActions
+    releaseActions = new ImmutableList<ReleaseAction>( action, releaseActions);
   }
   
   /**
    * recursively process release actions registered for this type or any of
-   * its super types (only classes)
+   * its super types (only classes). The releaseAction list is flattened during
+   * ClassInfo initialization, to reduce runtime overhead during GC sweep
    */
   public void processReleaseActions (ElementInfo ei){
-    if (releaseActions != null){
-      for (ReleaseAction action : releaseActions){
+    if (releaseActions != null) {
+      for (ReleaseAction action : releaseActions) {
         action.release(ei);
       }
     }

@@ -145,6 +145,12 @@ public class JVM {
   // <2do> there are probably many places where this should be used
   protected boolean isBigEndian;
 
+  // a list of actions to be run post GC. This is a bit redundant to VMListener,
+  // but in addition to avoid the per-instruction execution overhead of a VMListener
+  // we want a (internal) mechanism that is on-demand only, i.e. processed
+  // actions are removed from the list
+  protected ArrayList<Runnable> postGcActions = new ArrayList<Runnable>();
+  
   /**
    * be prepared this might throw JPFConfigExceptions
    */
@@ -314,6 +320,8 @@ public class JVM {
     pushClinits(clinitQueue, tiMain);
 
     initSystemState(tiMain);
+    registerThreadListCleanup();
+    
     return true;
   }
 
@@ -344,13 +352,12 @@ public class JVM {
   protected ThreadInfo createMainThread () {
     Heap heap = getHeap();
 
-    // first we need a group for this baby (happens to be called "tiMain")
-
-    int objRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread"), null);
+    ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
+    int objRef = heap.newObject( ciThread, null);
     int groupRef = createSystemThreadGroup(objRef);
     int nameRef = heap.newString("main", null);
-
-    //--- initialize the Thread object
+    
+    //--- initialize the main Thread object
     ElementInfo ei = heap.get(objRef);
     ei.setReferenceField("group", groupRef);
     ei.setReferenceField("name", nameRef);
@@ -363,9 +370,8 @@ public class JVM {
 
     //--- create the ThreadInfo
     ThreadInfo ti = ThreadInfo.createThreadInfo(this, objRef, groupRef, MJIEnv.NULL, nameRef, 0L);
-
+    
     //--- set it running
-    registerThread(ti);
     ti.setState(ThreadInfo.State.RUNNING);
 
     return ti;
@@ -396,7 +402,46 @@ public class JVM {
     return ref;
   }
 
+  protected void registerThreadListCleanup(){
+    ClassInfo ciThread = ClassInfo.tryGetResolvedClassInfo("java.lang.Thread");
+    assert ciThread != null : "java.lang.Thread not loaded yet";
+    
+    ciThread.addReleaseAction( new ReleaseAction(){
+      public void release(ElementInfo ei) {
+        ThreadList tl = getThreadList();
+        int objRef = ei.getIndex();
+        final ThreadInfo ti = tl.getThreadInfoForObjRef(objRef);
+        if (tl.remove(ti)){
+          addPostGcAction( new Runnable(){
+            public void run(){
+              // since we are going to reuse thread ids, we have to clean up ElementInfos
+              ti.cleanupReferencedObjects();
+            }
+          });
+        
+          getKernelState().changed();    
+        }
+      }
+    });    
+  }
 
+  public void addPostGcAction (Runnable r){
+    postGcActions.add(r);
+  }
+  
+  /**
+   * to be called from the Heap after GC is completed (i.e. only live objects remain)
+   */
+  public void processPostGcActions(){
+    if (!postGcActions.isEmpty()){
+      for (Runnable r : postGcActions){
+        r.run();
+      }
+      
+      postGcActions.clear();
+    }
+  }
+  
   protected List<ClassInfo> registerStartupClasses () {
     ArrayList<ClassInfo> queue = new ArrayList<ClassInfo>(32);
 
@@ -1937,15 +1982,6 @@ public class JVM {
     return getThreadList().add(ti);    
   }
   
-  /**
-   * note its still up to the ThreadList to decide if it really removes this
-   * thread, or just keeps it in the list as terminated
-   */
-  public void unregisterThread (ThreadInfo ti){
-    if (getThreadList().unregister(ti)){
-      getKernelState().changed();    
-    }
-  }
   
   public boolean isAtomic() {
     return ss.isAtomic();

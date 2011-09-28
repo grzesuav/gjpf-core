@@ -28,6 +28,9 @@ import java.util.HashMap;
 
 /**
  * MJI NativePeer class for java.lang.Thread library abstraction
+ * 
+ * NOTE - this implementation depends on all live thread objects being
+ * in ThreadList
  */
 public class JPF_java_lang_Thread {
 
@@ -51,18 +54,12 @@ public class JPF_java_lang_Thread {
   
   public static boolean isAlive____Z (MJIEnv env, int objref) {
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
-    if (ti != null){
-      return env.getThreadInfoForObjRef(objref).isAlive();      
-    }
-    
-    return false;
+    return ti.isAlive();      
   }
 
   public static void setDaemon0__Z__V (MJIEnv env, int objref, boolean isDaemon) {
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
-    if (ti != null){
-      ti.setDaemon(isDaemon);
-    }
+    ti.setDaemon(isDaemon);
   }
 
   public static void dumpStack____V (MJIEnv env, int clsObjRef){
@@ -93,23 +90,16 @@ public class JPF_java_lang_Thread {
   public static void setPriority0__I__V (MJIEnv env, int objref, int prio) {
     // again, we have to cache this in ThreadData for performance reasons
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
-    if (ti != null){
-      ti.setPriority(prio);
-    }
+    ti.setPriority(prio);
   }
 
   public static int countStackFrames____I (MJIEnv env, int objref) {
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
-    if (ti != null){
-      return env.getThreadInfoForObjRef(objref).countStackFrames();
-    }
-    
-    return 0;
+    return ti.countStackFrames();
   }
 
   public static int currentThread____Ljava_lang_Thread_2 (MJIEnv env, int clsObjRef) {
     ThreadInfo ti = env.getThreadInfo();
-
     return ti.getThreadObjectRef();
   }
 
@@ -126,7 +116,7 @@ public class JPF_java_lang_Thread {
 
     ThreadInfo interruptedThread = env.getThreadInfoForObjRef(objref);
 
-    if (interruptedThread != null && !ti.isFirstStepInsn()) {
+    if (!ti.isFirstStepInsn()) {
       interruptedThread.interrupt();
       
       // the interrupted thread can re-acquire the lock and therefore is runnable again
@@ -146,11 +136,7 @@ public class JPF_java_lang_Thread {
   // us the effort of avoiding unwanted shared object field access CGs
   public static boolean isInterrupted____Z (MJIEnv env, int objref) {
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
-    if (ti != null){
-      return ti.isInterrupted(false);
-    }
-    
-    return false;
+    return ti.isInterrupted(false);
   }
 
   public static boolean interrupted____Z (MJIEnv env, int clsObjRef) {
@@ -167,10 +153,6 @@ public class JPF_java_lang_Thread {
 
 
     if (!tiCurrent.isFirstStepInsn()) { // first time we see this (may be the only time)
-
-//System.out.println("@@ " + tiStartee + " => " + objref);
-
-      
       if (tiStartee.isStopped()) {
         // don't do anything but set it terminated - it hasn't acquired any resources yet.
         // note that apparently host VMs don't schedule this thread, so it never
@@ -184,7 +166,6 @@ public class JPF_java_lang_Thread {
       // silently ignored in Java 1.4, but the 1.5 spec explicitly marks this
       // as illegal, so we adopt this by throwing an IllegalThreadState, too
       if (! tiStartee.isNew()) {
-//vm.getThreadList().dump();
         env.throwException("java.lang.IllegalThreadStateException");
         return;
       }
@@ -272,7 +253,7 @@ public class JPF_java_lang_Thread {
     ThreadInfo target = env.getThreadInfoForObjRef(threadObjRef);
     SystemState ss = env.getSystemState();
 
-    if (target == null || target.isTerminated()) {
+    if (target.isTerminated()) {
       return;
     }
 
@@ -297,7 +278,7 @@ public class JPF_java_lang_Thread {
       return;
     }
 
-    if (target == null || target.isTerminated()) {
+    if (target.isTerminated()) {
       return;
     }
 
@@ -319,7 +300,7 @@ public class JPF_java_lang_Thread {
     ThreadInfo tiJoiner = env.getThreadInfo(); // this is the CURRENT thread (joiner)
     
     ThreadInfo tiJoinee = env.getThreadInfoForObjRef(joineeRef);
-    boolean isAlive = (tiJoinee != null) ? tiJoinee.isAlive() : false;
+    boolean isAlive = tiJoinee.isAlive();
 
     SystemState ss = env.getSystemState();
     ElementInfo ei = env.getElementInfo(joineeRef); // the thread object to wait on
@@ -405,45 +386,35 @@ public class JPF_java_lang_Thread {
   }
 
 
-  public static long getId____J (MJIEnv env, int objref) {
-    return env.getThreadInfoForObjRef(objref).getId();
-  }
-
   public static int getState0____I (MJIEnv env, int objref) {
     // return the state index with respect to one of the public Thread.States
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
 
-    if (ti != null){
-      switch (ti.getState()) {
-        case NEW:
-          return 1;
-        case RUNNING:
-          return 2;
-        case BLOCKED:
-          return 0;
-        case UNBLOCKED:
-          return 2;
-        case WAITING:
-          return 5;
-        case TIMEOUT_WAITING:
-          return 4;
-        case SLEEPING:
-          return 4;
-        case NOTIFIED:
-          return 0;
-        case INTERRUPTED:
-          return 0;
-        case TIMEDOUT:
-          return 2;
-        case TERMINATED:
-          return 3;
-        default:
-          throw new JPFException("illegal thread state: " + ti.getState());
-      }
-      
-    } else {
-      // <2do> this is questionable - we treat this as terminated (for reorganizing ThreadLists)
-      return 3; 
+    switch (ti.getState()) {
+      case NEW:
+        return 1;
+      case RUNNING:
+        return 2;
+      case BLOCKED:
+        return 0;
+      case UNBLOCKED:
+        return 2;
+      case WAITING:
+        return 5;
+      case TIMEOUT_WAITING:
+        return 4;
+      case SLEEPING:
+        return 4;
+      case NOTIFIED:
+        return 0;
+      case INTERRUPTED:
+        return 0;
+      case TIMEDOUT:
+        return 2;
+      case TERMINATED:
+        return 3;
+      default:
+        throw new JPFException("illegal thread state: " + ti.getState());
     }
   }
 
@@ -456,7 +427,7 @@ public class JPF_java_lang_Thread {
     ThreadInfo tiStop = env.getThreadInfoForObjRef(threadRef);  // the thread to stop
     ThreadInfo tiCurrent = env.getThreadInfo(); // the currently executing thread
 
-    if (tiStop == null || tiStop.isTerminated() || tiStop.isStopped()) {
+    if (tiStop.isTerminated() || tiStop.isStopped()) {
       // no need to kill it twice
       return;
     }

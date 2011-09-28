@@ -44,19 +44,19 @@ public class Thread implements Runnable {
   private static volatile UncaughtExceptionHandler defaultUncaughtExceptionHandler; // null by default
 
   
-  // JPF internal identifier - according to the Java specs, thread ids can be reused
-  // and therefore are only useful to lookup alive ThreadInfos. Once the thread is terminated,
-  // the id is invalidated to ensure it doesn't resolve to a valid ThreadInfo
+  // JPF internal identifier - according to the Java specs, thread ids can be reused.
+  // We keep ids until the thread object is recycled, i.e. there are never two live thread
+  // objects that have the same id (regardless of whether the threads are already terminated or not)
   int id;
   
   
   // initialized in init(), except of the main thread (which gets explicitly initialized by the VM)
-  ThreadGroup         group;
-  Runnable            target;
-  String              name;
-  int                 priority;
-  boolean             isDaemon;
-
+  ThreadGroup group;
+  Runnable target;
+  String name;
+  int priority;
+  boolean isDaemon;
+  
   // this is an explicit thread state that gets set on a call of interrupt(), but
   // only if the thread is not blocked. If it is, we only change the status.
   // this gets cleared by calling interrupted()
@@ -191,7 +191,9 @@ public class Thread implements Runnable {
     return isDaemon;
   }
 
-  public native long getId();
+  public long getId(){
+    return id;
+  }
 
   public StackTraceElement[] getStackTrace() {
     return null; // not yet implemented

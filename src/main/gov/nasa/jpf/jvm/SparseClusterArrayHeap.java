@@ -458,6 +458,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
 
     cleanupWeakRefs(); // for potential nullification
 
+    vm.processPostGcActions();
     vm.notifyGCEnd();
   }
 

@@ -164,13 +164,9 @@ public class ThreadInfo
   
   //--- the invariants
 
-  // the id is only guaranteed to be unique along each path. We have the 
-  // additional requirement that it is the smallest number possible under this
-  // requirement, since it is used within the ElementInfo.refTid set and
-  // in the SparseClusteredArrayHeap. Using the objRef would be preferable, but
-  // would not work with these usages. The most natural id computation scheme therefore
-  // is to use the size of the ThreadList at the time of thread creation, but
-  // clients should not explicitly rely on the id being the ThreadList index
+  // the id is only guaranteed to be unique among live thread objects (including
+  // terminated ones), i.e. it can be re-used within the same path for thread
+  // objects with disparate life spans
   protected int id; 
   
   protected int objRef; // the java.lang.Thread object reference
@@ -325,6 +321,7 @@ public class ThreadInfo
    */
   static boolean porSyncDetection;
 
+
   
   static boolean init (Config config) {
     currentThread = null;
@@ -395,6 +392,8 @@ public class ThreadInfo
     // to lookup the ThreadInfo. This is a bit premature since the thread is not runnable yet,
     // but chances are it will be started soon, so we don't waste another data structure to do the mapping
     id = vm.registerThread(this);
+    
+    ei.setIntField("id", id);
   }
 
   
@@ -2439,7 +2438,8 @@ public class ThreadInfo
 
       setState(State.TERMINATED);
       
-      vm.unregisterThread(this);
+      // we don't unregister this thread yet, this happens when the corresponding
+      // thread object is collected
 
       ss.clearAtomic();
       cleanupThreadObject(ei);
@@ -2491,8 +2491,6 @@ public class ThreadInfo
     ei.setReferenceField("threadLocals", MJIEnv.NULL);
     ei.setReferenceField("inheritableThreadLocals", MJIEnv.NULL);
     ei.setReferenceField("uncaughtExceptionHandler", MJIEnv.NULL);
-    
-    ei.setIntField("id", -1); // means its terminated
   }
 
   
