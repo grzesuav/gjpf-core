@@ -142,6 +142,15 @@
   <target name="build" depends="-cond-clean,compile"
         description="generate the core JPF jar files" >
 
+    <exec executable="hg" outputproperty="version" failifexecutionfails="false">
+      <arg value="tip"/>
+      <arg value="--template"/>
+      <arg value="{rev}:{tags} {date|isodate} {author}\n"/>
+    </exec>
+
+    <!-- .version is ignored by mercurial -->
+    <echo message="${version}" file=".version"/>
+
     <jar jarfile="build/jpf-classes.jar">
       <fileset dir="build/classes"/>
       <fileset dir="build/annotations"/>

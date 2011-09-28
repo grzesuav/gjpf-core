@@ -102,11 +102,6 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   public Memento<ElementInfo> getMemento(){
     return new SEIMemento(this);
   }
-
-  public int getIndex(){
-    // for StaticElementInfos, 'objRef' is the misnomer, so we keep getIndex() here
-    return objRef; 
-  }
   
   @Override
   protected int getNumberOfFieldsOrElements(){

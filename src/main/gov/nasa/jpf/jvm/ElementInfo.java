@@ -106,6 +106,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   protected FixedBitSet refTid;
 
   // this is the reference value for the object represented by this ElementInfo
+  // (note this is a slight misnomer for StaticElementInfos, which don't really
+  // represent objects but collections of static fields belonging to the same class)
   protected int objRef;
 
   // these are our state-stored object attributes
