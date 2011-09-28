@@ -73,7 +73,7 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   }
 
   protected void markAreaChanged(){
-    JVM.getVM().getHeap().markChanged(index);
+    JVM.getVM().getHeap().markChanged(objRef);
   }
 
   public void setIntField(FieldInfo fi, int value) {
@@ -113,7 +113,7 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   }
 
   protected Ref getRef () {
-    return new ObjRef(getIndex());
+    return new ObjRef(getObjectRef());
   }
 
   public ElementInfo getEnclosingElementInfo(){

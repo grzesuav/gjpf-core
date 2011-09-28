@@ -369,7 +369,7 @@ public class HeapTracker extends PropertyListenerAdapter {
 
   public void objectCreated(JVM jvm) {
     ElementInfo ei = jvm.getLastElementInfo();
-    int idx = ei.getIndex();
+    int idx = ei.getObjectRef();
     ThreadInfo ti = jvm.getLastThreadInfo();
     int line = ti.getLine();
     MethodInfo mi = ti.getMethod();
@@ -435,7 +435,7 @@ public class HeapTracker extends PropertyListenerAdapter {
   protected void printElementInfo(ElementInfo ei) {
     boolean first = false;
 
-    System.out.print( ei.getIndex());
+    System.out.print( ei.getObjectRef());
     System.out.print( ": ");
     System.out.print( ei.getClassInfo().getName());
     System.out.print( "  [");
@@ -450,7 +450,7 @@ public class HeapTracker extends PropertyListenerAdapter {
     }
     System.out.print( "] ");
 
-    SourceRef sr = loc.get(ei.getIndex());
+    SourceRef sr = loc.get(ei.getObjectRef());
     if (sr != null) {
       System.out.println(sr);
     } else {

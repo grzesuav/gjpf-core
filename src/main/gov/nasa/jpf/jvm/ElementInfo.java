@@ -103,9 +103,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // a problem for most SUTs
   // The alternative would be to directly store ThreadInfo references, but this
   // would have an impact on state matching efficiency and memory consumption
-  protected FixedBitSet     refTid;
+  protected FixedBitSet refTid;
 
-  protected int             index;
+  // this is the reference value for the object represented by this ElementInfo
+  protected int objRef;
 
   // these are our state-stored object attributes
   // WATCH OUT! only include info that otherwise reflects a state change, so
@@ -115,7 +116,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // info in the future.
   // We distinguish between propagates and private object attributes, the first
   // one stored in the lower 2 bytes
-  protected int             attributes;
+  protected int attributes;
 
 
   //--- the following fields are transient or search global, i.e. their values
@@ -152,7 +153,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
       ei.markUnchanged(); // we don't want any of the change flags
 
-      this.ref = ei.index;
+      this.ref = ei.objRef;
       this.ci = ei.ci;
       this.attributes = (ei.attributes & ATTR_STORE_MASK);
       this.fields = ei.fields;
@@ -163,7 +164,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
 
     public ElementInfo restore (ElementInfo ei){
-      ei.index = ref;
+      ei.objRef = ref;
       ei.ci = ci;
       ei.attributes = attributes;
       ei.fields = fields;
@@ -249,7 +250,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public String toString() {
-    return ((ci != null ? ci.getName() : "ElementInfo") + '@' + Integer.toHexString(index));
+    return ((ci != null ? ci.getName() : "ElementInfo") + '@' + Integer.toHexString(objRef));
   }
 
   public FieldLockInfo getFieldLockInfo (FieldInfo fi) {
@@ -463,7 +464,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       return false;
     }
 
-    setIndex(-1);
+    setObjectRef(-1);
 
     return true;
   }
@@ -484,7 +485,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   protected void resurrect (Area<?> area, int index) {
-    setIndex(index);
+    setObjectRef(index);
   }
 
   
@@ -1239,7 +1240,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   /**
    * this is the backend for System.arraycopy implementations, but since it only
    * throws general exceptions it can also be used in other contexts that require
-   * type and index checking
+   * type and objRef checking
    *
    * note that we have to do some additional type checking here because we store
    * reference arrays as int[], i.e. for reference arrays we can't rely on
@@ -1389,16 +1390,18 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return fields.getReferenceValue(idx);
   }
 
-  public void setIndex(int newIndex) {
-    index = newIndex;
+  public void setObjectRef(int newObjRef) {
+    objRef = newObjRef;
   }
 
-  public int getIndex() {
-    return index;
+  public int getObjectRef() {
+    return objRef;
   }
 
-  public int getThisReference() {
-    return index;
+  /** use getObjectRef() - this is not an index */
+  @Deprecated
+  public int getIndex(){
+    return objRef;
   }
 
   public int getLockCount() {
@@ -1504,7 +1507,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
     
   public boolean isNull() {
-    return (index == -1);
+    return (objRef == -1);
   }
 
   public ElementInfo getDeclaredObjectField(String fname, String referenceType) {
@@ -1595,7 +1598,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
       // note that we add only once, i.e. rely on the monitor lockCount to
       // determine when to remove an object from our lock set
-      //assert area.ks.tl.get(ti.index) == ti;  // covered by verifyLockInfo
+      //assert area.ks.tl.get(ti.objRef) == ti;  // covered by verifyLockInfo
       ti.updateLockedObject(this);
     }
 
@@ -1603,12 +1606,12 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       ThreadInfo[] lockedThreads = monitor.getLockedThreads();
       for (i=0; i<lockedThreads.length; i++) {
         ti = lockedThreads[i];
-        //assert area.ks.tl.get(ti.index) == ti;  // covered by verifyLockInfo
+        //assert area.ks.tl.get(ti.objRef) == ti;  // covered by verifyLockInfo
         
         // note that the thread might still be runnable if we have several threads
         // competing for the same lock
         if (!ti.isRunnable()){
-          ti.setLockRef(index);
+          ti.setLockRef(objRef);
         }
       }
     }
@@ -1675,7 +1678,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    */
   public void registerLockContender (ThreadInfo ti) {
 
-    assert ti.lockRef == -1 || ti.lockRef == index :
+    assert ti.lockRef == -1 || ti.lockRef == objRef :
       "thread " + ti + " trying to register for : " + this +
       " ,but already blocked on: " + ti.getElementInfo(ti.lockRef);
 
@@ -1685,7 +1688,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     setMonitorWithLocked(ti);
 
     // added to satisfy invariant implied by updateLockingInfo() -peterd
-    //ti.setLockRef(index);
+    //ti.setLockRef(objRef);
   }
 
   /**
@@ -1706,7 +1709,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     for (int i=0; i<lockedThreads.length; i++) {
       ThreadInfo ti = lockedThreads[i];
       if (ti.isRunnable()) {
-        ti.setBlockedState(index);
+        ti.setBlockedState(objRef);
       }
     }
   }
@@ -1721,7 +1724,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
     setMonitorWithLocked(ti);
     
-    ti.setBlockedState(index);    
+    ti.setBlockedState(objRef);    
   }
 
   /**
@@ -1910,7 +1913,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
 
     setMonitorWithLocked(ti);
-    ti.setLockRef(index);
+    ti.setLockRef(objRef);
     
     if (timeout == 0) {
       ti.setState(ThreadInfo.State.WAITING);
@@ -2068,7 +2071,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public void restore(int index, int attributes, Fields fields, Monitor monitor){
     markUnchanged();
     
-    this.index = index;
+    this.objRef = index;
     this.attributes = attributes;
     this.fields = fields;
     this.monitor = monitor;
@@ -2168,8 +2171,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * lockingThread, lockCount, or blocked/waiter threads, since we have to make
    * sure we don't modify an already pool-stored Monitor object
    *
-   * this is not very nice, but for the sake of consistency (ThreadData index,
-   * Fields index etc.) we keep it. The plethora of setMonitorXX methods is due to
+   * this is not very nice, but for the sake of consistency (ThreadData objRef,
+   * Fields objRef etc.) we keep it. The plethora of setMonitorXX methods is due to
    * some optimization, since we don't want to first pushClinit, then clone,
    * and finally replace waiter/blocked arrays. Stupid thing is that is a Monitor
    * optimization which is just here because of the associated mIndex == -1 check
@@ -2228,7 +2231,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       checkAssertion( refTid.cardinality() > 1, "locked threads without multiple referencing threads");
 
       for (ThreadInfo lti : monitor.getBlockedOrWaitingThreads()){
-        checkAssertion( lti.lockRef == index, "blocked or waiting thread has invalid lockRef: " + lti);
+        checkAssertion( lti.lockRef == objRef, "blocked or waiting thread has invalid lockRef: " + lti);
       }
 
       // we can't check for having lock contenders without being shared, since this can happen

@@ -47,7 +47,7 @@ public class LockedStackDepth extends ListenerAdapter
       Integer result;
       int lockIndex;
       
-      lockIndex = lock.getIndex();
+      lockIndex = lock.getObjectRef();
       result    = m_state.get(makeKey(lock));
       
       if (s_logger.isLoggable(Level.INFO))
@@ -310,7 +310,7 @@ public class LockedStackDepth extends ListenerAdapter
    
    private static int makeKey(ElementInfo lock)
    {
-      return(lock.getIndex());
+      return(lock.getObjectRef());
    }
    
    private static int makeKey(ThreadInfo thread)

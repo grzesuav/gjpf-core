@@ -94,10 +94,10 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
       for (int i=0; i<len; i++){
         Memento<ElementInfo> m = a[i];
         // ElementInfo mementos are Softreferences, so we don't need to get the
-        // restore-index upfront in order to retrieve the right inSitu object
+        // restore-objRef upfront in order to retrieve the right inSitu object
         ElementInfo ei = m.restore(null);
 
-        index = ei.getIndex();
+        index = ei.getObjectRef();
 
         area.removeRange(lastIndex+1, index);
         lastIndex = index;
@@ -222,7 +222,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     }
 
     /**
-     * this returns the index of the last element returned by next()
+     * this returns the objRef of the last element returned by next()
      */
     public int getLastRef() {
       return ref;
@@ -281,7 +281,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
 
   /**
    * reset any information that has to be re-computed in a backtrack
-   * (index.e. hasn't been stored explicitly)
+   * (objRef.e. hasn't been stored explicitly)
    */
   public void resetVolatiles () {
     // nothing yet
@@ -396,7 +396,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
   // somtimes it seems to be bigger
   // UPDATE: fixed? -pcd
   protected void add (int index, EI e) {
-    e.setIndex(index);
+    e.setObjectRef(index);
 
     assert (elements.get(index) == null) :
       "trying to overwrite non-null object: " + elements.get(index) + " with: " + e;
@@ -408,7 +408,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
 
   // for Restorer use only (EI is already properly initialized)
   protected void set (int index, EI e) {
-    e.setIndex(index);
+    e.setObjectRef(index);
     elements.set(index,e);
   }
 

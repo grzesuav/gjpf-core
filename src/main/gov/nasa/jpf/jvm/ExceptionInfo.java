@@ -37,7 +37,7 @@ public class ExceptionInfo {
   }
   
   public int getExceptionReference () {
-    return ei.getIndex();
+    return ei.getObjectRef();
   }
   
   public String getExceptionClassname() {
@@ -87,6 +87,6 @@ public class ExceptionInfo {
   }
   
   public void printOn (PrintWriter pw){
-    ti.printStackTrace(pw, ei.getIndex());
+    ti.printStackTrace(pw, ei.getObjectRef());
   }
 }

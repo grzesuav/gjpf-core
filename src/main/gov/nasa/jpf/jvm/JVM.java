@@ -409,7 +409,7 @@ public class JVM {
     ciThread.addReleaseAction( new ReleaseAction(){
       public void release(ElementInfo ei) {
         ThreadList tl = getThreadList();
-        int objRef = ei.getIndex();
+        int objRef = ei.getObjectRef();
         final ThreadInfo ti = tl.getThreadInfoForObjRef(objRef);
         if (tl.remove(ti)){
           addPostGcAction( new Runnable(){

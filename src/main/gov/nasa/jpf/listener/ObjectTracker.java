@@ -213,7 +213,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
     
     if (isTrackedClass(ci.getName())){
       ThreadInfo ti = vm.getLastThreadInfo();
-      trackedObjects.put(ei.getIndex(), new Record(ei, ti));
+      trackedObjects.put(ei.getObjectRef(), new Record(ei, ti));
     
       if (logLife){
         log(ti, "created %1$s", ei);
@@ -223,7 +223,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
   
   public void objectReleased (JVM vm) {
     ElementInfo ei = vm.getLastElementInfo();
-    int ref = ei.getIndex();
+    int ref = ei.getObjectRef();
     
     if (isTrackedObject(ref)){
       trackedObjects.remove(ref);

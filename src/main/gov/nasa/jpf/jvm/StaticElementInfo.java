@@ -103,6 +103,11 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     return new SEIMemento(this);
   }
 
+  public int getIndex(){
+    // for StaticElementInfos, 'objRef' is the misnomer, so we keep getIndex() here
+    return objRef; 
+  }
+  
   @Override
   protected int getNumberOfFieldsOrElements(){
     // static fields can't be arrays, those are always heap objects
@@ -118,7 +123,7 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   public void markUnchanged() {
     attributes &= ~ATTR_ANY_CHANGED;
   }
-
+  
   @Override
   public void hash(HashData hd) {
     super.hash(hd);
@@ -146,7 +151,7 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   }
 
   protected void markAreaChanged(){
-    JVM.getVM().getStaticArea().markChanged(index);
+    JVM.getVM().getStaticArea().markChanged(objRef);
   }
 
   public boolean isShared() {
@@ -230,7 +235,7 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   }
       
   protected Ref getRef () {
-    return new ClassRef(getIndex());
+    return new ClassRef(getObjectRef());
   }
 
   public int getClassObjectRef () {
@@ -243,7 +248,7 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   }
 
   public String toString() {
-    return getClassInfo().getName(); // don't append index (useless and misleading for statics)
+    return getClassInfo().getName(); // don't append objRef (useless and misleading for statics)
   }
 
   protected ElementInfo getReferencedElementInfo (FieldInfo fi){

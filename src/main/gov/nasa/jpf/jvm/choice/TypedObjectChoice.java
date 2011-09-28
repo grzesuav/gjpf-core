@@ -66,7 +66,7 @@ public class TypedObjectChoice extends ReferenceChoiceGenerator {
     values = new int[list.size()];
     int i = 0;
     for ( ElementInfo ei : list) {
-      values[i++] = ei.getIndex();
+      values[i++] = ei.getObjectRef();
     }
     
     count = -1;

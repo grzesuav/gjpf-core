@@ -939,7 +939,7 @@ public class ThreadInfo
 
     InvokeInstruction call = (InvokeInstruction) pc;
 
-    return getCalleeThis(Types.getArgumentsSize(call.getInvokedMethodSignature()) + 1) == r.getIndex();
+    return getCalleeThis(Types.getArgumentsSize(call.getInvokedMethodSignature()) + 1) == r.getObjectRef();
   }
 
   public char getCharLocal (String lname) {
@@ -1160,7 +1160,7 @@ public class ThreadInfo
       int[] a = new int[lockedObjects.size()];
       int i = 0;
       for (ElementInfo e : lockedObjects) {
-        a[i++] = e.getIndex();
+        a[i++] = e.getObjectRef();
       }
       return a;
 
@@ -1703,7 +1703,7 @@ public class ThreadInfo
     }
 
     return getMethod().isStatic()
-      ? false : r.getIndex() == getLocalVariable(0);
+      ? false : r.getObjectRef() == getLocalVariable(0);
   }
 
   public boolean atMethod (String mname) {
@@ -2485,7 +2485,7 @@ public class ThreadInfo
     // ThreadGroup object, which might create lots of states. So we just nullify
     // the Thread fields and remove it from the ThreadGroup from here
     int grpRef = ei.getReferenceField("group");
-    cleanupThreadGroup(grpRef, ei.getIndex());
+    cleanupThreadGroup(grpRef, ei.getObjectRef());
 
     ei.setReferenceField("group", MJIEnv.NULL);
     ei.setReferenceField("threadLocals", MJIEnv.NULL);
@@ -3082,7 +3082,7 @@ public class ThreadInfo
       MethodInfo miHandler = ciGrp.getMethod("uncaughtException(Ljava/lang/Thread;Ljava/lang/Throwable;)V", true);
       ClassInfo ciHandler = miHandler.getClassInfo();
       if (!ciHandler.getName().equals("java.lang.ThreadGroup")) {
-        return eiGrp.getIndex();
+        return eiGrp.getObjectRef();
       }
 
       grpRef = eiGrp.getReferenceField("parent");
@@ -3436,7 +3436,7 @@ public class ThreadInfo
       // can't be blocked on a lock we own (but could be in waiting before giving it up)
       if (!isWaiting() && lockedObjects != null && !lockedObjects.isEmpty()){
         for (ElementInfo lei : lockedObjects){
-            checkAssertion( lei.getIndex() != lockRef, "non-waiting thread blocked on owned lock: " + lei);
+            checkAssertion( lei.getObjectRef() != lockRef, "non-waiting thread blocked on owned lock: " + lei);
         }
       }
       

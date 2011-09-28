@@ -70,7 +70,7 @@ public class ReferenceLocator extends ListenerAdapter {
   
   public void objectCreated (JVM vm){
     ElementInfo ei = vm.getLastElementInfo();
-    int ref = ei.getIndex();
+    int ref = ei.getObjectRef();
     
     if (createRefs != null && Arrays.binarySearch(createRefs, ref) >= 0){
       ThreadInfo ti = vm.getLastThreadInfo();      
@@ -80,7 +80,7 @@ public class ReferenceLocator extends ListenerAdapter {
   
   public void objectReleased (JVM vm){
     ElementInfo ei = vm.getLastElementInfo();
-    int ref = ei.getIndex();
+    int ref = ei.getObjectRef();
     
     if (releaseRefs != null && Arrays.binarySearch(releaseRefs, ref) >= 0){
       pw.println("[ReferenceLocator] object " + ei + " released");

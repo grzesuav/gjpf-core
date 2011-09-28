@@ -396,7 +396,7 @@ public class JPF_java_lang_reflect_Method {
        
       case Types.T_ARRAY:
       case Types.T_REFERENCE:
-        return value.getIndex();
+        return value.getObjectRef();
 
       case Types.T_VOID:
       default:

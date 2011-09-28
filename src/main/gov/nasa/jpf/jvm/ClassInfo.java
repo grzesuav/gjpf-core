@@ -77,7 +77,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   // not registered or clinit'ed (but cached in loadedClasses)
   public static final int UNINITIALIZED = -1;
   // 'REGISTERED' simply means 'sei' is set (we have a StaticElementInfo)
-  // 'INITIALIZING' is any number >=0, which is the thread index that executes the clinit
+  // 'INITIALIZING' is any number >=0, which is the thread objRef that executes the clinit
   public static final int INITIALIZED = -2;
 
 
@@ -2204,10 +2204,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     ei.setReferenceField("name", clsNameRef);
 
     // link the class object to the StaticElementInfo
-    ei.setIntField("cref", sei.getIndex());
+    ei.setIntField("cref", sei.getObjectRef());
 
     // link the StaticElementInfo to the class object
-    sei.setClassObjectRef(ei.getIndex());
+    sei.setClassObjectRef(ei.getObjectRef());
 
     return ei;
   }

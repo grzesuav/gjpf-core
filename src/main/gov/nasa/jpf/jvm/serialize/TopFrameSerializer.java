@@ -54,7 +54,7 @@ public class TopFrameSerializer extends CFSerializer {
     // locking state
     processReference(ti.getLockRef());
     for (ElementInfo ei: ti.getLockedObjects()){
-      processReference(ei.getIndex());
+      processReference(ei.getObjectRef());
     }
 
     serializeFrame(ti.getTopFrame());

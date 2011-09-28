@@ -59,7 +59,7 @@ public class AdaptiveSerializer extends CFSerializer {
     // locking state
     processReference(ti.getLockRef());
     for (ElementInfo ei: ti.getLockedObjects()){
-      processReference(ei.getIndex());
+      processReference(ei.getObjectRef());
     }
 
     // serialize all frames (in most cases the top frame would do, but

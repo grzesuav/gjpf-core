@@ -578,7 +578,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
       DynamicElementInfo ei = elements.get(i);
             
       if (ei != null) {
-        assert ei.getIndex() == i : "inconsistent reference value of " + ei + " : " + i;
+        assert ei.getObjectRef() == i : "inconsistent reference value of " + ei + " : " + i;
         if (ei.hasChanged()){
           assert hasChanged.get(i) : "inconsistent change status of " + ei;
         }

@@ -225,7 +225,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     if (index < 0){
       throw new JPFException("per-thread heap limit exceeded");
     }
-    ei.setIndex(index);
+    ei.setObjectRef(index);
     set(index, ei);
     
     attributes |= ATTR_ELEMENTS_CHANGED;
@@ -243,13 +243,13 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     Monitor m = new Monitor();
     ElementInfo ei = createElementInfo(ci, f, m, ti);
 
-    // get next free index into thread cluster
+    // get next free objRef into thread cluster
     int tid = (ti != null) ? ti.getId() : 0;
     int index = firstNullIndex(tid << S1, MAX_CLUSTER_ENTRIES);
     if (index < 0){
       throw new JPFException("per-thread heap limit exceeded");
     }
-    ei.setIndex(index);
+    ei.setObjectRef(index);
     set(index, ei);
 
     attributes |= ATTR_ELEMENTS_CHANGED;
@@ -452,7 +452,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
         
         // <2do> still have to process finalizers here, which might make the object live again
         vm.notifyObjectReleased(ei);
-        set(ei.getIndex(), null);   // <2do> - do we need a separate remove?
+        set(ei.getObjectRef(), null);   // <2do> - do we need a separate remove?
       }
     }
 

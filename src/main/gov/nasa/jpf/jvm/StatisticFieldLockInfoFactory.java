@@ -93,12 +93,12 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
         ElementInfo eiLockCandidate = strongProtectionCandidate(ei,fi,currentLocks);
         if (eiLockCandidate != null) {
           // NOTE we raise the checklevel
-          return new SingleLockFli( ti, eiLockCandidate.getIndex(), CHECK_THRESHOLD);
+          return new SingleLockFli( ti, eiLockCandidate.getObjectRef(), CHECK_THRESHOLD);
         }
       }
       
       if (n == 1) { // most common case
-        return new SingleLockFli( ti, currentLocks.get(0).getIndex(), 0);
+        return new SingleLockFli( ti, currentLocks.get(0).getObjectRef(), 0);
       
       } else {
         return new MultiLockFli( ti, fi, currentLocks);
@@ -125,7 +125,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
 
       for (int i=0; i<n; i++) {
         ElementInfo e = currentLocks.get(i); // the locked object
-        if (e.getIndex() == cref) {
+        if (e.getObjectRef() == cref) {
           log.info("sync-detection: " + ei + " assumed to be synced on class object: " + e);
           return e;
         }
@@ -134,7 +134,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
     } else { // instance field, use lock distance as a heuristic
       for (int i=0; i<n; i++) {
         ElementInfo e = currentLocks.get(i); // the locked object
-        int eidx = e.getIndex();
+        int eidx = e.getObjectRef();
 
         // case 1: synchronization on field owner itself
         if (ei == e) {
@@ -143,7 +143,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
         }
 
         // case 2: synchronization on owner of object holding field (sync wrapper)
-        if (e.hasRefField(ei.getIndex())) {
+        if (e.hasRefField(ei.getObjectRef())) {
           log.info("sync-detection: " + ei + " assumed to be synced on object wrapper: " + e);
           return e;
         }
@@ -205,7 +205,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
       
       for (int i=0; i<n; i++) {
         ElementInfo lei = currentLocks.get(i);
-        if (lei.getIndex() == lockRef) {
+        if (lei.getObjectRef() == lockRef) {
           return this;
         }
       }
@@ -244,7 +244,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
       lockRefSet = new int[n];
       
       for (int i=0; i<n; i++) {
-        lockRefSet[i] = currentLocks.get(i).getIndex();
+        lockRefSet[i] = currentLocks.get(i).getObjectRef();
       }
     }
     
@@ -269,7 +269,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
 
         for (int i=0; i<nLocks; i++) { // get the set intersection
           ElementInfo lei = currentLocks.get(i);
-          int leidx = lei.getIndex();
+          int leidx = lei.getObjectRef();
 
           for (int j=0; j<lockRefSet.length; j++) {
             if (lockRefSet[j] == leidx) {

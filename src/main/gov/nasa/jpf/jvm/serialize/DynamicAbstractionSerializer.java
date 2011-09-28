@@ -353,7 +353,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
     // locking state
     processReference(ti.getLockRef());
     for (ElementInfo ei : ti.getLockedObjects()) {
-      processReference(ei.getIndex());
+      processReference(ei.getObjectRef());
     }
 
     for (StackFrame frame : ti) {
