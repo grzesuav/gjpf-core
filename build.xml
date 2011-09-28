@@ -143,13 +143,13 @@
         description="generate the core JPF jar files" >
 
     <exec executable="hg" outputproperty="version" failifexecutionfails="false">
-      <arg value="tip"/>
-      <arg value="--template"/>
-      <arg value="{rev}:{tags} {date|isodate} {author}\n"/>
+      <arg value="identify"/>
+      <arg value="-n"/> 
     </exec>
 
     <!-- .version is ignored by mercurial -->
-    <echo message="${version}" file=".version"/>
+    <echo message="${version}${line.separator}" file=".version"/>
+    <copy file=".version" todir="build/main/gov/nasa/jpf" failonerror="false"/>
 
     <jar jarfile="build/jpf-classes.jar">
       <fileset dir="build/classes"/>
@@ -310,7 +310,8 @@
       <arg value="showconfig"/>
       <arg value="paths.default"/>
     </exec>
-    <exec executable="hostname" osfamily="unix" failifexecutionfails="false" outputproperty="env.COMPUTERNAME"/>
+    
+    <exec executable="hostname" failifexecutionfails="false" outputproperty="env.COMPUTERNAME"/>
     <property name="hostname" value="${env.COMPUTERNAME}"/>  <!-- Windows doesn't have hostname -->
 
     <!-- it seems the 'propertyfile' task just appends -->

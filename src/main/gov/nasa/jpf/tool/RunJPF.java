@@ -46,6 +46,7 @@ public class RunJPF extends Run {
   public static final int LOG   = 4;
   public static final int BUILD_INFO = 8;
   public static final int ADD_PROJECT = 16;
+  public static final int VERSION = 32;
 
   static final String JPF_CLASSNAME = "gov.nasa.jpf.JPF";
 
@@ -74,6 +75,10 @@ public class RunJPF extends Run {
       }
 
       ClassLoader cl = conf.initClassLoader(RunJPF.class.getClassLoader());
+
+      if (isOptionEnabled(VERSION, options)) {
+        showVersion(cl);
+      }
 
       if (isOptionEnabled(BUILD_INFO, options)) {
         showBuild(cl);
@@ -131,6 +136,10 @@ public class RunJPF extends Run {
         } else if ("-addproject".equals(a)){
           args[i] = null;
           mask |= ADD_PROJECT;
+
+        } else if ("-version".equals(a)){
+          args[i] = null;
+          mask |= VERSION;
         }
       }
     }
@@ -145,7 +154,8 @@ public class RunJPF extends Run {
   public static void showUsage() {
     System.out.println("Usage: \"java [<vm-option>..] -jar ...RunJPF.jar [<jpf-option>..] [<app> [<app-arg>..]]");
     System.out.println("  <jpf-option> : -help : print usage information and exit");
-    System.out.println("               | -buildinfo : print build information and exit");
+    System.out.println("               | -version : print JPF version information");    
+    System.out.println("               | -buildinfo : print build and runtime information");
     System.out.println("               | -addproject [init] [<pathname>] : add project to site properties and exit");    
     System.out.println("               | -log : print configuration initialization steps");
     System.out.println("               | -show : print configuration dictionary contents");
@@ -188,10 +198,32 @@ public class RunJPF extends Run {
     }
   }
 
+  public static void showVersion (ClassLoader cl){
+    try {
+      InputStream is = cl.getResourceAsStream("gov/nasa/jpf/.version");
+      if (is != null){
+        System.out.print("JPF version: ");
+        
+        int len = is.available();
+        byte[] data = new byte[len];
+        is.read(data);
+        is.close();
+        String version = new String(data);
+        System.out.println(version);
+        
+      } else {
+        System.out.println("no JPF version information available");
+      }
+      
+
+    } catch (Throwable t){
+      System.err.println("error reading version information: " + t.getMessage());
+    }    
+  }
+  
   // print out the build.properties settings
   public static void showBuild(ClassLoader cl) {
     try {
-
       InputStream is = cl.getResourceAsStream("gov/nasa/jpf/build.properties");
       if (is != null){
         System.out.println("JPF build information:");

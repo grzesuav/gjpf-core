@@ -31,6 +31,7 @@ import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.RunRegistry;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -41,8 +42,7 @@ import java.util.logging.Logger;
  */
 public class JPF implements Runnable {
   
-  /** JPF version, we read this in later from default.properties */
-  public static String VERSION    = "6.0";
+  public static String VERSION = "6.0"; // the major version number
 
   static Logger logger     = null; // initially
 
@@ -269,6 +269,7 @@ public class JPF implements Runnable {
     }
   }  
 
+  
   public Status getStatus() {
     return status;
   }

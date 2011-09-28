@@ -307,21 +307,53 @@ public class Reporter extends SearchListenerAdapter {
   }
 
   public String getJPFBanner () {
-    String s = "JavaPathfinder v" + JPF.VERSION + " - (C) RIACS/NASA Ames Research Center";
-
+    StringBuilder sb = new StringBuilder();
+    
+    sb.append("JavaPathfinder v");
+    sb.append(JPF.VERSION);
+    
+    String rev = getRevision();
+    if (rev != null){
+      sb.append(" (rev ");
+      sb.append(rev);
+      sb.append(')');
+    }
+    
+    sb.append(" - (C) RIACS/NASA Ames Research Center");
+    
     if (conf.getBoolean("report.show_repository", false)) {
       String repInfo =  getRepositoryInfo();
       if (repInfo != null) {
-        s += repInfo;
+        sb.append( repInfo);
       }
     }
     
-    return s;
+    return sb.toString();
   }
 
-  String getRepositoryInfo() {
+
+  protected String getRevision() {
     try {
-      InputStream is = JPF.class.getClassLoader().getResourceAsStream("build.properties");
+      InputStream is = JPF.class.getResourceAsStream(".version");
+      if (is != null){
+        int len = is.available();
+        byte[] data = new byte[len];
+        is.read(data);
+        is.close();
+        return new String(data).trim();
+        
+      } else {
+        return null;
+      }
+      
+    } catch (Throwable t){
+      return null;
+    }
+  }
+  
+  protected String getRepositoryInfo() {
+    try {
+      InputStream is = JPF.class.getResourceAsStream("build.properties");
       if (is != null){
         Properties revInfo = new Properties();
         revInfo.load(is);
