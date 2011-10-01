@@ -125,7 +125,7 @@ public class ESParser {
     s.wordChars('<','<');
     s.wordChars('>','>');
 
-    // those can be part of component names
+    // those can be part of Event IDs
     s.wordChars('_','_');
     s.wordChars('#', '#');
     s.wordChars('*','*');
@@ -133,6 +133,7 @@ public class ESParser {
     s.wordChars('$','$');
     s.wordChars(':',':');
     s.wordChars('~','~');
+    s.wordChars('!', '!');
 
     s.quoteChar('"');
 
