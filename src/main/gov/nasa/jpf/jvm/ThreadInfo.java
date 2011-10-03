@@ -3244,6 +3244,20 @@ public class ThreadInfo
     }
   }
 
+  public void yield() {
+    SystemState ss = vm.getSystemState();
+
+    if (!ss.isIgnored()){
+      ThreadList tl = vm.getThreadList();
+      ThreadInfo[] choices = tl.getRunnableThreads();
+      ThreadChoiceFromSet cg = new ThreadChoiceFromSet( "yield", choices, true);
+      
+      System.out.println("@@ " + cg);
+        
+      ss.setNextChoiceGenerator(cg); // this breaks the transition
+    }
+  }  
+  
   /**
    * this breaks the current transition with a CG that forces an end state (i.e.
    * has no choices)

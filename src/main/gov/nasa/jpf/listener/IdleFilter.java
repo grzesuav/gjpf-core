@@ -84,7 +84,7 @@ public class IdleFilter extends PropertyListenerAdapter {
     }
   }
 
-  static enum Action { JUMP, PRUNE, BREAK, WARN }
+  static enum Action { JUMP, PRUNE, BREAK, YIELD, WARN }
 
   DynamicObjectArray<ThreadStat> threadStats = new DynamicObjectArray<ThreadStat>(4,16);
 
@@ -108,6 +108,8 @@ public class IdleFilter extends PropertyListenerAdapter {
       action = Action.WARN;
     } else if ("break".equalsIgnoreCase(act)){
       action = Action.BREAK;
+    } else if ("yield".equalsIgnoreCase(act)){
+      action = Action.YIELD;
     } else if ("prune".equalsIgnoreCase(act)){
       action = Action.PRUNE;
     } else if ("jump".equalsIgnoreCase(act)){
@@ -117,7 +119,7 @@ public class IdleFilter extends PropertyListenerAdapter {
     }
 
   }
-
+  
   public void stateAdvanced(Search search) {
     ts.backJumps = 0;
     ts.isCleared = false;
@@ -159,6 +161,7 @@ public class IdleFilter extends PropertyListenerAdapter {
         ts.loopStartPc = loopPc;
         ts.loopEndPc = insn.getPosition();
         ts.backJumps = 0;
+        
       } else {
         if (!ts.isCleared) {
           if (ts.backJumps > maxBackJumps) {
@@ -197,6 +200,16 @@ public class IdleFilter extends PropertyListenerAdapter {
 
                 break;
 
+              case YIELD:
+                // give other threads a chance to run
+                brokeTransition = true;
+                ti.yield();
+
+                log.warning("yield on suspicious loop in thread: " + ti.getName() +
+                        "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
+
+                break;
+                
               case WARN:
                 log.warning("detected suspicious loop in thread: " + ti.getName() +
                         "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
@@ -223,5 +236,13 @@ public class IdleFilter extends PropertyListenerAdapter {
       }
     }
   }
+  
+  // thread ids are reused, so we have to clean up
+  public void threadTerminated (JVM jvm){
+    ThreadInfo ti = jvm.getLastThreadInfo();
+    int tid = ti.getId();
+    threadStats.set(tid, null);
+  }
+
 
 }
