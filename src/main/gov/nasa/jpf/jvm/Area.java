@@ -292,9 +292,13 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
   }
 
   public void cleanUpDanglingReferences (Heap heap) {
+    ThreadInfo ti = ThreadInfo.getCurrentThread();
+    int tid = ti.getId();
+    boolean isThreadTermination = ti.isTerminated();
+    
     for (ElementInfo e : this) {
       if (e != null) {
-        e.cleanUp(heap);
+        e.cleanUp(heap, isThreadTermination, tid);
       }
     }
   }

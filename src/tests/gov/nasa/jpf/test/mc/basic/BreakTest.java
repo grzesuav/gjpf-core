@@ -79,7 +79,8 @@ public class BreakTest extends TestJPF {
 
   @Test
   public void testSimpleIgnore () {
-    if (verifyNoPropertyViolation("+listener=.test.mc.basic.BreakTest$FieldIgnorer")) {
+    if (verifyNoPropertyViolation("+listener=.test.mc.basic.BreakTest$FieldIgnorer",
+                                  "+vm.max_transition_length=1000000")) { 
       int i = 42;
       data = i; // we ignore here
       fail("should never get here");
@@ -112,7 +113,8 @@ public class BreakTest extends TestJPF {
 
   @Test 
   public void testSimpleBreak () {
-    if (verifyNoPropertyViolation("+listener=.test.mc.basic.BreakTest$FieldBreaker")) {
+    if (verifyNoPropertyViolation("+listener=.test.mc.basic.BreakTest$FieldBreaker",
+                                  "+vm.max_transition_length=1000000")) { 
       int i = 42;
       data = i; // we break after that
       i = 0;

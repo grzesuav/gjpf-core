@@ -223,6 +223,8 @@ public class IdleFilter extends PropertyListenerAdapter {
     } else if (!ts.isCleared) {
       // if we call methods or set array elements inside the loop in question,
       // we assume this is not an idle loop and terminate the checks
+      // <2do> this is too restrictive - we should leave this to state matching
+      
       if ((insn instanceof InvokeInstruction)
           || (insn instanceof ArrayStoreInstruction)) {
         int stackDepth = ti.getStackDepth();

@@ -113,32 +113,28 @@ public class VerifyTest extends TestJPF {
    * transition and the stateBacktracked is not called.
    */
   @Test
-  public void backtrackNotificationAfterIgnore()
-  {
-     if (verifyNoPropertyViolation("+listener+=,gov.nasa.jpf.test.mc.basic.VerifyTest$CountBacktrack"))
-     {
-        if (Verify.getBoolean(false))
-           Verify.ignoreIf(true);
-     }
-     else
-     {
-        assertEquals(2, CountBacktrack.getBacktrackedCount());
-     }
+  public void backtrackNotificationAfterIgnore() {
+    if (verifyNoPropertyViolation("+listener+=,gov.nasa.jpf.test.mc.basic.VerifyTest$CountBacktrack",
+            "+vm.max_transition_length=MAX")) {
+      if (Verify.getBoolean(false)) {
+        Verify.ignoreIf(true);
+      }
+    } else {
+      assertEquals(2, CountBacktrack.getBacktrackedCount());
+    }
   }
   
-  public static class CountBacktrack extends ListenerAdapter
-  {
-     private static int m_backtrackedCount;
+  public static class CountBacktrack extends ListenerAdapter {
 
-     public void stateBacktracked(Search search)
-     {
-        m_backtrackedCount++;
-     }
-     
-     public static int getBacktrackedCount()
-     {
-        return(m_backtrackedCount);
-     }
+    private static int m_backtrackedCount;
+
+    public void stateBacktracked(Search search) {
+      m_backtrackedCount++;
+    }
+
+    public static int getBacktrackedCount() {
+      return (m_backtrackedCount);
+    }
   }
    
   // <2do>... and many more to come

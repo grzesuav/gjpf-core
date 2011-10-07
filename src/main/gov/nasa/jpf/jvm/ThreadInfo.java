@@ -321,7 +321,16 @@ public class ThreadInfo
    */
   static boolean porSyncDetection;
 
-
+  /**
+   * break the current transition after this number of instructions.
+   * This is a safeguard against paths that won't break because potentially
+   * shared fields are not yet accessed by a second thread (existence of such
+   * paths is the downside of our access tracking). Note that we only break on
+   * backjumps once this count gets exceeded, to give state matching a better
+   * chance and avoid interference with the IdleLoop listener
+   */
+  static int maxTransitionLength;
+  
   
   static boolean init (Config config) {
     currentThread = null;
@@ -335,6 +344,8 @@ public class ThreadInfo
     porInEffect = config.getBoolean("vm.por");
     porFieldBoundaries = porInEffect && config.getBoolean("vm.por.field_boundaries");
     porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
+    
+    maxTransitionLength = config.getInt("vm.max_transition_length", 5000);
     
     return true;
   }
@@ -2150,19 +2161,28 @@ public class ThreadInfo
       pc = throwStopException();
       setPC(pc);
     }
-
+    
     // this constitutes the main transition loop. It gobbles up
-    // insns until there either is none left anymore in this thread,
-    // or it didn't execute (which indicates the insn registered a CG for
-    // subsequent invocation)
+    // insns until someone registered a ChoiceGenerator, there are no insns left,
+    // the transition was explicitly marked as ignored, or we have reached a
+    // max insn count and preempt the thread upon the next available backjump
     while (pc != null) {
       nextPc = executeInstruction();
-
+      
       if (ss.breakTransition()) {
-        // shortcut break if there was no progress (a ChoiceGenerator was created)
-        // or if the state is explicitly set as ignored
         break;
+        
       } else {
+        if (executedInstructions >= maxTransitionLength){ // try to preempt the current thread
+          //if (vm.getStateId() > 0){
+            if (pc.isBackJump() && (pc != nextPc) && (top != null && !top.isNative())) {
+              if (yield()) {
+                break;
+              }
+            }
+          //}
+        }
+        
         pc = nextPc;
       }
     }
@@ -2456,24 +2476,6 @@ public class ThreadInfo
     }
   }
 
-  /**
-   * optionally to be called by ThreadList implementations that recycle thread ids
-   * 
-   * Note - this can be expensive since it has to walk over all live objects before
-   * we even know if they survive GC.
-   * 
-   * The alternative would be to move this to the GC, or to have an iteration
-   * outside of the GC with configured actions (of which the GC sweep would be one),
-   * but this would make the loop body less efficient and also couple otherwise
-   * unrelated functions. Assuming thread termination is rare compared to normal
-   * GC cycles, we just do our separate iteration here
-   */
-  public void cleanupReferencedObjects(){
-    int id = this.id;
-    for (ElementInfo ei : getHeap().liveObjects()){
-      ei.updateRefTidWithout(id);
-    }
-  }
 
   /**
    * this is called upon ThreadInfo.exit(), i.e. the Thread object can be still
@@ -3244,18 +3246,18 @@ public class ThreadInfo
     }
   }
 
-  public void yield() {
+  public boolean yield() {
     SystemState ss = vm.getSystemState();
 
     if (!ss.isIgnored()){
       ThreadList tl = vm.getThreadList();
       ThreadInfo[] choices = tl.getRunnableThreads();
       ThreadChoiceFromSet cg = new ThreadChoiceFromSet( "yield", choices, true);
-      
-      System.out.println("@@ " + cg);
         
-      ss.setNextChoiceGenerator(cg); // this breaks the transition
+      return ss.setNextChoiceGenerator(cg); // this breaks the transition
     }
+    
+    return false;
   }  
   
   /**

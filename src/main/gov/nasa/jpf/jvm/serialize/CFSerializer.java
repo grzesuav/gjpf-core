@@ -20,6 +20,8 @@
 package gov.nasa.jpf.jvm.serialize;
 
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
  * a FilteringSerializer that performs on-the-fly heap canonicalization to

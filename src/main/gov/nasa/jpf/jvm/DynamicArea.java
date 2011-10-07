@@ -207,6 +207,9 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     // all objects with 'lastGc' != 'curGc'
     int count = 0;
 
+    ThreadInfo ti = vm.getCurrentThread();
+    int tid = ti.getId();
+    boolean isThreadTermination = ti.isTerminated();
 
     for (int i=0; i<length; i++){
       ElementInfo ei = elements.get(i);
@@ -224,7 +227,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
         // for subsequent gc and serialization
         ei.setUnmarked();
         ei.setAlive(liveBitValue);
-        ei.cleanUp(this);
+        ei.cleanUp(this, isThreadTermination, tid);
       }
     }
 

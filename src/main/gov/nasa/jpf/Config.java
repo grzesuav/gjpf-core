@@ -154,6 +154,8 @@ public class Config extends Properties {
 
   static final String TRUE = "true";
   static final String FALSE = "false";
+  
+  static final String MAX = "MAX";
 
   static final String IGNORE_VALUE = "-";
 
@@ -1234,10 +1236,14 @@ public class Config extends Properties {
   public int getInt(String key, int defValue) {
     String v = getProperty(key);
     if (v != null) {
-      try {
-        return Integer.parseInt(v);
-      } catch (NumberFormatException nfx) {
-        throw new JPFConfigException("illegal int element in '" + key + "' = \"" + v + '"');
+      if (MAX.equals(v)){
+        return Integer.MAX_VALUE;
+      } else {
+        try {
+          return Integer.parseInt(v);
+        } catch (NumberFormatException nfx) {
+          throw new JPFConfigException("illegal int element in '" + key + "' = \"" + v + '"');
+        }
       }
     }
 
@@ -1251,10 +1257,14 @@ public class Config extends Properties {
   public long getLong(String key, long defValue) {
     String v = getProperty(key);
     if (v != null) {
-      try {
-        return Long.parseLong(v);
-      } catch (NumberFormatException nfx) {
-        throw new JPFConfigException("illegal long element in '" + key + "' = \"" + v + '"');
+      if (MAX.equals(v)){
+        return Long.MAX_VALUE;
+      } else {
+        try {
+          return Long.parseLong(v);
+        } catch (NumberFormatException nfx) {
+          throw new JPFConfigException("illegal long element in '" + key + "' = \"" + v + '"');
+        }
       }
     }
 

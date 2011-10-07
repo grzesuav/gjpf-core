@@ -275,11 +275,13 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   /**
+   * post transition live object cleanup
    * update all non-fields references used by this object. This is only called
-   * at the end of the gc, and recycled objects should be either null or
-   * not marked
+   * at the end of the gc, and recycled objects should be either null or not marked
+   * 
+   * if the current thread terminated, update the refTids accordingly
    */
-  void cleanUp (Heap heap) {
+  void cleanUp (Heap heap, boolean isThreadTermination, int tid) {
     if (fLockInfo != null) {
       for (int i=0; i<fLockInfo.length; i++) {
         FieldLockInfo fli = fLockInfo[i];
@@ -288,8 +290,15 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
         }
       }
     }
+    
+    if (isThreadTermination){
+      if (refTid.get(tid)) {
+        updateRefTidWithout(tid);
+      }
+    }
   }
-
+  
+  
   //--- sids are only supposed to be used by the Serializer
   public void setSid(int id){
     sid = id;
@@ -416,7 +425,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * that are still alive
    */
   public boolean isShared() {
-    //return ((attributes & ATTR_TSHARED) != 0);
     return refTid.cardinality() > 1;
   }
 
@@ -425,9 +433,9 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public boolean checkUpdatedSharedness (ThreadInfo ti) {
-    // only mutable, shared objects are relevant
-    //return ((attributes & (ATTR_TSHARED | ATTR_IMMUTABLE)) == ATTR_TSHARED);
 
+    // we use the tid here to ensure that we are independent of thread access order,
+    // but this means we rely on threads doing refTid cleanup upon termination
     int tid = ti.getId();
     updateRefTidWith(tid);
     

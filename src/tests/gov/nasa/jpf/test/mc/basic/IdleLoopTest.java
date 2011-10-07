@@ -29,7 +29,9 @@ public class IdleLoopTest extends TestJPF {
   static final String LISTENER = "+listener=.listener.IdleFilter";
 
   @Test public void testBreak () {
-    if (verifyNoPropertyViolation(LISTENER, "+idle.action=break", "+log.warning=gov.nasa.jpf.listener.IdleFilter")) {
+    if (verifyNoPropertyViolation(LISTENER, "+idle.action=break", 
+                                  "+log.warning=gov.nasa.jpf.listener.IdleFilter",
+                                  "+vm.max_transition_length=MAX")) {
       int y = 4;
       int x = 0;
 
@@ -45,7 +47,9 @@ public class IdleLoopTest extends TestJPF {
   }
 
   @Test public void testPrune () {
-    if (verifyNoPropertyViolation(LISTENER, "+idle.action=prune", "+log.warning=gov.nasa.jpf.listener.IdleFilter")) {
+    if (verifyNoPropertyViolation(LISTENER, "+idle.action=prune",
+                                  "+log.warning=gov.nasa.jpf.listener.IdleFilter",
+                                  "+vm.max_transition_length=MAX")) {
       int y = 4;
       int x = 0;
 
@@ -64,8 +68,10 @@ public class IdleLoopTest extends TestJPF {
   }
 
   @Test public void testJump () {
-    if (verifyNoPropertyViolation(LISTENER, "+idle.action=jump", "+idle.max_backjumps=100",
-            "+log.warning=gov.nasa.jpf.listener.IdleFilter")) {
+    if (verifyNoPropertyViolation(LISTENER, "+idle.action=jump",
+                                  "+idle.max_backjumps=100",
+                                  "+log.warning=gov.nasa.jpf.listener.IdleFilter",
+                                  "+vm.max_transition_length=MAX")) {
 
       for (int i=0; i<1000; i++){
         assert i < 500 : "JPF failed to jump past idle loop";

@@ -99,7 +99,9 @@ public class CGNotificationTest extends TestJPF {
       Sequencer.sequence = new ArrayList<String>();
     }
 
-    if (verifyNoPropertyViolation("+listener=.test.mc.basic.CGNotificationTest$Sequencer")){
+    // make sure max insn preemption does not interfere 
+    if (verifyNoPropertyViolation("+listener=.test.mc.basic.CGNotificationTest$Sequencer",
+                                  "+vm.max_transition_length=MAX")){
       boolean b = Verify.getBoolean(); // first CG
       int i = Verify.getInt(1,2); // this one gets a CG on top registered by the listener
 /*

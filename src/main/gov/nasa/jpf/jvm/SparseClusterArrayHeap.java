@@ -430,16 +430,21 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     // at this point, all roots should be in the markQueue, but not traced yet
 
     markQueue.process(this); // trace all entries - this gets recursive
-
+    
+    ThreadInfo ti = vm.getCurrentThread();
+    int tid = ti.getId();
+    boolean isThreadTermination = ti.isTerminated();
+    
     // now go over all objects, purge the ones that are not live and reset attrs for rest
     for (ElementInfo ei : this){
-      if (ei.isMarked()){ // live object
-        ei.setUnmarked(); // so that we are ready for the next cycle
+      
+      if (ei.isMarked()){ // live object, prepare for next transition & gc cycle
+        ei.setUnmarked();
         ei.setAlive(liveBitValue);
-        ei.cleanUp(this);
-
-      } else { // object is no longer reachable
         
+        ei.cleanUp(this, isThreadTermination, tid);
+        
+      } else { // object is no longer reachable  
         /**
         MethodInfo mi = ei.getClassInfo().getFinalizer();
         if (mi != null){
@@ -447,7 +452,6 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
         } else {
         }
         **/
-        
         ei.processReleaseActions();
         
         // <2do> still have to process finalizers here, which might make the object live again

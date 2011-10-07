@@ -410,15 +410,8 @@ public class JVM {
       public void release(ElementInfo ei) {
         ThreadList tl = getThreadList();
         int objRef = ei.getObjectRef();
-        final ThreadInfo ti = tl.getThreadInfoForObjRef(objRef);
-        if (tl.remove(ti)){
-          addPostGcAction( new Runnable(){
-            public void run(){
-              // since we are going to reuse thread ids, we have to clean up ElementInfos
-              ti.cleanupReferencedObjects();
-            }
-          });
-        
+        ThreadInfo ti = tl.getThreadInfoForObjRef(objRef);
+        if (tl.remove(ti)){        
           getKernelState().changed();    
         }
       }

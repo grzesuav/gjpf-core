@@ -121,7 +121,8 @@ public class DynamicAbstractionTest extends TestJPF {
     
     if (verifyNoPropertyViolation(SERIALIZER_ARG,
                                   "+das.classes.include=*$MyClass",
-                                  "+das.methods.exclude=*")){
+                                  "+das.methods.exclude=*",
+                                  "+vm.max_transition_length=MAX")){
       MyClass matchedObject = new MyClass();
       SomeIgnoredClass ignoredObject = new SomeIgnoredClass();
       

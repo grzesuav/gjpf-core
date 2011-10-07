@@ -79,7 +79,7 @@ public class NEW extends Instruction {
     ti.push(objRef, true);
 
     ss.checkGC(); // has to happen after we push the new object ref
-
+    
     return getNext(ti);
   }
 
@@ -101,7 +101,7 @@ public class NEW extends Instruction {
 
   public String toString() {
     if (newObjRef != -1){
-      return "new " + cname + '@' + newObjRef;
+      return "new " + cname + '@' + Integer.toHexString(newObjRef);
 
     } else {
       return "new " + cname;
