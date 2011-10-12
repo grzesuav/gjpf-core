@@ -268,11 +268,11 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
   }
 
   private int newString(String str, ThreadInfo ti, boolean isIntern) {
-    if (str != null) {
+    if (str != null) {      
       int length = str.length();
       int index = newObject(ClassInfo.stringClassInfo, ti);
       int vref = newArray("C", length, ti);
-
+      
       ElementInfo e = get(index);
       // <2do> pcm - this is BAD, we shouldn't depend on private impl of
       // external classes - replace with our own java.lang.String !

@@ -143,4 +143,13 @@ public class StringTest extends TestJPF {
     }
   }
 
+  @Test
+  public void testNullChar(){
+    if (verifyNoPropertyViolation()){
+      String s = "\u0000";
+      assertTrue( s.length() == 1);
+      char c = s.charAt(0);
+      assertTrue( Character.isISOControl(c));
+    }
+  }
 }

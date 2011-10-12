@@ -25,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.UTFDataFormatException;
 import java.io.UnsupportedEncodingException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -413,6 +414,7 @@ public class ClassFile {
     return (data[idx++] <<24) | ((data[idx++]&0xff) << 16) | ((data[idx++]&0xff) << 8) | (data[idx]&0xff);
   }
 
+  
   //--- reader notifications
   private void setClass(ClassFileReader reader, String clsName, String superClsName, int flags, int cpCount){
     int p = pos;
@@ -822,6 +824,43 @@ public class ClassFile {
 
   //--- constpool parsing
 
+  public static String readModifiedUTF8String( byte[] data, int pos, int len) throws ClassFileException {
+    
+    int n = 0; // the number of chars in buf
+    char[] buf = new char[len]; // it can't be more, but it can be less chars
+    
+    // \u0001 - \u007f             : single byte chars:  0xxxxxxx
+    // \u0000 and \u0080 - \u07ff  : double byte chars:  110xxxxx, 10xxxxxx
+    // \u0800 - \uffff             : tripple byte chars: 1110xxxx, 10xxxxxx, 10xxxxxx
+    
+    int max = pos+len;
+    for (int i=pos; i<max; i++){
+      int c = data[i] & 0xff;
+      if ((c & 0x80) == 0){ // single byte char  0xxxxxxx
+        buf[n++] = (char)c;
+        
+      } else {
+        if ((c & 0x40) != 0){      // 11xxxxxx
+          
+          // for the sake of efficiency, we don't check for the trailing zero bit in the marker,
+          // we just mask it out
+          if ((c & 0x20) == 0) {   // 110xxxxx - double byte char
+            buf[n++] = (char) (((c & 0x1f) << 6) | (data[++i] & 0x3f));
+            
+          } else {                 // 1110xxxx - tripple byte char
+            buf[n++] = (char) (((c & 0x0f) << 12) | ((data[++i] & 0x3f) << 6) | (data[++i] & 0x3f));
+          }
+          
+        } else {
+          throw new ClassFileException("malformed modified UTF-8 input: ");
+        }
+      }
+    }
+    
+    return new String(buf, 0, n);
+  }
+
+  
   // the protected methods are called automatically, the public parse..Attr() methods
   // are called optionally from the corresponding ClassFileReader.set..Attribute() method.
   // Note that these calls have to provide the ClassFileReader as an argument because
@@ -843,14 +882,10 @@ public class ClassFile {
 
         case CONSTANT_UTF8:  // utf8_info { u1 tag; u2 length; u1 bytes[length]; }
           dataIdx[i] = j++;
-
           int len = ((data[j++]&0xff) <<8) | (data[j++]&0xff);
-          try {
-            String s = new String( data, j, len, "UTF-8");
-            values[i] = s;
-          } catch (UnsupportedEncodingException uex){
-            throw new ClassFileException("UTF-8 not supported "); // oh, really?
-          }
+
+          String s = readModifiedUTF8String( data, j, len);
+          values[i] = s;
 
           j += len;
           break;
