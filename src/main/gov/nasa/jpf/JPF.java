@@ -80,6 +80,12 @@ public class JPF implements Runnable {
   
   /** this is the backbone of all JPF configuration */
   Config config;
+  
+  /** we need to keep the ref so that we can dereference . If we don't, and we
+   * reuse the Config object to re-create JPF objects, we keep all of them alive
+   * by means of the ConfigListener.this0
+   */
+  ConfigListener configListener;
 
   /** The search policy used to explore the state space */
   Search search;
@@ -260,7 +266,9 @@ public class JPF implements Runnable {
                                                 searchArgTypes, searchArgs);
 
       addListeners();
-      config.addChangeListener(new ConfigListener());
+      
+      configListener = new ConfigListener();
+      config.addChangeListener(configListener);
       
     } catch (JPFConfigException cx) {
       logger.severe(cx.toString());
@@ -597,6 +605,10 @@ public class JPF implements Runnable {
 
       } finally {
         status = Status.DONE;
+        
+        // avoid a subtle memory leak keeping JPF objects alive through inner
+        // ConfigListener objects
+        config.removeChangeListener(configListener);
       }
     }
   }
