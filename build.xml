@@ -378,6 +378,7 @@
       <batchtest todir="build/tests">
         <fileset dir="build/tests">
           <exclude name="**/JPF_*.class"/>
+          <exclude name="**/FileIOTest.class"/>
           <include name="**/*Test.class"/>
         </fileset>
       </batchtest>
