@@ -22,7 +22,6 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
@@ -33,10 +32,12 @@ import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 
 
 /**
- * a listener that creates a CG on LCMP instructions that involve 
- * System.currentTimeMillis() obtained values.
+ * a listener that is used to explore all paths from a time-value comparison.
  * 
- * This is used to explore both paths in patterns like
+ * This works by creating a CG on LCMP instructions that involve 
+ * System.currentTimeMillis() obtained values, which are attribute tagged
+ * upon return from the native method, propagated on LSUB (duration computation),
+ * and finally used for LCMP interception if the tag attributes are present
  * 
  *   long t1 = System.currentTimeMillis();
  *   doSomeComputation();
@@ -49,11 +50,11 @@ import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
  * 
  * which boils down to a bytecode pattern like
  * 
- *   invokestatic #2; // System.currentTimeMillis()
+ *   invokestatic #2; // System.currentTimeMillis()   <<< tag result with TimeVal attr
  *   ..
- *   lsub
+ *   lsub  <<< propagate if any of the operands has a TimeVal attr
  *   ..
- *   lcmp
+ *   lcmp <<< register CG and skip if any of the operands has TimeVal attr
  * 
  */
 public class StopWatchFuzzer extends ListenerAdapter {

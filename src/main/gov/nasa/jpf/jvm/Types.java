@@ -511,11 +511,11 @@ public class Types {
     return getTypeName(signature.substring(i+1));
   }
   
-  public static String getTypeSignature (String type, boolean dotNotation) {
+  public static String getTypeSignature (String type, boolean asDotNotation) {
     String  t = null;
     int arrayDim = 0;
     
-    type = dotNotation ? type.replace('/', '.') : type.replace('.', '/');
+    type = asDotNotation ? type.replace('/', '.') : type.replace('.', '/');
     
     if ((type.charAt(0) == '[') || (type.endsWith(";"))) {  // [[[L...;
       t = type;
@@ -547,14 +547,13 @@ public class Types {
         t = "V";
       } else if (type.endsWith(";")) {
         t = type;
+        
+      } else {
+        t = "L" + type + ';';
       }
       
       while (arrayDim-- > 0) {
         t = "[" + t;
-      }
-      
-      if (t == null) {
-        t = "L" + type + ';';
       }
     }
 
