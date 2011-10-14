@@ -491,7 +491,7 @@ public class StackFrame implements Cloneable {
     int i = top-offset;
     assert (i >= stackBase);
     if (attrs != null){
-      return (attrs[top] != null);
+      return (attrs[i] != null);
     }
     return false;
   }
@@ -499,7 +499,7 @@ public class StackFrame implements Cloneable {
     int i = top-offset;
     assert (i >= stackBase);
     if (attrs != null){
-      return ObjectList.containsType(attrs[top], type);
+      return ObjectList.containsType(attrs[i], type);
     }
     return false;
   }
