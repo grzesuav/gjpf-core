@@ -17,10 +17,11 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm;
+package gov.nasa.jpf.jvm.choice;
 
-import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
+import gov.nasa.jpf.jvm.IntChoiceGenerator;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**
