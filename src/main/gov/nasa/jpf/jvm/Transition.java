@@ -25,7 +25,7 @@ import java.util.Iterator;
  * i.e. all instructions executed in the context of a vm.forward() leading
  * into a new state
  */
-public class Transition implements Iterable<Step> { // <2do> cloneable
+public class Transition implements Iterable<Step>, Cloneable {
 
   ChoiceGenerator<?> cg;
   ThreadInfo ti;
@@ -43,6 +43,21 @@ public class Transition implements Iterable<Step> { // <2do> cloneable
     this.ti = ti;
   }
 
+  public Object clone() {
+    try {
+      Transition t = (Transition)super.clone();
+      
+      // the deep copy references
+      t.cg = (ChoiceGenerator<?>)cg.clone();
+      t.ti = (ThreadInfo)ti.clone();
+      
+      return t;
+      
+    } catch (CloneNotSupportedException cnsx){
+      return null; // cannot happen
+    } 
+  }
+  
   public String getLabel () {
     if (last != null) {
       return last.getLineString();

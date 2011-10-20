@@ -42,7 +42,13 @@ public class Path implements Printable, Iterable<Transition>, Cloneable {
   public Path clone() {
     Path clone = new Path();
     clone.application = application;
-    clone.stack = (LinkedList<Transition>)stack.clone();
+    
+    // we need to deep copy the stack to preserve CG and ThreadInfo state
+    LinkedList<Transition> clonedStack = new LinkedList<Transition>();
+    for (Transition t : stack){
+      clonedStack.add( (Transition)t.clone());
+    }
+    clone.stack = clonedStack;
     
     return clone;
   }

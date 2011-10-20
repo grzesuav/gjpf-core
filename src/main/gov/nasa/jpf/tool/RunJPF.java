@@ -167,7 +167,7 @@ public class RunJPF extends Run {
   public static void addProject(String[] args){
     boolean init = false;
     int i=0;
-    String pn = null;
+    String sitePathName = null;
     
     // check if the first non-null arg is 'init', which means this project
     // should be added to the 'extensions' list
@@ -177,18 +177,22 @@ public class RunJPF extends Run {
           init = true;
           continue;
         } else {
-          pn = args[i];
+          sitePathName = args[i];
         }
         break;
       }
     }
     
-    File siteProps = pn == null ? JPFSiteUtils.getStandardSiteProperties() : new File(pn);
+    File siteProps = sitePathName == null ? JPFSiteUtils.getStandardSiteProperties() : new File(sitePathName);
     
     File curDir = new File( System.getProperty("user.dir"));
     String pid = JPFSiteUtils.getCurrentProjectId();
     if (pid == null){
       error("current dir not a valid JPF project: " + curDir);
+    }
+    
+    if ("jpf-core".equals(pid)){ // jpf-core always needs to be in the extensions list
+      init = true;
     }
     
     if (JPFSiteUtils.addProject( siteProps, pid, curDir, init)){

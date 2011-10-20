@@ -26,17 +26,16 @@ import gov.nasa.jpf.util.ObjectList;
 import java.lang.reflect.Array;
 import java.util.Iterator;
 
-
 /**
-* abstract root class for configurable choice generators
-*/
+ * abstract root class for configurable choice generators
+ */
 public abstract class ChoiceGenerator<T> implements Cloneable {
 
   // the marker for the current choice used in String conversion
   public static final char MARKER = '>';
-
   protected static Random random = new Random(42);
-
+  
+  
   // want the id to be visible to subclasses outside package
   protected String id;
   
@@ -44,10 +43,10 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   // into a host VM String anymore (we just need it for creation to look up
   // the class if this is a named CG)
   protected int idRef;
-
+  
   // used to cut off further choice enumeration
   protected boolean isDone;
-
+  
   // we keep a linked list of CG's
   protected ChoiceGenerator<?> prev;
 
@@ -65,76 +64,91 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   protected boolean isCascaded;
 
   // in case this is initalized from a JVM context
-  public static void init (Config config) {
-	  
-	  random.setSeed(config.getLong("cg.seed", 42));
-	  
-	  SystemState.RANDOMIZATION randomization = config.getEnum("cg.randomize_choices",
-			  SystemState.RANDOMIZATION.values(), SystemState.RANDOMIZATION.def);
-	  
-	  // if the randomize_choices is set to random then we need to 
-	  // pick the seed based on the system time. 
-	  
-	  if (randomization == SystemState.RANDOMIZATION.random) {
-		  random.setSeed(System.currentTimeMillis());
-	  } 
+  public static void init(Config config) {
+
+    random.setSeed(config.getLong("cg.seed", 42));
+
+    SystemState.RANDOMIZATION randomization = config.getEnum("cg.randomize_choices",
+            SystemState.RANDOMIZATION.values(), SystemState.RANDOMIZATION.def);
+
+    // if the randomize_choices is set to random then we need to 
+    // pick the seed based on the system time. 
+
+    if (randomization == SystemState.RANDOMIZATION.random) {
+      random.setSeed(System.currentTimeMillis());
+    }
   }
 
   /**
    *  don't use this since it is not safe for cascaded ChoiceGenerators
    * (we need the 'id' to be as context specific as possible)
    */
-  @Deprecated protected ChoiceGenerator () {
+  @Deprecated
+  protected ChoiceGenerator() {
     id = "?";
   }
 
-  protected ChoiceGenerator (String id) {
+  protected ChoiceGenerator(String id) {
     this.id = id;
   }
 
   public abstract T getNextChoice();
+
   public abstract Class<T> getChoiceType();
 
   public Object clone() throws CloneNotSupportedException {
     return super.clone();
   }
 
-  public String getId () {
+  public ChoiceGenerator<?> deepClone() throws CloneNotSupportedException {
+    ChoiceGenerator<?> clone = (ChoiceGenerator<?>) super.clone();
+    // we need to deep copy the parent CG
+    if (prev != null){
+      clone.prev = prev.deepClone();
+    }
+    return clone;
+  }
+  
+  
+
+  public String getId() {
     return id;
   }
 
-  public int getIdRef () {
+  public int getIdRef() {
     return idRef;
   }
 
-  public void setIdRef (int idRef) {
+  public void setIdRef(int idRef) {
     this.idRef = idRef;
   }
 
-  public void setId (String id) {
+  public void setId(String id) {
     this.id = id;
   }
 
-  public boolean isSchedulingPoint(){
+  public boolean isSchedulingPoint() {
     return false;
   }
 
   //--- the getters and setters for the CG creation info
-  public void setThreadInfo (ThreadInfo ti) {
+  public void setThreadInfo(ThreadInfo ti) {
     this.ti = ti;
   }
-  public ThreadInfo getThreadInfo () {
+
+  public ThreadInfo getThreadInfo() {
     return ti;
   }
-  public void setInsn (Instruction insn) {
+
+  public void setInsn(Instruction insn) {
     this.insn = insn;
   }
-  public Instruction getInsn () {
+
+  public Instruction getInsn() {
     return insn;
   }
 
-
-  public void setContext (ThreadInfo tiCreator){
+  public void setContext(ThreadInfo tiCreator) {
     ti = tiCreator;
     insn = tiCreator.getPC();
   }
@@ -143,7 +157,7 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     return insn.getSourceLocation();
   }
 
-  public void setPreviousChoiceGenerator (ChoiceGenerator<?> cg) {
+  public void setPreviousChoiceGenerator(ChoiceGenerator<?> cg) {
     prev = cg;
   }
 
@@ -159,8 +173,8 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     ChoiceGenerator<?> cg = prev;
 
     while (cg != null) {
-      if (cls.isInstance(cg)){
-        return (T)cg;
+      if (cls.isInstance(cg)) {
+        return (T) cg;
       }
       cg = cg.prev;
     }
@@ -170,9 +184,9 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   /**
    * returns the prev CG if it was registered for the same insn
    */
-  public ChoiceGenerator<?> getCascadedParent (){
-    if (prev != null){
-      if (prev.isCascaded){
+  public ChoiceGenerator<?> getCascadedParent() {
+    if (prev != null) {
+      if (prev.isCascaded) {
         return prev;
       }
     }
@@ -184,14 +198,14 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
    * return array with all cascaded parents and this CG, in registration order
    */
   public ChoiceGenerator<?>[] getCascade() {
-    int n=0;
-    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.getCascadedParent()){
+    int n = 0;
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.getCascadedParent()) {
       n++;
     }
 
     ChoiceGenerator<?>[] a = new ChoiceGenerator<?>[n];
 
-    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.getCascadedParent()){
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.getCascadedParent()) {
       a[--n] = cg;
     }
 
@@ -202,14 +216,14 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
    * return array with all parents and this CG, in registration order
    */
   public ChoiceGenerator<?>[] getAll() {
-    int n=0;
-    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev){
+    int n = 0;
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev) {
       n++;
     }
 
     ChoiceGenerator<?>[] a = new ChoiceGenerator<?>[n];
 
-    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev){
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev) {
       a[--n] = cg;
     }
 
@@ -219,56 +233,52 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
   /**
    * return array with all CGs (including this one) of given 'cgType', in registration order
    */
-  public <T extends ChoiceGenerator<?>> T[] getAllOfType (Class<T> cgType) {
-    int n=0;
-    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev){
-      if (cgType.isAssignableFrom(cg.getClass())){
+  public <T extends ChoiceGenerator<?>> T[] getAllOfType(Class<T> cgType) {
+    int n = 0;
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev) {
+      if (cgType.isAssignableFrom(cg.getClass())) {
         n++;
       }
     }
 
-    T[] a = (T[])Array.newInstance(cgType, n);
+    T[] a = (T[]) Array.newInstance(cgType, n);
 
-    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev){
-      if (cgType.isAssignableFrom(cg.getClass())){
-        a[--n] = (T)cg;
+    for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.prev) {
+      if (cgType.isAssignableFrom(cg.getClass())) {
+        a[--n] = (T) cg;
       }
     }
 
     return a;
   }
 
-
-  public abstract boolean hasMoreChoices ();
+  public abstract boolean hasMoreChoices();
 
   /**
    * advance to the next choice. This is the only method that really
    * advances our enumeration
    */
-  public abstract void advance ();
+  public abstract void advance();
 
-  
   // we can't put the advanceForCurrentInsn() here because it has to do
   // notifications, which are the SystemState responsibility
-
-
   /**
    * advance n choices
    * pretty braindead generic solution, but if more speed is needed, we can easily override
    * in the concrete CGs (it's used for path replay)
    */
-  public void advance (int nChoices) {
+  public void advance(int nChoices) {
     while (nChoices-- > 0) {
       advance();
     }
   }
 
-  public void select (int nChoice) {
+  public void select(int nChoice) {
     advance(nChoice);
     setDone();
   }
 
-  public boolean isDone () {
+  public boolean isDone() {
     return isDone;
   }
 
@@ -276,7 +286,7 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     isDone = true;
   }
 
-  public boolean isProcessed(){
+  public boolean isProcessed() {
     return isDone || !hasMoreChoices();
   }
 
@@ -284,20 +294,18 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
    *  this has to reset the CG to its initial state, which includes resetting
    * 'isDone'
    */
-  public abstract void reset ();
+  public abstract void reset();
 
-  public abstract int getTotalNumberOfChoices ();
+  public abstract int getTotalNumberOfChoices();
 
-  public abstract int getProcessedNumberOfChoices ();
-
+  public abstract int getProcessedNumberOfChoices();
 
   //--- the generic attribute API
-
-  public boolean hasAttr () {
+  public boolean hasAttr() {
     return (attr != null);
   }
 
-  public boolean hasAttr (Class<?> attrType){
+  public boolean hasAttr(Class<?> attrType) {
     return ObjectList.containsType(attr, attrType);
   }
 
@@ -305,7 +313,7 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
    * this returns all of them - use either if you know there will be only
    * one attribute at a time, or check/process result with ObjectList
    */
-  public Object getAttr(){
+  public Object getAttr() {
     return attr;
   }
 
@@ -315,19 +323,19 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
    *  - you obtained the value you set by a previous getXAttr()
    *  - you constructed a multi value list with ObjectList.createList()
    */
-  public void setAttr (Object a){
-    attr = a;    
+  public void setAttr(Object a) {
+    attr = a;
   }
 
-  public void addAttr (Object a){
+  public void addAttr(Object a) {
     attr = ObjectList.add(attr, a);
   }
 
-  public void removeAttr (Object a){
+  public void removeAttr(Object a) {
     attr = ObjectList.remove(attr, a);
   }
 
-  public void replaceAttr (Object oldAttr, Object newAttr){
+  public void replaceAttr(Object oldAttr, Object newAttr) {
     attr = ObjectList.replace(attr, oldAttr, newAttr);
   }
 
@@ -335,26 +343,25 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
    * this only returns the first attr of this type, there can be more
    * if you don't use client private types or the provided type is too general
    */
-  public <T> T getAttr (Class<T> attrType) {
+  public <T> T getAttr(Class<T> attrType) {
     return ObjectList.getFirst(attr, attrType);
   }
 
-  public <T> T getNextAttr (Class<T> attrType, Object prev) {
+  public <T> T getNextAttr(Class<T> attrType, Object prev) {
     return ObjectList.getNext(attr, attrType, prev);
   }
 
-  public ObjectList.Iterator attrIterator(){
+  public ObjectList.Iterator attrIterator() {
     return ObjectList.iterator(attr);
   }
-  
-  public <T> ObjectList.TypedIterator<T> attrIterator(Class<T> attrType){
+
+  public <T> ObjectList.TypedIterator<T> attrIterator(Class<T> attrType) {
     return ObjectList.typedIterator(attr, attrType);
   }
 
   // -- end attrs --
-
-  public String toString () {
-    StringBuilder b = new StringBuilder( getClass().getName());
+  public String toString() {
+    StringBuilder b = new StringBuilder(getClass().getName());
     b.append(" {id:\"");
     b.append(id);
     b.append("\" ,");
@@ -364,11 +371,11 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     b.append(",isCascaded:");
     b.append(isCascaded);
 
-    if (attr != null){
+    if (attr != null) {
       b.append(",attrs:[");
-      int i=0;
-      for (Object a: ObjectList.iterator(attr)){
-        if (i++ > 1){
+      int i = 0;
+      for (Object a : ObjectList.iterator(attr)) {
+        if (i++ > 1) {
           b.append(',');
         }
         b.append(a);
@@ -397,5 +404,5 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
    * a new "decorated" version.
    * - random data can be read from the "Random random" field in this class.
    */
-  public abstract ChoiceGenerator<?> randomize ();
+  public abstract ChoiceGenerator<?> randomize();
 }

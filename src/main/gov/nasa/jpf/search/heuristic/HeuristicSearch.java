@@ -91,6 +91,7 @@ public abstract class HeuristicSearch extends Search {
   
   void backtrackToParent () {
     backtrack();
+
     depth--;
     notifyStateBacktracked();    
   }
@@ -120,36 +121,39 @@ public abstract class HeuristicSearch extends Search {
 
       if (currentError != null){
         notifyPropertyViolated();
-
         if (hasPropertyTermination()) {
           return false;
         }
 
         // for search.multiple_errors we go on and store/treat this as
         // a new state, which will be state matched the next time we encounter it
-      }
+      } else {
       
-      if (!isEndState() && !isIgnoredState()) {
-        boolean isNewState = isNewState();
+        if (!isEndState() && !isIgnoredState()) {
+          boolean isNewState = isNewState();
 
-        if (isNewState && depth >= depthLimit) {
-          // we can't do this before we actually generated the VM child state
-          // since we don't want to report DEPTH_CONSTRAINTs for parents
-          // that have only visited or end state children
-          notifySearchConstraintHit("depth limit reached: " + depthLimit);
-          
-        } else if (isNewState || isPathSensitive) {
+          if (isNewState && depth >= depthLimit) {
+            // we can't do this before we actually generated the VM child state
+            // since we don't want to report DEPTH_CONSTRAINTs for parents
+            // that have only visited or end state children
+            notifySearchConstraintHit("depth limit reached: " + depthLimit);
 
-          if (isQueueLimitReached()) {
-            notifySearchConstraintHit("queue limit reached: " + getQueueSize());
-          }
+          } else if (isNewState || isPathSensitive) {
+
+            if (isQueueLimitReached()) {
+              notifySearchConstraintHit("queue limit reached: " + getQueueSize());
+            }
           
-          HeuristicState newHState = queueCurrentState();
+            HeuristicState newHState = queueCurrentState();
           
-          if (newHState != null) { 
-            childStates.add(newHState);
-            notifyStateStored();
+            if (newHState != null) { 
+              childStates.add(newHState);
+              notifyStateStored();
+            }
           }
+        
+        } else {
+          // end state or ignored transition
         }
       }
       
@@ -162,6 +166,7 @@ public abstract class HeuristicSearch extends Search {
   
   private void restoreState (HeuristicState hState) {    
     vm.restoreState(hState.getVMState());
+
     // note we have to query the depth from the VM because the state is taken from the queue
     // and we have no idea when it was entered there
     depth = vm.getPathLength();

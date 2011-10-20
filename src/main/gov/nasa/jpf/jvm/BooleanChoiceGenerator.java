@@ -96,7 +96,11 @@ public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
 
     sb.append(",{");
 
-    if (count < 1) {
+    if (count < 0){
+      sb.append(!next);
+      sb.append(',');
+      sb.append(next);
+    } else if (count == 0) {
       sb.append(MARKER);
       sb.append(next);
       sb.append(',');

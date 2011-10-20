@@ -57,9 +57,23 @@ public class SystemState {
     ThreadInfo execThread;
     int id;              // the state id
 
+    static private ChoiceGenerator<?> cloneCG( ChoiceGenerator<?> cg){
+      if (cg != null){
+        try {
+          return cg.deepClone();
+        } catch (CloneNotSupportedException cnsx){
+          throw new JPFException("clone failed: " + cg);          
+        }
+      } else {
+        return null;
+      }
+    }
+    
     Memento (SystemState ss) {
       nextCg = ss.nextCg;
-      curCg = ss.curCg;
+      
+      curCg = cloneCG(ss.curCg);
+      
       atomicLevel = ss.entryAtomicLevel; // store the value we had when we started the transition
       id = ss.id;
       execThread = ss.execThread;
@@ -71,7 +85,9 @@ public class SystemState {
      */
     void backtrack (SystemState ss) {
       ss.nextCg = null; // this is important - the nextCG will be set by the next Transition
-      ss.curCg = curCg;
+      
+      ss.curCg = cloneCG(curCg);
+      
       ss.atomicLevel = atomicLevel;
       ss.id = id;
       ss.execThread = execThread;
@@ -83,7 +99,9 @@ public class SystemState {
      */
     void restore (SystemState ss) {
       ss.nextCg = nextCg;
-      ss.curCg = curCg;
+      
+      ss.curCg = cloneCG(curCg);
+      
       ss.atomicLevel = atomicLevel;
       ss.id = id;
       ss.execThread = execThread;
