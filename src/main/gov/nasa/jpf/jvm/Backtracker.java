@@ -21,15 +21,16 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 
 public interface Backtracker {
-  static interface State {};
+  static interface RestorableState {};
   
   void attach(JVM jvm);
   
+  // the backtracking interface (depth first search only)
   boolean backtrack ();
-
   void pushSystemState (); 
   void pushKernelState ();
   
-  State getState();
-  void restoreState (State bs);
+  // the general restore interface
+  RestorableState getRestorableState();
+  void restoreState (RestorableState bs);
 }

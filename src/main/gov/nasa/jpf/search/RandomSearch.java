@@ -21,7 +21,7 @@ package gov.nasa.jpf.search;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.VMState;
+import gov.nasa.jpf.jvm.RestorableVMState;
 import gov.nasa.jpf.util.Debug;
 
 
@@ -52,7 +52,7 @@ public class RandomSearch extends Search {
     }
     
     //vm.forward();
-    VMState init_state = vm.getState();
+    RestorableVMState init_state = vm.getRestorableState();
     
     notifySearchStarted();
     while (!done) {

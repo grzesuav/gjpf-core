@@ -36,6 +36,8 @@ public class DefaultBacktracker<KState> implements Backtracker {
     restorer = jvm.getRestorer();
   }
 
+  //--- the backtrack support (depth first only)
+  
   protected void backtrackKernelState() {
     KState data = kstack.head;
     kstack = kstack.tail;
@@ -88,17 +90,23 @@ public class DefaultBacktracker<KState> implements Backtracker {
   }
 
   
-  class StateImpl implements State {
+  //--- the restore support
+  
+  // <2do> this saves both the backtrack and the restore data - too redundant
+  class RestorableStateImpl implements RestorableState {
     final ImmutableList<KState> savedKstack;
     final ImmutableList<Object> savedSstack;
+    
     final KState kcur;
     final Object scur;
-    StateImpl() {
+    
+    RestorableStateImpl() {
       savedKstack = kstack;
       savedSstack = sstack;
       kcur = restorer.getRestorableData();
-      scur = ss.getBacktrackData();
+      scur = ss.getRestoreData();
     }
+    
     void restore() {
       kstack = savedKstack;
       sstack = savedSstack;
@@ -108,12 +116,12 @@ public class DefaultBacktracker<KState> implements Backtracker {
   }
   
   @Override
-  public void restoreState (State state) {
-    ((StateImpl) state).restore();
+  public void restoreState (RestorableState state) {
+    ((RestorableStateImpl) state).restore();
   }
   
   @Override
-  public State getState() {
-    return new StateImpl();
+  public RestorableState getRestorableState() {
+    return new RestorableStateImpl();
   }
 }

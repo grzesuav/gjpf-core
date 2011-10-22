@@ -26,4 +26,8 @@ public interface JavaLangAccess {
     void blockedOn(Thread t, Interruptible b);
 
     void registerShutdownHook(int slot, Runnable r);
+    
+    int getStackTraceDepth(Throwable t);
+    
+    StackTraceElement getStackTraceElement(Throwable t, int i);
 }

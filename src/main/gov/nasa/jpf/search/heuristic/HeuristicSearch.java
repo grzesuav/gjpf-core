@@ -111,6 +111,7 @@ public abstract class HeuristicSearch extends Search {
     childStates = new ArrayList<HeuristicState>();
     
     while (!done) {
+      
       if (!forward()) {
         notifyStateProcessed();
         return true;
@@ -124,9 +125,11 @@ public abstract class HeuristicSearch extends Search {
         if (hasPropertyTermination()) {
           return false;
         }
-
-        // for search.multiple_errors we go on and store/treat this as
-        // a new state, which will be state matched the next time we encounter it
+        
+        // note that we don't store the error state anymore, which means we
+        // might encounter it along different paths. However, this is probably
+        // what we want for search.multiple_errors.
+        
       } else {
       
         if (!isEndState() && !isIgnoredState()) {
@@ -144,8 +147,7 @@ public abstract class HeuristicSearch extends Search {
               notifySearchConstraintHit("queue limit reached: " + getQueueSize());
             }
           
-            HeuristicState newHState = queueCurrentState();
-          
+            HeuristicState newHState = queueCurrentState();            
             if (newHState != null) { 
               childStates.add(newHState);
               notifyStateStored();

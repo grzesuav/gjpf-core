@@ -1329,8 +1329,8 @@ public class JVM {
   /**
    * Bundles up the state of the system for export
    */
-  public VMState getState () {
-    return new VMState(this);
+  public RestorableVMState getRestorableState () {
+    return new RestorableVMState(this);
   }
 
   /**
@@ -1794,7 +1794,7 @@ public class JVM {
   }
 
 
-  public void restoreState (VMState state) {
+  public void restoreState (RestorableVMState state) {
     if (state.path == null) {
       throw new JPFException("tried to restore partial VMState: " + state);
     }

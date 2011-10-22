@@ -48,6 +48,16 @@ public class SystemState {
    * we start to execute the step, but then we have to update the nextCg in the
    * snapshot, since it's only set at the transition end (required for
    * restore(), i.e.  HeuristicSearches)
+   * 
+   * NOTE: the plain Memento doesn't deep copy the CGs, which means it can
+   * only be used for depth first search, where the parent CG states are always
+   * current if we encounter an error. If general state restoration is
+   * required (where the parent CGs might have been changed at the time we
+   * restore), we have to use a RestorableMemento
+   * <2do> this separation is error prone and fragile. It depends on correct
+   * ChoiceGenerator deepCopy() implementations and a separate state acquisition
+   * for restorable states. Currently, the gate for this is JVM.getRestorableState(),
+   * but this could be bypassed.
    */
   static class Memento {
     ChoiceGenerator<?> curCg;  // the ChoiceGenerator for the current transition
@@ -56,8 +66,8 @@ public class SystemState {
     ChoicePoint trace;
     ThreadInfo execThread;
     int id;              // the state id
-
-    static private ChoiceGenerator<?> cloneCG( ChoiceGenerator<?> cg){
+    
+    static protected ChoiceGenerator<?> cloneCG( ChoiceGenerator<?> cg){
       if (cg != null){
         try {
           return cg.deepClone();
@@ -70,9 +80,8 @@ public class SystemState {
     }
     
     Memento (SystemState ss) {
-      nextCg = ss.nextCg;
-      
-      curCg = cloneCG(ss.curCg);
+      nextCg = ss.nextCg;      
+      curCg = ss.curCg;
       
       atomicLevel = ss.entryAtomicLevel; // store the value we had when we started the transition
       id = ss.id;
@@ -84,28 +93,61 @@ public class SystemState {
      * of the same CG, i.e. nextCG is reset
      */
     void backtrack (SystemState ss) {
-      ss.nextCg = null; // this is important - the nextCG will be set by the next Transition
-      
-      ss.curCg = cloneCG(curCg);
+      ss.nextCg = null; // this is important - the nextCG will be set by the next Transition      
+      ss.curCg = curCg;
       
       ss.atomicLevel = atomicLevel;
       ss.id = id;
       ss.execThread = execThread;
     }
 
-    /**
-     * this one is used if we restore and then advance, i.e. it might change the CG on
-     * the next advance (if nextCg was set)
-     */
     void restore (SystemState ss) {
-      ss.nextCg = nextCg;
+      throw new JPFException("can't restore a SystemState.Memento that was created for backtracking");
       
-      ss.curCg = cloneCG(curCg);
+      /**
+      ss.nextCg = nextCg;
+      ss.curCg = curCg;
+
+      //System.out.println("@@ ? Memento.restore: " + curCg);
       
       ss.atomicLevel = atomicLevel;
       ss.id = id;
       ss.execThread = execThread;
+      **/
     }
+  }
+  
+  /**
+   * a Memento that can be restored, not just backtracked to. Be aware this can
+   * be a lot more expensive since it has to deep copy CGs so that we have
+   * the state of the parent CGs restored properly
+   */
+  static class RestorableMemento extends Memento {
+    RestorableMemento (SystemState ss){
+      super(ss);
+      
+      nextCg = cloneCG(nextCg);
+      curCg = cloneCG( curCg);
+    }
+    
+    void backtrack (SystemState ss){
+      super.backtrack(ss);
+      ss.curCg = cloneCG(curCg);
+    }
+    
+    /**
+     * this one is used if we restore and then advance, i.e. it might change the CG on
+     * the next advance (if nextCg was set)
+     */
+    void restore (SystemState ss) {      
+      // if we don't clone them on restore, it means we can only restore this memento once
+      ss.nextCg = cloneCG(nextCg);
+      ss.curCg = cloneCG(curCg);
+
+      ss.atomicLevel = atomicLevel;
+      ss.id = id;
+      ss.execThread = execThread;
+    }    
   }
 
   int id;                   /** the state id */
@@ -463,6 +505,10 @@ public class SystemState {
     ((Memento) backtrackData).backtrack( this);
   }
 
+  public Object getRestoreData(){
+    return new RestorableMemento(this);
+  }
+  
   public void restoreTo (Object backtrackData) {
     ((Memento) backtrackData).restore( this);
   }

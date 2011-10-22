@@ -92,6 +92,12 @@ public class System {
       public void registerShutdownHook(int slot, Runnable r) {
         throw new UnsupportedOperationException("JavaLangAccess.registerShutdownHook() not supported yet");
       }
+      public int getStackTraceDepth(Throwable t) {
+        throw new UnsupportedOperationException("JavaLangAccess.getStackTraceDepth() not supported yet");
+      }
+      public StackTraceElement getStackTraceElement(Throwable t, int i) {
+        throw new UnsupportedOperationException("JavaLangAccess.getStackTraceElement() not supported yet");
+      }
     };
   }
 

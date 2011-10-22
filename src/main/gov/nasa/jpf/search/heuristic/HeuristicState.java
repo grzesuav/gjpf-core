@@ -19,7 +19,7 @@
 package gov.nasa.jpf.search.heuristic;
 
 import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.VMState;
+import gov.nasa.jpf.jvm.RestorableVMState;
 
 
 /**
@@ -29,15 +29,15 @@ import gov.nasa.jpf.jvm.VMState;
  */
 public abstract class HeuristicState {
   
-  protected VMState vmState;
+  protected RestorableVMState vmState;
   protected int     stateId;
     
   public HeuristicState (JVM vm) {
     stateId = vm.getStateId();
-    vmState = vm.getState();
+    vmState = vm.getRestorableState();
   }
   
-  public VMState getVMState () {
+  public RestorableVMState getVMState () {
     return vmState;
   }
   

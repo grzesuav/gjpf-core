@@ -23,7 +23,7 @@ package gov.nasa.jpf.jvm;
  * NOTE - making VMStates fully restorable is currently very
  * expensive and should only be done on a selective basis
  */
-public class VMState {
+public class RestorableVMState {
   
   /** the set of last executed insns */
   Transition lastTransition;
@@ -35,19 +35,19 @@ public class VMState {
    */
   Path path;
   
-  Backtracker.State bkstate;
+  Backtracker.RestorableState bkstate;
   
   JVM vm;
   
-  VMState (JVM vm) {
+  RestorableVMState (JVM vm) {
     this.vm = vm;
 
     path = vm.getClonedPath();
-    bkstate = vm.getBacktracker().getState();
+    bkstate = vm.getBacktracker().getRestorableState();
     lastTransition = vm.lastTrailInfo;
   }
   
-  public Backtracker.State getBkState() {
+  public Backtracker.RestorableState getBkState() {
     return bkstate;
   }
   
