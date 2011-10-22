@@ -93,10 +93,11 @@ public class System {
         throw new UnsupportedOperationException("JavaLangAccess.registerShutdownHook() not supported yet");
       }
       public int getStackTraceDepth(Throwable t) {
-        throw new UnsupportedOperationException("JavaLangAccess.getStackTraceDepth() not supported yet");
+        return t.getStackTraceDepth();
       }
       public StackTraceElement getStackTraceElement(Throwable t, int i) {
-        throw new UnsupportedOperationException("JavaLangAccess.getStackTraceElement() not supported yet");
+        StackTraceElement[] st = t.getStackTrace();
+        return st[i];
       }
     };
   }

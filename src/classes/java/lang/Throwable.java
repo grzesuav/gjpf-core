@@ -136,4 +136,8 @@ public class Throwable {
     String s = getStackTraceAsString();
     pw.print(s);    
   }
+  
+  int getStackTraceDepth(){
+    return (snapshot.length / 2); // snapshot stores the methodId and pc for each StackFrame 
+  }
 }
