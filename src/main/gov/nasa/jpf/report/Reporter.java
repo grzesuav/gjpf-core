@@ -83,6 +83,13 @@ public class Reporter extends SearchListenerAdapter {
     }
   }
 
+  /**
+   * called after the JPF run is finished. Shouldn't be public, but is called by JPF
+   */
+  public void cleanUp(){
+    // nothing yet
+  }
+  
   public Statistics getRegisteredStatistics(){
     
     if (stat == null){ // none yet, initialize

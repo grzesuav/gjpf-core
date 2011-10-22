@@ -19,6 +19,7 @@
 package gov.nasa.jpf.search;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.ConfigChangeListener;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
@@ -43,7 +44,7 @@ import java.util.logging.Logger;
  * general search info like depth, configured properties etc.
  */
 public abstract class Search {
-
+  
   protected static Logger log = JPF.getLogger("gov.nasa.jpf.search");
   
   /** error encountered during last transition, null otherwise */
@@ -78,7 +79,31 @@ public abstract class Search {
 
   protected final Config config; // to later-on access settings that are only used once (not ideal)
 
+  // don't forget to unregister or we have a HUGE memory leak if the same Config object is
+  // reused for several JPF runs
+  class ConfigListener implements ConfigChangeListener {
 
+    public void propertyChanged(Config config, String key, String oldValue, String newValue) {
+      // Different Config instance
+      if (!config.equals(Search.this.config)) {
+        return;
+      }
+
+      // Check if Search configuration changed
+      if (key.startsWith("search.")){
+        String k = key.substring(7);
+        if ("match_depth".equals(k) ||
+            "min_free".equals(k) ||
+            "multiple_errors".equals(k)){
+          initialize(config);
+        }
+      }
+    }
+  }
+
+  // we need to store this so that we can unregister when we are done
+  protected ConfigListener configListener;
+  
   /** storage to keep track of state depths */
   protected final IntVector stateDepth = new IntVector();
 
@@ -86,18 +111,34 @@ public abstract class Search {
     this.vm = vm;
     this.config = config;
 
-    depthLimit = config.getInt("search.depth_limit", Integer.MAX_VALUE);
-    matchDepth = config.getBoolean("search.match_depth");
-    minFreeMemory = config.getMemorySize("search.min_free", 1024<<10);
+    initialize( config);
 
     properties = getProperties(config);
     if (properties.isEmpty()) {
       log.severe("no property");
     }
-
-    getAllErrors = config.getBoolean("search.multiple_errors");
+    
+    configListener = new ConfigListener();
+    config.addChangeListener(configListener);
   }
 
+  protected void initialize( Config conf){
+    depthLimit = conf.getInt("search.depth_limit", Integer.MAX_VALUE);
+    matchDepth = conf.getBoolean("search.match_depth");
+    minFreeMemory = conf.getMemorySize("search.min_free", 1024<<10);    
+    getAllErrors = conf.getBoolean("search.multiple_errors");
+  }
+  
+  /**
+   * called after the JPF run is finished. Shouldn't be public, but is called by JPF
+   */
+  public void cleanUp(){
+    if (configListener != null){
+      config.removeChangeListener(configListener);
+      configListener = null;
+    }
+  }
+  
   public Config getConfig() {
     return config;
   }
@@ -136,7 +177,7 @@ public abstract class Search {
 
   /**
    * return set of configured properties
-   * note there is a nameclash here - JPF 'properties' have nothing to do with
+   * note there is a name clash here - JPF 'properties' have nothing to do with
    * Java properties (java.util.Properties)
    */
   protected ArrayList<Property> getProperties (Config config) {

@@ -254,12 +254,12 @@ public class StackFrame implements Cloneable {
           return new Short((short) v);
         case 'I':
           return new Integer((int) v);
-        case 'L':
-          return new Long(Types.intsToLong(v, slots[slotIdx + 1]));
+        case 'J':
+          return new Long(Types.intsToLong(slots[slotIdx + 1], v)); // Java is big endian, Types expects low,high
         case 'F':
           return new Float(Float.intBitsToFloat(v));
         case 'D':
-          return new Double(Double.longBitsToDouble(Types.intsToLong(v, slots[slotIdx + 1])));
+          return new Double(Double.longBitsToDouble(Types.intsToLong(slots[slotIdx + 1], v)));
         default:  // reference
           if (v >= 0) {
             return JVM.getVM().getHeap().get(v);

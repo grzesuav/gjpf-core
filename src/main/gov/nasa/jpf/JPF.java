@@ -605,12 +605,19 @@ public class JPF implements Runnable {
 
       } finally {
         status = Status.DONE;
-        
-        // avoid a subtle memory leak keeping JPF objects alive through inner
-        // ConfigListener objects
-        config.removeChangeListener(configListener);
+
+        cleanUp();        
       }
     }
+  }
+  
+  protected void cleanUp(){
+    // avoid a subtle memory leak keeping JPF objects alive through inner ConfigListener objects
+    config.removeChangeListener(configListener);
+    
+    search.cleanUp();
+    vm.cleanUp();
+    reporter.cleanUp();
   }
   
   public List<Error> getSearchErrors () {

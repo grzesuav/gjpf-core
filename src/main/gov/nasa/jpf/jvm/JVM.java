@@ -216,6 +216,19 @@ public class JVM {
     // peer classes get initialized upon NativePeer creation
   }
 
+  protected void initTimeModel (Config config){
+    Class<?>[] argTypes = { JVM.class, Config.class };
+    Object[] args = { this, config };
+    timeModel = config.getEssentialInstance("vm.time.class", TimeModel.class, argTypes, args);
+  }
+  
+  /**
+   * called after the JPF run is finished. Shouldn't be public, but is called by JPF
+   */
+  public void cleanUp(){
+    // nothing yet
+  }
+  
   protected boolean getPlatformEndianness (Config config){
     String endianness = config.getString("vm.endian");
     if (endianness == null) {
@@ -232,12 +245,6 @@ public class JVM {
   
   public boolean isBigEndianPlatform(){
     return isBigEndian;
-  }
-  
-  protected void initTimeModel (Config config){
-    Class<?>[] argTypes = { JVM.class, Config.class };
-    Object[] args = { this, config };
-    timeModel = config.getEssentialInstance("vm.time.class", TimeModel.class, argTypes, args);
   }
 
   /**

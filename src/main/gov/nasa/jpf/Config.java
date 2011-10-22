@@ -133,27 +133,27 @@ import java.util.regex.Pattern;
 @SuppressWarnings("serial")
 public class Config extends Properties {
 
-  static final String TARGET_KEY = "target";
-  static final String TARGET_ARGS_KEY = "target_args";
+  public static final String TARGET_KEY = "target";
+  public static final String TARGET_ARGS_KEY = "target_args";
 
   static final char   KEY_PREFIX = '@';
-  static final String REQUIRES_KEY = "@requires";
-  static final String INCLUDE_KEY = "@include";
-  static final String INCLUDE_UNLESS_KEY = "@include_unless";
-  static final String INCLUDE_IF_KEY = "@include_if";
-  static final String USING_KEY = "@using";
+  public static final String REQUIRES_KEY = "@requires";
+  public static final String INCLUDE_KEY = "@include";
+  public static final String INCLUDE_UNLESS_KEY = "@include_unless";
+  public static final String INCLUDE_IF_KEY = "@include_if";
+  public static final String USING_KEY = "@using";
 
   static final String[] EMPTY_STRING_ARRAY = new String[0];
 
   public static final String LIST_SEPARATOR = ",";
-  static final String PATH_SEPARATOR = ","; // the default for automatic appends
+  public static final String PATH_SEPARATOR = ","; // the default for automatic appends
 
   static final Class<?>[] CONFIG_ARGTYPES = { Config.class };  
   static final Class<?>[] NO_ARGTYPES = new Class<?>[0];
   static final Object[] NO_ARGS = new Object[0];
 
-  static final String TRUE = "true";
-  static final String FALSE = "false";
+  public static final String TRUE = "true";
+  public static final String FALSE = "false";
   
   static final String MAX = "MAX";
 

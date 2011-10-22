@@ -122,4 +122,53 @@ public class StackFrameTest extends TestJPF {
     assert frame.peek(0) == 4 && frame.getOperandAttr(0) == "4";
   }
 
+  @Test
+  public void testPushLong() {
+    // Push/Pop long value and also  StackFrame.getLocalValueObject
+
+    StackFrame frame = new StackFrame(0, 2);
+
+    long value = 0x123456780ABCDEFL;
+    frame.longPush(value);
+
+    Object obj_Long = frame.getLocalValueObject(new LocalVarInfo("testLong", "J", "J", 0, 0, 0));
+    assert obj_Long != null;
+    assert obj_Long instanceof Long;
+
+    long result_getLocValObj = (Long) obj_Long;
+    long result_popLong = frame.longPop();
+
+    assert result_getLocValObj == value;
+    assert result_popLong == value;
+  }
+
+  @Test
+  public void testPushDouble() {
+    // Push/Pop double value and also  StackFrame.getLocalValueObject
+
+    StackFrame frame = new StackFrame(2, 10);
+    // Initialize local values and the stack frame
+    frame.push(1);
+    frame.push(2);
+    frame.push(3);
+
+    double value = Math.PI;
+
+    frame.doublePush(value);
+
+    Object obj_Double = frame.getLocalValueObject(new LocalVarInfo("testDouble", "D", "D", 0, 0, frame.getTopPos() - 1));
+    assert obj_Double != null;
+    assert obj_Double instanceof Double;
+
+    double result_getLocValObj = (Double) obj_Double;
+    double result_popLong = frame.doublePop();
+
+    assert result_getLocValObj == value;
+    assert result_popLong == value;
+
+    assert frame.peek(0) == 3;
+    assert frame.peek(1) == 2;
+    assert frame.peek(2) == 1;
+  }
+
 }
