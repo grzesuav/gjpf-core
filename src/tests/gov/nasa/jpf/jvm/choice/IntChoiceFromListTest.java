@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.choice;
 
 import gov.nasa.jpf.jvm.IntChoiceGenerator;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**
