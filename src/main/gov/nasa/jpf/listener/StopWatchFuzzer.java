@@ -113,8 +113,7 @@ public class StopWatchFuzzer extends ListenerAdapter {
       if (!ti.isFirstStepInsn()){ // this is the first time we see this insn
         if (ti.hasOperandAttr(1, TimeVal.class) || ti.hasOperandAttr(3, TimeVal.class)){
           IntChoiceFromSet cg = new IntChoiceFromSet( CG_ID, -1, 0, 1);
-          SystemState ss = jvm.getSystemState();
-          if (ss.setNextChoiceGenerator(cg)){
+          if (jvm.setNextChoiceGenerator(cg)){
             ti.skipInstruction(insn); // reexecute after breaking the transition
           }
         }

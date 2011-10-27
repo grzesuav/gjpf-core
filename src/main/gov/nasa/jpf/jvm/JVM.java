@@ -1413,7 +1413,11 @@ public class JVM {
     return ss.getNextChoiceGenerator();
   }
 
-
+  public boolean setNextChoiceGenerator (ChoiceGenerator<?> cg){
+    return ss.setNextChoiceGenerator(cg);
+  }
+  
+  
   /**
    * return the latest registered ChoiceGenerator used in this transition
    * that matches the provided 'id' and is of 'cgType'.

@@ -828,33 +828,8 @@ public class Config extends Properties {
     }
 
     if (key.charAt(0) == KEY_PREFIX){
-
-      if (REQUIRES_KEY.equals(key)) {
-        // shortcircuit loading of property files - used to enforce order
-        // of properties, e.g. to model dependencies
-        for (String reqKey : split(value)) {
-          if (!containsKey(reqKey)) {
-            throw new MissingRequiredKeyException(reqKey);
-          }
-        }
-        return null;
-        
-      } else if (INCLUDE_KEY.equals(key)) {
-        includePropertyFile(key, value);
-        return null;
-      } else if (INCLUDE_UNLESS_KEY.equals(key)) {
-        includeCondPropertyFile(key, value, false);
-        return null;
-      } else if (INCLUDE_IF_KEY.equals(key)) {
-        includeCondPropertyFile(key, value, true);
-        return null;
-      } else if (USING_KEY.equals(key)){
-        includeProjectPropertyFile(value);
-        return null;
-      } else {
-        throw exception("unknown keyword: " + key);
-      }
-
+      processPseudoProperty( key, value);
+      return null; // no value it replaces
 
     } else {
       // finally, a real key/value pair to add (or remove) - expand and store
@@ -885,7 +860,46 @@ public class Config extends Properties {
       }
     }
   }
+  
+  protected void processPseudoProperty( String key, String value){
+    if (REQUIRES_KEY.equals(key)) {
+      // shortcircuit loading of property files - used to enforce order
+      // of properties, e.g. to model dependencies
+      for (String reqKey : split(value)) {
+        if (!containsKey(reqKey)) {
+          throw new MissingRequiredKeyException(reqKey);
+        }
+      }
 
+    } else if (INCLUDE_KEY.equals(key)) {
+      includePropertyFile(key, value);
+      
+    } else if (INCLUDE_UNLESS_KEY.equals(key)) {
+      includeCondPropertyFile(key, value, false);
+      
+    } else if (INCLUDE_IF_KEY.equals(key)) {
+      includeCondPropertyFile(key, value, true);
+      
+    } else if (USING_KEY.equals(key)) {
+      // check if corresponding jpf.properties has already been loaded. If yes, skip
+      if (!haveSeenProjectProperty(value)){
+        includeProjectPropertyFile(value);
+      }
+      
+    } else {
+      throw exception("unknown keyword: " + key);
+    }
+  }
+
+  protected boolean haveSeenProjectProperty (String key){
+    String pn = getString(key);
+    if (pn == null){
+      return false;
+    } else {
+      return sources.contains( new File(pn));
+    }
+  }
+  
   private Object setKey (String k, String v){
     Object oldValue = put0(k, v);
     notifyPropertyChangeListeners(k, (String) oldValue, v);
