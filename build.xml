@@ -347,6 +347,26 @@
     </zip>
   </target>
 
+  <target name="src-dist" description="build source distribution">
+    <delete file="build/${ant.project.name}-src.zip"/>
+    
+    <zip destfile="build/${ant.project.name}-src.zip" update="false" excludes="*">
+      <zipfileset file="jpf.properties"  prefix="${ant.project.name}"/>
+      <zipfileset file="build.xml"  prefix="${ant.project.name}"/>
+      <zipfileset dir="src" prefix="${ant.project.name}/src"/>
+      <zipfileset dir="lib"  prefix="${ant.project.name}/lib"/>
+      <zipfileset dir="bin"  prefix="${ant.project.name}/bin"/>
+      <zipfileset dir="tools" includes="Run*.jar" prefix="${ant.project.name}/tools"/>
+
+      <!-- IDE related configuration files -->
+      <zipfileset file=".project"  prefix="${ant.project.name}"/>
+      <zipfileset file=".classpath"  prefix="${ant.project.name}"/>
+      <zipfileset dir="eclipse" prefix="${ant.project.name}/eclipse"/>
+
+      <zipfileset dir="nbproject" prefix="${ant.project.name}/nbproject"/>
+    </zip>
+  </target>
+
   <!-- ======================= TEST SECTION ================================ -->
 
 
