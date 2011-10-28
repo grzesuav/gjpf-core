@@ -31,13 +31,15 @@ import java.util.NoSuchElementException;
  * We add a thread upon creation (within the ThreadInfo ctor), and remove it
  * when the corresponding java.lang.Thread object gets recycled by JPF. This means
  * that:
- *   (a) the thread list can contain terminated threads in it
- *   (b) the list can shrink along a given path
- *   (c) thread ids don't have to correspond with storing order !!
- *   (d) thread ids can be re-used
+ *   * the thread list can contain terminated threads in it
+ *   * terminated and recycled threads are removed from the list
+ *   * the list can shrink along a given path
+ *   * thread ids don't have to correspond with storing order !!
+ *   * thread ids can be re-used
  *
- * Thread ids are re-used in order to be packed (which is required to efficiently
- * keep track of referencing threads in ElementInfo reftids)
+ * Per default, thread ids are re-used in order to be packed (which is required to efficiently
+ * keep track of referencing threads in ElementInfo reftids). If there is a need
+ * to avoid recycled thread ids, set 'vm.reuse_tid=false'.
  * 
  * NOTE - this ThreadList implementation doubles up as a thread object -> ThreadInfo
  * map, which is for instance heavily used by the JPF_java_lang_Thread peer.
@@ -51,18 +53,25 @@ import java.util.NoSuchElementException;
  */
 public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<ThreadList> {
 
-  /** ThreadInfos for all live Thread objects (including terminated ones) */
+  protected boolean reuseTid;
+  
+  // ThreadInfos for all created but not terminated threads
   protected ThreadInfo[] threads;
+  
+  // the highest ID created so far along this path
+  protected int maxTid;
 
 
   static class TListMemento implements Memento<ThreadList> {
-    // note that ThreadInfo mementos are also identity preserving
+    // note that we don't clone/deepcopy ThreadInfos
     Memento<ThreadInfo>[] tiMementos;
+    int maxTid;
 
     TListMemento(ThreadList tl) {
       ThreadInfo[] threads = tl.threads;
       int len = threads.length;
 
+      maxTid = tl.maxTid;
       tiMementos = new Memento[len];
       for (int i=0; i<len; i++){
         ThreadInfo ti = threads[i];
@@ -89,6 +98,7 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
         threads[i] = ti;
       }
       tl.threads = threads;
+      tl.maxTid = maxTid;
 
       return tl;
     }
@@ -104,6 +114,8 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
    */
   public ThreadList (Config config, KernelState ks) {
     threads = new ThreadInfo[0];
+    
+    reuseTid = config.getBoolean("vm.reuse_tid", false);
   }
 
   public Memento<ThreadList> getMemento(MementoFactory factory) {
@@ -129,9 +141,7 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
   public int add (ThreadInfo ti) {
     int n = threads.length;
 
-    ids.clear();
-    
-    // check if it's already there
+    ids.clear();    
     for (int i=0; i<n; i++) {
       ThreadInfo t = threads[i];
       if (t == ti) {
@@ -147,7 +157,11 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     newThreads[n] = ti;
     threads = newThreads;
     
-    return ids.nextClearBit(0);
+    if (reuseTid){
+      return ids.nextClearBit(0);
+    } else {
+      return maxTid++;
+    }
   }
   
   public boolean remove (ThreadInfo ti){
