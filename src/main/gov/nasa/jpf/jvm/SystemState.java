@@ -108,8 +108,6 @@ public class SystemState {
       ss.nextCg = nextCg;
       ss.curCg = curCg;
 
-      //System.out.println("@@ ? Memento.restore: " + curCg);
-      
       ss.atomicLevel = atomicLevel;
       ss.id = id;
       ss.execThread = execThread;

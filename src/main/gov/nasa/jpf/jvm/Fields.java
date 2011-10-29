@@ -288,6 +288,7 @@ public abstract class Fields implements Cloneable {
 
   public abstract boolean equals(Object o);
 
+  // <2do> not multi-attr aware yet
   protected boolean compareAttrs(Fields f) {
     if (fieldAttrs != null || f.fieldAttrs != null) {
       if (!Misc.compare(fieldAttrs, f.fieldAttrs)) {
@@ -295,11 +296,7 @@ public abstract class Fields implements Cloneable {
       }
     }
 
-    if (objectAttr != null) {
-      if (!objectAttr.equals(f.objectAttr)) {
-        return false;
-      }
-    } else if (f.objectAttr != null) {
+    if (!ObjectList.equals(objectAttr, f.objectAttr)){
       return false;
     }
 
@@ -329,16 +326,17 @@ public abstract class Fields implements Cloneable {
     Object[] a = fieldAttrs;
     if (a != null) {
       for (int i=0, l=a.length; i < l; i++) {
-        hd.add(a[i]);
+        ObjectList.hash(a[i], hd);
       }
     }
 
     if (objectAttr != null){
-      hd.add(objectAttr);
+      ObjectList.hash(objectAttr, hd);
     }
   }
 
 
+  // <2do> not multi-attr aware yet
   public void copyAttrs(Fields other) {
     if (other.fieldAttrs != null){
       if (fieldAttrs == null){

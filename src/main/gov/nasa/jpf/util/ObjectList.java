@@ -18,8 +18,13 @@
 //
 package gov.nasa.jpf.util;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * a minimal container API that transparently handles Object lists which can
@@ -71,6 +76,21 @@ public abstract class ObjectList {
     Node(Object data, Node next) {
       this.data = data;
       this.next = next;
+    }
+    
+    public boolean equals(Object o){
+      if (o instanceof Node){        
+        Node n = this;
+        Node no = (Node)o;
+        for (; n != null && no != null; n=n.next, no=no.next){
+          if (!n.data.equals(no.data)){
+            return false;
+          }
+        }
+        return (n == null) && (no == null);
+      } else {
+        return false;
+      }
     }
   }
 
@@ -199,6 +219,9 @@ public abstract class ObjectList {
   /**
    * this returns either the first value if there is only one element, or
    * a Node list containing all the values in the order they are provided 
+   * 
+   * note - elements in the list occur in order of arguments, whereas normal
+   * add() always adds at the head of the list
    */
   public static Object createList(Object... values){
     if (values.length == 0){
@@ -208,21 +231,16 @@ public abstract class ObjectList {
       return values[0];
       
     } else {
-      Node node, prev = null, first = null;
+      Node node = null, next = null;
 
-      for (Object v : values) {
-        node = new Node(v, null);
-        if (prev != null) {
-          prev.next = node;
-        } else {
-          first = node;
-        }
+      for (int i=values.length-1; i>=0; i--){
+        node = new Node(values[i], next);
+        next = node;
       }
-
-      return first;
+      return node;
     }
   }
-  
+    
   public static Object valueOf (Object o){
     return (o instanceof Node) ? ((Node)o).data : o;
   }
@@ -494,5 +512,74 @@ public abstract class ObjectList {
     }
     
     return null;
+  }
+  
+  public static void hash (Object head, HashData hd){
+    if (head instanceof Node){
+      for (Node n = (Node) head; n != null; n = n.next) {
+        hd.add(n.data);
+      }
+            
+    } else if (head != null){
+      hd.add(head);
+    }    
+  }
+  
+  public static boolean equals( Object head1, Object head2){
+    if (head1 != null){
+      return head1.equals(head2);
+    } else {
+      return head2 == null; // both null is treated as equal      
+    }
+  }
+  
+  static Object cloneData (Object o) throws CloneNotSupportedException {
+    if (o instanceof CloneableObject) {
+      CloneableObject co = (CloneableObject) o;
+      return co.clone();
+      
+    } else if (o != null) {
+      Class<?> cls = o.getClass();
+      try {
+        Method m = cls.getMethod("clone");
+        // it can't be static because this would mask Object.clone()
+        // since Class.getMethod() only returns publics, we don't have to set accessible
+        return m.invoke(o);
+        
+      } catch (NoSuchMethodException nsmx){
+        // since Object.clone() would throw it (unless this is a Cloneable, in which
+        // case there most probably is a public clone() and we would not have
+        // gotten here), there is no use trying to call it
+        throw new CloneNotSupportedException("no public clone(): " + o);
+      } catch (InvocationTargetException ix){
+        throw new RuntimeException( "generic clone failed: " + o, ix.getCause());
+      } catch (IllegalAccessException iax){
+        throw new RuntimeException("clone() not accessible: " + o);
+      }
+      
+    } else {
+      return null;
+    }
+  }
+  
+  static Node cloneNode (Node n) throws CloneNotSupportedException {
+    if (n == null){
+      return null;
+    } else {
+      return new Node( cloneData(n.data), cloneNode(n.next));
+    }
+  }
+  
+  public static Object clone (Object head) throws CloneNotSupportedException {
+    if (head instanceof Node){
+      return cloneNode( (Node)head);
+            
+    } else if (head != null){
+      return cloneData( head);
+      
+    } else {
+      return null;
+    }
+    
   }
 }

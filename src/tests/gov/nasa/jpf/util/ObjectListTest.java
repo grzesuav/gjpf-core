@@ -19,6 +19,8 @@
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.util.test.TestJPF;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.Test;
 
 /**
@@ -173,5 +175,219 @@ public class ObjectListTest extends TestJPF {
       System.out.printf("[%d] = %s\n", i++, a.toString());
     }    
     assertTrue( ObjectList.size(attr) == 2);
+  }
+  
+  
+  Object a1, a2;
+  
+  @Test
+  public void testEquals(){
+    assertTrue( ObjectList.equals(a1, a2));
+    
+    a1 = null;
+    a2 = "one";
+    assertFalse( ObjectList.equals(a1, a2));
+    
+    a1 = "one";
+    a2 = null;
+    assertFalse( ObjectList.equals(a1, a2));
+
+    a1 = ObjectList.createList("one", "two");
+    a2 = null;
+    assertFalse( ObjectList.equals(a1, a2));
+
+    a1 = "one";
+    a2 = "one";
+    assertTrue( ObjectList.equals(a1, a2));
+    
+    a1 = ObjectList.createList("one", "two");
+    a2 = "one";
+    assertFalse( ObjectList.equals(a1, a2));
+
+    a1 = "one";
+    a2 = ObjectList.createList("one", "two");
+    assertFalse( ObjectList.equals(a1, a2));
+    
+    a1 = ObjectList.createList("one", "two");
+    a2 = ObjectList.createList("one", "two");
+    assertTrue( ObjectList.equals(a1, a2));
+    
+    a1 = ObjectList.createList("one", "two", "three");
+    a2 = ObjectList.createList("one", "two");
+    assertFalse( ObjectList.equals(a1, a2));
+
+    a1 = ObjectList.createList("one", "two");
+    a2 = ObjectList.createList("one", "two", "three");
+    assertFalse( ObjectList.equals(a1, a2));
+  }
+  
+  
+  static class A implements Cloneable {
+    String id;
+    
+    A (String id){
+      this.id = id;
+    }
+    
+    public int hashCode(){
+      return id.hashCode();
+    }
+    
+    public boolean equals (Object o){
+      if (o instanceof A){
+        return id.equals(((A)o).id);
+      } else {
+        return false;
+      }
+    }
+    
+    public Object clone(){
+      try {
+        A a = (A)super.clone();
+        a.id += "_clone";
+        return a;
+        
+      } catch (CloneNotSupportedException ex) {
+        return null;
+      }
+    }
+    
+    public String toString(){
+      return id;
+    }
+  }
+  
+  static class B extends A implements CloneableObject {
+    B (String id){
+      super(id);
+    }
+  }
+  
+  @Test
+  public void testClone(){
+    Object l1, l1c, l2;
+    
+    // lists with generic data clone()
+    l1 = ObjectList.createList(new A("one"), new A("two"));
+    l2 = ObjectList.createList(new A("one_clone"), new A("two_clone"));    
+    try {
+      l1c = ObjectList.clone(l1);
+      assertTrue( ObjectList.equals(l1c, l2));
+    } catch (CloneNotSupportedException cnsx){
+      fail("A.clone() did throw CloneNotSupportedException");
+    }
+    
+    // clone() attempt of non-Cloneables
+    l1 = "one";
+    l2 = "one_clone";
+    try {
+      l1c = ObjectList.clone(l1);
+      fail("Strings are not cloneable");
+    } catch (CloneNotSupportedException cnsx){
+      // this is Ok
+    }
+
+    // single object clone
+    l1 = new A("one");
+    try {
+      l1c = ObjectList.clone(l1);
+      assertTrue( l1.equals( new A("one")));
+    } catch (CloneNotSupportedException cnsx){
+      fail("object clone failed");
+    }
+
+    // null clone
+    l1 = null;
+    try {
+      l1c = ObjectList.clone(l1);
+      assertTrue( l1c == null);
+    } catch (CloneNotSupportedException cnsx){
+      fail("empty list clone failed");
+    }
+    
+    // single object clone of CloneableObject instance
+    l1 = new B("one");
+    try {
+      l1c = ObjectList.clone(l1);
+      assertTrue( l1.equals( new B("one")));
+    } catch (CloneNotSupportedException cnsx){
+      fail("object clone failed");
+    }
+    
+    // list clone with CloneableObject instances
+    l1 = ObjectList.createList(new B("one"), new B("two"));
+    l2 = ObjectList.createList(new A("one_clone"), new A("two_clone"));
+    try {
+      l1c = ObjectList.clone(l1);
+      assertTrue( ObjectList.equals(l1c, l2));
+    } catch (CloneNotSupportedException cnsx){
+      fail("B.clone() did throw CloneNotSupportedException");
+    }
+  }
+    
+  @Test
+  public void testHash() {
+    // test single object and list hash
+    // test if list nodes are hash transparent
+    
+    // test equals
+    Object l = null;
+    HashData hd = new HashData();
+    ObjectList.hash(l, hd);
+    HashData hd1 = new HashData();
+    assertTrue( hd.getValue() == hd1.getValue());
+        
+    l = "one";
+    hd = new HashData();
+    ObjectList.hash(l, hd);
+    hd1 = new HashData();
+    hd1.add("one");    
+    assertTrue( hd.getValue() == hd1.getValue());
+    
+    l = ObjectList.createList(new A("one"), new A("two"));
+    hd = new HashData();
+    ObjectList.hash(l, hd);
+    hd1 = new HashData();
+    hd1.add("one");
+    hd1.add("two");
+    assertTrue( hd.getValue() == hd1.getValue());
+
+    
+    // test non-equals
+    l = null;
+    hd = new HashData();
+    ObjectList.hash(l, hd);
+    hd1 = new HashData();
+    hd1.add("one");
+    assertTrue( hd.getValue() != hd1.getValue());
+
+    l = "one";
+    hd = new HashData();
+    ObjectList.hash(l, hd);
+    hd1 = new HashData();
+    assertTrue( hd.getValue() != hd1.getValue());
+    
+    l = "one";
+    hd = new HashData();
+    ObjectList.hash(l, hd);
+    hd1 = new HashData();
+    hd1.add("two");    
+    assertTrue( hd.getValue() != hd1.getValue());
+    
+    l = ObjectList.createList(new A("one"), new A("two"));
+    hd = new HashData();
+    ObjectList.hash(l, hd);
+    hd1 = new HashData();
+    hd1.add("one");
+    assertTrue( hd.getValue() != hd1.getValue());
+    
+    l = ObjectList.createList(new A("one"), new A("two"));
+    hd = new HashData();
+    ObjectList.hash(l, hd);
+    hd1 = new HashData();
+    hd1.add("two");
+    hd1.add("one");
+    assertTrue( hd.getValue() != hd1.getValue());
+
   }
 }

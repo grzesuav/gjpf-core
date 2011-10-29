@@ -68,6 +68,8 @@ public class StackFrame implements Cloneable {
   protected int[] slots;            // the combined local and operand slots
   protected FixedBitSet isRef;      // which slots contain references
 
+  protected Object frameAttr;       // this is where we can store attrs for the whole frame
+  
   /*
    * This array can be used to store attributes (e.g. variable names) for
    * operands. We don't do anything with this except of preserving it (across
@@ -385,6 +387,63 @@ public class StackFrame implements Cloneable {
     return attrs != null;
   }
 
+  public boolean hasFrameAttr(){
+    return frameAttr != null;
+  }
+  
+  //--- the frame attr accessors 
+  
+ /**
+   * this returns all of them - use either if you know there will be only
+   * one attribute at a time, or check/process result with ObjectList
+   */
+  public Object getObjectAttr(){
+    return frameAttr;
+  }
+
+  /**
+   * this replaces all of them - use only if you know 
+   *  - there will be only one attribute at a time
+   *  - you obtained the value you set by a previous getXAttr()
+   *  - you constructed a multi value list with ObjectList.createList()
+   */
+  public void setFrameAttr (Object attr){
+    frameAttr = attr;    
+  }
+
+  public void addFrameAttr (Object attr){
+    frameAttr = ObjectList.add(frameAttr, attr);
+  }
+
+  public void removeFrameAttr (Object attr){
+    frameAttr = ObjectList.remove(frameAttr, attr);
+  }
+
+  public void replaceFrameAttr (Object oldAttr, Object newAttr){
+    frameAttr = ObjectList.replace(frameAttr, oldAttr, newAttr);
+  }
+
+  /**
+   * this only returns the first attr of this type, there can be more
+   * if you don't use client private types or the provided type is too general
+   */
+  public <T> T getFrameAttr (Class<T> attrType) {
+    return ObjectList.getFirst(frameAttr, attrType);
+  }
+
+  public <T> T getNextFrameAttr (Class<T> attrType, Object prev) {
+    return ObjectList.getNext(frameAttr, attrType, prev);
+  }
+
+  public ObjectList.Iterator frameAttrIterator(){
+    return ObjectList.iterator(frameAttr);
+  }
+  
+  public <T> ObjectList.TypedIterator<T> frameAttrIterator(Class<T> attrType){
+    return ObjectList.typedIterator(frameAttr, attrType);
+  }
+
+  
   
   //--- the top single-slot operand attrs
 
@@ -1049,6 +1108,8 @@ public class StackFrame implements Cloneable {
         sf.attrs = attrs.clone();
       }
 
+      sf.frameAttr = frameAttr;
+      
       sf.changed = false; // has to be set explicitly
 
       return sf;
@@ -1353,6 +1414,10 @@ public class StackFrame implements Cloneable {
       if (!Misc.compare(top,attrs,other.attrs)){
         return false;
       }
+      
+      if (!ObjectList.equals(frameAttr, other.frameAttr)){
+        return false;
+      }
 
       return true;
     }
@@ -1387,8 +1452,12 @@ public class StackFrame implements Cloneable {
     // is, it should be kept consistent with the Fields.hash()
     if (attrs != null){
       for (int i=0; i<=top; i++){
-        hd.add(attrs[i]);
+        ObjectList.hash( attrs[i], hd);
       }
+    }
+    
+    if (frameAttr != null){
+      ObjectList.hash(frameAttr, hd);
     }
   }
 
