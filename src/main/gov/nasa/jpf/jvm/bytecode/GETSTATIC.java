@@ -70,24 +70,29 @@ public class GETSTATIC extends StaticFieldInstruction {
       }
     }
    
+    Object attr = ei.getFieldAttr(fieldInfo);
+
     if (size == 1) {
       int ival = ei.get1SlotField(fieldInfo);
       lastValue = ival;
 
       ti.push(ival, fieldInfo.isReference());
+      
+      if (attr != null) {
+        ti.setOperandAttrNoClone(attr);
+      }
 
     } else {
       long lval = ei.get2SlotField(fieldInfo);
       lastValue = lval;
       
       ti.longPush(lval);
+      
+      if (attr != null) {
+        ti.setLongOperandAttrNoClone(attr);
+      }
     }
-    
-    Object attr = ei.getFieldAttr(fieldInfo);
-    if (attr != null){
-      ti.setOperandAttrNoClone(attr);
-    }
-    
+        
     return getNext(ti);
   }
   
