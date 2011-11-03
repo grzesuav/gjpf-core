@@ -468,4 +468,44 @@ public class FileUtils {
     }
   }
   
+  public static String getRelativeUnixPath (File baseDir, File refFile) throws IOException {
+		String bpn = baseDir.getCanonicalPath().replace('\\', '/');
+		String rpn = refFile.getCanonicalPath().replace('\\', '/');
+
+		int len = Math.min(bpn.length(), rpn.length());
+		for (int i = 0, n = 0; i < len; i++) {
+			char c = bpn.charAt(i);
+			if (c == '/') {
+				n = i + 1;
+			} else if (c != rpn.charAt(i)) {
+				bpn = bpn.substring(n);
+				rpn = rpn.substring(n);
+				break;
+			}
+		}
+
+		len = bpn.length();
+		String up = "";
+		for (int i = 0; i < len; i++) {
+			if (bpn.charAt(i) == '/') {
+				up += "../";
+			}
+		}
+
+		String relPath = up + rpn;
+		return relPath;
+  }
+  
+  public static boolean copyFile (File src, File toDir) throws IOException {
+    if (src.isFile()) {
+      File tgt = new File(toDir, src.getName());
+      if (tgt.createNewFile()) {
+        byte[] data = getContents(src);
+        setContents(tgt, data);
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
