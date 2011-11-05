@@ -342,7 +342,7 @@
     <exec executable="hg" outputproperty="hg.tip.rev" failifexecutionfails="false">
       <arg value="tip"/>
       <arg value="--template"/>
-      <arg value="-{rev}"/>
+      <arg value="-r{rev}"/>
     </exec>
   	
     <!-- 2do this seems stupid - there needs to be a better way to re-base (zip basedir fails miserably) -->
@@ -360,7 +360,7 @@
     <exec executable="hg" outputproperty="hg.tip.rev" failifexecutionfails="false">
       <arg value="tip"/>
       <arg value="--template"/>
-      <arg value="-{rev}"/>
+      <arg value="-r{rev}"/>
     </exec>
   	
     <zip destfile="build/${ant.project.name}${hg.tip.rev}-src.zip" update="false" excludes="*">
