@@ -147,7 +147,7 @@ public class JPF_java_lang_Object {
     if (!ti.isFirstStepInsn()) { // first time around
       ElementInfo ei = env.getElementInfo(objref);
       
-      ChoiceGenerator cg = ss.getSchedulerFactory().createNotifyCG(ei, ti);
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createNotifyCG(ei, ti);
       if (ss.setNextChoiceGenerator(cg)){
         ti.skipInstructionLogging();
         env.repeatInvocation();
@@ -174,7 +174,7 @@ public class JPF_java_lang_Object {
       
       ElementInfo ei = env.getElementInfo(objref);
       
-      ChoiceGenerator cg = ss.getSchedulerFactory().createNotifyAllCG(ei, ti);
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createNotifyAllCG(ei, ti);
       if (ss.setNextChoiceGenerator(cg)){
         ti.skipInstructionLogging();
         env.repeatInvocation();

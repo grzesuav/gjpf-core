@@ -130,7 +130,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
   }
 
   protected boolean isNewPorFieldBoundary (ThreadInfo ti, FieldInfo fi, int objRef) {
-    return (!ti.isFirstStepInsn()) && isSchedulingRelevant(ti, objRef);
+    return (!ti.isFirstStepInsn()) && ti.usePorFieldBoundaries() && isSchedulingRelevant(ti, objRef);
   }
 
   /**

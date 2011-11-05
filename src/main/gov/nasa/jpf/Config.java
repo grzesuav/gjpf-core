@@ -896,7 +896,7 @@ public class Config extends Properties {
     if (pn == null){
       return false;
     } else {
-      return sources.contains( new File(pn));
+      return sources.contains( new File( pn, "jpf.properties"));
     }
   }
   
