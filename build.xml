@@ -337,9 +337,16 @@
   </target>
 
   <target name="dist" description="build binary distribution">
-    <delete file="build/${ant.project.name}.zip"/>
+    <delete file="build/${ant.project.name}*.zip"/>
+  	
+    <exec executable="hg" outputproperty="hg.tip.rev" failifexecutionfails="false">
+      <arg value="tip"/>
+      <arg value="--template"/>
+      <arg value="-{rev}"/>
+    </exec>
+  	
     <!-- 2do this seems stupid - there needs to be a better way to re-base (zip basedir fails miserably) -->
-    <zip destfile="build/${ant.project.name}.zip" update="false" excludes="*">
+    <zip destfile="build/${ant.project.name}${hg.tip.rev}.zip" update="false" excludes="*">
       <zipfileset file="jpf.properties"  prefix="${ant.project.name}"/>
       <zipfileset dir="lib"  prefix="${ant.project.name}/lib"/>
       <zipfileset dir="bin"  prefix="${ant.project.name}/bin"/>
@@ -348,11 +355,19 @@
   </target>
 
   <target name="src-dist" description="build source distribution">
-    <delete file="build/${ant.project.name}-src.zip"/>
+    <delete file="build/${ant.project.name}*-src.zip"/>
     
-    <zip destfile="build/${ant.project.name}-src.zip" update="false" excludes="*">
+    <exec executable="hg" outputproperty="hg.tip.rev" failifexecutionfails="false">
+      <arg value="tip"/>
+      <arg value="--template"/>
+      <arg value="-{rev}"/>
+    </exec>
+  	
+    <zip destfile="build/${ant.project.name}${hg.tip.rev}-src.zip" update="false" excludes="*">
       <zipfileset file="jpf.properties"  prefix="${ant.project.name}"/>
       <zipfileset file="build.xml"  prefix="${ant.project.name}"/>
+    	<zipfileset file="NOSA-1.3-JPF"  prefix="${ant.project.name}"/>
+      <zipfileset file="README"  prefix="${ant.project.name}"/>
       <zipfileset dir="src" prefix="${ant.project.name}/src"/>
       <zipfileset dir="lib"  prefix="${ant.project.name}/lib"/>
       <zipfileset dir="bin"  prefix="${ant.project.name}/bin"/>
