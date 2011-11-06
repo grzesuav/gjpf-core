@@ -61,7 +61,7 @@ public class LocalVarInfo {
 
   public String getType() {
     if (type == null){
-      type = Types.asTypeName(signature);
+      type = Types.getTypeName(signature);
     }
     return type; 
   }

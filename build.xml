@@ -348,8 +348,9 @@
     <!-- 2do this seems stupid - there needs to be a better way to re-base (zip basedir fails miserably) -->
     <zip destfile="build/${ant.project.name}${hg.tip.rev}.zip" update="false" excludes="*">
       <zipfileset file="jpf.properties"  prefix="${ant.project.name}"/>
+      <zipfileset file="build.properties"  prefix="${ant.project.name}"/>
       <zipfileset dir="lib"  prefix="${ant.project.name}/lib"/>
-      <zipfileset dir="bin"  prefix="${ant.project.name}/bin"/>
+      <zipfileset dir="bin"  prefix="${ant.project.name}/bin" filemode="754"/>
       <zipfileset dir="build" includes="*.jar" prefix="${ant.project.name}/build"/>
     </zip>
   </target>
@@ -365,13 +366,14 @@
   	
     <zip destfile="build/${ant.project.name}${hg.tip.rev}-src.zip" update="false" excludes="*">
       <zipfileset file="jpf.properties"  prefix="${ant.project.name}"/>
+      <zipfileset file="build.properties"  prefix="${ant.project.name}"/>
       <zipfileset file="build.xml"  prefix="${ant.project.name}"/>
     	<zipfileset file="NOSA-1.3-JPF"  prefix="${ant.project.name}"/>
       <zipfileset file="README"  prefix="${ant.project.name}"/>
       <zipfileset dir="src" prefix="${ant.project.name}/src"/>
       <zipfileset dir="lib"  prefix="${ant.project.name}/lib"/>
-      <zipfileset dir="bin"  prefix="${ant.project.name}/bin"/>
-      <zipfileset dir="tools" includes="Run*.jar" prefix="${ant.project.name}/tools"/>
+      <zipfileset dir="bin"  prefix="${ant.project.name}/bin" filemode="754"/>
+      <zipfileset dir="tools" prefix="${ant.project.name}/tools"/>
 
       <!-- IDE related configuration files -->
       <zipfileset file=".project"  prefix="${ant.project.name}"/>
