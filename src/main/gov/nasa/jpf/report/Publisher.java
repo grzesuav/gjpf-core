@@ -22,6 +22,7 @@ import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import gov.nasa.jpf.Config;
 
@@ -106,6 +107,17 @@ public abstract class Publisher {
     extensions.add(ext);
   }
 
+  // <2do> should not be a list we can add to
+  private static final List<PublisherExtension> EMPTY_LIST = new ArrayList<PublisherExtension>(0);
+  
+  public List<PublisherExtension> getExtensions(){
+    if (extensions != null){
+      return extensions;
+    } else {
+      return EMPTY_LIST; // make life easier for callers
+    }
+  }
+  
   public String getLastErrorId() {
     return reporter.getLastErrorId();
   }
