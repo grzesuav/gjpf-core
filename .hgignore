@@ -5,6 +5,7 @@ nbproject/private/*
 build/*
 dist/*
 tmp/*
+activity*.png
 *.class
 *~
 *.DS_Store

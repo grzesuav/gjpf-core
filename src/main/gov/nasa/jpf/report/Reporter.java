@@ -276,7 +276,7 @@ public class Reporter extends SearchListenerAdapter {
   }
 
   public String getLastSearchConstraint () {
-    return search.getLastSearchContraint();
+    return search.getLastSearchConstraint();
   }
 
   public String getLastErrorId () {

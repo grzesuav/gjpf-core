@@ -270,8 +270,15 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * object is recycled (after potential finalization)
    */
   public void processReleaseActions(){
-    // so far, we only support type based release actions
+    // type based release actions
     ci.processReleaseActions(this);
+    
+    // instance based release actions
+    if (fields.hasObjectAttr()){
+      for (ReleaseAction action : fields.objectAttrIterator(ReleaseAction.class)){
+        action.release(this);
+      }
+    }
   }
 
   /**

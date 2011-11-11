@@ -143,7 +143,14 @@ public class BudgetChecker extends ListenerAdapter {
     if (timeExceeded() || heapExceeded()) {
       search.notifySearchConstraintHit(message);
       search.terminate();
-    }    
+    }
+    
+    if (search.isNewState() || depthExceeded()){
+      if (statesExceeded()){
+        search.notifySearchConstraintHit(message);
+        search.terminate();        
+      }
+    }
   }
       
   public void instructionExecuted (JVM vm) {

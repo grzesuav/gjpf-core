@@ -223,7 +223,7 @@ public abstract class Search {
     return errors.size();
   }
 
-  public String getLastSearchContraint() {
+  public String getLastSearchConstraint() {
     return lastSearchConstraint;
   }
 
