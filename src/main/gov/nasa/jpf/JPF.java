@@ -614,6 +614,7 @@ public class JPF implements Runnable {
   protected void cleanUp(){
     // avoid a subtle memory leak keeping JPF objects alive through inner ConfigListener objects
     config.removeChangeListener(configListener);
+    configListener = null;
     
     search.cleanUp();
     vm.cleanUp();
