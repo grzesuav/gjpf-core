@@ -84,6 +84,19 @@ public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
     return (count+1);
   }
   
+  public boolean isFalseFirst(){
+    return falseFirst;
+  }
+  
+  /**
+   *  note this should only be called before the first advance since it resets
+   *  the enumeration state 
+   */
+  public void reverse(){
+    falseFirst = !falseFirst;
+    reset();
+  }
+  
   public String toString () {
     StringBuilder sb = new StringBuilder(getClass().getName());
     sb.append('[');

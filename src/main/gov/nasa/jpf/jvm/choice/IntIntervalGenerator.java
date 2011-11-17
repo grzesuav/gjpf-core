@@ -129,7 +129,20 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
       }
     }
   }
+  
+  public boolean isAscending(){
+    return delta > 0;
+  }
 
+  /**
+   *  note this should only be called before the CG is advanced since it resets
+   *  the enumeration state 
+   */
+  public void reverse(){
+    delta = -delta;
+    reset();
+  }
+  
   public String toString () {
     StringBuilder sb = new StringBuilder(getClass().getName());
     sb.append("[id=\"");
