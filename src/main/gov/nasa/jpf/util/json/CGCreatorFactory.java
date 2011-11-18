@@ -24,7 +24,7 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
+import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
 import gov.nasa.jpf.jvm.choice.DoubleThresholdGenerator;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
@@ -159,7 +159,7 @@ class DoubleFromSetCGCreator implements CGCreator {
       doubleSet[i] = params[i].getDouble().doubleValue();
     }
 
-    return new DoubleChoiceFromSet(id, doubleSet);
+    return new DoubleChoiceFromList(id, doubleSet);
   }
 
 }

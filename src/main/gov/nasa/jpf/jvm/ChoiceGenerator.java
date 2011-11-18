@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.util.Comparator;
 import java.util.Random;
 
 import gov.nasa.jpf.Config;
@@ -157,6 +158,22 @@ public abstract class ChoiceGenerator<T> implements Cloneable {
     return insn.getSourceLocation();
   }
 
+  public boolean supportsReordering(){
+    return false;
+  }
+  
+  /**
+   * reorder according to a user provided comparator
+   * @returns instance to reordered CG of same choice type, 
+   * null if not supported by particular CG subclass
+   * 
+   * Note: this should only be called before the first advance, since it
+   * can reset the CG enumeration status
+   */
+  public ChoiceGenerator<T> reorder (Comparator<T> comparator){
+    return null;
+  }
+  
   public void setPreviousChoiceGenerator(ChoiceGenerator<?> cg) {
     prev = cg;
   }

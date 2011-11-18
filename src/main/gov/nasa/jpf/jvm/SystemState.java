@@ -451,7 +451,7 @@ public class SystemState {
       // set its context (thread and insn)
       cg.setContext(execThread);
 
-      // do we already have a nextCG, which means this one is a cascadet CG
+      // do we already have a nextCG, which means this one is a cascaded CG
       if (nextCg != null) {
         cg.setPreviousChoiceGenerator(nextCg);
         nextCg.setCascaded(); // note the last registered CG is NOT set cascaded

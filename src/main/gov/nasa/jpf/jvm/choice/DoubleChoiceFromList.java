@@ -22,23 +22,33 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.DoubleChoiceGenerator;
+import gov.nasa.jpf.jvm.IntChoiceGenerator;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.logging.Logger;
 
 /**
  * simple DoubleChoiceGenerator that takes it's values from a single
  * property "values" (comma or blank separated list)
+ * 
  */
-public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
+public class DoubleChoiceFromList extends DoubleChoiceGenerator {
   
   static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.choice");
   
   protected Double[] values;
   protected int count = -1;
   
-  public DoubleChoiceFromSet (Config conf, String id) {
+  protected DoubleChoiceFromList (String id, Double[] vals){
+    super(id);
+    values = vals;
+    count = -1;
+  }
+  
+  public DoubleChoiceFromList (Config conf, String id) {
     super(id);
 
 		String[] vals = conf.getCompactStringArray(id + ".values");
@@ -54,6 +64,21 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
     for (int i=0; i<vals.length; i++){
       values[i] = parse(vals[i], resolveFrame);
     }
+  }
+  
+  public DoubleChoiceFromList (String id, double... val){
+    super(id);
+
+    if (val != null){
+      values = new Double[val.length];
+      for (int i=0; i<val.length; i++){
+        values[i] = val[i];
+      }
+    } else {
+      throw new JPFException("empty set for DoubleChoiceFromSet");
+    }
+
+    count = -1;
   }
 
   protected Double parse (String varId, StackFrame resolveFrame){
@@ -89,22 +114,6 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
   }
 
 
-  public DoubleChoiceFromSet (String id, double... val){
-    super(id);
-
-    if (val != null){
-      values = new Double[val.length];
-      for (int i=0; i<val.length; i++){
-        values[i] = new Double(val[i]);
-      }
-    } else {
-      throw new JPFException("empty set for DoubleChoiceFromSet");
-    }
-
-    count = -1;
-  }
-
-
   public void reset () {
     count = -1;
     isDone = false;
@@ -134,6 +143,20 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
     return count+1;
   }
   
+  @Override
+  public boolean supportsReordering(){
+    return true;
+  }
+  
+  @Override
+  public DoubleChoiceGenerator reorder (Comparator<Double> comparator){
+    
+    Double[] newValues = values.clone();
+    Arrays.sort( newValues, comparator);
+    
+    return new DoubleChoiceFromList( id, newValues);
+  }
+  
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append(getClass().getName());
@@ -155,7 +178,7 @@ public class DoubleChoiceFromSet extends DoubleChoiceGenerator {
     return sb.toString();
   }
 
-  public DoubleChoiceFromSet randomize () {
+  public DoubleChoiceFromList randomize () {
     for (int i = values.length - 1; i > 0; i--) {
       int j = random.nextInt(i + 1);
       Double tmp = values[i];

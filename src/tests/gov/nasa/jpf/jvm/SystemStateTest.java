@@ -23,7 +23,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.SystemState;
-import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
+import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.util.LogManager;
@@ -63,7 +63,7 @@ public class SystemStateTest extends TestJPF {
     IntChoiceFromSet       cg0 = new IntChoiceFromSet( "cg0", -100, -200); // not cascaded
     BooleanChoiceGenerator cg1 = new BooleanChoiceGenerator("cg1"); // false,true
     IntChoiceFromSet       cg2 = new IntChoiceFromSet( "cg2", 1, 2);
-    DoubleChoiceFromSet    cg3 = new DoubleChoiceFromSet( "cg3", 42.1, 42.2);
+    DoubleChoiceFromList    cg3 = new DoubleChoiceFromList( "cg3", 42.1, 42.2);
 
     cg2.isCascaded = true;
     cg1.isCascaded = true;
@@ -113,7 +113,7 @@ public class SystemStateTest extends TestJPF {
 
     BooleanChoiceGenerator cg1 = new BooleanChoiceGenerator("cg1"); // false,true
     IntChoiceFromSet       cg2 = new IntChoiceFromSet( "cg2", 1, 2);
-    DoubleChoiceFromSet    cg3 = new DoubleChoiceFromSet( "cg3", 42.1, 42.2);
+    DoubleChoiceFromList    cg3 = new DoubleChoiceFromList( "cg3", 42.1, 42.2);
 
     cg2.isCascaded = true;
     cg1.isCascaded = true;

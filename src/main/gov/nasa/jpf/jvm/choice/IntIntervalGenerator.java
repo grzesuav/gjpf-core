@@ -18,6 +18,9 @@
 //
 package gov.nasa.jpf.jvm.choice;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.IntChoiceGenerator;
@@ -141,6 +144,31 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
   public void reverse(){
     delta = -delta;
     reset();
+  }
+  
+  
+  public Integer[] getChoices(){
+    int n = getTotalNumberOfChoices();
+    Integer[] vals = new Integer[n];
+    int v = (delta > 0) ? min : max;
+    
+    for (int i=0; i<n; i++){
+      vals[i] = v;
+      v += delta;
+    }
+    
+    return vals;
+  }
+
+  public boolean supportsReordering(){
+    return true;
+  }
+  
+  public IntChoiceGenerator reorder (Comparator<Integer> comparator){
+    Integer[] vals = getChoices();
+    Arrays.sort(vals, comparator);
+    
+    return new IntChoiceFromList(id, vals);
   }
   
   public String toString () {

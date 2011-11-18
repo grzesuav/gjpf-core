@@ -18,7 +18,11 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
 
 /**
  * a pretty simple ChoiceGenerator that returns a boolean
@@ -83,6 +87,17 @@ public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
   public int getProcessedNumberOfChoices () {
     return (count+1);
   }
+  
+  // that is pretty stupid, but for the sake of consistency we make it available
+  Boolean[] getChoices(){
+    Boolean[] vals = new Boolean[2];
+    vals[0] = !falseFirst;
+    vals[1] = falseFirst;
+    
+    return vals;
+  }
+
+  // not much use to support reordering, we just have two elements so reverse() will do
   
   public boolean isFalseFirst(){
     return falseFirst;

@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet;
+import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.util.ObjectConverter;
@@ -403,11 +403,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
 
     if (!ti.isFirstStepInsn()) { // first time around
       double[] values = env.getDoubleArrayObject(valArrayRef);
-      DoubleChoiceGenerator cg = new DoubleChoiceFromSet("verifyDoubleSet([D)", values);
+      DoubleChoiceGenerator cg = new DoubleChoiceFromList("verifyDoubleSet([D)", values);
       return registerChoiceGenerator(env,ss,ti,cg, 0.0);
 
     } else {
-      return getNextChoice(ss, "verifyDoubleSet([D)", DoubleChoiceFromSet.class,Double.class);
+      return getNextChoice(ss, "verifyDoubleSet([D)", DoubleChoiceFromList.class,Double.class);
     }
   }
 

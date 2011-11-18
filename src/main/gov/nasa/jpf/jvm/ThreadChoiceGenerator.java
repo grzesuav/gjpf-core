@@ -30,7 +30,7 @@ public abstract class ThreadChoiceGenerator extends ChoiceGenerator<ThreadInfo> 
    * but the normal case is a scheduling point, and we don't want two
    * objects for each of it
    */
-  boolean isSchedulingPoint;
+  protected boolean isSchedulingPoint;
     
   protected ThreadChoiceGenerator (String id, boolean isSchedulingPoint) {
     super(id);

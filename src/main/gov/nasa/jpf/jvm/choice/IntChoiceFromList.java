@@ -18,6 +18,9 @@
 //
 package gov.nasa.jpf.jvm.choice;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.IntChoiceGenerator;
@@ -39,6 +42,20 @@ public class IntChoiceFromList extends IntChoiceGenerator {
 	protected Integer[] values;
 	protected int count = -1;
 	
+  /**
+   *  super constructor for subclasses that want to configure themselves
+   * @param id name used in choice config
+   */
+  protected IntChoiceFromList(String id){
+    super(id);
+  }
+
+  protected IntChoiceFromList (String id, Integer[] vals){
+    super(id);
+    values = vals;
+    count = -1;
+  }
+  
 	/**
 	 * @param conf JPF configuration object
 	 * @param id name used in choice config
@@ -61,6 +78,22 @@ public class IntChoiceFromList extends IntChoiceGenerator {
     }
 	}
 
+  public IntChoiceFromList(String id, int... val){
+    super(id);
+
+    if (val != null){
+      values = new Integer[val.length];
+      for (int i=0; i<val.length; i++){
+        values[i] = val[i];  // enable use of cached Integer values
+      }
+    } else {
+      throw new JPFException("empty set for IntChoiceFromList");
+    }
+
+    count = -1;
+  }
+  
+  
   protected Integer parse (String varId, StackFrame resolveFrame){
     int sign = 1;
 
@@ -93,29 +126,6 @@ public class IntChoiceFromList extends IntChoiceGenerator {
     }
   }
 
-  public IntChoiceFromList(String id, int... val){
-    super(id);
-
-    if (val != null){
-      values = new Integer[val.length];
-      for (int i=0; i<val.length; i++){
-        values[i] = new Integer(val[i]);
-      }
-    } else {
-      throw new JPFException("empty set for IntChoiceFromList");
-    }
-
-    count = -1;
-  }
-
-
-	/** super constructor for subclasses that want to configure themselves
-	 * 
-	 * @param id name used in choice config
-	 */
-	protected IntChoiceFromList(String id){
-		super(id);
-	}
 
   public void reset () {
     count = -1;
@@ -165,6 +175,20 @@ public class IntChoiceFromList extends IntChoiceGenerator {
 
   public int getProcessedNumberOfChoices () {
     return count+1;
+  }
+  
+  @Override
+  public boolean supportsReordering(){
+    return true;
+  }
+  
+  @Override
+  public IntChoiceGenerator reorder (Comparator<Integer> comparator){
+    
+    Integer[] newValues = values.clone();
+    Arrays.sort( newValues, comparator);
+    
+    return new IntChoiceFromList( id, newValues);
   }
   
   public String toString() {
