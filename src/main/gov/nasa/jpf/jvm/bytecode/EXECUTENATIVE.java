@@ -36,6 +36,8 @@ import java.lang.reflect.Method;
  */
 public class EXECUTENATIVE extends Instruction {
 
+  // unfortunately we can't null this in cleanupTransients(), but it is
+  // a potential leak for stored traces
   protected NativeMethodInfo executedMethod;
 
   public boolean isExtendedInstruction() {

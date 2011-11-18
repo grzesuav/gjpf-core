@@ -193,7 +193,7 @@ public class StackFrame implements Cloneable {
   public boolean isNative() {
     return false;
   }
-
+  
   /**
    * return the object reference for an instance method to be called (we are still in the
    * caller's frame). This only makes sense after all params have been pushed, before the
@@ -222,7 +222,8 @@ public class StackFrame implements Cloneable {
   }
 
   /**
-   * to be set (by ThreadInfo) when the frame is pushed
+   * to be set (by ThreadInfo) when the frame is pushed. Can also be used
+   * for non-local gotos, but be warned - that's tricky
    */
   public void setPrevious (StackFrame frame){
     prev = frame;
@@ -1622,7 +1623,7 @@ public class StackFrame implements Cloneable {
     StringWriter sw = new StringWriter(128);
     PrintWriter pw = new PrintWriter(sw);
 
-    pw.print("StackFrame{");
+    pw.print(getClass().getSimpleName() + '{');
     //pw.print(Integer.toHexString(objectHashCode()));
     printContentsOn(pw);
     pw.print('}');

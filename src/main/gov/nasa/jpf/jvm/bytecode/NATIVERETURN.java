@@ -64,6 +64,13 @@ public class NATIVERETURN extends ReturnInstruction {
   }
 
   @Override
+  public void cleanupTransients(){
+    ret = null;
+    retAttr = null;
+    returnFrame = null;
+  }
+  
+  @Override
   public boolean isExtendedInstruction() {
     return true;
   }

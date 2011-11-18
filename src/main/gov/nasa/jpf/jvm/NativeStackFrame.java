@@ -69,8 +69,6 @@ public class NativeStackFrame extends StackFrame {
     return sf;
   }
 
-
-
   @Override
   public boolean isNative() {
     return true;

@@ -43,8 +43,7 @@ public class DirectCallStackFrame extends StackFrame {
 
   public void reset() {
     pc = mi.getInstruction(0);
-  }
-  
+  }  
   
   public boolean isDirectCallFrame() {
     return true;

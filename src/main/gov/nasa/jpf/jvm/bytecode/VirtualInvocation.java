@@ -31,6 +31,10 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public abstract class VirtualInvocation extends InstanceInvocation {
 
+  // note that we can't null laseCalleeCi and invokedMethod in cleanupTransients()
+  // since we use it as an internal optimization (loops with repeated calls on the
+  // same object)
+  
   ClassInfo lastCalleeCi; // cached for performance
 
   protected VirtualInvocation () {}
@@ -64,7 +68,7 @@ public abstract class VirtualInvocation extends InstanceInvocation {
 
     return mi.execute(ti);    // this will lock the object if necessary
   }
-
+  
   /**
    * If the current thread already owns the lock, then the current thread can go on.
    * For example, this is a recursive acquisition.

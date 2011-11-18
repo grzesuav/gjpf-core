@@ -2226,6 +2226,9 @@ public class ThreadInfo
 
     // here we have our post exec bytecode exec observation point
     vm.notifyInstructionExecuted(this, pc, nextPc);
+    
+    // clean up whatever might have been stored by execute
+    pc.cleanupTransients();
 
     // set+return the next insn to execute if we did not return from the last stack frame.
     // Note that 'nextPc' might have been set by a listener, and/or 'top' might have
@@ -2732,7 +2735,7 @@ public class ThreadInfo
     // there always is one since we start all threads through directcalls
     top = frame.getPrevious();
     stackDepth--;
-
+    
     return top;
   }
 
@@ -2751,7 +2754,7 @@ public class ThreadInfo
     
     top = top.getPrevious();
     stackDepth--;
-
+    
     return top;
   }
 

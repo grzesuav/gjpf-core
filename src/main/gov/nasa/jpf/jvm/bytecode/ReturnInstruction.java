@@ -50,6 +50,14 @@ public abstract class ReturnInstruction extends Instruction implements gov.nasa.
     returnFrame = frame;
   }
 
+  /**
+   * this is important since keeping the StackFrame alive would be a major
+   * memory leak
+   */
+  @Override
+  public void cleanupTransients(){
+    returnFrame = null;
+  }
   
   //--- attribute accessors
   

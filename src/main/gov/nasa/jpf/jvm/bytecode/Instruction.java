@@ -33,6 +33,8 @@ import java.util.List;
 
 /**
  * common root of all JPF bytecode instruction classes 
+ * 
+ * <2do> this class should be in gov.nasa.jpf.jvm
  */
 public abstract class Instruction implements InstructionVisit {
 
@@ -152,6 +154,16 @@ public abstract class Instruction implements InstructionVisit {
     // <2do> how do we account for exceptions? 
   }
 
+  /**
+   * this method can be overridden if instruction classes have to store
+   * information for instructionExecuted() notifications, and this information
+   * should not be stored persistent to avoid memory leaks (e.g. via traces).
+   * Called by ThreadInfo.executeInstruction
+   */
+  public void cleanupTransients(){
+    // nothing here
+  }
+  
   public boolean isSchedulingRelevant(SystemState ss, KernelState ks, ThreadInfo ti) {
     return false;
   }
