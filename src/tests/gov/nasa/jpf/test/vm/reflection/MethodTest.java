@@ -162,8 +162,6 @@ public class MethodTest extends TestJPF {
     privateStaticMethod();   // Get rid of IDE warning
 
     if (verifyNoPropertyViolation()) {
-      Class c;
-
       Method m = getClass().getDeclaredMethod("privateStaticMethod");
 
       m.invoke(null);

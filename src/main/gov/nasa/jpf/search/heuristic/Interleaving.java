@@ -49,13 +49,13 @@ public class Interleaving extends SimplePriorityHeuristic {
     Path path = vm.getPath();
     int  pathSize = path.size();
     
-    int lastThread = vm.getLastTransition().getThreadIndex();
+    int tid = vm.getCurrentThread().getId();
     int h_value = 0;
 
     if (aliveThreads > 1) { // otherwise there's nothing to interleave
       
       for (int i= Math.max(0, pathSize - historyLimit); i<pathSize; i++) {
-        if (path.get(i).getThreadIndex() == lastThread) {
+        if (path.get(i).getThreadIndex() == tid) {
           h_value += (pathSize - i) * aliveThreads;
         }
       }
