@@ -1,10 +1,3 @@
-import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.ThreadList;
-
 //
 // Copyright (C) 2011 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
