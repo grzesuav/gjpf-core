@@ -59,6 +59,8 @@
     <available file="src/tests"       type="dir" property="have_tests"/>
     <available file="src/examples"    type="dir" property="have_examples"/>
 
+  	<available file=".hg"             type="dir" property="have_hg"/>
+
     <!-- for the core, it's a fail if any of these is missing -->
     <fail unless="have_main">no src/main</fail>
     <fail unless="have_annotations">no src/annotations</fail>
@@ -138,17 +140,20 @@
   
   <!-- ======================= MISC SECTION ================================ -->
   
-  <!-- build jars -->
-  <target name="build" depends="-cond-clean,compile"
-        description="generate the core JPF jar files" >
-
-    <exec executable="hg" outputproperty="version" failifexecutionfails="false">
+  <target name="-version" if="have_hg">
+    <exec executable="hg" outputproperty="version" searchpath="true" failifexecutionfails="false">
       <arg value="identify"/>
       <arg value="-n"/> 
     </exec>
-
-    <!-- .version is ignored by mercurial -->
+  	
+    <!-- .version is in .hgignore -->
     <echo message="${version}${line.separator}" file=".version"/>
+  </target>
+	
+  <!-- build jars -->
+  <target name="build" depends="-cond-clean,compile,-version"
+        description="generate the core JPF jar files" >
+
     <copy file=".version" todir="build/main/gov/nasa/jpf" failonerror="false"/>
 
     <jar jarfile="build/jpf-classes.jar">

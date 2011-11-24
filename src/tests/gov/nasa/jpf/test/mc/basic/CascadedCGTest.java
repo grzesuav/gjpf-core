@@ -130,7 +130,7 @@ public class CascadedCGTest extends TestJPF {
           IntChoiceFromSet cg = ss.getCurrentChoiceGenerator("fieldReplace", IntChoiceFromSet.class);
           if (cg == null){
 
-            // we might get here after a preceeding rescheduling exec, i.e.
+            // we might get here after a preceding rescheduling exec, i.e.
             // partial execution (with successive re-execution), or after
             // non-rescheduling exec has been completed (only one runnable thread).
             // In the first case we have to restore the operand stack so that
