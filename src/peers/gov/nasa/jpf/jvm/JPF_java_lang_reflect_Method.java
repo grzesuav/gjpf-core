@@ -23,6 +23,7 @@ import gov.nasa.jpf.util.MethodInfoRegistry;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
 import java.lang.reflect.*;
+import java.util.ArrayList;
 
 public class JPF_java_lang_reflect_Method {
 
@@ -33,7 +34,7 @@ public class JPF_java_lang_reflect_Method {
     // this is an example of how to handle cross-initialization between
     // native peers - this might also get explicitly called by the java.lang.Class
     // peer, since it creates Method objects. Here we have to make sure
-    // we only re-pushClinit between JPF runs
+    // we only reset between JPF runs
 
     if (registry == null){
       registry = new MethodInfoRegistry();
@@ -510,8 +511,42 @@ public class JPF_java_lang_reflect_Method {
     }
   }
   
-  public static int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef, int annotationClsRef) {
-    MethodInfo mi = getMethodInfo(env,mthRef);
+  // this one has to collect annotations upwards in the inheritance chain
+  static int getAnnotations (MJIEnv env, MethodInfo mi){
+    String mname = mi.getName();
+    String msig = mi.genericSignature;
+    ArrayList<AnnotationInfo> aiList = new ArrayList<AnnotationInfo>();
+    
+    // our own annotations
+    ClassInfo ci = mi.getClassInfo();
+    for (AnnotationInfo ai: mi.getAnnotations()){
+      aiList.add(ai);
+    }
+    
+    // our superclass annotations
+    for (ci = ci.getSuperClass(); ci != null; ci = ci.getSuperClass()){
+      mi = ci.getMethod(mname, msig, false);
+      if (mi != null){
+        for (AnnotationInfo ai: mi.getAnnotations()){
+          aiList.add(ai);
+        }        
+      }
+    }
+
+    try {
+      return env.newAnnotationProxies(aiList.toArray(new AnnotationInfo[aiList.size()]));
+    } catch (ClinitRequired x){
+      env.handleClinitRequest(x.getRequiredClassInfo());
+      return MJIEnv.NULL;
+    }    
+  }
+  public static int getAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
+    return getAnnotations( env, getMethodInfo(env,mthRef));
+  }
+  
+  // the following ones consist of a package default implementation that is shared with
+  // the constructor peer, and a public model method
+  static int getAnnotation (MJIEnv env, MethodInfo mi, int annotationClsRef){
     ClassInfo aci = env.getReferredClassInfo(annotationClsRef);
     
     AnnotationInfo ai = mi.getAnnotation(aci.getName());
@@ -526,10 +561,12 @@ public class JPF_java_lang_reflect_Method {
     }
     
     return MJIEnv.NULL;
+  }  
+  public static int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef, int annotationClsRef) {
+    return getAnnotation(env, getMethodInfo(env,mthRef), annotationClsRef);
   }
   
-  public static int getAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
-    MethodInfo mi = getMethodInfo(env,mthRef);
+  static int getDeclaredAnnotations (MJIEnv env, MethodInfo mi){
     AnnotationInfo[] ai = mi.getAnnotations();
 
     try {
@@ -537,8 +574,35 @@ public class JPF_java_lang_reflect_Method {
     } catch (ClinitRequired x){
       env.handleClinitRequest(x.getRequiredClassInfo());
       return MJIEnv.NULL;
-    }
+    }    
   }
+  public static int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
+    return getDeclaredAnnotations( env, getMethodInfo(env,mthRef));
+  }
+  
+  static int getParameterAnnotations (MJIEnv env, MethodInfo mi){
+    AnnotationInfo[][] pa = mi.getParameterAnnotations();
+    // this should always return an array object, even if the method has no arguments
+    
+    try {
+      int paRef = env.newObjectArray("[Ljava/lang/annotation/Annotation;", pa.length);
+      
+      for (int i=0; i<pa.length; i++){
+        int eRef = env.newAnnotationProxies(pa[i]);
+        env.setReferenceArrayElement(paRef, i, eRef);
+      }
+
+      return paRef;
+      
+    } catch (ClinitRequired x){ // be prepared that we might have to initialize respective annotation classes
+      env.handleClinitRequest(x.getRequiredClassInfo());
+      return MJIEnv.NULL;
+    }    
+  }
+  public static int getParameterAnnotations_____3_3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
+    return getParameterAnnotations( env, getMethodInfo(env,mthRef));
+  }
+  
   
   public static int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){
     StringBuilder sb = new StringBuilder();

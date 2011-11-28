@@ -20,6 +20,10 @@
 package gov.nasa.jpf.test.vm.reflection;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Constructor;
 import org.junit.Test;
 
@@ -28,11 +32,21 @@ import org.junit.Test;
  */
 public class ConstructorTest extends TestJPF {
 
-  static class X {
-
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface A {
+    String value();
+  }
+  
+  static class Y {
+    @A("this is a superclass ctor annotation")
+    protected Y(){}
+  }
+  
+  static class X extends Y {
     private String a;
 
-    public X(String x) {
+    @A("this is a ctor annotation")
+    public X (@A("this is a parameter annotation") String x) {
       this.a = x;
       System.out.println(x);
     }
@@ -78,4 +92,46 @@ public class ConstructorTest extends TestJPF {
     }
   }
 
+  
+  
+  @Test
+  public void testAnnotations(){
+    if (verifyNoPropertyViolation()) {
+      try {
+        Class<X> cls = X.class;
+        Constructor<X> ctor = cls.getDeclaredConstructor(new Class<?>[] { String.class });
+
+        Annotation[] ai = ctor.getDeclaredAnnotations();
+        assertTrue("no declared ctor annotations found", ai.length == 1);
+        
+        assertTrue("wrong ctor annotation type", ai[0] instanceof A);
+        System.out.printf("ctor annotation: " + ai[0]);
+        
+      } catch (Throwable t) {
+        fail("ctor.getDeclaredAnnotations() failed: " + t);
+      }
+    }    
+  }
+  
+  @Test
+  public void testParameterAnnotations(){
+    if (verifyNoPropertyViolation()) {
+      try {
+        Class<X> cls = X.class;
+        Constructor<X> ctor = cls.getDeclaredConstructor(new Class<?>[] { String.class });
+
+        Annotation[][] pai = ctor.getParameterAnnotations();
+        assertTrue("no ctor parameter annotations found", pai.length == 1);
+        
+        Annotation[] ai = pai[0];
+        assertTrue("wrong number of annotations for first ctor argument", ai.length == 1);
+        
+        assertTrue("wrong parameter annotation type", ai[0] instanceof A);
+        System.out.printf("ctor parameter annotation: " + ai[0]);
+        
+      } catch (Throwable t) {
+        fail("ctor.getParameterAnnotations() failed: " + t);
+      }
+    }        
+  }
 }

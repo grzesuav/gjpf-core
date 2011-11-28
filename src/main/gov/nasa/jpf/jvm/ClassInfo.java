@@ -1271,6 +1271,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   
   //--- type based object release actions
   
+  public boolean hasReleaseAction (ReleaseAction action){
+    return (releaseActions != null) && releaseActions.contains(action);
+  }
+  
   /**
    * NOTE - this can only be set *before* subclasses are loaded (e.g. from classLoaded() notification) 
    */

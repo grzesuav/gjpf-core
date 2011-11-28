@@ -48,7 +48,10 @@ public /*final*/ class Constructor <T> extends AccessibleObject implements Membe
   
   public native Class<T> getDeclaringClass();
   
+  public native Annotation[] getAnnotations();
+  public native Annotation[] getDeclaredAnnotations();
   public native <T extends Annotation> T getAnnotation( Class<T> annotationCls);
+  public native Annotation[][] getParameterAnnotations();
   
   public boolean isSynthetic () {
     return false;

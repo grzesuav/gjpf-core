@@ -194,6 +194,21 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     return getSyncCG( "sharedField", ei, ti);
   }
 
+  public ChoiceGenerator<ThreadInfo> createParkCG (ElementInfo ei, ThreadInfo tiPark, boolean isAbsoluteTime, long timeOut){
+    // we treat this like a wait, but don't differentiate between absolute and relative timeout. Note it has to be a right mover
+    // note that tiPark is already blocked at this point
+    if (ss.isAtomic()) {
+      ss.setBlockedInAtomicSection();
+    }
+
+    return new ThreadChoiceFromSet( "park", getRunnables(), true);
+  }
+  
+  public ChoiceGenerator<ThreadInfo> createUnparkCG (ThreadInfo tiUnparked) {
+    // note that tiUnparked is already runnable at this point
+    return getRunnableCG("unpark");
+  }
+  
   public ChoiceGenerator<ThreadInfo> createSharedArrayAccessCG (ElementInfo ei, ThreadInfo ti) {
     // the array object (ei) is shared, otherwise we won't get here
 

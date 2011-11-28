@@ -90,6 +90,7 @@ public class JPF_sun_misc_Unsafe {
   // this is a specialized, native wait that does not require a lock, and that can
   // be turned off by a preceding unpark() call (which is not accumulative)
   // park can be interrupted, but it doesn't throw an InterruptedException, and it doesn't clear the status
+  // it can only be called from the current (parking) thread
 
   public static void park__ZJ__V (MJIEnv env, int unsafeRef, boolean isAbsoluteTime, long timeout) {
     ThreadInfo ti = env.getThreadInfo();
@@ -129,9 +130,8 @@ public class JPF_sun_misc_Unsafe {
 
         assert ti.isWaiting();
 
-
         // note we pass in the timeout value, since this might determine the type of CG that is created
-        ChoiceGenerator<?> cg = env.getSchedulerFactory().createWaitCG(ei, ti, timeout);
+        ChoiceGenerator<?> cg = env.getSchedulerFactory().createParkCG(ei, ti, isAbsoluteTime, timeout);
         env.setMandatoryNextChoiceGenerator(cg, "no CG on blocking park()");
         env.repeatInvocation();
   
@@ -143,21 +143,34 @@ public class JPF_sun_misc_Unsafe {
 
   public static void unpark__Ljava_lang_Object_2__V (MJIEnv env, int unsafeRef, int objRef) {
     ThreadInfo ti = env.getThreadInfo();
-    ThreadInfo tiParked = env.getThreadInfoForObjRef(objRef);
     
-    if (tiParked.isTerminated()){
-      return;
-    }
-    
-    SystemState ss = env.getSystemState();
+    if (!ti.isFirstStepInsn()){
+      
+      ThreadInfo tiParked = env.getThreadInfoForObjRef(objRef);    
+      if (tiParked == null || tiParked.isTerminated()){
+        return;
+      }      
+      
+      SystemState ss = env.getSystemState();
+      int permitRef = env.getReferenceField( objRef, "permit");
+      ElementInfo eiPermit = env.getElementInfo(permitRef);
 
-    int permitRef = env.getReferenceField( objRef, "permit");
-    ElementInfo ei = env.getElementInfo(permitRef);
-
-    if (tiParked.getLockObject() == ei){
-      ei.notifies(ss, ti, false);
-    } else {
-      ei.setBooleanField("blockPark", false);
+      if (tiParked.getLockObject() == eiPermit){
+        // note that 'permit' is only used in park/unpark, so there never is more than
+        // one waiter, which immediately becomes runnable again because it doesn't hold a lock
+        // (park is a lockfree wait). unpark() therefore has to be a right mover
+        // and we have to register a ThreadCG here
+        eiPermit.notifies(ss, ti, false);
+        
+        ChoiceGenerator<?> cg = env.getSchedulerFactory().createUnparkCG(tiParked);
+        if (cg != null){
+          ss.setNextChoiceGenerator(cg);
+          env.repeatInvocation();
+        }
+        
+      } else {
+        eiPermit.setBooleanField("blockPark", false);
+      }      
     }
   }
 

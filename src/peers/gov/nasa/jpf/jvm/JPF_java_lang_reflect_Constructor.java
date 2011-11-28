@@ -38,7 +38,7 @@ public class JPF_java_lang_reflect_Constructor {
     // this is an example of how to handle cross-initialization between
     // native peers - this might also get explicitly called by the java.lang.Class
     // peer, since it creates Constructor objects. Here we have to make sure
-    // we only re-pushClinit between JPF runs
+    // we only reset between JPF runs
     
     if (registry == null){
       registry = new MethodInfoRegistry();
@@ -121,6 +121,25 @@ public class JPF_java_lang_reflect_Constructor {
     return JPF_java_lang_reflect_Method.getParameterTypes (env, getMethodInfo(env,objRef));
   }
 
+  
+  public static int getAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int objRef){
+    // <2do> check if ctor annotations are inherited, which is a bit off
+    return JPF_java_lang_reflect_Method.getAnnotations( env, getMethodInfo(env,objRef));
+  }
+  
+  public static int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int objRef){
+    return JPF_java_lang_reflect_Method.getDeclaredAnnotations( env, getMethodInfo(env,objRef));
+  }
+  
+  public static int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int objRef, int annotationClsRef) {
+    return JPF_java_lang_reflect_Method.getAnnotation( env, getMethodInfo(env,objRef), annotationClsRef);
+  }
+  
+  public static int getParameterAnnotations_____3_3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int objRef){
+    return JPF_java_lang_reflect_Method.getParameterAnnotations( env, getMethodInfo(env,objRef));
+  }
+
+  
   public static int getModifiers____I (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);
     return mi.getModifiers();
@@ -132,7 +151,7 @@ public class JPF_java_lang_reflect_Constructor {
     // can't get a Constructor object w/o having initialized it's declaring class first
     return ci.getClassObjectRef();
   }
-
+  
   public static int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){
     StringBuilder sb = new StringBuilder();
     

@@ -22,8 +22,11 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.AnnotationInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+
 import java.lang.annotation.*;
 import gov.nasa.jpf.util.test.TestJPF;
 import java.lang.reflect.*;
@@ -302,6 +305,53 @@ public class AnnotationTest extends TestJPF {
     if (verifyNoPropertyViolation("+listener=.test.vm.basic.AnnotationTest$DataListener")){
       MyClass obj = new MyClass();
       int d = obj.data;
+    }
+  }
+  
+  //-------------------------------------------------------------------
+  public static class ArgListener extends ListenerAdapter {
+    public void executeInstruction (JVM vm){
+      Instruction insn = vm.getLastInstruction();
+      if (insn instanceof InvokeInstruction){
+        MethodInfo mi = ((InvokeInstruction)insn).getInvokedMethod();
+        if (mi.getName().equals("foo")){
+          System.out.println("-- called method: " + mi.getUniqueName());
+          
+          AnnotationInfo[][] pai = mi.getParameterAnnotations();
+          
+          assert pai != null : "no parameter annotations found";
+          assert pai.length == 2 : "wrong number of parameter annotation arrays: " + pai.length;
+          assert pai[0] != null : "no parameter annotation for first argument found";
+          assert pai[0].length == 1 : "wrong number of annotations for first argument: "+ pai[0].length;
+          assert pai[1] != null : "no parameter annotation for second argument found";
+          assert pai[1].length == 0 : "wrong number of annotations for first argument: "+ pai[1].length;
+          
+          for (int i=0; i<pai.length; i++){
+            System.out.println("-- annotations for parameter: " + i);
+            AnnotationInfo[] ai = pai[i];
+            if (ai != null && ai.length > 0) {
+              for (int j = 0; j < ai.length; j++) {
+                assert (ai[i] != null) : "null annotation for paramter: " + j;
+                System.out.println(ai[i].asString());
+              }
+            } else {
+              System.out.println("none");
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  public void foo (@A1("arghh") MyClass x, String s){
+    // nothing
+  }
+  
+  @Test
+  public void testParameterAnnotation(){
+    if (verifyNoPropertyViolation("+listener=.test.vm.basic.AnnotationTest$ArgListener")){
+      MyClass obj = new MyClass();
+      foo( obj, "blah");
     }
   }
 }
