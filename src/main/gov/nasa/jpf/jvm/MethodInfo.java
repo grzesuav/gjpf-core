@@ -214,8 +214,14 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     return (parameterAnnotations != null);
   }
 
+  static AnnotationInfo[][] NO_PARAMETER_ANNOTATIONS = new AnnotationInfo[0][];
+  
   public AnnotationInfo[][] getParameterAnnotations() {
-    return parameterAnnotations;
+    if (parameterAnnotations == null){ // keep this similar to getAnnotations()
+      return NO_PARAMETER_ANNOTATIONS;
+    } else {
+      return parameterAnnotations;
+    }
   }
 
   /**
