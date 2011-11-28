@@ -519,7 +519,7 @@ public class JPF_java_lang_reflect_Method {
     
     // our own annotations
     ClassInfo ci = mi.getClassInfo();
-    for (AnnotationInfo ai: mi.getAnnotations()){
+    for (AnnotationInfo ai : mi.getAnnotations()) {
       aiList.add(ai);
     }
     

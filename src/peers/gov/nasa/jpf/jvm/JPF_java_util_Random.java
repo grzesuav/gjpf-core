@@ -65,6 +65,7 @@ public class JPF_java_util_Random {
   
   public static void $clinit____V (MJIEnv env, int rcls) {
     // don't let this one pass, it pulls the ObjectStreams
+    // <2do> but we have to initialize a number of fields required by the unmodified Random class!
   }
 
 

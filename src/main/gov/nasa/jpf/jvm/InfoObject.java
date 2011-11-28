@@ -28,6 +28,8 @@ package gov.nasa.jpf.jvm;
  */
 public abstract class InfoObject {
 
+  static AnnotationInfo[] NO_ANNOTATIONS = new AnnotationInfo[0];
+  
   // he number of annotations per class/method/field is usually
   // small enough so that simple arrays are more efficient than HashMaps
   protected AnnotationInfo[] annotations;
@@ -56,8 +58,16 @@ public abstract class InfoObject {
     annotations = ai;
   }
 
+  public boolean hasAnnotations(){
+    return (annotations != null);
+  }
+  
   public AnnotationInfo[] getAnnotations() {
-    return annotations;
+    if (annotations == null){
+      return NO_ANNOTATIONS; // make life a bit easier for clients and keep it similar to the model class API
+    } else {
+      return annotations;
+    }
   }
   
   public AnnotationInfo getAnnotation (String name){
