@@ -214,11 +214,29 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     return (parameterAnnotations != null);
   }
 
-  static AnnotationInfo[][] NO_PARAMETER_ANNOTATIONS = new AnnotationInfo[0][];
+  
+  // since some listeners might call this on every method invocation, we should do a little optimization
+  static AnnotationInfo[][] NO_PARAMETER_ANNOTATIONS_0 = new AnnotationInfo[0][];
+  static AnnotationInfo[][] NO_PARAMETER_ANNOTATIONS_1 = { new AnnotationInfo[0] };
+  static AnnotationInfo[][] NO_PARAMETER_ANNOTATIONS_2 = { new AnnotationInfo[0], new AnnotationInfo[0] };
+  static AnnotationInfo[][] NO_PARAMETER_ANNOTATIONS_3 = { new AnnotationInfo[0], new AnnotationInfo[0], new AnnotationInfo[0] };  
   
   public AnnotationInfo[][] getParameterAnnotations() {
     if (parameterAnnotations == null){ // keep this similar to getAnnotations()
-      return NO_PARAMETER_ANNOTATIONS;
+      int n = getNumberOfArguments();
+      switch (n){
+      case 0: return NO_PARAMETER_ANNOTATIONS_0;
+      case 1: return NO_PARAMETER_ANNOTATIONS_1;
+      case 2: return NO_PARAMETER_ANNOTATIONS_2;
+      case 3: return NO_PARAMETER_ANNOTATIONS_3;
+      default:
+        AnnotationInfo[][] pai = new AnnotationInfo[n][];
+        for (int i=0; i<n; i++){
+          pai[i] = new AnnotationInfo[0];
+        }
+        return pai;
+      }
+      
     } else {
       return parameterAnnotations;
     }

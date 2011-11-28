@@ -19,8 +19,13 @@
 package gov.nasa.jpf.test.vm.reflection;
 
 import gov.nasa.jpf.jvm.*;
+import gov.nasa.jpf.test.vm.reflection.ConstructorTest.X;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
+
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.*;
 
 public class MethodTest extends TestJPF {
@@ -528,4 +533,53 @@ public class MethodTest extends TestJPF {
   public void argTestString() throws NoSuchMethodException {
     argTest(String.class);
   }
+
+  //--- parameter annotation reflection
+  
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface A {
+    String value();
+  }
+  
+  void noFoo() {}
+  void noFoo(int a) {}
+  void oneFoo (@A("arg 1")int a){}
+  void twoFoo (int a, @A("arg 2") int b){}
+  
+  @Test
+  public void testParameterAnnotations(){
+    if (verifyNoPropertyViolation()){
+      try {
+        Class<MethodTest> cls = MethodTest.class;
+        Method mth = cls.getDeclaredMethod("noFoo");
+        Annotation[][] pai = mth.getParameterAnnotations();
+        assertTrue("should return Annotation[0][] for noFoo()", pai != null && pai.length == 0);
+        
+        mth = cls.getDeclaredMethod("noFoo", int.class );
+        pai = mth.getParameterAnnotations();
+        assertTrue("should return Annotation[1][{}] for noFoo(int)", pai != null && pai.length == 1 
+            && ((pai[0] != null) && (pai[0].length == 0)));
+        System.out.println("noFoo(int) : " + pai[0]);
+
+        mth = cls.getDeclaredMethod("oneFoo", int.class);
+        pai = mth.getParameterAnnotations();
+        assertTrue("should return Annotation[1][{@A}] for oneFoo(int)", pai != null && pai.length == 1 
+            && ((pai[0] != null) && (pai[0].length == 1) && (pai[0][0] instanceof A)));
+        System.out.println("oneFoo(@A int) : " + pai[0][0]);
+
+        mth = cls.getDeclaredMethod("twoFoo", int.class, int.class);
+        pai = mth.getParameterAnnotations();
+        assertTrue("should return Annotation[1][{@A}{}] for twoFoo(int,int)", pai != null && pai.length == 2 
+            && ((pai[0] != null) && (pai[0].length == 0))
+            && ((pai[1] != null) && (pai[1].length == 1)  && (pai[1][0] instanceof A)));
+        System.out.println("twoFoo(int, @A int)  : " + pai[0] + ',' +  pai[1][0]);
+        
+        
+      } catch (Throwable t){
+        fail("retrieving parameter annotation failed: " + t);
+      }
+
+    }
+  }
+  
 }
