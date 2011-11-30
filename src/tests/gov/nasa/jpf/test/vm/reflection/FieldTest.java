@@ -152,4 +152,50 @@ public class FieldTest extends TestJPF {
       }
     }
   }
+  
+  //--- field enumeration
+  interface I {
+    static int I_S = 42;
+  }
+  
+  static class X implements I {
+    public int pub_x_i;  // 1
+    protected int prot_x_i;
+    public static int pub_x_s;  // 2
+    static int prot_x_s;
+  }
+
+  static class Y extends X {
+    public static int pub_y_s; // 3
+    static int prot_y_s;
+    public int pub_y_i;  // 4
+    protected int prot_y_i;
+  }
+
+  @Test
+  public void testGetFields(){
+    if (verifyNoPropertyViolation()){
+      Field[] publicFields = Y.class.getFields();
+      String[] fnames = {"pub_x_i", "pub_x_s", "pub_y_s", "pub_y_i", "I_S"};
+      
+      assertTrue("wrong number of public fields", publicFields.length == fnames.length);
+      
+      for (Field f : publicFields){
+        String fname = f.getName();
+        System.out.println(fname);
+        
+        for (int i=0; i<fnames.length; i++){  
+          if (fname.equals(fnames[i])){
+            fnames[i] = null;
+          }
+        }
+      }
+      
+      for (int i=0; i<fnames.length; i++){
+        if (fnames[i] != null){
+          fail("unseen field: " + fnames[i]);
+        }
+      }
+    }
+  }
 }

@@ -1139,7 +1139,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     logger.finer("resolve classinfo: ", className);
 
-    //return loadClassThroughBCEL(typeName, idx);
     return loadClass(typeName, idx);
   }
 
@@ -2242,7 +2241,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /**
    * perform static initialization of class
-   * this recursively initializes all super classes
+   * this recursively initializes all super classes, but NOT the interfaces
    *
    * @param ti executing thread
    * @return  true if clinit stackframes were pushed, i.e. context instruction

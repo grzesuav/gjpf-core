@@ -77,6 +77,8 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
 
   public native Class<?> getComponentType ();
 
+  public native Field[] getFields() throws SecurityException;
+  
   public native Field getDeclaredField (String fieldName) throws NoSuchFieldException,
                                                           SecurityException;
 
@@ -297,10 +299,6 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
   }
 
   public Class<?>[] getClasses() {
-    throw new UnsupportedOperationException();
-  }
-
-  public Field[] getFields() throws SecurityException {
     throw new UnsupportedOperationException();
   }
   

@@ -401,18 +401,50 @@ public class JPF_java_lang_Class {
     return getMethod(env,clsRef, "<init>",argTypesRef,false,true);
   }
   
-  public static int getDeclaredFields_____3Ljava_lang_reflect_Field_2 (MJIEnv env, int objRef) {
-    
+  static ClassInfo getInitializedFieldClassInfo (MJIEnv env){
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
     ClassInfo fci = ClassInfo.getResolvedClassInfo("java.lang.reflect.Field");
     
     if (insn.requiresClinitCalls(ti, fci)) {
+      return null;
+    } else {
+      return fci;
+    }
+  }
+
+  static Set<ClassInfo> getInitializedInterfaces (MJIEnv env, ClassInfo ci){
+    ThreadInfo ti = env.getThreadInfo();
+    Instruction insn = ti.getPC();
+
+    Set<ClassInfo> ifcs = ci.getAllInterfaceClassInfos();
+    for (ClassInfo ciIfc : ifcs){
+      if (insn.requiresClinitCalls(ti, ciIfc)) {
+        return null;
+      } 
+    }
+
+    return ifcs;
+  }
+  
+  static int createFieldObject (MJIEnv env, FieldInfo fi, ClassInfo fci){
+    int regIdx = JPF_java_lang_reflect_Field.registerFieldInfo(fi);
+    
+    int eidx = env.newObject(fci);
+    ElementInfo ei = env.getElementInfo(eidx);    
+    ei.setIntField("regIdx", regIdx);
+    
+    return eidx;
+  }
+  
+  public static int getDeclaredFields_____3Ljava_lang_reflect_Field_2 (MJIEnv env, int objRef) {
+    
+    ClassInfo fci = getInitializedFieldClassInfo(env);
+    if (fci == null) {
       env.repeatInvocation();
       return MJIEnv.NULL;
     }
 
-    
     ClassInfo ci = env.getReferredClassInfo(objRef);
     int nInstance = ci.getNumberOfDeclaredInstanceFields();
     int nStatic = ci.getNumberOfStaticFields();
@@ -421,28 +453,62 @@ public class JPF_java_lang_Class {
     
     for (i=0; i<nStatic; i++) {
       FieldInfo fi = ci.getStaticField(i);
-      int regIdx = JPF_java_lang_reflect_Field.registerFieldInfo(fi);
-      int eidx = env.newObject(fci);
-      ElementInfo ei = env.getElementInfo(eidx);
-      
-      ei.setIntField("regIdx", regIdx);
-      env.setReferenceArrayElement(aref,j++,eidx);
+      env.setReferenceArrayElement(aref, j++, createFieldObject(env, fi, fci));
     }    
     
     for (i=0; i<nInstance; i++) {
       FieldInfo fi = ci.getDeclaredInstanceField(i);
-      
-      int regIdx = JPF_java_lang_reflect_Field.registerFieldInfo(fi);
-      int eidx = env.newObject(fci);
-      ElementInfo ei = env.getElementInfo(eidx);
-      
-      ei.setIntField("regIdx", regIdx);
-      env.setReferenceArrayElement(aref,j++,eidx);
+      env.setReferenceArrayElement(aref, j++, createFieldObject(env, fi, fci));
     }
     
     return aref;
   }
   
+  public static int getFields_____3Ljava_lang_reflect_Field_2 (MJIEnv env, int clsRef){
+    ClassInfo fci = getInitializedFieldClassInfo(env);
+    if (fci == null) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+        
+    ClassInfo ci = env.getReferredClassInfo(clsRef);
+    // interfaces might not be initialized yet, so we have to check first
+    Set<ClassInfo> ifcs = getInitializedInterfaces( env, ci);
+    if (ifcs == null) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    
+    ArrayList<FieldInfo> fiList = new ArrayList<FieldInfo>();
+    for (; ci != null; ci = ci.getSuperClass()){
+      // the host VM returns them in order of declaration, but the spec says there is no guaranteed order so we keep it simple
+      for (FieldInfo fi : ci.getDeclaredInstanceFields()){
+        if (fi.isPublic()){
+          fiList.add(fi);
+        }
+      }
+      for (FieldInfo fi : ci.getDeclaredStaticFields()){
+        if (fi.isPublic()){
+          fiList.add(fi);
+        }
+      }
+    }
+    
+    for (ClassInfo ciIfc : ifcs){
+      for (FieldInfo fi : ciIfc.getDeclaredStaticFields()){
+        fiList.add(fi); // there are no non-public fields in interfaces
+      }      
+    }
+
+    int aref = env.newObjectArray("Ljava/lang/reflect/Field;", fiList.size());
+    int j=0;
+    for (FieldInfo fi : fiList){
+      env.setReferenceArrayElement(aref, j++, createFieldObject(env, fi, fci));
+    }
+    
+    return aref;
+  }
+    
   static int getField (MJIEnv env, int clsRef, int nameRef, boolean isRecursiveLookup) {
     ClassInfo ci = env.getReferredClassInfo( clsRef);
     String fname = env.getStringObject(nameRef);
@@ -465,21 +531,14 @@ public class JPF_java_lang_Class {
       return MJIEnv.NULL;
       
     } else {
-      ThreadInfo ti = env.getThreadInfo();
-      Instruction insn = ti.getPC();
-      ClassInfo fci = ClassInfo.getResolvedClassInfo("java.lang.reflect.Field");
-      
-      if (insn.requiresClinitCalls(ti, fci)) {
+      // don't do a Field clinit before we know there is such a field
+      ClassInfo fci = getInitializedFieldClassInfo(env);
+      if (fci == null) {
         env.repeatInvocation();
         return MJIEnv.NULL;
       }
       
-      int regIdx = JPF_java_lang_reflect_Field.registerFieldInfo(fi);
-      int eidx = env.newObject(fci);
-      ElementInfo ei = env.getElementInfo(eidx);
-      
-      ei.setIntField("regIdx", regIdx);
-      return eidx;
+      return createFieldObject( env, fi, fci);
     }
   }
   
