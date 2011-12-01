@@ -174,7 +174,7 @@ public class Config extends Properties {
   // where did we initialize from
   ArrayList<Object> sources = new ArrayList<Object>();
   
-  List<ConfigChangeListener> changeListeners;
+  ArrayList<ConfigChangeListener> changeListeners;
   
   // Properties are simple Hashmaps, but we want to maintain the order of entries
   LinkedList<String> entrySequence = new LinkedList<String>();
@@ -1057,6 +1057,18 @@ public class Config extends Properties {
     }
   }
   
+  // this shouldn't really be public but only accessible to JPF
+  public void jpfRunTerminated() {
+    if (changeListeners != null) {
+      // note we can't use the standard list iterator here because the sole purpose
+      // of having this notification is to remove the listener from the list during its enumeration
+      // which would give us ConcurrentModificationExceptions
+      ArrayList<ConfigChangeListener> list = (ArrayList<ConfigChangeListener>)changeListeners.clone();
+      for (ConfigChangeListener l : list) {
+        l.jpfRunTerminated(this);
+      }
+    }
+  }
   
   public JPFException exception (String msg) {
     String context = getString("config");
@@ -1207,6 +1219,14 @@ public class Config extends Properties {
       return null;
     }
   }
+  public int[] getIntArray (String key, int... defaultValues){
+    int[] val = getIntArray(key);
+    if (val == null){
+      return defaultValues;
+    } else {
+      return val;
+    }
+  }
 
   public long getDuration (String key, long defValue) {
     String v = getProperty(key);
@@ -1305,7 +1325,61 @@ public class Config extends Properties {
     }
   }
 
+  public long[] getLongArray (String key, long... defaultValues){
+    long[] val = getLongArray(key);
+    if (val != null){
+      return val;
+    } else {
+      return defaultValues;
+    } 
+  }
 
+  public float getFloat (String key) {
+    return getFloat(key, 0.0f);
+  }
+
+  public float getFloat (String key, float defValue) {
+    String v = getProperty(key);
+    if (v != null) {
+      try {
+        return Float.parseFloat(v);
+      } catch (NumberFormatException nfx) {
+        throw new JPFConfigException("illegal float element in '" + key + "' = \"" + v + '"');
+      }
+    }
+
+    return defValue;
+  }
+  
+  public float[] getFloatArray (String key) throws JPFConfigException {
+    String v = getProperty(key);
+
+    if (v != null) {
+      String[] sa = split(v);
+      float[] a = new float[sa.length];
+      int i = 0;
+      try {
+        for (; i<sa.length; i++) {
+          a[i] = Float.parseFloat(sa[i]);
+        }
+        return a;
+      } catch (NumberFormatException nfx) {
+        throw new JPFConfigException("illegal float[] element in " + key + " = " + sa[i]);
+      }
+    } else {
+      return null;
+    }
+  }
+  public float[] getFloatArray (String key, float... defaultValues){
+    float[] v = getFloatArray( key);
+    if (v != null){
+      return v;
+    } else {
+      return defaultValues;
+    }
+  }
+  
+  
   public double getDouble (String key) {
     return getDouble(key, 0.0);
   }
@@ -1340,6 +1414,14 @@ public class Config extends Properties {
       }
     } else {
       return null;
+    }
+  }
+  public double[] getDoubleArray (String key, double... defaultValues){
+    double[] v = getDoubleArray( key);
+    if (v != null){
+      return v;
+    } else {
+      return defaultValues;
     }
   }
 

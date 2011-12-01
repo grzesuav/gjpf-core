@@ -19,13 +19,14 @@
 package gov.nasa.jpf.jvm.choice;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.DoubleChoiceGenerator;
 
 /**
  * ChoiceGenerator instance that produces a simple 3 value enumeration
  * 
  */
-public class DoubleThresholdGenerator extends DoubleChoiceGenerator {
+public class DoubleThresholdGenerator extends ChoiceGeneratorBase<Double> implements DoubleChoiceGenerator {
 
   protected double[] values = new double[3];
   protected int count;
@@ -97,5 +98,10 @@ public class DoubleThresholdGenerator extends DoubleChoiceGenerator {
       values[j] = tmp;
     }    
     return this;
+  }
+
+  @Override
+  public Class<Double> getChoiceType() {
+    return Double.class;
   }
 }

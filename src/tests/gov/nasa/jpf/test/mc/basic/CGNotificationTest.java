@@ -29,6 +29,7 @@ import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.choice.IntChoiceFromList;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.util.test.TestJPF;
 import java.util.ArrayList;
@@ -84,7 +85,7 @@ public class CGNotificationTest extends TestJPF {
         if (exec.getExecutedMethodName().equals("getInt")){// this insn did create a CG
           if (!ti.isFirstStepInsn()){
 
-            IntChoiceGenerator cg = new IntChoiceFromSet("listenerCG", 3,4);
+            ChoiceGenerator<Integer> cg = new IntChoiceFromList("listenerCG", 3,4);
             ss.setNextChoiceGenerator(cg);
           }
         }

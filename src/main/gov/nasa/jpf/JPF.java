@@ -49,9 +49,12 @@ public class JPF implements Runnable {
   public enum Status { NEW, RUNNING, DONE };
 
   class ConfigListener implements ConfigChangeListener {
+    
+    /**
+     * check for new listeners that are dynamically configured
+     */
+    @Override
     public void propertyChanged(Config config, String key, String oldValue, String newValue) {
-            
-      //--- check for new listeners
       if ("listener".equals(key)) {
         if (oldValue == null)
           oldValue = "";
@@ -75,18 +78,22 @@ public class JPF implements Runnable {
           }
         }
       }
-    }    
+    }
+    
+    /**
+     * clean up to avoid a sublte but serious memory leak when using the
+     * same config for multiple JPF objects/runs - this listener is an inner
+     * class object that keeps its encapsulating JPF instance alive
+     */
+    @Override
+    public void jpfRunTerminated(Config config){
+      config.removeChangeListener(this);
+    }
   }
   
   /** this is the backbone of all JPF configuration */
   Config config;
   
-  /** we need to keep the ref so that we can dereference . If we don't, and we
-   * reuse the Config object to re-create JPF objects, we keep all of them alive
-   * by means of the ConfigListener.this0
-   */
-  ConfigListener configListener;
-
   /** The search policy used to explore the state space */
   Search search;
 
@@ -267,8 +274,7 @@ public class JPF implements Runnable {
 
       addListeners();
       
-      configListener = new ConfigListener();
-      config.addChangeListener(configListener);
+      config.addChangeListener(new ConfigListener());
       
     } catch (JPFConfigException cx) {
       logger.severe(cx.toString());
@@ -606,16 +612,13 @@ public class JPF implements Runnable {
       } finally {
         status = Status.DONE;
 
+        config.jpfRunTerminated();
         cleanUp();        
       }
     }
   }
   
   protected void cleanUp(){
-    // avoid a subtle memory leak keeping JPF objects alive through inner ConfigListener objects
-    config.removeChangeListener(configListener);
-    configListener = null;
-    
     search.cleanUp();
     vm.cleanUp();
     reporter.cleanUp();

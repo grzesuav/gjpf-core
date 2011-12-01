@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.jvm.choice;
 
+import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.IntChoiceGenerator;
 import gov.nasa.jpf.util.test.TestJPF;
 
@@ -29,7 +30,7 @@ import org.junit.Test;
  */
 public class IntChoiceFromSetTest extends TestJPF {
 
-  private void testSetContents(IntChoiceGenerator cg) {
+  private void testSetContents(ChoiceGenerator<Integer> cg) {
     cg.advance();
     assertTrue (cg.hasMoreChoices());
     assertEquals ((int)cg.getNextChoice(), 1);

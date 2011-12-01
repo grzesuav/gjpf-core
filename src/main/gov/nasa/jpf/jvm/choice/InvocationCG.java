@@ -24,12 +24,13 @@ import java.util.List;
 import java.util.ListIterator;
 
 import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.util.Invocation;
 
 /**
  * ChoiceGenerator that represents method calls
  */
-public class InvocationCG extends ChoiceGenerator<Invocation> {
+public class InvocationCG extends ChoiceGeneratorBase<Invocation> {
 
   protected List<Invocation> invokes;
   protected Invocation cur;
@@ -74,7 +75,7 @@ public class InvocationCG extends ChoiceGenerator<Invocation> {
   }
 
   @Override
-  public ChoiceGenerator randomize () {
+  public ChoiceGenerator<Invocation> randomize () {
     // <2do>
     return this;
   }

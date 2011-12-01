@@ -22,15 +22,5 @@ package gov.nasa.jpf.jvm;
 /**
  * that's a little bit counter-intuitive - references are just int values in JPF
  */
-public abstract class ReferenceChoiceGenerator extends ChoiceGenerator<Integer> {
-
-  protected ReferenceChoiceGenerator (String id){
-    super(id);
-  }
-
-  public abstract Integer getNextChoice();
-  
-  public Class<Integer> getChoiceType() {
-    return Integer.class;
-  }
+public interface ReferenceChoiceGenerator extends ChoiceGenerator<Integer> {
 }

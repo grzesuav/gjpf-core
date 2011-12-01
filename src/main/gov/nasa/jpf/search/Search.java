@@ -83,6 +83,7 @@ public abstract class Search {
   // reused for several JPF runs
   class ConfigListener implements ConfigChangeListener {
 
+    @Override
     public void propertyChanged(Config config, String key, String oldValue, String newValue) {
       // Different Config instance
       if (!config.equals(Search.this.config)) {
@@ -99,10 +100,12 @@ public abstract class Search {
         }
       }
     }
+    
+    @Override
+    public void jpfRunTerminated (Config config){
+      config.removeChangeListener(this);
+    }
   }
-
-  // we need to store this so that we can unregister when we are done
-  protected ConfigListener configListener;
   
   /** storage to keep track of state depths */
   protected final IntVector stateDepth = new IntVector();
@@ -118,8 +121,7 @@ public abstract class Search {
       log.severe("no property");
     }
     
-    configListener = new ConfigListener();
-    config.addChangeListener(configListener);
+    config.addChangeListener( new ConfigListener());
   }
 
   protected void initialize( Config conf){
@@ -133,10 +135,7 @@ public abstract class Search {
    * called after the JPF run is finished. Shouldn't be public, but is called by JPF
    */
   public void cleanUp(){
-    if (configListener != null){
-      config.removeChangeListener(configListener);
-      configListener = null;
-    }
+    // nothing here, the ConfigListener removes itself
   }
   
   public Config getConfig() {

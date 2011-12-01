@@ -26,13 +26,14 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.ReferenceChoiceGenerator;
 
 /**
  * a choice generator that enumerates the set of all objects of a certain type. This
  * is a replacement for the old 'Verify.randomObject'
  */
-public class TypedObjectChoice extends ReferenceChoiceGenerator {
+public class TypedObjectChoice extends ChoiceGeneratorBase<Integer> implements ReferenceChoiceGenerator {
   
   // the requested object type
   protected String type;
@@ -135,5 +136,10 @@ public class TypedObjectChoice extends ReferenceChoiceGenerator {
       values[j] = tmp;
     }
     return this;
+  }
+
+  @Override
+  public Class<Integer> getChoiceType() {
+    return Integer.class;
   }
 }

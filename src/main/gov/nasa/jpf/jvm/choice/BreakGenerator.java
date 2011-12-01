@@ -20,6 +20,8 @@ package gov.nasa.jpf.jvm.choice;
 
 import java.io.PrintWriter;
 
+import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.ThreadChoiceGenerator;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -28,14 +30,14 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * just reschedule the current thread, or to indicate an end state
  * (e.g. for System.exit())
  */
-public class BreakGenerator extends ThreadChoiceGenerator {
+public class BreakGenerator extends ChoiceGeneratorBase<ThreadInfo> implements ThreadChoiceGenerator {
 
   ThreadInfo ti;
   int state = -1;
   boolean isTerminator;
 
   public BreakGenerator (String id, ThreadInfo ti, boolean isTerminator) {
-    super(id, true);
+    super(id);
     
     this.ti = ti;
     this.isTerminator = isTerminator;
@@ -79,5 +81,20 @@ public class BreakGenerator extends ThreadChoiceGenerator {
   @Override
   public boolean contains (ThreadInfo ti){
     return this.ti == ti;
+  }
+
+  @Override
+  public Class<ThreadInfo> getChoiceType() {
+    return ThreadInfo.class;
+  }
+
+  @Override
+  public ChoiceGenerator<ThreadInfo> randomize() {
+    return this;
+  }
+  
+  @Override
+  public boolean isSchedulingPoint(){
+    return true; // that's the whole point of having a BreakGenerator
   }
 }

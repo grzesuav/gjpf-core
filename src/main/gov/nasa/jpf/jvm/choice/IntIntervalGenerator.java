@@ -23,17 +23,18 @@ import java.util.Comparator;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.IntChoiceGenerator;
 
 /**
- * Choice Generator that enumerates an interval of int values Pretty simplistic
+ * Choice Generator that enumerates an interval of int values. Pretty simplistic
  * implementation for now, but at least it can count up and down
  *
  * randomizing is handled through RandomOrderIntCG
  */
-public class IntIntervalGenerator extends IntChoiceGenerator {
+public class IntIntervalGenerator extends ChoiceGeneratorBase<Integer> implements IntChoiceGenerator {
 
-  
   protected int min, max;
   protected int next;
   protected int delta;
@@ -164,7 +165,7 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
     return true;
   }
   
-  public IntChoiceGenerator reorder (Comparator<Integer> comparator){
+  public ChoiceGenerator<Integer> reorder (Comparator<Integer> comparator){
     Integer[] vals = getChoices();
     Arrays.sort(vals, comparator);
     
@@ -194,10 +195,14 @@ public class IntIntervalGenerator extends IntChoiceGenerator {
     sb.append(']');
     return sb.toString();
   }
-  
-  //see comment at top 
-  //public IntIntervalGenerator randomize() {
-  //  // we handle this at creation time
-  //  return this;
-  //}
+
+  @Override
+  public Class<Integer> getChoiceType() {
+    return Integer.class;
+  }
+
+  @Override
+  public ChoiceGenerator<Integer> randomize() {
+    return new RandomOrderIntCG(this);
+  }
 }

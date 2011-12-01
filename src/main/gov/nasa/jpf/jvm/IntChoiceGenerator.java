@@ -21,28 +21,8 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.jvm.choice.RandomOrderIntCG;
 
 /**
-* Choice Generator that creates double values
+* Choice Generator that creates Integer values - this is just an interface
+* so that we can type test for implementors that have their own generic hierarchy
 */
-public abstract class IntChoiceGenerator extends ChoiceGenerator<Integer> {
-  protected IntChoiceGenerator (String id) {
-    super(id);
-  }
-  
-  public abstract Integer getNextChoice ();
-  
-  public Class<Integer> getChoiceType() {
-    return Integer.class;
-  }
-  
-  public String toString () {
-    return (super.toString() + " => " + getNextChoice());
-  }
-  
-  /**
-   * this is just our generic Decorator - if a concrete instance has a better
-   * way of handling this w/o changing , it is free to override this method 
-   */
-  public IntChoiceGenerator randomize () {
-    return new RandomOrderIntCG(this);
-  }
+public interface IntChoiceGenerator extends ChoiceGenerator<Integer> {
 }

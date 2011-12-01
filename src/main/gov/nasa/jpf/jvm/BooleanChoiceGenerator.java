@@ -18,16 +18,15 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.util.Arrays;
-import java.util.Comparator;
-
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
 
 /**
  * a pretty simple ChoiceGenerator that returns a boolean
+ * there is not much use in having a CG type interface (such as
+ * IntChoiceGenerator) since there is hardly a need for a generic type hierarchy
+ * of BooleanChoiceGenerator subtypes - what else can you do with true/false
  */
-public class BooleanChoiceGenerator extends ChoiceGenerator<Boolean> {
+public class BooleanChoiceGenerator extends ChoiceGeneratorBase<Boolean> {
 
   // do we evaluate [false, true] or [true, false]
   protected boolean falseFirst = true;

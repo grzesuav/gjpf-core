@@ -1,11 +1,11 @@
 package gov.nasa.jpf.util.script;
 
-import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 
 /**
  * abstract ChoiceGenerator root for Event based generators
  */
-public abstract class EventGenerator<T> extends ChoiceGenerator<T> {
+public abstract class EventGenerator<T> extends ChoiceGeneratorBase<T> {
 
   protected EventGenerator (String id){
     super(id);

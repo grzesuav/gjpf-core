@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.choice;
 
-import gov.nasa.jpf.jvm.IntChoiceGenerator;
+import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.ThreadChoiceGenerator;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -26,16 +26,19 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Comparator;
 
-public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
+public class ThreadChoiceFromSet extends ChoiceGeneratorBase<ThreadInfo> implements ThreadChoiceGenerator {
 
+  protected boolean isSchedulingPoint;
   protected ThreadInfo[] values;
   protected int count;
     
   public ThreadChoiceFromSet (String id, ThreadInfo[] set, boolean isSchedulingPoint) {
-    super(id, isSchedulingPoint);
+    super(id);
         
     values = set;
     count = -1;
+    
+    this.isSchedulingPoint = isSchedulingPoint;
   }
   
   public void reset () {
@@ -142,5 +145,14 @@ public class ThreadChoiceFromSet extends ThreadChoiceGenerator {
       }
     }
     return false;
+  }
+
+  @Override
+  public Class<ThreadInfo> getChoiceType() {
+    return ThreadInfo.class;
+  }
+  
+  public boolean isSchedulingPoint() {
+    return isSchedulingPoint;
   }
 }

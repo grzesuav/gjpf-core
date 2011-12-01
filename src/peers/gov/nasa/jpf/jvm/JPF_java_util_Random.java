@@ -18,41 +18,102 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.lang.reflect.Field;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
+
+import sun.misc.Unsafe;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ConfigChangeListener;
+import gov.nasa.jpf.JPFException;
 
 /**
  * MJI NativePeer class for java.util.Random library abstraction
  *
- * (we need to cut off the static class init since it pulls in a lot
- * of classes requiring native methods)
- *
- * <2do> - we should add a property if the nextXX'es should be turned
- * into choice points, and if yes, how. In general, it is probably preferable
- * to leave them single-valued, but deterministic
+ * model - peer delegation is done via restoring a singleton, which unfortunately
+ * has to resort to the rather nasty Unsafe mechanism because the required
+ * random internals are private. We could use per-instance native objects
+ * stored as object attributes, but that would only partly solve the problem
+ * because we still would have to backtrack the internal state of such objects
  */
 public class JPF_java_util_Random {
 
-  static final long multiplier = 0x5DEECE66DL;
-  static final long addend     = 0xBL;
-  static final long mask       = (1L << 48) - 1;
-
+  static class Delegatee extends Random {
+    public int next (int nBits){
+      return super.next(nBits);
+    }
+  }
+  
+  // we need this because cg.enumerate_random might be set on demand
   static class ConfigListener implements ConfigChangeListener {
-
-    public void propertyChanged(Config conf, String key, String oldValue, String newValue) {
+    @Override
+    public void propertyChanged(Config config, String key, String oldValue, String newValue) {
       if ("cg.enumerate_random".equals(key)) {
-        setEnumerateRandom(conf);
+        setEnumerateRandom(config);
       }
+    }
+    
+    @Override
+    public void jpfRunTerminated(Config config){
+      config.removeChangeListener(this);
     }
   }
 
   static boolean enumerateRandom;
+  
+  // those are only used if enumerateRandom is not set, i.e. we delegate to the host VM
+  static boolean reproducibleRandom;
+  static long constantSeed;
+  static int[] defaultIntSet; // in case we have an nextInt(), i.e. an unspecified upper boundary
+  static long[] defaultLongSet;
+  static double[] defaultDoubleSet;
+  static float[] defaultFloatSet;
 
+  // since peer methods are atomic, we just keep one delegator instead of per-object,
+  // which would have to rely on attributes and still require storing/restoring
+  // the seed state with nasty Unsafe
+  static Delegatee delegatee = new Delegatee();
+  
+  // this is bad stuff we need to set/retrieve the Random.seed value. We only have
+  // a choice between a rock and a hard place here - either we depend on this
+  // field and sun.misc.Unsafe, or we duplicate the algorithms. The hard place
+  // seems worse than the rock
+  private static Unsafe unsafe;
+  private static long seedFieldOffset;
+  
+  static {
+    try {
+      // Unsafe.getUnsafe() can only be called from a SystemClassLoaderContext
+      Field singletonField = Unsafe.class.getDeclaredField("theUnsafe");
+      singletonField.setAccessible(true);
+      unsafe = (Unsafe)singletonField.get(null);
+      
+      seedFieldOffset = unsafe.objectFieldOffset(Random.class.getDeclaredField("seed"));
+    } catch (Exception ex) {
+      throw new JPFException("cannot access java.util.Random internals: " + ex); 
+    }
+  }
+  
+  private static void setNativeSeed (Random rand, long seed) {
+    AtomicLong al = (AtomicLong) unsafe.getObject(rand, seedFieldOffset);
+    al.set(seed);
+  }
+  private static long getNativeSeed (Random rand){
+    AtomicLong al = (AtomicLong) unsafe.getObject(rand, seedFieldOffset);
+    return al.longValue();
+  }
+  
   public static void init (Config conf) {
     setEnumerateRandom(conf);
     conf.addChangeListener(new ConfigListener());
+    
+    reproducibleRandom = conf.getBoolean("vm.reproducible_random", true);
+    constantSeed = conf.getLong("vm.random_seed", 42);
+    defaultIntSet = conf.getIntArray("vm.random_ints", Integer.MIN_VALUE, 0, Integer.MAX_VALUE);
+    defaultDoubleSet = conf.getDoubleArray("vm.random_doubles", Double.MIN_VALUE, 0, Double.MAX_VALUE);  
+    defaultLongSet = conf.getLongArray("vm.random_longs", Long.MIN_VALUE, 0, Long.MAX_VALUE);  
+    defaultFloatSet = conf.getFloatArray("vm.random_floats", Float.MIN_VALUE, 0, Float.MAX_VALUE);  
   }
 
   static void setEnumerateRandom (Config conf) {
@@ -63,140 +124,156 @@ public class JPF_java_util_Random {
     }    
   }
   
-  public static void $clinit____V (MJIEnv env, int rcls) {
-    // don't let this one pass, it pulls the ObjectStreams
-    // <2do> but we have to initialize a number of fields required by the unmodified Random class!
+  static long computeDefaultSeed(){
+    Random rand = (reproducibleRandom) ? new Random(constantSeed) : new Random();
+    return getNativeSeed( rand);
   }
-
-
-  // internal helpers to simulate Random operations, Unfortunately we
-  // can't just delegate to a real Random object because there is no decent
-  // way to get the updated seed value back
-
-  static long nextSeed (long seed){
-    return (seed * multiplier + addend) & mask;
+  static void storeSeed (MJIEnv env, int objRef, long seed){
+    env.setLongField(objRef, "seed", seed);
   }
-
-  static int next (long seed, int bits) {
-    return (int)(seed >>> (48 - bits));
+  static long getSeed (MJIEnv env, int objRef){
+    return env.getLongField(objRef, "seed");
   }
-
-  // that's a more convenient wrapper if we don't have repeated calls
-  static int next (MJIEnv env, int objref, int bits) {
-    int atomicLongRef = env.getReferenceField(objref, "seed");
-    long old = env.getLongField(atomicLongRef, "value");
-
-    long next = (old * multiplier + addend) & mask;
-
-    env.setLongField(atomicLongRef, "value", next);
-
-    return (int)(next >>> (48 - bits));
+  
+  static void restoreRandomState (MJIEnv env, int objRef, Random rand){
+    long seed = getSeed( env, objRef);
+    setNativeSeed( rand, seed);
   }
-
-  static long getSeed (MJIEnv env, int objref){
-    int atomicLongRef = env.getReferenceField(objref, "seed");
-    return env.getLongField(atomicLongRef, "value");
+  
+  static void storeRandomState (MJIEnv env, int objRef, Random rand){
+    long seed = getNativeSeed( rand);
+    storeSeed( env, objRef, seed);
   }
-
-  static void setSeed (MJIEnv env, int objref, long seed){
-    int atomicLongRef = env.getReferenceField(objref, "seed");
-    env.setLongField(atomicLongRef, "value", seed);
+  
+  
+  //--- the publics
+  public static void $init____V (MJIEnv env, int objRef){
+    long seed = computeDefaultSeed();
+    storeSeed( env, objRef, seed);
   }
-
-  public static int nextInt____I (MJIEnv env, int objref) {
-    int r = 0;
-    if (enumerateRandom) {
-      // <2do>
-    } else {
-      r = next(env,objref,32);
-    }
-
-    return r;
+  
+  public static void $init__J__V (MJIEnv env, int objRef, long seedStarter){
+    // note - the provided seedStarter is modified by java.util.Random, it is
+    // NOT the internal value that is consecutively used
+    Random rand = new Random(seedStarter);
+    storeRandomState(env, objRef, rand);    
   }
-
-  public static double nextDouble____D (MJIEnv env, int objref) {
-    double r = 0;
-    if (enumerateRandom) {
-      // <2do>
-    } else {
-      r = (((long)(next(env,objref, 26)) << 27)
-                   + next(env,objref, 27)) / (double)(1L << 53);
-    }
-
-    return r;
+  
+  public static void setSeed__J__V (MJIEnv env, int objRef, long seedStarter){
+    // my, what an effort to change a long.
+    restoreRandomState( env, objRef, delegatee);
+    delegatee.setSeed(seedStarter); // compute the new internal value
+    storeRandomState(env, objRef, delegatee);    
   }
+  
 
-  public static double nextGaussian____D (MJIEnv env, int objref) {
-    double r = 0;
-    if (enumerateRandom) {
-      // <2do>
-
-    } else {
-      // not sure if we really want to keep this fidelity, just in case the
-      // fields are used anywhere. After all, those fields are private
-
-      if (env.getBooleanField(objref, "haveNextNextGaussian")) {
-        env.setBooleanField(objref, "haveNextNextGaussian", false);
-        r = env.getDoubleField(objref, "nextNextGaussian");
-      } else {
-        double a,b,c;
-
-        do {
-          a = 2*nextDouble____D(env,objref) - 1; // <2do> that's inefficient!
-          b = 2*nextDouble____D(env,objref) - 1;
-          c = a*a + b*b;
-        } while (a >= 1 || c == 0);
-
-        r = StrictMath.sqrt( -2 * StrictMath.log(c) / c);
-        env.setDoubleField(objref, "nextNextGaussian", r * b);
-        env.setBooleanField(objref, "haveNextNextGaussian", true);
-
-        r *= a;
-      }
-    }
-
-    return r;
-  }
-
-
-
-  public static int nextInt__I__I (MJIEnv env, int objref, int n) {
-    if (enumerateRandom){
-      return JPF_gov_nasa_jpf_jvm_Verify.getInt__II__I(env,-1,0,n-1);
-
-    } else {
-      long seed = getSeed(env, objref);
-
-      if ((n & -n) == n) {
-        seed = nextSeed(seed);
-        setSeed(env, objref, seed);
-        return (int)((n * (long)next(seed,31)) >> 31);
-
-      } else {
-
-        int bits, v;
-        do {
-          seed = nextSeed(seed);
-          bits = next(seed, 31);
-          v = bits % n;
-        } while(bits - v + (n-1) < 0);
-
-        setSeed(env, objref, seed);
-        return v;
-      }
-    }
-  }
-
-  public static boolean nextBoolean____Z (MJIEnv env, int objref){
+  public static boolean nextBoolean____Z (MJIEnv env, int objRef){
     if (enumerateRandom){
       return JPF_gov_nasa_jpf_jvm_Verify.getBoolean____Z(env,-1);
 
     } else {
-      long seed = getSeed(env, objref);
-      seed = nextSeed(seed);
-      setSeed(env,objref,seed);
-      return (next(seed,1) != 0);
+      restoreRandomState(env, objRef, delegatee);
+      boolean ret = delegatee.nextBoolean();
+      storeRandomState(env, objRef, delegatee);
+      return ret;
     }
   }
+  
+  public static int nextInt__I__I (MJIEnv env, int objRef, int n){
+    if (enumerateRandom){
+      return JPF_gov_nasa_jpf_jvm_Verify.getInt__II__I(env,-1,0,n-1);
+      
+    } else {
+      restoreRandomState(env, objRef, delegatee);
+      int ret = delegatee.nextInt(n);
+      storeRandomState(env, objRef, delegatee);
+      return ret;
+    }
+  }
+  
+  public static int nextInt____I (MJIEnv env, int objRef){
+    if (enumerateRandom){
+      return JPF_gov_nasa_jpf_jvm_Verify.getIntFromList(env, defaultIntSet);
+      
+    } else {
+      restoreRandomState(env, objRef, delegatee);
+      int ret = delegatee.nextInt();
+      storeRandomState(env, objRef, delegatee);
+      return ret;
+    }
+  }
+  
+  public static int next__I__I (MJIEnv env, int objRef, int nBits){
+    if (enumerateRandom){
+      // <2do> we can't do this with an interval since it most likely would explode our state space
+      return JPF_gov_nasa_jpf_jvm_Verify.getIntFromList(env, defaultIntSet);
+      
+    } else {
+      restoreRandomState(env, objRef, delegatee);
+      int ret = delegatee.next( nBits);
+      storeRandomState(env, objRef, delegatee);
+      return ret;
+    }
+  }
+  
+  public static void nextBytes___3B__V (MJIEnv env, int objRef, int dataRef){
+    // <2do> this one is an even worse state exploder. We could use cascaded CGs,
+    // but chances are this really kills us, so we just ignore 'enumerateRandom' for now
+    
+    int n = env.getArrayLength(dataRef);
+    byte[] data = new byte[n];
 
+    restoreRandomState(env, objRef, delegatee);
+    delegatee.nextBytes(data);
+    storeRandomState(env, objRef, delegatee);
+
+    for (int i = 0; i < n; i++) {
+      env.setByteArrayElement(dataRef, i, data[i]);
+    }
+  }
+  
+  public static long nextLong____J (MJIEnv env, int objRef){
+    if (enumerateRandom){
+      return JPF_gov_nasa_jpf_jvm_Verify.getLongFromList(env, defaultLongSet);
+      
+    } else {
+      restoreRandomState(env, objRef, delegatee);
+      long ret = delegatee.nextLong();
+      storeRandomState(env, objRef, delegatee);
+      return ret;
+    }    
+  }
+
+  public static float nextFloat____F (MJIEnv env, int objRef){
+    if (enumerateRandom){
+      return JPF_gov_nasa_jpf_jvm_Verify.getFloatFromList(env, defaultFloatSet);
+      
+    } else {
+      restoreRandomState(env, objRef, delegatee);
+      float ret = delegatee.nextFloat();
+      storeRandomState(env, objRef, delegatee);
+      return ret;
+    }    
+  }
+
+  public static double nextDouble____D (MJIEnv env, int objRef){
+    if (enumerateRandom){
+      return JPF_gov_nasa_jpf_jvm_Verify.getDoubleFromList(env, defaultDoubleSet);
+      
+    } else {
+      restoreRandomState(env, objRef, delegatee);
+      double ret = delegatee.nextDouble();
+      storeRandomState(env, objRef, delegatee);
+      return ret;
+    }    
+  }
+
+  public static double nextGaussian____D (MJIEnv env, int objRef){
+    // <2do> we don't support this yet, neither for enumerateRandom nor
+    // delegation (which would require an additional 'haveNextGaussian' state)
+    restoreRandomState(env, objRef, delegatee);
+    double ret = delegatee.nextGaussian();
+    storeRandomState(env, objRef, delegatee);
+    return ret;
+  }
 }

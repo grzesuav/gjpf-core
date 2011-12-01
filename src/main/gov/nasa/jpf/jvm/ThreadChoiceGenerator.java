@@ -19,48 +19,10 @@
 package gov.nasa.jpf.jvm;
 
 import java.io.PrintWriter;
-import java.io.StringWriter;
 
-public abstract class ThreadChoiceGenerator extends ChoiceGenerator<ThreadInfo> {
+public interface ThreadChoiceGenerator extends ChoiceGenerator<ThreadInfo> {
   
-  /** that's not the best solution, but we can have Thread CGs which
-   * are used to switch threads, and others which just return objects.
-   * We don't want to double all subclasses based on that, so we bite
-   * the bullet and have a field. We could also do this with a decorator,
-   * but the normal case is a scheduling point, and we don't want two
-   * objects for each of it
-   */
-  protected boolean isSchedulingPoint;
-    
-  protected ThreadChoiceGenerator (String id, boolean isSchedulingPoint) {
-    super(id);
-    this.isSchedulingPoint = isSchedulingPoint;
-  }
-
-  public abstract ThreadInfo getNextChoice ();
+  void printOn (PrintWriter pw);
   
-  public Class<ThreadInfo> getChoiceType() {
-    return ThreadInfo.class;
-  }
-  
-  public String toString () {
-    StringWriter sw = new StringWriter(100);
-    PrintWriter pw = new PrintWriter(sw);
-    printOn(pw);
-    
-    return sw.toString();
-  }
-  
-  public abstract void printOn (PrintWriter pw);
-  
-  public ThreadChoiceGenerator randomize () {
-    return this;
-  }
-
-  @Override
-  public boolean isSchedulingPoint () {
-    return isSchedulingPoint;
-  }
-
-  public abstract boolean contains (ThreadInfo ti);
+  boolean contains (ThreadInfo ti);
 }

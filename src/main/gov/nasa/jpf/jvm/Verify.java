@@ -347,7 +347,7 @@ public class Verify {
     return getRandom().nextInt((max-min+1)) + min;
   }
 
-  public static int getIntFromSet (int... values){
+  public static int getIntFromList (int... values){
     if (values != null && values.length > 0) {
       int i = getRandom().nextInt(values.length);
       return values[i];
@@ -380,7 +380,7 @@ public class Verify {
     return getRandom().nextDouble();
   }
 
-  public static double getDoubleFromSet (double... values){
+  public static double getDoubleFromList (double... values){
     if (values != null && values.length > 0) {
       int i = getRandom().nextInt(values.length);
       return values[i];
@@ -388,7 +388,26 @@ public class Verify {
       return getRandom().nextDouble();
     }
   }
+  
+  public static long getLongFromList (long...values){
+    if (values != null && values.length > 0) {
+      int i = getRandom().nextInt(values.length);
+      return values[i];
+    } else {
+      return getRandom().nextLong();
+    }    
+  }
 
+  public static float getFloatFromList (float...values){
+    if (values != null && values.length > 0) {
+      int i = getRandom().nextInt(values.length);
+      return values[i];
+    } else {
+      return getRandom().nextFloat();
+    }    
+  }
+
+  
   /**
    * Returns a random number between 0 and max inclusive.
    */

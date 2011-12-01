@@ -19,21 +19,9 @@
 package gov.nasa.jpf.jvm;
 
 /**
-* Choice Generator that creates double values
+* Choice Generator that creates double values - this is only an
+* interface so that we can type check implementors that use 
+* their own generic hierarchy
 */
-public abstract class DoubleChoiceGenerator extends ChoiceGenerator<Double> {
-  protected DoubleChoiceGenerator (String id) {
-    super(id);
-  }
-  
-  public abstract Double getNextChoice ();
-  
-  public Class<Double> getChoiceType() {
-    return Double.class;
-  }
-  
-  public String toString () {
-    return (super.toString() + " => " + getNextChoice());
-  }
-  
+public interface DoubleChoiceGenerator extends ChoiceGenerator<Double> {
 }

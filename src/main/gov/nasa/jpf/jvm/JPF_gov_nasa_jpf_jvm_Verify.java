@@ -22,8 +22,10 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
+import gov.nasa.jpf.jvm.choice.FloatChoiceFromList;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
+import gov.nasa.jpf.jvm.choice.LongChoiceFromList;
 import gov.nasa.jpf.util.ObjectConverter;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.RunListener;
@@ -335,19 +337,22 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
   }
 
-  public static int getIntFromSet___3I__I (MJIEnv env, int clsObjRef, int valArrayRef){
+  static int getIntFromList (MJIEnv env, int[] values){
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
 
     if (!ti.isFirstStepInsn()) { // first time around
-      int[] values = env.getIntArrayObject(valArrayRef);
-
-      IntChoiceGenerator cg = new IntChoiceFromSet( "verifyGetIntSet([I)", values);
+      ChoiceGenerator<Integer> cg = new IntChoiceFromSet( "verifyGetIntSet([I)", values);
       return registerChoiceGenerator(env,ss,ti,cg,0);
 
     } else {
       return getNextChoice(ss, "verifyGetIntSet([I)", IntChoiceGenerator.class, Integer.class);
-    }
+    }    
+  }
+  
+  public static int getIntFromList___3I__I (MJIEnv env, int clsObjRef, int valArrayRef){
+    int[] values = env.getIntArrayObject(valArrayRef);
+    return getIntFromList( env, values);
   }
 
 
@@ -367,6 +372,24 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
   }
 
+  static long getLongFromList (MJIEnv env, long[] values){
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+
+    if (!ti.isFirstStepInsn()) { // first time around
+      ChoiceGenerator<Long> cg = new LongChoiceFromList( "verifyLongList([J)", values);
+      return registerChoiceGenerator(env,ss,ti,cg,0L);
+
+    } else {
+      return getNextChoice(ss, "verifyLongList([J)", LongChoiceGenerator.class, Long.class);
+    }    
+  }
+  
+  public static long getLongFromList___3J__J (MJIEnv env, int clsObjRef, int valArrayRef){
+    long[] values = env.getLongArrayObject(valArrayRef);
+    return getLongFromList( env, values);    
+  }
+  
   public static int getObject__Ljava_lang_String_2__Ljava_lang_Object_2 (MJIEnv env, int clsObjRef, int idRef) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
@@ -397,20 +420,42 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
   }
 
-  public static double getDoubleFromSet___3D__D (MJIEnv env, int clsObjRef, int valArrayRef){
+  public static double getDoubleFromList (MJIEnv env, double[] values){
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
 
     if (!ti.isFirstStepInsn()) { // first time around
-      double[] values = env.getDoubleArrayObject(valArrayRef);
-      DoubleChoiceGenerator cg = new DoubleChoiceFromList("verifyDoubleSet([D)", values);
+      ChoiceGenerator<Double> cg = new DoubleChoiceFromList("verifyDoubleList([D)", values);
       return registerChoiceGenerator(env,ss,ti,cg, 0.0);
 
     } else {
-      return getNextChoice(ss, "verifyDoubleSet([D)", DoubleChoiceFromList.class,Double.class);
-    }
+      return getNextChoice(ss, "verifyDoubleList([D)", DoubleChoiceFromList.class,Double.class);
+    }    
+  }
+  
+  public static double getDoubleFromList___3D__D (MJIEnv env, int clsObjRef, int valArrayRef){
+    double[] values = env.getDoubleArrayObject(valArrayRef);
+    return getDoubleFromList( env, values);
   }
 
+  
+  public static float getFloatFromList (MJIEnv env, float[] values){
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+
+    if (!ti.isFirstStepInsn()) { // first time around
+      ChoiceGenerator<Float> cg = new FloatChoiceFromList("verifyFloatSet([F)", values);
+      return registerChoiceGenerator(env,ss,ti,cg, 0.0f);
+
+    } else {
+      return getNextChoice(ss, "verifyFloatList([F)", FloatChoiceFromList.class, Float.class);
+    }    
+  }
+  
+  public static float getFloatFromList___3F__F (MJIEnv env, int clsObjRef, int valArrayRef){
+    float[] values = env.getFloatArrayObject(valArrayRef);
+    return getFloatFromList( env, values);
+  }
 
 
   public static void print__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int sRef, int val){

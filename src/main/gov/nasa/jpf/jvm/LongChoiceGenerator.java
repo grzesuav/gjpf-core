@@ -23,29 +23,9 @@ import gov.nasa.jpf.jvm.choice.RandomOrderLongCG;
 
 
 /**
- * base type for 'long' choice generator types
+ * ChoiceGenerator for Long values - this is only an interface so that
+ * we can use it for type checks of implementors that use their own
+ * generic hierarchy
  */
-public abstract class LongChoiceGenerator extends ChoiceGenerator<Long> {
-
-  protected LongChoiceGenerator (String id) {
-    super(id);
-  }
-
-  public abstract Long getNextChoice ();
-
-  public Class<Long> getChoiceType() {
-    return Long.class;
-  }
-
-  public String toString () {
-    return (super.toString() + " => " + getNextChoice());
-  }
-
-  /**
-   * this is just our generic Decorator - if a concrete instance has a better
-   * way of handling this w/o changing , it is free to override this method
-   */
-  public LongChoiceGenerator randomize () {
-    return new RandomOrderLongCG(this);
-  }
+public interface LongChoiceGenerator extends ChoiceGenerator<Long> {
 }

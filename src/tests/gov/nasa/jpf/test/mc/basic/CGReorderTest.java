@@ -110,7 +110,7 @@ public class CGReorderTest extends TestJPF {
   @Test
   public void testReorder(){
     if (verifyNoPropertyViolation("+listener=.test.mc.basic.CGReorderTest$ReorderListener")){
-      double x = Verify.getDoubleFromSet(1.0, 2.0, 3.0, 4.0);
+      double x = Verify.getDoubleFromList(1.0, 2.0, 3.0, 4.0);
       System.out.println(x);
     }
   }

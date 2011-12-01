@@ -20,20 +20,9 @@
 package gov.nasa.jpf.jvm;
 
 /**
- * Choice Generator that creates float values
+ * Choice Generator that creates float value - this is only an interface
+ * we can use for type checks of implementors that have their own
+ * generic hierarchy
  */
-public abstract class FloatChoiceGenerator extends ChoiceGenerator<Float> {
-  protected FloatChoiceGenerator (String id) {
-    super(id);
-  }
-
-  public abstract Float getNextChoice ();
-
-  public Class<Float> getChoiceType() {
-    return Float.class;
-  }
-
-  public String toString () {
-    return (super.toString() + " => " + getNextChoice());
-  }
+public interface FloatChoiceGenerator extends ChoiceGenerator<Float> {
 }

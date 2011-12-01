@@ -20,34 +20,29 @@ package gov.nasa.jpf.jvm.choice;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.DoubleChoiceGenerator;
+import gov.nasa.jpf.jvm.LongChoiceGenerator;
 
-/**
- * simple DoubleChoiceGenerator that takes it's values from a single
- * property "values" (comma or blank separated list)
- * 
- */
-public class DoubleChoiceFromList extends NumberChoiceFromList<Double> implements DoubleChoiceGenerator {
+public class LongChoiceFromList extends NumberChoiceFromList<Long> implements LongChoiceGenerator {
 
-  protected Double[] createValueArray(int len) {
-    return new Double[len];
+  protected Long[] createValueArray(int len) {
+    return new Long[len];
   }
 
-  protected Double getDefaultValue() {
-    return 0.0;
+  protected Long getDefaultValue() {
+    return 0L;
   }
 
-  public Class<Double> getChoiceType() {
-    return Double.class;
+  public Class<Long> getChoiceType() {
+    return Long.class;
   }
 
-  protected Double parseLiteral(String literal, int sign) {
-    double val = Double.parseDouble(literal);
-    return new Double(val * sign);
+  protected Long parseLiteral(String literal, int sign) {
+    long val = Long.parseLong(literal);
+    return new Long(val * sign);
   }
 
-  protected Double newValue(Number num, int sign) {
-    return new Double(num.intValue() * sign);
+  protected Long newValue(Number num, int sign) {
+    return new Long(num.longValue() * sign);
   }
 
   /**
@@ -56,28 +51,28 @@ public class DoubleChoiceFromList extends NumberChoiceFromList<Double> implement
    * @param id
    *          name used in choice config
    */
-  protected DoubleChoiceFromList(String id) {
+  protected LongChoiceFromList(String id) {
     super(id);
   }
 
-  protected DoubleChoiceFromList(String id, Double[] vals) {
+  protected LongChoiceFromList(String id, Long[] vals) {
     super(id, vals);
   }
 
-  public DoubleChoiceFromList(Config conf, String id) {
+  public LongChoiceFromList(Config conf, String id) {
     super(conf, id);
   }
 
-  public DoubleChoiceFromList(String id, double... val) {
+  public LongChoiceFromList(String id, long... val) {
     super(id);
 
     if (val != null) {
-      values = new Double[val.length];
+      values = new Long[val.length];
       for (int i = 0; i < val.length; i++) {
-        values[i] = val[i]; // enable use of cached Double values
+        values[i] = val[i]; // enable use of cached Integer values
       }
     } else {
-      throw new JPFException("empty set for DoubleChoiceFromList");
+      throw new JPFException("empty set for LongChoiceFromList");
     }
 
     count = -1;

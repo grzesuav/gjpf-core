@@ -19,12 +19,14 @@
 
 package gov.nasa.jpf.jvm.choice;
 
+import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.LongChoiceGenerator;
 
 /**
  *
  */
-public class RandomOrderLongCG extends LongChoiceGenerator {
+public class RandomOrderLongCG extends ChoiceGeneratorBase<Long> implements LongChoiceGenerator {
   protected long[] choices;
 
   protected int nextIdx;
@@ -72,4 +74,8 @@ public class RandomOrderLongCG extends LongChoiceGenerator {
     isDone = false;
   }
 
+  @Override
+  public Class<Long> getChoiceType() {
+    return Long.class;
+  }
 }

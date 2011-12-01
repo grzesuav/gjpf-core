@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2006 United States Government as represented by the
+// Copyright (C) 2011 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 // 
@@ -16,72 +16,65 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
+
 package gov.nasa.jpf.jvm.choice;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.IntChoiceGenerator;
-/**
- * @author jpenix
- *
- * choose from a set of values provided in configuration as
- * xxx.class = IntChoiceFromList
- * xxx.values = {1, 2, 3, 400}
- * where "xxx" is the choice id.
- * 
- * choices can then made using: getInt("xxx");
- */
-public class IntChoiceFromList extends NumberChoiceFromList<Integer> implements IntChoiceGenerator {
+import gov.nasa.jpf.jvm.FloatChoiceGenerator;
+
+public class FloatChoiceFromList extends NumberChoiceFromList<Float> implements FloatChoiceGenerator {
 
   
-  protected Integer[] createValueArray(int len){
-    return new Integer[len];
+  protected Float[] createValueArray(int len){
+    return new Float[len];
   }
-  protected Integer getDefaultValue() {
-    return 0;
+  protected Float getDefaultValue() {
+    return 0.0f;
   }
     
-  public Class<Integer> getChoiceType(){
-    return Integer.class;
+  public Class<Float> getChoiceType(){
+    return Float.class;
   }
-  	
-  protected Integer parseLiteral (String literal, int sign){
-    int val = Integer.parseInt(literal);
-    return new Integer( val * sign);
+    
+  protected Float parseLiteral (String literal, int sign){
+    Float val = Float.parseFloat(literal);
+    return new Float( val * sign);
   }
   
-  protected Integer newValue (Number num, int sign){
-    return new Integer( num.intValue() * sign);
+  protected Float newValue (Number num, int sign){
+    return new Float( num.intValue() * sign);
   }
   
   /**
    *  super constructor for subclasses that want to configure themselves
    * @param id name used in choice config
    */
-  protected IntChoiceFromList(String id){
+  protected FloatChoiceFromList(String id){
     super(id);
   }
 
-  protected IntChoiceFromList (String id, Integer[] vals){
+  protected FloatChoiceFromList (String id, Float[] vals){
     super(id, vals);
   }
   
-	public IntChoiceFromList(Config conf, String id) {
-		super(conf, id);
-	}
+  public FloatChoiceFromList(Config conf, String id) {
+    super(conf, id);
+  }
 
-  public IntChoiceFromList(String id, int... val){
+  public FloatChoiceFromList(String id, float... val){
     super(id);
 
     if (val != null){
-      values = new Integer[val.length];
+      values = new Float[val.length];
       for (int i=0; i<val.length; i++){
-        values[i] = val[i];  // enable use of cached Integer values
+        values[i] = val[i];  // enable use of cached Float values
       }
     } else {
-      throw new JPFException("empty set for IntChoiceFromList");
+      throw new JPFException("empty set for FloatChoiceFromList");
     }
 
     count = -1;
   }
+
 }
