@@ -1153,6 +1153,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ClassInfo ci = new ClassInfo(cf, uniqueId);
       ci.setContainer(match.container);
 
+      if (!ci.getName().equals(typeName)){
+        throw new NoClassInfoException("wrong class name, should be " + ci.getName());
+      }
+      
       return ci;
       
     } catch (ClassFileException cfx){
