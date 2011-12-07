@@ -26,6 +26,7 @@ import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Misc;
 
 import java.io.PrintWriter;
@@ -50,7 +51,7 @@ public class JVM {
    */
   public static final boolean CHECK_CONSISTENCY = false;
   
-  protected static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.JVM");
+  protected static JPFLogger log = JPF.getLogger("gov.nasa.jpf.jvm.JVM");
 
   /**
    * our execution context
@@ -91,7 +92,7 @@ public class JVM {
 
 
   /**
-   * various caches for VMListener state acqusition. NOTE - these are only
+   * various caches for VMListener state acquisition. NOTE - these are only
    * valid during notification
    *
    * <2do> get rid of the 'lasts' in favor of queries on the insn, the executing
@@ -590,6 +591,7 @@ public class JVM {
 
   
   public void addListener (VMListener newListener) {
+    log.info("VMListener added: ", newListener);
     listeners = Misc.appendElement(listeners, newListener);
   }
 

@@ -32,6 +32,7 @@ import gov.nasa.jpf.util.RunRegistry;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -104,6 +105,11 @@ public class JPF implements Runnable {
   Reporter reporter;
 
   Status status = Status.NEW;
+
+  /** a list of listeners that get automatically added from VM, Search or Reporter initialization */
+  List<VMListener> pendingVMListeners;
+  List<SearchListener> pendingSearchListeners;
+
   
   /** we use this as safety margin, to be released upon OutOfMemoryErrors */
   byte[] memoryReserve;
@@ -272,6 +278,16 @@ public class JPF implements Runnable {
       search = config.getEssentialInstance("search.class", Search.class,
                                                 searchArgTypes, searchArgs);
 
+      // although the Reporter will always be notified last, this has to be set
+      // first so that it can register utility listeners like Statistics that
+      // can be used by configured listeners
+      Class<?>[] reporterArgTypes = { Config.class, JPF.class };
+      Object[] reporterArgs = { config, this };
+      reporter = config.getInstance("report.class", Reporter.class, reporterArgTypes, reporterArgs);
+      if (reporter != null){
+        search.setReporter(reporter);
+      }
+      
       addListeners();
       
       config.addChangeListener(new ConfigListener());
@@ -308,15 +324,37 @@ public class JPF implements Runnable {
     }
   }
 
-  public void addListener (JPFListener l) {
+  protected void addPendingVMListener (VMListener l){
+    if (pendingVMListeners == null){
+      pendingVMListeners = new ArrayList<VMListener>();
+    }
+    pendingVMListeners.add(l);
+  }
+  
+  protected void addPendingSearchListener (SearchListener l){
+    if (pendingSearchListeners == null){
+      pendingSearchListeners = new ArrayList<SearchListener>();
+    }
+    pendingSearchListeners.add(l);
+  }
+  
+  public void addListener (JPFListener l) {    
+    // the VM is instantiated first
     if (l instanceof VMListener) {
       if (vm != null) {
         vm.addListener( (VMListener) l);
+        
+      } else { // no VM yet, we are in VM initialization
+        addPendingVMListener((VMListener)l);
       }
     }
+    
     if (l instanceof SearchListener) {
       if (search != null) {
         search.addListener( (SearchListener) l);
+        
+      } else { // no search yet, we are in Search initialization
+        addPendingSearchListener((SearchListener)l);
       }
     }
   }
@@ -388,24 +426,31 @@ public class JPF implements Runnable {
       search.addProperty(p);
     }
   }
-  
+    
+  /**
+   * this is called after vm, search and reporter got instantiated
+   */
   void addListeners () {
-
     Class<?>[] argTypes = { Config.class, JPF.class };
     Object[] args = { config, this };
 
-    // although the Reporter will always be notified last, this has to be set
-    // first so that it can register utility listeners like Statistics that
-    // can be used by configured listeners
-    reporter = config.getInstance("report.class", Reporter.class, argTypes, args);
-    if (reporter != null){
-      search.setReporter(reporter);
+    // first listeners that were automatically added from VM, Search and Reporter initialization
+    if (pendingVMListeners != null){
+      for (VMListener l : pendingVMListeners) {
+       vm.addListener(l);
+      }      
+      pendingVMListeners = null;
     }
-
-    // now everything that's user configured
-    List<JPFListener> listeners =
-      config.getInstances("listener", JPFListener.class, argTypes, args);
-
+    
+    if (pendingSearchListeners != null){
+      for (SearchListener l : pendingSearchListeners) {
+       search.addListener(l);
+      }
+      pendingSearchListeners = null;
+    }
+    
+    // and finally everything that's user configured
+    List<JPFListener> listeners = config.getInstances("listener", JPFListener.class, argTypes, args);
     if (listeners != null) {
       for (JPFListener l : listeners) {
         addListener(l);

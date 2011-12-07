@@ -32,6 +32,7 @@ import gov.nasa.jpf.jvm.ThreadList;
 import gov.nasa.jpf.jvm.Transition;
 import gov.nasa.jpf.report.Reporter;
 import gov.nasa.jpf.util.IntVector;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Misc;
 
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ import java.util.logging.Logger;
  */
 public abstract class Search {
   
-  protected static Logger log = JPF.getLogger("gov.nasa.jpf.search");
+  protected static JPFLogger log = JPF.getLogger("gov.nasa.jpf.search");
   
   /** error encountered during last transition, null otherwise */
   protected Error currentError = null;
@@ -149,6 +150,7 @@ public abstract class Search {
   }
 
   public void addListener (SearchListener newListener) {
+    log.info("SearchListener added: ", newListener);
     listeners = Misc.appendElement(listeners, newListener);
   }
 
