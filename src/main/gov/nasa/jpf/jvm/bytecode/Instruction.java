@@ -36,7 +36,7 @@ import java.util.List;
  * 
  * <2do> this class should be in gov.nasa.jpf.jvm
  */
-public abstract class Instruction implements InstructionVisit {
+public abstract class Instruction implements InstructionVisitorAcceptor {
 
   protected static final List<String> unimplemented = new ArrayList<String>();
   

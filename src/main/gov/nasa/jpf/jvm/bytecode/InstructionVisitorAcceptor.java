@@ -1,5 +1,5 @@
 package gov.nasa.jpf.jvm.bytecode;
 
-public interface InstructionVisit {
+public interface InstructionVisitorAcceptor {
 	public void accept(InstructionVisitor insVisitor);
 }
