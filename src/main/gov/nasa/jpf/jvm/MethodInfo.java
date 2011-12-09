@@ -483,7 +483,58 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
 
     return argSize;
   }
+  
+  /**
+   * return only the LocalVarInfos for arguments, in order of definition
+   * or null if there are no localVarInfos.
+   * throw a JPFException if there are more immediately in scope vars than args
+   */
+  public LocalVarInfo[] getArgumentLocalVars(){
+    if (localVars == null){ // shortcut in case we don't have args or localVars;
+      return null;
+    }
+    
+    int nArgs = getNumberOfStackArguments(); // we want 'this'
+    if (nArgs == 0){
+      return new LocalVarInfo[0]; // rare enough so that we don't use a static
+    }
 
+    LocalVarInfo[] argLvis = new LocalVarInfo[nArgs];
+    int n = 0; // how many args we've got so far
+    
+    for (LocalVarInfo lvi : localVars){
+      // arguments are the only ones that are immediately in scope
+      if (lvi.getStartPC() == 0){
+        if (n == nArgs){ // ARGH - more in-scope vars than args
+          throw new JPFException("inconsistent localVar table for method " + getFullName());
+        }
+        
+        // order with respect to slot index - since this might get called
+        // frequently, we don't use java.util.Arrays.sort() but sort in
+        // on-the-fly. Note that we can have several localVar entries for the
+        // same name, but only one can be immediately in scope
+        int slotIdx = lvi.getSlotIndex();
+
+        int i;
+        for (i = 0; i < n; i++) {
+          if (slotIdx < argLvis[i].getSlotIndex()) {
+            for (int j=n; j>i; j--){
+              argLvis[j] = argLvis[j-1];
+            }
+            argLvis[i] = lvi;
+            n++;
+            break;
+          }
+        }
+        if (i == n) { // append
+          argLvis[n++] = lvi;
+        }
+      }
+    }
+    
+    return argLvis;
+  }
+  
   public String getReturnType () {
     return Types.getReturnTypeSignature(signature);
   }

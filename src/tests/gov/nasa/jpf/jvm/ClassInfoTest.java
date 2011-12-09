@@ -19,13 +19,12 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassFile;
 import gov.nasa.jpf.classfile.ClassFileException;
-import gov.nasa.jpf.classfile.ClassPath;
-import gov.nasa.jpf.jvm.bytecode.InstructionFactory;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.io.File;
+
 import org.junit.Test;
 
 /**
@@ -107,25 +106,6 @@ public class ClassInfoTest extends TestJPF {
     @X
     String getString() {
       return s;
-    }
-  }
-
-  static class NonResolvedClassInfo extends ClassInfo {
-    NonResolvedClassInfo (ClassFile cf) throws ClassFileException {
-      super(cf);
-    }
-
-    protected ClassInfo loadSuperClass (String superName) {
-      return null;
-    }
-
-    protected CodeBuilder createCodeBuilder(){
-      InstructionFactory insnFactory = new InstructionFactory();
-      return new CodeBuilder(insnFactory, null, null);
-    }
-
-    protected void checkAnnotationDefaultValues(AnnotationInfo ai){
-      // nothing - we don't want annotation types to be resolved
     }
   }
 
