@@ -31,6 +31,7 @@ import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.SparseObjVector;
+import gov.nasa.jpf.util.StringSetMatcher;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -293,7 +294,7 @@ public class ThreadInfo
   /** do we halt on each throw, i.e. don't look for an exception handler?
    * Useful to find empty handler blocks, or misusd exceptionHandlers
    */
-  static String[] haltOnThrow;
+  static StringSetMatcher haltOnThrow;
 
   /**
    * do we delegate to Thread.UncaughtExceptionHandlers (in case there is any
@@ -338,7 +339,11 @@ public class ThreadInfo
     
     threadInfoCount = 0;
 
-    haltOnThrow = config.getStringArray("vm.halt_on_throw");
+    String[] haltOnThrowSpecs = config.getStringArray("vm.halt_on_throw");
+    if (haltOnThrowSpecs != null){
+      haltOnThrow = new StringSetMatcher(haltOnThrowSpecs);
+    }
+    
     ignoreUncaughtHandlers = config.getBoolean( "vm.ignore_uncaught_handler", true);
     passUncaughtHandler = config.getBoolean( "vm.pass_uncaught_handler", true);
     porInEffect = config.getBoolean("vm.por");
@@ -2850,13 +2855,8 @@ public class ThreadInfo
   }
 
   boolean haltOnThrow (String exceptionClassName){
-    if ((haltOnThrow != null) && (haltOnThrow.length > 0)){
-      for (String s : haltOnThrow) {
-        if (s.equalsIgnoreCase("any") ||
-            exceptionClassName.startsWith(s)){
-          return true;
-        }
-      }
+    if ((haltOnThrow != null) && (haltOnThrow.matchesAny(exceptionClassName))){
+      return true;
     }
 
     return false;
