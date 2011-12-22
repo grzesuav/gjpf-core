@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -100,7 +101,7 @@ public abstract class VirtualInvocation extends InstanceInvocation {
 
   public MethodInfo getInvokedMethod (ThreadInfo ti, int objRef) {
 
-    if (objRef != -1) {
+    if (objRef != MJIEnv.NULL) {
       lastObj = objRef;
 
       ClassInfo cci = ti.getClassInfo(objRef);
@@ -111,12 +112,14 @@ public abstract class VirtualInvocation extends InstanceInvocation {
 
         // here we could catch the NoSuchMethodError
         if (invokedMethod == null) {
-          lastObj = -1;
+          lastObj = MJIEnv.NULL;
+          lastCalleeCi = null;
         }
       }
 
     } else {
-      lastObj = -1;
+      lastObj = MJIEnv.NULL;
+      lastCalleeCi = null;
       invokedMethod = null;
     }
 
