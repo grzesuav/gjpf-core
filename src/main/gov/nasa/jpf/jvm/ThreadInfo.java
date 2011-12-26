@@ -1166,7 +1166,7 @@ public class ThreadInfo
     return threadData.lockCount;
   }
   
-  public LinkedList<ElementInfo> getLockedObjects () {
+  public List<ElementInfo> getLockedObjects () {
     return lockedObjects;
   }
 

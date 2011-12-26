@@ -1618,7 +1618,7 @@ public class JVM {
         //pw.print(tiMain.getName());
         pw.println(ti.getStateDescription());
 
-        LinkedList<ElementInfo> locks = ti.getLockedObjects();
+        List<ElementInfo> locks = ti.getLockedObjects();
         if (!locks.isEmpty()) {
           pw.print("  owned locks:");
           boolean first = true;

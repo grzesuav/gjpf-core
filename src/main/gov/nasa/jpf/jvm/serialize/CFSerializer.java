@@ -102,4 +102,9 @@ public class CFSerializer extends FilteringSerializer {
   protected void processReferenceQueue() {
     refQueue.process(this);
   }
+  
+  @Override
+  protected int getSerializedReferenceValue (ElementInfo ei){
+    return ei.getSid();
+  }
 }

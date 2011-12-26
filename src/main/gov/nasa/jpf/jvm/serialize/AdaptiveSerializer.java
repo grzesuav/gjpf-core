@@ -50,7 +50,7 @@ public class AdaptiveSerializer extends CFSerializer {
   }
 
   //@Override
-  protected void serializeThread(ThreadInfo ti){
+  protected void serializeStackFrames(ThreadInfo ti){
     processReference(ti.getThreadObjectRef());
 
     buf.add(ti.getState().ordinal()); // maybe that's enough for locking ?

@@ -19,6 +19,8 @@
 package gov.nasa.jpf.jvm.serialize;
 
 
+import java.util.List;
+
 import gov.nasa.jpf.jvm.AbstractSerializer;
 import gov.nasa.jpf.jvm.ArrayFields;
 import gov.nasa.jpf.jvm.ClassInfo;
@@ -239,6 +241,11 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   }
 
   // needs to be public because of ElementInfoProcessor interface
+  // NOTE: that we don't serialize the monitor state here since this is
+  // redundant to the thread locking state (which we will do after the heap).
+  // <2do> we don't strictly need the lockCount since this has to show in the
+  // stack frames. However, we should probably add monitor serialization to
+  // better support specialized subclasses
   public void processElementInfo(ElementInfo ei) {
     Fields fields = ei.getFields();
     ClassInfo ci = ei.getClassInfo();
@@ -262,28 +269,19 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     heap.unmarkAll();
   }
 
-  protected void serializeThreads() {
+  protected void serializeStackFrames() {
     ThreadList tl = ks.getThreadList();
 
     for (ThreadInfo ti : tl) {
       if (ti.isAlive()) {
-        serializeThread(ti);
+        processReference(ti.getThreadObjectRef());
+        
+        serializeStackFrames(ti);
       }
     }
   }
 
-  protected void serializeThread(ThreadInfo ti){
-    processReference(ti.getThreadObjectRef());
-
-    buf.add(ti.getState().ordinal()); // maybe that's enough for locking ?
-    buf.add(ti.getStackDepth());
-
-    // locking state
-    processReference(ti.getLockRef());
-    for (ElementInfo ei: ti.getLockedObjects()){
-      processReference(ei.getObjectRef());
-    }
-
+  protected void serializeStackFrames(ThreadInfo ti){
     for (StackFrame frame : ti) {
       serializeFrame(frame);
     }
@@ -324,14 +322,83 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     int len = frame.getTopPos()+1;
     buf.add(len);
 
-    // this adds reference slot values twice
     int[] slots = frame.getSlots();
     buf.append(slots,0,len);
 
     frame.visitReferenceSlots(this);
   }
 
+  // this is called after the heap got serialized, i.e. we should not use
+  // processReference() anymore. 
+  protected void serializeThreadState (ThreadInfo ti){
+    
+    buf.add( ti.getId());
+    buf.add(ti.getState().ordinal());
+    buf.add( ti.getStackDepth());
+    
+    //--- the lock state
+    // NOTE: both lockRef and lockedObjects can only refer to live objects
+    // which are already heap-processed at this point (i.e. have a valid 'sid'
+    // in case we don't want to directly serialize the reference values)
+    
+    // the object we are waiting for 
+    ElementInfo eiLock = ti.getLockObject();
+    if (eiLock != null){
+      buf.add(getSerializedReferenceValue( eiLock));
+    }
+    
+    // the objects we hold locks for
+    // NOTE: this should be independent of lockedObjects order, hence we
+    // have to factor this out
+    serializeLockedObjects( ti.getLockedObjects());
+  }
 
+  // NOTE: this should not be called before all live references have been processed
+  protected int getSerializedReferenceValue (ElementInfo ei){
+    return ei.getObjectRef();
+  }
+  
+  protected void serializeLockedObjects(List<ElementInfo> lockedObjects){
+    // lockedObjects are already a set since we don't have multiple entries
+    // (that would just increase the lock count), but our serialization should
+    // NOT produce different values depending on order of entry. We could achieve this by using
+    // a canonical order (based on reference or sid values), but this would require
+    // System.arraycopys and object allocation, which is too much overhead
+    // given that the number of lockedObjects is small for all but the most
+    // pathological systems under test. 
+    // We could spend all day to compute the perfect order-independent hash function,
+    // but since our StateSet isn't guaranteed to be collision free anyway, we
+    // rather shoot for something that can be nicely JITed
+
+    int n = lockedObjects.size();
+    buf.add(n);
+    
+    if (n > 0){
+      if (n == 1){ // no order involved
+        buf.add( getSerializedReferenceValue( lockedObjects.get(0)));
+        
+      } else {
+        // don't burn an iterator on this, 'n' is supposed to be small
+        int h = (n << 16) + (n % 3);
+        for (int i=0; i<n; i++){
+          int rot = (getSerializedReferenceValue( lockedObjects.get(i))) % 31;
+          h ^= (h << rot) | (h >>> (32 - rot)); // rotate left
+        }        
+        buf.add( h);
+      }
+    }
+  }
+  
+  protected void serializeThreadStates (){
+    ThreadList tl = ks.getThreadList();
+
+    for (ThreadInfo ti : tl) {
+      if (ti.isAlive()) {
+        serializeThreadState(ti);
+      }
+    }    
+  }
+  
   protected void serializeStatics(){
     StaticArea statics = ks.getStaticArea();
     buf.add(statics.getLength());
@@ -360,7 +427,6 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
       }
     }
   }
-
   
   //--- our main purpose in life
 
@@ -371,10 +437,16 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     heap = ks.getHeap();
     initReferenceQueue();
 
-    serializeThreads();
+    //--- serialize all live objects and loaded classes
+    serializeStackFrames();
     serializeStatics();
-
     processReferenceQueue();
+    
+    //--- now serialize the thread states (which might refer to live objects)
+    // we do this last because threads contain some internal references
+    // (locked objects etc) that should NOT set the canonical reference serialization
+    // values (if they are encountered before their first explicit heap reference)
+    serializeThreadStates();
 
     return buf.toArray();
   }

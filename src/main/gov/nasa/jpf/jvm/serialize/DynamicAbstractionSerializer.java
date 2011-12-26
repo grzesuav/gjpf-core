@@ -344,7 +344,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
     }
   }
 
-  protected void serializeThread(ThreadInfo ti) {    
+  protected void serializeStackFrames(ThreadInfo ti) {    
     processReference(ti.getThreadObjectRef());
 
     buf.add(ti.getState().ordinal());

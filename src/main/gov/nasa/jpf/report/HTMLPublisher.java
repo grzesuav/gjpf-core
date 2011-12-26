@@ -1302,7 +1302,7 @@ public class HTMLPublisher extends Publisher {
   }
 
   private void writeThreadLockedObjects(PrintWriter output, ThreadInfo thread) {
-    LinkedList<ElementInfo> locks;
+    List<ElementInfo> locks;
     ElementInfo block;
     int i;
 
