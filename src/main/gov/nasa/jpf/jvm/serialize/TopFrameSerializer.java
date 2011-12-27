@@ -46,17 +46,7 @@ public class TopFrameSerializer extends CFSerializer {
 
   @Override
   protected void serializeStackFrames(ThreadInfo ti){
-    processReference(ti.getThreadObjectRef());
-
-    buf.add(ti.getState().ordinal());
-    buf.add(ti.getStackDepth());
-
-    // locking state
-    processReference(ti.getLockRef());
-    for (ElementInfo ei: ti.getLockedObjects()){
-      processReference(ei.getObjectRef());
-    }
-
+    // we just look at the top frame
     serializeFrame(ti.getTopFrame());
   }
 

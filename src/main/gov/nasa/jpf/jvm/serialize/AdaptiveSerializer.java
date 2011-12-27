@@ -49,30 +49,6 @@ public class AdaptiveSerializer extends CFSerializer {
     isSchedulingPoint = (nextCg != null) && nextCg.isSchedulingPoint();
   }
 
-  //@Override
-  protected void serializeStackFrames(ThreadInfo ti){
-    processReference(ti.getThreadObjectRef());
-
-    buf.add(ti.getState().ordinal()); // maybe that's enough for locking ?
-    buf.add(ti.getStackDepth());
-
-    // locking state
-    processReference(ti.getLockRef());
-    for (ElementInfo ei: ti.getLockedObjects()){
-      processReference(ei.getObjectRef());
-    }
-
-    // serialize all frames (in most cases the top frame would do, but
-    // the scheduling point might be in a frame that is called from a loop, and
-    // doesn't have any change itself
-    // Note: don't try to be too smart and do anything that is not symmetric because
-    // it can actually cause more states
-    for (StackFrame frame : ti) {
-      serializeFrame(frame);
-    }
-  }
-
-
   @Override
   protected void queueReference(ElementInfo ei){
     if (traverseObjects){

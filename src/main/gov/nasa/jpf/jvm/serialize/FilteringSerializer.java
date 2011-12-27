@@ -282,7 +282,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   }
 
   protected void serializeStackFrames(ThreadInfo ti){
-    for (StackFrame frame : ti) {
+    for (StackFrame frame = ti.getTopFrame(); frame != null; frame = frame.getPrevious()){
       serializeFrame(frame);
     }
   }
@@ -333,7 +333,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   protected void serializeThreadState (ThreadInfo ti){
     
     buf.add( ti.getId());
-    buf.add(ti.getState().ordinal());
+    buf.add( ti.getState().ordinal());
     buf.add( ti.getStackDepth());
     
     //--- the lock state

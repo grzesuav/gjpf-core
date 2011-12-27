@@ -310,6 +310,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
     }
   }
 
+  @Override
   protected void serializeFrame(StackFrame frame) {
     MethodInfo mi = frame.getMethodInfo();
     
@@ -341,23 +342,6 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
     } else {
       // ignored class, but still process references to extract live objects
       processNamedStaticReferenceFields(ci, fields);
-    }
-  }
-
-  protected void serializeStackFrames(ThreadInfo ti) {    
-    processReference(ti.getThreadObjectRef());
-
-    buf.add(ti.getState().ordinal());
-    //buf.add(ti.getStackDepth());
-
-    // locking state
-    processReference(ti.getLockRef());
-    for (ElementInfo ei : ti.getLockedObjects()) {
-      processReference(ei.getObjectRef());
-    }
-
-    for (StackFrame frame : ti) {
-      serializeFrame(frame);
     }
   }
 
