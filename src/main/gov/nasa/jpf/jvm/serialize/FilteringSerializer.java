@@ -274,14 +274,15 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
 
     for (ThreadInfo ti : tl) {
       if (ti.isAlive()) {
-        processReference(ti.getThreadObjectRef());
-        
         serializeStackFrames(ti);
       }
     }
   }
 
   protected void serializeStackFrames(ThreadInfo ti){
+    // we need to add the thread object itself as a root
+    processReference( ti.getThreadObjectRef());
+    
     for (StackFrame frame = ti.getTopFrame(); frame != null; frame = frame.getPrevious()){
       serializeFrame(frame);
     }

@@ -264,7 +264,7 @@ public abstract class TestJPF implements JPFShell  {
 
     // hideSummary and stopOnFailure only make sense as global options anyways
 
-    if (args != null){
+    if (args != null){   
       for (int i=0; i<args.length; i++){
         String a = args[i];
         if (a != null){

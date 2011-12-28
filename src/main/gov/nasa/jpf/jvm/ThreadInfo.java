@@ -2340,7 +2340,7 @@ public class ThreadInfo
    * Instructions executed by this method are still fully observable and stored in
    * the path
    */
-  public void executeMethodAtomic (DirectCallStackFrame frame) {
+  public void executeMethodAtomic (StackFrame frame) {
 
     pushFrame(frame);
     int    depth = countStackFrames();
@@ -2385,7 +2385,7 @@ public class ThreadInfo
    * any silently executed code fall back into the visible path (for
    * no observable reason)
    */
-  public void executeMethodHidden (DirectCallStackFrame frame) {
+  public void executeMethodHidden (StackFrame frame) {
 
     pushFrame(frame);
     
