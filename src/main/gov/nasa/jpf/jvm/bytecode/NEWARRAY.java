@@ -31,11 +31,7 @@ import gov.nasa.jpf.jvm.Types;
  * Create new array
  * ..., count => ..., arrayref
  */
-public class NEWARRAY extends Instruction {
-  protected String type;
-  protected String typeName; // deferred
-
-  int arrayLength = -1;
+public class NEWARRAY extends NewArrayInstruction {
 
   public NEWARRAY(int typeCode) {
     type = Types.getElementDescriptorOfType(typeCode);
@@ -84,17 +80,6 @@ public class NEWARRAY extends Instruction {
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
-  }
-
-  public String getTypeName() {
-    if (typeName == null){
-      typeName = Types.getTypeName(type);
-    }
-    return typeName;
-  }
-
-  public int getArrayLength() {
-    return arrayLength;
   }
 
   public String toString() {

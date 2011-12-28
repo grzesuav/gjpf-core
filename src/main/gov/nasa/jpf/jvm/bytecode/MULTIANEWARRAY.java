@@ -33,7 +33,9 @@ import gov.nasa.jpf.jvm.Types;
  */
 public class MULTIANEWARRAY extends Instruction {
   protected String type;
+  
   protected int dimensions;
+  protected int[] arrayLengths;
 
   public MULTIANEWARRAY (String typeName, int dimensions){
     this.type = Types.getClassNameFromTypeName(typeName);
@@ -55,10 +57,10 @@ public class MULTIANEWARRAY extends Instruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    int[] dim = new int[dimensions];
+    arrayLengths = new int[dimensions];
 
     for (int i = dimensions - 1; i >= 0; i--) {
-      dim[i] = ti.pop();
+      arrayLengths[i] = ti.pop();
     }
 
     // there is no clinit for array classes, but we still have  to create a class object
@@ -69,7 +71,7 @@ public class MULTIANEWARRAY extends Instruction {
       ci.setInitialized();
     }
     
-    int arrayRef = allocateArray(ti.getHeap(), type, dim, ti, 0);
+    int arrayRef = allocateArray(ti.getHeap(), type, arrayLengths, ti, 0);
 
     // put the result (the array reference) on the stack
     ti.push(arrayRef, true);
@@ -89,11 +91,24 @@ public class MULTIANEWARRAY extends Instruction {
 	  insVisitor.visit(this);
   }
 
-  public String getType() {
-	return type;
+  public String getType(){
+    return type;
   }
-
+  
   public int getDimensions() {
-	return dimensions;
+    return dimensions;
+  }
+  
+  public int getArrayLength (int dimension){
+    if (dimension < dimensions && arrayLengths != null){
+      return arrayLengths[dimension];
+    } else {
+      return -1;
+    }
+  }
+  
+  @Override
+  public void cleanupTransients(){
+    arrayLengths= null;
   }
 }

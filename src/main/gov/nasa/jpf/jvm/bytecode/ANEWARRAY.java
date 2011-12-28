@@ -25,10 +25,7 @@ import gov.nasa.jpf.jvm.*;
  * Create new array of reference
  * ..., count => ..., arrayref
  */
-public class ANEWARRAY extends Instruction {
-  protected String type;
-
-  public ANEWARRAY(){} // this is going away
+public class ANEWARRAY extends NewArrayInstruction {
 
   public ANEWARRAY (String typeDescriptor){
     type = Types.getTypeSignature(typeDescriptor, true);
@@ -36,9 +33,9 @@ public class ANEWARRAY extends Instruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     Heap heap = ti.getHeap();
-    int size = ti.pop();
+    arrayLength = ti.pop();
 
-    if (size < 0){
+    if (arrayLength < 0){
       return ti.createAndThrowException("java.lang.NegativeArraySizeException");
     }
 
@@ -56,19 +53,15 @@ public class ANEWARRAY extends Instruction {
       return ti.createAndThrowException("java.lang.OutOfMemoryError",
                                         "trying to allocate new " +
                                           Types.getTypeName(type) +
-                                        "[" + size + "]");
+                                        "[" + arrayLength + "]");
     }
     
     // pushes the object reference on the top stack frame
-    ti.push(heap.newArray(type, size, ti), true);
+    ti.push(heap.newArray(type, arrayLength, ti), true);
 
     ss.checkGC(); // has to happen after we push the new object ref
     
     return getNext(ti);
-  }
-  
-  public String getType(){
-	  return type;
   }
 
   public int getLength () {
