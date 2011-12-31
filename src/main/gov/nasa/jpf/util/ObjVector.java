@@ -18,11 +18,11 @@
 //
 package gov.nasa.jpf.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.ArrayList;
 
 /**
  * more customizable alternative to java.util.Vector.  also, set(x,v) automatically

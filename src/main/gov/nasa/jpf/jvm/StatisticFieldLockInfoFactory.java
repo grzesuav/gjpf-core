@@ -18,11 +18,11 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.util.List;
-import java.util.logging.Logger;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * a FieldLockInfo implementation with the following strategy:

@@ -18,27 +18,29 @@
 //
 package gov.nasa.jpf.util.test;
 
-import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.JPFShell;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
+import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFShell;
 import gov.nasa.jpf.Property;
-import gov.nasa.jpf.jvm.*;
-
 import gov.nasa.jpf.annotation.FilterField;
+import gov.nasa.jpf.jvm.ExceptionInfo;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.NotDeadlockedProperty;
 import gov.nasa.jpf.tool.RunTest;
 import gov.nasa.jpf.util.ClassSpec;
 import gov.nasa.jpf.util.JPFSiteUtils;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Reflection;
+
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * base class for JPF unit tests. TestJPF mostly includes JPF invocations

@@ -18,13 +18,13 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.util.Date;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListener;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+
+import java.util.Date;
 
 
 /**

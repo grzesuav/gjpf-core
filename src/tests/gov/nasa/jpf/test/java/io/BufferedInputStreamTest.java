@@ -19,6 +19,7 @@
 package gov.nasa.jpf.test.java.io;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;

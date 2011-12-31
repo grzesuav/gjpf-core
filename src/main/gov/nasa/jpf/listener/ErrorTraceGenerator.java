@@ -32,6 +32,7 @@ import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.search.Search;
+
 import java.io.PrintWriter;
 
 /** 

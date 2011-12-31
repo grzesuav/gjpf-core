@@ -18,8 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.bytecode.Instruction;
-
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;

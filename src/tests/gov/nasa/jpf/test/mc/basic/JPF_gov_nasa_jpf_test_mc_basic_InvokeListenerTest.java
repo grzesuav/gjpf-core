@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.test.mc.basic;
 
-import gov.nasa.jpf.jvm.*;
+import gov.nasa.jpf.jvm.MJIEnv;
 
 /**
  * native peer for TestInvokeListener tests

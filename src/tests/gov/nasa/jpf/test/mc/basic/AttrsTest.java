@@ -19,10 +19,20 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.jvm.bytecode.*;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.StackFrame;
+import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.Verify;
+import gov.nasa.jpf.jvm.bytecode.DSTORE;
+import gov.nasa.jpf.jvm.bytecode.INVOKEVIRTUAL;
+import gov.nasa.jpf.jvm.bytecode.ISTORE;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.LRETURN;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**

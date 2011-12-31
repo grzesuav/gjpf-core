@@ -20,14 +20,15 @@ package gov.nasa.jpf.test.java.io;
 
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.io.File;
 import java.io.IOException;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *

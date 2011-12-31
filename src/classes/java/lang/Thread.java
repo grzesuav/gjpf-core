@@ -18,7 +18,6 @@
 //
 package java.lang;
 
-import java.util.concurrent.Callable;
 import sun.nio.ch.Interruptible;
 
 /**

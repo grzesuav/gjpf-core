@@ -19,7 +19,6 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.choice.RandomOrderLongCG;
 
 
 /**

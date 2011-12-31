@@ -21,30 +21,31 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import java.util.ArrayList;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.bytecode.VariableAccessor;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Collection;
-import java.util.List;
-import java.util.Collections;
-import gov.nasa.jpf.jvm.bytecode.StoreInstruction;
+import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.bytecode.ALOAD;
 import gov.nasa.jpf.jvm.bytecode.ArrayStoreInstruction;
+import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
-import gov.nasa.jpf.jvm.bytecode.ALOAD;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.bytecode.StoreInstruction;
+import gov.nasa.jpf.jvm.bytecode.VariableAccessor;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
+import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.util.StringSetMatcher;
+
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 
 /**

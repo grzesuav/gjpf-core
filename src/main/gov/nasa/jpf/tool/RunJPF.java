@@ -21,6 +21,7 @@ package gov.nasa.jpf.tool;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFShell;
 import gov.nasa.jpf.util.JPFSiteUtils;
+
 import java.io.File;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;

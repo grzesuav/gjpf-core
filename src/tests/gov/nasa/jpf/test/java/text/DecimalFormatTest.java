@@ -2,11 +2,13 @@
 package gov.nasa.jpf.test.java.text;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
+
 import org.junit.Test;
 
 /**

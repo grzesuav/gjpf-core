@@ -30,7 +30,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
-import java.util.ArrayList;
+
 import java.util.HashMap;
 
 /**

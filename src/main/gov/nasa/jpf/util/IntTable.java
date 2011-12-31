@@ -19,6 +19,7 @@
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.JPFException;
+
 import java.util.Iterator;
 
 /**

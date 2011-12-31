@@ -20,7 +20,7 @@ package gov.nasa.jpf.test.java.lang;
 
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
-import java.lang.reflect.InvocationTargetException;
+
 import org.junit.Test;
 
 /**

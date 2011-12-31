@@ -24,6 +24,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFLogger;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;

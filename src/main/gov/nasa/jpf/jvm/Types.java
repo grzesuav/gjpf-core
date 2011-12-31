@@ -37,6 +37,8 @@ import java.util.ArrayList;
 public class Types {
 
   // these have the same values as the BCEL Constants since we don't want to break compiled code
+  public static final byte T_NONE      = 0; // illegal type
+  
   public static final byte T_BOOLEAN   = 4;
   public static final byte T_BYTE      = 8;
   public static final byte T_CHAR      = 5;
@@ -588,6 +590,36 @@ public class Types {
       }
   }
 
+  public static byte getUnboxedType (String typeName){
+    if (typeName.startsWith("java.lang.")){
+      typeName = typeName.substring(10);
+      if (typeName.equals("Boolean")){
+        return T_BOOLEAN;
+      } else if (typeName.equals("Byte")){
+        return T_BYTE;
+      } else if (typeName.equals("Character")){
+        return T_CHAR;
+      } else if (typeName.equals("Short")){
+        return T_SHORT;
+      } else if (typeName.equals("Integer")){
+        return T_INT;
+      } else if (typeName.equals("Long")){
+        return T_LONG;
+      } else if (typeName.equals("Float")){
+        return T_FLOAT;
+      } else if (typeName.equals("Double")){
+        return T_DOUBLE;
+      }
+    }
+    
+    // everything else can't be a box type
+    if (typeName.charAt(0) == '[' || typeName.charAt(typeName.length()-1) == ']'){
+      return T_ARRAY;
+    } else {
+      return T_REFERENCE;
+    }
+  }
+  
   public static String getClassNameFromSignature (String signature){
     if (signature.charAt(signature.length()-1) == ';'){ // reference
       return signature.replace('/', '.');

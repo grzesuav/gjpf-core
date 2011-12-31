@@ -18,18 +18,17 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassFile;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
 import gov.nasa.jpf.util.ObjectList;
+
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 
 
 /**

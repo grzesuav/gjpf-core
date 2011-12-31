@@ -18,15 +18,15 @@
 //
 package gov.nasa.jpf.test.vm.reflection;
 
-import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.test.vm.reflection.ConstructorTest.X;
 import gov.nasa.jpf.util.test.TestJPF;
-import org.junit.Test;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import org.junit.Test;
 
 public class MethodTest extends TestJPF {
 
@@ -322,218 +322,310 @@ public class MethodTest extends TestJPF {
     }
   }
 
-  public void argTestTarget(byte arg) {
-    m_arg = arg;
-  }
-
-  public void argTestTarget(short arg) {
-    m_arg = arg;
-  }
-
-  public void argTestTarget(int arg) {
-    m_arg = arg;
-  }
-
-  public void argTestTarget(long arg) {
-    m_arg = arg;
-  }
-
-  public void argTestTarget(float arg) {
-    m_arg = arg;
-  }
-
-  public void argTestTarget(double arg) {
-    m_arg = arg;
-  }
-
-  public void argTestTarget(boolean arg) {
-    m_arg = arg;
-  }
-
-  public void argTestTarget(char arg) {
-    m_arg = arg;
-  }
-
-  public void argTestTarget(String arg) {
-    m_arg = arg;
-  }
-
-  public String runArgTest(Class argType) throws NoSuchMethodException {
-    Class clazz;
-    Method method;
-    Object args[];
-    StringBuilder result;
-    double expected, actual;
-    int i;
-
-    clazz = MethodTest.class;
-    method = clazz.getMethod("argTestTarget", argType);
-    result = new StringBuilder();
-
-    args = new Object[]{
-      Byte.valueOf((byte) 7),
-      Short.valueOf((short) 8),
-      Integer.valueOf(9),
-      Long.valueOf(10),
-      Float.valueOf(3.1415f),
-      Double.valueOf(3.14159),
-      Boolean.TRUE,
-      Character.valueOf('w'),
-      "hello",
-      null
-    };
-
-    for (i = args.length; --i >= 0;) {
-      if (args[i] == null) {
-        result.append("null");
-      } else {
-        result.append(args[i].getClass().getName());
+  //--- argument value conversion tests
+  
+  static final Object[] testArgValues = {
+    Byte.valueOf((byte) 7),
+    Short.valueOf((short) 8),
+    Integer.valueOf(9),
+    Long.valueOf(10),
+    Float.valueOf(3.1415f),
+    Double.valueOf(3.14159),
+    Boolean.TRUE,
+    Character.valueOf('w'),
+    "hello",
+    null
+  };
+  
+  static final Object ILLEGAL = new Object(); // we use this to flag an IllegalArgumentException
+  
+  private void invokeTest (Method m, Object argValue, Object expected){
+    System.out.print(argValue);
+    System.out.print("=>");
+    try {
+      Object ret = m.invoke(this, argValue);
+      System.out.println(ret);
+      if (isJPFRun()) {
+        assertTrue( ((ret == null) && (expected == null)) || ret.equals(expected));
       }
-
-      result.append('=');
-
-      try {
-        m_arg = null;
-
-        method.invoke(this, args[i]);
-
-        actual = decodeValue(m_arg);
-        expected = decodeValue(args[i]);
-
-        assert Math.abs(expected - actual) < 0.0000001 : "Expected = " + expected + ".  Actual = " + actual + ".  Result = " + result.toString();
-
-        result.append("No Exception");
-      } catch (AssertionError e) {
-        throw e;
-      } catch (Throwable t) {
-        assert m_arg == null : "m_arg expected to be null.  It was " + m_arg.toString() + ".  Result = " + result.toString() + ".  Exception = " + t.toString();
-        result.append(t.getClass().getName());
+      
+    } catch (IllegalArgumentException ix){
+      System.out.println("ILLEGAL");
+      if (isJPFRun()) {
+        assertTrue( expected == ILLEGAL);
       }
-
-      result.append(',');
-    }
-
-    return (result.toString());
+      
+    } catch (Throwable t){
+      fail("_test invocation failed for value = " + argValue + " with " + t);
+    }    
   }
 
-  private double decodeValue(Object value) {
-    double result;
-
-    if (value instanceof Number) {
-      result = ((Number) value).doubleValue();
-    } else if (value instanceof Character) {
-      result = ((Character) value).charValue();
-    } else if (value instanceof Boolean) {
-      result = ((Boolean) value).booleanValue() ? 1 : 0;
-    } else if (value instanceof String) {
-      result = -1.0;
-    } else if (value == null) {
-      result = 0.0;
-    } else {
-      fail("Unknown type: " + value.getClass().getName());
-      result = Double.NaN;
-    }
-
-    return (result);
+  //--- boolean argument
+  
+  boolean _test (boolean v){
+    //System.out.println("-- test(boolean) got " + v);
+    return v;    
   }
-
-  @Test
-  public void argTest() throws ClassNotFoundException, NoSuchMethodException // Method name must be the same as below in order to trick JPFTest
-  {
-    String actual, expected, argClassName;
-    Class argClass;
-    int i, length;
-
-    if (!Verify.isRunningInJPF()) {
-      return;
-    }
-
-    argClassName = Verify.getProperty("argtest.argClassName");
-
-    System.out.println("Arg Class = " + argClassName);
-
-    argClass = Class.forName(argClassName);
-    actual = runArgTest(argClass);
-    expected = Verify.getProperty("argtest.expected");
-
-    System.out.println("Actual Length = " + actual.length());
-    System.out.println("Actual =\n" + actual.replaceAll(",", "\n"));
-
-    System.out.println("Expected Length = " + expected.length());
-    System.out.println("Expected =\n" + expected.replaceAll(",", "\n"));
-
-    if (expected.equals(actual)) {
-      return;
-    }
-
-    length = Math.min(expected.length(), actual.length());
-
-    for (i = 0; i < length; i++) {
-      if (expected.charAt(i) != actual.charAt(i)) {
-        break;
-      }
-    }
-
-    System.out.println("Actual Diff =\n" + actual.substring(i));
-    System.out.println("Expected Diff =\n" + expected.substring(i));
-
-    fail("Expected != Actual");
-  }
-
-  private void argTest(Class argClass) throws NoSuchMethodException // Method name must be the same as above in order to trick JPFTest
-  {
-    String expected;
-
-    expected = runArgTest(argClass);
-
-    verifyNoPropertyViolation("+argtest.argClassName=" + argClass.getName(), "+argtest.expected=" + expected);
-  }
-
-  @Test
-  public void argTestByte() throws NoSuchMethodException {
-    argTest(byte.class);
-  }
-
-  @Test
-  public void argTestShort() throws NoSuchMethodException {
-    argTest(short.class);
-  }
-
-  @Test
-  public void argTestInt() throws NoSuchMethodException {
-    argTest(int.class);
-  }
-
-  @Test
-  public void argTestLong() throws NoSuchMethodException {
-    argTest(long.class);
-  }
-
-  @Test
-  public void argTestFloat() throws NoSuchMethodException {
-    argTest(float.class);
-  }
-
-  @Test
-  public void argTestDouble() throws NoSuchMethodException {
-    argTest(double.class);
-  }
-
+  
   @Test
   public void argTestBoolean() throws NoSuchMethodException {
-    argTest(boolean.class);
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", boolean.class);
+      Object[] expected = { // all but Boolean throws
+          ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, Boolean.TRUE, ILLEGAL, ILLEGAL, ILLEGAL
+      };
+
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }
+  }
+  
+  //--- byte argument
+  byte _test(byte v){
+    //System.out.println("-- test(long) got " + v);
+    return v;
+  }
+  
+  @Test
+  public void argTestByte() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", byte.class);
+      Object[] expected = { // all but byte throws
+          Byte.valueOf((byte)7), ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL
+      };
+      
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }    
+  }
+  
+  //--- short argument
+  short _test(short v){
+    //System.out.println("-- test(short) got " + v);
+    return v;
+  }
+  
+  @Test
+  public void argTestShort() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", short.class);
+      Object[] expected = { // all but byte and short throws
+          Short.valueOf((short)7), Short.valueOf((short)8), ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL
+      };
+      
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }    
   }
 
+  //--- char argument
+  char _test(char v){
+    //System.out.println("-- test(char) got " + v);
+    return v;
+  }
+  
   @Test
   public void argTestChar() throws NoSuchMethodException {
-    argTest(char.class);
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", char.class);
+      Object[] expected = { // all but char throws
+          ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, Character.valueOf('w'), ILLEGAL, ILLEGAL
+      };
+      
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }    
   }
 
+
+  //--- int argument
+  int _test(int v){
+    //System.out.println("-- test(int) got " + v);
+    return v;
+  }
+  
+  @Test
+  public void argTestInt() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", int.class);
+      Object[] expected = { // all but byte, short, int and char throws
+          Integer.valueOf(7), Integer.valueOf(8), Integer.valueOf(9), ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL,
+          Integer.valueOf((int)'w'), ILLEGAL, ILLEGAL
+      };
+      
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }    
+  }
+
+  
+  //--- long argument
+  long _test(long v){
+    //System.out.println("-- test(long) got " + v);
+    return v;
+  }
+  
+  @Test
+  public void argTestLong() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", long.class);
+      Object[] expected = {
+          Long.valueOf(7L),Long.valueOf(8L), Long.valueOf(9L), Long.valueOf(10L),
+          ILLEGAL, ILLEGAL, ILLEGAL, Long.valueOf((long)'w'), ILLEGAL, ILLEGAL
+      };
+      
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }
+  }
+
+  //--- float argument
+  float _test(float v){
+    //System.out.println("-- test(float) got " + v);
+    return v;
+  }
+  
+  @Test
+  public void argTestFloat() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", float.class);
+      Object[] expected = {
+          Float.valueOf(7f), Float.valueOf(8f), Float.valueOf(9f), 
+          Float.valueOf(10f), Float.valueOf(3.1415f), ILLEGAL, ILLEGAL, 
+          Float.valueOf((float)'w'), ILLEGAL, ILLEGAL
+      };
+      
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }
+  }
+
+  //--- double argument
+  double _test(double v){
+    //System.out.println("-- test(double) got " + v);
+    return v;
+  }
+  
+  @Test
+  public void argTestDouble() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", double.class);
+      Object[] expected = {
+          Double.valueOf(7.0), Double.valueOf(8.0), Double.valueOf(9.0), 
+          Double.valueOf(10.0), Double.valueOf((double)3.1415f), Double.valueOf(3.14159),
+          ILLEGAL, Double.valueOf((double)'w'), ILLEGAL, ILLEGAL
+      };
+      
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }
+  }
+
+  //--- String argument
+  String _test(String v){
+    //System.out.println("-- test(String) got " + v);
+    return v;
+  }
+  
   @Test
   public void argTestString() throws NoSuchMethodException {
-    argTest(String.class);
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", String.class);
+      Object[] expected = {
+          ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, ILLEGAL, "hello", null
+      };
+      
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }
+  }
+  
+  //--- Object argument
+  Object _test(Object v){
+    //System.out.println("-- test(String) got " + v);
+    return v;
+  }
+  
+  @Test
+  public void argTestObject() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", Object.class);
+      Object[] expected = testArgValues;
+      
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }
   }
 
+  //--- Number argument
+  Number _test(Number v){
+    //System.out.println("-- test(Number) got " + v);
+    return v;
+  }
+  
+  @Test
+  public void argTestNumber() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", Number.class);
+      Object[] expected = {
+          Byte.valueOf((byte) 7),
+          Short.valueOf((short) 8),
+          Integer.valueOf(9),
+          Long.valueOf(10),
+          Float.valueOf(3.1415f),
+          Double.valueOf(3.14159),
+          ILLEGAL,
+          ILLEGAL,
+          ILLEGAL,
+          null  // we already used the real null to flag an IllegalArgumentException
+       };
+      
+      for (int i=0; i<testArgValues.length; i++){
+        invokeTest( m, testArgValues[i], expected[i]);
+      }
+    }
+  }
+
+  //--- array argument
+  int[] _test(int[] v){
+    //System.out.println("-- test(int[]) got " + v);
+    return v;
+  }
+  
+  @Test
+  public void argTestIntArray() throws NoSuchMethodException {
+    if (verifyNoPropertyViolation()){
+      Method m = MethodTest.class.getDeclaredMethod("_test", int[].class);
+      Object[] testVals = {
+        new int[0],
+        new float[0],
+        "blah",
+        null
+      };
+      Object[] expected = {
+          testVals[0],
+          ILLEGAL,
+          ILLEGAL,
+          null
+       };
+      
+      for (int i=0; i<testVals.length; i++){
+        invokeTest( m, testVals[i], expected[i]);
+      }
+    }
+  }
+
+  
   //--- parameter annotation reflection
   
   @Retention(RetentionPolicy.RUNTIME)

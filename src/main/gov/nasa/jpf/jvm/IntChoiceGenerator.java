@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.choice.RandomOrderIntCG;
 
 /**
 * Choice Generator that creates Integer values - this is just an interface

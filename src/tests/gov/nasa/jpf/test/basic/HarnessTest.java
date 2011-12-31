@@ -3,6 +3,7 @@ package gov.nasa.jpf.test.basic;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.util.ClassSpec;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**

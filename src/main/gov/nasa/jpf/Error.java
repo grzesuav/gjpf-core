@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf;
 
-import gov.nasa.jpf.Property;
 import gov.nasa.jpf.jvm.Path;
 import gov.nasa.jpf.jvm.ThreadList;
 

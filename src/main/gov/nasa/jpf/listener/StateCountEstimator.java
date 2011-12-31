@@ -18,11 +18,16 @@
 //
 package gov.nasa.jpf.listener;
 
-import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.*;
-import gov.nasa.jpf.search.*;
-import java.io.*;
-import java.util.*;
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.Path;
+import gov.nasa.jpf.jvm.Transition;
+import gov.nasa.jpf.search.Search;
+
+import java.io.PrintWriter;
+import java.util.Formatter;
 
 /**
  * From already visited states, estimates the total number of states by the branching factor.

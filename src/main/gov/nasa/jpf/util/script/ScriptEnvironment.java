@@ -18,20 +18,18 @@
 //
 package gov.nasa.jpf.util.script;
 
+import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.util.StateExtensionClient;
+import gov.nasa.jpf.util.StateExtensionListener;
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
-
-import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.util.Misc;
-import gov.nasa.jpf.util.StateExtensionClient;
-import gov.nasa.jpf.util.StateExtensionListener;
 
 /**
  * class representing a statemachine environment that produces SCEventGenerators

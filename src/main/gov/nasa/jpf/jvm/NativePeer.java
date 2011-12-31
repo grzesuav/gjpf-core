@@ -23,12 +23,12 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.JPFLogger;
 
-import java.lang.reflect.*;
-
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 /**

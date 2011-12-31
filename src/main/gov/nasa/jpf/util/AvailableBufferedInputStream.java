@@ -18,8 +18,9 @@
 //
 package gov.nasa.jpf.util;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 
 public class AvailableBufferedInputStream extends InputStream
 {

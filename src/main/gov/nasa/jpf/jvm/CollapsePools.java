@@ -1,8 +1,8 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.HashPool;
-import gov.nasa.jpf.util.WeakPool;
 import gov.nasa.jpf.util.IntTable.Entry;
+import gov.nasa.jpf.util.WeakPool;
 
 abstract class CollapsePools {
   static class AllWeak {

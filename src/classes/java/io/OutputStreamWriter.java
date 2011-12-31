@@ -19,7 +19,9 @@
 package java.io;
 
 import gov.nasa.jpf.jvm.Verify;
-import java.nio.charset.*;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 
 /**
  * natively convert char output into byte output

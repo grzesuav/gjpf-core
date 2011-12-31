@@ -19,30 +19,30 @@
 package gov.nasa.jpf.jvm.serialize;
 
 
-import java.util.List;
-
 import gov.nasa.jpf.jvm.AbstractSerializer;
 import gov.nasa.jpf.jvm.ArrayFields;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.ElementInfoProcessor;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.ElementInfoProcessor;
+import gov.nasa.jpf.jvm.ReferenceProcessor;
+import gov.nasa.jpf.jvm.ReferenceQueue;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.StaticArea;
 import gov.nasa.jpf.jvm.StaticElementInfo;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.ThreadList;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.BitArray;
 import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
-import gov.nasa.jpf.jvm.ReferenceQueue;
-import gov.nasa.jpf.jvm.ReferenceProcessor;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
+
+import java.util.List;
 
 
 /**

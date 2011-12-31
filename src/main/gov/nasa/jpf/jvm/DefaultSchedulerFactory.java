@@ -19,7 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.choice.*;
+import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
 
 
 /**

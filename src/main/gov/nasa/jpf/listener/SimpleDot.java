@@ -20,9 +20,9 @@
 package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.Property;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
@@ -32,15 +32,9 @@ import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.NoUncaughtExceptionsProperty;
 import gov.nasa.jpf.jvm.NotDeadlockedProperty;
-import gov.nasa.jpf.search.Search;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.GETFIELD;
-import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
 import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
 import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
@@ -52,9 +46,14 @@ import gov.nasa.jpf.jvm.bytecode.PUTSTATIC;
 import gov.nasa.jpf.jvm.bytecode.StaticFieldInstruction;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
+import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.Misc;
+
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashSet;
 
 /**
@@ -82,6 +81,7 @@ public class SimpleDot extends ListenerAdapter {
   static final String END_NODE_ATTRS = "shape=doublecircle,fillcolor=cyan";
   static final String ERROR_NODE_ATTRS = "color=red,fillcolor=yellow";
   static final String BACKTRACK_EDGE_ATTRS = "arrowhead=onormal,color=gray,style=\"dotted\"";
+  static final String RESTORED_EDGE_ATTRS = "arrowhead=onormal,color=red,style=\"dotted\"";
   static final String NEW_EDGE_ATTRS = "arrowhead=normal";
   static final String VISITED_EDGE_ATTRS = "arrowhead=vee";
 
@@ -96,6 +96,7 @@ public class SimpleDot extends ListenerAdapter {
   protected String newEdgeAttrs;
   protected String visitedEdgeAttrs;
   protected String backtrackEdgeAttrs;
+  protected String restoreEdgeAttrs;
 
   protected boolean showTarget;
   protected boolean printFile;
@@ -130,6 +131,7 @@ public class SimpleDot extends ListenerAdapter {
     endNodeAttrs = config.getString("dot.end_node_attr", END_NODE_ATTRS);
     errorNodeAttrs = config.getString("dot.error_node_attr", ERROR_NODE_ATTRS);
     backtrackEdgeAttrs = config.getString("dot.bt_edge_attr", BACKTRACK_EDGE_ATTRS);
+    restoreEdgeAttrs = config.getString("dot.restore_edge_attr", RESTORED_EDGE_ATTRS);
 
     printFile = config.getBoolean("dot.print_file", false);
     showTarget = config.getBoolean("dot.show_target", false);
@@ -195,6 +197,18 @@ public class SimpleDot extends ListenerAdapter {
 
     if (!seenEdges.contains(edgeId)) {
       printBacktrack(getStateId(lastId), getStateId(id));
+      seenEdges.add(edgeId);
+    }
+    lastId = id;
+  }
+  
+  @Override
+  public void stateRestored(Search search) {
+    int id = search.getStateId();
+    long edgeId = ((long)lastId << 32) | id;
+
+    if (!seenEdges.contains(edgeId)) {
+      printRestored(getStateId(lastId), getStateId(id));
       seenEdges.add(edgeId);
     }
     lastId = id;
@@ -430,6 +444,19 @@ public class SimpleDot extends ListenerAdapter {
     pw.println("  // backtrack");
   }
 
+  protected void printRestored (String fromState, String toState){
+    pw.println();
+    pw.print(fromState);
+    pw.print(" -> ");
+    pw.print( toState);
+
+    pw.print(" [");
+    pw.print(restoreEdgeAttrs);
+    pw.print(']');
+
+    pw.println("  // restored");
+  }
+  
   protected void printStartState(String stateId){
     pw.print(stateId);
 

@@ -1,11 +1,12 @@
 package sun.reflect.annotation;
 
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.lang.reflect.Method;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Inherited;
+
 import sun.misc.SharedSecrets;
 
 /**

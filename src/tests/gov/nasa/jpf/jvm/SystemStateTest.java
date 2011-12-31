@@ -19,16 +19,10 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.Config;
-import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
-import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
-import gov.nasa.jpf.util.LogManager;
-
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 

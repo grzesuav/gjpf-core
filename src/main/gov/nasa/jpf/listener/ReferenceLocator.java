@@ -27,6 +27,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+
 import java.io.PrintWriter;
 import java.util.Arrays;
 

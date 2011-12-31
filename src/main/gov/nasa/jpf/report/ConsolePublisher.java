@@ -18,16 +18,6 @@
 //
 package gov.nasa.jpf.report;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.jvm.ClassInfo;
@@ -39,7 +29,14 @@ import gov.nasa.jpf.jvm.Transition;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.Left;
 import gov.nasa.jpf.util.RepositoryEntry;
-import gov.nasa.jpf.util.Source;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class ConsolePublisher extends Publisher {
 

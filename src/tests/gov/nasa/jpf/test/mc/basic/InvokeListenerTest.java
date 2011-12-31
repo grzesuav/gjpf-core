@@ -20,10 +20,15 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.VirtualInvocation;
 import gov.nasa.jpf.util.test.TestJPF;
-
-import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.jvm.bytecode.*;
 
 import org.junit.Test;
 

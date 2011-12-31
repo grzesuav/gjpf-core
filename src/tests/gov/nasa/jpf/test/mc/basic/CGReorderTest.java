@@ -19,18 +19,20 @@
 
 package gov.nasa.jpf.test.mc.basic;
 
+import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.DoubleChoiceGenerator;
+import gov.nasa.jpf.jvm.IntChoiceGenerator;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.Verify;
-import gov.nasa.jpf.jvm.IntChoiceGenerator;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.util.test.TestJPF;
-import gov.nasa.jpf.ListenerAdapter;
-import org.junit.Test;
+
 import java.util.Comparator;
+
+import org.junit.Test;
 
 /**
  * regression test for choice reordering APIs 

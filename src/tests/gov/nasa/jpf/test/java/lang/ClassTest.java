@@ -37,8 +37,10 @@
 package gov.nasa.jpf.test.java.lang;
 
 import gov.nasa.jpf.util.test.TestJPF;
-import java.io.*;
+
+import java.io.Serializable;
 import java.lang.reflect.Method;
+
 import org.junit.Test;
 
 /**

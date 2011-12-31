@@ -26,7 +26,6 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.Source;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 

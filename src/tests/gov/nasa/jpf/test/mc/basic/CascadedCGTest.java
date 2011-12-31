@@ -34,6 +34,7 @@ import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**

@@ -18,16 +18,23 @@
 //
 package gov.nasa.jpf.listener;
 
-import gov.nasa.jpf.*;
-import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.jvm.bytecode.*;
-import gov.nasa.jpf.jvm.choice.*;
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.PropertyListenerAdapter;
+import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.FieldInfo;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.bytecode.ArrayInstruction;
+import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.*;
 
 /**
  * This is a Race Detection Algorithm that is precise in its calculation of races, i.e. no false warnings.

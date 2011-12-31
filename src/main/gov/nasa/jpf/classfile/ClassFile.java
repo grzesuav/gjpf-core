@@ -24,13 +24,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.UTFDataFormatException;
-import java.io.UnsupportedEncodingException;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * class to read and dissect Java classfile contents (as specified by the Java VM

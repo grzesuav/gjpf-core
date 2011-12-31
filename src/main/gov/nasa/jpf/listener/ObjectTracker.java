@@ -19,9 +19,6 @@
 
 package gov.nasa.jpf.listener;
 
-import java.io.PrintWriter;
-import java.util.HashMap;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.PropertyListenerAdapter;
@@ -38,6 +35,9 @@ import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
 import gov.nasa.jpf.jvm.bytecode.VirtualInvocation;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
+
+import java.io.PrintWriter;
+import java.util.HashMap;
 
 /**
  * listener that keeps track of all allocations, method calls, field updates

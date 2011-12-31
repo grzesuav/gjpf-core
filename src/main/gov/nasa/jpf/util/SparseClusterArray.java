@@ -19,10 +19,8 @@
 package gov.nasa.jpf.util;
 
 import java.util.ConcurrentModificationException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Random;
 
 /**
  * A generic sparse reference array that assumes clusters, and more

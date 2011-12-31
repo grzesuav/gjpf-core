@@ -18,11 +18,12 @@
 //
 package gov.nasa.jpf.test.vm.basic;
 
-import gov.nasa.jpf.jvm.*;
 import gov.nasa.jpf.util.ClassSpec;
-import gov.nasa.jpf.util.test.*;
-import java.util.*;
-import org.junit.*;
+import gov.nasa.jpf.util.test.TestJPF;
+
+import java.util.ArrayList;
+
+import org.junit.Test;
 
 public class OutOfMemoryErrorTest extends TestJPF
 {

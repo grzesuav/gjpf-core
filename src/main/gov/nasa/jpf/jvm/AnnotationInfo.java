@@ -23,6 +23,7 @@ import gov.nasa.jpf.classfile.ClassFile;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassFileReaderAdapter;
 import gov.nasa.jpf.classfile.ClassPath;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 

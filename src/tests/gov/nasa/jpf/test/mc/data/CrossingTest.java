@@ -36,6 +36,7 @@ package gov.nasa.jpf.test.mc.data;
 
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 public class CrossingTest extends TestJPF {

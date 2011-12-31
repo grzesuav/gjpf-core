@@ -18,12 +18,10 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.JPFLogger;
-import java.util.HashMap;
 
 
 /**
@@ -193,7 +191,7 @@ public class JPF_java_lang_Thread {
       // exit point (DIRECTCALLRETURN) in case the thread is stopped or there is
       // a fail-safe UncaughtExceptionHandler set
       MethodInfo runStub = miRun.createDirectCallStub("[run]");
-      DirectCallStackFrame runFrame = new DirectCallStackFrame(runStub, 1, 0);
+      DirectCallStackFrame runFrame = new DirectCallStackFrame(runStub);
       runFrame.pushRef(runnableRef);
       // we need this in case of a synchronized run(), for which the invokes would
       // always be the firstStepInsn

@@ -19,14 +19,13 @@
 
 package gov.nasa.jpf.util;
 
-import java.lang.reflect.Array;
+import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.search.Search;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-
-import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.search.Search;
 
 /**
  * a generic, listener- created trace over property specific operations

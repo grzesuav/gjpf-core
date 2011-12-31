@@ -21,7 +21,6 @@ package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
-import java.util.HashSet;
 
 /**
  * utility class that can match FieldInfos against specs.

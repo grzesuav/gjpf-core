@@ -20,8 +20,10 @@
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.util.BitSet;
 import java.util.Random;
+
 import org.junit.Test;
 
 /**

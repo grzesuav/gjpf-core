@@ -18,9 +18,10 @@
 //
 package gov.nasa.jpf.util;
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.locks.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.concurrent.locks.ReentrantLock;
 
 /* Note: This class fails after 8 petabytes of data has been read.  This should
  * never be a problem.  For example, assuming a 10 Ghz clock and 1 cycle to read

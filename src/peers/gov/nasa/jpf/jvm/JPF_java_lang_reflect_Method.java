@@ -18,11 +18,12 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.*;
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.MethodInfoRegistry;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
-import java.lang.reflect.*;
+
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
 public class JPF_java_lang_reflect_Method {
@@ -228,8 +229,6 @@ public class JPF_java_lang_reflect_Method {
     ElementInfo source;
     ClassInfo sourceClass;
     String destTypeNames[];
-    Object objValue;
-    long rawValue;
     int i, nArgs, passedCount, sourceRef;
     byte sourceType, destTypes[];
 
@@ -249,6 +248,7 @@ public class JPF_java_lang_reflect_Method {
       
       sourceRef = env.getReferenceArrayElement(argsRef, i);
 
+      // we have to handle null references explicitly
       if (sourceRef == MJIEnv.NULL) {
         if ((destTypes[i] != Types.T_REFERENCE) && (destTypes[i] != Types.T_ARRAY)) {
           env.throwException(IllegalArgumentException.class.getName(), "Wrong argument type at index " + i + ".  Actual = (null).  Expected = " + destTypeNames[i]);
@@ -260,202 +260,197 @@ public class JPF_java_lang_reflect_Method {
       }
 
       source      = env.getElementInfo(sourceRef);
-      sourceClass = source.getClassInfo();
-      sourceType  = getClassType(sourceClass, !isBoxedPrimitive(destTypeNames[i]));
-       
-      if (!isCompatible(sourceType, destTypes[i], sourceClass, destTypeNames[i])) {
+      sourceClass = source.getClassInfo();   
+      sourceType = getSourceType( sourceClass, destTypes[i], destTypeNames[i]);
+             
+      if ((sourceType == Types.T_NONE) || !pushArg(frame, source, sourceType, destTypes[i])){
         env.throwException(IllegalArgumentException.class.getName(), "Wrong argument type at index " + i + ".  Source Class = " + sourceClass.getName() + ".  Dest Class = " + destTypeNames[i]);
-        return false;
+        return false;        
       }
-       
-      objValue = readValue(source, sourceType);
-      rawValue = convertValue(destTypes[i], objValue);
-       
-      pushValue(frame, destTypes[i], rawValue);
     }
     
     return true;
   }
-  
-  private static boolean isBoxedPrimitive(String className) {
-    return (className.equals("java.lang.Byte")
-        || className.equals("java.lang.Short")
-        || className.equals("java.lang.Integer")
-        || className.equals("java.lang.Long")
-        || className.equals("java.lang.Float")
-        || className.equals("java.lang.Double")
-        || className.equals("java.lang.Boolean") || className.equals("java.lang.Character"));
-  }
 
-  private static byte getClassType(ClassInfo clazz, boolean unbox) {
-    String className;
-    
-    className = clazz.getName();
-    
-    if (className.equals("java.lang.Byte") && unbox) {
-      return Types.T_BYTE; 
-    }
-
-    if (className.equals("java.lang.Short") && unbox) {
-      return Types.T_SHORT; 
-    }
-
-    if (className.equals("java.lang.Integer") && unbox) {
-      return Types.T_INT; 
-    }
-
-    if (className.equals("java.lang.Long") && unbox) {
-      return Types.T_LONG; 
-    }
-
-    if (className.equals("java.lang.Float") && unbox) {
-      return Types.T_FLOAT; 
-    }
-
-    if (className.equals("java.lang.Double") && unbox) {
-      return Types.T_DOUBLE; 
-    }
-
-    if (className.equals("java.lang.Boolean") && unbox) {
-      return Types.T_BOOLEAN; 
-    }
-
-    if (className.equals("java.lang.Character") && unbox) {
-      return Types.T_CHAR; 
-    }
-
-    if (className.equals("java.lang.Void")) {
-      return Types.T_VOID; 
+  // this returns the primitive type in case we have to unbox, and otherwise checks reference type compatibility
+  private static byte getSourceType (ClassInfo ciArgVal, byte destType, String destTypeName){
+    switch (destType){
+    // the primitives
+    case Types.T_BOOLEAN:
+    case Types.T_BYTE:
+    case Types.T_CHAR:
+    case Types.T_SHORT:
+    case Types.T_INT:
+    case Types.T_LONG:
+    case Types.T_FLOAT:
+    case Types.T_DOUBLE:
+      return Types.getUnboxedType(ciArgVal.getName());
+      
+    case Types.T_ARRAY:
+    case Types.T_REFERENCE: // check if the source type is assignment compatible with the destType
+      if (ciArgVal.isInstanceOf(destTypeName)){
+        return destType;
+      }
     }
     
-    if (className.charAt(0) == '[') {
-      return Types.T_ARRAY;
-    }
-    
-    return Types.T_REFERENCE;
+    return Types.T_NONE;
   }
   
-  private static boolean isCompatible(byte sourceType, byte destType, ClassInfo sourceClass, String destClassName) {
-    switch (destType) {
-      case Types.T_DOUBLE:
-        if (sourceType == Types.T_DOUBLE)
-          return true;
-        //break;
-        
+  // do the proper type conversion - Java is pretty forgiving here and does
+  // not throw exceptions upon value truncation
+  private static boolean pushArg( StackFrame frame, ElementInfo eiArg, byte srcType, byte destType){    
+    switch (srcType) {
+    case Types.T_DOUBLE:
+    {
+      double v = eiArg.getDoubleField("value");
+      if (destType == Types.T_DOUBLE){      
+        frame.longPush(Double.doubleToLongBits(v));
+        return true;
+      }
+      return false;
+    }
+    case Types.T_FLOAT: // covers float, double
+    {
+      float v = eiArg.getFloatField("value");
+      switch (destType){
       case Types.T_FLOAT:
-        if (sourceType == Types.T_FLOAT)
-          return true;
-        //break;
-
-      case Types.T_LONG:
-        if (sourceType == Types.T_LONG)
-          return true; 
-        //break;
-
-      case Types.T_INT:
-        if (sourceType == Types.T_CHAR)   // HotSpot's Method.invoke() will convert char to double/float/long/int
-          return true;
-
-        if (sourceType == Types.T_INT)
-          return true;
-        //break;
-       
-      case Types.T_SHORT:
-        if (sourceType == Types.T_SHORT)
-          return true;
-        //break;
-
-      case Types.T_BYTE:
-        return sourceType == Types.T_BYTE;
-
-      case Types.T_BOOLEAN:
-        return sourceType == Types.T_BOOLEAN;
-
-      case Types.T_CHAR:
-        return sourceType == Types.T_CHAR;
-
-      case Types.T_ARRAY:
-      case Types.T_REFERENCE:
-        return sourceClass.isInstanceOf(destClassName);
-
-      case Types.T_VOID:
-      default:
-        throw new JPFException("Can not convert " + sourceClass.getName() + " to " + destClassName);
-    }
-  }
-  
-  private static Object readValue(ElementInfo value, byte type) {
-    switch (type) {
-      case Types.T_DOUBLE:  return value.getDoubleField("value");
-      case Types.T_LONG:    return value.getLongField("value");
-      case Types.T_FLOAT:   return value.getFloatField("value");
-      case Types.T_INT:     return value.getIntField("value");
-      case Types.T_SHORT:   return value.getShortField("value");
-      case Types.T_BYTE:    return value.getByteField("value");
-      case Types.T_CHAR:    return value.getCharField("value");
-      case Types.T_BOOLEAN: return value.getBooleanField("value");
-       
-      case Types.T_ARRAY:
-      case Types.T_REFERENCE:
-        return value.getObjectRef();
-
-      case Types.T_VOID:
-      default:
-        throw new JPFException("Unhandled type: " + type);
-    }
-  }
-  
-  private static long convertValue(byte type, Object value) {
-    if ((type != Types.T_CHAR) && (value instanceof Character)) {  // HotSpot's Method.invoke() will convert char into double/float/long/int
-      value = Integer.valueOf(((Character) value).charValue());
-    } 
-     
-    switch (type) {
-      case Types.T_DOUBLE:  return Double.doubleToLongBits(((Number) value).doubleValue());
-      case Types.T_FLOAT:   return Float.floatToIntBits(((Number) value).floatValue());
-      case Types.T_LONG:    return ((Number) value).longValue();
-      case Types.T_INT:     return ((Number) value).intValue();
-      case Types.T_SHORT:   return ((Number) value).shortValue();
-      case Types.T_BYTE:    return ((Number) value).byteValue();
-      case Types.T_CHAR:    return ((Character) value).charValue();
-      case Types.T_BOOLEAN: return ((Boolean) value).booleanValue() ? 1 : 0;
-
-      case Types.T_ARRAY:
-      case Types.T_REFERENCE:
-         return ((Integer) value).intValue();
-
-      case Types.T_VOID:
-      default:
-         throw new JPFException("Unhandled type: " + type);
-    }
-  }
-  
-  private static void pushValue(StackFrame frame, byte type, long value) {
-    switch (type) {
+        frame.push(Float.floatToIntBits(v));
+        return true;
       case Types.T_DOUBLE:
+        frame.longPush(Double.doubleToLongBits(v));
+        return true;
+      }
+      return false;
+    }
+    case Types.T_LONG:
+    {
+      long v = eiArg.getLongField("value");
+      switch (destType){
       case Types.T_LONG:
-        frame.longPush(value);
-        break;
-              
+        frame.longPush(v);
+        return true;
       case Types.T_FLOAT:
+        frame.push(Float.floatToIntBits((float)v));
+        return true;
+      case Types.T_DOUBLE:
+        frame.longPush( Double.doubleToLongBits((double)v));
+        return true;
+      }
+      return false;
+    }
+    case Types.T_INT:
+    { 
+      int v = eiArg.getIntField("value");
+      switch (destType){
       case Types.T_INT:
+        frame.push(v);
+        return true;
+      case Types.T_LONG:
+        frame.longPush(v);
+        return true;        
+      case Types.T_FLOAT:
+        frame.push( Float.floatToIntBits((float)v));
+        return true;
+      case Types.T_DOUBLE:
+        frame.longPush( Double.doubleToLongBits((double)v));
+        return true;
+      }
+      return false;
+    }
+    case Types.T_SHORT:
+    { 
+      int v = eiArg.getShortField("value");
+      switch (destType){
       case Types.T_SHORT:
+      case Types.T_INT:
+        frame.push(v);
+        return true;
+      case Types.T_LONG:
+        frame.longPush(v);
+        return true;        
+      case Types.T_FLOAT:
+        frame.push( Float.floatToIntBits((float)v));
+        return true;
+      case Types.T_DOUBLE:
+        frame.longPush( Double.doubleToLongBits((double)v));
+        return true;
+      }
+      return false;
+    }
+    case Types.T_BYTE:
+    { 
+      byte v = eiArg.getByteField("value");
+      switch (destType){
       case Types.T_BYTE:
+      case Types.T_SHORT:
+      case Types.T_INT:
+        frame.push(v);
+        return true;
+      case Types.T_LONG:
+        frame.longPush(v);
+        return true;
+      case Types.T_FLOAT:
+        frame.push( Float.floatToIntBits((float)v));
+        return true;
+      case Types.T_DOUBLE:
+        frame.longPush( Double.doubleToLongBits((double)v));
+        return true;
+      }
+      return false;
+    }
+    case Types.T_CHAR:
+    {
+      char v = eiArg.getCharField("value");
+      switch (destType){
       case Types.T_CHAR:
-      case Types.T_BOOLEAN:
-        frame.push((int) value);
-        break;
-
-      case Types.T_ARRAY:
-      case Types.T_REFERENCE:
-        frame.pushRef((int) value);
-        break;
-
-      case Types.T_VOID:
-      default:
-        throw new JPFException("Unhandled type: " + type);
+      case Types.T_INT:
+        frame.push(v);
+        return true;
+      case Types.T_LONG:
+        frame.longPush(v);
+        return true;        
+      case Types.T_FLOAT:
+        frame.push( Float.floatToIntBits((float)v));
+        return true;
+      case Types.T_DOUBLE:
+        frame.longPush( Double.doubleToLongBits((double)v));
+        return true;
+      }
+      return false;
+    }
+    case Types.T_BOOLEAN:
+    {
+      boolean v = eiArg.getBooleanField("value");
+      if (destType == Types.T_BOOLEAN){
+        frame.push(v ? 1 : 0);
+        return true;
+      }
+      return false;
+    }
+    case Types.T_ARRAY:
+    {
+      int ref =  eiArg.getObjectRef();
+      if (destType == Types.T_ARRAY){
+        frame.pushRef(ref);
+        return true;
+      }
+      return false;
+    }
+    case Types.T_REFERENCE:
+    {
+      int ref =  eiArg.getObjectRef();
+      if (destType == Types.T_REFERENCE){
+        frame.pushRef(ref);
+        return true;
+      }
+      return false;
+    }
+    case Types.T_VOID:
+    default:
+      return false;
     }
   }
+
   
   public static int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                                            int objRef, int argsRef) {
@@ -475,14 +470,14 @@ public class JPF_java_lang_reflect_Method {
       }
     }
     
-    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+    StackFrame frame = ti.getReturnedDirectCall();
 
     if (frame != null){
       return createBoxedReturnValueObject( env, mi, frame);
 
     } else {
       MethodInfo stub = mi.createReflectionCallStub();
-      frame = new DirectCallStackFrame(stub, stub.getMaxStack(), stub.getMaxLocals());
+      frame = new DirectCallStackFrame(stub);
 
       if (!mi.isStatic()) {
         if (objRef == MJIEnv.NULL) {

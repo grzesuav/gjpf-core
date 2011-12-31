@@ -22,8 +22,8 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.util.ObjArray;
 import gov.nasa.jpf.util.ObjVector;
+
 import java.util.ArrayList;
 
 public class AmmendableFilterConfiguration implements FilterConfiguration {

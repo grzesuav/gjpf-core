@@ -19,7 +19,6 @@
 
 package gov.nasa.jpf.jvm.choice;
 
-import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.LongChoiceGenerator;
 

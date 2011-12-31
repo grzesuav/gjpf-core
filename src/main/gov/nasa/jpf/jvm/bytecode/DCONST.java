@@ -21,7 +21,6 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.Types;
 
 
 /**

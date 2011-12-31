@@ -20,24 +20,20 @@ package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.annotation.JPFOption;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.LockInstruction;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.Step;
-import java.io.PrintWriter;
+import gov.nasa.jpf.search.Search;
 
-import gov.nasa.jpf.util.Left;
+import java.io.PrintWriter;
 
 /**
  * Listener tool to monitor JPF execution. This class can be used as a drop-in

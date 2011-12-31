@@ -19,9 +19,8 @@
 package gov.nasa.jpf.search;
 
 
-import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.util.Debug;
+import gov.nasa.jpf.jvm.JVM;
 
 
 /**

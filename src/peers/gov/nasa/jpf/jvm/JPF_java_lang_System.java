@@ -18,17 +18,16 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
-import java.util.Map;
-
-import gov.nasa.jpf.classfile.ClassPath;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFConfigException;
+import gov.nasa.jpf.classfile.ClassPath;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.BreakGenerator;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * MJI NativePeer class for java.lang.System library abstraction

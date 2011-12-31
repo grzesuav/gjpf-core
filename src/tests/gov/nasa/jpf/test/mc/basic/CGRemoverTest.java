@@ -26,6 +26,7 @@ import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**
@@ -66,7 +67,7 @@ public class CGRemoverTest extends TestJPF {
     if (verifyNoPropertyViolation("+listener=.listener.CGRemover,.test.mc.basic.CGRemoverTest$R1Listener",
             "+log.info=gov.nasa.jpf.CGRemover",
             "+cgrm.sync.cg_class=gov.nasa.jpf.jvm.ThreadChoiceGenerator",
-            "+cgrm.sync.locations=CGRemoverTest.java:44,CGRemoverTest.java:74")){
+            "+cgrm.sync.locations=CGRemoverTest.java:45,CGRemoverTest.java:75")){
       R1 o = new R1();
       Thread t = new Thread(o);
       t.start();   // from now on 'o' is shared

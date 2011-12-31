@@ -19,11 +19,11 @@
 package gov.nasa.jpf.test.mc.data;
 
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Random;
-
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+
+import java.util.Random;
+
 import org.junit.Test;
 
 /**

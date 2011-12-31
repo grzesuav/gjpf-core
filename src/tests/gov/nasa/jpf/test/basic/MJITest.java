@@ -21,6 +21,7 @@ package gov.nasa.jpf.test.basic;
 
 import gov.nasa.jpf.JPFNativePeerException;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**

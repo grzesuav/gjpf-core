@@ -29,7 +29,6 @@ import gov.nasa.jpf.util.ObjectList;
 
 import java.io.PrintWriter;
 import java.lang.ref.SoftReference;
-import java.util.Iterator;
 
 /**
  * Describes an element of memory containing the field values of a class or an

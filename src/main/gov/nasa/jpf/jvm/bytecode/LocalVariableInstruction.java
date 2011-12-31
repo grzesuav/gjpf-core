@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.*;
+import gov.nasa.jpf.jvm.LocalVarInfo;
 
 /**
  * class abstracting instructions that access local variables, to keep

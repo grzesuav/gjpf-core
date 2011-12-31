@@ -19,13 +19,13 @@
 
 package gov.nasa.jpf.jvm;
 
-import java.io.File;
-
-import org.junit.Test;
-
 import gov.nasa.jpf.classfile.ClassFile;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.util.test.TestJPF;
+
+import java.io.File;
+
+import org.junit.Test;
 
 /**
  * unit test for MethodInfos

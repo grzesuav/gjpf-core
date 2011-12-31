@@ -18,15 +18,6 @@
 //
 package gov.nasa.jpf.listener;
 
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.ListIterator;
-import java.util.Stack;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
@@ -39,6 +30,15 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.ListIterator;
+import java.util.Stack;
 
 /**
  * example of a listener that creates property specific traces. The interesting

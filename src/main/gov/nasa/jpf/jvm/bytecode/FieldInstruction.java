@@ -19,16 +19,13 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.FieldLockInfoFactory;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.SystemState;
-
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.FieldLockInfo;
+import gov.nasa.jpf.jvm.FieldLockInfoFactory;
+import gov.nasa.jpf.jvm.SystemState;
+import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
 /**

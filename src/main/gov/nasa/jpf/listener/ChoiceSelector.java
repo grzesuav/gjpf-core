@@ -19,13 +19,11 @@
 
 package gov.nasa.jpf.listener;
 
-import java.util.Random;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.annotation.JPFOptions;
-import gov.nasa.jpf.annotation.JPFOption;
 import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.annotation.JPFOption;
+import gov.nasa.jpf.annotation.JPFOptions;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ChoicePoint;
 import gov.nasa.jpf.jvm.JVM;
@@ -34,6 +32,8 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
+
+import java.util.Random;
 
 /**
  * this is a listener that only executes single choices until it detects

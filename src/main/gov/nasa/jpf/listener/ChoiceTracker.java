@@ -1,8 +1,5 @@
 package gov.nasa.jpf.listener;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
@@ -13,6 +10,9 @@ import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.search.Search;
+
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 
 /**
  * generic choice tracker tool, to produce a list of choice values that

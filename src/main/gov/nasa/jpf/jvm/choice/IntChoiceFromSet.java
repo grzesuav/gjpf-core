@@ -19,10 +19,6 @@
 package gov.nasa.jpf.jvm.choice;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.IntChoiceGenerator;
-import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.ThreadInfo;
 /**
  * @author cartho
  *

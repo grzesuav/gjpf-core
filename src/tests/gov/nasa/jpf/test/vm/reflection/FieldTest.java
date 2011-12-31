@@ -19,9 +19,10 @@
 package gov.nasa.jpf.test.vm.reflection;
 
 import gov.nasa.jpf.util.test.TestJPF;
-import org.junit.Test;
 
 import java.lang.reflect.Field;
+
+import org.junit.Test;
 
 public class FieldTest extends TestJPF {
 

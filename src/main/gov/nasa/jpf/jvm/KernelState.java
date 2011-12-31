@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.util.Debug;
 import gov.nasa.jpf.util.HashData;
 
 import java.util.Stack;

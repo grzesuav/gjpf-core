@@ -20,7 +20,6 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
@@ -32,10 +31,8 @@ import gov.nasa.jpf.util.Misc;
 import java.io.PrintWriter;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.logging.Logger;
 
 
 /**
@@ -582,7 +579,7 @@ public class JVM {
     
     // create the direct call stub
     MethodInfo mainStub = miMain.createDirectCallStub("[main]");
-    DirectCallStackFrame frame = new DirectCallStackFrame(mainStub, 1, 0);
+    DirectCallStackFrame frame = new DirectCallStackFrame(mainStub);
     frame.pushRef(argsRef);
     // <2do> set RUNSTART pc if we want to catch synchronized tiMain() defects 
     

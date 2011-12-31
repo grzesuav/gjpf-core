@@ -20,11 +20,7 @@ package gov.nasa.jpf.util;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * a minimal container API that transparently handles Object lists which can

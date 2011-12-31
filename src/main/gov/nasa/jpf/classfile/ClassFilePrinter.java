@@ -20,7 +20,6 @@
 package gov.nasa.jpf.classfile;
 
 import java.io.PrintWriter;
-import java.util.Stack;
 
 /**
  * simple tool to print contents of a classfile

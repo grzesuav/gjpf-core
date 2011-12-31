@@ -23,8 +23,9 @@
 
 package gov.nasa.jpf.test.mc.threads;
 
-import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.util.ClassSpec;
+import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 class SharedObject {

@@ -1,6 +1,5 @@
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 public class JPF_gov_nasa_jpf_SerializationConstructor {
 
@@ -11,7 +10,7 @@ public class JPF_gov_nasa_jpf_SerializationConstructor {
   public static int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                              int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
-    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+    StackFrame frame = ti.getReturnedDirectCall();
 
     if (frame != null){
       return frame.pop();

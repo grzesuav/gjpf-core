@@ -20,6 +20,7 @@
 package gov.nasa.jpf.util.json;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**

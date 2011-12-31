@@ -22,6 +22,7 @@ import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
 import org.junit.Test;
 
 /**

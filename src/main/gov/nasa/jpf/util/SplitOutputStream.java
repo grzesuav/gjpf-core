@@ -20,7 +20,7 @@ package gov.nasa.jpf.util;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.Arrays;
 
 public class SplitOutputStream extends OutputStream
 {

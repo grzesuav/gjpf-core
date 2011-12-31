@@ -20,8 +20,8 @@
 package gov.nasa.jpf.util.json;
 
 import gov.nasa.jpf.jvm.ChoiceGenerator;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**

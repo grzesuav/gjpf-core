@@ -18,13 +18,20 @@
 //
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.util.test.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.security.*;
-import java.util.*;
-import org.junit.*;
+import gov.nasa.jpf.jvm.Verify;
+import gov.nasa.jpf.util.test.TestJPF;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.security.SecureRandom;
+import java.util.Random;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class SplitInputStreamTest extends TestJPF {
 

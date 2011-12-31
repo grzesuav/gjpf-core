@@ -19,17 +19,16 @@
 
 package gov.nasa.jpf.util.script;
 
-import java.io.Reader;
-import java.io.StreamTokenizer;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-
+import java.io.Reader;
+import java.io.StreamTokenizer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 /**
  * generic parser for event scripts

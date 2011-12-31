@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.MethodInfo;
 
 
 /**

@@ -7,7 +7,7 @@ import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
+
 import java.util.ArrayList;
 
 /**

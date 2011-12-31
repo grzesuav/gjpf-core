@@ -18,13 +18,6 @@
 //
 package gov.nasa.jpf.report;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.logging.Logger;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
@@ -34,8 +27,15 @@ import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.Path;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListenerAdapter;
+
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * this is our default report generator, which is heavily configurable

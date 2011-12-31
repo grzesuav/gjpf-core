@@ -32,11 +32,11 @@ import gov.nasa.jpf.jvm.ReferenceArrayFields;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.StaticArea;
 import gov.nasa.jpf.jvm.StaticElementInfo;
-import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.util.FieldSpec;
 import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.StringSetMatcher;
+
 import java.util.LinkedList;
 import java.util.List;
 

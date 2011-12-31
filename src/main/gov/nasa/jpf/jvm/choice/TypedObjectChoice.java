@@ -19,15 +19,15 @@
 
 package gov.nasa.jpf.jvm.choice;
 
-import java.util.ArrayList;
-
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.ReferenceChoiceGenerator;
+
+import java.util.ArrayList;
 
 /**
  * a choice generator that enumerates the set of all objects of a certain type. This

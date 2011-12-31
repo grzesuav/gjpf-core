@@ -19,8 +19,7 @@
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.util.test.TestJPF;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import org.junit.Test;
 
 /**

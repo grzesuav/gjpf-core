@@ -19,8 +19,6 @@
 
 package gov.nasa.jpf;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 
 /**
  * common stuff used by all Annotation Proxies

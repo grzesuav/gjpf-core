@@ -26,7 +26,6 @@ import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.Step;
 import gov.nasa.jpf.jvm.Transition;
 import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.search.SearchListener;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;

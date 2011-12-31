@@ -19,12 +19,14 @@
 package gov.nasa.jpf.test.java.text;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.text.DateFormat;
 import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+
 import org.junit.Test;
 
 public class SimpleDateFormatTest extends TestJPF {

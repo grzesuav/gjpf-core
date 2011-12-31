@@ -18,9 +18,6 @@
 //
 package gov.nasa.jpf.listener;
 
-import java.io.PrintWriter;
-import java.util.HashMap;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
@@ -37,6 +34,9 @@ import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
+
+import java.io.PrintWriter;
+import java.util.HashMap;
 
 
 /**

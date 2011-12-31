@@ -26,6 +26,7 @@ import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.SparseClusterArray;
 import gov.nasa.jpf.util.Transformer;
+
 import java.util.ArrayList;
 
 /**

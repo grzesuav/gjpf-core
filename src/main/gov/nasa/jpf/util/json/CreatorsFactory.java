@@ -20,8 +20,8 @@
 package gov.nasa.jpf.util.json;
 
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.MJIEnv;
+
 import java.util.HashMap;
 
 public class CreatorsFactory {

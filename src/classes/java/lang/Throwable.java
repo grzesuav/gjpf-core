@@ -19,7 +19,6 @@
 
 package java.lang;
 
-import gov.nasa.jpf.*;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 

@@ -34,10 +34,9 @@ import gov.nasa.jpf.util.json.CGCall;
 import gov.nasa.jpf.util.json.JSONLexer;
 import gov.nasa.jpf.util.json.JSONObject;
 import gov.nasa.jpf.util.json.JSONParser;
+
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.BitSet;
 import java.util.List;
 

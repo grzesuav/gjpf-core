@@ -20,6 +20,7 @@
 package gov.nasa.jpf.tool;
 
 import gov.nasa.jpf.util.JPFSiteUtils;
+
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

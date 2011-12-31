@@ -21,9 +21,8 @@ package gov.nasa.jpf.tool;
 import gov.nasa.jpf.jvm.Types;
 
 import java.io.PrintWriter;
-
-import java.lang.reflect.*;
-
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
 

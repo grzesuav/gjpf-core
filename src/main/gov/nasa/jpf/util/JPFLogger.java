@@ -20,7 +20,11 @@
 package gov.nasa.jpf.util;
 
 import java.util.ResourceBundle;
-import java.util.logging.*;
+import java.util.logging.Filter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  * this is a decorator for java.util.logging.JPFLogger

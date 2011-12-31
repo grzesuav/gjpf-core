@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.ObjectList;
+
 import java.lang.reflect.Modifier;
 
 

@@ -1,9 +1,9 @@
 package gov.nasa.jpf.jvm.serialize;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.FieldAmmendment;
 import gov.nasa.jpf.jvm.AnnotationInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
+import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.FieldAmmendment;
 
 public class IncludesFromAnnotations
 implements FieldAmmendment {

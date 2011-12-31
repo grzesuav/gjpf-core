@@ -21,9 +21,9 @@ package gov.nasa.jpf.test.basic;
 import gov.nasa.jpf.jvm.DirectCallStackFrame;
 import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.UncaughtException;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 /**
  * native peer class for unit testing MJI
@@ -148,7 +148,7 @@ public class JPF_gov_nasa_jpf_test_basic_MJI {
     System.out.println("# entering nativeRoundtripLoop(): " + a);
 
     ThreadInfo ti = env.getThreadInfo();
-    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+    StackFrame frame = ti.getReturnedDirectCall();
 
     if (frame == null){ // first time
       MethodInfo mi = env.getClassInfo(robj).getMethod("roundtrip(I)I",false);

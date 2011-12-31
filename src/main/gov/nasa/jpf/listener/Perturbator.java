@@ -31,20 +31,18 @@ import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
-import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
 import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
-import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
+import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.perturb.OperandPerturbator;
 import gov.nasa.jpf.util.FieldSpec;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.util.SourceRef;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 /**

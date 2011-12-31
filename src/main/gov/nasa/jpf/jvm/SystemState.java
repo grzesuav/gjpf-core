@@ -18,12 +18,12 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.io.PrintWriter;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.util.HashData;
+
+import java.io.PrintWriter;
 
 
 /**

@@ -20,7 +20,6 @@ package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.search.SearchListener;
 import gov.nasa.jpf.search.heuristic.HeuristicSearch;
 
 import java.io.PrintStream;

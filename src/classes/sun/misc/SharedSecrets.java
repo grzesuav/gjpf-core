@@ -18,9 +18,9 @@
 //
 package sun.misc;
 
-import java.util.jar.JarFile;
-import java.io.FileDescriptor;
 import java.io.File;
+import java.io.FileDescriptor;
+import java.util.jar.JarFile;
 
 /**
  * This is a backdoor mechanism in Java 6 to allow (some sort of)

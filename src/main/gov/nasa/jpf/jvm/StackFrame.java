@@ -18,8 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.io.PrintStream;
-
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.BitSet256;
@@ -28,6 +26,8 @@ import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.ObjectList;
+
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Iterator;
@@ -52,13 +52,13 @@ import java.util.Iterator;
  *
  */
 public class StackFrame implements Cloneable {
-
+  
    /**
     * the previous StackFrame (usually the caller, null if first). To be set when
     * the frame is pushed on the ThreadInfo callstack
     */
   protected StackFrame prev;
-
+    
   protected int top;                // top index of the operand stack (NOT size)
                                     // this points to the last pushed value
 
@@ -68,7 +68,7 @@ public class StackFrame implements Cloneable {
   protected int[] slots;            // the combined local and operand slots
   protected FixedBitSet isRef;      // which slots contain references
 
-  protected Object frameAttr;       // this is where we can store attrs for the whole frame
+  protected Object frameAttr;       // optional user attrs for the whole frame
   
   /*
    * This array can be used to store attributes (e.g. variable names) for
@@ -169,6 +169,13 @@ public class StackFrame implements Cloneable {
   protected StackFrame () {
   }
 
+  /**
+   * re-execute method from the beginning - use with care
+   */
+  public void reset() {
+    pc = mi.getInstruction(0);
+  }  
+  
   /**
    * creates a dummy Stackframe for testing of operand/local operations
    * NOTE - TESTING ONLY! this does not have a MethodInfo
@@ -342,10 +349,6 @@ public class StackFrame implements Cloneable {
 
   public boolean isSynthetic() {
     return false;
-  }
-
-  public boolean isInvoked() {
-    return true;
   }
 
   // gets and sets some derived information

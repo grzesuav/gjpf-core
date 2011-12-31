@@ -18,19 +18,17 @@
 //
 package java.lang;
 
-import java.io.PrintStream;
 import java.io.InputStream;
-import java.lang.annotation.Annotation;
+import java.io.PrintStream;
 import java.nio.channels.Channel;
 import java.util.Map;
 import java.util.Properties;
 
-//--- all the stuff that's dragged in via the JavaLangAccess backdoor
-import sun.misc.SharedSecrets;
 import sun.misc.JavaLangAccess;
+import sun.misc.SharedSecrets;
+import sun.nio.ch.Interruptible;
 import sun.reflect.ConstantPool;
 import sun.reflect.annotation.AnnotationType;
-import sun.nio.ch.Interruptible;
 
 
 public class System {

@@ -25,7 +25,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.test.TestJPF;
-import java.util.HashMap;
+
 import org.junit.Test;
 
 /**

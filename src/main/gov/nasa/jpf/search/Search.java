@@ -37,7 +37,6 @@ import gov.nasa.jpf.util.Misc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * the mother of all search classes. Mostly takes care of listeners, keeping

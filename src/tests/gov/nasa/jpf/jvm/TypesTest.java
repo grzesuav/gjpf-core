@@ -19,8 +19,8 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.Types;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**

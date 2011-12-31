@@ -19,8 +19,10 @@
 package gov.nasa.jpf.test.java.concurrent;
 
 import gov.nasa.jpf.util.test.TestJPF;
-import org.junit.Test;
+
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
+import org.junit.Test;
 
 /**
  * raw test for java.util.concurrent.atomic.AtomicIntegerFieldUpdater

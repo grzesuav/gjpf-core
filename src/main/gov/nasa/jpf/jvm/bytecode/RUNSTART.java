@@ -19,7 +19,6 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.SystemState;

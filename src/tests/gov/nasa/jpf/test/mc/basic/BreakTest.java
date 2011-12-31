@@ -29,6 +29,7 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 

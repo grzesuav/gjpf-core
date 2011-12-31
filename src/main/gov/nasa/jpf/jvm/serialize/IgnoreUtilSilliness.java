@@ -1,7 +1,7 @@
 package gov.nasa.jpf.jvm.serialize;
 
-import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.FieldAmmendment;
 import gov.nasa.jpf.jvm.FieldInfo;
+import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.FieldAmmendment;
 
 
 public class IgnoreUtilSilliness implements FieldAmmendment {

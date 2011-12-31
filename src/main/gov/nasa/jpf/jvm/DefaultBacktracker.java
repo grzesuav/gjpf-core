@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.ImmutableList;
 
 public class DefaultBacktracker<KState> implements Backtracker {

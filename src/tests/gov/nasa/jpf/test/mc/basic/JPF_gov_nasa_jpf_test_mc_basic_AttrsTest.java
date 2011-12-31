@@ -1,6 +1,6 @@
 package gov.nasa.jpf.test.mc.basic;
 
-import gov.nasa.jpf.jvm.*;
+import gov.nasa.jpf.jvm.MJIEnv;
 
 public class JPF_gov_nasa_jpf_test_mc_basic_AttrsTest {
 

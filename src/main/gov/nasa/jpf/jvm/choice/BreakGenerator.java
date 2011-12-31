@@ -18,12 +18,12 @@
 //
 package gov.nasa.jpf.jvm.choice;
 
-import java.io.PrintWriter;
-
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.ThreadChoiceGenerator;
 import gov.nasa.jpf.jvm.ThreadInfo;
+
+import java.io.PrintWriter;
 
 /**
  * a pseudo CG that is used to break transitions. It can be used to break and

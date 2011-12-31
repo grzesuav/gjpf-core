@@ -21,7 +21,9 @@ package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.io.File;
+
 import org.junit.Test;
 
 public class TraceTest extends TestJPF {

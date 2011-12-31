@@ -18,9 +18,9 @@
 //
 package gov.nasa.jpf.report;
 
-import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.Error;
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.Error;
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
@@ -31,13 +31,29 @@ import gov.nasa.jpf.jvm.Path;
 import gov.nasa.jpf.jvm.ReturnInstruction;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.Step;
-import gov.nasa.jpf.jvm.Transition;
-import gov.nasa.jpf.util.*;
-import java.io.*;
 import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.Transition;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import java.util.*;
-import java.util.logging.*;
+import gov.nasa.jpf.util.ObjectList;
+import gov.nasa.jpf.util.RepositoryEntry;
+import gov.nasa.jpf.util.Source;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /*
  * Outputs the report in HTML format.  Currently only Firefox 3.0.7 through 3.0.10 have been tested.

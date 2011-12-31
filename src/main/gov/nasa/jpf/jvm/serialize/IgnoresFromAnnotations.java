@@ -1,14 +1,13 @@
 package gov.nasa.jpf.jvm.serialize;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.FieldAmmendment;
-import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.FrameAmmendment;
+import gov.nasa.jpf.annotation.FilterField;
+import gov.nasa.jpf.annotation.FilterFrame;
 import gov.nasa.jpf.jvm.AnnotationInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
-
-import gov.nasa.jpf.annotation.FilterField;
-import gov.nasa.jpf.annotation.FilterFrame;
+import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.FieldAmmendment;
+import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.FrameAmmendment;
 
 public class IgnoresFromAnnotations
 implements FieldAmmendment, FrameAmmendment {

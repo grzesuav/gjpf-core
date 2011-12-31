@@ -21,10 +21,13 @@ package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.util.test.TestJPF;
-import gov.nasa.jpf.jvm.*;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.util.test.TestJPF;
+
 import java.util.ArrayList;
+
 import org.junit.Test;
 
 /**

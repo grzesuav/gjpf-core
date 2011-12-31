@@ -19,15 +19,9 @@
 
 package gov.nasa.jpf.util.script;
 
-import gov.nasa.jpf.util.script.Alternative;
-import gov.nasa.jpf.util.script.ElementProcessor;
-import gov.nasa.jpf.util.script.Event;
-import gov.nasa.jpf.util.script.Repetition;
-import gov.nasa.jpf.util.script.ScriptElement;
-
 import java.util.ArrayList;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 class CG {}
 

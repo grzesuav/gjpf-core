@@ -19,7 +19,9 @@
 package gov.nasa.jpf.test.java.concurrent;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 import org.junit.Test;
 
 /**

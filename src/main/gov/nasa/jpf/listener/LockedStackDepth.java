@@ -18,12 +18,21 @@
 //
 package gov.nasa.jpf.listener;
 
-import java.util.*;
-import gov.nasa.jpf.*;
-import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.search.*;
-import gov.nasa.jpf.search.heuristic.*;
-import java.util.logging.*;
+import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.search.DFSearch;
+import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.search.heuristic.BFSHeuristic;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A listener that tracks information about the stack depth of when a lock is first acquired.  If 

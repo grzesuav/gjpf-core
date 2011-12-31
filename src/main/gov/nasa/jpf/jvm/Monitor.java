@@ -21,7 +21,6 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.util.HashData;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 /**

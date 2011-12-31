@@ -18,8 +18,9 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.lang.reflect.Modifier;
 import gov.nasa.jpf.Config;
+
+import java.lang.reflect.Modifier;
 
 public class JPF_java_lang_reflect_Field {
 

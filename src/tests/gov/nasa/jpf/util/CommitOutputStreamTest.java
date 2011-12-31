@@ -18,9 +18,16 @@
 //
 package gov.nasa.jpf.util;
 
-import java.io.*;
-import java.security.*;
-import org.junit.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.security.SecureRandom;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class CommitOutputStreamTest
 {

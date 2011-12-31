@@ -20,11 +20,12 @@
 package gov.nasa.jpf.test.xerces;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
+
 import org.junit.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;

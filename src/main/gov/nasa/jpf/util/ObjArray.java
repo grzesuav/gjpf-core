@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.JPFException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;

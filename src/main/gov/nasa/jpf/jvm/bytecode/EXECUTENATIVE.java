@@ -22,10 +22,9 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.NativeMethodInfo;
-import gov.nasa.jpf.jvm.NativeStackFrame;
-import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
+
 import java.lang.reflect.Method;
 
 /**

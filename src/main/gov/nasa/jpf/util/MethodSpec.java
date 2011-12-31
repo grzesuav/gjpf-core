@@ -22,8 +22,8 @@ package gov.nasa.jpf.util;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.Types;
+
 import java.util.BitSet;
-import java.util.HashSet;
 
 /**
  * utility class that can match methods/args against specs.

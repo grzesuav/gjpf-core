@@ -24,7 +24,6 @@ import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.IntChoiceGenerator;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
-import gov.nasa.jpf.JPFException;
 
 /**
  * simple +/- delta perturbation of integer operand values

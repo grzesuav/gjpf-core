@@ -21,6 +21,7 @@ package gov.nasa.jpf.test.mc.data;
 
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**
@@ -76,7 +77,7 @@ public class PerturbatorTest extends TestJPF {
                                   "+perturb.fields=data",
                                   "+perturb.data.class=.perturb.IntOverUnder",
                                   "+perturb.data.field=gov.nasa.jpf.test.mc.data.PerturbatorTest.data",
-                                  "+perturb.data.location=PerturbatorTest.java:87",
+                                  "+perturb.data.location=PerturbatorTest.java:88",
                                   "+perturb.data.delta=1")){
       System.out.println("instance field location perturbation test");
 
@@ -119,7 +120,7 @@ public class PerturbatorTest extends TestJPF {
 
                                   "+perturb.foo.class=.perturb.IntOverUnder",
                                   "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foo(int)",
-                                  "+perturb.foo.location=PerturbatorTest.java:136",
+                                  "+perturb.foo.location=PerturbatorTest.java:137",
                                   "+perturb.foo.delta=1",
 
                                   "+perturb.bar.class=.perturb.IntOverUnder",
@@ -133,7 +134,7 @@ public class PerturbatorTest extends TestJPF {
       System.out.print("foo() = ");
       System.out.println(x);
 
-      x = foo(42); // line 136 => this should be
+      x = foo(42); // line 137 => this should be
       System.out.print("foo() = ");
       System.out.println(x);
 
@@ -203,7 +204,7 @@ public class PerturbatorTest extends TestJPF {
                                   "+perturb.params=foo,zoo",
                                   "+perturb.foo.class=.perturb.GenericDataAbstractor",
                                   "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foobar(long,double)",
-                                  "+perturb.foo.location=PerturbatorTest.java:233",
+                                  "+perturb.foo.location=PerturbatorTest.java:234",
                                   "+perturb.zoo.class=.perturb.GenericDataAbstractor",
                                   "+perturb.zoo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.zoo(int,boolean)"
     )) {
@@ -230,7 +231,7 @@ public class PerturbatorTest extends TestJPF {
       	System.out.print("foobar = ");
       	System.out.println(d);
 
-      	d = foobar(42, 0.0); // yes perturbation
+      	d = foobar(42, 0.0); // line 234 -> perturbation
       	System.out.print("foobar = ");
       	System.out.println(d);
 

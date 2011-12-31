@@ -19,9 +19,10 @@
 package gov.nasa.jpf.test.vm.reflection;
 
 import gov.nasa.jpf.util.test.TestJPF;
-import org.junit.Test;
 
 import java.lang.reflect.Array;
+
+import org.junit.Test;
 
 /**
  * Test class for primitive getters and setters in the <code>java.lang.reflect.Array</code> class.

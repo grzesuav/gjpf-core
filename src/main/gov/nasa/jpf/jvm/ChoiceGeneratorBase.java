@@ -18,14 +18,13 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.util.Comparator;
-import java.util.Random;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.ObjectList;
+
 import java.lang.reflect.Array;
-import java.util.Iterator;
+import java.util.Comparator;
+import java.util.Random;
 
 /**
  * abstract root class for configurable choice generators

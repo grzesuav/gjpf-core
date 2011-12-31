@@ -19,11 +19,15 @@
 
 package gov.nasa.jpf.util;
 
-import org.junit.Test;
+import static gov.nasa.jpf.util.SparseClusterArray.S1;
+import gov.nasa.jpf.util.SparseClusterArray.Entry;
+import gov.nasa.jpf.util.SparseClusterArray.Snapshot;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.util.HashMap;
 import java.util.Random;
-import static gov.nasa.jpf.util.SparseClusterArray.*;
+
+import org.junit.Test;
 
 /**
  * unit test for gov.nasa.jpf.util.SparseClusterArray

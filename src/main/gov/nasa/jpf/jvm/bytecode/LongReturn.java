@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ThreadInfo;
+
 import java.util.Iterator;
 
 /**

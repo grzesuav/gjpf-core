@@ -19,10 +19,12 @@
 package gov.nasa.jpf.test.mc.basic;
 
 
-import gov.nasa.jpf.*;
+import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.Verify;
-import gov.nasa.jpf.search.*;
-import gov.nasa.jpf.util.test.*;
+import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.util.test.TestJPFHelper;
+
 import org.junit.Test;
 
 

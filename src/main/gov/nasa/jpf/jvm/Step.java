@@ -19,8 +19,9 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.util.*;
-import java.util.*;
+import gov.nasa.jpf.util.Source;
+
+import java.util.WeakHashMap;
 
 /**
  * this corresponds to an executed instruction. Note that we can have a

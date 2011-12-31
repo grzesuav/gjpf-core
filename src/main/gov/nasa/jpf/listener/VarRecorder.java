@@ -18,11 +18,27 @@
 //
 package gov.nasa.jpf.listener;
 
-import gov.nasa.jpf.*;
-import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.jvm.bytecode.*;
-import gov.nasa.jpf.util.*;
-import java.util.*;
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.FieldInfo;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.StackFrame;
+import gov.nasa.jpf.jvm.Step;
+import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.Types;
+import gov.nasa.jpf.jvm.bytecode.ArrayInstruction;
+import gov.nasa.jpf.jvm.bytecode.ArrayLoadInstruction;
+import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.bytecode.LocalVariableInstruction;
+import gov.nasa.jpf.jvm.bytecode.StoreInstruction;
+import gov.nasa.jpf.jvm.bytecode.VariableAccessor;
+import gov.nasa.jpf.util.StringSetMatcher;
+
+import java.util.HashMap;
 
 /**
  * Simple listener tool to record the values of variables as they are accessed.

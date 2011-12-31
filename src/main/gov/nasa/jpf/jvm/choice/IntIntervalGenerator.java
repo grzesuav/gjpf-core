@@ -18,14 +18,14 @@
 //
 package gov.nasa.jpf.jvm.choice;
 
-import java.util.Arrays;
-import java.util.Comparator;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
 import gov.nasa.jpf.jvm.IntChoiceGenerator;
+
+import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Choice Generator that enumerates an interval of int values. Pretty simplistic

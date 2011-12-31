@@ -22,7 +22,6 @@ import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.ObjectList;
-import java.util.Iterator;
 
 
 /**

@@ -12,11 +12,9 @@ import gov.nasa.jpf.jvm.Step;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Transition;
 import gov.nasa.jpf.util.RepositoryEntry;
-import gov.nasa.jpf.util.Source;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

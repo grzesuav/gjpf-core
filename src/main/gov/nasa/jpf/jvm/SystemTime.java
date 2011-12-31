@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.JPF;
 
 /**
  * simple delegating TimeModel implementation that just returns System time.

@@ -18,21 +18,18 @@
 //
 package gov.nasa.jpf.listener;
 
-import java.io.PrintWriter;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.annotation.JPFOption;
 import gov.nasa.jpf.annotation.JPFOptions;
 import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
-import gov.nasa.jpf.report.PublisherExtensionAdapter;
 import gov.nasa.jpf.search.Search;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
 
 /**
  * Listener that implements various budget constraints

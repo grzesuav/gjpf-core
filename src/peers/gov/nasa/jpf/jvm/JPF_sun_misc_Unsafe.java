@@ -18,9 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.JPFException;
-import java.io.PrintWriter;
-import java.util.LinkedList;
 
 /**
  * we don't want this class! This is a hodgepodge of stuff that shouldn't be in Java, but

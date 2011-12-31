@@ -19,11 +19,12 @@
 package sun.net.www.protocol.http;
 
 import gov.nasa.jpf.CachedROHttpConnection;
-import java.net.URL;
-import java.net.Proxy;
+
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.Proxy;
+import java.net.URL;
 
 /**
  * replaced handler to support configured URLConnection classes

@@ -18,10 +18,9 @@
 //
 package gov.nasa.jpf.listener;
 
-import java.io.*;
-import java.util.*;
-
-import gov.nasa.jpf.*;
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ClassInfo;
@@ -30,15 +29,25 @@ import gov.nasa.jpf.jvm.IntChoiceGenerator;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ThreadChoiceGenerator;
-import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.MONITORENTER;
 import gov.nasa.jpf.jvm.bytecode.MONITOREXIT;
-import gov.nasa.jpf.jvm.choice.*;
-import gov.nasa.jpf.report.*;
-import gov.nasa.jpf.search.*;
+import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
+import gov.nasa.jpf.report.ConsolePublisher;
+import gov.nasa.jpf.report.HTMLPublisher;
+import gov.nasa.jpf.report.Publisher;
+import gov.nasa.jpf.report.PublisherExtension;
+import gov.nasa.jpf.search.Search;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * a listener that collects information about ChoiceGenerators, choices and

@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
+
 import java.io.PrintWriter;
 
 /**

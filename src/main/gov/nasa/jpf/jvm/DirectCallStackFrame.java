@@ -19,13 +19,14 @@
 package gov.nasa.jpf.jvm;
 
 /**
- * this is a StackFrame that can dynamically grow its operand stack size (and associated
- * operand attributes). To be used for floating calls, where we don't want to mis-use the
- * stack of the currently executing bytecode method, since it might not have enough
- * operand stack space. This class is basically an inheritance-decorator for StackFrame
- *
  * DirectCallStackFrames are only used for overlay calls (from native code), i.e.
- * they do not return any values themselves, but they do get the return values of the
+ * there is no corresponding INVOKE instruction. The associated MethodInfos are
+ * synthetic, their only code is (usually) a INVOKEx and a DIRECTCALLRETURN.
+ * NOTE: such MethodInfos do not belong to any class
+ * 
+ * Arguments have to be explicitly pushed by the caller
+ * 
+ * They do not return any values themselves, but they do get the return values of the
  * called methods pushed onto their own operand stack. If the DirectCallStackFrame user
  * needs such return values, it has to do so via ThreadInfo.getReturnedDirectCall()
  *
@@ -39,11 +40,6 @@ public class DirectCallStackFrame extends StackFrame {
   public DirectCallStackFrame (MethodInfo stub, int nOperandSlots, int nLocalSlots) {
     super(stub, nLocalSlots, nOperandSlots);
   }
-
-
-  public void reset() {
-    pc = mi.getInstruction(0);
-  }  
   
   public boolean isDirectCallFrame() {
     return true;
@@ -52,12 +48,6 @@ public class DirectCallStackFrame extends StackFrame {
   @Override
   public boolean isSynthetic() {
     return true;
-  }
-
-  @Override
-  public boolean isInvoked() {
-    // there was no corresponding InvokeInstruction
-    return false;
   }
 
   public String getClassName() {

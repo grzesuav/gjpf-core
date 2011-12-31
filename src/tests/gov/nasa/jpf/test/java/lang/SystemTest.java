@@ -20,6 +20,7 @@ package gov.nasa.jpf.test.java.lang;
 
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**

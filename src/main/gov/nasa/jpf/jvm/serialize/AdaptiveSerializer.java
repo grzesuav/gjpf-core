@@ -21,8 +21,6 @@ package gov.nasa.jpf.jvm.serialize;
 
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
  * a CG type adaptive, canonicalizing & filtering serializer that is an

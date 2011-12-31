@@ -18,10 +18,10 @@
 //
 package gov.nasa.jpf.test.mc.basic;
 
-import gov.nasa.jpf.*;
-import gov.nasa.jpf.jvm.*;
-import gov.nasa.jpf.util.test.*;
-import org.junit.*;
+import gov.nasa.jpf.jvm.Verify;
+import gov.nasa.jpf.util.test.TestJPF;
+
+import org.junit.Test;
 
 /**
  * Ensures that a recursive lock/unlock doesn't leave the lock in an acquired state.

@@ -1,7 +1,7 @@
 package gov.nasa.jpf.jvm.serialize;
 
-import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.StaticAmmendment;
 import gov.nasa.jpf.jvm.FieldInfo;
+import gov.nasa.jpf.jvm.serialize.AmmendableFilterConfiguration.StaticAmmendment;
 
 import java.util.Arrays;
 import java.util.HashSet;

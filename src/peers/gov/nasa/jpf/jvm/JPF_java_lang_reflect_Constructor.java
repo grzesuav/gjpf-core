@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.MethodInfoRegistry;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
@@ -82,7 +81,7 @@ public class JPF_java_lang_reflect_Constructor {
   public static int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                              int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
-    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+    StackFrame frame = ti.getReturnedDirectCall();
 
     if (frame != null){ // reflection call already returned
       // check if its the right one ??

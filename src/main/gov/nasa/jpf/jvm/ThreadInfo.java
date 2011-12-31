@@ -30,7 +30,6 @@ import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjectList;
-import gov.nasa.jpf.util.SparseObjVector;
 import gov.nasa.jpf.util.StringSetMatcher;
 
 import java.io.File;
@@ -118,7 +117,7 @@ public class ThreadInfo
         StackFrame ret = frame;
         frame = null;
         for (StackFrame f=ret.getPrevious(); f != null; f = f.getPrevious()){
-          if (f.isInvoked()){
+          if (!f.isDirectCallFrame()){
             frame = f;
             break;
           }
@@ -208,7 +207,7 @@ public class ThreadInfo
 
 
   /** the last returned direct call frame */
-  protected DirectCallStackFrame returnedDirectCall;
+  protected StackFrame returnedDirectCall;
 
   /** the next insn to execute (null prior to execution) */
   protected Instruction nextPc;
@@ -864,7 +863,7 @@ public class ThreadInfo
 
     int i = stackDepth-1;
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
-      if (frame.isInvoked()){
+      if (!frame.isDirectCallFrame()){
         list.add( frame);
       }
     }
@@ -904,7 +903,7 @@ public class ThreadInfo
 
   public StackFrame getLastInvokedStackFrame() {
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
-      if (!frame.isInvoked()){
+      if (!frame.isDirectCallFrame()){
         return frame;
       }
     }
@@ -2751,7 +2750,7 @@ public class ThreadInfo
   public StackFrame popDirectCallFrame() {
     assert top instanceof DirectCallStackFrame;
 
-    returnedDirectCall = (DirectCallStackFrame)top;
+    returnedDirectCall = top;
 
     if (top instanceof UncaughtHandlerFrame){
       return popUncaughtHandlerFrame();
@@ -2774,7 +2773,7 @@ public class ThreadInfo
             returnedDirectCall.getMethodName().equals(directCallId));
   }
 
-  public DirectCallStackFrame getReturnedDirectCall () {
+  public StackFrame getReturnedDirectCall () {
     return returnedDirectCall;
   }
 

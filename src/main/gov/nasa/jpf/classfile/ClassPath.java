@@ -21,6 +21,7 @@ package gov.nasa.jpf.classfile;
 
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.util.JPFLogger;
+
 import java.io.File;
 import java.util.ArrayList;
 

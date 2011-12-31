@@ -1,8 +1,8 @@
 package sun.misc;
 
-import sun.reflect.*;
-import sun.reflect.annotation.*;
 import sun.nio.ch.Interruptible;
+import sun.reflect.ConstantPool;
+import sun.reflect.annotation.AnnotationType;
 
 /**
  * this is a placeholder for a Java 6 class, which we only have here to

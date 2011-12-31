@@ -21,6 +21,7 @@ package gov.nasa.jpf.test.mc.data;
 
 import gov.nasa.jpf.util.ClassSpec;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**

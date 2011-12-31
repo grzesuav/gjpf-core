@@ -19,10 +19,6 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import java.util.List;
-
-
-import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.Ref;
@@ -31,6 +27,8 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 import gov.nasa.jpf.jvm.choice.InvocationCG;
 import gov.nasa.jpf.util.Invocation;
+
+import java.util.List;
 
 /**
  * a sytnthetic INVOKE instruction that gets it's parameters from an

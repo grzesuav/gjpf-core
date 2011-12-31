@@ -1,16 +1,16 @@
 package gov.nasa.jpf.util.script;
 
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.DynamicObjectArray;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 
 /**
  * abstract root for backtrackable event generator factories

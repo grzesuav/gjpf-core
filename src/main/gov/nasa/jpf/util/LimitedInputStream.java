@@ -18,7 +18,8 @@
 //
 package gov.nasa.jpf.util;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class LimitedInputStream extends InputStream
 {

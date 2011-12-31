@@ -22,7 +22,6 @@ package gov.nasa.jpf.util;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.jvm.LocalVarInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.StackFrame;
 
 /**
  * utility class to specify local variables in JPF options

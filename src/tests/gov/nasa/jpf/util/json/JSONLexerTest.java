@@ -19,7 +19,9 @@
 package gov.nasa.jpf.util.json;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.io.StringReader;
+
 import org.junit.Test;
 
 

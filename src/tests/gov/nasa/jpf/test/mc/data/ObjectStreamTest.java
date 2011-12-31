@@ -20,9 +20,11 @@ package gov.nasa.jpf.test.mc.data;
 
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
+
 import org.junit.After;
 import org.junit.Test;
 

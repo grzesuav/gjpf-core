@@ -19,6 +19,7 @@
 package gov.nasa.jpf.test.vm.basic;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import org.junit.Test;
 
 /**

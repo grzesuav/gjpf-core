@@ -19,8 +19,10 @@
 package gov.nasa.jpf.test.java.concurrent;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import org.junit.Test;
 
 /**

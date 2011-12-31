@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.Config;
 
 public abstract class AbstractRestorer<Saved> implements StateRestorer<Saved>, KernelState.ChangeListener {
 

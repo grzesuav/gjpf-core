@@ -19,10 +19,10 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.bytecode.NATIVERETURN;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Misc;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 

@@ -19,9 +19,11 @@
 package gov.nasa.jpf.test.java.lang;
 
 import gov.nasa.jpf.util.test.TestJPF;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
+
 import org.junit.Test;
 
 /**

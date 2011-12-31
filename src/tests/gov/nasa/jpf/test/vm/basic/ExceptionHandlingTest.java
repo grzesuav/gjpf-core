@@ -18,11 +18,12 @@
 //
 package gov.nasa.jpf.test.vm.basic;
 
-import gov.nasa.jpf.util.test.*;
+import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.util.test.TestJPFHelper;
+
+import java.lang.reflect.Method;
+
 import org.junit.Test;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.*;
 
 /**
  * JPF unit test for exception handling

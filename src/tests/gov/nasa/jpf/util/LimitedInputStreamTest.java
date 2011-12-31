@@ -18,9 +18,14 @@
 //
 package gov.nasa.jpf.util;
 
-import java.io.*;
-import java.security.*;
-import org.junit.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.SecureRandom;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class LimitedInputStreamTest
 {

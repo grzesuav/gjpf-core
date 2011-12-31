@@ -26,10 +26,13 @@ import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
-
-import java.lang.annotation.*;
 import gov.nasa.jpf.util.test.TestJPF;
-import java.lang.reflect.*;
+
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Method;
+
 import org.junit.Test;
 
 

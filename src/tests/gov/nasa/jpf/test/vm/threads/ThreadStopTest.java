@@ -20,9 +20,10 @@
 package gov.nasa.jpf.test.vm.threads;
 
 
-import gov.nasa.jpf.jvm.*;
+import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
-import org.junit.*;
+
+import org.junit.Test;
 
 /**
  * regression test for Thread.stop()

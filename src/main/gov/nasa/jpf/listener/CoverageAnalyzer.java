@@ -18,34 +18,42 @@
 //
 package gov.nasa.jpf.listener;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-
-import java.util.Enumeration;
-import java.util.Map;
-
-import java.util.jar.JarFile;
-import java.util.jar.JarEntry;
-import java.util.logging.Logger;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.*;
+import gov.nasa.jpf.jvm.AnnotationInfo;
+import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ExceptionHandler;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.NoClassInfoException;
+import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.GOTO;
 import gov.nasa.jpf.jvm.bytecode.IfInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
-import gov.nasa.jpf.report.*;
-import gov.nasa.jpf.util.*;
+import gov.nasa.jpf.report.ConsolePublisher;
+import gov.nasa.jpf.report.HTMLPublisher;
+import gov.nasa.jpf.report.Publisher;
+import gov.nasa.jpf.report.PublisherExtension;
+import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.StringSetMatcher;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.logging.Logger;
 
 /**
  * a listener to report coverage statistics

@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.HashData;
+
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;

@@ -18,14 +18,14 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.util.ArrayList;
-import java.util.Set;
-
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 
 /**
@@ -177,7 +177,7 @@ public class JPF_java_lang_Class {
    */
   public static int newInstance____Ljava_lang_Object_2 (MJIEnv env, int robj) {
     ThreadInfo ti = env.getThreadInfo();
-    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+    StackFrame frame = ti.getReturnedDirectCall();
 
     if (frame != null){
       return frame.pop();
