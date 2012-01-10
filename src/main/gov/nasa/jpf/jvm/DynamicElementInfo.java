@@ -55,6 +55,10 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
     attributes = ci.getElementInfoAttrs();
   }
 
+  public boolean isObject(){
+    return true;
+  }
+  
   public Memento<ElementInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
   }

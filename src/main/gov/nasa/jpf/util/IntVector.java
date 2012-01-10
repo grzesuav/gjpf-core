@@ -69,11 +69,14 @@ public final class IntVector implements Comparable<IntVector>, Cloneable {
   }
 
   public void add(int x) {
-    if (size+1 > data.length) {
+    try {
+      data[size] = x;
+      size++;
+    } catch (ArrayIndexOutOfBoundsException aobx){
       ensureCapacity(size+1);
+      data[size] = x;
+      size++;
     }
-    data[size] = x;
-    size++;
   }
 
   public boolean addIfAbsent (int x) {
@@ -362,7 +365,7 @@ public final class IntVector implements Comparable<IntVector>, Cloneable {
   }
   
   public void set(int idx, int x) {
-    ensureSize(idx+1);
+    ensureSize(idx + 1);
     data[idx] = x;
   }
 

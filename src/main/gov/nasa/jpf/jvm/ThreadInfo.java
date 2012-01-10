@@ -2779,14 +2779,21 @@ public class ThreadInfo
 
 
   public String getStateDescription () {
-    StringBuilder sb = new StringBuilder("thread id=");
+    StringBuilder sb = new StringBuilder("thread ");
+    sb.append(getThreadObjectClassInfo().getName());
+    sb.append(":{id:");
     sb.append(id);
     sb.append(',');
     sb.append(threadData.getFieldValues());
-
+    sb.append('}');
+    
     return sb.toString();
   }
 
+  public ClassInfo getThreadObjectClassInfo() {
+    return getThreadObject().getClassInfo();
+  }
+  
   /**
    * Prints the content of the stack
    */

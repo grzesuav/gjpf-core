@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
 
+import java.io.PrintStream;
 import java.io.PrintWriter;
 
 
@@ -44,8 +45,25 @@ public abstract class ArrayFields extends Fields {
   public int getNumberOfFields() {
     // has none
     return 0;
-  }
-
+  } 
+  
+  public void printElements( PrintStream ps, int max){
+    int len = arrayLength();
+    if (max < 0) max = len;
+    int i;
+    for (i=0; i<max; i++){
+      if (i>0){
+        ps.print(',');
+      }
+      printValue(ps, i);
+    }
+    if (i < len){
+      ps.print("...");
+    }
+  }  
+  
+  protected abstract void printValue (PrintStream ps, int idx);
+  
   public abstract Object getValues();
 
   public boolean getBooleanValue (int pos) {
@@ -168,6 +186,4 @@ public abstract class ArrayFields extends Fields {
     throw new JPFException("array has no field slots");
   }
 
-  // debugging
-  public abstract void printOn(PrintWriter pw, int maxLength);
 }

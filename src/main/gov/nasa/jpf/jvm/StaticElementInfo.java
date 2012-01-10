@@ -95,6 +95,10 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     // initial attributes?
   }
 
+  public boolean isObject(){
+    return false;
+  }
+  
   public Memento<ElementInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
   }

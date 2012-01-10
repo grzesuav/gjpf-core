@@ -26,6 +26,7 @@ import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.ObjectList;
+import gov.nasa.jpf.util.PrintUtils;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -1617,7 +1618,36 @@ public class StackFrame implements Cloneable {
     pw.print(']');
 
   }
+  
+  // <2do> there are way too many different print/debug methods here
+  public void printSlots (PrintStream ps){
+    for (int i = 0; i <= top; i++) {
+      if (i == stackBase){
+        ps.print("||");
+      } else {
+        if (i != 0) {
+          ps.print(',');
+        }
+      }
 
+      if (isRef.get(i)){
+        PrintUtils.printReference(ps, slots[i]);
+      } else {
+        ps.print(slots[i]);
+      }
+    }    
+  }
+
+  public int getDepth(){
+    int depth = 0;
+    
+    for (StackFrame frame = prev; frame != null; frame = frame.prev){
+      depth++;
+    }
+    
+    return depth;
+  }
+  
   protected int objectHashCode() {
     return super.hashCode();
   }

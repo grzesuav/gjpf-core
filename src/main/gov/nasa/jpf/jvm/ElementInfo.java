@@ -219,6 +219,9 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     // attributes are set in the concrete type ctors
   }
 
+  // not ideal, a sub-type checker.
+  public abstract boolean isObject();
+  
   protected FixedBitSet createRefTid( int tid){
     // Ok, this is a hard limit, but for the time being a SUT with more
     // than 64 threads is usually blowing us out of the water state-space-wise anyways
@@ -1436,6 +1439,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return ci.isArray();
   }
 
+  public boolean isCharArray(){
+    return (fields instanceof CharArrayFields);
+  }
+  
   public String getArrayType() {
     if (!ci.isArray()) {
       throw new JPFException("object is not an array");
@@ -2084,6 +2091,14 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return fields;
   }
 
+  public ArrayFields getArrayFields(){
+    if (fields instanceof ArrayFields){
+      return (ArrayFields)fields;
+    } else {
+      throw new JPFException("not an array: " + ci.getName());
+    }
+  }
+  
   public void restore(int index, int attributes, Fields fields, Monitor monitor){
     markUnchanged();
     

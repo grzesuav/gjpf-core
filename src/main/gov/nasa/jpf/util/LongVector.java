@@ -66,7 +66,7 @@ public final class LongVector {
   }
   
   public void set(int idx, long x) {
-    ensureSize(idx+1);
+    ensureSize(idx + 1);
     data[idx] = x;
   }
   

@@ -20,7 +20,9 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
+import gov.nasa.jpf.util.PrintUtils;
 
+import java.io.PrintStream;
 import java.io.PrintWriter;
 
 /**
@@ -44,6 +46,11 @@ public class ReferenceArrayFields extends ArrayFields {
     return values;
   }
 
+  @Override
+  protected void printValue(PrintStream ps, int idx){
+    PrintUtils.printReference(ps, values[idx]);
+  }
+  
   @Override
   public Object getValues(){
     return values;
@@ -112,20 +119,5 @@ public class ReferenceArrayFields extends ArrayFields {
     }
   }
 
-  // debugging
-  public void printOn(PrintWriter pw, int maxLength){    
-    for (int i=0; i<values.length; i++){
-      if (i == maxLength){
-        pw.print("...");
-        return;
-      }
-      if (i> 0){
-        pw.print(",@");
-      } else {
-        pw.print('@');
-      }
-      pw.print(values[i]);
-    }
-  }
 
 }

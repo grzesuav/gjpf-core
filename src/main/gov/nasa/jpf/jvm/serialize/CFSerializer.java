@@ -103,6 +103,6 @@ public class CFSerializer extends FilteringSerializer {
   
   @Override
   protected int getSerializedReferenceValue (ElementInfo ei){
-    return ei.getSid();
+    return Math.abs(ei.getSid());
   }
 }

@@ -227,6 +227,10 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
     }
     return type;
   }
+  
+  public byte getTypeCode (){
+    return Types.getTypeCode(signature);
+  }
 
   public String getSignature(){
     return signature;

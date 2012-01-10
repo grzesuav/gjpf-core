@@ -103,21 +103,20 @@ public class ThreadData {
   }
 
   public String toString () {
-    return ("ThreadData[" + getFieldValues() + ']');
+    return ("ThreadData{" + getFieldValues() + '}');
   }
 
   public String getFieldValues () {
-    Heap heap = JVM.getVM().getHeap();
-    StringBuilder sb = new StringBuilder("name=");
+    StringBuilder sb = new StringBuilder("name:");
 
     sb.append(name);
-    sb.append(",status=");
+    sb.append(",status:");
     sb.append(state.name());
-    sb.append(",priority=");
+    sb.append(",priority:");
     sb.append(priority);
-    sb.append(",lockCount=");
+    sb.append(",lockCount:");
     sb.append(lockCount);
-    sb.append(",suspendCount=");
+    sb.append(",suspendCount:");
     sb.append(suspendCount);
 
     return sb.toString();
