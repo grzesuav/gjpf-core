@@ -1,5 +1,27 @@
+//
+// Copyright (C) 2006 United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration
+// (NASA).  All Rights Reserved.
+//
+// This software is distributed under the NASA Open Source Agreement
+// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
+// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
+// directory tree for the complete NOSA document.
+//
+// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
+// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
+// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
+// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
+//
+
 package gov.nasa.jpf.jvm.serialize;
 
+import java.io.OutputStream;
+
+import gov.nasa.jpf.jvm.DebugStateSerializer;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.JPFOutputStream;
 import gov.nasa.jpf.jvm.StackFrame;
@@ -7,7 +29,13 @@ import gov.nasa.jpf.jvm.StaticElementInfo;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.util.FinalBitSet;
 
-public class DebugCFSerializer extends CFSerializer {
+/**
+ * a CFSerializer that stores the serialized program state in a 
+ * readable/diffable format.
+ * 
+ * Automatically used by Debug..StateSet if the configured vm.serializer.class is CFSerializer
+ */
+public class DebugCFSerializer extends CFSerializer implements DebugStateSerializer {
 
   JPFOutputStream os;
   
@@ -16,16 +44,19 @@ public class DebugCFSerializer extends CFSerializer {
     os = new JPFOutputStream(System.out);
   }
   
-  protected int[] computeStoringData() {
-    
-    os.println();
-    os.printCommentLine("------------------------");
+  public void setOutputStream (OutputStream s){
+    os = new JPFOutputStream(s);
+  }
+  
+  protected int[] computeStoringData() {    
+    os.printCommentLine("------------------------ serialized state");
     return super.computeStoringData();
   }
   
   protected void processReferenceQueue(){
     os.println();
-    os.printCommentLine("--- Heap");
+    os.printCommentLine("--- heap");
+    os.println();
     super.processReferenceQueue();
   }
   
@@ -40,6 +71,7 @@ public class DebugCFSerializer extends CFSerializer {
   protected void serializeStatics(){
     os.println();
     os.printCommentLine("--- classes");
+    os.println();
     super.serializeStatics();
   }
   
@@ -52,7 +84,9 @@ public class DebugCFSerializer extends CFSerializer {
   }
   
   protected void serializeStackFrames(){
+    os.println();
     os.printCommentLine("--- threads");
+    os.println();
     super.serializeStackFrames();
   }
   

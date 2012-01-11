@@ -312,6 +312,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       packageName = (i>0) ? name.substring(0, i) : "";
 
       if (superClsName != null){
+        // this is where we get recursive
         superClass = loadSuperClass( Types.getClassNameFromTypeName(superClsName));
       }
 
@@ -715,7 +716,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public ClassInfo(ClassFile cf, int uniqueId) throws ClassFileException {
 
     Initializer reader = new Initializer();
-    cf.parse(reader);
+    cf.parse(reader); // this does the heavy lifting for ClassInfo init
 
     this.uniqueId = uniqueId;
     

@@ -441,72 +441,83 @@ public class JVM {
   }
   
   protected List<ClassInfo> registerStartupClasses () {
+    ArrayList<String> list = new ArrayList<String>(128);
     ArrayList<ClassInfo> queue = new ArrayList<ClassInfo>(32);
 
-    String[] startupClasses = {  // order matters
-        // bare essentials
-        "java.lang.Object",
-        "java.lang.Class",
-        "java.lang.ClassLoader",
+    // bare essentials
+    list.add("java.lang.Object");
+    list.add("java.lang.Class");
+    list.add("java.lang.ClassLoader");
 
-        // the builtin types (and their arrays)
-        "boolean",
-        "[Z",
-        "byte",
-        "[B",
-        "char",
-        "[C",
-        "short",
-        "[S",
-        "int",
-        "[I",
-        "long",
-        "[J",
-        "float",
-        "[F",
-        "double",
-        "[D",
-        "void",
+    // the builtin types (and their arrays)
+    list.add("boolean");
+    list.add("[Z");
+    list.add("byte");
+    list.add("[B");
+    list.add("char");
+    list.add("[C");
+    list.add("short");
+    list.add("[S");
+    list.add("int");
+    list.add("[I");
+    list.add("long");
+    list.add("[J");
+    list.add("float");
+    list.add("[F");
+    list.add("double");
+    list.add("[D");
+    list.add("void");
 
-        // the box types
-        "java.lang.Boolean",
-        "java.lang.Character",
-        "java.lang.Short",
-        "java.lang.Integer",
-        "java.lang.Long",
-        "java.lang.Float",
-        "java.lang.Double",
+    // the box types
+    list.add("java.lang.Boolean");
+    list.add("java.lang.Character");
+    list.add("java.lang.Short");
+    list.add("java.lang.Integer");
+    list.add("java.lang.Long");
+    list.add("java.lang.Float");
+    list.add("java.lang.Double");
 
-        // standard system classes
-        "java.lang.String",
-        "java.lang.ThreadGroup",
-        "java.lang.Thread",
-        "java.lang.Thread$State",
-        "java.io.PrintStream",
-        "java.io.InputStream",
-        "java.lang.System",
+    // standard system classes
+    list.add("java.lang.String");
+    list.add("java.lang.ThreadGroup");
+    list.add("java.lang.Thread");
+    list.add("java.lang.Thread$State");
+    list.add("java.io.PrintStream");
+    list.add("java.io.InputStream");
+    list.add("java.lang.System");
 
-        mainClassName
-    };
+    // we could be more fancy and use wildcard patterns and the current classpath
+    // to specify extra classes, but this could be VERY expensive. Projected use
+    // is mostly to avoid static init of single classes during the search
+    String[] extraStartupClasses = config.getStringArray("vm.extra_startup_classes");
+    if (extraStartupClasses != null) {      
+      for (String extraCls : extraStartupClasses) {
+        list.add(extraCls);
+      }
+    }
 
-    for (String clsName : startupClasses) {
+    // last not least the application main class
+    list.add(mainClassName);
+
+    // now resolve all the entries in the list and queue the corresponding ClassInfos
+    for (String clsName : list) {
       ClassInfo ci = ClassInfo.tryGetResolvedClassInfo(clsName);
       if (ci != null) {
         registerStartupClass(ci, queue);
       } else {
-        log.severe("can't find startup class: " + clsName);
-        return null;
+        throw new JPFException("can't find startup class: " + clsName);
       }
     }
 
     return queue;
   }
-
+  
 
   // note this has to be in order - we don't want to init a derived class before
   // it's parent is initialized
   // This code must be kept in sync with ClassInfo.registerClass()
   void registerStartupClass (ClassInfo ci, List<ClassInfo> queue) {
+        
     if (!queue.contains(ci)) {
       if (ci.getSuperClass() != null) {
         registerStartupClass( ci.getSuperClass(), queue);
@@ -1392,6 +1403,11 @@ public class JVM {
     return serializer;
   }
 
+  public void setSerializer (StateSerializer newSerializer){
+    serializer = newSerializer;
+    serializer.attach(this);
+  }
+  
   /**
    * Returns the stateSet if states are being matched.
    */
