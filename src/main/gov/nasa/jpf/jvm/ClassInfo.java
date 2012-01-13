@@ -2253,7 +2253,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public void setInitialized() {
     sei.setStatus(INITIALIZED);
 
-    // we don't emitt classLoaded() notifications for non-builtin classes
+    // we don't emit classLoaded() notifications for non-builtin classes
     // here anymore because it would be confusing to get instructionExecuted()
     // notifications from the <clinit> execution before the classLoaded()
   }
