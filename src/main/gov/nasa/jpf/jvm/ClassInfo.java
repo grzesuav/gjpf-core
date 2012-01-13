@@ -2235,7 +2235,21 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public void setInitializing(ThreadInfo ti) {
     sei.setStatus(ti.getId());
   }
+  
+  public boolean requiresClinitExecution (ThreadInfo ti){
+    if (!isRegistered()) {
+      registerClass(ti); // this sets sei
+    }
 
+    if (sei.getStatus() == UNINITIALIZED){
+      if (initializeClass(ti)) {
+        return true; // there are new <clinit> frames on the stack, execute them
+      }
+    }
+
+    return false;
+  }
+  
   public void setInitialized() {
     sei.setStatus(INITIALIZED);
 
@@ -2258,6 +2272,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // push clinits of class hierarchy (upwards, since call stack is LIFO)
     for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
       if (ci.pushClinit(ti)) {
+        // we can't do setInitializing() yet because there is no global lock that
+        // covers the whole clinit chain, and we might have a context switch before executing
+        // a already pushed subclass clinit - there can be races as to which thread
+        // does the static init first. Note this case is checked in INVOKECLINIT
+        // (which is one of the reasons why we have it).
         pushedFrames++;
       }
     }
