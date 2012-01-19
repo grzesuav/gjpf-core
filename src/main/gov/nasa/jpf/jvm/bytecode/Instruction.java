@@ -312,20 +312,8 @@ public abstract class Instruction implements InstructionVisitorAcceptor {
    * we need some. 'causedClinitCalls' might be more appropriate, but it is
    * used in a number of external projects
    */
-  public boolean requiresClinitCalls(ThreadInfo ti, ClassInfo ci) {
-
-    if (!ci.isRegistered()){
-      ci.registerClass(ti);
-    }
-
-    if (ci.needsInitialization()) {
-      if (ci.initializeClass(ti)) {
-        //ti.skipInstructionLogging();
-        return true; // there are new <clinit> frames on the stack, execute them
-      }
-    }
-
-    return false;
+  public boolean requiresClinitExecution(ThreadInfo ti, ClassInfo ci) {
+    return ci.requiresClinitExecution(ti);
   }
 
   /**

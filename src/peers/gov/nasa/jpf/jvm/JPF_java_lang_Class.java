@@ -51,7 +51,7 @@ public class JPF_java_lang_Class {
       Instruction insn = ti.getPC();
       ClassInfo ci = env.getReferredClassInfo( robj).getComponentClassInfo();
 
-      if (insn.requiresClinitCalls(ti, ci)) {
+      if (insn.requiresClinitExecution(ti, ci)) {
         env.repeatInvocation();
         return MJIEnv.NULL;
       }
@@ -144,7 +144,7 @@ public class JPF_java_lang_Class {
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
 
-    if (insn.requiresClinitCalls(ti, ci)) {
+    if (insn.requiresClinitExecution(ti, ci)) {
       env.repeatInvocation();
       return MJIEnv.NULL;
     }
@@ -406,7 +406,7 @@ public class JPF_java_lang_Class {
     Instruction insn = ti.getPC();
     ClassInfo fci = ClassInfo.getResolvedClassInfo("java.lang.reflect.Field");
     
-    if (insn.requiresClinitCalls(ti, fci)) {
+    if (insn.requiresClinitExecution(ti, fci)) {
       return null;
     } else {
       return fci;
@@ -419,7 +419,7 @@ public class JPF_java_lang_Class {
 
     Set<ClassInfo> ifcs = ci.getAllInterfaceClassInfos();
     for (ClassInfo ciIfc : ifcs){
-      if (insn.requiresClinitCalls(ti, ciIfc)) {
+      if (insn.requiresClinitExecution(ti, ciIfc)) {
         return null;
       } 
     }
@@ -557,7 +557,13 @@ public class JPF_java_lang_Class {
   
   public static int getEnumConstants (MJIEnv env, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
-    if (ci.getSuperClass().getName().equals("java.lang.Enum")) {
+    
+    if (env.requiresClinitExecution(ci)){
+      env.repeatInvocation();
+      return 0;
+    }
+
+    if (ci.getSuperClass().getName().equals("java.lang.Enum")) {      
       ArrayList<FieldInfo> list = new ArrayList<FieldInfo>();
       String cName = ci.getName();
       

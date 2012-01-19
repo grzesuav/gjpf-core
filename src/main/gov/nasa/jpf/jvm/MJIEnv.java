@@ -1171,6 +1171,14 @@ public class MJIEnv {
   }
   
   /**
+   *  use this whenever a peer performs an operation on a class that might not be initialized yet
+   *  Do a repeatInvocation() in this case 
+   */
+  public boolean requiresClinitExecution(ClassInfo ci) {
+    return ci.requiresClinitExecution(ti);
+  }
+  
+  /**
    * repeat execution of the instruction that caused a native method call
    * NOTE - this does NOT mean it's the NEXT executed insn, since the native method
    * might have pushed direct call frames on the stack before asking us to repeat it.
@@ -1579,7 +1587,7 @@ public class MJIEnv {
     // NOTE: we have to repeat no matter what, since this is called from
     // a handler context (if we only had to create a class object w/o
     // calling clinit, we can't just go on)
-    insn.requiresClinitCalls(ti,ci);
+    insn.requiresClinitExecution(ti,ci);
     repeatInvocation();
   }
 
