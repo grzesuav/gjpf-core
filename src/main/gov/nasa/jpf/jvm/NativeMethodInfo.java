@@ -63,6 +63,8 @@ public class NativeMethodInfo extends MethodInfo {
 
     annotations = mi.annotations;
     
+    localVars = null; // there are no StackFrame localVarInfos, this is native
+    
     // what about maxLocals and maxStack?
 
     this.peer = peer;

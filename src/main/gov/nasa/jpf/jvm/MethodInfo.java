@@ -614,6 +614,10 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
    * return number of instructions
    */
   public int getNumberOfInstructions() {
+    if (code == null){
+      return 0;
+    }
+    
     return code.length;
   }
   
@@ -862,8 +866,11 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   }
 
   public Instruction getLastInsn() {
-    Instruction insn = code[code.length-1];
-    return insn;
+    if (code == null){
+      return null;
+    }
+    
+    return code[code.length-1];
   }
 
   /**
