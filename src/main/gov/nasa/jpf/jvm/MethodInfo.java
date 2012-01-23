@@ -104,7 +104,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   protected int[] lineNumbers;
   
   /** Local variable information */
-  protected LocalVarInfo localVars[] = EMPTY;
+  protected LocalVarInfo localVars[] = null;
 
   /** Maximum number of local variables */
   protected int maxLocals;
@@ -487,6 +487,12 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
    * return only the LocalVarInfos for arguments, in order of definition
    * or null if there are no localVarInfos.
    * throw a JPFException if there are more immediately in scope vars than args
+   * 
+   * NOTE - it is perfectly legal for a method to have arguments but no LocalVarInfos,
+   * which are code attributes, clients have to check for a non-null return value
+   * even if the method has arguments.
+   * Note also that abstract / interface methods don't have code and hence no
+   * LocalVarInfos
    */
   public LocalVarInfo[] getArgumentLocalVars(){
     if (localVars == null){ // shortcut in case we don't have args or localVars;
@@ -1087,6 +1093,10 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     return ti.getPC();
   }
 
+  public boolean hasCode(){
+    return (code != null);
+  }
+  
   public boolean hasEmptyBody (){
     // only instruction is a return
     return (code.length == 1 && (code[0] instanceof ReturnInstruction));
