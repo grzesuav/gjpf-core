@@ -167,4 +167,48 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
     return cf.asString(offset,length).equals(s);
   }
 
+  public boolean isBoxObject(){
+    String cname = ci.getName();
+    if (cname.startsWith("java.lang.")){
+      cname = cname.substring(10);
+      return ("Boolean".equals(cname) ||
+          "Character".equals(cname) ||
+          "Byte".equals(cname) ||
+          "Short".equals(cname) ||
+          "Integer".equals(cname) ||
+          "Float".equals(cname) ||
+          "Long".equals(cname) ||
+          "Double".equals(cname) );
+        
+    } else {
+      return false;
+    }
+  }
+  
+  public Object asBoxObject(){
+    String cname = ci.getName();
+    if (cname.startsWith("java.lang.")){
+      cname = cname.substring(10);
+      if ("Boolean".equals(cname)){
+        return Boolean.valueOf( getBooleanField("value"));
+      } else if ("Character".equals(cname)){
+        return Character.valueOf(getCharField("value"));
+      } else if ("Byte".equals(cname)){
+        return Byte.valueOf( getByteField("value"));
+      } else if ("Short".equals(cname)){
+        return Short.valueOf( getShortField("value"));
+      } else if ("Integer".equals(cname)){
+        return Integer.valueOf( getIntField("value"));
+      } else if ("Float".equals(cname)){
+        return Float.valueOf( getFloatField("value"));
+      } else if ("Long".equals(cname)){
+        return Long.valueOf( getLongField("value"));
+      } else if ("Double".equals(cname)){
+        return Double.valueOf( getDoubleField("value"));
+      }
+    }
+    
+    throw new JPFException("object is not a box object: " + this);    
+  }
+
 }

@@ -537,4 +537,33 @@ public class Verify {
     }
 
   }
+  
+  
+  //--- model logging support
+  
+  /*
+   * we add these here so that we don't need to pull in any java.util.logging classes
+   * Note - these need to be kept in sync with our native peer
+   */
+  public static final int SEVERE = 1;
+  public static final int WARNING = 2;
+  public static final int INFO = 3;
+  public static final int FINE = 4;
+  public static final int FINER = 5;
+  public static final int FINEST = 6;
+  
+  public static void log( String loggerId, int logLevel, String msg){
+    System.err.println(msg);
+  }
+
+  // to avoid construction of strings on the model side
+  public static void log( String loggerId, int logLevel, String msg, String arg){
+    System.err.println(msg);
+  }
+
+  public static void log( String loggerId, int logLevel, String format, Object... args){
+    System.err.printf(format, args);
+  }
+
+  
 }

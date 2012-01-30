@@ -26,6 +26,7 @@ import gov.nasa.jpf.jvm.choice.FloatChoiceFromList;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.jvm.choice.LongChoiceFromList;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjectConverter;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.RunListener;
@@ -981,6 +982,83 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     } catch (Exception ex) {
       throw new JPFException(ex);
     }
-    
   }
+  
+  //--- those need to be kept in sync with the model side
+  public static final int SEVERE = 1;
+  public static final int WARNING = 2;
+  public static final int INFO = 3;
+  public static final int FINE = 4;
+  public static final int FINER = 5;
+  public static final int FINEST = 6;
+
+  
+  private static void log (JPFLogger logger, int logLevel, String msg){
+    switch (logLevel){
+    case SEVERE:
+      logger.severe( msg);
+      break;
+    case WARNING:
+      logger.warning( msg);
+      break;
+    case INFO:
+      logger.info( msg);
+      break;
+    case FINE:
+      logger.fine( msg);
+      break;
+    case FINER:
+      logger.finer( msg);
+      break;
+    case FINEST:
+      logger.finest( msg);
+      break;
+    default:
+      throw new JPFException("unknown log level " + logLevel + " for logger " + logger.getName());
+    }    
+  }
+  
+  public static void log__Ljava_lang_String_2ILjava_lang_String_2__V (MJIEnv env, int clsObjRef,
+      int loggerIdRef, int logLevel, int msgRef){
+    String loggerId = env.getStringObject(loggerIdRef);
+    String msg = env.getStringObject(msgRef);
+    JPFLogger logger = JPF.getLogger(loggerId);
+    
+    log( logger, logLevel, msg);
+  }
+
+  public static void log__Ljava_lang_String_2ILjava_lang_String_2Ljava_lang_String_2__V (MJIEnv env, int clsObjRef,
+      int loggerIdRef, int logLevel, int arg1Ref, int arg2Ref){
+    String loggerId = env.getStringObject(loggerIdRef);
+    String msg = env.getStringObject(arg1Ref) + env.getStringObject(arg2Ref);
+    JPFLogger logger = JPF.getLogger(loggerId);
+    
+    log( logger, logLevel, msg);
+  }
+
+  
+  public static void log__Ljava_lang_String_2ILjava_lang_String_2_3Ljava_lang_Object_2__V (MJIEnv env, int clsObjRef,
+      int loggerIdRef, int logLevel, int fmtRef, int argsRef){
+    String loggerId = env.getStringObject(loggerIdRef);
+    String fmt = env.getStringObject(fmtRef);
+    JPFLogger logger = JPF.getLogger(loggerId);
+
+    int[] argRefs = env.getReferenceArrayObject( argsRef);
+    Object[] args = new Object[argRefs.length];
+    for (int i=0; i<args.length; i++){
+      ElementInfo eiArg = env.getElementInfo(argRefs[i]);
+      if (eiArg.isStringObject()){
+        args[i] = env.getStringObject(argRefs[i]);
+      } else if (eiArg.isBoxObject()){
+        args[i] = eiArg.asBoxObject(); 
+      } else {
+        args[i] = eiArg.toString();
+      }
+    }
+    
+    String msg = String.format(fmt, args);
+    
+    log( logger, logLevel, msg);
+  }
+
 }

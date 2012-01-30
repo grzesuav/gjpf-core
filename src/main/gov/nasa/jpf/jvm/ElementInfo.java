@@ -1608,6 +1608,20 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     throw new JPFException("not a String object: " + this);
   }
 
+  /**
+   * is this a Number, a Boolean or a Character object
+   * Note these classes are all final, so we don't have to check for subtypes
+   * 
+   * <2do> we should probably use a regular expression here
+   */
+  public boolean isBoxObject(){
+    return false;
+  }
+  
+  public Object asBoxObject(){
+    throw new JPFException("not a box object: " + this);    
+  }
+  
   void updateLockingInfo() {
     int i;
 
