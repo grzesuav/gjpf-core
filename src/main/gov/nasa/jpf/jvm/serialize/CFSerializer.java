@@ -20,6 +20,8 @@
 package gov.nasa.jpf.jvm.serialize;
 
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.StackFrame;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 /**
  * a FilteringSerializer that performs on-the-fly heap canonicalization to
@@ -93,6 +95,28 @@ public class CFSerializer extends FilteringSerializer {
 
       // note that we always add the absolute sid value
       buf.add(sid);
+    }
+  }
+  
+  @Override
+  protected void serializeFrame(StackFrame frame){
+    buf.add(frame.getMethodInfo().getGlobalId());
+
+    Instruction pc = frame.getPC();
+    buf.add( pc != null ? pc.getInstructionIndex() : -1);
+
+    int len = frame.getTopPos()+1;
+    buf.add(len);
+
+    // unfortunately we can't do this as a block operation because that
+    // would use concrete reference values as hash data, i.e. break heap symmetry
+    int[] slots = frame.getSlots();
+    for (int i = 0; i < len; i++) {
+      if (frame.isReferenceSlot(i)) {
+        processReference(slots[i]);
+      } else {
+        buf.add(slots[i]);
+      }
     }
   }
 

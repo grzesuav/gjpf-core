@@ -29,6 +29,7 @@ import gov.nasa.jpf.jvm.choice.BreakGenerator;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.StringSetMatcher;
 
@@ -59,7 +60,7 @@ import java.util.logging.Logger;
 public class ThreadInfo
      implements Iterable<StackFrame>, Comparable<ThreadInfo>, Cloneable, Restorable<ThreadInfo> {
 
-  static Logger log = JPF.getLogger("gov.nasa.jpf.jvm.ThreadInfo");
+  static JPFLogger log = JPF.getLogger("gov.nasa.jpf.jvm.ThreadInfo");
 
   //--- our internal thread states
   public enum State {
@@ -2181,6 +2182,7 @@ public class ThreadInfo
           //if (vm.getStateId() > 0){
             if (pc.isBackJump() && (pc != nextPc) && (top != null && !top.isNative())) {
               if (yield()) {
+                log.info("max transition length exceeded, breaking transition on ", nextPc);
                 break;
               }
             }

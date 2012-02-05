@@ -638,13 +638,34 @@ public class JPF_java_lang_Class {
     return env.newByteArray(content);
   }
 
-  public static int getEnclosingClass(MJIEnv env, int robj) {
-    ClassInfo enclosingClassInfo = env.getReferredClassInfo( robj).getEnclosingClassInfo();
-    if (enclosingClassInfo == null)
+  public static int getEnclosingClass (MJIEnv env, int clsRef) {
+    ClassInfo enclosingClassInfo = env.getReferredClassInfo( clsRef).getEnclosingClassInfo();
+    if (enclosingClassInfo == null){
       return MJIEnv.NULL;
-    if (!enclosingClassInfo.isRegistered())
+    }
+    
+    if (!enclosingClassInfo.isRegistered()){
       enclosingClassInfo.registerClass(env.getThreadInfo());
+    }
+    
     return enclosingClassInfo.getClassObjectRef();
   }
 
+  public static int getDeclaredClasses (MJIEnv env, int clsRef){
+    ClassInfo ci = env.getReferredClassInfo(clsRef);
+    String[] innerClassNames =  ci.getInnerClasses();
+    int aref = MJIEnv.NULL;
+    ThreadInfo ti = env.getThreadInfo();
+    
+    aref = env.newObjectArray("Ljava/lang/Class;", innerClassNames.length);
+    for (int i=0; i<innerClassNames.length; i++){
+      ClassInfo ici = ClassInfo.getResolvedClassInfo(innerClassNames[i]);
+      if (!ici.isRegistered()) {
+        ici.registerClass(ti);
+      }
+      env.setReferenceArrayElement(aref, i, ici.getClassObjectRef());
+    }
+    
+    return aref;
+  }
 }

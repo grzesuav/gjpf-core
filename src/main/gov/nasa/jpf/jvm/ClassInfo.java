@@ -130,7 +130,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   
   static FieldInfo[] emptyFields = new FieldInfo[0];
 
-
+  static String[] emptyInnerClassNames = new String[0];
+  
+  static final String UNINITIALIZED_STRING = "UNINITIALIZED"; 
+  
   /**
    * support to auto-load listeners from annotations
    */
@@ -212,18 +215,23 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   protected ClassInfo  superClass;
 
-  protected String enclosingClassName;
+  /**
+   * this is defered initialized since it requires loading the enclosing class
+   */
+  protected String enclosingClassName = UNINITIALIZED_STRING;
 
+  protected String[] innerClassNames = emptyInnerClassNames;
+  
   /** direct ifcSet implemented by this class */
   protected Set<String> interfaceNames;
-
+  
   /** cache of all interfaceNames (parent interfaceNames and interface parents) - lazy eval */
   protected Set<String> allInterfaces;
-
+  
   /** Name of the package. */
   protected String packageName;
 
-  /** Name of the file which contains the source of this class (includes package path) */
+  /** this is only set if the classfile has a SourceFile class attribute */
   protected String sourceFileName;
   
   /** from where the corresponding classfile was loaded (if this is not a builtin) */
@@ -306,8 +314,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
       name = Types.getClassNameFromTypeName(clsName);
 
-      // name derived fields
-      enclosingClassName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
+      // the enclosingClassName is set on demand since it requires loading enclosing class candidates
+      // to verify their innerClass attributes
+      
       int i = name.lastIndexOf('.');
       packageName = (i>0) ? name.substring(0, i) : "";
 
@@ -328,7 +337,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     public void setClassAttribute(ClassFile cf, int attrIndex, String name, int attrLength) {
       if (name == ClassFile.SOURCE_FILE_ATTR) {
         cf.parseSourceFileAttr(this, null);
-
+        
       } else if (name == ClassFile.SIGNATURE_ATTR){
         cf.parseSignatureAttr(this, ClassInfo.this);
 
@@ -337,9 +346,51 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
       } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR) {
         //cf.parseAnnotationsAttr(this, ClassInfo.this);
+        
+      } else if (name == ClassFile.INNER_CLASSES_ATTR){
+        cf.parseInnerClassesAttr( this, ClassInfo.this);
       }
     }
 
+    //--- inner classes
+    @Override
+    public void setInnerClassCount (ClassFile cf, Object tag, int classCount){
+      innerClassNames = new String[classCount];
+    }
+    
+    @Override
+    public void setInnerClass (ClassFile cf, Object tag, int innerClsIndex, 
+                               String outerName, String innerName, String innerSimpleName, int accessFlags){
+      // Ok, this is a total mess - some names are in dot notation, others use '/'
+      // and to make it even more confusing, some InnerClass attributes refer NOT
+      // to the currently parsed class, so we have to check if we are the outerName,
+      // but then 'outerName' can also be null instead of our own name.
+      // Oh, and there are also InnerClass attributes that have their own name as inner names
+      // (see java/lang/String$CaseInsensitiveComparator or ...System and java/lang/System$1 for instance)
+      if (outerName != null){
+        outerName = Types.getClassNameFromTypeName(outerName);
+        if (!outerName.equals(name)){
+          return;
+        }
+      }
+        
+      innerName = Types.getClassNameFromTypeName(innerName);
+      if (!innerName.equals(name)){
+        innerClassNames[innerClsIndex] = innerName;
+      }
+    }
+    
+    @Override
+    public void setInnerClassesDone (ClassFile cf, Object tag) {
+      // we have to check if we allocated too many - see the mess above
+      int count = 0;
+      for (int i=0; i<innerClassNames.length; i++){
+        innerClassNames = Misc.stripNullElements(innerClassNames);
+      }
+    }
+    
+    //--- source file
+    
     @Override
     public void setSourceFile(ClassFile cf, Object tag, String fileName) {
       // we already know the package, so we just prepend it
@@ -350,7 +401,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         sourceFileName = fileName;
       }
     }
-
 
     //--- interfaces
     Set<String> ifcSet = new HashSet<String>();
@@ -720,13 +770,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     this.uniqueId = uniqueId;
     
-    enclosingClassName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
-
-    if (sourceFileName == null){
-      // might not be set yet since the SourceFile attribute is optional
-      sourceFileName = computeSourceFileName();
-    }
-
     staticDataSize = computeStaticDataSize();
     instanceDataSize = computeInstanceDataSize();
     instanceDataOffset = computeInstanceDataOffset();
@@ -914,30 +957,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
-  /**
-   * deduce relative source pathname from class name
-   */
-  protected String computeSourceFileName(){
-    String sfn = null;
-
-    if (enclosingClassName != null){
-      // unfortunately we can't take the enclosingClassName directly since the nesting
-      // might be deeper
-      int i = enclosingClassName.indexOf('$');
-      if (i> 0){
-        sfn = enclosingClassName.substring(0, i);
-      } else {
-        sfn = enclosingClassName;
-      }
-    } else {
-      sfn = name;
-    }
-
-    sfn = sfn.replace('.', '/'); // Source will take care of proper separatorChars
-    sfn += ".java";
-
-    return sfn;
-  }
 
   /**
    * this is called from the annotated ClassInfo - the annotation type would
@@ -1633,9 +1652,29 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       return null;
     }
   }
+  
+  /**
+   * beware - this loads (but not yet registers) the enclosing class
+   */
+  public String getEnclosingClassName(){
+    if (enclosingClassName == UNINITIALIZED_STRING){
+      String enclName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
+      if (enclName != null && isInnerClassOf(enclName)) {
+        enclosingClassName = enclName;
+      } else {
+        enclosingClassName = null;
+      }
+    }
+    
+    return enclosingClassName;
+  }
 
+  /**
+   * beware - this loads (but not yet registers) the enclosing class
+   */
   public ClassInfo getEnclosingClassInfo() {
-    return (enclosingClassName == null ? null : getResolvedClassInfo(enclosingClassName));
+    String enclName = getEnclosingClassName();
+    return (enclName == null ? null : getResolvedClassInfo(enclName));
   }
 
   /**
@@ -1756,7 +1795,26 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return isInstanceOf(ci.name);
   }
 
-
+  public boolean isInnerClassOf (String enclosingName){
+    // don't register or initialize yet
+    ClassInfo ciEncl = tryGetResolvedClassInfo( enclosingName);
+    if (ciEncl != null){
+      return ciEncl.hasInnerClass(name);
+    } else {
+      return false;
+    }
+  }
+  
+  public boolean hasInnerClass (String innerName){
+    for (int i=0; i<innerClassNames.length; i++){
+      if (innerClassNames[i].equals(innerName)){
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
   /**
    * clean up statics for another 'main' run
    */
@@ -2052,6 +2110,25 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
     return set;
   }
+
+  
+  /**
+   * get names of direct inner classes
+   */
+  public String[] getInnerClasses(){
+    return innerClassNames;
+  }
+  
+  public ClassInfo[] getInnerClassInfos(){
+    ClassInfo[] innerClassInfos = new ClassInfo[innerClassNames.length];
+    
+    for (int i=0; i< innerClassNames.length; i++){
+      innerClassInfos[i] = getResolvedClassInfo(innerClassNames[i]);
+    }
+    
+    return innerClassInfos;
+  }
+  
 
   public ClassInfo getComponentClassInfo () {
     if (isArray()) {

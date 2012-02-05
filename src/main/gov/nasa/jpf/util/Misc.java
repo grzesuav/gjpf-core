@@ -98,6 +98,38 @@ public class Misc {
     return false;
   } 
   
+  @SuppressWarnings("unchecked")
+  public static <T> T[] stripNullElements(T[] oldArray){
+    int count = 0;
+    for (int i=0; i<oldArray.length; i++){
+      if (oldArray[i] != null){
+        count++;
+      }
+    }
+    
+    if (count == oldArray.length){ // nothing to strip
+      return oldArray;
+      
+    } else {
+      Class<?> ct = oldArray.getClass().getComponentType();
+      T[] newArray = (T[]) Array.newInstance(ct, count);
+
+      int j=0;
+      for (int i=0; i<oldArray.length; i++){
+        T e = oldArray[i];
+        if (e != null){
+          newArray[j++] = e;
+          if (j == count){
+            break;
+          }
+        }
+      }
+      
+      return newArray;
+    }
+  }
+  
+  @SuppressWarnings("unchecked")
   public static <T> T[] getAddedElements (T[] oldArray, T[] newArray) {
     
     if (newArray == null || newArray.length == 0) {
