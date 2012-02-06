@@ -45,7 +45,6 @@ public class AssertionProperty extends PropertyListenerAdapter {
   static JPFLogger log = JPF.getLogger("gov.nasa.jpf.listener.AssertionProperty");
   
   boolean goOn;
-  boolean caughtAssertion = false;
   String msg;
   
   public AssertionProperty (Config config) {
@@ -53,7 +52,7 @@ public class AssertionProperty extends PropertyListenerAdapter {
   }
   
   public boolean check(Search search, JVM vm) {
-    return !caughtAssertion;
+    return (msg == null);
   }
 
   public String getErrorMessage() {
@@ -91,7 +90,6 @@ public class AssertionProperty extends PropertyListenerAdapter {
         String details = eiMsg != null ? eiMsg.asString() : null;
 
         // Ok, arm ourselves
-        caughtAssertion = true;
         msg = getMessage( details, insn.getNext());
         
         if (goOn) {
@@ -109,7 +107,6 @@ public class AssertionProperty extends PropertyListenerAdapter {
   }
   
   public void reset() {
-    caughtAssertion = false;
     msg = null;
   }
 }
