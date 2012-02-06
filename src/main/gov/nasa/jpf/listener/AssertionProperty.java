@@ -19,6 +19,7 @@
 package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
@@ -28,6 +29,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.ATHROW;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.util.JPFLogger;
 
 /**
  * this is a property listener that turns thrown AssertionErrors into
@@ -40,6 +42,8 @@ import gov.nasa.jpf.search.Search;
  */
 public class AssertionProperty extends PropertyListenerAdapter {
 
+  static JPFLogger log = JPF.getLogger("gov.nasa.jpf.listener.AssertionProperty");
+  
   boolean goOn;
   boolean caughtAssertion = false;
   String msg;
@@ -56,18 +60,19 @@ public class AssertionProperty extends PropertyListenerAdapter {
     return msg;
   }
 
-  protected void warn (String details, Instruction insn){
-    // should probably use logging
-    System.err.print("WARNING - AssertionError");
-
+  protected String getMessage (String details, Instruction insn){
+    String s = "failed assertion";
+    
     if (details != null){
-      System.err.print(": ");
-      System.err.print(details);
+      s += ": \"";
+      s += details;
+      s += '"';
     }
-    System.err.println();
 
-    System.err.print("\tat ");
-    System.err.println(insn.getSourceLocation());
+    s += " at ";
+    s += insn.getSourceLocation();
+    
+    return s;
   }
 
   public void executeInstruction (JVM vm){
@@ -81,19 +86,16 @@ public class AssertionProperty extends PropertyListenerAdapter {
       ElementInfo ei = heap.get(xobjref);
       ClassInfo ci = ei.getClassInfo();
       if (ci.getName().equals("java.lang.AssertionError")) {
-        int msgref = ei.getIntField("detailMessage");
+        int msgref = ei.getReferenceField("detailMessage");
         ElementInfo eiMsg = heap.get(msgref);
+        String details = eiMsg != null ? eiMsg.asString() : null;
 
         // Ok, arm ourselves
         caughtAssertion = true;
-        if (eiMsg != null) {
-          msg = eiMsg.asString();
-        } else {
-          msg = null;
-        }
-
+        msg = getMessage( details, insn.getNext());
+        
         if (goOn) {
-          warn(msg, insn);
+          log.warning(msg);
 
           ti.pop(); // ensure operand stack integrity (ATHROW pops)
           ti.skipInstruction(insn.getNext());
