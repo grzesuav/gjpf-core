@@ -48,9 +48,10 @@ public class JPF_java_lang_reflect_Method {
     }
   }
 
-  static int createMethodObject (MJIEnv env, MethodInfo mi){
+  static int createMethodObject (MJIEnv env, ClassInfo ciMth, MethodInfo mi){
+    // note - it is the callers responsibility to ensure Method is properly initialized    
     int regIdx = registry.registerMethodInfo(mi);
-    int eidx = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.reflect.Method"));
+    int eidx = env.newObject( ciMth);
     ElementInfo ei = env.getElementInfo(eidx);
     
     ei.setIntField("regIdx", regIdx);

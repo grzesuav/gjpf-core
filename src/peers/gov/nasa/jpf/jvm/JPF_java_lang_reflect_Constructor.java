@@ -50,9 +50,11 @@ public class JPF_java_lang_reflect_Constructor {
     }
   }
 
-  static int createConstructorObject (MJIEnv env, MethodInfo mi){
+  static int createConstructorObject (MJIEnv env, ClassInfo ciCtor, MethodInfo mi){
+    // note - it is the callers responsibility to ensure Constructor is properly initialized    
+    
     int regIdx = registry.registerMethodInfo(mi);
-    int eidx = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.reflect.Constructor"));
+    int eidx = env.newObject(ciCtor);
     ElementInfo ei = env.getElementInfo(eidx);
     
     ei.setIntField("regIdx", regIdx);

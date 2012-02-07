@@ -33,6 +33,10 @@ import java.util.Set;
  */
 public class JPF_java_lang_Class {
   
+  static final String FIELD_CLASSNAME = "java.lang.reflect.Field";
+  static final String METHOD_CLASSNAME = "java.lang.reflect.Method";
+  static final String CONSTRUCTOR_CLASSNAME = "java.lang.reflect.Constructor";
+  
   public static void init (Config conf){
     // we create Method and Constructor objects, so we better make sure these
     // classes are initialized (they already might be)
@@ -234,7 +238,7 @@ public class JPF_java_lang_Class {
     return clRef;
   }
 
-  static int getMethod (MJIEnv env, int clsRef, String mname, int argTypesRef,
+  static int getMethod (MJIEnv env, int clsRef, ClassInfo ciMethod, String mname, int argTypesRef,
                         boolean isRecursiveLookup, boolean publicOnly) {
 
     ClassInfo ci = env.getReferredClassInfo( clsRef);
@@ -259,37 +263,55 @@ public class JPF_java_lang_Class {
       return MJIEnv.NULL;
       
     } else {
-      return createMethodObject(env,mi);      
+      return createMethodObject(env, ciMethod, mi);      
     }
   }
 
-  static int createMethodObject (MJIEnv env, MethodInfo mi) {
+  static int createMethodObject (MJIEnv env, ClassInfo objectCi, MethodInfo mi) {
     // NOTE - we rely on Constructor and Method peers being initialized
     if (mi.isCtor()){
-      return JPF_java_lang_reflect_Constructor.createConstructorObject(env,mi);
+      return JPF_java_lang_reflect_Constructor.createConstructorObject(env, objectCi, mi);
     } else {
-      return JPF_java_lang_reflect_Method.createMethodObject(env,mi);      
+      return JPF_java_lang_reflect_Method.createMethodObject(env, objectCi, mi);      
     }
   }
   
   public static int getDeclaredMethod__Ljava_lang_String_2_3Ljava_lang_Class_2__Ljava_lang_reflect_Method_2 (MJIEnv env, int clsRef,
                                                                                                      int nameRef, int argTypesRef) {
+    ClassInfo mci = getInitializedClassInfo(env, METHOD_CLASSNAME);
+    if (mci == null) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    
     String mname = env.getStringObject(nameRef);
-    return getMethod(env, clsRef, mname, argTypesRef, false, false);
+    return getMethod(env, clsRef, mci, mname, argTypesRef, false, false);
   }
 
   
   public static int getDeclaredConstructor___3Ljava_lang_Class_2__Ljava_lang_reflect_Constructor_2 (MJIEnv env,
                                                                                                int clsRef,
                                                                                                int argTypesRef){
-    int ctorRef =  getMethod(env,clsRef,"<init>",argTypesRef,false, false);
+    ClassInfo mci = getInitializedClassInfo(env, CONSTRUCTOR_CLASSNAME);
+    if (mci == null) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    
+    int ctorRef =  getMethod(env,clsRef, mci, "<init>",argTypesRef,false, false);
     return ctorRef;
   }
   
   public static int getMethod__Ljava_lang_String_2_3Ljava_lang_Class_2__Ljava_lang_reflect_Method_2 (MJIEnv env, int clsRef,
                                                                                                      int nameRef, int argTypesRef) {
+    ClassInfo mci = getInitializedClassInfo(env, METHOD_CLASSNAME);
+    if (mci == null) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    
     String mname = env.getStringObject(nameRef);
-    return getMethod( env, clsRef, mname, argTypesRef, true, true);
+    return getMethod( env, clsRef, mci, mname, argTypesRef, true, true);
   }
 
   private static void addDeclaredMethodsRec (HashMap<String,MethodInfo>methods, ClassInfo ci){
@@ -316,6 +338,12 @@ public class JPF_java_lang_Class {
   }
 
   public static int getMethods_____3Ljava_lang_reflect_Method_2 (MJIEnv env, int objref) {
+    ClassInfo mci = getInitializedClassInfo(env, METHOD_CLASSNAME);
+    if (mci == null) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    
     ClassInfo ci = env.getReferredClassInfo(objref);
 
     // collect all the public, non-ctor instance methods
@@ -328,7 +356,7 @@ public class JPF_java_lang_Class {
       int i=0;
 
       for (MethodInfo mi : methods.values()){
-        int mref = createMethodObject(env, mi);
+        int mref = createMethodObject(env, mci, mi);
         env.setReferenceArrayElement(aref,i++,mref);
       }
 
@@ -340,6 +368,12 @@ public class JPF_java_lang_Class {
   }
   
   public static int getDeclaredMethods_____3Ljava_lang_reflect_Method_2 (MJIEnv env, int objref) {
+    ClassInfo mci = getInitializedClassInfo(env, METHOD_CLASSNAME);
+    if (mci == null) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    
     ClassInfo ci = env.getReferredClassInfo(objref);
     MethodInfo[] methodInfos = ci.getDeclaredMethodInfos();
     
@@ -356,7 +390,7 @@ public class JPF_java_lang_Class {
     
     for (int i=0, j=0; i<methodInfos.length; i++) {
       if (methodInfos[i] != null){
-        int mref = createMethodObject(env, methodInfos[i]);
+        int mref = createMethodObject(env, mci, methodInfos[i]);
         env.setReferenceArrayElement(aref,j++,mref);
       }
     }
@@ -365,6 +399,12 @@ public class JPF_java_lang_Class {
   }
   
   static int getConstructors (MJIEnv env, int objref, boolean publicOnly){
+    ClassInfo mci = getInitializedClassInfo(env, CONSTRUCTOR_CLASSNAME);
+    if (mci == null) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    
     ClassInfo ci = env.getReferredClassInfo(objref);
     ArrayList<MethodInfo> ctors = new ArrayList<MethodInfo>();
     
@@ -381,7 +421,7 @@ public class JPF_java_lang_Class {
     int aref = env.newObjectArray("Ljava/lang/reflect/Constructor;", nCtors);
     
     for (int i=0; i<nCtors; i++){
-      env.setReferenceArrayElement(aref, i, createMethodObject(env, ctors.get(i)));
+      env.setReferenceArrayElement(aref, i, createMethodObject(env, mci, ctors.get(i)));
     }
     
     return aref;
@@ -397,20 +437,26 @@ public class JPF_java_lang_Class {
   
   public static int getConstructor___3Ljava_lang_Class_2__Ljava_lang_reflect_Constructor_2 (MJIEnv env, int clsRef,
                                                                                        int argTypesRef){
+    ClassInfo mci = getInitializedClassInfo(env, CONSTRUCTOR_CLASSNAME);
+    if (mci == null) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    
     // <2do> should only return a public ctor 
-    return getMethod(env,clsRef, "<init>",argTypesRef,false,true);
+    return getMethod(env,clsRef, mci, "<init>",argTypesRef,false,true);
   }
   
-  static ClassInfo getInitializedFieldClassInfo (MJIEnv env){
+  static ClassInfo getInitializedClassInfo (MJIEnv env, String clsName){
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
-    ClassInfo fci = ClassInfo.getResolvedClassInfo("java.lang.reflect.Field");
+    ClassInfo ci = ClassInfo.getResolvedClassInfo( clsName);
     
-    if (insn.requiresClinitExecution(ti, fci)) {
+    if (insn.requiresClinitExecution(ti, ci)) {
       return null;
     } else {
-      return fci;
-    }
+      return ci;
+    }    
   }
 
   static Set<ClassInfo> getInitializedInterfaces (MJIEnv env, ClassInfo ci){
@@ -438,8 +484,7 @@ public class JPF_java_lang_Class {
   }
   
   public static int getDeclaredFields_____3Ljava_lang_reflect_Field_2 (MJIEnv env, int objRef) {
-    
-    ClassInfo fci = getInitializedFieldClassInfo(env);
+    ClassInfo fci = getInitializedClassInfo(env, FIELD_CLASSNAME);
     if (fci == null) {
       env.repeatInvocation();
       return MJIEnv.NULL;
@@ -465,7 +510,7 @@ public class JPF_java_lang_Class {
   }
   
   public static int getFields_____3Ljava_lang_reflect_Field_2 (MJIEnv env, int clsRef){
-    ClassInfo fci = getInitializedFieldClassInfo(env);
+    ClassInfo fci = getInitializedClassInfo(env, FIELD_CLASSNAME);
     if (fci == null) {
       env.repeatInvocation();
       return MJIEnv.NULL;
@@ -532,7 +577,7 @@ public class JPF_java_lang_Class {
       
     } else {
       // don't do a Field clinit before we know there is such a field
-      ClassInfo fci = getInitializedFieldClassInfo(env);
+      ClassInfo fci = getInitializedClassInfo( env, FIELD_CLASSNAME);
       if (fci == null) {
         env.repeatInvocation();
         return MJIEnv.NULL;
