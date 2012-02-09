@@ -214,11 +214,9 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     fields = f;
     monitor = m;
 
-    refTid = createRefTid(tid);
-
-    // attributes are set in the concrete type ctors
+    // refTid and attributes are set in the concrete type ctors
   }
-
+  
   // not ideal, a sub-type checker.
   public abstract boolean isObject();
   
@@ -300,7 +298,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       }
     }
     
-    if (isThreadTermination){
+    if (isThreadTermination && refTid != null){
       if (refTid.get(tid)) {
         updateRefTidWithout(tid);
       }
@@ -455,6 +453,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       for (int i=refTid.nextSetBit(0); i>=0; i = refTid.nextSetBit(i+1)){
         ThreadInfo tiRef = tl.getThreadInfoForId(i);
         if (tiRef == null || tiRef.isTerminated()) { // it's terminated
+          // <2do> why does this happen, we clean up after thread termination ??
+System.out.println("@@ ARGH: " + this + " refTid has " + i);
           updateRefTidWithout(i);
           nThreadRefs--;
         } else if (!tiRef.isRunnable()){

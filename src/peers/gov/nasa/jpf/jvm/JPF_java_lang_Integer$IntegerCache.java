@@ -29,7 +29,7 @@ public class JPF_java_lang_Integer$IntegerCache {
   
   public static void $clinit (MJIEnv env, int clsObjRef){
     int low = -128;
-    int high = 127; // this is the fixed upper bound from Java 6 - we don't support the variable Java 7 bound yet
+    int high = 127; // this is the fixed upper bound from Java 6 - we don't support the variable Java 7 bounds yet
     
     int n = (high-low) + 1;
     int aRef = env.newObjectArray("java.lang.Integer", n);
@@ -53,9 +53,12 @@ public class JPF_java_lang_Integer$IntegerCache {
     
     FieldInfo fiLow = sei.getFieldInfo("low");
     if (fiLow != null){ // grrr, it's not in Java 6
-      sei.setIntField("low", low);
+      sei.setIntField( fiLow, low);
     }
     
-    sei.setIntField("high", high);
+    FieldInfo fiHigh = sei.getFieldInfo("high");
+    if (fiHigh != null){ // apparently, IcedTea 1.6 doesn't have that one either
+      sei.setIntField( fiHigh, high);
+    }
   }
 }

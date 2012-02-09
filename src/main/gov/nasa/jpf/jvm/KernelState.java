@@ -156,6 +156,8 @@ public class KernelState implements Restorable<KernelState> {
     heap.gc();
 
     // we might have stored stale references in live objects
+    // (outside of reference fields)
+    // <2do> get rid of this by storing objects instead of ref/id values that are reused
     heap.cleanUpDanglingReferences();
     statics.cleanUpDanglingReferences(heap);
   }

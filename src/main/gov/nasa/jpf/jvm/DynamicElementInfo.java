@@ -52,6 +52,7 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   public DynamicElementInfo (ClassInfo ci, Fields f, Monitor m, int tid) {
     super(ci, f, m, tid);
 
+    refTid = createRefTid( tid);
     attributes = ci.getElementInfoAttrs();
   }
 

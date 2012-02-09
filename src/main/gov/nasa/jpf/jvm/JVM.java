@@ -300,7 +300,7 @@ public class JVM {
     List<ClassInfo> clinitQueue = registerStartupClasses();
 
     if (clinitQueue== null) {
-      log.severe("error initializing startup classes (check 'classpath')");
+      log.severe("error initializing startup classes (check 'classpath' and 'target')");
       return false;
     }
 
@@ -505,7 +505,8 @@ public class JVM {
       if (ci != null) {
         registerStartupClass(ci, queue);
       } else {
-        throw new JPFException("can't find startup class: " + clsName);
+        log.severe("can't find startup class ", clsName);
+        return null;
       }
     }
 

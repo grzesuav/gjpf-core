@@ -342,8 +342,18 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     attributes &= ~ATTR_ANY_CHANGED;
   }
 
+  // clean up reference values outside of reference fields 
   public void cleanUpDanglingReferences() {
-    // we shouldn't have any
+    // <2do> get rid of this by storing objects instead of ref/id values that can be reused
+    ThreadInfo ti = ThreadInfo.getCurrentThread();
+    int tid = ti.getId();
+    boolean isThreadTermination = ti.isTerminated();
+    
+    for (ElementInfo e : this) {
+      if (e != null) {
+        e.cleanUp(this, isThreadTermination, tid);
+      }
+    }
   }
 
   protected void addToPinDownList (int objref){

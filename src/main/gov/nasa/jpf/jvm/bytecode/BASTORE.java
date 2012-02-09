@@ -58,4 +58,8 @@ public class BASTORE extends ArrayStoreInstruction {
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
+  
+  public byte getValue(){
+    return value;
+  }
 }

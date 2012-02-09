@@ -761,10 +761,12 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
 
   public LocalVarInfo getLocalVar(String name, int pc){
     LocalVarInfo[] vars = localVars;
-    for (int i=0; i<vars.length; i++){
-      LocalVarInfo lv = vars[i];
-      if (lv.matches(name, pc)){
-        return lv;
+    if (vars != null){
+      for (int i = 0; i < vars.length; i++) {
+        LocalVarInfo lv = vars[i];
+        if (lv.matches(name, pc)) {
+          return lv;
+        }
       }
     }
 
@@ -775,10 +777,12 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   public LocalVarInfo getLocalVar (int slotIdx, int pc){
     LocalVarInfo[] vars = localVars;
 
-    for (int i=0; i<vars.length; i++){
-      LocalVarInfo lv = vars[i];
-      if (lv.matches(slotIdx, pc)){
-        return lv;
+    if (vars != null){
+      for (int i = 0; i < vars.length; i++) {
+        LocalVarInfo lv = vars[i];
+        if (lv.matches(slotIdx, pc)) {
+          return lv;
+        }
       }
     }
 

@@ -26,6 +26,13 @@ import gov.nasa.jpf.util.HashData;
  * StaticElementInfo is only used to store "static class fields" in the
  * StaticArea.  It specifically knows about the relationship amongst
  * classes, and will recursively lookup a data member if needed.
+ * 
+ * Note that refTid is not set in the constructor, but in the first
+ * checkUpdatedSharedness() call, which always returns true (i.e. breaks)
+ * on the first invocation. This is to handle the case of non-deterministic
+ * class loading in symmetric threads - if each of them terminates before
+ * the other hits the contended static field ref, none would ever consider this
+ * to be a shared field and miss the race
  */
 public final class StaticElementInfo extends ElementInfo implements Restorable<ElementInfo> {
 
@@ -90,11 +97,24 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   public StaticElementInfo (ClassInfo ci, Fields f, Monitor m, int tid, int classObjRef) {
     super(ci, f, m, tid);
 
+    // note we don't set refTid yet 
+    //refTid = createRefTid(tid);
+    
     classObjectRef = classObjRef;
 
     // initial attributes?
   }
 
+  //@Override 
+  public boolean checkUpdatedSharedness (ThreadInfo ti) {
+    if (refTid == null){
+      refTid = createRefTid( ti.getId());
+      return true;
+    } else {
+      return super.checkUpdatedSharedness(ti);
+    }
+  }
+  
   public boolean isObject(){
     return false;
   }
