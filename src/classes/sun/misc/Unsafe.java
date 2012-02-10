@@ -54,6 +54,7 @@ public class Unsafe {
 
   // various accessors
   public native int getInt(Object obj, long l);
+  public native int getIntVolatile(Object obj, long l);
 
   @Deprecated
   public int getInt(Object obj, int offset) {
@@ -61,6 +62,7 @@ public class Unsafe {
   }
 
   public native void putInt(Object obj, long l, int i);
+  public native void putIntVolatile(Object obj, long l, int i);
 
   @Deprecated
   public void putInt(Object obj, int offset, int i) {
