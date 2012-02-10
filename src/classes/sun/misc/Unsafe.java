@@ -70,6 +70,7 @@ public class Unsafe {
   public native void putOrderedInt(Object obj, long l, int i);
 
   public native Object getObject(Object obj, long l);
+  public native Object getObjectVolatile(Object obj, long l);
 
   @Deprecated
   public Object getObject(Object obj, int offset) {
@@ -77,6 +78,8 @@ public class Unsafe {
   }
 
   public native void putObject(Object obj, long l, Object obj1);
+  public native void putObjectVolatile(Object obj, long l, Object obj1);
+  
 
   @Deprecated
   public void putObject(Object obj, int offset, Object obj1) {
@@ -86,6 +89,7 @@ public class Unsafe {
   public native void putOrderedObject(Object obj, long l, Object obj1);
 
   public native boolean getBoolean(Object obj, long l);
+  public native boolean getBooleanVolatile(Object obj, long l);
 
   @Deprecated
   public boolean getBoolean(Object obj, int offset) {
@@ -93,6 +97,7 @@ public class Unsafe {
   }
 
   public native void putBoolean(Object obj, long l, boolean flag);
+  public native void putBooleanVolatile(Object obj, long l, boolean flag);
 
   @Deprecated
   public void putBoolean(Object obj, int offset, boolean flag) {
@@ -100,6 +105,7 @@ public class Unsafe {
   }
 
   public native byte getByte(Object obj, long l);
+  public native byte getByteVolatile(Object obj, long l);
 
   @Deprecated
   public byte getByte(Object obj, int offset) {
@@ -107,6 +113,7 @@ public class Unsafe {
   }
 
   public native void putByte(Object obj, long l, byte byte0);
+  public native void putByteVolatile(Object obj, long l, byte byte0);
 
   @Deprecated
   public void putByte(Object obj, int offset, byte byte0) {
@@ -114,6 +121,7 @@ public class Unsafe {
   }
 
   public native short getShort(Object obj, long l);
+  public native short getShortVolatile(Object obj, long l);
 
   @Deprecated
   public short getShort(Object obj, int offset) {
@@ -121,6 +129,7 @@ public class Unsafe {
   }
 
   public native void putShort(Object obj, long l, short word0);
+  public native void putShortVolatile(Object obj, long l, short word0);
 
   @Deprecated
   public void putShort(Object obj, int offset, short word0) {
@@ -128,6 +137,7 @@ public class Unsafe {
   }
 
   public native char getChar(Object obj, long l);
+  public native char getCharVolatile(Object obj, long l);
 
   @Deprecated
   public char getChar(Object obj, int offset) {
@@ -135,6 +145,7 @@ public class Unsafe {
   }
 
   public native void putChar(Object obj, long l, char c);
+  public native void putCharVolatile(Object obj, long l, char c);
 
   @Deprecated
   public void putChar(Object obj, int offset, char c) {
@@ -142,6 +153,7 @@ public class Unsafe {
   }
 
   public native long getLong(Object obj, long l);
+  public native long getLongVolatile(Object obj, long l);
 
   @Deprecated
   public long getLong(Object obj, int offset) {
@@ -149,6 +161,7 @@ public class Unsafe {
   }
 
   public native void putLong(Object obj, long l, long l1);
+  public native void putLongVolatile(Object obj, long l, long l1);
 
   public native void putOrderedLong(Object obj, long l, long l1);
 
@@ -158,6 +171,7 @@ public class Unsafe {
   }
 
   public native float getFloat(Object obj, long l);
+  public native float getFloatVolatile(Object obj, long l);
 
   @Deprecated
   public float getFloat(Object obj, int offset) {
@@ -165,6 +179,7 @@ public class Unsafe {
   }
 
   public native void putFloat(Object obj, long l, float f);
+  public native void putFloatVolatile(Object obj, long l, float f);
 
   @Deprecated
   public void putFloat(Object obj, int offset, float f) {
@@ -172,6 +187,7 @@ public class Unsafe {
   }
 
   public native double getDouble(Object obj, long l);
+  public native double getDoubleVolatile(Object obj, long l);
 
   @Deprecated
   public double getDouble(Object obj, int offset) {
@@ -179,6 +195,7 @@ public class Unsafe {
   }
 
   public native void putDouble(Object obj, long l, double d);
+  public native void putDoubleVolatile(Object obj, long l, double d);
 
   @Deprecated
   public void putDouble(Object obj, int offset, double d) {

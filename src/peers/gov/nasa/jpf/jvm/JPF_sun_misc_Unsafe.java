@@ -186,6 +186,11 @@ public class JPF_sun_misc_Unsafe {
       return ei.getReferenceElement((int)fieldOffset);
     }
   }
+  
+  public static int getObjectVolatile__Ljava_lang_Object_2J__Ljava_lang_Object_2 (MJIEnv env, int unsafeRef,
+      int objRef, long fieldOffset) {
+    return getObject__Ljava_lang_Object_2J__Ljava_lang_Object_2( env, unsafeRef, objRef, fieldOffset);
+  }  
 
   public static void putObject__Ljava_lang_Object_2JLjava_lang_Object_2__V (MJIEnv env, int unsafeRef,
                                                                             int objRef, long fieldOffset, int valRef) {
@@ -196,6 +201,11 @@ public class JPF_sun_misc_Unsafe {
     } else {
       ei.setReferenceElement((int)fieldOffset, valRef);
     }
+  }
+  
+  public static void putObjectVolatile__Ljava_lang_Object_2JLjava_lang_Object_2__V (MJIEnv env, int unsafeRef,
+      int objRef, long fieldOffset, int valRef) {
+    putObject__Ljava_lang_Object_2JLjava_lang_Object_2__V( env, unsafeRef, objRef, fieldOffset, valRef);
   }
 
   public static void putOrderedObject__Ljava_lang_Object_2JLjava_lang_Object_2__V(
@@ -219,6 +229,9 @@ public class JPF_sun_misc_Unsafe {
       return ei.getBooleanElement((int)fieldOffset);
     }
   }
+  public static boolean getBooleanVolatile__Ljava_lang_Object_2J__Z(MJIEnv env, int unsafeRef,int objRef,long fieldOffset) {
+    return getBoolean__Ljava_lang_Object_2J__Z( env, unsafeRef, objRef, fieldOffset);
+  }
   
   public static void putBoolean__Ljava_lang_Object_2JZ__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, boolean val){
@@ -230,7 +243,10 @@ public class JPF_sun_misc_Unsafe {
       ei.setBooleanElement((int)fieldOffset, val);
     }
   }
-
+  public static void putBooleanVolatile__Ljava_lang_Object_2JZ__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, boolean val){
+    putBoolean__Ljava_lang_Object_2JZ__V( env, unsafeRef, objRef, fieldOffset, val);
+  }
+  
   public static byte getByte__Ljava_lang_Object_2J__B(MJIEnv env,
                                                       int unsafeRef,
                                                       int objRef,
@@ -243,6 +259,9 @@ public class JPF_sun_misc_Unsafe {
       return ei.getByteElement((int)fieldOffset);
     }
   }
+  public static byte getByteVolatile__Ljava_lang_Object_2J__B(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
+    return getByte__Ljava_lang_Object_2J__B(env, unsafeRef, objRef, fieldOffset);
+  }
   
   public static void putByte__Ljava_lang_Object_2JB__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, byte val){
@@ -254,6 +273,10 @@ public class JPF_sun_misc_Unsafe {
       ei.setByteElement((int)fieldOffset, val);
     }
   }
+  public static void putByteVolatile__Ljava_lang_Object_2JB__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, byte val){
+    putByte__Ljava_lang_Object_2JB__V( env, unsafeRef, objRef, fieldOffset, val);
+  }
+  
 
   public static char getChar__Ljava_lang_Object_2J__C(MJIEnv env,
                                                       int unsafeRef,
@@ -267,6 +290,9 @@ public class JPF_sun_misc_Unsafe {
       return ei.getCharElement((int)fieldOffset);
     }
   }
+  public static char getCharVolatile__Ljava_lang_Object_2J__C(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
+    return getChar__Ljava_lang_Object_2J__C( env, unsafeRef, objRef, fieldOffset);
+  }
   
   public static void putChar__Ljava_lang_Object_2JC__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, char val){
@@ -278,7 +304,10 @@ public class JPF_sun_misc_Unsafe {
       ei.setCharElement((int)fieldOffset, val);
     }
   }
-
+  public static void putCharVolatile__Ljava_lang_Object_2JC__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, char val){
+    putChar__Ljava_lang_Object_2JC__V( env, unsafeRef, objRef, fieldOffset, val);
+  }
+  
   public static short getShort__Ljava_lang_Object_2J__S(MJIEnv env,
                                                         int unsafeRef,
                                                         int objRef,
@@ -291,7 +320,10 @@ public class JPF_sun_misc_Unsafe {
       return ei.getShortElement((int)fieldOffset);
     }
   }
-
+  public static short getShortVolatile__Ljava_lang_Object_2J__S(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
+    return getShort__Ljava_lang_Object_2J__S( env, unsafeRef, objRef, fieldOffset);
+  }
+  
   public static void putShort__Ljava_lang_Object_2JS__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, short val){
     ElementInfo ei = env.getElementInfo(objRef);
@@ -302,6 +334,9 @@ public class JPF_sun_misc_Unsafe {
       ei.setShortElement((int)fieldOffset, val);
     }
   }
+  public static void putShortVolatile__Ljava_lang_Object_2JS__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, short val){
+    putShort__Ljava_lang_Object_2JS__V( env, unsafeRef, objRef, fieldOffset, val);
+  }  
 
   public static int getInt__Ljava_lang_Object_2J__I(MJIEnv env, int unsafeRef,
                                                     int objRef, long fieldOffset) {
@@ -313,7 +348,10 @@ public class JPF_sun_misc_Unsafe {
       return ei.getIntElement((int)fieldOffset);
     }
   }
-
+  public static int getIntVolatile__Ljava_lang_Object_2J__I(MJIEnv env, int unsafeRef, int objRef, long fieldOffset) {
+    return getInt__Ljava_lang_Object_2J__I( env, unsafeRef, objRef, fieldOffset);
+  }
+  
   public static void putInt__Ljava_lang_Object_2JI__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, int val){
     ElementInfo ei = env.getElementInfo(objRef);
@@ -324,6 +362,9 @@ public class JPF_sun_misc_Unsafe {
       ei.setIntElement((int)fieldOffset, val);
     }
   }
+  public static void putIntVolatile__Ljava_lang_Object_2JI__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, int val){
+    putInt__Ljava_lang_Object_2JI__V(env, unsafeRef, objRef, fieldOffset, val);
+  }  
 
   public static void putOrderedInt__Ljava_lang_Object_2JI__V(MJIEnv env,
                                                              int unsafeRef,
@@ -346,6 +387,9 @@ public class JPF_sun_misc_Unsafe {
       return ei.getFloatElement((int)fieldOffset);
     }
   }
+  public static float getFloatVolatile__Ljava_lang_Object_2J__F(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
+    return getFloat__Ljava_lang_Object_2J__F( env, unsafeRef, objRef, fieldOffset);
+  }  
 
   public static void putFloat__Ljava_lang_Object_2JF__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, float val){
@@ -357,6 +401,9 @@ public class JPF_sun_misc_Unsafe {
       ei.setFloatElement((int)fieldOffset, val);
     }
   }
+  public static void putFloatVolatile__Ljava_lang_Object_2JF__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, float val){
+    putFloat__Ljava_lang_Object_2JF__V( env, unsafeRef, objRef, fieldOffset, val);
+  }  
 
   public static long getLong__Ljava_lang_Object_2J__J(MJIEnv env,
                                                       int unsafeRef,
@@ -370,7 +417,10 @@ public class JPF_sun_misc_Unsafe {
       return ei.getLongElement((int)fieldOffset);
     }
   }
-
+  public static long getLongVolatile__Ljava_lang_Object_2J__J(MJIEnv env, int unsafeRef, int objRef, long fieldOffset) {
+    return getLong__Ljava_lang_Object_2J__J( env, unsafeRef, objRef, fieldOffset);
+  }
+    
   public static void putLong__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, long val){
     ElementInfo ei = env.getElementInfo(objRef);
@@ -381,6 +431,9 @@ public class JPF_sun_misc_Unsafe {
       ei.setLongElement((int)fieldOffset, val);
     }
   }
+  public static void putLongVolatile__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, long val){
+    putLong__Ljava_lang_Object_2JJ__V( env, unsafeRef, objRef, fieldOffset, val);
+  }  
 
   public static void putOrderedLong__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef,
                                                         int objRef, long fieldOffset, long val) {
@@ -399,7 +452,10 @@ public class JPF_sun_misc_Unsafe {
       return ei.getDoubleElement((int)fieldOffset);
     }
   }
-
+  public static double getDoubleVolatile__Ljava_lang_Object_2J__D(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
+    return getDouble__Ljava_lang_Object_2J__D( env, unsafeRef, objRef, fieldOffset);
+  }
+  
   public static void putDouble__Ljava_lang_Object_2JD__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, double val){
     ElementInfo ei = env.getElementInfo(objRef);
@@ -410,7 +466,10 @@ public class JPF_sun_misc_Unsafe {
       ei.setDoubleElement((int)fieldOffset, val);
     }
   }
-
+  public static void putDoubleVolatile__Ljava_lang_Object_2JD__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, double val){
+    putDouble__Ljava_lang_Object_2JD__V( env, unsafeRef, objRef, fieldOffset, val);
+  }
+  
   public static int arrayBaseOffset__Ljava_lang_Class_2__I (MJIEnv env, int unsafeRef, int clazz) {
     return 0;
   }
