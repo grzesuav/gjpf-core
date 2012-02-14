@@ -325,6 +325,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         superClass = loadSuperClass( Types.getClassNameFromTypeName(superClsName));
       }
 
+      if (superClass != null) {
+        AnnotationInfo[] inheritedAnn = superClass.getAnnotations();
+        annotations = new AnnotationInfo[inheritedAnn.length];
+        for (int j = 0; j < inheritedAnn.length; j++)
+          annotations[j] = new AnnotationInfo(inheritedAnn[j].name, inheritedAnn[j].entries, true);
+      }
+
       modifiers = flags;
       isClass = ((flags & Modifier.INTERFACE) == 0);
 
@@ -635,7 +642,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     @Override
     public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){
       if (tag instanceof InfoObject){
-        ((InfoObject)tag).startAnnotations(annotationCount);
+        if (tag instanceof ClassInfo){
+          if (annotations == null) 
+            ((InfoObject) tag).startAnnotations(annotationCount);
+        } 
+        else
+          ((InfoObject) tag).startAnnotations(annotationCount);            
       }
     }
 
@@ -679,9 +691,24 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     @Override
     public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
       if (tag instanceof InfoObject){
-        curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
-        ((InfoObject)tag).setAnnotation(annotationIndex, curAi);
+        curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));      
+        if (tag instanceof ClassInfo)
+          setAnnotation(annotationIndex, curAi);
+        else
+          ((InfoObject)tag).setAnnotation(annotationIndex, curAi);
       }
+    }
+
+    protected void setAnnotation (int index, AnnotationInfo ai) {
+      if (annotations.length > 0) {
+        for(int i=0; i<annotations.length; i++) {
+          if (annotations[i].equals(ai)) {
+            annotations[i].inherited = false;
+            return;
+          }        
+        }
+      }
+      addAnnotation(ai);
     }
 
     @Override

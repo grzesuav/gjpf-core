@@ -189,6 +189,7 @@ public class AnnotationInfo {
   
   String name;
   Entry[] entries;
+  boolean inherited = false;
 
 
   
@@ -246,6 +247,12 @@ public class AnnotationInfo {
   public AnnotationInfo (String name, Entry[] entries){
     this.name = name;
     this.entries = entries;
+  }
+
+  public AnnotationInfo (String name, Entry[] entries, boolean inherited) {
+    this.name = name;
+    this.entries = entries;
+    this.inherited = inherited;
   }
 
   /**
@@ -421,5 +428,9 @@ public class AnnotationInfo {
     sb.append(']');
     
     return sb.toString();
+  }
+
+  public boolean equals (AnnotationInfo ai) {
+    return (this.name.equals(ai.name));
   }
 }
