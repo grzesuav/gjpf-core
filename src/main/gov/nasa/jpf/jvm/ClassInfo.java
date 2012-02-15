@@ -328,8 +328,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       if (superClass != null) {
         AnnotationInfo[] inheritedAnn = superClass.getAnnotations();
         annotations = new AnnotationInfo[inheritedAnn.length];
-        for (int j = 0; j < inheritedAnn.length; j++)
+        for (int j = 0; j < inheritedAnn.length; j++){
           annotations[j] = new AnnotationInfo(inheritedAnn[j].name, inheritedAnn[j].entries, true);
+        }
       }
 
       modifiers = flags;
@@ -643,11 +644,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){
       if (tag instanceof InfoObject){
         if (tag instanceof ClassInfo){
-          if (annotations == null) 
+          if (annotations == null){
             ((InfoObject) tag).startAnnotations(annotationCount);
+          }
         } 
-        else
-          ((InfoObject) tag).startAnnotations(annotationCount);            
+        else {
+          ((InfoObject) tag).startAnnotations(annotationCount);
+        }
       }
     }
 
@@ -692,10 +695,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
       if (tag instanceof InfoObject){
         curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));      
-        if (tag instanceof ClassInfo)
+        if (tag instanceof ClassInfo){
           setAnnotation(annotationIndex, curAi);
-        else
+        }
+        else {
           ((InfoObject)tag).setAnnotation(annotationIndex, curAi);
+        }
       }
     }
 
