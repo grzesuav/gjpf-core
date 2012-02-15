@@ -194,7 +194,15 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
   }
 
   public String getSimpleName () {
-    int idx = name.lastIndexOf('.'); // <2do> not really - inner classes?
+    int idx; // <2do> not really - inner classes?
+    Class<?> enclosingClass = getEnclosingClass();
+    
+    if(enclosingClass!=null){
+      idx = enclosingClass.getName().length();
+    } else{
+      idx = name.lastIndexOf('.');
+    }
+    
     return name.substring(idx+1);
   }
 

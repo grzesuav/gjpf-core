@@ -1595,7 +1595,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public String getSimpleName () {
-    int i = name.lastIndexOf('.');
+    int i;
+    String enclosingClassName = getEnclosingClassName();
+    
+    if(enclosingClassName!=null){
+      i = enclosingClassName.length();      
+    } else{
+      i = name.lastIndexOf('.');
+    }
+    
     return name.substring(i+1);
   }
 
