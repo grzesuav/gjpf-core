@@ -29,6 +29,7 @@ import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
@@ -355,6 +356,37 @@ public class AnnotationTest extends TestJPF {
     if (verifyNoPropertyViolation("+listener=.test.vm.basic.AnnotationTest$ArgListener")){
       MyClass obj = new MyClass();
       foo( obj, "blah");
+    }        
+  }
+  
+  /***************************************************/
+  
+  @Retention(RetentionPolicy.RUNTIME)
+  @Inherited
+  public @interface A9 {
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface A10 {
+  }
+  
+  @A9()
+  public static class Parent {
+  }
+
+  @A10
+  public static class Child1 extends Parent {
+  }
+
+  public static class Child2 extends Child1 {
+  }
+ 
+  @Test
+  public void getAnnotationsTest () {
+    if (verifyNoPropertyViolation()) {      
+      assertTrue(Parent.class.getAnnotations().length == 1);
+      assertTrue(Child1.class.getAnnotations().length == 2);
+      assertTrue(Child2.class.getAnnotations().length == 1);
     }
   }
 }

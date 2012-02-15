@@ -183,6 +183,7 @@ public class AnnotationInfo {
   // exotic, so we save some time by not creating a ClassInfo (which would hold
   // the default vals as method annotations) and directly store the default values here
   static HashMap<String,Entry[]> defaultEntries = new HashMap<String,Entry[]>();
+  static ArrayList<String> inheritedEntries = new ArrayList(0);
 
   static DefaultValueCollector valueCollector = new DefaultValueCollector();
 
@@ -249,7 +250,7 @@ public class AnnotationInfo {
     this.entries = entries;
   }
 
-  public AnnotationInfo (String name, Entry[] entries, boolean inherited) {
+  private AnnotationInfo (String name, Entry[] entries, boolean inherited) {
     this.name = name;
     this.entries = entries;
     this.inherited = inherited;
@@ -288,6 +289,12 @@ public class AnnotationInfo {
         newEntries[elen] = de;
         entries = newEntries;
       }
+    }
+  }
+  
+  public void checkInheritedAnnotation(String annotationName) {
+    if(this.name.equals("java.lang.annotation.Inherited") && !inheritedEntries.contains(annotationName)){
+      inheritedEntries.add(annotationName);
     }
   }
 
@@ -429,8 +436,8 @@ public class AnnotationInfo {
     
     return sb.toString();
   }
-
-  public boolean equals (AnnotationInfo ai) {
-    return (this.name.equals(ai.name));
+  
+  public AnnotationInfo cloneInherited() {
+    return new AnnotationInfo(name, entries, true);
   }
 }
