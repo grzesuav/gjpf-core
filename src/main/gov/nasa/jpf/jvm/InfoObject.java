@@ -88,7 +88,7 @@ public abstract class InfoObject {
    */
   public abstract ClassInfo getClassInfo();
 
-  public void computeInheritedAnnotations (ClassInfo superClass){
+  public void computeInheritedAnnotations (InfoObject superClass){
     if (superClass != null){
       AnnotationInfo[] superClassAnn = superClass.getAnnotations();
       ArrayList<AnnotationInfo> inheritedAnn = new ArrayList<AnnotationInfo>();

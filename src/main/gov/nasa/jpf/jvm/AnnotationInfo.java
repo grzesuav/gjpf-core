@@ -61,7 +61,7 @@ public class AnnotationInfo {
     String key;
     Object[] valElements;
     ArrayList<Entry> entries;
-    boolean annotationMode;
+    AnnotationAttribute curAttr;
 
     Entry[] getDefaultValueEntries() {
       if (entries == null){
@@ -73,8 +73,8 @@ public class AnnotationInfo {
 
     public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
       entries = null;
-      annotationMode = false;
       annotationName = Types.getClassNameFromTypeName(clsName);
+      curAttr = new AnnotationAttribute(null, false);
       if (!"java/lang/Object".equals(superClsName)){
         throw new JPFException("illegal annotation superclass of: " + annotationName + " is " + superClsName);
       }
@@ -105,36 +105,37 @@ public class AnnotationInfo {
     @Override
     public void setClassAttribute(ClassFile cf, int attrIndex, String name, int attrLength) {
       if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR) {
-        annotationMode = true;
+        key = null;
         cf.parseAnnotationsAttr(this, null);
       }
     }
     
     public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
       if (annotationType.equals("Ljava/lang/annotation/Inherited;")) {
-        annotationAttributes.get(this.annotationName).isInherited = true;
+        curAttr.isInherited = true;
       }
     }
     
+    public void setAnnotationsDone(ClassFile cf, Object tag) {
+      curAttr.defaultEntries = getDefaultValueEntries();
+      annotationAttributes.put(annotationName, curAttr);
+    }
+    
     public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int arrayIndex, Object val) {
-      if (!annotationMode){
-        if (arrayIndex >= 0){
-          valElements[arrayIndex] = val;
-        } else {
-          entries.add(new Entry(key, val));
-        }
+            String elementName, int arrayIndex, Object val) {  
+      if (arrayIndex >= 0){
+        valElements[arrayIndex] = val;
+      } else {
+        entries.add(new Entry(key, val));
       }
     }
 
     public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int arrayIndex, String val) {
-      if (!annotationMode){
-        if (arrayIndex >= 0){
-          valElements[arrayIndex] = val;
-        } else {
-          entries.add(new Entry(key, val));
-        }
+      if (arrayIndex >= 0){
+        valElements[arrayIndex] = val;
+      } else {
+        entries.add(new Entry(key, val));
       }
     }
 
@@ -148,16 +149,13 @@ public class AnnotationInfo {
 
     public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int elementCount) {
-      if (!annotationMode){
-        valElements = new Object[elementCount];
-      }
+      valElements = new Object[elementCount];
     }
 
     public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName) {
-      if (!annotationMode){
-        entries.add( new Entry(key, valElements));
-      }
+      if (key != null)
+        entries.add( new Entry(key, valElements));    
     }
 
   }
@@ -279,10 +277,8 @@ public class AnnotationInfo {
       byte[] data = cp.getClassData(this.name);
       if (data == null){ throw new JPFException("annotation class not found: " + this.name); }
 
-      annotationAttributes.put(this.name, new AnnotationAttribute(null, false));
       ClassFile cf = new ClassFile(data);
       cf.parse(valueCollector);
-      annotationAttributes.get(this.name).defaultEntries = valueCollector.getDefaultValueEntries();
 
     } catch (ClassFileException cfx) {
       throw new JPFException("malformed annotation classfile");
