@@ -187,10 +187,11 @@ public class ClassFile {
   //--- standard class attributes
   public static final String  SOURCE_FILE_ATTR = "SourceFile";
   public static final String  INNER_CLASSES_ATTR = "InnerClasses";
+  public static final String  ENCLOSING_METHOD_ATTR = "EnclosingMethod";
 
   protected final static String[] stdClassAttrs = {
     SOURCE_FILE_ATTR, DEPRECATED_ATTR, INNER_CLASSES_ATTR, DEPRECATED_ATTR, SIGNATURE_ATTR,
-    RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR };
+    RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR, ENCLOSING_METHOD_ATTR };
 
 
   protected String internStdAttrName(int cpIdx, String name, String[] stdNames){
@@ -627,6 +628,11 @@ public class ClassFile {
     int p = pos;
     reader.setInnerClass( this, tag, innerClsIndex, outerName, innerName, innerSimpleName, accessFlags);
     pos = p;
+  }
+  private void setEnclosingClass(ClassFileReader reader, Object tag, String enclosingClass, String enclosedMethod, String descriptor){
+    int p = pos;
+	//reader.setEnclosingClass(reader, tag, enclosingClass, enclosedMethod, descriptor);
+	pos = p;
   }
   private void setInnerClassesDone(ClassFileReader reader, Object tag){
     int p = pos;
@@ -1265,6 +1271,48 @@ public class ClassFile {
 
     setInnerClassesDone(reader, tag);
   }
+  
+  /**
+   * EnclosingMethod_attribute {
+   * u2 attribute_name_index;
+   * u4 attribute_length;
+   * 
+   * u2 class_index
+   * u2 method_index;{
+   *                  u1 tag;
+   *                  u2 name_index;
+   *                  u2 descriptor_index;{
+   *                                       u1 tag;
+   *                                       u2 length;
+   *                                       u1 bytes[length];
+   *                                      }
+   *                  }                  
+   * }
+   */
+  public void parseEnclosingMethodAttr(ClassFileReader reader, Object tag){
+    System.out.println("\n-------->parseEnclosingMethodAttr" + tag.getClass());
+    
+    // class_index -> name
+    int cpIdx = readU2();
+    String enclosingClass =  nameAt(cpIdx);
+    System.out.println("class: " + enclosingClass);
+    
+    // method_index -> name
+    cpIdx = readU2();
+    String enclosedMethod = nameAt(cpIdx);
+    System.out.println("method: " + enclosedMethod);
+    
+    // method_index -> descriptor
+    cpIdx = readU2();
+    String descriptor = utf8At(cpIdx-1);
+    System.out.println("descriptor: " + descriptor);
+    
+    setEnclosingClass(reader, tag, enclosingClass, enclosedMethod, descriptor);
+  }
+  
+  String nameAt (int nameTypeInfoIdx){	
+	   return utf8At( u2( cpPos[nameTypeInfoIdx]+1));
+	 }
 
 // those are as per http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf
 
