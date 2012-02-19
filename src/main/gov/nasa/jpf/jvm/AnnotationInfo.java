@@ -55,12 +55,13 @@ public class AnnotationInfo {
     }
   }
   
-  static class DefaultValueCollector extends ClassFileReaderAdapter {
+  static class AnnotationReader extends ClassFileReaderAdapter {
     String annotationName;
 
     String key;
     Object[] valElements;
     ArrayList<Entry> entries;
+    boolean annotationMode;
 
     Entry[] getDefaultValueEntries() {
       if (entries == null){
@@ -72,6 +73,7 @@ public class AnnotationInfo {
 
     public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
       entries = null;
+      annotationMode = false;
       annotationName = Types.getClassNameFromTypeName(clsName);
       if (!"java/lang/Object".equals(superClsName)){
         throw new JPFException("illegal annotation superclass of: " + annotationName + " is " + superClsName);
@@ -98,24 +100,41 @@ public class AnnotationInfo {
     }
 
     public void setMethodsDone(ClassFile cf) {
-      cf.stopParsing();
     }
 
+    @Override
+    public void setClassAttribute(ClassFile cf, int attrIndex, String name, int attrLength) {
+      if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR) {
+        annotationMode = true;
+        cf.parseAnnotationsAttr(this, null);
+      }
+    }
+    
+    public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
+      if (annotationType.equals("Ljava/lang/annotation/Inherited;")) {
+        annotationAttributes.get(this.annotationName).isInherited = true;
+      }
+    }
+    
     public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int arrayIndex, Object val) {
-      if (arrayIndex >=0){
-        valElements[arrayIndex] = val;
-      } else {
-        entries.add(new Entry(key,val));
+      if (!annotationMode){
+        if (arrayIndex >= 0){
+          valElements[arrayIndex] = val;
+        } else {
+          entries.add(new Entry(key, val));
+        }
       }
     }
 
     public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int arrayIndex, String val) {
-      if (arrayIndex >=0){
-        valElements[arrayIndex] = val;
-      } else {
-        entries.add(new Entry(key,val));
+      if (!annotationMode){
+        if (arrayIndex >= 0){
+          valElements[arrayIndex] = val;
+        } else {
+          entries.add(new Entry(key, val));
+        }
       }
     }
 
@@ -129,12 +148,16 @@ public class AnnotationInfo {
 
     public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int elementCount) {
-      valElements = new Object[elementCount];
+      if (!annotationMode){
+        valElements = new Object[elementCount];
+      }
     }
 
     public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName) {
-      entries.add( new Entry(key, valElements));
+      if (!annotationMode){
+        entries.add( new Entry(key, valElements));
+      }
     }
 
   }
@@ -182,10 +205,20 @@ public class AnnotationInfo {
   // uses annotation reflection (which creates a ClassInfo), but this is rather
   // exotic, so we save some time by not creating a ClassInfo (which would hold
   // the default vals as method annotations) and directly store the default values here
-  static HashMap<String,Entry[]> defaultEntries = new HashMap<String,Entry[]>();
-  static ArrayList<String> inheritedEntries = new ArrayList(0);
 
-  static DefaultValueCollector valueCollector = new DefaultValueCollector();
+  static HashMap<String, AnnotationAttribute> annotationAttributes = new HashMap<String, AnnotationAttribute>();
+
+  static class AnnotationAttribute {
+    Entry[] defaultEntries;
+    boolean isInherited;
+
+    AnnotationAttribute (Entry[] defaultEntries, boolean isInherited) {
+      this.defaultEntries = defaultEntries;
+      this.isInherited = isInherited;
+    }
+  }
+
+  static AnnotationReader valueCollector = new AnnotationReader();
 
   
   String name;
@@ -196,7 +229,11 @@ public class AnnotationInfo {
   
   public static Entry[] getDefaultEntries (ClassPath locator, String annotationType){
 
-    Entry[] def = defaultEntries.get(annotationType);
+    Entry[] def = null;
+        
+    if (annotationAttributes.get(annotationType) != null) {
+      def = annotationAttributes.get(annotationType).defaultEntries;
+    }
 
     if (def == null){ // Annotation not seen yet - we have to dig it out from the classfile
       try {
@@ -209,7 +246,7 @@ public class AnnotationInfo {
         cf.parse(valueCollector);
 
         def = valueCollector.getDefaultValueEntries();
-        defaultEntries.put(annotationType, def);
+        annotationAttributes.put(annotationType, new AnnotationAttribute(def, false));
 
       } catch (ClassFileException cfx){
         throw new JPFException("malformed annotation classfile");
@@ -234,6 +271,23 @@ public class AnnotationInfo {
     this.name = name;
     // entries will follow later, so this object is only partially initialized
   }
+  
+  protected AnnotationInfo (String name, ClassPath cp) {
+    this.name = name;
+    
+    try {
+      byte[] data = cp.getClassData(this.name);
+      if (data == null){ throw new JPFException("annotation class not found: " + this.name); }
+
+      annotationAttributes.put(this.name, new AnnotationAttribute(null, false));
+      ClassFile cf = new ClassFile(data);
+      cf.parse(valueCollector);
+      annotationAttributes.get(this.name).defaultEntries = valueCollector.getDefaultValueEntries();
+
+    } catch (ClassFileException cfx) {
+      throw new JPFException("malformed annotation classfile");
+    }
+  }
 
   protected void startEntries (int count){
     entries = new Entry[count];
@@ -253,6 +307,14 @@ public class AnnotationInfo {
   private AnnotationInfo (String name, Entry[] entries, boolean inherited) {
     this.name = name;
     this.entries = entries;
+    this.inherited = inherited;
+  }
+
+  public boolean isInherited (){
+    return this.inherited;
+  }
+  
+  public void setInherited (boolean inherited){
     this.inherited = inherited;
   }
 
@@ -289,12 +351,6 @@ public class AnnotationInfo {
         newEntries[elen] = de;
         entries = newEntries;
       }
-    }
-  }
-  
-  public void checkInheritedAnnotation(String annotationName) {
-    if(this.name.equals("java.lang.annotation.Inherited") && !inheritedEntries.contains(annotationName)){
-      inheritedEntries.add(annotationName);
     }
   }
 

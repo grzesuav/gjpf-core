@@ -325,9 +325,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         superClass = loadSuperClass( Types.getClassNameFromTypeName(superClsName));
       }
       
-      if (superClass != null) { 
-        computeInheritedAnnotations();
-      }      
+      computeInheritedAnnotations(superClass);      
 
       modifiers = flags;
       isClass = ((flags & Modifier.INTERFACE) == 0);
@@ -335,22 +333,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       if (attributor != null){
         attributor.setElementInfoAttributes(ClassInfo.this);
       }
-    }
-    
-    private void computeInheritedAnnotations() {
-      AnnotationInfo[] superClassAnn = superClass.getAnnotations();       
-      ArrayList<AnnotationInfo> inheritedAnn = new ArrayList<AnnotationInfo>();
-      for(AnnotationInfo ai: superClassAnn) {
-        if(AnnotationInfo.inheritedEntries.contains(ai.name)) {
-          if(ai.inherited) {
-            inheritedAnn.add(ai);
-          }
-          else {
-            inheritedAnn.add(ai.cloneInherited());
-          }
-        }
-      }          
-      annotations = inheritedAnn.toArray(new AnnotationInfo[inheritedAnn.size()]);
     }
 
     @Override
@@ -706,13 +688,18 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     @Override
     public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
       if (tag instanceof InfoObject){
-        curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));      
-        if (tag instanceof ClassInfo){
-          if(!AnnotationInfo.inheritedEntries.contains(curAi.name)){
-            addAnnotation(curAi);
-          }
+        if (AnnotationInfo.annotationAttributes.get(annotationType) == null) {
+          curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType), cp);
+        } else {
+          curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
         }
-        else {
+        if (tag instanceof ClassInfo) {
+          if (((InfoObject)tag).getAnnotation(curAi.getName()) == null) {
+            addAnnotation(curAi);
+          } else {
+            ((InfoObject)tag).getAnnotation(curAi.getName()).setInherited(false);
+          }
+        } else {
           ((InfoObject)tag).setAnnotation(annotationIndex, curAi);
         }
       }
@@ -1000,7 +987,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   protected void checkAnnotationDefaultValues(AnnotationInfo ai){
     ai.checkDefaultValues(cp);
-    ai.checkInheritedAnnotation(name);
   }
 
   /**
