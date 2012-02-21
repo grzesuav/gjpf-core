@@ -110,6 +110,8 @@ public class ClassFileReaderAdapter implements ClassFileReader {
           String outerName, String innerName, String innerSimpleName, int accessFlags) {}
 
   public void setInnerClassesDone(ClassFile cf, Object tag) {}
+  
+  public void setEnclosingMethod(ClassFile cf, Object tag, String enclosingClass, String enclosingMethod, String descriptor) {}
 
   public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){}
 

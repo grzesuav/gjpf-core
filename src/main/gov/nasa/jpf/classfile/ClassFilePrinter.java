@@ -322,6 +322,9 @@ public class ClassFilePrinter implements ClassFileReader {
     } else if (name == ClassFile.SIGNATURE_ATTR){
       cf.parseSignatureAttr(this, null);
 
+    } else if (name == ClassFile.ENCLOSING_METHOD_ATTR){
+      cf.parseEnclosingMethodAttr(this, null);
+      
     } else {
       pw.printf(" ,length=%d,data=[", attrLength );
       printRawData(pw, cf, attrLength, 10);
@@ -332,6 +335,11 @@ public class ClassFilePrinter implements ClassFileReader {
     decIndent();
   }
 
+  public void setEnclosingMethod(ClassFile cf, Object tag, String enclosingClass, String enclosingMethod, String descriptor) {
+    pw.printf(", enclosingClass=%s, method=%s%s\n", enclosingClass, enclosingMethod, descriptor);
+  }
+
+  
   public void setSourceFile(ClassFile cf, Object tag, String pathName){
     pw.printf(", path=%s\n", pathName);
   }

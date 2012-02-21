@@ -135,6 +135,8 @@ public interface ClassFileReader {
 
   void setInnerClassesDone (ClassFile cf, Object tag);
 
+  void setEnclosingMethod(ClassFile cf, Object tag, String enclosingClass, String enclosingMethod, String descriptor);
+  
   //--- annotations
   void setAnnotationCount(ClassFile cf, Object tag, int annotationCount);
 
