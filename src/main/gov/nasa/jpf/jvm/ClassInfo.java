@@ -222,6 +222,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   protected String[] innerClassNames = emptyInnerClassNames;
   
+  protected MethodInfo enclosingMethod;
+  
   /** direct ifcSet implemented by this class */
   protected Set<String> interfaceNames;
   
@@ -351,6 +353,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         
       } else if (name == ClassFile.INNER_CLASSES_ATTR){
         cf.parseInnerClassesAttr( this, ClassInfo.this);
+        
+      } else if(name == ClassFile.ENCLOSING_METHOD_ATTR) {
+    	  cf.parseEnclosingMethodAttr(this, ClassInfo.this);
       }
     }
 
@@ -380,6 +385,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       if (!innerName.equals(name)){
         innerClassNames[innerClsIndex] = innerName;
       }
+    }
+    
+    @Override
+    public void setEnclosingMethod(ClassFile cf, Object tag, String enclosingClassName, String enclosingMethodName, String descriptor) {
+      enclosingMethod = getResolvedClassInfo(enclosingClassName).getMethod(enclosingMethodName, descriptor, false);
     }
     
     @Override
@@ -1409,6 +1419,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return null;
   }
 
+  public MethodInfo getEnclosingMethod() {
+    return enclosingMethod;
+  }
+  
   /**
    * iterate over all methods of this class (and it's superclasses), until
    * the provided MethodLocator tells us it's done
