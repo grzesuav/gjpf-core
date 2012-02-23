@@ -454,7 +454,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
         ThreadInfo tiRef = tl.getThreadInfoForId(i);
         if (tiRef == null || tiRef.isTerminated()) { // it's terminated
           // <2do> why does this happen, we clean up after thread termination ??
-System.out.println("@@ ARGH: " + this + " refTid has " + i);
           updateRefTidWithout(i);
           nThreadRefs--;
         } else if (!tiRef.isRunnable()){

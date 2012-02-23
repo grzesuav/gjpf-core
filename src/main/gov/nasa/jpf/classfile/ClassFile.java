@@ -1281,14 +1281,20 @@ public class ClassFile {
    * }
    */
   public void parseEnclosingMethodAttr(ClassFileReader reader, Object tag){
+    String enclosedMethod = null;
+    String descriptor = null;
     
     int cpIdx = readU2(); // start of Class_info
     String enclosingClass =  nameAt(cpIdx);
     
     cpIdx = readU2(); // start of NameAndType_info
     
-    String enclosedMethod = nameAt(cpIdx);    
-    String descriptor = descriptorAt(cpIdx);
+    // check if this is inside a method - we also get EnclosingMethod_infos for
+    // classes that are not immediately enclosed
+    if (cpIdx != 0){
+      enclosedMethod = nameAt(cpIdx);    
+      descriptor = descriptorAt(cpIdx);
+    }
     
     setEnclosingMethod(reader, tag, enclosingClass, enclosedMethod, descriptor);
   }

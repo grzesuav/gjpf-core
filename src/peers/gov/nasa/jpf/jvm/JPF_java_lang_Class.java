@@ -684,16 +684,25 @@ public class JPF_java_lang_Class {
   }
 
   public static int getEnclosingClass (MJIEnv env, int clsRef) {
-    ClassInfo enclosingClassInfo = env.getReferredClassInfo( clsRef).getEnclosingClassInfo();
-    if (enclosingClassInfo == null){
+    ClassInfo ciEncl = env.getReferredClassInfo( clsRef).getEnclosingClassInfo();
+    
+    if (ciEncl == null){
       return MJIEnv.NULL;
     }
-    
-    if (!enclosingClassInfo.isRegistered()){
-      enclosingClassInfo.registerClass(env.getThreadInfo());
+        
+    if (!ciEncl.isRegistered()){
+      ThreadInfo ti = env.getThreadInfo();
+      ciEncl.registerClass(ti);
+      
+      if (!ciEncl.isInitialized()){
+        if (ciEncl.requiresClinitExecution(ti)){
+          env.repeatInvocation();
+          return 0;
+        }
+      }
     }
     
-    return enclosingClassInfo.getClassObjectRef();
+    return ciEncl.getClassObjectRef();
   }
 
   public static int getDeclaredClasses (MJIEnv env, int clsRef){

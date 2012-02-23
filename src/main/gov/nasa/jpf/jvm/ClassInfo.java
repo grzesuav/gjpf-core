@@ -215,15 +215,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   protected ClassInfo  superClass;
 
-  /**
-   * this is defered initialized since it requires loading the enclosing class
-   */
-  protected String enclosingClassName = UNINITIALIZED_STRING;
+  protected String enclosingClassName;
+  protected String enclosingMethodName;
 
   protected String[] innerClassNames = emptyInnerClassNames;
-  
-  protected MethodInfo enclosingMethod;
-  
+    
   /** direct ifcSet implemented by this class */
   protected Set<String> interfaceNames;
   
@@ -376,20 +372,25 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       // (see java/lang/String$CaseInsensitiveComparator or ...System and java/lang/System$1 for instance)
       if (outerName != null){
         outerName = Types.getClassNameFromTypeName(outerName);
-        if (!outerName.equals(name)){
-          return;
-        }
       }
         
       innerName = Types.getClassNameFromTypeName(innerName);
       if (!innerName.equals(name)){
         innerClassNames[innerClsIndex] = innerName;
+        
+      } else {
+        // this refers to ourself, and is a force fight with setEnclosingMethod
+        enclosingClassName = outerName;
       }
     }
     
     @Override
     public void setEnclosingMethod(ClassFile cf, Object tag, String enclosingClassName, String enclosingMethodName, String descriptor) {
-      enclosingMethod = getResolvedClassInfo(enclosingClassName).getMethod(enclosingMethodName, descriptor, false);
+      ClassInfo.this.enclosingClassName = enclosingClassName;
+      
+      if (enclosingMethodName != null){
+        ClassInfo.this.enclosingMethodName = enclosingMethodName + descriptor;
+      }
     }
     
     @Override
@@ -1418,10 +1419,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     return null;
   }
-
-  public MethodInfo getEnclosingMethod() {
-    return enclosingMethod;
-  }
   
   /**
    * iterate over all methods of this class (and it's superclasses), until
@@ -1700,18 +1697,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * beware - this loads (but not yet registers) the enclosing class
    */
   public String getEnclosingClassName(){
-    if (enclosingClassName == UNINITIALIZED_STRING){
-      String enclName = name.contains("$") ? name.substring(0, name.lastIndexOf('$')) : null;
-      if (enclName != null && isInnerClassOf(enclName)) {
-        enclosingClassName = enclName;
-      } else {
-        enclosingClassName = null;
-      }
-    }
-    
     return enclosingClassName;
   }
-
+  
   /**
    * beware - this loads (but not yet registers) the enclosing class
    */
@@ -1720,6 +1708,24 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return (enclName == null ? null : getResolvedClassInfo(enclName));
   }
 
+  public String getEnclosingMethodName(){
+    return enclosingMethodName;
+  }
+
+  /**
+   * same restriction as getEnclosingClassInfo() - might not be registered/initialized
+   */
+  public MethodInfo getEnclosingMethodInfo(){
+    MethodInfo miEncl = null;
+    
+    if (enclosingMethodName != null){
+      ClassInfo ciIncl = getEnclosingClassInfo();
+      miEncl = ciIncl.getMethod( enclosingMethodName, false);
+    }
+    
+    return miEncl;
+  }
+  
   /**
    * Returns true if the class is a system class.
    */

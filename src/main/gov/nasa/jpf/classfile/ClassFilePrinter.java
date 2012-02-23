@@ -336,7 +336,11 @@ public class ClassFilePrinter implements ClassFileReader {
   }
 
   public void setEnclosingMethod(ClassFile cf, Object tag, String enclosingClass, String enclosingMethod, String descriptor) {
-    pw.printf(", enclosingClass=%s, method=%s%s\n", enclosingClass, enclosingMethod, descriptor);
+    if (enclosingMethod != null){
+      pw.printf(", enclosingClass=%s, method=%s%s\n", enclosingClass, enclosingMethod, descriptor);
+    } else {
+      pw.printf(", enclosingClass=%s\n", enclosingClass);
+    }
   }
 
   
