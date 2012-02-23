@@ -37,6 +37,14 @@ public class TABLESWITCH extends SwitchInstruction implements gov.nasa.jpf.jvm.T
     this.min = min;
     this.max = max;
   }
+  
+  public int getMin(){
+	  return min;
+  }
+  
+  public int getMax(){
+	  return max;
+  }
 
   public void setTarget (int value, int target){
     int i = value-min;
