@@ -247,8 +247,11 @@ public class Source {
   }
 
   public static Source getSource (String relPathName) {
-    Source s = sources.get(relPathName);
+    if (relPathName == null){
+      return null;
+    }
     
+    Source s = sources.get(relPathName);
     if (s == noSource) {
        return null;
     }
