@@ -1344,6 +1344,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * ClassInfo initialization, to reduce runtime overhead during GC sweep
    */
   public void processReleaseActions (ElementInfo ei){
+    if (superClass != null){
+      superClass.processReleaseActions(ei);
+    }
+    
     if (releaseActions != null) {
       for (ReleaseAction action : releaseActions) {
         action.release(ei);
