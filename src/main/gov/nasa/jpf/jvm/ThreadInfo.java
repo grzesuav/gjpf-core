@@ -3357,6 +3357,18 @@ public class ThreadInfo
     return top;
   }
 
+  /**
+   * this is going to be used to directly manipulate the Stackframes in lieu
+   * of the various forwarding operations such as dup(), push() etc.
+   */
+  public StackFrame getClonedTopFrame(){
+    if (!top.hasChanged()) {
+      top = top.clone();
+      markTfChanged(top);
+    }
+    return top;    
+  }
+  
   public StackFrame getStackFrameExecuting (Instruction insn, int offset){
     int n = offset;
     StackFrame frame = top;

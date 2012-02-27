@@ -1686,7 +1686,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   abstract public int getNumberOfFields();
 
-  abstract public FieldInfo getFieldInfo(int i);
+  abstract public FieldInfo getFieldInfo(int fieldIndex);
 
   public void log() { // <2do> replace this
     if (haveFieldsChanged()) {
