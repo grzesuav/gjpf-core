@@ -2138,11 +2138,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public boolean isAlive(boolean liveBitValue) {
-    if (liveBitValue){
-      return (attributes & ATTR_LIVE_BIT) != 0;
-    } else {
-      return (attributes & ATTR_LIVE_BIT) == 0;
-    }
+    return ((attributes & ATTR_LIVE_BIT) == 0) ^ liveBitValue;
   }
 
   public void setAlive(boolean liveBitValue){
@@ -2162,13 +2158,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public boolean isMarkedOrAlive (boolean liveBitValue){
-    if (liveBitValue) {
-      // any of the bits are set
-      return (attributes & ATTR_MARKED_OR_LIVE_BIT) != 0;
-    } else {
-      // only the mark bit is set
-      return (attributes & ATTR_MARKED_OR_LIVE_BIT) == ATTR_IS_MARKED;
-    }
+    return ((attributes & ATTR_IS_MARKED) != 0) | (((attributes & ATTR_LIVE_BIT) == 0) ^ liveBitValue);
   }
 
   protected abstract void markAreaChanged();

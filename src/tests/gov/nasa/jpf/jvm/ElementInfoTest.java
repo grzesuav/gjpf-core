@@ -61,4 +61,73 @@ public class ElementInfoTest extends TestJPF {
     assert ei.decPinDown(); // should return true now
     assert ei.getPinDownCount() == 0 : "getPinDownCount() != 0";
   }
+  
+  
+  
+  @Test
+  public void testALiveFlag() {
+    DynamicElementInfo ei = new DynamicElementInfo();
+
+    assert !ei.isMarked();
+    
+    ei.setAlive(true);
+    
+    assert  ei.isAlive(true);
+    assert !ei.isAlive(false);
+    assert  ei.isMarkedOrAlive(true);
+    assert !ei.isMarkedOrAlive(false);
+    
+    
+    ei.setAlive(false);
+    
+    assert !ei.isAlive(true);
+    assert  ei.isAlive(false);
+    assert !ei.isMarkedOrAlive(true);
+    assert  ei.isMarkedOrAlive(false);
+    
+  }
+
+  @Test
+  public void testMarkedFlag() {
+    DynamicElementInfo ei = new DynamicElementInfo();
+
+    assert !ei.isMarked();
+    
+    ei.setMarked();
+    assert ei.isMarked();
+
+    ei.setUnmarked();
+    assert !ei.isMarked();
+    
+  }
+
+  @Test
+  public void testMarkedOrAlive() {
+    DynamicElementInfo ei = new DynamicElementInfo();
+    boolean[] boolValues = { true, false};
+    
+    assert !ei.isMarked();
+    
+    ei.setMarked();
+    assert ei.isMarked();
+    
+    for(boolean b : boolValues) {
+       ei.setAlive(b);
+       
+      assert ei.isMarkedOrAlive(true);
+      assert ei.isMarkedOrAlive(false);
+    }
+    
+
+    ei.setUnmarked();
+    assert !ei.isMarked();
+    
+    for(boolean b : boolValues) {
+      ei.setAlive(b);
+      
+      assert ei.isMarkedOrAlive(true) == ei.isAlive(true);
+      assert ei.isMarkedOrAlive(false) == ei.isAlive(false);
+    }
+  }
+
 }

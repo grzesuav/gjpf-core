@@ -109,6 +109,7 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   public boolean checkUpdatedSharedness (ThreadInfo ti) {
     if (refTid == null){
       refTid = createRefTid( ti.getId());
+      attributes |= ElementInfo.ATTR_REFTID_CHANGED;
       return true;
     } else {
       return super.checkUpdatedSharedness(ti);

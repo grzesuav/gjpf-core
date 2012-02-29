@@ -1682,7 +1682,7 @@ public class JVM {
   }
 
   /**
-   * Moves one step backward. This method and forward() are the tiMain methods
+   * Moves one step backward. This method and forward() are the main methods
    * used by the search object.
    * Note this is called with the state that caused the backtrack still being on
    * the stack, so we have to remove that one first (i.e. popping two states
@@ -1699,7 +1699,7 @@ public class JVM {
       path.removeLast();
       lastTrailInfo = path.getLast();
 
-      return ((ss.getId() != StateSet.UNKNOWN_ID) || (stateSet == null));
+      return ((ss.getId() != StateSet.UNKNOWN_ID) ||  (stateSet == null));
     } else {
       return false;
     }
