@@ -1201,7 +1201,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         throw new NoClassInfoException(typeName);
       }
 
-      ClassFile cf = new ClassFile(match.data);
+      ClassFile cf = new ClassFile( typeName, match.getBytes());
+      
+      JVM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
+      
       ClassInfo ci = new ClassInfo(cf, uniqueId);
       ci.setContainer(match.container);
 
@@ -1218,7 +1221,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   private static ClassInfo loadClass(String typeName, byte[] data, int offset, int length, int uniqueId) {
     try {
-      ClassFile cf = new ClassFile(data,offset);
+      ClassFile cf = new ClassFile( typeName, data, offset);
+      
+      JVM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
+      
       return new ClassInfo(cf, uniqueId);
 
     } catch (ClassFileException cfx){
