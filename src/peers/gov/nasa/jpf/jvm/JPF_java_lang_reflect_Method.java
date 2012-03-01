@@ -605,23 +605,8 @@ public class JPF_java_lang_reflect_Method {
     
     MethodInfo mi = getMethodInfo(env, objRef);
 
-    if (mi.isPublic()){
-      sb.append("public ");
-    } else if (mi.isProtected()){
-      sb.append("protected ");
-    } else if (mi.isPrivate()){
-      sb.append("private ");
-    }
-
-    if (mi.isStatic()){
-      sb.append("static ");
-    }
-    if (mi.isSynchronized()){
-      sb.append("synchronized ");
-    }
-    if (mi.isNative()){
-      sb.append("native ");
-    }
+    sb.append(Modifier.toString(mi.getModifiers()));
+    sb.append(' ');
 
     sb.append(mi.getReturnTypeName());
     sb.append(' ');
