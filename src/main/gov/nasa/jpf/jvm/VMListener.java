@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFListener;
+import gov.nasa.jpf.classfile.ClassFile;
 
 /**
  * interface to register for callbacks by the JVM
@@ -82,7 +83,19 @@ public interface VMListener extends JPFListener {
   void threadScheduled (JVM vm); // this might go into the choice generator notifications
 
   /**
-   * new class was loaded
+   * a new classfile is about to be parsed. This notification allows replacement
+   * of the related classfile data via ClassFile.{get/set}Data() and can be
+   * used to do on-the-fly classfile instrumentation with 3rd party libraries 
+   */
+  public void loadClass (JVM vm, ClassFile cf);
+  
+  /**
+   * new class was loaded. This is notified after the ClassInfo has been
+   * instantiated, but before the class object is initialized, i.e. clinit
+   * is called. The main use for this notification is to identify and 
+   * store ClassInfos, MethodInfos, FieldInfos or Instructions that are
+   * used by listeners etc. in order to enable efficient identify based filters
+   * in the performance critical instruction notifications
    */
   void classLoaded (JVM vm);
   

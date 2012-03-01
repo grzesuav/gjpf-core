@@ -240,7 +240,7 @@ public class AnnotationInfo {
           throw new JPFException("annotation class not found: " + annotationType);
         }
 
-        ClassFile cf = new ClassFile(data);
+        ClassFile cf = new ClassFile( annotationType, data);
         cf.parse(valueCollector);
 
         def = valueCollector.getDefaultValueEntries();
@@ -277,7 +277,7 @@ public class AnnotationInfo {
       byte[] data = cp.getClassData(this.name);
       if (data == null){ throw new JPFException("annotation class not found: " + this.name); }
 
-      ClassFile cf = new ClassFile(data);
+      ClassFile cf = new ClassFile( name, data);
       cf.parse(valueCollector);
 
     } catch (ClassFileException cfx) {

@@ -39,6 +39,10 @@ public class ClassPath {
       container = c;
       data = d;
     }
+    
+    public byte[] getBytes() {
+      return data;
+    }
   }
   
   static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.classfile");

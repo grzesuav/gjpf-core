@@ -22,6 +22,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListenerException;
+import gov.nasa.jpf.classfile.ClassFile;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
@@ -883,6 +884,20 @@ public class JVM {
     } catch (Throwable t) {
       throw new JPFListenerException("exception during threadScheduled() notification", t);
     }
+  }
+  
+  protected void notifyLoadClass (ClassFile cf){
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].loadClass(this, cf);
+      }
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during classLoaded() notification", t);
+    }    
   }
 
   protected void notifyClassLoaded(ClassInfo ci) {

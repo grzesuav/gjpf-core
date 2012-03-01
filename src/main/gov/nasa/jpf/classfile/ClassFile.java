@@ -19,6 +19,8 @@
 
 package gov.nasa.jpf.classfile;
 
+import gov.nasa.jpf.JPFException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -66,6 +68,7 @@ public class ClassFile {
     // we need this since it can happen at various recursion levels
   }
 
+  String requestedTypeName; // the type name that caused this classfile to be loaded
 
   byte[] data; // the classfile data
 
@@ -78,13 +81,15 @@ public class ClassFile {
 
   
   //--- ctors
-  public ClassFile (byte[] data){
+  public ClassFile (String typeName, byte[] data){
+    this.requestedTypeName = typeName;
     this.data = data;
   }
 
-  public ClassFile (byte[] data, int offset){
+  public ClassFile (String typeName, byte[] data, int offset){
+    this.requestedTypeName = typeName;
     this.data = data;
-    pos = offset;
+    this.pos = offset;
   }
 
 
@@ -118,6 +123,41 @@ public class ClassFile {
     this( new File(pathName));
   }
 
+
+  /**
+   * obtain current classfile data. This is mainly provided to allow
+   * on-the-fly classfile instrumentation with 3rd party libraries
+   * 
+   * BEWARE - this is not a copy, i.e. any modification of the returned data
+   * might cause the parsing to fail.
+   */
+  public byte[] getData(){
+    return data;
+  }
+  
+  /**
+   * set classfile data.  This is mainly provided to allow
+   * on-the-fly classfile instrumentation with 3rd party libraries
+   * 
+   * BEWARE - like getData(), this method can cause parsing to fail if the
+   * provided data does not conform to the JVM specs. In particular, this
+   * method should ONLY be called before executing parse(ClassFileReader) and
+   * will otherwise throw a JPFException
+   */
+  public void setData(byte[] newData){
+    if (cpPos != null){
+      throw new JPFException("concurrent modification of ClassFile data");
+    }
+    
+    data = newData;
+  }
+  
+  /**
+   * return the typename this classfile gets loaded for
+   */
+  public String getRequestedTypeName(){
+    return requestedTypeName;
+  }
 
   //--- internal methods
 
