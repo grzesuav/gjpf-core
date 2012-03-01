@@ -147,7 +147,8 @@ public class CGNotificationTest extends TestJPF {
         "advance listenerCG 4",
         "processed listenerCG",
         "processed verifyGetInt(II)",
-        "processed verifyGetBoolean"
+        "processed verifyGetBoolean",
+        "processed <root>"
       };
 
       assert Sequencer.sequence.size() == expected.length;

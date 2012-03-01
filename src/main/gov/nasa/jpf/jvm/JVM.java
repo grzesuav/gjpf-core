@@ -1714,7 +1714,8 @@ public class JVM {
       path.removeLast();
       lastTrailInfo = path.getLast();
 
-      return ((ss.getId() != StateSet.UNKNOWN_ID) ||  (stateSet == null));
+      return true;
+      
     } else {
       return false;
     }
@@ -1893,9 +1894,6 @@ public class JVM {
    * no transition occurred after a forward call
    */
   public boolean isNewState() {
-    if (newStateId == -1){ // we haven't had a transition yet
-      return true;
-    }
 
     if (!transitionOccurred){
       return false;

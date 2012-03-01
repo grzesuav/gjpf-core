@@ -122,7 +122,8 @@ public class VerifyTest extends TestJPF {
         Verify.ignoreIf(true);
       }
     } else {
-      assertEquals(2, CountBacktrack.getBacktrackedCount());
+      // 2 for the Verify.getBoolean, 1 for <root>
+      assertEquals(3, CountBacktrack.getBacktrackedCount());
     }
   }
   
