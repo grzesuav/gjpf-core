@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.lang.reflect.Modifier;
+
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.MethodInfoRegistry;
 import gov.nasa.jpf.util.RunListener;
@@ -158,8 +160,10 @@ public class JPF_java_lang_reflect_Constructor {
     
     MethodInfo mi = getMethodInfo(env, objRef);
 
-    sb.append(mi.getName());
+    sb.append(Modifier.toString(mi.getModifiers()));
+    sb.append(' ');
 
+    sb.append(mi.getClassInfo().getName());
     sb.append('(');
     
     String[] at = mi.getArgumentTypeNames();
