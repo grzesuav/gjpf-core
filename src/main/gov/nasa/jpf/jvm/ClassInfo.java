@@ -379,8 +379,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         innerClassNames[innerClsIndex] = innerName;
         
       } else {
-        // this refers to ourself, and is a force fight with setEnclosingMethod
-        enclosingClassName = outerName;
+        // this refers to ourself, and can be a force fight with setEnclosingMethod
+        if (outerName != null){ // only set if this is a direct member, otherwise taken from setEnclosingMethod
+          enclosingClassName = outerName;
+        }
       }
     }
     
