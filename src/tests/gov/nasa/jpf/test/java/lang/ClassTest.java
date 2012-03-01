@@ -341,4 +341,23 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
       assert enclosingClass == null;
     }
   }
+  
+  public static class TestEnclosedClass {
+    public Object foo;
+
+    public TestEnclosedClass () {
+      class LocalClass {
+      }
+      ;
+      foo = new LocalClass();
+    }
+  }
+  
+  @Test
+  public void localClassEnclosingClassTest (){
+    if (verifyNoPropertyViolation()){
+      TestEnclosedClass testObj = new ClassTest.TestEnclosedClass();
+      assertEquals(testObj.foo.getClass().getEnclosingClass(), TestEnclosedClass.class);
+    }
+  }
 }
