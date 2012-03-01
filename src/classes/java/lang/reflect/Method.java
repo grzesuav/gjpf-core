@@ -50,9 +50,8 @@ public final class Method extends AccessibleObject implements Member {
   public native <T extends Annotation> T getAnnotation( Class<T> annotationCls);
   public native Annotation[][] getParameterAnnotations();
 
-  public boolean isSynthetic () {
-    // ?? don't know of others
-    return (name.startsWith("access$"));
+  public boolean isSynthetic (){
+    return Modifier.isSynthetic(getModifiers());
   }
 
   public native String toString();
