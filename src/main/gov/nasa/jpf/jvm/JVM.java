@@ -2010,6 +2010,10 @@ public class JVM {
     return getThreadList().hasOtherNonDaemonRunnablesThan(ti);
   }
 
+  public boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti){
+    return getThreadList().hasOnlyDaemonRunnablesOtherThan(ti);
+  }
+  
   public int registerThread (ThreadInfo ti){
     getKernelState().changed();
     return getThreadList().add(ti);    

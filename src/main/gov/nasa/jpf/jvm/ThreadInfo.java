@@ -2438,7 +2438,8 @@ public class ThreadInfo
     int objref = getThreadObjectRef();
     ElementInfo ei = getElementInfo(objref);
     SystemState ss = vm.getSystemState();
-
+    ThreadList tl = vm.getThreadList();
+    
     // beware - this notifies all waiters for this thread (e.g. in a join())
     // hence it has to be able to acquire the lock
     if (!ei.canLock(this)) {
@@ -2453,8 +2454,21 @@ public class ThreadInfo
       return false; // come back once we can obtain the lock to notify our waiters
 
     } else { // Ok, we can get the lock, time to die
+      
+      // if this is the last non-daemon and there are only daemons left (which
+      // would be killed by our termination) we have to give them a chance to
+      // run BEFORE we terminate, to catch errors in those daemons we might have
+      // triggered in our last transition. In a way, this simulates preemption on
+      // non-CG insns within our last transition
+      if (tl.hasOnlyDaemonRunnablesOtherThan(this)){
+        if (yield()){
+          return false;
+        }
+      }
+      
+      //--- now we get into the termination spin
+      
       // notify waiters on thread termination
-
       if (!holdsLock(ei)) {
         // we only need to increase the lockcount if we don't own the lock yet,
         // as is the case for synchronized run() in anonymous threads (otherwise
@@ -2462,7 +2476,7 @@ public class ThreadInfo
         ei.lock(this);
       }
 
-      ei.notifiesAll();
+      ei.notifiesAll(); // watch out, this might change the runnable count
       ei.unlock(this);
 
       setState(State.TERMINATED);
@@ -2474,7 +2488,7 @@ public class ThreadInfo
       cleanupThreadObject(ei);
       vm.activateGC();  // stack is gone, so reachability might change
 
-      if (hasOtherNonDaemonRunnables()) {
+      if (tl.hasOtherNonDaemonRunnablesThan(this)){
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(this);
         ss.setMandatoryNextChoiceGenerator(cg, "thread terminated without CG: ");
       }
@@ -3298,7 +3312,7 @@ public class ThreadInfo
   public boolean hasOtherNonDaemonRunnables() {
     return vm.hasOtherNonDaemonRunnablesThan(this);
   }
-
+  
   protected void markUnchanged() {
     attributes &= ~ATTR_ANY_CHANGED;
 
