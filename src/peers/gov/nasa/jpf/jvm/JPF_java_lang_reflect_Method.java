@@ -60,7 +60,7 @@ public class JPF_java_lang_reflect_Method {
     return eidx;
   }
   
-  static MethodInfo getMethodInfo (MJIEnv env, int objRef){
+  public static MethodInfo getMethodInfo (MJIEnv env, int objRef){
     return registry.getMethodInfo(env,objRef, "regIdx");
   }
   

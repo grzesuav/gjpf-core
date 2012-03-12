@@ -54,6 +54,20 @@ import java.util.NoSuchElementException;
  */
 public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<ThreadList> {
 
+  public static class Count {
+    public final int alive;
+    public final int runnableNonDaemons;
+    public final int runnableDaemons;
+    public final int blocked;
+    
+    Count (int alive, int runnableNonDaemons, int runnableDaemons, int blocked){
+      this.alive = alive;
+      this.runnableNonDaemons = runnableNonDaemons;
+      this.runnableDaemons = runnableDaemons;
+      this.blocked = blocked;
+    }
+  }
+  
   protected boolean reuseTid;
   
   // ThreadInfos for all created but not terminated threads
@@ -264,6 +278,36 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
       }
     }
   }
+
+  public Count getCountWithout (ThreadInfo tiExclude){
+    int alive=0, runnableNonDaemons=0, runnableDaemons=0, blocked=0;
+    
+    for (int i = 0; i < threads.length; i++) {
+      ThreadInfo ti = threads[i];
+  
+      if (ti != tiExclude){
+        if (ti.isAlive()) {
+          alive++;
+
+          if (ti.isRunnable()) {
+            if (ti.isDaemon()) {
+              runnableDaemons++;
+            } else {
+              runnableNonDaemons++;
+            }
+          } else {
+            blocked++;
+          }
+        }
+      }
+    }
+    
+    return new Count(alive, runnableNonDaemons, runnableDaemons, blocked);
+  }
+
+  public Count getCount(){
+    return getCountWithout(null);
+  }
   
   /**
    * return if there are still runnables, and there is at least one
@@ -408,25 +452,42 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return false;
   }
 
+  boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti){
+    int n = threads.length;
 
+    for (int i=0; i<n; i++) {
+      ThreadInfo t = threads[i];
+      if (t != ti) {
+        if (t.isRunnable() && t.isDaemon()) {
+          return true;
+        }
+      }
+    }
 
+    return false;
+  }
+  
   boolean isDeadlocked () {
+    boolean hasNonDaemons = false;
     boolean hasBlockedThreads = false;
 
     for (int i = 0; i < threads.length; i++) {
       ThreadInfo ti = threads[i];
-      // if there's at least one runnable, we are not deadlocked
-      if (ti.isTimeoutRunnable()) { // willBeRunnable() ?
-        return false;
-      }
-
+      
       if (ti.isAlive()){
+        hasNonDaemons |= !ti.isDaemon();
+
+        // shortcut - if there is at least one runnable, we are not deadlocked
+        if (ti.isTimeoutRunnable()) { // willBeRunnable() ?
+          return false;
+        }
+
         // means it is not NEW or TERMINATED, i.e. live & blocked
         hasBlockedThreads = true;
       }
     }
 
-    return hasBlockedThreads;
+    return (hasNonDaemons && hasBlockedThreads);
   }
 
   public void dump () {

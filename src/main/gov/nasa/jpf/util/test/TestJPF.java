@@ -78,6 +78,7 @@ public abstract class TestJPF implements JPFShell  {
   @FilterField protected static boolean runDirectly; // don't run test methods through JPF, invoke it directly
   @FilterField protected static boolean stopOnFailure; // stop as soon as we encounter a failed test or error
   @FilterField protected static boolean showConfig; // for debugging purposes
+  @FilterField protected static boolean showConfigSources; // for debugging purposes  
   @FilterField protected static boolean hideSummary;
 
   @FilterField protected String sutClassName;
@@ -272,13 +273,17 @@ public abstract class TestJPF implements JPFShell  {
         if (a != null){
           if (a.length() > 0){
             if (a.charAt(0) == '-'){
-              if (a.equals("-d")){
+              a = a.substring(1);
+              
+              if (a.equals("d")){
                 runDirectly = true;
-              } else if (a.equals("-s")){
+              } else if (a.equals("s") || a.equals("show")){
                 showConfig = true;
-              } else if (a.equals("-x")){
+              } else if (a.equals("l") || a.equals("log")){
+                showConfigSources = true;
+              } else if (a.equals("x")){
                 stopOnFailure = true;
-              } else if (a.equals("-h")){
+              } else if (a.equals("h")){
                 hideSummary = true;
               }
               args[i] = null;
@@ -632,12 +637,21 @@ public abstract class TestJPF implements JPFShell  {
     conf.promotePropertyCategory("test.");
 
     if (conf.getTarget() != null) {
-      jpf = new JPF(conf);
-
       getOptions(args);
-      if (showConfig) {
-        conf.print(new PrintWriter(System.out));
+      
+      if (showConfig || showConfigSources){
+        PrintWriter pw = new PrintWriter(System.out, true);
+        if (showConfigSources){
+          conf.printSources(pw);        
+        }
+        
+        if (showConfig) {
+          conf.print(pw);
+        }
+        pw.flush();
       }
+      
+      jpf = new JPF(conf);
     }
 
     return jpf;

@@ -287,11 +287,11 @@ public class JPF_java_lang_String {
     int start = thisOffset;
     int end = thisOffset + thisLength;
 
-    while ((start < end) && (thisChars[start] == ' ')){
+    while ((start < end) && (thisChars[start] <= ' ')){
       start++;
     }
 
-    while ((start < end) && (thisChars[end - 1] == ' ')){
+    while ((start < end) && (thisChars[end - 1] <= ' ')){
       end--;
     }
 

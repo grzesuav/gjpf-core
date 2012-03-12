@@ -2298,6 +2298,8 @@ public class Config extends Properties {
     map.putAll(this);
     return map;
   }
+  
+  //--- various debugging methods
 
   public void print (PrintWriter pw) {
     pw.println("----------- Config contents");
@@ -2321,9 +2323,13 @@ public class Config extends Properties {
     pw.flush();
   }
 
-  /*
-   * for debugging purposes
-   */
+  public void printSources (PrintWriter pw) {
+    pw.println("----------- Config sources");
+    for (Object src : sources){
+      pw.println(src);
+    }    
+  }
+  
   public void printEntries() {
     PrintWriter pw = new PrintWriter(System.out);
     print(pw);
