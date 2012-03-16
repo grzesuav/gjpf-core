@@ -173,53 +173,73 @@ public class JPF_java_lang_reflect_Method {
     // it's got to be registered, otherwise we wouldn't be able to acquire the Method object
     return ci.getClassObjectRef();
   }
-    
+
+  // NOTE - setting the return value attribute here is inconsistent with the current cache
+  // mechanism.  
   static int createBoxedReturnValueObject (MJIEnv env, MethodInfo mi, StackFrame frame) {
     byte rt = mi.getReturnTypeCode();
     int ret = MJIEnv.NULL;
     ElementInfo rei;
     
     if (rt == Types.T_DOUBLE) {
+      Object attr = frame.getLongOperandAttr();
+      env.setReturnAttribute(attr);
       double v = frame.doublePop();
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"));
       rei = env.getElementInfo(ret);
       rei.setDoubleField("value", v);
     } else if (rt == Types.T_FLOAT) {
+      Object attr = frame.getOperandAttr();
+      env.setReturnAttribute(attr);
       int v = frame.pop();
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_LONG) {
+      Object attr = frame.getLongOperandAttr();
+      env.setReturnAttribute(attr);
       long v = frame.longPop();
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Long"));
       rei = env.getElementInfo(ret);
       rei.setLongField("value", v);
     } else if (rt == Types.T_BYTE) {
+      Object attr = frame.getOperandAttr();
+      env.setReturnAttribute(attr);
       int v = frame.pop(); 
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Byte"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_CHAR) {
+      Object attr = frame.getOperandAttr();
+      env.setReturnAttribute(attr);
       int v = frame.pop(); 
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Character"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_SHORT) {
+      Object attr = frame.getOperandAttr();
+      env.setReturnAttribute(attr);
       int v = frame.pop(); 
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Short"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_INT) {
+      Object attr = frame.getOperandAttr();
+      env.setReturnAttribute(attr);
       int v = frame.pop(); 
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Integer"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_BOOLEAN) {
+      Object attr = frame.getOperandAttr();
+      env.setReturnAttribute(attr);
       int v = frame.pop(); 
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Boolean"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (mi.isReferenceReturnType()){ 
+      Object attr = frame.getOperandAttr();
+      env.setReturnAttribute(attr);
       ret = frame.pop();
     }
 
@@ -263,8 +283,9 @@ public class JPF_java_lang_reflect_Method {
       source      = env.getElementInfo(sourceRef);
       sourceClass = source.getClassInfo();   
       sourceType = getSourceType( sourceClass, destTypes[i], destTypeNames[i]);
-             
-      if ((sourceType == Types.T_NONE) || !pushArg(frame, source, sourceType, destTypes[i])){
+
+      Object attr = env.getElementInfo(argsRef).getFields().getFieldAttr(i);
+      if ((sourceType == Types.T_NONE) || !pushArg(frame, source, sourceType, destTypes[i], attr)){
         env.throwException(IllegalArgumentException.class.getName(), "Wrong argument type at index " + i + ".  Source Class = " + sourceClass.getName() + ".  Dest Class = " + destTypeNames[i]);
         return false;        
       }
@@ -299,13 +320,14 @@ public class JPF_java_lang_reflect_Method {
   
   // do the proper type conversion - Java is pretty forgiving here and does
   // not throw exceptions upon value truncation
-  private static boolean pushArg( StackFrame frame, ElementInfo eiArg, byte srcType, byte destType){    
+  private static boolean pushArg( StackFrame frame, ElementInfo eiArg, byte srcType, byte destType, Object attr){    
     switch (srcType) {
     case Types.T_DOUBLE:
     {
       double v = eiArg.getDoubleField("value");
       if (destType == Types.T_DOUBLE){      
         frame.longPush(Double.doubleToLongBits(v));
+        frame.setOperandAttr(attr);
         return true;
       }
       return false;
@@ -316,9 +338,11 @@ public class JPF_java_lang_reflect_Method {
       switch (destType){
       case Types.T_FLOAT:
         frame.push(Float.floatToIntBits(v));
+        frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
         frame.longPush(Double.doubleToLongBits(v));
+        frame.setLongOperandAttr(attr);
         return true;
       }
       return false;
@@ -329,12 +353,15 @@ public class JPF_java_lang_reflect_Method {
       switch (destType){
       case Types.T_LONG:
         frame.longPush(v);
+        frame.setLongOperandAttr(attr);
         return true;
       case Types.T_FLOAT:
         frame.push(Float.floatToIntBits((float)v));
+        frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
         frame.longPush( Double.doubleToLongBits((double)v));
+        frame.setLongOperandAttr(attr);
         return true;
       }
       return false;
@@ -345,15 +372,19 @@ public class JPF_java_lang_reflect_Method {
       switch (destType){
       case Types.T_INT:
         frame.push(v);
+        frame.setOperandAttr(attr);
         return true;
       case Types.T_LONG:
         frame.longPush(v);
+        frame.setLongOperandAttr(attr);
         return true;        
       case Types.T_FLOAT:
         frame.push( Float.floatToIntBits((float)v));
+        frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
         frame.longPush( Double.doubleToLongBits((double)v));
+        frame.setLongOperandAttr(attr);
         return true;
       }
       return false;
@@ -365,15 +396,19 @@ public class JPF_java_lang_reflect_Method {
       case Types.T_SHORT:
       case Types.T_INT:
         frame.push(v);
+        frame.setOperandAttr(attr);
         return true;
       case Types.T_LONG:
         frame.longPush(v);
+        frame.setLongOperandAttr(attr);
         return true;        
       case Types.T_FLOAT:
         frame.push( Float.floatToIntBits((float)v));
+        frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
         frame.longPush( Double.doubleToLongBits((double)v));
+        frame.setLongOperandAttr(attr);
         return true;
       }
       return false;
@@ -386,15 +421,19 @@ public class JPF_java_lang_reflect_Method {
       case Types.T_SHORT:
       case Types.T_INT:
         frame.push(v);
+        frame.setOperandAttr(attr);
         return true;
       case Types.T_LONG:
         frame.longPush(v);
+        frame.setLongOperandAttr(attr);
         return true;
       case Types.T_FLOAT:
         frame.push( Float.floatToIntBits((float)v));
+        frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
         frame.longPush( Double.doubleToLongBits((double)v));
+        frame.setLongOperandAttr(attr);
         return true;
       }
       return false;
@@ -406,15 +445,19 @@ public class JPF_java_lang_reflect_Method {
       case Types.T_CHAR:
       case Types.T_INT:
         frame.push(v);
+        frame.setOperandAttr(attr);
         return true;
       case Types.T_LONG:
         frame.longPush(v);
+        frame.setLongOperandAttr(attr);
         return true;        
       case Types.T_FLOAT:
         frame.push( Float.floatToIntBits((float)v));
+        frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
         frame.longPush( Double.doubleToLongBits((double)v));
+        frame.setLongOperandAttr(attr);
         return true;
       }
       return false;
@@ -424,6 +467,7 @@ public class JPF_java_lang_reflect_Method {
       boolean v = eiArg.getBooleanField("value");
       if (destType == Types.T_BOOLEAN){
         frame.push(v ? 1 : 0);
+        frame.setOperandAttr(attr);
         return true;
       }
       return false;
@@ -433,6 +477,7 @@ public class JPF_java_lang_reflect_Method {
       int ref =  eiArg.getObjectRef();
       if (destType == Types.T_ARRAY){
         frame.pushRef(ref);
+        frame.setOperandAttr(attr);
         return true;
       }
       return false;
@@ -442,6 +487,7 @@ public class JPF_java_lang_reflect_Method {
       int ref =  eiArg.getObjectRef();
       if (destType == Types.T_REFERENCE){
         frame.pushRef(ref);
+        frame.setOperandAttr(attr);
         return true;
       }
       return false;
