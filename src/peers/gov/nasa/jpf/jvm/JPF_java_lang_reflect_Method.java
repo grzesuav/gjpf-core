@@ -173,9 +173,7 @@ public class JPF_java_lang_reflect_Method {
     // it's got to be registered, otherwise we wouldn't be able to acquire the Method object
     return ci.getClassObjectRef();
   }
-
-  // NOTE - setting the return value attribute here is inconsistent with the current cache
-  // mechanism.  
+    
   static int createBoxedReturnValueObject (MJIEnv env, MethodInfo mi, StackFrame frame) {
     byte rt = mi.getReturnTypeCode();
     int ret = MJIEnv.NULL;
