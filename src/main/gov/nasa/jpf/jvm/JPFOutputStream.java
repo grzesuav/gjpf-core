@@ -170,7 +170,7 @@ public class JPFOutputStream extends OutputStream {
     ps.print(frame.getDepth());
     
     ps.print(" frame ");
-    ps.print( mi.getCompleteName());
+    ps.print( mi.getFullName());
     ps.print( ":{" );
     
     if (!mi.isStatic()){

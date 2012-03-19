@@ -279,7 +279,11 @@ public abstract class Instruction implements InstructionVisitorAcceptor {
     }
 
     if (file != null) {
-      return (file + ':' + line);
+      if (line != -1){
+        return (file + ':' + line);
+      } else {
+        return file;
+      }
     } else {
       return ("pc " + position);
     }

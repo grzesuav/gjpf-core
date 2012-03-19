@@ -1723,7 +1723,7 @@ public class ThreadInfo
   }
 
   public boolean atMethod (String mname) {
-    return top != null && getMethod().getCompleteName().equals(mname);
+    return top != null && getMethod().getFullName().equals(mname);
   }
 
   public boolean atPosition (int position) {
@@ -2211,7 +2211,7 @@ public class ThreadInfo
     nextPc = null;
 
     if (log.isLoggable(Level.FINER)) {
-      log.fine( pc.getMethodInfo().getCompleteName() + " " + pc.getPosition() + " : " + pc);
+      log.fine( pc.getMethodInfo().getFullName() + " " + pc.getPosition() + " : " + pc);
     }
 
     // this is the pre-execution notification, during which a listener can perform
@@ -2261,7 +2261,7 @@ public class ThreadInfo
     nextPc = null; // reset in case pc.execute blows (this could be behind an exception firewall)
 
     if (log.isLoggable(Level.FINE)) {
-      log.fine( pc.getMethodInfo().getCompleteName() + " " + pc.getPosition() + " : " + pc);
+      log.fine( pc.getMethodInfo().getFullName() + " " + pc.getPosition() + " : " + pc);
     }
 
     nextPc = pc.execute(ss, ks, this);
@@ -3475,7 +3475,7 @@ public class ThreadInfo
       // this is a bit dangerous in case we introduce new timeout points
       MethodInfo mi = ((EXECUTENATIVE)insn).getExecutedMethod();
       String mname = mi.getUniqueName();
-      checkAssertion( mname.equals("wait(J") || mname.equals("park(ZJ"), "timedout thread outside timeout method: " + mi.getCompleteName());
+      checkAssertion( mname.equals("wait(J") || mname.equals("park(ZJ"), "timedout thread outside timeout method: " + mi.getFullName());
     }
     
     if (lockRef != -1){

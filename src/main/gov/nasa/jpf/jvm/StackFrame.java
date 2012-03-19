@@ -194,7 +194,7 @@ public class StackFrame implements Cloneable {
     } else if (nSlots <= 256){
       return new BitSet256();
     } else {
-      throw new JPFException("too many slots in " + mi.getCompleteName() + " : " + nSlots);
+      throw new JPFException("too many slots in " + mi.getFullName() + " : " + nSlots);
     }
   }
 
@@ -1059,24 +1059,23 @@ public class StackFrame implements Cloneable {
   public String getStackTraceInfo () {
     StringBuilder sb = new StringBuilder(128);
 
-    ClassInfo ciMi = mi.getClassInfo();
-    if (ciMi != null) {
-      sb.append(mi.getClassInfo().getName());
-      sb.append('.');
-    }
-    sb.append(mi.getName());
+    if (!mi.isSynthetic()){
+      sb.append(mi.getStackTraceName());
 
-    if (pc != null) {
-      if (ciMi != null) {
+      if (pc != null){
         sb.append('(');
         sb.append( pc.getFilePos());
         sb.append(')');
+      }
+      
+    } else {
+      sb.append(mi.getName());
+      
+      if (mi.isMJI()){
+        sb.append("(Native)");        
       } else {
-        // this is a synthetic method
         sb.append("(Synthetic)");
       }
-    } else {
-      sb.append("(Native Method)");
     }
 
     return sb.toString();
@@ -1529,7 +1528,7 @@ public class StackFrame implements Cloneable {
     PrintStream pw = System.out;
 
     pw.print( "\tat ");
-    pw.print( mi.getCompleteName());
+    pw.print( mi.getFullName());
 
     if (pc != null) {
       pw.println( ":" + pc.getPosition());
