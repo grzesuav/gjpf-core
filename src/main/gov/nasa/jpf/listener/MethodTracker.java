@@ -61,7 +61,7 @@ public class MethodTracker extends ListenerAdapter {
       out.print("native ");
     }
 
-    out.print(mi.getCompleteName());
+    out.print(mi.getFullName());
 
     if (ti.isFirstStepInsn()) {
       out.print("...");

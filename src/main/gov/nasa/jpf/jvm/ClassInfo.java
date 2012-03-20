@@ -811,6 +811,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       superClass.nInstanceFields + iFields.length : iFields.length;
 
     source = null;
+    if (sourceFileName == null){ // apparently some classfiles don't have a SourceFile attribute?
+      sourceFileName = computeSourceFileName();
+    }
 
     // we need to set the cached ci's before checking WeakReferences and Enums
     updateCachedClassInfos(this);
@@ -961,6 +964,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
 
+  protected String computeSourceFileName(){
+    return name.replace('.', '/') + ".java";
+  }
+  
   protected static void updateCachedClassInfos (ClassInfo ci) {
 
     if (remainingSysCi > 0){
@@ -1117,6 +1124,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return isAbstract;
   }
 
+  public boolean isBuiltin(){
+    return isBuiltin;
+  }
+  
   public boolean isInterface() {
     return ((modifiers & Modifier.INTERFACE) != 0);
   }

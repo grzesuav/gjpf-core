@@ -414,7 +414,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   public boolean isInit() {
     return ((attributes & IS_INIT) != 0);
   }
-
+  
   /**
    * yet another name - this time with a non-mangled, but abbreviated signature
    * and without return type (e.g. like "main(String[])"
@@ -572,10 +572,10 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   }
 
   /**
-   * Return the complete name of the method, including the class name.
+   * @deprecated - use getFullName
    */
   public String getCompleteName () {
-    return getClassName() + '.' + name + signature;
+    return getFullName();
   }
 
   /**
@@ -606,16 +606,27 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   }
   
   /**
-   * Returns the full name of the method, name and signature.
+   * Returns the full classname (if any) + name + signature.
    */
   public String getFullName () {
     if (ci != null) {
       return ci.getName() + '.' + getUniqueName();
     } else {
-      return (name + signature);
+      return getUniqueName();
     }
   }
 
+  /**
+   * returns stack trace name: classname (if any) + name
+   */
+  public String getStackTraceName(){
+    if (ci != null) {
+      return ci.getName() + '.' + name;
+    } else {
+      return name;
+    }
+  }
+  
   /**
    * return number of instructions
    */
@@ -989,6 +1000,15 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   public boolean isProtected() {
     return ((modifiers & Modifier.PROTECTED) != 0);
   }
+
+  /**
+   * is this something that was read from a classfile
+   */
+  public boolean isSynthetic(){
+    // <2do> can we actually get synthetic methods from classfiles ?
+    // return ((modifiers & Modifier.SYNTHETIC) != 0) || (ci == null);
+    return (ci == null);
+  }
   
   /**
    * Returns true if the method is synchronized.
@@ -1029,7 +1049,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
       ei = th.getElementInfo(objref);
 
       assert (ei != null) : ("inconsistent stack, no object or class ref: " +
-                               getCompleteName() + " (" + objref +")");
+                               getFullName() + " (" + objref +")");
     }
 
     return ei;
