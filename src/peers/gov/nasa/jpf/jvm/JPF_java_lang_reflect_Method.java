@@ -461,6 +461,18 @@ public class JPF_java_lang_reflect_Method {
     ElementInfo mth = ti.getElementInfo(mthRef);
     boolean accessible = (Boolean) mth.getFieldValueObject("isAccessible");
     
+    if (mi.isStatic()){ // this might require class init and reexecution
+      if (calleeClass.requiresClinitExecution(ti)){
+        env.repeatInvocation();
+        return 0;
+      }
+    } else { // check if we have an object
+      if (objRef == MJIEnv.NULL){
+        env.throwException("java.lang.NullPointerException");
+        return MJIEnv.NULL;
+      }
+    }
+    
     if (!accessible) {
       StackFrame frame = ti.getTopFrame().getPrevious();
       ClassInfo callerClass = frame.getClassInfo();
@@ -473,19 +485,14 @@ public class JPF_java_lang_reflect_Method {
     
     StackFrame frame = ti.getReturnedDirectCall();
 
-    if (frame != null){
+    if (frame != null){ // we have returned from the direct call
       return createBoxedReturnValueObject( env, mi, frame);
 
-    } else {
+    } else { // first time, set up direct call
       MethodInfo stub = mi.createReflectionCallStub();
       frame = new DirectCallStackFrame(stub);
 
       if (!mi.isStatic()) {
-        if (objRef == MJIEnv.NULL) {
-          env.throwException(NullPointerException.class.getName(), "Expected an instance of " + calleeClass);
-          return MJIEnv.NULL;
-        }
-
         ElementInfo obj = ti.getElementInfo(objRef);
         ClassInfo objClass = obj.getClassInfo();
         
