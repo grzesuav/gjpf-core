@@ -65,9 +65,6 @@ public class JPF_java_lang_Integer {
   }
 
   public static int valueOf__I__Ljava_lang_Integer_2 (MJIEnv env, int clsRef, int val) {
-    Object[] attrs = env.getArgAttributes();
-	int objref = env.newInteger(val);
-	env.setReturnAttribute(attrs[0]);
-    return objref;
+    return env.valueOfInteger(val);
   }
 }

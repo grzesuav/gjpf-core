@@ -1596,4 +1596,8 @@ public class MJIEnv {
     // we provide a little helper to get the caller
     return ti.getLastNonSyntheticStackFrame();
   }
+  
+  public int valueOfInteger(int i) {
+    return BoxObjectCacheManager.valueOfInteger(ti, i);
+  }
 }

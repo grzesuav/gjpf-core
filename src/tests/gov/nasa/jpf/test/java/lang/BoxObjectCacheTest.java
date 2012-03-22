@@ -18,6 +18,9 @@
 //
 package gov.nasa.jpf.test.java.lang;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import gov.nasa.jpf.util.test.TestJPF;
 
 import org.junit.Test;
@@ -72,4 +75,16 @@ public class BoxObjectCacheTest extends TestJPF {
     }
   }
 
+  @Test
+  public void testIntCacheBoxObject() throws SecurityException, NoSuchMethodException, IllegalAccessException, InvocationTargetException{
+    if (verifyNoPropertyViolation()){
+      Integer i1 = Integer.valueOf( 1);        // should be cached
+      assertTrue( i1.intValue() == 1);
+      
+      Integer i2 = new Integer(1);
+      Method m = Integer.class.getMethod("intValue", new Class[0]);
+      Integer i3 = (Integer) m.invoke(i2, new Object[0]);
+      assertTrue( i1 == i3);
+    }
+  }
 }
