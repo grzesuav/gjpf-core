@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.util.BitSet1024;
 import gov.nasa.jpf.util.BitSet256;
 import gov.nasa.jpf.util.BitSet64;
 import gov.nasa.jpf.util.FixedBitSet;
@@ -192,8 +193,11 @@ public class StackFrame implements Cloneable {
     if (nSlots <= 64){
       return new BitSet64();
     } else if (nSlots <= 256){
-      return new BitSet256();
-    } else {
+      return new BitSet256();  
+    } else if (nSlots <= 1024) {
+    	return new BitSet1024();
+    }
+    else {
       throw new JPFException("too many slots in " + mi.getFullName() + " : " + nSlots);
     }
   }
@@ -1059,23 +1063,22 @@ public class StackFrame implements Cloneable {
   public String getStackTraceInfo () {
     StringBuilder sb = new StringBuilder(128);
 
-    if (!mi.isSynthetic()){
-      sb.append(mi.getStackTraceName());
-
-      if (pc != null){
-        sb.append('(');
-        sb.append( pc.getFilePos());
-        sb.append(')');
-      }
-      
+    if(!mi.isSynthetic()) {
+    	sb.append(mi.getStackTraceName());
+    	
+    	if(pc != null) {
+    		sb.append('(');
+            sb.append( pc.getFilePos());
+            sb.append(')');
+    	}
     } else {
-      sb.append(mi.getName());
-      
-      if (mi.isMJI()){
-        sb.append("(Native)");        
-      } else {
-        sb.append("(Synthetic)");
-      }
+    	sb.append(mi.getName());
+    	
+    	if(mi.isMJI()) {
+    		sb.append("(Native)");
+    	} else {
+    		sb.append("(Synthetic)");
+    	}
     }
 
     return sb.toString();
