@@ -35,8 +35,8 @@ public class BoxObjectCacheManager {
   private static byte byteHigh;
 
   public static int initByteCache(ThreadInfo ti) {
-	byteLow = (byte) ti.getVM().getConfig().getInt("cache.byte_low_bound", defLow);
-	byteHigh = (byte) ti.getVM().getConfig().getInt("cache.byte_high_bound", defHigh);
+	byteLow = (byte) ti.getVM().getConfig().getInt("vm.cache.low_byte", defLow);
+	byteHigh = (byte) ti.getVM().getConfig().getInt("vm.cache.high_byte", defHigh);
 
 	int n = (byteHigh-byteLow) + 1;
     int aRef = ti.getHeap().newArray("Ljava/lang/Byte", n, ti);
@@ -61,7 +61,7 @@ public class BoxObjectCacheManager {
     ClassInfo cacheClass  = ClassInfo.getResolvedClassInfo(boxObjectCaches);
     int byteCache = cacheClass.getStaticElementInfo().getReferenceField("byteCache");
 
-    if(byteCache == MJIEnv.NULL) {
+    if(byteCache == MJIEnv.NULL) {    // initializing the cache on demand
       byteCache = initByteCache(ti);
     }
 
@@ -79,7 +79,7 @@ public class BoxObjectCacheManager {
   private static int charHigh;
 
   public static int initCharCache(ThreadInfo ti) {
-    charHigh = ti.getVM().getConfig().getInt("cache.char_high_bound", defHigh);
+    charHigh = ti.getVM().getConfig().getInt("vm.cache.high_char", defHigh);
 
     int n = charHigh + 1;
     int aRef = ti.getHeap().newArray("Ljava/lang/Character", n, ti);
@@ -103,7 +103,7 @@ public class BoxObjectCacheManager {
     ClassInfo cacheClass  = ClassInfo.getResolvedClassInfo(boxObjectCaches);
     int charCache = cacheClass.getStaticElementInfo().getReferenceField("charCache");
 
-    if(charCache == MJIEnv.NULL) {
+    if(charCache == MJIEnv.NULL) {    // initializing the cache on demand
   	  charCache = initCharCache(ti);
     }
 
@@ -122,8 +122,8 @@ public class BoxObjectCacheManager {
   private static short shortHigh;
 
   public static int initShortCache(ThreadInfo ti) {
-    shortLow = (short) ti.getVM().getConfig().getInt("cache.short_low_bound", defLow);
-    shortHigh = (short) ti.getVM().getConfig().getInt("cache.short_high_bound", defHigh);
+    shortLow = (short) ti.getVM().getConfig().getInt("vm.cache.low_short", defLow);
+    shortHigh = (short) ti.getVM().getConfig().getInt("vm.cache.high_short", defHigh);
 
 	int n = (shortHigh-shortLow) + 1;
     int aRef = ti.getHeap().newArray("Ljava/lang/Short", n, ti);
@@ -148,7 +148,7 @@ public class BoxObjectCacheManager {
     ClassInfo cacheClass  = ClassInfo.getResolvedClassInfo(boxObjectCaches);
     int shortCache = cacheClass.getStaticElementInfo().getReferenceField("shortCache");
 
-    if(shortCache == MJIEnv.NULL) {
+    if(shortCache == MJIEnv.NULL) {    // initializing the cache on demand
       shortCache = initShortCache(ti);
     }
 
@@ -167,8 +167,8 @@ public class BoxObjectCacheManager {
   private static int intHigh;
 
   public static int initIntCache(ThreadInfo ti) {
-    intLow = ti.getVM().getConfig().getInt("cache.int_low_bound", defLow);
-    intHigh = ti.getVM().getConfig().getInt("cache.int_high_bound", defHigh);
+    intLow = ti.getVM().getConfig().getInt("vm.cache.low_int", defLow);
+    intHigh = ti.getVM().getConfig().getInt("vm.cache.high_int", defHigh);
 
 	int n = (intHigh-intLow) + 1;
     int aRef = ti.getHeap().newArray("Ljava/lang/Integer", n, ti);
@@ -192,7 +192,7 @@ public class BoxObjectCacheManager {
 	ClassInfo cacheClass  = ClassInfo.getResolvedClassInfo(boxObjectCaches);
     int intCache = cacheClass.getStaticElementInfo().getReferenceField("intCache");
 
-    if(intCache == MJIEnv.NULL) {
+    if(intCache == MJIEnv.NULL) {    // initializing the cache on demand
       intCache = initIntCache(ti);
     }
 
@@ -211,8 +211,8 @@ public class BoxObjectCacheManager {
   private static int longHigh;
 
   public static int initLongCache(ThreadInfo ti) {
-    longLow = ti.getVM().getConfig().getInt("cache.long_low_bound", defLow);
-    longHigh = ti.getVM().getConfig().getInt("cache.long_high_bound", defHigh);
+    longLow = ti.getVM().getConfig().getInt("vm.cache.low_long", defLow);
+    longHigh = ti.getVM().getConfig().getInt("vm.cache.high_long", defHigh);
 
 	int n = (longHigh-longLow) + 1;
     int aRef = ti.getHeap().newArray("Ljava/lang/Long", n, ti);
@@ -236,7 +236,7 @@ public class BoxObjectCacheManager {
     ClassInfo cacheClass  = ClassInfo.getResolvedClassInfo(boxObjectCaches);
     int longCache = cacheClass.getStaticElementInfo().getReferenceField("longCache");
 
-    if(longCache == MJIEnv.NULL) {
+    if(longCache == MJIEnv.NULL) {    // initializing the cache on demand
       longCache = initLongCache(ti);
     }
 
