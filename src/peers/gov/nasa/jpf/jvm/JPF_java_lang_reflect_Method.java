@@ -195,37 +195,27 @@ public class JPF_java_lang_reflect_Method {
     } else if (rt == Types.T_LONG) {
       attr = frame.getLongOperandAttr();
       long v = frame.longPop();
-      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Long"));
-      rei = env.getElementInfo(ret);
-      rei.setLongField("value", v);
+      ret = env.valueOfLong(v);
     } else if (rt == Types.T_BYTE) {
       attr = frame.getOperandAttr();
       int v = frame.pop(); 
-      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Byte"));
-      rei = env.getElementInfo(ret);
-      rei.setIntField("value", v);
+      ret = env.valueOfByte((byte)v);
     } else if (rt == Types.T_CHAR) {
       attr = frame.getOperandAttr();
       int v = frame.pop(); 
-      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Character"));
-      rei = env.getElementInfo(ret);
-      rei.setIntField("value", v);
+      ret = env.valueOfCharacter((char)v);
     } else if (rt == Types.T_SHORT) {
       attr = frame.getOperandAttr();
       int v = frame.pop(); 
-      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Short"));
-      rei = env.getElementInfo(ret);
-      rei.setIntField("value", v);
+      ret = env.valueOfShort((short)v);
     } else if (rt == Types.T_INT) {
       attr = frame.getOperandAttr();
       int v = frame.pop(); 
       ret = env.valueOfInteger(v);
     } else if (rt == Types.T_BOOLEAN) {
       attr = frame.getOperandAttr();
-      int v = frame.pop(); 
-      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Boolean"));
-      rei = env.getElementInfo(ret);
-      rei.setIntField("value", v);
+      int v = frame.pop();
+      ret = env.valueOfBoolean((v == 1)? true: false);
     } else if (mi.isReferenceReturnType()){ 
       attr = frame.getOperandAttr();
       ret = frame.pop();

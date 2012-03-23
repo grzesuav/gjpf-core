@@ -27,6 +27,7 @@ package gov.nasa.jpf.jvm;
  * MJI NativePeer class for java.lang.Short library abstraction
  */
 public class JPF_java_lang_Short {
+  // <2do> at this point we deliberately do not override clinit
   
   public static short parseShort__Ljava_lang_String_2__S (MJIEnv env, 
                                                           int clsObjRef, 
@@ -54,5 +55,9 @@ public class JPF_java_lang_Short {
 
   public static int toString__S__Ljava_lang_String_2 (MJIEnv env, int objref, short val) {
     return env.newString(Short.toString(val));
+  }
+
+  public static int valueOf__S__Ljava_lang_Short_2 (MJIEnv env, int clsRef, short val) {
+    return env.valueOfShort(val);
   }
 }

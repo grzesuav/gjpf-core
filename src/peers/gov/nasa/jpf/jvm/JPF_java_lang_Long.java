@@ -22,6 +22,8 @@ package gov.nasa.jpf.jvm;
  * MJI NativePeer class for java.lang.Long library abstraction
  */
 public class JPF_java_lang_Long {
+  // <2do> at this point we deliberately do not override clinit
+
   public static long parseLong__Ljava_lang_String_2I__J (MJIEnv env, int clsObjRef, 
                                                      int strRef, int radix) {
     try {
@@ -62,5 +64,9 @@ public class JPF_java_lang_Long {
 
   public static int toString__JI__Ljava_lang_String_2 (MJIEnv env, int objref, long val, int radix) {
     return env.newString(Long.toString(val, radix));
+  }
+
+  public static int valueOf__J__Ljava_lang_Long_2 (MJIEnv env, int clsRef, long val) {
+    return env.valueOfLong(val);
   }
 }

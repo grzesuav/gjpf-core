@@ -76,6 +76,51 @@ public class BoxObjectCacheTest extends TestJPF {
   }
 
   @Test
+  public void testShortCache(){
+   if (verifyNoPropertyViolation()){
+     Short s1 = Short.valueOf((short)1);        // should be cached
+     assertTrue( s1.shortValue() == 1);
+     
+     Short s2 = Short.parseShort("1");
+     assertTrue( s1 == s2);
+      
+     s1 = Short.valueOf((short)10000); // should be too large for cache
+     assertTrue( s1.shortValue() == (short)10000);
+      
+     s2 = Short.parseShort("10000");
+     assertTrue(s1 != s2);
+    }
+  }
+
+  @Test
+  public void testLongCache(){
+   if (verifyNoPropertyViolation()){
+     Long l1 = Long.valueOf((long)1);        // should be cached
+     assertTrue( l1.longValue() == 1);
+     
+     Long l2 = Long.parseLong("1");
+     assertTrue( l1 == l2);
+      
+     l1 = Long.valueOf((long)10000000); // should be too large for cache
+     assertTrue( l1.longValue() == (long)10000000);
+      
+     l2 = Long.parseLong("10000000");
+     assertTrue(l1 != l2);
+    }
+  }  
+
+  @Test
+  public void testBooleanCache(){
+    if (verifyNoPropertyViolation()){
+      Boolean b1 = Boolean.valueOf(true);        // should be cached
+      assertTrue( b1.booleanValue() == true);
+      
+      Boolean b2 = Boolean.parseBoolean("true");
+      assertTrue( b1 == b2);
+    }
+  }
+
+  @Test
   public void testIntCacheBoxObject() throws SecurityException, NoSuchMethodException, IllegalAccessException, InvocationTargetException{
     if (verifyNoPropertyViolation()){
       Integer i1 = Integer.valueOf( 1);        // should be cached
@@ -85,6 +130,71 @@ public class BoxObjectCacheTest extends TestJPF {
       Method m = Integer.class.getMethod("intValue", new Class[0]);
       Integer i3 = (Integer) m.invoke(i2, new Object[0]);
       assertTrue( i1 == i3);
+    }
+  }
+
+  @Test
+  public void testCharacterCacheBoxObject() throws SecurityException, NoSuchMethodException, IllegalAccessException, InvocationTargetException{
+    if (verifyNoPropertyViolation()){
+      Character c1 = Character.valueOf( '?');        // should be cached
+      assertTrue( c1.charValue() == '?');
+      
+      Character c2 = new Character('?');
+      Method m = Character.class.getMethod("charValue", new Class[0]);
+      Character c3 = (Character) m.invoke(c2, new Object[0]);
+      assertTrue( c1 == c3);
+    }
+  }
+
+  @Test
+  public void testByteCacheBoxObject() throws SecurityException, NoSuchMethodException, IllegalAccessException, InvocationTargetException{
+    if (verifyNoPropertyViolation()){
+      Byte b1 = Byte.valueOf( (byte)1);        // should be cached
+      assertTrue( b1.byteValue() == 1);
+      
+      Byte b2 = new Byte((byte)1);
+      Method m = Byte.class.getMethod("byteValue", new Class[0]);
+      Byte b3 = (Byte) m.invoke(b2, new Object[0]);
+      assertTrue( b1 == b3);
+    }
+  }
+
+  @Test
+  public void testShortCacheBoxObject() throws SecurityException, NoSuchMethodException, IllegalAccessException, InvocationTargetException{
+    if (verifyNoPropertyViolation()){
+      Short s1 = Short.valueOf((short)1);        // should be cached
+      assertTrue( s1.shortValue() == 1);
+      
+      Short s2 = new Short((short)1);
+      Method m = Short.class.getMethod("shortValue", new Class[0]);
+      Short s3 = (Short) m.invoke(s2, new Object[0]);
+      assertTrue( s1 == s3);
+    }
+  }
+
+  @Test
+  public void testLongCacheBoxObject() throws SecurityException, NoSuchMethodException, IllegalAccessException, InvocationTargetException{
+    if (verifyNoPropertyViolation()){
+      Long l1 = Long.valueOf((long)1);        // should be cached
+      assertTrue( l1.longValue() == 1);
+      
+      Long l2 = new Long((long)1);
+      Method m = Long.class.getMethod("longValue", new Class[0]);
+      Long l3 = (Long) m.invoke(l2, new Object[0]);
+      assertTrue( l1 == l3);
+    }
+  }
+
+  @Test
+  public void testBooleanCacheBoxObject() throws SecurityException, NoSuchMethodException, IllegalAccessException, InvocationTargetException{
+    if (verifyNoPropertyViolation()){
+      Boolean b1 = Boolean.valueOf(true);        // should be cached
+      assertTrue( b1.booleanValue() == true);
+      
+      Boolean b2 = new Boolean(true);
+      Method m = Boolean.class.getMethod("booleanValue", new Class[0]);
+      Boolean b3 = (Boolean) m.invoke(b2, new Object[0]);
+      assertTrue( b1 == b3);
     }
   }
 }

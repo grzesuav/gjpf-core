@@ -1597,7 +1597,27 @@ public class MJIEnv {
     return ti.getLastNonSyntheticStackFrame();
   }
   
+  public int valueOfBoolean(boolean b) {
+    return BoxObjectCacheManager.valueOfBoolean(ti, b);
+  }
+
+  public int valueOfByte(byte b) {
+    return BoxObjectCacheManager.valueOfByte(ti, b);
+  }
+
+  public int valueOfCharacter(char c) {
+    return BoxObjectCacheManager.valueOfCharacter(ti, c);
+  }
+
+  public int valueOfShort(short s) {
+    return BoxObjectCacheManager.valueOfShort(ti, s);
+  }
+
   public int valueOfInteger(int i) {
     return BoxObjectCacheManager.valueOfInteger(ti, i);
+  }
+
+  public int valueOfLong(long l) {
+    return BoxObjectCacheManager.valueOfLong(ti, l);
   }
 }

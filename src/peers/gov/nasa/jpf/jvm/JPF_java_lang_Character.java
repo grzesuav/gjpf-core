@@ -23,6 +23,8 @@ package gov.nasa.jpf.jvm;
  * Whoever is using this seriously is definitely screwed, performance-wise
  */
 public class JPF_java_lang_Character {
+  // <2do> at this point we deliberately do not override clinit
+
   public static boolean isDefined__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isDefined(c);
   }
@@ -177,5 +179,9 @@ public class JPF_java_lang_Character {
 
   public static char toUpperCase__C__C (MJIEnv env, int clsObjRef, char c) {
     return Character.toUpperCase(c);
+  }
+
+  public static int valueOf__C__Ljava_lang_Character_2 (MJIEnv env, int clsRef, char val) {
+    return env.valueOfCharacter(val);
   }
 }
