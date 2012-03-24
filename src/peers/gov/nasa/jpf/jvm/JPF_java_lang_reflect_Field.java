@@ -429,13 +429,16 @@ public class JPF_java_lang_reflect_Field {
       return;
     }
     
-    if (!setValue(env, fi, fobjRef, val)) {
+    Object[] attrs = env.getArgAttributes();
+    Object attr = (attrs==null)? null: attrs[2];
+    
+    if (!setValue(env, fi, fobjRef, val, attr)) {
       env.throwException("java.lang.IllegalArgumentException",  
                          "Can not set " + fi.getType() + " field " + fi.getFullName() + " to " + ((MJIEnv.NULL != val) ? env.getClassInfo(val).getName() + " object " : "null"));
     }
   }
 
-  private static boolean setValue(MJIEnv env, FieldInfo fi, int obj, int value) {
+  private static boolean setValue(MJIEnv env, FieldInfo fi, int obj, int value, Object attr) {
     ClassInfo fieldClassInfo = fi.getClassInfo();
     
     String className = fieldClassInfo.getName();
@@ -457,6 +460,7 @@ public class JPF_java_lang_reflect_Field {
         }
 
         ElementInfo ei = fi.isStatic() ? fi.getClassInfo().getStaticElementInfo() : env.getElementInfo(obj);
+        ei.setFieldAttr(fi, attr);
 
         if ("boolean".equals(fieldType)){
           boolean val = env.getBooleanField(value, fieldName);
@@ -503,6 +507,10 @@ public class JPF_java_lang_reflect_Field {
             return false;
           }
         }
+
+        ElementInfo ei = fi.isStatic() ? fi.getClassInfo().getStaticElementInfo() : env.getElementInfo(obj);
+        ei.setFieldAttr(fi, attr);
+
         if (fi.isStatic()) {
           env.setStaticReferenceField(className, fi.getName(), value);
         } else {
