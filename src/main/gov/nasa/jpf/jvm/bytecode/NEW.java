@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.AllocInstruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.KernelState;
@@ -31,7 +32,7 @@ import gov.nasa.jpf.jvm.Types;
  * Create new object
  * ... => ..., objectref
  */
-public class NEW extends Instruction {
+public class NEW extends Instruction implements AllocInstruction {
   protected String cname;
   protected int newObjRef = -1;
 

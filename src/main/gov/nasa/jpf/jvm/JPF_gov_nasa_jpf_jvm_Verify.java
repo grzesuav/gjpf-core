@@ -85,7 +85,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
   }
 
-  public static final int getCounter__I__I (MJIEnv env, int clsObjRef, int counterId) {
+  public static int getCounter__I__I (MJIEnv env, int clsObjRef, int counterId) {
     if ((counter == null) || (counterId < 0) || (counterId >= counter.length)) {
       return 0;
     }
@@ -103,14 +103,14 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }    
   }
   
-  public static final void resetCounter__I__V (MJIEnv env, int clsObjRef, int counterId) {
+  public static void resetCounter__I__V (MJIEnv env, int clsObjRef, int counterId) {
     if ((counter == null) || (counterId < 0) || (counterId >= counter.length)) {
       return;
     }
     counter[counterId] = 0;
   }
 
-  public static final void setCounter__II__V (MJIEnv env, int clsObjRef, int counterId, int val) {
+  public static void setCounter__II__V (MJIEnv env, int clsObjRef, int counterId, int val) {
     if (counterId < 0){
       return;
     }
@@ -119,7 +119,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     counter[counterId] = val;
   }
   
-  public static final int incrementCounter__I__I (MJIEnv env, int clsObjRef, int counterId) {
+  public static int incrementCounter__I__I (MJIEnv env, int clsObjRef, int counterId) {
     if (counterId < 0) {
       return 0;
     }
@@ -152,7 +152,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     return bitSets[id].get(bitNum);
   }
 
-  public static final long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
+  public static long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
     return System.currentTimeMillis();
   }
 
@@ -281,7 +281,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     return ((ChoiceGenerator<T>)cg).getNextChoice();
   }
 
-  public static final boolean getBoolean____Z (MJIEnv env, int clsObjRef) {
+  public static boolean getBoolean____Z (MJIEnv env, int clsObjRef) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
     ChoiceGenerator<?> cg;
@@ -298,7 +298,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
   }
 
-  public static final boolean getBoolean__Z__Z (MJIEnv env, int clsObjRef, boolean falseFirst) {
+  public static boolean getBoolean__Z__Z (MJIEnv env, int clsObjRef, boolean falseFirst) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
     ChoiceGenerator<?> cg;
@@ -799,7 +799,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   /**
    *  deprecated, use getBoolean()
    */
-  public static final boolean randomBool (MJIEnv env, int clsObjRef) {
+  public static boolean randomBool (MJIEnv env, int clsObjRef) {
     //SystemState ss = env.getSystemState();
     //return (ss.random(2) != 0);
 
@@ -811,7 +811,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   /**
    * deprecated, use getInt
    */
-  public static final int random__I__I (MJIEnv env, int clsObjRef, int x) {
+  public static int random__I__I (MJIEnv env, int clsObjRef, int x) {
    return getInt__II__I( env, clsObjRef, 0, x);
   }
 

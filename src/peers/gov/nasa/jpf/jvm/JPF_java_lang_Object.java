@@ -138,7 +138,7 @@ public class JPF_java_lang_Object {
     wait0(env,objref,timeout);
   }
 
-  public static final void notify____V (MJIEnv env, int objref) {
+  public static void notify____V (MJIEnv env, int objref) {
     // IllegalMonitorStateExceptions are checked in the MJIEnv methods
 
     ThreadInfo ti = env.getThreadInfo();

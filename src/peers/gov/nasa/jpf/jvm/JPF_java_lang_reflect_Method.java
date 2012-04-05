@@ -60,7 +60,9 @@ public class JPF_java_lang_reflect_Method {
     return eidx;
   }
   
-  public static MethodInfo getMethodInfo (MJIEnv env, int objRef){
+  // this is NOT an MJI method, but it is used outside this package, so
+  // we have to add 'final'
+  public static final MethodInfo getMethodInfo (MJIEnv env, int objRef){
     return registry.getMethodInfo(env,objRef, "regIdx");
   }
   

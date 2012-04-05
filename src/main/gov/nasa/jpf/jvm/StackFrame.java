@@ -400,6 +400,10 @@ public class StackFrame implements Cloneable {
     return frameAttr != null;
   }
   
+  public boolean hasFrameAttr (Class<?> attrType){
+    return ObjectList.containsType(frameAttr, attrType);
+  }
+  
   //--- the frame attr accessors 
   
  /**

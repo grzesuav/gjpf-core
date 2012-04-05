@@ -203,9 +203,16 @@ public class NativePeer {
     }
   }
 
+  
+  static final int MJI_MODIFIERS = Modifier.PUBLIC | Modifier.STATIC;
+  static final int MJI_TEST = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
+  
   private static boolean isMJICandidate (Method mth) {
     // only the public static ones are supposed to be native method impls
-    if ((mth.getModifiers() & (Modifier.PUBLIC | Modifier.STATIC)) != (Modifier.PUBLIC | Modifier.STATIC)) {
+    // if there is a public static method with MJIEnv argument that we DO NOT
+    // want to be considered, we have to add a 'final' modifier (which is pointless
+    // for statics but accepted by the compiler)
+    if ((mth.getModifiers() & MJI_TEST) != MJI_MODIFIERS) {
       return false;
     }
 
