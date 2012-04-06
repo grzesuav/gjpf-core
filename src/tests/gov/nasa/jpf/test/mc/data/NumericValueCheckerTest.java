@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.test.mc.data;
 
-import gov.nasa.jpf.util.ClassSpec;
+import gov.nasa.jpf.util.TypeRef;
 import gov.nasa.jpf.util.test.TestJPF;
 
 import org.junit.Test;
@@ -38,7 +38,7 @@ public class NumericValueCheckerTest extends TestJPF {
 
   @Test
   public void testField(){
-    if (verifyPropertyViolation(new ClassSpec("gov.nasa.jpf.listener.NumericValueChecker"),
+    if (verifyPropertyViolation(new TypeRef("gov.nasa.jpf.listener.NumericValueChecker"),
             "+listener=.listener.NumericValueChecker",
             "+range.fields=d",
             "+range.d.field=*.NumericValueCheckerTest$C1.d",
@@ -57,7 +57,7 @@ public class NumericValueCheckerTest extends TestJPF {
 
   @Test
   public void testVars(){
-    if (verifyPropertyViolation(new ClassSpec("gov.nasa.jpf.listener.NumericValueChecker"),
+    if (verifyPropertyViolation(new TypeRef("gov.nasa.jpf.listener.NumericValueChecker"),
             "+listener=.listener.NumericValueChecker",
             "+range.vars=x",
             "+range.x.var=*$C2.doSomething(int):x",

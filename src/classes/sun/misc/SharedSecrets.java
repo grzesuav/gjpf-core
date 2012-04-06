@@ -56,6 +56,7 @@ public class SharedSecrets {
   private static JavaNetAccess javaNetAccess;
   private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
   private static JavaNioAccess javaNioAccess;
+  private static JavaAWTAccess javaAWTAccess;
 
   // (required for EnumSet ops)
   public static JavaLangAccess getJavaLangAccess() {
@@ -136,4 +137,10 @@ public class SharedSecrets {
     return javaIOFileDescriptorAccess;
   }
 
+  public static void setJavaAWTAccess (JavaAWTAccess jaa){
+    javaAWTAccess = jaa;
+  }
+  public static JavaAWTAccess getJavaAWTAccess(){
+    return javaAWTAccess;
+  }
 }

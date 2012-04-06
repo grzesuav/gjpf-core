@@ -749,6 +749,25 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     return lineNumbers;
   }
 
+  public boolean containsLineNumber (int n){
+    if (lineNumbers != null){
+      return (lineNumbers[0] <= n) && (lineNumbers[lineNumbers.length-1] <= n);
+    }
+    
+    return false;
+  }
+  
+  public boolean intersectsLineNumbers( int first, int last){
+    if (lineNumbers != null){
+      if ((last < lineNumbers[0]) || (first > lineNumbers[lineNumbers.length-1])){
+        return false;
+      }
+      return true;
+    }
+    
+    return false;
+  }
+  
   public boolean isMJI () {
     return false;
   }

@@ -21,6 +21,7 @@ package gov.nasa.jpf.test.mc.basic;
 
 import org.junit.Test;
 
+import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
 
 public class OOMEInjectorTest extends TestJPF {
@@ -52,5 +53,29 @@ public class OOMEInjectorTest extends TestJPF {
       int res = foo(42);  // this should cause an OOME
       System.out.println("should never get here!");
     }    
+  }
+  
+  static class DontAllocateMe {}
+  static class X extends DontAllocateMe {}
+  
+  @Test
+  public void testType(){
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+    }
+    
+    if (verifyNoPropertyViolation("+listener=.listener.OOMEInjector",
+        "+oome.types=*DontAllocateMe+")){
+      try {
+        X x = new X(); // that should trip an OOME
+      } catch (OutOfMemoryError oome){
+        oome.printStackTrace();
+        Verify.incrementCounter(0);
+      }
+    }
+    
+    if (!isJPFRun()){
+      assertEquals(1, Verify.getCounter(0));
+    }
   }
 }

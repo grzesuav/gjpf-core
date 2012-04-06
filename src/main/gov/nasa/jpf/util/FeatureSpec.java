@@ -60,6 +60,11 @@ public abstract class FeatureSpec {
     return s;
   }
 
+  protected static String parseType (String s, ParseData d){
+    d.typeSpec = s;
+    return s;
+  }
+  
   protected static String parseTypeAndName (String s, ParseData d){
     int i = s.lastIndexOf('.'); // beginning of name
     if (i >= 0){
@@ -97,7 +102,10 @@ public abstract class FeatureSpec {
     }
 
     clsSpec = new StringMatcher(cls);
-    nameSpec = new StringMatcher(name);
+    
+    if (name != null){
+      nameSpec = new StringMatcher(name);
+    }
   }
 
   public String getSource() {

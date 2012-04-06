@@ -166,7 +166,7 @@
 
           <!-- these are required if we run TestJPF derived test classes -->
           <include name="gov/nasa/jpf/JPFShell.class"/>
-          <include name="gov/nasa/jpf/util/ClassSpec.class"/>
+          <include name="gov/nasa/jpf/util/TypeRef.class"/>
           <include name="gov/nasa/jpf/util/test/TestJPF.class"/>
           <include name="gov/nasa/jpf/util/test/TestJPFHelper.class"/>
       </fileset>

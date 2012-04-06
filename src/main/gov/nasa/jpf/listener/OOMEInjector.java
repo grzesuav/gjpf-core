@@ -28,19 +28,21 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.AllocInstruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.NEW;
 import gov.nasa.jpf.util.LocationSpec;
+import gov.nasa.jpf.util.TypeSpec;
 
 /**
  * simulator for OutOfMemoryErrors. This can be configured to either
- * fire a specific location (file:line), at a specified number of live objects,
- * or a specified heap size threshold. For locations, we support transitive
- * scopes, i.e. every allocation that happens from within a certain range
- * of instructions of an active method execution
+ * fire for a specified location range (file:line) or specified types.
+ * Ranges are transitive, i.e. everything called from within it should also
+ * trigger.  
  * 
  * Since our only action is to inject OutOfMemoryErrors, we don't need
  * to implement a Property interface
@@ -51,15 +53,46 @@ public class OOMEInjector extends ListenerAdapter {
   static OOME throwOOME = new OOME(); // we can reuse the same object as an attribute
   
   List<LocationSpec> locations = new ArrayList<LocationSpec>();
+  List<TypeSpec> types = new ArrayList<TypeSpec>();
   
   public OOMEInjector (Config config, JPF jpf){
     String[] spec = config.getStringArray("oome.locations");
     if (spec != null){
       for (String s : spec){
         LocationSpec locSpec = LocationSpec.createLocationSpec(s);
-        locations.add(locSpec);
+        if (locSpec != null){
+          locations.add(locSpec);
+        }
       }
     }
+    
+    spec = config.getStringArray("oome.types");
+    if (spec != null){
+      for (String s : spec){
+        TypeSpec typeSpec = TypeSpec.createTypeSpec(s);
+        if (typeSpec != null){
+          types.add(typeSpec);
+        }
+      }      
+    }
+  }
+  
+  protected void markMatchingInstructions (MethodInfo mi, LocationSpec locSpec){
+    int first = locSpec.getFromLine();
+    int[] lineNumbers = mi.getLineNumbers();
+              
+    if (lineNumbers != null && first >= lineNumbers[0]){
+      int last = locSpec.getToLine();
+      for (int i=0; i<lineNumbers.length; i++){
+        int l = lineNumbers[i];
+        if (last < lineNumbers[i]){
+          return;
+        } else {
+          Instruction insn = mi.getInstruction(i);
+          insn.addAttr(throwOOME);                
+        }
+      }
+    }    
   }
   
   @Override
@@ -67,31 +100,26 @@ public class OOMEInjector extends ListenerAdapter {
     ClassInfo ci = vm.getLastClassInfo();
     String fname = ci.getSourceFileName();
     
+    for (TypeSpec typeSpec : types){
+      if (typeSpec.matches(ci)){
+        ci.addAttr(throwOOME);
+      }
+    }
+
+    // if we have a matching typespec this could be skipped, but maybe
+    // we also want to cover statis methods of this class
     for (LocationSpec locSpec : locations){
       if (locSpec.matchesFile(fname)){
         for (MethodInfo mi : ci.getDeclaredMethodInfos()){
-          int[] lineNumbers = mi.getLineNumbers();
-          for (int i=0; i<lineNumbers.length; i++){
-            if (locSpec.includesLine(lineNumbers[i])){
-              Instruction insn = mi.getInstruction(i);
-              insn.addAttr(throwOOME);
-            }
-          }
+          markMatchingInstructions(mi, locSpec);
         }
       }
     }
   }
   
-  protected boolean checkOOMCondition (StackFrame frame, Instruction insn){
-    if (insn.hasAttr(OOME.class)){
-      return true;
-    }
-    
-    if (frame.hasFrameAttr(OOME.class)){
-      return true;
-    }
-    
-    return false;
+  protected boolean checkCallerForOOM (StackFrame frame, Instruction insn){
+    // these refer to the calling code
+    return (insn.hasAttr(OOME.class) || frame.hasFrameAttr(OOME.class));
   }
   
   @Override
@@ -99,7 +127,7 @@ public class OOMEInjector extends ListenerAdapter {
     Instruction insn = vm.getLastInstruction();
     if (insn instanceof AllocInstruction){
       ThreadInfo ti = vm.getLastThreadInfo();
-      if (checkOOMCondition(ti.getTopFrame(), insn)){
+      if (checkCallerForOOM(ti.getTopFrame(), insn)){
         // we could use Heap.setOutOfMemory(true), but then we would have to reset
         // if the app handles it so that it doesn't throw outside the specified locations.
         // This would require more effort than throwing explicitly
@@ -118,8 +146,21 @@ public class OOMEInjector extends ListenerAdapter {
       StackFrame frame = ti.getTopFrame();
       
       if (frame.getPC() != insn){ // means the call did succeed
-        if (checkOOMCondition(frame.getPrevious(), insn)){
-          frame.addFrameAttr(throwOOME);
+        if (checkCallerForOOM(frame.getPrevious(), insn)){
+          frame.addFrameAttr(throwOOME); // propagate caller OOME context
+        }
+      }
+      
+    } else if (insn instanceof NEW){
+      if (!types.isEmpty()){
+        int objRef = ((NEW) insn).getNewObjectRef();
+        if (objRef != MJIEnv.NULL) {
+          ClassInfo ci = vm.getClassInfo(objRef);
+          if (ci.hasAttr(OOME.class)) {
+            ThreadInfo ti = vm.getLastThreadInfo();
+            Instruction nextInsn = ti.createAndThrowException("java.lang.OutOfMemoryError");
+            ti.setNextPC(nextInsn);
+          }
         }
       }
     }

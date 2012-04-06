@@ -117,10 +117,6 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
     return this;
   }
 
-  protected Ref getRef () {
-    return new ObjRef(getObjectRef());
-  }
-
   public ElementInfo getEnclosingElementInfo(){
     for (FieldInfo fi : getClassInfo().getDeclaredInstanceFields()){
       if (fi.getName().startsWith("this$")){

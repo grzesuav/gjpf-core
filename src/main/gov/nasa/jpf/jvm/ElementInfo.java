@@ -2171,14 +2171,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     attributes &= ~ATTR_IS_MARKED;
   }
 
-  /**
-   * The various lock methods need access to a Ref object to do their work. The
-   * subclass should return an appropriate type. This is a simple factory
-   * method.
-   *
-   * @return the right kind of Ref object for the given ElementInfo
-   */
-  protected abstract Ref getRef();
 
   protected Fields cloneFields() {
     if ((attributes & ATTR_FIELDS_CHANGED) == 0) {

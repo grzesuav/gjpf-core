@@ -28,7 +28,7 @@ import gov.nasa.jpf.jvm.ExceptionInfo;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.NotDeadlockedProperty;
 import gov.nasa.jpf.tool.RunTest;
-import gov.nasa.jpf.util.ClassSpec;
+import gov.nasa.jpf.util.TypeRef;
 import gov.nasa.jpf.util.JPFSiteUtils;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Reflection;
@@ -840,7 +840,7 @@ public abstract class TestJPF implements JPFShell  {
 
     return jpf;
   }
-  protected boolean verifyJPFException (ClassSpec xClsSpec, String... args){
+  protected boolean verifyJPFException (TypeRef xClsSpec, String... args){
     if (runDirectly) {
       return true;
 
@@ -891,7 +891,7 @@ public abstract class TestJPF implements JPFShell  {
     fail("JPF failed to detect error: " + propertyCls.getName());
     return jpf;
   }
-  protected boolean verifyPropertyViolation (ClassSpec propertyClsSpec, String... args){
+  protected boolean verifyPropertyViolation (TypeRef propertyClsSpec, String... args){
     if (runDirectly) {
       return true;
 

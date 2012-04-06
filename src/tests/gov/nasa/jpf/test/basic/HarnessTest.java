@@ -1,7 +1,7 @@
 package gov.nasa.jpf.test.basic;
 
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.util.ClassSpec;
+import gov.nasa.jpf.util.TypeRef;
 import gov.nasa.jpf.util.test.TestJPF;
 
 import org.junit.Test;
@@ -44,7 +44,7 @@ public class HarnessTest extends TestJPF {
 
   @Test
   public void verifyRuntimeException() {
-    if (verifyPropertyViolation(new ClassSpec("gov.nasa.jpf.jvm.NoUncaughtExceptionsProperty"))) {
+    if (verifyPropertyViolation(new TypeRef("gov.nasa.jpf.jvm.NoUncaughtExceptionsProperty"))) {
       System.out.println("** this is verifyRuntimeException() - JPF should find an unhandled exception");
 
       throw new RuntimeException("Bang!");
@@ -53,7 +53,7 @@ public class HarnessTest extends TestJPF {
 
   @Test
   public void verifyJPFExcept() {
-    if (verifyJPFException(new ClassSpec("gov.nasa.jpf.JPFConfigException"), "+vm.class=InvalidVMClass", "+pass_exceptions")) {
+    if (verifyJPFException(new TypeRef("gov.nasa.jpf.JPFConfigException"), "+vm.class=InvalidVMClass", "+pass_exceptions")) {
       fail("** JPF should not run");
     }
   }

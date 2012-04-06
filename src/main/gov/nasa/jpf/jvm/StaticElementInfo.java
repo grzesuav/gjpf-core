@@ -254,10 +254,6 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     heap.markStaticRoot(classObjectRef);
   }
       
-  protected Ref getRef () {
-    return new ClassRef(getObjectRef());
-  }
-
   public int getClassObjectRef () {
     return classObjectRef;
   }

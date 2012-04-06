@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.test.vm.basic;
 
-import gov.nasa.jpf.util.ClassSpec;
+import gov.nasa.jpf.util.TypeRef;
 import gov.nasa.jpf.util.test.TestJPF;
 
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public class OutOfMemoryErrorTest extends TestJPF
       ArrayList<byte[]> hold;
       byte hog[];
       
-      if (verifyPropertyViolation(new ClassSpec("gov.nasa.jpf.jvm.NoOutOfMemoryErrorProperty")))
+      if (verifyPropertyViolation(new TypeRef("gov.nasa.jpf.jvm.NoOutOfMemoryErrorProperty")))
       {
          hold = new ArrayList<byte[]>();
          
