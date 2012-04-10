@@ -524,4 +524,35 @@ public class JPF_java_lang_reflect_Field {
       return false;
     }
   }
+
+  public static boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int fobjRef){
+    int fidx = env.getIntField(fobjRef, "regIdx");
+    if (fidx >= 0 && fidx < nRegistered){
+      FieldInfo fi1 = getFieldInfo(env, objRef);
+      FieldInfo fi2 = getFieldInfo(env, fobjRef);
+      return ((fi1.getClassInfo() == fi2.getClassInfo()) && fi1.getName().equals(fi2.getName()) && fi1.getType().equals(fi2.getType()));
+    }
+    return false;
+  }
+
+  public static int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){
+    StringBuilder sb = new StringBuilder();
+    FieldInfo fi = getFieldInfo(env, objRef);
+    sb.append(Modifier.toString(fi.getModifiers()));
+    sb.append(' ');
+    sb.append(fi.getType());
+    sb.append(' ');
+    sb.append(fi.getFullName());
+    int sref = env.newString(sb.toString());
+    return sref;
+  }
+
+  public static int hashCode____I (MJIEnv env, int objRef){
+    FieldInfo fi = getFieldInfo(env, objRef);
+    return fi.getClassInfo().getName().hashCode() ^ fi.getName().hashCode();
+  }
+
+  public static int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int objRef){
+    return getAnnotations_____3Ljava_lang_annotation_Annotation_2(env, objRef);
+  }
 }

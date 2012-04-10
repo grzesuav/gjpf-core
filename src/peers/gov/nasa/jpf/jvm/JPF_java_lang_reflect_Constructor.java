@@ -177,4 +177,35 @@ public class JPF_java_lang_reflect_Constructor {
     int sref = env.newString(sb.toString());
     return sref;
   }
+
+  public static boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int mthRef){
+    ElementInfo ei = env.getElementInfo(mthRef);
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(JPF_java_lang_Class.CONSTRUCTOR_CLASSNAME);
+
+    if (ei.getClassInfo() == ci){
+      MethodInfo mi1 = getMethodInfo(env, objRef);
+      MethodInfo mi2 = getMethodInfo(env, mthRef);
+      if (mi1.getClassInfo() == mi2.getClassInfo()){
+        if (mi1.getName().equals(mi2.getName())){
+          if (mi1.getReturnType().equals(mi2.getReturnType())){
+            byte[] params1 = mi1.getArgumentTypes();
+            byte[] params2 = mi2.getArgumentTypes();
+            if (params1.length == params2.length){
+              for (int i = 0; i < params1.length; i++){
+                if (params1[i] != params2[i])
+                  return false;
+              }
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  public static int hashCode____I (MJIEnv env, int objRef){
+    MethodInfo ctor = getMethodInfo(env, objRef);
+    return ctor.getClassName().hashCode();
+  }
 }

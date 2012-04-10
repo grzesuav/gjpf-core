@@ -722,4 +722,118 @@ public class JPF_java_lang_Class {
     
     return aref;
   }
+
+  private static String getCanonicalName (ClassInfo ci){
+    if (ci.isArray()){
+      String canonicalName = getCanonicalName(ci.getComponentClassInfo());
+      if (canonicalName != null){
+        return canonicalName + "[]";
+      } else{
+        return null;
+      }
+    }
+    if (isLocalOrAnonymousClass(ci)) {
+      return null;
+    }
+    if (ci.getEnclosingClassInfo() == null){
+      return ci.getName();
+    } else{
+      String enclosingName = getCanonicalName(ci.getEnclosingClassInfo());
+      if (enclosingName == null){ return null; }
+      return enclosingName + "." + ci.getSimpleName();
+    }
+  }
+
+  public static int getCanonicalName____Ljava_lang_String_2 (MJIEnv env, int clsRef){
+    ClassInfo ci = env.getReferredClassInfo(clsRef);
+    return env.newString(getCanonicalName(ci));
+  }
+
+  public static int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj){
+    ClassInfo ci = env.getReferredClassInfo(robj);
+    ArrayList<AnnotationInfo> declared = new ArrayList<AnnotationInfo>();
+    for (AnnotationInfo a : ci.getAnnotations()){
+      if (!a.inherited){
+        declared.add(a);
+      }
+    }
+
+    AnnotationInfo[] ai = declared.toArray(new AnnotationInfo[declared.size()]);
+
+    try{
+      return env.newAnnotationProxies(ai);
+    } catch (ClinitRequired x){
+      env.handleClinitRequest(x.getRequiredClassInfo());
+      return MJIEnv.NULL;
+    }
+  }
+
+  public static int getEnclosingConstructor____Ljava_lang_reflect_Constructor_2 (MJIEnv env, int robj){
+    ClassInfo mci = getInitializedClassInfo(env, CONSTRUCTOR_CLASSNAME);
+    if (mci == null){
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    ClassInfo ci = env.getReferredClassInfo(robj);
+    MethodInfo enclosingMethod = ci.getEnclosingMethodInfo();
+
+    if ((enclosingMethod != null) && enclosingMethod.isCtor()){ 
+      return createMethodObject(env, mci, enclosingMethod); 
+    }
+    return MJIEnv.NULL;
+  }
+
+  public static int getEnclosingMethod____Ljava_lang_reflect_Method_2 (MJIEnv env, int robj){
+    ClassInfo mci = getInitializedClassInfo(env, METHOD_CLASSNAME);
+    if (mci == null){
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    ClassInfo ci = env.getReferredClassInfo(robj);
+    MethodInfo enclosingMethod = ci.getEnclosingMethodInfo();
+
+    if ((enclosingMethod != null) && !enclosingMethod.isCtor()){ 
+      return createMethodObject(env, mci, enclosingMethod); 
+    }
+    return MJIEnv.NULL;
+  }
+
+  public static boolean isAnonymousClass____Z (MJIEnv env, int robj){
+    ClassInfo ci = env.getReferredClassInfo(robj);
+    String cname = null;
+    if (ci.getName().contains("$")){
+      cname = ci.getName().substring(ci.getName().lastIndexOf('$') + 1);
+    }
+    return (cname == null) ? false : cname.matches("\\d+?");
+  }
+
+  public static boolean isEnum____Z (MJIEnv env, int robj){
+    ClassInfo ci = env.getReferredClassInfo(robj);
+    return ci.isEnum();
+  }
+
+  // Similar to getEnclosingClass() except it returns null for the case of
+  // anonymous class.
+  public static int getDeclaringClass____Ljava_lang_Class_2 (MJIEnv env, int clsRef){
+    ClassInfo ci = env.getReferredClassInfo(clsRef);
+    if (isLocalOrAnonymousClass(ci)){
+      return MJIEnv.NULL;
+    } else{
+      return getEnclosingClass(env, clsRef);
+    }
+  }
+
+  public static boolean isLocalClass____Z (MJIEnv env, int robj){
+    ClassInfo ci = env.getReferredClassInfo(robj);
+    return isLocalOrAnonymousClass(ci) && !isAnonymousClass____Z(env, robj);
+  }
+
+  private static boolean isLocalOrAnonymousClass (ClassInfo ci){
+    return (ci.getEnclosingMethodInfo() != null);
+  }
+
+  public static boolean isMemberClass____Z (MJIEnv env, int robj){
+    ClassInfo ci = env.getReferredClassInfo(robj);
+    return (ci.getEnclosingClassInfo() != null) && !isLocalOrAnonymousClass(ci);
+  }
 }
