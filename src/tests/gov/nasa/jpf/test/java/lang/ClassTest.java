@@ -348,10 +348,10 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
   
   @Retention(RetentionPolicy.RUNTIME)
   @Inherited
-  public @interface AnnotationTest {
+  public @interface TestAnnotation {
   }
 
-  @AnnotationTest()
+  @TestAnnotation()
   public static class ParentAnnotated<E> {
   }
 
@@ -362,7 +362,7 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
     item;
   }
 
-  @AnnotationTest()
+  @TestAnnotation()
   public static class TestEnclosedClass {
     public Object foo;
 

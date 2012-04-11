@@ -42,14 +42,14 @@ public class FieldTest extends TestJPF {
     }
   }
 
-  enum enumTest{
+  enum TestEnum{
     f1, f2, f3
   }
 
   @Test
   public void isEnumConstantTest (){
     if (verifyNoPropertyViolation()){
-      for (Field f : enumTest.class.getFields())
+      for (Field f : TestEnum.class.getFields())
         assertTrue(f.isEnumConstant());
     }
   }
