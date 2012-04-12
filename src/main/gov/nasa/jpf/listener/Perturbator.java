@@ -31,18 +31,20 @@ import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
+import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
 import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
+import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
 import gov.nasa.jpf.perturb.OperandPerturbator;
 import gov.nasa.jpf.util.FieldSpec;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.util.SourceRef;
-
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -75,7 +77,8 @@ import java.util.List;
  *   # method parameter perturbation example
  *   perturb.params = foo, ...
  *   perturb.foo.method = x.y.MyClass.send(int, float, boolean)
- *   perturb.foo.class = .perturb.dataAbstractor
+ *   perturb.foo.location = MyClass.java:42
+ *   perturb.class = .perturb.dataAbstractor
  *   
  */
 
@@ -230,7 +233,7 @@ public class Perturbator extends ListenerAdapter {
       MethodSpec mthSpec = MethodSpec.createMethodSpec(ms);
       if (mthSpec != null) {
         Object[] args = {conf, keyPrefix};
-        OperandPerturbator perturbator = conf.getInstance(keyPrefix + ".class", OperandPerturbator.class, argTypes, args);
+        OperandPerturbator perturbator = conf.getInstance("perturb.class", OperandPerturbator.class, argTypes, args);
         if (perturbator != null) {
           String loc = conf.getString(keyPrefix + ".location");
           ParamsPerturbation p = new ParamsPerturbation(mthSpec, perturbator, loc);
