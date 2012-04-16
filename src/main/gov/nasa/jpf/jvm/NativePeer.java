@@ -84,11 +84,7 @@ public class NativePeer {
     return packages;
   }
 
-  NativePeer () {
-    // just here for our derived classes
-  }
-
-  NativePeer (Class<?> peerClass, ClassInfo ci) {
+  public NativePeer (Class<?> peerClass, ClassInfo ci) {
     initialize(peerClass, ci, true);
   }
 

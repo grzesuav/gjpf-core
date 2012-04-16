@@ -45,8 +45,8 @@ public class NativeMethodInfo extends MethodInfo {
     }
   }
 
-  Method mth; // the native method to execute in lieu
-  NativePeer peer;
+  protected Method mth; // the native method to execute in lieu
+  protected NativePeer peer;
 
   public NativeMethodInfo (MethodInfo mi, Method mth, NativePeer peer){
     super(mi.globalId);
@@ -136,7 +136,7 @@ public class NativeMethodInfo extends MethodInfo {
 
     env.setCallEnvironment(this);
 
-    if (mth == null) {
+    if (isUnsatisfiedLinkError(env)) {
       return ti.createAndThrowException("java.lang.UnsatisfiedLinkError",
                                         "cannot find native " + ci.getName() + '.' + getName());
     }
@@ -199,6 +199,10 @@ public class NativeMethodInfo extends MethodInfo {
       throw new JPFNativePeerException("exception in native method "
           + ci.getName() + '.' + getName(), itx.getTargetException());
     }
+  }
+
+  protected boolean isUnsatisfiedLinkError(MJIEnv env){
+    return(mth == null);
   }
 
   /**
