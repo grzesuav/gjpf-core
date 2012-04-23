@@ -271,7 +271,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
   private int newString(String str, ThreadInfo ti, boolean isIntern) {
     if (str != null) {      
       int length = str.length();
-      int index = newObject(ClassInfo.stringClassInfo, ti);
+      int index = newObject(ClassInfo.getResolvedClassInfo("java.lang.String"), ti);
       int vref = newArray("C", length, ti);
       
       ElementInfo e = get(index);

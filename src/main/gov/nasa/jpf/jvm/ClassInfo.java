@@ -113,20 +113,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   protected static FieldsFactory fieldsFactory;
 
-
-  /*
-   * some distinguished ClassInfos we keep around for efficiency reasons
-   */
-  static final int NUMBER_OF_CACHED_CLASSES = 7;
-  static int remainingSysCi; // we keep track how many we still have to initialize
-  static ClassInfo objectClassInfo;
-  static ClassInfo classClassInfo;
-  static ClassInfo stringClassInfo;
-  static ClassInfo weakRefClassInfo;
-  static ClassInfo refClassInfo;
-  static ClassInfo enumClassInfo;
-  static ClassInfo threadClassInfo;
-
   
   static FieldInfo[] emptyFields = new FieldInfo[0];
 
@@ -157,6 +143,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   // various class attributes
   protected boolean      isClass = true;
   protected boolean      isWeakReference = false;
+  protected boolean      isObjectClassInfo = false;
+  protected boolean      isStringClassInfo = false;
+  protected boolean      isRefClassInfo = false;
   protected boolean      isArray = false;
   protected boolean      isEnum = false;
   protected boolean      isReferenceArray = false;
@@ -299,11 +288,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public static boolean isObjectClassInfo (ClassInfo ci){
-    return ci == objectClassInfo;
+    return ci.isObjectClassInfo();
   }
 
   public static boolean isStringClassInfo (ClassInfo ci){
-    return ci == stringClassInfo;
+    return ci.isStringClassInfo();
   }
 
   class Initializer extends ClassFileReaderAdapter {
@@ -815,9 +804,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       sourceFileName = computeSourceFileName();
     }
 
-    // we need to set the cached ci's before checking WeakReferences and Enums
-    updateCachedClassInfos(this);
-
+    isStringClassInfo = isStringClassInfo0();
+    isObjectClassInfo = isObjectClassInfo0();
+    isRefClassInfo = isRefClassInfo0();
     isWeakReference = isWeakReference0();
     finalizer = getFinalizer0();
     isAbstract = (modifiers & Modifier.ABSTRACT) != 0;
@@ -876,7 +865,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     sFields = emptyFields;
 
     if (isArray) {
-      superClass = objectClassInfo;
+      superClass = getResolvedClassInfo("java.lang.Object");
       interfaceNames = loadArrayInterfaces();
       methods = loadArrayMethods();
     } else {
@@ -966,36 +955,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   protected String computeSourceFileName(){
     return name.replace('.', '/') + ".java";
-  }
-  
-  protected static void updateCachedClassInfos (ClassInfo ci) {
-
-    if (remainingSysCi > 0){
-      String name = ci.name;
-      
-      if ((objectClassInfo == null) && name.equals("java.lang.Object")) {
-        objectClassInfo = ci;
-        remainingSysCi--;
-      } else if ((classClassInfo == null) && name.equals("java.lang.Class")) {
-        classClassInfo = ci;
-        remainingSysCi--;
-      } else if ((stringClassInfo == null) && name.equals("java.lang.String")) {
-        stringClassInfo = ci;
-        remainingSysCi--;
-      } else if ((weakRefClassInfo == null) && name.equals("java.lang.ref.WeakReference")) {
-        weakRefClassInfo = ci;
-        remainingSysCi--;
-      } else if ((refClassInfo == null) && name.equals("java.lang.ref.Reference")) {
-        refClassInfo = ci;
-        remainingSysCi--;
-      } else if ((enumClassInfo == null) && name.equals("java.lang.Enum")) {
-        enumClassInfo = ci;
-        remainingSysCi--;
-      } else if ((threadClassInfo == null) && name.equals("java.lang.Thread")) {
-        threadClassInfo = ci;
-        remainingSysCi--;
-      }
-    }
   }
 
 
@@ -1137,11 +1096,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public boolean isObjectClassInfo() {
-    return this == objectClassInfo;
+    return isObjectClassInfo;
   }
 
   public boolean isStringClassInfo() {
-    return this == stringClassInfo;
+    return isStringClassInfo;
   }
 
   public static ClassInfo getClassInfo(int uniqueId) {
@@ -1798,14 +1757,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * note this only returns true is this is really the java.lang.ref.Reference classInfo
    */
   public boolean isReferenceClassInfo () {
-    return (this == refClassInfo);
+    return isRefClassInfo;
   }
 
   /**
    * whether this refers to a primitive type.
    */
   public boolean isPrimitive() {
-    return superClass == null && this != objectClassInfo;
+    return superClass == null && !isObjectClassInfo();
   }
 
 
@@ -1892,14 +1851,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   public static void reset () {
     loadedClasses.clear();
-
-    remainingSysCi = NUMBER_OF_CACHED_CLASSES;
-    classClassInfo = null;
-    objectClassInfo = null;
-    stringClassInfo = null;
-    weakRefClassInfo = null;
-    refClassInfo = null;
-    enumClassInfo = null;
   }
 
   public static int getNumberOfLoadedClasses() {
@@ -2354,7 +2305,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   ElementInfo createClassObject (ThreadInfo ti){
     Heap heap = JVM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
-    int clsObjRef = heap.newObject(classClassInfo, ti);
+    int clsObjRef = heap.newObject(getResolvedClassInfo("java.lang.Class"), ti);
     ElementInfo ei = heap.get(clsObjRef);
 
     int clsNameRef = heap.newInternString(name, ti);
@@ -2535,7 +2486,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   protected ClassInfo loadSuperClass (String superName) {
-    if (this == objectClassInfo) {
+    if (this.isObjectClassInfo()) {
       return null;
     } else {
 
@@ -2559,16 +2510,41 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     // we are only interested in non-empty method bodies, Object.finalize()
     // is a dummy
-    if ((mi != null) && (mi.getClassInfo() != objectClassInfo)) {
+    if ((mi != null) && (!mi.getClassInfo().isObjectClassInfo())) {
       return mi;
     }
 
     return null;
   }
 
+  private boolean isObjectClassInfo0 () {
+	if (name.equals("java.lang.Object")) {
+	  return true;
+	}
+	return false;
+  }
+
+  private boolean isStringClassInfo0 () {
+    if(name.equals("java.lang.String")) {
+      return true;
+    }
+    return false;
+  }
+
+  private boolean isRefClassInfo0 () {
+    if(name.equals("java.lang.ref.Reference")) {
+      return true;
+    }
+    return false;
+  }
+
   private boolean isWeakReference0 () {
-    for (ClassInfo ci = this; ci != objectClassInfo; ci = ci.superClass) {
-      if (ci == weakRefClassInfo) {
+	if(name.equals("java.lang.ref.WeakReference")) {
+      return true;
+	}
+
+    for (ClassInfo ci = this; !ci.isObjectClassInfo(); ci = ci.superClass) {
+      if (ci.isWeakReference()) {
         return true;
       }
     }
@@ -2577,8 +2553,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   private boolean isEnum0 () {
-    for (ClassInfo ci = this; ci != objectClassInfo; ci = ci.superClass) {
-      if (ci == enumClassInfo) {
+	if(name.equals("java.lang.Enum")) {
+      return true;
+	}
+
+    for (ClassInfo ci = this; !ci.isObjectClassInfo(); ci = ci.superClass) {
+      if (ci.isEnum()) {
         return true;
       }
     }
