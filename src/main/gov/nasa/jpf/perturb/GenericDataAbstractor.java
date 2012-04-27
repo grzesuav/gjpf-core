@@ -19,16 +19,26 @@
 
 package gov.nasa.jpf.perturb;
 
-import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.IntChoiceGenerator;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.Types;
-import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
-
+import java.math.*;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.Vector;
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.jvm.ArrayFields;
+import gov.nasa.jpf.jvm.LocalVarInfo;
+import gov.nasa.jpf.jvm.ReferenceArrayFields;
+import gov.nasa.jpf.jvm.ChoiceGenerator;
+import gov.nasa.jpf.jvm.Fields;
+import gov.nasa.jpf.jvm.IntChoiceGenerator;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MJIEnv;
+import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.StackFrame;
+import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.Types;
+import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
+import gov.nasa.jpf.JPFException;
 
 /**
  * This file implements a generic data abstraction module that can be used

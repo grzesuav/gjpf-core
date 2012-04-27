@@ -1021,19 +1021,34 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   }
 
   /**
-   * is this something that was read from a classfile
-   */
-  public boolean isSynthetic(){
-    // <2do> can we actually get synthetic methods from classfiles ?
-    // return ((modifiers & Modifier.SYNTHETIC) != 0) || (ci == null);
-    return (ci == null);
-  }
-  
-  /**
    * Returns true if the method is synchronized.
    */
   public boolean isSynchronized () {
     return ((modifiers & Modifier.SYNCHRONIZED) != 0);
+  }
+
+  // <2do> these modifiers are still java.lang.reflect internal and not
+  // supported by public Modifier methods, but since we want to keep this 
+  // similar to the Method reflection and we get the modifiers from the
+  // classfile we implement this with explicit values
+  
+  public boolean isSynthetic(){
+    return ((modifiers & 0x00001000) != 0);    
+  } 
+  public boolean isVarargs(){
+    return ((modifiers & 0x00000080) != 0);        
+  }
+  
+  /*
+   * is this from a classfile or was it created by JPF (and hence should not
+   * be visible in stacktraces etc)
+   */
+  public boolean isJPFInternal(){
+    // note this has a different meaning than Method.isSynthetic(), which
+    // is defined in VM spec 4.7.8. What we mean here is that this MethodInfo
+    // is not associated with any class (such as direct call MethodInfos), but
+    // there might be more in the future
+    return (ci == null);
   }
   
   public String getUniqueName () {
