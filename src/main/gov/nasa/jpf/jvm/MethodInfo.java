@@ -1023,7 +1023,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   /**
    * is this something that was read from a classfile
    */
-  public boolean isSynthetic(){
+  public boolean isJPFInternal(){
     // <2do> can we actually get synthetic methods from classfiles ?
     // return ((modifiers & Modifier.SYNTHETIC) != 0) || (ci == null);
     return (ci == null);

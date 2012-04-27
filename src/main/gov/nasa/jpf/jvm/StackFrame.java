@@ -1067,7 +1067,7 @@ public class StackFrame implements Cloneable {
   public String getStackTraceInfo () {
     StringBuilder sb = new StringBuilder(128);
 
-    if(!mi.isSynthetic()) {
+    if(!mi.isJPFInternal()) {
     	sb.append(mi.getStackTraceName());
     	
     	if(pc != null) {
