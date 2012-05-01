@@ -136,9 +136,11 @@ public class GenericDataAbstractor implements OperandPerturbator {
     // choice vectors. The parameter name can be used to specialize
     // population to parameter names
     paramNames = new String[nParams];
-    String[] localVars = mi.getLocalVariableNames();
-    for (int i = 0; i < nParams; i++) {
-      paramNames[i] = isStatic? localVars[i] : localVars[i + 1];
+    if (nParams != 0) {
+    	String[] localVars = mi.getLocalVariableNames();
+    	for (int i = 0; i < nParams; i++) {
+    		paramNames[i] = isStatic? localVars[i] : localVars[i + 1];
+    	}
     }
 
     // We build an array of choices, with each choice being an index into
