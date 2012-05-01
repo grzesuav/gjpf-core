@@ -39,7 +39,11 @@ package gov.nasa.jpf.test.java.lang;
 import gov.nasa.jpf.util.test.TestJPF;
 
 import java.io.Serializable;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 
 import org.junit.Test;
 
@@ -342,6 +346,23 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
     }
   }
   
+  @Retention(RetentionPolicy.RUNTIME)
+  @Inherited
+  public @interface TestAnnotation {
+  }
+
+  @TestAnnotation()
+  public static class ParentAnnotated<E> {
+  }
+
+  public static class ChildAnnotated<E> extends ParentAnnotated {
+  }
+
+  public enum TestEnum{
+    item;
+  }
+
+  @TestAnnotation()
   public static class TestEnclosedClass {
     public Object foo;
 
@@ -351,13 +372,158 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
       ;
       foo = new LocalClass();
     }
+
+    public static class MemberClass {
+    }
+
+    public Object getLocalClassObj (){
+
+      class LocalClass {
+      }
+      ;
+
+      return new LocalClass();
+    }
+
+    public Object getAnonymousClassObj (){
+      return new Object() {
+      };
+    }
   }
-  
+
   @Test
   public void localClassEnclosingClassTest (){
     if (verifyNoPropertyViolation()){
       TestEnclosedClass testObj = new ClassTest.TestEnclosedClass();
       assertEquals(testObj.foo.getClass().getEnclosingClass(), TestEnclosedClass.class);
+    }
+  }
+
+  @Test
+  public void getCanonicalNameTest (){
+    if (verifyNoPropertyViolation()){
+      assertEquals(ArrayList.class.getCanonicalName(), "java.util.ArrayList");
+      assertEquals(Class.class.getCanonicalName(), "java.lang.Class");
+      assertEquals(String.class.getCanonicalName(), "java.lang.String");
+      assertEquals((new Object[0]).getClass().getCanonicalName(), "java.lang.Object[]");
+    }
+  }
+
+  @Test
+  public void getDeclaredAnnotationsTest (){
+    if (verifyNoPropertyViolation()){
+      assertTrue(ClassTest.ParentAnnotated.class.getDeclaredAnnotations().length == 1);
+      assertTrue(ChildAnnotated.class.getDeclaredAnnotations().length == 0);
+      assertTrue(ClassTest.ParentAnnotated.class.getAnnotations().length == 1);
+      assertTrue(ChildAnnotated.class.getAnnotations().length == 1);
+    }
+  }
+
+  @Test
+  public void getEnclosingConstructor () throws SecurityException, NoSuchMethodException{
+    if (verifyNoPropertyViolation()){
+      Class cls = (new ClassTest.TestEnclosedClass()).foo.getClass();
+      assertTrue(cls.getEnclosingConstructor().getDeclaringClass() == ClassTest.TestEnclosedClass.class);
+      assertEquals(cls.getEnclosingConstructor().getName(), "<init>");
+      assertNull(cls.getEnclosingMethod());
+    }
+  }
+
+  @Test
+  public void getEnclosingMethod () throws SecurityException, NoSuchMethodException{
+    if (verifyNoPropertyViolation()){
+      Class cls = (new ClassTest.TestEnclosedClass()).getLocalClassObj().getClass();
+      assertTrue(cls.getEnclosingMethod().getDeclaringClass() == ClassTest.TestEnclosedClass.class);
+      assertNull(cls.getEnclosingConstructor());
+      assertEquals(cls.getEnclosingMethod().getName(), "getLocalClassObj");
+      Method m1 = ClassTest.TestEnclosedClass.class.getMethod("getLocalClassObj", new Class[0]);
+      Method m2 = cls.getEnclosingMethod();
+      assertEquals(m1, m2);
+      assertTrue(cls.getEnclosingMethod().equals(ClassTest.TestEnclosedClass.class.getMethod("getLocalClassObj", new Class[0])));
+    }
+  }
+
+  @Test
+  public void isAnonymousClassTest (){
+    if (verifyNoPropertyViolation()){
+      Class cls = (new ClassTest.TestEnclosedClass()).getAnonymousClassObj().getClass();
+      assertTrue(cls.isAnonymousClass());
+      assertFalse(Class.class.isAnonymousClass());
+    }
+  }
+
+  @Test
+  public void isEnumTest (){
+    if (verifyNoPropertyViolation()){
+      assertTrue(TestEnum.class.isEnum());
+      assertFalse(Class.class.isEnum());
+    }
+  }
+
+  @Test
+  public void getDeclaringClassTest (){
+    if (verifyNoPropertyViolation()){
+      assertTrue(TestEnclosedClass.class.getDeclaringClass() == ClassTest.class);
+      assertNull(Class.class.getDeclaringClass());
+      Class anonymousCls = (new ClassTest.TestEnclosedClass()).getAnonymousClassObj().getClass();
+      assertNull(anonymousCls.getDeclaringClass());
+      Class localCls = (new ClassTest.TestEnclosedClass()).foo.getClass();
+      assertNull(localCls.getDeclaringClass());
+    }
+  }
+
+  @Test
+  public void isLocalClassTest (){
+    if (verifyNoPropertyViolation()){
+      TestEnclosedClass testObj = new ClassTest.TestEnclosedClass();
+      assertTrue(testObj.foo.getClass().isLocalClass());
+      assertTrue(testObj.getLocalClassObj().getClass().isLocalClass());
+      assertFalse(Class.class.isLocalClass());
+    }
+  }
+
+  @Test
+  public void isMemberClassTest (){
+    if (verifyNoPropertyViolation()){
+      assertTrue(TestEnclosedClass.MemberClass.class.isMemberClass());
+      assertFalse(Class.class.isMemberClass());
+      assertFalse(((new TestEnclosedClass()).getLocalClassObj().getClass().isMemberClass()));
+    }
+  }
+
+  @Test
+  public void isSyntheticTest (){
+    if (verifyNoPropertyViolation()){
+      assertFalse(Class.class.isSynthetic());
+    }
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  @Inherited
+  public @interface A9 {
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface A10 {
+  }
+
+  @A9()
+  public static class Parent {
+  }
+
+  @A10
+  public static class Child1 extends Parent {
+  }
+
+  public static class Child2 extends Child1 {
+  }
+
+  @Test
+  public void getAnnotationsTest (){
+    if (verifyNoPropertyViolation()){
+      assertTrue(Parent.class.getAnnotations().length == 1);
+      assertTrue(Child1.class.getAnnotations().length == 2);
+      assertTrue(Child2.class.getAnnotations().length == 1);
     }
   }
 }

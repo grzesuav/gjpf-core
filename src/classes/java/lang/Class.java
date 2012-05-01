@@ -259,10 +259,6 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
   native void setAnnotationType (AnnotationType at);
 
   native AnnotationType getAnnotationType();
-
-  public boolean isSynthetic() {
-    throw new UnsupportedOperationException();
-  }
   
   public TypeVariable<Class<T>>[] getTypeParameters() {
     throw new UnsupportedOperationException();
@@ -338,5 +334,10 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
   
   public Annotation[] getDeclaredAnnotations() {
     throw new UnsupportedOperationException();
+  }
+
+  public boolean isSynthetic (){
+    final int SYNTHETIC = 0x00001000;
+    return (getModifiers() & SYNTHETIC) != 0;
   }
 }

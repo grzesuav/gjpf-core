@@ -61,4 +61,16 @@ public final class Method extends AccessibleObject implements Member {
   public Object getDefaultValue() {
     throw new UnsupportedOperationException("Method.getDefaultValue() not supported yet");
   }
+
+  public native boolean equals (Object obj);
+
+  public boolean isVarArgs (){
+    return (getModifiers() & Modifier.VARARGS) != 0;
+  }
+
+  public native int hashCode ();
+
+  public boolean isBridge (){
+    return (getModifiers() & Modifier.BRIDGE) != 0;
+  }
 }

@@ -233,6 +233,9 @@ public class Perturbator extends ListenerAdapter {
       MethodSpec mthSpec = MethodSpec.createMethodSpec(ms);
       if (mthSpec != null) {
         Object[] args = {conf, keyPrefix};
+        // <2do> pcm - this is not consistent with field and return value perturbation, which can have
+        // location specific heuristics. Per-location specs will probably be re-instated once the problem
+        // with jpf-jdart is sorted out
         OperandPerturbator perturbator = conf.getInstance("perturb.class", OperandPerturbator.class, argTypes, args);
         if (perturbator != null) {
           String loc = conf.getString(keyPrefix + ".location");

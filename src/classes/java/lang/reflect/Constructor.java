@@ -58,4 +58,14 @@ public /*final*/ class Constructor <T> extends AccessibleObject implements Membe
   }
   
   public native String toString();
+  
+  public native boolean equals (Object obj);
+
+  public boolean isVarArgs (){
+    return (getModifiers() & Modifier.VARARGS) != 0;
+  }
+
+  public native int hashCode ();
+
+  public native String toGenericString ();
 }
