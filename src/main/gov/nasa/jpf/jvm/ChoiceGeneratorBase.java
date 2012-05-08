@@ -66,16 +66,16 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
   // in case this is initalized from a JVM context
   public static void init(Config config) {
 
-    random.setSeed(config.getLong("cg.seed", 42));
-
-    SystemState.RANDOMIZATION randomization = config.getEnum("cg.randomize_choices",
-            SystemState.RANDOMIZATION.values(), SystemState.RANDOMIZATION.def);
+    SystemState.ChoiceRandomizationPolicy randomization = config.getEnum("cg.randomize_choices",
+            SystemState.ChoiceRandomizationPolicy.values(), SystemState.ChoiceRandomizationPolicy.NONE);
 
     // if the randomize_choices is set to random then we need to 
     // pick the seed based on the system time. 
 
-    if (randomization == SystemState.RANDOMIZATION.random) {
+    if (randomization == SystemState.ChoiceRandomizationPolicy.VAR_SEED) {
       random.setSeed(System.currentTimeMillis());
+    } else if (randomization == SystemState.ChoiceRandomizationPolicy.FIXED_SEED){
+      random.setSeed( config.getLong("cg.seed", 42));      
     }
   }
 

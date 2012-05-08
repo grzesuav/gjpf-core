@@ -239,25 +239,29 @@ public class JPF_java_lang_System {
         
     return aref;
   }
-  
-  static String SYSPROP_SRC_KEY = "vm.sysprop.source";
-  static enum SYSPROP_SRC { selected, file, host };
+
+  /**
+   * policy of how to initialize system properties of the system under test
+   */
+  static enum SystemPropertyPolicy {
+    SELECTED,  // copy host values for keys specified in  
+    FILE, 
+    HOST
+  };
 
   public static int getKeyValuePairs_____3Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
     Config conf = env.getConfig();
-    SYSPROP_SRC sysPropSrc = conf.getEnum(SYSPROP_SRC_KEY, SYSPROP_SRC.values(), SYSPROP_SRC.selected);
+    SystemPropertyPolicy sysPropSrc = conf.getEnum( "vm.sysprop.source", SystemPropertyPolicy.values(), SystemPropertyPolicy.SELECTED);
 
-    // <2do> temporary workaround - a switch would cause an anonymous inner class that gets
-    // erroneously associated with a different ..$1 class (anonymous JavaLangAccess) from our model
-    if (sysPropSrc == SYSPROP_SRC.file){
+    if (sysPropSrc == SystemPropertyPolicy.FILE){
       return getSysPropsFromFile(env);
-    } else if (sysPropSrc == SYSPROP_SRC.host){
+    } else if (sysPropSrc == SystemPropertyPolicy.HOST){
       return getSysPropsFromHost(env);
-    } else if (sysPropSrc == SYSPROP_SRC.selected){
+    } else if (sysPropSrc == SystemPropertyPolicy.SELECTED){
       return getSelectedSysPropsFromHost(env);
-    } else {
-        throw new JPFConfigException("unsupported system properties source: " + conf.getString(SYSPROP_SRC_KEY));
     }
+    
+    return 0;
   }
   
   // <2do> - this break every app which uses time delta thresholds

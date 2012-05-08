@@ -21,20 +21,25 @@
 package gov.nasa.jpf.jvm;
 
 /**
- * generic interface for objects that are used to restore previous states
+ * generic interface for objects that are used to restore previous states from
+ * within a context that holds the references to the objects to restore (e.g. a
+ * container), i.e. the caller knows where to restore the objects in question.
+ * The caller can provide a cached object the memento can update. However, its
+ * up to the memento if it uses this (optional) argument object to restore
+ * in-situ, the only guarantee it makes is that it returns a restored object
  */
 public interface Memento<T> {
 
   /**
    * note that there is no guarantee the restored object will be the same that
    * is (optionally) passed in.
-   *
-   * Implementations are free to restore in-situ or
-   * create a new object if a non-null reference is provided. Callers are
-   * responsible for identity integrity if they do provide in-situ objects
-   *
-   * The caller does not guarantee the provided in-situ object was the one
-   * the Memento was created from
+   * 
+   * Implementations are free to restore in-situ or create a new object if a
+   * non-null reference is provided. Callers are responsible for identity
+   * integrity if they do provide in-situ objects
+   * 
+   * The caller does not guarantee the provided in-situ object was the one the
+   * Memento was created from
    */
   T restore(T inSitu);
 }

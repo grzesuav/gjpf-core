@@ -1373,11 +1373,11 @@ public class MJIEnv {
     return JVM.getVM().getKernelState();
   }
 
-  MethodInfo getMethodInfo () {
+  public MethodInfo getMethodInfo () {
     return mi;
   }
 
-  Instruction getInstruction () {
+  public Instruction getInstruction () {
     return ti.getPC();
   }
   
