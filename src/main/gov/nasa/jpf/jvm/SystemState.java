@@ -215,7 +215,7 @@ public class SystemState {
    */
   static enum ChoiceRandomizationPolicy {
     VAR_SEED,    // randomize choices using a different seed for every JPF run 
-    FIXED_SEED,  // randomize choices using a fixed seed for each JPF run (reproducable, seed can be specified as )
+    FIXED_SEED,  // randomize choices using a fixed seed for each JPF run (reproducible, seed can be specified as cg.seed)
     NONE         // don't randomize choices
   };
   

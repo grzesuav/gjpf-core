@@ -148,6 +148,9 @@ public class ThreadInfo
     }
   }
   
+  // search global id, which is the basis for canonical order of threads
+  protected int gid;
+  
   // transient, not state stored
   protected ExceptionInfo pendingException;
 
@@ -367,9 +370,10 @@ public class ThreadInfo
    * passed and sets the target object as well.
    */
   public ThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef, long stackSize) {
+    threadInfoCount++;
+
     this.objRef = objRef;
     targetRef = runnableRef;
-    id = threadInfoCount++;
     
     ElementInfo ei = vm.getElementInfo(objRef);
     ci = ei.getClassInfo();
@@ -383,7 +387,6 @@ public class ThreadInfo
     threadData.lockCount = 0;
     threadData.suspendCount = 0;
     threadData.name = vm.getElementInfo(nameRef).asString();
-    
     
     // this is nasty - 'priority', 'name', 'target' and 'group' are not taken
     // from the object, but set within the java.lang.Thread ctors
@@ -1029,12 +1032,22 @@ public class ThreadInfo
   }
 
   /**
-   * the unique id for this ThreadInfo
+   * path local unique id for live threads. This is what we use for the
+   * public java.lang.Thread.getId() that can be called from SUT code. It is
+   * NOT what we use for our canonical root set
    */
   public int getId () {
     return id;
   }
 
+  /**
+   * this is our internal, search global id that is used for the
+   * canonical root set
+   */
+  public int getSearchGlobalId(){
+    return gid;
+  }
+  
   /**
    * record what this thread is being blocked on.
    */
