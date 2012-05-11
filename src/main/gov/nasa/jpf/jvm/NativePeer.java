@@ -340,5 +340,20 @@ public class NativePeer {
       return null;
     }
   }
+
+  public NativePeer getInstanceFor(ClassInfo ci) {
+    NativePeer nativePeer = null;
+
+    try {
+      nativePeer = (NativePeer)super.clone();
+      nativePeer.ci = ci;
+      nativePeer.methods = new HashMap<String, Method>(methods);
+      nativePeer.peerClass = peerClass;
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+
+    return nativePeer;
+  }
 }
 

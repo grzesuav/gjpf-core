@@ -139,6 +139,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   /** Generic type signatures of the class as per para. 4.4.4 of the revised VM spec */
   protected String genericSignature;
 
+  /** The classloader that defined (directly loaded) this class */
+  protected ClassLoaderInfo classLoader;
 
   // various class attributes
   protected boolean      isClass = true;
@@ -2655,7 +2657,83 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return ObjectList.typedIterator(attr, attrType);
   }
 
-  // -- end attrs --  
+  // -- end attrs -- 
+
+  /**
+   * It creates an instance from a original ClassInfo instance.
+   * 
+   * It is used for the cases where cl tries to load a class that the original version 
+   * of which has been loaded by some other classloader.
+   */
+  public ClassInfo getInstanceFor(ClassLoaderInfo cl) {
+    
+    try {
+      ClassInfo ci = (ClassInfo)super.clone();
+
+      ci.name = name;
+      ci.signature = signature;
+      ci.genericSignature = genericSignature;
+      ci.classLoader = cl;
+
+      ci.isClass = isClass;
+      ci.isWeakReference = isWeakReference;
+      ci.isObjectClassInfo = isObjectClassInfo;
+      ci.isStringClassInfo = isStringClassInfo;
+      ci.isRefClassInfo = isRefClassInfo;
+      ci.isArray = isArray;
+      ci.isEnum = isEnum;
+      ci.isReferenceArray = isReferenceArray;
+      ci.isAbstract = isAbstract;
+      ci.isBuiltin = isBuiltin;
+      ci.modifiers = modifiers;
+
+      ci.finalizer = finalizer;
+      ci.elementInfoAttrs = elementInfoAttrs;
+
+      ci.methods = new LinkedHashMap<String,MethodInfo>(methods);
+
+      ci.iFields = iFields.clone();
+      ci.instanceDataSize = instanceDataSize;
+      ci.instanceDataOffset = instanceDataOffset;
+      ci.nInstanceFields = nInstanceFields;
+
+      ci.sFields = sFields.clone();
+      ci.staticDataSize = staticDataSize;
+      ci.sei = null;
+
+      // <2do> - clone this by loading through cl
+      //ci.superClass = superClass;
+      ci.enclosingClassName = new String(enclosingClassName);
+      ci.enclosingMethodName = new String(enclosingMethodName);
+
+      ci.innerClassNames = innerClassNames.clone();
+      for(int i=0; i<innerClassNames.length; i++) {
+        ci.innerClassNames[i] = new String(innerClassNames[i]);
+      }
+
+      ci.interfaceNames = interfaceNames;
+      ci.allInterfaces = allInterfaces;
+
+      ci.packageName = new String(packageName);
+      ci.sourceFileName = new String(sourceFileName);
+
+      // we are going to get rid of this after classloader implementation?
+      ci.container = container;
+
+      ci.uniqueId = uniqueId;
+
+      ci.nativePeer = nativePeer.getInstanceFor(ci);
+      ci.source = source;
+
+      ci.attr = attr;
+      ci.enableAssertions = enableAssertions;
+      ci.releaseActions = releaseActions;
+      
+    } catch (CloneNotSupportedException cnsx){
+      return null;
+    }
+    return null;
+  }
 }
 
 
