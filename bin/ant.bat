@@ -16,7 +16,7 @@ REM this is the common ant stuff
 set CP=%CP%;%JPF_HOME%\tools\ant-junit.jar;%JPF_HOME%\tools\ant-launcher.jar;%JPF_HOME%\tools\ant-nodeps.jar;%JPF_HOME%\tools\ant.jar
 
 REM other libraries
-set CP=%CP%;%JPF_HOME%\lib\junit-4.6.jar
+set CP=%CP%;%JPF_HOME%\lib\junit-4.10.jar
 
 
 set JVM_FLAGS=-Xmx1024m
