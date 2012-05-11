@@ -149,7 +149,9 @@ public class JVM {
   // we want a (internal) mechanism that is on-demand only, i.e. processed
   // actions are removed from the list
   protected ArrayList<Runnable> postGcActions = new ArrayList<Runnable>();
-  
+
+  protected static ClassLoaderInfo sysClassLoader;
+
   /**
    * be prepared this might throw JPFConfigExceptions
    */
@@ -1191,6 +1193,10 @@ public class JVM {
     ThreadInfo ti = ThreadInfo.getCurrentThread();
 
     return ti.getName();
+  }
+
+  public static ClassLoaderInfo getSysClassLoader() {
+    return sysClassLoader;
   }
 
   // VMListener acquisition

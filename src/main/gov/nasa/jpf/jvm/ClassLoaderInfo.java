@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import java.io.File;
+import java.util.List;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.classfile.ClassPath;
@@ -66,5 +67,32 @@ public class ClassLoaderInfo {
         sysClassPath.addPathName(pn);
       }
     }
+  }
+
+  public static ClassLoaderInfo getCurrentClassLoader() {
+    try {
+      ThreadInfo ti = ThreadInfo.getCurrentThread();
+
+      MethodInfo mi = ti.getTopFrame().getMethodInfo();
+
+      ClassInfo ci = mi.getClassInfo();
+
+      if(ci != null) {
+        return ci.classLoader;
+      } else {
+        List<StackFrame> stack = ti.getStack();
+
+        for(StackFrame sf: stack) {
+          ci = sf.getMethodInfo().getClassInfo();
+          if(ci != null) {
+            return ci.classLoader;
+          }
+        }
+      }
+    } catch(NullPointerException e) {
+      return JVM.getSysClassLoader();
+    }
+
+    return null;
   }
 }
