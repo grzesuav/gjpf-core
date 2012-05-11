@@ -37,9 +37,24 @@ public class ClassLoaderInfo {
   // Represents the locations where this classloader can load classes form
   protected ClassPath cp;
 
-  protected ClassLoaderInfo(ClassPath cp) {
+  protected StaticArea staticArea;
+
+  protected boolean isSysClassLoader = false;
+  
+  static Config config;
+
+  protected ClassLoaderInfo(JVM vm, ClassPath cp) {
     definedClasses = new ObjVector<ClassInfo>(100);
     this.cp = cp;
+
+    Class<?>[] argTypes = { Config.class, KernelState.class };
+    Object[] args = { config, vm.getKernelState() };
+
+    this.staticArea = config.getEssentialInstance("vm.static.class", StaticArea.class, argTypes, args);
+  }
+
+  public boolean isSysClassLoader() {
+    return isSysClassLoader;
   }
 
   /**
@@ -94,5 +109,12 @@ public class ClassLoaderInfo {
     }
 
     return null;
+  }
+
+  /**
+   * This is invoked by JVM.initSubsystems()
+   */
+  static void init (Config config) {
+    ClassLoaderInfo.config = config;
   }
 }

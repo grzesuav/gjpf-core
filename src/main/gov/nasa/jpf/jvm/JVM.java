@@ -206,6 +206,7 @@ public class JVM {
   }
 
   protected void initSubsystems (Config config) {
+    ClassLoaderInfo.init(config);
     ClassInfo.init(config);
     ThreadInfo.init(config);
     ElementInfo.init(config);
