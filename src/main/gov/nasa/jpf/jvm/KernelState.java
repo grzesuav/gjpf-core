@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.HashData;
 
+import java.util.ArrayList;
 import java.util.Stack;
 
 
@@ -29,14 +30,14 @@ import java.util.Stack;
  */
 public class KernelState implements Restorable<KernelState> {
 
-  /** The area containing static fields and  classes */
-  public StaticArea statics;
-
   /** The area containing the heap */
   public Heap heap;
 
   /** The list of the threads */
   public ThreadList threads;
+
+  /** the list of the class loaders */
+  public ArrayList<ClassLoaderInfo> classLoaders;
 
   /**
    * current listeners waiting for notification of next change.
@@ -52,14 +53,14 @@ public class KernelState implements Restorable<KernelState> {
 
     KsMemento (KernelState ks){
       threadsMemento = ks.threads.getMemento();
-      staticsMemento = ks.statics.getMemento();
+      staticsMemento = ks.getStaticArea().getMemento();
       heapMemento = ks.heap.getMemento();
     }
 
     public KernelState restore (KernelState ks) {
       // those are all in-situ objects, no need to set them in ks
       threadsMemento.restore(ks.threads);
-      staticsMemento.restore(ks.statics);
+      staticsMemento.restore(ks.getStaticArea());
       heapMemento.restore(ks.heap);
 
       return ks;
@@ -73,7 +74,7 @@ public class KernelState implements Restorable<KernelState> {
     Class<?>[] argTypes = { Config.class, KernelState.class };
     Object[] args = { config, this };
 
-    statics = config.getEssentialInstance("vm.static.class", StaticArea.class, argTypes, args);
+    classLoaders = new ArrayList<ClassLoaderInfo>();  
     heap = config.getEssentialInstance("vm.heap.class", Heap.class, argTypes, args);
     threads = config.getEssentialInstance("vm.threadlist.class", ThreadList.class, argTypes, args);
   }
@@ -87,7 +88,15 @@ public class KernelState implements Restorable<KernelState> {
   }
 
   public StaticArea getStaticArea() {
-    return statics;
+    // <2do> - just to make it work for now
+    return classLoaders.get(0).staticArea;
+  }
+
+  /**
+   * Adds the given loader to the list of existing class loaders. 
+   */
+  public void addClassLoader(ClassLoaderInfo cl) {
+    classLoaders.add(cl);
   }
 
   public Heap getHeap() {
@@ -159,12 +168,12 @@ public class KernelState implements Restorable<KernelState> {
     // (outside of reference fields)
     // <2do> get rid of this by storing objects instead of ref/id values that are reused
     heap.cleanUpDanglingReferences();
-    statics.cleanUpDanglingReferences(heap);
+    getStaticArea().cleanUpDanglingReferences(heap);
   }
 
   public void hash (HashData hd) {
     heap.hash(hd);
-    statics.hash(hd);
+    getStaticArea().hash(hd);
     threads.hash(hd);
   }
 }

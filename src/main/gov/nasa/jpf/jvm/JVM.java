@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.classfile.ClassFile;
+import gov.nasa.jpf.classfile.ClassPath;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
@@ -196,6 +197,7 @@ public class JVM {
     out = null;
 
     ss = new SystemState(config, this);
+    sysClassLoader = createSysClassLoader();
 
     stateSet = config.getInstance("vm.storage.class", StateSet.class);
     if (stateSet != null) stateSet.attach(this);
@@ -349,6 +351,13 @@ public class JVM {
     }
 
     transitionOccurred = true;
+  }
+
+  protected ClassLoaderInfo createSysClassLoader() {
+    ClassPath cp = ClassLoaderInfo.buildSystemClassPath(config);
+    ClassLoaderInfo cl = new ClassLoaderInfo(this, cp);
+    cl.isSysClassLoader = true;
+    return cl;
   }
 
   /**
@@ -1196,10 +1205,6 @@ public class JVM {
     return ti.getName();
   }
 
-  public static ClassLoaderInfo getSysClassLoader() {
-    return sysClassLoader;
-  }
-
   // VMListener acquisition
   Instruction getInstruction () {
     ThreadInfo ti = ThreadInfo.getCurrentThread();
@@ -1485,7 +1490,7 @@ public class JVM {
   }
   
   public StaticElementInfo getClassReference (String name) {
-    return ss.ks.statics.get(name);
+    return ss.ks.getStaticArea().get(name);
   }
 
   public void print (String s) {
@@ -1996,6 +2001,10 @@ public class JVM {
     error_id = 0;
   }
 
+  public static ClassLoaderInfo getSysClassLoader() {
+    return sysClassLoader;
+  }
+
   public Heap getHeap() {
     return ss.getHeap();
   }
@@ -2023,13 +2032,16 @@ public class JVM {
   public boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti){
     return getThreadList().hasOnlyDaemonRunnablesOtherThan(ti);
   }
-  
+
+  public void registerClassLoader(ClassLoaderInfo cl) {
+    this.getKernelState().addClassLoader(cl);
+  }
+
   public int registerThread (ThreadInfo ti){
     getKernelState().changed();
     return getThreadList().add(ti);    
   }
-  
-  
+
   public boolean isAtomic() {
     return ss.isAtomic();
   }
@@ -2038,7 +2050,7 @@ public class JVM {
    * same for "loaded classes", but be advised it will probably go away at some point
    */
   public StaticArea getStaticArea () {
-    return ss.ks.statics;
+    return ss.ks.getStaticArea();
   }
 
     

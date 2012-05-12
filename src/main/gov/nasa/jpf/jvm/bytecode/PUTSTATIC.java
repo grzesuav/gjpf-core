@@ -60,7 +60,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
       return ti.getPC();
     }
 
-    ElementInfo ei = ks.statics.get(clsInfo.getName());
+    ElementInfo ei = ks.getStaticArea().get(clsInfo.getName());
 
     if (isNewPorFieldBoundary(ti)) {
       if (createAndSetFieldCG(ss, ei, ti)) {

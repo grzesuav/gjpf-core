@@ -71,7 +71,7 @@ public class DoubleSpec {
         }
         else { // static method (no this)- must be static var
           ClassInfo ci = ti.getMethod().getClassInfo();
-          StaticElementInfo ei = vm.getKernelState().statics.get(ci.getName());
+          StaticElementInfo ei = vm.getKernelState().getStaticArea().get(ci.getName());
           ret = ei.getDoubleField(varId[0]);
         }
       }

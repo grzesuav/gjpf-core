@@ -37,6 +37,7 @@ public class ClassLoaderInfo {
   // Represents the locations where this classloader can load classes form
   protected ClassPath cp;
 
+  // The area containing static fields and  classes
   protected StaticArea staticArea;
 
   protected boolean isSysClassLoader = false;
@@ -51,6 +52,8 @@ public class ClassLoaderInfo {
     Object[] args = { config, vm.getKernelState() };
 
     this.staticArea = config.getEssentialInstance("vm.static.class", StaticArea.class, argTypes, args);
+
+    vm.registerClassLoader(this);
   }
 
   public boolean isSysClassLoader() {
@@ -64,7 +67,7 @@ public class ClassLoaderInfo {
    *        - standard extensions packages ($JREHOME/lib/ext/*.jar)
    *        - the local file system ($CLASSPATH)
    */
-  protected static void buildSystemClassPath (Config config){
+  protected static ClassPath buildSystemClassPath (Config config){
     ClassPath sysClassPath = new ClassPath();
 
     for (File f : config.getPathArray("boot_classpath")){
@@ -82,6 +85,8 @@ public class ClassLoaderInfo {
         sysClassPath.addPathName(pn);
       }
     }
+
+    return sysClassPath;
   }
 
   public static ClassLoaderInfo getCurrentClassLoader() {

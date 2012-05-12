@@ -180,7 +180,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     //--- phase 1 - add our root sets.
     markPinnedDown();
     ks.threads.markRoots(this); // mark thread stacks
-    ks.statics.markRoots(this); // mark objects referenced from StaticArea ElementInfos
+    ks.getStaticArea().markRoots(this); // mark objects referenced from StaticArea ElementInfos
 
     //--- phase 2 - traverse all queued elements
     markQueue.process(this);
