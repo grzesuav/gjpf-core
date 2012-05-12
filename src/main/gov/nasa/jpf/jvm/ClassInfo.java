@@ -2293,27 +2293,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   // Note: JVM.registerStartupClass() must be kept in sync
   public void registerClass (ThreadInfo ti){
-    // ti might be null if we are still in main thread creation
-
-    if (sei == null){
-      // do this recursively for superclasses and interfaceNames
-      if (superClass != null) {
-        superClass.registerClass(ti);
-      }
-
-      for (String ifcName : interfaceNames) {
-        ClassInfo ici = getResolvedClassInfo(ifcName); // already resolved at this point
-        ici.registerClass(ti);
-      }
-
-      logger.finer("registering class: ", name);
-
-      // register ourself in the static area
-      StaticArea sa = JVM.getVM().getStaticArea();
-      sei = sa.addClass(this, ti);
-
-      createClassObject(ti);
-    }
+    classLoader.registerClass(ti, this);
   }
 
   public boolean isRegistered () {

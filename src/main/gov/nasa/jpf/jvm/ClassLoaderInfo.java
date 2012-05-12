@@ -116,6 +116,33 @@ public class ClassLoaderInfo {
     return null;
   }
 
+  // Note: JVM.registerStartupClass() must be kept in sync
+  public void registerClass (ThreadInfo ti, ClassInfo ci){
+    // ti might be null if we are still in main thread creation
+    StaticElementInfo sei = ci.sei;
+    ClassInfo superClass = ci.superClass;
+
+    if (sei == null){
+      // do this recursively for superclasses and interfaceNames
+      if (superClass != null) {
+        superClass.registerClass(ti);
+      }
+
+      for (String ifcName : ci.interfaceNames) {
+        ClassInfo ici = ClassInfo.getResolvedClassInfo(ifcName); // already resolved at this point
+        ici.registerClass(ti);
+      }
+
+      ClassInfo.logger.finer("registering class: ", ci.name);
+
+      // register ourself in the static area
+      StaticArea sa = JVM.getVM().getStaticArea();
+      sei = sa.addClass(ci, ti);
+
+      ci.createClassObject(ti);
+    }
+  }
+
   /**
    * This is invoked by JVM.initSubsystems()
    */
