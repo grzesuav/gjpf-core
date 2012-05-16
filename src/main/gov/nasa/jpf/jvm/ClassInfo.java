@@ -1121,7 +1121,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public static ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {
     ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
 
-    return getResolvedClassInfo(className, cl);
+    return cl.getResolvedClassInfo(className);
   }
 
   /**
@@ -1221,7 +1221,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length) throws NoClassInfoException {
     ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
 
-    return getResolvedClassInfo(className, buffer, offset, length, cl);
+    return cl.getResolvedClassInfo(className, buffer, offset, length);
   }
 
   public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length, ClassLoaderInfo cl) throws NoClassInfoException {
@@ -1610,7 +1610,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public int getUniqueId() {
-    return uniqueId;
+    return sei.getObjectRef();
   }
 
   public int getFieldAttrs (int fieldIndex) {

@@ -2945,7 +2945,7 @@ public class ThreadInfo
 
       // that means we have to turn the exception into an InvocationTargetException
       if (mi.isReflectionCallStub()) {
-        ci               = ClassInfo.getResolvedClassInfo("java.lang.reflect.InvocationTargetException");
+        ci               = ClassInfo.getInitializedClassInfo("java.lang.reflect.InvocationTargetException", this);
         exceptionObjRef  = createException(ci, cname, exceptionObjRef);
         cname            = ci.getName();
         ei               = heap.get(exceptionObjRef);

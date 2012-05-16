@@ -113,9 +113,63 @@ public class ClassLoaderInfo {
       return JVM.getSysClassLoader();
     }
 
-    return null;
+    return JVM.getSysClassLoader();
+  }
+  public ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {
+    if (className == null) {
+      return null;
+    }
+
+    String typeName = Types.getClassNameFromTypeName(className);
+
+    // <2do> this is BAD - fix it!
+    int idx = staticArea.indexFor(typeName);
+    
+    ClassInfo ci = definedClasses.get(idx);
+
+    if (ci == null) {
+      ci = ClassInfo.getResolvedClassInfo(className, this);
+      if(ci.classLoader != this) {
+        // creates a new instance from ci using this classloader
+        System.exit(0);
+        ci = ci.getInstanceFor(this);
+      }
+
+      // this class loader just defined the class ci.
+      //definedClasses.add(ci);
+      definedClasses.set(idx, ci);
+    }
+    
+    return ci;
   }
 
+  public ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length) throws NoClassInfoException {
+    if (className == null) {
+      return null;   
+    }
+    
+    String typeName = Types.getClassNameFromTypeName(className);
+    
+    // <2do> this is BAD - fix it!
+    int idx = staticArea.indexFor(typeName);
+    
+    ClassInfo ci = definedClasses.get(idx);
+    
+    if (ci == null) {
+      ci = ClassInfo.getResolvedClassInfo(className, buffer, offset, length, this);
+      if(ci.classLoader != this) {
+        System.exit(0);
+        // creates a new instance from ci using this classloader
+        ci = ci.getInstanceFor(this);
+      }
+
+      // this class loader just defined the class ci.
+      //definedClasses.add(ci);
+      definedClasses.set(idx, ci);
+    }
+    
+    return ci;
+  }
   // Note: JVM.registerStartupClass() must be kept in sync
   public void registerClass (ThreadInfo ti, ClassInfo ci){
     // ti might be null if we are still in main thread creation
