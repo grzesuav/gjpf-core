@@ -19,7 +19,9 @@
 package gov.nasa.jpf.jvm;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.classfile.ClassPath;
@@ -31,8 +33,9 @@ import gov.nasa.jpf.util.ObjVector;
  */
 public class ClassLoaderInfo {
 
-  // List of classes defined (directly loaded) by this classloader
-  protected final ObjVector<ClassInfo> definedClasses;
+  // Map from the name of classes defined (directly loaded) by this classloader to
+  // the corresponding ClassInfos
+  protected static Map<String,ClassInfo> definedClasses;
 
   // Represents the locations where this classloader can load classes form
   protected ClassPath cp;
@@ -45,7 +48,8 @@ public class ClassLoaderInfo {
   static Config config;
 
   protected ClassLoaderInfo(JVM vm, ClassPath cp) {
-    definedClasses = new ObjVector<ClassInfo>(100);
+    //definedClasses = new ObjVector<ClassInfo>(100);
+    definedClasses = new HashMap<String,ClassInfo>();
     this.cp = cp;
 
     Class<?>[] argTypes = { Config.class, KernelState.class };
@@ -122,10 +126,7 @@ public class ClassLoaderInfo {
 
     String typeName = Types.getClassNameFromTypeName(className);
 
-    // <2do> this is BAD - fix it!
-    int idx = staticArea.indexFor(typeName);
-    
-    ClassInfo ci = definedClasses.get(idx);
+    ClassInfo ci = definedClasses.get(typeName);
 
     if (ci == null) {
       ci = ClassInfo.getResolvedClassInfo(className, this);
@@ -136,8 +137,7 @@ public class ClassLoaderInfo {
       }
 
       // this class loader just defined the class ci.
-      //definedClasses.add(ci);
-      definedClasses.set(idx, ci);
+      definedClasses.put(typeName, ci);
     }
     
     return ci;
@@ -150,10 +150,7 @@ public class ClassLoaderInfo {
     
     String typeName = Types.getClassNameFromTypeName(className);
     
-    // <2do> this is BAD - fix it!
-    int idx = staticArea.indexFor(typeName);
-    
-    ClassInfo ci = definedClasses.get(idx);
+    ClassInfo ci = definedClasses.get(typeName);
     
     if (ci == null) {
       ci = ClassInfo.getResolvedClassInfo(className, buffer, offset, length, this);
@@ -164,8 +161,7 @@ public class ClassLoaderInfo {
       }
 
       // this class loader just defined the class ci.
-      //definedClasses.add(ci);
-      definedClasses.set(idx, ci);
+      definedClasses.put(typeName, ci);
     }
     
     return ci;
