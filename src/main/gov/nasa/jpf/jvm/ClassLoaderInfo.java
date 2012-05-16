@@ -187,7 +187,7 @@ public class ClassLoaderInfo {
 
       // register ourself in the static area
       StaticArea sa = JVM.getVM().getStaticArea();
-      sei = sa.addClass(ci, ti);
+      sa.addClass(ci, ti);
 
       ci.createClassObject(ti);
     }
