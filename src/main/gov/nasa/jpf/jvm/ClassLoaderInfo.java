@@ -132,7 +132,6 @@ public class ClassLoaderInfo {
       ci = ClassInfo.getResolvedClassInfo(className, this);
       if(ci.classLoader != this) {
         // creates a new instance from ci using this classloader
-        System.exit(0);
         ci = ci.getInstanceFor(this);
       }
 
@@ -155,7 +154,6 @@ public class ClassLoaderInfo {
     if (ci == null) {
       ci = ClassInfo.getResolvedClassInfo(className, buffer, offset, length, this);
       if(ci.classLoader != this) {
-        System.exit(0);
         // creates a new instance from ci using this classloader
         ci = ci.getInstanceFor(this);
       }
