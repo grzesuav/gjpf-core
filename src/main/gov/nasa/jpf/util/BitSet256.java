@@ -185,10 +185,15 @@ public class BitSet256 implements FixedBitSet, Cloneable {
     return cardinality;
   }
 
+  public int size() {
+    return cardinality;
+  }
+
+  
   /**
    * number of bits we can store
    */
-  public int size() {
+  public int capacity() {
     return 256;
   }
 

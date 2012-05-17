@@ -30,9 +30,9 @@ public class JPF_sun_reflect_ReflectionFactory {
     // ctor for the concrete type that explicitly calls the default ctor of the
     // first non-serializable superclass. Oh my!
 
-    ClassInfo.getInitializedClassInfo("gov.nasa.jpf.SerializationConstructor", env.getThreadInfo());
     // <2do> we really have to model ObjectStreamClass and ObjectStreamField
-    int sCtorRef = env.newObject("gov.nasa.jpf.SerializationConstructor");
+    ClassInfo ci = ClassInfo.getInitializedClassInfo("gov.nasa.jpf.SerializationConstructor", env.getThreadInfo());
+    int sCtorRef = env.newObject(ci);
     
     env.setReferenceField(sCtorRef, "mdc", clsRef);
     env.setReferenceField(sCtorRef, "firstNonSerializableCtor", ctorRef);

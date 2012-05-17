@@ -20,12 +20,16 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.BitSet1024;
 import gov.nasa.jpf.util.BitSet256;
 import gov.nasa.jpf.util.BitSet64;
 import gov.nasa.jpf.util.Debug;
 import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.IntIterator;
+import gov.nasa.jpf.util.IntSet;
 import gov.nasa.jpf.util.ObjectList;
+import gov.nasa.jpf.util.UnsortedArrayIntSet;
 
 import java.io.PrintWriter;
 import java.lang.ref.SoftReference;
@@ -102,7 +106,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // a problem for most SUTs
   // The alternative would be to directly store ThreadInfo references, but this
   // would have an impact on state matching efficiency and memory consumption
-  protected FixedBitSet refTid;
+  protected IntSet refTid;
 
   // this is the reference value for the object represented by this ElementInfo
   // (note this is a slight misnomer for StaticElementInfos, which don't really
@@ -145,7 +149,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     ClassInfo ci;
     Fields fields;
     Monitor monitor;
-    FixedBitSet refTid;
+    IntSet refTid;
     int attributes;
 
 
@@ -220,14 +224,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // not ideal, a sub-type checker.
   public abstract boolean isObject();
   
-  protected FixedBitSet createRefTid( int tid){
-    // Ok, this is a hard limit, but for the time being a SUT with more
-    // than 64 threads is usually blowing us out of the water state-space-wise anyways
-    if (maxThreadRefs <= 64){
-      return new BitSet64(tid);
-    } else {
-      return new BitSet256(tid);
-    }
+  protected IntSet createRefTid( int tid){
+    IntSet set = new UnsortedArrayIntSet();
+    set.add(tid);
+    return set;
   }
 
   protected ElementInfo() {
@@ -299,7 +299,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
     
     if (isThreadTermination && refTid != null){
-      if (refTid.get(tid)) {
+      if (refTid.contains(tid)) {
         updateRefTidWithout(tid);
       }
     }
@@ -334,32 +334,32 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
 
   public boolean hasMultipleReferencingThreads() {
-    return refTid.cardinality() > 1;
+    return refTid.size() > 1;
   }
 
   public void updateRefTidWith (int tid){
-    FixedBitSet b = refTid;
+    IntSet b = refTid;
 
-    if (!b.get(tid)){
+    if (!b.contains(tid)){
       if ((attributes & ATTR_REFTID_CHANGED) == 0){
         b = b.clone();
         refTid = b;
         attributes |= ATTR_REFTID_CHANGED;
       }
-      b.set(tid);
+      b.add(tid);
     }
   }
 
   public void updateRefTidWithout (int tid){
-    FixedBitSet b = refTid;
+    IntSet b = refTid;
 
-    if (b.get(tid)){
+    if (b.contains(tid)){
       if ((attributes & ATTR_REFTID_CHANGED) == 0){
         b = b.clone();
         refTid = b;
         attributes |= ATTR_REFTID_CHANGED;
       }
-      b.clear(tid);
+      b.remove(tid);
     }
   }
 
@@ -432,7 +432,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * that are still alive
    */
   public boolean isShared() {
-    return refTid.cardinality() > 1;
+    return refTid.size() > 1;
   }
 
   public boolean isImmutable() {
@@ -446,15 +446,16 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     int tid = ti.getId();
     updateRefTidWith(tid);
     
-    int nThreadRefs = refTid.cardinality();    
+    int nThreadRefs = refTid.size();    
     if (nThreadRefs > 1){
       // check if we have to cleanup the refTid set, or if some other accessors are not runnable
       ThreadList tl = JVM.getVM().getThreadList();
-      for (int i=refTid.nextSetBit(0); i>=0; i = refTid.nextSetBit(i+1)){
-        ThreadInfo tiRef = tl.getThreadInfoForId(i);
+      for (IntIterator it = refTid.intIterator(); it.hasNext();){
+        tid = it.next();
+        ThreadInfo tiRef = tl.getThreadInfoForId(tid);
         if (tiRef == null || tiRef.isTerminated()) { // it's terminated
           // <2do> why does this happen, we clean up after thread termination ??
-          updateRefTidWithout(i);
+          updateRefTidWithout(tid);
           nThreadRefs--;
         } else if (!tiRef.isRunnable()){
           nThreadRefs--;

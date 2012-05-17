@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2010 United States Government as represented by the
+// Copyright (C) 2012 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -17,31 +17,13 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.util;
+package gov.nasa.jpf;
 
 /**
- * BitSet like interface for fixed size bit sets
+ * a type tag for attributes used by JPF
+ * SystemAttributes are protected by the .util.ObjectList API against accidental
+ * set(..) overwrite, they have to be removed by forceSet(..)
  */
-public interface FixedBitSet extends Cloneable {
-
-  void set (int i);
-  void set (int i, boolean val);
-  boolean get (int i);
-  void clear (int i);
-  
-  int nextClearBit (int fromIndex);
-  int nextSetBit (int fromIndex);
-
-  FixedBitSet clone();
-
-  boolean isEmpty();
-  int size();
-  int cardinality();
-  int length();
-  int capacity();
-  
-  void clear();
-  
-  int longSize();
-  long getLong(int i);
+public interface SystemAttribute {
+  // nothing in here
 }

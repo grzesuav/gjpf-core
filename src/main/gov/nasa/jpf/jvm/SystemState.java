@@ -24,6 +24,10 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.HashData;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 
 /**
@@ -66,6 +70,7 @@ public class SystemState {
     ChoicePoint trace;
     ThreadInfo execThread;
     int id;              // the state id
+    LinkedHashMap<Object,ClosedMemento> restorers;
     
     static protected ChoiceGenerator<?> cloneCG( ChoiceGenerator<?> cg){
       if (cg != null){
@@ -86,6 +91,8 @@ public class SystemState {
       atomicLevel = ss.entryAtomicLevel; // store the value we had when we started the transition
       id = ss.id;
       execThread = ss.execThread;
+      
+      restorers = ss.restorers;
     }
 
     /**
@@ -99,6 +106,12 @@ public class SystemState {
       ss.atomicLevel = atomicLevel;
       ss.id = id;
       ss.execThread = execThread;
+      
+      if (restorers != null){
+        for (ClosedMemento r : restorers.values()){
+          r.restore();
+        }
+      }
     }
 
     void restore (SystemState ss) {
@@ -145,7 +158,13 @@ public class SystemState {
       ss.atomicLevel = atomicLevel;
       ss.id = id;
       ss.execThread = execThread;
-    }    
+      
+      if (restorers != null){
+        for (ClosedMemento r : restorers.values()){
+          r.restore();
+        }
+      }
+    }  
   }
 
   int id;                   /** the state id */
@@ -154,7 +173,10 @@ public class SystemState {
   ChoiceGenerator<?>  curCg;   // the ChoiceGenerator used in the current transition
   ThreadInfo execThread;    // currently executing thread, reset by ThreadChoiceGenerators
   
-  static enum RANDOMIZATION {random, path, def};
+  // on-demand list of optional restorers that run if we backtrack to this state
+  // this is reset before each transition
+  LinkedHashMap<Object,ClosedMemento> restorers;
+  
 
   /** current execution state of the VM (stored separately by VM) */
   public KernelState ks;
@@ -188,7 +210,16 @@ public class SystemState {
   int maxAllocGC;
   int nAlloc;
   
-  RANDOMIZATION randomization = RANDOMIZATION.def;
+  /**
+   * choice randomization policies, which can be set from JPF configuration
+   */
+  static enum ChoiceRandomizationPolicy {
+    VAR_SEED,    // randomize choices using a different seed for every JPF run 
+    FIXED_SEED,  // randomize choices using a fixed seed for each JPF run (reproducible, seed can be specified as cg.seed)
+    NONE         // don't randomize choices
+  };
+  
+  ChoiceRandomizationPolicy randomization = ChoiceRandomizationPolicy.NONE;
 
   /** NOTE: this has changed its meaning again. Now it once more is an
    * optimization that can be used by applications calling Verify.begin/endAtomic(),
@@ -228,10 +259,10 @@ public class SystemState {
     // we can't yet initialize the trail until we have the start thread
 
    
-    randomization = config.getEnum("cg.randomize_choices", RANDOMIZATION.values(), 
-    						RANDOMIZATION.def);
+    randomization = config.getEnum("cg.randomize_choices", ChoiceRandomizationPolicy.values(), 
+    						ChoiceRandomizationPolicy.NONE);
    
-    if(randomization != RANDOMIZATION.def) {
+    if(randomization != ChoiceRandomizationPolicy.NONE) {
     	randomizeChoices = true;
     }
     
@@ -616,6 +647,42 @@ public class SystemState {
     GCNeeded = true;
   }
 
+  public boolean hasRestorer (Object key){
+    if (restorers != null){
+      return restorers.containsKey(key);
+    }
+    
+    return false;
+  }
+  
+  public ClosedMemento getRestorer( Object key){
+    if (restorers != null){
+      return restorers.get(key);
+    }
+    
+    return null;    
+  }
+  
+  /**
+   * call the provided restorer each time we get back to this state
+   * 
+   * @param key usually the object this restorer encapsulates
+   * @param restorer the ClosedMemento that restores the state of the object
+   * it encapsulates once we backtrack/restore this program state
+   * 
+   * Note that restorers are called in the order of registration, but in
+   * general it is not a good idea to depend on order since restorers can
+   * be set from different locations (listeners, peers, instructions)
+   */
+  public void putRestorer (Object key, ClosedMemento restorer){
+    if (restorers == null){
+      restorers = new LinkedHashMap<Object,ClosedMemento>();
+    }
+    
+    // we only support one restorer per target for now
+    restorers.put(key,restorer);
+  }
+  
   public void gcIfNeeded () {
     if (GCNeeded) {
       ks.gc();
@@ -672,6 +739,8 @@ public class SystemState {
       isBoring = false;
     }
 
+    restorers = null;
+    
     // 'nextCg' got set at the end of the previous transition (or a preceding
     // choiceGeneratorSet() notification).
     // Be aware of that 'nextCg' is only the *last* CG that was registered, i.e.

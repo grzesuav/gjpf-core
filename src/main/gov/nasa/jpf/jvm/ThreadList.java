@@ -32,8 +32,8 @@ import java.util.NoSuchElementException;
  * We add a thread upon creation (within the ThreadInfo ctor), and remove it
  * when the corresponding java.lang.Thread object gets recycled by JPF. This means
  * that:
- *   * the thread list can contain terminated threads in it
- *   * terminated and recycled threads are removed from the list
+ *   * the thread list can contain terminated threads
+ *   * terminated and recycled threads are (eventually) removed from the list
  *   * the list can shrink along a given path
  *   * thread ids don't have to correspond with storing order !!
  *   * thread ids can be re-used
@@ -151,12 +151,16 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return other;
   }
 
-  BitSet ids = new BitSet();
-  
+  /**
+   * add a new ThreadInfo if it isn't already in the list.
+   * Note: the returned id is NOT our internal storage index
+   * 
+   * @return (path specific) Thread id
+   */
   public int add (ThreadInfo ti) {
     int n = threads.length;
 
-    ids.clear();    
+    BitSet ids = new BitSet();   
     for (int i=0; i<n; i++) {
       ThreadInfo t = threads[i];
       if (t == ti) {
@@ -498,7 +502,7 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
   }
 
   public Iterator<ThreadInfo> iterator() {
-    return new Iterator() {
+    return new Iterator<ThreadInfo>() {
       int i = 0;
 
       public boolean hasNext() {
@@ -519,7 +523,65 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     };
   }
 
+  
+  class CanonicalLiveIterator implements Iterator<ThreadInfo> {
+    
+    int nextGid = -1;
+    int nextIdx = -1;
+    
+    CanonicalLiveIterator(){
+      setNext();
+    }
+    
+    // <2do> not overly efficient, but we assume small thread lists anyways
+    void setNext (){
+      int lastGid = nextGid;
+      int nextGid = Integer.MAX_VALUE;
+      int nextIdx = -1;
+      
+      for (int i=0; i<threads.length; i++){
+        ThreadInfo ti = threads[i];
+        if (ti.isAlive()){
+          int gid = ti.getGlobalId();
+          if ((gid > lastGid) && (gid < nextGid)){
+            nextGid = gid;
+            nextIdx = i;
+          }
+        }
+      }
+      
+      CanonicalLiveIterator.this.nextGid = nextGid;
+      CanonicalLiveIterator.this.nextIdx = nextIdx;
+    }
+    
+    public boolean hasNext() {
+      return (nextIdx >= 0);
+    }
 
+    public ThreadInfo next() {
+      if (nextIdx >= 0){
+        ThreadInfo tiNext = threads[nextIdx];
+        setNext();
+        return tiNext;
+        
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+
+    public void remove() {
+      throw new UnsupportedOperationException("Iterator<ThreadInfo>.remove()");
+    }
+  }
+  
+  /**
+   * an iterator for a canonical order over all live threads
+   */
+  public Iterator<ThreadInfo> canonicalLiveIterator(){
+    return new CanonicalLiveIterator();     
+  }
+  
+  
   /**
    * only for debugging purposes, this is expensive
    */

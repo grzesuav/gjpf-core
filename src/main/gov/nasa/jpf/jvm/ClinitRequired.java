@@ -16,4 +16,8 @@ public class ClinitRequired extends RuntimeException {
   ClassInfo getRequiredClassInfo() {
     return ci;
   }
+  
+  public String getMessage(){
+    return ci.getName();
+  }
 }

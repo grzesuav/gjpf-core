@@ -19,12 +19,14 @@
 
 package gov.nasa.jpf.util;
 
+import java.util.NoSuchElementException;
+
 import gov.nasa.jpf.JPFException;
 
 /**
  *
  */
-public class BitSet64 implements FixedBitSet, Cloneable {
+public class BitSet64 implements FixedBitSet, Cloneable, IntSet {
 
   static final int INDEX_MASK = 0xffffffc0; // ( i>=0 && i<64)
 
@@ -115,11 +117,15 @@ public class BitSet64 implements FixedBitSet, Cloneable {
     return cardinality;
   }
 
+  public int capacity(){
+    return 64;
+  }
+  
   /**
    * number of bits we can store
    */
   public int size() {
-    return 64;
+    return cardinality;
   }
 
   /**
@@ -140,7 +146,8 @@ public class BitSet64 implements FixedBitSet, Cloneable {
 
   public int nextSetBit (int fromIdx){
     if ((fromIdx & INDEX_MASK) == 0){
-      int n = Long.numberOfTrailingZeros(l0 & (0xffffffffffffffffL << fromIdx));
+      //int n = Long.numberOfTrailingZeros(l0 & (0xffffffffffffffffL << fromIdx));
+      int n = Long.numberOfTrailingZeros(l0 >> fromIdx) + fromIdx;
       if (n < 64) {
         return n;
       } else {
@@ -154,7 +161,8 @@ public class BitSet64 implements FixedBitSet, Cloneable {
 
   public int nextClearBit (int fromIdx){
     if ((fromIdx & INDEX_MASK) == 0){
-      int n = Long.numberOfTrailingZeros(~l0 & (0xffffffffffffffffL << fromIdx));
+      //int n = Long.numberOfTrailingZeros(~l0 & (0xffffffffffffffffL << fromIdx));
+      int n = Long.numberOfTrailingZeros(~l0 >> fromIdx) + fromIdx;
       if (n < 64) {
         return n;
       } else {
@@ -225,5 +233,59 @@ public class BitSet64 implements FixedBitSet, Cloneable {
     sb.append('}');
 
     return sb.toString();
+  }
+
+  //--- IntSet interface
+  
+  class SetBitIterator implements IntIterator {
+    int cur = 0;
+    int nBits;
+    
+    @Override
+    public void remove() {
+      if (cur >0){
+        clear(cur-1);
+      }
+    }
+
+    @Override
+    public boolean hasNext() {
+      return nBits < cardinality;
+    }
+
+    @Override
+    public int next() {
+      if (nBits < cardinality){
+        int idx = nextSetBit(cur);
+        if (idx >= 0){
+          nBits++;
+          cur = idx+1;
+        }
+        return idx;
+        
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+  }
+  
+  @Override
+  public void add(int i) {
+    set(i);
+  }
+
+  @Override
+  public void remove(int i) {
+    clear(i);
+  }
+
+  @Override
+  public boolean contains(int i) {
+    return get(i);
+  }
+
+  @Override
+  public IntIterator intIterator() {
+    return new SetBitIterator();
   }
 }

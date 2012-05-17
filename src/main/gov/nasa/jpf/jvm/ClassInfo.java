@@ -2291,7 +2291,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     if (!ci.isInitialized()) {
       if (ci.initializeClass(ti)) {
-        throw new JPFException(clsName + " can not have a static initializer");
+        throw new ClinitRequired(ci);
       }
     }
 

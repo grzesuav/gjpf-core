@@ -912,50 +912,46 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   }
 
 
-  //--- the JSON object initialization
-
-
+  // the JSON object initialization
   public static int createFromJSON__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
           MJIEnv env, int clsObjRef, int newObjClsRef, int jsonStringRef) {
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
     
-    int typeNameRef = env.getReferenceField(newObjClsRef, "name");
-    String typeName = env.getStringObject(typeNameRef);
-    String jsonString = env.getStringObject(jsonStringRef);
-
+    String jsonString = env.getStringObject(jsonStringRef);    
     JSONLexer lexer = new JSONLexer(jsonString);
     JSONParser parser = new JSONParser(lexer);
     JSONObject jsonObject = parser.parse();
-
-    ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
-
+        
     if (jsonObject != null) {
-      // Top half - get list of CGs we need to set to fill object's fields from JSON
-      // and set if any
+      ClassInfo ci = env.getReferredClassInfo( newObjClsRef);
+      
+      // check if we need any class init (and hence reexecution) before creating any CGs
+      if (jsonObject.requiresClinitExecution(ci,ti)){
+        env.repeatInvocation();
+        return MJIEnv.NULL;
+      }
+
       if (!ti.isFirstStepInsn()) {
-
-        // Get list of choice generators that should be set according to
-        // a JSON object
+        // Top half - get and register CGs we need to set to fill object from JSON
         List<ChoiceGenerator<?>> cgList = CGCall.createCGList(jsonObject);
-
-        boolean repeat = false;
-        for (ChoiceGenerator<?> cg : cgList) {
-          repeat |= ss.setNextChoiceGenerator(cg);
-        }
-
-        if (repeat){
-          env.repeatInvocation();
-          // This will not be returned to a caller
-          return MJIEnv.NULL;
+        if (cgList.isEmpty()){
+          return jsonObject.fillObject(env, ci, null, "");
+          
         } else {
-          // No need to repeat this call. Just fill object without CGs
-          return jsonObject.fillObject(env, typeName, null, "");
+          for (ChoiceGenerator<?> cg : cgList) {
+            ss.setNextChoiceGenerator(cg);
+          }
+
+          env.repeatInvocation();
+          return MJIEnv.NULL;
         }
+        
       } else {
-        // Botom half - fill object with JSON and current values of CGs
+        // Bottom half - fill object with JSON and current values of CGs
         ChoiceGenerator<?>[] cgs = ss.getChoiceGenerators();
 
-        return jsonObject.fillObject(env, typeName, cgs, "");
+        return jsonObject.fillObject(env, ci, cgs, "");
       }
 
     } else {

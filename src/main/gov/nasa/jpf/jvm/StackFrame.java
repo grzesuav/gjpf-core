@@ -415,13 +415,11 @@ public class StackFrame implements Cloneable {
   }
 
   /**
-   * this replaces all of them - use only if you know 
-   *  - there will be only one attribute at a time
-   *  - you obtained the value you set by a previous getXAttr()
-   *  - you constructed a multi value list with ObjectList.createList()
+   * this replaces all of them - use only if you know there are no 
+   * SystemAttributes in the list (which would cause an exception)
    */
   public void setFrameAttr (Object attr){
-    frameAttr = attr;    
+    frameAttr = ObjectList.set(frameAttr, attr);    
   }
 
   public void addFrameAttr (Object attr){

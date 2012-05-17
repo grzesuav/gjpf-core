@@ -1435,9 +1435,12 @@ public class Config extends Properties {
           return t;
         }
       }
+      
+      throw new JPFConfigException("unknown enum value for " + key + " = " + v);
+      
+    } else {
+      return defValue;
     }
-
-    return defValue;
   }
 
   public String getString(String key) {

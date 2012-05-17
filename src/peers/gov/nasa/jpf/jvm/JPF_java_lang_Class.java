@@ -189,6 +189,11 @@ public class JPF_java_lang_Class {
     } else {
       ClassInfo ci = env.getReferredClassInfo(robj);   // what are we
 
+      if (ci.requiresClinitExecution(ti)) {
+        env.repeatInvocation();
+        return MJIEnv.NULL;
+      }
+      
       if(ci.isAbstract()){ // not allowed to instantiate
         env.throwException("java.lang.InstantiationException");
         return MJIEnv.NULL;
