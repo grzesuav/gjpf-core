@@ -489,6 +489,7 @@ public class JVM {
     list.add("java.lang.Long");
     list.add("java.lang.Float");
     list.add("java.lang.Double");
+    list.add("java.lang.Byte");
 
     // the cache for box types
     list.add("gov.nasa.jpf.BoxObjectCaches");
