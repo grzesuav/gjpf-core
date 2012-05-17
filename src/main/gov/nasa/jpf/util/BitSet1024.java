@@ -375,11 +375,16 @@ public class BitSet1024 implements FixedBitSet, Cloneable {
   public int cardinality() {
     return cardinality;
   }
+  
+  public int size() {
+    return cardinality;
+  }
+
 
   /**
    * number of bits we can store
    */
-  public int size() {
+  public int capacity() {
     return 1024;
   }
 

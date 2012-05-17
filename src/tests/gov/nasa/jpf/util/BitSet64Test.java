@@ -140,7 +140,23 @@ public class BitSet64Test extends TestJPF {
     assert b.nextSetBit(43) == 55;
   }
 
-
+  @Test
+  public void testIntSetInterface(){
+    IntSet s = new BitSet64();
+    
+    s.add(42);
+    s.add(0);
+    s.add(63);
+    
+    assertTrue(s.size() == 3);
+    assertTrue( s.contains(42));
+    
+    for (IntIterator it = s.intIterator(); it.hasNext();){
+      int i = it.next();
+      System.out.println(i);
+    }
+  }
+  
   //--- performance section
 
   static final int NROUNDS = 2000000;

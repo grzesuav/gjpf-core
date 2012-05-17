@@ -19,8 +19,12 @@
 
 package gov.nasa.jpf.jvm.serialize;
 
+import java.util.Iterator;
+
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.StackFrame;
+import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.ThreadList;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 /**
@@ -95,6 +99,15 @@ public class CFSerializer extends FilteringSerializer {
 
       // note that we always add the absolute sid value
       buf.add(sid);
+    }
+  }
+  
+  @Override
+  protected void serializeStackFrames() {
+    ThreadList tl = ks.getThreadList();
+
+    for (Iterator<ThreadInfo> it = tl.canonicalLiveIterator(); it.hasNext(); ) {
+      serializeStackFrames(it.next());
     }
   }
   

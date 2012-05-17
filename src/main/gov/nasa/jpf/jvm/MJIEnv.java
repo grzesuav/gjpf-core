@@ -988,10 +988,14 @@ public class MJIEnv {
   }
 
   /**
-   * watch out - we don't check if the class is initialized, since the
+   * WATCH OUT - we don't check if the class is initialized, since the
    * caller would have to take appropriate action anyways
    */
   public int newObject (ClassInfo ci) {
+    if (ci.requiresClinitExecution(ti)){
+      throw new ClinitRequired(ci);
+    }
+    
     return heap.newObject(ci, ti);
   }
 

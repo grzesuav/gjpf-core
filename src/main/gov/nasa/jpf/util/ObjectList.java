@@ -18,6 +18,9 @@
 //
 package gov.nasa.jpf.util;
 
+import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.SystemAttribute;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.NoSuchElementException;
@@ -45,6 +48,15 @@ import java.util.NoSuchElementException;
  * 
  * We assume that attribute collections are small, otherwise retrieval and
  * deletion with this API becomes rather inefficient
+ * 
+ * NOTE: while ObjectList heads are stored in simple Object fields within the
+ * user (and therefore could be just overwritten by simple assignments)
+ * YOU SHOULD NOT DO THIS! Other extensions or JPF itself could rely on
+ * current attributes. In case you have to change the whole list, use
+ * set(oldAttrs,newAttr), which checks if there currently is a SystemAttribute
+ * instance in the list, in which case it throws a JPFException unless the
+ * new attibute value is also a gov.nasa.jpf.SystemAttribute instance. Use
+ * forceSet(null) if you really have to remove lists with SystemAttributes  
  * 
  * 
  * usage:
@@ -241,6 +253,39 @@ public abstract class ObjectList {
     return (o instanceof Node) ? ((Node)o).data : o;
   }
     
+  public static Object set (Object head, Object newHead){
+    if (head == null || newHead instanceof SystemAttribute){
+      return newHead; // Ok to overwrite
+      
+    } else {
+      if (head instanceof Node){
+        // check if there is any SystemAttribute in the list
+        for (Node n = (Node)head; n != null; n = n.next){
+          if (n.data instanceof SystemAttribute){
+            throw new JPFException("attempt to overwrite SystemAttribute with " + newHead);
+          }
+        }
+        
+        return newHead; // Ok to overwrite
+        
+      } else { // single data attribute
+        if (head instanceof SystemAttribute){
+          throw new JPFException("attempt to overwrite SystemAttribute with " + newHead);
+        } else {
+          return newHead; // Ok to overwrite
+        }
+      }
+    }
+  }
+  
+  /**
+   * just to provide a way to overwrite SystemAttributes (e.g. with null)
+   */
+  public static Object forceSet (Object head, Object newHead){
+    return newHead;
+  }
+  
+  
   public static Object add (Object head, Object data){
     if (head == null){
       return data;

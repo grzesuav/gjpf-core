@@ -84,6 +84,7 @@ public class ThreadInfo
   static ThreadInfo currentThread;
   static ThreadInfo mainThread;
 
+  static GlobalIdManager gidManager = new GlobalIdManager();
 
   protected class StackIterator implements Iterator<StackFrame> {
     StackFrame frame = top;
@@ -147,10 +148,7 @@ public class ThreadInfo
       return exceptionInfo;
     }
   }
-  
-  // search global id, which is the basis for canonical order of threads
-  protected int gid;
-  
+    
   // transient, not state stored
   protected ExceptionInfo pendingException;
 
@@ -167,11 +165,9 @@ public class ThreadInfo
 
   
   //--- the invariants
-
-  // the id is only guaranteed to be unique among live thread objects (including
-  // terminated ones), i.e. it can be re-used within the same path for thread
-  // objects with disparate life spans
-  protected int id; 
+  
+  // search global id, which is the basis for canonical order of threads
+  protected int gid;
   
   protected int objRef; // the java.lang.Thread object reference
   protected ClassInfo ci; // the classinfo associated with the thread object
@@ -372,6 +368,8 @@ public class ThreadInfo
   public ThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef, long stackSize) {
     threadInfoCount++;
 
+    gid = computeGlobalId(vm.getSystemState());
+    
     this.objRef = objRef;
     targetRef = runnableRef;
     
@@ -410,9 +408,8 @@ public class ThreadInfo
     // note that we have to register here so that subsequent native peer calls can use the objRef
     // to lookup the ThreadInfo. This is a bit premature since the thread is not runnable yet,
     // but chances are it will be started soon, so we don't waste another data structure to do the mapping
-    id = vm.registerThread(this);
-    
-    ei.setIntField("id", id);
+    vm.registerThread(this);    
+    ei.setIntField("id", gid);
   }
 
   
@@ -1037,15 +1034,26 @@ public class ThreadInfo
    * NOT what we use for our canonical root set
    */
   public int getId () {
-    return id;
+    return gid;
   }
 
   /**
    * this is our internal, search global id that is used for the
    * canonical root set
    */
-  public int getSearchGlobalId(){
+  public int getGlobalId(){
     return gid;
+  }
+  
+  protected int computeGlobalId (SystemState ss){
+    ThreadInfo tiExec = currentThread;
+    Instruction insn = null;
+    
+    if (tiExec != null){
+      insn = tiExec.getTopFrame().getPC();  
+    }
+        
+    return gidManager.getNewId(ss, currentThread, insn);
   }
   
   /**
@@ -2660,16 +2668,16 @@ public class ThreadInfo
   void markRoots (Heap heap) {
 
     // 1. mark the Thread object itself
-    heap.markThreadRoot(objRef, id);
+    heap.markThreadRoot(objRef, gid);
 
     // 2. and its runnable
     if (targetRef != MJIEnv.NULL) {
-      heap.markThreadRoot(targetRef,id);
+      heap.markThreadRoot(targetRef,gid);
     }
 
     // 3. now all references on the stack
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
-      frame.markThreadRoots(heap, id);
+      frame.markThreadRoots(heap, gid);
     }
   }
 
@@ -2811,7 +2819,7 @@ public class ThreadInfo
     StringBuilder sb = new StringBuilder("thread ");
     sb.append(getThreadObjectClassInfo().getName());
     sb.append(":{id:");
-    sb.append(id);
+    sb.append(gid);
     sb.append(',');
     sb.append(threadData.getFieldValues());
     sb.append('}');
@@ -2958,7 +2966,7 @@ public class ThreadInfo
 
       // that means we have to turn the exception into an InvocationTargetException
       if (mi.isReflectionCallStub()) {
-        ci               = ClassInfo.getResolvedClassInfo("java.lang.reflect.InvocationTargetException");
+        ci               = ClassInfo.getInitializedClassInfo("java.lang.reflect.InvocationTargetException", this);
         exceptionObjRef  = createException(ci, cname, exceptionObjRef);
         cname            = ci.getName();
         ei               = heap.get(exceptionObjRef);
@@ -3414,7 +3422,7 @@ public class ThreadInfo
   }
 
   public String toString() {
-    return "ThreadInfo [name=" + getName() + ",id=" + id + ",state=" + getStateName() + ']';
+    return "ThreadInfo [name=" + getName() + ",id=" + gid + ",state=" + getStateName() + ']';
   }
 
   void setDaemon (boolean isDaemon) {
@@ -3459,7 +3467,7 @@ public class ThreadInfo
    * Comparison for sorting based on index.
    */
   public int compareTo (ThreadInfo that) {
-    return this.id - that.id;
+    return this.gid - that.gid;
   }
   
   /**

@@ -23,10 +23,12 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ClinitRequired;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.MJIEnv;
+import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjectConverter;
 
@@ -89,18 +91,40 @@ public class JSONObject{
     return result;
   }
 
+  /**
+   * check if all required ClassInfos for this object have been initialized so
+   * that the caller can decide if it has to re-execute before proceeding 
+   * 
+   * NOTE - this currently does not support concrete field types that are subtypes
+   * of the respective field types
+   */
+  public boolean requiresClinitExecution (ClassInfo ci, ThreadInfo ti){
+    while (ci != null){
+      if (ci.requiresClinitExecution(ti)){
+        return true;
+      }
 
-  //--- the fillers
-  public int fillObject(MJIEnv env, String typeName, ChoiceGenerator<?>[] cgs, String prefix) {
-
-    int newObjRef = env.newObject(typeName);
-    ElementInfo ei = env.getHeap().get(newObjRef);
-
-    if (ei == null) {
-      throw new JPFException("No such class " + typeName);
+      for (FieldInfo fi : ci.getDeclaredInstanceFields()) {
+        ClassInfo ciField = fi.getTypeClassInfo();
+        if (requiresClinitExecution(ciField, ti)){
+          return true;
+        }
+      }
+      
+      ci = ci.getSuperClass();
     }
-
-    ClassInfo ci = ei.getClassInfo();
+    
+    return false;
+  }
+  
+  //--- the fillers
+  
+  // NOTE - (pcm) before calling this method you have to make sure all required
+  // types are initialized
+  
+  public int fillObject(MJIEnv env, ClassInfo ci, ChoiceGenerator<?>[] cgs, String prefix) {
+    int newObjRef = env.newObject(ci);
+    ElementInfo ei = env.getHeap().get(newObjRef);
 
     // Fill all fields for this class until it has a super class
     while (ci != null) {
@@ -114,6 +138,7 @@ public class JSONObject{
         // If a value was defined in JSON document
         if (val != null) {
           fillFromValue(fi, ei, val, env, cgs, prefix);
+          
         } else if (cgCall != null) {
           // Value of this field should be taken from CG
           String cgId = prefix + fieldName;
@@ -144,9 +169,10 @@ public class JSONObject{
     // Handle primitive types
     if (!fi.isReference()) {
       fillPrimitive(ei, fi, val);
+      
     } else {
       if (isArrayType(fi.getType())) {
-        int newArrRef = createArray(env, fi.getType(), val, cgs, prefix + fieldName);
+        int newArrRef = createArray(env, fi.getTypeClassInfo(), val, cgs, prefix + fieldName);
         ei.setReferenceField(fi, newArrRef);
 
       } else {
@@ -157,11 +183,15 @@ public class JSONObject{
           
         } else {
           // Not a special case. Fill it recursively
-          String subTypeName = fi.getType();
+          ClassInfo ciField = fi.getTypeClassInfo();
+          if (ciField.requiresClinitExecution(env.getThreadInfo())){
+            throw new ClinitRequired(ciField);
+          }
+          
           JSONObject jsonObj = val.getObject();
           int fieldRef = MJIEnv.NULL;
           if (jsonObj != null) {
-            fieldRef = jsonObj.fillObject(env, subTypeName, cgs, prefix + fieldName);
+            fieldRef = jsonObj.fillObject(env, ciField, cgs, prefix + fieldName);
           }
           ei.setReferenceField(fi.getName(), fieldRef);
         }
@@ -196,11 +226,11 @@ public class JSONObject{
     }
   }
 
-  public int createArray(MJIEnv env, String typeName, Value value, ChoiceGenerator<?>[] cgs, String prefix) {
+  public int createArray(MJIEnv env, ClassInfo ciArray, Value value, ChoiceGenerator<?>[] cgs, String prefix) {
     Value vals[] = value.getArray();
 
-    // Get name of array's elements types
-    String arrayElementType = typeName.substring(0, typeName.lastIndexOf('['));
+    ClassInfo ciElement = ciArray.getComponentClassInfo();
+    String arrayElementType = ciElement.getName();
     int arrayRef;
 
     // Handle arrays of primitive types
@@ -275,11 +305,11 @@ public class JSONObject{
           newObjRef = creator.create(env, arrayElementType, vals[i]);
         } else{
           if (isArrayType(arrayElementType)) {
-            newObjRef = createArray(env, arrayElementType, vals[i], cgs, prefix + "[" + i);
+            newObjRef = createArray(env, ciElement, vals[i], cgs, prefix + "[" + i);
           } else {
             JSONObject jsonObj = vals[i].getObject();
             if (jsonObj != null) {
-              newObjRef = jsonObj.fillObject(env, arrayElementType, cgs, prefix + "[" + i);
+              newObjRef = jsonObj.fillObject(env, ciElement, cgs, prefix + "[" + i);
             } else {
               newObjRef = MJIEnv.NULL;
             }
@@ -288,7 +318,6 @@ public class JSONObject{
 
         fields.setReferenceValue(i, newObjRef);
       }
-
     }
 
     return arrayRef;

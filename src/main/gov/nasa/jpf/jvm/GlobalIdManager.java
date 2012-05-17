@@ -19,27 +19,82 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.MutableInteger;
 import gov.nasa.jpf.util.MutableIntegerRestorer;
-import gov.nasa.jpf.util.SparseObjVector;
+import gov.nasa.jpf.util.ObjVector;
 
 /**
  * helper object to compute search global id's, e.g. to create canonical
  * orders. Usually, there is one instance per type (e.g. ThreadInfo or
  * ClassLoaderInfo), and it is kept in a static field of the respective class.
+ * 
+ * Returned id values are packed, i.e. can be used to index into arrays
  */
 public class GlobalIdManager {
 
-  SparseObjVector<MutableInteger> perThreadPathInstances = new SparseObjVector<MutableInteger>();
-  
-  
-  public int getNewId (SystemState ss, ThreadInfo executingThread, Instruction loc){
-    int gid = executingThread.getSearchGlobalId();
+  // this is only used internally. Externally, global ids are integers for us
+  static class GlobalId {
     
-    MutableInteger mInt = perThreadPathInstances.get(gid);
+    protected int tgid;     // global id for creating thread (0 if this is for main thread itself)
+    protected int count;    // running number created by thread
+    protected int mgid;     // global id for creating method
+    protected int insnIdx;  // instruction index for creating instruction
+
+    protected int hc;       // hashCode cache   
+    
+    public GlobalId (int tgid, int count, int mgid, int insnIdx){
+      this.tgid = tgid;
+      this.count = count;
+      this.mgid = mgid;
+      this.insnIdx = insnIdx;
+      
+      HashData hd = new HashData();
+      hd.add(tgid);
+      hd.add(count);
+      hd.add(mgid);
+      hd.add(insnIdx);
+      hc = hd.getValue();
+    }
+    
+    @Override
+    public boolean equals (Object o){
+      if (o instanceof GlobalId){
+        GlobalId other = (GlobalId)o;
+        
+        if ((hc == other.hc) &&  // shortcut
+            (tgid == other.tgid) &&
+            (count == other.count) &&
+            (mgid == other.mgid) &&
+            (insnIdx == other.insnIdx)){
+          return true;
+        }
+      }
+        
+      return false;
+    }
+      
+    @Override
+    public int hashCode(){
+      return hc;
+    }
+  }
+  
+  // this is where we keep track of instance counts without the need of adding
+  // dedicated fields to the model classes
+  ObjVector<MutableInteger> perThreadPathInstances = new ObjVector<MutableInteger>();
+  
+  // this is where we keep track of assigned ids, so that ids are packed and
+  // we can use them in arrays/vectors (such as 'perThreadPathInstances')
+  IntTable<GlobalId> idMap = new IntTable<GlobalId>();
+  
+  
+  protected int getPathCount (SystemState ss, int tgid){
+    MutableInteger mInt = perThreadPathInstances.get(tgid);
     if (mInt == null){
       mInt = new MutableInteger(0);
-      perThreadPathInstances.set(gid, mInt);
+      perThreadPathInstances.set(tgid, mInt);
     }
     
     // make sure we properly restore the original value upon backtrack
@@ -48,9 +103,28 @@ public class GlobalIdManager {
     }
     
     mInt.inc(); // we got here because there is a new object we need an id for
+
+    return mInt.intValue();
+  }
+  
+  public int getNewId (SystemState ss, ThreadInfo executingThread, Instruction insn){
+    int tgid = (executingThread != null) ? executingThread.getGlobalId() : 0;
+    int count = getPathCount(ss,tgid);
     
+    int mgid;
+    int insnIdx;
     
+    if (insn != null){
+      mgid = insn.getMethodInfo().getGlobalId();
+      insnIdx = insn.getInstructionIndex();      
+    } else {
+      mgid = -1;
+      insnIdx = -1;
+    }
     
-    return 0;
+    GlobalId key = new GlobalId(tgid,count,mgid,insnIdx);
+    int gid = idMap.poolIndex(key);
+    
+    return gid;
   }
 }
