@@ -48,7 +48,6 @@ public class ClassLoaderInfo {
   static Config config;
 
   protected ClassLoaderInfo(JVM vm, ClassPath cp) {
-    //definedClasses = new ObjVector<ClassInfo>(100);
     definedClasses = new HashMap<String,ClassInfo>();
     this.cp = cp;
 

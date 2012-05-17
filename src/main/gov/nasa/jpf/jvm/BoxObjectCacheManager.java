@@ -9,6 +9,11 @@ package gov.nasa.jpf.jvm;
  * 
  *         All the caches, except Boolean, are initialized on the first
  *         invocation of valueOf(), and they all exempt from garbage collection.
+ *
+ *         NOTE: All classes obtained from getResolvedClassInfo in BoxObjectCacheManager
+ *         are safe, and there is no need to check if they are initialized. The 
+ *         wrappers and BoxObjectCaches are initialized in JVM.intialize(), and 
+ *         there are no clinit for array classes.
  */
 public class BoxObjectCacheManager {
   private static String boxObjectCaches = "gov.nasa.jpf.BoxObjectCaches";
