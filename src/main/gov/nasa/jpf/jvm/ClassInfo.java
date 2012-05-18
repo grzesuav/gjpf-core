@@ -86,13 +86,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   static Config config;
 
   /**
-   * this is our classpath. Note that this actually might be
-   * turned into a call or ClassInfo instance field if we ever support
-   * ClassLoaders (for now we keep it simple)
-   */
-  protected static gov.nasa.jpf.classfile.ClassPath cp;
-
-  /**
    * ClassLoader that loaded this class.
    */
   protected static final ClassLoader thisClassLoader = ClassInfo.class.getClassLoader();
@@ -259,7 +252,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     setSourceRoots(config);
     //buildBCELModelClassPath(config);
-    buildModelClassPath(config);
 
     attributor = config.getEssentialInstance("vm.attributor.class",
                                                          Attributor.class);
@@ -283,10 +275,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
 
     return true;
-  }
-
-  public static gov.nasa.jpf.classfile.ClassPath getModelClassPath() {
-    return cp;
   }
 
   public static boolean isObjectClassInfo (ClassInfo ci){
@@ -691,9 +679,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     @Override
     public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
+      ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
       if (tag instanceof InfoObject){
         if (AnnotationInfo.annotationAttributes.get(annotationType) == null) {
-          curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType), cp);
+          curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType), cl.getClassPath());
         } else {
           curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
         }
@@ -982,7 +971,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * override this in case resolving annotation types is not wanted (e.g. for unit tests)
    */
   protected void checkAnnotationDefaultValues(AnnotationInfo ai){
-    ai.checkDefaultValues(cp);
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+    ai.checkDefaultValues(cl.getClassPath());
   }
 
   /**
@@ -1188,7 +1178,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   private static ClassInfo loadClass(String typeName, ClassLoaderInfo cl){
     try {
-      ClassPath.Match match = cp.findMatch(typeName);
+      ClassPath.Match match = cl.getMatch(typeName);
       if (match == null){
         throw new NoClassInfoException(typeName);
       }
@@ -1889,15 +1879,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return(classes);
   }
 
-  public  ClassPath getClassPath(){
-    // <2do> this is only a hack - it needs to support a classloader chain
-    return cp;
-  }
-
-  public static String[] getClassPathElements() {
-    return cp.getPathNames();
-  }
-
   public static String makeModelClassPath (Config config) {
     StringBuilder buf = new StringBuilder(256);
     String ps = File.pathSeparator;
@@ -1920,26 +1901,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
     
     return buf.toString();
-  }
-
-  protected static void buildModelClassPath (Config config){
-    cp = new ClassPath();
-
-    for (File f : config.getPathArray("boot_classpath")){
-      cp.addPathName(f.getAbsolutePath());
-    }
-
-    for (File f : config.getPathArray("classpath")){
-      cp.addPathName(f.getAbsolutePath());
-    }
-
-    // finally, we load from the standard Java libraries
-    String v = System.getProperty("sun.boot.class.path");
-    if (v != null) {
-      for (String pn : v.split(File.pathSeparator)){
-        cp.addPathName(pn);
-      }
-    }
   }
 
   protected static Set<String> loadArrayInterfaces () {
@@ -2571,35 +2532,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
 
     return false;
-  }
-
-  public static String findResource (String resourceName){
-    // would have been nice to just delegate this to the BCEL ClassPath, but
-    // unfortunately BCELs getPath() doesn't indicate at all if the resource
-    // is in a jar :<
-    try {
-    for (String cpe : getClassPathElements()) {
-      if (cpe.endsWith(".jar")){
-        JarFile jar = new JarFile(cpe);
-        JarEntry e = jar.getJarEntry(resourceName);
-        if (e != null){
-          File f = new File(cpe);
-          return "jar:" + f.toURI().toURL().toString() + "!/" + resourceName;
-        }
-      } else {
-        File f = new File(cpe, resourceName);
-        if (f.exists()){
-          return f.toURI().toURL().toString();
-        }
-      }
-    }
-    } catch (MalformedURLException mfx){
-      return null;
-    } catch (IOException iox){
-      return null;
-    }
-
-    return null;
   }
 
   //--- the generic attribute API

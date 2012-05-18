@@ -30,8 +30,9 @@ public class JPF_java_lang_ClassLoader {
   
   public static int getResourcePath__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
     String resourceName = env.getStringObject(resRef);
-    
-    String resourcePath = ClassInfo.findResource(resourceName);
+
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+    String resourcePath = cl.findResource(resourceName);
     return env.newString(resourcePath);
   }
 }

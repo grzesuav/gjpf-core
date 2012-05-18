@@ -222,7 +222,8 @@ public class JPF_java_lang_System {
         // the special beasts first (if they weren't overridden with vm.system.properties)
         if (s == JAVA_CLASS_PATH) {
           // maybe we should just use vm.classpath
-          ClassPath cp = ClassInfo.getModelClassPath();
+          // NOTE: the curent classloader at the point it has to be a system classloader.
+          ClassPath cp = ClassLoaderInfo.getCurrentClassLoader().getClassPath();
           // <2do> should be consistent with path.separator (this is host VM notation)
           v = cp.toString();
           

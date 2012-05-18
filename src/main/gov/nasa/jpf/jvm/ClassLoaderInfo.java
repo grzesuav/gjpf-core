@@ -19,11 +19,17 @@
 package gov.nasa.jpf.jvm;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassPath;
 import gov.nasa.jpf.util.ObjVector;
 
@@ -118,6 +124,7 @@ public class ClassLoaderInfo {
 
     return JVM.getSysClassLoader();
   }
+
   public ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {
     if (className == null) {
       return null;
@@ -147,6 +154,7 @@ public class ClassLoaderInfo {
     }
     
     String typeName = Types.getClassNameFromTypeName(className);
+
     
     ClassInfo ci = definedClasses.get(typeName);
     
@@ -188,6 +196,56 @@ public class ClassLoaderInfo {
 
       ci.createClassObject(ti);
     }
+  }
+
+  protected ClassPath.Match getMatch(String typeName) {
+    ClassPath.Match match;
+    try {
+      match = cp.findMatch(typeName);
+      if (match == null){
+        throw new NoClassInfoException(typeName);
+      } 
+    } catch (ClassFileException cfx){
+      throw new JPFException("error reading class " + typeName, cfx);
+    }
+    return match;
+  }
+
+  public String findResource (String resourceName){
+    // would have been nice to just delegate this to the BCEL ClassPath, but
+    // unfortunately BCELs getPath() doesn't indicate at all if the resource
+    // is in a jar :<
+    try {
+    for (String cpe : getClassPathElements()) {
+      if (cpe.endsWith(".jar")){
+        JarFile jar = new JarFile(cpe);
+        JarEntry e = jar.getJarEntry(resourceName);
+        if (e != null){
+          File f = new File(cpe);
+          return "jar:" + f.toURI().toURL().toString() + "!/" + resourceName;
+        }
+      } else {
+        File f = new File(cpe, resourceName);
+        if (f.exists()){
+          return f.toURI().toURL().toString();
+        }
+      }
+    }
+    } catch (MalformedURLException mfx){
+      return null;
+    } catch (IOException iox){
+      return null;
+    }
+
+    return null;
+  }
+
+  public ClassPath getClassPath() {
+    return cp;
+  }
+
+  public String[] getClassPathElements() {
+    return cp.getPathNames();
   }
 
   /**
