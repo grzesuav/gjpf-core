@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.AnnotationInfo;
 import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.ExceptionHandler;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
@@ -604,7 +605,8 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
     // just store one entry per qualified class name (i.e. there won't be
     // multiple entries)
     // NOTE : this doesn't yet deal with ClassLoaders, but that's also true for BCEL
-    for (String s : ClassInfo.getClassPathElements()) {
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+    for (String s : cl.getClassPathElements()) {
       log.fine("analyzing classpath element: " + s);
       File f = new File(s);
       if (f.exists()) {
