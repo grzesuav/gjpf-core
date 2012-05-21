@@ -135,7 +135,8 @@ public class ClassLoaderInfo {
     ClassInfo ci = definedClasses.get(typeName);
 
     if (ci == null) {
-      ci = ClassInfo.getResolvedClassInfo(className, this);
+      ClassPath.Match match = getMatch(typeName);
+      ci = ClassInfo.getResolvedClassInfo(className, this, match);
       if(ci.classLoader != this) {
         // creates a new instance from ci using this classloader
         ci = ci.getInstanceFor(this);
@@ -171,6 +172,11 @@ public class ClassLoaderInfo {
     
     return ci;
   }
+
+  protected ClassInfo getDefinedClassInfo(String typeName){
+    return definedClasses.get(typeName);
+  }
+
   // Note: JVM.registerStartupClass() must be kept in sync
   public void registerClass (ThreadInfo ti, ClassInfo ci){
     // ti might be null if we are still in main thread creation
@@ -199,15 +205,17 @@ public class ClassLoaderInfo {
   }
 
   protected ClassPath.Match getMatch(String typeName) {
+    if(ClassInfo.isBuiltinClass(typeName)) {
+      return null;
+    }
+
     ClassPath.Match match;
     try {
-      match = cp.findMatch(typeName);
-      if (match == null){
-        throw new NoClassInfoException(typeName);
-      } 
+      match = cp.findMatch(typeName); 
     } catch (ClassFileException cfx){
       throw new JPFException("error reading class " + typeName, cfx);
     }
+
     return match;
   }
 

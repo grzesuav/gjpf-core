@@ -91,10 +91,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected static final ClassLoader thisClassLoader = ClassInfo.class.getClassLoader();
 
   /**
-   * Loaded classes, indexed by id number.
+   * Map from the classFileUrl of classes to their original ClassInfo instances
    */
-  protected static final ObjVector<ClassInfo> loadedClasses =
-    new ObjVector<ClassInfo>(100);
+   protected static Map<String,ClassInfo> loadedClasses = new HashMap<String, ClassInfo>();
 
   /**
    * optionally used to determine atomic methods of a class (during class loading)
@@ -215,7 +214,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /** this is only set if the classfile has a SourceFile class attribute */
   protected String sourceFileName;
-  
+
+  /** 
+   * Uniform resource locater for the class file. NOTE: since for builtin classes
+   * there is no class file assigned is set to the typeName 
+   */ 
+  protected String classFileUrl;
+
   /** from where the corresponding classfile was loaded (if this is not a builtin) */
   protected ClassFileContainer container;
 
@@ -777,7 +782,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     cf.parse(reader);
   }
 
-  public ClassInfo(ClassFile cf, ClassLoaderInfo classLoader) throws ClassFileException {
+  public ClassInfo(ClassFile cf, ClassLoaderInfo classLoader, String url) throws ClassFileException {
     this.classLoader = classLoader;
 
     Initializer reader = new Initializer();
@@ -807,7 +812,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     processJPFConfigAnnotation();
     loadAnnotationListeners();
 
-    loadedClasses.add(this);
+    classFileUrl = url;
+    addOriginalClass(this);
 
     // the 'sei' field gets initialized during registerClass(ti), since
     // it needs to be linked to a corresponding java.lang.Class object which
@@ -868,29 +874,26 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     enableAssertions = true; // doesn't really matter - no code associated
 
-    loadedClasses.add(this);
+    classFileUrl = name;
+    addOriginalClass(this);
     
     JVM.getVM().notifyClassLoaded(this);
   }
 
-  /**
-   * This is very BAD. I will change it as soon as I changed the loadedClasses
-   * structure to HashMap
-   */
-  private static ClassInfo getOriginalClassInfo(String cname) {
-    for(int i=0; i<loadedClasses.size(); i++) {
-      ClassInfo ci = loadedClasses.get(i);
-      if(cname.equals(ci.getName())) {
-        return ci;
-      }
+  private static void addOriginalClass(ClassInfo ci) {
+    if(ci.classFileUrl != null) {
+      loadedClasses.put(ci.classFileUrl, ci);
     }
-    return null;
+  }
+
+  private static ClassInfo getOriginalClassInfo(String url) {
+    return loadedClasses.get(url);
   }
 
   /**
    * createAndInitialize a fully synthetic implementation of an Annotation proxy
    */
-  ClassInfo(ClassInfo annotationCls, String name, ClassLoaderInfo classLoader) {
+  ClassInfo(ClassInfo annotationCls, String name, ClassLoaderInfo classLoader, String url) {
     this.classLoader = classLoader;
 
     this.name = name;
@@ -953,7 +956,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     instanceDataSize = computeInstanceDataSize();
     instanceDataOffset = 0;
 
-    loadedClasses.add(this);
+    classFileUrl = url;
+    addOriginalClass(this);
     
     JVM.getVM().notifyClassLoaded(this);
   }
@@ -1151,7 +1155,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * additional state {resolved,registered,initialized}, and it is questionable
    * what a non-resolvable ClassInfo would be good for anyways
    */
-  public static ClassInfo getResolvedClassInfo (String className, ClassLoaderInfo cl) throws NoClassInfoException {
+  public static ClassInfo getResolvedClassInfo (String className, ClassLoaderInfo cl, ClassPath.Match match) throws NoClassInfoException {
 
     if (className == null) {
       return null;
@@ -1159,7 +1163,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     String typeName = Types.getClassNameFromTypeName(className);
 
-    ClassInfo ci = getOriginalClassInfo(typeName);
+    String url = computeClassFileUrl(match, typeName, cl);
+    ClassInfo ci = getOriginalClassInfo(url);
 
     if (ci != null) {
       return ci;
@@ -1173,12 +1178,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     logger.finer("resolve classinfo: ", className);
 
-    return loadClass(typeName, cl);
+    return loadClass(typeName, cl, match, url);
   }
 
-  private static ClassInfo loadClass(String typeName, ClassLoaderInfo cl){
+  private static ClassInfo loadClass(String typeName, ClassLoaderInfo cl, ClassPath.Match match, String url){
     try {
-      ClassPath.Match match = cl.getMatch(typeName);
       if (match == null){
         throw new NoClassInfoException(typeName);
       }
@@ -1186,8 +1190,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ClassFile cf = new ClassFile( typeName, match.getBytes());
       
       JVM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
-      
-      ClassInfo ci = new ClassInfo(cf, cl);
+
+      ClassInfo ci = new ClassInfo(cf, cl, url);
       ci.setContainer(match.container);
 
       if (!ci.getName().equals(typeName)){
@@ -1207,7 +1211,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       
       JVM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
       
-      return new ClassInfo(cf, cl);
+      return new ClassInfo(cf, cl, null);
 
     } catch (ClassFileException cfx){
       throw new JPFException("error reading class " + typeName, cfx);
@@ -1269,11 +1273,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       }
     }
 
-    String cname = ciAnnotation.getName() + "$Proxy";
-    ClassInfo ci = getOriginalClassInfo(cname);
+    String url = computeProxyUrl(ciAnnotation);
+    ClassInfo ci = getOriginalClassInfo(url);
 
     if (ci == null){
-      ci = new ClassInfo(ciAnnotation, cname, ciAnnotation.classLoader);
+      String cname = ciAnnotation.getName() + "$Proxy";
+      ci = new ClassInfo(ciAnnotation, cname, ciAnnotation.classLoader, url);
       if (!ci.isInitialized()){
         ci.registerClass(ti);
         ci.setInitialized();
@@ -1312,8 +1317,34 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public void setContainer (ClassFileContainer c){
     container = c;
   }
+
+  protected static String computeClassFileUrl(ClassPath.Match match, String typeName, ClassLoaderInfo cl) {
+    // it has to be a built-in class or annotation proxy!
+    if(match == null) {
+      if(ClassInfo.isBuiltinClass(typeName)){
+        return typeName;
+      } else if(typeName.endsWith("$Proxy")) {
+        String annotationName = typeName.substring(0, typeName.lastIndexOf('$'));
+        ClassInfo annotationCls = cl.getDefinedClassInfo(annotationName);
+        return computeProxyUrl(annotationCls);
+      } else {
+        return null;
+      }
+    }
+    
+    return match.container.getURL() + typeName.replace('.', '/') + ".class";
+  }
+
+  // Builds urls for annotation class proxies
+  private static String computeProxyUrl(ClassInfo annotationCls) {
+    String annotationUrl = annotationCls.getClassFileUrl();
+    return annotationUrl.substring(0, annotationUrl.lastIndexOf(".class")) + "$Proxy";
+  }
   
-  
+  public String getClassFileUrl (){
+    return classFileUrl;
+  }
+
   //--- type based object release actions
   
   public boolean hasReleaseAction (ReleaseAction action){
@@ -1874,9 +1905,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public static ClassInfo[] getLoadedClasses() {
-    ClassInfo classes[] = new ClassInfo[loadedClasses.size()];
-    loadedClasses.toArray(classes);
-    return(classes);
+    return (ClassInfo[]) loadedClasses.values().toArray();
   }
 
   public static String makeModelClassPath (Config config) {
