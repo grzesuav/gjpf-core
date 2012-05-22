@@ -151,7 +151,7 @@ public class JVM {
   // actions are removed from the list
   protected ArrayList<Runnable> postGcActions = new ArrayList<Runnable>();
 
-  protected static SystemClassLoader systemClassLoader;
+  protected SystemClassLoader systemClassLoader;
 
   /**
    * be prepared this might throw JPFConfigExceptions
@@ -1875,7 +1875,7 @@ public class JVM {
     error_id = 0;
   }
 
-  public static SystemClassLoader getSystemClassLoader() {
+  public SystemClassLoader getSystemClassLoader() {
     return systemClassLoader;
   }
 

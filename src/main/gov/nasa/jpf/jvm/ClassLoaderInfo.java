@@ -109,10 +109,10 @@ public class ClassLoaderInfo {
         }
       }
     } catch(NullPointerException e) {
-      return JVM.getSystemClassLoader();
+      return JVM.getVM().getSystemClassLoader();
     }
 
-    return JVM.getSystemClassLoader();
+    return JVM.getVM().getSystemClassLoader();
   }
 
   public ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {
