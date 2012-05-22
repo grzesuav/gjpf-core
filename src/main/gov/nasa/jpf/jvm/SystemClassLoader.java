@@ -6,6 +6,26 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
+/**
+ * Represents the JPF system classloader which models the following hierarchy.
+ * 
+ *            ----------------
+ *            | Bootstrap CL |
+ *            ----------------
+ *                   |
+ *            ----------------
+ *            | Extension CL |
+ *            ----------------
+ *                   |
+ *           ------------------
+ *           | Application CL |
+ *           ------------------
+ *           
+ * Since in the standard JVM user does not have any control over the built-in 
+ * classloaders hierarchy, in JPF, we model all three by an instance of 
+ * SystemClassLoader which is responsible to load classes from Java API, 
+ * standard extensions packages, and the local file system.     
+ */
 public class SystemClassLoader extends ClassLoaderInfo {
 
   protected SystemClassLoader (JVM vm) {
@@ -15,7 +35,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
   }
   
   /**
-   * Builds the classpath for our system classes loader which resemblances the 
+   * Builds the classpath for our system class loaders which resemblances the 
    * location for classes within,
    *        - Java API ($JREHOME/Classes/classes.jar,...) 
    *        - standard extensions packages ($JREHOME/lib/ext/*.jar)
