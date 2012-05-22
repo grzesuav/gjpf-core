@@ -31,6 +31,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassPath;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.ObjVector;
 
 /**
@@ -50,12 +51,19 @@ public class ClassLoaderInfo {
   protected StaticArea staticArea;
 
   protected boolean isSystemClassLoader = false;
-  
+
+  //search global id, which is the basis for canonical order of classloaders
+  protected int gid;
+ 
   static Config config;
+
+  static GlobalIdManager gidManager = new GlobalIdManager();
 
   protected ClassLoaderInfo(JVM vm, ClassPath cp) {
     definedClasses = new HashMap<String,ClassInfo>();
+
     this.cp = cp;
+    this.gid = this.computeGlobalId(vm);
 
     Class<?>[] argTypes = { Config.class, KernelState.class };
     Object[] args = { config, vm.getKernelState() };
@@ -63,6 +71,17 @@ public class ClassLoaderInfo {
     this.staticArea = config.getEssentialInstance("vm.static.class", StaticArea.class, argTypes, args);
 
     vm.registerClassLoader(this);
+  }
+
+  protected int computeGlobalId (JVM vm){
+    ThreadInfo tiExec = vm.getCurrentThread();
+    Instruction insn = null;
+    
+    if (tiExec != null){
+      insn = tiExec.getTopFrame().getPC();  
+    }
+
+    return gidManager.getNewId(vm.getSystemState(), tiExec, insn);
   }
 
   public boolean isSystemClassLoader() {
