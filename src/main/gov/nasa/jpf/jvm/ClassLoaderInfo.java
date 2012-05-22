@@ -53,15 +53,18 @@ public class ClassLoaderInfo {
 
   //search global id, which is the basis for canonical order of classloaders
   protected int gid;
- 
+
+  protected ClassLoaderInfo parent;
+
   static Config config;
 
   static GlobalIdManager gidManager = new GlobalIdManager();
 
-  protected ClassLoaderInfo(JVM vm, ClassPath cp) {
+  protected ClassLoaderInfo(JVM vm, ClassPath cp, ClassLoaderInfo parent) {
     definedClasses = new HashMap<String,ClassInfo>();
 
     this.cp = cp;
+    this.parent = parent;
     this.gid = this.computeGlobalId(vm);
 
     Class<?>[] argTypes = { Config.class, KernelState.class };

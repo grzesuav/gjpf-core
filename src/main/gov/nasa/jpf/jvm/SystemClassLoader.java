@@ -29,7 +29,7 @@ import java.util.ListIterator;
 public class SystemClassLoader extends ClassLoaderInfo {
 
   protected SystemClassLoader (JVM vm) {
-    super(vm, null);
+    super(vm, null, null);
     setSystemClassPath();
     isSystemClassLoader = true;
   }
