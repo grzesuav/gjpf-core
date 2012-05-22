@@ -22,7 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -32,7 +32,6 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassPath;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
-import gov.nasa.jpf.util.ObjVector;
 
 /**
  * Represents the classloader construct in JVM which is responsible for loading
@@ -97,14 +96,15 @@ public class ClassLoaderInfo {
       ClassInfo ci = mi.getClassInfo();
 
       if(ci != null) {
-        return ci.classLoader;
+        return ci.getClassLoaderInfo();
       } else {
-        List<StackFrame> stack = ti.getStack();
+        Iterator<StackFrame> it = ti.iterator();
 
-        for(StackFrame sf: stack) {
+        while(it.hasNext()) {
+          StackFrame sf = it.next();
           ci = sf.getMethodInfo().getClassInfo();
           if(ci != null) {
-            return ci.classLoader;
+            return ci.getClassLoaderInfo();
           }
         }
       }

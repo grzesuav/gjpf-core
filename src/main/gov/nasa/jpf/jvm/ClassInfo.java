@@ -1062,6 +1062,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
+  /**
+   * Returns the class loader that 
+   */
+  public ClassLoaderInfo getClassLoaderInfo() {
+    return classLoader;
+  }
 
   /**
    * required by InfoObject interface
