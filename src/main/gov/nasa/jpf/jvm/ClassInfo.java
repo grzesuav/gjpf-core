@@ -1216,7 +1216,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ClassFile cf = new ClassFile( typeName, data, offset);
       
       JVM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
-      
+
+      // for now, we do not keep dynamic proxy classes, which are defined through 
+      // the java.lang.reflect.Proxy native peer, in the loadedClasses map
       return new ClassInfo(cf, cl, null);
 
     } catch (ClassFileException cfx){
@@ -2671,8 +2673,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ci.sFields = sFields.clone();
       ci.staticDataSize = staticDataSize;
 
-      // <2do> - clone this by loading through cl
-      //ci.superClass = superClass;
+      ci.superClass = cl.getResolvedClassInfo(superClass.getName());
       ci.enclosingClassName = new String(enclosingClassName);
       ci.enclosingMethodName = new String(enclosingMethodName);
 
