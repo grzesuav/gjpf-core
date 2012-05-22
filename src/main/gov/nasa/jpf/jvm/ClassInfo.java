@@ -1254,11 +1254,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * @return null if class was not found
    */
   public static ClassInfo tryGetResolvedClassInfo (String className){
-    try {
-      return getResolvedClassInfo(className);
-    } catch (NoClassInfoException cx){
-      return null;
-    }
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+
+    return cl.tryGetResolvedClassInfo(className);
   }
 
   public static ClassInfo getAnnotationProxy (ClassInfo ciAnnotation){

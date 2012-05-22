@@ -69,35 +69,6 @@ public class ClassLoaderInfo {
     return isSysClassLoader;
   }
 
-  /**
-   * Builds the classpath for our system classes loader which resemblances the 
-   * location for classes within,
-   *        - Java API ($JREHOME/Classes/classes.jar,...) 
-   *        - standard extensions packages ($JREHOME/lib/ext/*.jar)
-   *        - the local file system ($CLASSPATH)
-   */
-  protected static ClassPath buildSystemClassPath (Config config){
-    ClassPath sysClassPath = new ClassPath();
-
-    for (File f : config.getPathArray("boot_classpath")){
-      sysClassPath.addPathName(f.getAbsolutePath());
-    }
-
-    for (File f : config.getPathArray("classpath")){
-      sysClassPath.addPathName(f.getAbsolutePath());
-    }
-
-    // finally, we load from the standard Java libraries
-    String v = System.getProperty("sun.boot.class.path");
-    if (v != null) {
-      for (String pn : v.split(File.pathSeparator)){
-        sysClassPath.addPathName(pn);
-      }
-    }
-
-    return sysClassPath;
-  }
-
   public static ClassLoaderInfo getCurrentClassLoader() {
     try {
       ThreadInfo ti = ThreadInfo.getCurrentThread();
@@ -119,10 +90,10 @@ public class ClassLoaderInfo {
         }
       }
     } catch(NullPointerException e) {
-      return JVM.getSysClassLoader();
+      return JVM.getSystemClassLoader();
     }
 
-    return JVM.getSysClassLoader();
+    return JVM.getSystemClassLoader();
   }
 
   public ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {
@@ -171,6 +142,21 @@ public class ClassLoaderInfo {
     }
     
     return ci;
+  }
+
+  /**
+   * obtain ClassInfo from context that does not care about resolution, i.e.
+   * does not check for NoClassInfoExceptions
+   *
+   * @param className fully qualified classname to get a ClassInfo for
+   * @return null if class was not found
+   */
+  public ClassInfo tryGetResolvedClassInfo (String className){
+    try {
+      return getResolvedClassInfo(className);
+    } catch (NoClassInfoException cx){
+      return null;
+    }
   }
 
   protected ClassInfo getDefinedClassInfo(String typeName){
