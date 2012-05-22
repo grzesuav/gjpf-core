@@ -11,6 +11,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
   protected SystemClassLoader (JVM vm) {
     super(vm, null);
     setSystemClassPath();
+    isSystemClassLoader = true;
   }
   
   /**

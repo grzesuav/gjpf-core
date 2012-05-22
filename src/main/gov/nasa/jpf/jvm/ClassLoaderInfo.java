@@ -49,7 +49,7 @@ public class ClassLoaderInfo {
   // The area containing static fields and  classes
   protected StaticArea staticArea;
 
-  protected boolean isSysClassLoader = false;
+  protected boolean isSystemClassLoader = false;
   
   static Config config;
 
@@ -65,8 +65,8 @@ public class ClassLoaderInfo {
     vm.registerClassLoader(this);
   }
 
-  public boolean isSysClassLoader() {
-    return isSysClassLoader;
+  public boolean isSystemClassLoader() {
+    return isSystemClassLoader;
   }
 
   public static ClassLoaderInfo getCurrentClassLoader() {
