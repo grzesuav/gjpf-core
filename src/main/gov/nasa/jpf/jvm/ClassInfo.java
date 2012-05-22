@@ -1643,6 +1643,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * The uniqueId for ClassInfo is set to an integer where the two left bytes store the
    * global id of the classloader that defines the class and the right two bytes store 
    * the ref that refers to the class object in the JPF heap
+   * 
+   * @limit This requires that both the classloader.gid, and sei index should not exceed 
+   * 2^16
    */
   public void setUniqueId() {
     uniqueId = (classLoader.gid << 16) + sei.getObjectRef();
