@@ -256,6 +256,10 @@ public class ClassLoaderInfo {
     return null;
   }
 
+  public StaticArea getStaticArea() {
+    return staticArea;
+  }
+
   public ClassPath getClassPath() {
     return cp;
   }
