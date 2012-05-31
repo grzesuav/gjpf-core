@@ -41,7 +41,7 @@ public class ClassLoaderInfo {
 
   // Map from the name of classes defined (directly loaded) by this classloader to
   // the corresponding ClassInfos
-  protected static Map<String,ClassInfo> definedClasses;
+  protected Map<String,ClassInfo> definedClasses;
 
   // Represents the locations where this classloader can load classes form
   protected ClassPath cp;
