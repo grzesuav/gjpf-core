@@ -56,6 +56,10 @@ public class DefaultMementoRestorer extends MementoRestorer {
     return sca.getMemento();
   }
 
+  public Memento<ClassLoaderList> getMemento (ClassLoaderList cllist) {
+    return cllist.getMemento();
+  }
+
   public Memento<ClassLoaderInfo> getMemento (ClassLoaderInfo cl) {
     return cl.getMemento();
   }

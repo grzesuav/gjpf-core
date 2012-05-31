@@ -33,6 +33,8 @@ public interface MementoFactory {
 
   Memento<ThreadInfo> getMemento(ThreadInfo ti);
 
+  Memento<ClassLoaderList> getMemento(ClassLoaderList cllist);
+
   Memento<ClassLoaderInfo> getMemento(ClassLoaderInfo cl);
 
   Memento<Heap> getMemento(DynamicArea da);
