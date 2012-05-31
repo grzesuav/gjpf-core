@@ -37,7 +37,8 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
  * Represents the classloader construct in JVM which is responsible for loading
  * classes.
  */
-public class ClassLoaderInfo {
+public class ClassLoaderInfo 
+     implements Iterable<ClassInfo>, Comparable<ClassLoaderInfo>, Cloneable {
 
   // Map from the name of classes defined (directly loaded) by this classloader to
   // the corresponding ClassInfos
@@ -273,5 +274,20 @@ public class ClassLoaderInfo {
    */
   static void init (Config config) {
     ClassLoaderInfo.config = config;
+  }
+
+  /**
+   * Comparison for sorting based on index.
+   */
+  public int compareTo (ClassLoaderInfo that) {
+    return this.gid - that.gid;
+  }
+
+  /**
+   * Returns an iterator over the classes that are defined (directly loaded) by this
+   * classloader. 
+   */
+  public Iterator<ClassInfo> iterator () {
+    return definedClasses.values().iterator();
   }
 }
