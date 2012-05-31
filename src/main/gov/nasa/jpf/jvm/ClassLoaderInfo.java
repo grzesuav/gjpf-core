@@ -38,7 +38,7 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
  * classes.
  */
 public class ClassLoaderInfo 
-     implements Iterable<ClassInfo>, Comparable<ClassLoaderInfo>, Cloneable {
+     implements Iterable<ClassInfo>, Comparable<ClassLoaderInfo>, Cloneable, Restorable<ClassLoaderInfo> {
 
   // Map from the name of classes defined (directly loaded) by this classloader to
   // the corresponding ClassInfos
@@ -61,6 +61,22 @@ public class ClassLoaderInfo
 
   static GlobalIdManager gidManager = new GlobalIdManager();
 
+  static class ClMemento implements Memento<ClassLoaderInfo> {
+    // note that we don't have to store the invariants (gid, cp, parent, isSystemClassLoader)
+    ClassLoaderInfo cl;
+    Memento<StaticArea> saMemento;
+
+    ClMemento (ClassLoaderInfo cl){
+      this.cl = cl;
+      saMemento = cl.staticArea.getMemento();
+    }
+
+    public ClassLoaderInfo restore(ClassLoaderInfo ignored) {
+      saMemento.restore(cl.staticArea);
+      return cl;
+    }
+  }
+
   protected ClassLoaderInfo(JVM vm, ClassPath cp, ClassLoaderInfo parent) {
     definedClasses = new HashMap<String,ClassInfo>();
 
@@ -74,6 +90,14 @@ public class ClassLoaderInfo
     this.staticArea = config.getEssentialInstance("vm.static.class", StaticArea.class, argTypes, args);
 
     vm.registerClassLoader(this);
+  }
+
+  public Memento<ClassLoaderInfo> getMemento (MementoFactory factory) {
+    return factory.getMemento(this);
+  }
+
+  public Memento<ClassLoaderInfo> getMemento(){
+    return new ClMemento(this);
   }
 
   protected int computeGlobalId (JVM vm){
