@@ -48,19 +48,19 @@ public class KernelState implements Restorable<KernelState> {
   static class KsMemento implements Memento<KernelState> {
     // note - order does matter: threads need to be restored before the heap
     Memento<ThreadList> threadsMemento;
-    Memento<StaticArea> staticsMemento;
+    Memento<ClassLoaderList> cloadersMemento;
     Memento<Heap> heapMemento;
 
     KsMemento (KernelState ks){
       threadsMemento = ks.threads.getMemento();
-      staticsMemento = ks.getStaticArea().getMemento();
+      cloadersMemento = ks.classLoaders.getMemento();
       heapMemento = ks.heap.getMemento();
     }
 
     public KernelState restore (KernelState ks) {
       // those are all in-situ objects, no need to set them in ks
       threadsMemento.restore(ks.threads);
-      staticsMemento.restore(ks.getStaticArea());
+      cloadersMemento.restore(ks.classLoaders);
       heapMemento.restore(ks.heap);
 
       return ks;
