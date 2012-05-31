@@ -37,7 +37,7 @@ public class KernelState implements Restorable<KernelState> {
   public ThreadList threads;
 
   /** the list of the class loaders */
-  public ArrayList<ClassLoaderInfo> classLoaders;
+  public ClassLoaderList classLoaders;
 
   /**
    * current listeners waiting for notification of next change.
@@ -74,7 +74,7 @@ public class KernelState implements Restorable<KernelState> {
     Class<?>[] argTypes = { Config.class, KernelState.class };
     Object[] args = { config, this };
 
-    classLoaders = new ArrayList<ClassLoaderInfo>();  
+    classLoaders = new ClassLoaderList();  
     heap = config.getEssentialInstance("vm.heap.class", Heap.class, argTypes, args);
     threads = config.getEssentialInstance("vm.threadlist.class", ThreadList.class, argTypes, args);
   }
