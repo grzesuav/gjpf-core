@@ -22,6 +22,7 @@ package gov.nasa.jpf.jvm.serialize;
 import gov.nasa.jpf.jvm.AbstractSerializer;
 import gov.nasa.jpf.jvm.ArrayFields;
 import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.ElementInfoProcessor;
 import gov.nasa.jpf.jvm.FieldInfo;
@@ -401,10 +402,17 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   }
   
   protected void serializeStatics(){
-    StaticArea statics = ks.getStaticArea();
-    buf.add(statics.getLength());
+    buf.add(ks.classLoaders.size());
 
-    for (StaticElementInfo sei : statics) {
+    for (ClassLoaderInfo cl : ks.classLoaders) {
+      serializeStaticArea(cl.getStaticArea());
+    }
+  }
+
+  protected void serializeStaticArea(StaticArea sa){
+    buf.add(sa.getLength());
+
+    for (StaticElementInfo sei : sa) {
       serializeClass(sei);
     }
   }
