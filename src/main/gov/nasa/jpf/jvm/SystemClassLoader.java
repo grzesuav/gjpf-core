@@ -29,11 +29,11 @@ import java.util.ListIterator;
 public class SystemClassLoader extends ClassLoaderInfo {
 
   protected SystemClassLoader (JVM vm) {
-    super(vm, null, null);
+    super(vm, MJIEnv.NULL, null, null);
     setSystemClassPath();
     isSystemClassLoader = true;
   }
-  
+
   /**
    * Builds the classpath for our system class loaders which resemblances the 
    * location for classes within,

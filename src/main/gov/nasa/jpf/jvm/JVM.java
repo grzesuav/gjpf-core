@@ -353,8 +353,31 @@ public class JVM {
     transitionOccurred = true;
   }
 
+  /**
+   * Creates & returns a system classLoader which is root in the classLaoders 
+   * hierarchy
+   */
   protected SystemClassLoader createSystemClassLoader() {
+    Heap heap = getHeap();
+
+    //--- create the ClassLoaderInfo
     SystemClassLoader cl = new SystemClassLoader(this);
+
+    // Note: that has to be set before loading java.lang.ClassLoader, otherwise its
+    // super class cannot be loaded
+    systemClassLoader = cl;
+
+    //--- java.lang.ClassLoader is registered later along with other startup classes
+    ClassInfo ciClassLoader = cl.getResolvedClassInfo("java.lang.ClassLoader");
+
+    //--- create java.lang.ClassLoader object corresponding to a systemClassLoader
+    int objRef = heap.newObject( ciClassLoader, null);
+
+    //--- initialize the systemClassLoader object
+    ElementInfo ei = heap.get(objRef);
+    ei.setIntField("clRef", cl.gid);
+    ei.setReferenceField("parent", MJIEnv.NULL);
+
     return cl;
   }
 

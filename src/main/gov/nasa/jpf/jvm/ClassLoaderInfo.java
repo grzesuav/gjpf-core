@@ -52,8 +52,11 @@ public class ClassLoaderInfo
 
   protected boolean isSystemClassLoader = false;
 
-  //search global id, which is the basis for canonical order of classloaders
+  // Search global id, which is the basis for canonical order of classloaders
   protected int gid;
+
+  // The java.lang.ClassLoader object reference
+  protected int objRef;
 
   protected ClassLoaderInfo parent;
 
@@ -77,12 +80,13 @@ public class ClassLoaderInfo
     }
   }
 
-  protected ClassLoaderInfo(JVM vm, ClassPath cp, ClassLoaderInfo parent) {
+  protected ClassLoaderInfo(JVM vm, int objRef, ClassPath cp, ClassLoaderInfo parent) {
     definedClasses = new HashMap<String,ClassInfo>();
 
     this.cp = cp;
     this.parent = parent;
     this.gid = this.computeGlobalId(vm);
+    this.objRef = objRef;
 
     Class<?>[] argTypes = { Config.class, KernelState.class };
     Object[] args = { config, vm.getKernelState() };
@@ -90,6 +94,15 @@ public class ClassLoaderInfo
     this.staticArea = config.getEssentialInstance("vm.static.class", StaticArea.class, argTypes, args);
 
     vm.registerClassLoader(this);
+
+    ElementInfo ei = vm.getElementInfo(objRef);
+
+    // For systemClassLoaders, this object is still null, since the class java.lang.ClassLoader 
+    // class cannot be loaded before creating the systemClassLoader
+    if(ei!=null) {
+      ei.setIntField("clRef", gid);
+      ei.setReferenceField("parent", parent.objRef);
+    }
   }
 
   public Memento<ClassLoaderInfo> getMemento (MementoFactory factory) {
