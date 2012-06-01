@@ -230,7 +230,7 @@ public class ClassLoaderInfo
       ClassInfo.logger.finer("registering class: ", ci.name);
 
       // register ourself in the static area
-      StaticArea sa = JVM.getVM().getStaticArea();
+      StaticArea sa = ci.getClassLoaderInfo().getStaticArea();
       sa.addClass(ci, ti);
 
       ci.createClassObject(ti);

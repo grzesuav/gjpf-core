@@ -1364,7 +1364,7 @@ public class JVM {
   }
   
   public StaticElementInfo getClassReference (String name) {
-    return ss.ks.getStaticArea().get(name);
+    return ss.ks.getCurrentStaticArea().get(name);
   }
 
   public void print (String s) {
@@ -1927,6 +1927,12 @@ public class JVM {
     return ss.ks.getStaticArea();
   }
 
+  /**
+   * Returns the StaticArea of the current ClassLoader
+   */
+  public StaticArea getCurrentStaticArea() {
+    return ss.ks.getCurrentStaticArea();
+  }
     
   /**
    * <2do> this is where we will hook in a better time model

@@ -1268,7 +1268,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public static ClassInfo getAnnotationProxy (ClassInfo ciAnnotation){
-    StaticArea sa = JVM.getVM().getStaticArea();
+    StaticArea sa = JVM.getVM().getCurrentStaticArea();
     ThreadInfo ti = ThreadInfo.getCurrentThread();
 
     // make sure the annotationCls is initialized (no code there)

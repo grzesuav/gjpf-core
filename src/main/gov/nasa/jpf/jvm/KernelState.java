@@ -93,6 +93,13 @@ public class KernelState implements Restorable<KernelState> {
   }
 
   /**
+   * Returns the StaticArea of the current ClassLoader
+   */
+  public StaticArea getCurrentStaticArea() {
+    return ClassLoaderInfo.getCurrentClassLoader().getStaticArea();
+  }
+
+  /**
    * Adds the given loader to the list of existing class loaders. 
    */
   public void addClassLoader(ClassLoaderInfo cl) {
@@ -168,12 +175,26 @@ public class KernelState implements Restorable<KernelState> {
     // (outside of reference fields)
     // <2do> get rid of this by storing objects instead of ref/id values that are reused
     heap.cleanUpDanglingReferences();
-    getStaticArea().cleanUpDanglingReferences(heap);
+    cleanUpDanglingStaticReferences();
+  }
+
+  private void cleanUpDanglingStaticReferences() {
+    for(ClassLoaderInfo cl: classLoaders) {
+      StaticArea sa = cl.getStaticArea();
+      sa.cleanUpDanglingReferences(heap);
+    }
   }
 
   public void hash (HashData hd) {
     heap.hash(hd);
-    getStaticArea().hash(hd);
+    hashStatics(hd);
     threads.hash(hd);
+  }
+
+  private void hashStatics (HashData hd) {
+    for(ClassLoaderInfo cl: classLoaders) {
+      StaticArea sa = cl.getStaticArea();
+      sa.hash(hd);
+    }
   }
 }

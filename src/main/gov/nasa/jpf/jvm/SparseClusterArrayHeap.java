@@ -434,7 +434,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
 
     markPinDownList();
     vm.getThreadList().markRoots(this); // mark thread stacks
-    vm.getStaticArea().markRoots(this); // mark objects referenced from StaticArea ElementInfos
+    markStaticRoots(); // mark objects referenced from StaticArea ElementInfos
 
     // add pinned down objects
 
@@ -475,6 +475,13 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
 
     vm.processPostGcActions();
     vm.notifyGCEnd();
+  }
+
+  private void markStaticRoots() {
+    for(ClassLoaderInfo cl: vm.getKernelState().classLoaders) {
+      StaticArea sa = cl.getStaticArea();
+      sa.markRoots(this);
+    }
   }
 
   public boolean isAlive (ElementInfo ei){

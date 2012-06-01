@@ -79,7 +79,7 @@ public class MJIEnv {
     // this thread (where any access to the heap or sa would bomb)
     vm = ti.getVM();
     heap = vm.getHeap();
-    sa = vm.getStaticArea();
+    sa = vm.getCurrentStaticArea();
 
     exceptionRef = NULL;
   }
@@ -1386,7 +1386,7 @@ public class MJIEnv {
   }
   
   StaticArea getStaticArea () {
-    return ti.getVM().getStaticArea();
+    return ti.getVM().getCurrentStaticArea();
   }
 
   public SystemState getSystemState () {
