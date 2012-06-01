@@ -31,6 +31,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassPath;
+import gov.nasa.jpf.jvm.ThreadInfo.State;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 /**
@@ -326,5 +327,14 @@ public class ClassLoaderInfo
    */
   public Iterator<ClassInfo> iterator () {
     return definedClasses.values().iterator();
+  }
+
+  /**
+   * For now, this always returns true, and it used while the classloader is being
+   * serialized. That is going to be changed if we ever consider unloading the
+   * classes. For now, it is just added in analogy to ThreadInfo
+   */
+  public boolean isAlive () {
+    return true;
   }
 }

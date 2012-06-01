@@ -350,7 +350,9 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
     buf.add(ks.classLoaders.size());
 
     for (ClassLoaderInfo cl : ks.classLoaders) {
-      serializeStaticArea(cl.getStaticArea());
+      if(cl.isAlive()) {
+        serializeStaticArea(cl.getStaticArea());
+      }
     }
   }
 

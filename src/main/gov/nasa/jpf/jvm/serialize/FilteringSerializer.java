@@ -405,7 +405,9 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     buf.add(ks.classLoaders.size());
 
     for (ClassLoaderInfo cl : ks.classLoaders) {
-      serializeStaticArea(cl.getStaticArea());
+      if(cl.isAlive()) {
+        serializeStaticArea(cl.getStaticArea());
+      }
     }
   }
 
