@@ -34,8 +34,11 @@ public class ClassLoader {
 
   static ClassLoader systemClassLoader = new ClassLoader();
   
-  ClassLoader parent;  
-  
+  ClassLoader parent;
+
+  // This is JPF internal identifier which set to the globalId of the classLoader
+  private int clRef;
+
   //--- internals
   private native void init0();
   private native String getResourcePath (String rname);
