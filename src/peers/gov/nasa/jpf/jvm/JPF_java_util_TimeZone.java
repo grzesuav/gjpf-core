@@ -18,20 +18,145 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+/**
+ * native peer for java.util.TimeZone
+ * 
+ * this is a (mostly) delegating implementation that became necessary because TimeZone has been
+ * considerably changed in Java 1.7 (OpenJDK) and we need a version that is compatible with
+ * pre and post 1.7 releases
+ */
 public class JPF_java_util_TimeZone {
 
-  static TimeZone getTimeZone(MJIEnv env, int tzRef) {
-    int idRef = env.getReferenceField(tzRef, "ID");
-    String id = env.getStringObject(idRef);
-    
-    return TimeZone.getTimeZone(id);
+
+  //--- internals
+  static TimeZone tz; // only used within (atomic) peer methods so that we don't have to instantiate all the time
+  
+  // we have to keep optional defaults here so that we don't change the host environment
+  static String defaultID;
+  static int defaultRawOffset;
+  
+  static {
+    tz = TimeZone.getDefault();
+    defaultID = tz.getID();
+    defaultRawOffset = tz.getRawOffset();
   }
   
+  private static TimeZone getTimeZone (MJIEnv env, int objRef){
+    int rawOffset = env.getIntField(objRef, "rawOffset");
+    tz.setRawOffset(rawOffset);
+    return tz;
+  }
+
+  //--- native methods
+  
+  //--- the factory methods
+  public static int getTimeZone__Ljava_lang_String_2__Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef, int idRef){
+    String id = env.getStringObject(idRef);
+    TimeZone tz = TimeZone.getTimeZone(id);
+    
+    int rawOffset = tz.getRawOffset();
+    String realId = tz.getID(); // could have been changed if id was unknown
+    if (!realId.equals(id)){
+      idRef = env.newString(realId);
+    }
+
+    int tzRef = env.newObject("java.util.TimeZone");
+    env.setReferenceField(tzRef, "ID", idRef);
+    env.setIntField(tzRef, "rawOffset", rawOffset);
+    
+    return tzRef;
+  }
+  
+  public static int getDefault____Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef){
+    int idRef = env.newString(defaultID);
+
+    int tzRef = env.newObject("java.util.TimeZone");
+    env.setReferenceField(tzRef, "ID", idRef);
+    env.setIntField(tzRef, "rawOffset", defaultRawOffset);
+    
+    return tzRef;
+  }
+  
+  public static void setDefault__Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef, int tzRef){
+    defaultID = env.getStringField(tzRef, "ID");
+    defaultRawOffset = env.getIntField( tzRef, "rawOffset");
+  }
+  
+  //--- the ID queries
+  public static int getAvailableIDs_____3Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
+    String[] ids = TimeZone.getAvailableIDs();
+    return env.newStringArray(ids);
+  }
+  
+  public static int getAvailableIDs__I___3Ljava_lang_String_2 (MJIEnv env, int clsObjRef, int rawOffset){
+    String[] ids = TimeZone.getAvailableIDs(rawOffset);
+    return env.newStringArray(ids);    
+  }
+
+  
+  public static void setID__Ljava_lang_String_2__V (MJIEnv env, int objRef, int idRef){
+    String id = env.getStringObject(idRef);
+    TimeZone tz = TimeZone.getTimeZone(id);
+    
+    int rawOffset = tz.getRawOffset();
+    String realId = tz.getID(); // could have been changed if id was unknown
+    if (!realId.equals(id)){
+      idRef = env.newString(realId);
+    }
+    
+    env.setReferenceField(objRef, "ID", idRef);
+    env.setIntField(objRef, "rawOffset", rawOffset);
+  }
+  
+  public static int getOffset__IIIIII__I (MJIEnv env, int objRef,
+      int era, int year, int month, int day, int dayOfWeek, int milliseconds){
+    TimeZone tz = getTimeZone( env, objRef);
+    return tz.getOffset(era, year, month, day, dayOfWeek, milliseconds);
+  }
+    
+  public static int getOffset__J__I (MJIEnv env, int objRef, long date){
+    TimeZone tz = getTimeZone( env, objRef);
+    return tz.getOffset(date);
+  }
+  
+  // unfortunately, this is not public in Java 1.7, so we can't delegate w/o reflection
+  public static int getOffsets__J_3I__I (MJIEnv env, int objRef, long date, int offsetsRef){
+    TimeZone tz = getTimeZone( env, objRef);
+    
+    int rawOffset = tz.getRawOffset();
+    int dstOffset = 0;
+    if (tz.inDaylightTime(new Date(date))) {
+      dstOffset = tz.getDSTSavings();
+    }
+    
+    if (offsetsRef != MJIEnv.NULL) {
+      env.setIntArrayElement( offsetsRef, 0, rawOffset);
+      env.setIntArrayElement( offsetsRef, 1, dstOffset);
+    }
+    
+    return (rawOffset + dstOffset);
+  }
+  
+  public static boolean inDaylightTime__J__Z (MJIEnv env, int objRef, long time){
+    Date date = new Date(time);
+    TimeZone tz = getTimeZone( env, objRef);
+    return tz.inDaylightTime(date);
+  }
+  
+  public static boolean useDaylightTime____Z (MJIEnv env, int objRef){
+    TimeZone tz = getTimeZone( env, objRef);
+    return tz.useDaylightTime();
+  }
+
+  public static int getDSTSavings____I (MJIEnv env, int objRef){
+    TimeZone tz = getTimeZone( env, objRef);
+    return tz.getDSTSavings();    
+  }
+    
   public static int getDisplayName__ZILjava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objRef,
                                        boolean daylight, int style, int localeRef) {
     TimeZone tz = getTimeZone(env, objRef);
@@ -41,45 +166,6 @@ public class JPF_java_util_TimeZone {
     int sref = env.newString(s);
     return sref;
   }
-
-  public static int getTimeZone__Ljava_lang_String_2__Ljava_util_TimeZone_2 (MJIEnv env, int clsRef,
-                                                                              int idRef){
-    String id = env.getStringObject(idRef);
-    TimeZone tz = TimeZone.getTimeZone(id);
-    
-    id = tz.getID();
-    idRef = env.newString(id);
-    
-    int tzRef = env.newObject("java.util.TimeZone");
-    env.setReferenceField(tzRef, "ID", idRef);
-    
-    return tzRef;
-  }
   
-  public static boolean inDaylightTime__Ljava_util_Date_2__Z (MJIEnv env, int objRef, int dateRef){
-    TimeZone tz = getTimeZone(env, objRef);
-    Date date = JPF_java_util_Date.getDate(env, dateRef);
-    return tz.inDaylightTime(date);
-  }
-  
-  public static int getRawOffset____I (MJIEnv env, int objRef){
-    TimeZone tz = getTimeZone(env, objRef);
-    return tz.getRawOffset();
-  }
-
-  // used from within the private setDefaultZone()
-  public static int getSystemGMTOffsetID____Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
-    // unfortunately this is private, so we have to use reflection
-    try {
-      Method m = TimeZone.class.getMethod("getSystemGMTOffsetID");
-      m.setAccessible(true);
-      String s = (String)m.invoke(null);
-      
-      return env.newString(s);
-      
-    } catch (Throwable t){
-      return MJIEnv.NULL;
-    }
-  }
 }
 

@@ -38,9 +38,20 @@ public class JPF_java_util_Locale {
 
 
     //--- if it wasn't any of these, get the fields and just construct it
-    String country = env.getStringObject(env.getReferenceField(locref, "country"));
-    String language = env.getStringObject(env.getReferenceField(locref, "language"));
-    String variant = env.getStringObject(env.getReferenceField(locref, "variant"));
+
+    String country, language, variant;
+    FieldInfo fiBase = ci.getInstanceField("baseLocale");
+    if (fiBase != null){ // Java >= 1.7
+      int baseLocref = env.getReferenceField(locref, fiBase);
+      country = env.getStringObject(env.getReferenceField(baseLocref,"region"));
+      language = env.getStringObject(env.getReferenceField(baseLocref, "language"));
+      variant = env.getStringObject(env.getReferenceField(baseLocref, "variant"));
+            
+    } else {  // Java < 1.7
+      country = env.getStringObject(env.getReferenceField(locref,"country"));
+      language = env.getStringObject(env.getReferenceField(locref, "language"));
+      variant = env.getStringObject(env.getReferenceField(locref, "variant"));
+    }
     
     Locale locale = new Locale(language,country,variant); 
     return locale;
