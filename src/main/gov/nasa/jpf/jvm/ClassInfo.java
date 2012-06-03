@@ -2503,7 +2503,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
       logger.finer("resolving superclass: ", superName, " of ", name);
 
-      ClassInfo sci = getResolvedClassInfo(superName);
+      ClassInfo sci = (classLoader!=null)? classLoader.getResolvedClassInfo(superName):
+        getResolvedClassInfo(superName);
       if (sci == null){
         throw new NoClassInfoException(superName);
       }
