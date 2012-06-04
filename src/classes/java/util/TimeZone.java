@@ -18,6 +18,7 @@
 //
 package java.util;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -25,23 +26,56 @@ import java.util.Date;
  * problems
  * Note that we drop the abstract modifier
  */
-public class TimeZone  {
+public class TimeZone implements Serializable, Cloneable {
 
   private static final long serialVersionUID = 1L;
 
   private int rawOffset; 
   private String ID;
   
+  private static TimeZone defaultZone;
+  
   // public styles
   public static final int SHORT = 0;
   public static final int LONG = 1;
   
   // we keep construction on the peer side
+  private static native TimeZone createDefaultZone();
+  
   // both are always cloned
   public static native TimeZone getTimeZone (String ID);
-  public static native TimeZone getDefault();
+  public static TimeZone getDefault() {
+    return (TimeZone) (getDefaultRef().clone());
+  }
 
-  public static native void setDefault (TimeZone tz);
+  // called internally (e.g. by java.util.Date) - no clone here
+  static TimeZone getDefaultRef(){
+    if (defaultZone == null){
+      defaultZone = createDefaultZone();
+    }
+    
+    return defaultZone;
+  }
+  
+  // clone handles CloneNotSupportedException
+  public Object clone() {
+    try {
+      return (TimeZone) super.clone();
+    } catch (CloneNotSupportedException e) {
+      throw new InternalError();
+    }
+  }
+  
+  public static void setDefault (TimeZone tz) {
+    if (tz == null){ // that's a reset according to the API docs
+      defaultZone = createDefaultZone();
+    } else {
+      defaultZone = tz;
+    }
+    
+    setDefaultValues(defaultZone); // remember on the native side
+  }
+  private static native void setDefaultValues (TimeZone tz); 
   
   public static native String[] getAvailableIDs();
   public static native String[] getAvailableIDs(int rawOffset);

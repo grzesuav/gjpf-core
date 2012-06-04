@@ -40,9 +40,7 @@ public class JPF_java_util_TimeZone {
   static int defaultRawOffset;
   
   static {
-    tz = TimeZone.getDefault();
-    defaultID = tz.getID();
-    defaultRawOffset = tz.getRawOffset();
+    getHostDefaultValues();
   }
   
   private static TimeZone getTimeZone (MJIEnv env, int objRef){
@@ -71,7 +69,13 @@ public class JPF_java_util_TimeZone {
     return tzRef;
   }
   
-  public static int getDefault____Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef){
+  static void getHostDefaultValues(){
+    tz = TimeZone.getDefault();
+    defaultID = tz.getID();
+    defaultRawOffset = tz.getRawOffset();
+  }
+  
+  public static int createDefaultZone____Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef){
     int idRef = env.newString(defaultID);
 
     int tzRef = env.newObject("java.util.TimeZone");
@@ -80,8 +84,9 @@ public class JPF_java_util_TimeZone {
     
     return tzRef;
   }
+
   
-  public static void setDefault__Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef, int tzRef){
+  public static void setDefaultValues__Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef, int tzRef){
     defaultID = env.getStringField(tzRef, "ID");
     defaultRawOffset = env.getIntField( tzRef, "rawOffset");
   }
