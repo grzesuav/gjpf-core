@@ -114,6 +114,21 @@ public class ClassLoaderInfo
     return new ClMemento(this);
   }
 
+  /**
+   * this is our internal, search global id that is used for the
+   * canonical root set
+   */
+  public int getGlobalId() {
+    return gid;
+  }
+
+  /**
+   * Returns the object reference.
+   */
+  public int getClassLoaderObjectRef () {
+    return objRef;
+  }
+
   protected int computeGlobalId (JVM vm){
     ThreadInfo tiExec = vm.getCurrentThread();
     Instruction insn = null;
