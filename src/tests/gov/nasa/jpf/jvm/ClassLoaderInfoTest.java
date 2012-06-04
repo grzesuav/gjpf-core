@@ -28,6 +28,7 @@ public class ClassLoaderInfoTest extends TestJPF {
 
   @Test
   public void testSystemClassLoader() {
+    //--- Sets up the JPF environment
     // just use some dummy class to be able to initialize jpf & jvm 
     String[] args = {"+target=HelloWorld"};
     Config config = JPF.createConfig(args);
@@ -36,16 +37,18 @@ public class ClassLoaderInfoTest extends TestJPF {
     JVM vm = jpf.getVM();
     vm.initialize();
 
+
+    //--- Gets systemClassLoaders
     // gets the systemClassLoader which already loaded the startup classes
     SystemClassLoader cl1 = vm.getSystemClassLoader();
-
     // create a new systemClassLoader
     SystemClassLoader cl2 = vm.createSystemClassLoader();
     // loades the startup classes through
     cl2.loadStartUpClasses(vm);
 
-    assert cl1.definedClasses.size() == ClassInfo.getLoadedClasses().length;
 
+    //--- Tests classloaders
+    assert cl1.definedClasses.size() == ClassInfo.getLoadedClasses().length;
     assert cl1.getGlobalId() != cl2.getGlobalId();
     assert cl1.staticArea != cl2.staticArea;
     assert cl1.parent == null;
@@ -61,12 +64,35 @@ public class ClassLoaderInfoTest extends TestJPF {
     ElementInfo ei2 = heap.get(cl2ObjRef);
     assert ei2.getIntField("clRef") == cl2.getGlobalId();
 
+
+    //--- Tests classes which are already loaded by both classLoaders
     ClassInfo ci1 = cl1.getResolvedClassInfo("java.lang.Class");
     ClassInfo ci2 = cl2.getResolvedClassInfo("java.lang.Class");
 
     assert ci1 != ci2;
     assert ci1.getName().equals(ci2.getName());
     assert ci1.getClassFileUrl().equals(ci2.getClassFileUrl());
-    assert ci1.getUniqueId() != ci2.getUniqueId();   
+    assert ci1.getUniqueId() != ci2.getUniqueId();
+    // cl1 loaded java.lang.Class earlier than cl2, therefore 
+    // ClassInfo.loadedClasses must contain ci1 and not ci2
+    assert ci1 == ClassInfo.loadedClasses.get(ci2.getClassFileUrl());
+
+
+    //--- Tests classes which are going to be loaded by both classLoaders
+    ci2 = cl2.getResolvedClassInfo("java.util.ArrayList");
+    ci1 = cl1.getResolvedClassInfo("java.util.ArrayList");
+
+    assert ci1 != ci2;
+    assert ci1.getName().equals(ci2.getName());
+    assert ci1.getClassFileUrl().equals(ci2.getClassFileUrl());
+
+    ThreadInfo ti = vm.getCurrentThread();
+    // classes need to be registered before retrieving the uniqueIds
+    cl1.registerClass(ti, ci1);
+    cl2.registerClass(ti, ci2);
+    assert ci1.getUniqueId() != ci2.getUniqueId();  
+    // cl2 loaded java.util.ArrayList earlier than cl2, therefore 
+    // ClassInfo.loadedClasses must contain ci2 and not ci1
+    assert ci2 == ClassInfo.loadedClasses.get(ci1.getClassFileUrl());
   }
 }
