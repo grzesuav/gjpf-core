@@ -377,6 +377,7 @@ public class JVM {
     ElementInfo ei = heap.get(objRef);
     ei.setIntField("clRef", cl.gid);
     ei.setReferenceField("parent", MJIEnv.NULL);
+    cl.objRef = objRef;
 
     return cl;
   }
