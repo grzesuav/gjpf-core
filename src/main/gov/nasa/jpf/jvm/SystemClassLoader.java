@@ -211,4 +211,16 @@ public class SystemClassLoader extends ClassLoaderInfo {
       }
     }
   }
+
+  /**
+   * This loads the startup classes. Loading includes the following steps:
+   *   1. Defines
+   *   2. Resolves
+   *   3. Initializes
+   */
+  protected void loadStartUpClasses(JVM vm) {
+    registerStartupClasses(vm);
+    createStartupClassObjects(vm.getCurrentThread());
+    pushClinits(vm.getCurrentThread());
+  }
 }
