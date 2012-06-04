@@ -31,7 +31,6 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassPath;
-import gov.nasa.jpf.jvm.ThreadInfo.State;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 /**
@@ -342,6 +341,32 @@ public class ClassLoaderInfo
    */
   public Iterator<ClassInfo> iterator () {
     return definedClasses.values().iterator();
+  }
+
+  /**
+   * Creates a classLoader object in the heap
+   */
+  protected ElementInfo createClassLoaderObject(ClassInfo ci, ClassLoaderInfo parent) {
+    Heap heap = JVM.getVM().getHeap();
+
+    //--- create java.lang.ClassLoader object corresponding to a systemClassLoader
+    int objRef = heap.newObject( ci, null);
+
+    //--- initialize the systemClassLoader object
+    ElementInfo ei = heap.get(objRef);
+    ei.setIntField("clRef", gid);
+
+    int parentRef;
+    if(parent == null) {
+      parentRef = MJIEnv.NULL;
+    } else {
+      parentRef = parent.objRef;
+    }
+    ei.setReferenceField("parent", parentRef);
+
+    this.objRef = objRef;
+
+    return ei;
   }
 
   /**

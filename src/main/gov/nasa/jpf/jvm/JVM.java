@@ -23,7 +23,6 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.classfile.ClassFile;
-import gov.nasa.jpf.classfile.ClassPath;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
@@ -34,7 +33,6 @@ import java.io.PrintWriter;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 
 /**
@@ -358,8 +356,6 @@ public class JVM {
    * hierarchy
    */
   protected SystemClassLoader createSystemClassLoader() {
-    Heap heap = getHeap();
-
     //--- create the ClassLoaderInfo
     SystemClassLoader cl = new SystemClassLoader(this);
 
@@ -368,16 +364,8 @@ public class JVM {
     systemClassLoader = cl;
 
     //--- java.lang.ClassLoader is registered later along with other startup classes
-    ClassInfo ciClassLoader = cl.getResolvedClassInfo("java.lang.ClassLoader");
-
-    //--- create java.lang.ClassLoader object corresponding to a systemClassLoader
-    int objRef = heap.newObject( ciClassLoader, null);
-
-    //--- initialize the systemClassLoader object
-    ElementInfo ei = heap.get(objRef);
-    ei.setIntField("clRef", cl.gid);
-    ei.setReferenceField("parent", MJIEnv.NULL);
-    cl.objRef = objRef;
+    ClassInfo ci = cl.getResolvedClassInfo("java.lang.ClassLoader");
+    cl.createClassLoaderObject(ci, null);
 
     return cl;
   }
