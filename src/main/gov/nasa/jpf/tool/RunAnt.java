@@ -76,25 +76,38 @@ public class RunAnt {
     System.err.println("ERROR: " + msg);
     System.exit(1);
   }
-  
-  static void addJavac(List<URL> list) {
+
+  static String getToolsJarPath(){
     char sc = File.separatorChar;
     String javaHome = System.getProperty("java.home");
+    String toolsJarPath = null;
+    
+    if (javaHome.endsWith(sc + "jre")){
+      toolsJarPath = javaHome.substring(0, javaHome.length()-4) + sc + "lib" + sc + "tools.jar";
+    } else {
+      toolsJarPath = javaHome + sc + "lib" + sc + "tools.jar";
+    }
+    
+    return toolsJarPath;
+  }
+  
+  static void addJavac(List<URL> list) {
     String os = System.getProperty("os.name");
-    String toolsJarPath;
+    String version = System.getProperty("java.version");
+    String toolsJarPath = null;
 
     if ("Mac OS X".equals(os)){
-      // nothing to do, it's in classes.jar
+      // pre Java 1.7 it was part of classes.zip, but with OpenJDK, it got moved back into tools.jar
+      if (version.compareTo("1.7") >= 0){  // I guess it will be a while until we reach Java 10
+        toolsJarPath = getToolsJarPath();
+      }
+      
     } else {
       // on Linux and Windows it's in ${java.home}/lib/tools.jar
-
-      if (javaHome.endsWith(sc + "jre")){
-        warning("this is a JRE, which does not come with tools.jar: " + javaHome);
-        toolsJarPath = javaHome.substring(0, javaHome.length()-4) + sc + "lib" + sc + "tools.jar";
-      } else {
-        toolsJarPath = javaHome + sc + "lib" + sc + "tools.jar";
-      }
-
+      toolsJarPath = getToolsJarPath();
+    }
+    
+    if (toolsJarPath != null){
       File toolsJar = new File(toolsJarPath);
       if (toolsJar.isFile()){
         try {
