@@ -31,6 +31,10 @@ import gov.nasa.jpf.util.ObjVector;
  * ClassLoaderInfo), and it is kept in a static field of the respective class.
  * 
  * Returned id values are packed, i.e. can be used to index into arrays
+ * 
+ * The global ids are guaranteed to be unique along a given path since
+ * there can only be one Nth object of class C created in Thread T at any time, and
+ * we use a <GlobalId,int> hashmap with a GlobalId.equals() that compares both values 
  */
 public class GlobalIdManager {
 
