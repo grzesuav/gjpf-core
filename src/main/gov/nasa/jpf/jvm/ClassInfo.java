@@ -63,7 +63,7 @@ import java.util.logging.Level;
  * static and dynamic fields, methods, and information relevant to the
  * class.
  */
-public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, GenericSignatureHolder {
+public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, GenericSignatureHolder, Cloneable {
 
   //--- ClassInfo states, in chronological order
   // note the somewhat strange, decreasing values - >= 0 (=thread-id) means 
@@ -2648,9 +2648,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * of which has been loaded by some other classloader.
    */
   public ClassInfo getInstanceFor(ClassLoaderInfo cl) {
-    
+    ClassInfo ci;
+
     try {
-      ClassInfo ci = (ClassInfo)super.clone();
+      ci = (ClassInfo)super.clone();
+
+      ci.annotations = annotations;
 
       ci.name = name;
       ci.signature = signature;
@@ -2682,20 +2685,23 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ci.sFields = sFields.clone();
       ci.staticDataSize = staticDataSize;
 
-      ci.superClass = cl.getResolvedClassInfo(superClass.getName());
-      ci.enclosingClassName = new String(enclosingClassName);
-      ci.enclosingMethodName = new String(enclosingMethodName);
+      if(superClass!=null) {
+        ci.superClass = cl.getResolvedClassInfo(superClass.getName());
+      }
+
+      ci.enclosingClassName = enclosingClassName;
+      ci.enclosingMethodName = enclosingMethodName;
 
       ci.innerClassNames = innerClassNames.clone();
       for(int i=0; i<innerClassNames.length; i++) {
-        ci.innerClassNames[i] = new String(innerClassNames[i]);
+        ci.innerClassNames[i] = innerClassNames[i];
       }
 
       ci.interfaceNames = interfaceNames;
       ci.allInterfaces = allInterfaces;
 
-      ci.packageName = new String(packageName);
-      ci.sourceFileName = new String(sourceFileName);
+      ci.packageName = packageName;
+      ci.sourceFileName = sourceFileName;
 
       // we are going to get rid of this after classloader implementation?
       ci.container = container;
@@ -2708,9 +2714,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ci.releaseActions = releaseActions;
       
     } catch (CloneNotSupportedException cnsx){
+      cnsx.printStackTrace();
       return null;
     }
-    return null;
+    return ci;
   }
 }
 
