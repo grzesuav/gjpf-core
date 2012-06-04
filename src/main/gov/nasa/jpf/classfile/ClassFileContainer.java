@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -33,6 +34,7 @@ import java.util.jar.JarFile;
 public abstract class ClassFileContainer {
 
   String name;
+  String url;
 
   protected ClassFileContainer(String name) {
     this.name = name;
@@ -40,6 +42,10 @@ public abstract class ClassFileContainer {
 
   public String getName() {
     return name;
+  }
+
+  public String getURL() {
+    return url;
   }
 
   public abstract byte[] getClassData(String clsName) throws ClassFileException;
@@ -123,6 +129,13 @@ class DirContainer extends ClassFileContainer {
 
   DirContainer(File dir) {
     super(dir.getPath());
+
+    try {
+      url = dir.toURI().toURL().toString();
+    } catch (MalformedURLException e) {
+      url = null;
+    }
+
     this.dir = dir;
   }
 
@@ -170,12 +183,14 @@ class JarContainer extends ClassFileContainer {
   JarContainer(File file) throws IOException {
     super(file.getPath());
 
+    url = "jar:" + file.toURI().toURL().toString() + "!/";
     jar = new JarFile(file);
   }
 
   JarContainer (File file, String pathPrefix) throws IOException {
     super(getPath(file, pathPrefix));
 
+    url = "jar:" + file.toURI().toURL().toString() + "!/";
     jar = new JarFile(file);
     
     this.pathPrefix = getNormalizedPathPrefix(pathPrefix);

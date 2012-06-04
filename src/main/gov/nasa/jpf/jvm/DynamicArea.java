@@ -180,7 +180,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     //--- phase 1 - add our root sets.
     markPinnedDown();
     ks.threads.markRoots(this); // mark thread stacks
-    ks.statics.markRoots(this); // mark objects referenced from StaticArea ElementInfos
+    markStaticRoots(); // mark objects referenced from StaticArea ElementInfos
 
     //--- phase 2 - traverse all queued elements
     markQueue.process(this);
@@ -239,6 +239,12 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     vm.notifyGCEnd();
   }
 
+  private void markStaticRoots() {
+    for(ClassLoaderInfo cl: ks.classLoaders) {
+      StaticArea sa = cl.getStaticArea();
+      sa.markRoots(this);
+    }
+  }
 
   public void cleanUpDanglingReferences () {
     // nothing - we already cleaned up our live objects
@@ -399,7 +405,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   public int newString (String str, ThreadInfo th) {
     if (str != null) {
       int length = str.length();
-      int index = newObject(ClassInfo.stringClassInfo, th);
+      int index = newObject(ClassInfo.getResolvedClassInfo("java.lang.String"), th);
       int value = newArray("C", length, th);
 
       ElementInfo e = get(index);
@@ -441,7 +447,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
 
   protected boolean checkInternStringEntry (InternStringEntry e) {
     ElementInfo ei = get(e.ref);
-    if (ei != null && ei.getClassInfo() == ClassInfo.stringClassInfo) {
+    if (ei != null && ClassInfo.isStringClassInfo(ei.getClassInfo())) {
       // check if it was the interned string
       int vref = ei.getReferenceField("value");
       ei = get(vref);

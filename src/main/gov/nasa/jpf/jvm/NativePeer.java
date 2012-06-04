@@ -37,7 +37,7 @@ import java.util.logging.Level;
  * class executed by JPF that has native mehods must have a native peer class
  * (which is looked up and associated at class loadtime)
  */
-public class NativePeer {
+public class NativePeer implements Cloneable {
 
   static final String MODEL_PACKAGE = "<model>";
   static final String DEFAULT_PACKAGE = "<default>";
@@ -339,6 +339,21 @@ public class NativePeer {
     } else {
       return null;
     }
+  }
+
+  public NativePeer getInstanceFor(ClassInfo ci) {
+    NativePeer nativePeer = null;
+
+    try {
+      nativePeer = (NativePeer)super.clone();
+      nativePeer.ci = ci;
+      nativePeer.methods = new HashMap<String, Method>(methods);
+      nativePeer.peerClass = peerClass;
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+
+    return nativePeer;
   }
 }
 

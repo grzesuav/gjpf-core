@@ -55,4 +55,12 @@ public class DefaultMementoRestorer extends MementoRestorer {
   public Memento<Heap> getMemento(SparseClusterArrayHeap sca){
     return sca.getMemento();
   }
+
+  public Memento<ClassLoaderList> getMemento (ClassLoaderList cllist) {
+    return cllist.getMemento();
+  }
+
+  public Memento<ClassLoaderInfo> getMemento (ClassLoaderInfo cl) {
+    return cl.getMemento();
+  }
 }

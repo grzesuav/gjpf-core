@@ -71,7 +71,7 @@ public class DoubleSpec {
         }
         else { // static method (no this)- must be static var
           ClassInfo ci = ti.getMethod().getClassInfo();
-          StaticElementInfo ei = vm.getKernelState().statics.get(ci.getName());
+          StaticElementInfo ei = vm.getKernelState().getCurrentStaticArea().get(ci.getName());
           ret = ei.getDoubleField(varId[0]);
         }
       }
@@ -79,7 +79,7 @@ public class DoubleSpec {
     }
     case 2: { // static variable name TODO other cases here...
       ClassInfo ci = ClassInfo.getResolvedClassInfo(varId[0]);
-      StaticElementInfo ei = vm.getStaticArea().get(ci.getName());
+      StaticElementInfo ei = ci.getClassLoaderInfo().getStaticArea().get(ci.getName());
       ret = ei.getDoubleField(varId[1]);
       break;
     }

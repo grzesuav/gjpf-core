@@ -18,15 +18,61 @@
 //
 package gov.nasa.jpf.jvm;
 
+
 /**
- * class to store object references (used for locking purposes)
+ * helper class to store reference objects
+ * <2do> check how 'isClass' correlates with ClassRef
+ * 
+ * <2do> - I'm a bit suspicious of that this is just a workaround for the
+ * Static/DynamicElementInfo thing, and would go away if we get rid of
+ * the statics
  */
-public class ObjRef extends Ref {
+public class ObjRef {
+  public static final ObjRef NULL = new ObjRef(-1);
+  int                        reference;
+  boolean                    isClass;
+
+  protected ObjRef (int r, boolean c) {
+    reference = r;
+    isClass = c;
+  }
+
   public ObjRef (int r) {
-    super(r, false);
+    this(r, false);
+  }
+
+  public boolean isClass () {
+    return isClass;
+  }
+
+  public boolean isNull () {
+    return reference == -1;
+  }
+
+  public int getReference () {
+    return reference;
   }
 
   public Object clone () {
     return new ObjRef(reference);
+  }
+
+  public boolean equals (Object o) {
+    return (reference == ((ObjRef) o).reference) && 
+           (isClass == ((ObjRef) o).isClass);
+  }
+
+  public int hashCode () {
+    return reference;
+  }
+
+  public String toString () {
+    JVM vm = JVM.getVM();
+
+    if (isClass) { // StaticElementInfo
+      return vm.getCurrentStaticArea().get(reference).toString(); // this is SO ugly, remove this
+    } else {       // DynamicElementInfo
+      return (vm.getHeap().get(reference)).toString();
+    }
   }
 }

@@ -237,10 +237,14 @@ public class JPF_java_lang_Class {
   }
 
   public static int getClassLoader____Ljava_lang_ClassLoader_2 (MJIEnv env, int objref){
-    // <2do> - that's a shortcut hack for now, since we don't support user defined
-    // ClassLoaders yet
-    int clRef = env.getStaticReferenceField("java.lang.ClassLoader", "systemClassLoader");
-    return clRef;
+    ClassInfo ci = env.getReferredClassInfo( objref);
+    ClassLoaderInfo cli = ci.getClassLoaderInfo();
+
+    // if the class is loaded by a system classloader, this should return null
+    if(cli.isSystemClassLoader()) {
+      return MJIEnv.NULL;
+    }
+    return cli.objRef;
   }
 
   static int getMethod (MJIEnv env, int clsRef, ClassInfo ciMethod, String mname, int argTypesRef,
