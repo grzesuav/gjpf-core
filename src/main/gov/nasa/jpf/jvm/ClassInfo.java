@@ -1919,7 +1919,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public static ClassInfo[] getLoadedClasses() {
-    return (ClassInfo[]) loadedClasses.values().toArray();
+    return loadedClasses.values().toArray(new ClassInfo[loadedClasses.size()]);
   }
 
   public static String makeModelClassPath (Config config) {
@@ -2706,13 +2706,16 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       // we are going to get rid of this after classloader implementation?
       ci.container = container;
 
-      ci.nativePeer = nativePeer.getInstanceFor(ci);
+      if(nativePeer != null) {
+        ci.nativePeer = nativePeer.getInstanceFor(ci);
+      }
+
       ci.source = source;
 
       ci.attr = attr;
       ci.enableAssertions = enableAssertions;
       ci.releaseActions = releaseActions;
-      
+
     } catch (CloneNotSupportedException cnsx){
       cnsx.printStackTrace();
       return null;
