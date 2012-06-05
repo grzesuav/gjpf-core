@@ -38,23 +38,19 @@ public abstract class ClassLoader {
   private int clRef;
 
   //--- internals
-  private native void init0();
   private native String getResourcePath (String rname);
 
 
   protected static boolean registerAsParallelCapable() {
     return true; // dummy, in prep for jdk7
   }
-  
+
   protected ClassLoader() {
-    // the system ClassLoader ctor
-    this.parent = getSystemClassLoader();
-    init0();
+    // constructed on the native side
   }
-  
+
   protected ClassLoader (ClassLoader parent){
-    this.parent = parent;
-    init0();
+    // constructed on the native side
   }
     
   public URL getResource (String rname) {
