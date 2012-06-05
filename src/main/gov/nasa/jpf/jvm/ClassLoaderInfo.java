@@ -171,6 +171,19 @@ public class ClassLoaderInfo
     return JVM.getVM().getSystemClassLoader();
   }
 
+  /**
+   * This is useful when there are multiple systemClassLoaders created.
+   */
+  public static ClassLoaderInfo getCurrentSystemClassLoader() {
+    ClassLoaderInfo cl = getCurrentClassLoader();
+
+    while(!cl.isSystemClassLoader) {
+      cl = cl.parent;
+    }
+
+    return cl;
+  }
+
   public ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {
     if (className == null) {
       return null;
