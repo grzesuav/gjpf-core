@@ -22,6 +22,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.HashData;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Stack;
 
 
@@ -104,6 +105,22 @@ public class KernelState implements Restorable<KernelState> {
    */
   public void addClassLoader(ClassLoaderInfo cl) {
     classLoaders.add(cl);
+  }
+
+  /**
+   * Returns the ClassLoader with the given globalId
+   */
+  protected ClassLoaderInfo getClassLoader(int gid) {
+    Iterator<ClassLoaderInfo> it = classLoaders.iterator();
+
+    while(it.hasNext()) {
+      ClassLoaderInfo cl = it.next();
+      if(cl.getGlobalId() == gid) {
+        return cl;
+      }
+    }
+
+    return null;
   }
 
   public Heap getHeap() {
