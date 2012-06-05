@@ -1946,7 +1946,14 @@ public class JVM {
   public StaticArea getCurrentStaticArea() {
     return ss.ks.getCurrentStaticArea();
   }
-    
+
+  /**
+   * Returns the ClassLoader with the given globalId
+   */
+  protected ClassLoaderInfo getClassLoader(int gid) {
+    return ss.ks.getClassLoader(gid);
+  }
+
   /**
    * <2do> this is where we will hook in a better time model
    */
