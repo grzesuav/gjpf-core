@@ -24,18 +24,8 @@ package gov.nasa.jpf.jvm;
 public class JPF_java_lang_ClassLoader {
 
   public static void $init____V (MJIEnv env, int objRef) {
-    Heap heap = env.getHeap();
     ClassLoaderInfo systemCl = ClassLoaderInfo.getCurrentSystemClassLoader();
-
-    //--- create the internal representation of the classloader
-    ClassLoaderInfo cl = new ClassLoaderInfo(env.getVM(), objRef, null, systemCl);
-
-    //--- initialize the java.lang.ClassLoader object
-    ElementInfo ei = heap.get(objRef);
-    ei.setIntField("clRef", cl.getGlobalId());
-    // If we decide not to make the systemCLassLoader available through SUT we should set
-    // the parent to null
-    ei.setReferenceField("parent", systemCl.getClassLoaderObjectRef());
+    $init__Ljava_lang_ClassLoader_2__V (env, objRef, systemCl.getClassLoaderObjectRef());
   }
 
   public static void $init__Ljava_lang_ClassLoader_2__V (MJIEnv env, int objRef, int parentRef) {
