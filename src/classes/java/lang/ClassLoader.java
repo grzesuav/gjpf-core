@@ -30,9 +30,7 @@ import java.util.Vector;
  * very very rudimentary beginning of a ClassLoader model. We skip
  * the 'abstract' for now, since all we want is resource lookup
  */
-public class ClassLoader {
-
-  static ClassLoader systemClassLoader = new ClassLoader();
+public abstract class ClassLoader {
   
   ClassLoader parent;
 
@@ -94,11 +92,9 @@ public class ClassLoader {
     }
     return null;
   }
-  
-  public static ClassLoader getSystemClassLoader () {
-    return systemClassLoader;
-  }
-  
+
+  public native static ClassLoader getSystemClassLoader ();
+
   //--- not yet supported methods
   
   protected  Class<?> defineClass (String name, byte[] b, int off, int len) {

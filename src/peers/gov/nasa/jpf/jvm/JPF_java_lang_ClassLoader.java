@@ -23,11 +23,49 @@ package gov.nasa.jpf.jvm;
  */
 public class JPF_java_lang_ClassLoader {
 
-  
-  public static void init0____ (MJIEnv env, int objRef){
-    // not yet
+  public static void $init____V (MJIEnv env, int objRef) {
+    Heap heap = env.getHeap();
+    ClassLoaderInfo systemCl = ClassLoaderInfo.getCurrentSystemClassLoader();
+
+    //--- create the internal representation of the classloader
+    ClassLoaderInfo cl = new ClassLoaderInfo(env.getVM(), objRef, null, systemCl);
+
+    //--- initialize the java.lang.ClassLoader object
+    ElementInfo ei = heap.get(objRef);
+    ei.setIntField("clRef", cl.getGlobalId());
+    // If we decide not to make the systemCLassLoader available through SUT we should set
+    // the parent to null
+    ei.setReferenceField("parent", systemCl.getClassLoaderObjectRef());
   }
-  
+
+  public static void $init__Ljava_lang_ClassLoader_2__V (MJIEnv env, int objRef, int parentRef) {
+    Heap heap = env.getHeap();
+
+    //--- Retrieve the parent ClassLoaderInfo
+    ElementInfo ei = heap.get(parentRef);
+    int parentGId = ei.getIntField("clRef");
+    ClassLoaderInfo parent = env.getVM().getClassLoader(parentGId);
+
+    //--- create the internal representation of the classloader
+    ClassLoaderInfo cl = new ClassLoaderInfo(env.getVM(), objRef, null, parent);
+
+    //--- initialize the java.lang.ClassLoader object
+    ei = heap.get(objRef);
+    ei.setIntField("clRef", cl.getGlobalId());
+
+    // we should use the following block if we decide to make systemClassLoader unavailable 
+    // if(parent.isSystemClassLoader) {
+    //  // we don't want to make the systemCLassLoader available through SUT
+    //  parentRef = MJIEnv.NULL;
+    // }
+
+    ei.setReferenceField("parent", parentRef);
+  }
+
+  public static int getSystemClassLoader____Ljava_lang_ClassLoader_2 (MJIEnv env, int clsObjRef) {
+    return ClassLoaderInfo.getCurrentSystemClassLoader().getClassLoaderObjectRef();
+  }
+
   public static int getResourcePath__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
     String resourceName = env.getStringObject(resRef);
 
