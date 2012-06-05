@@ -365,6 +365,9 @@ public class ClassLoaderInfo
     //--- create ClassLoader object of type ci which corresponds to this ClassLoader
     int objRef = heap.newObject( ci, ti);
 
+    //--- make sure that the classloader object is not garbage collected 
+    heap.registerPinDown(objRef);
+
     //--- initialize the systemClassLoader object
     ElementInfo ei = heap.get(objRef);
     ei.setIntField("clRef", gid);
