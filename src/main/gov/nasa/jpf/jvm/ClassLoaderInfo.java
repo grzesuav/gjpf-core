@@ -346,11 +346,11 @@ public class ClassLoaderInfo
   /**
    * Creates a classLoader object in the heap
    */
-  protected ElementInfo createClassLoaderObject(ClassInfo ci, ClassLoaderInfo parent) {
+  protected ElementInfo createClassLoaderObject(ClassInfo ci, ClassLoaderInfo parent, ThreadInfo ti) {
     Heap heap = JVM.getVM().getHeap();
 
-    //--- create java.lang.ClassLoader object corresponding to a systemClassLoader
-    int objRef = heap.newObject( ci, null);
+    //--- create ClassLoader object of type ci which corresponds to this ClassLoader
+    int objRef = heap.newObject( ci, ti);
 
     //--- initialize the systemClassLoader object
     ElementInfo ei = heap.get(objRef);

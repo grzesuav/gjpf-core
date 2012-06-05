@@ -365,7 +365,8 @@ public class JVM {
 
     //--- java.lang.ClassLoader is registered later along with other startup classes
     ClassInfo ci = cl.getResolvedClassInfo("java.lang.ClassLoader");
-    cl.createClassLoaderObject(ci, null);
+    //--- create java.lang.ClassLoader object corresponding to the systemClassLoader
+    cl.createClassLoaderObject(ci, null, null);
 
     return cl;
   }
