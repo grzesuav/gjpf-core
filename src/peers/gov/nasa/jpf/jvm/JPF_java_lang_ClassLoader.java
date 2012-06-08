@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.classfile.ClassPath;
+
 /**
  * native peer for our (totally incomplete) ClassLoader model
  */
@@ -37,14 +39,14 @@ public class JPF_java_lang_ClassLoader {
     ClassLoaderInfo parent = env.getVM().getClassLoader(parentGId);
 
     //--- create the internal representation of the classloader
-    ClassLoaderInfo cl = new ClassLoaderInfo(env.getVM(), objRef, null, parent);
+    ClassLoaderInfo cl = new ClassLoaderInfo(env.getVM(), objRef, new ClassPath(), parent);
 
     //--- initialize the java.lang.ClassLoader object
     ei = heap.get(objRef);
     ei.setIntField("clRef", cl.getGlobalId());
 
-    // we should use the following block if we decide to make systemClassLoader unavailable 
-    // if(parent.isSystemClassLoader) {
+    // we should use the following block if we ever decide to make systemClassLoader 
+    // unavailable if(parent.isSystemClassLoader) {
     //  // we don't want to make the systemCLassLoader available through SUT
     //  parentRef = MJIEnv.NULL;
     // }
@@ -57,10 +59,33 @@ public class JPF_java_lang_ClassLoader {
   }
 
   public static int getResourcePath__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
-    String resourceName = env.getStringObject(resRef);
+    Heap heap = env.getHeap();
+    String rname = env.getStringObject(resRef);
 
-    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
-    String resourcePath = cl.findResource(resourceName);
+    int gid = heap.get(objRef).getIntField("clRef");
+    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+
+    String resourcePath = getResource(cl, rname);
+
     return env.newString(resourcePath);
+  }
+
+  /**
+   * If the given classloader is systemClassLoader, the resource with given name,
+   * if any, is return. Otherwise, it goes all the way up through the classloader 
+   * hierarchy to search for the given resource
+   */
+  private static String getResource(ClassLoaderInfo cl, String rname) {
+    String resourcePath = null;
+    if(cl.parent != null) {
+      resourcePath = getResource(cl.parent, rname);
+    }
+
+    // either cl is a system classloader or cl parent couldn't find the resource
+    if(resourcePath == null) {
+      return cl.findResource(rname);
+    }
+
+    return resourcePath;
   }
 }

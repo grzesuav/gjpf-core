@@ -55,11 +55,26 @@ public abstract class ClassLoader {
     
   public URL getResource (String rname) {
     String resourcePath = getResourcePath(rname);
+
+    // If this is not the systemClassLoader & the given resource name was 
+    // not find among the classloader parents hierarchy 
+    if(parent != null && resourcePath == null) {
+      return findResource(rname);
+    }
+
     try {
       return new URL(resourcePath);
     } catch (MalformedURLException x){
       return null;
     }
+  }
+
+  /**
+   * Finds the resource with the given name. Class loader implementations
+   * should override this method to specify where to find resources.
+   */
+  protected URL findResource(String name) {
+      return null;
   }
 
   public Enumeration<URL> getResources (String name){

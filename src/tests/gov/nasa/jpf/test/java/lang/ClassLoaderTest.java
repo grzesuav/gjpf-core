@@ -127,6 +127,8 @@ public class ClassLoaderTest extends TestJPF {
   private void testGetResourceImpl(ClassLoader classLoader) {
     assertNull(classLoader.getResource("not_existing_resource"));
     assertNotNull(classLoader.getResource("DiningPhil.class"));
+    assertNull(classLoader.getResource("ClassLoader.class"));
+    assertNotNull(classLoader.getResource("java/lang/ClassLoader.class"));
   }
 
   private void testGetResourcesImpl(ClassLoader classLoader) throws IOException{
