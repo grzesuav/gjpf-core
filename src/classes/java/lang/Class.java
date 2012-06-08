@@ -29,6 +29,7 @@ import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -115,10 +116,19 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
     return new ByteArrayInputStream(byteArray);
   }
 
-  public URL getResource (String name) {
-    name = null;  // Get rid of IDE warning
-    // <2do> if we support getResourceAsStream, we need to support this as well
-    throw new UnsupportedOperationException("Class.getResource() not yet supported in JPF");
+  private native String getResourcePath (String rname);
+
+  public URL getResource (String rname) {
+    String resourcePath = getResourcePath(rname);
+    if(resourcePath != null) {
+      try {
+        return new URL(resourcePath);
+      } catch (MalformedURLException x){
+        return null;
+      }
+    }
+
+    return null;
   }
 
   public Package getPackage() {

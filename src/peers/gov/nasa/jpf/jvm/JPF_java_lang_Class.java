@@ -845,4 +845,44 @@ public class JPF_java_lang_Class {
     ClassInfo ci = env.getReferredClassInfo(robj);
     return (ci.getEnclosingClassInfo() != null) && !isLocalOrAnonymousClass(ci);
   }
+
+  /**
+   * Append the package name prefix of the class represented by robj, if the name is not 
+   * absolute. OW, remove leading "/". 
+   */
+  private static int resolveName(MJIEnv env, int robj, int resRef) {
+    String rname = env.getStringObject(resRef);
+    ClassInfo ci = env.getReferredClassInfo(robj);
+    if (rname == null) {
+      return MJIEnv.NULL;
+    }
+    if (!rname.startsWith("/")) {
+      ClassInfo c = ci;
+      while (c.isArray()) {
+          c = c.getComponentClassInfo();
+      }
+      String baseName = c.getName();
+      int index = baseName.lastIndexOf('.');
+      if (index != -1) {
+        rname = baseName.substring(0, index).replace('.', '/')
+            +"/"+rname;
+      }
+    } else {
+        rname = rname.substring(1);
+    }
+
+    System.out.println("rname: " + rname);
+    return env.newString(rname);
+  }
+
+  public static int getResourcePath__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
+    // first add the package prefix if the name is not absolute
+    int resolvedName = resolveName(env, objRef, resRef);
+    
+    ClassInfo ci = env.getReferredClassInfo(objRef);
+    int clRef = ci.getClassLoaderInfo().getClassLoaderObjectRef();
+
+    return JPF_java_lang_ClassLoader.getResourcePath__Ljava_lang_String_2__Ljava_lang_String_2
+             (env, clRef, resolvedName);
+  }
 }
