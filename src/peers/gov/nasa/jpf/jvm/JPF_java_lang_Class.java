@@ -871,7 +871,6 @@ public class JPF_java_lang_Class {
         rname = rname.substring(1);
     }
 
-    System.out.println("rname: " + rname);
     return env.newString(rname);
   }
 

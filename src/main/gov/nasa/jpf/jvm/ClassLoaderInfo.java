@@ -293,26 +293,35 @@ public class ClassLoaderInfo
     return match;
   }
 
+  /**
+   * Finds the first Resource in the classpath which has the specified name. 
+   * Returns null if no Resource is found.
+   */
   public String findResource (String resourceName){
-    // would have been nice to just delegate this to the BCEL ClassPath, but
-    // unfortunately BCELs getPath() doesn't indicate at all if the resource
-    // is in a jar :<
-    try {
     for (String cpe : getClassPathElements()) {
-      if (cpe.endsWith(".jar")){
-        JarFile jar = new JarFile(cpe);
-        JarEntry e = jar.getJarEntry(resourceName);
+      String URL = getResourceURL(cpe, resourceName);
+      if(URL != null) {
+        return URL;
+      }
+    }
+    return null;
+  }
+  
+  protected String getResourceURL(String path, String resource) {
+    try {
+      if (path.endsWith(".jar")){
+        JarFile jar = new JarFile(path);
+        JarEntry e = jar.getJarEntry(resource);
         if (e != null){
-          File f = new File(cpe);
-          return "jar:" + f.toURI().toURL().toString() + "!/" + resourceName;
+          File f = new File(path);
+          return "jar:" + f.toURI().toURL().toString() + "!/" + resource;
         }
       } else {
-        File f = new File(cpe, resourceName);
+        File f = new File(path, resource);
         if (f.exists()){
           return f.toURI().toURL().toString();
         }
       }
-    }
     } catch (MalformedURLException mfx){
       return null;
     } catch (IOException iox){

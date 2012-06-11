@@ -65,27 +65,8 @@ public class JPF_java_lang_ClassLoader {
     int gid = heap.get(objRef).getIntField("clRef");
     ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
 
-    String resourcePath = getResource(cl, rname);
+    String resourcePath = cl.findResource(rname);
 
     return env.newString(resourcePath);
-  }
-
-  /**
-   * If the given classloader is systemClassLoader, the resource with given name,
-   * if any, is return. Otherwise, it goes all the way up through the classloader 
-   * hierarchy to search for the given resource
-   */
-  private static String getResource(ClassLoaderInfo cl, String rname) {
-    String resourcePath = null;
-    if(cl.parent != null) {
-      resourcePath = getResource(cl.parent, rname);
-    }
-
-    // either cl is a system classloader or cl parent couldn't find the resource
-    if(resourcePath == null) {
-      return cl.findResource(rname);
-    }
-
-    return resourcePath;
   }
 }

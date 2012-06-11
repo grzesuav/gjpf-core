@@ -52,21 +52,24 @@ public abstract class ClassLoader {
   protected ClassLoader (ClassLoader parent){
     // constructed on the native side
   }
-    
-  public URL getResource (String rname) {
-    String resourcePath = getResourcePath(rname);
 
-    // If this is not the systemClassLoader & the given resource name was 
-    // not find among the classloader parents hierarchy 
-    if(parent != null && resourcePath == null) {
-      return findResource(rname);
+  public URL getResource(String name) {
+    URL url = null;
+
+    if(parent == null) {
+      String resourcePath = getSystemClassLoader().getResourcePath(name);
+      try {
+        return new URL(resourcePath);
+      } catch (MalformedURLException x){
+        return null;
+      }
     }
 
-    try {
-      return new URL(resourcePath);
-    } catch (MalformedURLException x){
-      return null;
+    url = parent.getResource(name);
+    if (url == null) {
+      url = findResource(name);
     }
+    return url;
   }
 
   /**
@@ -82,6 +85,7 @@ public abstract class ClassLoader {
     getResources0(list, name);
     return list.elements();
   }
+
   private void getResources0(Vector list, String name){
     if (parent != null){
       parent.getResources0(list, name);
