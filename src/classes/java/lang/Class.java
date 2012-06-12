@@ -116,19 +116,11 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
     return new ByteArrayInputStream(byteArray);
   }
 
-  private native String getResourcePath (String rname);
+  private native String getResolvedName (String rname);
 
   public URL getResource (String rname) {
-    String resourcePath = getResourcePath(rname);
-    if(resourcePath != null) {
-      try {
-        return new URL(resourcePath);
-      } catch (MalformedURLException x){
-        return null;
-      }
-    }
-
-    return null;
+    String resolvedName = getResolvedName(rname);
+    return getClassLoader().getResource(resolvedName);
   }
 
   public Package getPackage() {

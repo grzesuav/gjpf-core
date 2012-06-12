@@ -240,10 +240,10 @@ public class JPF_java_lang_Class {
     ClassInfo ci = env.getReferredClassInfo( objref);
     ClassLoaderInfo cli = ci.getClassLoaderInfo();
 
-    // if the class is loaded by a system classloader, this should return null
-    if(cli.isSystemClassLoader()) {
-      return MJIEnv.NULL;
-    }
+    // For now, we comment this out to make the systemClassLoader available
+    //if(cli.isSystemClassLoader()) {
+    //  return MJIEnv.NULL;
+    //}
     return cli.objRef;
   }
 
@@ -850,7 +850,7 @@ public class JPF_java_lang_Class {
    * Append the package name prefix of the class represented by robj, if the name is not 
    * absolute. OW, remove leading "/". 
    */
-  private static int resolveName(MJIEnv env, int robj, int resRef) {
+  public static int getResolvedName__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int robj, int resRef){
     String rname = env.getStringObject(resRef);
     ClassInfo ci = env.getReferredClassInfo(robj);
     if (rname == null) {
@@ -872,16 +872,5 @@ public class JPF_java_lang_Class {
     }
 
     return env.newString(rname);
-  }
-
-  public static int getResourcePath__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
-    // first add the package prefix if the name is not absolute
-    int resolvedName = resolveName(env, objRef, resRef);
-    
-    ClassInfo ci = env.getReferredClassInfo(objRef);
-    int clRef = ci.getClassLoaderInfo().getClassLoaderObjectRef();
-
-    return JPF_java_lang_ClassLoader.getResource0__Ljava_lang_String_2__Ljava_lang_String_2
-             (env, clRef, resolvedName);
   }
 }
