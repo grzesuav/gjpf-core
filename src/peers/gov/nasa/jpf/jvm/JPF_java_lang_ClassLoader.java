@@ -58,7 +58,7 @@ public class JPF_java_lang_ClassLoader {
     return ClassLoaderInfo.getCurrentSystemClassLoader().getClassLoaderObjectRef();
   }
 
-  public static int getResourcePath__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
+  public static int getResource0__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
     Heap heap = env.getHeap();
     String rname = env.getStringObject(resRef);
 
@@ -68,5 +68,17 @@ public class JPF_java_lang_ClassLoader {
     String resourcePath = cl.findResource(rname);
 
     return env.newString(resourcePath);
+  }
+
+  public static int getResources0__Ljava_lang_String_2___3Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef) {
+    Heap heap = env.getHeap();
+    String rname = env.getStringObject(resRef);
+
+    int gid = heap.get(objRef).getIntField("clRef");
+    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+
+    String[] resources = cl.findResources(rname);
+
+    return env.newStringArray(resources);
   }
 }

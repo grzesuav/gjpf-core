@@ -881,7 +881,7 @@ public class JPF_java_lang_Class {
     ClassInfo ci = env.getReferredClassInfo(objRef);
     int clRef = ci.getClassLoaderInfo().getClassLoaderObjectRef();
 
-    return JPF_java_lang_ClassLoader.getResourcePath__Ljava_lang_String_2__Ljava_lang_String_2
+    return JPF_java_lang_ClassLoader.getResource0__Ljava_lang_String_2__Ljava_lang_String_2
              (env, clRef, resolvedName);
   }
 }

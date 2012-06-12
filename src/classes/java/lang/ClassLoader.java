@@ -26,6 +26,8 @@ import java.security.ProtectionDomain;
 import java.util.Enumeration;
 import java.util.Vector;
 
+import sun.misc.CompoundEnumeration;
+
 /**
  * very very rudimentary beginning of a ClassLoader model. We skip
  * the 'abstract' for now, since all we want is resource lookup
@@ -38,8 +40,6 @@ public abstract class ClassLoader {
   private int clRef;
 
   //--- internals
-  private native String getResourcePath (String rname);
-
 
   protected static boolean registerAsParallelCapable() {
     return true; // dummy, in prep for jdk7
@@ -53,19 +53,22 @@ public abstract class ClassLoader {
     // constructed on the native side
   }
 
+  private native String getResource0 (String rname);
+
   public URL getResource(String name) {
     URL url = null;
 
     if(parent == null) {
-      String resourcePath = getSystemClassLoader().getResourcePath(name);
+      String resourcePath = getSystemClassLoader().getResource0(name);
       try {
-        return new URL(resourcePath);
+        url = new URL(resourcePath);
       } catch (MalformedURLException x){
-        return null;
+        url = null;
       }
+    } else {
+      url = parent.getResource(name);
     }
 
-    url = parent.getResource(name);
     if (url == null) {
       url = findResource(name);
     }
@@ -80,20 +83,46 @@ public abstract class ClassLoader {
       return null;
   }
 
-  public Enumeration<URL> getResources (String name){
-    Vector<URL> list = new Vector<URL>(); // we need an enumeration  
-    getResources0(list, name);
+  private native String[] getResources0 (String rname);
+
+  /**
+   * Returns an array of URL including all resources with the given name 
+   * found in the classpath of this classloader.
+   */
+  private Enumeration<URL> getResourcesURL(String name) {
+    String[] urls = getResources0(name);
+    Vector<URL> list = new Vector<URL>(0);
+    for(String url: urls) {
+      try {
+        list.add(new URL(url));
+      } catch (MalformedURLException x){
+        // process the rest
+      }
+    }
+
     return list.elements();
   }
 
-  private void getResources0(Vector list, String name){
-    if (parent != null){
-      parent.getResources0(list, name);
+  public Enumeration<URL> getResources(String name) throws IOException {
+    Enumeration[] resEnum = new Enumeration[2];
+
+    if(parent == null) {
+      resEnum[0] = getSystemClassLoader().getResourcesURL(name);
+    } else{
+      resEnum[0] = parent.getResources(name);
     }
-    URL url = getResource(name);
-    if (url != null && !list.contains(url)){
-      list.add(url);
-    }
+    resEnum[1] = findResources(name);
+
+    return new CompoundEnumeration(resEnum);
+  }
+
+  /**
+   * Returns an enumeration representing all the resources with the given 
+   * name. Class loader implementations should override this method to 
+   * specify where to load resources from.
+   */
+  protected Enumeration<URL> findResources(String name) throws IOException {
+      return (new Vector<URL>()).elements();
   }
 
   public InputStream getResourceAsStream (String name){

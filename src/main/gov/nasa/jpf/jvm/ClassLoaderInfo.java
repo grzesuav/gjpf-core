@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -305,6 +306,21 @@ public class ClassLoaderInfo
       }
     }
     return null;
+  }
+
+  /**
+   * Finds all resources in the classpath with the given name. Returns an 
+   * enumeration of the URL objects.
+   */
+  public String[] findResources (String resourceName){
+    ArrayList<String> resources = new ArrayList(0);
+    for (String cpe : getClassPathElements()) {
+      String URL = getResourceURL(cpe, resourceName);
+      if(URL != null) {
+        resources.add(URL);
+      }
+    }
+    return resources.toArray(new String[resources.size()]);
   }
   
   protected String getResourceURL(String path, String resource) {
