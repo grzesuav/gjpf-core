@@ -159,6 +159,12 @@ public abstract class ClassLoader {
   // defined by this classloader. But it has to return an initiated class.
   protected native final Class<?> findLoadedClass(String name);
 
+  private native Class<?> loadClass0(String name);
+
+  protected final Class<?> findSystemClass(String name) throws ClassNotFoundException {
+    return getSystemClassLoader().loadClass0(name);
+  }
+
   //--- not yet supported methods
   
   protected  Class<?> defineClass (String name, byte[] b, int off, int len) {
@@ -178,10 +184,6 @@ public abstract class ClassLoader {
   
   protected void resolveClass(Class<?> cls){
     throw new UnsupportedOperationException("ClassLoader.resolveClass(Class<?>) not yet supported");        
-  }
-
-  protected final Class<?> findSystemClass (String name){
-    throw new UnsupportedOperationException("ClassLoader.findSystemClass() not yet supported");
   }
 
   protected final Class<?> defineClass(String name,byte[] b,int off,int len,ProtectionDomain protectionDomain){

@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.classfile.ClassPath;
+import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 /**
  * native peer for our (totally incomplete) ClassLoader model
@@ -95,5 +96,33 @@ public class JPF_java_lang_ClassLoader {
     }
 
     return MJIEnv.NULL;
+  }
+
+  public static int getClassObject (MJIEnv env, ClassInfo ci){
+    ThreadInfo ti = env.getThreadInfo();
+    Instruction insn = ti.getPC();
+
+    if (insn.requiresClinitExecution(ti, ci)) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+
+    return ci.getClassObjectRef();
+  }
+
+  public static int loadClass0__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
+    Heap heap = env.getHeap();
+    String cname = env.getStringObject(nameRef);
+
+    int gid = heap.get(objRef).getIntField("clRef");
+    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+
+    ClassInfo ci = cl.tryGetResolvedClassInfo(cname);
+    if (ci == null){
+      env.throwException("java.lang.ClassNotFoundException", cname);
+      return MJIEnv.NULL;
+    }
+
+    return getClassObject(env, ci);
   }
 }
