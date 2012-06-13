@@ -139,6 +139,26 @@ public abstract class ClassLoader {
 
   public native static ClassLoader getSystemClassLoader ();
 
+  public static URL getSystemResource(String name){
+    return getSystemClassLoader().getResource(name);
+  }
+
+  public static InputStream getSystemResourceAsStream(String name) {
+    return getSystemClassLoader().getResourceAsStream(name);
+  }
+
+  public static Enumeration<URL> getSystemResources(String name) throws IOException {
+    return getSystemClassLoader().getResources(name);
+  }
+
+  public ClassLoader getParent() {
+    return parent;
+  }
+
+  // that has to be fixed. For now it returns a class that is directly 
+  // defined by this classloader. But it has to return an initiated class.
+  protected native final Class<?> findLoadedClass(String name);
+
   //--- not yet supported methods
   
   protected  Class<?> defineClass (String name, byte[] b, int off, int len) {
@@ -156,10 +176,6 @@ public abstract class ClassLoader {
     throw new UnsupportedOperationException("ClassLoader.loadClass(String,boolean) not yet supported");    
   }
   
-  protected Class<?> findLoadedClass(String name){
-    throw new UnsupportedOperationException("ClassLoader.findLoadClass(String) not yet supported");    
-  }
-  
   protected void resolveClass(Class<?> cls){
     throw new UnsupportedOperationException("ClassLoader.resolveClass(Class<?>) not yet supported");        
   }
@@ -170,21 +186,5 @@ public abstract class ClassLoader {
 
   protected final Class<?> defineClass(String name,byte[] b,int off,int len,ProtectionDomain protectionDomain){
     throw new UnsupportedOperationException("ClassLoader.defineClass() not yet supported");
-  }
-
-  public static URL getSystemResource(String name){
-    return getSystemClassLoader().getResource(name);
-  }
-
-  public static InputStream getSystemResourceAsStream(String name) {
-    return getSystemClassLoader().getResourceAsStream(name);
-  }
-
-  public static Enumeration<URL> getSystemResources(String name) throws IOException {
-    return getSystemClassLoader().getResources(name);
-  }
-
-  public ClassLoader getParent() {
-    return parent;
   }
 }

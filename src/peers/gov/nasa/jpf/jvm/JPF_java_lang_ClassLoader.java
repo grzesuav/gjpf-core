@@ -81,4 +81,19 @@ public class JPF_java_lang_ClassLoader {
 
     return env.newStringArray(resources);
   }
+
+  public static int findLoadedClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
+    Heap heap = env.getHeap();
+    String cname = env.getStringObject(nameRef);
+
+    int gid = heap.get(objRef).getIntField("clRef");
+    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+
+    ClassInfo ci = cl.getDefinedClassInfo(cname);
+    if(ci != null) {
+      return ci.getClassObjectRef();
+    }
+
+    return MJIEnv.NULL;
+  }
 }
