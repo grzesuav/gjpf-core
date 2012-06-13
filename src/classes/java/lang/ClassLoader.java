@@ -165,23 +165,43 @@ public abstract class ClassLoader {
     return getSystemClassLoader().loadClass0(name);
   }
 
+  public Class<?> loadClass(String name) throws ClassNotFoundException {
+    Class<?> c = findLoadedClass(name);
+
+    if(c == null) {
+      try {
+        if (parent != null) {
+            c = parent.loadClass(name, false);
+        } else {
+            c = findSystemClass(name);
+        }
+      } catch (ClassNotFoundException e) {
+        c = findClass(name);
+      }
+    }
+
+    return c;
+  }
+
+  protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    return loadClass(name);
+  }
+
+  /**
+   * Finds the class with a given name. This method should be overridden by 
+   * ClassLoader subclasses, and it will be used by loadClass().
+   */
+  protected Class<?> findClass(String name) throws ClassNotFoundException {
+      throw new ClassNotFoundException(name);
+  }
+
   //--- not yet supported methods
   
   protected  Class<?> defineClass (String name, byte[] b, int off, int len) {
     throw new UnsupportedOperationException("ClassLoader.defineClass() not yet supported");
     //return null;
   }
-  
-  // Author : Taehoon Lee
-  public Class<?> loadClass(String clsName)throws ClassNotFoundException{
-	  Class<?> c= Class.forName(clsName);
-	  return c;
-  }
 
-  protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-    throw new UnsupportedOperationException("ClassLoader.loadClass(String,boolean) not yet supported");    
-  }
-  
   protected void resolveClass(Class<?> cls){
     throw new UnsupportedOperationException("ClassLoader.resolveClass(Class<?>) not yet supported");        
   }
