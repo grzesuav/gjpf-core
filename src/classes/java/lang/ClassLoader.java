@@ -195,15 +195,18 @@ public abstract class ClassLoader {
       throw new ClassNotFoundException(name);
   }
 
+  /**
+   * All the class objects are resolved internally by JPF. So this method
+   * does nothing.
+   */
+  protected final void resolveClass(Class<?> c) {
+  }
+
   //--- not yet supported methods
   
   protected  Class<?> defineClass (String name, byte[] b, int off, int len) {
     throw new UnsupportedOperationException("ClassLoader.defineClass() not yet supported");
     //return null;
-  }
-
-  protected void resolveClass(Class<?> cls){
-    throw new UnsupportedOperationException("ClassLoader.resolveClass(Class<?>) not yet supported");        
   }
 
   protected final Class<?> defineClass(String name,byte[] b,int off,int len,ProtectionDomain protectionDomain){
