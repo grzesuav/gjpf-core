@@ -50,7 +50,7 @@ public class GETFIELD extends InstanceFieldInstruction {
       return ti.createAndThrowException("java.lang.NoSuchFieldError",
                                         "referencing field '" + fname + "' in " + ei);
     }
-
+    
     // check if this breaks the current transition
     if (isNewPorFieldBoundary(ti, fi, objRef)) {
       if (createAndSetFieldCG(ss, ei, ti)) {
@@ -65,8 +65,14 @@ public class GETFIELD extends InstanceFieldInstruction {
     if (fi.getStorageSize() == 1) { // 1 slotter
       int ival = ei.get1SlotField(fi);
       lastValue = ival;
-
-      ti.push(ival, fi.isReference());
+      
+      if (fi.isReference()){
+        ti.pushRef(ival);
+        
+      } else {
+        ti.push(ival);
+      }
+      
       if (attr != null) {
         ti.setOperandAttrNoClone(attr);
       }

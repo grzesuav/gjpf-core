@@ -64,8 +64,6 @@ public class NEWARRAY extends NewArrayInstruction {
     int arrayRef = heap.newArray(type, arrayLength, ti);
     ti.push(arrayRef, true);
 
-    ss.checkGC(); // has to happen after we push the new object ref
-    
     return getNext(ti);
   }
 

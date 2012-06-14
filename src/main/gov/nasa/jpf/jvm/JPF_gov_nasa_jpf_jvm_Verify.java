@@ -844,6 +844,17 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     return env.getVM().isTraceReplay();
   }
 
+  public static boolean isShared__Ljava_lang_Object_2__Z (MJIEnv env, int clsObjRef, int objRef){
+    if (objRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(objRef);
+      if (ei != null){
+        return ei.isShared();
+      }
+    }
+    
+    return false;
+  }
+  
   public static void setProperties___3Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int argRef) {
     if (argRef != MJIEnv.NULL) {
       Config conf = env.getConfig();

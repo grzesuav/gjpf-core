@@ -31,6 +31,15 @@ public class UnsortedArrayIntSet extends ArrayIntSet {
   static final int DEFAULT_CAPACITY = 4;
   static final int GROWTH = 8;
   
+  public UnsortedArrayIntSet (){
+    // nothing
+  }
+  
+  public UnsortedArrayIntSet (int initialCapacity){
+    super(initialCapacity);
+  }
+
+  
   
   @Override
   public void add (int v) {
@@ -64,13 +73,18 @@ public class UnsortedArrayIntSet extends ArrayIntSet {
       int[] a = elements;
       for (int i=0; i<len; i++){
         if (a[i] == v){
-          if (len == 1){
+          len--;
+          if (len == 0) {
             elements = null;
+            size = 0;
+
           } else {
-            System.arraycopy(a, i+1, a, i, len-i);
+            if (i < len) {
+              System.arraycopy(a, i + 1, a, i, (len - i));
+            }
+            size = len;
           }
           
-          size--;
           return;
         }
       }

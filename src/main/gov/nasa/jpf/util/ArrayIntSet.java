@@ -59,7 +59,13 @@ public abstract class ArrayIntSet implements IntSet, Cloneable {
     }
   }
   
+  protected ArrayIntSet (){
+    // nothing
+  }
   
+  protected ArrayIntSet (int initialCapacity){
+    elements = new int[initialCapacity];
+  }
   
   @Override
   public  boolean isEmpty(){
@@ -79,7 +85,7 @@ public abstract class ArrayIntSet implements IntSet, Cloneable {
   
   @Override
   public String toString(){
-    StringBuilder sb = new StringBuilder(getClass().getName());
+    StringBuilder sb = new StringBuilder(/*getClass().getName()*/);
     sb.append('{');
     for (int i=0; i<size; i++){
       if (i>0){

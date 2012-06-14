@@ -200,6 +200,11 @@ public class JPF_java_lang_Thread {
       tiStartee.pushFrame(runFrame);
       tiStartee.setState(ThreadInfo.State.RUNNING);
 
+      // set the thread object (transitively) shared
+      // we need this in case we don't break the transition on Thread.start()
+      ElementInfo eiThread = env.getElementInfo(objref);
+      eiThread.setShared(tiStartee);
+      eiThread.propagateShared(tiStartee);
       
       // now we have a new thread, create a CG for scheduling it
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG(tiStartee);

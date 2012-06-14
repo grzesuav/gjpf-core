@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.ObjectQueue;
 
 /**
  * A specialized version of ElementInfo for use in the StaticArea.  The
@@ -97,23 +98,11 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   public StaticElementInfo (ClassInfo ci, Fields f, Monitor m, int tid, int classObjRef) {
     super(ci, f, m, tid);
 
-    // note we don't set refTid yet 
-    //refTid = createRefTid(tid);
+    refTid = createRefTid(tid);
     
     classObjectRef = classObjRef;
 
     // initial attributes?
-  }
-
-  //@Override 
-  public boolean checkUpdatedSharedness (ThreadInfo ti) {
-    if (refTid == null){
-      refTid = createRefTid( ti.getId());
-      attributes |= ElementInfo.ATTR_REFTID_CHANGED;
-      return true;
-    } else {
-      return super.checkUpdatedSharedness(ti);
-    }
   }
   
   public boolean isObject(){
@@ -272,5 +261,11 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     Heap heap = JVM.getVM().getHeap();
     return heap.get(getIntField(fi));
   }
+  
+  @Override
+  void pushUnsharedRefFields(ObjectQueue<ElementInfo> queue, ThreadInfo ti) {
+    // ??? causes invalid heap ref if same as DynamicElementInfo ???
+  }
+
 }
 

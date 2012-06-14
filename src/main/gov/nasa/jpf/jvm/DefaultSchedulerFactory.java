@@ -37,6 +37,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   boolean breakStart;
   boolean breakYield;
   boolean breakSleep;
+  boolean breakMonitorExit;
   boolean breakArrayAccess;
   boolean breakSingleChoice;
 
@@ -47,6 +48,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     breakStart = config.getBoolean("cg.threads.break_start", false);
     breakYield = config.getBoolean("cg.threads.break_yield", false);
     breakSleep = config.getBoolean("cg.threads.break_sleep", false);
+    breakMonitorExit = config.getBoolean("cg.threads.break_monitor_exit", false);
 
     breakArrayAccess = config.getBoolean("cg.threads.break_arrays", false);
     breakSingleChoice = config.getBoolean("cg.break_single_choice");
@@ -121,7 +123,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   }
 
   public ChoiceGenerator<ThreadInfo> createSyncMethodExitCG (ElementInfo ei, ThreadInfo ti) {
-    return null; // nothing, left mover
+    return createMonitorExitCG( ei, ti);
   }
 
   public ChoiceGenerator<ThreadInfo> createMonitorEnterCG (ElementInfo ei, ThreadInfo ti) {
@@ -150,11 +152,11 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
 
   public ChoiceGenerator<ThreadInfo> createMonitorExitCG (ElementInfo ei, ThreadInfo ti) {
 
-    /**
-    if (!ss.isAtomic()){
-      return getSyncCG( "monitorExit", ei, ti);
+    if (breakMonitorExit){
+      if (!ss.isAtomic()) {
+        return getSyncCG("monitorExit", ei, ti);
+      }
     }
-    **/
 
     return null; // nothing, left mover
   }

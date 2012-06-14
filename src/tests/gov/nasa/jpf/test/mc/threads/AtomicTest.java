@@ -58,7 +58,8 @@ public class AtomicTest extends TestJPF {
     }
   }
   
-  @Test public void testDataCG () {
+  @Test 
+  public void testDataCG () {
     if (verifyNoPropertyViolation("+cg.enable_atomic")) {
       Runnable r = new Runnable() {
 

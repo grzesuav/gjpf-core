@@ -241,7 +241,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   }
 
   // needs to be public because of ElementInfoProcessor interface
-  // NOTE: that we don't serialize the monitor state here since this is
+  // NOTE: we don't serialize the monitor state here since this is
   // redundant to the thread locking state (which we will do after the heap).
   // <2do> we don't strictly need the lockCount since this has to show in the
   // stack frames. However, we should probably add monitor serialization to
@@ -263,9 +263,9 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   protected void processReferenceQueue () {
     refQueue.process(this);
     
-    // this sucks, but we can'ti do the 'isMarkedOrLive' trick used in gc here
+    // this sucks, but we can't do the 'isMarkedOrLive' trick used in gc here
     // because gc depends on live bit integrity, and we only mark non-filtered live
-    // objects here, i.e. we can'ti just set the Heap liveBitValue subsequently.
+    // objects here, i.e. we can't just set the Heap liveBitValue subsequently.
     heap.unmarkAll();
   }
 

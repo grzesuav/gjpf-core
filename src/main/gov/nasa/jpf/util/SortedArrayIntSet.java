@@ -89,6 +89,15 @@ public class SortedArrayIntSet extends ArrayIntSet {
   
   
   //--- public methods
+  
+  public SortedArrayIntSet (){
+    // nothing
+  }
+  
+  public SortedArrayIntSet (int initialCapacity){
+    super(initialCapacity);
+  }
+  
   @Override
   public boolean contains (int v) {
     return ((size > 0) && elements[bisect(v)] == v);      
@@ -125,13 +134,16 @@ public class SortedArrayIntSet extends ArrayIntSet {
       int i = bisect(v);
       if (a[i] == v) {
         len--;
-        if (i < len) {
-          System.arraycopy(a, i + 1, a, i, (len - i));
-        } else if (len == 0){
+        if (len == 0){
           elements = null;
+          size = 0;
+          
+        } else {
+          if (i < len){
+            System.arraycopy(a, i + 1, a, i, (len - i));          
+          }
+          size = len;
         }
-        size--;
-        return;
       }
     }    
   }

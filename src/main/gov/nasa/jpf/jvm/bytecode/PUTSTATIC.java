@@ -50,7 +50,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
       return ti.createAndThrowException("java.lang.NoSuchFieldError",
           (className + '.' + fname));
     }
-    
+        
     // this can be actually different (can be a base)
     clsInfo = fi.getClassInfo();
 
@@ -59,9 +59,10 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
     if (!mi.isClinit(clsInfo) && requiresClinitExecution(ti, clsInfo)) {
       return ti.getPC();
     }
-
+    
     ElementInfo ei = ks.statics.get(clsInfo.getName());
 
+    // note this will also set the shared attribute of the StaticElementInfo
     if (isNewPorFieldBoundary(ti)) {
       if (createAndSetFieldCG(ss, ei, ti)) {
         return this;
@@ -78,6 +79,17 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
 
       if (fi.isReference()) {
         ei.setReferenceField(fi, ival);
+        
+        // note that we only propagate the stored object, not all static fields of this class
+        if (ei.isShared()){
+          if (ival != -1) {
+            ElementInfo eiRef = ti.getElementInfo(ival);
+            if (!eiRef.isSharedWith(ti)){
+              eiRef.propagateShared(ti);
+            }
+          }
+        }
+        
       } else {
         ei.set1SlotField(fi, ival);
       }

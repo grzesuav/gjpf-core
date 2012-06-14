@@ -490,6 +490,10 @@ public class Verify {
     return false; // native
   }
 
+  public static boolean isShared (Object o){
+    return false; // native
+  }
+  
   public static void terminateSearch () {
     // native
   }

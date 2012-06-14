@@ -71,6 +71,34 @@ public class UnsortedArrayIntSetTest extends TestJPF {
   }
   
   @Test
+  public void testRemoveLast(){
+    UnsortedArrayIntSet s = new UnsortedArrayIntSet(2);
+    s.add(1);
+    s.add(2);
+    
+    s.remove(2);
+    assertTrue( s.size() == 1);
+    assertTrue( s.contains(1));
+    
+    s.remove(1);
+    assertTrue( s.isEmpty());
+  }
+  
+  @Test
+  public void testRemoveFirst(){
+    UnsortedArrayIntSet s = new UnsortedArrayIntSet(2);
+    s.add(1);
+    s.add(2);
+    
+    s.remove(1);
+    assertTrue( s.size() == 1);
+    assertTrue( s.contains(2));
+    
+    s.remove(2);
+    assertTrue( s.isEmpty());
+  }
+  
+  @Test
   public void testIterator(){
     UnsortedArrayIntSet s = new UnsortedArrayIntSet();
     s.add(1);

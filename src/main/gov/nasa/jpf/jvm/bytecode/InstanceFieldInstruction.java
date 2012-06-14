@@ -76,7 +76,6 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
     }
 
     //--- from here on, we know this is a shared object that can be accessed concurrently
-
     if (ti.usePorSyncDetection()) {
 
       if (fi.breakShared()) {

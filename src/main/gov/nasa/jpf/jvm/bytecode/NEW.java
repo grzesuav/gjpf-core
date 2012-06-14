@@ -79,8 +79,6 @@ public class NEW extends Instruction implements AllocInstruction {
     // pushes the return value onto the stack
     ti.push(objRef, true);
 
-    ss.checkGC(); // has to happen after we push the new object ref
-    
     return getNext(ti);
   }
 

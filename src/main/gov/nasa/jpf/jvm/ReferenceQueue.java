@@ -20,7 +20,7 @@
 package gov.nasa.jpf.jvm;
 
 /**
- * add class used to recursively mark live heap objects.
+ * add class used to recursively process heap objects.
  * We use an explicit add to avoid recursive calls that can run out of
  * stack space when traversing long reference chains (e.g. linked lists)
  *

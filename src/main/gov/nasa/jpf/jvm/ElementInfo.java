@@ -20,16 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.util.BitSet1024;
-import gov.nasa.jpf.util.BitSet256;
-import gov.nasa.jpf.util.BitSet64;
-import gov.nasa.jpf.util.Debug;
-import gov.nasa.jpf.util.FixedBitSet;
-import gov.nasa.jpf.util.HashData;
-import gov.nasa.jpf.util.IntIterator;
-import gov.nasa.jpf.util.IntSet;
-import gov.nasa.jpf.util.ObjectList;
-import gov.nasa.jpf.util.UnsortedArrayIntSet;
+import gov.nasa.jpf.util.*;
 
 import java.io.PrintWriter;
 import java.lang.ref.SoftReference;
@@ -59,6 +50,10 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // This attribute is set in gov.nasa.jpf.jvm.bytecode.RETURN.execute().
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
   public static final int   ATTR_CONSTRUCTED   = 0x2000;
+  
+  
+  // this object is shared between at least two threads
+  public static final int ATTR_SHARED = 0x4000;
 
 
 
@@ -95,17 +90,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   protected Fields          fields;
   protected Monitor         monitor;
   
-  // the set of referencing thread ids. Note that we need an implementation that
-  // is not depending on order of reference, or we effectively shoot heap symmetry.
-  // There are two more implications with using a bit set for reference tracking:
-  // (1) thread ids should be "dense", i.e. cannot be arbitrary hash values
-  // (2) SUTs that use a lot of short living, dynamically created threads are a problem
-  // If the SUT does not have a fixed, small number of threads (e.g. from a pool),
-  // a reorganizing ThreadList implementation has to be used (which recycles thread ids).
-  // Since Java threads are expensive and hence are usually limited, this shouldn't be
-  // a problem for most SUTs
-  // The alternative would be to directly store ThreadInfo references, but this
-  // would have an impact on state matching efficiency and memory consumption
+  // the set of referencing thread ids. Note this is not used for state matching
+  // so that order or thread id do not have a direct impact on heap symmetry
   protected IntSet refTid;
 
   // this is the reference value for the object represented by this ElementInfo
@@ -179,7 +165,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       ei.sid = 0;
       ei.updateLockingInfo();
       ei.markUnchanged();
-      
+
       return ei;
     }
 
@@ -299,8 +285,12 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
     
     if (isThreadTermination && refTid != null){
-      if (refTid.contains(tid)) {
-        updateRefTidWithout(tid);
+//System.out.print("@@ cleanUp " + this + ", refTid " + refTid);
+      updateRefTidWithout(tid);
+//System.out.println(" => " + refTid);
+      
+      if (refTid.size() == 1){
+        setUnshared();
       }
     }
   }
@@ -424,50 +414,96 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return attributes & ATTR_STORE_MASK;
   }
 
-  /**
-   * note this was a prospective answer (reachability), but now it is
-   * actual - only elements that already have been referenced from different threads
-   * might return true. If the refTid set is cleaned from terminated threads, it
-   * more precisely means this element has been referenced from different threads
-   * that are still alive
-   */
-  public boolean isShared() {
-    return refTid.size() > 1;
-  }
-
   public boolean isImmutable() {
     return ((attributes & ATTR_IMMUTABLE) != 0);
   }
 
-  public boolean checkUpdatedSharedness (ThreadInfo ti) {
+  
+  //--- shared handling
+  
+  private static ObjectQueue<ElementInfo> shareQueue = new ArrayObjectQueue<ElementInfo>(256);
+  
+  static class ShareProcessor implements ObjectQueueProcessor<ElementInfo> {
+    ThreadInfo ti;
+    int tid;
+    ObjectQueue<ElementInfo> queue;
+    
+    ShareProcessor (ThreadInfo ti, ObjectQueue<ElementInfo> queue){
+      this.ti = ti;
+      tid = ti.getId();
+      this.queue = queue;
+    }
 
+    // this method is a performance bottleneck - inline and avoid calls
+    public void process (ElementInfo ei) {
+      ei.pushUnsharedRefFields(queue, ti);
+    }
+  }
+  
+  abstract void pushUnsharedRefFields (ObjectQueue<ElementInfo> queue, ThreadInfo ti);
+  
+  /**
+   * note this does not change the attributes of this object
+   * @param ti thread the objects referenced by our fields are shared with 
+   */
+  public void propagateShared (ThreadInfo ti){
+    shareQueue.clear();
+    shareQueue.add(this);
+    shareQueue.processQueue(new ShareProcessor(ti, shareQueue));
+  }
+  
+  public boolean isShared() {
+    //return refTid.size() > 1;
+    return ((attributes & ATTR_SHARED) != 0);
+  }
+  
+  public boolean isSharedWith(ThreadInfo ti){
+    if ((attributes & ATTR_SHARED) != 0){
+      return refTid.contains(ti.getId());
+    }
+    
+    return false;
+  }
+  
+  public void setShared (ThreadInfo ti){
+    if ((attributes & ATTR_SHARED) == 0) {
+      attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);  
+    }
+  }
+  
+  public void setUnshared (){
+    if ((attributes & ATTR_SHARED) != 0) {
+      attributes &= ~ATTR_SHARED;
+      attributes |= ATTR_ATTRIBUTE_CHANGED;
+    }
+  }
+  
+  public boolean checkUpdatedSharedness (ThreadInfo ti) {
+    
     // we use the tid here to ensure that we are independent of thread access order,
     // but this means we rely on threads doing refTid cleanup upon termination
     int tid = ti.getId();
-    updateRefTidWith(tid);
     
-    int nThreadRefs = refTid.size();    
-    if (nThreadRefs > 1){
-      // check if we have to cleanup the refTid set, or if some other accessors are not runnable
-      ThreadList tl = JVM.getVM().getThreadList();
-      for (IntIterator it = refTid.intIterator(); it.hasNext();){
-        tid = it.next();
-        ThreadInfo tiRef = tl.getThreadInfoForId(tid);
-        if (tiRef == null || tiRef.isTerminated()) { // it's terminated
-          // <2do> why does this happen, we clean up after thread termination ??
-          updateRefTidWithout(tid);
-          nThreadRefs--;
-        } else if (!tiRef.isRunnable()){
-          nThreadRefs--;
-        }
-      }
+//System.out.print("@@ check: " + this + " refTid = " + refTid);
+    int nBefore = refTid.size();
+    updateRefTidWith(tid);
+    int nAfter = refTid.size();
+//System.out.println( " -> " + refTid);
+    
+    if (nBefore == 1 && nAfter == 2){ // we just became shared
+      setShared(ti);
       
-      return (nThreadRefs > 1);
-
-    } else { // only one referencing thread
-      return false;
+      // we could account for blocked threads here, only returning true if
+      // this is shared with a running thread
+      return true;
+      
+    } else {
+      return isShared();
     }
   }
+  
+  
+  
 
   
   /**

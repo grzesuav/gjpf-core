@@ -348,7 +348,6 @@ public class ThreadInfo
     porInEffect = config.getBoolean("vm.por");
     porFieldBoundaries = porInEffect && config.getBoolean("vm.por.field_boundaries");
     porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
-    
     maxTransitionLength = config.getInt("vm.max_transition_length", 5000);
     
     return true;

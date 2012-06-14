@@ -62,7 +62,11 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     }
     ElementInfo ei = ti.getElementInfo(objRef);
 
+    
+    boolean wasUnshared = ei.isSharedWith(ti);
+    
     // check if this breaks the current transition
+    // note this will also set the shared attribute of the field owner
     if (isNewPorFieldBoundary(ti, fi, objRef)) {
       if (createAndSetFieldCG(ss, ei, ti)) {
         return this;
@@ -80,6 +84,11 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
 
       if (fi.isReference()) {
         ei.setReferenceField(fi, ival);
+        
+        if (wasUnshared){
+          ei.propagateShared(ti);
+        }
+
       } else {
         ei.set1SlotField(fi, ival);
       }

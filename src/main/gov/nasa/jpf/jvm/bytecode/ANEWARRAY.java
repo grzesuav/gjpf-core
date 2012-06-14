@@ -60,11 +60,11 @@ public class ANEWARRAY extends NewArrayInstruction {
                                           Types.getTypeName(type) +
                                         "[" + arrayLength + "]");
     }
+
+    int aRef = heap.newArray(type, arrayLength, ti);
     
     // pushes the object reference on the top stack frame
-    ti.push(heap.newArray(type, arrayLength, ti), true);
-
-    ss.checkGC(); // has to happen after we push the new object ref
+    ti.push(aRef, true);
     
     return getNext(ti);
   }
