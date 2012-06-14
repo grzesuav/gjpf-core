@@ -1211,15 +1211,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
-  private static ClassInfo loadClass(String typeName, byte[] data, int offset, int length, ClassLoaderInfo cl) {
+  private static ClassInfo loadClass(String typeName, byte[] data, int offset, int length, ClassLoaderInfo cl, String url) {
     try {
       ClassFile cf = new ClassFile( typeName, data, offset);
       
       JVM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
 
-      // for now, we do not keep dynamic proxy classes, which are defined through 
-      // the java.lang.reflect.Proxy native peer, in the loadedClasses map
-      return new ClassInfo(cf, cl, null);
+      return new ClassInfo(cf, cl, url);
 
     } catch (ClassFileException cfx){
       throw new JPFException("error reading class " + typeName, cfx);
@@ -1230,17 +1228,20 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length) throws NoClassInfoException {
     ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
 
-    return cl.getResolvedClassInfo(className, buffer, offset, length);
+    // for now, we do not keep dynamic proxy classes, which are defined through 
+    // the java.lang.reflect.Proxy native peer, in the loadedClasses map
+    return cl.getResolvedClassInfo(className, buffer, offset, length, null);
   }
 
-  public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length, ClassLoaderInfo cl) throws NoClassInfoException {
+  public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length, ClassLoaderInfo cl, ClassPath.Match match) throws NoClassInfoException {
     if (className == null) {
       return null;   
     }
     
     String typeName = Types.getClassNameFromTypeName(className);
 
-    ClassInfo ci = getOriginalClassInfo(typeName);
+    String url = (match != null)? computeClassFileUrl(match, typeName, cl): typeName;
+    ClassInfo ci = getOriginalClassInfo(url);
     
     if (ci != null) {
       return ci;
@@ -1250,7 +1251,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       return new ClassInfo(typeName, cl);
 
     } else {
-      return loadClass(typeName, buffer, offset, length, cl);
+      return loadClass(typeName, buffer, offset, length, cl, (match != null)? url: null);
     }
   }
 

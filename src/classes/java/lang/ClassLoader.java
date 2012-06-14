@@ -202,14 +202,13 @@ public abstract class ClassLoader {
   protected final void resolveClass(Class<?> c) {
   }
 
-  //--- not yet supported methods
-  
-  protected  Class<?> defineClass (String name, byte[] b, int off, int len) {
-    throw new UnsupportedOperationException("ClassLoader.defineClass() not yet supported");
-    //return null;
+  private native Class<?> defineClass0(String name, byte[] b, int off, int len);
+
+  protected final Class<?> defineClass(String name, byte[] b, int off, int len) throws ClassFormatError {
+    return defineClass0(name, b, off, len);
   }
 
-  protected final Class<?> defineClass(String name,byte[] b,int off,int len,ProtectionDomain protectionDomain){
-    throw new UnsupportedOperationException("ClassLoader.defineClass() not yet supported");
+  protected final Class<?> defineClass(String name, byte[] b, int off, int len, ProtectionDomain protectionDomain) throws ClassFormatError {
+    return defineClass(name, b, off, len);
   }
 }

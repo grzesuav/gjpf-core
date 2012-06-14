@@ -209,7 +209,7 @@ public class ClassLoaderInfo
     return ci;
   }
 
-  public ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length) throws NoClassInfoException {
+  public ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length, ClassPath.Match match) throws NoClassInfoException {
     if (className == null) {
       return null;   
     }
@@ -220,7 +220,7 @@ public class ClassLoaderInfo
     ClassInfo ci = definedClasses.get(typeName);
     
     if (ci == null) {
-      ci = ClassInfo.getResolvedClassInfo(className, buffer, offset, length, this);
+      ci = ClassInfo.getResolvedClassInfo(className, buffer, offset, length, this, match);
       if(ci.classLoader != this) {
         // creates a new instance from ci using this classloader
         ci = ci.getInstanceFor(this);

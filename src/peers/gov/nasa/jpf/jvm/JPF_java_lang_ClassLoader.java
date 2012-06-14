@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassPath;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 
@@ -124,5 +125,68 @@ public class JPF_java_lang_ClassLoader {
     }
 
     return getClassObject(env, ci);
+  }
+
+  public static int defineClass0__Ljava_lang_String_2_3BII__Ljava_lang_Class_2 
+      (MJIEnv env, int objRef, int nameRef, int bufferRef, int offset, int length) {
+
+    Heap heap = env.getHeap();
+    String clsName = env.getStringObject(nameRef);
+    byte[] buffer = env.getByteArrayObject(bufferRef);
+
+    if(!isValidName(clsName)) {
+      env.throwException("java.lang.NoClassDefFoundError", "IllegalName: " + clsName);
+      return MJIEnv.NULL;
+    }
+
+    if(isProhibited(clsName)) {
+      env.throwException("java.lang.SecurityException", "Prohibited package name: " + clsName);
+      return MJIEnv.NULL;
+    }
+
+    if(offset<0 || length<0 || offset+length>buffer.length) {
+      env.throwException("java.lang.IndexOutOfBoundsException");
+      return MJIEnv.NULL;
+    }
+
+    int gid = heap.get(objRef).getIntField("clRef");
+    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+
+    ClassPath.Match match = cl.getMatch(clsName);
+    if(!match.getBytes().equals(buffer)) {
+      env.throwException("java.lang.ClassFormatError");
+      return MJIEnv.NULL;
+    }
+
+    ClassInfo ci = null; 
+    try {
+      ci = cl.getResolvedClassInfo(clsName, buffer, offset, length, match);
+    } catch(JPFException e) {
+      env.throwException("java.lang.ClassFormatError");
+      return MJIEnv.NULL;
+    }
+
+    if (!ci.isRegistered()) {
+      ThreadInfo ti = env.getThreadInfo();
+      ci.registerClass(ti);
+    }
+
+    return ci.getClassObjectRef();
+  }
+
+  private static boolean isProhibited(String name) {
+    return (name != null) && name.startsWith("java.");
+  }
+
+  private static boolean isValidName(String name) {
+    if ((name == null) || (name.length() == 0)) {
+      return true;
+    }
+
+    if ((name.indexOf('/') != -1) && (name.charAt(0) == '[')) {
+      return false;
+    }
+
+    return true;
   }
 }
