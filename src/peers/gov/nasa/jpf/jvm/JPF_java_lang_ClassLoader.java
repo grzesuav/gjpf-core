@@ -99,18 +99,6 @@ public class JPF_java_lang_ClassLoader {
     return MJIEnv.NULL;
   }
 
-  public static int getClassObject (MJIEnv env, ClassInfo ci){
-    ThreadInfo ti = env.getThreadInfo();
-    Instruction insn = ti.getPC();
-
-    if (insn.requiresClinitExecution(ti, ci)) {
-      env.repeatInvocation();
-      return MJIEnv.NULL;
-    }
-
-    return ci.getClassObjectRef();
-  }
-
   public static int loadClass0__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
     Heap heap = env.getHeap();
     String cname = env.getStringObject(nameRef);
@@ -124,7 +112,11 @@ public class JPF_java_lang_ClassLoader {
       return MJIEnv.NULL;
     }
 
-    return getClassObject(env, ci);
+    if(!ci.isRegistered()) {
+      ci.registerClass(env.getThreadInfo());
+    }
+
+    return ci.getClassObjectRef();
   }
 
   public static int defineClass0__Ljava_lang_String_2_3BII__Ljava_lang_Class_2 

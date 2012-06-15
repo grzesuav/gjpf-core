@@ -85,11 +85,13 @@ public class JPF_java_lang_reflect_Constructor {
   public static int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                              int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
-    StackFrame frame = ti.getReturnedDirectCall();
+    StackFrame executingFrame = ti.getTopFrame();
+    StackFrame directCallFrame = executingFrame.getFrameAttr(DirectCallStackFrame.class);
 
-    if (frame != null){ // reflection call already returned
+    if (directCallFrame != null){ // reflection call already returned
       // check if its the right one ??
-      return frame.pop(); // the object reference of the created object we stored in (1)
+      executingFrame.removeFrameAttr(directCallFrame); // there can be only one
+      return directCallFrame.pop(); // the object reference of the created object we stored in (1)
 
     } else { // do the reflection call
       MethodInfo mi = getMethodInfo(env,mthRef);
@@ -103,15 +105,16 @@ public class JPF_java_lang_reflect_Constructor {
       int objRef = env.newObject(ci);
       MethodInfo stub = mi.createDirectCallStub("[reflection]");
 
-      frame = new DirectCallStackFrame(stub, stub.getMaxStack()+1, stub.getMaxLocals());
-      frame.push(objRef, true);  // (1) we store the return object on the frame
-      frame.dup();
+      directCallFrame = new DirectCallStackFrame(stub, stub.getMaxStack()+1, stub.getMaxLocals());
+      directCallFrame.push(objRef, true);  // (1) we store the return object on the frame
+      directCallFrame.dup();
 
-      if (!JPF_java_lang_reflect_Method.pushUnboxedArguments(env, mi, frame, argsRef)) {
+      if (!JPF_java_lang_reflect_Method.pushUnboxedArguments(env, mi, directCallFrame, argsRef)) {
         return MJIEnv.NULL;
       }
 
-      ti.pushFrame(frame);
+      ti.pushFrame(directCallFrame);
+      executingFrame.addFrameAttr(directCallFrame);
 
       //env.repeatInvocation(); // we don't need this, direct calls don't advance their return frame
       return MJIEnv.NULL; // doesn't matter, we come back

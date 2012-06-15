@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.SystemAttribute;
+
 /**
  * DirectCallStackFrames are only used for overlay calls (from native code), i.e.
  * there is no corresponding INVOKE instruction. The associated MethodInfos are
@@ -31,7 +33,7 @@ package gov.nasa.jpf.jvm;
  * needs such return values, it has to do so via ThreadInfo.getReturnedDirectCall()
  *
  */
-public class DirectCallStackFrame extends StackFrame {
+public class DirectCallStackFrame extends StackFrame implements SystemAttribute{
   
   public DirectCallStackFrame (MethodInfo stub) {
     super(stub, null);

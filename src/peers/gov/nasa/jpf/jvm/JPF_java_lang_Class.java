@@ -181,19 +181,21 @@ public class JPF_java_lang_Class {
    */
   public static int newInstance____Ljava_lang_Object_2 (MJIEnv env, int robj) {
     ThreadInfo ti = env.getThreadInfo();
-    StackFrame frame = ti.getReturnedDirectCall();
+    ClassInfo ci = env.getReferredClassInfo(robj);   // what are we
 
-    if (frame != null){
-      return frame.pop();
+    if (ci.requiresClinitExecution(ti)) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+
+    StackFrame executingFrame = ti.getTopFrame();
+    StackFrame directCallFrame = executingFrame.getFrameAttr(DirectCallStackFrame.class);
+    
+    if (directCallFrame != null){
+      executingFrame.removeFrameAttr(directCallFrame); // there can be only one
+      return directCallFrame.pop();
 
     } else {
-      ClassInfo ci = env.getReferredClassInfo(robj);   // what are we
-
-      if (ci.requiresClinitExecution(ti)) {
-        env.repeatInvocation();
-        return MJIEnv.NULL;
-      }
-      
       if(ci.isAbstract()){ // not allowed to instantiate
         env.throwException("java.lang.InstantiationException");
         return MJIEnv.NULL;
@@ -211,13 +213,13 @@ public class JPF_java_lang_Class {
         }
 
         MethodInfo stub = mi.createDirectCallStub("[init]");
-        frame = new DirectCallStackFrame(stub, 2,0);
-        frame.push( objRef, true);
+        directCallFrame = new DirectCallStackFrame(stub, 2,0);
+        directCallFrame.push( objRef, true);
         // Hmm, we borrow the DirectCallStackFrame to cache the object ref
         // (don't try that with a normal StackFrame)
-        frame.dup();
-        ti.pushFrame(frame);
-
+        directCallFrame.dup();
+        ti.pushFrame(directCallFrame);
+        executingFrame.addFrameAttr(directCallFrame);
         return MJIEnv.NULL;
 
       } else {
