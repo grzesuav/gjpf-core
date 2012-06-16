@@ -103,6 +103,11 @@ public class JPF_java_lang_ClassLoader {
     Heap heap = env.getHeap();
     String cname = env.getStringObject(nameRef);
 
+    checkForIllegalName(env, cname);
+    if(env.hasException()) {
+      return MJIEnv.NULL;
+    }
+
     int gid = heap.get(objRef).getIntField("clRef");
     ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
 
@@ -120,31 +125,30 @@ public class JPF_java_lang_ClassLoader {
   }
 
   public static int defineClass0__Ljava_lang_String_2_3BII__Ljava_lang_Class_2 
-      (MJIEnv env, int objRef, int nameRef, int bufferRef, int offset, int length) {
-
+           (MJIEnv env, int objRef, int nameRef, int bufferRef, int offset, int length) {
     Heap heap = env.getHeap();
-    String clsName = env.getStringObject(nameRef);
-    byte[] buffer = env.getByteArrayObject(bufferRef);
 
-    if(!isValidName(clsName)) {
-      env.throwException("java.lang.NoClassDefFoundError", "IllegalName: " + clsName);
-      return MJIEnv.NULL;
-    }
-
-    if(isProhibited(clsName)) {
-      env.throwException("java.lang.SecurityException", "Prohibited package name: " + clsName);
-      return MJIEnv.NULL;
-    }
-
-    if(offset<0 || length<0 || offset+length>buffer.length) {
-      env.throwException("java.lang.IndexOutOfBoundsException");
-      return MJIEnv.NULL;
-    }
-
+    // retrieve ClassLoaderInfo instance
     int gid = heap.get(objRef).getIntField("clRef");
     ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
 
-    ClassPath.Match match = cl.getMatch(clsName);
+    String cname = env.getStringObject(nameRef);
+    byte[] buffer = env.getByteArrayObject(bufferRef);
+
+    return defineClass(env, cl, cname, buffer, offset, length, null);
+  }
+  
+  protected static int defineClass (MJIEnv env, ClassLoaderInfo cl, String cname, byte[] buffer, int offset, int length, ClassPath.Match match) {
+
+    if(!check(env, cname, buffer, offset, length)) {
+      return MJIEnv.NULL;
+    }
+
+    if(match == null) {
+      match = cl.getMatch(cname);
+    }
+
+    // I am not sure about this! Test it on JVM!
     if(!match.getBytes().equals(buffer)) {
       env.throwException("java.lang.ClassFormatError");
       return MJIEnv.NULL;
@@ -152,7 +156,7 @@ public class JPF_java_lang_ClassLoader {
 
     ClassInfo ci = null; 
     try {
-      ci = cl.getResolvedClassInfo(clsName, buffer, offset, length, match);
+      ci = cl.getResolvedClassInfo(cname, buffer, offset, length, match);
     } catch(JPFException e) {
       env.throwException("java.lang.ClassFormatError");
       return MJIEnv.NULL;
@@ -166,19 +170,40 @@ public class JPF_java_lang_ClassLoader {
     return ci.getClassObjectRef();
   }
 
-  private static boolean isProhibited(String name) {
-    return (name != null) && name.startsWith("java.");
+  protected static boolean check(MJIEnv env, String cname, byte[] buffer, int offset, int length) {
+    // throw SecurityExcpetion if the package prefix is java
+    checkForProhibitedPkg(env, cname);
+
+    // throw NoClassDefFoundError if the given class does name might 
+    // not be a valid binary name
+    checkForIllegalName(env, cname);
+
+    // throw IndexOutOfBoundsException if buffer length is not consistent
+    // with offset
+    checkData(env, buffer, offset, length);
+
+    return !env.hasException();
   }
 
-  private static boolean isValidName(String name) {
-    if ((name == null) || (name.length() == 0)) {
-      return true;
+  protected static void checkForProhibitedPkg(MJIEnv env, String name) {
+    if(name != null && name.startsWith("java.")) {
+      env.throwException("java.lang.SecurityException", "Prohibited package name: " + name);
+    }
+  }
+
+  protected static void checkForIllegalName(MJIEnv env, String name) {
+    if((name == null) || (name.length() == 0)) {
+      return;
     }
 
-    if ((name.indexOf('/') != -1) && (name.charAt(0) == '[')) {
-      return false;
+    if((name.indexOf('/') != -1) || (name.charAt(0) == '[')) {
+      env.throwException("java.lang.NoClassDefFoundError", "IllegalName: " + name);
     }
+  }
 
-    return true;
+  protected static void checkData(MJIEnv env, byte[] buffer, int offset, int length) {
+    if(offset<0 || length<0 || offset+length > buffer.length) {
+      env.throwException("java.lang.IndexOutOfBoundsException");
+    }
   }
 }
