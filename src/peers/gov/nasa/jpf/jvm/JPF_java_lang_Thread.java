@@ -40,13 +40,12 @@ public class JPF_java_lang_Thread {
    * single location where we can init our ThreadInfo, but it is PRIVATE
    */
   public static void init0__Ljava_lang_ThreadGroup_2Ljava_lang_Runnable_2Ljava_lang_String_2J__V (MJIEnv env,
-                                                                                                  int objRef,
-                                                                                                  int groupRef,
-                                                                                                  int runnableRef,
-                                                                                                  int nameRef,
-                                                                                                  long stackSize) {
+                         int objRef, int groupRef, int runnableRef, int nameRef, long stackSize) {
     JVM vm = env.getVM();
-    ThreadInfo ti = ThreadInfo.createThreadInfo( vm, objRef, groupRef, runnableRef, nameRef, stackSize);
+    
+    // we only need to create the ThreadInfo - its initialization will take care
+    // of proper linkage to the java.lang.Thread object (objRef)
+    ThreadInfo ti = ThreadInfo.createThreadInfo( vm, objRef, groupRef, runnableRef, nameRef);
   }
 
   
@@ -147,8 +146,8 @@ public class JPF_java_lang_Thread {
     ThreadInfo tiCurrent = env.getThreadInfo();
     SystemState ss = env.getSystemState();
     JVM vm = tiCurrent.getVM();
+    
     ThreadInfo tiStartee = env.getThreadInfoForObjRef(objref);
-
 
     if (!tiCurrent.isFirstStepInsn()) { // first time we see this (may be the only time)
       if (tiStartee.isStopped()) {
@@ -200,12 +199,6 @@ public class JPF_java_lang_Thread {
       tiStartee.pushFrame(runFrame);
       tiStartee.setState(ThreadInfo.State.RUNNING);
 
-      // set the thread object (transitively) shared
-      // we need this in case we don't break the transition on Thread.start()
-      ElementInfo eiThread = env.getElementInfo(objref);
-      eiThread.setShared(tiStartee);
-      eiThread.propagateShared(tiStartee);
-      
       // now we have a new thread, create a CG for scheduling it
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG(tiStartee);
       if (ss.setNextChoiceGenerator(cg)) {

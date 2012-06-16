@@ -44,7 +44,7 @@ public class FloatFieldInfo extends SingleSlotFieldInfo {
     }
   }
 
-  public void initialize (ElementInfo ei) {
+  public void initialize (ElementInfo ei, ThreadInfo ti) {
     ei.getFields().setFloatValue(storageOffset, init);
   }
 

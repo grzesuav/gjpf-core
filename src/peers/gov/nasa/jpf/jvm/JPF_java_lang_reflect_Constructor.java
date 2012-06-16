@@ -86,22 +86,25 @@ public class JPF_java_lang_reflect_Constructor {
                                                                              int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = ti.getReturnedDirectCall();
+    String mid = "[reflection]";
 
-    if (frame != null){ // reflection call already returned
-      // check if its the right one ??
-      return frame.pop(); // the object reference of the created object we stored in (1)
-
-    } else { // do the reflection call
+    if (frame == null){ // first time
       MethodInfo mi = getMethodInfo(env,mthRef);
       ClassInfo ci = mi.getClassInfo();
 
-      if (ci.isAbstract()){
+       if (ci.isAbstract()){
         env.throwException("java.lang.InstantiationException");
         return MJIEnv.NULL;
       }
-
+      
+      if (ci.requiresClinitExecution(ti)) {
+        // NOTE - this might cause cause another direct call for a <clinit>
+        env.repeatInvocation();
+        return MJIEnv.NULL;
+      }
+      
       int objRef = env.newObject(ci);
-      MethodInfo stub = mi.createDirectCallStub("[reflection]");
+      MethodInfo stub = mi.createDirectCallStub(mid);
 
       frame = new DirectCallStackFrame(stub, stub.getMaxStack()+1, stub.getMaxLocals());
       frame.push(objRef, true);  // (1) we store the return object on the frame
@@ -115,6 +118,15 @@ public class JPF_java_lang_reflect_Constructor {
 
       //env.repeatInvocation(); // we don't need this, direct calls don't advance their return frame
       return MJIEnv.NULL; // doesn't matter, we come back
+      
+    } else { // reflection call returned
+      while (!frame.getMethodInfo().getName().equals(mid)){
+        // frame was the [clinit] direct call
+        frame = frame.getPrevious();
+      }
+      
+      int objRef = frame.pop(); // that's the object ref we pushed in (1)
+      return objRef;
     }
   }
     

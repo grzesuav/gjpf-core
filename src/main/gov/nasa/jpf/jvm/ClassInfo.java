@@ -2490,10 +2490,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return fieldsFactory.createStaticFields(this);
   }
 
-  void initializeStaticData (ElementInfo ei) {
+  void initializeStaticData (ElementInfo ei, ThreadInfo ti) {
     for (int i=0; i<sFields.length; i++) {
       FieldInfo fi = sFields[i];
-      fi.initialize(ei);
+      fi.initialize(ei, ti);
     }
   }
 
@@ -2504,7 +2504,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return fieldsFactory.createInstanceFields(this);
   }
 
-  void initializeInstanceData (ElementInfo ei) {
+  void initializeInstanceData (ElementInfo ei, ThreadInfo ti) {
     // Note this is only used for field inits, and array elements are not fields!
     // Since Java has only limited element init requirements (either 0 or null),
     // we do this ad hoc in the ArrayFields ctor
@@ -2515,12 +2515,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // safely we init top down
 
     if (superClass != null) { // do superclasses first
-      superClass.initializeInstanceData(ei);
+      superClass.initializeInstanceData(ei, ti);
     }
 
     for (int i=0; i<iFields.length; i++) {
       FieldInfo fi = iFields[i];
-      fi.initialize(ei);
+      fi.initialize(ei, ti);
     }
   }
 

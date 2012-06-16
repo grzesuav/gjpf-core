@@ -39,6 +39,9 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
 
   static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.MethodInfo");
 
+  // the method name used for reflection direct calls
+  public static final String REFLECTION_ID = "[reflection]";
+  
   static final int INIT_MTH_SIZE = 4096;
   protected static final ArrayList<MethodInfo> mthTable = new ArrayList<MethodInfo>(INIT_MTH_SIZE);
   
@@ -392,7 +395,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
   }
 
   public MethodInfo createReflectionCallStub() {
-    return createCallStub("[reflection]", REFLECTION_CALL);
+    return createCallStub(REFLECTION_ID, REFLECTION_CALL);
   }
   
   public boolean isReflectionCallStub() {

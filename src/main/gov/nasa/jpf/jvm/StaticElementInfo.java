@@ -18,9 +18,11 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.ObjectQueue;
+import gov.nasa.jpf.util.SparseClusterArray;
 
 /**
  * A specialized version of ElementInfo for use in the StaticArea.  The
@@ -42,11 +44,6 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   static final int ATTR_STATUS_CHANGED = 0x200000;
 
   static final int ATTR_ANY_CHANGED = ElementInfo.ATTR_ANY_CHANGED | ATTR_COR_CHANGED | ATTR_STATUS_CHANGED;
-
-
-  int classObjectRef = -1;
-  int status = ClassInfo.UNINITIALIZED;
-
 
   // our default memento implementation
   static class SEIMemento extends EIMemento<StaticElementInfo> {
@@ -92,19 +89,44 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     **/
   }
 
+  static SparseClusterArray<ThreadInfoSet> usingThreads;
+  
+  public static boolean init (Config conf){
+    usingThreads = new SparseClusterArray<ThreadInfoSet>();
+    return true;
+  }
+
+
+  
+  
+  int classObjectRef = -1;
+  int status = ClassInfo.UNINITIALIZED;
+
+  
   public StaticElementInfo () {
   }
 
-  public StaticElementInfo (ClassInfo ci, Fields f, Monitor m, int tid, int classObjRef) {
-    super(ci, f, m, tid);
+  public StaticElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti, int classObjRef) {
+    super(ci, f, m, ti);
 
-    refTid = createRefTid(tid);
-    
     classObjectRef = classObjRef;
 
     // initial attributes?
   }
   
+  @Override
+  protected ThreadInfoSet createThreadInfoSet(ThreadInfo ti){
+    ThreadInfoSet tis = usingThreads.get(objRef);
+    if (tis == null){
+      tis = new ThreadInfoSet(ti);
+      usingThreads.set(objRef,tis);
+    }
+    tis.add(ti);
+ 
+    return tis;
+  }
+  
+  @Override
   public boolean isObject(){
     return false;
   }
@@ -260,11 +282,6 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     assert fi.isReference();
     Heap heap = JVM.getVM().getHeap();
     return heap.get(getIntField(fi));
-  }
-  
-  @Override
-  void pushUnsharedRefFields(ObjectQueue<ElementInfo> queue, ThreadInfo ti) {
-    // ??? causes invalid heap ref if same as DynamicElementInfo ???
   }
 
 }

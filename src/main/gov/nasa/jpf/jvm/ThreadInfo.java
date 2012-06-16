@@ -27,11 +27,7 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.choice.BreakGenerator;
 import gov.nasa.jpf.jvm.choice.ThreadChoiceFromSet;
-import gov.nasa.jpf.util.HashData;
-import gov.nasa.jpf.util.IntVector;
-import gov.nasa.jpf.util.JPFLogger;
-import gov.nasa.jpf.util.ObjectList;
-import gov.nasa.jpf.util.StringSetMatcher;
+import gov.nasa.jpf.util.*;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -76,8 +72,6 @@ public class ThreadInfo
     TERMINATED,
     SLEEPING
   };
-
-  static int threadInfoCount; // the number of ThreadInfos created
 
   static final int[] emptyRefArray = new int[0];
 
@@ -164,8 +158,16 @@ public class ThreadInfo
   protected int stackDepth;
 
   
-  //--- the invariants
+  // something that tells the ThreadList how to look this up efficiently (e.g. index)
+  // note - this is for internal purposes only, there is no public accessor
+  // (we don't want to expose/hardwire ThreadList implementation)
+  // note also that the ThreadList is allowed to move this thread around, in which
+  // case update is the ThreadLists responsibility
+  protected int tlIdx;
+
   
+  //--- the invariants
+    
   // search global id, which is the basis for canonical order of threads
   protected int gid;
   
@@ -258,6 +260,7 @@ public class ThreadInfo
 
     TiMemento (ThreadInfo ti){
       this.ti = ti;
+      
       threadData = ti.threadData;  // no need to clone - it's copy on first write
       top = ti.top; // likewise
       stackDepth = ti.stackDepth; // we just copy this for efficiency reasons
@@ -330,13 +333,15 @@ public class ThreadInfo
    * chance and avoid interference with the IdleLoop listener
    */
   static int maxTransitionLength;
-  
-  
+
+  /**
+   * reset ThreadInfo statics (e.g. to reinitialize JPF) 
+   */
   static boolean init (Config config) {
     currentThread = null;
     mainThread = null;
     
-    threadInfoCount = 0;
+    globalThreadInfos = new ObjVector<ThreadInfo>(16); // re-create to avoid memory leaks
 
     String[] haltOnThrowSpecs = config.getStringArray("vm.halt_on_throw");
     if (haltOnThrowSpecs != null){
@@ -352,29 +357,76 @@ public class ThreadInfo
     
     return true;
   }
-
+  
+  //--- factory methods
+  // <2do> this is going to be a configurable factory method  
+  
+  /** repository for global threads accessed by gid */
+  static ObjVector<ThreadInfo> globalThreadInfos;  // initialized by init
+  
+  
   /**
-   * <2do> this is going to be a configurable factory method
+   * WATCH OUT - this is only to be used by the VM, the returned object still
+   * needs to be initialized by calling initReferenceFields(objRef,...)
    */
-  static ThreadInfo createThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef, long stackSize) {
-    return new ThreadInfo(vm, objRef, groupRef, runnableRef, nameRef, stackSize);
+  protected static ThreadInfo createMainThreadInfo(JVM vm){
+    if (mainThread == null){
+      mainThread = new ThreadInfo(vm);
+      mainThread.gid = 0;
+    }
+
+    currentThread = mainThread;
+    
+    mainThread.initFields(vm);
+    return mainThread;
   }
+  
+  /**
+   * this is our normal factory method for all but the mainThread, i.e. at the
+   * point of creation we already have all the required object references
+   */
+  public static ThreadInfo createThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef) {
+    int gid = computeGlobalId(vm.getSystemState()) + 1; // we reserve 0 for the mainThread
+    
+    ThreadInfo ti = globalThreadInfos.get(gid);
+    if (ti == null){
+      ti = new ThreadInfo(vm);
+      ti.gid = gid;
+      
+      globalThreadInfos.set(gid,ti);
+    } else {
+      //assert vm.getThreadList().getThreadInfoForId(gid) == null; // can't be in the threadlist
+    }
+    
+    ti.initFields(vm);
+    ti.initReferenceFields( objRef, groupRef, runnableRef, nameRef);
+    return ti;
+  }
+  
+  // note we can't call this outside a valid thread context
+  protected static int computeGlobalId (SystemState ss){
+    ThreadInfo tiExec = currentThread;
+    Instruction insn = null;
+    
+    if (tiExec != null){
+      insn = tiExec.getTopFrame().getPC();  
+    }
+        
+    return gidManager.getNewId(ss, currentThread, insn);
+  }
+
   
   /**
    * Creates a new thread info. It is associated with the object
    * passed and sets the target object as well.
    */
-  public ThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef, long stackSize) {
-    threadInfoCount++;
+  protected ThreadInfo (JVM vm) {
+  }
 
-    gid = computeGlobalId(vm.getSystemState());
+  protected void initFields(JVM vm){
+    // 'gid' is set by the factory method
+    // we can't set the 'id' field of the corresponding java.lang.Thread object until we have one
     
-    this.objRef = objRef;
-    targetRef = runnableRef;
-    
-    ElementInfo ei = vm.getElementInfo(objRef);
-    ci = ei.getClassInfo();
-
     this.vm = vm;
 
     threadData = new ThreadData();
@@ -383,9 +435,9 @@ public class ThreadInfo
     threadData.isDaemon = false;
     threadData.lockCount = 0;
     threadData.suspendCount = 0;
-    threadData.name = vm.getElementInfo(nameRef).asString();
+    // threadData.name not yet known
     
-    // this is nasty - 'priority', 'name', 'target' and 'group' are not taken
+    // 'priority', 'name', 'target' and 'group' are not taken
     // from the object, but set within the java.lang.Thread ctors
 
     top = null;
@@ -395,22 +447,28 @@ public class ThreadInfo
 
     markUnchanged();
     attributes |= ATTR_DATA_CHANGED; 
-    env = new MJIEnv(this);
-    //threadInfos.set(objRef, this); // our ThreadInfo repository
+    env = new MJIEnv(this);    
+  }
+  
+  // initialize related JPF object references
+  protected void initReferenceFields (int objRef, int groupRef, int runnableRef, int nameRef){
+    ElementInfo ei = vm.getElementInfo(objRef);
+    
+    this.objRef = objRef;
+    this.targetRef = runnableRef;
+    
+    this.ci = ei.getClassInfo();
 
-    // there can only be one
-    if (mainThread == null) {
-      mainThread = this;
-      currentThread = this;
-    }
-        
+    threadData.name = vm.getElementInfo(nameRef).asString();
+
+    ei.setIntField( "id", gid);
+    
     // note that we have to register here so that subsequent native peer calls can use the objRef
     // to lookup the ThreadInfo. This is a bit premature since the thread is not runnable yet,
     // but chances are it will be started soon, so we don't waste another data structure to do the mapping
-    vm.registerThread(this);    
-    ei.setIntField("id", gid);
+    vm.registerThread(this);
   }
-
+  
   
   public Memento<ThreadInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
@@ -741,6 +799,10 @@ public class ThreadInfo
     return this == currentThread;
   }
 
+  public boolean isInCurrentThreadList(){
+    return vm.getThreadList().contains(this);
+  }
+  
   /**
    * An alive thread is anything but TERMINATED or NEW
    */
@@ -1044,16 +1106,6 @@ public class ThreadInfo
     return gid;
   }
   
-  protected int computeGlobalId (SystemState ss){
-    ThreadInfo tiExec = currentThread;
-    Instruction insn = null;
-    
-    if (tiExec != null){
-      insn = tiExec.getTopFrame().getPC();  
-    }
-        
-    return gidManager.getNewId(ss, currentThread, insn);
-  }
   
   /**
    * record what this thread is being blocked on.

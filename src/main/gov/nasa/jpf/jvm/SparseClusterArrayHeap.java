@@ -147,8 +147,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
   // internal stuff
 
   protected DynamicElementInfo createElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti){
-    int tid = ti == null ? 0 : ti.getId();
-    return new DynamicElementInfo(ci,f,m,tid);
+    return new DynamicElementInfo(ci,f,m,ti);
   }
 
   public <T> Snapshot<T> getSnapshot (Transformer<ElementInfo,T> transformer){
@@ -256,7 +255,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     attributes |= ATTR_ELEMENTS_CHANGED;
 
     // and do the default (const) field initialization
-    ci.initializeInstanceData(ei);
+    ci.initializeInstanceData(ei, ti);
 
     vm.notifyObjectCreated(ti, ei);
     

@@ -111,6 +111,7 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
         ThreadInfo ti = m.restore(null);
         ti.cachedMemento = m;
         threads[i] = ti;
+        ti.tlIdx = i;
       }
       tl.threads = threads;
       tl.maxTid = maxTid;
@@ -173,7 +174,10 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     // append it
     ThreadInfo[] newThreads = new ThreadInfo[n+1];
     System.arraycopy(threads, 0, newThreads, 0, n);
+    
     newThreads[n] = ti;
+    ti.tlIdx = n;
+    
     threads = newThreads;
     
     if (reuseTid){
@@ -195,6 +199,14 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
         }
         if (i<n1){
           System.arraycopy(threads, i+1, newThreads, i, (n1-i));
+          
+          // update the tlIdx values
+          for (int j=i; j<n1; j++){
+            ThreadInfo t = threads[j];
+            if (t != null){
+              t.tlIdx = j;
+            }
+          }
         }
         
         threads = newThreads;        
@@ -249,7 +261,16 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     
     return null;
   }
-
+  
+  public boolean contains (ThreadInfo ti){
+    int idx = ti.tlIdx;
+    
+    if (idx < threads.length){
+      return threads[idx] == ti;
+    }
+    
+    return false;
+  }
   
   /**
    * Returns the length of the list.

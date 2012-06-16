@@ -292,13 +292,16 @@ public class JVM {
       log.severe("Not a valid main class: " + mainClassName);
       return false;
     }
+    
+    // we can't do anything without a main ThreadInfo
+    ThreadInfo tiMain = ThreadInfo.createMainThreadInfo(this);
 
     // from here, we get into some bootstrapping process
     //  - first, we have to load class structures (fields, supers, interfaces..)
     //  - second, we have to create a thread (so that we have a stack)
     //  - third, with that thread we have to create class objects
     //  - forth, we have to push the clinit methods on this stack
-    List<ClassInfo> clinitQueue = registerStartupClasses();
+    List<ClassInfo> clinitQueue = registerStartupClasses(tiMain);
 
     if (clinitQueue== null) {
       log.severe("error initializing startup classes (check 'classpath' and 'target')");
@@ -316,7 +319,7 @@ public class JVM {
     // pulls in the whole Collections/Random smash, but we can't execute the
     // Collections.<clinit> yet because there's no stack before we have a tiMain
     // thread. Let's hope none of the init classes creates threads in their <clinit>.
-    ThreadInfo tiMain = createMainThread();
+    initMainThread(tiMain);
 
     // now that we have a tiMain thread, we can finish the startup class init
     createStartupClassObjects(clinitQueue, tiMain);
@@ -355,13 +358,15 @@ public class JVM {
    * we have to do the initialization excplicitly here since we can't execute
    * bytecode yet (which would need a ThreadInfo context)
    */
-  protected ThreadInfo createMainThread () {
+  protected void initMainThread (ThreadInfo ti) {
+    
+    //--- now create & initialize all the related JPF objects
     Heap heap = getHeap();
 
     ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
-    int objRef = heap.newObject( ciThread, null);
-    int groupRef = createSystemThreadGroup(objRef);
-    int nameRef = heap.newString("main", null);
+    int objRef = heap.newObject( ciThread, ti);
+    int groupRef = createSystemThreadGroup(ti, objRef);
+    int nameRef = heap.newString("main", ti);
     
     //--- initialize the main Thread object
     ElementInfo ei = heap.get(objRef);
@@ -369,35 +374,34 @@ public class JVM {
     ei.setReferenceField("name", nameRef);
     ei.setIntField("priority", Thread.NORM_PRIORITY);
 
-    int permitRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"),null);
+    int permitRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), ti);
     ElementInfo eiPermitRef = heap.get(permitRef);
     eiPermitRef.setBooleanField("blockPark", true);
     ei.setReferenceField("permit", permitRef);
 
-    //--- create the ThreadInfo
-    ThreadInfo ti = ThreadInfo.createThreadInfo(this, objRef, groupRef, MJIEnv.NULL, nameRef, 0L);
-    
-    //--- set it running
+    //--- initialize the ThreadInfo reference fields
+    ti.initReferenceFields(objRef, groupRef, MJIEnv.NULL, nameRef);
+  
+    //--- set the thread running
     ti.setState(ThreadInfo.State.RUNNING);
-
-    return ti;
   }
 
-  protected int createSystemThreadGroup (int mainThreadRef) {
+  protected int createSystemThreadGroup (ThreadInfo ti, int mainThreadRef) {
     Heap heap = getHeap();
-
-    int ref = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), null);
+    
+// !!! <2do> we need to have a mainThread ti here, null doesn't work!! 
+    int ref = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti);
     ElementInfo ei = heap.get(ref);
 
     // since we can't call methods yet, we have to init explicitly (BAD)
     // <2do> - this isn't complete yet
 
-    int grpName = heap.newString("main", null);
+    int grpName = heap.newString("main", ti);
     ei.setReferenceField("name", grpName);
 
     ei.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
 
-    int threadsRef = heap.newArray("Ljava/lang/Thread;", 4, null);
+    int threadsRef = heap.newArray("Ljava/lang/Thread;", 4, ti);
     ElementInfo eiThreads = heap.get(threadsRef);
     eiThreads.setReferenceElement(0, mainThreadRef);
 
@@ -441,7 +445,7 @@ public class JVM {
     }
   }
   
-  protected List<ClassInfo> registerStartupClasses () {
+  protected List<ClassInfo> registerStartupClasses (ThreadInfo ti) {
     ArrayList<String> list = new ArrayList<String>(128);
     ArrayList<ClassInfo> queue = new ArrayList<ClassInfo>(32);
 
@@ -507,7 +511,7 @@ public class JVM {
     for (String clsName : list) {
       ClassInfo ci = ClassInfo.tryGetResolvedClassInfo(clsName);
       if (ci != null) {
-        registerStartupClass(ci, queue);
+        registerStartupClass(ci, queue, ti);
       } else {
         log.severe("can't find startup class ", clsName);
         return null;
@@ -521,16 +525,16 @@ public class JVM {
   // note this has to be in order - we don't want to init a derived class before
   // it's parent is initialized
   // This code must be kept in sync with ClassInfo.registerClass()
-  void registerStartupClass (ClassInfo ci, List<ClassInfo> queue) {
+  void registerStartupClass (ClassInfo ci, List<ClassInfo> queue, ThreadInfo ti) {
         
     if (!queue.contains(ci)) {
       if (ci.getSuperClass() != null) {
-        registerStartupClass( ci.getSuperClass(), queue);
+        registerStartupClass( ci.getSuperClass(), queue, ti);
       }
       
       for (String ifcName : ci.getAllInterfaces()) {
         ClassInfo ici = ClassInfo.getResolvedClassInfo(ifcName);
-        registerStartupClass(ici, queue);
+        registerStartupClass(ici, queue, ti);
       }
 
       ClassInfo.logger.finer("registering class: ", ci.getName());
@@ -538,7 +542,7 @@ public class JVM {
 
       StaticArea sa = getStaticArea();
       if (!sa.containsClass(ci.getName())){
-        sa.addClass(ci, null);
+        sa.addClass(ci, ti);
       }
     }
   }
@@ -586,7 +590,7 @@ public class JVM {
     }
 
     // create the args array object
-    int argsRef = heap.newArray("Ljava/lang/String;", args.length, null);
+    int argsRef = heap.newArray("Ljava/lang/String;", args.length, tiMain);
     ElementInfo argsElement = heap.get(argsRef);
     for (int i = 0; i < args.length; i++) {
       int aRef = heap.newString(args[i], tiMain);

@@ -483,39 +483,36 @@ public class JPF_java_lang_reflect_Method {
   public static int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                                            int objRef, int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
-    MethodInfo mi = getMethodInfo(env,mthRef);
-    ClassInfo calleeClass = mi.getClassInfo();
-    ElementInfo mth = ti.getElementInfo(mthRef);
-    boolean accessible = (Boolean) mth.getFieldValueObject("isAccessible");
-    
-    if (mi.isStatic()){ // this might require class init and reexecution
-      if (calleeClass.requiresClinitExecution(ti)){
-        env.repeatInvocation();
-        return 0;
-      }
-    } else { // check if we have an object
-      if (objRef == MJIEnv.NULL){
-        env.throwException("java.lang.NullPointerException");
-        return MJIEnv.NULL;
-      }
-    }
-    
-    if (!accessible) {
-      StackFrame frame = ti.getTopFrame().getPrevious();
-      ClassInfo callerClass = frame.getClassInfo();
-      
-      if (callerClass != calleeClass) {
-        env.throwException(IllegalAccessException.class.getName(), "Class " + callerClass.getName() + " can not access a member of class " + calleeClass.getName() + " with modifiers \"" + Modifier.toString(mi.getModifiers()));
-        return MJIEnv.NULL;
-      }
-    }
-    
+    MethodInfo mi = getMethodInfo(env, mthRef);
     StackFrame frame = ti.getReturnedDirectCall();
+    
+    if (frame == null){ // first time
+      ClassInfo calleeClass = mi.getClassInfo();
+      ElementInfo mth = ti.getElementInfo(mthRef);
+      boolean accessible = (Boolean) mth.getFieldValueObject("isAccessible");
 
-    if (frame != null){ // we have returned from the direct call
-      return createBoxedReturnValueObject( env, mi, frame);
+      if (mi.isStatic()) { // this might require class init and reexecution
+        if (calleeClass.requiresClinitExecution(ti)) { // might cause another direct call
+          env.repeatInvocation();
+          return 0;
+        }
+      } else { // check if we have an object
+        if (objRef == MJIEnv.NULL) {
+          env.throwException("java.lang.NullPointerException");
+          return MJIEnv.NULL;
+        }
+      }
 
-    } else { // first time, set up direct call
+      if (!accessible) {
+        StackFrame caller = ti.getTopFrame().getPrevious();
+        ClassInfo callerClass = caller.getClassInfo();
+
+        if (callerClass != calleeClass) {
+          env.throwException(IllegalAccessException.class.getName(), "Class " + callerClass.getName() + " can not access a member of class " + calleeClass.getName() + " with modifiers \"" + Modifier.toString(mi.getModifiers()));
+          return MJIEnv.NULL;
+        }
+      }
+      
       MethodInfo stub = mi.createReflectionCallStub();
       frame = new DirectCallStackFrame(stub);
 
@@ -538,6 +535,14 @@ public class JPF_java_lang_reflect_Method {
       ti.pushFrame(frame);
       
       return MJIEnv.NULL;
+      
+    } else { // we have returned from the direct call
+      while (!frame.getMethodInfo().getName().equals(MethodInfo.REFLECTION_ID)){
+        // frame was the [clinit] direct call
+        frame = frame.getPrevious();
+      }
+      
+      return createBoxedReturnValueObject( env, mi, frame);
     }
   }
   

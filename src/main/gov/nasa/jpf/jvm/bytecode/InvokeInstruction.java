@@ -337,7 +337,7 @@ public abstract class InvokeInstruction extends Instruction {
           }
 
         } else { // already locked by another thread, we have to block and therefore need a CG
-          ei.updateRefTidWith(ti.getId()); // Ok, now we know it is shared
+          // the top half already did set the object shared
 
           ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
 

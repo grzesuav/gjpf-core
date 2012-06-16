@@ -132,19 +132,19 @@ public class StaticArea extends Area<StaticElementInfo> implements Restorable<St
     return new StaticElementInfo();
   }
 
-  protected StaticElementInfo createElementInfo (ClassInfo ci,Fields f, Monitor m, int tid, int clsObjRef){
-    return new StaticElementInfo(ci,f,m,tid, clsObjRef);
+  protected StaticElementInfo createElementInfo (ClassInfo ci,Fields f, Monitor m, ThreadInfo ti, int clsObjRef){
+    return new StaticElementInfo(ci,f,m,ti, clsObjRef);
   }
 
 
-  protected StaticElementInfo createElementInfo (ClassInfo ci, int tid, int clsObjRef) {
+  protected StaticElementInfo createElementInfo (ClassInfo ci, ThreadInfo ti, int clsObjRef) {
     Fields   f = ci.createStaticFields();
     Monitor  m = new Monitor();
 
-    StaticElementInfo ei = createElementInfo(ci,f, m, tid, clsObjRef);
+    StaticElementInfo ei = createElementInfo(ci,f, m, ti, clsObjRef);
     ci.setStaticElementInfo(ei);
 
-    ci.initializeStaticData(ei);
+    ci.initializeStaticData(ei, ti);
 
     return ei;
   }
@@ -154,8 +154,7 @@ public class StaticArea extends Area<StaticElementInfo> implements Restorable<St
    * a class object - the StaticElementInfo needs its reference value
    */
   public StaticElementInfo addClass (ClassInfo ci, ThreadInfo ti) {
-    int tid = ti == null ? 0 : ti.getId();
-    StaticElementInfo ei = createElementInfo(ci, tid, -1);
+    StaticElementInfo ei = createElementInfo(ci, ti, -1);
     int index = indexFor(ci.getName());
 
     add(index, ei);

@@ -24,6 +24,7 @@ import gov.nasa.jpf.util.*;
 
 import java.io.PrintWriter;
 import java.lang.ref.SoftReference;
+import java.util.List;
 
 /**
  * Describes an element of memory containing the field values of a class or an
@@ -51,11 +52,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
   public static final int   ATTR_CONSTRUCTED   = 0x2000;
   
-  
-  // this object is shared between at least two threads
-  public static final int ATTR_SHARED = 0x4000;
-
-
 
   //--- the upper two bytes are for transient (heap internal) use only, and are not stored
 
@@ -90,9 +86,11 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   protected Fields          fields;
   protected Monitor         monitor;
   
-  // the set of referencing thread ids. Note this is not used for state matching
+  // the set of threads using this object. Note this is not used for state matching
   // so that order or thread id do not have a direct impact on heap symmetry
-  protected IntSet refTid;
+  // THIS IS SEARCH GLOBAL - there can be ThreadInfos in this set which are terminated
+  // and/or not in the current ThreadList
+  protected ThreadInfoSet usingTi;
 
   // this is the reference value for the object represented by this ElementInfo
   // (note this is a slight misnomer for StaticElementInfos, which don't really
@@ -135,7 +133,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     ClassInfo ci;
     Fields fields;
     Monitor monitor;
-    IntSet refTid;
+    ThreadInfoSet usingTi;
     int attributes;
 
 
@@ -149,7 +147,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       this.attributes = (ei.attributes & ATTR_STORE_MASK);
       this.fields = ei.fields;
       this.monitor = ei.monitor;
-      this.refTid = ei.refTid;
+      this.usingTi = ei.usingTi;
 
       ei.markUnchanged();
     }
@@ -160,7 +158,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       ei.attributes = attributes;
       ei.fields = fields;
       ei.monitor = monitor;
-      ei.refTid = refTid;
+      ei.usingTi = usingTi;
 
       ei.sid = 0;
       ei.updateLockingInfo();
@@ -177,7 +175,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
      *  if (ciMth != other.ciMth) return false;
         if (fields != other.fields) return false;
         if (monitor != other.monitor) return false;
-        if (refTid != other.refTid) return false;
+        if (usingTi != other.usingTi) return false;
         if (attributes != other.attributes) return false;
         return true;
       }
@@ -189,32 +187,28 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
     **/
   }
-
-  static int maxThreadRefs;
-
+  
   static boolean init (Config config) {
-
-    maxThreadRefs = config.getInt("vm.max_thread_refs", 64);
-
+    DynamicElementInfo.init(config);
+    StaticElementInfo.init(config);
     return true;
   }
 
-  protected ElementInfo(ClassInfo c, Fields f, Monitor m, int tid) {
+  protected ElementInfo(ClassInfo c, Fields f, Monitor m, ThreadInfo ti) {
     ci = c;
     fields = f;
     monitor = m;
 
-    // refTid and attributes are set in the concrete type ctors
+    usingTi = createThreadInfoSet(ti); // it's always initialized with one member
+    
+    assert ti != null; // we need that for our POR
   }
+
+  // we need to delegate this in case it is global
+  protected abstract ThreadInfoSet createThreadInfoSet(ThreadInfo ti);
   
   // not ideal, a sub-type checker.
   public abstract boolean isObject();
-  
-  protected IntSet createRefTid( int tid){
-    IntSet set = new UnsortedArrayIntSet();
-    set.add(tid);
-    return set;
-  }
 
   protected ElementInfo() {
   }
@@ -283,16 +277,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
         }
       }
     }
-    
-    if (isThreadTermination && refTid != null){
-//System.out.print("@@ cleanUp " + this + ", refTid " + refTid);
-      updateRefTidWithout(tid);
-//System.out.println(" => " + refTid);
-      
-      if (refTid.size() == 1){
-        setUnshared();
-      }
-    }
   }
   
   
@@ -323,34 +307,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
 
-  public boolean hasMultipleReferencingThreads() {
-    return refTid.size() > 1;
-  }
-
-  public void updateRefTidWith (int tid){
-    IntSet b = refTid;
-
-    if (!b.contains(tid)){
-      if ((attributes & ATTR_REFTID_CHANGED) == 0){
-        b = b.clone();
-        refTid = b;
-        attributes |= ATTR_REFTID_CHANGED;
-      }
-      b.add(tid);
-    }
-  }
-
-  public void updateRefTidWithout (int tid){
-    IntSet b = refTid;
-
-    if (b.contains(tid)){
-      if ((attributes & ATTR_REFTID_CHANGED) == 0){
-        b = b.clone();
-        refTid = b;
-        attributes |= ATTR_REFTID_CHANGED;
-      }
-      b.remove(tid);
-    }
+  public int numberOfUserThreads() {
+    return usingTi.size();
   }
 
 
@@ -421,90 +379,25 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   
   //--- shared handling
   
-  private static ObjectQueue<ElementInfo> shareQueue = new ArrayObjectQueue<ElementInfo>(256);
-  
-  static class ShareProcessor implements ObjectQueueProcessor<ElementInfo> {
-    ThreadInfo ti;
-    int tid;
-    ObjectQueue<ElementInfo> queue;
-    
-    ShareProcessor (ThreadInfo ti, ObjectQueue<ElementInfo> queue){
-      this.ti = ti;
-      tid = ti.getId();
-      this.queue = queue;
-    }
-
-    // this method is a performance bottleneck - inline and avoid calls
-    public void process (ElementInfo ei) {
-      ei.pushUnsharedRefFields(queue, ti);
-    }
-  }
-  
-  abstract void pushUnsharedRefFields (ObjectQueue<ElementInfo> queue, ThreadInfo ti);
-  
-  /**
-   * note this does not change the attributes of this object
-   * @param ti thread the objects referenced by our fields are shared with 
-   */
-  public void propagateShared (ThreadInfo ti){
-    shareQueue.clear();
-    shareQueue.add(this);
-    shareQueue.processQueue(new ShareProcessor(ti, shareQueue));
-  }
-  
   public boolean isShared() {
-    //return refTid.size() > 1;
-    return ((attributes & ATTR_SHARED) != 0);
+    //return usingTi.getNumberOfLiveThreads() > 1;
+    return usingTi.hasMultipleLiveThreads();
   }
   
   public boolean isSharedWith(ThreadInfo ti){
-    if ((attributes & ATTR_SHARED) != 0){
-      return refTid.contains(ti.getId());
-    }
-    
-    return false;
+    return usingTi.containsLiveThread(ti);
   }
   
-  public void setShared (ThreadInfo ti){
-    if ((attributes & ATTR_SHARED) == 0) {
-      attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);  
-    }
-  }
-  
-  public void setUnshared (){
-    if ((attributes & ATTR_SHARED) != 0) {
-      attributes &= ~ATTR_SHARED;
-      attributes |= ATTR_ATTRIBUTE_CHANGED;
-    }
+  public void setUsedBy( ThreadInfo ti){
+    usingTi.add(ti);
   }
   
   public boolean checkUpdatedSharedness (ThreadInfo ti) {
-    
-    // we use the tid here to ensure that we are independent of thread access order,
-    // but this means we rely on threads doing refTid cleanup upon termination
-    int tid = ti.getId();
-    
-//System.out.print("@@ check: " + this + " refTid = " + refTid);
-    int nBefore = refTid.size();
-    updateRefTidWith(tid);
-    int nAfter = refTid.size();
-//System.out.println( " -> " + refTid);
-    
-    if (nBefore == 1 && nAfter == 2){ // we just became shared
-      setShared(ti);
-      
-      // we could account for blocked threads here, only returning true if
-      // this is shared with a running thread
-      return true;
-      
-    } else {
-      return isShared();
-    }
+    usingTi.add(ti);
+    return isShared();
   }
   
   
-  
-
   
   /**
    * this is called before the system attempts to reclaim the object. If
@@ -548,7 +441,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     hd.add(ci.getUniqueId());
     fields.hash(hd);
     monitor.hash(hd);
-    hd.add(refTid);
     hd.add(attributes & ATTR_STORE_MASK);
   }
 
@@ -579,7 +471,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       if (!monitor.equals(other.monitor)){
         return false;
       }
-      if (refTid != other.refTid){
+      if (usingTi != other.usingTi){
         return false;
       }
 
@@ -2309,7 +2201,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       System.out.println("!!!!!! failed ElementInfo consistency: "  + this + ": " + failMsg);
 
       System.out.println("object: " + this);
-      System.out.println("refTid: " + refTid);
+      System.out.println("usingTi: " + usingTi);
       
       ThreadInfo tiLock = getLockingThread();
       if (tiLock != null) System.out.println("locked by: " + tiLock);

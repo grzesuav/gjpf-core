@@ -255,7 +255,7 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
   /**
    * pushClinit the corresponding data in the provided Fields instance
    */
-  public abstract void initialize (ElementInfo ei);
+  public abstract void initialize (ElementInfo ei, ThreadInfo ti);
 
 
   /**

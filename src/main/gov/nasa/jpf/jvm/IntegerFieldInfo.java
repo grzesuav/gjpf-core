@@ -33,7 +33,7 @@ public class IntegerFieldInfo extends SingleSlotFieldInfo {
      super(name, "I", modifiers, ci, idx, off);
   }
 
-  public void initialize (ElementInfo ei) {
+  public void initialize (ElementInfo ei, ThreadInfo ti) {
     ei.getFields().setIntValue( storageOffset, init);
   }
 

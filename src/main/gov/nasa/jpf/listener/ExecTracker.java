@@ -265,6 +265,8 @@ public class ExecTracker extends ListenerAdapter {
   
   public void choiceGeneratorAdvanced (JVM jvm) {
     out.println("\t\t # choice: " + jvm.getLastChoiceGenerator());
+    
+    //jvm.dumpThreadStates();
   }
   
   /****************************************** private stuff ******/

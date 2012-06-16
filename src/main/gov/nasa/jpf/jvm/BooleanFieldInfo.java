@@ -43,7 +43,7 @@ public class BooleanFieldInfo extends SingleSlotFieldInfo {
     }
   }
 
-  public void initialize (ElementInfo ei) {
+  public void initialize (ElementInfo ei, ThreadInfo ti) {
     ei.getFields().setBooleanValue(storageOffset, init);
   }
 

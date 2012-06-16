@@ -18,8 +18,10 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.ObjectQueue;
+import gov.nasa.jpf.util.SparseClusterArray;
 
 /**
  * A specialized version of ElementInfo for use in the DynamicArea.
@@ -46,17 +48,38 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
     }
   }
 
-
+  static SparseClusterArray<ThreadInfoSet> usingThreads;
+  
+  public static boolean init (Config conf){
+    usingThreads = new SparseClusterArray<ThreadInfoSet>();
+    return true;
+  }
+  
+  
   public DynamicElementInfo () {
   }
 
-  public DynamicElementInfo (ClassInfo ci, Fields f, Monitor m, int tid) {
-    super(ci, f, m, tid);
+  public DynamicElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti) {
+    super(ci, f, m, ti);
 
-    refTid = createRefTid( tid);
     attributes = ci.getElementInfoAttrs();
   }
 
+  
+  @Override
+  protected ThreadInfoSet createThreadInfoSet(ThreadInfo ti){
+    ThreadInfoSet tis = usingThreads.get(objRef);
+    if (tis == null){
+      tis = new ThreadInfoSet(ti);
+      usingThreads.set(objRef,tis);
+    }
+    
+    tis.add(ti);
+    
+    return tis;
+  }
+  
+  @Override
   public boolean isObject(){
     return true;
   }
@@ -208,27 +231,4 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
     
     throw new JPFException("object is not a box object: " + this);    
   }
-
-  @Override
-  void pushUnsharedRefFields(ObjectQueue<ElementInfo> queue, ThreadInfo ti) {
-    int tid = ti.getId();    
-    int nInstanceFields = ci.getNumberOfInstanceFields();
-    
-    for (int i = 0; i < nInstanceFields; i++) {
-      FieldInfo fi = ci.getInstanceField(i);
-      if (fi.isReference()) {
-        int ref = getReferenceField(fi);
-        if (ref != -1) {
-          ElementInfo eiRef = ti.getElementInfo(ref);
-
-          if ((eiRef.attributes & ATTR_SHARED) == 0) {  // referenced object not yet shared
-            eiRef.attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
-            queue.add(eiRef);
-          }
-          eiRef.updateRefTidWith(tid);
-        }
-      }
-    }
-  }
-  
 }

@@ -182,23 +182,22 @@ public class JPF_java_lang_Class {
   public static int newInstance____Ljava_lang_Object_2 (MJIEnv env, int robj) {
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = ti.getReturnedDirectCall();
+    String id = "[init]";
 
-    if (frame != null){
-      return frame.pop();
-
-    } else {
+    if (frame == null){
       ClassInfo ci = env.getReferredClassInfo(robj);   // what are we
 
-      if (ci.requiresClinitExecution(ti)) {
-        env.repeatInvocation();
-        return MJIEnv.NULL;
-      }
-      
       if(ci.isAbstract()){ // not allowed to instantiate
         env.throwException("java.lang.InstantiationException");
         return MJIEnv.NULL;
       }
-
+      
+      if (ci.requiresClinitExecution(ti)) {
+        // NOTE - this might cause cause another direct call for a <clinit.
+        env.repeatInvocation();
+        return MJIEnv.NULL;
+      }
+      
       int objRef = env.newObject(ci);  // create the thing
 
       MethodInfo mi = ci.getMethod("<init>()V", true);
@@ -210,12 +209,10 @@ public class JPF_java_lang_Class {
           return MJIEnv.NULL;
         }
 
-        MethodInfo stub = mi.createDirectCallStub("[init]");
+        MethodInfo stub = mi.createDirectCallStub(id);
         frame = new DirectCallStackFrame(stub, 2,0);
         frame.push( objRef, true);
-        // Hmm, we borrow the DirectCallStackFrame to cache the object ref
-        // (don't try that with a normal StackFrame)
-        frame.dup();
+        frame.dup(); // (1) cache the object ref so that the bottom half can retrieve it
         ti.pushFrame(frame);
 
         return MJIEnv.NULL;
@@ -223,6 +220,15 @@ public class JPF_java_lang_Class {
       } else {
         return objRef; // no initialization required
       }
+      
+    } else {
+      while (!frame.getMethodInfo().getName().equals(id)){
+        // frame was the [clinit] direct call
+        frame = frame.getPrevious();
+      }
+      
+      int objRef = frame.pop(); // that's the object ref we pushed in (1)
+      return objRef;
     }
   }
   

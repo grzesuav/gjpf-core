@@ -43,7 +43,7 @@ public class LongFieldInfo extends DoubleSlotFieldInfo {
     }
   }
 
-  public void initialize (ElementInfo ei) {
+  public void initialize (ElementInfo ei, ThreadInfo ti) {
     ei.getFields().setLongValue( storageOffset, init);
   }
 

@@ -61,9 +61,6 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
                                  "referencing field '" + fname + "' on null object");
     }
     ElementInfo ei = ti.getElementInfo(objRef);
-
-    
-    boolean wasUnshared = ei.isSharedWith(ti);
     
     // check if this breaks the current transition
     // note this will also set the shared attribute of the field owner
@@ -85,10 +82,6 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
       if (fi.isReference()) {
         ei.setReferenceField(fi, ival);
         
-        if (wasUnshared){
-          ei.propagateShared(ti);
-        }
-
       } else {
         ei.set1SlotField(fi, ival);
       }

@@ -44,7 +44,7 @@ public class ByteFieldInfo extends SingleSlotFieldInfo {
   }
 
 
-  public void initialize (ElementInfo ei) {
+  public void initialize (ElementInfo ei, ThreadInfo ti) {
     ei.getFields().setByteValue(storageOffset, init);
   }
 

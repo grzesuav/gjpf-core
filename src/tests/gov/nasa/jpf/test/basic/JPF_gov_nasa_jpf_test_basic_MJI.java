@@ -147,12 +147,13 @@ public class JPF_gov_nasa_jpf_test_basic_MJI {
   public static int nativeRoundtripLoop__I__I (MJIEnv env, int robj, int a) {
     System.out.println("# entering nativeRoundtripLoop(): " + a);
 
+    MethodInfo mi = env.getClassInfo(robj).getMethod("roundtrip(I)I",false);
+    String mid = "[roundtrip]" + mi.getName();
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = ti.getReturnedDirectCall();
 
     if (frame == null){ // first time
-      MethodInfo mi = env.getClassInfo(robj).getMethod("roundtrip(I)I",false);
-      MethodInfo stub = mi.createDirectCallStub("[roundtrip]" + mi.getName());
+      MethodInfo stub = mi.createDirectCallStub(mid);
       frame = new DirectCallStackFrame(stub, 2, 1);
 
       frame.setLocalVariable(0, 0, false);
@@ -164,6 +165,11 @@ public class JPF_gov_nasa_jpf_test_basic_MJI {
 
     } else { // direct call returned
 
+      // this method can't be executed unless the class is already initialized,
+      // i.e. we don't have to check for overlayed clinit calls and the frame
+      // has to be the one we pushed
+      assert frame.getMethodName().equals(mid);
+      
       // this shows how to get information back from the JPF roundtrip into
       // the native method
       int r = frame.pop(); // the return value of the direct call above

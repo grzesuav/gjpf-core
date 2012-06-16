@@ -116,6 +116,7 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
       }
 
       if (isMonitorEnterPrologue()) {
+        // if this is a GET followed by a MONITOR_ENTER then we just break on the monitor
         return false;
       }
 

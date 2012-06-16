@@ -45,7 +45,7 @@ public class DoubleFieldInfo extends DoubleSlotFieldInfo {
   }
 
 
-  public void initialize (ElementInfo ei) {
+  public void initialize (ElementInfo ei, ThreadInfo ti) {
     ei.getFields().setDoubleValue(storageOffset, init);
   }
 

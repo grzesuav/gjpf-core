@@ -379,7 +379,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     add(index, dei);
 
     // and do the default (const) field initialization
-    ci.initializeInstanceData(dei);
+    ci.initializeInstanceData(dei, ti);
 
     //if (ti != null) { // maybe we should report them all, and put the burden on the listener
       JVM.getVM().notifyObjectCreated(ti, dei);
@@ -564,7 +564,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
 
   protected DynamicElementInfo createElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti){
     int tid = ti == null ? 0 : ti.getId();
-    return new DynamicElementInfo(ci,f,m,tid);
+    return new DynamicElementInfo(ci,f,m,ti);
   }
 
 

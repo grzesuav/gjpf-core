@@ -80,16 +80,6 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
       if (fi.isReference()) {
         ei.setReferenceField(fi, ival);
         
-        // note that we only propagate the stored object, not all static fields of this class
-        if (ei.isShared()){
-          if (ival != -1) {
-            ElementInfo eiRef = ti.getElementInfo(ival);
-            if (!eiRef.isSharedWith(ti)){
-              eiRef.propagateShared(ti);
-            }
-          }
-        }
-        
       } else {
         ei.set1SlotField(fi, ival);
       }
