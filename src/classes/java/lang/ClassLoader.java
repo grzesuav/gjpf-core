@@ -34,7 +34,7 @@ import sun.misc.CompoundEnumeration;
  */
 public abstract class ClassLoader {
   
-  ClassLoader parent;
+  private ClassLoader parent;
 
   // This is JPF internal identifier which set to the globalId of the classLoader
   private int clRef;
