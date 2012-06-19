@@ -95,6 +95,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
    protected static Map<String,ClassInfo> loadedClasses = new HashMap<String, ClassInfo>();
 
+   /**
+    * Map from globalIds to instances of ClassInfos. This map includes all the ClassInfos
+    * defined by any classloaders.
+    */
+   protected static Map<Integer,ClassInfo> classes = new HashMap<Integer, ClassInfo>();
+
   /**
    * optionally used to determine atomic methods of a class (during class loading)
    */
@@ -2328,6 +2334,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // link the StaticElementInfo to the class object
     sei.setClassObjectRef(ei.getObjectRef());
     setUniqueId();
+    classes.put(uniqueId, this);
 
     return ei;
   }
