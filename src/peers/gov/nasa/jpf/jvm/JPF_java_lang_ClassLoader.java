@@ -20,7 +20,6 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassPath;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 /**
  * native peer for our (totally incomplete) ClassLoader model
@@ -99,8 +98,7 @@ public class JPF_java_lang_ClassLoader {
     return MJIEnv.NULL;
   }
 
-  public static int loadClass0__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
-    Heap heap = env.getHeap();
+  public static int findSystemClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
     String cname = env.getStringObject(nameRef);
 
     checkForIllegalName(env, cname);
@@ -108,8 +106,7 @@ public class JPF_java_lang_ClassLoader {
       return MJIEnv.NULL;
     }
 
-    int gid = heap.get(objRef).getIntField("clRef");
-    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentSystemClassLoader();
 
     ClassInfo ci = cl.tryGetResolvedClassInfo(cname);
     if (ci == null){
@@ -148,9 +145,10 @@ public class JPF_java_lang_ClassLoader {
       match = cl.getMatch(cname);
     }
 
-    // I am not sure about this! Test it on JVM!
-    if(!match.getBytes().equals(buffer)) {
-      env.throwException("java.lang.ClassFormatError");
+    // determine whether that the corresponding class is already defined by this 
+    // classloader, if so this attempt is invalid and loading throws a LinkageError.
+    if(cl.getDefinedClassInfo(cname) != null) {
+      env.throwException("java.lang.LinkageError");
       return MJIEnv.NULL;
     }
 

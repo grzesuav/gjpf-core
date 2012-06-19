@@ -155,15 +155,13 @@ public abstract class ClassLoader {
     return parent;
   }
 
-  // that has to be fixed. For now it returns a class that is directly 
-  // defined by this classloader. But it has to return an initiated class.
+  /**
+   * If the class with the given name has been already defined, it is returned. OW, it
+   * returns null.
+   */
   protected native final Class<?> findLoadedClass(String name);
 
-  private native Class<?> loadClass0(String name);
-
-  protected final Class<?> findSystemClass(String name) throws ClassNotFoundException {
-    return getSystemClassLoader().loadClass0(name);
-  }
+  protected native final Class<?> findSystemClass(String name) throws ClassNotFoundException;
 
   public Class<?> loadClass(String name) throws ClassNotFoundException {
     Class<?> c = findLoadedClass(name);

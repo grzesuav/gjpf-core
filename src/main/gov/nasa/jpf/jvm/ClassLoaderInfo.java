@@ -220,7 +220,7 @@ public class ClassLoaderInfo
     ClassInfo ci = definedClasses.get(typeName);
     
     if (ci == null) {
-      ci = ClassInfo.getResolvedClassInfo(className, buffer, offset, length, this, match);
+      ci = ClassInfo.getResolvedClassInfo(typeName, buffer, offset, length, this, match);
       if(ci.classLoader != this) {
         // creates a new instance from ci using this classloader
         ci = ci.getInstanceFor(this);
