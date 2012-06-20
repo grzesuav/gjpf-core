@@ -146,7 +146,7 @@ public class JPF_java_lang_ClassLoader {
     }
 
     // determine whether that the corresponding class is already defined by this 
-    // classloader, if so this attempt is invalid and loading throws a LinkageError.
+    // classloader, if so, this attempt is invalid, and loading throws a LinkageError.
     if(cl.getDefinedClassInfo(cname) != null) {
       env.throwException("java.lang.LinkageError");
       return MJIEnv.NULL;
@@ -156,14 +156,18 @@ public class JPF_java_lang_ClassLoader {
     try {
       ci = cl.getResolvedClassInfo(cname, buffer, offset, length, match);
     } catch(JPFException e) {
+      // if the representation is not a ClassFile structure, loading throws an instance 
+      // of ClassFormatError.
       env.throwException("java.lang.ClassFormatError");
       return MJIEnv.NULL;
     }
 
-    if (!ci.isRegistered()) {
-      ThreadInfo ti = env.getThreadInfo();
-      ci.registerClass(ti);
-    }
+    // Note: if the representation is not of a supported major or minor version, loading 
+    // throws an UnsupportedClassVersionError. But for now, we do not check for this here 
+    // since we don't do much with minor and major versions
+
+    ThreadInfo ti = env.getThreadInfo();
+    ci.registerClass(ti);
 
     return ci.getClassObjectRef();
   }
