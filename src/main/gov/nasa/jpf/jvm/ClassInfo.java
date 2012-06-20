@@ -1133,11 +1133,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public static ClassInfo getClassInfo(int uniqueId) {
-    if (uniqueId >= 0) {
-      return classes.get(uniqueId);
-    } else {
-      return null; 
-    }
+    return classes.get(uniqueId);
   }
 
   public static ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {

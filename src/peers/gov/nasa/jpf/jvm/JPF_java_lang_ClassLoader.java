@@ -146,7 +146,7 @@ public class JPF_java_lang_ClassLoader {
     }
 
     // determine whether that the corresponding class is already defined by this 
-    // classloader, if so, this attempt is invalid, and loading throws a LinkageError.
+    // classloader, if so, this attempt is invalid, and loading throws a LinkageError
     if(cl.getDefinedClassInfo(cname) != null) {
       env.throwException("java.lang.LinkageError");
       return MJIEnv.NULL;
@@ -155,9 +155,14 @@ public class JPF_java_lang_ClassLoader {
     ClassInfo ci = null; 
     try {
       ci = cl.getResolvedClassInfo(cname, buffer, offset, length, match);
+    } catch(NoClassInfoException e) {
+      // if the representation does not represent a class with the requested name, loading 
+      // throws an instance of NoClassDefFoundError
+      env.throwException("java.lang.NoClassDefFoundError");
+      return MJIEnv.NULL;
     } catch(JPFException e) {
       // if the representation is not a ClassFile structure, loading throws an instance 
-      // of ClassFormatError.
+      // of ClassFormatError
       env.throwException("java.lang.ClassFormatError");
       return MJIEnv.NULL;
     }
