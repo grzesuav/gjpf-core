@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.Stack;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -2509,10 +2510,19 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return new HashMap<String, MethodInfo>(0);
   }
 
+  // this a helper field used to keep track of resolved super classes, to catch
+  // ClassCircularityError which is thrown if any of the superclasses of the 
+  // class is the class itself
+  private static final Stack<String> superNames = new Stack<String>();
+
   protected ClassInfo loadSuperClass (String superName) {
     if (this.isObjectClassInfo()) {
       return null;
     } else {
+      if(superNames.contains(superName)) {
+        throw new ClassInfoCircularityError("a superclass of " + superName + " is the class itself");
+      }
+      superNames.push(superName);
 
       logger.finer("resolving superclass: ", superName, " of ", name);
 
@@ -2522,6 +2532,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         throw new NoClassInfoException(superName);
       }
 
+      superNames.pop();
       return sci;
     }
   }

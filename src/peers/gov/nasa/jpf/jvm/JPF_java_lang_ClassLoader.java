@@ -160,6 +160,11 @@ public class JPF_java_lang_ClassLoader {
       // throws an instance of NoClassDefFoundError
       env.throwException("java.lang.NoClassDefFoundError");
       return MJIEnv.NULL;
+    } catch(ClassInfoCircularityError e) {
+      // if any of the superclasses of the class, is the class itself, loading throws an 
+      // instance of ClassCircularityError
+      env.throwException("java.lang.ClassCircularityError");
+      return MJIEnv.NULL;
     } catch(JPFException e) {
       // if the representation is not a ClassFile structure, loading throws an instance 
       // of ClassFormatError
