@@ -1126,13 +1126,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return isStringClassInfo;
   }
 
-//  public static ClassInfo getClassInfo(int uniqueId) {
-//    if (uniqueId >= 0) {
-//      return loadedClasses.get(uniqueId); 
-//    } else {
-//      return null; 
-//    }
-//  }  
+  public static ClassInfo getClassInfo(int uniqueId) {
+    if (uniqueId >= 0) {
+      return classes.get(uniqueId);
+    } else {
+      return null; 
+    }
+  }
 
   public static ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {
     ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
@@ -1190,10 +1190,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     logger.finer("resolve classinfo: ", className);
 
-    return loadClass(typeName, cl, match, url);
+    return defineClass(typeName, cl, match, url);
   }
 
-  private static ClassInfo loadClass(String typeName, ClassLoaderInfo cl, ClassPath.Match match, String url){
+  private static ClassInfo defineClass(String typeName, ClassLoaderInfo cl, ClassPath.Match match, String url){
     try {
       if (match == null){
         throw new NoClassInfoException(typeName);
@@ -1217,7 +1217,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
-  private static ClassInfo loadClass(String typeName, byte[] data, int offset, int length, ClassLoaderInfo cl, String url) {
+  private static ClassInfo defineClass(String typeName, byte[] data, int offset, int length, ClassLoaderInfo cl, String url) {
     try {
       ClassFile cf = new ClassFile( typeName, data, offset);
       
@@ -1257,7 +1257,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       return new ClassInfo(typeName, cl);
 
     } else {
-      return loadClass(typeName, buffer, offset, length, cl, (match != null)? url: null);
+      return defineClass(typeName, buffer, offset, length, cl, (match != null)? url: null);
     }
   }
 
