@@ -302,6 +302,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
       name = Types.getClassNameFromTypeName(clsName);
 
+      String requestedName = cf.getRequestedTypeName();
+      // check if the ClassFile does not represent a class with the requested name
+      if(requestedName!=null && !requestedName.equals(name)) {
+        throw new NoClassInfoException("wrong class name, should be " + name);
+      }
+
       // the enclosingClassName is set on demand since it requires loading enclosing class candidates
       // to verify their innerClass attributes
       
@@ -1206,10 +1212,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ClassInfo ci = new ClassInfo(cf, cl, url);
       ci.setContainer(match.container);
 
-      if (!ci.getName().equals(typeName)){
-        throw new NoClassInfoException("wrong class name, should be " + ci.getName());
-      }
-      
       return ci;
       
     } catch (ClassFileException cfx){
