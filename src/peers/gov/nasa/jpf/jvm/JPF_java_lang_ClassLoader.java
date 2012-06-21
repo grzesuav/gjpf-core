@@ -161,7 +161,8 @@ public class JPF_java_lang_ClassLoader {
       env.throwException("java.lang.NoClassDefFoundError");
       return MJIEnv.NULL;
     } catch(ClassInfoCircularityError e) {
-      // if any of the superclasses of the class, is the class itself, loading throws an 
+      // if any of the superclasses of a class, is the class itself, or if any of the 
+      // superinterfaces of an interface, is the interface itself, loading throws an 
       // instance of ClassCircularityError
       env.throwException("java.lang.ClassCircularityError");
       return MJIEnv.NULL;

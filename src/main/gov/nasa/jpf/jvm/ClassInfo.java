@@ -426,6 +426,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     public void setInterfacesDone(ClassFile cf) {
       //loadInterfaceRec(null, ifcSet);
       interfaceNames =  Collections.unmodifiableSet(ifcSet);
+
+      // check if this is an interface and one of its super interfaces is the interface
+      // itself
+      if(isInterface() && interfaceNames.contains(name)) {
+        throw new ClassInfoCircularityError("a super interface of " + name + " is itself");
+      }
     }
 
     //--- fields
