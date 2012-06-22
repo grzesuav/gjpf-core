@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -27,7 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Logical shift right int
  * ..., value1, value2 => ..., result
  */
-public class IUSHR extends Instruction {
+public class IUSHR extends JVMInstruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     int v1 = th.pop();

@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -31,7 +32,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * (2): <iinc> indexbyte1 indexbyte2 constbyte1 constbyte2
  *
  */
-public class WIDE extends Instruction {
+public class WIDE extends JVMInstruction {
 
   // would have to be checked and reset by following insn
   public static boolean isWide = false;

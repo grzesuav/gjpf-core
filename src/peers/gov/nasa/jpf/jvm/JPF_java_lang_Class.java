@@ -19,7 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.Instruction;
 
 import java.io.IOException;
 import java.io.InputStream;

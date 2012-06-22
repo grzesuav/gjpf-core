@@ -28,15 +28,7 @@ import gov.nasa.jpf.jvm.LocalVarInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.bytecode.DSTORE;
-import gov.nasa.jpf.jvm.bytecode.FSTORE;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.ISTORE;
-import gov.nasa.jpf.jvm.bytecode.InstructionVisitorAdapter;
-import gov.nasa.jpf.jvm.bytecode.LSTORE;
-import gov.nasa.jpf.jvm.bytecode.LocalVariableInstruction;
-import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
-import gov.nasa.jpf.jvm.bytecode.PUTSTATIC;
+import gov.nasa.jpf.jvm.bytecode.*;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.FieldSpec;
 import gov.nasa.jpf.util.VarSpec;
@@ -264,7 +256,7 @@ public class NumericValueChecker extends PropertyListenerAdapter {
   @Override
   public void instructionExecuted (JVM vm){
     this.vm = vm;
-    vm.getLastInstruction().accept(visitor);
+    ((JVMInstruction)vm.getLastInstruction()).accept(visitor);
   }
 
   @Override

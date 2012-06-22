@@ -16,29 +16,19 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.jvm.bytecode;
+package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.SystemState;
-import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.Source;
 
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**
  * common root of all JPF bytecode instruction classes 
  * 
- * <2do> this class should be in gov.nasa.jpf.jvm
  */
-public abstract class Instruction implements InstructionVisitorAcceptor {
+public abstract class Instruction {
 
-  protected static final List<String> unimplemented = new ArrayList<String>();
-  
   protected int insnIndex;        // code[] index of instruction
   protected int position;     // accumulated bytecode position (prev pos + prev bc-length)
   protected MethodInfo mi;    // the method this insn belongs to
@@ -180,15 +170,6 @@ public abstract class Instruction implements InstructionVisitorAcceptor {
    * 'prepareExecution' out of execute()
    */
   public abstract Instruction execute(SystemState ss, KernelState ks, ThreadInfo ti);
-
-  public boolean examine(SystemState ss, KernelState ks, ThreadInfo th) {
-    return false;
-  }
-
-  public boolean examineAbstraction(SystemState ss, KernelState ks,
-          ThreadInfo th) {
-    return false;
-  }
 
   public String toString() {
     return getMnemonic();
@@ -335,10 +316,6 @@ public abstract class Instruction implements InstructionVisitorAcceptor {
   public Instruction getNext (ThreadInfo ti) {
     return ti.getPC().getNext();
   }
-  
-  public void accept(InstructionVisitor insVisitor) {
-	  insVisitor.visit(this);
-  }
 
   
   //--- the generic attribute API
@@ -366,7 +343,7 @@ public abstract class Instruction implements InstructionVisitorAcceptor {
    *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setAttr (Object a){
-    attr = a;    
+    attr = ObjectList.set(attr, a);    
   }
 
   public void addAttr (Object a){

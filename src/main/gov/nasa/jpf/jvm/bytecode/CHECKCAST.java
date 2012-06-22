@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
@@ -31,7 +32,7 @@ import gov.nasa.jpf.jvm.Types;
  * Check whether object is of given type
  * ..., objectref => ..., objectref
  */
-public class CHECKCAST extends Instruction {
+public class CHECKCAST extends JVMInstruction {
   String type;
 
   public CHECKCAST() {} // this is going away

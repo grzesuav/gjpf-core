@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -27,7 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Push byte
  * ... => ..., value
  */
-public class BIPUSH extends Instruction {
+public class BIPUSH extends JVMInstruction {
   private int value;
 
   public BIPUSH() {} // this is going away

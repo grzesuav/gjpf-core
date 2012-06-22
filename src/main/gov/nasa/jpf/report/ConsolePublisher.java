@@ -26,7 +26,7 @@ import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.Path;
 import gov.nasa.jpf.jvm.Step;
 import gov.nasa.jpf.jvm.Transition;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.util.Left;
 import gov.nasa.jpf.util.RepositoryEntry;
 

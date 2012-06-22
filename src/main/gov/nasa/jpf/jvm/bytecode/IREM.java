@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -27,7 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Remainder int
  * ..., value1, value2  => ..., result
  */
-public class IREM extends Instruction {
+public class IREM extends JVMInstruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     int v1 = th.pop();

@@ -26,7 +26,7 @@ import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromList;
 import gov.nasa.jpf.util.test.TestJPF;
 

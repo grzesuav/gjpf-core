@@ -22,7 +22,6 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ByteCodeReader;
 import gov.nasa.jpf.classfile.ClassFile;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.Invocation;
 
 import java.util.ArrayList;

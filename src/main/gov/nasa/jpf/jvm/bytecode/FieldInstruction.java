@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
@@ -35,7 +36,7 @@ import gov.nasa.jpf.jvm.Types;
  * fields - w/o the instance/static helper methods we would have to duplicate
  * code in the getters/setters
  */
-public abstract class FieldInstruction extends Instruction implements VariableAccessor
+public abstract class FieldInstruction extends JVMInstruction implements VariableAccessor
 {
   //--- vm.por.sync_detection related settings
   static FieldLockInfoFactory fliFactory;

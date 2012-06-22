@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.Instruction;
 
 import java.util.HashMap;
 

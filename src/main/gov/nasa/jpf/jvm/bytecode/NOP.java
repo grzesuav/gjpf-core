@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -27,7 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Do nothing
  *    No change
  */
-public class NOP extends Instruction {
+public class NOP extends JVMInstruction {
   
   public NOP () {
     // nothing to do

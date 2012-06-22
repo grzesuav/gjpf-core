@@ -21,7 +21,6 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFNativePeerException;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.JPFLogger;
 
 import java.lang.reflect.InvocationTargetException;

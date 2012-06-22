@@ -30,7 +30,7 @@ import gov.nasa.jpf.jvm.bytecode.ArrayStoreInstruction;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.bytecode.StoreInstruction;
 import gov.nasa.jpf.jvm.bytecode.VariableAccessor;
 import gov.nasa.jpf.report.ConsolePublisher;

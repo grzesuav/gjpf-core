@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.Ref;
@@ -36,7 +37,7 @@ import java.util.List;
  * executes in has enough operand space (e.g. a DirectCallStackFrame).
  * 
  */
-public class INVOKECG extends Instruction {
+public class INVOKECG extends JVMInstruction {
 
   List<Invocation>  invokes;
   InvokeInstruction realInvoke;

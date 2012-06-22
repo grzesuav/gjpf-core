@@ -19,12 +19,47 @@
 
 package gov.nasa.jpf.util;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 /**
  * simple identity set for objects 
+ * we don't sort&bisect, assuming the number of entries will be small
+ * be aware this doesn't scale to large sets
  */
 public class IdentityArrayObjectSet<E> implements IdentityObjectSet<E> {
 
   static final int DEFAULT_CAPACITY = 4;
+  
+  private class StoreOrderIterator implements Iterator<E> {
+    int next = 0;
+
+    @Override
+    public void remove() {
+      int idx = next-1;
+      if (idx >=0){
+        if (idx < size-1){
+          System.arraycopy(elements, next, elements, idx, size-idx);
+        }
+        size--;
+        next = idx;
+      }
+    }
+
+    @Override
+    public boolean hasNext() {
+      return (next < size);
+    }
+
+    @Override
+    public E next() {
+      if (next < size){
+        return (E) elements[next++];
+      } else {
+        throw new NoSuchElementException();
+      }
+    }
+  }
   
   protected int size;
   protected Object[] elements;
@@ -112,6 +147,11 @@ public class IdentityArrayObjectSet<E> implements IdentityObjectSet<E> {
       // can't happen
       return null;
     }
+  }
+  
+  @Override
+  public Iterator<E> iterator(){
+    return new StoreOrderIterator();
   }
   
   @Override

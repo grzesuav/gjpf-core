@@ -28,7 +28,6 @@ import gov.nasa.jpf.classfile.ClassFileContainer;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassFileReaderAdapter;
 import gov.nasa.jpf.classfile.ClassPath;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.ImmutableList;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;

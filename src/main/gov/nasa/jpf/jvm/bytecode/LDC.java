@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.NoClassInfoException;
@@ -30,7 +31,7 @@ import gov.nasa.jpf.jvm.Types;
  * Push item from runtime constant pool
  * ... => ..., value
  */
-public class LDC extends Instruction {
+public class LDC extends JVMInstruction {
 
   public enum Type {STRING, CLASS, INT, FLOAT};
 

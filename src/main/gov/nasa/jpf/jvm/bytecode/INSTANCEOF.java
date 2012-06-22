@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -28,7 +29,7 @@ import gov.nasa.jpf.jvm.Types;
  * Determine if object is of given type
  * ..., objectref => ..., result
  */
-public class INSTANCEOF extends Instruction {
+public class INSTANCEOF extends JVMInstruction {
   private String type;
 
 

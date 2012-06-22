@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -27,7 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Jump subroutine (wide insnIndex)
  * ... => ..., address
  */
-public class JSR_W extends Instruction {
+public class JSR_W extends JVMInstruction {
   private int target;
 
   public JSR_W(int targetPc){

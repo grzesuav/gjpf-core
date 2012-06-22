@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -25,7 +26,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 /**
  * common root for MONITORENTER/EXIT
  */
-public abstract class LockInstruction extends Instruction {
+public abstract class LockInstruction extends JVMInstruction {
   int lastLockRef = -1;
 
   /**

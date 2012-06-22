@@ -19,7 +19,6 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.BitSet1024;
 import gov.nasa.jpf.util.BitSet256;
 import gov.nasa.jpf.util.BitSet64;

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.LocalVarInfo;
@@ -31,7 +32,7 @@ import gov.nasa.jpf.jvm.Types;
 /**
  * abstraction for all invoke instructions
  */
-public abstract class InvokeInstruction extends Instruction {
+public abstract class InvokeInstruction extends JVMInstruction {
   /* Those are all from the BCEL class, i.e. straight from the class file.
    * Note that we can't directly resolve to MethodInfo objects because
    * the corresponding class might not be loaded yet (has to be done

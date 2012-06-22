@@ -33,7 +33,7 @@ import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.Step;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Transition;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.RepositoryEntry;
 import gov.nasa.jpf.util.Source;

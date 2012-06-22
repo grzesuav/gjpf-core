@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -28,7 +29,7 @@ import gov.nasa.jpf.jvm.Types;
  * Convert float to int
  * ..., value => ..., result
  */
-public class F2I extends Instruction {
+public class F2I extends JVMInstruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     //float v = Types.intToFloat(th.pop());

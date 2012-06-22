@@ -32,7 +32,7 @@ import gov.nasa.jpf.jvm.Types;
 import gov.nasa.jpf.jvm.bytecode.ArrayInstruction;
 import gov.nasa.jpf.jvm.bytecode.ArrayLoadInstruction;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.bytecode.LocalVariableInstruction;
 import gov.nasa.jpf.jvm.bytecode.StoreInstruction;
 import gov.nasa.jpf.jvm.bytecode.VariableAccessor;

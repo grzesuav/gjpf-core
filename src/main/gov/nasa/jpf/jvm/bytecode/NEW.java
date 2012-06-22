@@ -18,31 +18,27 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.AllocInstruction;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.Heap;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.NoClassInfoException;
-import gov.nasa.jpf.jvm.SystemState;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.Types;
+import gov.nasa.jpf.jvm.*;
 
 
 /**
  * Create new object
  * ... => ..., objectref
  */
-public class NEW extends Instruction implements AllocInstruction {
+public class NEW extends JVMInstruction implements AllocInstruction {
   protected String cname;
   protected int newObjRef = -1;
 
   public NEW (String clsDescriptor){
     cname = Types.getClassNameFromTypeName(clsDescriptor);
+    
+    // we need to maintain an execution count for NEW instructions
+    ExecutionCount ec = new ExecutionCount();
+    addAttr( ec);
   }
   
-  public String getClassName()    // Needed for Java Race Finder
-  {
-     return(cname);
+  public String getClassName(){    // Needed for Java Race Finder
+    return(cname);
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
@@ -73,6 +69,21 @@ public class NEW extends Instruction implements AllocInstruction {
                                         "trying to allocate new " + cname);
     }
 
+    //----
+    ExecutionCount ec = getAttr( ExecutionCount.class);
+    if (ec != null){
+      if (ss.getRestorer(this) == null){ // first change for this transition
+        ss.putRestorer( this, ec.createRestorer());
+      }
+      ExecutionCount.ExecEntry ee = ec.getExecEntry(ti);
+      int count = ee.incCount();
+
+//System.out.println("@@ [" + ti.getId() + "] new@" + Integer.toHexString(hashCode()) + ", cid: " + Integer.toHexString(ee.getCallerContextId()) + " = " + count + ", " + this.getSourceLocation());
+    }
+    //----
+    
+    
+    
     int objRef = heap.newObject(ci, ti);
     newObjRef = objRef;
 

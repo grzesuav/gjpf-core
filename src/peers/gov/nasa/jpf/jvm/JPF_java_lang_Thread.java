@@ -20,7 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.util.JPFLogger;
 
 

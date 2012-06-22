@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
@@ -26,7 +27,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 /**
  * abstraction for all comparison instructions
  */
-public abstract class IfInstruction extends Instruction {
+public abstract class IfInstruction extends JVMInstruction {
   protected int targetPosition;  // insn position at jump insnIndex
   protected Instruction target;  // jump target
   

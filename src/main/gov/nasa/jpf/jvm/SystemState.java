@@ -20,7 +20,6 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.bytecode.Instruction;
 import gov.nasa.jpf.util.HashData;
 
 import java.io.PrintWriter;
@@ -92,6 +91,7 @@ public class SystemState {
       id = ss.id;
       execThread = ss.execThread;
       
+      // we can just copy the reference since it is re-created in each transition
       restorers = ss.restorers;
     }
 

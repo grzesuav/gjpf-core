@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.SystemState;
@@ -37,7 +38,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * just happens to be the first transition we execute within this thread
  * 
  */
-public class RUNSTART extends Instruction {
+public class RUNSTART extends JVMInstruction {
 
   public RUNSTART (MethodInfo runMth) {
     this.mi = runMth;

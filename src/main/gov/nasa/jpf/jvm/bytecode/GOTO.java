@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -29,7 +30,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  *
  * <2do> store this as code insnIndex, not as bytecode position
  */
-public class GOTO extends Instruction {
+public class GOTO extends JVMInstruction {
   protected int targetPosition;
   Instruction target;
 

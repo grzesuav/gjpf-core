@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
+
 public interface InstructionVisitor {
 
 	public void visit(Instruction ins);

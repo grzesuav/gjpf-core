@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.SystemState;
@@ -27,7 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 /**
  * abstraction for all array instructions
  */
-public abstract class ArrayInstruction extends Instruction {
+public abstract class ArrayInstruction extends JVMInstruction {
 
   int arrayRef;
   int index;

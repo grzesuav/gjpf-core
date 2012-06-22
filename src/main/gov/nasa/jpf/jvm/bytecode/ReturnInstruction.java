@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
@@ -31,7 +32,7 @@ import java.util.Iterator;
 /**
  * abstraction for the various return instructions
  */
-public abstract class ReturnInstruction extends Instruction implements gov.nasa.jpf.jvm.ReturnInstruction {
+public abstract class ReturnInstruction extends JVMInstruction implements gov.nasa.jpf.jvm.ReturnInstruction {
 
   // to store where we came from
   protected StackFrame returnFrame;

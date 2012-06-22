@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -27,7 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Push null
  * ... => ..., null
  */
-public class ACONST_NULL extends Instruction {
+public class ACONST_NULL extends JVMInstruction {
   
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     // pushes a null onto the stack

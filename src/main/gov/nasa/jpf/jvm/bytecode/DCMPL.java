@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -29,7 +30,7 @@ import gov.nasa.jpf.jvm.Types;
  * Compare double
  * ..., value1, value2 => ..., result
  */
-public class DCMPL extends Instruction {
+public class DCMPL extends JVMInstruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     double v1 = Types.longToDouble(th.longPop());

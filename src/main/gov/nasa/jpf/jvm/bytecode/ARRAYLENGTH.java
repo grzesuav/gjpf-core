@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
@@ -28,7 +29,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * Get length of array 
  * ..., arrayref => ..., length
  */
-public class ARRAYLENGTH extends Instruction {
+public class ARRAYLENGTH extends JVMInstruction {
   
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     int objref = th.pop();

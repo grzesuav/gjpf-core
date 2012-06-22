@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -30,7 +31,7 @@ import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
  * <2do> this is inefficient. First, we should store targets as instruction indexes
  * to avoid execution() looping. Second, there are no matches for a TABLESWITCH
  */
-public abstract class SwitchInstruction extends Instruction {
+public abstract class SwitchInstruction extends JVMInstruction {
 
   public static final int DEFAULT = -1; 
   

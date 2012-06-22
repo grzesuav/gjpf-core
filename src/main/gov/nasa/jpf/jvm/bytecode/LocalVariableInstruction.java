@@ -18,13 +18,14 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.LocalVarInfo;
 
 /**
  * class abstracting instructions that access local variables, to keep
  * track of slot/varname mapping
  */
-public abstract class LocalVariableInstruction extends Instruction
+public abstract class LocalVariableInstruction extends JVMInstruction
   implements VariableAccessor {
 
   protected int index;

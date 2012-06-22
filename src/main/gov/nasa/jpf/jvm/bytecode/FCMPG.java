@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -28,7 +29,7 @@ import gov.nasa.jpf.jvm.Types;
  * Compare float
  * ..., value1, value2 => ..., result
  */
-public class FCMPG extends Instruction {
+public class FCMPG extends JVMInstruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
     float v1 = Types.intToFloat(th.pop());
