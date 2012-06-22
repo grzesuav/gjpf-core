@@ -783,7 +783,7 @@ public abstract class TestJPF implements JPFShell  {
       }
     }
 
-    if ((details != null) && (details.equals(xi.getDetails()))) {
+    if ((details != null) && (!details.equals(xi.getDetails()))) {
       fail("JPF caught the right exception but the details were wrong: " + xi.getDetails() + ", expected: " + details);
     }
 

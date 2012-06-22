@@ -24,7 +24,7 @@ public class HarnessTest extends TestJPF {
 
   @Test
   public void verifyAssert() {
-    if (verifyAssertionErrorDetails("wrong answer..")) {
+    if (verifyAssertionErrorDetails("java.lang.AssertionError : wrong answer..")) {
       System.out.println("** this is verifyAssert() - JPF should find an AssertionError");
 
       assert d == 42 : "wrong answer..";
