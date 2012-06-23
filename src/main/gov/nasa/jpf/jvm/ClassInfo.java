@@ -2516,31 +2516,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return new HashMap<String, MethodInfo>(0);
   }
 
-  // this a helper field used to keep track of resolved super classes, to catch
-  // ClassCircularityError which is thrown if any of the superclasses of the 
-  // class is the class itself
-  private static final Stack<String> superNames = new Stack<String>();
-
   protected ClassInfo loadSuperClass (String superName) {
-    if (this.isObjectClassInfo()) {
-      return null;
+    if(classLoader != null) {
+      return classLoader.loadSuperClass(this, superName);
     } else {
-      if(superNames.contains(superName)) {
-        throw new ClassInfoCircularityError("a superclass of " + superName + " is the class itself");
-      }
-      superNames.push(superName);
-
-      logger.finer("resolving superclass: ", superName, " of ", name);
-
-      ClassInfo sci = (classLoader!=null)? classLoader.getResolvedClassInfo(superName):
-        getResolvedClassInfo(superName);
-      if (sci == null){
-        throw new NoClassInfoException(superName);
-      }
-
-      superNames.pop();
-      return sci;
+      ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+      return cl.loadSuperClass(this, superName);
     }
+    
   }
 
   public String toString() {

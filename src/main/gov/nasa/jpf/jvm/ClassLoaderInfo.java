@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Stack;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -233,6 +234,32 @@ public class ClassLoaderInfo
     }
     
     return ci;
+  }
+
+  // this a helper field used to keep track of resolved super classes, to catch
+  // ClassCircularityError which is thrown if any of the superclasses of the 
+  // class is the class itself
+  private static final Stack<String> superNames = new Stack<String>();
+
+  protected ClassInfo loadSuperClass (ClassInfo ci, String superName) {
+    if (ci.isObjectClassInfo()) {
+      return null;
+    } else {
+      if(superNames.contains(superName)) {
+        throw new ClassInfoCircularityError("a superclass of " + superName + " is the class itself");
+      }
+      superNames.push(superName);
+
+      ClassInfo.logger.finer("resolving superclass: ", superName, " of ", ci.getName());
+
+      ClassInfo sci = getResolvedClassInfo(superName);
+      if (sci == null){
+        throw new NoClassInfoException(superName);
+      }
+
+      superNames.pop();
+      return sci;
+    }
   }
 
   /**
