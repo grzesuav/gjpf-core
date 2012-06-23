@@ -44,6 +44,7 @@ public class ExecutionCount implements SystemAttribute {
     
     public Restorer (ExecutionCount ec){
       this.ec = ec;
+
       if (ec.threadEntries != null){
         threadEntries = cloneThreadEntries(ec.threadEntries);
       }
@@ -229,5 +230,36 @@ public class ExecutionCount implements SystemAttribute {
   
   public Restorer createRestorer(){
     return new Restorer(this);
+  }
+  
+  // for debugging purposes
+  public void dumpExecutionCount(){
+    System.out.print("{");
+    int i=0;
+    if (threadEntries != null){
+      for (ThreadEntry te : threadEntries) {
+        if (i++ > 0) {
+          System.out.print(',');
+        }
+        System.out.print("{");
+        System.out.print(te.ti.getName());
+        System.out.print(',');
+        int j = 0;
+        if (te.execEntries != null){
+          for (ExecEntry ee : te.execEntries) {
+            if (j++ > 0) {
+              System.out.print(',');
+            }
+            System.out.print("(");
+            System.out.print(ee.callerContext);
+            System.out.print(',');
+            System.out.print(ee.count);
+            System.out.print(")");
+          }
+        }
+        System.out.print("}");
+      }
+    }
+    System.out.println("}");    
   }
 }
