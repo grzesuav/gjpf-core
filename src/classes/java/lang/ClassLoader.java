@@ -29,8 +29,9 @@ import java.util.Vector;
 import sun.misc.CompoundEnumeration;
 
 /**
- * very very rudimentary beginning of a ClassLoader model. We skip
- * the 'abstract' for now, since all we want is resource lookup
+ * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
+ * 
+ *  Model class for java.lang.ClassLoader
  */
 public abstract class ClassLoader {
   

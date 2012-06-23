@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 
 /**
+ * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
+ * 
  * Represents the JPF system classloader which models the following hierarchy.
  * 
  *            ----------------

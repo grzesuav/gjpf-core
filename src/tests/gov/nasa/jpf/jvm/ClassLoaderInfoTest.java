@@ -24,6 +24,11 @@ import gov.nasa.jpf.util.test.TestJPF;
 
 import org.junit.Test;
 
+/**
+ * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
+ * 
+ * unit test for ClassLoaderInfo
+ */
 public class ClassLoaderInfoTest extends TestJPF {
 
   @Test

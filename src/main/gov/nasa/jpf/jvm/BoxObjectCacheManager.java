@@ -19,7 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 /**
- * @author Nastaran
+ * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
  * 
  *         Cache management implementation for the types Boolean, Byte,
  *         Character, Short, Integer, Long. The references to the caches are in

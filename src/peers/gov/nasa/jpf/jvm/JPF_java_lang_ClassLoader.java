@@ -22,7 +22,9 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassPath;
 
 /**
- * native peer for our (totally incomplete) ClassLoader model
+ * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
+ * 
+ * Native peer for java.lang.ClassLoader
  */
 public class JPF_java_lang_ClassLoader {
 

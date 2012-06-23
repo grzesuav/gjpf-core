@@ -35,6 +35,8 @@ import gov.nasa.jpf.classfile.ClassPath;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 /**
+ * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
+ *  
  * Represents the classloader construct in JVM which is responsible for loading
  * classes.
  */
