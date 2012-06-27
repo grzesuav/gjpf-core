@@ -290,6 +290,8 @@ public class JVM {
    * classes used by it)
    */
   public boolean initialize () {
+    ClassInfoException cie = null;
+    ThreadInfo tiMain = null;
 
     if (!checkClassName(mainClassName)) {
       log.severe("Not a valid main class: " + mainClassName);
@@ -301,35 +303,62 @@ public class JVM {
     //  - second, we have to create a thread (so that we have a stack)
     //  - third, with that thread we have to create class objects
     //  - forth, we have to push the clinit methods on this stack
-    systemClassLoader.registerStartupClasses(this);
+    try {
+      systemClassLoader.registerStartupClasses(this);
 
-    if (systemClassLoader.getStartupQueue() == null) {
-      log.severe("error initializing startup classes (check 'classpath' and 'target')");
-      return false;
+      if (systemClassLoader.getStartupQueue() == null) {
+        log.severe("error initializing startup classes (check 'classpath' and 'target')");
+        return false;
+      }
+
+      if (!checkModelClassAccess()) {
+        log.severe( "error during VM runtime initialization: wrong model classes (check 'classpath')");
+        return false;
+      }
+    } catch (ClassInfoException e) {
+      // If loading a system class is failed, bail out immediately
+      if(e.checkSystemClassFailure()) {
+        throw new JPFException("loading the system class " + e.getFaildClass() + " faild");
+      }
+
+      // If loading of a non-system class failed, just store it & throw a JPF exception
+      // once the main thread is created
+      cie = e;
     }
 
-    if (!checkModelClassAccess()) {
-      log.severe( "error during VM runtime initialization: wrong model classes (check 'classpath')");
-      return false;
+    try {
+      // create the thread for the tiMain class
+      // note this is incomplete for Java 1.3 where Thread ctors rely on tiMain's
+      // 'inheritableThreadLocals' being set to 'Collections.EMPTY_SET', which
+      // pulls in the whole Collections/Random smash, but we can't execute the
+      // Collections.<clinit> yet because there's no stack before we have a tiMain
+      // thread. Let's hope none of the init classes creates threads in their <clinit>.
+      tiMain = createMainThread();
+
+      if(cie != null) {
+        tiMain.getEnv().throwException(cie.getExceptionClass(), cie.getMessage());
+        return false;
+      }
+
+      // now that we have a tiMain thread, we can finish the startup class init
+      systemClassLoader.createStartupClassObjects(tiMain);
+
+      // pushClinit the call stack with the clinits we've picked up, followed by tiMain()
+      pushMainEntry(tiMain);
+      systemClassLoader.pushClinits(tiMain);
+
+      initSystemState(tiMain);
+      registerThreadListCleanup();
+    } catch (ClassInfoException e) {
+      // If the main thread is not created due to an error thrown while loading a class, 
+      // bail out immediately
+      if(tiMain == null) {
+        throw new JPFException("loading of the class " + e.getFaildClass() + " faild");
+      } else{
+        tiMain.getEnv().throwException(e.getExceptionClass(), e.getMessage());
+        return false;
+      }
     }
-
-    // create the thread for the tiMain class
-    // note this is incomplete for Java 1.3 where Thread ctors rely on tiMain's
-    // 'inheritableThreadLocals' being set to 'Collections.EMPTY_SET', which
-    // pulls in the whole Collections/Random smash, but we can't execute the
-    // Collections.<clinit> yet because there's no stack before we have a tiMain
-    // thread. Let's hope none of the init classes creates threads in their <clinit>.
-    ThreadInfo tiMain = createMainThread();
-
-    // now that we have a tiMain thread, we can finish the startup class init
-    systemClassLoader.createStartupClassObjects(tiMain);
-
-    // pushClinit the call stack with the clinits we've picked up, followed by tiMain()
-    pushMainEntry(tiMain);
-    systemClassLoader.pushClinits(tiMain);
-
-    initSystemState(tiMain);
-    registerThreadListCleanup();
     
     return true;
   }
@@ -363,10 +392,16 @@ public class JVM {
     // super class cannot be loaded
     systemClassLoader = cl;
 
-    //--- java.lang.ClassLoader is registered later along with other startup classes
-    ClassInfo ci = cl.getResolvedClassInfo("java.lang.ClassLoader");
-    //--- create java.lang.ClassLoader object corresponding to the systemClassLoader
-    cl.createClassLoaderObject(ci, null, null);
+    try {
+      //--- java.lang.ClassLoader is registered later along with other startup classes
+      ClassInfo ci = cl.getResolvedClassInfo("java.lang.ClassLoader");
+
+      //--- create java.lang.ClassLoader object corresponding to the systemClassLoader
+      cl.createClassLoaderObject(ci, null, null);
+    } catch(ClassInfoException cie) {
+      throw new JPFException("loading of the class " + cie.getFaildClass() + 
+                                  " throws " + cie.getExceptionClass());
+    }
 
     return cl;
   }

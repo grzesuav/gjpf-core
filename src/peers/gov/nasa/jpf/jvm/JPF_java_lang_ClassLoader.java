@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassPath;
 
 /**
@@ -154,26 +153,7 @@ public class JPF_java_lang_ClassLoader {
       return MJIEnv.NULL;
     }
 
-    ClassInfo ci = null; 
-    try {
-      ci = cl.getResolvedClassInfo(cname, buffer, offset, length, match);
-    } catch(NoClassInfoException e) {
-      // if the representation does not represent a class with the requested name, loading 
-      // throws an instance of NoClassDefFoundError
-      env.throwException("java.lang.NoClassDefFoundError");
-      return MJIEnv.NULL;
-    } catch(ClassInfoCircularityError e) {
-      // if any of the superclasses of a class, is the class itself, or if any of the 
-      // superinterfaces of an interface, is the interface itself, loading throws an 
-      // instance of ClassCircularityError
-      env.throwException("java.lang.ClassCircularityError");
-      return MJIEnv.NULL;
-    } catch(JPFException e) {
-      // if the representation is not a ClassFile structure, loading throws an instance 
-      // of ClassFormatError
-      env.throwException("java.lang.ClassFormatError");
-      return MJIEnv.NULL;
-    }
+    ClassInfo ci = cl.getResolvedClassInfo(cname, buffer, offset, length, match);
 
     // Note: if the representation is not of a supported major or minor version, loading 
     // throws an UnsupportedClassVersionError. But for now, we do not check for this here 

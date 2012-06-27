@@ -188,7 +188,7 @@ public class ClassLoaderInfo
     return cl;
   }
 
-  public ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {
+  public ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {
     if (className == null) {
       return null;
     }
@@ -212,7 +212,7 @@ public class ClassLoaderInfo
     return ci;
   }
 
-  public ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length, ClassPath.Match match) throws NoClassInfoException {
+  public ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length, ClassPath.Match match) throws ClassInfoException {
     if (className == null) {
       return null;   
     }
@@ -241,12 +241,13 @@ public class ClassLoaderInfo
   // class is the class itself
   private static final Stack<String> superNames = new Stack<String>();
 
-  protected ClassInfo loadSuperClass (ClassInfo ci, String superName) {
+  protected ClassInfo loadSuperClass (ClassInfo ci, String superName) throws ClassInfoException {
     if (ci.isObjectClassInfo()) {
       return null;
     } else {
       if(superNames.contains(superName)) {
-        throw new ClassInfoCircularityError("a superclass of " + superName + " is the class itself");
+        throw new ClassInfoException("a superclass of " + superName + " is the class itself", 
+                                     "java.lang.ClassCircularityError", superName);
       }
       superNames.push(superName);
 
@@ -254,7 +255,8 @@ public class ClassLoaderInfo
 
       ClassInfo sci = getResolvedClassInfo(superName);
       if (sci == null){
-        throw new NoClassInfoException(superName);
+        throw new ClassInfoException("the class, " + superName + ", is not found in the classloader search path", 
+                                     "java.lang.NoClassDefFoundError", superName);
       }
 
       superNames.pop();
@@ -272,7 +274,7 @@ public class ClassLoaderInfo
   public ClassInfo tryGetResolvedClassInfo (String className){
     try {
       return getResolvedClassInfo(className);
-    } catch (NoClassInfoException cx){
+    } catch (ClassInfoException cx){
       return null;
     }
   }

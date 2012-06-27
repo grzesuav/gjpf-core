@@ -22,7 +22,6 @@ import gov.nasa.jpf.jvm.AllocInstruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.NoClassInfoException;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -49,13 +48,7 @@ public class NEW extends Instruction implements AllocInstruction {
     Heap heap = ti.getHeap();
     ClassInfo ci;
 
-    try {
-      ci = ClassInfo.getResolvedClassInfo(cname);
-
-    } catch (NoClassInfoException cx){
-      // can be any inherited class or required interface
-      return ti.createAndThrowException("java.lang.NoClassDefFoundError", cx.getMessage());
-    }
+    ci = ClassInfo.getResolvedClassInfo(cname);
 
     if (!ci.isRegistered()){
       ci.registerClass(ti);

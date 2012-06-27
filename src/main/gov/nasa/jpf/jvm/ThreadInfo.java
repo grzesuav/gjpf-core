@@ -2119,13 +2119,12 @@ public class ThreadInfo
       ClassInfo ci = ClassInfo.getResolvedClassInfo(cname);
       return createAndThrowException(ci, details);
 
-    } catch (NoClassInfoException cx){
-      try {
-        ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.NoClassDefFoundError");
-        return createAndThrowException(ci, cx.getMessage());
-
-      } catch (NoClassInfoException cxx){
-        throw new JPFException("no java.lang.NoClassDefFoundError class");
+    } catch (ClassInfoException cie){
+      if(!cname.equals(cie.getExceptionClass())) {
+        ClassInfo ci = ClassInfo.getResolvedClassInfo(cie.getExceptionClass());
+        return createAndThrowException(ci, cie.getMessage());
+      } else {
+        throw cie;
       }
     }
   }
@@ -2240,9 +2239,13 @@ public class ThreadInfo
     vm.notifyExecuteInstruction(this, pc);
 
     if (!skipInstruction) {
-      // execute the next bytecode
-      nextPc = pc.execute(ss, ks, this);
-    }
+        // execute the next bytecode
+        try {
+          nextPc = pc.execute(ss, ks, this);
+        } catch (ClassInfoException cie) {
+          nextPc = this.createAndThrowException(cie.getExceptionClass(), cie.getMessage());
+        }
+      }
 
     // we also count the skipped ones
     executedInstructions++;
@@ -2285,7 +2288,11 @@ public class ThreadInfo
       log.fine( pc.getMethodInfo().getFullName() + " " + pc.getPosition() + " : " + pc);
     }
 
-    nextPc = pc.execute(ss, ks, this);
+    try {
+        nextPc = pc.execute(ss, ks, this);
+      } catch (ClassInfoException cie) {
+        nextPc = this.createAndThrowException(cie.getExceptionClass(), cie.getMessage());
+      }
 
     // we did not return from the last frame stack
     if (top != null) { // <2do> should probably bomb otherwise

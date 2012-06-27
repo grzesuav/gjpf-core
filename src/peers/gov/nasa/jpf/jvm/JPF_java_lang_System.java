@@ -91,23 +91,11 @@ public class JPF_java_lang_System {
   }
   
   public static int createSystemOut____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
-    try {
-      return createPrintStream(env,clsObjRef);
-
-    } catch (NoClassInfoException cx){
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
-      return MJIEnv.NULL;
-    }
+    return createPrintStream(env,clsObjRef);
   }
   
   public static int createSystemErr____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
-    try {
-      return createPrintStream(env,clsObjRef);
-
-    } catch (NoClassInfoException cx){
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
-      return MJIEnv.NULL;
-    }
+    return createPrintStream(env,clsObjRef);
   }
   
   static int getProperties (MJIEnv env, Properties p){

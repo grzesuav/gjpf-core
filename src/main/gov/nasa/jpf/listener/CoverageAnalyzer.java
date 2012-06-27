@@ -23,11 +23,11 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.AnnotationInfo;
 import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ClassInfoException;
 import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.ExceptionHandler;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.NoClassInfoException;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.GOTO;
 import gov.nasa.jpf.jvm.bytecode.IfInstruction;
@@ -472,8 +472,8 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
 
       try {
         ci = ClassInfo.getResolvedClassInfo(className);
-      } catch (NoClassInfoException e) {
-        log.warning("CoverageAnalyzer problem: " + e);   // Just log the problem but don't fail.  We still want the report to be written.
+      } catch (ClassInfoException cie) {
+        log.warning("CoverageAnalyzer problem: " + cie);   // Just log the problem but don't fail.  We still want the report to be written.
       }
       
       return ci != null;

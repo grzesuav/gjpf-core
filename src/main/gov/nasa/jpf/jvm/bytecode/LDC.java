@@ -20,7 +20,6 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.NoClassInfoException;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -76,22 +75,17 @@ public class LDC extends Instruction {
         break;
 
       case CLASS:
-        try {
-          ClassInfo ci = ClassInfo.getResolvedClassInfo(string);
+        ClassInfo ci = ClassInfo.getResolvedClassInfo(string);
 
-          // LDC doesn't cause a <clinit> - we only register all required classes
-          // to make sure we have class objects. <clinit>s are called prior to
-          // GET/PUT or INVOKE
-          if (!ci.isRegistered()) {
-            ci.registerClass(ti);
-          }
-
-          ti.push(ci.getClassObjectRef(), true);
-
-        } catch (NoClassInfoException cx) {
-          // can be any inherited class or required interface
-          return ti.createAndThrowException("java.lang.NoClassDefFoundError", cx.getMessage());
+        // LDC doesn't cause a <clinit> - we only register all required classes
+        // to make sure we have class objects. <clinit>s are called prior to
+        // GET/PUT or INVOKE
+        if (!ci.isRegistered()) {
+          ci.registerClass(ti);
         }
+
+        ti.push(ci.getClassObjectRef(), true);
+
         break;
     }
     

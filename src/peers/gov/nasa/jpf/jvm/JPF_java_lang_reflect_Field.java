@@ -67,18 +67,12 @@ public class JPF_java_lang_reflect_Field {
     ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
 
-    try {
-      ClassInfo ci = fi.getTypeClassInfo();
-      if (!ci.isRegistered()) {
-        ci.registerClass(ti);
-      }
-
-      return ci.getClassObjectRef();
-
-    } catch (NoClassInfoException cx){
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
-      return MJIEnv.NULL;
+    ClassInfo ci = fi.getTypeClassInfo();
+    if (!ci.isRegistered()) {
+      ci.registerClass(ti);
     }
+
+    return ci.getClassObjectRef();
   }
   
   public static int getModifiers____I (MJIEnv env, int objRef){
@@ -444,84 +438,78 @@ public class JPF_java_lang_reflect_Field {
     String className = fieldClassInfo.getName();
     String fieldType = fi.getType();
 
-    try {
-      ClassInfo tci = fi.getTypeClassInfo();
+    ClassInfo tci = fi.getTypeClassInfo();
 
-      if (tci.isPrimitive()) {
-        if (value == MJIEnv.NULL) {
-          return false;
-        }
-
-        // checks whether unboxing can be done by accessing the field "value"
-        final String fieldName = "value";
-        FieldInfo finfo = env.getElementInfo(value).getFieldInfo(fieldName);
-        if (finfo == null) {
-          return false;
-        }
-
-        ElementInfo ei = fi.isStatic() ? fi.getClassInfo().getStaticElementInfo() : env.getElementInfo(obj);
-        ei.setFieldAttr(fi, attr);
-
-        if ("boolean".equals(fieldType)){
-          boolean val = env.getBooleanField(value, fieldName);
-          ei.setBooleanField(fi, val);
-          return true;
-        } else if ("byte".equals(fieldType)){
-          byte val = env.getByteField(value, fieldName);
-          ei.setByteField(fi, val);
-          return true;
-        } else if ("char".equals(fieldType)){
-          char val = env.getCharField(value, fieldName);
-          ei.setCharField(fi, val);
-          return true;
-        } else if ("short".equals(fieldType)){
-          short val = env.getShortField(value, fieldName);
-          ei.setShortField(fi, val);
-          return true;
-        } else if ("int".equals(fieldType)){
-          int val = env.getIntField(value, fieldName);
-          ei.setIntField(fi, val);
-          return true;
-        } else if ("long".equals(fieldType)){
-          long val = env.getLongField(value, fieldName);
-          ei.setLongField(fi, val);
-          return true;
-        } else if ("float".equals(fieldType)){
-          float val = env.getFloatField(value, fieldName);
-          ei.setFloatField(fi, val);
-          return true;
-        } else if ("double".equals(fieldType)){
-          double val = env.getDoubleField(value, fieldName);
-          ei.setDoubleField(fi, val);
-          return true;
-        } else {
-          return false;
-        }
-
-      } else { // it's a reference
-        if (value != MJIEnv.NULL) {
-          String type = env.getTypeName(value);
-          // this is an instance so the ClassInfo has to be registered
-          ClassInfo valueCI = ClassInfo.getResolvedClassInfo(type);
-          if (!valueCI.isInstanceOf(tci)) {
-            return false;
-          }
-        }
-
-        ElementInfo ei = fi.isStatic() ? fi.getClassInfo().getStaticElementInfo() : env.getElementInfo(obj);
-        ei.setFieldAttr(fi, attr);
-
-        if (fi.isStatic()) {
-          env.setStaticReferenceField(className, fi.getName(), value);
-        } else {
-          env.setReferenceField(obj, fi.getName(), value);
-        }
-        return true;
+    if (tci.isPrimitive()) {
+      if (value == MJIEnv.NULL) {
+        return false;
       }
 
-    } catch (NoClassInfoException cx){
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
-      return false;
+      // checks whether unboxing can be done by accessing the field "value"
+      final String fieldName = "value";
+      FieldInfo finfo = env.getElementInfo(value).getFieldInfo(fieldName);
+      if (finfo == null) {
+        return false;
+      }
+
+      ElementInfo ei = fi.isStatic() ? fi.getClassInfo().getStaticElementInfo() : env.getElementInfo(obj);
+      ei.setFieldAttr(fi, attr);
+
+      if ("boolean".equals(fieldType)){
+        boolean val = env.getBooleanField(value, fieldName);
+        ei.setBooleanField(fi, val);
+        return true;
+      } else if ("byte".equals(fieldType)){
+        byte val = env.getByteField(value, fieldName);
+        ei.setByteField(fi, val);
+        return true;
+      } else if ("char".equals(fieldType)){
+        char val = env.getCharField(value, fieldName);
+        ei.setCharField(fi, val);
+        return true;
+      } else if ("short".equals(fieldType)){
+        short val = env.getShortField(value, fieldName);
+        ei.setShortField(fi, val);
+        return true;
+      } else if ("int".equals(fieldType)){
+        int val = env.getIntField(value, fieldName);
+        ei.setIntField(fi, val);
+        return true;
+      } else if ("long".equals(fieldType)){
+        long val = env.getLongField(value, fieldName);
+        ei.setLongField(fi, val);
+        return true;
+      } else if ("float".equals(fieldType)){
+        float val = env.getFloatField(value, fieldName);
+        ei.setFloatField(fi, val);
+        return true;
+      } else if ("double".equals(fieldType)){
+        double val = env.getDoubleField(value, fieldName);
+        ei.setDoubleField(fi, val);
+        return true;
+      } else {
+        return false;
+      }
+
+    } else { // it's a reference
+      if (value != MJIEnv.NULL) {
+        String type = env.getTypeName(value);
+        // this is an instance so the ClassInfo has to be registered
+        ClassInfo valueCI = ClassInfo.getResolvedClassInfo(type);
+        if (!valueCI.isInstanceOf(tci)) {
+          return false;
+        }
+      }
+
+      ElementInfo ei = fi.isStatic() ? fi.getClassInfo().getStaticElementInfo() : env.getElementInfo(obj);
+      ei.setFieldAttr(fi, attr);
+
+      if (fi.isStatic()) {
+        env.setStaticReferenceField(className, fi.getName(), value);
+      } else {
+        env.setReferenceField(obj, fi.getName(), value);
+      }
+      return true;
     }
   }
 
