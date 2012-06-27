@@ -2523,13 +2523,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   protected ClassInfo loadSuperClass (String superName) {
-    if(classLoader != null) {
-      return classLoader.loadSuperClass(this, superName);
-    } else {
-      ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
-      return cl.loadSuperClass(this, superName);
-    }
-    
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+    return cl.loadSuperClass(this, superName);
   }
 
   public String toString() {
