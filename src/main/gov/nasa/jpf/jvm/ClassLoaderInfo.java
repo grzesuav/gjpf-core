@@ -239,7 +239,7 @@ public class ClassLoaderInfo
   // this a helper field used to keep track of resolved super classes, to catch
   // ClassCircularityError which is thrown if any of the superclasses of the 
   // class is the class itself
-  private static final Stack<String> superNames = new Stack<String>();
+  protected static final Stack<String> superNames = new Stack<String>();
 
   protected ClassInfo loadSuperClass (ClassInfo ci, String superName) throws ClassInfoException {
     if (ci.isObjectClassInfo()) {

@@ -23,6 +23,7 @@ import gov.nasa.jpf.classfile.ClassPath;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.ListIterator;
+import java.util.Stack;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -80,6 +81,31 @@ public class SystemClassLoader extends ClassLoaderInfo {
       }
     }
   }
+
+  @Override
+  protected ClassInfo loadSuperClass (ClassInfo ci, String superName) throws ClassInfoException {
+    if (ci.isObjectClassInfo()) {
+      return null;
+    } else {
+      if(superNames.contains(superName)) {
+        throw new ClassInfoException("a superclass of " + superName + " is the class itself", 
+                                     "java.lang.ClassCircularityError", superName);
+      }
+      superNames.push(superName);
+
+      ClassInfo.logger.finer("resolving superclass: ", superName, " of ", ci.getName());
+
+      ClassInfo sci = getResolvedClassInfo(superName);
+      if (sci == null){
+        throw new ClassInfoException("the class, " + superName + ", is not found in the classloader search path", 
+                                     "java.lang.NoClassDefFoundError", superName);
+      }
+
+      superNames.pop();
+      return sci;
+    }
+  }
+
 
   private ArrayList<String> getStartupClasses(JVM vm) {
     ArrayList<String> startupClasses = new ArrayList<String>(128);

@@ -19,7 +19,6 @@
 
 package gov.nasa.jpf.jvm;
 
-import java.util.ArrayList;
 
 /**
  * common root for ClassInfo, MethodInfo, FieldInfo (and maybe more to follow)
@@ -91,17 +90,18 @@ public abstract class InfoObject {
   public void computeInheritedAnnotations (InfoObject superClass){
     if (superClass != null){
       AnnotationInfo[] superClassAnn = superClass.getAnnotations();
-      ArrayList<AnnotationInfo> inheritedAnn = new ArrayList<AnnotationInfo>();
       for (AnnotationInfo ai : superClassAnn){
         if (AnnotationInfo.annotationAttributes.get(ai.getName()).isInherited){
-          if (ai.isInherited()){
-            inheritedAnn.add(ai);
+          AnnotationInfo existingAnn = getAnnotation(ai.getName());
+          if(existingAnn !=  null) {
+            existingAnn.setInherited(false);
+          } else if (ai.isInherited()){
+            addAnnotation(ai);
           } else{
-            inheritedAnn.add(ai.cloneInherited());
+            addAnnotation(ai.cloneInherited());
           }
         }
       }
-      annotations = inheritedAnn.toArray(new AnnotationInfo[inheritedAnn.size()]);
     }
   }
 }

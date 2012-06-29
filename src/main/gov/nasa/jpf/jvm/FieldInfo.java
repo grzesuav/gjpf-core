@@ -46,11 +46,11 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
   protected int storageSize;
 
   protected final ClassInfo ci; // class this field belongs to
-  protected final int fieldIndex; // declaration ordinal
+  protected int fieldIndex; // declaration ordinal
 
   // where in the corresponding Fields object do we store the value
   // (note this works because of the wonderful single inheritance)
-  protected final int storageOffset;
+  protected int storageOffset;
 
   // optional initializer for this field, can't be final because it is set from
   // classfile field_info attributes (i.e. after construction)
@@ -87,6 +87,29 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
     }
   }
 
+  public static FieldInfo create (ClassInfo ci, String name, String signature, int modifiers){
+    switch(signature.charAt(0)){
+      case 'Z':
+        return new BooleanFieldInfo(name, modifiers, ci);
+      case 'B':
+        return new ByteFieldInfo(name, modifiers, ci);
+      case 'S':
+        return new ShortFieldInfo(name, modifiers, ci);
+      case 'C':
+        return new CharFieldInfo(name, modifiers, ci);
+      case 'I':
+        return new IntegerFieldInfo(name, modifiers, ci);
+      case 'J':
+        return new LongFieldInfo(name, modifiers, ci);
+      case 'F':
+        return new FloatFieldInfo(name, modifiers, ci);
+      case 'D':
+        return new DoubleFieldInfo(name, modifiers, ci);
+      default:
+        return new ReferenceFieldInfo(name, signature, modifiers, ci);
+    }
+  }
+
   protected FieldInfo(String name, String signature, int modifiers,
                       ClassInfo ci, int idx, int off) {
     this.name = name;
@@ -94,6 +117,14 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
     this.ci = ci;
     this.fieldIndex = idx;
     this.storageOffset = off;
+    this.modifiers = modifiers;
+  }
+
+  protected FieldInfo(String name, String signature, int modifiers,
+                      ClassInfo ci) {
+    this.name = name;
+    this.signature = signature;
+    this.ci = ci;
     this.modifiers = modifiers;
   }
 
@@ -173,6 +204,9 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
     return fieldIndex;
   }
 
+  public void setFieldIndex (int fieldIndex) {
+    this.fieldIndex = fieldIndex;
+  }
 
   /**
    * is this a static field? Counter productive to the current class struct,
@@ -305,6 +339,10 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
   
   public int getStorageOffset () {
     return storageOffset;
+  }
+
+  public void setStorageOffset (int storageOffset) {
+    this.storageOffset = storageOffset;
   }
 
   public String getFullName() {

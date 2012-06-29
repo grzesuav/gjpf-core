@@ -34,6 +34,10 @@ public class FloatFieldInfo extends SingleSlotFieldInfo {
     super(name, "F", modifiers, ci, idx, off);
   }
 
+  public FloatFieldInfo (String name, int modifiers, ClassInfo ci) {
+    super(name, "F", modifiers, ci);
+  }
+
   public void setConstantValue(Object constValue){
     if (constValue instanceof Float){
       cv = constValue;

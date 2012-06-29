@@ -34,6 +34,10 @@ public class DoubleFieldInfo extends DoubleSlotFieldInfo {
     super(name, "D", modifiers, ci, idx, off);
   }
 
+  public DoubleFieldInfo (String name, int modifiers, ClassInfo ci) {
+    super(name, "D", modifiers, ci);
+  }
+
   public void setConstantValue(Object constValue){
     if (constValue instanceof Double){
       cv = constValue;

@@ -204,6 +204,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * we can createAndInitialize objects of this type
    */
   protected ClassInfo  superClass;
+  protected String superClassName;
 
   protected String enclosingClassName;
   protected String enclosingMethodName;
@@ -316,19 +317,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       int i = name.lastIndexOf('.');
       packageName = (i>0) ? name.substring(0, i) : "";
 
-      if (superClsName != null){
-        // this is where we get recursive
-        superClass = loadSuperClass( Types.getClassNameFromTypeName(superClsName));
-      }
-
-      computeInheritedAnnotations(superClass);      
-
       modifiers = flags;
       isClass = ((flags & Modifier.INTERFACE) == 0);
 
       if (attributor != null){
         attributor.setElementInfoAttributes(ClassInfo.this);
       }
+
+      superClassName = superClsName;
     }
 
     @Override
@@ -455,7 +451,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       FieldInfo fi=null;
 
       if ((accessFlags & Modifier.STATIC) == 0){ // instance field
-        fi = FieldInfo.create (ClassInfo.this, name, descriptor, accessFlags, iIdx, iOff);
+        fi = FieldInfo.create (ClassInfo.this, name, descriptor, accessFlags);
         instanceFields.add(fi);
         iIdx++;
         iOff += fi.getStorageSize();
@@ -473,7 +469,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         attributor.setFieldInfoAttributes(curFi);
       }
     }
-
+ 
     @Override
     public void setFieldAttribute(ClassFile cf, int fieldIndex, int attrIndex, String name, int attrLength) {
       if (name == ClassFile.SIGNATURE_ATTR){
@@ -712,15 +708,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         } else {
           curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
         }
-        if (tag instanceof ClassInfo) {
-          if (((InfoObject)tag).getAnnotation(curAi.getName()) == null) {
-            addAnnotation(curAi);
-          } else {
-            ((InfoObject)tag).getAnnotation(curAi.getName()).setInherited(false);
-          }
-        } else {
-          ((InfoObject)tag).setAnnotation(annotationIndex, curAi);
-        }
+
+        ((InfoObject)tag).setAnnotation(annotationIndex, curAi);
       }
     }
 
@@ -801,6 +790,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected ClassInfo(ClassFile cf) throws ClassFileException {
     Initializer reader = new Initializer();
     cf.parse(reader);
+    resolveClass();
   }
 
   public ClassInfo(ClassFile cf, ClassLoaderInfo classLoader, String url) throws ClassFileException {
@@ -810,10 +800,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     cf.parse(reader); // this does the heavy lifting for ClassInfo init
 
     staticDataSize = computeStaticDataSize();
-    instanceDataSize = computeInstanceDataSize();
-    instanceDataOffset = computeInstanceDataOffset();
-    nInstanceFields = (superClass != null) ?
-      superClass.nInstanceFields + iFields.length : iFields.length;
 
     source = null;
     if (sourceFileName == null){ // apparently some classfiles don't have a SourceFile attribute?
@@ -823,10 +809,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     isStringClassInfo = isStringClassInfo0();
     isObjectClassInfo = isObjectClassInfo0();
     isRefClassInfo = isRefClassInfo0();
-    isWeakReference = isWeakReference0();
+   // isWeakReference = isWeakReference0();
     finalizer = getFinalizer0();
     isAbstract = (modifiers & Modifier.ABSTRACT) != 0;
-    isEnum = isEnum0();
+   // isEnum = isEnum0();
 
     enableAssertions = getAssertionStatus();
 
@@ -849,12 +835,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // ones are handled by the peer (by means of setting MethodInfo attributes)
     nativePeer = NativePeer.getNativePeer(this);
     checkUnresolvedNativeMethods();
-    
-    if (superClass != null){
-    // flatten so that it becomes more efficient to process at sweep time
-      releaseActions = superClass.releaseActions;
-    }
-    
+
+    resolveClass();
     JVM.getVM().notifyClassLoaded(this);
   }
 
@@ -2522,9 +2504,48 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return new HashMap<String, MethodInfo>(0);
   }
 
+  protected void resolveClass() {
+    if (superClassName != null){
+      // this is where we get recursive
+      superClass = loadSuperClass( Types.getClassNameFromTypeName(superClassName));
+    }
+
+    computeInheritedAnnotations(superClass);
+    resolveInstanceFields();
+
+    isWeakReference = isWeakReference0();
+    isEnum = isEnum0();
+
+    if (superClass != null){
+      // flatten so that it becomes more efficient to process at sweep time
+        releaseActions = superClass.releaseActions;
+    }
+  }
+
   protected ClassInfo loadSuperClass (String superName) {
     ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
     return cl.loadSuperClass(this, superName);
+  }
+
+  protected void resolveInstanceFields() {
+    int idx = 0, off = 0;
+
+    if(superClass != null) {
+      off = superClass.instanceDataSize;
+      idx = superClass.nInstanceFields;
+    }
+
+    for(FieldInfo fi: iFields) {
+      fi.setFieldIndex(idx);
+      fi.setStorageOffset(off);
+      idx++;
+      off += fi.getStorageSize();
+    }
+
+    instanceDataSize = computeInstanceDataSize();
+    instanceDataOffset = computeInstanceDataOffset();
+    nInstanceFields = (superClass != null) ?
+    superClass.nInstanceFields + iFields.length : iFields.length;
   }
 
   public String toString() {

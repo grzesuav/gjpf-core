@@ -31,8 +31,10 @@ class NonResolvedClassInfo extends ClassInfo {
     super(cf);
   }
 
-  protected ClassInfo loadSuperClass (String superName) {
-    return null;
+  @Override
+  protected void resolveClass() {
+    computeInheritedAnnotations(superClass);
+    resolveInstanceFields();
   }
 
   protected CodeBuilder createCodeBuilder(){

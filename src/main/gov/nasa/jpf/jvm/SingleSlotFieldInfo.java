@@ -29,6 +29,10 @@ public abstract class SingleSlotFieldInfo extends FieldInfo {
       super(name, signature, modifiers, ci, idx, off);
     }
 
+    protected SingleSlotFieldInfo (String name, String signature, int modifiers,
+                                   ClassInfo ci) {
+      super(name, signature, modifiers, ci);
+             }
     public boolean is1SlotField(){
       return true;
     }
