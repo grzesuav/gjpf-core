@@ -62,6 +62,7 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
   
   private String name;
 
+  private ClassLoader classLoader;
   /**
    * this is the StaticArea ref of the class we refer to
    * (so that we don't have to convert to a Java String in the peer all the time)
@@ -254,7 +255,9 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
 
   native public boolean desiredAssertionStatus ();
 
-  public native ClassLoader getClassLoader();
+  public ClassLoader getClassLoader() {
+    return classLoader;
+  }
 
   native ConstantPool getConstantPool();
 
