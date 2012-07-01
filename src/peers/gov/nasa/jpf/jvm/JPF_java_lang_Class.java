@@ -132,7 +132,7 @@ public class JPF_java_lang_Class {
     // note this does NOT return the box class (e.g. java.lang.Integer), which
     // is a normal, functional class, but a primitive class (e.g. 'int') that
     // is rather a strange beast (not even Object derived)
-    StaticArea        sa = env.getStaticArea();
+    StaticArea        sa = env.getStaticArea(rcls);
     StaticElementInfo ei = sa.get(clsName);
     int               cref = ei.getClassObjectRef();
     env.setBooleanField(cref, "isPrimitive", true);
@@ -236,17 +236,6 @@ public class JPF_java_lang_Class {
     } else {
       return MJIEnv.NULL;
     }
-  }
-
-  public static int getClassLoader____Ljava_lang_ClassLoader_2 (MJIEnv env, int objref){
-    ClassInfo ci = env.getReferredClassInfo( objref);
-    ClassLoaderInfo cli = ci.getClassLoaderInfo();
-
-    // For now, we comment this out to make the systemClassLoader available
-    //if(cli.isSystemClassLoader()) {
-    //  return MJIEnv.NULL;
-    //}
-    return cli.objRef;
   }
 
   static int getMethod (MJIEnv env, int clsRef, ClassInfo ciMethod, String mname, int argTypesRef,
