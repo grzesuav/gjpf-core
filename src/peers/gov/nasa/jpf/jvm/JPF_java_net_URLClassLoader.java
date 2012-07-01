@@ -33,7 +33,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
     ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
     ClassPath cp = cl.getClassPath();
     String url = env.getStringObject(urlRef);
-    cp.addPathName(url);
+    cp.addPathName(url.substring(url.indexOf(':')+1));
   }
 
   public static int findClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
@@ -54,10 +54,15 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
       return ci.getClassObjectRef();
     }
 
-    ClassPath.Match match = cl.getMatch(typeName);
+    ClassPath.Match match = cl.getMatch(name);
     if(match != null) {
       byte[] buffer = match.getBytes();
-      return defineClass(env, cl, typeName, buffer, 0, buffer.length, match);
+      try{
+        return defineClass(env, cl, name, buffer, 0, buffer.length, match);
+      } catch(ResolveRequired rre) {
+        env.repeatInvocation();
+        return MJIEnv.NULL;
+      }
     } else{
       env.throwException("java.lang.ClassNotFoundException", path);
       return MJIEnv.NULL;

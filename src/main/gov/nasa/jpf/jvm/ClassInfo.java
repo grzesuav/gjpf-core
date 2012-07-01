@@ -837,7 +837,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     checkUnresolvedNativeMethods();
 
     resolveClass();
-    JVM.getVM().notifyClassLoaded(this);
   }
 
 
@@ -1246,6 +1245,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     ClassInfo ci = getOriginalClassInfo(url);
     
     if (ci != null) {
+      if(!ci.isResolved()) {
+        ci.resolveClass();
+      }
       return ci;
     } else if (isBuiltinClass(typeName)) {
       if(cl.isSystemClassLoader()) {
@@ -2331,8 +2333,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // link the class object to the StaticElementInfo
     ei.setIntField("cref", sei.getObjectRef());
 
+    // link the class object to the classloader and its StaticArea 
+    ei.setReferenceField("classLoader", classLoader.getClassLoaderObjectRef());
+
     // link the StaticElementInfo to the class object
     sei.setClassObjectRef(ei.getObjectRef());
+
     setUniqueId();
     classes.put(uniqueId, this);
 
@@ -2345,6 +2351,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   public boolean isInitialized () {
     return ((sei != null) && (sei.getStatus() == INITIALIZED));
+  }
+
+  public boolean isResolved () {
+    return (!isObjectClassInfo() && superClass != null);
   }
 
   public boolean needsInitialization () {
@@ -2507,7 +2517,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected void resolveClass() {
     if (superClassName != null){
       // this is where we get recursive
-      superClass = loadSuperClass( Types.getClassNameFromTypeName(superClassName));
+      superClass = classLoader.loadSuperClass(this, superClassName);
     }
 
     computeInheritedAnnotations(superClass);
@@ -2520,11 +2530,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       // flatten so that it becomes more efficient to process at sweep time
         releaseActions = superClass.releaseActions;
     }
-  }
 
-  protected ClassInfo loadSuperClass (String superName) {
-    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
-    return cl.loadSuperClass(this, superName);
+    JVM.getVM().notifyClassLoaded(this);
   }
 
   protected void resolveInstanceFields() {

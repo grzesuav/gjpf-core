@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2007 United States Government as represented by the
+// Copyright (C) 2012 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 // 

@@ -216,10 +216,9 @@ public class ClassLoaderInfo
     if (className == null) {
       return null;   
     }
-    
+
     String typeName = Types.getClassNameFromTypeName(className);
 
-    
     ClassInfo ci = definedClasses.get(typeName);
     
     if (ci == null) {
@@ -241,27 +240,70 @@ public class ClassLoaderInfo
   // class is the class itself
   protected static final Stack<String> superNames = new Stack<String>();
 
+  /**
+   * This method is only used in the case of non-systemClassLoaders. SystemClassLoader 
+   * overrides this method.
+   */
   protected ClassInfo loadSuperClass (ClassInfo ci, String superName) throws ClassInfoException {
     if (ci.isObjectClassInfo()) {
       return null;
-    } else {
-      if(superNames.contains(superName)) {
-        throw new ClassInfoException("a superclass of " + superName + " is the class itself", 
-                                     "java.lang.ClassCircularityError", superName);
-      }
-      superNames.push(superName);
-
-      ClassInfo.logger.finer("resolving superclass: ", superName, " of ", ci.getName());
-
-      ClassInfo sci = getResolvedClassInfo(superName);
-      if (sci == null){
-        throw new ClassInfoException("the class, " + superName + ", is not found in the classloader search path", 
-                                     "java.lang.NoClassDefFoundError", superName);
-      }
-
-      superNames.pop();
-      return sci;
     }
+
+    if(superNames.contains(superName)) {
+      throw new ClassInfoException("a superclass of " + superName + " is the class itself", 
+                                   "java.lang.ClassCircularityError", superName);
+    }
+
+    ClassInfo.logger.finer("resolving superclass: ", superName, " of ", ci.getName());
+
+    // Check if the superclass is defined by this classloader
+    ClassInfo sci = getDefinedClassInfo(superName);
+
+    // If the superclass is not among the defined classes of this classloader, we
+    // need to do a round trip to execute the user code of loadClass(superName) 
+    if(sci == null) {
+      ThreadInfo ti = JVM.getVM().getCurrentThread();
+      StackFrame frame = ti.getReturnedDirectCall();
+
+      if(frame != null && frame.getMethodName().equals("[loadClass(" + superName + ")]")) {
+        // the round trip ends here. loadClass(superName) is already executed on JPF
+        int clsObjRef = frame.pop();
+
+        if (clsObjRef == MJIEnv.NULL){
+          throw new ClassInfoException("the class, " + superName + ", is not found in the classloader search path", 
+                                       "java.lang.NoClassDefFoundError", superName);
+          } else {
+            return ti.getEnv().getReferredClassInfo(clsObjRef);
+          }
+      } else {
+        // the round trip starts here
+        pushResolveSuperClass(superName);
+        // bail out right away & re-execute the current instruction in JPF
+        throw new ResolveRequired(superName);
+      }
+    }
+    return sci;
+  }
+
+  protected void pushResolveSuperClass(String superName) {
+    ThreadInfo ti = JVM.getVM().getCurrentThread();
+
+    // obtain the class of this ClassLoader
+    ClassInfo clClass = JVM.getVM().getClassInfo(objRef);
+
+    // retrieve the loadClass() method of this ClassLoader class
+    MethodInfo mi = clClass.getMethod("loadClass(Ljava/lang/String;)Ljava/lang/Class;", true);
+
+    // create a frame representing loadClass() & push it to the stack of the 
+    // current thread 
+    MethodInfo stub = mi.createDirectCallStub("[loadClass(" + superName + ")]");
+    StackFrame frame = new DirectCallStackFrame(stub);
+
+    int sRef = ti.getEnv().newString(superName.replace('/', '.'));
+    frame.push(objRef, true);
+    frame.pushRef(sRef);
+
+    ti.pushFrame(frame);
   }
 
   /**
