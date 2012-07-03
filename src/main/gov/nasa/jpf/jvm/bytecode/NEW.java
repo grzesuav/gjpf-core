@@ -31,16 +31,15 @@ public class NEW extends JVMInstruction implements AllocInstruction {
 
   public NEW (String clsDescriptor){
     cname = Types.getClassNameFromTypeName(clsDescriptor);
-    
-    // we need to maintain an execution count for NEW instructions
-    ExecutionCount ec = new ExecutionCount();
-    addAttr( ec);
   }
   
   public String getClassName(){    // Needed for Java Race Finder
     return(cname);
   }
 
+  // need one per count location
+  static GlobalId executeGid = new GlobalId("NEW.execute");
+  
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     Heap heap = ti.getHeap();
     ClassInfo ci;
@@ -70,20 +69,12 @@ public class NEW extends JVMInstruction implements AllocInstruction {
     }
 
     //----
-    ExecutionCount ec = getAttr( ExecutionCount.class);
-    if (ec != null){
-      if (ss.getRestorer(this) == null){ // first change for this transition
-        ss.putRestorer( this, ec.createRestorer());
-      }
-      ExecutionCount.ExecEntry ee = ec.getExecEntry(ti);
-      int count = ee.incCount();
-
-//System.out.println("@@ [" + ti.getId() + "] new@" + Integer.toHexString(hashCode()) + ", cid: " + Integer.toHexString(ee.getCallerContextId()) + " = " + count + ", " + this.getSourceLocation());
+    if (ss.getRestorer(executeGid) == null){ // first encounter for this transition
+      ss.putRestorer( executeGid, executeGid.createRestorer());      
     }
+    int id = executeGid.computeId(ti);
     //----
-    
-    
-    
+       
     int objRef = heap.newObject(ci, ti);
     newObjRef = objRef;
 

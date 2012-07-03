@@ -73,4 +73,33 @@ public class IntTableTest extends TestJPF {
       System.out.println(e);
     }
   }
+  
+  @Test
+  public void testSnapshot (){
+    IntTable<String> tbl = new IntTable<String>();
+    
+    tbl.add("1", 1);
+    tbl.add("2", 2);
+    tbl.add("3", 3);
+    tbl.add("12345", 12345);
+    tbl.dump();
+    
+    IntTable.Snapshot<String> snap = tbl.getSnapshot();
+    
+    tbl.remove("3");
+    tbl.remove("1");
+    tbl.add("42", 42);
+    tbl.dump();
+    
+    assertTrue(tbl.size() == 3);
+    
+    tbl.restore(snap);
+    tbl.dump();
+    
+    assertTrue(tbl.size() == 4);
+    assertTrue(tbl.hasEntry("1"));
+    assertTrue(tbl.hasEntry("2"));
+    assertTrue(tbl.hasEntry("3"));
+    assertTrue(tbl.hasEntry("12345"));
+  }
 }

@@ -683,7 +683,10 @@ public abstract class TestJPF implements JPFShell  {
    * run JPF expecting a AssertionError in the SuT
    * @param args JPF main() arguments
    */
-  protected JPF assertionError (String details, String... args) {
+  protected JPF assertionError (String... args) {
+    return unhandledException("java.lang.AssertionError", null, args );
+  }
+  protected JPF assertionErrorDetails (String details, String... args) {
     return unhandledException("java.lang.AssertionError", details, args );
   }
   protected boolean verifyAssertionErrorDetails (String details, String... args){
@@ -783,8 +786,15 @@ public abstract class TestJPF implements JPFShell  {
       }
     }
 
-    if ((details != null) && (!details.equals(xi.getDetails()))) {
-      fail("JPF caught the right exception but the details were wrong: " + xi.getDetails() + ", expected: " + details);
+    if (details != null){
+      String gotDetails = xi.getDetails();
+      if (gotDetails == null){
+        fail("JPF caught the right exception but the details but no details, expected: " + details);
+      } else {
+        if (!gotDetails.endsWith(details)){
+          fail("JPF caught the right exception but the details were wrong: " + gotDetails + ", expected: " + details);          
+        }
+      }
     }
 
     return jpf;
