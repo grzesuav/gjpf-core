@@ -185,22 +185,25 @@ public class Event extends ScriptElement {
   Object getConcreteArgument (String s) {
     char c = s.charAt(0);
 
-    if (c == '"' || c == '\'') {             // String literal
+    if (c == '"' || c == '\'') { // String literal
       return s.substring(1,s.length()-1);
 
-    } else if (Character.isDigit(c)) {       // ints and doubbles
+    } else if (Character.isDigit(c)) { // ints and doubbles
       if (s.indexOf('.') >=0) {
         return Double.parseDouble(s);
       } else {
         return Integer.parseInt(s);
       }
       
-    } else if (s.equals("true")) {           // boolean
+    } else if (s.equals("true")) { // boolean
       return Boolean.TRUE;
     } else if (s.equals("false")) {
       return Boolean.FALSE;
       
-    } else {                                 // not supported
+    } else if (c == '@'){ // variable
+      return s;
+      
+    } else { // not supported
       throw new IllegalArgumentException("unsupported event argument type of value=" + s);
     }
   }
