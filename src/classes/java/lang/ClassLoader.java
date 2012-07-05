@@ -169,7 +169,7 @@ public abstract class ClassLoader {
 
     if(c == null) {
       try {
-        if (parent != null) {
+        if (parent != null && parent != getSystemClassLoader()) {
             c = parent.loadClass(name, false);
         } else {
             c = findSystemClass(name);

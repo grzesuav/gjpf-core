@@ -213,6 +213,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
   /** direct ifcSet implemented by this class */
   protected Set<String> interfaceNames;
+
+  protected Set<ClassInfo> interfaces = new HashSet<ClassInfo>();
   
   /** cache of all interfaceNames (parent interfaceNames and interface parents) - lazy eval */
   protected Set<String> allInterfaces;
@@ -307,8 +309,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       String requestedName = cf.getRequestedTypeName();
       // check if the ClassFile does not represent a class with the requested name
       if(requestedName!=null && !requestedName.equals(name)) {
-        throw new ClassInfoException("wrong class name, should be " + name, 
-                                     "java.lang.NoClassDefFoundError", name);
+        throw new ClassInfoException("wrong class name, should be " + name + 
+            ", not " + requestedName, "java.lang.NoClassDefFoundError", name);
       }
 
       // the enclosingClassName is set on demand since it requires loading enclosing class candidates
@@ -2154,11 +2156,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public Set<ClassInfo> getInterfaceClassInfos() {
-    Set<ClassInfo> set = new HashSet<ClassInfo>();
-    for (String ifcName : interfaceNames) {
-      set.add(getResolvedClassInfo(ifcName));
-    }
-    return set;
+    return interfaces;
   }
 
   /**
@@ -2515,10 +2513,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   protected void resolveClass() {
-    if (superClassName != null){
-      // this is where we get recursive
-      superClass = classLoader.loadSuperClass(this, superClassName);
-    }
+    classLoader.loadInterfaces(this);
+    // this is where we get recursive
+    superClass = classLoader.loadSuperClass(this, superClassName);
 
     computeInheritedAnnotations(superClass);
     resolveInstanceFields();

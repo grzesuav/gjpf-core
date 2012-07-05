@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Stack;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -235,11 +234,6 @@ public class ClassLoaderInfo
     return ci;
   }
 
-  // this a helper field used to keep track of resolved super classes, to catch
-  // ClassCircularityError which is thrown if any of the superclasses of the 
-  // class is the class itself
-  protected static final Stack<String> superNames = new Stack<String>();
-
   /**
    * This method is only used in the case of non-systemClassLoaders. SystemClassLoader 
    * overrides this method.
@@ -249,43 +243,58 @@ public class ClassLoaderInfo
       return null;
     }
 
-    if(superNames.contains(superName)) {
-      throw new ClassInfoException("a superclass of " + superName + " is the class itself", 
-                                   "java.lang.ClassCircularityError", superName);
-    }
-
     ClassInfo.logger.finer("resolving superclass: ", superName, " of ", ci.getName());
 
-    // Check if the superclass is defined by this classloader
-    ClassInfo sci = getDefinedClassInfo(superName);
+    return invokeLoadClass(superName);
+  }
 
-    // If the superclass is not among the defined classes of this classloader, we
-    // need to do a round trip to execute the user code of loadClass(superName) 
-    if(sci == null) {
+  protected void loadInterfaces (ClassInfo ci) throws ClassInfoException {
+    for (String ifcName : ci.interfaceNames) {
+      ClassInfo.logger.finer("resolving interface: ", ifcName, " of ", ci.getName());
+
+      boolean loaded = false;
+      for (ClassInfo ifc: ci.interfaces) {
+        if(ifc.getName().equals(ifcName)) {
+          loaded = true;
+        }
+      }
+
+      if(!loaded) {
+        ci.interfaces.add(invokeLoadClass(ifcName));
+      }
+    }
+  }
+  protected ClassInfo invokeLoadClass(String cname) {
+    // Check if the given class is already defined by this classloader
+    ClassInfo ci = getDefinedClassInfo(cname);
+
+    // If the class is not among the defined classes of this classloader, then
+    // do a round trip to execute the user code of loadClass(superName) 
+    if(ci == null) {
       ThreadInfo ti = JVM.getVM().getCurrentThread();
       StackFrame frame = ti.getReturnedDirectCall();
 
-      if(frame != null && frame.getMethodName().equals("[loadClass(" + superName + ")]")) {
+      if(frame != null && frame.getMethodName().equals("[loadClass(" + cname + ")]")) {
         // the round trip ends here. loadClass(superName) is already executed on JPF
         int clsObjRef = frame.pop();
 
         if (clsObjRef == MJIEnv.NULL){
-          throw new ClassInfoException("the class, " + superName + ", is not found in the classloader search path", 
-                                       "java.lang.NoClassDefFoundError", superName);
+          throw new ClassInfoException(cname + ", is not found in the classloader search path", 
+                                       "java.lang.NoClassDefFoundError", cname);
           } else {
             return ti.getEnv().getReferredClassInfo(clsObjRef);
           }
       } else {
         // the round trip starts here
-        pushResolveSuperClass(superName);
+        pushloadClassFrame(cname);
         // bail out right away & re-execute the current instruction in JPF
-        throw new ResolveRequired(superName);
+        throw new ResolveRequired(cname);
       }
     }
-    return sci;
+    return ci;
   }
 
-  protected void pushResolveSuperClass(String superName) {
+  protected void pushloadClassFrame(String superName) {
     ThreadInfo ti = JVM.getVM().getCurrentThread();
 
     // obtain the class of this ClassLoader
@@ -337,9 +346,8 @@ public class ClassLoaderInfo
         superClass.registerClass(ti);
       }
 
-      for (String ifcName : ci.interfaceNames) {
-        ClassInfo ici = ClassInfo.getResolvedClassInfo(ifcName); // already resolved at this point
-        ici.registerClass(ti);
+      for (ClassInfo ifc : ci.interfaces) {
+        ifc.registerClass(ti);
       }
 
       ClassInfo.logger.finer("registering class: ", ci.name);

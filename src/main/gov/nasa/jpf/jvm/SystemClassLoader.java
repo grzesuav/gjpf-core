@@ -23,7 +23,6 @@ import gov.nasa.jpf.classfile.ClassPath;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.ListIterator;
-import java.util.Stack;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -87,12 +86,6 @@ public class SystemClassLoader extends ClassLoaderInfo {
     if (ci.isObjectClassInfo()) {
       return null;
     } else {
-      if(superNames.contains(superName)) {
-        throw new ClassInfoException("a superclass of " + superName + " is the class itself", 
-                                     "java.lang.ClassCircularityError", superName);
-      }
-      superNames.push(superName);
-
       ClassInfo.logger.finer("resolving superclass: ", superName, " of ", ci.getName());
 
       ClassInfo sci = getResolvedClassInfo(superName);
@@ -101,11 +94,23 @@ public class SystemClassLoader extends ClassLoaderInfo {
                                      "java.lang.NoClassDefFoundError", superName);
       }
 
-      superNames.pop();
       return sci;
     }
   }
 
+  protected void loadInterfaces (ClassInfo ci) throws ClassInfoException {
+    for(String ifcName: ci.interfaceNames) {
+      ClassInfo.logger.finer("resolving interface: ", ifcName, " of ", ci.getName());
+
+      ClassInfo ifc = getResolvedClassInfo(ifcName);
+      if (ifc == null) {
+        throw new ClassInfoException("the class, " + ifcName + ", is not found in the classloader search path", 
+                                     "java.lang.NoClassDefFoundError", ifcName);
+      } else {
+        ci.interfaces.add(ifc);
+      }
+    }
+  }
 
   private ArrayList<String> getStartupClasses(JVM vm) {
     ArrayList<String> startupClasses = new ArrayList<String>(128);

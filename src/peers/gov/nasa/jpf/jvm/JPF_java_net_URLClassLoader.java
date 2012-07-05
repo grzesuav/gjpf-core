@@ -37,7 +37,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
   }
 
   public static int findClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
-    String name = env.getStringObject(nameRef);
+    String typeName = env.getStringObject(nameRef);
     Heap heap = env.getHeap();
 
     // retrieve the classloader
@@ -45,26 +45,25 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
     ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
 
     // check if the given type is in the classloader search path
-    String path = name.replace('.', '/').concat(".class");
-    String typeName = Types.getClassNameFromTypeName(path);
+    String className = Types.getClassNameFromTypeName(typeName);
 
     // check if this class  has been already defined
-    ClassInfo ci = cl.getDefinedClassInfo(typeName);
+    ClassInfo ci = cl.getDefinedClassInfo(className);
     if(ci != null) {
       return ci.getClassObjectRef();
     }
 
-    ClassPath.Match match = cl.getMatch(name);
+    ClassPath.Match match = cl.getMatch(typeName);
     if(match != null) {
       byte[] buffer = match.getBytes();
       try{
-        return defineClass(env, cl, name, buffer, 0, buffer.length, match);
+        return defineClass(env, cl, typeName, buffer, 0, buffer.length, match);
       } catch(ResolveRequired rre) {
         env.repeatInvocation();
         return MJIEnv.NULL;
       }
     } else{
-      env.throwException("java.lang.ClassNotFoundException", path);
+      env.throwException("java.lang.ClassNotFoundException", className);
       return MJIEnv.NULL;
     }
   }

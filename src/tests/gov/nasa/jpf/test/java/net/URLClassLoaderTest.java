@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.test.java.net;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -111,7 +112,7 @@ public class URLClassLoaderTest extends TestJPF {
   }
 
   @Test
-  public void testLoadClass() throws ClassNotFoundException {
+  public void testSystemLoaderLoadClass() throws ClassNotFoundException {
    if (verifyNoPropertyViolation()) {
       URL[] urls = new URL[0];
       ClassLoader systemCl = ClassLoader.getSystemClassLoader();
@@ -148,6 +149,43 @@ public class URLClassLoaderTest extends TestJPF {
       // systemClassLoader is going to be the defining classloader
       assertNull(ucl2.getLoadedClass(cname));
       assertNull(ucl1.getLoadedClass(cname));
+    }
+  }
+
+  String pkg = "classloader_specific_tests";
+  String user_dir = System.getProperty("user.dir");
+  String originalPath = user_dir + "/build/tests/" + pkg;
+  String tempPath = user_dir + "/build/" + pkg;
+
+  @Test
+  public void testNonSystemLoaderLoadClass() throws MalformedURLException, ClassNotFoundException {
+    // move the package, to avoid systemClassLoader loading its classes
+    if(!TestJPF.isJPFRun()) {
+      File file = new File(originalPath);
+      assertTrue(file.renameTo(new File(tempPath)));
+    }
+
+    if (verifyNoPropertyViolation()) {
+      String path = user_dir + "/build";
+      URL[] urls = { new URL("file://" + path ) };
+      URLClassLoader cl =  new URLClassLoader(urls);
+
+      String cname = pkg + ".Class1";
+      Class<?> cls = cl.loadClass(cname);
+
+      assertEquals(cls.getClassLoader(), cl);
+      assertFalse(cls.getClassLoader() == ClassLoader.getSystemClassLoader());
+
+      assertEquals(cls.getInterfaces().length, 2);
+      for(Class<?>ifc: cls.getInterfaces()) {
+        assertEquals(cls.getClassLoader(), ifc.getClassLoader());
+      }
+    }
+
+    // move the package back to its original place
+    if(!TestJPF.isJPFRun()) {
+      File file = new File(tempPath);
+      assertTrue(file.renameTo(new File(originalPath)));  
     }
   }
 }

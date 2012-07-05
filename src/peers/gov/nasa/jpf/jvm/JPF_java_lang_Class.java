@@ -320,8 +320,9 @@ public class JPF_java_lang_Class {
       addDeclaredMethodsRec(methods,sci);
     }
 
+    ClassLoaderInfo cl = ci.getClassLoaderInfo();
     for (String ifcName : ci.getInterfaces()){
-      ClassInfo ici = ClassInfo.getResolvedClassInfo(ifcName); // has to be already defined, so no exception
+      ClassInfo ici = cl.getResolvedClassInfo(ifcName); // has to be already defined, so no exception
       addDeclaredMethodsRec(methods,ici);
     }
 
@@ -638,17 +639,12 @@ public class JPF_java_lang_Class {
     // contrary to the API doc, this only returns the interfaces directly
     // implemented by this class, not it's bases
     // <2do> this is not exactly correct, since the interfaces should be ordered
-    Set<String> ifcNames = ci.getInterfaces();
-    aref = env.newObjectArray("Ljava/lang/Class;", ifcNames.size());
-    
+    Set<ClassInfo> interfaces = ci.getInterfaceClassInfos();
+    aref = env.newObjectArray("Ljava/lang/Class;", interfaces.size());
+
     int i=0;
-    for (String ifc : ifcNames){
-      ClassInfo ici = ClassInfo.getResolvedClassInfo(ifc);
-      if (!ici.isRegistered()) {
-        ici.registerClass(ti);
-      }
-      
-      env.setReferenceArrayElement(aref, i++, ici.getClassObjectRef());
+    for (ClassInfo ifc: interfaces){
+      env.setReferenceArrayElement(aref, i++, ifc.getClassObjectRef());
     }
     
     return aref;

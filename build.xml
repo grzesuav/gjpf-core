@@ -121,7 +121,7 @@
     <mkdir dir="build/tests"/>
     <javac srcdir="src/tests" destdir="build/tests" includeantruntime="false"
            debug="${debug}" source="${src_level}" deprecation="${deprecation}"
-           includes="*,gov/nasa/jpf/**">
+           includes="*,gov/nasa/jpf/**,classloader_specific_tests/**">
       <classpath>
         <path refid="lib.path"/>
         <pathelement location="build/annotations"/>
