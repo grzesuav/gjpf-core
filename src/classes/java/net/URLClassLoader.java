@@ -18,8 +18,11 @@
 //
 package java.net;
 
+import java.io.IOException;
 import java.security.SecureClassLoader;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Vector;
 
 /**
@@ -28,6 +31,9 @@ import java.util.Vector;
  *  Model class for java.net.URLClassLoader
  */
 public class URLClassLoader extends SecureClassLoader {
+
+  private List<URL> urls =  new ArrayList<URL>(0);
+
   public URLClassLoader(URL[] urls) {
     super();
     addURLs(urls);
@@ -40,14 +46,19 @@ public class URLClassLoader extends SecureClassLoader {
 
   private void addURLs(URL[] urls) {
     for(URL url: urls) {
-      addURL0(url.toString());
+      addURL(url);
     }
   }
 
-  private native void addURL0(String url);
+  private native void addToSearchPath(String url);
+
+  private void addToURLs(URL url) {
+    urls.add(url);
+  }
 
   protected void addURL(URL url) {
-    addURL0(url.toString());
+    addToSearchPath(url.toString());    
+    addToURLs(url);
   }
 
   protected native Class<?> findClass(final String name) throws ClassNotFoundException;
@@ -69,7 +80,7 @@ public class URLClassLoader extends SecureClassLoader {
 
   private native String[] findResources0 (String rname);
 
-  public Enumeration<URL> findResources(String name) {
+  public Enumeration<URL> findResources(String name) throws IOException {
     String[] urls = findResources0(name);
     Vector<URL> list = new Vector<URL>(0);
     for(String url: urls) {
@@ -81,5 +92,17 @@ public class URLClassLoader extends SecureClassLoader {
     }
 
     return list.elements();
+  }
+
+  public URL[] getURLs() {
+    return urls.toArray(new URL[urls.size()]);
+  }
+
+  public static URLClassLoader newInstance(URL[] urls) {
+    return (new URLClassLoader(urls));
+  }
+
+  public static URLClassLoader newInstance(URL[] urls, ClassLoader parent) {
+    return (new URLClassLoader(urls, parent));
   }
 }
