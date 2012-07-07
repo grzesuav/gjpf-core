@@ -398,31 +398,35 @@ public class ClassLoaderInfo
     for (String cpe : getClassPathElements()) {
       String URL = getResourceURL(cpe, resourceName);
       if(URL != null) {
-        resources.add(URL);
+        if(!resources.contains(URL)) {
+          resources.add(URL);
+        }
       }
     }
     return resources.toArray(new String[resources.size()]);
   }
   
   protected String getResourceURL(String path, String resource) {
-    try {
-      if (path.endsWith(".jar")){
-        JarFile jar = new JarFile(path);
-        JarEntry e = jar.getJarEntry(resource);
-        if (e != null){
-          File f = new File(path);
-          return "jar:" + f.toURI().toURL().toString() + "!/" + resource;
+    if(resource != null) {
+      try {
+        if (path.endsWith(".jar")){
+          JarFile jar = new JarFile(path);
+          JarEntry e = jar.getJarEntry(resource);
+          if (e != null){
+            File f = new File(path);
+            return "jar:" + f.toURI().toURL().toString() + "!/" + resource;
+          }
+        } else {
+          File f = new File(path, resource);
+          if (f.exists()){
+            return f.toURI().toURL().toString();
+          }
         }
-      } else {
-        File f = new File(path, resource);
-        if (f.exists()){
-          return f.toURI().toURL().toString();
-        }
+      } catch (MalformedURLException mfx){
+        return null;
+      } catch (IOException iox){
+        return null;
       }
-    } catch (MalformedURLException mfx){
-      return null;
-    } catch (IOException iox){
-      return null;
     }
 
     return null;
