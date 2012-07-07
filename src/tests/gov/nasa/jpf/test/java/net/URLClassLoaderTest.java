@@ -19,9 +19,13 @@
 package gov.nasa.jpf.test.java.net;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -152,22 +156,47 @@ public class URLClassLoaderTest extends TestJPF {
     }
   }
 
-  String pkg = "classloader_specific_tests";
   String user_dir = System.getProperty("user.dir");
+  String pkg = "classloader_specific_tests";
+
   String originalPath = user_dir + "/build/tests/" + pkg;
   String tempPath = user_dir + "/build/" + pkg;
 
+  String jarUrl = "jar:file:" + user_dir + "/build/" + pkg + ".jar!/";
+  String dirUrl = "file:" + user_dir + "/build";
+
+  /**
+   * move the package, to avoid systemClassLoader loading its classes
+   */
+  protected void movePkgOut() {
+    if(!TestJPF.isJPFRun()) {
+      movePkg(originalPath, tempPath);
+    }
+  }
+
+  /**
+   * move the package back to its original place
+   */
+  protected void movePkgBack() {
+    if(!TestJPF.isJPFRun()) {
+      movePkg(tempPath, originalPath);
+    }
+  }
+
+  protected void movePkg(String from, String to) {
+    File file = new File(to);
+    if(!file.exists()) {
+      file = new File(from);
+      assertTrue(file.renameTo(new File(to)));
+    }
+  }
+
   @Test
   public void testNonSystemLoaderLoadClass() throws MalformedURLException, ClassNotFoundException {
-    // move the package, to avoid systemClassLoader loading its classes
-    if(!TestJPF.isJPFRun()) {
-      File file = new File(originalPath);
-      assertTrue(file.renameTo(new File(tempPath)));
-    }
-
+    movePkgOut();
     if (verifyNoPropertyViolation()) {
-      String path = user_dir + "/build";
-      URL[] urls = { new URL("file://" + path ) };
+      // create a url from a dir
+      URL[] urls = { new URL(dirUrl) };
       URLClassLoader cl =  new URLClassLoader(urls);
 
       String cname = pkg + ".Class1";
@@ -180,12 +209,150 @@ public class URLClassLoaderTest extends TestJPF {
       for(Class<?>ifc: cls.getInterfaces()) {
         assertEquals(cls.getClassLoader(), ifc.getClassLoader());
       }
-    }
 
-    // move the package back to its original place
-    if(!TestJPF.isJPFRun()) {
-      File file = new File(tempPath);
-      assertTrue(file.renameTo(new File(originalPath)));  
+      // create a url from jar
+      urls[0] = new URL(jarUrl);
+      cl =  new URLClassLoader(urls);
+      cls = cl.loadClass(cname);
+
+      assertEquals(cls.getClassLoader(), cl);
+      assertFalse(cls.getClassLoader() == ClassLoader.getSystemClassLoader());
+      assertEquals(cls.getInterfaces().length, 2);
+      for(Class<?>ifc: cls.getInterfaces()) {
+        assertEquals(cls.getClassLoader(), ifc.getClassLoader());
+      }
     }
+    movePkgBack();
+  }
+
+  @Test
+  public void testFindResource() throws MalformedURLException {
+    movePkgOut();
+    if (verifyNoPropertyViolation()) {
+      URL[] urls = { new URL(dirUrl) };
+      URLClassLoader cl =  new URLClassLoader(urls);
+
+      String resClass1 = pkg + "/Class1.class";
+      URL url = cl.findResource(resClass1);
+      String expectedUrl = dirUrl + "/" + resClass1;
+      assertEquals(url.toString(), expectedUrl);
+
+      String resInterface1 = pkg + "/Interface1.class";
+      url = cl.findResource(resInterface1);
+      expectedUrl = dirUrl + "/" + resInterface1;
+      assertEquals(url.toString(), expectedUrl);
+
+      url = cl.findResource("non_existence_resource");
+      assertNull(url);
+
+      url = cl.findResource("java/lang/Class.class");
+      assertNull(url);
+
+      // create a url from jar
+      urls[0] = new URL(jarUrl);
+      cl =  new URLClassLoader(urls);
+      url = cl.findResource(resClass1);
+      expectedUrl = jarUrl + resClass1;
+      assertEquals(url.toString(), expectedUrl);
+
+      url = cl.findResource(resInterface1);
+      expectedUrl = jarUrl + resInterface1;
+      assertEquals(url.toString(), expectedUrl);
+
+      url = cl.findResource("non_existence_resource");
+      assertNull(url);
+
+      url = cl.findResource("java/lang/Class.class");
+      assertNull(url);
+    }
+    movePkgBack();
+  }
+
+  @Test
+  public void testFindResources() throws IOException {
+    movePkgOut();
+    if (verifyNoPropertyViolation()) {
+      URL[] urls = { new URL(dirUrl), new URL(jarUrl), new URL(jarUrl) };
+      URLClassLoader cl =  new URLClassLoader(urls);
+      String resource = pkg + "/Class1.class";
+      Enumeration<URL> e = cl.findResources(resource);
+
+      List<String> urlList = new ArrayList<String>();
+      while(e.hasMoreElements()) {
+        urlList.add(e.nextElement().toString());
+      }
+
+      assertTrue(urlList.contains(jarUrl + resource));
+      assertTrue(urlList.contains(dirUrl + "/" + resource));
+
+      // we added the same url path twice, but findResource return value should only 
+      // include one entry for the same resource
+      assertEquals(urlList.size(), 2);
+
+      e = cl.findResources(null);
+      assertNotNull(e);
+      assertFalse(e.hasMoreElements());
+    }
+    movePkgBack();
+  }
+
+  @Test
+  public void testGetURLs() throws MalformedURLException {
+    if (verifyNoPropertyViolation()) {
+      URL[] urls = new URL[5];
+      urls[0] = new URL("file://" + "/x/y/z/" );
+      urls[1] = new URL("file://" + "/a/b/c/" );
+      urls[2] = new URL("file://" + "/a/b/c/" );
+      urls[3] = new URL(dirUrl);;
+      urls[4] = new URL(jarUrl);
+
+      URLClassLoader cl =  new URLClassLoader(urls);
+      URL[] clUrls = cl.getURLs();
+
+      assertEquals(clUrls.length, urls.length);
+      for (int i=0; i<urls.length; i++) {
+        assertEquals(clUrls[i], urls[i]);
+      }
+    }
+  }
+
+  @Test
+  public void testNewInstance1() throws MalformedURLException, ClassNotFoundException {
+    movePkgOut();
+    if (verifyNoPropertyViolation()) {
+      URL[] urls = new URL[1];
+      urls[0] = new URL(dirUrl);
+      URLClassLoader cl =  URLClassLoader.newInstance(urls);
+      Class<?> c = cl.loadClass(pkg + ".Class1");
+      assertNotNull(c);
+      assertSame(c.getClassLoader(), cl);
+      URL resource = cl.getResource(pkg + "/Interface1.class");
+      assertNotNull(resource);
+    }
+    movePkgBack();
+  }
+
+  @Test
+  public void testNewInstance2() throws MalformedURLException, ClassNotFoundException {
+    movePkgOut();
+    if (verifyNoPropertyViolation()) {
+      URL[] urls = new URL[1];
+      urls[0] = new URL(dirUrl);
+      URLClassLoader parent =  URLClassLoader.newInstance(urls);
+      URLClassLoader cl =  URLClassLoader.newInstance(urls, parent);
+      assertSame(parent, cl.getParent());
+
+      Class<?> c = cl.loadClass(pkg + ".Class1");
+      assertNotNull(c);
+      assertSame(c.getClassLoader(), parent);
+
+      String resName = pkg + "/Interface1.class";
+      URL resource = cl.getResource(resName);
+      assertNotNull(resource);
+
+      resource = cl.getParent().getResource(resName);
+      assertNotNull(resource);
+    }
+    movePkgBack();
   }
 }

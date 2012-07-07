@@ -193,6 +193,13 @@
       <fileset dir="build/annotations"/>
     </jar>
 
+    <!-- this jar is needed to test classloaders, it is used by URLClassLoaderTest -->
+    <jar jarfile="build/classloader_specific_tests.jar">
+      <fileset dir="build/tests">
+        <include name="classloader_specific_tests/*.class"/>
+  	  </fileset>
+    </jar>
+
     <jar jarfile="build/RunJPF.jar">
       <fileset dir="build/main">
         <include name="gov/nasa/jpf/tool/Run.class"/>
