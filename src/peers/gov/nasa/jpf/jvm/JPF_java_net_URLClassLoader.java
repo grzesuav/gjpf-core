@@ -18,6 +18,9 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import gov.nasa.jpf.classfile.ClassPath;
 
 /**
@@ -27,13 +30,26 @@ import gov.nasa.jpf.classfile.ClassPath;
  */
 public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
 
-  public static void addURL0__Ljava_lang_String_2__V (MJIEnv env, int objRef, int urlRef) {
+  public static void addToSearchPath__Ljava_lang_String_2__V (MJIEnv env, int objRef, int urlRef) throws MalformedURLException {
     Heap heap = env.getHeap();
     int gid = heap.get(objRef).getIntField("clRef");
     ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
     ClassPath cp = cl.getClassPath();
     String url = env.getStringObject(urlRef);
-    cp.addPathName(url.substring(url.indexOf(':')+1));
+
+    String path = null;
+    URL u = new URL(url);
+    String protocol = u.getProtocol();
+    if(protocol.equals("file")) {
+      path = u.getFile();
+    } else if(protocol.equals("jar")){
+      path = url.substring(url.lastIndexOf(':')+1, url.indexOf('!'));
+    } else {
+      // we don't support other protocols for now!
+      return;
+    }
+
+    cp.addPathName(path);
   }
 
   public static int findClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
