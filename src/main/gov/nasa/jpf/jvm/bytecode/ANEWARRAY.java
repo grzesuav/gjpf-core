@@ -62,7 +62,7 @@ public class ANEWARRAY extends NewArrayInstruction {
                                         "[" + arrayLength + "]");
     }
 
-    int aRef = heap.newArray(type, arrayLength, ti);
+    int aRef = heap.newArray(type, arrayLength, ti, "ANEWARRAY.execute");
     
     // pushes the object reference on the top stack frame
     ti.push(aRef, true);

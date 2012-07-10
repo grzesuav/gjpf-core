@@ -75,7 +75,7 @@ public class NEW extends JVMInstruction implements AllocInstruction {
     int id = executeGid.computeId(ti);
     **/
        
-    int objRef = heap.newObject(ci, ti);
+    int objRef = heap.newObject(ci, ti, "NEW.execute");
     newObjRef = objRef;
 
     // pushes the return value onto the stack

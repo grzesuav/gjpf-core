@@ -2353,7 +2353,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   ElementInfo createClassObject (ThreadInfo ti){
     Heap heap = JVM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
-    int clsObjRef = heap.newObject(classClassInfo, ti);
+    int clsObjRef = heap.newObject(classClassInfo, ti, "ClassInfo.createClassObject");
     ElementInfo ei = heap.get(clsObjRef);
 
     int clsNameRef = heap.newInternString(name, ti);

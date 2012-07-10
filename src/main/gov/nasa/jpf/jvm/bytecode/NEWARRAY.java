@@ -62,7 +62,7 @@ public class NEWARRAY extends NewArrayInstruction {
                                         "[" + arrayLength + "]");
     }
     
-    int arrayRef = heap.newArray(type, arrayLength, ti);
+    int arrayRef = heap.newArray(type, arrayLength, ti, "NEWARRRAY.execute");
     ti.push(arrayRef, true);
 
     return getNext(ti);

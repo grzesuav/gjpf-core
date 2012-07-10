@@ -319,7 +319,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
    * NOTE: The elementType has to be either a valid builtin typecode ("B', "C", ..)
    * or an "L-slash" name
    */
-  public int newArray (String elementType, int nElements, ThreadInfo ti) {
+  public int newArray (String elementType, int nElements, ThreadInfo ti, String location) {
 
     //if (!Types.isTypeCode(elementType)) {
     //  elementType = Types.getTypeSignature(elementType, true);
@@ -361,7 +361,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
    * <2do> this should return a DynamicElementInfo (most callers need it anyways,
    * and getting the ref out of the ElementInfo is more efficient than a get(ref)
    */
-  public int newObject (ClassInfo ci, ThreadInfo ti) {
+  public int newObject (ClassInfo ci, ThreadInfo ti, String location) {
     int index;
 
     // create the thing itself
@@ -399,8 +399,8 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   public int newString (String str, ThreadInfo th) {
     if (str != null) {
       int length = str.length();
-      int index = newObject(ClassInfo.stringClassInfo, th);
-      int value = newArray("C", length, th);
+      int index = newObject(ClassInfo.stringClassInfo, th, "Heap.newString");
+      int value = newArray("C", length, th, "Heap.newString.value");
 
       ElementInfo e = get(index);
       // <2do> pcm - this is BAD, we shouldn't depend on private impl of
@@ -460,7 +460,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
 
     InternStringEntry e = internStrings.get(str);
     if (e == null || !checkInternStringEntry(e)) { // not seen or new state branch
-      ref = newString(str,ti);
+      ref = newString(str, ti);
       ElementInfo ei = get(ref);
       ei.incPinDown();
 

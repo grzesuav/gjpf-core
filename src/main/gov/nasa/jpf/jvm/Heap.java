@@ -36,12 +36,12 @@ public interface Heap {
 
   void setOutOfMemory(boolean isOutOfMemory);
 
-  int newArray (String elementType, int nElements, ThreadInfo ti);
+  //--- the allocator primitives
+  int newArray (String elementType, int nElements, ThreadInfo ti, String location);
+  int newObject (ClassInfo ci, ThreadInfo ti, String location);
 
-  int newObject (ClassInfo ci, ThreadInfo ti);
-
+  //--- convenience allocators
   int newString (String str, ThreadInfo ti);
-
   int newInternString (String str, ThreadInfo ti);
   
   Iterable<ElementInfo> liveObjects();

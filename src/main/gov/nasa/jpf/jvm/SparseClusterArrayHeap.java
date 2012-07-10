@@ -204,7 +204,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     }
   }
 
-  public int newArray(String elementType, int nElements, ThreadInfo ti) {
+  public int newArray(String elementType, int nElements, ThreadInfo ti, String location) {
     String type = "[" + elementType;
     ClassInfo ci = ClassInfo.getResolvedClassInfo(type);
 
@@ -237,7 +237,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     return index;
   }
 
-  public int newObject(ClassInfo ci, ThreadInfo ti) {
+  public int newObject(ClassInfo ci, ThreadInfo ti, String location) {
     // create the thing itself
     Fields f = ci.createInstanceFields();
     Monitor m = new Monitor();
@@ -270,8 +270,8 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
   private int newString(String str, ThreadInfo ti, boolean isIntern) {
     if (str != null) {      
       int length = str.length();
-      int index = newObject(ClassInfo.stringClassInfo, ti);
-      int vref = newArray("C", length, ti);
+      int index = newObject(ClassInfo.stringClassInfo, ti, "Heap.newString");
+      int vref = newArray("C", length, ti, "Heap.newString.value");
       
       ElementInfo e = get(index);
       // <2do> pcm - this is BAD, we shouldn't depend on private impl of

@@ -1928,7 +1928,7 @@ public class ThreadInfo
     }
 
     Heap heap = vm.getHeap();
-    int aref = heap.newArray("Ljava/lang/StackTraceElement;", nVisible, this);
+    int aref = heap.newArray("Ljava/lang/StackTraceElement;", nVisible, this, "ThreadInfo.createStackTraceElements");
     ElementInfo aei = heap.get(aref);
     for (int i=0; i<nVisible; i++){
       int eref = list[i].createJPFStackTraceElement();
@@ -2060,7 +2060,7 @@ public class ThreadInfo
         Heap heap = vm.getHeap();
 
         ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.StackTraceElement");
-        int sRef = heap.newObject(ci, ThreadInfo.this);
+        int sRef = heap.newObject(ci, ThreadInfo.this, "ThreadInfo.createJPFStackTraceElement");
 
         ElementInfo  sei = heap.get(sRef);
         sei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this));
@@ -2118,7 +2118,7 @@ public class ThreadInfo
    */
   int createException (ClassInfo ci, String details, int causeRef){
     Heap heap = vm.getHeap();
-    int objref = heap.newObject(ci, this);
+    int objref = heap.newObject(ci, this, "ThreadInfo.createException");
     int msgref = -1;
 
     ElementInfo ei = heap.get(objref);

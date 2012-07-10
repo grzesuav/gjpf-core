@@ -367,7 +367,7 @@ public class JVM {
     Heap heap = getHeap();
 
     ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
-    int objRef = heap.newObject( ciThread, ti);
+    int objRef = heap.newObject( ciThread, ti, "JVM.initMainThread.thread");
     int groupRef = createSystemThreadGroup(ti, objRef);
     int nameRef = heap.newString("main", ti);
     
@@ -377,7 +377,7 @@ public class JVM {
     ei.setReferenceField("name", nameRef);
     ei.setIntField("priority", Thread.NORM_PRIORITY);
 
-    int permitRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), ti);
+    int permitRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), ti, "JVM.initMainThread.permit");
     ElementInfo eiPermitRef = heap.get(permitRef);
     eiPermitRef.setBooleanField("blockPark", true);
     ei.setReferenceField("permit", permitRef);
@@ -393,7 +393,7 @@ public class JVM {
     Heap heap = getHeap();
     
 // !!! <2do> we need to have a mainThread ti here, null doesn't work!! 
-    int ref = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti);
+    int ref = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti, "JVM.createSystemThreadGroup");
     ElementInfo ei = heap.get(ref);
 
     // since we can't call methods yet, we have to init explicitly (BAD)
@@ -404,7 +404,7 @@ public class JVM {
 
     ei.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
 
-    int threadsRef = heap.newArray("Ljava/lang/Thread;", 4, ti);
+    int threadsRef = heap.newArray("Ljava/lang/Thread;", 4, ti, "JVM.createSystemThreadGroup.threads");
     ElementInfo eiThreads = heap.get(threadsRef);
     eiThreads.setReferenceElement(0, mainThreadRef);
 
@@ -593,7 +593,7 @@ public class JVM {
     }
 
     // create the args array object
-    int argsRef = heap.newArray("Ljava/lang/String;", args.length, tiMain);
+    int argsRef = heap.newArray("Ljava/lang/String;", args.length, tiMain, "JVM.pushMainEntry.args");
     ElementInfo argsElement = heap.get(argsRef);
     for (int i = 0; i < args.length; i++) {
       int aRef = heap.newString(args[i], tiMain);

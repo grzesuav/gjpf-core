@@ -918,15 +918,15 @@ public class MJIEnv {
   }
 
   public int newBooleanArray (int size) {
-    return heap.newArray("Z", size, ti);
+    return heap.newArray("Z", size, ti, "MJIEnv.newBooleanArray");
   }
 
   public int newByteArray (int size) {
-    return heap.newArray("B", size, ti);
+    return heap.newArray("B", size, ti, "MJIEnv.newByteArray(int)");
   }
 
   public int newByteArray (byte[] buf){
-    int ref = heap.newArray("B", buf.length, ti);
+    int ref = heap.newArray("B", buf.length, ti, "MJIEnv.newByteArray(byte[])");
     for (int i=0; i<buf.length; i++){
       setByteArrayElement(ref, i, buf[i]);
     }
@@ -934,24 +934,35 @@ public class MJIEnv {
   }
 
   public int newCharArray (int size) {
-    return heap.newArray("C", size, ti);
+    return heap.newArray("C", size, ti, "MJIEnv.newCharArray(int)");
   }
 
   public int newCharArray (char[] buf){
-    int ref = heap.newArray("C", buf.length, ti);
+    int ref = heap.newArray("C", buf.length, ti, "MJIEnv.newCharArray(char[])");
     for (int i=0; i<buf.length; i++){
       setCharArrayElement(ref, i, buf[i]);
     }
     return ref;
   }
 
+  public int newShortArray (int size) {
+    return heap.newArray("S", size, ti, "MJIEnv.newShortArray(int)");
+  }
+  
+  public int newShortArray (short[] buf){
+    int ref = heap.newArray("S", buf.length, ti, "MJIEnv.newShortArray(short[])");
+    for (int i=0; i<buf.length; i++){
+      setShortArrayElement(ref, i, buf[i]);
+    }
+    return ref;
+  }
 
   public int newDoubleArray (int size) {
-    return heap.newArray("D", size, ti);
+    return heap.newArray("D", size, ti, "MJIEnv.newDoubleArray(int)");
   }
 
   public int newDoubleArray (double[] buf){
-    int ref = heap.newArray("D", buf.length, ti);
+    int ref = heap.newArray("D", buf.length, ti, "MJIEnv.newDoubleArray(double[])");
     for (int i=0; i<buf.length; i++){
       setDoubleArrayElement(ref, i, buf[i]);
     }
@@ -959,15 +970,23 @@ public class MJIEnv {
   }
 
   public int newFloatArray (int size) {
-    return heap.newArray("F", size, ti);
+    return heap.newArray("F", size, ti, "MJIEnv.newFloatArray(int)");
+  }
+  
+  public int newFloatArray (float[] buf){
+    int ref = heap.newArray("F", buf.length, ti, "MJIEnv.newFloatArray(float[])");
+    for (int i=0; i<buf.length; i++){
+      setFloatArrayElement(ref, i, buf[i]);
+    }
+    return ref;
   }
 
   public int newIntArray (int size) {
-    return heap.newArray("I", size, ti);
+    return heap.newArray("I", size, ti, "MJIEnv.newIntArray(int)");
   }
 
   public int newIntArray (int[] buf){
-    int ref = heap.newArray("I", buf.length, ti);
+    int ref = heap.newArray("I", buf.length, ti, "MJIEnv.newIntArray(int[])");
     for (int i=0; i<buf.length; i++){
       setIntArrayElement(ref, i, buf[i]);
     }
@@ -975,17 +994,25 @@ public class MJIEnv {
   }
 
   public int newLongArray (int size) {
-    return heap.newArray("J", size, ti);
+    return heap.newArray("J", size, ti, "MJIEnv.newLongArray(int)");
   }
 
-  public int newLongArray (int[] buf){
-    int ref = heap.newArray("J", buf.length, ti);
+  public int newLongArray (long[] buf){
+    int ref = heap.newArray("J", buf.length, ti, "MJIEnv.newLongArray(long[])");
     for (int i=0; i<buf.length; i++){
       setLongArrayElement(ref, i, buf[i]);
     }
     return ref;
   }
 
+  public int newObjectArray (String elementClsName, int size) {
+    if (!elementClsName.endsWith(";")) {
+      elementClsName = Types.getTypeSignature(elementClsName, false);
+    }
+
+    return heap.newArray(elementClsName, size, ti, "MJIEnv.newObjectArray");
+  }
+  
   /**
    * WATCH OUT - we don't check if the class is initialized, since the
    * caller would have to take appropriate action anyways
@@ -995,7 +1022,7 @@ public class MJIEnv {
       throw new ClinitRequired(ci);
     }
     
-    return heap.newObject(ci, ti);
+    return heap.newObject(ci, ti, "MJIEnv.newObject");
   }
 
   public int newObject (String clsName) {
@@ -1006,19 +1033,7 @@ public class MJIEnv {
       return NULL;
     }
   }
-
-  public int newObjectArray (String elementClsName, int size) {
-    if (!elementClsName.endsWith(";")) {
-      elementClsName = Types.getTypeSignature(elementClsName, false);
-    }
-
-    return heap.newArray(elementClsName, size, ti);
-  }
-
-  public int newShortArray (int size) {
-    return heap.newArray("S", size, ti);
-  }
-
+  
   public int newString (String s) {
     if (s == null){
       return NULL;
@@ -1097,43 +1112,43 @@ public class MJIEnv {
   }
 
   public int newInteger (int n){
-    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Integer"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Integer"), ti, "MJIEnv.newInteger");
     setIntField(r,"value",n);
     return r;
   }
 
   public int newLong (long l){
-    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Long"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Long"), ti, "MJIEnv.newLong");
     setLongField(r,"value",l);
     return r;
   }
 
   public int newDouble (double d){
-    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"), ti, "MJIEnv.newDouble");
     setDoubleField(r,"value",d);
     return r;
   }
 
   public int newFloat (float f){
-    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"), ti, "MJIEnv.newFloat");
     setIntField(r,"value",Types.floatToInt(f));
     return r;
   }
 
   public int newByte (byte b){
-    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Byte"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Byte"), ti, "MJIEnv.newByte");
     setIntField(r,"value",b);
     return r;
   }
 
   public int newShort (short s){
-    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Short"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Short"), ti, "MJIEnv.newShort");
     setIntField(r,"value",s);
     return r;
   }
 
   public int newCharacter (char c){
-    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Character"), ti);
+    int r = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Character"), ti, "MJIEnv.newCharacter");
     setIntField(r,"value",c);
     return r;
   }
