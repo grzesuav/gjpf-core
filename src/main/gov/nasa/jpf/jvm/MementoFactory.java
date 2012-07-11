@@ -19,6 +19,8 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.classfile.ClassPath;
+
 /**
  * interface to create Memento objects for state storage/restore
  *
@@ -36,6 +38,8 @@ public interface MementoFactory {
   Memento<ClassLoaderList> getMemento(ClassLoaderList cllist);
 
   Memento<ClassLoaderInfo> getMemento(ClassLoaderInfo cl);
+
+  Memento<ClassPath> getMemento (ClassPath cp);
 
   Memento<Heap> getMemento(DynamicArea da);
   Memento<Heap> getMemento(SparseClusterArrayHeap sca);

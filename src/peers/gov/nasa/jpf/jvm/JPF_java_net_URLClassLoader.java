@@ -30,7 +30,7 @@ import gov.nasa.jpf.classfile.ClassPath;
  */
 public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
 
-  public static void addToSearchPath__Ljava_lang_String_2__V (MJIEnv env, int objRef, int urlRef) throws MalformedURLException {
+  public static void addURL0__Ljava_lang_String_2__V (MJIEnv env, int objRef, int urlRef) throws MalformedURLException {
     Heap heap = env.getHeap();
     int gid = heap.get(objRef).getIntField("clRef");
     ClassLoaderInfo cl = env.getVM().getClassLoader(gid);

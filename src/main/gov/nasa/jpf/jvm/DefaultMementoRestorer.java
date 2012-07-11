@@ -19,6 +19,8 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.classfile.ClassPath;
+
 /**
  * a MementoRestorer that uses the default mementos
  */
@@ -62,5 +64,9 @@ public class DefaultMementoRestorer extends MementoRestorer {
 
   public Memento<ClassLoaderInfo> getMemento (ClassLoaderInfo cl) {
     return cl.getMemento();
+  }
+
+  public Memento<ClassPath> getMemento (ClassPath cp) {
+    return cp.getMemento();
   }
 }

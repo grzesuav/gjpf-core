@@ -71,14 +71,17 @@ public class ClassLoaderInfo
     // note that we don't have to store the invariants (gid, cp, parent, isSystemClassLoader)
     ClassLoaderInfo cl;
     Memento<StaticArea> saMemento;
+    Memento<ClassPath> cpMemento;
 
     ClMemento (ClassLoaderInfo cl){
       this.cl = cl;
       saMemento = cl.staticArea.getMemento();
+      cpMemento = cl.cp.getMemento();
     }
 
     public ClassLoaderInfo restore(ClassLoaderInfo ignored) {
       saMemento.restore(cl.staticArea);
+      cpMemento.restore(null);
       return cl;
     }
   }

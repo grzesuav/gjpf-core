@@ -1389,7 +1389,7 @@ public class MJIEnv {
   StaticArea getStaticArea (int clsObjRef) {
     ElementInfo ei = getElementInfo(clsObjRef);
     int clObjRef = ei.getReferenceField("classLoader");
-    ClassLoaderInfo cl = getClassLoader(clObjRef);
+    ClassLoaderInfo cl = getClassLoaderInfo(clObjRef);
     return cl.getStaticArea();
   }
 
@@ -1397,7 +1397,7 @@ public class MJIEnv {
    * It returns the ClassLoaderInfo corresponding to the given classloader object
    * reference
    */
-  public ClassLoaderInfo getClassLoader(int clObjRef) {
+  public ClassLoaderInfo getClassLoaderInfo(int clObjRef) {
     int gid = heap.get(clObjRef).getIntField("clRef");
     return getVM().getClassLoader(gid);
   }

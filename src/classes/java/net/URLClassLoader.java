@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.security.SecureClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Vector;
 
 /**
@@ -32,7 +31,7 @@ import java.util.Vector;
  */
 public class URLClassLoader extends SecureClassLoader {
 
-  private List<URL> urls =  new ArrayList<URL>(0);
+  private ArrayList<URL> urls = new ArrayList<URL>(0);
 
   public URLClassLoader(URL[] urls) {
     super();
@@ -50,15 +49,11 @@ public class URLClassLoader extends SecureClassLoader {
     }
   }
 
-  private native void addToSearchPath(String url);
-
-  private void addToURLs(URL url) {
-    urls.add(url);
-  }
+  private native void addURL0(String url);
 
   protected void addURL(URL url) {
-    addToSearchPath(url.toString());    
-    addToURLs(url);
+    addURL0(url.toString());
+    urls.add(url);
   }
 
   protected native Class<?> findClass(final String name) throws ClassNotFoundException;
