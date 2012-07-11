@@ -36,15 +36,13 @@ public class JPF_java_lang_ClassLoader {
     Heap heap = env.getHeap();
 
     //--- Retrieve the parent ClassLoaderInfo
-    ElementInfo ei = heap.get(parentRef);
-    int parentGId = ei.getIntField("clRef");
-    ClassLoaderInfo parent = env.getVM().getClassLoader(parentGId);
+    ClassLoaderInfo parent = env.getClassLoaderInfo(parentRef);
 
     //--- create the internal representation of the classloader
     ClassLoaderInfo cl = new ClassLoaderInfo(env.getVM(), objRef, new ClassPath(), parent);
 
     //--- initialize the java.lang.ClassLoader object
-    ei = heap.get(objRef);
+    ElementInfo ei = heap.get(objRef);
     ei.setIntField("clRef", cl.getGlobalId());
 
     // we should use the following block if we ever decide to make systemClassLoader 
@@ -61,11 +59,9 @@ public class JPF_java_lang_ClassLoader {
   }
 
   public static int getResource0__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
-    Heap heap = env.getHeap();
     String rname = env.getStringObject(resRef);
 
-    int gid = heap.get(objRef).getIntField("clRef");
-    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
 
     String resourcePath = cl.findResource(rname);
 
@@ -73,11 +69,9 @@ public class JPF_java_lang_ClassLoader {
   }
 
   public static int getResources0__Ljava_lang_String_2___3Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef) {
-    Heap heap = env.getHeap();
     String rname = env.getStringObject(resRef);
 
-    int gid = heap.get(objRef).getIntField("clRef");
-    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
 
     String[] resources = cl.findResources(rname);
 
@@ -85,11 +79,9 @@ public class JPF_java_lang_ClassLoader {
   }
 
   public static int findLoadedClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
-    Heap heap = env.getHeap();
     String cname = env.getStringObject(nameRef);
 
-    int gid = heap.get(objRef).getIntField("clRef");
-    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
 
     ClassInfo ci = cl.getDefinedClassInfo(cname);
     if(ci != null) {
@@ -124,11 +116,8 @@ public class JPF_java_lang_ClassLoader {
 
   public static int defineClass0__Ljava_lang_String_2_3BII__Ljava_lang_Class_2 
            (MJIEnv env, int objRef, int nameRef, int bufferRef, int offset, int length) {
-    Heap heap = env.getHeap();
-
     // retrieve ClassLoaderInfo instance
-    int gid = heap.get(objRef).getIntField("clRef");
-    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
 
     String cname = env.getStringObject(nameRef);
     byte[] buffer = env.getByteArrayObject(bufferRef);

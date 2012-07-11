@@ -68,7 +68,7 @@ public class ClassLoaderInfo
   static GlobalIdManager gidManager = new GlobalIdManager();
 
   static class ClMemento implements Memento<ClassLoaderInfo> {
-    // note that we don't have to store the invariants (gid, cp, parent, isSystemClassLoader)
+    // note that we don't have to store the invariants (gid, parent, isSystemClassLoader)
     ClassLoaderInfo cl;
     Memento<StaticArea> saMemento;
     Memento<ClassPath> cpMemento;

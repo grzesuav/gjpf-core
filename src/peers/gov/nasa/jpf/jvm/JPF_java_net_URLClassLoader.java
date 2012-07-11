@@ -31,9 +31,7 @@ import gov.nasa.jpf.classfile.ClassPath;
 public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
 
   public static void addURL0__Ljava_lang_String_2__V (MJIEnv env, int objRef, int urlRef) throws MalformedURLException {
-    Heap heap = env.getHeap();
-    int gid = heap.get(objRef).getIntField("clRef");
-    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
     ClassPath cp = cl.getClassPath();
     String url = env.getStringObject(urlRef);
 
@@ -54,11 +52,9 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
 
   public static int findClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
     String typeName = env.getStringObject(nameRef);
-    Heap heap = env.getHeap();
 
     // retrieve the classloader
-    int gid = heap.get(objRef).getIntField("clRef");
-    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
 
     // check if the given type is in the classloader search path
     String className = Types.getClassNameFromTypeName(typeName);
@@ -85,11 +81,9 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
   }
 
   public static int findResource0__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
-    Heap heap = env.getHeap();
     String rname = env.getStringObject(resRef);
 
-    int gid = heap.get(objRef).getIntField("clRef");
-    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
 
     String resourcePath = cl.findResource(rname);
 
@@ -97,11 +91,9 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
   }
 
   public static int findResources0__Ljava_lang_String_2___3Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef) {
-    Heap heap = env.getHeap();
     String rname = env.getStringObject(resRef);
 
-    int gid = heap.get(objRef).getIntField("clRef");
-    ClassLoaderInfo cl = env.getVM().getClassLoader(gid);
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
 
     String[] resources = cl.findResources(rname);
 
