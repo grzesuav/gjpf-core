@@ -217,6 +217,87 @@ public class ImmutableObjectTableTest extends TestJPF {
     System.out.println("remove: " + (t2 - t1));
   }
   
+  static class EvenPredicate implements Predicate<Integer>{
+    public boolean isTrue (Integer i){
+      return (i % 2) == 0;
+    }
+  }
+  
+  static class IntervalPredicate implements Predicate<Integer>{
+    int min, max;
+    
+    public IntervalPredicate (int min, int max){
+      this.min = min;
+      this.max = max;
+    }
+    
+    public boolean isTrue (Integer i) {
+      return (min <= i) && (max >= i);
+    }
+  }
+  
+  @Test
+  public void testBlockRemove(){
+    int N = 150;
+    
+    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();    
+    for (int i=0; i<N; i++){
+      t = t.set(i,i);
+    }
+    ImmutableObjectTable<Integer> t0 = t;
+
+    System.out.println("original table");
+    dumpInKeyOrder(t, new IntegerProcessor());
+
+    System.out.println("\nremoving all even");
+    t = t.removeAllSatisfying(new EvenPredicate());
+    dumpInKeyOrder(t, new IntegerProcessor());
+
+    int min = 10, max = 140;
+    System.out.printf("\nremoving [%d..%d] from original table\n", min, max);
+    t = t0.removeAllSatisfying(new IntervalPredicate(min, max));
+    dumpInKeyOrder(t, new IntegerProcessor());
+  }
+  
+  public void blockRemoveBenchmark() {
+    int N = 150;
+    int M = 100000;
+    long t1, t2;
+    
+    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();    
+    for (int i=0; i<N; i++){
+      t = t.set(i,i);
+    }
+    ImmutableObjectTable<Integer> t0 = t;
+
+    System.out.println("original table");
+    dumpInKeyOrder(t, new IntegerProcessor());
+
+    int min = 20;
+    int max = 130;
+    
+    Runtime.getRuntime().gc();
+    Predicate<Integer> pred = new IntervalPredicate(min, max);
+    t1 = System.currentTimeMillis();
+    for (int j=0; j<M; j++) {
+      t = t0.removeAllSatisfying(pred); 
+    }
+    t2 = System.currentTimeMillis();
+    System.out.printf("block remove of %d = %d\n", t.getSizeChange(), (t2 - t1));
+    
+    Runtime.getRuntime().gc();
+    t1 = System.currentTimeMillis();
+    for (int j=0; j<M; j++) {
+      t = t0;      
+      for (int i=min; i<=max; i++) {
+        t = t.remove(i);
+      }
+    }
+    t2 = System.currentTimeMillis();
+    System.out.printf("explicit remove of %d = %d\n", (max-min+1), (t2 - t1));
+    
+  }
+  
   //@Test
   public void benchmark (){
     long t1, t2;

@@ -324,14 +324,18 @@ public abstract class TestJPF implements JPFShell  {
     int mod = m.getModifiers();
     if (((mod & setModifiers) != 0) && ((mod & unsetModifiers) == 0)) {
       if (m.getParameterTypes().length == 0) {
-        Annotation[] annotations = m.getAnnotations();
-        for (int i = 0; i < annotations.length; i++) {
-          String annotType = annotations[i].annotationType().getName();
-          for (int j = 0; j < annotationNames.length; j++) {
-            if (annotType.equals(annotationNames[j])) {
-              return true;
+        if (annotationNames != null){
+          Annotation[] annotations = m.getAnnotations();
+          for (int i = 0; i < annotations.length; i++) {
+            String annotType = annotations[i].annotationType().getName();
+            for (int j = 0; j < annotationNames.length; j++) {
+              if (annotType.equals(annotationNames[j])) {
+                return true;
+              }
             }
           }
+        } else {
+          return true;
         }
       }
     }
@@ -380,7 +384,7 @@ public abstract class TestJPF implements JPFShell  {
           try {
             Method m = testCls.getDeclaredMethod(test);
 
-            if (isMatchingMethod(m, Modifier.PUBLIC, Modifier.STATIC, testAnnotations)){
+            if (isMatchingMethod(m, Modifier.PUBLIC, Modifier.STATIC, null /*testAnnotations*/ )){
               list.add(m);
             } else {
               throw new RuntimeException("test method must be @Test annotated public instance method without arguments: " + test);

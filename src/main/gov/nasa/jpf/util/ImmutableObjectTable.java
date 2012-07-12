@@ -24,7 +24,7 @@ package gov.nasa.jpf.util;
 public class ImmutableObjectTable<V> {
 
   private static class Result<V> {
-    boolean changedValueCount;
+    int changeCount;
     V oldValue;
   }
   
@@ -41,6 +41,7 @@ public class ImmutableObjectTable<V> {
     abstract Node<V> assoc (int shift, int key, V value, Result<V> result);
     abstract V find (int shift, int key);
     abstract Node<V> remove (int shift, int key, Result<V> result);
+    abstract Object removeAllSatisfying(Predicate<V> pred, Result<V> result);
     abstract void process (Processor<V> proc);
     abstract void process (int level, int pos, Processor<V> proc, CountDown countDown);
   }
@@ -176,7 +177,9 @@ public class ImmutableObjectTable<V> {
               return this;
               
             } else {
-              result.changedValueCount = (node.value == null);
+              if (node.value == null){
+                result.changeCount++;
+              }
               result.oldValue = node.value;
               
               node = node.cloneWithValue(value);
@@ -203,14 +206,14 @@ public class ImmutableObjectTable<V> {
             }
             
           } else { // not at leaf level, we need to replace the value with a Node
-            result.changedValueCount = true;
+            result.changeCount++;
             Node<V> node = createNode( shift+5, key, value, currentValue);
             return cloneWithReplacedNodeOrValue( idx, node);            
           }
         }
 
       } else { // neither child node nor value for this bit yet
-        result.changedValueCount = true;
+        result.changeCount++;
         
         if (isAtLeafLevel){ // we can directly store it as a value
           return cloneWithAddedNodeOrValue( bit, idx, value);
@@ -236,7 +239,7 @@ public class ImmutableObjectTable<V> {
           
           if (isAtLeafLevel){
             if (node.value != null){
-              result.changedValueCount = true;
+              result.changeCount--;
               result.oldValue = node.value;
               node = node.cloneWithValue(null);
               return cloneWithReplacedNodeOrValue(idx, node);
@@ -266,7 +269,7 @@ public class ImmutableObjectTable<V> {
           
         } else { // we have a value for this index
           if (isAtLeafLevel){
-            result.changedValueCount = true;
+            result.changeCount--;
             result.oldValue = (V)o;
             
             if (bitmap == bit) { // last value
@@ -284,6 +287,86 @@ public class ImmutableObjectTable<V> {
         return this;
       }
     }
+    
+    public Object removeAllSatisfying (Predicate<V> pred, Result<V> result){
+      Object[] nv = nodesOrValues;
+      Object[] a = null; // deferred initialized
+      V newValue = value;
+      int newBitmap = bitmap;
+      
+      //--- check if our own value got removed
+      if (value != null && pred.isTrue(value)){
+        result.changeCount--;
+        newValue = null;
+      }
+      
+      //--- check which nodesOrValues are affected and update bitmap
+      int bit=1;
+      for (int i=0; i<nv.length; i++) {
+        while ((newBitmap & bit) == 0){
+          bit <<= 1;
+        }
+        
+        Object o = nv[i];
+        if (o instanceof Node){ // a node
+          Object v = ((Node<V>)o).removeAllSatisfying(pred, result);
+          if (v != o){ // node got removed
+            if (a == null){
+              a = nv.clone();
+            }
+            a[i] = v;
+            if (v == null){
+              newBitmap ^= bit;
+            }
+          }
+        } else { // a value
+          if (pred.isTrue((V)o)){ // value got removed
+            if (a == null){
+              a = nv.clone();
+            }
+            result.changeCount--;
+            a[i] = null;
+            newBitmap ^= bit;
+          }
+        }
+        bit <<= 1;
+      }
+      
+      //--- now figure out what we have to return
+      if (a == null){ // no nodesOrValues got changed
+        if (newValue == value){ // value didn't get removed
+          return this; 
+        } else {
+          return cloneWithValue(null);
+        }
+        
+      } else { // nodesOrValues got changed, we need to compact and update the bitmap
+        int newLen= Integer.bitCount(newBitmap);
+
+        if (newLen == 0){ // nothing left of this node, but maybe its still a value
+          return newValue;
+          
+        } else if (newLen == 1){ // reduce node
+          int idx = Integer.bitCount( bitmap & (newBitmap -1));
+          Object o=a[idx];
+          
+          return new OneNode<V>( newValue, idx, o);
+          
+        } else { // still a BitmapNode
+          Object[] newNodesOrValues = new Object[newLen];
+          int j = 0;
+          for (int i = 0; i < a.length; i++) {
+            Object o = a[i];
+            if (o != null) {
+              newNodesOrValues[j++] = o;
+            }
+          }
+          
+          return new BitmapNode<V>( newValue, newBitmap, newNodesOrValues);
+        }
+      }
+    }
+    
     
     public void process (Processor<V> proc){
       if (value != null){
@@ -304,10 +387,10 @@ public class ImmutableObjectTable<V> {
       Object[] nv = nodesOrValues;
       
       if (levelDistance == 0){
-        int bit = 2 << pos; // we don't use bit 0
+        int bit = 1 << pos;
         if ((bitmap & bit) != 0) {
           int idx = Integer.bitCount(bitmap & (bit - 1));
-          Object o=nv[pos];
+          Object o=nv[idx];
           if (o instanceof Node){
             Node<V> node = (Node<V>)o;
             if (node.value != null){
@@ -382,7 +465,9 @@ public class ImmutableObjectTable<V> {
               return this;
               
             } else {
-              result.changedValueCount = (node.value == null);
+              if (node.value == null){
+                result.changeCount++;
+              }
               result.oldValue = node.value;
               
               node = node.cloneWithValue(value);
@@ -409,14 +494,14 @@ public class ImmutableObjectTable<V> {
             }
             
           } else { // not at leaf level, we need to replace the value with a Node
-            result.changedValueCount = true;
+            result.changeCount++;
             Node<V> node = createNode( shift+5, key, value, currentValue);
             return cloneWithReplacedNodeOrValue( node);            
           }
         }
 
       } else { // neither child node nor value for this index, we have to add
-        result.changedValueCount = true;
+        result.changeCount++;
         
         if (isAtLeafLevel){ // we can directly store it as a value
           return cloneWithAddedNodeOrValue( idx, value);
@@ -471,7 +556,7 @@ public class ImmutableObjectTable<V> {
           
           if (isAtLeafLevel){
             if (node.value != null){
-              result.changedValueCount = true;
+              result.changeCount--;
               result.oldValue = node.value;
               node = node.cloneWithValue(null);
               return cloneWithReplacedNodeOrValue(node);
@@ -497,7 +582,7 @@ public class ImmutableObjectTable<V> {
           
         } else { // we have a value for this index
           if (isAtLeafLevel){
-            result.changedValueCount = true;
+            result.changeCount--;
             result.oldValue = (V)o;
             
             return null; // no child left
@@ -512,6 +597,44 @@ public class ImmutableObjectTable<V> {
       }
     }
 
+    Object removeAllSatisfying(Predicate<V> pred, Result<V> result) {
+      V newValue = value;
+      if (newValue != null && pred.isTrue(newValue)){
+        result.changeCount--;
+        newValue = null;
+      }
+      
+      Object o = nodeOrValue;
+      if (o instanceof Node){
+        Object v = ((Node<V>)o).removeAllSatisfying(pred, result);
+        if (v == o){
+          if (newValue == value){ // nothing changed
+            return this;
+          } else {
+            return cloneWithValue(newValue);
+          }
+        } else {
+          if (v == null){
+            return newValue;
+          } else {
+            return new OneNode<V>(newValue, idx, v);
+          }
+        }
+        
+      } else { // we had a value
+        if (pred.isTrue((V)o)){
+          result.changeCount--;
+          return newValue;
+        } else {
+          if (newValue == value) {
+            return this;
+          } else {
+            return new OneNode<V>(newValue, idx, o);
+          }
+        }
+      }
+    }
+    
     public void process (Processor<V> proc){
       if (value != null){
         proc.process(value);
@@ -545,6 +668,7 @@ public class ImmutableObjectTable<V> {
         }
       }
     }
+
   }
   
   // a Node that has 32 non-null elements, and hence doesn't add and doesn't need a bitmap
@@ -634,7 +758,7 @@ public class ImmutableObjectTable<V> {
           }
 
         } else { // this is not the leaf level, promote value to node
-          result.changedValueCount = true;
+          result.changeCount++;
           Node<V> node = createNode(shift + 5, key, value, currentValue);
           return cloneWithReplacedNodeOrValue(idx, node);
         }
@@ -664,6 +788,21 @@ public class ImmutableObjectTable<V> {
       }
     }
 
+    public void process(Processor<V> proc) {
+      if (value != null){
+        proc.process(value);
+      }
+      
+      for (int i=0; i<32; i++){
+        Object o=nodesOrValues[i];
+        if (o instanceof Node){
+          ((Node<V>)o).process(proc);
+        } else {
+          proc.process( (V)o);
+        }
+      }
+    }
+    
     public Node<V> remove(int shift, int key, Result<V> result) {
       int ks = key >>> shift;      
       int idx = ks & 0x01f;
@@ -675,7 +814,7 @@ public class ImmutableObjectTable<V> {
         Node<V> node = (Node<V>)o;
         if (isAtLeafLevel){
           if (node.value != null){
-            result.changedValueCount = true;
+            result.changeCount--;
             result.oldValue = node.value;
             node = node.cloneWithValue(null);
             return cloneWithReplacedNodeOrValue(idx, node);
@@ -699,7 +838,7 @@ public class ImmutableObjectTable<V> {
       } else { // remove value
         V currentValue = (V)o;
         if (isAtLeafLevel){
-          result.changedValueCount = true;
+          result.changeCount--;
           result.oldValue = currentValue;
           return cloneWithoutNodeOrValue(idx);
         } else {
@@ -707,21 +846,83 @@ public class ImmutableObjectTable<V> {
         }
       }
     }
-
-    public void process(Processor<V> proc) {
-      if (value != null){
-        proc.process(value);
+    
+    public Object removeAllSatisfying (Predicate<V> pred, Result<V> result){
+      Object[] nv = nodesOrValues;
+      Object[] a = null; // deferred initialized
+      V newValue = value;
+      
+      //--- check if our own value got removed
+      if (value != null && pred.isTrue(value)){
+        result.changeCount--;
+        newValue = null;
       }
       
-      for (int i=0; i<32; i++){
-        Object o=nodesOrValues[i];
-        if (o instanceof Node){
-          ((Node<V>)o).process(proc);
+      //--- check which nodesOrValues are affected and create bitmap
+      int newBitmap = 0;
+      int bit = 1;
+      for (int i=0; i<nv.length; i++) {
+        Object o = nv[i];
+        if (o instanceof Node){ // a node
+          Object v = ((Node<V>)o).removeAllSatisfying(pred, result);
+          if (v != o){ // node got removed
+            if (a == null){
+              a = nv.clone();
+            }
+            a[i] = v;
+          }
+          if (v != null){
+            newBitmap |= bit;
+          }
+        } else { // a value
+          if (pred.isTrue((V)o)){ // value got removed
+            if (a == null){
+              a = nv.clone();
+            }
+            result.changeCount--;
+            a[i] = null;
+          } else {
+            newBitmap |= bit;
+          }
+        }
+        bit <<= 1;
+      }
+      
+      //--- now figure out what we have to return
+      if (a == null){ // no nodesOrValues got changed
+        if (newValue == value){ // value didn't get removed
+          return this; 
         } else {
-          proc.process( (V)o);
+          return cloneWithValue(newValue);
+        }
+        
+      } else { // nodesOrValues got changed, we need to compact
+        int newLen= Integer.bitCount(newBitmap);
+
+        if (newLen == 0){ // nothing left of this node, but maybe its still a value
+          return newValue;
+          
+        } else if (newLen == 1){ // reduce node
+          // since this was a FullNode, a started at index 0
+          int idx = Integer.numberOfTrailingZeros(newBitmap);
+          Object o=a[idx];
+          return new OneNode<V>( newValue, idx, o);
+          
+        } else { // a BitmapNode
+          Object[] newNodesOrValues = new Object[newLen];
+          int j = 0;
+          for (int i = 0; i < a.length; i++) {
+            Object o = a[i];
+            if (o != null) {
+              newNodesOrValues[j++] = o;
+            }
+          }
+          
+          return new BitmapNode<V>( newValue, newBitmap, newNodesOrValues);
         }
       }
     }
+
     
     public void process (int levelDistance, int pos, Processor<V> proc, CountDown countDown){
       Object[] nv = nodesOrValues;
@@ -789,7 +990,7 @@ public class ImmutableObjectTable<V> {
     Result<V> result = new Result<V>();
     
     if (root == null){
-      result.changedValueCount = true;
+      result.changeCount++;
       return new ImmutableObjectTable<V>( 1, createNode( 0, key, value, null), result);
 
     } else {
@@ -798,8 +999,8 @@ public class ImmutableObjectTable<V> {
       if (root == newRoot){ // key and value were already there
         return this;
       } else { // could have been a replaced value that didn't change the size
-        if (result.changedValueCount){
-          return new ImmutableObjectTable<V>( size+1, newRoot, result);
+        if (result.changeCount != 0){
+          return new ImmutableObjectTable<V>( size+result.changeCount, newRoot, result);
         } else {
           return new ImmutableObjectTable<V>( size, newRoot, result);
         }
@@ -831,6 +1032,18 @@ public class ImmutableObjectTable<V> {
     }
   }
   
+  // bulk remove
+  public ImmutableObjectTable<V> removeAllSatisfying (Predicate<V> pred){
+    if (root != null){
+      Result<V> result = new Result<V>();
+      Node<V> newRoot = (Node<V>) root.removeAllSatisfying( pred, result);
+      return new ImmutableObjectTable<V>( size + result.changeCount, newRoot, result);
+      
+    } else {
+      return this;
+    }
+  }
+  
   public int size(){
     return size;
   }
@@ -840,7 +1053,15 @@ public class ImmutableObjectTable<V> {
   }
   
   public boolean hasChangedSize(){
-    return (result != null) && (result.changedValueCount);
+    return (result != null) && (result.changeCount != 0);
+  }
+  
+  public int getSizeChange() {
+    if (result != null) {
+      return result.changeCount;
+    } else {
+      return 0;
+    }
   }
   
   public V getOldValue(){

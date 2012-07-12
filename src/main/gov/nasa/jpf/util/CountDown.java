@@ -27,9 +27,10 @@ final class CountDown extends RuntimeException {
   }
   
   public final int dec(){
-    if (--remaining <= 0){
+    if (remaining <= 0){
       throw this;
     }
+    remaining--;
     return remaining;
   }
   
