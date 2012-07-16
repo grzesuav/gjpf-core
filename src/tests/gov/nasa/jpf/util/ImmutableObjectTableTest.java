@@ -50,6 +50,7 @@ public class ImmutableObjectTableTest extends TestJPF {
   static <T> void dump (ImmutableObjectTable<T> t, Processor<T> proc){
     System.out.print( "size=");
     System.out.print(t.size());
+    System.out.print(", rsh=" + t.rootShift);
     System.out.print(", values={");
     t.process( proc); 
     System.out.println('}');    
@@ -64,8 +65,24 @@ public class ImmutableObjectTableTest extends TestJPF {
   }
 
   
+  
   @Test
-  public void testSimpleInsert(){
+  public void testSimpleInsertL6() {
+    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+
+    t = t.set(1, 1);
+    dump(t, new IntegerProcessor());
+    t = t.set(20, 20);
+    dump(t, new IntegerProcessor());
+    
+    assertTrue( t.size() == 2);
+    assertTrue( t.get(1) == 1);
+    assertTrue( t.get(20) == 20);
+    assertTrue( t.get(42) == null);
+  }
+
+  @Test
+  public void testSimpleInsertL5(){
     ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
     
     t = t.set(42,42);
@@ -74,6 +91,68 @@ public class ImmutableObjectTableTest extends TestJPF {
     assertTrue( t.size() == 1);
     assertTrue( t.get(42) == 42);
   }
+  
+  @Test
+  public void testSimpleInsertL6L5() {
+    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+
+    t = t.set(1, 1);
+    dump(t, new IntegerProcessor());
+    t = t.set(42, 42);
+    dump(t, new IntegerProcessor());
+    
+    assertTrue( t.size() == 2);
+    assertTrue( t.get(1) == 1);
+    assertTrue( t.get(42) == 42);
+    assertTrue( t.get(420) == null);
+  }
+  
+
+  @Test
+  public void testInsertL6L4() {
+    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+
+    t = t.set(1, 1);
+    dump(t, new IntegerProcessor());
+    t = t.set(16384, 16384);
+    dump(t, new IntegerProcessor());
+    
+    assertTrue( t.size() == 2);
+    assertTrue( 1 == t.get(1));
+    assertTrue( 16384 == t.get(16384));
+    assertTrue( t.get(42) == null);
+  }
+
+  @Test
+  public void testInsertL4L6() {
+    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+
+    t = t.set(16384, 16384);
+    dump(t, new IntegerProcessor());
+    t = t.set(1, 1);
+    dump(t, new IntegerProcessor());
+    
+    assertTrue( t.size() == 2);
+    assertTrue( 1 == t.get(1));
+    assertTrue( 16384 == t.get(16384));
+    assertTrue( t.get(42) == null);
+  }
+
+  @Test
+  public void testInsertL6L5() {
+    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+
+    t = t.set(1, 1);
+    dump(t, new IntegerProcessor());
+    t = t.set(42, 42);
+    dump(t, new IntegerProcessor());
+    
+    assertTrue( t.size() == 2);
+    assertTrue( t.get(1) == 1);
+    assertTrue( t.get(42) == 42);
+    assertTrue( t.get(420) == null);
+  }
+
   
   @Test
   public void testValueToNodePromotion(){
@@ -260,7 +339,7 @@ public class ImmutableObjectTableTest extends TestJPF {
   }
   
   public void blockRemoveBenchmark() {
-    int N = 150;
+    int N = 500;
     int M = 100000;
     long t1, t2;
     
@@ -271,10 +350,10 @@ public class ImmutableObjectTableTest extends TestJPF {
     ImmutableObjectTable<Integer> t0 = t;
 
     System.out.println("original table");
-    dumpInKeyOrder(t, new IntegerProcessor());
+    //dumpInKeyOrder(t, new IntegerProcessor());
 
-    int min = 20;
-    int max = 130;
+    int min = 50;
+    int max = 300;
     
     Runtime.getRuntime().gc();
     Predicate<Integer> pred = new IntervalPredicate(min, max);
@@ -295,6 +374,29 @@ public class ImmutableObjectTableTest extends TestJPF {
     }
     t2 = System.currentTimeMillis();
     System.out.printf("explicit remove of %d = %d\n", (max-min+1), (t2 - t1));
+    
+    
+    //--- HashMap
+    HashMap<Integer,Integer> h0 = new HashMap<Integer,Integer>();
+    for (int i=0; i<N; i++){
+      h0.put(i, i);
+    }
+
+    long td = 0, t3, t4;
+    Runtime.getRuntime().gc();
+    t1 = System.currentTimeMillis();
+    for (int j=0; j<M; j++) {
+      HashMap<Integer,Integer> h = (HashMap<Integer,Integer>)h0.clone();
+      t3 = System.currentTimeMillis();
+      for (int i=min; i<=max; i++) {
+        h.remove(i);
+      }
+      t4 = System.currentTimeMillis();
+      td += (t4-t3);
+    }
+    t2 = System.currentTimeMillis();
+    System.out.printf("HashMap remove of %d = %d (%d with restore)\n", (max-min+1), td, (t2 - t1));
+    
     
   }
   

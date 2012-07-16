@@ -23,6 +23,9 @@ package gov.nasa.jpf.util;
  */
 public class ImmutableObjectTable<V> {
 
+  //static final int SHIFT_INC = 5; // lsb first
+  static final int SHIFT_INC = -5; // msb first
+  
   private static class Result<V> {
     int changeCount;
     V oldValue;
@@ -130,42 +133,14 @@ public class ImmutableObjectTable<V> {
     }
     
     //--- the recursive operations
-    
-    public V find (int shift, int key){
-      int ks = key >>> shift;
-      int bit = 1 << (ks & 0x01f); // bitpos = index into bitmap
-      if ((bitmap & bit) != 0) { // we  have a node or value for this index
-        int idx = Integer.bitCount( bitmap & (bit -1));
-        Object o = nodesOrValues[idx];
-        boolean isAtLeafLevel = (ks >>> 5) == 0;
         
-        if (o instanceof Node){ // recurse down
-          Node<V> node = (Node<V>)o;
-          
-          if (isAtLeafLevel){ // at leaf level
-            return node.value;
-          } else {
-            return node.find( shift+5, key);
-          }
-          
-        } else {
-          if (isAtLeafLevel){
-            return (V)o;
-          } else {
-            return null;
-          }
-        }
-        
-      } else {
-        return null;
-      }
-    }
-    
     public Node<V> assoc (int shift, int key, V value, Result<V> result){
-      int ks = key >>> shift;
-      int bit = 1 << (ks & 0x01f); // bitpos = index into bitmap
+      int ks = (key >>> shift);
+      int bit = 1 << (ks & 0x1f); // bitpos = index into bitmap
+      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+      //boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
+      
       int idx = Integer.bitCount( bitmap & (bit -1));
-      boolean isAtLeafLevel = (ks >>> 5) == 0;
 
       if ((bitmap & bit) != 0) { // we already have an entry for this index
         Object o = nodesOrValues[idx];
@@ -187,7 +162,7 @@ public class ImmutableObjectTable<V> {
             }
             
           } else { // not at leaf level, needs recursive descent
-            node = node.assoc( shift+5, key, value, result);
+            node = node.assoc( shift + SHIFT_INC, key, value, result);
             if (node == o){ // nothing changed by child node(s)
               return this;
             } else {
@@ -207,7 +182,7 @@ public class ImmutableObjectTable<V> {
             
           } else { // not at leaf level, we need to replace the value with a Node
             result.changeCount++;
-            Node<V> node = createNode( shift+5, key, value, currentValue);
+            Node<V> node = createNode( shift + SHIFT_INC, key, value, currentValue);
             return cloneWithReplacedNodeOrValue( idx, node);            
           }
         }
@@ -219,16 +194,49 @@ public class ImmutableObjectTable<V> {
           return cloneWithAddedNodeOrValue( bit, idx, value);
           
         } else { // needs to be a node
-          Node<V> node = createNode( shift+5, key, value, null);
+          Node<V> node = createNode( shift + SHIFT_INC, key, value, null);
           return cloneWithAddedNodeOrValue( bit, idx, node);          
         }
       }      
     }
 
+    public V find (int shift, int key){
+      int ks = (key >>> shift);
+      int bit = 1 << (ks & 0x1f); // bitpos = index into bitmap
+      
+      if ((bitmap & bit) != 0) { // we  have a node or value for this index
+        int idx = Integer.bitCount( bitmap & (bit -1));
+        Object o = nodesOrValues[idx];
+        boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+        //boolean isAtLeafLevel = (ks >>> 5) == 0;  // lsb first
+        
+        if (o instanceof Node){ // recurse down
+          Node<V> node = (Node<V>)o;
+          
+          if (isAtLeafLevel){ // at leaf level
+            return node.value;
+          } else {
+            return node.find( shift+SHIFT_INC, key);
+          }
+          
+        } else {
+          if (isAtLeafLevel){
+            return (V)o;
+          } else {
+            return null;
+          }
+        }
+        
+      } else {
+        return null;
+      }
+    }
+    
     public Node<V> remove (int shift, int key, Result<V> result){
-      int ks = key >>> shift;
-      int bit = 1 << (ks & 0x01f); // bitpos = index into bitmap
-      boolean isAtLeafLevel = (ks >>> 5) == 0;
+      int ks = (key >>> shift);
+      int bit = 1 << (ks & 0x1f); // bitpos = index into bitmap
+      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+      //boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
       
       if ((bitmap & bit) != 0) { // we have a node or value for this index
         int idx = Integer.bitCount( bitmap & (bit -1));
@@ -248,7 +256,7 @@ public class ImmutableObjectTable<V> {
             }
             
           } else {
-            node = node.remove(shift + 5, key, result); // recurse down
+            node = node.remove(shift +SHIFT_INC, key, result); // recurse down
 
             if (node == o) { // nothing removed by children
               return this;
@@ -453,7 +461,8 @@ public class ImmutableObjectTable<V> {
     public Node<V> assoc (int shift, int key, V value, Result<V> result){      
       int ks = key >>> shift;
       int idx = ks & 0x1f;
-      boolean isAtLeafLevel = (ks == idx);
+      //boolean isAtLeafLevel = (ks == idx); // lsb first
+      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
 
       if (idx == this.idx) { // we already have an entry for this index
         Object o = nodeOrValue;
@@ -475,7 +484,7 @@ public class ImmutableObjectTable<V> {
             }
             
           } else { // not at leaf level, needs recursive descent
-            node = node.assoc( shift+5, key, value, result);
+            node = node.assoc( shift + SHIFT_INC, key, value, result);
             if (node == o){ // nothing changed by child node(s)
               return this;
             } else {
@@ -495,7 +504,7 @@ public class ImmutableObjectTable<V> {
             
           } else { // not at leaf level, we need to replace the value with a Node
             result.changeCount++;
-            Node<V> node = createNode( shift+5, key, value, currentValue);
+            Node<V> node = createNode( shift + SHIFT_INC, key, value, currentValue);
             return cloneWithReplacedNodeOrValue( node);            
           }
         }
@@ -507,7 +516,7 @@ public class ImmutableObjectTable<V> {
           return cloneWithAddedNodeOrValue( idx, value);
           
         } else { // needs to be a node
-          Node<V> node = createNode( shift+5, key, value, null);
+          Node<V> node = createNode( shift + SHIFT_INC, key, value, null);
           return cloneWithAddedNodeOrValue( idx, node);          
         }
       }      
@@ -519,7 +528,8 @@ public class ImmutableObjectTable<V> {
 
       if (idx == this.idx) { // we  have a node or value for this index
         Object o = nodeOrValue;
-        boolean isAtLeafLevel = (ks == idx);
+        //boolean isAtLeafLevel = (ks == idx); // lsb first
+        boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
         
         if (o instanceof Node){ // recurse down
           Node<V> node = (Node<V>)o;
@@ -527,7 +537,7 @@ public class ImmutableObjectTable<V> {
           if (isAtLeafLevel){ // at leaf level
             return node.value;
           } else {
-            return node.find( shift+5, key);
+            return node.find( shift + SHIFT_INC, key);
           }
           
         } else {
@@ -546,7 +556,8 @@ public class ImmutableObjectTable<V> {
     public Node<V> remove (int shift, int key, Result<V> result){
       int ks = key >>> shift;
       int idx = (ks & 0x01f);
-      boolean isAtLeafLevel = (ks == idx);
+      //boolean isAtLeafLevel = (ks == idx); // lsb first
+      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
       
       if (idx == this.idx) { // we have a node or value for this index
         Object o = nodeOrValue;
@@ -565,7 +576,7 @@ public class ImmutableObjectTable<V> {
             }
             
           } else {
-            node = node.remove(shift + 5, key, result); // recurse down
+            node = node.remove(shift +SHIFT_INC, key, result); // recurse down
 
             if (node == o) { // nothing removed by child
               return this;
@@ -723,7 +734,8 @@ public class ImmutableObjectTable<V> {
     public Node<V> assoc(int shift, int key, V value, Result<V> result) {
       int ks = key >>> shift;
       int idx = ks & 0x01f;
-      boolean isAtLeafLevel = (ks >>> 5) == 0;
+      //boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
+      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
       
       Object o = nodesOrValues[idx];
       // this is a full node, so we don't have to check if we have a node or value
@@ -739,7 +751,7 @@ public class ImmutableObjectTable<V> {
             return cloneWithReplacedNodeOrValue(idx, node);
           }
         } else {
-          node = node.assoc(shift + 5, key, value, result);
+          node = node.assoc(shift +SHIFT_INC, key, value, result);
           if (node == o) { // nothing added by children
             return this;
           } else {
@@ -759,7 +771,7 @@ public class ImmutableObjectTable<V> {
 
         } else { // this is not the leaf level, promote value to node
           result.changeCount++;
-          Node<V> node = createNode(shift + 5, key, value, currentValue);
+          Node<V> node = createNode(shift +SHIFT_INC, key, value, currentValue);
           return cloneWithReplacedNodeOrValue(idx, node);
         }
       }
@@ -768,7 +780,8 @@ public class ImmutableObjectTable<V> {
     public V find (int shift, int key) {
       int ks = key >>> shift;      
       int idx = ks & 0x01f;
-      boolean isAtLeafLevel = (ks >>> 5) == 0;
+      //boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
+      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
       
       Object o = nodesOrValues[idx];
       
@@ -806,7 +819,8 @@ public class ImmutableObjectTable<V> {
     public Node<V> remove(int shift, int key, Result<V> result) {
       int ks = key >>> shift;      
       int idx = ks & 0x01f;
-      boolean isAtLeafLevel = (ks >>> 5) == 0;
+      //boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
+      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
       
       Object o = nodesOrValues[idx];
       
@@ -823,7 +837,7 @@ public class ImmutableObjectTable<V> {
           }
           
         } else { // not at leaf level, recurse down
-          node = node.remove( shift+5, key, result);
+          node = node.remove( shift + SHIFT_INC, key, result);
           if (node == o){
             return this; // nothing got removed
           } else {
@@ -956,53 +970,116 @@ public class ImmutableObjectTable<V> {
   static <V> Node<V> createNode (int shift, int key, V value, V nodeValue){
     int ks = key >>> shift;
     int idx = (ks & 0x01f);
-    boolean isAtLeafLevel = (idx == ks);
+    // boolean isAtLeafLevel = (idx == ks); // lsb first
+    boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
     
     Object o;
     if (isAtLeafLevel){
       o = value;
     } else {
-      o = createNode( shift+5, key, value, (V)null);
+      o = createNode( shift + SHIFT_INC, key, value, (V)null);
     }
     
     return new OneNode<V>( nodeValue, idx, o);
   }
 
+  static <V> Node<V> createAndMergeNode (int shift, int key, V value, Node<V> mergeNode){
+    int ks = key >>> shift;
+    int idx = (ks & 0x01f);
+    boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+    
+    Object o;
+    
+    if (isAtLeafLevel){
+      o = value;
+    } else {
+      o = createNode( shift + SHIFT_INC, key, value, null);
+    }
+      
+    Object[] nodesOrValues = new Object[2];
+    nodesOrValues[0] = mergeNode;
+    nodesOrValues[1] = o;
+    int bitmap = (1 << idx) | 1;
+    
+    return new BitmapNode<V>(null, bitmap, nodesOrValues);
+  }
+  
+  static <V> Node<V> propagateMergeNode (int shift, int nodeShift, Node<V> node){
+    shift += SHIFT_INC;
+    while (shift > nodeShift){
+      node = new OneNode<V>(null, 0, node);
+      shift += SHIFT_INC;
+    }
+    
+    return node;
+  }
+  
+  
+  // this is only required for msb lookup (SHIFT_INC < 0)
+  static int getInitialShift (int key) {
+    if ((key & 0xc0000000) != 0) return 30;
+    if ((key & 0x3e000000) != 0) return 25;
+    if ((key & 0x1f00000) != 0)  return 20;
+    if ((key & 0xf8000) != 0)    return 15;
+    if ((key & 0x7c00) != 0)     return 10;
+    if ((key & 0x3e0) != 0)      return 5;
+    return 0;
+  }
   
   //--- invariant instance data
   final int size;
   final Node<V> root;
   final Result<V> result;
   
+  // for msb first mode, we keep track of the initial shift to save cloning empty top nodes
+  final int rootShift;
+  
   public ImmutableObjectTable(){
     size = 0;
     root = null;
     result = null;
+    rootShift = 0;
   }
 
-  private ImmutableObjectTable (int size, Node<V> root, Result<V> result){
+  private ImmutableObjectTable (int size, Node<V> root, int initialShift, Result<V> result){
     this.size = size;
     this.root = root;
+    this.rootShift = initialShift;
     this.result = result;
   }
 
   public ImmutableObjectTable<V> set (int key, V value){
     Result<V> result = new Result<V>();
+    int ish = getInitialShift(key);
     
     if (root == null){
-      result.changeCount++;
-      return new ImmutableObjectTable<V>( 1, createNode( 0, key, value, null), result);
+      result.changeCount = 1;
+      Node<V> newRoot = createNode( ish, key, value, null);
+      return new ImmutableObjectTable<V>( 1, newRoot, ish, result);
 
-    } else {
-      Node<V> newRoot = root.assoc( 0, key, value, result);
+    } else {            
+      Node<V> newRoot;
+      int newRootShift;
+      
+      if (ish <= rootShift) { // new key can be added to current root (key smaller than previous ones)
+        newRoot = root.assoc( rootShift, key, value, result);
+        newRootShift = rootShift;
 
+      } else { // current root has to be merged into new one
+        result.changeCount = 1; // since shift count is different, there has to be a new node
+        
+        Node<V> mergeNode = propagateMergeNode( ish, rootShift, root);
+        newRoot = createAndMergeNode( ish, key, value, mergeNode);
+        newRootShift = ish;
+      }
+      
       if (root == newRoot){ // key and value were already there
         return this;
       } else { // could have been a replaced value that didn't change the size
         if (result.changeCount != 0){
-          return new ImmutableObjectTable<V>( size+result.changeCount, newRoot, result);
+          return new ImmutableObjectTable<V>( size+result.changeCount, newRoot, newRootShift, result);
         } else {
-          return new ImmutableObjectTable<V>( size, newRoot, result);
+          return new ImmutableObjectTable<V>( size, newRoot, newRootShift, result);
         }
       }
     }
@@ -1010,7 +1087,7 @@ public class ImmutableObjectTable<V> {
   
   public V get (int key){
     if (root != null){
-      return root.find(0, key);
+      return root.find( rootShift, key);
     } else {
       return null;
     }
@@ -1022,12 +1099,13 @@ public class ImmutableObjectTable<V> {
       
     } else {
       Result<V> result = new Result<V>();
-      Node<V> newRoot = root.remove( 0, key, result);
+      Node<V> newRoot = root.remove( rootShift, key, result);
 
       if (root == newRoot){ // nothing removed
         return this;
       } else {
-        return new ImmutableObjectTable<V>( size-1, newRoot, result);
+        // <2do> we should check if we can increase the initialShift
+        return new ImmutableObjectTable<V>( size-1, newRoot, rootShift, result);
       }
     }
   }
@@ -1037,7 +1115,10 @@ public class ImmutableObjectTable<V> {
     if (root != null){
       Result<V> result = new Result<V>();
       Node<V> newRoot = (Node<V>) root.removeAllSatisfying( pred, result);
-      return new ImmutableObjectTable<V>( size + result.changeCount, newRoot, result);
+      
+      // <2do> we should check if we can increase the initialShift
+
+      return new ImmutableObjectTable<V>( size + result.changeCount, newRoot, rootShift, result);
       
     } else {
       return this;
