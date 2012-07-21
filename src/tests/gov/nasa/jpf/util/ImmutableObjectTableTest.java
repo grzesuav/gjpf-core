@@ -64,7 +64,23 @@ public class ImmutableObjectTableTest extends TestJPF {
     System.out.println('}');    
   }
 
+  ImmutableObjectTable<Integer> insert (ImmutableObjectTable<Integer> t, int key){
+    System.out.println();
+    System.out.printf("--- add %d:\n", key);
+    t = t.set( key, key);
+    dump(t, new IntegerProcessor());
+    t.printOn(System.out);
+    System.out.printf("--- find(%d): %s\n", key, t.get(key)); 
+    return t;
+  }
   
+  @Test
+  public void testInsert() {
+    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+    t = insert( t, 1);
+    t = insert( t, 32);
+    t = insert( t, 33);
+  }
   
   @Test
   public void testSimpleInsertL6() {
@@ -74,6 +90,8 @@ public class ImmutableObjectTableTest extends TestJPF {
     dump(t, new IntegerProcessor());
     t = t.set(20, 20);
     dump(t, new IntegerProcessor());
+    
+    t.printOn(System.out);
     
     assertTrue( t.size() == 2);
     assertTrue( t.get(1) == 1);
@@ -201,7 +219,7 @@ public class ImmutableObjectTableTest extends TestJPF {
     }
     
     IntegerProcessor proc = new IntegerProcessor();
-    dumpInKeyOrder(t, proc);
+    dump(t, proc);
     
     assertTrue( t.size() == max);
     assertTrue( proc.getCount() == t.size());
@@ -209,6 +227,8 @@ public class ImmutableObjectTableTest extends TestJPF {
     for (int i=0; i<max; i++){
       assertTrue( t.get(i) == i);
     }
+    
+    t.printOn(System.out);
     
     assertTrue( t.get(max+1) == null);
   }
@@ -266,7 +286,7 @@ public class ImmutableObjectTableTest extends TestJPF {
   @Test
   public void testLargeTable() {
     long t1, t2;
-    int N = 20000; // table size
+    int N = 2000; // table size
     int M = 5000000; // lookup
 
     //--- create
@@ -282,7 +302,8 @@ public class ImmutableObjectTableTest extends TestJPF {
 
     t1 = System.currentTimeMillis();
     for (int i=0; i<N; i++){
-      assertTrue(t.get(i) != null);
+      Object v = t.get(i);
+      assertTrue(("lookup failed for index: " + i + ", got " + v), v != null);
     }
     t2 = System.currentTimeMillis();
     System.out.println("lookup: " + (t2 - t1));
