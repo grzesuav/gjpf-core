@@ -29,7 +29,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 /**
  * regression test for ImmutableObjectTable
  */
-public class ImmutableObjectTableTest extends TestJPF {
+public class PersistentMsbIntMapTest extends TestJPF {
 
   //--- test  
   static class IntegerProcessor implements Processor<Integer>{
@@ -47,7 +47,7 @@ public class ImmutableObjectTableTest extends TestJPF {
     }
   }
 
-  static <T> void dump (ImmutableObjectTable<T> t, Processor<T> proc){
+  static <T> void dump (PersistentMsbIntMap<T> t, Processor<T> proc){
     System.out.print( "size=");
     System.out.print(t.size());
     System.out.print(", rsh=" + t.rootShift);
@@ -56,7 +56,7 @@ public class ImmutableObjectTableTest extends TestJPF {
     System.out.println('}');    
   }
 
-  static <T> void dumpInKeyOrder (ImmutableObjectTable<T> t, Processor<T> proc){
+  static <T> void dumpInKeyOrder (PersistentMsbIntMap<T> t, Processor<T> proc){
     System.out.print( "size=");
     System.out.print(t.size());
     System.out.print(", values={");
@@ -64,7 +64,7 @@ public class ImmutableObjectTableTest extends TestJPF {
     System.out.println('}');    
   }
 
-  ImmutableObjectTable<Integer> insert (ImmutableObjectTable<Integer> t, int key){
+  PersistentMsbIntMap<Integer> insert (PersistentMsbIntMap<Integer> t, int key){
     System.out.println();
     System.out.printf("--- add %d:\n", key);
     t = t.set( key, key);
@@ -76,21 +76,21 @@ public class ImmutableObjectTableTest extends TestJPF {
   
   @Test
   public void testInsert() {
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
     
     System.out.println("------------ 0");
     t = insert( t, 0);
     
     
     System.out.println("\n------------ 1, 32, 33");
-    t = new ImmutableObjectTable<Integer>();
+    t = new PersistentMsbIntMap<Integer>();
     t = insert( t, 1);
     t = insert( t, 32);
     t = insert( t, 33);
     assertTrue( t.size() == 3);
 
     System.out.println("\n------------ 0x18001, 0x18000");
-    t = new ImmutableObjectTable<Integer>();
+    t = new PersistentMsbIntMap<Integer>();
     t = insert( t, 0x18001);
     t = insert( t, 0x18000);
     assertTrue( t.size() == 2);
@@ -101,7 +101,7 @@ public class ImmutableObjectTableTest extends TestJPF {
   public void testFullNode(){
     
     System.out.println("\n-------------- BitmapNode[0..30]");
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
     for (int i=0; i<31; i++){
       t = t.set(i,  new Integer(i));
     }
@@ -132,7 +132,7 @@ public class ImmutableObjectTableTest extends TestJPF {
   
   @Test
   public void testDenseInsert(){
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
     
     int max = 100;
     
@@ -157,14 +157,14 @@ public class ImmutableObjectTableTest extends TestJPF {
 
   @Test
   public void testRemove(){
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
     
     t = t.set(42,42);
     dump(t, new IntegerProcessor());
     t.printOn(System.out);
 
     assertTrue( t.size() == 1);
-    ImmutableObjectTable<Integer> tt = t.remove(12345); // should not remove anything
+    PersistentMsbIntMap<Integer> tt = t.remove(12345); // should not remove anything
     assertTrue( t == tt);
 
     System.out.println("\n--------- remove 42");
@@ -176,7 +176,7 @@ public class ImmutableObjectTableTest extends TestJPF {
   
   @Test
   public void testDenseRemove(){
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
     
     for (int i=0; i<42; i++){
       t = t.set(i,i);
@@ -193,7 +193,7 @@ public class ImmutableObjectTableTest extends TestJPF {
 
   @Test
   public void testInsertRemoveInsert(){
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
     
     t = t.set(42,42);
     dump(t, new IntegerProcessor());
@@ -219,7 +219,7 @@ public class ImmutableObjectTableTest extends TestJPF {
     System.out.println("-------- creating table with " + N + " entries");
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
     for (int i=0; i<N; i++){
       t = t.set(i,  new Integer(i));
     }
@@ -271,11 +271,11 @@ public class ImmutableObjectTableTest extends TestJPF {
   public void testBlockRemove(){
     int N = 150;
     
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();    
+    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();    
     for (int i=0; i<N; i++){
       t = t.set(i,i);
     }
-    ImmutableObjectTable<Integer> t0 = t;
+    PersistentMsbIntMap<Integer> t0 = t;
 
     System.out.println("original table");
     dumpInKeyOrder(t, new IntegerProcessor());
@@ -295,11 +295,11 @@ public class ImmutableObjectTableTest extends TestJPF {
     int M = 100000;
     long t1, t2;
     
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();    
+    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();    
     for (int i=0; i<N; i++){
       t = t.set(i,i);
     }
-    ImmutableObjectTable<Integer> t0 = t;
+    PersistentMsbIntMap<Integer> t0 = t;
 
     System.out.println("original table");
     //dumpInKeyOrder(t, new IntegerProcessor());
@@ -361,7 +361,7 @@ public class ImmutableObjectTableTest extends TestJPF {
     //--- create
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
     for (int i=0; i<N; i++){
       t = t.set(i,  new Integer(i));
     }

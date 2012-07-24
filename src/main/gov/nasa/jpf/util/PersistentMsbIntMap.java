@@ -23,7 +23,7 @@ import java.io.PrintStream;
 /**
  * an immutable Vector that is implemented as a 
  */
-public class ImmutableObjectTable<V> {
+public class PersistentMsbIntMap<V> {
 
   static final int SHIFT_INC = -5; // msb first
   
@@ -1054,21 +1054,21 @@ public class ImmutableObjectTable<V> {
   // for msb first mode, we keep track of the initial shift to save cloning empty top nodes
   final int rootShift;
   
-  public ImmutableObjectTable(){
+  public PersistentMsbIntMap(){
     size = 0;
     root = null;
     result = null;
     rootShift = 0;
   }
 
-  private ImmutableObjectTable (int size, Node<V> root, int initialShift, Result<V> result){
+  private PersistentMsbIntMap (int size, Node<V> root, int initialShift, Result<V> result){
     this.size = size;
     this.root = root;
     this.rootShift = initialShift;
     this.result = result;
   }
 
-  public ImmutableObjectTable<V> set (int key, V value){
+  public PersistentMsbIntMap<V> set (int key, V value){
     Result<V> result = new Result<V>();
     int ish = getInitialShift(key);
     int fsh = getFinalShift(key);
@@ -1076,7 +1076,7 @@ public class ImmutableObjectTable<V> {
     if (root == null){
       result.changeCount = 1;
       Node<V> newRoot = createNode( ish, fsh, key, value, null);
-      return new ImmutableObjectTable<V>( 1, newRoot, ish, result);
+      return new PersistentMsbIntMap<V>( 1, newRoot, ish, result);
 
     } else {            
       Node<V> newRoot;
@@ -1098,9 +1098,9 @@ public class ImmutableObjectTable<V> {
         return this;
       } else { // could have been a replaced value that didn't change the size
         if (result.changeCount != 0){
-          return new ImmutableObjectTable<V>( size+result.changeCount, newRoot, newRootShift, result);
+          return new PersistentMsbIntMap<V>( size+result.changeCount, newRoot, newRootShift, result);
         } else {
-          return new ImmutableObjectTable<V>( size, newRoot, newRootShift, result);
+          return new PersistentMsbIntMap<V>( size, newRoot, newRootShift, result);
         }
       }
     }
@@ -1115,7 +1115,7 @@ public class ImmutableObjectTable<V> {
     }
   }
   
-  public ImmutableObjectTable<V> remove(int key){
+  public PersistentMsbIntMap<V> remove(int key){
     if (root == null){
       return this;
       
@@ -1128,20 +1128,20 @@ public class ImmutableObjectTable<V> {
         return this;
       } else {
         // <2do> we should check if we can increase the initialShift
-        return new ImmutableObjectTable<V>( size-1, newRoot, rootShift, result);
+        return new PersistentMsbIntMap<V>( size-1, newRoot, rootShift, result);
       }
     }
   }
   
   // bulk remove
-  public ImmutableObjectTable<V> removeAllSatisfying (Predicate<V> pred){
+  public PersistentMsbIntMap<V> removeAllSatisfying (Predicate<V> pred){
     if (root != null){
       Result<V> result = new Result<V>();
       Node<V> newRoot = (Node<V>) root.removeAllSatisfying( pred, result);
       
       // <2do> we should check if we can increase the initialShift
 
-      return new ImmutableObjectTable<V>( size + result.changeCount, newRoot, rootShift, result);
+      return new PersistentMsbIntMap<V>( size + result.changeCount, newRoot, rootShift, result);
       
     } else {
       return this;
