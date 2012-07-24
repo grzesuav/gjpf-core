@@ -25,29 +25,40 @@ import java.io.PrintStream;
  */
 public class ImmutableObjectTable<V> {
 
-  //static final int SHIFT_INC = 5; // lsb first
   static final int SHIFT_INC = -5; // msb first
   
   private static class Result<V> {
     int changeCount;
     V oldValue;
+    
+    void replacedValue(V oldValue) {
+      this.oldValue = oldValue;
+    }
+    
+    void addedValue() {
+      this.changeCount++;
+    }
+    
+    void removedValue(V oldValue) {
+      this.oldValue = oldValue;
+      this.changeCount--;
+    }
   }
   
+  /**
+   * the abstract root class for all node types
+   */
   private abstract static class Node<V> implements Cloneable {
-    // optional value for this node, in case it represents both a leaf and
-    // a key prefix for other nodes
-    final V value;
     
-    protected Node (V value){
-      this.value = value;
-    }
-    protected abstract Node<V> cloneWithValue (V value);
+    abstract Node<V> assocNodeValue( V value, Result<V> result);
+    abstract Node<V> removeNodeValue (Result<V> result);
     
     abstract Node<V> assoc (int shift, int finalShift, int key, V value, Result<V> result);
     abstract V find (int shift, int finalShift, int key);
     abstract Node<V> remove (int shift, int finalShift, int key, Result<V> result);
-    abstract Object removeAllSatisfying(Predicate<V> pred, Result<V> result);
+    abstract Node<V> removeAllSatisfying(Predicate<V> pred, Result<V> result);
     abstract void process (Processor<V> proc);
+    abstract V getNodeValue();
     
     void printIndentOn (PrintStream ps, int level) {
       for (int i=0; i<level; i++) {
@@ -61,24 +72,279 @@ public class ImmutableObjectTable<V> {
         clsName = clsName.substring(idx+1);
       }
       ps.print(clsName);
-      
-      if (value != null) {
-        ps.print(", value=");
-        ps.print(value);
-      }
     }
     abstract void printOn(PrintStream ps, int level);
   }
   
+
+  /**
+   * a node that has only one element and hence does not need an array.
+   * This can also be the element at index 0, in which case this element
+   * has to be a Node, or otherwise the value would be directly stored in the
+   * parent elements.
+   * If the element changes from a Node into a value, this OneNode gets
+   * demoted into a parent value element
+   * If a new Element is added, this OneNode gets promoted into a BitmapNode
+   */
+  private static class OneNode<V> extends Node<V> {
+    final int idx;
+    final Object nodeOrValue;
+    
+    OneNode (int idx, Object o){
+      this.idx = idx;
+      this.nodeOrValue = o;
+    }
+        
+    private final Node<V> cloneWithReplacedNodeOrValue( Object o){
+      return new OneNode<V>(idx, o);
+    }
+    
+    private final Node<V> cloneWithAddedNodeOrValue(int oIdx, Object o){
+      Object[] a = new Object[2];
+      
+      if (oIdx < idx){
+        a[0] = o;
+        a[1] = nodeOrValue;
+      } else {
+        a[0] = nodeOrValue;
+        a[1] = o;
+      }
+      int bitmap = (1 << idx) | (1 << oIdx);
+      
+      return new BitmapNode<V>(bitmap, a);
+    }
+        
+    //--- Node interface
+        
+    public V getNodeValue() {
+      if (idx == 0) {
+        Object o = nodeOrValue;
+        if ((o instanceof Node)) {
+          return ((Node<V>)o).getNodeValue();
+        } else {
+          return (V)o;
+        }
+      } else {
+        return null;
+      }
+    }
+    
+    public Node<V> assocNodeValue (V value, Result<V> result){
+      if (idx == 0) {
+        Object o = nodeOrValue;
+        if (o instanceof Node) {
+          Node<V> node = (Node<V>)o;
+          node = node.assocNodeValue(value, result);
+          if (node == o) {
+            return this;
+          } else {
+            return cloneWithReplacedNodeOrValue(node);
+          }
+          
+        } else {
+          if (o == value) {
+            return this;
+          } else {
+            result.replacedValue((V)o);
+            return cloneWithReplacedNodeOrValue(value);
+          }
+        }
+        
+      } else { // we don't have anything for index 0
+        result.addedValue();
+        return cloneWithAddedNodeOrValue(0, value);
+      }
+    }
+    
+    public Node<V> assoc (int shift, int finalShift, int key, V value, Result<V> result){
+      int idx = (key>>>shift) & 0x1f;
+      
+      if (idx == this.idx) { // do we already have something for this index?
+        Object o = nodeOrValue;
+        if (o instanceof Node) { // we already have a node for this index
+          Node<V> node = (Node<V>) o;
+          node = (shift == finalShift) ? node.assocNodeValue(value, result) :
+                              node.assoc(shift+SHIFT_INC, finalShift, key, value, result);
+          if (node == o) { // no change
+            return this;
+          } else {
+            return cloneWithReplacedNodeOrValue(node);
+          }
+        } else { // we had a value
+          if (shift == finalShift) {
+            if (o == value) { // no change
+              return this;
+            } else {
+              result.replacedValue((V)o);
+              return cloneWithReplacedNodeOrValue(value);
+            }
+          } else { // not at value level yet
+            result.addedValue();
+            Node<V> node = createNode(shift+SHIFT_INC, finalShift, key, value, (V)o);
+            return cloneWithReplacedNodeOrValue(node);
+          }
+        }
+        
+      } else { // nothing for this index yet
+        Object o = (shift == finalShift) ? value : 
+                             createNode(shift+SHIFT_INC, finalShift, key, value, null);
+        result.addedValue();
+        return cloneWithAddedNodeOrValue(idx, o);
+      }
+    }
+    
+    public V find (int shift, int finalShift, int key){
+      int idx = ((key>>>shift) & 0x01f);
+
+      if (idx == this.idx) { // we  have a node or value for this index
+        Object o = nodeOrValue;
+        
+        if (o instanceof Node){ // recurse down
+          Node<V> node = (Node<V>)o;
+          
+          if (shift == finalShift){ // at value level
+            return node.getNodeValue();
+          } else {
+            return node.find( shift + SHIFT_INC, finalShift, key);
+          }
+          
+        } else { // we have a value for this index
+          if (shift == finalShift){
+            return (V)o;
+          } else {
+            return null;
+          }
+        }
+        
+      } else {
+        return null;
+      }
+    }
+    
+    public Node<V> removeNodeValue (Result<V> result){
+      if (idx == 0) {
+        Object o = nodeOrValue;
+        if (o instanceof Node) {
+          Node<V> node = (Node<V>)o;
+          node = node.removeNodeValue(result);
+          if (node == null) {
+            return null;
+          } else if (node == o) {
+            return this;
+          } else {
+            return cloneWithReplacedNodeOrValue(node);
+          }
+          
+        } else { // we had a value
+          result.removedValue((V)o);
+          return null;
+        }
+      } else {
+        return this;
+      }
+    }
+    
+    public Node<V> remove (int shift, int finalShift, int key, Result<V> result){
+      int idx = ((key>>>shift) & 0x01f);
+      
+      if (idx == this.idx) { // we have a node or value for this index
+        Object o = nodeOrValue;
+        
+        if (o instanceof Node){
+          Node<V> node = (Node<V>)o;
+          node = (shift == finalShift) ?  node.removeNodeValue(result) :
+                             node.remove(shift +SHIFT_INC, finalShift, key, result);
+          if (node == null) { // nothing left
+            return null;
+          } else if (node == o) { // nothing changed
+            return this;
+          } else {
+            return cloneWithReplacedNodeOrValue(node);
+          }            
+          
+        } else { // we have a value for this index
+          if (shift == finalShift){
+            result.removedValue((V)o);
+            return null; // no child left
+          } else {
+            return this; // the key isn't in this map
+          }
+        }
+        
+      } else { // nothing stored for this key
+        return this;
+      }
+    }
+
+    Node<V> removeAllSatisfying(Predicate<V> pred, Result<V> result) {
+      Object o = nodeOrValue;
+      if (o instanceof Node){
+        Node<V> node = (Node<V>)o;
+        node = node.removeAllSatisfying(pred, result);
+        if (node == null) { // nothing left
+          return null;
+        } else if (node == o) { // nothing changed
+          return this;
+        } else {
+          return cloneWithReplacedNodeOrValue(node);
+        }
+        
+      } else { // we had a value
+        V v = (V)o;
+        if (pred.isTrue(v)){
+          result.removedValue(v);
+          return null;
+        } else {
+          return this;
+        }
+      }
+    }
+    
+    public void process (Processor<V> proc){
+      if (nodeOrValue instanceof Node){
+        ((Node<V>)nodeOrValue).process(proc);
+      } else {
+        proc.process((V)nodeOrValue);
+      }
+    }
+    
+    public void printOn (PrintStream ps, int level) {
+      printIndentOn(ps, level);
+      ps.printf("%2d: ", idx);
+
+      Object o = nodeOrValue;
+      if (o instanceof Node) {
+        Node<V> n = (Node<V>) o;
+        printNodeInfoOn(ps);
+        ps.println();
+        n.printOn(ps, level + 1);
+      } else {
+        ps.print("value=");
+        ps.println(o);
+      }
+    }
+  }
+
+
+  /**
+   * a node that holds between 2 and 31 elements.
+   * We use bitmap based element compaction - the corresponding level part of the key
+   * [0..31] is used as an index into the bitmap. The elements are stored in a dense
+   * array at indices corresponding to the number of set bitmap bits to the right of the
+   * respective index, e.g. for 
+   *   key = 289 =  b..01001.00001, shift = 5, node already contains a key 97 =>
+   *     idx = (key >>> shift) & 0x1f = b01001 = 9
+   *     bitmap =  1000001000 (bit 3 from previous key 97)
+   *     element index = 1 (one set bit to the right of bit 9)
+   * If the bit count is 2 and an element is removed, this gets demoted into a OneNode.
+   * If the bit count is 31 and an element is added, this gets promoted into a FullNode
+   */
   private final static class BitmapNode<V> extends Node<V> {
     
-    final int bitmap; // key partition bit positions of non-null child nodes or values
-    // note: we don't use bit 0 since we only need 31 positions (then we promote to full node)
-    
+    final int bitmap; // key partition bit positions of non-null child nodes or values    
     final Object[] nodesOrValues; // dense child|value array indexed by bitmap bitcount of pos
     
-    BitmapNode (V value, int bitmap, Object[] nodesOrValues){
-      super(value);
+    BitmapNode (int bitmap, Object[] nodesOrValues){
       this.bitmap = bitmap;
       this.nodesOrValues = nodesOrValues;
     }
@@ -123,23 +389,16 @@ public class ImmutableObjectTable<V> {
     }
 
     //--- these are here to support changing the concrete Node type based on population
-
-    // note: ctor construction is about 5x faster than cloning for a low number of fields
-    // and simple field assignment ctors, so we don't bother with Object.clone()
-    
-    protected final Node<V> cloneWithValue (V value){
-      return new BitmapNode<V>( value, bitmap, nodesOrValues);
-    }
     
     private final Node<V> cloneWithReplacedNodeOrValue (int idx, Object o){
-      return new BitmapNode<V>(value, bitmap, cloneArrayWithReplaced(idx, o));
+      return new BitmapNode<V>( bitmap, cloneArrayWithReplaced(idx, o));
     }
 
     private final Node<V> cloneWithAddedNodeOrValue (int bit, int idx, Object o){
       if (nodesOrValues.length == 31){
-        return new FullNode<V>(value, nodesOrValues, idx, o); 
+        return new FullNode<V>( nodesOrValues, idx, o); 
       } else {
-        return new BitmapNode<V>(value, bitmap | bit, cloneArrayWithAdded(idx, o));
+        return new BitmapNode<V>( bitmap | bit, cloneArrayWithAdded(idx, o));
       }
     }
     
@@ -147,14 +406,55 @@ public class ImmutableObjectTable<V> {
       if (nodesOrValues.length == 2){
         Object o = (idx == 0) ? nodesOrValues[1] : nodesOrValues[0];
         int i = Integer.numberOfTrailingZeros(bitmap ^ bit);
-        return new OneNode<V>( value, i, o);
+        return new OneNode<V>( i, o);
       } else {
-        return new BitmapNode<V>(value, bitmap ^ bit, cloneArrayWithout(idx));
+        return new BitmapNode<V>(bitmap ^ bit, cloneArrayWithout(idx));
+      }
+    }
+        
+    //--- the abstract Node methods
+    
+    public V getNodeValue() {
+      if ((bitmap & 1) != 0) {
+        Object o = nodesOrValues[0];
+        if ((o instanceof Node)) {
+          return ((Node<V>)o).getNodeValue();
+        } else {
+          return (V)o;
+        }
+      } else {
+        return null;
       }
     }
     
-    //--- the recursive operations
+    public Node<V> assocNodeValue (V value, Result<V> result){
+      if ((bitmap & 1) != 0) {
+        Object o = nodesOrValues[0];
+        if (o instanceof Node) {
+          Node<V> node = (Node<V>)o;
+          node = node.assocNodeValue(value, result);
+          if (node == o) {
+            return this;
+          } else {
+            return cloneWithReplacedNodeOrValue(0, node);
+          }
+          
+        } else {
+          if (o == value) {
+            return this;
+          } else {
+            result.replacedValue((V)o);
+            return cloneWithReplacedNodeOrValue(0, value);
+          }
+        }
         
+      } else { // we don't have anything for index 0
+        result.addedValue();
+        return cloneWithAddedNodeOrValue(1, 0, value);
+      }
+    }
+
+            
     public Node<V> assoc (int shift, int finalShift, int key, V value, Result<V> result){
       int bit = 1 << ((key>>>shift) & 0x1f); // bitpos = index into bitmap
       
@@ -165,48 +465,33 @@ public class ImmutableObjectTable<V> {
         
         if (o instanceof Node){ // we already have a node
           Node<V> node = (Node<V>)o;
-          if (shift == finalShift){ // leaf level, check node value
-            if (value == node.value){ // already there
-              return this;
-              
-            } else {
-              if (node.value == null){
-                result.changeCount++;
-              }
-              result.oldValue = node.value;
-              
-              node = node.cloneWithValue(value);
-              return cloneWithReplacedNodeOrValue( idx, node);
-            }
-            
-          } else { // not at leaf level, needs recursive descent
-            node = node.assoc( shift + SHIFT_INC, finalShift, key, value, result);
-            if (node == o){ // nothing changed by child node(s)
-              return this;
-            } else {
-              return cloneWithReplacedNodeOrValue( idx, node);
-            }
+          node = (shift == finalShift) ?  node.assocNodeValue(value, result) :
+                        node.assoc( shift + SHIFT_INC, finalShift, key, value, result);
+          if (node == o) { // nothing changed
+            return this;
+          } else {
+            return cloneWithReplacedNodeOrValue(idx, node);
           }
 
         } else { // we already have a value
-          V currentValue = (V)o;
-          if (shift == finalShift){ // leaf level, check value
-            if (value == currentValue){ // it's already there
+          V v = (V)o;
+          if (shift == finalShift){ // value level, check value
+            if (value == v){ // it's already there
               return this;
             } else { // replace value
-              result.oldValue = currentValue;
+              result.replacedValue(v);
               return cloneWithReplacedNodeOrValue( idx, value);
             }
             
-          } else { // not at leaf level, we need to replace the value with a Node
+          } else { // not at value level, we need to replace the value with a Node
             result.changeCount++;
-            Node<V> node = createNode( shift + SHIFT_INC, finalShift, key, value, currentValue);
+            Node<V> node = createNode( shift + SHIFT_INC, finalShift, key, value, v);
             return cloneWithReplacedNodeOrValue( idx, node);            
           }
         }
 
       } else { // neither child node nor value for this bit yet
-        result.changeCount++;
+        result.addedValue();
         
         if (shift == finalShift){ // we can directly store it as a value
           return cloneWithAddedNodeOrValue( bit, idx, value);
@@ -229,7 +514,7 @@ public class ImmutableObjectTable<V> {
           Node<V> node = (Node<V>)o;
           
           if (shift == finalShift){ // at leaf level
-            return node.value;
+            return node.getNodeValue();
           } else {
             return node.find( shift+SHIFT_INC, finalShift, key);
           }
@@ -247,6 +532,29 @@ public class ImmutableObjectTable<V> {
       }
     }
     
+    public Node<V> removeNodeValue (Result<V> result){
+      if ((bitmap & 1) != 0) {
+        Object o = nodesOrValues[0];
+        if (o instanceof Node) {
+          Node<V> node = (Node<V>)o;
+          node = node.removeNodeValue(result);
+          if (node == null) {
+            return cloneWithoutNodeOrValue(1, 0);
+          } else if (node != o) {
+            return cloneWithReplacedNodeOrValue(0,node);
+          } else {
+            return this;
+          }
+          
+        } else { // we had a value at index 0
+          result.removedValue((V)o);
+          return cloneWithoutNodeOrValue(1, 0);
+        }
+      } else {
+        return this;
+      }
+    }
+    
     public Node<V> remove (int shift, int finalShift, int key, Result<V> result){
       int bit = 1 << ((key>>>shift) & 0x1f); // bitpos = index into bitmap
       
@@ -256,50 +564,22 @@ public class ImmutableObjectTable<V> {
         
         if (o instanceof Node){
           Node<V> node = (Node<V>)o;
-          
-          if (shift == finalShift){
-            if (node.value != null){
-              result.changeCount--;
-              result.oldValue = node.value;
-              node = node.cloneWithValue(null);
-              return cloneWithReplacedNodeOrValue(idx, node);
-            } else {
-              return this; // nothing to remove
-            }
-            
+          node = (shift == finalShift) ? node.removeNodeValue(result) :
+                            node.remove(shift +SHIFT_INC, finalShift, key, result);
+          if (node == null) {
+            return cloneWithoutNodeOrValue( bit, idx);
+          } else if (node == o) {
+            return this;
           } else {
-            node = node.remove(shift +SHIFT_INC, finalShift, key, result); // recurse down
-
-            if (node == o) { // nothing removed by children
-              return this;
-              
-            } else { // children did change
-              if (node != null) { // we still have children
-                return cloneWithReplacedNodeOrValue( idx, node);
-                
-              } else { // no children left
-                if (bitmap == bit) { // this was our last child
-                  return null;
-                } else {
-                  return cloneWithoutNodeOrValue( bit, idx);
-                }
-              }
-            }
+            return cloneWithReplacedNodeOrValue(idx, node);            
           }
           
         } else { // we have a value for this index
-          if (shift == finalShift){
-            result.changeCount--;
-            result.oldValue = (V)o;
-            
-            if (bitmap == bit) { // last value
-              return null;
-            } else {
-              return cloneWithoutNodeOrValue( bit, idx);
-            }
-            
+          if (shift == finalShift) {
+            result.removedValue((V)o);
+            return cloneWithoutNodeOrValue( bit, idx);
           } else {
-            return this; // the key isn't in this map
+            return this; // key is not in this map
           }
         }
         
@@ -308,18 +588,11 @@ public class ImmutableObjectTable<V> {
       }
     }
     
-    public Object removeAllSatisfying (Predicate<V> pred, Result<V> result){
+    public Node<V> removeAllSatisfying (Predicate<V> pred, Result<V> result){
       Object[] nv = nodesOrValues;
       Object[] a = null; // deferred initialized
-      V newValue = value;
       int newBitmap = bitmap;
-      
-      //--- check if our own value got removed
-      if (value != null && pred.isTrue(value)){
-        result.changeCount--;
-        newValue = null;
-      }
-      
+            
       //--- check which nodesOrValues are affected and update bitmap
       int bit=1;
       for (int i=0; i<nv.length; i++) {
@@ -328,19 +601,23 @@ public class ImmutableObjectTable<V> {
         }
         
         Object o = nv[i];
-        if (o instanceof Node){ // a node
-          Object v = ((Node<V>)o).removeAllSatisfying(pred, result);
-          if (v != o){ // node got removed
+        if (o instanceof Node){ // we have a node at this index
+          Node<V> node = (Node<V>)o;
+          node = node.removeAllSatisfying(pred, result);
+          if (node != o) {
             if (a == null){
               a = nv.clone();
             }
-            a[i] = v;
-            if (v == null){
+            a[i] = node;
+            if (node == null){
               newBitmap ^= bit;
-            }
+            }            
           }
-        } else { // a value
-          if (pred.isTrue((V)o)){ // value got removed
+          
+        } else { // we have a value at this index
+          V v = (V) o;
+          
+          if (pred.isTrue(v)){ // value got removed
             if (a == null){
               a = nv.clone();
             }
@@ -354,23 +631,18 @@ public class ImmutableObjectTable<V> {
       
       //--- now figure out what we have to return
       if (a == null){ // no nodesOrValues got changed
-        if (newValue == value){ // value didn't get removed
-          return this; 
-        } else {
-          return cloneWithValue(null);
-        }
+        return this;
         
       } else { // nodesOrValues got changed, we need to compact and update the bitmap
         int newLen= Integer.bitCount(newBitmap);
 
-        if (newLen == 0){ // nothing left of this node, but maybe its still a value
-          return newValue;
+        if (newLen == 0){ // nothing left of this node
+          return null;
           
         } else if (newLen == 1){ // reduce node
           int idx = Integer.bitCount( bitmap & (newBitmap -1));
           Object o=a[idx];
-          
-          return new OneNode<V>( newValue, idx, o);
+          return new OneNode<V>( idx, o);
           
         } else { // still a BitmapNode
           Object[] newNodesOrValues = new Object[newLen];
@@ -382,17 +654,13 @@ public class ImmutableObjectTable<V> {
             }
           }
           
-          return new BitmapNode<V>( newValue, newBitmap, newNodesOrValues);
+          return new BitmapNode<V>( newBitmap, newNodesOrValues);
         }
       }
     }
     
     
     public void process (Processor<V> proc){
-      if (value != null){
-        proc.process(value);
-      }
-      
       for (int i=0; i<nodesOrValues.length; i++){
         Object o = nodesOrValues[i];
         if (o instanceof Node){
@@ -425,263 +693,21 @@ public class ImmutableObjectTable<V> {
       }
     }
   }
-      
-  // a node that has only one element and hence doesn't need an array
-  static class OneNode<V> extends Node<V> {
-    final int idx; // could be byte, but that's probably not faster
-    final Object nodeOrValue;
-    
-    OneNode (V value, int idx, Object o){
-      super(value);
-      this.idx = idx;
-      this.nodeOrValue = o;
-    }
-    
-    protected final Node<V> cloneWithValue(V newValue){
-      return new OneNode<V>(newValue, idx, nodeOrValue);
-    }
-    
-    private final Node<V> cloneWithReplacedNodeOrValue( Object o){
-      return new OneNode<V>(value, idx, o);
-    }
-    
-    private final Node<V> cloneWithAddedNodeOrValue(int oIdx, Object o){
-      Object[] a = new Object[2];
-      
-      if (oIdx < idx){
-        a[0] = o;
-        a[1] = nodeOrValue;
-      } else {
-        a[0] = nodeOrValue;
-        a[1] = o;
-      }
-      int bitmap = (1 << idx) | (1 << oIdx);
-      
-      return new BitmapNode<V>(value, bitmap, a);
-    }
-    
-    //--- Node interface
-    
-    public Node<V> assoc (int shift, int finalShift, int key, V value, Result<V> result){      
-      int idx = (key>>>shift) & 0x1f;
 
-      if (idx == this.idx) { // we already have an entry for this index
-        Object o = nodeOrValue;
-        
-        if (o instanceof Node){ // we already have a node
-          Node<V> node = (Node<V>)o;
-          if (shift == finalShift){ // leaf level, check node value
-            if (value == node.value){ // already there
-              return this;
-              
-            } else {
-              if (node.value == null){
-                result.changeCount++;
-              }
-              result.oldValue = node.value;
-              
-              node = node.cloneWithValue(value);
-              return cloneWithReplacedNodeOrValue( node);
-            }
-            
-          } else { // not at leaf level, needs recursive descent
-            node = node.assoc( shift + SHIFT_INC, finalShift, key, value, result);
-            if (node == o){ // nothing changed by child node(s)
-              return this;
-            } else {
-              return cloneWithReplacedNodeOrValue( node);
-            }
-          }
 
-        } else { // we already have a value
-          V currentValue = (V)o;
-          if (shift == finalShift){ // leaf level, check value
-            if (value == currentValue){ // it's already there
-              return this;
-            } else { // replace value
-              result.oldValue = currentValue;
-              return cloneWithReplacedNodeOrValue( value);
-            }
-            
-          } else { // not at leaf level, we need to replace the value with a Node
-            result.changeCount++;
-            Node<V> node = createNode( shift + SHIFT_INC, finalShift, key, value, currentValue);
-            return cloneWithReplacedNodeOrValue( node);            
-          }
-        }
-
-      } else { // neither child node nor value for this index, we have to add
-        result.changeCount++;
-        
-        if (shift == finalShift){ // we can directly store it as a value
-          return cloneWithAddedNodeOrValue( idx, value);
-          
-        } else { // needs to be a node
-          Node<V> node = createNode( shift + SHIFT_INC, finalShift, key, value, null);
-          return cloneWithAddedNodeOrValue( idx, node);          
-        }
-      }      
-    }
-    
-    public V find (int shift, int finalShift, int key){
-      int idx = ((key>>>shift) & 0x01f);
-
-      if (idx == this.idx) { // we  have a node or value for this index
-        Object o = nodeOrValue;
-        
-        if (o instanceof Node){ // recurse down
-          Node<V> node = (Node<V>)o;
-          
-          if (shift == finalShift){ // at leaf level
-            return node.value;
-          } else {
-            return node.find( shift + SHIFT_INC, finalShift, key);
-          }
-          
-        } else {
-          if (shift == finalShift){
-            return (V)o;
-          } else {
-            return null;
-          }
-        }
-        
-      } else {
-        return null;
-      }
-    }
-    
-    public Node<V> remove (int shift, int finalShift, int key, Result<V> result){
-      int idx = ((key>>>shift) & 0x01f);
-      
-      if (idx == this.idx) { // we have a node or value for this index
-        Object o = nodeOrValue;
-        
-        if (o instanceof Node){
-          Node<V> node = (Node<V>)o;
-          
-          if (shift == finalShift){
-            if (node.value != null){
-              result.changeCount--;
-              result.oldValue = node.value;
-              node = node.cloneWithValue(null);
-              return cloneWithReplacedNodeOrValue(node);
-            } else {
-              return this; // nothing to remove
-            }
-            
-          } else {
-            node = node.remove(shift +SHIFT_INC, finalShift, key, result); // recurse down
-
-            if (node == o) { // nothing removed by child
-              return this;
-              
-            } else { // child did change
-              if (node != null) { // we still have children
-                return cloneWithReplacedNodeOrValue(node);
-                
-              } else { // no child left
-                return null;
-              }
-            }
-          }
-          
-        } else { // we have a value for this index
-          if (shift == finalShift){
-            result.changeCount--;
-            result.oldValue = (V)o;
-            
-            return null; // no child left
-            
-          } else {
-            return this; // the key isn't in this map
-          }
-        }
-        
-      } else { // nothing stored for this key
-        return this;
-      }
-    }
-
-    Object removeAllSatisfying(Predicate<V> pred, Result<V> result) {
-      V newValue = value;
-      if (newValue != null && pred.isTrue(newValue)){
-        result.changeCount--;
-        newValue = null;
-      }
-      
-      Object o = nodeOrValue;
-      if (o instanceof Node){
-        Object v = ((Node<V>)o).removeAllSatisfying(pred, result);
-        if (v == o){
-          if (newValue == value){ // nothing changed
-            return this;
-          } else {
-            return cloneWithValue(newValue);
-          }
-        } else {
-          if (v == null){
-            return newValue;
-          } else {
-            return new OneNode<V>(newValue, idx, v);
-          }
-        }
-        
-      } else { // we had a value
-        if (pred.isTrue((V)o)){
-          result.changeCount--;
-          return newValue;
-        } else {
-          if (newValue == value) {
-            return this;
-          } else {
-            return new OneNode<V>(newValue, idx, o);
-          }
-        }
-      }
-    }
-    
-    public void process (Processor<V> proc){
-      if (value != null){
-        proc.process(value);
-      }
-
-      if (nodeOrValue instanceof Node){
-        ((Node<V>)nodeOrValue).process(proc);
-      } else {
-        proc.process((V)nodeOrValue);
-      }
-    }
-    
-    public void printOn (PrintStream ps, int level) {
-      printIndentOn(ps, level);
-      ps.printf("%2d: ", idx);
-
-      Object o = nodeOrValue;
-      if (o instanceof Node) {
-        Node<V> n = (Node<V>) o;
-        printNodeInfoOn(ps);
-        ps.println();
-        n.printOn(ps, level + 1);
-      } else {
-        ps.print("value=");
-        ps.println(o);
-      }
-    }
-  }
-  
-  // a Node that has 32 non-null elements, and hence doesn't add and doesn't need a bitmap
-  static class FullNode<V> extends Node<V> {
+  /**
+   * a node with 32 elements, for which we don't need a bitmap.
+   * No element can be added since this means we just promote an existing element
+   * If an element is removed, this FullNode gets demoted int a BitmapNode
+   */
+  private static class FullNode<V> extends Node<V> {
     final Object[] nodesOrValues;
-
-    FullNode (V value, Object[] a){
-      super(value);
-      nodesOrValues = a;
-    }
           
-    FullNode(V value, Object[] a31, int idx, Object o){
-      super(value);
-      
+    FullNode( Object[] a32){
+      nodesOrValues = a32;
+    }
+    
+    FullNode( Object[] a31, int idx, Object o){      
       Object[] nv = new Object[32];
       
       if (idx > 0){
@@ -695,14 +721,11 @@ public class ImmutableObjectTable<V> {
       nodesOrValues = nv;
     }
     
-    protected final Node<V> cloneWithValue(V newValue){
-      return new FullNode<V>( newValue, nodesOrValues);
-    }
     
     private final Node<V> cloneWithReplacedNodeOrValue(int idx, Object o){
       Object[] a = nodesOrValues.clone();
       a[idx] = o;
-      return new FullNode<V>(value, a);
+      return new FullNode<V>(a);
     }
     
     private final Node<V> cloneWithoutNodeOrValue(int idx){
@@ -716,79 +739,96 @@ public class ImmutableObjectTable<V> {
         System.arraycopy(nodesOrValues, idx+1, a, idx, 31-idx);
       }
       
-      return new BitmapNode<V>( value, bitmap, a);
+      return new BitmapNode<V>( bitmap, a);
+    }
+    
+    public V getNodeValue() {
+      Object o = nodesOrValues[0];
+      if ((o instanceof Node)) {
+        return ((Node<V>) o).getNodeValue();
+      } else {
+        return (V) o;
+      }
+    }
+    
+    public Node<V> assocNodeValue (V value, Result<V> result){
+      Object o = nodesOrValues[0];
+      if (o instanceof Node) {
+        Node<V> node = (Node<V>) o;
+        node = node.assocNodeValue(value, result);
+        if (node == o) {
+          return this;
+        } else {
+          return cloneWithReplacedNodeOrValue(0, node);
+        }
+
+      } else {
+        if (o == value) {
+          return this;
+        } else {
+          result.replacedValue((V) o);
+          return cloneWithReplacedNodeOrValue(0, value);
+        }
+      }
     }
     
     public Node<V> assoc(int shift, int finalShift, int key, V value, Result<V> result) {
       int idx = (key>>>shift) & 0x01f;
       
-      Object o = nodesOrValues[idx];
       // this is a full node, so we don't have to check if we have a node or value
+      Object o = nodesOrValues[idx];
       
-      if (o instanceof Node){ // we had a node for this index
+      if (o instanceof Node){
         Node<V> node = (Node<V>)o;
-        if (shift == finalShift){
-          if (node.value == value){
-            return this;
-          } else {
-            result.oldValue = node.value;
-            node = node.cloneWithValue( value);
-            return cloneWithReplacedNodeOrValue(idx, node);
-          }
+        node = (shift == finalShift) ?  node.assocNodeValue(value, result) :
+                      node.assoc( shift + SHIFT_INC, finalShift, key, value, result);
+        if (node == o) { // nothing changed
+          return this;
         } else {
-          node = node.assoc(shift +SHIFT_INC, finalShift, key, value, result);
-          if (node == o) { // nothing added by children
-            return this;
-          } else {
-            return cloneWithReplacedNodeOrValue(idx, node);
-          }
+          return cloneWithReplacedNodeOrValue(idx, node);
         }
 
-      } else { // we have a previous value for this index
-        V currentValue = (V)o;
-        if (shift == finalShift){
-          if (currentValue == value) {
-            return this; // nothing to do, the value is already there
-          } else {
-            result.oldValue = currentValue;
+      } else { // a value at this index
+        V v = (V)o;
+        if (shift == finalShift){ // leaf level, check value
+          if (value == v){ // it's already there
+            return this;
+          } else { // replace value
+            result.replacedValue(v);
             return cloneWithReplacedNodeOrValue( idx, value);
           }
-
-        } else { // this is not the leaf level, promote value to node
+          
+        } else { // not at value level, we need to replace the value with a Node
           result.changeCount++;
-          Node<V> node = createNode(shift +SHIFT_INC, finalShift, key, value, currentValue);
-          return cloneWithReplacedNodeOrValue(idx, node);
+          Node<V> node = createNode( shift + SHIFT_INC, finalShift, key, value, v);
+          return cloneWithReplacedNodeOrValue( idx, node);            
         }
       }
     }
 
     public V find (int shift, int finalShift, int key) {
-      int idx = (key>>>shift) & 0x01f;
-      boolean isAtLeafLevel = shift == 0;
-      
+      int idx = (key>>>shift) & 0x01f;      
       Object o = nodesOrValues[idx];
       
-      if (isAtLeafLevel){
-        if (o instanceof Node){
-          return ((Node<V>)o).value;
+      if (o instanceof Node){ // recurse down
+        Node<V> node = (Node<V>)o;
+        
+        if (shift == finalShift){ // at leaf level
+          return node.getNodeValue();
         } else {
-          return (V)o;
+          return node.find( shift+SHIFT_INC, finalShift, key);
         }
         
       } else {
-        if (o instanceof Node){
-          return ((Node<V>)o).find(shift+5, finalShift, key);
+        if (shift == finalShift){
+          return (V)o;
         } else {
           return null;
-        }        
+        }
       }
     }
 
-    public void process (Processor<V> proc) {
-      if (value != null){
-        proc.process(value);
-      }
-      
+    public void process (Processor<V> proc) {      
       for (int i=0; i<32; i++){
         Object o=nodesOrValues[i];
         if (o instanceof Node){
@@ -796,6 +836,25 @@ public class ImmutableObjectTable<V> {
         } else {
           proc.process( (V)o);
         }
+      }
+    }
+     
+    public Node<V> removeNodeValue (Result<V> result){
+      Object o = nodesOrValues[0];
+      if (o instanceof Node) {
+        Node<V> node = (Node<V>)o;
+        node = node.removeNodeValue(result);
+        if (node == null) {
+          return cloneWithoutNodeOrValue( 0);
+        } else if (node != o) {
+          return cloneWithReplacedNodeOrValue(0,node);
+        } else {
+          return this;
+        }
+        
+      } else { // we had a value at index 0
+        result.removedValue((V)o);
+        return cloneWithoutNodeOrValue( 0);
       }
     }
     
@@ -806,70 +865,50 @@ public class ImmutableObjectTable<V> {
       
       if (o instanceof Node){
         Node<V> node = (Node<V>)o;
-        if (shift == finalShift){
-          if (node.value != null){
-            result.changeCount--;
-            result.oldValue = node.value;
-            node = node.cloneWithValue(null);
-            return cloneWithReplacedNodeOrValue(idx, node);
-          } else {
-            return this; // nothing to remove
-          }
-          
-        } else { // not at leaf level, recurse down
-          node = node.remove( shift + SHIFT_INC, finalShift, key, result);
-          if (node == o){
-            return this; // nothing got removed
-          } else {
-            if (node == null){
-              return cloneWithoutNodeOrValue(idx);
-            } else {
-              return cloneWithReplacedNodeOrValue(idx, node);
-            }
-          }
+        node = (shift == finalShift) ? node.removeNodeValue(result) :
+                          node.remove(shift +SHIFT_INC, finalShift, key, result);
+        if (node == null) {
+          return cloneWithoutNodeOrValue( idx);
+        } else if (node == o) {
+          return this;
+        } else {
+          return cloneWithReplacedNodeOrValue(idx, node);            
         }
         
-      } else { // remove value
-        V currentValue = (V)o;
-        if (shift == finalShift){
-          result.changeCount--;
-          result.oldValue = currentValue;
+      } else { // we have a value for this index
+        if (shift == finalShift) {
+          result.removedValue((V)o);
           return cloneWithoutNodeOrValue(idx);
         } else {
-          return this; // nothing to remove
+          return this; // key is not in this map
         }
       }
     }
     
-    public Object removeAllSatisfying (Predicate<V> pred, Result<V> result){
+    public Node<V> removeAllSatisfying (Predicate<V> pred, Result<V> result){
       Object[] nv = nodesOrValues;
       Object[] a = null; // deferred initialized
-      V newValue = value;
-      
-      //--- check if our own value got removed
-      if (value != null && pred.isTrue(value)){
-        result.changeCount--;
-        newValue = null;
-      }
-      
+            
       //--- check which nodesOrValues are affected and create bitmap
       int newBitmap = 0;
       int bit = 1;
       for (int i=0; i<nv.length; i++) {
         Object o = nv[i];
         if (o instanceof Node){ // a node
-          Object v = ((Node<V>)o).removeAllSatisfying(pred, result);
-          if (v != o){ // node got removed
+          Node<V> node = (Node<V>)o;
+          node = node.removeAllSatisfying(pred, result);
+          if (node != o){ // node got removed
             if (a == null){
               a = nv.clone();
             }
-            a[i] = v;
+            a[i] = node;
           }
-          if (v != null){
+          if (node != null){
             newBitmap |= bit;
           }
         } else { // a value
-          if (pred.isTrue((V)o)){ // value got removed
+          V v = (V)o;
+          if (pred.isTrue(v)){ // value got removed
             if (a == null){
               a = nv.clone();
             }
@@ -884,23 +923,19 @@ public class ImmutableObjectTable<V> {
       
       //--- now figure out what we have to return
       if (a == null){ // no nodesOrValues got changed
-        if (newValue == value){ // value didn't get removed
-          return this; 
-        } else {
-          return cloneWithValue(newValue);
-        }
+        return this;
         
       } else { // nodesOrValues got changed, we need to compact
         int newLen= Integer.bitCount(newBitmap);
 
-        if (newLen == 0){ // nothing left of this node, but maybe its still a value
-          return newValue;
+        if (newLen == 0){ // nothing left of this node
+          return null;
           
         } else if (newLen == 1){ // reduce node
           // since this was a FullNode, a started at index 0
           int idx = Integer.numberOfTrailingZeros(newBitmap);
           Object o=a[idx];
-          return new OneNode<V>( newValue, idx, o);
+          return new OneNode<V>( idx, o);
           
         } else { // a BitmapNode
           Object[] newNodesOrValues = new Object[newLen];
@@ -912,7 +947,7 @@ public class ImmutableObjectTable<V> {
             }
           }
           
-          return new BitmapNode<V>( newValue, newBitmap, newNodesOrValues);
+          return new BitmapNode<V>( newBitmap, newNodesOrValues);
         }
       }
     }
@@ -945,10 +980,21 @@ public class ImmutableObjectTable<V> {
     if (shift == finalShift){
       o = value;
     } else {
-      o = createNode( shift + SHIFT_INC, finalShift, key, value, (V)null);
+      o = createNode( shift + SHIFT_INC, finalShift, key, value, 
+                      ((idx == 0) ? nodeValue : null));
     }
     
-    return new OneNode<V>( nodeValue, idx, o);
+    if (nodeValue != null) {
+      Object[] nodesOrValues = new Object[2];
+      nodesOrValues[0] = nodeValue;
+      nodesOrValues[1] = o;
+      int bitmap = (1 << idx) | 1;
+      
+      return new BitmapNode<V>(bitmap, nodesOrValues);
+      
+    } else {
+      return new OneNode<V>( idx, o);
+    }
   }
 
   static <V> Node<V> createAndMergeNode (int shift, int finalShift, int key, V value, Node<V> mergeNode){
@@ -966,13 +1012,13 @@ public class ImmutableObjectTable<V> {
     nodesOrValues[1] = o;
     int bitmap = (1 << idx) | 1;
     
-    return new BitmapNode<V>(null, bitmap, nodesOrValues);
+    return new BitmapNode<V>(bitmap, nodesOrValues);
   }
   
   static <V> Node<V> propagateMergeNode (int shift, int nodeShift, Node<V> node){
     shift += SHIFT_INC;
     while (shift > nodeShift){
-      node = new OneNode<V>(null, 0, node);
+      node = new OneNode<V>(0, node);
       shift += SHIFT_INC;
     }
     
@@ -991,7 +1037,7 @@ public class ImmutableObjectTable<V> {
   }
   
   static int getFinalShift (int key) {
-    if ((key & 0x1f) != 0)       return 0;
+    if ((key & 0x1f) < 32)       return 0;
     if ((key & 0x3e0) != 0)      return 5;
     if ((key & 0x7c00) != 0)     return 10;
     if ((key & 0xf8000) != 0)    return 15;

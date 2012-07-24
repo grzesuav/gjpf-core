@@ -77,134 +77,56 @@ public class ImmutableObjectTableTest extends TestJPF {
   @Test
   public void testInsert() {
     ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
+    
+    System.out.println("------------ 0");
+    t = insert( t, 0);
+    
+    
+    System.out.println("\n------------ 1, 32, 33");
+    t = new ImmutableObjectTable<Integer>();
     t = insert( t, 1);
     t = insert( t, 32);
     t = insert( t, 33);
+    assertTrue( t.size() == 3);
+
+    System.out.println("\n------------ 0x18001, 0x18000");
+    t = new ImmutableObjectTable<Integer>();
+    t = insert( t, 0x18001);
+    t = insert( t, 0x18000);
+    assertTrue( t.size() == 2);
   }
   
-  @Test
-  public void testSimpleInsertL6() {
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
-
-    t = t.set(1, 1);
-    dump(t, new IntegerProcessor());
-    t = t.set(20, 20);
-    dump(t, new IntegerProcessor());
-    
-    t.printOn(System.out);
-    
-    assertTrue( t.size() == 2);
-    assertTrue( t.get(1) == 1);
-    assertTrue( t.get(20) == 20);
-    assertTrue( t.get(42) == null);
-  }
-
-  @Test
-  public void testSimpleInsertL5(){
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
-    
-    t = t.set(42,42);
-    
-    dump(t, new IntegerProcessor());
-    assertTrue( t.size() == 1);
-    assertTrue( t.get(42) == 42);
-  }
-  
-  @Test
-  public void testSimpleInsertL6L5() {
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
-
-    t = t.set(1, 1);
-    dump(t, new IntegerProcessor());
-    t = t.set(42, 42);
-    dump(t, new IntegerProcessor());
-    
-    assertTrue( t.size() == 2);
-    assertTrue( t.get(1) == 1);
-    assertTrue( t.get(42) == 42);
-    assertTrue( t.get(420) == null);
-  }
-  
-
-  @Test
-  public void testInsertL6L4() {
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
-
-    t = t.set(1, 1);
-    dump(t, new IntegerProcessor());
-    t = t.set(16384, 16384);
-    dump(t, new IntegerProcessor());
-    
-    assertTrue( t.size() == 2);
-    assertTrue( 1 == t.get(1));
-    assertTrue( 16384 == t.get(16384));
-    assertTrue( t.get(42) == null);
-  }
-
-  @Test
-  public void testInsertL4L6() {
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
-
-    t = t.set(16384, 16384);
-    dump(t, new IntegerProcessor());
-    t = t.set(1, 1);
-    dump(t, new IntegerProcessor());
-    
-    assertTrue( t.size() == 2);
-    assertTrue( 1 == t.get(1));
-    assertTrue( 16384 == t.get(16384));
-    assertTrue( t.get(42) == null);
-  }
-
-  @Test
-  public void testInsertL6L5() {
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
-
-    t = t.set(1, 1);
-    dump(t, new IntegerProcessor());
-    t = t.set(42, 42);
-    dump(t, new IntegerProcessor());
-    
-    assertTrue( t.size() == 2);
-    assertTrue( t.get(1) == 1);
-    assertTrue( t.get(42) == 42);
-    assertTrue( t.get(420) == null);
-  }
-
-  
-  @Test
-  public void testValueToNodePromotion(){
-    ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
-    
-    t = t.set(1,1);
-    t = t.set(33,33);
-    
-    dump(t, new IntegerProcessor());
-    
-    assertTrue( t.get(33) == 33);
-    assertTrue( t.get(42) == null);
-  }
 
   @Test
   public void testFullNode(){
+    
+    System.out.println("\n-------------- BitmapNode[0..30]");
     ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
     for (int i=0; i<31; i++){
       t = t.set(i,  new Integer(i));
     }
     dump(t, new IntegerProcessor());
+    t.printOn(System.out);
     assertTrue( t.size() == 31);
    
+    
+    System.out.println("\n-------------- FullNode[0..31]");
     t = t.set(31,31); // that should promote to full node
     assertTrue( t.size() == 32);
     dump(t, new IntegerProcessor());
+    t.printOn(System.out);
 
+    System.out.println("\n-------------- set value[31] = -31");
     t = t.set(31, -31);
     assertTrue( t.size() == 32);
     assertTrue( t.get(31) == -31);
     dump(t, new IntegerProcessor());
+    t.printOn(System.out);
     
+    System.out.println("\n-------------- remove 31");
     t = t.remove(31); // reduce full node again
     dump(t, new IntegerProcessor());
+    t.printOn(System.out);
     assertTrue( t.size() == 31);
   }
   
@@ -234,17 +156,21 @@ public class ImmutableObjectTableTest extends TestJPF {
   }
 
   @Test
-  public void testSimpleRemove(){
+  public void testRemove(){
     ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
     
     t = t.set(42,42);
     dump(t, new IntegerProcessor());
+    t.printOn(System.out);
+
     assertTrue( t.size() == 1);
     ImmutableObjectTable<Integer> tt = t.remove(12345); // should not remove anything
     assertTrue( t == tt);
-    
+
+    System.out.println("\n--------- remove 42");
     t = t.remove(42);
     dump(t, new IntegerProcessor());
+    t.printOn(System.out);
     assertTrue( t.size() == 0);    
   }
   
@@ -286,10 +212,11 @@ public class ImmutableObjectTableTest extends TestJPF {
   @Test
   public void testLargeTable() {
     long t1, t2;
-    int N = 2000; // table size
+    int N = 20000; // table size
     int M = 5000000; // lookup
 
     //--- create
+    System.out.println("-------- creating table with " + N + " entries");
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
     ImmutableObjectTable<Integer> t = new ImmutableObjectTable<Integer>();
@@ -300,14 +227,18 @@ public class ImmutableObjectTableTest extends TestJPF {
     System.out.println("creation: " + (t2 - t1));
     assertTrue(t.size() == N);
 
+    System.out.println("-------- retrieving each entry");
+    Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
     for (int i=0; i<N; i++){
       Object v = t.get(i);
-      assertTrue(("lookup failed for index: " + i + ", got " + v), v != null);
+      assertTrue( v != null);
     }
     t2 = System.currentTimeMillis();
     System.out.println("lookup: " + (t2 - t1));
     
+    System.out.println("-------- removing each entry");
+    Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
     for (int i=0; i<N; i++){
        t = t.remove(i);
