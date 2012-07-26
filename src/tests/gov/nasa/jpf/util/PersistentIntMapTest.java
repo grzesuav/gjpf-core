@@ -29,7 +29,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 /**
  * regression test for ImmutableObjectTable
  */
-public class PersistentMsbIntMapTest extends TestJPF {
+public class PersistentIntMapTest extends TestJPF {
 
   //--- test  
   static class IntegerProcessor implements Processor<Integer>{
@@ -46,17 +46,23 @@ public class PersistentMsbIntMapTest extends TestJPF {
       return count;
     }
   }
+  
+  static PersistentIntMap<Integer> createPersistentIntMap(){
+    return new PersistentMsbIntMap<Integer>();
+  }
 
-  static <T> void dump (PersistentMsbIntMap<T> t, Processor<T> proc){
+  static <T> void dump (PersistentIntMap<T> t, Processor<T> proc){
     System.out.print( "size=");
     System.out.print(t.size());
-    System.out.print(", rsh=" + t.rootShift);
+    if (t instanceof PersistentMsbIntMap){
+      System.out.print(", rsh=" + ((PersistentMsbIntMap)t).rootShift);
+    }
     System.out.print(", values={");
     t.process( proc); 
     System.out.println('}');    
   }
 
-  static <T> void dumpInKeyOrder (PersistentMsbIntMap<T> t, Processor<T> proc){
+  static <T> void dumpInKeyOrder (PersistentIntMap<T> t, Processor<T> proc){
     System.out.print( "size=");
     System.out.print(t.size());
     System.out.print(", values={");
@@ -64,7 +70,7 @@ public class PersistentMsbIntMapTest extends TestJPF {
     System.out.println('}');    
   }
 
-  PersistentMsbIntMap<Integer> insert (PersistentMsbIntMap<Integer> t, int key){
+  PersistentIntMap<Integer> insert (PersistentIntMap<Integer> t, int key){
     System.out.println();
     System.out.printf("--- add %d:\n", key);
     t = t.set( key, key);
@@ -76,21 +82,21 @@ public class PersistentMsbIntMapTest extends TestJPF {
   
   @Test
   public void testInsert() {
-    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
+    PersistentIntMap<Integer> t = createPersistentIntMap();
     
     System.out.println("------------ 0");
     t = insert( t, 0);
     
     
     System.out.println("\n------------ 1, 32, 33");
-    t = new PersistentMsbIntMap<Integer>();
+    t = createPersistentIntMap();
     t = insert( t, 1);
     t = insert( t, 32);
     t = insert( t, 33);
     assertTrue( t.size() == 3);
 
     System.out.println("\n------------ 0x18001, 0x18000");
-    t = new PersistentMsbIntMap<Integer>();
+    t = createPersistentIntMap();
     t = insert( t, 0x18001);
     t = insert( t, 0x18000);
     assertTrue( t.size() == 2);
@@ -101,7 +107,7 @@ public class PersistentMsbIntMapTest extends TestJPF {
   public void testFullNode(){
     
     System.out.println("\n-------------- BitmapNode[0..30]");
-    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
+    PersistentIntMap<Integer> t = createPersistentIntMap();
     for (int i=0; i<31; i++){
       t = t.set(i,  new Integer(i));
     }
@@ -132,7 +138,7 @@ public class PersistentMsbIntMapTest extends TestJPF {
   
   @Test
   public void testDenseInsert(){
-    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
+    PersistentIntMap<Integer> t = createPersistentIntMap();
     
     int max = 100;
     
@@ -157,14 +163,14 @@ public class PersistentMsbIntMapTest extends TestJPF {
 
   @Test
   public void testRemove(){
-    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
+    PersistentIntMap<Integer> t = createPersistentIntMap();
     
     t = t.set(42,42);
     dump(t, new IntegerProcessor());
     t.printOn(System.out);
 
     assertTrue( t.size() == 1);
-    PersistentMsbIntMap<Integer> tt = t.remove(12345); // should not remove anything
+    PersistentIntMap<Integer> tt = t.remove(12345); // should not remove anything
     assertTrue( t == tt);
 
     System.out.println("\n--------- remove 42");
@@ -176,13 +182,13 @@ public class PersistentMsbIntMapTest extends TestJPF {
   
   @Test
   public void testDenseRemove(){
-    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
+    PersistentIntMap<Integer> t = createPersistentIntMap();
     
     for (int i=0; i<42; i++){
       t = t.set(i,i);
     }    
     dump(t, new IntegerProcessor());
-    assertTrue( t.size == 42);
+    assertTrue( t.size() == 42);
     
     for (int i=0; i<42; i++){
       t = t.remove(i);
@@ -193,7 +199,7 @@ public class PersistentMsbIntMapTest extends TestJPF {
 
   @Test
   public void testInsertRemoveInsert(){
-    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
+    PersistentIntMap<Integer> t = createPersistentIntMap();
     
     t = t.set(42,42);
     dump(t, new IntegerProcessor());
@@ -219,7 +225,7 @@ public class PersistentMsbIntMapTest extends TestJPF {
     System.out.println("-------- creating table with " + N + " entries");
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
-    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
+    PersistentIntMap<Integer> t = createPersistentIntMap();
     for (int i=0; i<N; i++){
       t = t.set(i,  new Integer(i));
     }
@@ -271,11 +277,11 @@ public class PersistentMsbIntMapTest extends TestJPF {
   public void testBlockRemove(){
     int N = 150;
     
-    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();    
+    PersistentIntMap<Integer> t = createPersistentIntMap();    
     for (int i=0; i<N; i++){
       t = t.set(i,i);
     }
-    PersistentMsbIntMap<Integer> t0 = t;
+    PersistentIntMap<Integer> t0 = t;
 
     System.out.println("original table");
     dumpInKeyOrder(t, new IntegerProcessor());
@@ -295,11 +301,11 @@ public class PersistentMsbIntMapTest extends TestJPF {
     int M = 100000;
     long t1, t2;
     
-    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();    
+    PersistentIntMap<Integer> t = createPersistentIntMap();    
     for (int i=0; i<N; i++){
       t = t.set(i,i);
     }
-    PersistentMsbIntMap<Integer> t0 = t;
+    PersistentIntMap<Integer> t0 = t;
 
     System.out.println("original table");
     //dumpInKeyOrder(t, new IntegerProcessor());
@@ -314,7 +320,7 @@ public class PersistentMsbIntMapTest extends TestJPF {
       t = t0.removeAllSatisfying(pred); 
     }
     t2 = System.currentTimeMillis();
-    System.out.printf("block remove of %d = %d\n", t.getSizeChange(), (t2 - t1));
+    System.out.printf("block remove of %d = %d\n", t0.size() - t.size(), (t2 - t1));
     
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
@@ -361,7 +367,7 @@ public class PersistentMsbIntMapTest extends TestJPF {
     //--- create
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
-    PersistentMsbIntMap<Integer> t = new PersistentMsbIntMap<Integer>();
+    PersistentIntMap<Integer> t = createPersistentIntMap();
     for (int i=0; i<N; i++){
       t = t.set(i,  new Integer(i));
     }

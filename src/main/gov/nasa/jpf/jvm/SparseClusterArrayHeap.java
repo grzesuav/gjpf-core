@@ -204,7 +204,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     }
   }
 
-  public int newArray(String elementType, int nElements, ThreadInfo ti, String location) {
+  public int newArray(String elementType, int nElements, ThreadInfo ti, String allocLocation) {
     String type = "[" + elementType;
     ClassInfo ci = ClassInfo.getResolvedClassInfo(type);
 
@@ -237,7 +237,7 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
     return index;
   }
 
-  public int newObject(ClassInfo ci, ThreadInfo ti, String location) {
+  public int newObject(ClassInfo ci, ThreadInfo ti, String allocLocation) {
     // create the thing itself
     Fields f = ci.createInstanceFields();
     Monitor m = new Monitor();
