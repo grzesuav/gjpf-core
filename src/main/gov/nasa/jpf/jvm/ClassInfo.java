@@ -2512,10 +2512,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return new HashMap<String, MethodInfo>(0);
   }
 
+  /**
+   * It loads the class superclass and its interfaces, and it sets all the class
+   * data that depents on the superclass such as instance fields (their offsets
+   * is calculated based on superClass data)
+   */
   protected void resolveClass() {
-    classLoader.loadInterfaces(this);
-    // this is where we get recursive
-    superClass = classLoader.loadSuperClass(this, superClassName);
+    classLoader.resolveClass(this);
 
     computeInheritedAnnotations(superClass);
     resolveInstanceFields();

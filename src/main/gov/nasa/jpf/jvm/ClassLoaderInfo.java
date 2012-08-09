@@ -50,10 +50,15 @@ public class ClassLoaderInfo
   // Represents the locations where this classloader can load classes form
   protected ClassPath cp;
 
+  // The type of the corresponding class loader object
+  protected ClassInfo ci;
+
   // The area containing static fields and  classes
   protected StaticArea staticArea;
 
   protected boolean isSystemClassLoader = false;
+
+  protected boolean roundTripRequired = false;
 
   // Search global id, which is the basis for canonical order of classloaders
   protected int gid;
@@ -108,6 +113,8 @@ public class ClassLoaderInfo
     if(ei!=null) {
       ei.setIntField("clRef", gid);
       ei.setReferenceField("parent", parent.objRef);
+      ci = ei.getClassInfo();
+      setRoundTripRequired();
     }
   }
 
@@ -128,6 +135,13 @@ public class ClassLoaderInfo
   }
 
   /**
+   * Returns the type of the corresponding class loader object
+   */
+  public ClassInfo getClassInfo () {
+    return ci;
+  }
+
+  /**
    * Returns the object reference.
    */
   public int getClassLoaderObjectRef () {
@@ -143,6 +157,25 @@ public class ClassLoaderInfo
     }
 
     return gidManager.getNewId(vm.getSystemState(), tiExec, insn);
+  }
+
+  /**
+   * For optimizing the class loading mechanism, if the class loader class and the 
+   * classes of the whole parents hierarchy are descendant of URLClassLoader and 
+   * do not override the ClassLoader.loadClass() & URLClassLoader.findClass, resolving 
+   * the class is done natively within JPF
+   */
+  protected void setRoundTripRequired() {
+    roundTripRequired = parent.roundTripRequired || !this.hasOriginalLoadingImp();
+  }
+
+  private boolean hasOriginalLoadingImp() {
+    String signature = "(Ljava/lang/String;)Ljava/lang/Class;";
+    MethodInfo loadClass = ci.getMethod("loadClass" + signature, true);
+    MethodInfo findClass = ci.getMethod("findClass" + signature, true);
+  
+    return (loadClass.getClassName().equals("java.lang.ClassLoader") &&
+        findClass.getClassName().equals("java.net.URLClassLoader"));
   }
 
   public boolean isSystemClassLoader() {
@@ -238,6 +271,27 @@ public class ClassLoaderInfo
   }
 
   /**
+   * obtain ClassInfo from context that does not care about resolution, i.e.
+   * does not check for NoClassInfoExceptions
+   *
+   * @param className fully qualified classname to get a ClassInfo for
+   * @return null if class was not found
+   */
+  public ClassInfo tryGetResolvedClassInfo (String className){
+    try {
+      return getResolvedClassInfo(className);
+    } catch (ClassInfoException cx){
+      return null;
+    }
+  }
+
+  protected void resolveClass(ClassInfo ci) {
+    loadInterfaces(ci);
+    // this is where we get recursive
+    ci.superClass = loadSuperClass(ci, ci.superClassName);
+  }
+
+  /**
    * This method is only used in the case of non-systemClassLoaders. SystemClassLoader 
    * overrides this method.
    */
@@ -267,6 +321,7 @@ public class ClassLoaderInfo
       }
     }
   }
+
   protected ClassInfo invokeLoadClass(String cname) {
     // Check if the given class is already defined by this classloader
     ClassInfo ci = getDefinedClassInfo(cname);
@@ -316,21 +371,6 @@ public class ClassLoaderInfo
     frame.pushRef(sRef);
 
     ti.pushFrame(frame);
-  }
-
-  /**
-   * obtain ClassInfo from context that does not care about resolution, i.e.
-   * does not check for NoClassInfoExceptions
-   *
-   * @param className fully qualified classname to get a ClassInfo for
-   * @return null if class was not found
-   */
-  public ClassInfo tryGetResolvedClassInfo (String className){
-    try {
-      return getResolvedClassInfo(className);
-    } catch (ClassInfoException cx){
-      return null;
-    }
   }
 
   protected ClassInfo getDefinedClassInfo(String typeName){
