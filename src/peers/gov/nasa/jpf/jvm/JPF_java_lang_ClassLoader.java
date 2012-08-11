@@ -101,11 +101,7 @@ public class JPF_java_lang_ClassLoader {
 
     ClassLoaderInfo cl = ClassLoaderInfo.getCurrentSystemClassLoader();
 
-    ClassInfo ci = cl.tryGetResolvedClassInfo(cname);
-    if (ci == null){
-      env.throwException("java.lang.ClassNotFoundException", cname);
-      return MJIEnv.NULL;
-    }
+    ClassInfo ci = cl.getResolvedClassInfo(cname);
 
     if(!ci.isRegistered()) {
       ci.registerClass(env.getThreadInfo());

@@ -164,12 +164,8 @@ public class JPF_java_lang_Class {
                                                                        int clsNameRef) {
     String            clsName = env.getStringObject(clsNameRef);
     
-    ClassInfo ci = ClassInfo.tryGetResolvedClassInfo(clsName);
-    if (ci == null){
-      env.throwException("java.lang.ClassNotFoundException", clsName);
-      return MJIEnv.NULL;
-    }
-    
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+
     return getClassObject(env, ci);
   }
 

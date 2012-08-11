@@ -92,11 +92,7 @@ public class JPF_sun_net_www_protocol_http_Handler {
         if (map[i].matcher.matches(url)) {
           String clsName = map[i].clsName;
 
-          ClassInfo ci = ClassInfo.tryGetResolvedClassInfo(clsName);
-          if (ci == null) {
-            env.throwException("java.lang.ClassNotFoundException", clsName); // Hmm, maybe an IOException?
-            return MJIEnv.NULL;
-          }
+          ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
 
           // this might re-execute if there is a clinit
           int clsObjRef = JPF_java_lang_Class.getClassObject(env, ci);

@@ -1196,7 +1196,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     try {
       if (match == null){
         throw new ClassInfoException("the class, " + typeName + ", is not found in the classloader search path", 
-                                     "java.lang.NoClassDefFoundError", typeName);
+                                     "java.lang.ClassNotFoundException", typeName);
       }
 
       ClassFile cf = new ClassFile( typeName, match.getBytes());
@@ -2694,6 +2694,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     try {
       ci = (ClassInfo)super.clone();
+      cl.resolveClass(ci);
+
+      ci.uniqueId = -1;
+      ci.sei = null;
 
       ci.annotations = annotations;
 
@@ -2727,10 +2731,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ci.sFields = sFields.clone();
       ci.staticDataSize = staticDataSize;
 
-      if(superClass!=null) {
-        ci.superClass = cl.getResolvedClassInfo(superClass.getName());
-      }
-
       ci.enclosingClassName = enclosingClassName;
       ci.enclosingMethodName = enclosingMethodName;
 
@@ -2739,6 +2739,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         ci.innerClassNames[i] = innerClassNames[i];
       }
 
+      ci.superClassName = superClassName;
       ci.interfaceNames = interfaceNames;
       ci.allInterfaces = allInterfaces;
 

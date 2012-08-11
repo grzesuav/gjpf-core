@@ -1398,6 +1398,10 @@ public class MJIEnv {
    * reference
    */
   public ClassLoaderInfo getClassLoaderInfo(int clObjRef) {
+    if(clObjRef == MJIEnv.NULL) {
+      return null;
+    }
+
     int gid = heap.get(clObjRef).getIntField("clRef");
     return getVM().getClassLoader(gid);
   }

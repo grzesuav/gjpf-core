@@ -355,4 +355,76 @@ public class URLClassLoaderTest extends TestJPF {
     }
     movePkgBack();
   }
+
+  public class Standard extends URLClassLoader {
+    public Standard (URL[] urls) {
+      super(urls);
+    }
+
+    public Standard(URL[] urls, ClassLoader parent) {
+      super(urls, parent);
+    }
+  }
+
+  public class Costum extends URLClassLoader {
+    public Costum (URL[] urls) {
+      super(urls);
+    }
+    
+    public Costum(URL[] urls, ClassLoader parent) {
+      super(urls, parent);
+    }
+    
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+      return super.findClass(name);
+    }
+    
+    public Class<?> loadClass(String name) throws ClassNotFoundException {
+      return super.loadClass(name);
+    }
+  }
+    
+  @Test
+  public void testClassResolution1() throws MalformedURLException, ClassNotFoundException {
+    movePkgOut();
+    if (verifyNoPropertyViolation()) {
+      // create a url from a dir
+      URL[] urls = { new URL(dirUrl) };
+      String cname = pkg + ".Class1";
+      String objClass = "java.lang.Object";
+
+      Standard cl1 = new Standard(new URL[0]);
+      Standard cl2 = new Standard(urls, cl1);
+      Standard cl3 =  new Standard(urls, cl2);
+
+      Class<?> c = cl3.loadClass(cname);
+      assertEquals(c.getClassLoader(), cl2);
+
+      c = cl3.loadClass(objClass);
+      assertEquals(c.getClassLoader(), ClassLoader.getSystemClassLoader());
+
+      Costum cl4 = new Costum(urls, null);
+      Standard cl5 = new Standard(urls, cl4);
+
+      c = cl5.loadClass(cname);
+      assertEquals(c.getClassLoader(), cl4);
+      assertSame(c, cl4.loadClass(cname));
+
+      c = cl5.loadClass(objClass);
+      assertEquals(c.getClassLoader(), ClassLoader.getSystemClassLoader());
+      assertSame(c, cl4.loadClass(objClass));
+
+      cl4 = new Costum(urls, cl3);
+      cl5 = new Standard(urls, cl4);
+
+      c = cl5.loadClass(cname);
+      assertEquals(c.getClassLoader(), cl2);
+      assertSame(c, cl4.loadClass(cname));
+
+      c = cl5.loadClass(objClass);
+      assertEquals(c.getClassLoader(), ClassLoader.getSystemClassLoader());
+      assertSame(c, cl4.loadClass(objClass));
+    }
+    movePkgBack();
+  }
 }

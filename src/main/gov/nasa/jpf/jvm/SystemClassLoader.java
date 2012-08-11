@@ -52,7 +52,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
     super(vm, MJIEnv.NULL, null, null);
     setSystemClassPath();
     isSystemClassLoader = true;
-    ci = getResolvedClassInfo("java.lang.ClassLoader");
+    classInfo = getResolvedClassInfo("java.lang.ClassLoader");
   }
 
   /**
@@ -187,7 +187,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
 
     // now resolve all the entries in the list and queue the corresponding ClassInfos
     for (String clsName : startupClasses) {
-      ClassInfo ci = tryGetResolvedClassInfo(clsName);
+      ClassInfo ci = getResolvedClassInfo(clsName);
       if (ci != null) {
         registerStartupClass(ci);
       } else {

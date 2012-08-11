@@ -51,7 +51,7 @@ public class ClassLoaderInfo
   protected ClassPath cp;
 
   // The type of the corresponding class loader object
-  protected ClassInfo ci;
+  protected ClassInfo classInfo;
 
   // The area containing static fields and  classes
   protected StaticArea staticArea;
@@ -112,8 +112,10 @@ public class ClassLoaderInfo
     // class cannot be loaded before creating the systemClassLoader
     if(ei!=null) {
       ei.setIntField("clRef", gid);
-      ei.setReferenceField("parent", parent.objRef);
-      ci = ei.getClassInfo();
+      if(parent != null) {
+        ei.setReferenceField("parent", parent.objRef);
+      }
+      classInfo = ei.getClassInfo();
       setRoundTripRequired();
     }
   }
@@ -138,7 +140,7 @@ public class ClassLoaderInfo
    * Returns the type of the corresponding class loader object
    */
   public ClassInfo getClassInfo () {
-    return ci;
+    return classInfo;
   }
 
   /**
@@ -166,13 +168,14 @@ public class ClassLoaderInfo
    * the class is done natively within JPF
    */
   protected void setRoundTripRequired() {
-    roundTripRequired = parent.roundTripRequired || !this.hasOriginalLoadingImp();
+    roundTripRequired = (parent!=null? parent.roundTripRequired: true) 
+        || !this.hasOriginalLoadingImp();
   }
 
   private boolean hasOriginalLoadingImp() {
     String signature = "(Ljava/lang/String;)Ljava/lang/Class;";
-    MethodInfo loadClass = ci.getMethod("loadClass" + signature, true);
-    MethodInfo findClass = ci.getMethod("findClass" + signature, true);
+    MethodInfo loadClass = classInfo.getMethod("loadClass" + signature, true);
+    MethodInfo findClass = classInfo.getMethod("findClass" + signature, true);
   
     return (loadClass.getClassName().equals("java.lang.ClassLoader") &&
         findClass.getClassName().equals("java.net.URLClassLoader"));
@@ -216,11 +219,13 @@ public class ClassLoaderInfo
   public static ClassLoaderInfo getCurrentSystemClassLoader() {
     ClassLoaderInfo cl = getCurrentClassLoader();
 
-    while(!cl.isSystemClassLoader) {
-      cl = cl.parent;
+    ClassInfo ci = cl.getClassInfo();
+
+    while(!ci.getName().equals("java.lang.ClassLoader")) {
+      ci = ci.getSuperClass();
     }
 
-    return cl;
+    return ci.getClassLoaderInfo();
   }
 
   public ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {
@@ -286,6 +291,10 @@ public class ClassLoaderInfo
   }
 
   protected void resolveClass(ClassInfo ci) {
+    if(ClassInfo.isBuiltinClass(ci.getName()) || ci.isObjectClassInfo) {
+      return;
+    }
+
     loadInterfaces(ci);
     // this is where we get recursive
     ci.superClass = loadSuperClass(ci, ci.superClassName);
@@ -302,7 +311,7 @@ public class ClassLoaderInfo
 
     ClassInfo.logger.finer("resolving superclass: ", superName, " of ", ci.getName());
 
-    return invokeLoadClass(superName);
+    return loadClass(superName);
   }
 
   protected void loadInterfaces (ClassInfo ci) throws ClassInfoException {
@@ -317,14 +326,54 @@ public class ClassLoaderInfo
       }
 
       if(!loaded) {
-        ci.interfaces.add(invokeLoadClass(ifcName));
+        ci.interfaces.add(loadClass(ifcName));
       }
     }
   }
 
-  protected ClassInfo invokeLoadClass(String cname) {
+  protected ClassInfo loadClass(String cname) {
+    ClassInfo ci = null;
+    if(roundTripRequired) {
+      // loadClass bytecode needs to be executed by the JPF vm
+      ci = loadClassOnJPF(cname);
+    } else {
+      // This class loader and the whole parent hierarchy use the standard class loading
+      // mechanism, therefore the class is loaded natively
+      ci = loadClassOnJVM(cname);
+    }
+
+    return ci;
+  }
+
+  protected ClassInfo loadClassOnJVM(String cname) {
+    String className = Types.getClassNameFromTypeName(cname);
     // Check if the given class is already defined by this classloader
-    ClassInfo ci = getDefinedClassInfo(cname);
+    ClassInfo ci = getDefinedClassInfo(className);
+
+    if (ci == null) {
+      try {
+        if(parent != null) {
+          ci = parent.loadClassOnJVM(cname);
+        } else {
+          ClassLoaderInfo systemClassLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
+          ci = systemClassLoader.getResolvedClassInfo(cname);
+        }
+      } catch(ClassInfoException cie) {
+        if(cie.getExceptionClass().equals("java.lang.ClassNotFoundException")) {
+          ci = getResolvedClassInfo(cname);
+        } else {
+          throw cie;
+        }
+      }
+    }
+
+    return ci;
+  }
+
+  protected ClassInfo loadClassOnJPF(String cname) {
+    String className = Types.getClassNameFromTypeName(cname);
+    // Check if the given class is already defined by this classloader
+    ClassInfo ci = getDefinedClassInfo(className);
 
     // If the class is not among the defined classes of this classloader, then
     // do a round trip to execute the user code of loadClass(superName) 
