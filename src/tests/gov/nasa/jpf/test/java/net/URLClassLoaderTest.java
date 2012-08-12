@@ -385,7 +385,7 @@ public class URLClassLoaderTest extends TestJPF {
   }
     
   @Test
-  public void testClassResolution1() throws MalformedURLException, ClassNotFoundException {
+  public void testClassResolution() throws MalformedURLException, ClassNotFoundException {
     movePkgOut();
     if (verifyNoPropertyViolation()) {
       // create a url from a dir

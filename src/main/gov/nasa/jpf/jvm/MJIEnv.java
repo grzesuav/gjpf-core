@@ -1488,7 +1488,7 @@ public class MJIEnv {
       String eCls = ev.getEnumClassName();
       String eConst = ev.getEnumConstName();
 
-      ClassInfo eci = ClassInfo.tryGetResolvedClassInfo(eCls);
+      ClassInfo eci = ClassInfo.getResolvedClassInfo(eCls);
       if (!eci.isInitialized()){
         throw new ClinitRequired(eci);
       }

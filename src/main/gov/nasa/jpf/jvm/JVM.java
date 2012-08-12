@@ -467,9 +467,8 @@ public class JVM {
   }
 
   protected void registerThreadListCleanup(){
-    ClassInfo ciThread = ClassInfo.tryGetResolvedClassInfo("java.lang.Thread");
-    assert ciThread != null : "java.lang.Thread not loaded yet";
-    
+    ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
+
     ciThread.addReleaseAction( new ReleaseAction(){
       public void release(ElementInfo ei) {
         ThreadList tl = getThreadList();
