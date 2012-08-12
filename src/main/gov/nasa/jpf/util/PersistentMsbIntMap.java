@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.util;
 
+
 import java.io.PrintStream;
 
 /**
@@ -25,44 +26,8 @@ import java.io.PrintStream;
  * ordered in most significant bit order on top, so that consecutive key values are stored in the
  * same (terminal) nodes.
  */
-public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
-
-  static final int SHIFT_INC = -5; // msb first
+public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   
-  /**
-   * the abstract root class for all node types
-   */
-  protected abstract static class Node<V> implements Cloneable {
-    
-    abstract Node<V> assocNodeValue( V value, Result<V> result);
-    abstract Node<V> removeNodeValue (Result<V> result);
-    
-    abstract Node<V> assoc (int shift, int finalShift, int key, V value, Result<V> result);
-    abstract V find (int shift, int finalShift, int key);
-    abstract V getValue (int idx);
-    abstract Node<V> setValue (int idx, V value, Result<V> result);
-    abstract Node<V> remove (int shift, int finalShift, int key, Result<V> result);
-    abstract Node<V> removeAllSatisfying(Predicate<V> pred, Result<V> result);
-    abstract void process (Processor<V> proc);
-    abstract V getNodeValue();
-    
-    void printIndentOn (PrintStream ps, int level) {
-      for (int i=0; i<level; i++) {
-        ps.print("    ");
-      }
-    }
-    void printNodeInfoOn (PrintStream ps) {
-      String clsName = getClass().getSimpleName();
-      int idx = clsName.indexOf('$');
-      if (idx > 0) {
-        clsName = clsName.substring(idx+1);
-      }
-      ps.print(clsName);
-    }
-    abstract void printOn(PrintStream ps, int level);
-  }
-  
-
   /**
    * a node that has only one element and hence does not need an array.
    * This can also be the element at index 0, in which case this element
@@ -74,18 +39,39 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
    */
   protected static class OneNode<V> extends Node<V> {
     final int idx;
-    final Object nodeOrValue;
+    /*final*/ Object nodeOrValue;  // unfortunately we can't make it final because of setElement
     
     OneNode (int idx, Object o){
       this.idx = idx;
       this.nodeOrValue = o;
     }
-        
-    private final Node<V> cloneWithReplacedNodeOrValue( Object o){
+            
+    protected Object getElement (int levelIndex) {
+      if (levelIndex == idx) {
+        return nodeOrValue;
+      } else {
+        return null;
+      }
+    }
+    
+    /**
+     * danger - only use on already cloned nodes!
+     */
+    protected void setElement (int levelIndex, Object o) {
+      if (levelIndex == idx) {
+        nodeOrValue = o;
+      } else {
+        throw new RuntimeException("trying to set value of non-member element");
+      }
+    }
+
+    
+    protected Node<V> cloneWithReplacedElement( int oidx, Object o){
+      // assert oidx == idx
       return new OneNode<V>(idx, o);
     }
     
-    private final Node<V> cloneWithAddedNodeOrValue(int oIdx, Object o){
+    protected final Node<V> cloneWithAddedElement(int oIdx, Object o){
       Object[] a = new Object[2];
       
       if (oIdx < idx){
@@ -98,6 +84,10 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
       int bitmap = (1 << idx) | (1 << oIdx);
       
       return new BitmapNode<V>(bitmap, a);
+    }
+    
+    protected final Node<V> cloneWithoutElement (int levelIdx){
+      return null;
     }
         
     //--- Node interface
@@ -127,179 +117,6 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
         return null;
       }
     }
-    
-    Node<V> setValue (int idx, V value, Result<V> result) {
-      if (this.idx == idx) {
-        Object o = nodeOrValue;
-        if (o instanceof Node) {
-          Node<V> node = (Node<V>) o;
-          node = node.assocNodeValue(value, result);
-          if (node != o) {
-            return new OneNode<V>(idx, node);
-          } else {
-            return this;
-          }
-        } else { // replace value
-          V v = (V)o;
-          if (v == value) {
-            return this;
-          } else {
-            result.replacedValue(v);
-            return new OneNode<V>(idx, value);
-          }
-        }
-      } else {
-        result.addedValue(value);
-        return cloneWithAddedNodeOrValue( idx, value);
-      }
-    }
-    
-    public Node<V> assocNodeValue (V value, Result<V> result){
-      if (idx == 0) {
-        Object o = nodeOrValue;
-        if (o instanceof Node) {
-          Node<V> node = (Node<V>)o;
-          node = node.assocNodeValue(value, result);
-          if (node == o) {
-            return this;
-          } else {
-            return cloneWithReplacedNodeOrValue(node);
-          }
-          
-        } else {
-          if (o == value) {
-            return this;
-          } else {
-            result.replacedValue((V)o);
-            return cloneWithReplacedNodeOrValue(value);
-          }
-        }
-        
-      } else { // we don't have anything for index 0
-        result.addedValue(value);
-        return cloneWithAddedNodeOrValue(0, value);
-      }
-    }
-    
-    public Node<V> assoc (int shift, int finalShift, int key, V value, Result<V> result){
-      int idx = (key>>>shift) & 0x1f;
-      
-      if (idx == this.idx) { // do we already have something for this index?
-        Object o = nodeOrValue;
-        if (o instanceof Node) { // we already have a node for this index
-          Node<V> node = (Node<V>) o;
-          node = (shift == finalShift) ? node.assocNodeValue(value, result) :
-                              node.assoc(shift+SHIFT_INC, finalShift, key, value, result);
-          if (node == o) { // no change
-            return this;
-          } else {
-            return cloneWithReplacedNodeOrValue(node);
-          }
-        } else { // we had a value
-          if (shift == finalShift) {
-            if (o == value) { // no change
-              return this;
-            } else {
-              result.replacedValue((V)o);
-              return cloneWithReplacedNodeOrValue(value);
-            }
-          } else { // not at value level yet
-            result.addedValue(value);
-            Node<V> node = createNode(shift+SHIFT_INC, finalShift, key, value, (V)o);
-            return cloneWithReplacedNodeOrValue(node);
-          }
-        }
-        
-      } else { // nothing for this index yet
-        Object o = (shift == finalShift) ? value : 
-                             createNode(shift+SHIFT_INC, finalShift, key, value, null);
-        result.addedValue(value);
-        return cloneWithAddedNodeOrValue(idx, o);
-      }
-    }
-        
-    public V find (int shift, int finalShift, int key){
-      int idx = ((key>>>shift) & 0x01f);
-
-      if (idx == this.idx) { // we  have a node or value for this index
-        Object o = nodeOrValue;
-        
-        if (o instanceof Node){ // recurse down
-          Node<V> node = (Node<V>)o;
-          
-          if (shift == finalShift){ // at value level
-            return node.getNodeValue();
-          } else {
-            return node.find( shift + SHIFT_INC, finalShift, key);
-          }
-          
-        } else { // we have a value for this index
-          if (shift == finalShift){
-            return (V)o;
-          } else {
-            return null;
-          }
-        }
-        
-      } else {
-        return null;
-      }
-    }
-    
-    public Node<V> removeNodeValue (Result<V> result){
-      if (idx == 0) {
-        Object o = nodeOrValue;
-        if (o instanceof Node) {
-          Node<V> node = (Node<V>)o;
-          node = node.removeNodeValue(result);
-          if (node == null) {
-            return null;
-          } else if (node == o) {
-            return this;
-          } else {
-            return cloneWithReplacedNodeOrValue(node);
-          }
-          
-        } else { // we had a value
-          result.removedValue((V)o);
-          return null;
-        }
-      } else {
-        return this;
-      }
-    }
-    
-    public Node<V> remove (int shift, int finalShift, int key, Result<V> result){
-      int idx = ((key>>>shift) & 0x01f);
-      
-      if (idx == this.idx) { // we have a node or value for this index
-        Object o = nodeOrValue;
-        
-        if (o instanceof Node){
-          Node<V> node = (Node<V>)o;
-          node = (shift == finalShift) ?  node.removeNodeValue(result) :
-                             node.remove(shift +SHIFT_INC, finalShift, key, result);
-          if (node == null) { // nothing left
-            return null;
-          } else if (node == o) { // nothing changed
-            return this;
-          } else {
-            return cloneWithReplacedNodeOrValue(node);
-          }            
-          
-        } else { // we have a value for this index
-          if (shift == finalShift){
-            result.removedValue((V)o);
-            return null; // no child left
-          } else {
-            return this; // the key isn't in this map
-          }
-        }
-        
-      } else { // nothing stored for this key
-        return this;
-      }
-    }
 
     Node<V> removeAllSatisfying(Predicate<V> pred, Result<V> result) {
       Object o = nodeOrValue;
@@ -311,13 +128,13 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
         } else if (node == o) { // nothing changed
           return this;
         } else {
-          return cloneWithReplacedNodeOrValue(node);
+          return cloneWithReplacedElement(idx, node);
         }
         
       } else { // we had a value
         V v = (V)o;
         if (pred.isTrue(v)){
-          result.removedValue(v);
+          result.removedValue( null, v); // bulk op -> no use to keep track of nodeBase 
           return null;
         } else {
           return this;
@@ -325,9 +142,9 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
       }
     }
     
-    public void process (Processor<V> proc){
+    public void process (PersistentIntMap<V> map, Processor<V> proc){
       if (nodeOrValue instanceof Node){
-        ((Node<V>)nodeOrValue).process(proc);
+        map.processNode((Node<V>)nodeOrValue,proc);
       } else {
         proc.process((V)nodeOrValue);
       }
@@ -373,6 +190,29 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
       this.bitmap = bitmap;
       this.nodesOrValues = nodesOrValues;
     }
+        
+    protected Object getElement (int levelIndex) {
+      int bit = 1 << levelIndex;
+      if ((bitmap & bit) != 0) {
+        int idx = Integer.bitCount( bitmap & (bit-1));
+        return nodesOrValues[idx];
+      } else {
+        return null;
+      }
+    }
+
+    /**
+     * danger - only use on already cloned nodes!
+     */
+    protected void setElement (int levelIndex, Object o) {
+      int bit = 1 << levelIndex;
+      if ((bitmap & bit) != 0) {
+        int idx = Integer.bitCount( bitmap & (bit-1));
+        nodesOrValues[idx] = o;
+      } else {
+        throw new RuntimeException("trying to set value of non-member element");
+      }
+    }
     
     private final Object[] cloneArrayWithReplaced (int idx, Object o){
       Object[] a = nodesOrValues.clone();
@@ -415,11 +255,14 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
 
     //--- these are here to support changing the concrete Node type based on population
     
-    private final Node<V> cloneWithReplacedNodeOrValue (int idx, Object o){
+    protected Node<V> cloneWithReplacedElement (int levelIdx, Object o){
+      int idx = Integer.bitCount( bitmap & ((1<<levelIdx) -1));
       return new BitmapNode<V>( bitmap, cloneArrayWithReplaced(idx, o));
     }
 
-    private final Node<V> cloneWithAddedNodeOrValue (int bit, int idx, Object o){
+    protected final Node<V> cloneWithAddedElement (int levelIdx, Object o){
+      int bit = 1 << levelIdx;
+      int idx = Integer.bitCount( bitmap & (bit -1));
       if (nodesOrValues.length == 31){
         return new FullNode<V>( nodesOrValues, idx, o); 
       } else {
@@ -427,7 +270,10 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
       }
     }
     
-    private final Node<V> cloneWithoutNodeOrValue (int bit, int idx){
+    protected final Node<V> cloneWithoutElement (int levelIdx){
+      int bit = (1<<levelIdx);
+      int idx = Integer.bitCount( bitmap & (bit-1));
+      
       if (nodesOrValues.length == 2){
         Object o = (idx == 0) ? nodesOrValues[1] : nodesOrValues[0];
         int i = Integer.numberOfTrailingZeros(bitmap ^ bit);
@@ -452,82 +298,6 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
       }
     }
     
-    public Node<V> assocNodeValue (V value, Result<V> result){
-      if ((bitmap & 1) != 0) {
-        Object o = nodesOrValues[0];
-        if (o instanceof Node) {
-          Node<V> node = (Node<V>)o;
-          node = node.assocNodeValue(value, result);
-          if (node == o) {
-            return this;
-          } else {
-            return cloneWithReplacedNodeOrValue(0, node);
-          }
-          
-        } else {
-          if (o == value) {
-            return this;
-          } else {
-            result.replacedValue((V)o);
-            return cloneWithReplacedNodeOrValue(0, value);
-          }
-        }
-        
-      } else { // we don't have anything for index 0
-        result.addedValue(value);
-        return cloneWithAddedNodeOrValue(1, 0, value);
-      }
-    }
-
-            
-    public Node<V> assoc (int shift, int finalShift, int key, V value, Result<V> result){
-      int bit = 1 << ((key>>>shift) & 0x1f); // bitpos = index into bitmap
-      
-      int idx = Integer.bitCount( bitmap & (bit -1));
-
-      if ((bitmap & bit) != 0) { // we already have an entry for this index
-        Object o = nodesOrValues[idx];
-        
-        if (o instanceof Node){ // we already have a node
-          Node<V> node = (Node<V>)o;
-          node = (shift == finalShift) ?  node.assocNodeValue(value, result) :
-                        node.assoc( shift + SHIFT_INC, finalShift, key, value, result);
-          if (node == o) { // nothing changed
-            return this;
-          } else {
-            return cloneWithReplacedNodeOrValue(idx, node);
-          }
-
-        } else { // we already have a value
-          V v = (V)o;
-          if (shift == finalShift){ // value level, check value
-            if (value == v){ // it's already there
-              return this;
-            } else { // replace value
-              result.replacedValue(v);
-              return cloneWithReplacedNodeOrValue( idx, value);
-            }
-            
-          } else { // not at value level, we need to replace the value with a Node
-            result.addedValue(value);
-            Node<V> node = createNode( shift + SHIFT_INC, finalShift, key, value, v);
-            return cloneWithReplacedNodeOrValue( idx, node);            
-          }
-        }
-
-      } else { // neither child node nor value for this bit yet
-        result.addedValue(value);
-        
-        if (shift == finalShift){ // we can directly store it as a value
-          return cloneWithAddedNodeOrValue( bit, idx, value);
-          
-        } else { // needs to be a node
-          Node<V> node = createNode( shift + SHIFT_INC, finalShift, key, value, null);
-          return cloneWithAddedNodeOrValue( bit, idx, node);          
-        }
-      }      
-    }
-    
     V getValue (int index){
       int bit = 1 << index;
       if ((bitmap & bit) != 0){
@@ -542,122 +312,7 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
         return null;
       }
     }
-    
-    Node<V> setValue (int index, V value, Result<V> result) {
-      int bit = 1 << index;
-      if ((bitmap & bit) != 0){
-        int idx = Integer.bitCount( bitmap & (bit -1));
-        Object o = nodesOrValues[idx];
-        if (o instanceof Node) {
-          Node<V> node = (Node<V>) o;
-          node = node.assocNodeValue(value, result);
-          if (node == o) {
-            return this;
-          } else {
-            return cloneWithReplacedNodeOrValue(idx, node);
-          }
-          
-        } else { // replace value
-          V v = (V) o;
-          if (v == value) {
-            return this;
-          } else {
-            result.replacedValue(v);
-            return cloneWithReplacedNodeOrValue(idx, value);
-          }
-        }
-      } else {
-        int idx = Integer.bitCount((bitmap | bit) & (bit -1));
-        result.addedValue(value);
-        return cloneWithAddedNodeOrValue(bit, idx, value);
-      }
-    }
-    
-    public V find (int shift, int finalShift, int key){
-      int bit = 1 << ((key>>>shift) & 0x1f); // bitpos = index into bitmap
-      
-      if ((bitmap & bit) != 0) { // we  have a node or value for this index
-        int idx = Integer.bitCount( bitmap & (bit -1));
-        Object o = nodesOrValues[idx];
         
-        if (o instanceof Node){ // recurse down
-          Node<V> node = (Node<V>)o;
-          
-          if (shift == finalShift){ // at leaf level
-            return node.getNodeValue();
-          } else {
-            return node.find( shift+SHIFT_INC, finalShift, key);
-          }
-          
-        } else {
-          if (shift == finalShift){
-            return (V)o;
-          } else {
-            return null;
-          }
-        }
-        
-      } else {
-        return null;
-      }
-    }
-    
-    public Node<V> removeNodeValue (Result<V> result){
-      if ((bitmap & 1) != 0) {
-        Object o = nodesOrValues[0];
-        if (o instanceof Node) {
-          Node<V> node = (Node<V>)o;
-          node = node.removeNodeValue(result);
-          if (node == null) {
-            return cloneWithoutNodeOrValue(1, 0);
-          } else if (node != o) {
-            return cloneWithReplacedNodeOrValue(0,node);
-          } else {
-            return this;
-          }
-          
-        } else { // we had a value at index 0
-          result.removedValue((V)o);
-          return cloneWithoutNodeOrValue(1, 0);
-        }
-      } else {
-        return this;
-      }
-    }
-    
-    public Node<V> remove (int shift, int finalShift, int key, Result<V> result){
-      int bit = 1 << ((key>>>shift) & 0x1f); // bitpos = index into bitmap
-      
-      if ((bitmap & bit) != 0) { // we have a node or value for this index
-        int idx = Integer.bitCount( bitmap & (bit -1));
-        Object o = nodesOrValues[idx];
-        
-        if (o instanceof Node){
-          Node<V> node = (Node<V>)o;
-          node = (shift == finalShift) ? node.removeNodeValue(result) :
-                            node.remove(shift +SHIFT_INC, finalShift, key, result);
-          if (node == null) {
-            return cloneWithoutNodeOrValue( bit, idx);
-          } else if (node == o) {
-            return this;
-          } else {
-            return cloneWithReplacedNodeOrValue(idx, node);            
-          }
-          
-        } else { // we have a value for this index
-          if (shift == finalShift) {
-            result.removedValue((V)o);
-            return cloneWithoutNodeOrValue( bit, idx);
-          } else {
-            return this; // key is not in this map
-          }
-        }
-        
-      } else { // nothing stored for this key
-        return this;
-      }
-    }
-    
     public Node<V> removeAllSatisfying (Predicate<V> pred, Result<V> result){
       Object[] nv = nodesOrValues;
       Object[] a = null; // deferred initialized
@@ -691,7 +346,7 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
             if (a == null){
               a = nv.clone();
             }
-            result.removedValue(v);
+            result.removedValue( this, v);
             a[i] = null;
             newBitmap ^= bit;
           }
@@ -729,12 +384,11 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
       }
     }
     
-    
-    public void process (Processor<V> proc){
+    public void process (PersistentIntMap<V> map, Processor<V> proc){
       for (int i=0; i<nodesOrValues.length; i++){
         Object o = nodesOrValues[i];
         if (o instanceof Node){
-          ((Node<V>)o).process(proc);
+          map.processNode((Node<V>)o,proc);
         } else {
           proc.process((V)o);
         }
@@ -742,7 +396,6 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
     }
     
     public void printOn (PrintStream ps, int level) {
-      
       int j=0;
       for (int i=0; i<32; i++) {
         if ((bitmap & (1<<i)) != 0) {
@@ -791,14 +444,29 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
       nodesOrValues = nv;
     }
     
+    protected Object getElement (int levelIndex) {
+      return nodesOrValues[levelIndex];
+    }
     
-    private final Node<V> cloneWithReplacedNodeOrValue(int idx, Object o){
+    /**
+     * danger - only use on already cloned nodes!
+     */
+    protected void setElement (int levelIndex, Object o) {
+      nodesOrValues[levelIndex] = o;
+    }
+
+    
+    protected Node<V> cloneWithReplacedElement(int idx, Object o){
       Object[] a = nodesOrValues.clone();
       a[idx] = o;
       return new FullNode<V>(a);
     }
     
-    private final Node<V> cloneWithoutNodeOrValue(int idx){
+    protected Node<V> cloneWithAddedElement (int idx, Object o){
+      throw new RuntimeException("can't add elements to FullNode");
+    }
+    
+    protected final Node<V> cloneWithoutElement(int idx){
       Object[] a = new Object[31];
       int bitmap = 0xffffffff ^ (1 << idx);
       
@@ -821,61 +489,6 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
       }
     }
     
-    public Node<V> assocNodeValue (V value, Result<V> result){
-      Object o = nodesOrValues[0];
-      if (o instanceof Node) {
-        Node<V> node = (Node<V>) o;
-        node = node.assocNodeValue(value, result);
-        if (node == o) {
-          return this;
-        } else {
-          return cloneWithReplacedNodeOrValue(0, node);
-        }
-
-      } else {
-        if (o == value) {
-          return this;
-        } else {
-          result.replacedValue((V) o);
-          return cloneWithReplacedNodeOrValue(0, value);
-        }
-      }
-    }
-    
-    public Node<V> assoc(int shift, int finalShift, int key, V value, Result<V> result) {
-      int idx = (key>>>shift) & 0x01f;
-      
-      // this is a full node, so we don't have to check if we have a node or value
-      Object o = nodesOrValues[idx];
-      
-      if (o instanceof Node){
-        Node<V> node = (Node<V>)o;
-        node = (shift == finalShift) ?  node.assocNodeValue(value, result) :
-                      node.assoc( shift + SHIFT_INC, finalShift, key, value, result);
-        if (node == o) { // nothing changed
-          return this;
-        } else {
-          return cloneWithReplacedNodeOrValue(idx, node);
-        }
-
-      } else { // a value at this index
-        V v = (V)o;
-        if (shift == finalShift){ // leaf level, check value
-          if (value == v){ // it's already there
-            return this;
-          } else { // replace value
-            result.replacedValue(v);
-            return cloneWithReplacedNodeOrValue( idx, value);
-          }
-          
-        } else { // not at value level, we need to replace the value with a Node
-          result.addedValue(v);
-          Node<V> node = createNode( shift + SHIFT_INC, finalShift, key, value, v);
-          return cloneWithReplacedNodeOrValue( idx, node);            
-        }
-      }
-    }
-    
     V getValue (int idx){
       Object o = nodesOrValues[idx];
       if (o instanceof Node) {
@@ -884,104 +497,14 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
         return (V) o;
       }
     }
-    
-    Node<V> setValue (int idx, V value, Result<V> result) {
-      Object o = nodesOrValues[idx];
-      if (o instanceof Node) {
-        Node<V> node = (Node<V>) o;
-        node = node.assocNodeValue(value, result);
-        if (node == o) {
-          return this;
-        } else {
-          return cloneWithReplacedNodeOrValue(idx, node);
-        }
-        
-      } else { // replace value
-        V v = (V) o;
-        if (v == value) {
-          return this;
-        } else {
-          result.replacedValue(v);
-          return cloneWithReplacedNodeOrValue(idx, value);
-        }
-      }
-    }
-    
-    public V find (int shift, int finalShift, int key) {
-      int idx = (key>>>shift) & 0x01f;      
-      Object o = nodesOrValues[idx];
-      
-      if (o instanceof Node){ // recurse down
-        Node<V> node = (Node<V>)o;
-        
-        if (shift == finalShift){ // at leaf level
-          return node.getNodeValue();
-        } else {
-          return node.find( shift+SHIFT_INC, finalShift, key);
-        }
-        
-      } else {
-        if (shift == finalShift){
-          return (V)o;
-        } else {
-          return null;
-        }
-      }
-    }
 
-    public void process (Processor<V> proc) {      
+    public void process (PersistentIntMap<V> map, Processor<V> proc) {      
       for (int i=0; i<32; i++){
         Object o=nodesOrValues[i];
         if (o instanceof Node){
-          ((Node<V>)o).process(proc);
+          map.processNode((Node<V>)o,proc);
         } else {
           proc.process( (V)o);
-        }
-      }
-    }
-     
-    public Node<V> removeNodeValue (Result<V> result){
-      Object o = nodesOrValues[0];
-      if (o instanceof Node) {
-        Node<V> node = (Node<V>)o;
-        node = node.removeNodeValue(result);
-        if (node == null) {
-          return cloneWithoutNodeOrValue( 0);
-        } else if (node != o) {
-          return cloneWithReplacedNodeOrValue(0,node);
-        } else {
-          return this;
-        }
-        
-      } else { // we had a value at index 0
-        result.removedValue((V)o);
-        return cloneWithoutNodeOrValue( 0);
-      }
-    }
-    
-    public Node<V> remove (int shift, int finalShift, int key, Result<V> result) {
-      int idx = (key>>>shift) & 0x01f;
-      
-      Object o = nodesOrValues[idx];
-      
-      if (o instanceof Node){
-        Node<V> node = (Node<V>)o;
-        node = (shift == finalShift) ? node.removeNodeValue(result) :
-                          node.remove(shift +SHIFT_INC, finalShift, key, result);
-        if (node == null) {
-          return cloneWithoutNodeOrValue( idx);
-        } else if (node == o) {
-          return this;
-        } else {
-          return cloneWithReplacedNodeOrValue(idx, node);            
-        }
-        
-      } else { // we have a value for this index
-        if (shift == finalShift) {
-          result.removedValue((V)o);
-          return cloneWithoutNodeOrValue(idx);
-        } else {
-          return this; // key is not in this map
         }
       }
     }
@@ -1013,7 +536,7 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
             if (a == null){
               a = nv.clone();
             }
-            result.removedValue(v);
+            result.removedValue( this, v);
             a[i] = null;
           } else {
             newBitmap |= bit;
@@ -1074,59 +597,62 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
 
   //--- static ImmutableObjectTable methods
   
-  static <V> Node<V> createNode (int shift, int finalShift, int key, V value, V nodeValue){
+  static <V> Node<V> createNode (int shift, int finalShift, int key, V value, V nodeValue, Result<V> result){
     int idx = ((key>>>shift) & 0x01f);
     
-    Object o;
-    if (shift == finalShift){
-      o = value;
-    } else {
-      o = createNode( shift + SHIFT_INC, finalShift, key, value, 
-                      ((idx == 0) ? nodeValue : null));
-    }
+    Object o = (shift == finalShift) ? value : 
+      createNode( shift-5, finalShift, key, value, ((idx == 0) ? nodeValue : null), result);
     
+    Node<V> node;
     if (nodeValue != null) {
       Object[] nodesOrValues = new Object[2];
       nodesOrValues[0] = nodeValue;
       nodesOrValues[1] = o;
       int bitmap = (1 << idx) | 1;
-      
-      return new BitmapNode<V>(bitmap, nodesOrValues);
+      node = new BitmapNode<V>(bitmap, nodesOrValues);
       
     } else {
-      return new OneNode<V>( idx, o);
+      node = new OneNode<V>( idx, o);
     }
+    
+    if (shift == finalShift) {
+      result.addedValue(node, value);
+    }
+    return node;
   }
 
-  static <V> Node<V> createAndMergeNode (int shift, int finalShift, int key, V value, Node<V> mergeNode){
-    int idx = ((key>>>shift) & 0x01f);
+  static <V> Node<V> createAndMergeNode (int shift, int finalShift, int key, V value, Node<V> mergeNode, Result<V> result){
+    int k = (key >>> shift);
+    int idx = (k & 0x01f);
     
-    Object o;    
-    if (shift == finalShift){
-      o = value;
-    } else {
-      o = createNode( shift + SHIFT_INC, finalShift, key, value, null);
-    }
-      
+    int bitmap = (1 << idx) | 1;
     Object[] nodesOrValues = new Object[2];
     nodesOrValues[0] = mergeNode;
-    nodesOrValues[1] = o;
-    int bitmap = (1 << idx) | 1;
-    
-    return new BitmapNode<V>(bitmap, nodesOrValues);
-  }
-  
-  static <V> Node<V> propagateMergeNode (int shift, int nodeShift, Node<V> node){
-    shift += SHIFT_INC;
-    while (shift > nodeShift){
-      node = new OneNode<V>(0, node);
-      shift += SHIFT_INC;
+
+    Node<V> node;
+    if (shift == finalShift) {
+      nodesOrValues[1] = value;
+      node = new BitmapNode<V>(bitmap, nodesOrValues);
+      result.addedValue( node, value);  
+    } else {
+      nodesOrValues[1] = createNode( shift-5, finalShift, key, value, null, result);
+      node = new BitmapNode<V>(bitmap, nodesOrValues);
     }
     
     return node;
   }
   
+  static <V> Node<V> propagateMergeNode (int shift, int nodeShift, Node<V> node){
+    shift -= 5;
+    while (shift > nodeShift){
+      node = new OneNode<V>(0, node);
+      shift -= 5;
+    }
+    
+    return node;
+  }
   
+  // <2do> these two can be probably optimized to avoid branches
   static int getInitialShift (int key) {
     if ((key & 0xc0000000) != 0) return 30;
     if ((key & 0x3e000000) != 0) return 25;
@@ -1138,7 +664,7 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
   }
   
   static int getFinalShift (int key) {
-    if ((key & 0x1f) < 32)       return 0;
+    if ((key & 0x1f) < 32)       return 0; // takes also care of 0
     if ((key & 0x3e0) != 0)      return 5;
     if ((key & 0x7c00) != 0)     return 10;
     if ((key & 0xf8000) != 0)    return 15;
@@ -1154,6 +680,7 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
   // for msb first mode, we keep track of the initial shift to save cloning empty top nodes
   final protected int rootShift;
   
+  
   public PersistentMsbIntMap(){
     size = 0;
     root = null;
@@ -1165,20 +692,93 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
     this.root = root;
     this.rootShift = initialShift;
   }
+  
+  //--- set() related methods
+  protected Node<V> assocNodeValue (Node<V> node, V value, Result<V> result){
+    Object o = node.getElement(0);
 
-  public PersistentMsbIntMap<V> set (int key, V value){
-    Result<V> result = Result.getNewResult();
-    return set( key, value, result);
-  }  
+    if (o != null){                        // we got something for index 0
+      if (o instanceof Node){           // we've got a node
+        Node<V> newNodeElement = assocNodeValue( (Node<V>)o, value, result);
+        if (newNodeElement == o){
+          return node;
+        } else {
+          return node.cloneWithReplacedElement( 0, newNodeElement);
+        }
+
+      } else {                             // we've got a value
+        if (o == value){
+          return node;
+        } else {
+          node = node.cloneWithReplacedElement( 0, value);
+          result.replacedValue( node, (V)o);
+          return node;
+        }
+      }
+
+    } else {                               // we didn't have anything for this index
+      node = node.cloneWithAddedElement( 0, value);
+      result.addedValue( node, value);
+      return node;
+    }
+  }
+  
+  protected Node<V> assoc (int shift, int finalShift, int key, V value, Node<V> node, Result<V> result){
+    int k = key >>> shift;
+    int levelIdx = k & 0x1f;
+    Object o = node.getElement(levelIdx);
+
+    if (o != null){                       // we already have a node or value for this index
+
+      if (o instanceof Node){             // we had a node for this index
+        Node<V> replacedNode;
+        if (shift == finalShift){         // at value level
+          replacedNode = assocNodeValue( node, value, result);
+        } else {                          // not at value level yet, recurse
+          replacedNode = assoc( shift-5, finalShift, key, value, (Node<V>)o, result);
+        }
+        if (replacedNode == o){           // nothing changed
+          return node;
+        } else {                          // element got replaced, clone the node
+          return node.cloneWithReplacedElement( levelIdx, replacedNode);
+        }        
+
+      } else { // we had a value for this index
+        if (shift == finalShift){         // at value level
+          if (value == o){                // nothing changed
+            return node;
+          } else {                        // clone with updated value
+            node = node.cloneWithReplacedElement( levelIdx, value);
+            result.replacedValue( node, (V)o);
+            return node;
+          }
+
+        } else {                          // not at value level yet
+          Node<V> addedNode = createNode( shift-5, finalShift, key, value, (V)o, result);
+          return node.cloneWithReplacedElement( levelIdx, addedNode);
+        }
+      }
+
+    } else { // nothing for this index yet
+      if (shift == finalShift){           // at value level
+        node = node.cloneWithAddedElement( levelIdx, value);
+        result.addedValue( node, value);
+
+      } else {                            // not at value level yet
+        Node<V> addedNode = createNode( shift-5, finalShift, key, value, null, result);
+        node = node.cloneWithAddedElement( levelIdx, addedNode);
+      }
+      return node;
+    }
+  }
   
   public PersistentMsbIntMap<V> set (int key, V value, Result<V> result){
-    
     int ish = getInitialShift(key);
     int fsh = getFinalShift(key);
+    result.clear();
     
     if (root == null){
-      result.addedValue(value);
-      Node<V> newRoot = createNode( ish, fsh, key, value, null);
+      Node<V> newRoot = createNode( ish, fsh, key, value, null, result);
       return new PersistentMsbIntMap<V>( 1, newRoot, ish);
 
     } else {            
@@ -1186,50 +786,145 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
       int newRootShift;
       
       if (ish <= rootShift) { // new key can be added to current root (key smaller than previous ones)
-        newRoot = root.assoc( rootShift, fsh, key, value, result);
+        newRoot = assoc( rootShift, fsh, key, value, root, result);
         newRootShift = rootShift;
 
       } else { // current root has to be merged into new one
-        result.addedValue(value); // since shift count is different, there has to be a new node
-        
         Node<V> mergeNode = propagateMergeNode( ish, rootShift, root);
-        newRoot = createAndMergeNode( ish, fsh, key, value, mergeNode);
+        newRoot = createAndMergeNode( ish, fsh, key, value, mergeNode, result);
         newRootShift = ish;
       }
       
       if (root == newRoot){ // key and value were already there
         return this;
       } else { // could have been a replaced value that didn't change the size
-        if (result.hasChangedSize()){
-          return new PersistentMsbIntMap<V>( size+result.getSizeChange(), newRoot, newRootShift);
-        } else {
-          return new PersistentMsbIntMap<V>( size, newRoot, newRootShift);
-        }
+        int newSize = size + result.getSizeChange();
+        return new PersistentMsbIntMap<V>( newSize, newRoot, newRootShift);
       }
     }
   }
-  
+
+  public PersistentMsbIntMap<V> set (int key, V value){
+    Result<V> result = Result.getNewResult();
+    return set( key, value, result);
+  }  
+
+  /**
+   * retrieve value for specified key
+   * @return null if this key is not in the map
+   */
   public V get (int key){
     if (root != null){
-      int fsh = getFinalShift(key);
-      return root.find( rootShift, fsh, key);
-    } else {
+      int shift = rootShift;
+      int finalShift = getFinalShift(key);      
+      Node<V> node = root;
+
+      for (;;){
+        int levelIdx = (key>>>shift) & 0x1f;
+        Object o = node.getElement(levelIdx);
+        if (o != null){                      // do we have something for this index
+          if (o instanceof Node){            // we have a node
+            node = (Node<V>)o;
+            if (shift == finalShift){        // at value level
+              return node.getNodeValue();
+            } else {                         // shift to next level (tail recursion)
+              shift -= 5;
+              continue;
+            }
+            
+          } else {                           // we have a value
+            if (shift == finalShift){        // at value level
+              return (V)o;
+            } else {
+              return null;                   // can't go down, so it's not there
+            }
+          }
+          
+        } else {                             // nothing for this index
+          return null;
+        }
+      }
+      
+    } else {                                 // no root
       return null;
     }
   }
 
-  public PersistentMsbIntMap<V> remove(int key){
-    Result<V> result = Result.getNewResult();
-    return remove( key, result);
-  }  
+  //--- remove() related methods
   
+  protected Node<V> removeNodeValue (int shift, int key, Node<V> node, Result<V> result){
+    Object o = node.getElement(0);
+
+    if (o != null){                        // we got something for index 0
+      if (o instanceof Node){              // we've got a node
+        Node<V> newNodeElement = removeNodeValue( shift-5, key, (Node<V>)o, result);
+        if (newNodeElement == null){
+          return node.cloneWithoutElement( 0);
+        } else if (newNodeElement == o){
+          return node;
+        } else {
+          return node.cloneWithReplacedElement( 0, newNodeElement);
+        }
+
+      } else {                             // we've got a value
+        node = node.cloneWithoutElement( 0);
+        result.removedValue( node, (V)o);
+        return node;
+      }
+
+    } else {                               // we didn't have anything for this index
+      return node;
+    }
+  }
+  
+  protected Node<V> remove (int shift, int finalShift, int key, Node<V> node, Result<V> result){
+    int k = (key >>> shift);
+    int levelIdx = k & 0x1f;
+    Object o = node.getElement(levelIdx);
+
+    if (o != null){                        // we got something for this index
+      if (o instanceof Node){              // we've got a node
+        Node<V> newNodeElement;
+        if (shift == finalShift){          // at value level
+          newNodeElement = removeNodeValue( shift-5, key, (Node<V>)o, result);
+        } else {                           // not yet at value level, recurse downwards
+          newNodeElement = remove(shift-5, finalShift, key, (Node<V>)o, result);
+        }
+        if (newNodeElement == null){       // nothing left
+          return node.cloneWithoutElement( levelIdx);
+        } else if (newNodeElement == o){   // nothing changed
+          return node;
+        } else {
+          return node.cloneWithReplacedElement( levelIdx, newNodeElement);
+        }
+
+      } else {                             // we've got a value
+        if (shift == finalShift){          // at value level
+          node = node.cloneWithoutElement( levelIdx);
+          result.removedValue( node, (V)o);
+          return node;
+        } else {                           // not at value level, key isn't in the map
+          return node;
+        }
+      }
+    } else {                               // we didn't have anything for this index
+      return node;
+    }
+  }
+   
+  /**
+   * the public remove() method
+   */
   public PersistentMsbIntMap<V> remove(int key, Result<V> result){
     if (root == null){
       return this;
       
     } else {
+      result.clear();
+      
       int fsh = getFinalShift(key);
-      Node<V> newRoot = root.remove( rootShift, fsh, key, result);
+      //Node<V> newRoot = root.remove( rootShift, fsh, key, result);
+      Node<V> newRoot = remove( rootShift, fsh, key, root, result);
 
       if (root == newRoot){ // nothing removed
         return this;
@@ -1239,8 +934,14 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
       }
     }
   }
+
+  public PersistentMsbIntMap<V> remove(int key){
+    Result<V> result = Result.getNewResult();
+    return remove( key, result);
+  } 
   
-  // bulk remove
+  //--- bulk remove
+  
   public PersistentMsbIntMap<V> removeAllSatisfying (Predicate<V> predicate){
     Result<V> result = Result.getNewResult();
     return removeAllSatisfying(predicate, result);
@@ -1260,6 +961,9 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
     }
   }
   
+  
+  //--- statistics
+  
   public int size(){
     return size;
   }
@@ -1267,19 +971,25 @@ public class PersistentMsbIntMap<V> implements PersistentIntMap<V> {
   public boolean isEmpty(){
     return size==0;
   }
-    
   
-  // iterators would require a snapshot (list), which kind of defeats the purpose
+  //--- iterator-less generic value processing
+  
+  protected void processNode (Node<V> node, Processor<V> processor) {
+    node.process(this, processor);
+  }
   
   public void process (Processor<V> processor){
     if (root != null){
-      root.process(processor);
+      root.process(this, processor);
     }
   }
   
   public void processInKeyOrder (Processor<V> processor){
     process( processor);
   }
+  
+  
+  //--- debugging
   
   public void printOn (PrintStream ps) {
     if (root != null) {

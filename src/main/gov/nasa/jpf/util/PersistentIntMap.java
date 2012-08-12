@@ -25,7 +25,47 @@ import java.util.Iterator;
 /**
  * immutable generic map type that maps integer keys to object values
  */
-public interface PersistentIntMap<V> {
+public abstract class PersistentIntMap<V> {
+  
+  static final int DONT_CARE = 0;
+  
+  /**
+   * the abstract root class for all node types
+   */
+  protected abstract static class Node<V> implements Cloneable {
+    
+        
+    abstract Object getElement( int levelIndex);
+    
+    /**
+     *  this one is dangerous - only to be used on already cloned nodes!
+     */
+    abstract void setElement( int levelIndex, Object e);
+    
+    abstract Node<V> cloneWithReplacedElement( int idx, Object o);
+    abstract Node<V> cloneWithAddedElement( int idx, Object o);
+    abstract Node<V> cloneWithoutElement( int idx); // caller has to make sure it's there
+
+    abstract Node<V> removeAllSatisfying(Predicate<V> pred, Result<V> result);
+    
+    abstract void process (PersistentIntMap<V> map, Processor<V> proc);
+    abstract V getNodeValue();
+    
+    void printIndentOn (PrintStream ps, int level) {
+      for (int i=0; i<level; i++) {
+        ps.print("    ");
+      }
+    }
+    void printNodeInfoOn (PrintStream ps) {
+      String clsName = getClass().getSimpleName();
+      int idx = clsName.indexOf('$');
+      if (idx > 0) {
+        clsName = clsName.substring(idx+1);
+      }
+      ps.print(clsName);
+    }
+    abstract void printOn(PrintStream ps, int level);
+  }
   
   /**
    * object that holds the results of operations performed on a PersistentMap
@@ -44,29 +84,44 @@ public interface PersistentIntMap<V> {
       }
     }
     
+    /**
+     * the number of changed values (>0: added, <0: removed). If 0, no
+     * change occurred (set value was already there or remove value wasn't in the map)
+     */
     protected int changeCount;
+    
+    /**
+     * internal use only - the node that takes the last added value
+     */
+    protected Node<V> valueNode;
+    protected boolean merged;
     
     protected void finalize(){
       synchronized (Result.class){
-        changeCount = 0;
         cachedResult = this;
       }
     }
 
     public void clear(){
       changeCount = 0;
+      valueNode = null;
+      merged = false;
     }
     
-    void replacedValue(V oldValue) {}
+    protected void replacedValue(Node<V> node, V oldValue) {
+      valueNode = node;
+    }
     
-    void addedValue(V newValue) {
+    protected void addedValue(Node<V> node, V newValue) {
+      valueNode = node;
       changeCount++;
     }
     
-    void removedValue(V oldValue) {
+    protected void removedValue(Node<V> node, V oldValue) {
+      valueNode = node;
       changeCount--;
     }
-    
+        
     public int getSizeChange(){
       return changeCount;
     }
@@ -75,6 +130,9 @@ public interface PersistentIntMap<V> {
       return changeCount != 0;
     }
   }
+  
+  // in case we don't care
+  public static final Result NO_RESULT = new Result();
 
   public static class RecordingResult<V> extends Result<V>{
     private static RecordingResult cachedResult = new RecordingResult();
@@ -101,31 +159,28 @@ public interface PersistentIntMap<V> {
       }
     }
 
+    @Override
     public void clear(){
-      changeCount = 0;
+      super.clear();
       changedValue = null;
     }
         
-    void replacedValue(V oldValue) {
+    @Override
+    protected void replacedValue(Node<V> node, V oldValue) {
+      super.replacedValue(node, oldValue);
       changedValue = oldValue;
     }
     
-    void addedValue(V newValue) {
-      changeCount++;
+    @Override
+    protected void addedValue(Node<V> node, V newValue) {
+      super.addedValue(node, newValue);
       changedValue = ObjectList.add(changedValue, newValue);
     }
     
-    void removedValue(V oldValue) {
-      changeCount--;
+    @Override
+    protected void removedValue(Node<V> node, V oldValue) {
+      super.removedValue(node, oldValue);
       changedValue = ObjectList.add( changedValue, oldValue);
-    }
-    
-    public int getSizeChange(){
-      return changeCount;
-    }
-    
-    public boolean hasChangedSize(){
-      return changeCount != 0;
     }
     
     public V getChanged(){
@@ -138,23 +193,23 @@ public interface PersistentIntMap<V> {
   }
   
   //--- these are our primary operations
-  V get (int key);
+  public abstract V get (int key);
   
-  PersistentIntMap<V> set (int key, V value);
-  PersistentIntMap<V> set (int key, V value, Result<V> result);  
+  public abstract PersistentIntMap<V> set (int key, V value);
+  public abstract PersistentIntMap<V> set (int key, V value, Result<V> result);  
   
-  PersistentIntMap<V> remove (int key);
-  PersistentIntMap<V> remove (int key, Result<V> result);
+  public abstract PersistentIntMap<V> remove (int key);
+  public abstract PersistentIntMap<V> remove (int key, Result<V> result);
   
-  PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate);
-  PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate, Result<V> result);
+  public abstract PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate);
+  public abstract PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate, Result<V> result);
 
-  void process (Processor<V> processor);
-  void processInKeyOrder (Processor<V> processor);
+  protected abstract void processNode (Node<V> node, Processor<V> processor);
+  public abstract void process (Processor<V> processor);
+  public abstract void processInKeyOrder (Processor<V> processor);
 
+  public abstract void printOn (PrintStream ps);
 
-  void printOn (PrintStream ps);
-
-  boolean isEmpty();
-  int size();
+  public abstract boolean isEmpty();
+  public abstract int size();
 }
