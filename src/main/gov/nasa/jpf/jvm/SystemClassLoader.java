@@ -83,34 +83,8 @@ public class SystemClassLoader extends ClassLoaderInfo {
   }
 
   @Override
-  protected ClassInfo loadSuperClass (ClassInfo ci, String superName) throws ClassInfoException {
-    if (ci.isObjectClassInfo()) {
-      return null;
-    } else {
-      ClassInfo.logger.finer("resolving superclass: ", superName, " of ", ci.getName());
-
-      ClassInfo sci = getResolvedClassInfo(superName);
-      if (sci == null){
-        throw new ClassInfoException("the class, " + superName + ", is not found in the classloader search path", 
-                                     "java.lang.NoClassDefFoundError", superName);
-      }
-
-      return sci;
-    }
-  }
-
-  protected void loadInterfaces (ClassInfo ci) throws ClassInfoException {
-    for(String ifcName: ci.interfaceNames) {
-      ClassInfo.logger.finer("resolving interface: ", ifcName, " of ", ci.getName());
-
-      ClassInfo ifc = getResolvedClassInfo(ifcName);
-      if (ifc == null) {
-        throw new ClassInfoException("the class, " + ifcName + ", is not found in the classloader search path", 
-                                     "java.lang.NoClassDefFoundError", ifcName);
-      } else {
-        ci.interfaces.add(ifc);
-      }
-    }
+  protected ClassInfo loadClass(String cname) {
+    return getResolvedClassInfo(cname);
   }
 
   private ArrayList<String> getStartupClasses(JVM vm) {
