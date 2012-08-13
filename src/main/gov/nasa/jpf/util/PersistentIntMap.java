@@ -46,7 +46,7 @@ public abstract class PersistentIntMap<V> {
     abstract Node<V> cloneWithAddedElement( int idx, Object o);
     abstract Node<V> cloneWithoutElement( int idx); // caller has to make sure it's there
 
-    abstract Node<V> removeAllSatisfying(Predicate<V> pred, Result<V> result);
+    abstract Node<V> removeAllSatisfying(PersistentIntMap<V> map, Predicate<V> pred, Result<V> result);
     
     abstract void process (PersistentIntMap<V> map, Processor<V> proc);
     abstract V getNodeValue();
@@ -200,11 +200,12 @@ public abstract class PersistentIntMap<V> {
   
   public abstract PersistentIntMap<V> remove (int key);
   public abstract PersistentIntMap<V> remove (int key, Result<V> result);
-  
+
+  protected abstract Node<V> removeAllSatisfying (Node<V> node, Predicate<V> predicate, Result<V> result); // node redirection
   public abstract PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate);
   public abstract PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate, Result<V> result);
 
-  protected abstract void processNode (Node<V> node, Processor<V> processor);
+  protected abstract void processNode (Node<V> node, Processor<V> processor); // node redirection
   public abstract void process (Processor<V> processor);
   public abstract void processInKeyOrder (Processor<V> processor);
 

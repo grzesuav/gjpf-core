@@ -37,11 +37,14 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
    * demoted into a parent value element
    * If a new Element is added, this OneNode gets promoted into a BitmapNode
    */
-  protected static class OneNode<V> extends Node<V> {
+  protected final static class OneNode<V> extends Node<V> {
     final int idx;
     /*final*/ Object nodeOrValue;  // unfortunately we can't make it final because of setElement
     
+    static int nNodes;
+    
     OneNode (int idx, Object o){
+nNodes++;
       this.idx = idx;
       this.nodeOrValue = o;
     }
@@ -118,11 +121,11 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
       }
     }
 
-    Node<V> removeAllSatisfying(Predicate<V> pred, Result<V> result) {
+    Node<V> removeAllSatisfying(PersistentIntMap<V> map, Predicate<V> pred, Result<V> result) {
       Object o = nodeOrValue;
       if (o instanceof Node){
         Node<V> node = (Node<V>)o;
-        node = node.removeAllSatisfying(pred, result);
+        node = map.removeAllSatisfying(node, pred, result); // give map a chance to redirect
         if (node == null) { // nothing left
           return null;
         } else if (node == o) { // nothing changed
@@ -186,7 +189,10 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
     final int bitmap; // key partition bit positions of non-null child nodes or values    
     final Object[] nodesOrValues; // dense child|value array indexed by bitmap bitcount of pos
     
+    static int nNodes;
+
     BitmapNode (int bitmap, Object[] nodesOrValues){
+nNodes++;
       this.bitmap = bitmap;
       this.nodesOrValues = nodesOrValues;
     }
@@ -313,7 +319,7 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
       }
     }
         
-    public Node<V> removeAllSatisfying (Predicate<V> pred, Result<V> result){
+    public Node<V> removeAllSatisfying (PersistentIntMap<V> map, Predicate<V> pred, Result<V> result){
       Object[] nv = nodesOrValues;
       Object[] a = null; // deferred initialized
       int newBitmap = bitmap;
@@ -328,7 +334,7 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
         Object o = nv[i];
         if (o instanceof Node){ // we have a node at this index
           Node<V> node = (Node<V>)o;
-          node = node.removeAllSatisfying(pred, result);
+          node = map.removeAllSatisfying( node, pred, result);
           if (node != o) {
             if (a == null){
               a = nv.clone();
@@ -423,10 +429,13 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
    * No element can be added since this means we just promote an existing element
    * If an element is removed, this FullNode gets demoted int a BitmapNode
    */
-  protected static class FullNode<V> extends Node<V> {
+  protected final static class FullNode<V> extends Node<V> {
     final Object[] nodesOrValues;
           
+    static int nNodes;
+
     FullNode( Object[] a32){
+nNodes++;
       nodesOrValues = a32;
     }
     
@@ -509,7 +518,7 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
       }
     }
     
-    public Node<V> removeAllSatisfying (Predicate<V> pred, Result<V> result){
+    public Node<V> removeAllSatisfying (PersistentIntMap<V> map, Predicate<V> pred, Result<V> result){
       Object[] nv = nodesOrValues;
       Object[] a = null; // deferred initialized
             
@@ -520,7 +529,7 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
         Object o = nv[i];
         if (o instanceof Node){ // a node
           Node<V> node = (Node<V>)o;
-          node = node.removeAllSatisfying(pred, result);
+          node = map.removeAllSatisfying( node, pred, result); // give map a chance to redirect
           if (node != o){ // node got removed
             if (a == null){
               a = nv.clone();
@@ -852,12 +861,12 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
 
   //--- remove() related methods
   
-  protected Node<V> removeNodeValue (int shift, int key, Node<V> node, Result<V> result){
+  protected Node<V> removeNodeValue (Node<V> node, Result<V> result){
     Object o = node.getElement(0);
 
     if (o != null){                        // we got something for index 0
       if (o instanceof Node){              // we've got a node
-        Node<V> newNodeElement = removeNodeValue( shift-5, key, (Node<V>)o, result);
+        Node<V> newNodeElement = removeNodeValue((Node<V>)o, result);
         if (newNodeElement == null){
           return node.cloneWithoutElement( 0);
         } else if (newNodeElement == o){
@@ -886,7 +895,7 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
       if (o instanceof Node){              // we've got a node
         Node<V> newNodeElement;
         if (shift == finalShift){          // at value level
-          newNodeElement = removeNodeValue( shift-5, key, (Node<V>)o, result);
+          newNodeElement = removeNodeValue( (Node<V>)o, result);
         } else {                           // not yet at value level, recurse downwards
           newNodeElement = remove(shift-5, finalShift, key, (Node<V>)o, result);
         }
@@ -942,6 +951,10 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   
   //--- bulk remove
   
+  protected Node<V> removeAllSatisfying (Node<V> node, Predicate<V> predicate, Result<V> result) {
+    return node.removeAllSatisfying( this, predicate, result);
+  }
+  
   public PersistentMsbIntMap<V> removeAllSatisfying (Predicate<V> predicate){
     Result<V> result = Result.getNewResult();
     return removeAllSatisfying(predicate, result);
@@ -950,7 +963,7 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   public PersistentMsbIntMap<V> removeAllSatisfying (Predicate<V> predicate, Result<V> result){
     if (root != null){
       result.clear();
-      Node<V> newRoot = (Node<V>) root.removeAllSatisfying( predicate, result);
+      Node<V> newRoot = (Node<V>) root.removeAllSatisfying( this, predicate, result);
       
       // <2do> we should check if we can increase the initialShift
 

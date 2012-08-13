@@ -24,6 +24,9 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import gov.nasa.jpf.util.PersistentMsbIntMap.FullNode;
+import gov.nasa.jpf.util.PersistentMsbIntMap.BitmapNode;
+import gov.nasa.jpf.util.PersistentMsbIntMap.OneNode;
 import gov.nasa.jpf.util.test.TestJPF;
 
 /**
@@ -218,8 +221,7 @@ public class PersistentIntMapTest extends TestJPF {
   @Test
   public void testLargeTable() {
     long t1, t2;
-    int N = 20000; // table size
-    int M = 5000000; // lookup
+    int N = 40000; // table size
 
     //--- create
     System.out.println("-------- creating table with " + N + " entries");
@@ -252,6 +254,8 @@ public class PersistentIntMapTest extends TestJPF {
     }
     t2 = System.currentTimeMillis();
     System.out.println("remove: " + (t2 - t1));
+    
+System.out.printf("OneNodes: %d, BitmapNodes: %d, FullNodes: %d\n", OneNode.nNodes, BitmapNode.nNodes, FullNode.nNodes);
   }
   
   static class EvenPredicate implements Predicate<Integer>{
