@@ -608,25 +608,26 @@ nNodes++;
   
   static <V> Node<V> createNode (int shift, int finalShift, int key, V value, V nodeValue, Result<V> result){
     int idx = ((key>>>shift) & 0x01f);
-    
-    Object o = (shift == finalShift) ? value : 
-      createNode( shift-5, finalShift, key, value, ((idx == 0) ? nodeValue : null), result);
-    
     Node<V> node;
-    if (nodeValue != null) {
-      Object[] nodesOrValues = new Object[2];
-      nodesOrValues[0] = nodeValue;
-      nodesOrValues[1] = o;
-      int bitmap = (1 << idx) | 1;
-      node = new BitmapNode<V>(bitmap, nodesOrValues);
-      
-    } else {
-      node = new OneNode<V>( idx, o);
-    }
     
     if (shift == finalShift) {
+      if (nodeValue != null) {
+        Object[] nodesOrValues = new Object[2];
+        nodesOrValues[0] = nodeValue;
+        nodesOrValues[1] = value;
+        int bitmap = (1 << idx) | 1;
+        node = new BitmapNode<V>(bitmap, nodesOrValues);        
+      } else {
+        node = new OneNode<V>( idx, value);
+      }
       result.addedValue(node, value);
+      
+    } else {
+assert (shift-5 >= finalShift) : "shift=" + shift + ", fsh= " + finalShift + "key=" + key;
+      node = createNode( shift-5, finalShift, key, value, nodeValue, result);
+      node = new OneNode<V>(idx, node);
     }
+    
     return node;
   }
 
@@ -661,7 +662,7 @@ nNodes++;
     return node;
   }
   
-  // <2do> these two can be probably optimized to avoid branches
+  /**
   static int getInitialShift (int key) {
     if ((key & 0xc0000000) != 0) return 30;
     if ((key & 0x3e000000) != 0) return 25;
@@ -671,9 +672,27 @@ nNodes++;
     if ((key & 0x3e0) != 0)      return 5;
     return 0;
   }
+  **/
   
+  static final int LeadingMultiplyDeBruijnBitPosition[] = {
+    0, 5, 0, 10, 10, 20, 0, 25, 10, 10, 15, 15, 20, 25, 0, 30,
+    5, 10, 20, 25, 15, 15, 20, 5, 15, 25, 20, 5, 25, 5, 0, 30
+  };
+  static int getInitialShift (int v){
+    v |= v >>> 1;
+    v |= v >>> 2;
+    v |= v >>> 4;
+    v |= v >>> 8;
+    v |= v >>> 16;
+
+    return LeadingMultiplyDeBruijnBitPosition[(v * 0x07C4ACDD) >>> 27];
+  }
+
+  
+  
+  /**
   static int getFinalShift (int key) {
-    if ((key & 0x1f) < 32)       return 0; // takes also care of 0
+    if (key == 0 || (key & 0x1f) != 0)       return 0;
     if ((key & 0x3e0) != 0)      return 5;
     if ((key & 0x7c00) != 0)     return 10;
     if ((key & 0xf8000) != 0)    return 15;
@@ -681,6 +700,27 @@ nNodes++;
     if ((key & 0x3e000000) != 0) return 25;
     return 30;
   }
+  **/
+  
+  /**
+  static final int Mod37Shifts[] = {
+    0, 0, 0, 25, 0, 20, 25, 0, 0, 15, 20, 30, 25, 10, 0, 10, 0,
+    5, 15, 0,  25,  20, 30, 15, 25, 10,  10, 5, 0, 20, 10, 5, 5,
+    20, 5, 15, 15
+  };
+  static int getFinalShift (int v){
+    return Mod37Shifts[ (-v & v) % 37];
+  }
+  **/
+
+  static final int TrailingMultiplyDeBruijnBitPosition[] = {
+      0, 0, 25, 0, 25, 10, 20, 0, 30, 20, 20, 15, 25, 15, 0, 5, 
+      30, 25, 10, 20, 20, 15, 15, 5, 25, 10, 15, 5, 10, 5, 10, 5
+  };
+  static int getFinalShift (int v) {
+    return TrailingMultiplyDeBruijnBitPosition[(((v & -v) * 0x077CB531)) >>> 27];
+  }
+  
   
   //--- invariant instance data
   final protected int size;

@@ -178,7 +178,16 @@ public class PersistentStagingMsbIntMapTest extends TestJPF {
     t1 = System.currentTimeMillis();
     PersistentIntMap<Integer> t = new PersistentStagingMsbIntMap<Integer>();
     for (int i=0; i<N; i++){
+if (i == 32) {
+  System.out.println("@@ at 32");
+}
+try {
       t = t.set(i,  new Integer(i));
+} catch (Throwable x) {
+  System.out.println("@@ X at " + i);
+  x.printStackTrace();
+  System.exit(0);
+}
     }
     t2 = System.currentTimeMillis();
     System.out.println("creation: " + (t2 - t1));

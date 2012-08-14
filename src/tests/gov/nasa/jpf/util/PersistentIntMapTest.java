@@ -52,6 +52,7 @@ public class PersistentIntMapTest extends TestJPF {
   
   static PersistentIntMap<Integer> createPersistentIntMap(){
     return new PersistentMsbIntMap<Integer>();
+    //return new PersistentLsbIntMap<Integer>();
   }
 
   static <T> void dump (PersistentIntMap<T> t, Processor<T> proc){
@@ -105,6 +106,16 @@ public class PersistentIntMapTest extends TestJPF {
     assertTrue( t.size() == 2);
   }
   
+  @Test
+  public void testNodeValueInsert() {
+    PersistentIntMap<Integer> t = createPersistentIntMap();
+    for (int i=0; i<33; i++) {
+      t = t.set( i, i);
+      assertTrue( t.size() == i+1);
+    }
+    dumpInKeyOrder(t, new IntegerProcessor());
+    t.printOn(System.out);
+  }
 
   @Test
   public void testFullNode(){

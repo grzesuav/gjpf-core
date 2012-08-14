@@ -173,12 +173,12 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   }
   
   @Override
-  public PersistentStagingMsbIntMap<V> set (int key, V value, Result<V> result){ 
+  public PersistentMsbIntMap<V> set (int key, V value, Result<V> result){ 
     int fsh = getFinalShift(key);  
     int k = (key >>> fsh);
     result.clear();
     
-    if (((k >>> 5) << (fsh+5)) == stagingBase){       // stagingNode hit (this should be the statistically dominant case)
+    if ((key & 0xffffffe0) == stagingBase){       // stagingNode hit (this should be the statistically dominant case)
       int levelIdx = k & 0x1f;
       Node<V> newStagingNode = setStageNodeValue( stagingNode, levelIdx, value, result);
       if (newStagingNode != stagingNode) {
@@ -190,7 +190,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
       
     } else {                             // stagingNode miss
       int ish = getInitialShift(key);
-      int newStagingBase = (k >>> 5) << (fsh+5);
+      int newStagingBase = (key & 0xffffffe0);
       
       if (root == null){                 // the very first node  
         Node<V> newRoot = createNode( ish, fsh, key, value, null, result);
@@ -237,7 +237,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
     int fsh = getFinalShift(key);
   
     int k = (key >>> fsh);
-    if (((k >>> 5) << (fsh+5)) == stagingBase){ // we have a staging hit
+    if ((key & 0xffffffe0) == stagingBase){ // we have a staging hit
       k &= 0x1f;
       Object o = stagingNode.getElement(k);
       if (o == null || o instanceof Node) { // ?? NodeValue?
@@ -354,12 +354,12 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   }
   
   @Override
-  public PersistentStagingMsbIntMap<V> remove(int key, Result<V> result){
+  public PersistentMsbIntMap<V> remove(int key, Result<V> result){
     int fsh = getFinalShift(key);  
     int k = (key >>> fsh);
     result.clear();
     
-    if (((k >>> 5) << (fsh+5)) == stagingBase){       // stagingNode hit (this should be the statistically dominant case)
+    if (((key & 0xffffffe0)) == stagingBase){       // stagingNode hit (this should be the statistically dominant case)
       int levelIdx = k & 0x1f;
       Node<V> newStagingNode = removeStageNodeValue( stagingNode, levelIdx, result);
       if (newStagingNode != stagingNode) {
@@ -375,7 +375,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
         return this;
 
       } else {
-        int newStagingBase = (k >>> 5) << (fsh+5);
+        int newStagingBase = ((key & 0xffffffe0));
         
         Node<V> newRoot = remove(rootShift, fsh, key, root, result);
         Node<V> newStagingNode = result.valueNode;

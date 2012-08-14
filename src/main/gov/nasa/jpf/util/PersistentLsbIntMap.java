@@ -21,7 +21,7 @@ package gov.nasa.jpf.util;
 /**
  * an immutable Vector that is implemented as a 
  */
-public class PersistentLsbIntMap<V> {
+public class PersistentLsbIntMap<V>  {
 
   //static final int SHIFT_INC = 5; // lsb first
   static final int SHIFT_INC = -5; // msb first
