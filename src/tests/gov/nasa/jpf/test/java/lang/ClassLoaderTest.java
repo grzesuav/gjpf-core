@@ -22,6 +22,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Enumeration;
 
 import org.junit.Test;
@@ -124,6 +125,16 @@ public class ClassLoaderTest extends TestJPF {
     }
   }
 
+  @Test
+  public void testFoundResources() throws IOException {
+    if(verifyNoPropertyViolation()) {
+      TestClassLoader classLoader = new TestClassLoader();
+      Enumeration<URL> enm = classLoader.findResources("not_existing_resource"); 
+      assertNotNull(enm);
+      assertFalse(enm.hasMoreElements());
+    }
+  }
+
   private void testGetResourceImpl(ClassLoader classLoader) {
     assertNull(classLoader.getResource("not_existing_resource"));
     assertNotNull(classLoader.getResource("DiningPhil.class"));
@@ -165,6 +176,10 @@ public class ClassLoaderTest extends TestJPF {
 
     public TestClassLoader(ClassLoader parent) {
       super(parent);
+    }
+
+    protected Enumeration<URL> findResources(String name) throws IOException {
+      return super.findResources(name);
     }
   }
 }

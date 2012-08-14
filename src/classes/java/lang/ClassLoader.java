@@ -210,4 +210,8 @@ public abstract class ClassLoader {
   protected final Class<?> defineClass(String name, byte[] b, int off, int len, ProtectionDomain protectionDomain) throws ClassFormatError {
     return defineClass(name, b, off, len);
   }
+
+  protected String findLibrary(String libname) {
+    return null;
+  }
 }

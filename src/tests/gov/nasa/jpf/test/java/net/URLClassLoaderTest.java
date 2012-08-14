@@ -55,6 +55,10 @@ public class URLClassLoaderTest extends TestJPF {
     public Class<?> getLoadedClass(String name) {
       return findLoadedClass(name);
     }
+
+    public Class<?> delegateTofindSystemClass(String cname) throws ClassNotFoundException {
+      return this.findSystemClass(cname);
+    }
   }
 
   @Test
@@ -424,6 +428,41 @@ public class URLClassLoaderTest extends TestJPF {
       c = cl5.loadClass(objClass);
       assertEquals(c.getClassLoader(), ClassLoader.getSystemClassLoader());
       assertSame(c, cl4.loadClass(objClass));
+    }
+    movePkgBack();
+  }
+
+  @Test
+  public void testFindSystemClass() throws MalformedURLException, ClassNotFoundException {
+    movePkgOut();
+    if (verifyNoPropertyViolation()) {
+      URL[] urls = { new URL(dirUrl) };
+      CustomizedClassLoader loader = new CustomizedClassLoader(urls);
+      assertNotNull(loader.delegateTofindSystemClass("java.lang.Class"));
+
+      String cname = pkg + ".Class1";
+      assertNotNull(loader.loadClass(cname));
+
+      try {
+        loader.delegateTofindSystemClass(cname);
+      } catch(ClassNotFoundException e) {
+        
+      }
+    }
+    movePkgBack();
+  }
+
+  @Test
+  public void testFindSystemClass_ClassNotFoundException() throws MalformedURLException, ClassNotFoundException {
+    movePkgOut();
+    if (verifyUnhandledException("java.lang.ClassNotFoundException")) {
+      URL[] urls = { new URL(dirUrl) };
+      CustomizedClassLoader cl = new CustomizedClassLoader(urls);
+      String cname = pkg + ".Class1";
+
+      // this should fail, cause our SystemClassLoader cannot find a non-standard 
+      // class that is not on the classpath
+      cl.delegateTofindSystemClass(cname);
     }
     movePkgBack();
   }
