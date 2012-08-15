@@ -2296,17 +2296,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * an exception. NO STATIC BLOCKS / FIELDS ALLOWED
    */
   public static ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
-
-    ci.registerClass(ti); // this is safe to call on already loaded classes
-
-    if (!ci.isInitialized()) {
-      if (ci.initializeClass(ti)) {
-        throw new ClinitRequired(ci);
-      }
-    }
-
-    return ci;
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+    return cl.getInitializedClassInfo(clsName, ti);
   }
 
   // Note: JVM.registerStartupClass() must be kept in sync
