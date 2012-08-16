@@ -24,9 +24,9 @@ import java.util.Random;
 
 import org.junit.Test;
 
-import gov.nasa.jpf.util.PersistentMsbIntMap.FullNode;
-import gov.nasa.jpf.util.PersistentMsbIntMap.BitmapNode;
-import gov.nasa.jpf.util.PersistentMsbIntMap.OneNode;
+import gov.nasa.jpf.util.PersistentIntMap.FullNode;
+import gov.nasa.jpf.util.PersistentIntMap.BitmapNode;
+import gov.nasa.jpf.util.PersistentIntMap.OneNode;
 import gov.nasa.jpf.util.test.TestJPF;
 
 /**

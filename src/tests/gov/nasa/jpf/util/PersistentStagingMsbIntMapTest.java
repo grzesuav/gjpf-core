@@ -3,11 +3,10 @@ package gov.nasa.jpf.util;
 import org.junit.Test;
 
 import gov.nasa.jpf.util.PersistentIntMapTest.EvenPredicate;
-import gov.nasa.jpf.util.PersistentIntMapTest.IntegerProcessor;
 import gov.nasa.jpf.util.PersistentIntMapTest.IntervalPredicate;
-import gov.nasa.jpf.util.PersistentMsbIntMap.BitmapNode;
-import gov.nasa.jpf.util.PersistentMsbIntMap.FullNode;
-import gov.nasa.jpf.util.PersistentMsbIntMap.OneNode;
+import gov.nasa.jpf.util.PersistentIntMap.BitmapNode;
+import gov.nasa.jpf.util.PersistentIntMap.FullNode;
+import gov.nasa.jpf.util.PersistentIntMap.OneNode;
 import gov.nasa.jpf.util.test.TestJPF;
 
 public class PersistentStagingMsbIntMapTest extends TestJPF {
@@ -178,16 +177,7 @@ public class PersistentStagingMsbIntMapTest extends TestJPF {
     t1 = System.currentTimeMillis();
     PersistentIntMap<Integer> t = new PersistentStagingMsbIntMap<Integer>();
     for (int i=0; i<N; i++){
-if (i == 32) {
-  System.out.println("@@ at 32");
-}
-try {
       t = t.set(i,  new Integer(i));
-} catch (Throwable x) {
-  System.out.println("@@ X at " + i);
-  x.printStackTrace();
-  System.exit(0);
-}
     }
     t2 = System.currentTimeMillis();
     System.out.println("creation: " + (t2 - t1));

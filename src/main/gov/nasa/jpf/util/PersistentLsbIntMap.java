@@ -18,13 +18,9 @@
 //
 package gov.nasa.jpf.util;
 
-/**
- * an immutable Vector that is implemented as a 
- */
 public class PersistentLsbIntMap<V>  {
 
-  //static final int SHIFT_INC = 5; // lsb first
-  static final int SHIFT_INC = -5; // msb first
+  static final int SHIFT_INC = 5; // lsb first
   
   private static class Result<V> {
     int changeCount;
@@ -137,8 +133,7 @@ public class PersistentLsbIntMap<V>  {
     public Node<V> assoc (int shift, int key, V value, Result<V> result){
       int ks = (key >>> shift);
       int bit = 1 << (ks & 0x1f); // bitpos = index into bitmap
-      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
-      //boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
+      boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
       
       int idx = Integer.bitCount( bitmap & (bit -1));
 
@@ -207,8 +202,7 @@ public class PersistentLsbIntMap<V>  {
       if ((bitmap & bit) != 0) { // we  have a node or value for this index
         int idx = Integer.bitCount( bitmap & (bit -1));
         Object o = nodesOrValues[idx];
-        boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
-        //boolean isAtLeafLevel = (ks >>> 5) == 0;  // lsb first
+        boolean isAtLeafLevel = (ks >>> 5) == 0;  // lsb first
         
         if (o instanceof Node){ // recurse down
           Node<V> node = (Node<V>)o;
@@ -235,8 +229,7 @@ public class PersistentLsbIntMap<V>  {
     public Node<V> remove (int shift, int key, Result<V> result){
       int ks = (key >>> shift);
       int bit = 1 << (ks & 0x1f); // bitpos = index into bitmap
-      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
-      //boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
+      boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
       
       if ((bitmap & bit) != 0) { // we have a node or value for this index
         int idx = Integer.bitCount( bitmap & (bit -1));
@@ -461,8 +454,7 @@ public class PersistentLsbIntMap<V>  {
     public Node<V> assoc (int shift, int key, V value, Result<V> result){      
       int ks = key >>> shift;
       int idx = ks & 0x1f;
-      //boolean isAtLeafLevel = (ks == idx); // lsb first
-      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+      boolean isAtLeafLevel = (ks == idx); // lsb first
 
       if (idx == this.idx) { // we already have an entry for this index
         Object o = nodeOrValue;
@@ -528,8 +520,7 @@ public class PersistentLsbIntMap<V>  {
 
       if (idx == this.idx) { // we  have a node or value for this index
         Object o = nodeOrValue;
-        //boolean isAtLeafLevel = (ks == idx); // lsb first
-        boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+        boolean isAtLeafLevel = (ks == idx); // lsb first
         
         if (o instanceof Node){ // recurse down
           Node<V> node = (Node<V>)o;
@@ -556,8 +547,7 @@ public class PersistentLsbIntMap<V>  {
     public Node<V> remove (int shift, int key, Result<V> result){
       int ks = key >>> shift;
       int idx = (ks & 0x01f);
-      //boolean isAtLeafLevel = (ks == idx); // lsb first
-      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+      boolean isAtLeafLevel = (ks == idx); // lsb first
       
       if (idx == this.idx) { // we have a node or value for this index
         Object o = nodeOrValue;
@@ -734,8 +724,7 @@ public class PersistentLsbIntMap<V>  {
     public Node<V> assoc(int shift, int key, V value, Result<V> result) {
       int ks = key >>> shift;
       int idx = ks & 0x01f;
-      //boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
-      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+      boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
       
       Object o = nodesOrValues[idx];
       // this is a full node, so we don't have to check if we have a node or value
@@ -780,8 +769,7 @@ public class PersistentLsbIntMap<V>  {
     public V find (int shift, int key) {
       int ks = key >>> shift;      
       int idx = ks & 0x01f;
-      //boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
-      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+      boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
       
       Object o = nodesOrValues[idx];
       
@@ -819,8 +807,7 @@ public class PersistentLsbIntMap<V>  {
     public Node<V> remove(int shift, int key, Result<V> result) {
       int ks = key >>> shift;      
       int idx = ks & 0x01f;
-      //boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
-      boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+      boolean isAtLeafLevel = (ks >>> 5) == 0; // lsb first
       
       Object o = nodesOrValues[idx];
       
@@ -970,8 +957,7 @@ public class PersistentLsbIntMap<V>  {
   static <V> Node<V> createNode (int shift, int key, V value, V nodeValue){
     int ks = key >>> shift;
     int idx = (ks & 0x01f);
-    // boolean isAtLeafLevel = (idx == ks); // lsb first
-    boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+    boolean isAtLeafLevel = (idx == ks); // lsb first
     
     Object o;
     if (isAtLeafLevel){
@@ -986,7 +972,7 @@ public class PersistentLsbIntMap<V>  {
   static <V> Node<V> createAndMergeNode (int shift, int key, V value, Node<V> mergeNode){
     int ks = key >>> shift;
     int idx = (ks & 0x01f);
-    boolean isAtLeafLevel = (key & -key) >= (1<<shift); // msb first
+    boolean isAtLeafLevel = (idx == ks); // lsb first
     
     Object o;
     

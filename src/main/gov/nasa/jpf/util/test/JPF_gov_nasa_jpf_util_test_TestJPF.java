@@ -153,10 +153,6 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF {
   }
 
 
-  public static int assertionError__Ljava_lang_String_2_3Ljava_lang_String_2__Lgov_nasa_jpf_JPF_2 (MJIEnv env, int clsObjRef,
-                                  int detailsRef, int jpfArgsRef){
-    return MJIEnv.NULL;
-  }
   public static boolean verifyAssertionErrorDetails__Ljava_lang_String_2_3Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                   int detailsRef, int jpfArgsRef){
     return true;

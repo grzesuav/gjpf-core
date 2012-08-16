@@ -19,9 +19,14 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
+import gov.nasa.jpf.jvm.bytecode.IRETURN;
+import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.util.test.TestJPF;
 
@@ -29,8 +34,13 @@ import org.junit.Test;
 
 public class SkipInstructionTest extends TestJPF {
 
-  public static class Listener extends ListenerAdapter {
+  //--- replacing field access
 
+  int answer = 0;
+
+  public static class GetFieldListener extends ListenerAdapter {
+    
+    @Override
     public void executeInstruction(JVM vm) {
       ThreadInfo ti = vm.getCurrentThread();
       Instruction pc = ti.getPC();
@@ -49,14 +59,11 @@ public class SkipInstructionTest extends TestJPF {
       }
     }
   }
-
-  //--- the test methods
-
-  int answer = 0;
   
-  @Test public void testGETFIELD () {
+  @Test
+  public void testGETFIELD () {
 
-    if (verifyNoPropertyViolation("+listener=gov.nasa.jpf.test.mc.basic.SkipInstructionTest$Listener")){
+    if (verifyNoPropertyViolation("+listener=gov.nasa.jpf.test.mc.basic.SkipInstructionTest$GetFieldListener")){
       int i = answer; // to be intercepted by listener
     
       System.out.println(i);
@@ -64,4 +71,64 @@ public class SkipInstructionTest extends TestJPF {
     }
   }
   
+  //--- replacing method execution
+  // this is not using skipInstruction but is setting the next one to execute, which
+  // means it can skip over a whole bunch of things. The use that comes to mind is to
+  // skip over method bodies, but still preserve the invoke processing so that we
+  // preserve the locking/sync (which we otherwise would have to do explicitly from
+  // a pre-exec listener
+  
+  // the intercepted method
+  int foo (int a, int b) {
+    int result = a + b;
+    if (result > 10) {
+      return 10;
+    } else {
+      return result;
+    }
+  }
+  
+  // the listener that does the interception
+  public static class InvokeListener extends ListenerAdapter {
+    MethodInfo interceptedMethod;
+    
+    @Override
+    public void classLoaded (JVM vm) {
+      ClassInfo ci = vm.getLastClassInfo();
+      if (ci.getName().equals("gov.nasa.jpf.test.mc.basic.SkipInstructionTest")) {
+        interceptedMethod = ci.getMethod("foo(II)I", false);
+        assert interceptedMethod != null : "foo(II)I not found";
+        System.out.println("method to intercept: " + interceptedMethod);
+      }
+    }
+    
+    @Override
+    public void instructionExecuted (JVM vm) {
+      Instruction insn = vm.getLastInstruction();
+      
+      if (insn instanceof InvokeInstruction) {
+        ThreadInfo ti = vm.getLastThreadInfo();
+        MethodInfo mi = ti.getTopMethod();
+        if (mi == interceptedMethod) {
+          System.out.println("we just entered " + mi);
+          Instruction lastInsn = mi.getLastInsn();
+          assert lastInsn instanceof IRETURN : "last instruction not an IRETURN ";
+          StackFrame frame = ti.getClonedTopFrame(); // we are modifying it
+          System.out.println("listener is skipping method body of " + mi + " returning 42");
+          frame.push( 42);
+          ti.setNextPC(lastInsn);
+        }
+      }
+      
+    }    
+  }
+  
+  @Test
+  public void testSkipMethodBody() {
+    if (verifyNoPropertyViolation("+listener=gov.nasa.jpf.test.mc.basic.SkipInstructionTest$InvokeListener")){
+      int ret = foo( 3, 4);
+      System.out.println(ret);
+      assertTrue( ret == 42);
+    }    
+  }
 }
