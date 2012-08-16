@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.util.Map;
+
 import gov.nasa.jpf.classfile.ClassPath;
 
 /**
@@ -185,5 +187,71 @@ public class JPF_java_lang_ClassLoader {
     if(offset<0 || length<0 || offset+length > buffer.length) {
       env.throwException("java.lang.IndexOutOfBoundsException");
     }
+  }
+
+  static String pkg_class_name = "java.lang.Package";
+
+  public static int getPackages_____3Ljava_lang_Package_2 (MJIEnv env, int objRef) {
+    ClassLoaderInfo sysLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
+    ClassInfo pkgClass = null; 
+    try {
+      pkgClass = sysLoader.getInitializedClassInfo(pkg_class_name, env.getThreadInfo());
+    } catch (ClinitRequired x){
+      env.handleClinitRequest(x.getRequiredClassInfo());
+      return MJIEnv.NULL;
+    }
+
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
+    // Returns all of the Packages defined by this class loader and its ancestors
+    Map<String, ClassLoaderInfo> pkgs = cl.getPackages();
+    int size = pkgs.size();
+    // create an array of type java.lang.Package
+    int pkgArr = env.newObjectArray(pkg_class_name, size);
+
+    int i = 0;
+    for(String name: cl.getPackages().keySet()) {
+      int pkgRef = createPackageObject(env, pkgClass, name, cl);
+      // place the object into the array
+      env.setReferenceArrayElement(pkgArr, i++, pkgRef);
+    }
+
+    return pkgArr;
+  }
+
+  public static int getPackage__Ljava_lang_String_2__Ljava_lang_Package_2 (MJIEnv env, int objRef, int nameRef) {
+    ClassLoaderInfo sysLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
+
+    ClassInfo pkgClass = null; 
+    try {
+      pkgClass = sysLoader.getInitializedClassInfo(pkg_class_name, env.getThreadInfo());
+    } catch (ClinitRequired x){
+      env.handleClinitRequest(x.getRequiredClassInfo());
+      return MJIEnv.NULL;
+    }
+
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
+    String pkgName = env.getStringObject(nameRef);
+    if(cl.getPackages().get(pkgName)!=null) {
+      return createPackageObject(env, pkgClass, pkgName, cl);
+    } else {
+      return MJIEnv.NULL;
+    }
+  }
+
+  public static int createPackageObject(MJIEnv env, ClassInfo pkgClass, String pkgName, ClassLoaderInfo cl) {
+    int pkgRef = env.newObject(pkgClass);
+    ElementInfo ei = env.getElementInfo(pkgRef);
+
+    ei.setReferenceField("pkgName", env.newString(pkgName));
+    ei.setReferenceField("loader", cl.getClassLoaderObjectRef());
+    // the rest of the fields set to some dummy value
+    ei.setReferenceField("specTitle", env.newString("spectitle"));
+    ei.setReferenceField("specVersion", env.newString("specversion"));
+    ei.setReferenceField("specVendor", env.newString("specvendor"));
+    ei.setReferenceField("implTitle", env.newString("impltitle"));
+    ei.setReferenceField("implVersion", env.newString("implversion"));
+    ei.setReferenceField("sealBase", MJIEnv.NULL);
+
+    return pkgRef;
   }
 }

@@ -276,6 +276,25 @@ public class ClassLoaderInfo
   }
 
   /**
+   * this one is for clients that need to synchronously get an initialized classinfo.
+   * NOTE: we don't handle clinits here. If there is one, this will throw
+   * an exception. NO STATIC BLOCKS / FIELDS ALLOWED
+   */
+  public ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
+    ClassInfo ci = getResolvedClassInfo(clsName);
+
+    registerClass(ti, ci); // this is safe to call on already loaded classes
+
+    if (!ci.isInitialized()) {
+      if (ci.initializeClass(ti)) {
+        throw new ClinitRequired(ci);
+      }
+    }
+
+    return ci;
+  }
+
+  /**
    * obtain ClassInfo from context that does not care about resolution, i.e.
    * does not check for NoClassInfoExceptions
    *
@@ -594,5 +613,28 @@ public class ClassLoaderInfo
    */
   public boolean isAlive () {
     return true;
+  }
+
+  public Map<String, ClassLoaderInfo> getPackages() {
+    Map<String, ClassLoaderInfo> pkgs = new HashMap<String, ClassLoaderInfo>();
+    for(String cname: definedClasses.keySet()) {
+      if(!ClassInfo.isBuiltinClass(cname) && cname.indexOf('.')!=-1) {
+        pkgs.put(cname.substring(0, cname.lastIndexOf('.')), this);
+      }
+    }
+
+    Map<String, ClassLoaderInfo> parentPkgs = null;
+    if(parent!=null) {
+      parentPkgs = parent.getPackages();
+    }
+
+    if (parentPkgs != null) {
+      for (String pName: parentPkgs.keySet()) {
+        if (pkgs.get(pName) == null) {
+          pkgs.put(pName, parentPkgs.get(pName));
+        }
+      }
+    }
+    return pkgs;
   }
 }

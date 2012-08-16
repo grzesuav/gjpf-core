@@ -214,4 +214,8 @@ public abstract class ClassLoader {
   protected String findLibrary(String libname) {
     return null;
   }
+
+  protected native Package getPackage(String name);
+
+  protected native Package[] getPackages();
 }

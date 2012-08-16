@@ -38,13 +38,13 @@ import gov.nasa.jpf.util.test.TestJPF;
  */
 public class URLClassLoaderTest extends TestJPF {
 
-  public class CustomizedClassLoader extends URLClassLoader {
+  public class TestClassLoader extends URLClassLoader {
 
-    public CustomizedClassLoader(URL[] urls) {
+    public TestClassLoader(URL[] urls) {
         super(urls);
     }
 
-    public CustomizedClassLoader(URL[] urls, ClassLoader parent) {
+    public TestClassLoader(URL[] urls, ClassLoader parent) {
       super(urls, parent);
     }
     
@@ -58,6 +58,14 @@ public class URLClassLoaderTest extends TestJPF {
 
     public Class<?> delegateTofindSystemClass(String cname) throws ClassNotFoundException {
       return this.findSystemClass(cname);
+    }
+
+    protected Package[] getPackages() {
+      return super.getPackages();
+    }
+
+    protected Package getPackage(String name) {
+      return super.getPackage(name);
     }
   }
 
@@ -81,7 +89,7 @@ public class URLClassLoaderTest extends TestJPF {
   public void testConstructorParent() {
     if (verifyNoPropertyViolation()) {
       URL[] urls = new URL[0];
-      ClassLoader parent = new CustomizedClassLoader(urls);
+      ClassLoader parent = new TestClassLoader(urls);
       URLClassLoader cl =  new URLClassLoader(urls, parent);
 
       assertNotNull(parent.getParent());
@@ -124,7 +132,7 @@ public class URLClassLoaderTest extends TestJPF {
    if (verifyNoPropertyViolation()) {
       URL[] urls = new URL[0];
       ClassLoader systemCl = ClassLoader.getSystemClassLoader();
-      ClassLoader parent = new CustomizedClassLoader(urls);
+      ClassLoader parent = new TestClassLoader(urls);
       URLClassLoader cl =  new URLClassLoader(urls, parent);
 
       String cname = "java.lang.Class";
@@ -145,8 +153,8 @@ public class URLClassLoaderTest extends TestJPF {
   public void testFindLoadedClass() throws ClassNotFoundException, MalformedURLException {
     if (verifyNoPropertyViolation()) {
       URL[] urls = new URL[0];
-      CustomizedClassLoader ucl1 = new CustomizedClassLoader(urls);
-      CustomizedClassLoader ucl2 = new CustomizedClassLoader(urls, ucl1);
+      TestClassLoader ucl1 = new TestClassLoader(urls);
+      TestClassLoader ucl2 = new TestClassLoader(urls, ucl1);
 
       String cname = "java.lang.Class";
 
@@ -437,7 +445,7 @@ public class URLClassLoaderTest extends TestJPF {
     movePkgOut();
     if (verifyNoPropertyViolation()) {
       URL[] urls = { new URL(dirUrl) };
-      CustomizedClassLoader loader = new CustomizedClassLoader(urls);
+      TestClassLoader loader = new TestClassLoader(urls);
       assertNotNull(loader.delegateTofindSystemClass("java.lang.Class"));
 
       String cname = pkg + ".Class1";
@@ -457,12 +465,63 @@ public class URLClassLoaderTest extends TestJPF {
     movePkgOut();
     if (verifyUnhandledException("java.lang.ClassNotFoundException")) {
       URL[] urls = { new URL(dirUrl) };
-      CustomizedClassLoader cl = new CustomizedClassLoader(urls);
+      TestClassLoader cl = new TestClassLoader(urls);
       String cname = pkg + ".Class1";
 
       // this should fail, cause our SystemClassLoader cannot find a non-standard 
       // class that is not on the classpath
       cl.delegateTofindSystemClass(cname);
+    }
+    movePkgBack();
+  }
+
+  @Test
+  public void testGetPackages() throws ClassNotFoundException, MalformedURLException {
+    movePkgOut();
+    if(verifyNoPropertyViolation()) {
+      URL[] urls = { new URL(dirUrl) };
+      TestClassLoader cl = new TestClassLoader(urls);
+      Package[] pkgs = cl.getPackages();
+
+      boolean java_lang = false;
+      boolean classloader_specific_tests = false;
+      for(int i=0; i<pkgs.length; i++) {
+        if(pkgs[i].getName().equals("java.lang")) {
+          java_lang = true;
+        } else if(pkgs[i].getName().equals("classloader_specific_tests")) {
+          classloader_specific_tests = true;
+        }
+      }
+      assertTrue(java_lang && !classloader_specific_tests);
+
+      String cname = pkg + ".Class1";
+      cl.loadClass(cname);
+      pkgs = cl.getPackages();
+      for(int i=0; i<pkgs.length; i++) {
+        if(pkgs[i].getName().equals("java.lang")) {
+          java_lang = true;
+        } else if(pkgs[i].getName().equals("classloader_specific_tests")) {
+          classloader_specific_tests = true;
+        }
+      }
+      assertTrue(java_lang && classloader_specific_tests);
+    }
+    movePkgBack();
+  }
+
+  @Test
+  public void testGetPackage() throws ClassNotFoundException, MalformedURLException {
+    movePkgOut();
+    if(verifyNoPropertyViolation()) {
+      URL[] urls = { new URL(dirUrl) };
+      TestClassLoader cl = new TestClassLoader(urls);
+      assertNotNull(cl.getPackage("java.lang"));
+      assertNull(cl.getPackage("non_existing_package"));
+      assertNull(cl.getPackage("classloader_specific_tests"));
+
+      String cname = pkg + ".Class1";
+      cl.loadClass(cname);
+      assertNotNull(cl.getPackage("classloader_specific_tests"));
     }
     movePkgBack();
   }
