@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.util;
 
-public class PersistentLsbIntMap<V>  {
+public class PersistentLsbIntMap0<V>  {
 
   static final int SHIFT_INC = 5; // lsb first
   
@@ -1020,28 +1020,28 @@ public class PersistentLsbIntMap<V>  {
   // for msb first mode, we keep track of the initial shift to save cloning empty top nodes
   final int rootShift;
   
-  public PersistentLsbIntMap(){
+  public PersistentLsbIntMap0(){
     size = 0;
     root = null;
     result = null;
     rootShift = 0;
   }
 
-  private PersistentLsbIntMap (int size, Node<V> root, int initialShift, Result<V> result){
+  private PersistentLsbIntMap0 (int size, Node<V> root, int initialShift, Result<V> result){
     this.size = size;
     this.root = root;
     this.rootShift = initialShift;
     this.result = result;
   }
 
-  public PersistentLsbIntMap<V> set (int key, V value){
+  public PersistentLsbIntMap0<V> set (int key, V value){
     Result<V> result = new Result<V>();
     int ish = getInitialShift(key);
     
     if (root == null){
       result.changeCount = 1;
       Node<V> newRoot = createNode( ish, key, value, null);
-      return new PersistentLsbIntMap<V>( 1, newRoot, ish, result);
+      return new PersistentLsbIntMap0<V>( 1, newRoot, ish, result);
 
     } else {            
       Node<V> newRoot;
@@ -1063,9 +1063,9 @@ public class PersistentLsbIntMap<V>  {
         return this;
       } else { // could have been a replaced value that didn't change the size
         if (result.changeCount != 0){
-          return new PersistentLsbIntMap<V>( size+result.changeCount, newRoot, newRootShift, result);
+          return new PersistentLsbIntMap0<V>( size+result.changeCount, newRoot, newRootShift, result);
         } else {
-          return new PersistentLsbIntMap<V>( size, newRoot, newRootShift, result);
+          return new PersistentLsbIntMap0<V>( size, newRoot, newRootShift, result);
         }
       }
     }
@@ -1079,7 +1079,7 @@ public class PersistentLsbIntMap<V>  {
     }
   }
   
-  public PersistentLsbIntMap<V> remove(int key){
+  public PersistentLsbIntMap0<V> remove(int key){
     if (root == null){
       return this;
       
@@ -1091,20 +1091,20 @@ public class PersistentLsbIntMap<V>  {
         return this;
       } else {
         // <2do> we should check if we can increase the initialShift
-        return new PersistentLsbIntMap<V>( size-1, newRoot, rootShift, result);
+        return new PersistentLsbIntMap0<V>( size-1, newRoot, rootShift, result);
       }
     }
   }
   
   // bulk remove
-  public PersistentLsbIntMap<V> removeAllSatisfying (Predicate<V> pred){
+  public PersistentLsbIntMap0<V> removeAllSatisfying (Predicate<V> pred){
     if (root != null){
       Result<V> result = new Result<V>();
       Node<V> newRoot = (Node<V>) root.removeAllSatisfying( pred, result);
       
       // <2do> we should check if we can increase the initialShift
 
-      return new PersistentLsbIntMap<V>( size + result.changeCount, newRoot, rootShift, result);
+      return new PersistentLsbIntMap0<V>( size + result.changeCount, newRoot, rootShift, result);
       
     } else {
       return this;

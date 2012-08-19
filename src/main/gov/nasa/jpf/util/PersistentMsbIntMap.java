@@ -85,64 +85,6 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
     return node;
   }
   
-  /**
-  static int getInitialShift (int key) {
-    if ((key & 0xc0000000) != 0) return 30;
-    if ((key & 0x3e000000) != 0) return 25;
-    if ((key & 0x1f00000) != 0)  return 20;
-    if ((key & 0xf8000) != 0)    return 15;
-    if ((key & 0x7c00) != 0)     return 10;
-    if ((key & 0x3e0) != 0)      return 5;
-    return 0;
-  }
-  **/
-  
-  static final int LeadingMultiplyDeBruijnBitPosition[] = {
-    0, 5, 0, 10, 10, 20, 0, 25, 10, 10, 15, 15, 20, 25, 0, 30,
-    5, 10, 20, 25, 15, 15, 20, 5, 15, 25, 20, 5, 25, 5, 0, 30
-  };
-  static int getInitialShift (int v){
-    v |= v >>> 1;
-    v |= v >>> 2;
-    v |= v >>> 4;
-    v |= v >>> 8;
-    v |= v >>> 16;
-
-    return LeadingMultiplyDeBruijnBitPosition[(v * 0x07C4ACDD) >>> 27];
-  }
-
-  
-  
-  /**
-  static int getFinalShift (int key) {
-    if (key == 0 || (key & 0x1f) != 0)       return 0;
-    if ((key & 0x3e0) != 0)      return 5;
-    if ((key & 0x7c00) != 0)     return 10;
-    if ((key & 0xf8000) != 0)    return 15;
-    if ((key & 0x1f00000) != 0)  return 20;
-    if ((key & 0x3e000000) != 0) return 25;
-    return 30;
-  }
-  **/
-  
-  /**
-  static final int Mod37Shifts[] = {
-    0, 0, 0, 25, 0, 20, 25, 0, 0, 15, 20, 30, 25, 10, 0, 10, 0,
-    5, 15, 0,  25,  20, 30, 15, 25, 10,  10, 5, 0, 20, 10, 5, 5,
-    20, 5, 15, 15
-  };
-  static int getFinalShift (int v){
-    return Mod37Shifts[ (-v & v) % 37];
-  }
-  **/
-
-  static final int TrailingMultiplyDeBruijnBitPosition[] = {
-      0, 0, 25, 0, 25, 10, 20, 0, 30, 20, 20, 15, 25, 15, 0, 5, 
-      30, 25, 10, 20, 20, 15, 15, 5, 25, 10, 15, 5, 10, 5, 10, 5
-  };
-  static int getFinalShift (int v) {
-    return TrailingMultiplyDeBruijnBitPosition[(((v & -v) * 0x077CB531)) >>> 27];
-  }
   
   //--- instance fields
   
@@ -161,38 +103,11 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   }
   
   //--- set() related methods
-  protected Node<V> assocNodeValue (Node<V> node, V value, Result<V> result){
-    Object o = node.getElement(0);
-
-    if (o != null){                        // we got something for index 0
-      if (o instanceof Node){           // we've got a node
-        Node<V> newNodeElement = assocNodeValue( (Node<V>)o, value, result);
-        if (newNodeElement == o){
-          return node;
-        } else {
-          return node.cloneWithReplacedElement( 0, newNodeElement);
-        }
-
-      } else {                             // we've got a value
-        if (o == value){
-          return node;
-        } else {
-          node = node.cloneWithReplacedElement( 0, value);
-          result.replacedValue( node, (V)o);
-          return node;
-        }
-      }
-
-    } else {                               // we didn't have anything for this index
-      node = node.cloneWithAddedElement( 0, value);
-      result.addedValue( node, value);
-      return node;
-    }
-  }
   
   protected Node<V> assoc (int shift, int finalShift, int key, V value, Node<V> node, Result<V> result){
     int k = key >>> shift;
     int levelIdx = k & 0x1f;
+    result.valueNodeLevel++;
     Object o = node.getElement(levelIdx);
 
     if (o != null){                       // we already have a node or value for this index
@@ -200,7 +115,7 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
       if (o instanceof Node){             // we had a node for this index
         Node<V> replacedNode;
         if (shift == finalShift){         // at value level
-          replacedNode = assocNodeValue( node, value, result);
+          replacedNode = assocNodeValue( (Node<V>)o, value, result);
         } else {                          // not at value level yet, recurse
           replacedNode = assoc( shift-5, finalShift, key, value, (Node<V>)o, result);
         }
@@ -240,8 +155,8 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   }
   
   public PersistentMsbIntMap<V> set (int key, V value, Result<V> result){
-    int ish = getInitialShift(key);
-    int fsh = getFinalShift(key);
+    int ish = getMsbShift(key);
+    int fsh = getLsbShift(key);
     result.clear();
     
     if (root == null){
@@ -271,11 +186,6 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
     }
   }
 
-  public PersistentMsbIntMap<V> set (int key, V value){
-    Result<V> result = Result.getNewResult();
-    return set( key, value, result);
-  }  
-
   /**
    * retrieve value for specified key
    * @return null if this key is not in the map
@@ -283,7 +193,7 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   public V get (int key){
     if (root != null){
       int shift = rootShift;
-      int finalShift = getFinalShift(key);      
+      int finalShift = getLsbShift(key);      
       Node<V> node = root;
 
       for (;;){
@@ -319,34 +229,11 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
 
   //--- remove() related methods
   
-  protected Node<V> removeNodeValue (Node<V> node, Result<V> result){
-    Object o = node.getElement(0);
-
-    if (o != null){                        // we got something for index 0
-      if (o instanceof Node){              // we've got a node
-        Node<V> newNodeElement = removeNodeValue((Node<V>)o, result);
-        if (newNodeElement == null){
-          return node.cloneWithoutElement( 0);
-        } else if (newNodeElement == o){
-          return node;
-        } else {
-          return node.cloneWithReplacedElement( 0, newNodeElement);
-        }
-
-      } else {                             // we've got a value
-        node = node.cloneWithoutElement( 0);
-        result.removedValue( node, (V)o);
-        return node;
-      }
-
-    } else {                               // we didn't have anything for this index
-      return node;
-    }
-  }
-  
   protected Node<V> remove (int shift, int finalShift, int key, Node<V> node, Result<V> result){
     int k = (key >>> shift);
     int levelIdx = k & 0x1f;
+    result.valueNodeLevel++;
+
     Object o = node.getElement(levelIdx);
 
     if (o != null){                        // we got something for this index
@@ -389,7 +276,7 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
     } else {
       result.clear();
       
-      int fsh = getFinalShift(key);
+      int fsh = getLsbShift(key);
       //Node<V> newRoot = root.remove( rootShift, fsh, key, result);
       Node<V> newRoot = remove( rootShift, fsh, key, root, result);
 
@@ -402,22 +289,12 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
     }
   }
 
-  public PersistentMsbIntMap<V> remove(int key){
-    Result<V> result = Result.getNewResult();
-    return remove( key, result);
-  } 
-  
   //--- bulk remove
   
   protected Node<V> removeAllSatisfying (Node<V> node, Predicate<V> predicate, Result<V> result) {
     return node.removeAllSatisfying( this, predicate, result);
   }
-  
-  public PersistentMsbIntMap<V> removeAllSatisfying (Predicate<V> predicate){
-    Result<V> result = Result.getNewResult();
-    return removeAllSatisfying(predicate, result);
-  }
-    
+      
   public PersistentMsbIntMap<V> removeAllSatisfying (Predicate<V> predicate, Result<V> result){
     if (root != null){
       result.clear();
@@ -430,33 +307,6 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
     } else {
       return this;
     }
-  }
-  
-  
-  //--- iterator-less generic value processing
-  
-  protected void processNode (Node<V> node, Processor<V> processor) {
-    node.process(this, processor);
-  }
-  
-  public void process (Processor<V> processor){
-    if (root != null){
-      root.process(this, processor);
-    }
-  }
-  
-  public void processInKeyOrder (Processor<V> processor){
-    process( processor);
-  }
-  
-  
-  //--- debugging
-  
-  public void printOn (PrintStream ps) {
-    if (root != null) {
-      root.printNodeInfoOn(ps);
-      ps.println();
-      root.printOn(ps, 1);
-    }
-  }
+  }  
+
 }

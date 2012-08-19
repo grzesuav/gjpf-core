@@ -30,10 +30,11 @@ import gov.nasa.jpf.util.PersistentIntMap.OneNode;
 import gov.nasa.jpf.util.test.TestJPF;
 
 /**
- * regression test for ImmutableObjectTable
+ * regression test base for concrete PersistentIntMap classes 
  */
-public class PersistentIntMapTest extends TestJPF {
+public abstract class PersistentIntMapTestBase extends TestJPF {
 
+  
   //--- test  
   static class IntegerProcessor implements Processor<Integer>{
     int count=0;
@@ -50,12 +51,9 @@ public class PersistentIntMapTest extends TestJPF {
     }
   }
   
-  static PersistentIntMap<Integer> createPersistentIntMap(){
-    return new PersistentMsbIntMap<Integer>();
-    //return new PersistentLsbIntMap<Integer>();
-  }
+  protected abstract PersistentIntMap<Integer> createPersistentIntMap();
 
-  static <T> void dump (PersistentIntMap<T> t, Processor<T> proc){
+  protected void dump (PersistentIntMap<Integer> t, Processor<Integer> proc){
     System.out.print( "size=");
     System.out.print(t.size());
     if (t instanceof PersistentMsbIntMap){
@@ -63,14 +61,6 @@ public class PersistentIntMapTest extends TestJPF {
     }
     System.out.print(", values={");
     t.process( proc); 
-    System.out.println('}');    
-  }
-
-  static <T> void dumpInKeyOrder (PersistentIntMap<T> t, Processor<T> proc){
-    System.out.print( "size=");
-    System.out.print(t.size());
-    System.out.print(", values={");
-    t.processInKeyOrder( proc); 
     System.out.println('}');    
   }
 
@@ -86,12 +76,12 @@ public class PersistentIntMapTest extends TestJPF {
   
   @Test
   public void testInsert() {
-    PersistentIntMap<Integer> t = createPersistentIntMap();
-    
+    PersistentIntMap<Integer> t;
+
     System.out.println("------------ 0");
+    t = createPersistentIntMap();
     t = insert( t, 0);
-    
-    
+        
     System.out.println("\n------------ 1, 32, 33");
     t = createPersistentIntMap();
     t = insert( t, 1);
@@ -113,7 +103,7 @@ public class PersistentIntMapTest extends TestJPF {
       t = t.set( i, i);
       assertTrue( t.size() == i+1);
     }
-    dumpInKeyOrder(t, new IntegerProcessor());
+    dump(t, new IntegerProcessor());
     t.printOn(System.out);
   }
 
@@ -299,21 +289,21 @@ System.out.printf("OneNodes: %d, BitmapNodes: %d, FullNodes: %d\n", OneNode.nNod
     PersistentIntMap<Integer> t0 = t;
 
     System.out.println("original table");
-    dumpInKeyOrder(t, new IntegerProcessor());
+    dump(t, new IntegerProcessor());
 
     System.out.println("\nremoving all even");
     t = t.removeAllSatisfying(new EvenPredicate());
-    dumpInKeyOrder(t, new IntegerProcessor());
+    dump(t, new IntegerProcessor());
 
     int min = 10, max = 140;
     System.out.printf("\nremoving [%d..%d] from original table\n", min, max);
     t = t0.removeAllSatisfying(new IntervalPredicate(min, max));
-    dumpInKeyOrder(t, new IntegerProcessor());
+    dump(t, new IntegerProcessor());
   }
   
   public void blockRemoveBenchmark() {
     int N = 500;
-    int M = 100000;
+    int M = 10000;
     long t1, t2;
     
     PersistentIntMap<Integer> t = createPersistentIntMap();    

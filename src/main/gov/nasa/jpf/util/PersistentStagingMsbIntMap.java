@@ -25,7 +25,7 @@ import gov.nasa.jpf.util.PersistentIntMap.Result;
 import java.io.PrintStream;
 
 public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
-
+  
   protected final int stagingBase;
   protected final Node<V> stagingNode;
   protected final Node<V> sourceNode; // that gets replaced by the stagingNode
@@ -45,7 +45,8 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
     this.stagingNode = stagingNode;
     this.sourceNode = sourceNode;
   }
-    
+
+  
   /**
    * the internal single value setter - only used on the stageNode, hence we don't have to keep track of the node base
    */
@@ -79,12 +80,19 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
     }
   }
   
+  protected Node<V> assocNodeValue (Node<V> node, V value, Result<V> result){
+    if (node == sourceNode) {
+      node = stagingNode;
+      result.merged = true;
+    }
+    
+    return super.assocNodeValue( node, value, result);
+  }
+  
   /**
    * an assoc version that merges the staging node on-the-fly, without redundant node cloning  
    */
-  protected Node<V> assoc (int shift, int finalShift, int key, V value, Node<V> node, Result<V> result){
-    int k = (key >>> shift);
-    
+  protected Node<V> assoc (int shift, int finalShift, int key, V value, Node<V> node, Result<V> result){    
     if (node == sourceNode) {
       // takes care of old staging node parent of new staging node, in which case we can do
       // the merge on-the-fly (in descending branch of recursion)
@@ -92,51 +100,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
       result.merged = true;
     }
     
-    int levelIdx = k & 0x1f;
-    Object o = node.getElement(levelIdx);
-
-    if (o != null){                       // we already have a node or value for this index
-
-      if (o instanceof Node){             // we had a node for this index
-        Node<V> newElement;
-        if (shift == finalShift){         // at value level
-          newElement = assocNodeValue( node, value, result);
-        } else {                          // not at value level yet, recurse
-          newElement = assoc( shift-5, finalShift, key, value, (Node<V>)o, result);
-        }
-        if (newElement == o){           // nothing changed
-          return node;
-        } else {                          // element got replaced, clone the node
-          return node.cloneWithReplacedElement( levelIdx, newElement);
-        }        
-
-      } else { // we had a value for this index
-        if (shift == finalShift){         // at value level
-          if (value == o){                // nothing changed
-            return node;
-          } else {                        // clone with updated value
-            node = node.cloneWithReplacedElement( levelIdx, value);
-            result.replacedValue( node, (V)o);
-            return node;
-          }
-
-        } else {                          // not at value level yet
-          Node<V> addedNode = createNode( shift-5, finalShift, key, value, (V)o, result);
-          return node.cloneWithReplacedElement( levelIdx, addedNode);
-        }
-      }
-
-    } else { // nothing for this index yet
-      if (shift == finalShift){           // at value level
-        node = node.cloneWithAddedElement( levelIdx, value);
-        result.addedValue( node, value);
-
-      } else {                            // not at value level yet
-        Node<V> addedNode = createNode( shift-5, finalShift, key, value, null, result);
-        node = node.cloneWithAddedElement( levelIdx, addedNode);
-      }
-      return node;
-    }
+    return super.assoc( shift, finalShift, key, value, node, result);
   }
   
   /**
@@ -174,7 +138,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   
   @Override
   public PersistentMsbIntMap<V> set (int key, V value, Result<V> result){ 
-    int fsh = getFinalShift(key);  
+    int fsh = getLsbShift(key);  
     int k = (key >>> fsh);
     result.clear();
     
@@ -197,12 +161,12 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
       }
       
     } else {                             // stagingNode miss
-      int ish = getInitialShift(key);
-      int newStagingBase = sb;
+      int ish = getMsbShift(key);
       
       if (root == null){                 // the very first node  
         Node<V> newRoot = createNode( ish, fsh, key, value, null, result);
         Node<V> newStagingNode = result.valueNode;
+        int newStagingBase = key | (0x1f << (ish - (result.valueNodeLevel * 5)));
         return new PersistentStagingMsbIntMap<V>( 1, newRoot, ish, newStagingNode, newStagingBase, newStagingNode);
 
       } else {                           // set new & merge old stagingNode
@@ -212,7 +176,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
         if (ish <= rootShift) { // new key can be added to current root (key smaller than previous ones)
           newRoot = assoc( rootShift, fsh, key, value, root, result);
           newRootShift = rootShift;
-
+          
         } else { // current root has to be merged into new one
           Node<V> mergeNode = propagateMergeNode( ish, rootShift, root);
           newRoot = createAndMergeNode( ish, fsh, key, value, mergeNode, result);
@@ -224,7 +188,8 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
         }
         
         Node<V> newStagingNode = result.valueNode;
-                
+        int newStagingBase = key | (0x1f << (ish - (result.valueNodeLevel * 5)));  
+        
         if (root == newRoot){ // key and value were already there
           return this;
           
@@ -242,7 +207,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   }
   
   public V get (int key){
-    int fsh = getFinalShift(key);
+    int fsh = getLsbShift(key);
   
     int k = (key >>> fsh);
     int sb = (k | 0x1f) << fsh;
@@ -319,52 +284,46 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
     }
   }
   
-  protected Node<V> remove (int shift, int finalShift, int key, Node<V> node, Result<V> result){
-    int k = (key >>> shift);
-    
+  protected Node<V> removeNodeValue (Node<V> node, Result<V> result){
     if (node == sourceNode) {
-      // takes care of old staging node parent of new staging node, in which case we can do
-      // the merge on-the-fly (in descending branch of recursion)
+      node = stagingNode;
+      result.merged = true;
+    }
+
+    return super.removeNodeValue(node, result);
+  }
+  
+  protected Node<V> remove (int shift, int finalShift, int key, Node<V> node, Result<V> result){    
+    if (node == sourceNode) {
       node = stagingNode;
       result.merged = true;
     }
     
-    int levelIdx = k & 0x1f;
-    Object o = node.getElement(levelIdx);
-
-    if (o != null){                        // we got something for this index
-      if (o instanceof Node){              // we've got a node
-        Node<V> newNodeElement;
-        if (shift == finalShift){          // at value level
-          newNodeElement = removeNodeValue( (Node<V>)o, result);
-        } else {                           // not yet at value level, recurse downwards
-          newNodeElement = remove(shift-5, finalShift, key, (Node<V>)o, result);
-        }
-        if (newNodeElement == null){       // nothing left
-          return node.cloneWithoutElement( levelIdx);
-        } else if (newNodeElement == o){   // nothing changed
-          return node;
-        } else {
-          return node.cloneWithReplacedElement( levelIdx, newNodeElement);
-        }
-
-      } else {                             // we've got a value
-        if (shift == finalShift){          // at value level
-          node = node.cloneWithoutElement( levelIdx);
-          result.removedValue( node, (V)o);
-          return node;
-        } else {                           // not at value level, key isn't in the map
-          return node;
-        }
+    return super.remove(shift, finalShift, key, node, result);
+  }
+  
+  Node<V> removeSourceNode (int shift, int key, Node<V> node){
+    if (node == sourceNode) {
+      return null;
+      
+    } else {
+      int k = key >>> shift;
+      int levelIdx = k & 0x1f;
+      Node<V> nodeElement = (Node<V>) node.getElement(levelIdx); // it's got to be      
+      Node<V> newNodeElement = removeSourceNode( shift-5, key, nodeElement);
+      
+      // has to be either null or a new Node, since we removed the sourceNode
+      if (newNodeElement == null) {
+        return node.cloneWithoutElement(levelIdx);
+      } else {
+        return node.cloneWithReplacedElement( levelIdx, newNodeElement);
       }
-    } else {                               // we didn't have anything for this index
-      return node;
     }
   }
   
   @Override
   public PersistentMsbIntMap<V> remove(int key, Result<V> result){
-    int fsh = getFinalShift(key);  
+    int fsh = getLsbShift(key);  
     int k = (key >>> fsh);
     result.clear();
     
@@ -373,8 +332,13 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
       int levelIdx = k & 0x1f;
       Node<V> newStagingNode = removeStageNodeValue( stagingNode, levelIdx, result);
       if (newStagingNode != stagingNode) {
-        Node<V> newRoot = (stagingNode == root) ? newStagingNode : root;
-        return new PersistentStagingMsbIntMap<V>(size + result.changeCount, newRoot, rootShift, newStagingNode, stagingBase, sourceNode);
+        if (newStagingNode == null) {
+          Node<V> newRoot = removeSourceNode( rootShift, key, root);
+          return new PersistentStagingMsbIntMap<V>(size -1, newRoot, rootShift, null, -1, null);
+        } else {
+          Node<V> newRoot = (stagingNode == root) ? newStagingNode : root;
+          return new PersistentStagingMsbIntMap<V>(size -1, newRoot, rootShift, newStagingNode, sb, sourceNode);
+        }
 
       } else {
         return this; // nothing removed
@@ -384,9 +348,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
       if (root == null) {
         return this;
 
-      } else {
-        int newStagingBase = sb;
-        
+      } else {        
         Node<V> newRoot = remove(rootShift, fsh, key, root, result);
         Node<V> newStagingNode = result.valueNode;
 
@@ -394,7 +356,9 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
           return this;
           
         } else {
-          if (!result.merged) { // the old stagingNode wasn't on the cloned path of the new one
+          int newStagingBase = key | (0x1f << (rootShift - (result.valueNodeLevel * 5)));
+          
+          if (!result.merged && stagingNode != null) { // the old stagingNode wasn't on the cloned path of the new one
             // this cannot change the root since that it is always on both the new staging and old staging path
             mergeStagingNode( rootShift, key, newRoot, true);
           }

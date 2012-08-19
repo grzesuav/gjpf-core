@@ -311,7 +311,7 @@ public abstract class TestJPF implements JPFShell  {
           int setModifiers, int unsetModifiers, String[] annotationNames){
     List<Method> list = new ArrayList<Method>();
     
-    for (Method m : testCls.getDeclaredMethods()){
+    for (Method m : testCls.getMethods()){
       if (isMatchingMethod(m, setModifiers, unsetModifiers, annotationNames)){
         list.add(m);
       }
@@ -348,7 +348,7 @@ public abstract class TestJPF implements JPFShell  {
     String[] annotations = {annotation};
 
     List<Method> list = new ArrayList<Method>();
-    for (Method m : testCls.getDeclaredMethods()){
+    for (Method m : testCls.getMethods()){
       if (isMatchingMethod(m, setModifiers, unsetModifiers, annotations)){
         list.add(m);
       }
@@ -382,7 +382,7 @@ public abstract class TestJPF implements JPFShell  {
         if (test != null){
 
           try {
-            Method m = testCls.getDeclaredMethod(test);
+            Method m = testCls.getMethod(test);
 
             if (isMatchingMethod(m, Modifier.PUBLIC, Modifier.STATIC, null /*testAnnotations*/ )){
               list.add(m);
@@ -579,7 +579,7 @@ public abstract class TestJPF implements JPFShell  {
     
     clazz  = Class.forName(args[0]);
     target = clazz.newInstance();
-    method = clazz.getDeclaredMethod(args[1]);
+    method = clazz.getMethod(args[1]);
 
     try {
       method.invoke(target);

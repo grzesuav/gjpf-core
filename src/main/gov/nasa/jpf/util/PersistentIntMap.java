@@ -28,11 +28,11 @@ import java.util.Iterator;
 public abstract class PersistentIntMap<V> {
   
   /**
-   * the abstract root class for all node types
+   * the abstract root class for all node types. It is essential that this
+   * type is invisible to clients
    */
   protected abstract static class Node<V> implements Cloneable {
     
-        
     abstract Object getElement( int levelIndex);
     
     /**
@@ -47,6 +47,7 @@ public abstract class PersistentIntMap<V> {
     abstract Node<V> removeAllSatisfying(PersistentIntMap<V> map, Predicate<V> pred, Result<V> result);
     
     abstract void process (PersistentIntMap<V> map, Processor<V> proc);
+    
     abstract V getNodeValue();
     
     void printIndentOn (PrintStream ps, int level) {
@@ -81,7 +82,7 @@ public abstract class PersistentIntMap<V> {
     static int nNodes;
     
     OneNode (int idx, Object o){
-nNodes++;
+      nNodes++; // <2do> just for statistics, to be disabled in production code
       this.idx = idx;
       this.nodeOrValue = o;
     }
@@ -229,11 +230,11 @@ nNodes++;
     static int nNodes;
 
     BitmapNode (int bitmap, Object[] nodesOrValues){
-nNodes++;
+      nNodes++; // <2do> just for statistics, to be disabled in production code
       this.bitmap = bitmap;
       this.nodesOrValues = nodesOrValues;
     }
-        
+            
     protected Object getElement (int levelIndex) {
       int bit = 1 << levelIndex;
       if ((bitmap & bit) != 0) {
@@ -472,7 +473,7 @@ nNodes++;
     static int nNodes;
 
     FullNode( Object[] a32){
-nNodes++;
+      nNodes++; // <2do> just for statistics, to be disabled in production code
       nodesOrValues = a32;
     }
     
@@ -489,7 +490,7 @@ nNodes++;
       
       nodesOrValues = nv;
     }
-    
+        
     protected Object getElement (int levelIndex) {
       return nodesOrValues[levelIndex];
     }
@@ -646,18 +647,6 @@ nNodes++;
    * object that holds the results of operations performed on a PersistentMap
    */
   public static class Result<V>{
-    private static Result cachedResult = new Result();
-    
-    public static synchronized <V> Result<V> getNewResult(){
-      if (cachedResult != null){
-        Result<V> r = (Result<V>)cachedResult;
-        cachedResult = null;
-        return r;
-        
-      } else {
-        return new Result<V>();
-      }
-    }
     
     /**
      * the number of changed values (>0: added, <0: removed). If 0, no
@@ -667,19 +656,16 @@ nNodes++;
     
     /**
      * internal use only - the node that takes the last added value
+     * <2do> these should be in PersistentStagingMsbIntMap, not here
      */
     protected Node<V> valueNode;
+    protected int valueNodeLevel;
     protected boolean merged;
     
-    protected void finalize(){
-      synchronized (Result.class){
-        cachedResult = this;
-      }
-    }
-
     public void clear(){
       changeCount = 0;
       valueNode = null;
+      valueNodeLevel = -1;
       merged = false;
     }
     
@@ -705,34 +691,11 @@ nNodes++;
       return changeCount != 0;
     }
   }
-  
-  // in case we don't care
-  public static final Result NO_RESULT = new Result();
+
 
   public static class RecordingResult<V> extends Result<V>{
-    private static RecordingResult cachedResult = new RecordingResult();
-    
-    public static synchronized <V> Result<V> getNewResult(){
-      if (cachedResult != null){
-        Result<V> r = (Result<V>)cachedResult;
-        cachedResult = null;
-        return r;
-        
-      } else {
-        return new Result<V>();
-      }
-    }
     
     private Object changedValue;
-
-    protected void finalize(){
-      synchronized (RecordingResult.class){
-        changeCount = 0;
-        changedValue = null;
-        
-        cachedResult = this;
-      }
-    }
 
     @Override
     public void clear(){
@@ -767,6 +730,76 @@ nNodes++;
     }    
   }
   
+  //--- static utilities
+  
+  /**
+  static int getMsbShift (int key) {
+    if ((key & 0xc0000000) != 0) return 30;
+    if ((key & 0x3e000000) != 0) return 25;
+    if ((key & 0x1f00000) != 0)  return 20;
+    if ((key & 0xf8000) != 0)    return 15;
+    if ((key & 0x7c00) != 0)     return 10;
+    if ((key & 0x3e0) != 0)      return 5;
+    return 0;
+  }
+  **/
+  
+  static final int LeadingMultiplyDeBruijnBitPosition[] = {
+    0, 5, 0, 10, 10, 20, 0, 25, 10, 10, 15, 15, 20, 25, 0, 30,
+    5, 10, 20, 25, 15, 15, 20, 5, 15, 25, 20, 5, 25, 5, 0, 30
+  };
+  
+  /**
+   * get the shift count for the highest bit index (bit block). This is essentially counting the number of leading zero bits,
+   * which we can derive from http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogLookup
+   */
+  static int getMsbShift (int v){
+    v |= v >>> 1;
+    v |= v >>> 2;
+    v |= v >>> 4;
+    v |= v >>> 8;
+    v |= v >>> 16;
+
+    return LeadingMultiplyDeBruijnBitPosition[(v * 0x07C4ACDD) >>> 27];
+  }
+  
+  /**
+  static int getLsbShift (int key) {
+    if (key == 0 || (key & 0x1f) != 0)       return 0;
+    if ((key & 0x3e0) != 0)      return 5;
+    if ((key & 0x7c00) != 0)     return 10;
+    if ((key & 0xf8000) != 0)    return 15;
+    if ((key & 0x1f00000) != 0)  return 20;
+    if ((key & 0x3e000000) != 0) return 25;
+    return 30;
+  }
+  **/
+  
+  /**
+  static final int Mod37Shifts[] = {
+    0, 0, 0, 25, 0, 20, 25, 0, 0, 15, 20, 30, 25, 10, 0, 10, 0,
+    5, 15, 0,  25,  20, 30, 15, 25, 10,  10, 5, 0, 20, 10, 5, 5,
+    20, 5, 15, 15
+  };
+  static int getLsbShift (int v){
+    return Mod37Shifts[ (-v & v) % 37];
+  }
+  **/
+
+  static final int TrailingMultiplyDeBruijnBitPosition[] = {
+      0, 0, 25, 0, 25, 10, 20, 0, 30, 20, 20, 15, 25, 15, 0, 5, 
+      30, 25, 10, 20, 20, 15, 15, 5, 25, 10, 15, 5, 10, 5, 10, 5
+  };
+  
+  /**
+   * get the shift count for the lowest bit index (bit block). This is essentially counting the number of trailing
+   * zero bits, which we can derive from http://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightMultLookup
+   */
+  static int getLsbShift (int v) {
+    return TrailingMultiplyDeBruijnBitPosition[(((v & -v) * 0x077CB531)) >>> 27];
+  }
+
+  
   //--- the instance fields
   final protected int size;
   final protected Node<V> root;
@@ -792,22 +825,118 @@ nNodes++;
     return size==0;
   }
   
+  protected Node<V> assocNodeValue (Node<V> node, V value, Result<V> result){
+    result.valueNodeLevel++;
+    Object o = node.getElement(0);
+
+    if (o != null){                        // we got something for index 0
+      if (o instanceof Node){           // we've got a node
+        Node<V> newNodeElement = assocNodeValue( (Node<V>)o, value, result);
+        if (newNodeElement == o){
+          return node;
+        } else {
+          return node.cloneWithReplacedElement( 0, newNodeElement);
+        }
+
+      } else {                             // we've got a value
+        if (o == value){
+          return node;
+        } else {
+          node = node.cloneWithReplacedElement( 0, value);
+          result.replacedValue( node, (V)o);
+          return node;
+        }
+      }
+
+    } else {                               // we didn't have anything for this index
+      node = node.cloneWithAddedElement( 0, value);
+      result.addedValue( node, value);
+      return node;
+    }
+  }
+  
+  protected Node<V> removeNodeValue (Node<V> node, Result<V> result){
+    result.valueNodeLevel++;
+    Object o = node.getElement(0);
+
+    if (o != null){                        // we got something for index 0
+      if (o instanceof Node){              // we've got a node
+        Node<V> newNodeElement = removeNodeValue((Node<V>)o, result);
+        if (newNodeElement == null){
+          return node.cloneWithoutElement( 0);
+        } else if (newNodeElement == o){
+          return node;
+        } else {
+          return node.cloneWithReplacedElement( 0, newNodeElement);
+        }
+
+      } else {                             // we've got a value
+        node = node.cloneWithoutElement( 0);
+        result.removedValue( node, (V)o);
+        return node;
+      }
+
+    } else {                               // we didn't have anything for this index
+      return node;
+    }
+  }
+  
   //--- abstract methods
   public abstract V get (int key);
   
-  public abstract PersistentIntMap<V> set (int key, V value);
+  public PersistentIntMap<V> set (int key, V value) {
+    return set( key, value, createResult());
+  }
   public abstract PersistentIntMap<V> set (int key, V value, Result<V> result);  
   
-  public abstract PersistentIntMap<V> remove (int key);
+  public PersistentIntMap<V> remove (int key){
+    return remove( key, createResult());
+  }
   public abstract PersistentIntMap<V> remove (int key, Result<V> result);
 
   protected abstract Node<V> removeAllSatisfying (Node<V> node, Predicate<V> predicate, Result<V> result); // node redirection
-  public abstract PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate);
   public abstract PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate, Result<V> result);
+  
+  public PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate) {
+    return removeAllSatisfying( predicate, createResult());
+  }
 
-  protected abstract void processNode (Node<V> node, Processor<V> processor); // node redirection
-  public abstract void process (Processor<V> processor);
-  public abstract void processInKeyOrder (Processor<V> processor);
-
-  public abstract void printOn (PrintStream ps);
+  
+  protected void processNode (Node<V> node, Processor<V> processor) {
+    node.process(this, processor);
+  }
+  
+  public void process (Processor<V> processor){
+    if (root != null){
+      root.process(this, processor);
+    }
+  }
+    
+  /**
+   * Obtain a Result object that allows inspection of size changes of the map, but not changed values.
+   * Can be overridden to allow concrete PersistentIntMap classes to use specialized Result objects with varying
+   * internal information but the same public interface
+   * @return new Result<V> object
+   */
+  public Result<V> createResult(){
+    return new Result<V>();
+  }
+  
+  /**
+   * Obtain a Result object that allows inspection of size and value changes of the map.
+   * Can be overridden to allow concrete PersistentIntMap classes to use specialized Result objects with varying
+   * internal information but the same public interface
+   * @return new Result<V> object
+   */
+  public Result<V> createRecordingResult(){
+    return new RecordingResult<V>();
+  }
+  
+  public void printOn (PrintStream ps) {
+    if (root != null) {
+      root.printNodeInfoOn(ps);
+      ps.println();
+      root.printOn(ps, 1);
+    }
+  }
 }
