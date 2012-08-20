@@ -347,6 +347,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     mi.exceptionHandlers = null;
     mi.thrownExceptionClassNames = null;
     mi.uniqueName = mi.name;
+    mi.ci = ci;
 
     CodeBuilder cb = mi.createCodeBuilder();
 
