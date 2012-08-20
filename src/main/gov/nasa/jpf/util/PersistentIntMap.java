@@ -23,39 +23,191 @@ import java.io.PrintStream;
 import java.util.Iterator;
 
 /**
- * immutable generic map type that maps integer keys to object values
+ * Persistent (immutable) associative array that maps integer keys to generic objects.
+ * This is an abstract base for a number of concrete subclasses that are all implemented
+ * as bitwise search tries.
+ * <p>
+ * The 32bit key values are broken up into 5bit blocks that represent the trie
+ * levels, with each 5bit block (0..31) being the index for the respective child level node or value.
+ * The concrete subclasses differ in terms of how the blocks are processed: left-to-right
+ * (Msb - most significant bit first), or right-to-left (Lsb - least significant bit first).
+ * For instance, PersistentMsbIntMap stores value 'x' for key 12345
+ * 
+ * <blockquote><pre>
+ *   level:     1    2     3     4     5     6     7
+ *              00.00000.00000.00000.01100.00001.11001  = 12345
+ *   block-val:  0     0     0     0    12     1    25
+ * 
+ *       Node0
+ *         ... 
+ *         12 -> Node1
+ *                 ...
+ *                 1 -> Node2
+ *                        ...
+ *                        25 -> 'x'
+ *</pre></blockquote>
+ * <p>
+ * The internal trie representation uses a protected Node type, which uses the bit block values (0..31)
+ * as index into an array that stores either child node references (in case this is not a
+ * terminal block), or value objects (if this is the terminal block). There are three Node
+ * subtypes that get promoted upon population in the following order:
+ * 
+ * <ul>
+ *  <li>OneNode - store only a single value/child element. Every node starts as a OneNode
+ *  <li>BitmapNode - stores up to 31 elements (compressed)
+ *  <li>FullNode - stores 32 elements
+ * </ul>
+ * 
+ * It is essential that all Node instances remain internal to guarantee invariant data.
+ * <p>
+ * Apart from the Node hierarchy, PersistentIntMaps differ from other tries by using
+ * heterogenous containers to store child nodes and values. Values that are associated
+ * with keys that have one or more trailing zero blocks (such as 0x18000) are called
+ * 'NodeValues', and are directly stored as elements of the node that corresponds
+ * to the lowest set bit block, unless this element already holds a reference to a child
+ * node. In this case NodeValues are stored in the first 0-indexed child node that does not
+ * have a node as its 0-indexed element.     
+ * 
+ * The five major public operations for PersistentIntMaps are
+ * 
+ * <ol>
+ *  <li>set(int key, V value) -> PersistentIntMap : return a new map with an additional value 
+ *  <li>get(int key) -> V : retrieve value
+ *  <li>remove(int key) -> PersistentIntMap : return a new map without the specified key/value
+ *  <li>removeAllSatisfying(Predicate<V> predicate) -> PersistentIntMap : return a new map
+ *                             without all values satisfying the specified predicate
+ *  <li>process(Processor<V> processor) : iterate over all values with specified processor
+ * </ol>
+ *  
+ * Being a persistent data structure, the main property of PersistentIntMaps is that all
+ * add/remove operations (set,remove,removeAllSatisfying) have to return new PersistenIntMap
+ * instances, no destructive update is allowed. No PersistentIntMap instance can ever change
+ * its keys or value identities. Normal usage patterns therefore looks like this:
+ * 
+ * <blockquote><pre>
+ *   PersistentIntMap<String> map = PersistentMsbIntMap<String>();
+ *   ..
+ *   map = map.set(42, "fortytwo"); // returns a new map
+ *   ..
+ *   map = map.remove(42); // returns a new map
+ *   ..
+ *   map = map.removeAllSatisfying( new Predicate<String>(){ // returns a new map
+ *     public boolean isTrue (String val){ 
+ *       return val.endsWith("two");
+ *     });
+ *     
+ *   map.process( new Processor<String>(){
+ *     public void process (String val){
+ *       System.out.println(val);
+ *     });
+ * </pre></blockquote>
+ * 
+ * <p>
+ * If clients need to obtain more detailed information about add/remove operations (added/removed
+ * values), they have to provide a Result<V> object that is created by the respective map instance.
+ *  
+ * Result objects also double up as containers for variant (operation dependent) state. The
+ * general principle is that map state is invariant, and all temporary state that is required
+ * during add/remove operations is contained in Result objects. This resembles the
+ * intrinsic/external state separation of the Flyweight design pattern (but for different
+ * reasons). To ensure invariance of map data, it is imperative that Result objects only
+ * expose change counts and values to clients, but do not leak internal trie information such
+ * as nodes.
+ * 
+ * <p>
+ * The main implementation challenge is to minimize the number of nodes that have to be
+ * cloned when adding/removing values. In general, the new map has to replace all nodes from
+ * the one that holds the value up to the root node in order to separate data that is
+ * shared with the old map from modified data of the new map. The required path copy upon
+ * modification means that the trie height should be kept at a minimum, which comes down to
+ * ignoring heading zero blocks and to roll up trailing zero blocks by directly storing
+ * values in parent nodes. The latter one requires recursive propagation of such values into
+ * NodeValues of child nodes in case there is a conflict between a value and a child node.
+ * This gets further complicated by promotion/demotion of node types due to population.
+ * 
+ * <i>Comment: While add operations of concrete PersistentMap classes are considered
+ * to be reasonably complete with respect to trie height minimization, the same is not yet
+ * true for remove operations</i>
+ *  
  */
 public abstract class PersistentIntMap<V> {
   
   /**
-   * the abstract root class for all node types. It is essential that this
-   * type is invisible to clients
+   * Abstract root class for all node types. This type needs to be internal, no instances
+   * are allowed to be visible outside the PersistentIntMap class hierarchy in order to guarantee
+   * invariant data.
    */
   protected abstract static class Node<V> implements Cloneable {
     
-    abstract Object getElement( int levelIndex);
+    //--- element setters/getters used by PersistentStagingMsbIntMap
+    /**
+     * obtain Node or value for the provided bit block value
+     * @param idx element index (bit block value of range [0..31])
+     * @return Node or value stored under levelIndex, or null if not present
+     * @see gov.nasa.jpf.util.PersistentStagingMsbIntMap
+     */
+    protected abstract Object getElement( int idx);
     
     /**
-     *  this one is dangerous - only to be used on already cloned nodes!
+     * store a new node or value for the provided index
+     *  THIS IS DANGEROUS - only to be used on already cloned nodes (by PersistentStagingMsbIntMap)
+     * @param idx element index (bit block value of range [0..31])
+     * @param e (non-null) node or value to set
+     * @see gov.nasa.jpf.util.PersistentStagingMsbIntMap
      */
-    abstract void setElement( int levelIndex, Object e);
+    protected abstract void setElement( int idx, Object e);
     
-    abstract Node<V> cloneWithReplacedElement( int idx, Object o);
-    abstract Node<V> cloneWithAddedElement( int idx, Object o);
-    abstract Node<V> cloneWithoutElement( int idx); // caller has to make sure it's there
+    //--- node promotion/demotion
+    /**
+     * create new Node of same type with replaced element
+     * @param idx element index (bit block value of range [0..31])
+     * @param e (non-null) node or value to set
+     * @return new Node (non-null)
+     */
+    protected abstract Node<V> cloneWithReplacedElement( int idx, Object e);
+    
+    /**
+     * create new Node with additional element. Node type can change based on population.
+     * @param idx index for new element (bit block value of range [0..31])
+     * @param e (non-null) node or value to add
+     * @return new Node (non-null)
+     */    
+    protected abstract Node<V> cloneWithAddedElement( int idx, Object e);
+    
+    /**
+     * create new Node without specified element. Node type can change based on population.
+     * @param idx index of element to remove (bit block value of range [0..31])
+     * @return new Node or null if no element left
+     */    
+    protected abstract Node<V> cloneWithoutElement( int idx); // caller has to make sure it's there
 
-    abstract Node<V> removeAllSatisfying(PersistentIntMap<V> map, Predicate<V> pred, Result<V> result);
+    /**
+     * create new Node without all values that satisfy provided Predicate. This needs the containing
+     * map as an explicit argument to allow specialized PersistentIntMaps to filter/forward cached nodes 
+     * 
+     * @param map PersistentIntMap containing this node
+     * @param pred Predicate that identifies values to remove (if it evaluates to true for a given value)
+     * @param result Result object with updated changeCount upon return
+     * @return new Node or null if no element left
+     * 
+     * @see renmoveAllSatisfying(Node<V>, Predicate<V> pred, Result<V> result)
+     */
+    protected abstract Node<V> removeAllSatisfying(PersistentIntMap<V> map, Predicate<V> pred, Result<V> result);
     
-    abstract void process (PersistentIntMap<V> map, Processor<V> proc);
     
-    abstract V getNodeValue();
+    protected abstract void process (PersistentIntMap<V> map, Processor<V> proc);
     
-    void printIndentOn (PrintStream ps, int level) {
+    protected abstract V getNodeValue();
+    
+    //--- debug support (printing nodes)
+    
+    protected void printIndentOn (PrintStream ps, int level) {
       for (int i=0; i<level; i++) {
         ps.print("    ");
       }
     }
-    void printNodeInfoOn (PrintStream ps) {
+    
+    protected void printNodeInfoOn (PrintStream ps) {
       String clsName = getClass().getSimpleName();
       int idx = clsName.indexOf('$');
       if (idx > 0) {
@@ -63,11 +215,12 @@ public abstract class PersistentIntMap<V> {
       }
       ps.print(clsName);
     }
-    abstract void printOn(PrintStream ps, int level);
+    
+    protected abstract void printOn(PrintStream ps, int level);
   }
   
   /**
-   * a node that has only one element and hence does not need an array.
+   * Node that has only one element and hence does not need an array.
    * This can also be the element at index 0, in which case this element
    * has to be a Node, or otherwise the value would be directly stored in the
    * parent elements.
@@ -133,7 +286,7 @@ public abstract class PersistentIntMap<V> {
         
     //--- Node interface
         
-    V getNodeValue() {
+    protected V getNodeValue() {
       if (idx == 0) {
         Object o = nodeOrValue;
         if ((o instanceof Node)) {
@@ -159,7 +312,7 @@ public abstract class PersistentIntMap<V> {
       }
     }
 
-    Node<V> removeAllSatisfying(PersistentIntMap<V> map, Predicate<V> pred, Result<V> result) {
+    protected Node<V> removeAllSatisfying(PersistentIntMap<V> map, Predicate<V> pred, Result<V> result) {
       Object o = nodeOrValue;
       if (o instanceof Node){
         Node<V> node = (Node<V>)o;
@@ -210,17 +363,22 @@ public abstract class PersistentIntMap<V> {
 
 
   /**
-   * a node that holds between 2 and 31 elements.
-   * We use bitmap based element compaction - the corresponding level part of the key
-   * [0..31] is used as an index into the bitmap. The elements are stored in a dense
+   * A node that holds between 2 and 31 elements.
+   * 
+   * We use bitmap based element array compaction - the corresponding bit block of the key
+   * [0..31] is used as an index into a bitmap. The elements are stored in a dense
    * array at indices corresponding to the number of set bitmap bits to the right of the
-   * respective index, e.g. for 
-   *   key = 289 =  b..01001.00001, shift = 5, node already contains a key 97 =>
+   * respective index in the bitmap, e.g. for
+   * 
+   * <blockquote><pre> 
+   *   key = 289 =  b...01001.00001, shift = 5, node already contains a key 97 =>
    *     idx = (key >>> shift) & 0x1f = b01001 = 9
-   *     bitmap =  1000001000 (bit 3 from previous key 97)
+   *     bitmap =  1000001000 (bit 3 from key 97)
    *     element index = 1 (one set bit to the right of bit 9)
-   * If the bit count is 2 and an element is removed, this gets demoted into a OneNode.
-   * If the bit count is 31 and an element is added, this gets promoted into a FullNode
+   * </pre></blockquote>
+   * <p>
+   * If the bit count of a BitmapNode is 2 and an element is removed, this gets demoted into a OneNode.
+   * If the bit count of a BitmapNode is 31 and an element is added, this gets promoted into a FullNode
    */
   protected final static class BitmapNode<V> extends Node<V> {
     

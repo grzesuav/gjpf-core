@@ -229,8 +229,9 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
     PersistentIntMap<Integer> t = createPersistentIntMap();
+    PersistentIntMap.Result<Integer> res = t.createResult();
     for (int i=0; i<N; i++){
-      t = t.set(i,  new Integer(i));
+      t = t.set(i,  new Integer(i), res);
     }
     t2 = System.currentTimeMillis();
     System.out.println("creation: " + (t2 - t1));
@@ -250,13 +251,13 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
     for (int i=0; i<N; i++){
-       t = t.remove(i);
+       t = t.remove(i,res);
        assertTrue( t.size() == (N-i-1));
     }
     t2 = System.currentTimeMillis();
     System.out.println("remove: " + (t2 - t1));
     
-System.out.printf("OneNodes: %d, BitmapNodes: %d, FullNodes: %d\n", OneNode.nNodes, BitmapNode.nNodes, FullNode.nNodes);
+    System.out.printf("OneNodes: %d, BitmapNodes: %d, FullNodes: %d\n", OneNode.nNodes, BitmapNode.nNodes, FullNode.nNodes);
   }
   
   static class EvenPredicate implements Predicate<Integer>{
