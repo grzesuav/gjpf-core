@@ -405,7 +405,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   public int newString (String str, ThreadInfo th) {
     if (str != null) {
       int length = str.length();
-      int index = newObject(ClassInfo.getResolvedClassInfo("java.lang.String"), th);
+      int index = newObject(ClassInfo.getResolvedSystemClassInfo("java.lang.String"), th);
       int value = newArray("C", length, th);
 
       ElementInfo e = get(index);

@@ -168,13 +168,13 @@ public class JPF_java_lang_reflect_Method {
     if (rt == Types.T_DOUBLE) {
       attr = frame.getLongOperandAttr();
       double v = frame.doublePop();
-      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"));
+      ret = env.newObject(ClassInfo.getResolvedSystemClassInfo("java.lang.Double"));
       rei = env.getElementInfo(ret);
       rei.setDoubleField("value", v);
     } else if (rt == Types.T_FLOAT) {
       attr = frame.getOperandAttr();
       int v = frame.pop();
-      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"));
+      ret = env.newObject(ClassInfo.getResolvedSystemClassInfo("java.lang.Float"));
       rei = env.getElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_LONG) {

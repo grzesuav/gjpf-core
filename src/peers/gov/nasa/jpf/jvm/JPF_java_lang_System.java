@@ -140,7 +140,7 @@ public class JPF_java_lang_System {
   static String JAVA_CLASS_PATH = "java.class.path";
   
   public static String getSUTJavaClassPath(JVM vm) {
-    ClassInfo system = ClassInfo.getResolvedClassInfo("java.lang.System");
+    ClassInfo system = ClassInfo.getResolvedSystemClassInfo("java.lang.System");
     
     if (system == null) {
       return null; 

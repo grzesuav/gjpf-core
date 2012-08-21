@@ -867,7 +867,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     sFields = emptyFields;
 
     if (isArray) {
-      superClass = getResolvedClassInfo("java.lang.Object");
+      superClass = ClassInfo.getResolvedSystemClassInfo("java.lang.Object");
       interfaceNames = loadArrayInterfaces();
       methods = loadArrayMethods();
     } else {
@@ -1126,6 +1126,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   public static ClassInfo getClassInfo(int uniqueId) {
     return classes.get(uniqueId);
+  }
+
+  public static ClassInfo getResolvedSystemClassInfo(String className) {
+    ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
+    return systemLoader.getResolvedClassInfo(className);
   }
 
   public static ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {
@@ -2290,6 +2295,21 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return false;
   }
 
+  public static ClassInfo getInitializedSystemClassInfo (String clsName, ThreadInfo ti){
+    ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
+    ClassInfo ci = systemLoader.getResolvedClassInfo(clsName);
+
+    systemLoader.registerClass(ti, ci); // this is safe to call on already loaded classes
+
+    if (!ci.isInitialized()) {
+      if (ci.initializeClass(ti)) {
+        throw new ClinitRequired(ci);
+      }
+    }
+
+    return ci;
+  }
+
   /**
    * this one is for clients that need to synchronously get an initialized classinfo.
    * NOTE: we don't handle clinits here. If there is one, this will throw
@@ -2313,7 +2333,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   ElementInfo createClassObject (ThreadInfo ti){
     Heap heap = JVM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
-    int clsObjRef = heap.newObject(getResolvedClassInfo("java.lang.Class"), ti);
+    int clsObjRef = heap.newObject(ClassInfo.getResolvedSystemClassInfo("java.lang.Class"), ti);
     ElementInfo ei = heap.get(clsObjRef);
 
     int clsNameRef = heap.newInternString(name, ti);

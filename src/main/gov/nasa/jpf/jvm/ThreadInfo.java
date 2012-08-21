@@ -708,7 +708,7 @@ public class ThreadInfo
     // fall victim to GC, and that does not cause NoUncaughtExcceptionsProperty violations
     if (throwableRef == MJIEnv.NULL){
       // if no throwable was provided (the normal case), throw a java.lang.ThreadDeath Error
-      ClassInfo cix = ClassInfo.getInitializedClassInfo("java.lang.ThreadDeath", this);
+      ClassInfo cix = ClassInfo.getInitializedSystemClassInfo("java.lang.ThreadDeath", this);
       throwableRef = createException(cix, null, MJIEnv.NULL);
     }
 
@@ -2009,7 +2009,7 @@ public class ThreadInfo
       } else {
         Heap heap = vm.getHeap();
 
-        ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.StackTraceElement");
+        ClassInfo ci = ClassInfo.getResolvedSystemClassInfo("java.lang.StackTraceElement");
         int sRef = heap.newObject(ci, ThreadInfo.this);
 
         ElementInfo  sei = heap.get(sRef);
@@ -2973,7 +2973,7 @@ public class ThreadInfo
 
       // that means we have to turn the exception into an InvocationTargetException
       if (mi.isReflectionCallStub()) {
-        ci               = ClassInfo.getInitializedClassInfo("java.lang.reflect.InvocationTargetException", this);
+        ci               = ClassInfo.getInitializedSystemClassInfo("java.lang.reflect.InvocationTargetException", this);
         exceptionObjRef  = createException(ci, cname, exceptionObjRef);
         cname            = ci.getName();
         ei               = heap.get(exceptionObjRef);

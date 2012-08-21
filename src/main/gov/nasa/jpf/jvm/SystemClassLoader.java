@@ -83,7 +83,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
   }
 
   @Override
-  protected ClassInfo loadClass(String cname) {
+  public ClassInfo loadClass(String cname) {
     return getResolvedClassInfo(cname);
   }
 
