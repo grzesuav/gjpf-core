@@ -27,10 +27,10 @@ package gov.nasa.jpf.jvm;
  * to do a round trip back and forth to JPF, to execute the user implemented
  * user code.
  */
-public class ResolveRequired extends RuntimeException {
+public class LoadOnJPFRequired extends RuntimeException {
   String className;
 
-  public ResolveRequired (String className){
+  public LoadOnJPFRequired (String className){
     this.className = className;
   }
 }

@@ -350,7 +350,8 @@ public class ClassLoaderInfo
     }
   }
 
-  protected ClassInfo loadClass(String cname) {
+  // it acquires the resolvedClassInfo by executing the class loader loadClass() method
+  public ClassInfo loadClass(String cname) {
     ClassInfo ci = null;
     if(roundTripRequired) {
       // loadClass bytecode needs to be executed by the JPF vm
@@ -414,7 +415,7 @@ public class ClassLoaderInfo
         // the round trip starts here
         pushloadClassFrame(cname);
         // bail out right away & re-execute the current instruction in JPF
-        throw new ResolveRequired(cname);
+        throw new LoadOnJPFRequired(cname);
       }
     }
     return ci;

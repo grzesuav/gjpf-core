@@ -70,7 +70,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
       byte[] buffer = match.getBytes();
       try{
         return defineClass(env, cl, typeName, buffer, 0, buffer.length, match);
-      } catch(ResolveRequired rre) {
+      } catch(LoadOnJPFRequired rre) {
         env.repeatInvocation();
         return MJIEnv.NULL;
       }
