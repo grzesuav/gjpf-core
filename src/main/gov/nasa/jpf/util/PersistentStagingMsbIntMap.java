@@ -81,6 +81,8 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   }
   
   protected Node<V> assocNodeValue (Node<V> node, V value, Result<V> result){
+    result.valueNodeLevel++;
+    
     if (node == sourceNode) {
       node = stagingNode;
       result.merged = true;
@@ -92,7 +94,9 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   /**
    * an assoc version that merges the staging node on-the-fly, without redundant node cloning  
    */
-  protected Node<V> assoc (int shift, int finalShift, int key, V value, Node<V> node, Result<V> result){    
+  protected Node<V> assoc (int shift, int finalShift, int key, V value, Node<V> node, Result<V> result){
+    result.valueNodeLevel++;
+    
     if (node == sourceNode) {
       // takes care of old staging node parent of new staging node, in which case we can do
       // the merge on-the-fly (in descending branch of recursion)
@@ -285,6 +289,8 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   }
   
   protected Node<V> removeNodeValue (Node<V> node, Result<V> result){
+    result.valueNodeLevel++;
+    
     if (node == sourceNode) {
       node = stagingNode;
       result.merged = true;
@@ -293,7 +299,9 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
     return super.removeNodeValue(node, result);
   }
   
-  protected Node<V> remove (int shift, int finalShift, int key, Node<V> node, Result<V> result){    
+  protected Node<V> remove (int shift, int finalShift, int key, Node<V> node, Result<V> result){
+    result.valueNodeLevel++;
+    
     if (node == sourceNode) {
       node = stagingNode;
       result.merged = true;

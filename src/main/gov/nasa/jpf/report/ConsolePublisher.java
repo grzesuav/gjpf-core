@@ -196,9 +196,9 @@ public class ConsolePublisher extends Publisher {
   }
 
   protected void publishError() {
-    Error e = reporter.getLastError();
+    Error e = reporter.getCurrentError();
 
-    publishTopicStart("error " + reporter.getLastErrorId());
+    publishTopicStart("error " + e.getId());
     out.println(e.getDescription());
 
     String s = e.getDetails();
@@ -260,7 +260,7 @@ public class ConsolePublisher extends Publisher {
       return; // nothing to publish
     }
 
-    publishTopicStart("trace " + reporter.getLastErrorId());
+    publishTopicStart("trace " + reporter.getCurrentErrorId());
 
     for (Transition t : path) {
       out.print("------------------------------------------------------ ");
@@ -334,7 +334,7 @@ public class ConsolePublisher extends Publisher {
       return; // nothing to publish
     }
 
-    publishTopicStart("output " + reporter.getLastErrorId());
+    publishTopicStart("output " + reporter.getCurrentErrorId());
 
     if (path.hasOutput()) {
       for (Transition t : path) {
@@ -353,7 +353,7 @@ public class ConsolePublisher extends Publisher {
 
     // not so nice - we have to delegate this since it's using a lot of internals, and is also
     // used in debugging
-    publishTopicStart("snapshot " + reporter.getLastErrorId());
+    publishTopicStart("snapshot " + reporter.getCurrentErrorId());
 
     if (vm.getPathLength() > 0) {
       vm.printLiveThreadStatus(out);

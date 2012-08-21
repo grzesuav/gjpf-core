@@ -119,7 +119,7 @@ public abstract class Publisher {
   }
   
   public String getLastErrorId() {
-    return reporter.getLastErrorId();
+    return reporter.getCurrentErrorId();
   }
 
   public boolean hasTopic (String topic) {

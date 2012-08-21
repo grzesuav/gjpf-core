@@ -802,7 +802,41 @@ public abstract class PersistentIntMap<V> {
 
   
   /**
-   * object that holds the results of operations performed on a PersistentMap
+   * Result objects hold the results of operations performed on a PersistentMap.
+   * 
+   * This class can be instantiated by the user and reused in a number of map
+   * operations to save per-add/remove allocation
+   * 
+   * <blockquote><pre>
+   *   PersistentIntMap.Result<X> result = new PersistentIntMap.Result<X>();
+   *   PersistentIntMap<X> map = ...
+   *   
+   *   for (int i=0; i<MAX; i++){
+   *     X value = ..
+   *     map = map.add( key, value, result);
+   *     ..
+   * </pre></blockquote>
+   * 
+   * This is a public type and some of the info (such as changeCount) is exposed
+   * to the client, but it also doubles up as a container for transient state
+   * of the respective PersistentIntMap that is used internally within add/remove
+   * operations.
+   * 
+   * CARE HAS TO BE TAKEN THAT THIS TRANSIENT STATE DOES NOT LEAK TO THE CLIENT
+   * 
+   * Ideally, this should be a covariant argument type, which is not supported by Java,
+   * mostly to allow type safe class hierarchies of Results (not all internals are
+   * used by all PersistentIntMap subclasses). However, the usual workaround to turn the
+   * concrete Result type into a PersistentIntMap type parameter causes ugly
+   * constructs for concrete subclasses (such as PersistentMsbIntMap) that are itself
+   * extended (requiring them to expose their Result type parameter to the user),
+   * and - worse - prevents the abstraction to PersistentIntMap<V> within user code
+   * that also uses result objects (e.g. to avoid per-call allocation).
+   * The workaround is to hoist all required transient state into Result<V>,
+   * but since the PersistentIntMap class hierarchy is not supposed to get large,
+   * and the fields holding transient state are (so far) inexpensive, type abstraction
+   * in the user code is considered more important than encapsulation within internal
+   * implementation code. Caveat - this might change.
    */
   public static class Result<V>{
     
@@ -814,7 +848,7 @@ public abstract class PersistentIntMap<V> {
     
     /**
      * internal use only - the node that takes the last added value
-     * <2do> these should be in PersistentStagingMsbIntMap, not here
+     * Ideally, these should be in PersistentStagingMsbIntMap, not here (see above)
      */
     protected Node<V> valueNode;
     protected int valueNodeLevel;
@@ -851,6 +885,12 @@ public abstract class PersistentIntMap<V> {
   }
 
 
+  /**
+   * a Result type that also records and exposes added/removed values to the 
+   * user (but not where these values were added/removed).
+   * This Result type carries runtime overhead and should be avoided unless
+   * the user code needs to retrieve such values
+   */
   public static class RecordingResult<V> extends Result<V>{
     
     private Object changedValue;
@@ -984,7 +1024,6 @@ public abstract class PersistentIntMap<V> {
   }
   
   protected Node<V> assocNodeValue (Node<V> node, V value, Result<V> result){
-    result.valueNodeLevel++;
     Object o = node.getElement(0);
 
     if (o != null){                        // we got something for index 0
@@ -1014,7 +1053,6 @@ public abstract class PersistentIntMap<V> {
   }
   
   protected Node<V> removeNodeValue (Node<V> node, Result<V> result){
-    result.valueNodeLevel++;
     Object o = node.getElement(0);
 
     if (o != null){                        // we got something for index 0
@@ -1038,13 +1076,40 @@ public abstract class PersistentIntMap<V> {
       return node;
     }
   }
+
+  //--- used to implement node redirection in subclasses
+  protected abstract Node<V> removeAllSatisfying (Node<V> node, Predicate<V> predicate, Result<V> result);
+
+  protected void processNode (Node<V> node, Processor<V> processor) {
+    node.process(this, processor);
+  }
   
-  //--- abstract methods
+  //--- public API methods
+  
+  /**
+   * retrieve value object for specified key
+   * @return value object or null if not in map
+   */
   public abstract V get (int key);
   
+  /**
+   * create new PersistentIntMap with added (key,value) pair. If the value object
+   * is already stored in the map under this key, the same map is returned as it
+   * has not changed.
+   * 
+   * null value objects are ignored
+   * 
+   * This operation uses default Result objects that are allocated per call and cannot
+   * be retrieved by the caller. Use this method if you don't need to know about changes
+   * 
+   * @param key key under which value is stored
+   * @param value new value object (non-null)
+   * @return new PersistentIntMap that holds specified (key,value) pair
+   */
   public PersistentIntMap<V> set (int key, V value) {
     return set( key, value, createResult());
   }
+  
   public abstract PersistentIntMap<V> set (int key, V value, Result<V> result);  
   
   public PersistentIntMap<V> remove (int key){
@@ -1052,18 +1117,13 @@ public abstract class PersistentIntMap<V> {
   }
   public abstract PersistentIntMap<V> remove (int key, Result<V> result);
 
-  protected abstract Node<V> removeAllSatisfying (Node<V> node, Predicate<V> predicate, Result<V> result); // node redirection
   public abstract PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate, Result<V> result);
   
   public PersistentIntMap<V> removeAllSatisfying (Predicate<V> predicate) {
     return removeAllSatisfying( predicate, createResult());
   }
 
-  
-  protected void processNode (Node<V> node, Processor<V> processor) {
-    node.process(this, processor);
-  }
-  
+    
   public void process (Processor<V> processor){
     if (root != null){
       root.process(this, processor);

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.util;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -32,6 +33,85 @@ import java.util.NoSuchElementException;
 public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
   public static final int defaultInitCap = 40;
 
+  static final int MAX_GAP = 10;
+  
+  public static class Snapshot<E> {
+    static class SnapshotBlock {
+      int baseIndex;
+      Object[] data;
+      SnapshotBlock next;
+      
+      SnapshotBlock (int baseIndex, Object[] data, SnapshotBlock next){
+        this.baseIndex = baseIndex;
+        this.data = data;
+        this.next = next;
+      }
+    }
+    
+    // the ObjVector state we directly store
+    int size;
+    Growth growth;
+    
+    // where we keep the data
+    SnapshotBlock head;
+    
+    int saveBlock (Object[] d, int start, int end) {
+      int len = end-start+1;
+      Object[] bd = Arrays.copyOfRange(d, start, end+1); 
+      head = new SnapshotBlock(start, bd, head);      
+      
+      return len;
+    }
+    
+    Snapshot (ObjVector<E> v){
+      int n = v.size;
+      size = n;
+      growth = v.growth;      
+      Object[] d = v.data;
+      
+      int end = -1, start = -1;
+      
+      for (int i=n-1; (i>=0) && (n>0); i--) {
+        if (d[i] != null) {
+          if (start > 0 && (start - i) > MAX_GAP ) { // store prev block
+            n -= saveBlock( d, start, end);              
+            end = i;
+            start = i;
+            
+          } else {
+            if (end < 0) {
+              end = i;
+            }
+            start = i;
+          }
+        }
+      }
+      
+      if (end >=0 && end >= start) {
+        saveBlock( d, start, end);
+      }
+    }
+    
+    void restore (ObjVector<E> v) {
+      Object[] d;
+      if (size <= v.size) {
+        d = v.data;
+        Arrays.fill(d, null);
+      } else {
+        d = new Object[size];
+        v.data = d;
+      }
+
+      for (SnapshotBlock block = head; block != null; block = block.next) {
+        Object[] bd = block.data;
+        System.arraycopy(bd, 0, d, block.baseIndex, bd.length);
+      }
+      
+      v.size = size;
+      v.growth = growth;
+    }
+  }
+
   
   /** <i>size</i> as in a java.util.Vector. */
   protected int size;
@@ -41,9 +121,9 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
   
   /** growth strategy. */
   protected Growth growth;
+    
   
-  
-  /*======================== CONSTRUCTORS ======================*/
+  //--- constructors
   public ObjVector(Growth initGrowth, int initCap) {
     growth = initGrowth;
     data = new Object[initCap];
@@ -75,7 +155,16 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
   }
   
   
-  /*========================= PUBLIC METHODS =======================*/
+  //--- ObjVector operations
+  
+  public Snapshot<E> getSnapshot(){
+    return new Snapshot<E>(this);
+  }
+  
+  public void restore (Snapshot<E> snap) {
+    snap.restore(this);
+  }
+  
   public void add(E x) {
     if (size >= data.length) {
       ensureCapacity(size+1);
@@ -179,6 +268,14 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     data[idx] = v;
   }
 
+  public void setRange (int startIdx, int endIdx, E v) {
+    ensureSize(endIdx+1);
+    
+    for (int i=startIdx; i<= endIdx; i++) {
+      data[i] = v;
+    }
+  }
+  
   public <F> F[] toArray (F[] dst) {
     System.arraycopy(data,0,dst,0,size);
     return dst;
@@ -221,6 +318,26 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     // faster than iterating over the whole array
     data = new Object[data.length];
     size = 0;
+  }
+  
+  @SuppressWarnings("unchecked")
+  public void clearAllSatisfying (Predicate<E> pred) {
+    Object[] d = data;
+    int newSize = 0;
+    for (int i=size-1; i>=0; i--) {
+      E e = (E)d[i];
+      if (e != null) {
+        if (pred.isTrue(e)) {
+          d[i] = null;
+        } else {
+          if (newSize == 0) {
+            newSize = i+1;
+          }
+        }
+      }
+    }
+    
+    size = newSize;
   }
   
   public int size() { return size; }
@@ -371,6 +488,17 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     public Iterator<E> iterator() {
       return this;
     }
+  }
+  
+  public void printOn (PrintStream ps) {
+    ps.println("ObjVector = [");
+    for (int i=0; i<size; i++) {
+      ps.print("  ");
+      ps.print(i);
+      ps.print(": ");
+      ps.println(get(i));
+    }
+    ps.println(']');
   }
 
 }

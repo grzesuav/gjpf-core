@@ -107,7 +107,6 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   protected Node<V> assoc (int shift, int finalShift, int key, V value, Node<V> node, Result<V> result){
     int k = key >>> shift;
     int levelIdx = k & 0x1f;
-    result.valueNodeLevel++;
     Object o = node.getElement(levelIdx);
 
     if (o != null){                       // we already have a node or value for this index
@@ -232,7 +231,6 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   protected Node<V> remove (int shift, int finalShift, int key, Node<V> node, Result<V> result){
     int k = (key >>> shift);
     int levelIdx = k & 0x1f;
-    result.valueNodeLevel++;
 
     Object o = node.getElement(levelIdx);
 

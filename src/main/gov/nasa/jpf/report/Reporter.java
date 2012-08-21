@@ -271,16 +271,16 @@ public class Reporter extends SearchListenerAdapter {
     return search.getErrors();
   }
 
-  public Error getLastError () {
-    return search.getLastError();
+  public Error getCurrentError () {
+    return search.getCurrentError();
   }
 
   public String getLastSearchConstraint () {
     return search.getLastSearchConstraint();
   }
 
-  public String getLastErrorId () {
-    Error e = getLastError();
+  public String getCurrentErrorId () {
+    Error e = getCurrentError();
     if (e != null) {
       return "#" + e.getId();
     } else {

@@ -20,6 +20,8 @@
 package gov.nasa.jpf.util;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 
 import org.junit.Test;
@@ -247,6 +249,8 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
     t2 = System.currentTimeMillis();
     System.out.println("lookup: " + (t2 - t1));
     
+    PersistentIntMap<Integer> t0 = t;
+    
     System.out.println("-------- removing each entry");
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
@@ -257,7 +261,91 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
     t2 = System.currentTimeMillis();
     System.out.println("remove: " + (t2 - t1));
     
+    System.out.println("-------- block remove of entries");
+    Predicate<Integer> pred = new Predicate<Integer>(){
+      public boolean isTrue (Integer o) {
+        int i = o.intValue();
+        return (i > 20000 && i < 30000);
+      }
+    };
+    Runtime.getRuntime().gc();
+    t1 = System.currentTimeMillis();
+    t = t0.removeAllSatisfying(pred,res);
+    t2 = System.currentTimeMillis();
+    System.out.println("block remove of " + Math.abs(res.changeCount) + " values: " + (t2 - t1));
+    assertTrue( (t0.size() + res.changeCount) == t.size() );
+    
+    
     System.out.printf("OneNodes: %d, BitmapNodes: %d, FullNodes: %d\n", OneNode.nNodes, BitmapNode.nNodes, FullNode.nNodes);
+  }
+  
+  public void benchmarkHashMap() {
+    long t1, t2;
+    int N = 40000; // table size
+
+    //--- create
+    System.out.println("-------- creating HashMap with " + N + " entries");
+    Runtime.getRuntime().gc();
+    t1 = System.currentTimeMillis();
+    HashMap<Integer,Integer> t = new HashMap<Integer,Integer>();
+    for (int i=0; i<N; i++){
+      t.put(i, i);
+    }
+    t2 = System.currentTimeMillis();
+    System.out.println("creation: " + (t2 - t1));
+    assertTrue(t.size() == N);
+
+    System.out.println("-------- retrieving each entry");
+    Runtime.getRuntime().gc();
+    t1 = System.currentTimeMillis();
+    for (int i=0; i<N; i++){
+      Object v = t.get(i);
+      assertTrue( v != null);
+    }
+    t2 = System.currentTimeMillis();
+    System.out.println("lookup: " + (t2 - t1));
+       
+    System.out.println("-------- clone HashMap");
+    Runtime.getRuntime().gc();
+    HashMap<Integer,Integer> t0 = null;
+    t1 = System.currentTimeMillis();
+    for (int i=0; i<1000; i++) {
+      t0 = (HashMap<Integer,Integer>)t.clone();
+    }
+    t2 = System.currentTimeMillis();
+    System.out.println("cloned 1000 times (corresponds to state storage): " + (t2 - t1));
+    
+    System.out.println("-------- removing each entry");
+    Runtime.getRuntime().gc();
+    t1 = System.currentTimeMillis();
+    for (int i=0; i<N; i++){
+       t.remove(i);
+       assertTrue( t.size() == (N-i-1));
+    }
+    t2 = System.currentTimeMillis();
+    System.out.println("remove: " + (t2 - t1));
+    
+    System.out.println("-------- block remove of entries");
+    
+    Predicate<Integer> pred = new Predicate<Integer>(){
+      public boolean isTrue (Integer o) {
+        int i = o.intValue();
+        return (i > 20000 && i < 30000);
+      }
+    };
+    Runtime.getRuntime().gc();
+    int nRemoved=0;
+    t1 = System.currentTimeMillis();
+    for (Iterator<Map.Entry<Integer,Integer>> it = t0.entrySet().iterator(); it.hasNext();) {
+      Map.Entry<Integer, Integer> e = it.next();
+      if (pred.isTrue(e.getValue())) {
+        it.remove();
+        nRemoved++;
+      }      
+    }
+    t2 = System.currentTimeMillis();
+    System.out.println("block remove of " + nRemoved + " values: " + (t2 - t1));
+    
   }
   
   static class EvenPredicate implements Predicate<Integer>{
@@ -302,126 +390,103 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
     dump(t, new IntegerProcessor());
   }
   
-  public void blockRemoveBenchmark() {
-    int N = 500;
-    int M = 10000;
-    long t1, t2;
-    
-    PersistentIntMap<Integer> t = createPersistentIntMap();    
-    for (int i=0; i<N; i++){
-      t = t.set(i,i);
-    }
-    PersistentIntMap<Integer> t0 = t;
 
-    System.out.println("original table");
-    //dumpInKeyOrder(t, new IntegerProcessor());
-
-    int min = 50;
-    int max = 300;
-    
-    Runtime.getRuntime().gc();
-    Predicate<Integer> pred = new IntervalPredicate(min, max);
-    t1 = System.currentTimeMillis();
-    for (int j=0; j<M; j++) {
-      t = t0.removeAllSatisfying(pred); 
-    }
-    t2 = System.currentTimeMillis();
-    System.out.printf("block remove of %d = %d\n", t0.size() - t.size(), (t2 - t1));
-    
-    Runtime.getRuntime().gc();
-    t1 = System.currentTimeMillis();
-    for (int j=0; j<M; j++) {
-      t = t0;      
-      for (int i=min; i<=max; i++) {
-        t = t.remove(i);
-      }
-    }
-    t2 = System.currentTimeMillis();
-    System.out.printf("explicit remove of %d = %d\n", (max-min+1), (t2 - t1));
-    
-    
-    //--- HashMap
-    HashMap<Integer,Integer> h0 = new HashMap<Integer,Integer>();
-    for (int i=0; i<N; i++){
-      h0.put(i, i);
-    }
-
-    long td = 0, t3, t4;
-    Runtime.getRuntime().gc();
-    t1 = System.currentTimeMillis();
-    for (int j=0; j<M; j++) {
-      HashMap<Integer,Integer> h = (HashMap<Integer,Integer>)h0.clone();
-      t3 = System.currentTimeMillis();
-      for (int i=min; i<=max; i++) {
-        h.remove(i);
-      }
-      t4 = System.currentTimeMillis();
-      td += (t4-t3);
-    }
-    t2 = System.currentTimeMillis();
-    System.out.printf("HashMap remove of %d = %d (%d with restore)\n", (max-min+1), td, (t2 - t1));
-    
-    
-  }
+  final static int NSTATES = 20000;
+  final static int NOBJECTS = 2000;
+  final static int NGC = 400;
   
-  //@Test
+  
   public void benchmark (){
     long t1, t2;
-    int N = 20000; // table size
-    int M = 5000000; // lookup
 
-    //--- create
+    //--- PersistentIntMap
+    Predicate<Integer> pred = new Predicate<Integer>() {
+      public boolean isTrue (Integer o) {
+        int i = o.intValue();
+        return (i < NGC);
+      }
+    };
+    
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
-    PersistentIntMap<Integer> t = createPersistentIntMap();
-    for (int i=0; i<N; i++){
-      t = t.set(i,  new Integer(i));
+    for (int l=0; l<NSTATES; l++) {
+      PersistentIntMap<Integer> t = createPersistentIntMap();
+      PersistentIntMap.Result<Integer> res = t.createResult();  
+      
+      //--- allocations
+      for (int i=0; i<NOBJECTS; i++){
+        t = t.set(i,  new Integer(i), res);
+      }
+
+      //--- lookup
+      for (int i=0; i<NOBJECTS; i++) {
+        Integer o = t.get(i);
+      }
+      
+      //--- gc
+      t = t.removeAllSatisfying(pred, res);
+      
+      //--- no store/backtrack costs for container
     }
     t2 = System.currentTimeMillis();
-    System.out.println("table creation: " + (t2 - t1));
+    System.out.println("PersistentIntMap (" + NSTATES + " cycles): " + (t2 - t1));
+  
 
+    //--- HashMap
     Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
-    HashMap<Integer,Integer> h = new HashMap<Integer,Integer>();
-    for (int i=0; i<N; i++){
-      h.put(i, i);
-    }
-    t2 = System.currentTimeMillis();
-    System.out.println("HashMap creation: " + (t2 - t1));
+    for (int l=0; l<NSTATES; l++) {
+      HashMap<Integer,Integer> m = new HashMap<Integer,Integer>();
+      //--- allocations
+      for (int i=0; i<NOBJECTS; i++){
+        m.put(i, i);
+      }
 
-    //--- lookup
-    Random r = new Random(42);
-    t1 = System.currentTimeMillis();
-    for (int i=0; i<M; i++){
-      int k = r.nextInt(N);
-      t.get(k);
+      //--- lookup
+      for (int i=0; i<NOBJECTS; i++) {
+        Integer o = m.get(i);
+      }
+      
+      //--- gc
+      for (Iterator<Map.Entry<Integer,Integer>> it = m.entrySet().iterator(); it.hasNext();) {
+        Map.Entry<Integer, Integer> e = it.next();
+        if (pred.isTrue(e.getValue())) {
+          it.remove();
+        }      
+      }
+      
+      //--- 2xclone (upon store and backtrack)
+      m = (HashMap<Integer,Integer>)m.clone();
+      m = (HashMap<Integer,Integer>)m.clone();
     }
     t2 = System.currentTimeMillis();
-    System.out.println("table lookup: " + (t2 - t1));
-    
-    r = new Random(42);
-    t1 = System.currentTimeMillis();
-    for (int i=0; i<M; i++){
-      int k = r.nextInt(N);
-      h.get(k);
-    }
-    t2 = System.currentTimeMillis();
-    System.out.println("HashMap lookup: " + (t2 - t1));
+    System.out.println("HashMap (" + NSTATES + " cycles): " + (t2 - t1));
 
-    //--- remove
+    //--- ObjVector (needs to be adjusted for holes -> increased size)
+    Runtime.getRuntime().gc();
     t1 = System.currentTimeMillis();
-    for (int i=0; i<N; i++){
-      t = t.remove(i);
+    for (int l=0; l<NSTATES; l++) {
+      ObjVector<Integer> v = new ObjVector<Integer>();
+      //--- allocations
+      for (int i=0; i<NOBJECTS; i++){
+        v.set(i, i);
+      }
+
+      //--- lookup
+      for (int i=0; i<NOBJECTS; i++) {
+        Integer o = v.get(i);
+      }
+      
+      //--- gc
+      v.clearAllSatisfying(pred);
+      
+      //--- snap & restore
+      ObjVector.Snapshot<Integer> snap = v.getSnapshot();
+      v.restore(snap);
     }
     t2 = System.currentTimeMillis();
-    System.out.println("table remove: " + (t2 - t1));
-    
-    t1 = System.currentTimeMillis();
-    for (int i=0; i<N; i++){
-      h.remove(i);
-    }
-    t2 = System.currentTimeMillis();
-    System.out.println("HashMap remove: " + (t2 - t1));
+    System.out.println("ObjVector (" + NSTATES + " cycles): " + (t2 - t1));
+
   }
 
 }
