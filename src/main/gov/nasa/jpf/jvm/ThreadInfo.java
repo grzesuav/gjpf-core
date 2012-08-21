@@ -2116,9 +2116,19 @@ public class ThreadInfo
 
   public Instruction createAndThrowException (String cname, String details) {
     try {
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(cname);
+      ClassInfo ci = null;
+      try {
+        ci = ClassInfo.getResolvedClassInfo(cname);
+      } catch(ClassInfoException cie) {
+        // the non-system class loader couldn't find the class, 
+        if(cie.getExceptionClass().equals("java.lang.ClassNotFoundException") &&
+        !ClassLoaderInfo.getCurrentClassLoader().isSystemClassLoader()) {
+          ci = ClassInfo.getResolvedSystemClassInfo(cname);
+        } else {
+          throw cie;
+        }
+      }
       return createAndThrowException(ci, details);
-
     } catch (ClassInfoException cie){
       if(!cname.equals(cie.getExceptionClass())) {
         ClassInfo ci = ClassInfo.getResolvedClassInfo(cie.getExceptionClass());
