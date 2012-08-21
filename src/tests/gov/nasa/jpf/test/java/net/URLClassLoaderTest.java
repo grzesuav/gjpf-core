@@ -20,6 +20,8 @@ package gov.nasa.jpf.test.java.net;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -36,7 +38,7 @@ import gov.nasa.jpf.util.test.TestJPF;
  * 
  * test of java.lang.ClassLoader API
  */
-public class URLClassLoaderTest extends TestJPF {
+public class URLClassLoaderTest extends LoadUtility {
 
   public class TestClassLoader extends URLClassLoader {
 
@@ -165,41 +167,6 @@ public class URLClassLoaderTest extends TestJPF {
       // systemClassLoader is going to be the defining classloader
       assertNull(ucl2.getLoadedClass(cname));
       assertNull(ucl1.getLoadedClass(cname));
-    }
-  }
-
-  String user_dir = System.getProperty("user.dir");
-  String pkg = "classloader_specific_tests";
-
-  String originalPath = user_dir + "/build/tests/" + pkg;
-  String tempPath = user_dir + "/build/" + pkg;
-
-  String jarUrl = "jar:file:" + user_dir + "/build/" + pkg + ".jar!/";
-  String dirUrl = "file:" + user_dir + "/build";
-
-  /**
-   * move the package, to avoid systemClassLoader loading its classes
-   */
-  protected void movePkgOut() {
-    if(!TestJPF.isJPFRun()) {
-      movePkg(originalPath, tempPath);
-    }
-  }
-
-  /**
-   * move the package back to its original place
-   */
-  protected void movePkgBack() {
-    if(!TestJPF.isJPFRun()) {
-      movePkg(tempPath, originalPath);
-    }
-  }
-
-  protected void movePkg(String from, String to) {
-    File file = new File(to);
-    if(!file.exists()) {
-      file = new File(from);
-      assertTrue(file.renameTo(new File(to)));
     }
   }
 
@@ -522,6 +489,27 @@ public class URLClassLoaderTest extends TestJPF {
       String cname = pkg + ".Class1";
       cl.loadClass(cname);
       assertNotNull(cl.getPackage("classloader_specific_tests"));
+    }
+    movePkgBack();
+  }
+
+  @Test
+  public void testThrownException() throws ClassNotFoundException, MalformedURLException, SecurityException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    movePkgOut();
+    if(verifyNoPropertyViolation()) {
+      URL[] urls = { new URL(dirUrl) };
+      TestClassLoader loader = new TestClassLoader(urls);
+      String cname = pkg + ".Class1";
+
+      Class<?> c = loader.loadClass(cname);
+      Method m = c.getMethod("throwDividByZeroException", new Class<?>[0]);
+
+      try {
+        m.invoke(null, new Object[0]);
+      } catch(InvocationTargetException ite) {
+        // success!
+        assertTrue(ite.getMessage().equals("java.lang.ArithmeticException"));
+      }
     }
     movePkgBack();
   }
