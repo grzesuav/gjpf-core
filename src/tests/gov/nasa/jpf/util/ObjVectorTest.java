@@ -65,11 +65,11 @@ public class ObjVectorTest extends TestJPF {
     assertEquals( v0, v);
     
     //--- punch holes into it
-    v.setRange(11,  19, null);
+    v.setRange(11,  20, null);
     v.set( 25,null);
     v.set( 26, null);
     v.set( 42, null);
-    v.setRange(70, 84, null);
+    v.setRange(70, 85, null);
     ObjVector.Snapshot<Integer> snap1 = v.getSnapshot();    
     ObjVector<Integer> v1 = v.clone();
     v.clear();

@@ -33,7 +33,7 @@ import java.util.NoSuchElementException;
 public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
   public static final int defaultInitCap = 40;
 
-  static final int MAX_GAP = 10;
+  static final int DEFAULT_MAX_GAP = 10;
   
   public static class Snapshot<E> {
     static class SnapshotBlock {
@@ -57,13 +57,14 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     
     int saveBlock (Object[] d, int start, int end) {
       int len = end-start+1;
-      Object[] bd = Arrays.copyOfRange(d, start, end+1); 
+      Object[] bd = new Object[len];
+      System.arraycopy(d, start, bd, 0, len);
       head = new SnapshotBlock(start, bd, head);      
       
       return len;
     }
     
-    Snapshot (ObjVector<E> v){
+    Snapshot (ObjVector<E> v, int maxGap){
       int n = v.size;
       size = n;
       growth = v.growth;      
@@ -73,7 +74,7 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
       
       for (int i=n-1; (i>=0) && (n>0); i--) {
         if (d[i] != null) {
-          if (start > 0 && (start - i) > MAX_GAP ) { // store prev block
+          if (start > 0 && (start - i) > maxGap ) { // store prev block
             n -= saveBlock( d, start, end);              
             end = i;
             start = i;
@@ -90,17 +91,12 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
       if (end >=0 && end >= start) {
         saveBlock( d, start, end);
       }
-    }
+    }    
     
     void restore (ObjVector<E> v) {
-      Object[] d;
-      if (size <= v.size) {
-        d = v.data;
-        Arrays.fill(d, null);
-      } else {
-        d = new Object[size];
-        v.data = d;
-      }
+      // this is faster than iterating through the array
+      Object[] d = new Object[size];
+      v.data = d;
 
       for (SnapshotBlock block = head; block != null; block = block.next) {
         Object[] bd = block.data;
@@ -158,8 +154,16 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
   //--- ObjVector operations
   
   public Snapshot<E> getSnapshot(){
-    return new Snapshot<E>(this);
+    return new Snapshot<E>(this, DEFAULT_MAX_GAP);
   }
+  
+  /**
+   * create a snapshot that doesn't store more than maxGap consecutive null values
+   */
+  public Snapshot<E> getSnapshot( int maxGap){
+    return new Snapshot<E>(this, maxGap);
+  }
+  
   
   public void restore (Snapshot<E> snap) {
     snap.restore(this);
@@ -268,12 +272,15 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     data[idx] = v;
   }
 
-  public void setRange (int startIdx, int endIdx, E v) {
-    ensureSize(endIdx+1);
-    
-    for (int i=startIdx; i<= endIdx; i++) {
-      data[i] = v;
-    }
+  /**
+   * set range of values
+   * @param fromIndex first index (inclusive)
+   * @param toIndex last index (exclusive)
+   * @param val value to set
+   */
+  public void setRange (int fromIndex, int toIndex, E val) {
+    ensureSize(toIndex);
+    Arrays.fill(data, fromIndex, toIndex, val);
   }
   
   public <F> F[] toArray (F[] dst) {
@@ -313,8 +320,6 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
   }
 
   public void clear() { 
-    //setSize(0);
-
     // faster than iterating over the whole array
     data = new Object[data.length];
     size = 0;
@@ -340,9 +345,13 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     size = newSize;
   }
   
-  public int size() { return size; }
+  public int size() { 
+    return size; 
+  }
   
-  public int length() { return size; }
+  public int length() {
+    return size;
+  }
   
   public void ensureSize(int sz) {
     if (size < sz) {
@@ -378,21 +387,6 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     System.arraycopy(src.data, srcPos, dst, dstPos, len);
   }
 
-  public int removeAll() {
-    int n=0;
-    Object[] data = this.data;
-    int len = size;
-
-    for (int i=0; i<len; i++){
-      if (data[i] != null){
-        data[i] = null;
-        n++;
-      }
-    }
-    size = 0;
-    return n;
-  }
-
   /**
    * remove all non-null elements between 'fromIdx' (inclusive) and
    * 'toIdx' (exclusive)
@@ -426,18 +420,8 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     return removeRange(fromIdx,size);
   }
 
-  public Iterator<E> iterator () {
-    return new OVIterator();
-  }
-
-  public Iterator<E> nonNullIterator() {
-    return new NonNullIterator();
-  }
-
-  public Iterable<E> elements() {
-    return new NonNullIterator();
-  }
-
+  //--- Iterators
+  
   class OVIterator implements Iterator<E> {
     int idx = 0;
     
@@ -489,6 +473,20 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
       return this;
     }
   }
+  
+  public Iterator<E> iterator () {
+    return new OVIterator();
+  }
+
+  public Iterator<E> nonNullIterator() {
+    return new NonNullIterator();
+  }
+
+  public Iterable<E> elements() {
+    return new NonNullIterator();
+  }
+
+
   
   public void printOn (PrintStream ps) {
     ps.println("ObjVector = [");
