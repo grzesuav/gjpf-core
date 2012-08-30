@@ -201,9 +201,10 @@ public class PerturbatorTest extends TestJPF {
 
     if (verifyNoPropertyViolation("+listener=.listener.Perturbator",
                                   "+perturb.params=foo,zoo",
-                                  "+perturb.class=.perturb.GenericDataAbstractor",
+                                  "+perturb.foo.class=.perturb.GenericDataAbstractor",
                                   "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foobar(long,double)",
-                                  "+perturb.foo.location=PerturbatorTest.java:232",
+                                  "+perturb.foo.location=PerturbatorTest.java:233",        // <<<<<<<<< update if file is changed!
+                                  "+perturb.zoo.class=.perturb.GenericDataAbstractor",
                                   "+perturb.zoo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.zoo(int,boolean)"
     )) {
       System.out.println("parameters perturbation test");

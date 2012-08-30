@@ -194,14 +194,14 @@ public class ArrayObjectQueue<E> implements ObjectQueue<E> {
   }
   
   /**
-   * call ObjectQueueProcessor.process(e) on each queued object
+   * call Processor.process(e) on each queued object
    * 
    * This method does not return before the queue is empty, which makes it
    * suitable for graph traversal. It also avoids iterator objects, allows
    * adding new objects while processing the queue, and enables to keep
    * processing state in the processor
    */
-  public void processQueue (ObjectQueueProcessor<E> processor){
+  public void processQueue (Processor<E> processor){
     while (size > 0){
       E e = remove();
       processor.process(e);

@@ -163,7 +163,7 @@ public class ArrayObjectQueueTest extends TestJPF {
     E (String name){ this.name = name; }
   }
 
-  static class EProcessor implements ObjectQueueProcessor<E> {
+  static class EProcessor implements Processor<E> {
     ArrayObjectQueue queue;
     int processed = 0;
     

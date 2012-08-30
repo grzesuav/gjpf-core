@@ -426,7 +426,7 @@ public abstract class Area<EI extends ElementInfo> implements Iterable<EI> {
     hasChanged.clear();
   }
 
-  public boolean anyChanged() {
+  public boolean hasChanged() {
     return !hasChanged.isEmpty();
   }
 

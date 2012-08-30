@@ -162,9 +162,4 @@ public class KernelState implements Restorable<KernelState> {
     statics.cleanUpDanglingReferences(heap);
   }
 
-  public void hash (HashData hd) {
-    heap.hash(hd);
-    statics.hash(hd);
-    threads.hash(hd);
-  }
 }

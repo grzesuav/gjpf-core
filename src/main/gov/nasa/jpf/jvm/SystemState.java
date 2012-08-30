@@ -704,10 +704,6 @@ public class SystemState {
     }
   }
 
-  public void hash (HashData hd) {
-    ks.hash(hd);
-  }
-
 
   void dumpThreadCG (ThreadChoiceGenerator cg) {
     PrintWriter pw = new PrintWriter(System.out, true);

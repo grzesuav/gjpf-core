@@ -2511,6 +2511,7 @@ public class ThreadInfo
     SystemState ss = vm.getSystemState();
     ThreadList tl = vm.getThreadList();
     
+if (ei == null) System.out.println("@@@ ARGHH: " + Integer.toHexString(objref));
     // beware - this notifies all waiters for this thread (e.g. in a join())
     // hence it has to be able to acquire the lock
     if (!ei.canLock(this)) {
