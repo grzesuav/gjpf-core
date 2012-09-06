@@ -130,71 +130,25 @@ public class SparseClusterArrayHeap extends GenericHeapImpl {
     return elementInfos.iterator();
   }
 
-  public int newArray(String elementType, int nElements, ThreadInfo ti, String allocLocation) {
-    String type = "[" + elementType;
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(type);
+  //--- the allocator primitives
 
-    if (!ci.isInitialized()){
-      // we do this explicitly here since there are no clinits for array classes
-      ci.registerClass(ti);
-      ci.setInitialized();
-    }
-
-    Fields  f = ci.createArrayFields(type, nElements,
-                                     Types.getTypeSize(elementType),
-                                     Types.isReference(elementType));
-    Monitor  m = new Monitor();
-    DynamicElementInfo ei = createElementInfo(ci, f, m, ti);
-
+  @Override
+  protected int getNewElementInfoIndex (ClassInfo ci, ThreadInfo ti, String allocLocation) {
     int tid = (ti != null) ? ti.getId() : 0;
     int index = getFirstFreeIndex(tid);
     if (index < 0){
       throw new JPFException("per-thread heap limit exceeded");
     }
-    ei.setObjectRef(index);
-    elementInfos.set(index, ei);
     
-    attributes |= ATTR_ELEMENTS_CHANGED;
-
-    vm.notifyObjectCreated(ti, ei);
-
-    // see newObject for 'outOfMemory' handling
-
     return index;
   }
-
-  public int newObject(ClassInfo ci, ThreadInfo ti, String allocLocation) {
-    // create the thing itself
-    Fields f = ci.createInstanceFields();
-    Monitor m = new Monitor();
-    ElementInfo ei = createElementInfo(ci, f, m, ti);
-
-    // get next free objRef into thread cluster
-    int tid = (ti != null) ? ti.getId() : 0;
-    int index = getFirstFreeIndex(tid);
-    if (index < 0){
-      throw new JPFException("per-thread heap limit exceeded");
-    }
-    ei.setObjectRef(index);
+  
+  @Override
+  protected void set (int index, ElementInfo ei) {
     elementInfos.set(index, ei);
-
-    attributes |= ATTR_ELEMENTS_CHANGED;
-
-    // and do the default (const) field initialization
-    ci.initializeInstanceData(ei, ti);
-
-if (index == 247) System.out.println("@@ new " + ei);
-    
-    vm.notifyObjectCreated(ti, ei);
-    
-    // note that we don't return -1 if 'outOfMemory' (which is handled in
-    // the NEWxx bytecode) because our allocs are used from within the
-    // exception handling of the resulting OutOfMemoryError (and we would
-    // have to override it, since the VM should guarantee proper exceptions)
-
-    return index;
   }
-
+  
+  
   private int newString(String str, ThreadInfo ti, boolean isIntern) {
     if (str != null) {      
       int length = str.length();

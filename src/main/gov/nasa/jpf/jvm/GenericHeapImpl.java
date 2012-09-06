@@ -197,12 +197,66 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     }
   }
   
-  //--- abstract allocators
-  @Override
-  public abstract int newObject(ClassInfo ci, ThreadInfo ti, String location);
+  protected abstract int getNewElementInfoIndex (ClassInfo ci, ThreadInfo ti, String allocLocation);
+  protected abstract void set (int index, ElementInfo ei);
   
+  //--- allocators
+    
   @Override
-  public abstract int newArray(String elementType, int nElements, ThreadInfo ti, String location);
+  public int newObject(ClassInfo ci, ThreadInfo ti, String allocLocation) {
+    // create the thing itself
+    Fields f = ci.createInstanceFields();
+    Monitor m = new Monitor();
+    ElementInfo ei = createElementInfo(ci, f, m, ti);
+
+    int index = getNewElementInfoIndex( ci, ti, allocLocation);
+    ei.setObjectRef(index);
+    set(index, ei);
+
+    attributes |= ATTR_ELEMENTS_CHANGED;
+
+    // and do the default (const) field initialization
+    ci.initializeInstanceData(ei, ti);
+
+    vm.notifyObjectCreated(ti, ei);
+    
+    // note that we don't return -1 if 'outOfMemory' (which is handled in
+    // the NEWxx bytecode) because our allocs are used from within the
+    // exception handling of the resulting OutOfMemoryError (and we would
+    // have to override it, since the VM should guarantee proper exceptions)
+
+    return index;
+  }
+
+  @Override
+  public int newArray(String elementType, int nElements, ThreadInfo ti, String allocLocation) {
+    String type = "[" + elementType;
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(type);
+
+    if (!ci.isInitialized()){
+      // we do this explicitly here since there are no clinits for array classes
+      ci.registerClass(ti);
+      ci.setInitialized();
+    }
+
+    Fields  f = ci.createArrayFields(type, nElements,
+                                     Types.getTypeSize(elementType),
+                                     Types.isReference(elementType));
+    Monitor  m = new Monitor();
+    DynamicElementInfo ei = createElementInfo(ci, f, m, ti);
+
+    int index = getNewElementInfoIndex(ci, ti, allocLocation);
+    ei.setObjectRef(index);
+    set(index, ei);
+    
+    attributes |= ATTR_ELEMENTS_CHANGED;
+
+    vm.notifyObjectCreated(ti, ei);
+
+    // see newObject for 'outOfMemory' handling
+
+    return index;
+  }
 
   
   // <2do> these should probably also have locations, but the problem is that they represent bundle allocators
@@ -330,7 +384,6 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
         
         // <2do> still have to process finalizers here, which might make the object live again
         vm.notifyObjectReleased(ei);
-if (ei.getObjectRef() == 247) System.out.println("@@ remove " + ei);
         remove(ei.getObjectRef());
       }
     }    

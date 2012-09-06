@@ -675,7 +675,6 @@ public class SparseClusterArray <E> implements Iterable<E> {
       int base = c.base;
       int i=-1;
       while ((i=c.nextSetBit(i+1)) >= 0) {
- //System.out.println("@@ store: [" + (base+i) + "] = " + c.elements[i]);
         Object val = transformer.transform((E)c.elements[i]);
         values[j] = val;
         indices[j] = base + i;
@@ -700,7 +699,6 @@ public class SparseClusterArray <E> implements Iterable<E> {
     for (int i=0; i<len; i++){
       E obj = transformer.transform(values[i]);
       int index = indices[i];
-//System.out.println("@@ restore: [" + index + "] = " + obj);
 
       set(index,obj);
     }

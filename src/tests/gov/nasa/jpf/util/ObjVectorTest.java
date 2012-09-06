@@ -51,7 +51,7 @@ public class ObjVectorTest extends TestJPF {
     Integer val = Integer.valueOf(42);
     v.set(0,  val);
     assertTrue(v.size() == 1 && v.get(0) == val);
-    v.restore(snap);
+    v.restoreSnapshot(snap);
     assertTrue(v.size() == 0 && v.get(0) == null);
     
     //--- all full snapshot
@@ -61,7 +61,7 @@ public class ObjVectorTest extends TestJPF {
     ObjVector<Integer> v0 = v.clone();
     ObjVector.Snapshot<Integer> snap0 = v.getSnapshot();
     v.clear();
-    v.restore(snap0);
+    v.restoreSnapshot(snap0);
     assertEquals( v0, v);
     
     //--- punch holes into it
@@ -73,20 +73,79 @@ public class ObjVectorTest extends TestJPF {
     ObjVector.Snapshot<Integer> snap1 = v.getSnapshot();    
     ObjVector<Integer> v1 = v.clone();
     v.clear();
-    v.restore(snap1);
+    v.restoreSnapshot(snap1);
     //v.printOn( System.out);
     assertEquals( v1, v);
     
     //--- chop off the ends
-    v.restore(snap0);
+    v.restoreSnapshot(snap0);
     v.setRange(81, 99, null);
     v.setRange(0, 19, null);
     ObjVector.Snapshot<Integer> snap2 = v.getSnapshot();    
     ObjVector<Integer> v2 = v.clone();
     v.clear();
-    v.restore(snap2);
-    assertEquals( v2, v);
+    v.restoreSnapshot(snap2);
+    assertEquals( v2, v); 
+  }
+  
+  //--- mutating snapshot
+  
+  static class X {
+    int val;
+    X (Integer o) { val = o.intValue(); }
+  }
+  
+  static class IXTransformer implements Transformer<Integer,X> {
+    public X transform( Integer obj) {
+      return new X(obj);
+    }
+  }
+  
+  static class XITransformer implements Transformer<X,Integer>{
+    public Integer transform( X obj) {
+      return Integer.valueOf(obj.val);
+    }
+  }
+  
+  @Test
+  public void testMutatingSnapshot() {
+    ObjVector<Integer> v = new ObjVector<Integer>(100);
+
+    for (int i=0; i<100; i+=2) {
+      v.set(i, Integer.valueOf(i));
+    }
+    print(v);
     
+    System.out.println("now storing snapshot for ObjVector of size " + v.size());
+    ObjVector.MutatingSnapshot<Integer,X> snap = v.getSnapshot(new IXTransformer());
     
+    System.out.println("now modifying ObjVector");
+    v.clear();
+    v.setRange(0, 30, Integer.valueOf(42));
+    print(v);
+    
+    System.out.println("now restoring ObjVector");
+    v.restoreSnapshot(snap, new XITransformer());
+    
+    int n = print(v);
+    assert n == 50 : "got wrong number of non-null elements: " + n;
+  }
+  
+  // utilities
+  
+  int print(ObjVector<Integer> v) {
+    int n = 0;
+    for (int i=0; i<=v.size(); i++) {
+      Integer e = v.get(i);
+      if (e != null) {
+        if (n++ > 0) {
+          System.out.print(',');
+        }
+        System.out.print(e);
+      }
+    }
+    System.out.println();
+    
+    return n;
   }
 }

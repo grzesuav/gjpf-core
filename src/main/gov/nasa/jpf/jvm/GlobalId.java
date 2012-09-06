@@ -29,11 +29,11 @@ import gov.nasa.jpf.util.IntTable;
 public class GlobalId extends ExecutionCount {
 
   private static int maxId = 0;
-  private static IntTable<IntTable.Entry<ExecutionContext>> globalIdMap;
+  private static IntTable<IntTable.Entry<PreciseAllocationContext>> globalIdMap;
   
   public static boolean init (Config conf){
     int tblPow = conf.getInt("vm.id_size", 12);
-    globalIdMap = new IntTable<IntTable.Entry<ExecutionContext>>(tblPow);
+    globalIdMap = new IntTable<IntTable.Entry<PreciseAllocationContext>>(tblPow);
     
     return true;
   }
@@ -46,10 +46,10 @@ public class GlobalId extends ExecutionCount {
   public int computeId (ThreadInfo ti){
     int id = 0;
     
-    IntTable.Entry<ExecutionContext> ee = getExecEntry(ti);
+    IntTable.Entry<PreciseAllocationContext> ee = getExecEntry(ti);
     ee.val ++;
     
-    IntTable.Entry<IntTable.Entry<ExecutionContext>> eGid = globalIdMap.get(ee); 
+    IntTable.Entry<IntTable.Entry<PreciseAllocationContext>> eGid = globalIdMap.get(ee); 
     if (eGid == null){
       id = maxId++;
       // NOTE - we have to clone ee since it can get modified
@@ -57,8 +57,6 @@ public class GlobalId extends ExecutionCount {
     } else {
       id = eGid.val;
     }
-    
-    //System.out.println("@@ " + name + "(" + Integer.toHexString(ee.hashCode()) + ") = " + id);
     
     return id;
   }

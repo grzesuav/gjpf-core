@@ -384,7 +384,7 @@ public class ConsolePublisher extends Publisher {
     pw.println("max memory:         " + (stat.maxUsed >> 20) + "MB");
 
     pw.println("loaded code:        classes=" + ClassInfo.getNumberOfLoadedClasses() + ", methods="
-            + MethodInfo.getNumberOfLoadedMethods());    
+            + MethodInfo.getNumberOfLoadedMethods());
   }
   
   public void publishStatistics() {

@@ -26,89 +26,22 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * more customizable alternative to java.util.Vector.  also, set(x,v) automatically
- * grows the structure as needed.
+ * more customizable alternative to java.util.Vector. Other than Vector, it
+ * supports dynamic growth on set() operations. While it supports list
+ * functions such as append, ObjVector resembles mostly an array, i.e.
+ * is meant to be a random-access collection
+ * 
+ * this collection does not keep a count of non-null elements, but does maintain the
+ * highest set index as its size through set/add and remove operations. Note that size
+ * only shrinks through remove operations, not by setting null values. This means there
+ * is no guarantee that data[size-1] is not null. The converse however is true - there is no
+ * non-null element at an index >= size.
+ * 
  * @author pcd
  */
 public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
-  public static final int defaultInitCap = 40;
+  public static final int defaultInitCap = 40;  
 
-  static final int DEFAULT_MAX_GAP = 10;
-  
-  public static class Snapshot<E> {
-    static class SnapshotBlock {
-      int baseIndex;
-      Object[] data;
-      SnapshotBlock next;
-      
-      SnapshotBlock (int baseIndex, Object[] data, SnapshotBlock next){
-        this.baseIndex = baseIndex;
-        this.data = data;
-        this.next = next;
-      }
-    }
-    
-    // the ObjVector state we directly store
-    int size;
-    Growth growth;
-    
-    // where we keep the data
-    SnapshotBlock head;
-    
-    int saveBlock (Object[] d, int start, int end) {
-      int len = end-start+1;
-      Object[] bd = new Object[len];
-      System.arraycopy(d, start, bd, 0, len);
-      head = new SnapshotBlock(start, bd, head);      
-      
-      return len;
-    }
-    
-    Snapshot (ObjVector<E> v, int maxGap){
-      int n = v.size;
-      size = n;
-      growth = v.growth;      
-      Object[] d = v.data;
-      
-      int end = -1, start = -1;
-      
-      for (int i=n-1; (i>=0) && (n>0); i--) {
-        if (d[i] != null) {
-          if (start > 0 && (start - i) > maxGap ) { // store prev block
-            n -= saveBlock( d, start, end);              
-            end = i;
-            start = i;
-            
-          } else {
-            if (end < 0) {
-              end = i;
-            }
-            start = i;
-          }
-        }
-      }
-      
-      if (end >=0 && end >= start) {
-        saveBlock( d, start, end);
-      }
-    }    
-    
-    void restore (ObjVector<E> v) {
-      // this is faster than iterating through the array
-      Object[] d = new Object[size];
-      v.data = d;
-
-      for (SnapshotBlock block = head; block != null; block = block.next) {
-        Object[] bd = block.data;
-        System.arraycopy(bd, 0, d, block.baseIndex, bd.length);
-      }
-      
-      v.size = size;
-      v.growth = growth;
-    }
-  }
-
-  
   /** <i>size</i> as in a java.util.Vector. */
   protected int size;
   
@@ -120,6 +53,7 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     
   
   //--- constructors
+  
   public ObjVector(Growth initGrowth, int initCap) {
     growth = initGrowth;
     data = new Object[initCap];
@@ -150,24 +84,7 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     System.arraycopy(from.data, 0, this.data, 0, size);
   }
   
-  
-  //--- ObjVector operations
-  
-  public Snapshot<E> getSnapshot(){
-    return new Snapshot<E>(this, DEFAULT_MAX_GAP);
-  }
-  
-  /**
-   * create a snapshot that doesn't store more than maxGap consecutive null values
-   */
-  public Snapshot<E> getSnapshot( int maxGap){
-    return new Snapshot<E>(this, maxGap);
-  }
-  
-  
-  public void restore (Snapshot<E> snap) {
-    snap.restore(this);
-  }
+  //--- set/add/remove operations  
   
   public void add(E x) {
     if (size >= data.length) {
@@ -420,9 +337,195 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     return removeRange(fromIdx,size);
   }
 
-  //--- Iterators
+  public E remove (int i) {
+    E e = (E) data[i];
+    
+    if (e != null) {
+      data[i] = null;
+      if (i+1 == size) {
+        size--;
+      }
+    }
+    
+    return e;
+  }
+
+  //--- store/restore snapshot operations
+    
+  static final int DEFAULT_MAX_GAP = 10;
   
-  class OVIterator implements Iterator<E> {
+  /**
+   * this is a block operation snapshot that stores chunks of original data with
+   * not more than DEFAULT_MAX_GAP consecutive null elements. Use this if 
+   * elements can be stored directly
+   */
+  public static class Snapshot<E> {
+    static class Block {
+      int baseIndex;
+      Object[] data;
+      Block next;
+      
+      Block (int baseIndex, Object[] data, Block next){
+        this.baseIndex = baseIndex;
+        this.data = data;
+        this.next = next;
+      }
+    }
+    
+    // the ObjVector state we directly store
+    int size;
+    Growth growth;
+    
+    // where we keep the data
+    Block head;
+    
+    int saveBlock (Object[] d, int start, int end) {
+      int len = end-start+1;
+      Object[] bd = new Object[len];
+      System.arraycopy(d, start, bd, 0, len);
+      head = new Block(start, bd, head);      
+      
+      return len;
+    }
+    
+    Snapshot (ObjVector<E> v, int maxGap){
+      int n = v.size;
+      size = n;
+      growth = v.growth;      
+      Object[] d = v.data;
+      
+      int end = -1, start = -1;
+      
+      for (int i=n-1; (i>=0) && (n>0); i--) {
+        if (d[i] != null) {
+          if (start > 0 && (start - i) > maxGap ) { // store prev block
+            n -= saveBlock( d, start, end);              
+            end = i;
+            start = i;
+            
+          } else {
+            if (end < 0) {
+              end = i;
+            }
+            start = i;
+          }
+        }
+      }
+      
+      if (end >=0 && end >= start) {
+        saveBlock( d, start, end);
+      }
+    }    
+    
+    public void restore (ObjVector<E> v) {
+      // this is faster than iterating through the array
+      Object[] d = new Object[size];
+      v.data = d;
+
+      for (Block block = head; block != null; block = block.next) {
+        Object[] bd = block.data;
+        System.arraycopy(bd, 0, d, block.baseIndex, bd.length);
+      }
+      
+      v.size = size;
+      v.growth = growth;
+    }
+  }
+
+  
+  public Snapshot<E> getSnapshot(){
+    return new Snapshot<E>(this, DEFAULT_MAX_GAP);
+  }
+  
+  /**
+   * create a snapshot that doesn't store more than maxGap consecutive null values
+   */
+  public Snapshot<E> getSnapshot( int maxGap){
+    return new Snapshot<E>(this, maxGap);
+  }
+  
+  public void restoreSnapshot (Snapshot<E> snap) {
+    snap.restore(this);
+  }
+
+  
+  /**
+   *  snapshot that can mutate element values, but therefore can't use block operations.
+   *  This is slower to store/restore, but can be more memory efficient if the elements
+   *  are fragmented (lots of small holes in data)
+   */
+  
+  public static class MutatingSnapshot<E,T>{
+    T[] values;
+    int[] indices;
+    
+    @SuppressWarnings("unchecked")
+    MutatingSnapshot (ObjVector<E> vec, Transformer<E,T> transformer){
+      E[] d = (E[])vec.data;
+      int size = vec.size;
+      int len = 0;
+      
+      //--- get number of non-null elements
+      for (int i=0; i<size; i++) {
+        if (d[i] != null) {
+          len++;
+        }
+      }
+      
+      //--- allocate data
+      T[] values = (T[])new Object[len];
+      int[] indices = new int[len];
+      
+      //--- fill it
+      int j=0;
+      for (int i=0; j < len; i++) {
+        if (d[i] != null) {
+          indices[j] = i;
+          values[j] = transformer.transform(d[i]);
+          j++;
+        }
+      }
+      
+      this.values = values;
+      this.indices = indices;
+    }
+    
+    @SuppressWarnings("unchecked")
+    protected void restore (ObjVector<E> vec, Transformer<T,E> transformer) {
+      T[] values = this.values;
+      int[] indices = this.indices;
+      int len = indices.length;
+      int size = indices[len-1] +1;
+
+      vec.clear();
+      vec.ensureSize(size);
+      E[] d = (E[])vec.data;
+
+      for (int i=0; i<len; i++){
+        E obj = transformer.transform(values[i]);
+        int index = indices[i];
+        d[index] = obj;
+      }
+      
+      vec.size = size;
+    }
+  }
+  
+  public <T> MutatingSnapshot<E,T> getSnapshot( Transformer<E,T> transformer){
+    return new MutatingSnapshot<E,T>(this, transformer);
+  }
+  
+  public <T> void restoreSnapshot (MutatingSnapshot<E,T> snap, Transformer<T,E> transformer) {
+    snap.restore(this, transformer);
+  }
+  
+
+  //--- iterators
+  
+  /**
+   * iterator that goes over all elements regardless of value (i.e. also includes null values)
+   */
+  protected class OVIterator implements Iterator<E> {
     int idx = 0;
     
     public boolean hasNext () {
@@ -442,7 +545,14 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     }
   }
 
-  class NonNullIterator implements Iterator<E>, Iterable<E> {
+  public Iterator<E> iterator () {
+    return new OVIterator();
+  }
+  
+  /**
+   * iterator that only includes element values that are not null
+   */
+  protected class NonNullIterator implements Iterator<E>, Iterable<E> {
     int idx = 0;
     int count = 0;
 
@@ -474,9 +584,7 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     }
   }
   
-  public Iterator<E> iterator () {
-    return new OVIterator();
-  }
+
 
   public Iterator<E> nonNullIterator() {
     return new NonNullIterator();
@@ -487,6 +595,7 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
   }
 
 
+  //--- misc (debugging etc.)
   
   public void printOn (PrintStream ps) {
     ps.println("ObjVector = [");

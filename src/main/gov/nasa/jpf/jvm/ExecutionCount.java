@@ -27,14 +27,14 @@ import gov.nasa.jpf.util.IntTable;
 
 
 /**
- * stores how many times a certain Instruction got executed within the same
- * thread for each different calling context.
+ * stores how many times an ExecutionContext (list of instructions on the stack) got
+ * executed within a given ThreadInfo
  */
 public class ExecutionCount {
 
   public static class Restorer implements ClosedMemento {
     ExecutionCount ec;
-    IntTable.Snapshot<ExecutionContext> snapshot;
+    IntTable.Snapshot<PreciseAllocationContext> snapshot;
     
     public Restorer (ExecutionCount ec){
       this.ec = ec;
@@ -68,7 +68,7 @@ public class ExecutionCount {
   /**
    * this is where we keep the execution counts per ExecutionContext (ThreadInfo and callstack)
    */
-  protected IntTable<ExecutionContext> countTable = new IntTable<ExecutionContext>(6);
+  protected IntTable<PreciseAllocationContext> countTable = new IntTable<PreciseAllocationContext>(6);
     
   
   //--- our public methods
@@ -80,9 +80,9 @@ public class ExecutionCount {
     this.id = ecList.size();
   }
   
-  public IntTable.Entry<ExecutionContext> getExecEntry (ThreadInfo ti){
-    ExecutionContext key = ExecutionContext.getExecutionContext(ti);
-    IntTable.Entry<ExecutionContext> e = countTable.get(key);
+  public IntTable.Entry<PreciseAllocationContext> getExecEntry (ThreadInfo ti){
+    PreciseAllocationContext key = PreciseAllocationContext.getExecutionContext(ti);
+    IntTable.Entry<PreciseAllocationContext> e = countTable.get(key);
     if (e == null){
       e = countTable.add(key, 0);
     }
@@ -90,7 +90,7 @@ public class ExecutionCount {
   }
   
   public int getIncCount (ThreadInfo ti){
-    IntTable.Entry<ExecutionContext> e = getExecEntry(ti);
+    IntTable.Entry<PreciseAllocationContext> e = getExecEntry(ti);
     e.val++;
     
 //System.out.println("@@ " + name + " [" + e.key.ti.getId() + ',' + Integer.toHexString(e.key.hashCode()) + "] = " + e.val);

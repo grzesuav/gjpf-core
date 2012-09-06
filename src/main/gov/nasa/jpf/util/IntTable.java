@@ -24,10 +24,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 /**
- * a hash map that holds int values
- * this is a straight forward linked list hashmap
+ * A hash map that holds int values associated with generic key objects.
+ * This is a straight forward linked list hashmap.
  *
- * keys are supposed to be invariant, lookup explicitly checks for key object identity
+ * Key objects have to be invariant, lookup uses equality but checks for
+ * identity as an optimization.
  *
  * note: this does deep copy clones, which can be quite expensive
  */
@@ -83,7 +84,8 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
         @SuppressWarnings("unchecked")
         Entry<E> other = (Entry<E>)o;
         if (val == other.val){
-          if (key.equals(other.key)){
+          E k = other.key;
+          if (key == k || key.equals(k)){
             return true;
           }
         }
@@ -343,7 +345,8 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
     Entry<E> prev = null;
     Entry<E> cur = table[idx];
     while (cur != null) {
-      if (cur.key.equals(key)) {
+      E k = cur.key;
+      if (k == key || k.equals(key)) {
         if (prev == null) {
           table[idx] = cur.next;
         } else {

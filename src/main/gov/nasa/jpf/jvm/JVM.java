@@ -212,7 +212,7 @@ public class JVM {
     ChoiceGeneratorBase.init(config);
 
     ExecutionCount.init(config);
-    ExecutionContext.init(config);
+    PreciseAllocationContext.init(config);
     GlobalId.init(config);
     
     // peer classes get initialized upon NativePeer creation

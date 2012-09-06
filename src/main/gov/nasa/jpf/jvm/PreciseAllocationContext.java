@@ -31,10 +31,11 @@ import java.util.HashMap;
  * note that we pool (i.e. use static factory methods) in order to avoid
  * creating a myriad of redundant objects
  */
-public class ExecutionContext {
+public class PreciseAllocationContext {
 
-  // this is search global
-  static private HashMap<ExecutionContext,ExecutionContext> ccCache = new HashMap<ExecutionContext,ExecutionContext>();
+  // this is search global, i.e. does not have to be backtracked, but has to be
+  // re-initialized between JPF runs (everything that changes hashCode)
+  static private HashMap<PreciseAllocationContext,PreciseAllocationContext> ccCache = new HashMap<PreciseAllocationContext,PreciseAllocationContext>();
   
   protected ThreadInfo ti;
   protected Instruction[] cc;
@@ -42,7 +43,7 @@ public class ExecutionContext {
   
   // a mutable ExecutionContext that is only used internally to avoid creating superfluous new instances to
   // find out if we already have seen a similar one
-  private static class LookupContext extends ExecutionContext {
+  private static class LookupContext extends PreciseAllocationContext {
     int stackDepth;
     
     LookupContext (){
@@ -57,11 +58,11 @@ public class ExecutionContext {
   private static LookupContext lookupContext = new LookupContext();
   
   static boolean init (Config config) {
-    ccCache = new HashMap<ExecutionContext,ExecutionContext>();
+    ccCache = new HashMap<PreciseAllocationContext,PreciseAllocationContext>();
     return true;
   }
   
-  public static synchronized ExecutionContext getExecutionContext (ThreadInfo ti){
+  public static synchronized PreciseAllocationContext getExecutionContext (ThreadInfo ti){
     int stackDepth = ti.getStackDepth();
     int h = 0;
     
@@ -85,21 +86,21 @@ public class ExecutionContext {
     h = OATHash.hashFinalize(h);
     lookupContext.hashCode = h;
     
-    ExecutionContext ec = ccCache.get(lookupContext);
+    PreciseAllocationContext ec = ccCache.get(lookupContext);
     if (ec == null){
-      ec = new ExecutionContext(ti, Arrays.copyOf(cc, stackDepth), h);
+      ec = new PreciseAllocationContext(ti, Arrays.copyOf(cc, stackDepth), h);
       ccCache.put(ec, ec);
     }
     
     return ec;
   }
   
-  protected ExecutionContext(){
+  protected PreciseAllocationContext(){
     // for subclassing
   }
   
   // we only construct this from a LookupContext, which already has all the data
-  private ExecutionContext (ThreadInfo ti, Instruction[] cc, int hashCode){
+  private PreciseAllocationContext (ThreadInfo ti, Instruction[] cc, int hashCode){
     this.ti = ti;
     this.cc = cc;
     this.hashCode = hashCode;
@@ -118,8 +119,8 @@ public class ExecutionContext {
       return true;
       
     } else {
-      if (o instanceof ExecutionContext){
-        ExecutionContext other = (ExecutionContext)o;
+      if (o instanceof PreciseAllocationContext){
+        PreciseAllocationContext other = (PreciseAllocationContext)o;
         if (hashCode == other.hashCode){ // we might get here because of bin masking
           if (ti.getId() == other.ti.getId()) {
             Instruction[] ccOther = other.cc;
