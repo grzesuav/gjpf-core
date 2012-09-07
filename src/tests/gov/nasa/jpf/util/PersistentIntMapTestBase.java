@@ -482,7 +482,7 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
       
       //--- snap & restore
       ObjVector.Snapshot<Integer> snap = v.getSnapshot();
-      v.restoreSnapshot(snap);
+      v.restore(snap);
     }
     t2 = System.currentTimeMillis();
     System.out.println("ObjVector (" + NSTATES + " cycles): " + (t2 - t1));

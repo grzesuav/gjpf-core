@@ -687,7 +687,7 @@ public class SparseClusterArray <E> implements Iterable<E> {
   }
 
   @SuppressWarnings("unchecked")
-  public <T> void restoreSnapshot (Snapshot<E,T> snap, Transformer<T,E> transformer) {
+  public <T> void restore (Snapshot<E,T> snap, Transformer<T,E> transformer) {
     // <2do> - there are more efficient ways to restore small changes,
     // but since snapshot elements are ordered it should be reasonably fast
     clear();

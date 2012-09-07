@@ -31,6 +31,7 @@ import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.util.ObjectQueue;
 import gov.nasa.jpf.util.Processor;
+import gov.nasa.jpf.util.Transformer;
 
 /**
  * this is an abstract root for Heap implementations, providing a standard
@@ -42,6 +43,52 @@ import gov.nasa.jpf.util.Processor;
  */
 public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
 
+  protected static Transformer<ElementInfo,Memento<ElementInfo>> ei2mei = new Transformer<ElementInfo,Memento<ElementInfo>>(){
+    public Memento<ElementInfo> transform (ElementInfo ei){
+      Memento<ElementInfo> m = null;
+      if (!ei.hasChanged()) {
+        m = ei.cachedMemento;
+      }
+      if (m == null) {
+        m = ei.getMemento();
+        ei.cachedMemento = m;
+      }
+      return m;
+    }
+  };
+
+  protected static Transformer<Memento<ElementInfo>,ElementInfo> mei2ei = new Transformer<Memento<ElementInfo>,ElementInfo>(){
+    public ElementInfo transform(Memento<ElementInfo> m) {
+      ElementInfo ei = m.restore(null);
+      ei.cachedMemento = m;
+      return ei;
+    }
+  };
+  
+  static abstract class GenericHeapImplMemento implements Memento<Heap> {
+    // those can be simply copied
+    int attributes;
+    IntVector pinDownList;
+    IntTable<String> internStrings;
+    
+    protected GenericHeapImplMemento (GenericHeapImpl heap){
+      // these are copy-on-first-write, so we don't have to clone
+      pinDownList = heap.pinDownList;
+      internStrings = heap.internStrings;
+      attributes = heap.attributes & ATTR_STORE_MASK;
+      
+      heap.markUnchanged();
+    }
+    
+    protected void restore (GenericHeapImpl heap) {
+      heap.pinDownList = pinDownList;
+      heap.internStrings = internStrings;
+      heap.attributes = attributes;
+      heap.liveBitValue = false; // always start with false after a restore
+    }
+  }
+  
+  
   protected class ElementInfoMarker implements Processor<ElementInfo>{
     public void process (ElementInfo ei) {
       ei.markRecursive( GenericHeapImpl.this); // this might in turn call queueMark
@@ -197,6 +244,8 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     }
   }
   
+  // NOTE - this is where to assert if this index isn't occupied yet, since only concrete classes know
+  // if there can be collisions, and how elements are stored
   protected abstract int getNewElementInfoIndex (ClassInfo ci, ThreadInfo ti, String allocLocation);
   protected abstract void set (int index, ElementInfo ei);
   
@@ -210,6 +259,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     ElementInfo ei = createElementInfo(ci, f, m, ti);
 
     int index = getNewElementInfoIndex( ci, ti, allocLocation);
+    
     ei.setObjectRef(index);
     set(index, ei);
 
@@ -268,6 +318,13 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   @Override
   public abstract int newInternString(String str, ThreadInfo ti);
 
+  protected void addToInternStrings (String str, int objref) {
+    if ((attributes & ATTR_INTERN_CHANGED) == 0){
+      internStrings = internStrings.clone();
+      attributes |= ATTR_INTERN_CHANGED;
+    }
+    internStrings.add(str, objref);
+  }
   
   //--- abstract accessors
   

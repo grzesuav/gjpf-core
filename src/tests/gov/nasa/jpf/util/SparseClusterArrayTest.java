@@ -231,7 +231,7 @@ public class SparseClusterArrayTest extends TestJPF {
     arr.set(87, new Integer(87));
     arr.set(7162827, new Integer(-1));
 
-    arr.restoreSnapshot(snap, s2i);
+    arr.restore(snap, s2i);
     for (Integer i : arr) {
       System.out.println(i);
     }

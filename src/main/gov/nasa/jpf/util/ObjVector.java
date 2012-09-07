@@ -444,7 +444,7 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     return new Snapshot<E>(this, maxGap);
   }
   
-  public void restoreSnapshot (Snapshot<E> snap) {
+  public void restore (Snapshot<E> snap) {
     snap.restore(this);
   }
 
@@ -515,7 +515,7 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     return new MutatingSnapshot<E,T>(this, transformer);
   }
   
-  public <T> void restoreSnapshot (MutatingSnapshot<E,T> snap, Transformer<T,E> transformer) {
+  public <T> void restore (MutatingSnapshot<E,T> snap, Transformer<T,E> transformer) {
     snap.restore(this, transformer);
   }
   

@@ -52,7 +52,12 @@ public class DefaultMementoRestorer extends MementoRestorer {
     return ei.getMemento();
   }
 
-  public Memento<Heap> getMemento(SparseClusterArrayHeap sca){
-    return sca.getMemento();
+  public Memento<Heap> getMemento(SparseClusterArrayHeap heap){
+    return heap.getMemento();
   }
+  
+  public Memento<Heap> getMemento(ObjVectorHeap heap){
+    return heap.getMemento();
+  }
+
 }

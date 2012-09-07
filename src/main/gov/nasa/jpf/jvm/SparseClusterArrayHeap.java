@@ -41,50 +41,22 @@ public class SparseClusterArrayHeap extends GenericHeapImpl {
 
   SparseClusterArray<ElementInfo> elementInfos;
 
-  public static class Snapshot<T> {
-    int attributes;
-    IntVector pinDownList;
-    IntTable<String> internStrings;
-    SparseClusterArray.Snapshot<ElementInfo, T> scaSnap;
-  }
-
-  static Transformer<ElementInfo,Memento<ElementInfo>> ei2mei = new Transformer<ElementInfo,Memento<ElementInfo>>(){
-    public Memento<ElementInfo> transform (ElementInfo ei){
-      Memento<ElementInfo> m = null;
-      if (!ei.hasChanged()) {
-        m = ei.cachedMemento;
-      }
-      if (m == null) {
-        m = ei.getMemento();
-        ei.cachedMemento = m;
-      }
-      return m;
-    }
-  };
-
-  static Transformer<Memento<ElementInfo>,ElementInfo> mei2ei = new Transformer<Memento<ElementInfo>,ElementInfo>(){
-    public ElementInfo transform(Memento<ElementInfo> m) {
-      ElementInfo ei = m.restore(null);
-      ei.cachedMemento = m;
-      return ei;
-    }
-  };
-
   // our default memento implementation
-  static class SCAMemento implements Memento<Heap> {
-    Snapshot<Memento<ElementInfo>> snap;
+  static class SCAMemento extends GenericHeapImplMemento {
+    SparseClusterArray.Snapshot<ElementInfo, Memento<ElementInfo>> eiSnap;
 
-    SCAMemento(SparseClusterArrayHeap scah) {
-      snap = scah.getSnapshot(ei2mei);
-      scah.markUnchanged();
+    SCAMemento(SparseClusterArrayHeap heap) {
+      super(heap);
+      eiSnap = heap.elementInfos.getSnapshot(ei2mei);
     }
 
     public Heap restore(Heap inSitu) {
-      SparseClusterArrayHeap scah = (SparseClusterArrayHeap)inSitu;
-      scah.restoreSnapshot(snap, mei2ei);
-      return scah;
+      SparseClusterArrayHeap heap = (SparseClusterArrayHeap)inSitu;
+      
+      super.restore(heap);
+      heap.elementInfos.restore(eiSnap, mei2ei);
+      return heap;
     }
-
   }
 
 
@@ -92,32 +64,6 @@ public class SparseClusterArrayHeap extends GenericHeapImpl {
     super(config, ks);
     
     elementInfos = new SparseClusterArray<ElementInfo>();
-  }
-
-  // internal stuff
-
-
-  public <T> Snapshot<T> getSnapshot (Transformer<ElementInfo,T> transformer){
-    Snapshot<T> snap = new Snapshot<T>();
-    
-    snap.scaSnap = elementInfos.getSnapshot(transformer);
-    
-    // these are copy-on-first-write, so we don't have to clone
-    snap.pinDownList = pinDownList;
-    snap.internStrings = internStrings;
-    snap.attributes = attributes & ATTR_STORE_MASK;
-
-    return snap;
-  }
-
-  public <T> void restoreSnapshot (Snapshot<T> snap, Transformer<T,ElementInfo> transformer){    
-    elementInfos.restoreSnapshot(snap.scaSnap, transformer);
-    
-    pinDownList = snap.pinDownList;
-    internStrings = snap.internStrings;
-    attributes = snap.attributes;
-
-    liveBitValue = false; // always start with false after a restore
   }
 
   protected int getFirstFreeIndex (int tid) {
@@ -187,12 +133,7 @@ public class SparseClusterArrayHeap extends GenericHeapImpl {
     IntTable.Entry<String> e = internStrings.get(str);
     if (e == null){
       int objref = newString(str,ti,true);
-
-      if ((attributes & ATTR_INTERN_CHANGED) == 0){
-        internStrings = internStrings.clone();
-        attributes |= ATTR_INTERN_CHANGED;
-      }
-      internStrings.add(str, objref);
+      addToInternStrings( str, objref);
 
       return objref;
 
