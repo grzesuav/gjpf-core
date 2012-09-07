@@ -3,12 +3,13 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.ObjVector;
+import gov.nasa.jpf.util.SparseIntVector;
 
 import java.util.Iterator;
 
 public class ObjVectorHeap extends GenericHeapImpl {
 
-  IntTable<AllocationContext> allocCounts;
+  SparseIntVector allocCounts;
   
   ObjVector<ElementInfo> elementInfos;
   int size;  // non-null elements - we need to maintain this ourselves since ObjVector size is different
@@ -19,7 +20,7 @@ public class ObjVectorHeap extends GenericHeapImpl {
   public ObjVectorHeap (Config config, KernelState ks){
     super(config, ks);
     
-    allocCounts = new IntTable<AllocationContext>();
+    allocCounts = new SparseIntVector();
     elementInfos = new ObjVector<ElementInfo>();
   }
 

@@ -26,7 +26,7 @@ public class SparseIntVectorTest extends TestJPF {
     int val = 42;
     v.set(0,  val);
     assertTrue(v.size() == 1 && v.get(0) == val);
-    v.restoreSnapshot(snap);
+    v.restore(snap);
     assertTrue(v.size() == 0);
 
     //--- all full snapshot
@@ -36,7 +36,7 @@ public class SparseIntVectorTest extends TestJPF {
     }
     SparseIntVector.Snapshot snap0 = v.getSnapshot();
     v.clear();
-    v.restoreSnapshot(snap0);
+    v.restore(snap0);
     for (int i=0; i<100; i++) {
       assertTrue( i == v.get(i));
     }
@@ -50,18 +50,63 @@ public class SparseIntVectorTest extends TestJPF {
     SparseIntVector.Snapshot snap1 = v.getSnapshot();    
     SparseIntVector v1 = v.clone();
     v.clear();
-    v.restoreSnapshot(snap1);
+    v.restore(snap1);
     //v.printOn( System.out);
     assertEquals( v1, v);
     
     //--- chop off the ends
-    v.restoreSnapshot(snap0);
+    v.restore(snap0);
     v.setRange(81, 99, 0);
     v.setRange(0, 19, 0);
     SparseIntVector.Snapshot snap2 = v.getSnapshot();    
     SparseIntVector v2 = v.clone();
     v.clear();
-    v.restoreSnapshot(snap2);
+    v.restore(snap2);
     assertEquals( v2, v); 
+  }
+  
+  static final int MAX_SIZE = 10000;
+  static final int MAX_ROUNDS = 1000;
+  
+  public void benchmark() {
+    long t1, t2;
+
+    for (int rep = 0; rep < 2; rep++) {
+      Runtime.getRuntime().gc();
+      SparseIntVector siv = new SparseIntVector();
+      t1 = System.currentTimeMillis();
+      for (int i = 0; i < MAX_ROUNDS; i++) {
+        SparseIntVector.Snapshot snap = siv.getSnapshot();
+        for (int j = 0; j < MAX_SIZE; j++) {
+          siv.set(j, j);
+          assert siv.get(j) == j;
+          // assert siv.size() == (j+1) : "size differs: " + siv.size() + " / "
+          // + (j+1);
+        }
+        assert siv.size() == MAX_SIZE : "wrong size: " + siv.size();
+        siv.restore(snap);
+      }
+      t2 = System.currentTimeMillis();
+      System.out.printf("SparseIntVector size %d, rounds %d: %d\n", MAX_SIZE,
+          MAX_ROUNDS, (t2 - t1));
+
+      Runtime.getRuntime().gc();
+      IntTable<Integer> tbl = new IntTable<Integer>();
+      t1 = System.currentTimeMillis();
+      for (int i = 0; i < MAX_ROUNDS; i++) {
+        IntTable.Snapshot<Integer> snap = tbl.getSnapshot();
+        for (int j = 0; j < MAX_SIZE; j++) {
+          tbl.put(j, j);
+
+          IntTable.Entry<Integer> e = tbl.get(j);
+          assert e != null && e.val == j  : "wrong IntTable entry for index: " + j + " : " + e + " in round: " + i;
+        }
+        assert tbl.size() == MAX_SIZE : "wrong size: " + tbl.size();
+        tbl.restore(snap);
+      }
+      t2 = System.currentTimeMillis();
+      System.out.printf("IntTable size %d, rounds %d: %d\n", MAX_SIZE,
+          MAX_ROUNDS, (t2 - t1));
+    }
   }
 }

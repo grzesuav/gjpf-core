@@ -159,7 +159,7 @@ public class SparseIntVector implements Cloneable {
     return new Snapshot(this);
   }
   
-  public void restoreSnapshot (Snapshot snap) {
+  public void restore (Snapshot snap) {
     snap.restore(this);
   }
   
@@ -187,6 +187,28 @@ public class SparseIntVector implements Cloneable {
     count = 0;
   }
   
+  public void clear(int idx) {
+    int code = mix(idx);
+    int pos = code & mask;
+    int delta = (code >> (pow - 1)) | 1; // must be odd!
+    int oidx = pos;
+
+    for(;;) {
+      int tidx = idxTable[pos];
+      if (tidx == MIN_VALUE) {
+        return; // nothing to clear
+      }
+      if (tidx == idx) {
+        count--;
+        idxTable[pos] = MIN_VALUE;
+        valTable[pos] = defaultValue;
+        return;
+      }
+      pos = (pos + delta) & mask;
+      assert (pos != oidx); // should never wrap around
+    }
+  }
+  
   @SuppressWarnings("unchecked")
   public int get(int idx) {
     int code = mix(idx);
@@ -207,6 +229,17 @@ public class SparseIntVector implements Cloneable {
     }
   }
 
+  // for debug only
+  int count() {
+    int count = 0;
+    for (int i = 0; i < idxTable.length; i++) {
+      if (idxTable[i] != MIN_VALUE /*&& valTable[i] != defaultValue*/) {
+        count++;
+      }
+    }
+    return count;
+  }
+  
   public void set(int idx, int val) {
     int code = mix(idx);
     int pos = code & mask;
@@ -227,13 +260,18 @@ public class SparseIntVector implements Cloneable {
     }
     // idx not in table; add it
     
-    count++;
-    if (count >= nextWipe) { // too full
+    if ((count+1) >= nextWipe) { // too full
+      if (count >= nextRehash) {
+        pow++;
+      }
+      
+      /**
       // determine if size needs to be increased or just wipe null blocks
       int oldCount = count;
       count = 0;
       for (int i = 0; i < idxTable.length; i++) {
-        if (idxTable[i] != MIN_VALUE && valTable[i] != defaultValue) {
+        //if (idxTable[i] != MIN_VALUE && valTable[i] != defaultValue) {
+        if (idxTable[i] != MIN_VALUE) {
           count++;
         }
       }
@@ -247,6 +285,8 @@ public class SparseIntVector implements Cloneable {
           System.out.println("Rehash reclaiming this many nulls: " + (oldCount - count));
         }
       }
+      **/
+      
       int[] oldValTable = valTable;
       int[] oldIdxTable = idxTable;
       newTable();
@@ -259,7 +299,7 @@ public class SparseIntVector implements Cloneable {
         int tidx = oldIdxTable[i];
         if (tidx == MIN_VALUE) continue;
         int o = oldValTable[i];
-        if (o == defaultValue) continue;
+        //if (o == defaultValue) continue;
         // otherwise:
         code = mix(tidx);
         pos = code & mask;
@@ -277,9 +317,12 @@ public class SparseIntVector implements Cloneable {
       while (idxTable[pos] != MIN_VALUE) { // we know enough slots exist
         pos = (pos + delta) & mask;
       }
+            
     } else {
       // pos already pointing to empty slot
     }
+
+    count++;
 
     idxTable[pos] = idx;
     valTable[pos] = val;
