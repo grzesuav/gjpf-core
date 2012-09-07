@@ -29,12 +29,31 @@ import org.junit.Test;
 public class IntTableTest extends TestJPF {
 
   @Test
-  public void testBasic(){
+  public void testBasicPut(){
+    IntTable<Integer> tbl = new IntTable<Integer>();
+
+    assert tbl.size() == 0;
+    final int N = 5000;
+
+    for (int i=0; i<N; i++){
+      tbl.put(i, i);
+
+      IntTable.Entry<Integer> e = tbl.get(i);
+      assert e.val == i;
+    }
+
+    assert tbl.size() == N;
+  }
+
+  
+  @Test
+  public void testStringKeyAdd(){
     IntTable<String> tbl = new IntTable<String>();
 
     assert tbl.size() == 0;
+    final int N = 5000;
 
-    for (int i=0; i<300; i++){
+    for (int i=0; i<N; i++){
       String key = "averylonginttablekey-" + i;
       tbl.add(key, i);
 
@@ -42,7 +61,7 @@ public class IntTableTest extends TestJPF {
       assert e.val == i;
     }
 
-    assert tbl.size() == 300;
+    assert tbl.size() == N;
   }
 
   @Test

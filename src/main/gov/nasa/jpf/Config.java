@@ -1039,6 +1039,27 @@ public class Config extends Properties {
     return cl;
   }
 
+  /**
+   * has to be called if 'native_classpath' gets explicitly changed
+   * USE WITH CARE - if this is messed up, it is hard to debug
+   */
+  public void updateClassLoader (){
+    if (loader != null && loader instanceof JPFClassLoader){
+      JPFClassLoader jpfCl = (JPFClassLoader)loader;
+            
+      ArrayList<String> list = new ArrayList<String>();
+      String[] cp = getCompactStringArray("native_classpath");
+      cp = FileUtils.expandWildcards(cp);
+      for (String e : cp) {
+        URL url = FileUtils.getURL(e);
+        jpfCl.addURL(url); // this does not add if already present
+      }
+
+      String[] nativeLibs = getCompactStringArray("native_libraries");
+      jpfCl.setNativeLibs(nativeLibs);
+    }
+  }
+  
 
   //------------------------------ public methods - the Config API
 
@@ -2149,6 +2170,49 @@ public class Config extends Properties {
     return elements.toArray(new String[elements.size()]);
   }
 
+  static final String UNINITIALIZED = "uninitialized";
+  // this is where we store the initial values in case we have to recollect
+  String initialNativeClasspath = UNINITIALIZED, 
+          initialClasspath = UNINITIALIZED, 
+          initialSourcepath = UNINITIALIZED, 
+          initialPeerPackages = UNINITIALIZED,
+          initialNativeLibraries = UNINITIALIZED;
+  
+
+  /**
+   * this resets to what was explicitly set in the config files
+   */
+  public void resetGlobalPaths() {
+    if (initialNativeClasspath == UNINITIALIZED){
+      initialNativeClasspath = getString("native_classpath");
+    } else {
+      put0( "native_classpath", initialNativeClasspath);
+    }
+
+    if (initialClasspath == UNINITIALIZED){
+      initialClasspath = getString("classpath");
+    } else {
+      put0( "classpath", initialClasspath);
+    }
+    
+    if (initialSourcepath == UNINITIALIZED){
+      initialSourcepath = getString("sourcepath");
+    } else {
+      put0( "sourcepath", initialSourcepath);
+    }
+
+    if (initialPeerPackages == UNINITIALIZED){
+      initialPeerPackages = getString("peer_packages");
+    } else {
+      put0( "peer_packages", initialPeerPackages);
+    }
+
+    if (initialNativeLibraries == UNINITIALIZED){
+      initialNativeLibraries = getString("native_libraries");
+    } else {
+      put0( "native_libraries", initialNativeLibraries);
+    }
+  }
 
   /**
    * collect all the <project>.{native_classpath,classpath,sourcepath,peer_packages,native_libraries}
@@ -2161,6 +2225,7 @@ public class Config extends Properties {
    * classpath, sourcepath and peer_packages separately (they can be collected later)
    */
   public void collectGlobalPaths() {
+        
     // note - this is in the order of entry, i.e. reflects priorities
     // we have to process this in reverse order so that later entries are prioritized
     String[] keys = getEntrySequence();
@@ -2172,18 +2237,23 @@ public class Config extends Properties {
       String k = keys[i];
       if (k.endsWith(".native_classpath")){
         appendPath("native_classpath", k);
+        
       } else if (k.endsWith(".classpath")){
         appendPath("classpath", k);
-      } else if (k.endsWith(".sourcepath")){
+        
+      } else if (k.endsWith(".sourcepath")){        
         appendPath("sourcepath", k);
+        
       } else if (k.endsWith("peer_packages")){
         append("peer_packages", getString(k), ",");
+        
       } else if (k.endsWith(nativeLibKey)){
         appendPath("native_libraries", k);
       }
     }
   }
 
+  
   static Pattern absPath = Pattern.compile("(?:[a-zA-Z]:)?[/\\\\].*");
 
   void appendPath (String pathKey, String key){

@@ -77,7 +77,7 @@ public class ThreadInfo
   static ThreadInfo currentThread;
   static ThreadInfo mainThread;
 
-  static GlobalIdManager gidManager = new GlobalIdManager();
+  static GlobalIdManager gidManager;
 
   protected class StackIterator implements Iterator<StackFrame> {
     StackFrame frame = top;
@@ -339,6 +339,7 @@ public class ThreadInfo
   static boolean init (Config config) {
     currentThread = null;
     mainThread = null;
+    gidManager = new GlobalIdManager();
     
     globalThreadInfos = new ObjVector<ThreadInfo>(16); // re-create to avoid memory leaks
 

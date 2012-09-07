@@ -73,18 +73,16 @@ public class UnsortedArrayIntSet extends ArrayIntSet {
       int[] a = elements;
       for (int i=0; i<len; i++){
         if (a[i] == v){
-          len--;
-          if (len == 0) {
+          if (len == 1){
             elements = null;
-            size = 0;
-
           } else {
+            i++;
             if (i < len) {
-              System.arraycopy(a, i + 1, a, i, (len - i));
+              System.arraycopy(a, i, a, i-1, len-i);
             }
-            size = len;
           }
           
+          size--;
           return;
         }
       }
