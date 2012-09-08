@@ -749,10 +749,8 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *
 	 * @since  JDK1.1
 	 */
-	public byte[] getBytes(String charsetName)
-			throws UnsupportedEncodingException {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public byte[] getBytes(String charsetName)
+			throws UnsupportedEncodingException;
 
 	/**
 	 * Encodes this {@code String} into a sequence of bytes using the given
@@ -808,9 +806,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @see  #compareTo(String)
 	 * @see  #equalsIgnoreCase(String)
 	 */
-	public boolean equals(Object anObject) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public boolean equals(Object anObject);
 
 	/**
 	 * Compares this string to the specified {@code StringBuffer}.  The result
@@ -876,9 +872,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *
 	 * @see  #equals(Object)
 	 */
-	public boolean equalsIgnoreCase(String anotherString) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public boolean equalsIgnoreCase(String anotherString);
 
 	/**
 	 * Compares two strings lexicographically.
@@ -921,9 +915,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          value greater than <code>0</code> if this string is
 	 *          lexicographically greater than the string argument.
 	 */
-	public int compareTo(String anotherString) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public int compareTo(String anotherString);
 
 	/**
 	 * A Comparator that orders <code>String</code> objects as by
@@ -1081,9 +1073,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          this.substring(toffset).startsWith(prefix)
 	 *          </pre>
 	 */
-	public boolean startsWith(String prefix, int toffset) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public boolean startsWith(String prefix, int toffset);
 
 	/**
 	 * Tests if this string starts with the specified prefix.
@@ -1130,9 +1120,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *
 	 * @return  a hash code value for this object.
 	 */
-	public int hashCode() {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public int hashCode();
 
 	/**
 	 * Returns the index within this string of the first occurrence of
@@ -1201,9 +1189,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          than or equal to <code>fromIndex</code>, or <code>-1</code>
 	 *          if the character does not occur.
 	 */
-	public int indexOf(int ch, int fromIndex) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public int indexOf(int ch, int fromIndex);
 
 	/**
 	 * Handles (rare) calls of indexOf with a supplementary character.
@@ -1235,9 +1221,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          character sequence represented by this object, or
 	 *          <code>-1</code> if the character does not occur.
 	 */
-	public int lastIndexOf(int ch) {
-		return lastIndexOf(ch, value.length - 1);
-	}
+	native public int lastIndexOf(int ch);
 
 	/**
 	 * Returns the index within this string of the last occurrence of
@@ -1298,9 +1282,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @return  the index of the first occurrence of the specified substring,
 	 *          or {@code -1} if there is no such occurrence.
 	 */
-	public int indexOf(String str) {
-		return indexOf(str, 0);
-	}
+	native public int indexOf(String str);
 
 	/**
 	 * Returns the index within this string of the first occurrence of the
@@ -1318,10 +1300,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          starting at the specified index,
 	 *          or {@code -1} if there is no such occurrence.
 	 */
-	public int indexOf(String str, int fromIndex) {
-		return indexOf(value, 0, value.length,
-				str.value, 0, str.value.length, fromIndex);
-	}
+	native public int indexOf(String str, int fromIndex);
 
 	/**
 	 * Code shared by String and StringBuffer to do searches. The
@@ -1500,9 +1479,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @return  a string that represents the concatenation of this object's
 	 *          characters followed by the string argument's characters.
 	 */
-	public String concat(String str) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public String concat(String str);
 
 	/**
 	 * Returns a new string resulting from replacing all occurrences of
@@ -1533,9 +1510,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @return  a string derived from this string by replacing every
 	 *          occurrence of <code>oldChar</code> with <code>newChar</code>.
 	 */
-	public String replace(char oldChar, char newChar) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public String replace(char oldChar, char newChar);
 
 	/**
 	 * Tells whether or not this string matches the given <a
@@ -1563,9 +1538,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @since 1.4
 	 * @spec JSR-51
 	 */
-	public boolean matches(String regex) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public boolean matches(String regex);
 
 	/**
 	 * Returns true if and only if this string contains the specified
@@ -1619,13 +1592,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @since 1.4
 	 * @spec JSR-51
 	 */
-	public String replaceFirst(String regex, String replacement) {
-		if(USE_PATTERN_MJI){
-			return Pattern.compile(regex).matcher(this).replaceFirst(replacement);
-		}
-		throw new IllegalStateException("MJI REQURIED");
-
-	}
+	native public String replaceFirst(String regex, String replacement);
 
 	/**
 	 * Replaces each substring of this string that matches the given <a
@@ -1666,13 +1633,9 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @since 1.4
 	 * @spec JSR-51
 	 */
-	public String replaceAll(String regex, String replacement) {
-		if(USE_PATTERN_MJI){
-		return Pattern.compile(regex).matcher(this).replaceAll(replacement);
-		}
-        throw new IllegalStateException("MJI REQURIED");
+	native public String replaceAll(String regex, String replacement);
 
-	}
+	
 
 	/**
 	 * Replaces each substring of this string that matches the literal target
@@ -1772,9 +1735,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @since 1.4
 	 * @spec JSR-51
 	 */
-	public String[] split(String regex, int limit) {
-        throw new IllegalStateException("MJI REQURIED");
-	}
+	native public String[] split(String regex, int limit);
 
 	/**
 	 * Splits this string around matches of the given <a
@@ -1814,9 +1775,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @since 1.4
 	 * @spec JSR-51
 	 */
-	public String[] split(String regex) {
-		return split(regex, 0);
-	}
+	native public String[] split(String regex);
 
 	/**
 	 * Converts all of the characters in this <code>String</code> to lower
@@ -1870,9 +1829,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @see     java.lang.String#toUpperCase(Locale)
 	 * @since   1.1
 	 */
-	public String toLowerCase(Locale locale) {
-        throw new IllegalStateException("MJI REQURIED");
-	}
+	native public String toLowerCase(Locale locale);
 
 	/**
 	 * Converts all of the characters in this <code>String</code> to lower
@@ -1893,9 +1850,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @return  the <code>String</code>, converted to lowercase.
 	 * @see     java.lang.String#toLowerCase(Locale)
 	 */
-	public String toLowerCase() {
-		return toLowerCase(Locale.getDefault());
-	}
+	native public String toLowerCase();
 
 	/**
 	 * Converts all of the characters in this <code>String</code> to upper
@@ -1945,9 +1900,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @see     java.lang.String#toLowerCase(Locale)
 	 * @since   1.1
 	 */
-	public String toUpperCase(Locale locale) {
-        throw new IllegalStateException("MJI REQURIED");
-	}
+	native public String toUpperCase(Locale locale);
 
 	/**
 	 * Converts all of the characters in this <code>String</code> to upper
@@ -1968,9 +1921,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @return  the <code>String</code>, converted to uppercase.
 	 * @see     java.lang.String#toUpperCase(Locale)
 	 */
-	public String toUpperCase() {
-		return toUpperCase(Locale.getDefault());
-	}
+	native public String toUpperCase();
 
 	/**
 	 * Returns a copy of the string, with leading and trailing whitespace
@@ -2003,9 +1954,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          space removed, or this string if it has no leading or
 	 *          trailing white space.
 	 */
-	public String trim() {
-        throw new IllegalStateException("MJI REQURIED");
-	}
+	native public String trim();
 
 	/**
 	 * This object (which is already a string!) is itself returned.
@@ -2023,9 +1972,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          of this string and whose contents are initialized to contain
 	 *          the character sequence represented by this string.
 	 */
-	public char[] toCharArray() {
-        throw new IllegalStateException("MJI REQURIED");
-	}
+	native public char[] toCharArray();
 
 	/**
 	 * Returns a formatted string using the specified format string and
@@ -2065,9 +2012,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @see  java.util.Formatter
 	 * @since  1.5
 	 */
-	public static String format(String format, Object... args) {
-        throw new IllegalStateException("MJI REQURIED");
-	}
+	native public static String format(String format, Object... args);
 
 	/**
 	 * Returns a formatted string using the specified locale, format string,
@@ -2122,9 +2067,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          <code>obj.toString()</code> is returned.
 	 * @see     java.lang.Object#toString()
 	 */
-	public static String valueOf(Object obj) {
-        throw new IllegalStateException("MJI REQURIED");
-	}
+	native public static String valueOf(Object obj);
 
 	/**
 	 * Returns the string representation of the <code>char</code> array
