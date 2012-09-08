@@ -1,8 +1,8 @@
-package stringTest;
+package gov.stringTest;
 
-public class String {
+public class StringPrototype {
 	static public native void dumpStatistics();
-	public String() {
+	public StringPrototype() {
 		// TODO Auto-generated constructor stub
 	}
 

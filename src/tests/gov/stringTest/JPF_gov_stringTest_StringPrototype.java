@@ -1,8 +1,10 @@
-package gov.nasa.jpf.jvm;
+package gov.stringTest;
 
-public class JPF_stringTest_String {
+import gov.nasa.jpf.jvm.MJIEnv;
 
-	public JPF_stringTest_String() {
+public class JPF_gov_stringTest_StringPrototype {
+
+	public JPF_gov_stringTest_StringPrototype() {
 		// TODO Auto-generated constructor stub
 	}
 

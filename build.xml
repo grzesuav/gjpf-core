@@ -23,7 +23,7 @@
   <property file="local.properties"/>
 
   <!-- compiler settings -->
-  <property name="src_level"     value="6"/>
+  <property name="src_level"     value="7"/>
   <property name="debug"         value="on"/>
   <property name="deprecation"   value="on"/>
 
@@ -420,6 +420,7 @@
         <fileset dir="build/tests">
           <exclude name="**/JPF_*.class"/>
           <include name="**/*Test.class"/>
+        	
         </fileset>
       </batchtest>
 
