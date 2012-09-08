@@ -56,6 +56,10 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 
 	/** use serialVersionUID from JDK 1.0.2 for interoperability */
 	private static final long serialVersionUID = -6849794470754667710L;
+	
+	/** from SE6 that jpf depends on */
+	private final int offset=0;
+	private final int count=0;
 
 	/**
 	 * Class String is special cased within the Serialization Stream Protocol.
