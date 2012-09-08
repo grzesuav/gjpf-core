@@ -309,14 +309,54 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   }
 
   
-  // <2do> these should probably also have locations, but the problem is that they represent bundle allocators
-  // (String, char[]) and location should not be shared between different object allocations
-  
-  @Override
-  public abstract int newString(String str, ThreadInfo ti);
+  protected ElementInfo newStringElementInfo (String str, ThreadInfo ti, String allocLocation) {
+    if (str != null) {      
+      int length = str.length();
+      
+      // those two always get allocated together, so the allocation counts are guaranteed to be deterministic
+      int index = newObject(ClassInfo.stringClassInfo, ti, allocLocation);
+      int vref = newArray("C", length, ti, allocLocation);
+      
+      ElementInfo e = get(index);
+      // <2do> pcm - this is BAD, we shouldn't depend on private impl of
+      // external classes - replace with our own java.lang.String !
+      e.setReferenceField("value", vref);
+      e.setIntField("offset", 0);
+      e.setIntField("count", length);
 
-  @Override
-  public abstract int newInternString(String str, ThreadInfo ti);
+      ElementInfo eVal = get(vref);
+      CharArrayFields cf = (CharArrayFields)eVal.getFields();
+      cf.setCharValues(str.toCharArray());
+
+      return e;
+
+    } else {
+      return null;
+    }
+  }
+
+  public int newString(String str, ThreadInfo ti, String allocLocation){
+    ElementInfo ei = newStringElementInfo(str,ti,allocLocation);
+    return ei.getObjectRef();
+  }
+
+  public int newInternString (String str, ThreadInfo ti, String allocLocation) {
+    IntTable.Entry<String> e = internStrings.get(str);
+    if (e == null){
+      ElementInfo ei = newStringElementInfo(str,ti,allocLocation);
+      
+      // new interned Strings are always pinned down
+      int objref = ei.getObjectRef();
+      ei.incPinDown();
+      addToPinDownList(objref);
+      addToInternStrings( str, objref);
+
+      return objref;
+
+    } else {
+      return e.val;
+    }
+  }
 
   protected void addToInternStrings (String str, int objref) {
     if ((attributes & ATTR_INTERN_CHANGED) == 0){

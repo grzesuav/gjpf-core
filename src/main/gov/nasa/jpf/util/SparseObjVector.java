@@ -27,7 +27,7 @@ import java.util.Arrays;
  * instead of an array.  Also, does not require allocation with each add. 
  */
 public class SparseObjVector<E> {
-  private static final boolean DEBUG = true; 
+  private static final boolean DEBUG = false; 
   
   static final double MAX_LOAD_WIPE = 0.6;
   static final double MAX_LOAD_REHASH = 0.4;
@@ -134,8 +134,12 @@ public class SparseObjVector<E> {
     }
     // idx not in table; add it
     
-    count++;
-    if (count >= nextWipe) { // too full
+    if ((count+1) >= nextWipe) { // too full
+      if (count >= nextRehash) {
+        pow++;
+      }
+      
+      /**
       // determine if size needs to be increased or just wipe null blocks
       int oldCount = count;
       count = 0;
@@ -154,6 +158,8 @@ public class SparseObjVector<E> {
           System.out.println("Rehash reclaiming this many nulls: " + (oldCount - count));
         }
       }
+      **/
+      
       Object[] oldValTable = valTable;
       int[] oldIdxTable = idxTable;
       newTable();
@@ -166,7 +172,7 @@ public class SparseObjVector<E> {
         int tidx = oldIdxTable[i];
         if (tidx == MIN_VALUE) continue;
         Object o = oldValTable[i];
-        if (o == null) continue;
+        //if (o == null) continue;
         // otherwise:
         code = mix(tidx);
         pos = code & mask;
@@ -188,6 +194,8 @@ public class SparseObjVector<E> {
       // pos already pointing to empty slot
     }
 
+    count++;
+    
     idxTable[pos] = idx;
     valTable[pos] = e;
   }

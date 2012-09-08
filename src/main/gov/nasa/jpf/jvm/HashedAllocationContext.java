@@ -39,6 +39,7 @@ public class HashedAllocationContext implements AllocationContext {
 
   static SparseObjVector<HashedAllocationContext> pool;
   
+static int N=0;
   
   public static AllocationContext getAllocationContext (ClassInfo ci, ThreadInfo ti, String loc) {
     int h = 0;

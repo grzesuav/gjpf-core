@@ -94,53 +94,6 @@ public class SparseClusterArrayHeap extends GenericHeapImpl {
     elementInfos.set(index, ei);
   }
   
-  
-  private int newString(String str, ThreadInfo ti, boolean isIntern) {
-    if (str != null) {      
-      int length = str.length();
-      int index = newObject(ClassInfo.stringClassInfo, ti, "Heap.newString");
-      int vref = newArray("C", length, ti, "Heap.newString.value");
-      
-      ElementInfo e = get(index);
-      // <2do> pcm - this is BAD, we shouldn't depend on private impl of
-      // external classes - replace with our own java.lang.String !
-      e.setReferenceField("value", vref);
-      e.setIntField("offset", 0);
-      e.setIntField("count", length);
-
-      ElementInfo eVal = get(vref);
-      CharArrayFields cf = (CharArrayFields)eVal.getFields();
-      cf.setCharValues(str.toCharArray());
-
-      if (isIntern){
-        // we know it's not in the pinDown list yet, this is a new object
-        e.incPinDown();
-        addToPinDownList(index);
-      }
-
-      return index;
-
-    } else {
-      return -1;
-    }
-  }
-
-  public int newString(String str, ThreadInfo ti){
-    return newString(str,ti,false);
-  }
-
-  public int newInternString (String str, ThreadInfo ti) {
-    IntTable.Entry<String> e = internStrings.get(str);
-    if (e == null){
-      int objref = newString(str,ti,true);
-      addToInternStrings( str, objref);
-
-      return objref;
-
-    } else {
-      return e.val;
-    }
-  }
 
   public Iterable<ElementInfo> liveObjects() {
     return elementInfos;

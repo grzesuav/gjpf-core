@@ -41,8 +41,8 @@ public interface Heap {
   int newObject (ClassInfo ci, ThreadInfo ti, String location);
 
   //--- convenience allocators
-  int newString (String str, ThreadInfo ti);
-  int newInternString (String str, ThreadInfo ti);
+  int newString (String str, ThreadInfo ti, String location);
+  int newInternString (String str, ThreadInfo ti, String location);
   
   Iterable<ElementInfo> liveObjects();
 

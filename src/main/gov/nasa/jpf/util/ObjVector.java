@@ -343,7 +343,9 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     if (e != null) {
       data[i] = null;
       if (i+1 == size) {
-        size--;
+        int j=i-1;
+        for (; j>=0 && (data[j] == null); j--); 
+        size = j+1;
       }
     }
     
@@ -554,10 +556,10 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
    */
   protected class NonNullIterator implements Iterator<E>, Iterable<E> {
     int idx = 0;
-    int count = 0;
+    //int count = 0;
 
     public boolean hasNext() {
-      return (count < size && idx < size);
+      return (idx < size); // size is max set index
     }
 
     @SuppressWarnings("unchecked")
@@ -566,11 +568,18 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
       for (int i=idx; i<len; i++){
         Object o = data[i];
         if (o != null){
-          count++;
+          //count++;
           idx = i+1;
           return (E)o;
         }
       }
+
+System.out.println("@@ len: " + len + ", idx: " + idx + ", size: " + size);
+int n=0;
+for (int i=0; i<len; i++) {
+  if (data[i] != null) n++;
+}
+System.out.println("@@ counted: " + n);
 
       throw new NoSuchElementException();
     }

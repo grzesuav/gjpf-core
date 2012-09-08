@@ -1038,7 +1038,7 @@ public class MJIEnv {
     if (s == null){
       return NULL;
     } else {
-      return heap.newString(s, ti);
+      return heap.newString(s, ti, "MJIEnv.newString");
     }
   }
 

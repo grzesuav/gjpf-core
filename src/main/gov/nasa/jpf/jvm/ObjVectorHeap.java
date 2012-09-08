@@ -114,7 +114,7 @@ public class ObjVectorHeap extends GenericHeapImpl {
       allocCounts.put(ctx, 1);
       cnt = 1;
     } else {
-      cnt = cntEntry.val++;
+      cnt = ++cntEntry.val;
     }
     
     alloc.init(ctx, cnt);
@@ -128,6 +128,7 @@ public class ObjVectorHeap extends GenericHeapImpl {
       alloc = new Allocation(); // !! create new one so that we don't modify a stored key
     }
     
+    
     // we do this here since we know how elements are stored
     assert elementInfos.get(idx) == null;
     
@@ -136,17 +137,6 @@ public class ObjVectorHeap extends GenericHeapImpl {
   
   protected void set (int index, ElementInfo ei) {
     elementInfos.set(index, ei);
-  }
-
-
-  @Override
-  public int newString(String str, ThreadInfo ti) {
-    return 0;
-  }
-
-  @Override
-  public int newInternString(String str, ThreadInfo ti) {
-    return 0;
   }
 
   /**

@@ -31,7 +31,7 @@ public class JPF_java_lang_String {
     Heap   heap = env.getHeap();
 
     String s = env.getStringObject(robj);
-    robj = heap.newInternString(s, env.getThreadInfo());
+    robj = heap.newInternString(s, env.getThreadInfo(), "JPF_java_lang_String.intern");
 
     return robj;
   }

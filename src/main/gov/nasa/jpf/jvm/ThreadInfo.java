@@ -2064,9 +2064,9 @@ public class ThreadInfo
         int sRef = heap.newObject(ci, ThreadInfo.this, "ThreadInfo.createJPFStackTraceElement");
 
         ElementInfo  sei = heap.get(sRef);
-        sei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this));
-        sei.setReferenceField("mthName", heap.newString(mthName, ThreadInfo.this));
-        sei.setReferenceField("fileName", heap.newString(fileName, ThreadInfo.this));
+        sei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this, "ThreadInfo.createJPFStackTraceElement.clsName"));
+        sei.setReferenceField("mthName", heap.newString(mthName, ThreadInfo.this, "ThreadInfo.createJPFStackTraceElement.mthName"));
+        sei.setReferenceField("fileName", heap.newString(fileName, ThreadInfo.this, "ThreadInfo.createJPFStackTraceElement.fileName"));
         sei.setIntField("line", line);
 
         return sRef;
@@ -2125,7 +2125,7 @@ public class ThreadInfo
     ElementInfo ei = heap.get(objref);
 
     if (details != null) {
-      msgref = heap.newString(details, this);
+      msgref = heap.newString(details, this, "ThreadInfo.createException.msg");
       ei.setReferenceField("detailMessage", msgref);
     }
 

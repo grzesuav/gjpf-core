@@ -396,11 +396,11 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
   /**
    * Creates a new string.
    */
-  public int newString (String str, ThreadInfo th) {
+  public int newString (String str, ThreadInfo th, String allocLocation) {
     if (str != null) {
       int length = str.length();
-      int index = newObject(ClassInfo.stringClassInfo, th, "Heap.newString");
-      int value = newArray("C", length, th, "Heap.newString.value");
+      int index = newObject(ClassInfo.stringClassInfo, th, allocLocation);
+      int value = newArray("C", length, th, allocLocation);
 
       ElementInfo e = get(index);
       // <2do> pcm - this is BAD, we shouldn't depend on private impl of
@@ -455,12 +455,12 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
 
   protected HashMap<String,InternStringEntry> internStrings = new HashMap<String,InternStringEntry>();
 
-  public int newInternString (String str, ThreadInfo ti) {
+  public int newInternString (String str, ThreadInfo ti, String allocLocation) {
     int ref = -1;
 
     InternStringEntry e = internStrings.get(str);
     if (e == null || !checkInternStringEntry(e)) { // not seen or new state branch
-      ref = newString(str, ti);
+      ref = newString(str, ti, allocLocation);
       ElementInfo ei = get(ref);
       ei.incPinDown();
 

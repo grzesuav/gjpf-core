@@ -369,7 +369,7 @@ public class JVM {
     ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
     int objRef = heap.newObject( ciThread, ti, "JVM.initMainThread.thread");
     int groupRef = createSystemThreadGroup(ti, objRef);
-    int nameRef = heap.newString("main", ti);
+    int nameRef = heap.newString("main", ti, "JVM.initMainThread.nameRef");
     
     //--- initialize the main Thread object
     ElementInfo ei = heap.get(objRef);
@@ -399,7 +399,7 @@ public class JVM {
     // since we can't call methods yet, we have to init explicitly (BAD)
     // <2do> - this isn't complete yet
 
-    int grpName = heap.newString("main", ti);
+    int grpName = heap.newString("main", ti, "JVM.createSystemThreadGroup.grpName");
     ei.setReferenceField("name", grpName);
 
     ei.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
@@ -596,7 +596,7 @@ public class JVM {
     int argsRef = heap.newArray("Ljava/lang/String;", args.length, tiMain, "JVM.pushMainEntry.args");
     ElementInfo argsElement = heap.get(argsRef);
     for (int i = 0; i < args.length; i++) {
-      int aRef = heap.newString(args[i], tiMain);
+      int aRef = heap.newString(args[i], tiMain, "JVM.pushMainEntry.arg");
       argsElement.setReferenceElement(i, aRef);
     }
     
