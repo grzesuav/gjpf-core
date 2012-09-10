@@ -26,6 +26,20 @@ import java.util.Locale;
  */
 public class JPF_java_lang_String {
 
+	public static double numObjects;
+	public static double numSubstring;
+	public static double numConstructorCalls;
+	
+	public static String init___3III__Ljava_lang_String_2(MJIEnv env, int objRef,int codePointsRef, int offset, int count){
+		int[]codePoints=env.getIntArrayObject(codePointsRef);
+		return new String(codePoints,offset,count);
+	}
+
+	public static String init___3BIII__Ljava_lang_String_2(MJIEnv env, int objRef,int asciiRef, 
+			int hibyte,int offset, int count){
+		byte[]ascii=env.getByteArrayObject(asciiRef);
+		return new String(ascii,hibyte,offset,count);
+	}
 
 	public static int intern____Ljava_lang_String_2 (MJIEnv env, int robj) {
 		// <2do> Replace this with a JPF space HashSet once we have a String model
@@ -429,5 +443,71 @@ public class JPF_java_lang_String {
 		String anotherString = env.getStringObject(anotherStringRef);
 		return obj.compareTo(anotherString);
 	}
+	
+	public static int substring__I__Ljava_lang_String_2(MJIEnv env,int objRef,int beginIndex){
+		String obj = env.getStringObject(objRef);
+		String result=obj.substring(beginIndex);
+		return env.newString(result);
+		
+	}
+	
+	static public void dumpTest(){
+		if(numObjects>0){
+			int o=(int)numObjects;
+			int s=(int)numSubstring;
+			System.out.println(s+"/"+o+"="+numSubstring/numObjects);
+			if(numConstructorCalls!=numObjects){
+				System.out.println("numConstructors="+(int)numConstructorCalls);
+			}
+		}
+	}
 
+	public static int substring__II__Ljava_lang_String_2(MJIEnv env,int objRef,int beginIndex,
+			int endIndex){
+		String obj = env.getStringObject(objRef);
+		String result=obj.substring(beginIndex,endIndex);
+		return env.newString(result);
+		
+	}
+
+	public static boolean regionMatches__ZILjava_lang_String_2II__Z(MJIEnv env,int objRef,
+			boolean ignoreCase, int toffset,
+			int otherRef, int ooffset, int len){
+		String obj = env.getStringObject(objRef);
+		String other = env.getStringObject(otherRef);
+		return obj.regionMatches(ignoreCase,toffset,other,ooffset,len);
+		
+	}
+
+	static public void getChars__II_3CI__V(MJIEnv env,int objRef,int srcBegin, int srcEnd, int dstRef, int dstBegin){
+		String obj = env.getStringObject(objRef);
+		char[]dst=env.getCharArrayObject(dstRef);
+		obj.getChars(srcBegin,srcEnd,dst,dstBegin);
+	}
+	
+	static public int MJIcompare__Ljava_lang_String_2Ljava_lang_String_2__I(MJIEnv env,int clsRef,
+			int s1Ref,int s2Ref){
+		String s1=env.getStringObject(s1Ref);
+		String s2=env.getStringObject(s2Ref);
+        int n1 = s1.length();
+        int n2 = s2.length();
+        int min = Math.min(n1, n2);
+        for (int i = 0; i < min; i++) {
+            char c1 = s1.charAt(i);
+            char c2 = s2.charAt(i);
+            if (c1 != c2) {
+                c1 = Character.toUpperCase(c1);
+                c2 = Character.toUpperCase(c2);
+                if (c1 != c2) {
+                    c1 = Character.toLowerCase(c1);
+                    c2 = Character.toLowerCase(c2);
+                    if (c1 != c2) {
+                        // No overflow because of numeric promotion
+                        return c1 - c2;
+                    }
+                }
+            }
+        }
+        return n1 - n2;	
+	}
 }
