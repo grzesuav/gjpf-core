@@ -139,19 +139,13 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          characters outside the bounds of the {@code value} array
 	 */
 	public String(char value[], int offset, int count) {
-		if (offset < 0) {
-			throw new StringIndexOutOfBoundsException(offset);
-		}
-		if (count < 0) {
-			throw new StringIndexOutOfBoundsException(count);
-		}
-		// Note: offset or count might be near -1>>>1.
-		if (offset > value.length - count) {
-			throw new StringIndexOutOfBoundsException(offset + count);
-		}
-		this.value = Arrays.copyOfRange(value, offset, offset+count);
-		this.count=count;
+		String proxy=init(value,offset,count);
+		this.value=proxy.value;
+		this.count=proxy.count;
+		this.hash=proxy.hash;
 	}
+
+	private native String init(char[] value, int offset, int count);
 
 	/**
 	 * Allocates a new {@code String} that contains characters from a subarray
@@ -185,6 +179,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 		String proxy=init(codePoints,offset,count);
 		this.value=proxy.value;
 		this.count=proxy.count;
+		this.hash=proxy.hash;
 	}
 
 	private native String init(int[] codePoints, int offset, int count);
@@ -233,6 +228,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 		String proxy=init(ascii,hibyte,offset,count);
 		this.value=proxy.value;
 		this.count=proxy.count;
+		this.hash=proxy.hash;
 	}
 
 	private native String init(byte ascii[], int hibyte, int offset, int count);
@@ -324,6 +320,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 		String proxy=init(bytes,offset,length,charsetName);
 		this.value=proxy.value;
 		this.count=proxy.count;
+		this.hash=proxy.hash;
 	}
 
 	private native String init(byte bytes[], int offset, int length, String charsetName);

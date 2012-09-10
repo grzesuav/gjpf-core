@@ -30,15 +30,31 @@ public class JPF_java_lang_String {
 	public static double numSubstring;
 	public static double numConstructorCalls;
 	
-	public static String init___3III__Ljava_lang_String_2(MJIEnv env, int objRef,int codePointsRef, int offset, int count){
-		int[]codePoints=env.getIntArrayObject(codePointsRef);
-		return new String(codePoints,offset,count);
+	public static int init___3CII__Ljava_lang_String_2(MJIEnv env, int objRef,int valueRef, int offset, int count){
+		char[]value=env.getCharArrayObject(valueRef);
+		String result= new String(value,offset,count);
+		return env.newString(result);
 	}
 
-	public static String init___3BIII__Ljava_lang_String_2(MJIEnv env, int objRef,int asciiRef, 
+	public static int init___3III__Ljava_lang_String_2(MJIEnv env, int objRef,int codePointsRef, int offset, int count){
+		int[]codePoints=env.getIntArrayObject(codePointsRef);
+		String result= new String(codePoints,offset,count);
+		return env.newString(result);
+	}
+
+	public static int init___3BIII__Ljava_lang_String_2(MJIEnv env, int objRef,int asciiRef, 
 			int hibyte,int offset, int count){
 		byte[]ascii=env.getByteArrayObject(asciiRef);
-		return new String(ascii,hibyte,offset,count);
+		String result=new String(ascii,hibyte,offset,count);
+		return env.newString(result);
+	}
+
+	public static int init___3BIILjava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bytesRef, 
+			int offset, int length,int charsetNameRef){
+		byte[]bytes=env.getByteArrayObject(bytesRef);
+		String charsetName=env.getStringObject(charsetNameRef);
+		String result=new String(bytes,offset,length,charsetName);
+		return env.newString(result);
 	}
 
 	public static int intern____Ljava_lang_String_2 (MJIEnv env, int robj) {
