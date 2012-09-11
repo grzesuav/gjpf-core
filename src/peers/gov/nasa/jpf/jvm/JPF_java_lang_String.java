@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Locale;
 
 /**
@@ -48,14 +49,36 @@ public class JPF_java_lang_String {
 		String result=new String(ascii,hibyte,offset,count);
 		return env.newString(result);
 	}
-
+	
+	
 	public static int init___3BIILjava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bytesRef, 
-			int offset, int length,int charsetNameRef){
+			int offset, int length,int charsetNameRef) throws UnsupportedEncodingException{
 		byte[]bytes=env.getByteArrayObject(bytesRef);
 		String charsetName=env.getStringObject(charsetNameRef);
 		String result=new String(bytes,offset,length,charsetName);
 		return env.newString(result);
 	}
+	
+	public static int init___3BIILjava_nio_charset_Charset_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bytesRef, 
+			int offset,int length, int charsetRef){
+		throw new IllegalStateException("sorry, can't reflect, no Charset model.  You must punch code directly into the String model");
+	}
+
+	public static int init___3BII__Ljava_lang_String_2(MJIEnv env, int objRef,int bytesRef, 
+			int offset, int length){
+		byte[]bytes=env.getByteArrayObject(bytesRef);
+		String result=new String(bytes,offset,length);
+		return env.newString(result);
+	}
+	
+	public static int init___Ljava_lang_StringBuffer_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bufferRef){
+		throw new IllegalStateException("sorry, can't reflect, no StringBuffer model.  You must punch code directly into the String model");
+	}
+
+	public static int init___Ljava_lang_StringBuilder_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bufferRef){
+		throw new IllegalStateException("sorry, can't reflect, no StringBuilder model.  You must punch code directly into the String model");
+	}
+
 
 	public static int intern____Ljava_lang_String_2 (MJIEnv env, int robj) {
 		// <2do> Replace this with a JPF space HashSet once we have a String model

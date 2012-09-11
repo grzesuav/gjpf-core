@@ -160,67 +160,43 @@ public class StringTest extends TestJPF {
 
 	@Test
 	public void testConstructors(){
-		// Just checking existence of implementation
 		if (verifyNoPropertyViolation()){
-			if (verifyNoPropertyViolation()){
-				String s=new String();
-				new String(s);
-				char[]value=new char[]{'a'};
-				new String(value);
-				new String(value,0,0);
-				int[]codePoints=new int[]{1};
-				new String(codePoints,0,0);
-				byte[]bytes=new byte[]{1};
-				new String(bytes,0,0,0);
-				new String(bytes,0);
-				try {
-					Charset d=Charset.defaultCharset();
-					String dname=d.name();
-					new String(bytes,0,0,dname);
-					new String(bytes,0,0,d);
-					new String(bytes,dname);
-					new String(bytes,d);
-				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-					fail("default encoding failure");
-				}
-				new String(bytes,0,0);
-				new String(bytes);
-				StringBuffer buf=new StringBuffer();
-				new String(buf);
-				StringBuilder build=new StringBuilder();
-				new String(build);
-				assertTrue(true);
+			String s=new String();
+			new String(s);
+			assertTrue("empty test",s.isEmpty());
+			char[]value=new char[]{'a','b','c','d','e'};
+			assertTrue("String([]abcde=abcde","abcde".equals(new String(value)));
+			assertTrue("String([]abcde,2,3)=cde","cde".equals(new String(value,2,3)));
+			int[]codePoints=new int[]{48,49,50,51,52,53,54,55,56,57};
+			assertTrue("codePoints0,4=0123","0123".equals(new String(codePoints,0,4)));
+			byte[]bytes=new byte[]{65,66,67,68};
+			byte[]data=new byte[]{69,70,71,72};
+			byte[]more=new byte[]{73,74,75,76};
+			byte[]yow=new byte[]{77,78,79};
+			assertTrue("bytes0,1,3=BCD","BCD".equals(new String(bytes,0,1,3)));
+			assertTrue("bytes=ABCD","ABCD".equals(new String(bytes,0)));
+			try {
+				Charset d = Charset.forName("ISO-8859-1");
+				String dname=d.name();
+				assertTrue("bytes1,2,ISO=BC","BC".equals(new String(bytes,1,2,dname)));
+				assertTrue("bytes2,2,ISO=CD","CD".equals(new String(bytes,2,2,d)));
+
+				assertTrue("data,ISO=EFGH","EFGH".equals(new String(data,dname)));
+				assertTrue("more,ISO=IJKL","IJKL".equals(new String(more,d)));
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				fail("default encoding failure");
 			}
+			assertTrue("more1,3=JKL","JKL".equals(new String(more,1,3)));
+			assertTrue("yow=MNO","MNO".equals(new String(yow)));
+			StringBuffer buf=new StringBuffer();
+			buf.append("yogi");
+			assertTrue("buf=yogi","yogi".equals(new String(buf)));
+			StringBuilder build=new StringBuilder();
+			build.append("boo-boo");
+			assertTrue("build=boo-boo","boo-boo".equals(new String(build)));
 		}
 	}
 
-	@Test
-	public void testMJI(){
-		// Just checking MJI wiring
-		String x=new String("Hey boo-boo bear, let's get us a pickinic basket!");
-		x.codePointAt(0);
-		x.codePointBefore(0);
-		x.codePointCount(0, 0);
-		char dst[]=new char[]{'a','b','c'};
-		x.getChars(0,0,dst,0);
-		byte dstb[]=new byte[]{1,2,3};
-		x.getBytes(0,0,dstb,0);
-
-		Charset d=Charset.defaultCharset();
-		String dname=d.name();
-
-		x.getBytes(d);
-		x.getBytes();
-		
-		StringBuffer buf=new StringBuffer();
-		x.contentEquals(buf);
-		x.contentEquals(x);
-		
-		TreeSet<String> compareSet=new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-		compareSet.add(x);
-		compareSet.add(x+"I don't know Yogi");
-		
-	}
 
 }
