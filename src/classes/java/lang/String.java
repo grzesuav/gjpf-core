@@ -29,9 +29,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
-
  * MJI adapter for java.lang.String, based on jkd 1.7.0_07 source.
  * Adapted by frank.
+ * 
+ * We have to model java.lang.String since it changed its implementation between
+ * Java 1.6 and Java 1.7, and JPF is initializing string objects internally without
+ * doing roundtrips (for performance reasons), i.e. we need to be able to rely
+ * on fields of the String implementation.
+ * 
+ * The silver lining is that most methods are now native and don't appear in
+ * traces anymore. Spending a lot of JPF cycles (instruction.execute()) on
+ * String is just not worth it in terms of potential properties.
  */
 
 public final class String
@@ -43,12 +51,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	/** Cache the hash code for the string */
 	private int hash; // Default to 0
 
-	/** use serialVersionUID from JDK 1.0.2 for interoperability */
 	private static final long serialVersionUID = -6849794470754667710L;
-
-	/** from SE6 that jpf depends on */
-	private final int offset=0;
-	private final int count;
 
 
 	private static final ObjectStreamField[] serialPersistentFields =
@@ -56,24 +59,20 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 
 	public String() {
 		this.value = new char[0];
-		count=0;
 	}
 
 	public String(String original) {
 		this.value = original.value;
 		this.hash = original.hash;
-		count=original.count;
 	}
 
 	public String(char value[]) {
 		this.value = Arrays.copyOf(value, value.length);
-		count=value.length;
 	}
 
 	public String(char value[], int offset, int count) {
 		String proxy=init(value,offset,count);
 		this.value=proxy.value;
-		this.count=proxy.count;
 		this.hash=proxy.hash;
 	}
 
@@ -82,7 +81,6 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	public String(int[] codePoints, int offset, int count) {
 		String proxy=init(codePoints,offset,count);
 		this.value=proxy.value;
-		this.count=proxy.count;
 		this.hash=proxy.hash;
 	}
 
@@ -92,7 +90,6 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	public String(byte ascii[], int hibyte, int offset, int count) {
 		String proxy=init(ascii,hibyte,offset,count);
 		this.value=proxy.value;
-		this.count=proxy.count;
 		this.hash=proxy.hash;
 	}
 
@@ -108,7 +105,6 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	public String(byte bytes[], int offset, int length, String charsetName){
 		String proxy=init(bytes,offset,length,charsetName);
 		this.value=proxy.value;
-		this.count=proxy.count;
 		this.hash=proxy.hash;
 	}
 
@@ -130,13 +126,8 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 			throw new StringIndexOutOfBoundsException(offset + length);
 		}
 
-
 		this.value =  StringCoding.decode(cset, x, offset, length);
-		this.count=this.value.length;
 	}
-
-	private native String init(byte bytes[], int offset, int length, Charset charset);
-
 
 	public String(byte bytes[], String charsetName)
 			throws UnsupportedEncodingException {
@@ -150,7 +141,6 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	public String(byte bytes[], int offset, int length) {
 		String proxy=init(bytes,offset,length);
 		this.value=proxy.value;
-		this.count=proxy.count;
 		this.hash=proxy.hash;
 	}
 
@@ -163,24 +153,15 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 
 
 	public String(StringBuffer x) {
-		// no StringBuffer model
 		synchronized(x) {
 			this.value = Arrays.copyOf(x.getValue(), x.length());
-			this.count=this.value.length;
 		}
-
 	}
-	private native String init(StringBuffer buffer);
 
 
 	public String(StringBuilder x) {
-		// no StringBuilder model
 		this.value = Arrays.copyOf(x.getValue(), x.length());
-		this.count=this.value.length;	       
 	}
-
-
-	private native String init(StringBuilder builder);
 
 	@Deprecated
 	String(int offset, int count, char[] value) {
@@ -227,47 +208,42 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 		}
 	}
 
-	public boolean contentEquals(CharSequence charSequence){
-		// No CharSequence model.
-		if (value.length != charSequence.length())
+  native static boolean equals0 (char[] a, char[] b, int len);
+  
+  /**
+   * we can't turn this into a native method at top level since it would require a bunch
+   * of round trips
+   */
+	public boolean contentEquals (CharSequence charSequence){
+		if (value.length != charSequence.length()){
 			return false;
-		// Case: StringBuffer, StringBuilder
-		if (charSequence instanceof AbstractStringBuilder) {
-			char a[] = value;
-			char b[] = ((AbstractStringBuilder) charSequence).getValue();
-			int i = 0;
-			int n = value.length;
-			while (n-- != 0) {
-				if (a[i] != b[i])
-					return false;
-				i++;
-			}
-			return true;
-		}
-		// Case: String
+    }
+
+    // that should be the common case (String)
 		if (charSequence.equals(this)){
 			return true;
 		}
-		// Case: CharSequence
-		char v1[] = value;
-		int i = 0;
-		int n = value.length;
-		while (n-- != 0) {
-			if (v1[i] != charSequence.charAt(i))
-				return false;
-			i++;
+    
+    // we can do that natively, too
+		if (charSequence instanceof AbstractStringBuilder) {
+      return equals0( value,  ((AbstractStringBuilder) charSequence).getValue(), value.length);
 		}
-		return true;
 
+		// generic CharSequence - expensive
+    char v[] = value;
+    for (int n=value.length, i=0; n >= 0; n--,i++){
+      if (v[i] != charSequence.charAt(i)){
+        return false;
+      }
+    }
+		return true;
 	}
 
 	native public boolean equalsIgnoreCase(String anotherString);
 	native public int compareTo(String anotherString);
 
-	public static final Comparator<String> CASE_INSENSITIVE_ORDER
-	= new CaseInsensitiveComparator();
-	private static class CaseInsensitiveComparator
-	implements Comparator<String>, java.io.Serializable {
+	public static final Comparator<String> CASE_INSENSITIVE_ORDER = new CaseInsensitiveComparator();
+	private static class CaseInsensitiveComparator implements Comparator<String>, java.io.Serializable {
 		// use serialVersionUID from JDK 1.2.2 for interoperability
 		private static final long serialVersionUID = 8575799808933029326L;
 
@@ -281,10 +257,8 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 		return CASE_INSENSITIVE_ORDER.compare(this, str);
 	}
 
-	native public boolean regionMatches(int toffset, String other, int ooffset,
-			int len);
-	native public boolean regionMatches(boolean ignoreCase, int toffset,
-			String other, int ooffset, int len);
+	native public boolean regionMatches(int toffset, String other, int ooffset, int len);
+	native public boolean regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len);
 	native public boolean startsWith(String prefix, int toffset);
 	public boolean startsWith(String prefix) {
 		return startsWith(prefix, 0);

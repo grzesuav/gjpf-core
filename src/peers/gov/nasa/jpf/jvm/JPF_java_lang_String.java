@@ -43,14 +43,14 @@ public class JPF_java_lang_String {
 		return env.newString(result);
 	}
 
+  @SuppressWarnings("deprecation")
 	public static int init___3BIII__Ljava_lang_String_2(MJIEnv env, int objRef,int asciiRef, 
 			int hibyte,int offset, int count){
 		byte[]ascii=env.getByteArrayObject(asciiRef);
 		String result=new String(ascii,hibyte,offset,count);
 		return env.newString(result);
 	}
-	
-	
+
 	public static int init___3BIILjava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bytesRef, 
 			int offset, int length,int charsetNameRef) throws UnsupportedEncodingException{
 		byte[]bytes=env.getByteArrayObject(bytesRef);
@@ -59,26 +59,12 @@ public class JPF_java_lang_String {
 		return env.newString(result);
 	}
 	
-	public static int init___3BIILjava_nio_charset_Charset_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bytesRef, 
-			int offset,int length, int charsetRef){
-		throw new IllegalStateException("sorry, can't reflect, no Charset model.  You must code directly into the String model");
-	}
-
 	public static int init___3BII__Ljava_lang_String_2(MJIEnv env, int objRef,int bytesRef, 
 			int offset, int length){
 		byte[]bytes=env.getByteArrayObject(bytesRef);
 		String result=new String(bytes,offset,length);
 		return env.newString(result);
 	}
-	
-	public static int init___Ljava_lang_StringBuffer_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bufferRef){
-		throw new IllegalStateException("sorry, can't reflect, no StringBuffer model.  You must code directly into the String model");
-	}
-
-	public static int init___Ljava_lang_StringBuilder_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bufferRef){
-		throw new IllegalStateException("sorry, can't reflect, no StringBuilder model.  You must code directly into the String model");
-	}
-
 
 
 	static public int codePointAt__I__I(MJIEnv env, int objRef, int index){
@@ -107,6 +93,7 @@ public class JPF_java_lang_String {
 		obj.getChars(srcBegin,srcEnd,dst,dstBegin);
 	}
 
+  @SuppressWarnings("deprecation")
 	static public void getBytes__II_3BI__V(MJIEnv env,int objRef,int srcBegin, int srcEnd, int dstRef, int dstBegin){
 		String obj = env.getStringObject(objRef);
 		byte[]dst=env.getByteArrayObject(dstRef);
@@ -133,10 +120,31 @@ public class JPF_java_lang_String {
 		return env.newByteArray(bytes);
 	}
 
+  public static boolean equals0___3C_3CI__Z (MJIEnv env, int clsObjRef, int charsRef1, int charsRef2, int len){
+    
+    if ((charsRef1 == MJIEnv.NULL) || (charsRef2 == MJIEnv.NULL) ){
+      return false;
+    }
+    
+    char[] a = env.getCharArrayObject(charsRef1);
+    char[] b = env.getCharArrayObject(charsRef2);
+
+    if (a.length < len || b.length < len){
+      return false;
+    }
+    
+    for (int i=0; i<len; i++){
+      if (a[i] != b[i]){
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
 	public static boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int argRef) {
 		if (argRef == MJIEnv.NULL){
 			return false;
-
 		}
 
 		Heap   heap = env.getHeap();
@@ -148,22 +156,17 @@ public class JPF_java_lang_String {
 		}
 
 		Fields f1 = heap.get( s1.getReferenceField("value")).getFields();
-		int o1 = s1.getIntField("offset");
-		int l1 = s1.getIntField("count");
-
 		Fields f2 = heap.get( s2.getReferenceField("value")).getFields();
-		int o2 = s2.getIntField("offset");
-		int l2 = s2.getIntField("count");
-
-		if (l1 != l2) {
-			return false;
-		}
 
 		char[] c1 = ((CharArrayFields)f1).asCharArray();
 		char[] c2 = ((CharArrayFields)f2).asCharArray();
 
-		for (int j=o1, k=o2, max=o1+l1; j<max; j++, k++){
-			if (c1[j] != c2[k]){
+    if (c1.length != c2.length){
+      return false;
+    }
+    
+    for (int i=0; i<c1.length; i++){
+			if (c1[i] != c2[i]){
 				return false;
 			}
 		}
@@ -252,18 +255,15 @@ public class JPF_java_lang_String {
 
 		if (h == 0){
 			int vref = env.getReferenceField(objref, "value");
-			int off = env.getIntField(objref, "offset");
-			int len = env.getIntField(objref, "count");
 
 			// now get the char array data, but be aware they are stored as ints
 			ElementInfo ei = env.getElementInfo(vref);
 			char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
 
-			for (int max=off+len; off<max; off++) {
-				h = 31*h + values[off];
+			for (int i=0; i<values.length; i++) {
+				h = 31*h + values[i];
 			}
 			env.setIntField(objref, "hash", h);
-
 		}    
 
 		return h;
@@ -276,8 +276,10 @@ public class JPF_java_lang_String {
 
 	public static int indexOf__II__I (MJIEnv env, int objref, int c, int fromIndex) {
 		int vref = env.getReferenceField(objref, "value");
-		int off = env.getIntField(objref, "offset");
-		int len = env.getIntField(objref, "count");
+		ElementInfo ei = env.getElementInfo(vref);
+		char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
+        
+		int len = values.length;
 
 		if (fromIndex >= len){
 			return -1;
@@ -286,11 +288,8 @@ public class JPF_java_lang_String {
 			fromIndex = 0;
 		}
 
-		ElementInfo ei = env.getElementInfo(vref);
-		char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
-
 		for (int i=fromIndex; i<len; i++){
-			if (values[i+off] == c){
+			if (values[i] == c){
 				return i;
 			}
 		}
@@ -304,8 +303,10 @@ public class JPF_java_lang_String {
 
 	public static int lastIndexOf__II__I (MJIEnv env, int objref, int c, int fromIndex) {
 		int vref = env.getReferenceField(objref, "value");
-		int off = env.getIntField(objref, "offset");
-		int len = env.getIntField(objref, "count");
+		ElementInfo ei = env.getElementInfo(vref);
+		char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
+    
+		int len = values.length;
 
 		if (fromIndex < 0){
 			return -1;
@@ -314,11 +315,8 @@ public class JPF_java_lang_String {
 			fromIndex = len-1;
 		}
 
-		ElementInfo ei = env.getElementInfo(vref);
-		char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
-
 		for (int i=fromIndex; i>0; i--){
-			if (values[i+off] == c){
+			if (values[i] == c){
 				return i;
 			}
 		}
@@ -370,25 +368,22 @@ public class JPF_java_lang_String {
 		Heap heap = env.getHeap();
 
 		ElementInfo thisStr = heap.get(objRef);
-		ElementInfo otherStr = heap.get(strRef);
-
-		int thisLength = thisStr.getIntField("count");
-		int otherLength = otherStr.getIntField("count");
-
-		if (otherLength == 0)
-			return objRef;
-
-		int thisOffset = thisStr.getIntField("offset");
 		CharArrayFields thisFields = (CharArrayFields) heap.get(thisStr.getReferenceField("value")).getFields();
-		char thisChars[] = thisFields.asCharArray();
-
-		int otherOffset = otherStr.getIntField("offset");
+		char[] thisChars = thisFields.asCharArray();
+		int thisLength = thisChars.length;
+        
+		ElementInfo otherStr = heap.get(strRef);
 		CharArrayFields otherFields = (CharArrayFields) heap.get(otherStr.getReferenceField("value")).getFields();
-		char otherChars[] = otherFields.asCharArray();
+		char[] otherChars = otherFields.asCharArray();
+		int otherLength = otherChars.length;
+
+		if (otherLength == 0){
+			return objRef;
+    }
 
 		char resultChars[] = new char[thisLength + otherLength];
-		System.arraycopy(thisChars, thisOffset, resultChars, 0, thisLength);
-		System.arraycopy(otherChars, otherOffset, resultChars, thisLength, otherLength);
+		System.arraycopy(thisChars, 0, resultChars, 0, thisLength);
+		System.arraycopy(otherChars, 0, resultChars, thisLength, otherLength);
 
 		return env.newString(new String(resultChars));
 	}
@@ -402,20 +397,19 @@ public class JPF_java_lang_String {
 		}
 
 		int vref = env.getReferenceField(objRef, "value");
-		int off = env.getIntField(objRef, "offset");
-		int len = env.getIntField(objRef, "count");
-
 		ElementInfo ei = env.getElementInfo(vref);
 		char[] values = ((CharArrayFields) ei.getFields()).asCharArray();
+		int len = values.length;
+
 		char[] newValues = null;
 
-		for (int i = off, j = 0; j<len; i++, j++) {
+		for (int i = 0, j = 0; j<len; i++, j++) {
 			char c = values[i];
 			if (c == oldChar) {
 				if (newValues == null) {
 					newValues = new char[len];
 					if (j>0){
-						System.arraycopy(values, off, newValues, 0, j);
+						System.arraycopy(values, 0, newValues, 0, j);
 					}
 				}
 				newValues[j] = newChar;
@@ -519,12 +513,11 @@ public class JPF_java_lang_String {
 		ElementInfo thisStr = heap.get(objRef);
 
 		CharArrayFields thisFields = (CharArrayFields) heap.get(thisStr.getReferenceField("value")).getFields();
-		int thisLength = thisStr.getIntField("count");
-		int thisOffset = thisStr.getIntField("offset");
-		char thisChars[] = thisFields.asCharArray();
+		char[] thisChars = thisFields.asCharArray();
+		int thisLength = thisChars.length;
 
-		int start = thisOffset;
-		int end = thisOffset + thisLength;
+		int start = 0;
+		int end = thisLength;
 
 		while ((start < end) && (thisChars[start] <= ' ')){
 			start++;
@@ -534,7 +527,7 @@ public class JPF_java_lang_String {
 			end--;
 		}
 
-		if (start == thisOffset && end == thisOffset + thisLength){
+		if (start == 0 && end == thisLength){
 			// if there was no white space, return the string itself
 			return objRef;
 		}
@@ -546,14 +539,9 @@ public class JPF_java_lang_String {
 
 	public static int toCharArray_____3C (MJIEnv env, int objref){
 		int vref = env.getReferenceField(objref, "value");
-		int off = env.getIntField(objref, "offset");
-		int len = env.getIntField(objref, "count");
+    char[] v = env.getCharArrayObject(vref);
 
-		int cref = env.newCharArray(len);
-
-		for (int i=0, j=off; i<len; i++, j++){
-			env.setCharArrayElement(cref, i, env.getCharArrayElement(vref, j));
-		}
+    int cref = env.newCharArray(v);
 
 		return cref;
 	}
