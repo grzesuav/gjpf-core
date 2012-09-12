@@ -278,8 +278,6 @@ public class SparseClusterArrayHeap extends SparseClusterArray<ElementInfo> impl
       // <2do> pcm - this is BAD, we shouldn't depend on private impl of
       // external classes - replace with our own java.lang.String !
       e.setReferenceField("value", vref);
-      e.setIntField("offset", 0);
-      e.setIntField("count", length);
 
       ElementInfo eVal = get(vref);
       CharArrayFields cf = (CharArrayFields)eVal.getFields();
