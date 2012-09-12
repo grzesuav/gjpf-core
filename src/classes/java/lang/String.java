@@ -36,9 +36,6 @@ import java.util.regex.Pattern;
 
 public final class String
 implements java.io.Serializable, Comparable<String>, CharSequence {
-	// set this value to true if you want to run through the modelled
-	// Pattern code.  Otherwise Pattern methods reflect to JRE.
-	public boolean USE_PATTERN_MJI=false;
 
 	/** The value is used for character storage. */
 	private final char value[];
