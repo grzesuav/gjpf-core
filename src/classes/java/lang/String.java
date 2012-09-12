@@ -523,18 +523,22 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *
 	 * @since  1.5
 	 */
+
+
 	public String(StringBuilder builder) {
-		/* This will not work because no StringBuilder model
+		/*
+		 This will not work because no StringBuilder model
 		String proxy=init(buffer);
 		this.value=proxy.value;
 		this.count=proxy.count;
 		this.hash=proxy.hash;
 		 */
 		// Punching in from jdk1.7.0_07 source
-	    this.value = Arrays.copyOf(builder.getValue(), builder.length());
+		this.value = Arrays.copyOf(builder.getValue(), builder.length());
 		this.count=this.value.length;	       
 	}
-	
+
+
 	private native String init(StringBuilder builder);
 
 	/*
@@ -826,7 +830,12 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *
 	 * @since  1.6
 	 */
-	native public byte[] getBytes(Charset charset);
+	public byte[] getBytes(Charset charset){
+
+		// No Charset model.  Punching in from jdk1.7.0_07 source
+		if (charset == null) throw new NullPointerException();
+		return StringCoding.encode(charset, value, 0, value.length);
+	}
 
 	/**
 	 * Encodes this {@code String} into a sequence of bytes using the
@@ -874,7 +883,12 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *
 	 * @since  1.4
 	 */
-	native public boolean contentEquals(StringBuffer sb);
+	public boolean contentEquals(StringBuffer sb){
+		// No StringBuffer model.  Punching in from jdk1.7.0_07 source
+		synchronized (sb) {
+			return contentEquals((CharSequence) sb);
+		}
+	}
 
 	/**
 	 * Compares this string to the specified {@code CharSequence}.  The result
@@ -890,7 +904,38 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *
 	 * @since  1.5
 	 */
-	native public boolean contentEquals(CharSequence cs);
+	public boolean contentEquals(CharSequence cs){
+		// No CharSequence model.  Punching in from jdk1.7.0_07 source
+		if (value.length != cs.length())
+			return false;
+		// Argument is a StringBuffer, StringBuilder
+		if (cs instanceof AbstractStringBuilder) {
+			char v1[] = value;
+			char v2[] = ((AbstractStringBuilder) cs).getValue();
+			int i = 0;
+			int n = value.length;
+			while (n-- != 0) {
+				if (v1[i] != v2[i])
+					return false;
+				i++;
+			}
+			return true;
+		}
+		// Argument is a String
+		if (cs.equals(this))
+			return true;
+		// Argument is a generic CharSequence
+		char v1[] = value;
+		int i = 0;
+		int n = value.length;
+		while (n-- != 0) {
+			if (v1[i] != cs.charAt(i))
+				return false;
+			i++;
+		}
+		return true;
+
+	}
 
 	/**
 	 * Compares this {@code String} to another {@code String}, ignoring case
@@ -1046,11 +1091,8 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          exactly matches the specified subregion of the string argument;
 	 *          <code>false</code> otherwise.
 	 */
-	public boolean regionMatches(int toffset, String other, int ooffset,
-			int len) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
-
+	native public boolean regionMatches(int toffset, String other, int ooffset,
+			int len);
 	/**
 	 * Tests if two string regions are equal.
 	 * <p>
@@ -1242,10 +1284,11 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	/**
 	 * Handles (rare) calls of indexOf with a supplementary character.
 	 */
-	private int indexOfSupplementary(int ch, int fromIndex) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
 
+	// NOT VISIBLE
+	/*
+	private int indexOfSupplementary(int ch, int fromIndex);
+	 */
 	/**
 	 * Returns the index within this string of the last occurrence of
 	 * the specified character. For values of <code>ch</code> in the
@@ -1305,16 +1348,14 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          than or equal to <code>fromIndex</code>, or <code>-1</code>
 	 *          if the character does not occur before that point.
 	 */
-	public int lastIndexOf(int ch, int fromIndex) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public int lastIndexOf(int ch, int fromIndex);
 
 	/**
 	 * Handles (rare) calls of lastIndexOf with a supplementary character.
 	 */
-	private int lastIndexOfSupplementary(int ch, int fromIndex) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	/* NOT VISIBLE
+	private int lastIndexOfSupplementary(int ch, int fromIndex);
+	 */
 
 	/**
 	 * Returns the index within this string of the first occurrence of the
@@ -1363,12 +1404,11 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @param   targetCount  count of the target string.
 	 * @param   fromIndex    the index to begin searching from.
 	 */
-	static int indexOf(char[] source, int sourceOffset, int sourceCount,
+	/* NOT VISIBLE
+	native static int indexOf(char[] source, int sourceOffset, int sourceCount,
 			char[] target, int targetOffset, int targetCount,
-			int fromIndex) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
-
+			int fromIndex);
+	 */
 	/**
 	 * Returns the index within this string of the last occurrence of the
 	 * specified substring.  The last occurrence of the empty string ""
@@ -1404,10 +1444,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          searching backward from the specified index,
 	 *          or {@code -1} if there is no such occurrence.
 	 */
-	public int lastIndexOf(String str, int fromIndex) {
-		return lastIndexOf(value, 0, value.length,
-				str.value, 0, str.value.length, fromIndex);
-	}
+	native public int lastIndexOf(String str, int fromIndex);
 
 	/**
 	 * Code shared by String and StringBuffer to do searches. The
@@ -1422,12 +1459,12 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @param   targetCount  count of the target string.
 	 * @param   fromIndex    the index to begin searching from.
 	 */
+	/* NOT VISIBLE
 	static int lastIndexOf(char[] source, int sourceOffset, int sourceCount,
 			char[] target, int targetOffset, int targetCount,
-			int fromIndex) {
-		throw new IllegalStateException("MJI REQURIED");
+			int fromIndex);
 	}
-
+	 */
 	/**
 	 * Returns a new string that is a substring of this string. The
 	 * substring begins with the character at the specified index and
@@ -1594,7 +1631,9 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @since 1.5
 	 */
 	public boolean contains(CharSequence s) {
-		throw new IllegalStateException("MJI REQURIED");
+		// No CharSequence model
+		// Punching in from jdk1.7.0_07 source
+		return indexOf(s.toString()) > -1;
 	}
 
 	/**
@@ -1696,7 +1735,12 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @since 1.5
 	 */
 	public String replace(CharSequence target, CharSequence replacement) {
-		throw new IllegalStateException("MJI REQURIED");
+		// No CharSequence model
+		// Punching in from jdk1.7.0_07 source (more or less)
+		int LITERAL= 0x10;
+		return Pattern.compile(target.toString(), LITERAL).matcher(
+				this).replaceAll(Matcher.quoteReplacement(replacement.toString()));
+
 	}
 
 	/**
@@ -2098,9 +2142,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @see  java.util.Formatter
 	 * @since  1.5
 	 */
-	public static String format(Locale l, String format, Object... args) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public static String format(Locale l, String format, Object... args);
 
 	/**
 	 * Returns the string representation of the <code>Object</code> argument.
@@ -2111,7 +2153,11 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 *          <code>obj.toString()</code> is returned.
 	 * @see     java.lang.Object#toString()
 	 */
-	native public static String valueOf(Object obj);
+	public static String valueOf(Object obj){
+		// can't translate arbitrary object, so
+		// punching in from jdk1.7.0_07 source
+		return (obj == null) ? "null" : obj.toString();
+	}
 
 	/**
 	 * Returns the string representation of the <code>char</code> array
@@ -2214,9 +2260,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @return  a string representation of the <code>int</code> argument.
 	 * @see     java.lang.Integer#toString(int, int)
 	 */
-	public static String valueOf(int i) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public static String valueOf(int i);
 
 	/**
 	 * Returns the string representation of the <code>long</code> argument.
@@ -2228,9 +2272,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @return  a string representation of the <code>long</code> argument.
 	 * @see     java.lang.Long#toString(long)
 	 */
-	public static String valueOf(long l) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public static String valueOf(long l);
 
 	/**
 	 * Returns the string representation of the <code>float</code> argument.
@@ -2242,9 +2284,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @return  a string representation of the <code>float</code> argument.
 	 * @see     java.lang.Float#toString(float)
 	 */
-	public static String valueOf(float f) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public static String valueOf(float f);
 
 	/**
 	 * Returns the string representation of the <code>double</code> argument.
@@ -2256,9 +2296,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	 * @return  a  string representation of the <code>double</code> argument.
 	 * @see     java.lang.Double#toString(double)
 	 */
-	public static String valueOf(double d) {
-		throw new IllegalStateException("MJI REQURIED");
-	}
+	native public static String valueOf(double d);
 
 	/**
 	 * Returns a canonical representation for the string object.

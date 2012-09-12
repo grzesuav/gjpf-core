@@ -80,16 +80,58 @@ public class JPF_java_lang_String {
 	}
 
 
-	public static int intern____Ljava_lang_String_2 (MJIEnv env, int robj) {
-		// <2do> Replace this with a JPF space HashSet once we have a String model
-		Heap   heap = env.getHeap();
 
-		String s = env.getStringObject(robj);
-		robj = heap.newInternString(s, env.getThreadInfo());
-
-		return robj;
+	static public int codePointAt__I__I(MJIEnv env, int objRef, int index){
+		String obj = env.getStringObject(objRef);
+		return obj.codePointAt(index);
+	}
+	
+	static public int codePointBefore__I__I(MJIEnv env, int objRef, int index){
+		String obj = env.getStringObject(objRef);
+		return obj.codePointBefore(index);
 	}
 
+	static public int codePointCount__II__I(MJIEnv env, int objRef,int beginIndex, int endIndex){
+		String obj = env.getStringObject(objRef);
+		return obj.codePointCount(beginIndex,endIndex);
+	}
+
+	static public int offsetByCodePoints__II__I(MJIEnv env, int objRef,int index, int codePointOffset){
+		String obj = env.getStringObject(objRef);
+		return obj.offsetByCodePoints(index,codePointOffset);
+	}
+	
+	static public void getChars__II_3CI__V(MJIEnv env,int objRef,int srcBegin, int srcEnd, int dstRef, int dstBegin){
+		String obj = env.getStringObject(objRef);
+		char[]dst=env.getCharArrayObject(dstRef);
+		obj.getChars(srcBegin,srcEnd,dst,dstBegin);
+	}
+
+	static public void getBytes__II_3BI__V(MJIEnv env,int objRef,int srcBegin, int srcEnd, int dstRef, int dstBegin){
+		String obj = env.getStringObject(objRef);
+		byte[]dst=env.getByteArrayObject(dstRef);
+		obj.getBytes(srcBegin,srcEnd,dst,dstBegin);
+	}
+
+	public static int getBytes__Ljava_lang_String_2___3B(MJIEnv env, int objRef, int charSetRef){
+		String string = env.getStringObject(objRef);
+		String charset = env.getStringObject(charSetRef);
+
+		try {
+			byte[] b=string.getBytes(charset);
+			return env.newByteArray(b);
+
+		} catch (UnsupportedEncodingException uex){
+			env.throwException(uex.getClass().getName(), uex.getMessage());
+			return MJIEnv.NULL;
+		}
+	}
+
+	static public int getBytes_____3B(MJIEnv env,int objRef){
+		String obj = env.getStringObject(objRef);
+		byte[]bytes=obj.getBytes();
+		return env.newByteArray(bytes);
+	}
 
 	public static boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int argRef) {
 		if (argRef == MJIEnv.NULL){
@@ -130,6 +172,7 @@ public class JPF_java_lang_String {
 	}
 
 
+	
 	public static boolean equalsIgnoreCase__Ljava_lang_String_2__Z(MJIEnv env, int objref, int anotherString) {
 		String thisString = env.getStringObject(objref);
 		if (anotherString != MJIEnv.NULL){
@@ -139,19 +182,96 @@ public class JPF_java_lang_String {
 		}
 	}
 
+	
+	public static int compareTo__Ljava_lang_String_2__I(MJIEnv env,int objRef,int anotherStringRef){
+		String obj = env.getStringObject(objRef);
+		String anotherString = env.getStringObject(anotherStringRef);
+		return obj.compareTo(anotherString);
+	}
+	
 
-	public static int toCharArray_____3C (MJIEnv env, int objref){
-		int vref = env.getReferenceField(objref, "value");
-		int off = env.getIntField(objref, "offset");
-		int len = env.getIntField(objref, "count");
+	static public int MJIcompare__Ljava_lang_String_2Ljava_lang_String_2__I(MJIEnv env,int clsRef,
+			int s1Ref,int s2Ref){
+		// Is there a way to reflect? Punching in from jkd1.7.0_07
+		String s1=env.getStringObject(s1Ref);
+		String s2=env.getStringObject(s2Ref);
+        int n1 = s1.length();
+        int n2 = s2.length();
+        int min = Math.min(n1, n2);
+        for (int i = 0; i < min; i++) {
+            char c1 = s1.charAt(i);
+            char c2 = s2.charAt(i);
+            if (c1 != c2) {
+                c1 = Character.toUpperCase(c1);
+                c2 = Character.toUpperCase(c2);
+                if (c1 != c2) {
+                    c1 = Character.toLowerCase(c1);
+                    c2 = Character.toLowerCase(c2);
+                    if (c1 != c2) {
+                        // No overflow because of numeric promotion
+                        return c1 - c2;
+                    }
+                }
+            }
+        }
+        return n1 - n2;	
+	}
+	
+	public static boolean regionMatches__ILjava_lang_String_2II__Z(MJIEnv env,int objRef,
+			int toffset,int otherRef, int ooffset, int len){
+		String obj = env.getStringObject(objRef);
+		String other = env.getStringObject(otherRef);
+		return obj.regionMatches(toffset,other,ooffset,len);
+		
+	}
 
-		int cref = env.newCharArray(len);
 
-		for (int i=0, j=off; i<len; i++, j++){
-			env.setCharArrayElement(cref, i, env.getCharArrayElement(vref, j));
-		}
+	public static boolean regionMatches__ZILjava_lang_String_2II__Z(MJIEnv env,int objRef,
+			boolean ignoreCase, int toffset,
+			int otherRef, int ooffset, int len){
+		String obj = env.getStringObject(objRef);
+		String other = env.getStringObject(otherRef);
+		return obj.regionMatches(ignoreCase,toffset,other,ooffset,len);
+		
+	}
 
-		return cref;
+	static public boolean startsWith__Ljava_lang_String_2I__Z(MJIEnv env, int objRef, int prefixRef, int toffset){
+		String thisStr = env.getStringObject(objRef);
+		String prefix = env.getStringObject(prefixRef);
+		return thisStr.startsWith(prefix,toffset);
+	}
+
+
+	static public boolean startsWith__Ljava_lang_String_2__Z(MJIEnv env, int objRef, int prefixRef){
+		String thisStr = env.getStringObject(objRef);
+		String prefix = env.getStringObject(prefixRef);
+		return thisStr.startsWith(prefix);
+	}
+
+	public static int hashCode____I (MJIEnv env, int objref) {
+		int h = env.getIntField(objref, "hash");
+
+		if (h == 0){
+			int vref = env.getReferenceField(objref, "value");
+			int off = env.getIntField(objref, "offset");
+			int len = env.getIntField(objref, "count");
+
+			// now get the char array data, but be aware they are stored as ints
+			ElementInfo ei = env.getElementInfo(vref);
+			char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
+
+			for (int max=off+len; off<max; off++) {
+				h = 31*h + values[off];
+			}
+			env.setIntField(objref, "hash", h);
+
+		}    
+
+		return h;
+	}
+
+	public static int indexOf__I__I (MJIEnv env, int objref, int c) {
+		return indexOf__II__I(env,objref,c,0);
 	}
 
 
@@ -179,12 +299,9 @@ public class JPF_java_lang_String {
 		return -1;
 	}
 
-
-	public static int indexOf__I__I (MJIEnv env, int objref, int c) {
-		return indexOf__II__I(env,objref,c,0);
+	public static int lastIndexOf__I__I (MJIEnv env, int objref, int c) {
+		return lastIndexOf__II__I(env,objref,c,Integer.MAX_VALUE);
 	}
-
-
 
 	public static int lastIndexOf__II__I (MJIEnv env, int objref, int c, int fromIndex) {
 		int vref = env.getReferenceField(objref, "value");
@@ -211,9 +328,6 @@ public class JPF_java_lang_String {
 	}
 
 
-	public static int lastIndexOf__I__I (MJIEnv env, int objref, int c) {
-		return lastIndexOf__II__I(env,objref,c,Integer.MAX_VALUE);
-	}
 
 
 	public static int indexOf__Ljava_lang_String_2__I(MJIEnv env, int objref, int str) {
@@ -231,151 +345,27 @@ public class JPF_java_lang_String {
 		return thisStr.indexOf(indexStr, fromIndex);
 	}
 
+	public static int lastIndexOf__Ljava_lang_String_2I__I(MJIEnv env, int objref, int str, int fromIndex) {
+		String thisStr = env.getStringObject(objref);
+		String indexStr = env.getStringObject(str);
 
-	public static int hashCode____I (MJIEnv env, int objref) {
-		int h = env.getIntField(objref, "hash");
-
-		if (h == 0){
-			int vref = env.getReferenceField(objref, "value");
-			int off = env.getIntField(objref, "offset");
-			int len = env.getIntField(objref, "count");
-
-			// now get the char array data, but be aware they are stored as ints
-			ElementInfo ei = env.getElementInfo(vref);
-			char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
-
-			for (int max=off+len; off<max; off++) {
-				h = 31*h + values[off];
-			}
-			env.setIntField(objref, "hash", h);
-
-		}    
-
-		return h;
+		return thisStr.lastIndexOf(indexStr, fromIndex);
 	}
 
-
-	public static boolean matches__Ljava_lang_String_2__Z (MJIEnv env, int objRef, int regexRef){
-		String s = env.getStringObject(objRef);
-		String r = env.getStringObject(regexRef);
-
-		return s.matches(r);
-	}
-
-	// <2do> we also need startsWith, endsWith, indexOf etc. - all not relevant from
-	// a model checking perspective (unless we want to compute execution budgets)
-
-
-	public static int format__Ljava_lang_String_2_3Ljava_lang_Object_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef,
-			int fmtRef, int argRef){
-		return env.newString(env.format(fmtRef,argRef));
-	}
-
-
-	public static int getBytes__Ljava_lang_String_2___3B(MJIEnv env, int objRef, int charSetRef){
-		String string = env.getStringObject(objRef);
-		String charset = env.getStringObject(charSetRef);
-
-		try {
-			byte[] b=string.getBytes(charset);
-			return env.newByteArray(b);
-
-		} catch (UnsupportedEncodingException uex){
-			env.throwException(uex.getClass().getName(), uex.getMessage());
-			return MJIEnv.NULL;
-		}
-	}
-
-
-
-	public static int toUpperCase____Ljava_lang_String_2 (MJIEnv env, int objRef){
-		String s = env.getStringObject(objRef);
-		String upper = s.toUpperCase();
-
-		return (s == upper) ? objRef : env.newString(upper);
-	}
-
-
-	public static int toLowerCase____Ljava_lang_String_2 (MJIEnv env, int objRef){
-		String s = env.getStringObject(objRef);
-		String lower = s.toLowerCase();
-
-		return (s == lower) ? objRef : env.newString(lower);
-	}
-
-
-
-	public static int toUpperCase__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int locRef){
-		String s = env.getStringObject(objRef);
-		Locale loc = JPF_java_util_Locale.getLocale(env, locRef);
-
-		String upper = s.toUpperCase(loc);
-
-		return (s == upper) ? objRef : env.newString(upper);
-	}
-
-
-	public static int toLowerCase__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int locRef){
-		String s = env.getStringObject(objRef);
-		Locale loc = JPF_java_util_Locale.getLocale(env, locRef);
-
-		String lower = s.toLowerCase(loc);
-
-		return (s == lower) ? objRef : env.newString(lower);
-	}
-
-
-
-	public static int split__Ljava_lang_String_2I___3Ljava_lang_String_2(MJIEnv env, int clsObjRef, int strRef, int limit) {
-		String s = env.getStringObject(strRef);
-		String obj = env.getStringObject(clsObjRef);
-
-		String[] result = obj.split(s, limit);
-
-		return env.newStringArray(result);
-	}
-
-
-	public static int split__Ljava_lang_String_2___3Ljava_lang_String_2(MJIEnv env,int clsObjRef,int strRef){
-		String s=env.getStringObject(strRef);
-		String obj=env.getStringObject(clsObjRef);
-
-		String[] result=obj.split(s);
-
-		return env.newStringArray(result);
-	}
-
-
-
-	public static int trim____Ljava_lang_String_2(MJIEnv env,int objRef) {
-		Heap heap = env.getHeap();
-		ElementInfo thisStr = heap.get(objRef);
-
-		CharArrayFields thisFields = (CharArrayFields) heap.get(thisStr.getReferenceField("value")).getFields();
-		int thisLength = thisStr.getIntField("count");
-		int thisOffset = thisStr.getIntField("offset");
-		char thisChars[] = thisFields.asCharArray();
-
-		int start = thisOffset;
-		int end = thisOffset + thisLength;
-
-		while ((start < end) && (thisChars[start] <= ' ')){
-			start++;
-		}
-
-		while ((start < end) && (thisChars[end - 1] <= ' ')){
-			end--;
-		}
-
-		if (start == thisOffset && end == thisOffset + thisLength){
-			// if there was no white space, return the string itself
-			return objRef;
-		}
-
-		String result = new String(thisChars, start, end - start);
+	
+	public static int substring__I__Ljava_lang_String_2(MJIEnv env,int objRef,int beginIndex){
+		String obj = env.getStringObject(objRef);
+		String result=obj.substring(beginIndex);
 		return env.newString(result);
+		
 	}
-
+	public static int substring__II__Ljava_lang_String_2(MJIEnv env,int objRef,int beginIndex,
+			int endIndex){
+		String obj = env.getStringObject(objRef);
+		String result=obj.substring(beginIndex,endIndex);
+		return env.newString(result);
+		
+	}
 
 	public static int concat__Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int objRef, int strRef) {
 		Heap heap = env.getHeap();
@@ -403,7 +393,7 @@ public class JPF_java_lang_String {
 
 		return env.newString(new String(resultChars));
 	}
-
+	
 	//--- the various replaces
 
 	public static int replace__CC__Ljava_lang_String_2(MJIEnv env, int objRef, char oldChar, char newChar) {
@@ -445,6 +435,15 @@ public class JPF_java_lang_String {
 				return objRef;
 		}
 	}
+	
+
+	public static boolean matches__Ljava_lang_String_2__Z (MJIEnv env, int objRef, int regexRef){
+		String s = env.getStringObject(objRef);
+		String r = env.getStringObject(regexRef);
+
+		return s.matches(r);
+	}
+
 
 	public static int replaceFirst__Ljava_lang_String_2Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int objRef, int regexRef, int replacementRef) {
 		String thisStr = env.getStringObject(objRef);
@@ -464,89 +463,143 @@ public class JPF_java_lang_String {
 		return (result != thisStr) ? env.newString(result) : objRef;
 	}
 
-	// added by frank
-	static public boolean startsWith__Ljava_lang_String_2I__Z(MJIEnv env, int objRef, int prefixRef, int toffset){
-		String thisStr = env.getStringObject(objRef);
-		String prefix = env.getStringObject(prefixRef);
-		return thisStr.startsWith(prefix,toffset);
+
+	public static int split__Ljava_lang_String_2I___3Ljava_lang_String_2(MJIEnv env, int clsObjRef, int strRef, int limit) {
+		String s = env.getStringObject(strRef);
+		String obj = env.getStringObject(clsObjRef);
+
+		String[] result = obj.split(s, limit);
+
+		return env.newStringArray(result);
 	}
 
-	public static int valueOf__Ljava_lang_Object_2__Ljava_lang_String_2(MJIEnv env,int clsRef,int objRef){
-		String obj = env.getStringObject(objRef);
-		String result=String.valueOf(obj);
-		return env.newString(result);
+	public static int split__Ljava_lang_String_2___3Ljava_lang_String_2(MJIEnv env,int clsObjRef,int strRef){
+		String s=env.getStringObject(strRef);
+		String obj=env.getStringObject(clsObjRef);
+
+		String[] result=obj.split(s);
+
+		return env.newStringArray(result);
 	}
 
-	public static int compareTo__Ljava_lang_String_2__I(MJIEnv env,int objRef,int anotherStringRef){
-		String obj = env.getStringObject(objRef);
-		String anotherString = env.getStringObject(anotherStringRef);
-		return obj.compareTo(anotherString);
+	public static int toLowerCase__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int locRef){
+		String s = env.getStringObject(objRef);
+		Locale loc = JPF_java_util_Locale.getLocale(env, locRef);
+
+		String lower = s.toLowerCase(loc);
+
+		return (s == lower) ? objRef : env.newString(lower);
 	}
-	
-	public static int substring__I__Ljava_lang_String_2(MJIEnv env,int objRef,int beginIndex){
-		String obj = env.getStringObject(objRef);
-		String result=obj.substring(beginIndex);
-		return env.newString(result);
-		
+
+	public static int toLowerCase____Ljava_lang_String_2 (MJIEnv env, int objRef){
+		String s = env.getStringObject(objRef);
+		String lower = s.toLowerCase();
+
+		return (s == lower) ? objRef : env.newString(lower);
 	}
-	
-	static public void dumpTest(){
-		if(numObjects>0){
-			int o=(int)numObjects;
-			int s=(int)numSubstring;
-			System.out.println(s+"/"+o+"="+numSubstring/numObjects);
-			if(numConstructorCalls!=numObjects){
-				System.out.println("numConstructors="+(int)numConstructorCalls);
-			}
+
+	public static int toUpperCase__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int locRef){
+		String s = env.getStringObject(objRef);
+		Locale loc = JPF_java_util_Locale.getLocale(env, locRef);
+
+		String upper = s.toUpperCase(loc);
+
+		return (s == upper) ? objRef : env.newString(upper);
+	}
+
+
+	public static int toUpperCase____Ljava_lang_String_2 (MJIEnv env, int objRef){
+		String s = env.getStringObject(objRef);
+		String upper = s.toUpperCase();
+
+		return (s == upper) ? objRef : env.newString(upper);
+	}
+
+	public static int trim____Ljava_lang_String_2(MJIEnv env,int objRef) {
+		Heap heap = env.getHeap();
+		ElementInfo thisStr = heap.get(objRef);
+
+		CharArrayFields thisFields = (CharArrayFields) heap.get(thisStr.getReferenceField("value")).getFields();
+		int thisLength = thisStr.getIntField("count");
+		int thisOffset = thisStr.getIntField("offset");
+		char thisChars[] = thisFields.asCharArray();
+
+		int start = thisOffset;
+		int end = thisOffset + thisLength;
+
+		while ((start < end) && (thisChars[start] <= ' ')){
+			start++;
 		}
-	}
 
-	public static int substring__II__Ljava_lang_String_2(MJIEnv env,int objRef,int beginIndex,
-			int endIndex){
-		String obj = env.getStringObject(objRef);
-		String result=obj.substring(beginIndex,endIndex);
+		while ((start < end) && (thisChars[end - 1] <= ' ')){
+			end--;
+		}
+
+		if (start == thisOffset && end == thisOffset + thisLength){
+			// if there was no white space, return the string itself
+			return objRef;
+		}
+
+		String result = new String(thisChars, start, end - start);
 		return env.newString(result);
-		
 	}
 
-	public static boolean regionMatches__ZILjava_lang_String_2II__Z(MJIEnv env,int objRef,
-			boolean ignoreCase, int toffset,
-			int otherRef, int ooffset, int len){
-		String obj = env.getStringObject(objRef);
-		String other = env.getStringObject(otherRef);
-		return obj.regionMatches(ignoreCase,toffset,other,ooffset,len);
-		
+
+	public static int toCharArray_____3C (MJIEnv env, int objref){
+		int vref = env.getReferenceField(objref, "value");
+		int off = env.getIntField(objref, "offset");
+		int len = env.getIntField(objref, "count");
+
+		int cref = env.newCharArray(len);
+
+		for (int i=0, j=off; i<len; i++, j++){
+			env.setCharArrayElement(cref, i, env.getCharArrayElement(vref, j));
+		}
+
+		return cref;
 	}
 
-	static public void getChars__II_3CI__V(MJIEnv env,int objRef,int srcBegin, int srcEnd, int dstRef, int dstBegin){
-		String obj = env.getStringObject(objRef);
-		char[]dst=env.getCharArrayObject(dstRef);
-		obj.getChars(srcBegin,srcEnd,dst,dstBegin);
+	public static int format__Ljava_lang_String_2_3Ljava_lang_Object_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef,
+			int fmtRef, int argRef){
+		return env.newString(env.format(fmtRef,argRef));
+	}
+
+	public static int format__Ljava_util_Locale_2Ljava_lang_String_2_3Ljava_lang_Object_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef,
+			int locRef,int fmtRef, int argRef){
+		Locale loc = JPF_java_util_Locale.getLocale(env, locRef);
+		return env.newString(env.format(loc,fmtRef,argRef));
+	}
+
+
+	public static int intern____Ljava_lang_String_2 (MJIEnv env, int robj) {
+		// <2do> Replace this with a JPF space HashSet once we have a String model
+		Heap   heap = env.getHeap();
+
+		String s = env.getStringObject(robj);
+		robj = heap.newInternString(s, env.getThreadInfo());
+
+		return robj;
+	}
+
+	public static int  valueOf__I__Ljava_lang_String_2(MJIEnv env, int clsref,int i){
+		String result=String.valueOf(i);
+		return env.newString(result);
+	}
+
+	public static int  valueOf__J__Ljava_lang_String_2(MJIEnv env, int clsref,long l){
+		String result=String.valueOf(l);
+		return env.newString(result);
+	}
+
+	public static int  valueOf__F__Ljava_lang_String_2(MJIEnv env, int clsref,float f){
+		String result=String.valueOf(f);
+		return env.newString(result);
 	}
 	
-	static public int MJIcompare__Ljava_lang_String_2Ljava_lang_String_2__I(MJIEnv env,int clsRef,
-			int s1Ref,int s2Ref){
-		String s1=env.getStringObject(s1Ref);
-		String s2=env.getStringObject(s2Ref);
-        int n1 = s1.length();
-        int n2 = s2.length();
-        int min = Math.min(n1, n2);
-        for (int i = 0; i < min; i++) {
-            char c1 = s1.charAt(i);
-            char c2 = s2.charAt(i);
-            if (c1 != c2) {
-                c1 = Character.toUpperCase(c1);
-                c2 = Character.toUpperCase(c2);
-                if (c1 != c2) {
-                    c1 = Character.toLowerCase(c1);
-                    c2 = Character.toLowerCase(c2);
-                    if (c1 != c2) {
-                        // No overflow because of numeric promotion
-                        return c1 - c2;
-                    }
-                }
-            }
-        }
-        return n1 - n2;	
+	public static int  valueOf__D__Ljava_lang_String_2(MJIEnv env, int clsref,double d){
+		String result=String.valueOf(d);
+		return env.newString(result);
 	}
+
+
 }

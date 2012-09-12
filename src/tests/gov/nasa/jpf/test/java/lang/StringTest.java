@@ -23,6 +23,8 @@ import gov.nasa.jpf.util.test.TestJPF;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.util.Iterator;
+import java.util.Locale;
 import java.util.TreeSet;
 
 import org.junit.Test;
@@ -197,6 +199,91 @@ public class StringTest extends TestJPF {
 			assertTrue("build=boo-boo","boo-boo".equals(new String(build)));
 		}
 	}
-
-
+	// Test new modelled methods
+	@Test
+	public void testMethods(){
+		// 97 ...
+		String x=new String("abcdefg");
+		assertTrue("abcdefg[3]=100",x.codePointAt(3)==100);
+		assertTrue("abcdefg[2]=99",x.codePointBefore(3)==99);
+		assertTrue("abcdefg(2,4)",x.codePointCount(2, 4)==2);
+		assertTrue("abcdefg(2+2)",x.offsetByCodePoints(2,2)==4);
+		char[] dst=new char[]{0,0,0,0,0};
+		x.getChars(4,7,dst,1);
+		assertTrue("abcdefg(4,7->1)=0efg0",dst[0]==0);
+		assertTrue("abcdefg(4,7->1)=0efg0",dst[1]=='e');
+		assertTrue("abcdefg(4,7->1)=0efg0",dst[2]=='f');
+		assertTrue("abcdefg(4,7->1)=0efg0",dst[3]=='g');
+		assertTrue("abcdefg(4,7->1)=0efg0",dst[4]==0);
+		byte[] bdst=new byte[]{0,0,0,0,0};
+		x.getBytes(3,6,bdst,1);
+		assertTrue("abcdefg(4,7->1)=0efg0",bdst[0]==0);
+		assertTrue("abcdefg(4,7->1)=0efg0",bdst[1]=='d');
+		assertTrue("abcdefg(4,7->1)=0efg0",bdst[2]=='e');
+		assertTrue("abcdefg(4,7->1)=0efg0",bdst[3]=='f');
+		assertTrue("abcdefg(4,7->1)=0efg0",bdst[4]==0);
+		String y=new String("qrs");
+		try {
+			bdst=y.getBytes("ISO-8859-1");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		assertTrue("qrs 0",bdst[0]=='q');
+		assertTrue("qrs 1",bdst[1]=='r');
+		assertTrue("qrs 2",bdst[2]=='s');
+		Charset charSet=Charset.forName("ISO-8859-1");
+		String z=new String("tuv");
+		bdst=z.getBytes(charSet);
+		assertTrue("tuv 0",bdst[0]=='t');
+		assertTrue("tuv 1",bdst[1]=='u');
+		assertTrue("tuv 2",bdst[2]=='v');
+		String s=new String("wxy");
+		bdst=s.getBytes();
+		assertTrue("wxy 0",bdst[0]=='w');
+		assertTrue("wxy 1",bdst[1]=='x');
+		assertTrue("wxy 2",bdst[2]=='y');
+		StringBuffer buf=new StringBuffer();
+		buf.append("xyz");
+		assertTrue("xyz".contentEquals(buf));
+		assertTrue("a<b","a".compareTo("b")<0);
+		TreeSet<String>set=new TreeSet<String>();
+		set.add("b");
+		set.add("a");
+		Iterator<String>iter=set.iterator();
+		String a=iter.next();
+		assertTrue("set0=a",a.equals("a"));
+		String b=iter.next();
+		assertTrue("set1=b",b.equals("b"));
+		assertTrue("AaBb=aabb","AaBb".compareToIgnoreCase("aabb")==0);
+		assertTrue("abcdef1,3-->bcdef","abcde".regionMatches(2, "bcdef", 1, 3));
+		assertTrue("abcdef1,3-->BCDEF","abcde".regionMatches(true,2, "BCDEF", 1, 3));
+		assertTrue("xyz->yz","xyz".startsWith("yz",1));
+		assertTrue("abc->a","abc".startsWith("a"));
+		assertTrue("xyz->yz","xyz".endsWith("yz"));
+		buf.delete(0,buf.length());
+		buf.append("hash");
+		assertTrue("hashCode","hash".hashCode()==buf.toString().hashCode());
+		assertTrue("abc->1","abc".indexOf('b')==1);
+		assertTrue("ababa->3","ababa".indexOf('b',2)==3);
+		assertTrue("ababa(z)->-1","ababa".lastIndexOf('z')==-1);
+		assertTrue("aacdabcd(a,3)","aacdabcd".lastIndexOf('a',3)==1);
+		assertTrue("abcabca->bca so 1","abcabca".indexOf("bca")==1);
+		assertTrue("abcabca->bca 2, so 4","abcabca".indexOf("bca",2)==4);
+		assertTrue("lovelovelove->8","lovelovelove".lastIndexOf("love")==8);
+		assertTrue("crazycrazy->0","crazycrazy".lastIndexOf("crazy",4)==0);
+		assertTrue("yellowblue->6","yellowblue".substring(6).equals("blue"));
+		assertTrue("yellowbluebluegreen->6,14","yellowbluebluegreen".substring(6,14).equals("blueblue"));
+		assertTrue("x+y","x".concat("y").equals("xy"));
+		assertTrue("xyz(xy)","xyz".contains("xy"));
+		assertTrue("abcabc->abaaba","abcabc".replace("c","a").equals("abaaba"));
+		Locale l=Locale.ENGLISH;
+		String result=String.format(l, "Gimme the %s and save my soul","FORTRAN");
+		assertTrue("fortran",result.equals("Gimme the FORTRAN and save my soul"));
+		assertTrue("1",String.valueOf(1).equals("1"));
+		assertTrue("1111111111111111111L",String.valueOf(1111111111111111111L).equals("1111111111111111111"));
+		assertTrue("3.14159",String.valueOf(3.14159).equals("3.14159"));
+		System.out.println(String.valueOf(3.14159265358979324D));
+		assertTrue("3.141592653589793",String.valueOf(3.141592653589793D).equals("3.141592653589793"));
+	}
 }
