@@ -23,7 +23,7 @@
   <property file="local.properties"/>
 
   <!-- compiler settings -->
-  <property name="src_level"     value="7"/>
+  <property name="src_level"     value="6"/>
   <property name="debug"         value="on"/>
   <property name="deprecation"   value="on"/>
 

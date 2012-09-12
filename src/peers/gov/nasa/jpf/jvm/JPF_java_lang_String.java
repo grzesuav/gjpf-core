@@ -61,7 +61,7 @@ public class JPF_java_lang_String {
 	
 	public static int init___3BIILjava_nio_charset_Charset_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bytesRef, 
 			int offset,int length, int charsetRef){
-		throw new IllegalStateException("sorry, can't reflect, no Charset model.  You must punch code directly into the String model");
+		throw new IllegalStateException("sorry, can't reflect, no Charset model.  You must code directly into the String model");
 	}
 
 	public static int init___3BII__Ljava_lang_String_2(MJIEnv env, int objRef,int bytesRef, 
@@ -72,11 +72,11 @@ public class JPF_java_lang_String {
 	}
 	
 	public static int init___Ljava_lang_StringBuffer_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bufferRef){
-		throw new IllegalStateException("sorry, can't reflect, no StringBuffer model.  You must punch code directly into the String model");
+		throw new IllegalStateException("sorry, can't reflect, no StringBuffer model.  You must code directly into the String model");
 	}
 
 	public static int init___Ljava_lang_StringBuilder_2__Ljava_lang_String_2(MJIEnv env, int objRef,int bufferRef){
-		throw new IllegalStateException("sorry, can't reflect, no StringBuilder model.  You must punch code directly into the String model");
+		throw new IllegalStateException("sorry, can't reflect, no StringBuilder model.  You must code directly into the String model");
 	}
 
 
@@ -192,24 +192,23 @@ public class JPF_java_lang_String {
 
 	static public int MJIcompare__Ljava_lang_String_2Ljava_lang_String_2__I(MJIEnv env,int clsRef,
 			int s1Ref,int s2Ref){
-		// Is there a way to reflect? Punching in from jkd1.7.0_07
-		String s1=env.getStringObject(s1Ref);
+		// Is there a way to reflect?
+		String a=env.getStringObject(s1Ref);
 		String s2=env.getStringObject(s2Ref);
-        int n1 = s1.length();
+        int n1 = a.length();
         int n2 = s2.length();
         int min = Math.min(n1, n2);
         for (int i = 0; i < min; i++) {
-            char c1 = s1.charAt(i);
-            char c2 = s2.charAt(i);
-            if (c1 != c2) {
-                c1 = Character.toUpperCase(c1);
-                c2 = Character.toUpperCase(c2);
-                if (c1 != c2) {
-                    c1 = Character.toLowerCase(c1);
-                    c2 = Character.toLowerCase(c2);
-                    if (c1 != c2) {
-                        // No overflow because of numeric promotion
-                        return c1 - c2;
+            char x = a.charAt(i);
+            char y = s2.charAt(i);
+            if (x != y) {
+                x = Character.toUpperCase(x);
+                y = Character.toUpperCase(y);
+                if (x != y) {
+                    x = Character.toLowerCase(x);
+                    y = Character.toLowerCase(y);
+                    if (x != y) {
+                         return x - y;
                     }
                 }
             }
