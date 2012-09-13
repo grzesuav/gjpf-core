@@ -67,7 +67,6 @@ public class JPF_java_io_OutputStreamWriter {
                                          int sref, int off, int len,
                                          int bref){
     int cref = env.getReferenceField(sref, "value");
-    off += env.getIntField(sref, "offset");
     
     return encode___3CII_3B__I(env,objref,cref,off,len,bref);
   }

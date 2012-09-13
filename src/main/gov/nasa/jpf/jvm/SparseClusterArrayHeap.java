@@ -93,7 +93,7 @@ public class SparseClusterArrayHeap extends GenericHeapImpl {
   protected void set (int index, ElementInfo ei) {
     elementInfos.set(index, ei);
   }
-  
+
 
   public Iterable<ElementInfo> liveObjects() {
     return elementInfos;

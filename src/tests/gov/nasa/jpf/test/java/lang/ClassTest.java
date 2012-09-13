@@ -526,4 +526,23 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
       assertTrue(Child2.class.getAnnotations().length == 1);
     }
   }
+  
+  @Test
+  public void testIsAnnotation(){
+    if (verifyNoPropertyViolation()){
+      assertFalse( Child2.class.isAnnotation());
+      assertTrue( A9.class.isAnnotation());
+    }
+  }
+  
+  @Test
+  public void testIsAnnotationPresent(){
+    if (verifyNoPropertyViolation()){
+      assertFalse( Child2.class.isAnnotationPresent(SuppressWarnings.class));
+      assertTrue( Child1.class.isAnnotationPresent(A10.class));
+      assertTrue( Child1.class.isAnnotationPresent(A9.class));
+      assertTrue( Child2.class.isAnnotationPresent(A9.class));
+    }    
+  }
+  
 }

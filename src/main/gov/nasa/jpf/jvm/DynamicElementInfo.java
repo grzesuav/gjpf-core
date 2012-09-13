@@ -155,14 +155,11 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
       throw new JPFException("object is not of type java.lang.String");
     }
 
-    int vref = getDeclaredReferenceField("value", "java.lang.String");
-    int length = getDeclaredIntField("count", "java.lang.String");
-    int offset = getDeclaredIntField("offset", "java.lang.String");
-
+    int vref = getDeclaredReferenceField("value", "java.lang.String");    
     if (vref != -1){
       ElementInfo eVal = JVM.getVM().getHeap().get(vref);
       char[] value = eVal.asCharArray();
-      return new String(value, offset, length);
+      return new String(value);
     } else {
       // can happen if 'asString' is called during the String construction itself
       // (e.g. from a careless listener)
@@ -179,13 +176,11 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
     }
 
     int vref = getDeclaredReferenceField("value", "java.lang.String");
-    int length = getDeclaredIntField("count", "java.lang.String");
-    int offset = getDeclaredIntField("offset", "java.lang.String");
-
     ElementInfo e = JVM.getVM().getHeap().get(vref);
     CharArrayFields cf = (CharArrayFields)e.getFields();
-
-    return cf.asString(offset,length).equals(s);
+    char[] v = cf.asCharArray();
+    
+    return new String(v).equals(s);
   }
 
   public boolean isBoxObject(){
