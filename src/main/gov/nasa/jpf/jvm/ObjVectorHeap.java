@@ -128,7 +128,6 @@ public class ObjVectorHeap extends GenericHeapImpl {
       alloc = new Allocation(); // !! create new one so that we don't modify a stored key
     }
     
-    
     // we do this here since we know how elements are stored
     assert elementInfos.get(idx) == null;
     
