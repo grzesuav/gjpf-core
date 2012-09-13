@@ -29,7 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * MJI adapter for java.lang.String, based on jkd 1.7.0_07 source.
+ * MJI adapter for java.lang.String, based on jdk 1.7.0_07 source.
  * Adapted by frank.
  * 
  * We have to model java.lang.String since it changed its implementation between
