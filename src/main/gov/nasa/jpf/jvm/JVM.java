@@ -213,7 +213,6 @@ public class JVM {
 
     ExecutionCount.init(config);
     PreciseAllocationContext.init(config);
-    GlobalId.init(config);
     
     // peer classes get initialized upon NativePeer creation
   }

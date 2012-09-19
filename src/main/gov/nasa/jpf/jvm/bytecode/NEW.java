@@ -36,9 +36,6 @@ public class NEW extends JVMInstruction implements AllocInstruction {
   public String getClassName(){    // Needed for Java Race Finder
     return(cname);
   }
-
-  // need one per count location
-  static GlobalId executeGid = new GlobalId("NEW.execute");
   
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     Heap heap = ti.getHeap();

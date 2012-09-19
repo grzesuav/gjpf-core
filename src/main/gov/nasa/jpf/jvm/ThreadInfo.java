@@ -77,8 +77,6 @@ public class ThreadInfo
   static ThreadInfo currentThread;
   static ThreadInfo mainThread;
 
-  static GlobalIdManager gidManager;
-
   protected class StackIterator implements Iterator<StackFrame> {
     StackFrame frame = top;
 
@@ -339,7 +337,6 @@ public class ThreadInfo
   static boolean init (Config config) {
     currentThread = null;
     mainThread = null;
-    gidManager = new GlobalIdManager();
     
     globalThreadInfos = new ObjVector<ThreadInfo>(16); // re-create to avoid memory leaks
 
@@ -386,7 +383,7 @@ public class ThreadInfo
    * point of creation we already have all the required object references
    */
   public static ThreadInfo createThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef) {
-    int gid = computeGlobalId(vm.getSystemState()) + 1; // we reserve 0 for the mainThread
+    int gid = objRef;
     
     ThreadInfo ti = globalThreadInfos.get(gid);
     if (ti == null){
@@ -403,18 +400,6 @@ public class ThreadInfo
     return ti;
   }
   
-  // note we can't call this outside a valid thread context
-  protected static int computeGlobalId (SystemState ss){
-    ThreadInfo tiExec = currentThread;
-    Instruction insn = null;
-    
-    if (tiExec != null){
-      insn = tiExec.getTopFrame().getPC();  
-    }
-        
-    return gidManager.getNewId(ss, currentThread, insn);
-  }
-
   
   /**
    * Creates a new thread info. It is associated with the object

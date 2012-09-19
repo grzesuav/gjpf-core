@@ -63,7 +63,7 @@ public class SharedPropagationTest extends TestJPF {
   
   @Test
   public void testLocalRef(){
-    if (verifyUnhandledException(Gotcha.class.getName())){
+    if (verifyUnhandledException( Gotcha.class.getName(), "+vm.por.global_tracking")){
       T1.main(new String[0]);
     }
   }
