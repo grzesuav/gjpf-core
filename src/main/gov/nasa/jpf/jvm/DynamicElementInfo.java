@@ -20,7 +20,6 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.util.ObjectQueue;
 import gov.nasa.jpf.util.SparseClusterArray;
 
 /**
@@ -51,7 +50,9 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   static SparseClusterArray<ThreadInfoSet> usingThreads;
   
   public static boolean init (Config conf){
-    usingThreads = new SparseClusterArray<ThreadInfoSet>();
+    if (conf.getBoolean("vm.por.global_tracking")){
+      usingThreads = new SparseClusterArray<ThreadInfoSet>();
+    }
     return true;
   }
   
@@ -68,10 +69,17 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   
   @Override
   protected ThreadInfoSet createThreadInfoSet(ThreadInfo ti){
-    ThreadInfoSet tis = usingThreads.get(objRef);
-    if (tis == null){
+    ThreadInfoSet tis;
+    
+    if (usingThreads != null) { // we track referencing threads search globally
+      tis = usingThreads.get(objRef);
+      if (tis == null){
+        tis = new ThreadInfoSet(ti);
+        usingThreads.set(objRef,tis);
+      }
+      
+    } else { // we only track referencing threads in this path
       tis = new ThreadInfoSet(ti);
-      usingThreads.set(objRef,tis);
     }
     
     tis.add(ti);

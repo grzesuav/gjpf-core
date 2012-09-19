@@ -52,21 +52,24 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
   public static final int   ATTR_CONSTRUCTED   = 0x2000;
   
-
+  // object is shared
+  public static final int   ATTR_SHARED        = 0x4000;
+  
+  
   //--- the upper two bytes are for transient (heap internal) use only, and are not stored
 
   // BEWARE if you add or change values, make sure these are not used in derived classes !
   // <2do> this is efficient but fragile
   public static final int   ATTR_FIELDS_CHANGED     = 0x10000;
   public static final int   ATTR_MONITOR_CHANGED    = 0x20000;
-  public static final int   ATTR_REFTID_CHANGED     = 0x40000;
+  public static final int   ATTR_TREF_CHANGED       = 0x40000; // usingTi has changed
   public static final int   ATTR_ATTRIBUTE_CHANGED  = 0x80000; // refers only to sticky bits
 
   //--- useful flag sets & masks
 
   static final int   ATTR_STORE_MASK = 0x0000ffff;
 
-  static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_REFTID_CHANGED | ATTR_ATTRIBUTE_CHANGED);
+  static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_TREF_CHANGED | ATTR_ATTRIBUTE_CHANGED);
 
   // transient flag set if object is reachable from root object, i.e. can't be recycled
   public static final int   ATTR_IS_MARKED       = 0x80000000;
@@ -88,8 +91,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   
   // the set of threads using this object. Note this is not used for state matching
   // so that order or thread id do not have a direct impact on heap symmetry
-  // THIS IS SEARCH GLOBAL - there can be ThreadInfos in this set which are terminated
-  // and/or not in the current ThreadList
+  // The "vm.por.global_tracking" property controls if the set of referencing threads is
+  // search global or per-path. In the latter case, there can be missed paths
   protected ThreadInfoSet usingTi;
 
   // this is the reference value for the object represented by this ElementInfo
@@ -228,7 +231,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public boolean hasRefTidChanged() {
-    return (attributes & ATTR_REFTID_CHANGED) != 0;
+    return (attributes & ATTR_TREF_CHANGED) != 0;
   }
 
   public String toString() {
@@ -381,20 +384,33 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   
   public boolean isShared() {
     //return usingTi.getNumberOfLiveThreads() > 1;
-    return usingTi.hasMultipleLiveThreads();
+    return ((attributes & ATTR_SHARED) != 0);
   }
   
-  public boolean isSharedWith(ThreadInfo ti){
-    return usingTi.containsLiveThread(ti);
-  }
-  
-  public void setUsedBy( ThreadInfo ti){
-    usingTi.add(ti);
+  public void setShared (boolean isShared) {
+    if (isShared) {
+      if ((attributes & ATTR_SHARED) == 0) {
+        attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
+      }
+    } else {
+      if ((attributes & ATTR_SHARED) != 0) {
+        attributes &= ~ATTR_SHARED;
+        attributes |= ATTR_ATTRIBUTE_CHANGED;
+      }
+    }
   }
   
   public boolean checkUpdatedSharedness (ThreadInfo ti) {
     usingTi.add(ti);
-    return isShared();
+    
+    if (usingTi.hasMultipleLiveThreads()) {
+      setShared(true);
+      return true;
+      
+    } else {
+      setShared(false);
+      return false;
+    }
   }
   
   

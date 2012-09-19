@@ -91,7 +91,7 @@ public class SparseClusterArrayHeap extends GenericHeapImpl {
   
   @Override
   protected int getNewSystemElementInfoIndex (ClassInfo ci, int anchor, String allocLocation) {
-    int index = getFirstFreeIndex( MAX_THREADS-1);
+    int index = getFirstFreeIndex( 0);
     if (index < 0){
       throw new JPFException("per-thread heap limit exceeded");
     }
