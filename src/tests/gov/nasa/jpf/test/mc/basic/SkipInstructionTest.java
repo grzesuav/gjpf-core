@@ -27,6 +27,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.IRETURN;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.choice.IntChoiceFromList;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.util.test.TestJPF;
 
@@ -101,25 +102,41 @@ public class SkipInstructionTest extends TestJPF {
         System.out.println("method to intercept: " + interceptedMethod);
       }
     }
-    
+        
     @Override
     public void instructionExecuted (JVM vm) {
+      ThreadInfo ti = vm.getLastThreadInfo();
       Instruction insn = vm.getLastInstruction();
+      MethodInfo mi = ti.getTopMethod();
       
-      if (insn instanceof InvokeInstruction) {
-        ThreadInfo ti = vm.getLastThreadInfo();
-        MethodInfo mi = ti.getTopMethod();
-        if (mi == interceptedMethod) {
-          System.out.println("we just entered " + mi);
-          Instruction lastInsn = mi.getLastInsn();
-          assert lastInsn instanceof IRETURN : "last instruction not an IRETURN ";
-          StackFrame frame = ti.getClonedTopFrame(); // we are modifying it
-          System.out.println("listener is skipping method body of " + mi + " returning 42");
-          frame.push( 42);
-          ti.setNextPC(lastInsn);
+      if (mi == interceptedMethod) {
+        System.out.println("in " + mi);
+
+        if (!ti.isFirstStepInsn()) {
+          System.out.println("in top half: " + insn);
+          if (insn instanceof InvokeInstruction) { // we just entered the interceptedMethod
+            IntChoiceFromList cg = new IntChoiceFromList("Test", 42, 43);
+            if (vm.setNextChoiceGenerator(cg)) {
+              return; // we are done here, next insn in this method will skip to return
+            }
+          }
+        } else {
+          // note - this is the first insn WITHIN the interceptedMethod
+          System.out.println("in bottom half: " + insn);
+          IntChoiceFromList cg = vm.getCurrentChoiceGenerator("Test", IntChoiceFromList.class);
+          if (cg != null) {
+            int choice = cg.getNextChoice();
+            Instruction lastInsn = mi.getLastInsn();
+            assert lastInsn instanceof IRETURN : "last instruction not an IRETURN ";
+            StackFrame frame = ti.getClonedTopFrame(); // we are modifying it
+            System.out.println("listener is skipping method body of " + mi + " returning " + choice);
+            frame.push(choice);
+            ti.setNextPC(lastInsn);
+          } else {
+            System.out.println("unexpected CG: " + cg);
+          }
         }
-      }
-      
+      }      
     }    
   }
   
@@ -128,7 +145,7 @@ public class SkipInstructionTest extends TestJPF {
     if (verifyNoPropertyViolation("+listener=gov.nasa.jpf.test.mc.basic.SkipInstructionTest$InvokeListener")){
       int ret = foo( 3, 4);
       System.out.println(ret);
-      assertTrue( ret == 42);
+      //assertTrue( ret == 42);
     }    
   }
 }

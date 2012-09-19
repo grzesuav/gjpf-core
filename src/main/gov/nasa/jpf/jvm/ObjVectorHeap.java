@@ -93,6 +93,10 @@ public class ObjVectorHeap extends GenericHeapImpl {
     return HashedAllocationContext.getAllocationContext(ci, ti, loc);
   }
   
+  protected AllocationContext getSystemAllocationContext (ClassInfo ci, int anchor, String loc) {
+    return HashedAllocationContext.getSystemAllocationContext(ci, anchor, loc);
+  }
+  
   //--- heap interface
   
   /**
@@ -103,12 +107,12 @@ public class ObjVectorHeap extends GenericHeapImpl {
     return size;
   }
   
-  //--- the allocator primitives
-  protected int getNewElementInfoIndex (ClassInfo ci, ThreadInfo ti, String loc) {
+  //--- the allocator primitives (called from the newXX() template methods)
+  
+  protected int getIndex (AllocationContext ctx) {
     int idx;
     int cnt;
     
-    AllocationContext ctx = getAllocationContext(ci, ti, loc);
     IntTable.Entry<AllocationContext> cntEntry = allocCounts.get(ctx);
     if (cntEntry == null) {
       allocCounts.put(ctx, 1);
@@ -134,6 +138,21 @@ public class ObjVectorHeap extends GenericHeapImpl {
     return idx;
   }
   
+  @Override
+  protected int getNewElementInfoIndex (ClassInfo ci, ThreadInfo ti, String loc) {
+    AllocationContext ctx = getAllocationContext(ci, ti, loc);
+    return getIndex(ctx);
+  }
+  
+  @Override
+  protected int getNewSystemElementInfoIndex (ClassInfo ci, int anchor, String loc) {
+    AllocationContext ctx = getSystemAllocationContext(ci, anchor, loc);
+    return getIndex(ctx);    
+  }
+  
+  //--- the container interface
+  
+  @Override
   protected void set (int index, ElementInfo ei) {
     elementInfos.set(index, ei);
   }

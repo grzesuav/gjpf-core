@@ -319,6 +319,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
    * NOTE: The elementType has to be either a valid builtin typecode ("B', "C", ..)
    * or an "L-slash" name
    */
+  @Override
   public int newArray (String elementType, int nElements, ThreadInfo ti, String location) {
 
     //if (!Types.isTypeCode(elementType)) {
@@ -352,6 +353,10 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     return idx;
   }
 
+  @Override
+  public int newSystemArray (String elementType, int nElements, ThreadInfo ti, int anchor, String location) {
+    return newArray( elementType, nElements, ti, location);
+  }
 
   /**
    * Creates a new object of the given class.
@@ -361,6 +366,7 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
    * <2do> this should return a DynamicElementInfo (most callers need it anyways,
    * and getting the ref out of the ElementInfo is more efficient than a get(ref)
    */
+  @Override
   public int newObject (ClassInfo ci, ThreadInfo ti, String location) {
     int index;
 
@@ -393,9 +399,15 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     return index;
   }
 
+  @Override
+  public int newSystemObject (ClassInfo ci, ThreadInfo ti, int anchor, String location) {
+    return newObject(ci, ti, location);
+  }
+  
   /**
    * Creates a new string.
    */
+  @Override
   public int newString (String str, ThreadInfo th, String allocLocation) {
     if (str != null) {
       int length = str.length();
@@ -417,6 +429,10 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
     }
   }
 
+  @Override
+  public int newSystemString (String str, ThreadInfo ti, int anchor, String allocLocation) {
+    return newString( str, ti, allocLocation);
+  }
 
   // we are trying to save a backtracked HashMap here. The idea is that the string
   // value chars are constant and not attributed, so the Fields object of the

@@ -26,6 +26,7 @@ import gov.nasa.jpf.jvm.choice.FloatChoiceFromList;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.jvm.choice.LongChoiceFromList;
+import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjectConverter;
 import gov.nasa.jpf.util.ObjectList;
@@ -49,8 +50,12 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   static final int MAX_COUNTERS = 10;
 
   static boolean isInitialized;
+  
+  // those are used to store search global int values (e.g. from TestJPF derived classes)
   static int[] counter;
+  static IntTable<String> map;
 
+  
   static boolean supportIgnorePath;
   static boolean breakSingleChoice;
   static boolean enableAtomic;
@@ -65,6 +70,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   static BitSet[] bitSets;
   static int nextBitSet;
 
+  
   public static void init (Config conf) {
 
     if (!isInitialized){
@@ -73,6 +79,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
       enableAtomic = conf.getBoolean("cg.enable_atomic", true);
 
       counter = null;
+      map = null;
+      
       config = conf;
 
       Verify.setPeerClass( JPF_gov_nasa_jpf_jvm_Verify.class);
@@ -85,6 +93,29 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     }
   }
 
+  public static int getValue__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, int keyRef) {
+    if (map == null) {
+      return -1;
+    } else {
+      String key = env.getStringObject(keyRef);
+      IntTable.Entry<String> e = map.get(key);
+      if (e != null) {
+        return e.val;
+      } else {
+        return -1;
+      }
+    }
+  }
+  
+  public static void putValue__Ljava_lang_String_2I__V (MJIEnv env, int clsObjRef, int keyRef, int val) {
+    if (map == null) {
+      map = new IntTable<String>();
+    }
+    
+    String key = env.getStringObject(keyRef);
+    map.put(key, val);
+  }
+  
   public static int getCounter__I__I (MJIEnv env, int clsObjRef, int counterId) {
     if ((counter == null) || (counterId < 0) || (counterId >= counter.length)) {
       return 0;

@@ -124,6 +124,14 @@ public class Verify {
     }
   }
 
+  public static void putValue (String key, int value) {
+    throw new UnsupportedOperationException("putValue requires JPF execution");
+  }
+  
+  public static int getValue (String key) {
+    throw new UnsupportedOperationException("getValue requires JPF execution");    
+  }
+  
   // same mechanism and purpose as the counters, but with BitSets, which is
   // more convenient if we have a lot of different events to check
 

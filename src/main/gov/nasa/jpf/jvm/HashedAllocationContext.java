@@ -33,14 +33,21 @@ import static gov.nasa.jpf.util.OATHash.*;
  * implementations might simply report this as a problem requiring a
  * non-lossy AllocationContext.
  * 
+ * Ideally, we would like to hash the host VM thread context too (esp.
+ * for system allocations), but host VM stack traces are expensive, and it is
+ * arguable if would be too strict (e.g. when using a dedicated allocator
+ * method called from alternative branches of the caller) 
+ * 
  * note - this is a HashMap key type which has to obey the hashCode/equals contract
  */
 public class HashedAllocationContext implements AllocationContext {
 
-  static SparseObjVector<HashedAllocationContext> pool;
-  
-static int N=0;
-  
+  //static SparseObjVector<HashedAllocationContext> pool;
+    
+  /**
+   * this one is for allocations that should depend on the SUT thread context (such as all
+   * explicit NEW executions)
+   */
   public static AllocationContext getAllocationContext (ClassInfo ci, ThreadInfo ti, String loc) {
     int h = 0;
     
@@ -58,18 +65,47 @@ static int N=0;
     h = hashMixin(h, System.identityHashCode(loc));
 
     h = hashFinalize(h);
+    HashedAllocationContext ctx = new HashedAllocationContext(h);
     
+    /**
     HashedAllocationContext ctx = pool.get(h);
     if (ctx == null) {
       ctx = new HashedAllocationContext(h);
       pool.set(h, ctx);
     }
+    **/
+    
+    return ctx;
+  }
+  
+  /**
+   * this one is for allocations that should NOT depend on the SUT thread context (such as
+   * automatic allocation of java.lang.Class objects by the VM)
+   * 
+   * @param anchor a value that can be used to provide a context that is heap graph specific (such as
+   * a classloader or class object reference)
+   */
+  public static AllocationContext getSystemAllocationContext (ClassInfo ci, int anchor, String loc) {
+    int h = 0;
+    
+    h = hashMixin(h, ci.hashCode());
+    
+    // add some common component for all system allocations
+    h = hashMixin(h, 0x652AC7C9);
+    
+    h = hashMixin(h, anchor);
+    
+    //h = hashMixin(h, loc.hashCode()); // this version is value based, which allows dynamically computed locs
+    h = hashMixin(h, System.identityHashCode(loc));
+    
+    h = hashFinalize(h);
+    HashedAllocationContext ctx = new HashedAllocationContext(h);
     
     return ctx;
   }
 
   public static boolean init (Config conf) {
-    pool = new SparseObjVector<HashedAllocationContext>();
+    //pool = new SparseObjVector<HashedAllocationContext>();
     return true;
   }
   

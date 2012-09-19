@@ -739,9 +739,13 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
         return pc.getPosition();
     }
 
-    int idx = pc.getInstructionIndex();
-    if (idx < 0) idx = 0;
-    return lineNumbers[idx];
+    if (pc != null) {
+      int idx = pc.getInstructionIndex();
+      if (idx < 0) idx = 0;
+      return lineNumbers[idx];
+    } else {
+      return -1;
+    }
   }
 
   /**

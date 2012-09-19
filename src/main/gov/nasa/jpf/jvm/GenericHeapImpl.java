@@ -246,20 +246,28 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   
   // NOTE - this is where to assert if this index isn't occupied yet, since only concrete classes know
   // if there can be collisions, and how elements are stored
+  
+  /**
+   * this is called for newXX(..) allocations that are SUT thread specific, i.e. in response to
+   * a explicit NEW or xNEWARRAY instruction that should take the allocating thread into account 
+   */
   protected abstract int getNewElementInfoIndex (ClassInfo ci, ThreadInfo ti, String allocLocation);
-  protected abstract void set (int index, ElementInfo ei);
+
+  /**
+   * this is to be called for newSystemXX(..) allocations, i.e. for objects that are automatically
+   * allocated by the VM in a context that should not be thread specific. For now, this is
+   * class object creation 
+   */
+  protected abstract int getNewSystemElementInfoIndex (ClassInfo ci, int anchor, String allocLocation);
   
   //--- allocators
     
-  @Override
-  public int newObject(ClassInfo ci, ThreadInfo ti, String allocLocation) {
+  protected ElementInfo createObject (ClassInfo ci, ThreadInfo ti, int index) {
     // create the thing itself
     Fields f = ci.createInstanceFields();
     Monitor m = new Monitor();
     ElementInfo ei = createElementInfo(ci, f, m, ti);
 
-    int index = getNewElementInfoIndex( ci, ti, allocLocation);
-    
     ei.setObjectRef(index);
     set(index, ei);
 
@@ -275,81 +283,129 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     // exception handling of the resulting OutOfMemoryError (and we would
     // have to override it, since the VM should guarantee proper exceptions)
 
+    return ei;    
+  }
+  
+  @Override
+  public int newObject(ClassInfo ci, ThreadInfo ti, String allocLocation) {
+    int index = getNewElementInfoIndex( ci, ti, allocLocation);
+    createObject( ci, ti, index);
     return index;
   }
 
-  @Override
-  public int newArray(String elementType, int nElements, ThreadInfo ti, String allocLocation) {
+  public int newSystemObject (ClassInfo ci, ThreadInfo ti, int anchor, String allocLocation) {
+    int index = getNewSystemElementInfoIndex( ci, anchor, allocLocation);
+    createObject( ci, ti, index);
+    return index;    
+  }
+  
+  protected ElementInfo createArray (String elementType, int nElements, ClassInfo ci, ThreadInfo ti, int index) {
+
+    Fields f = ci.createArrayFields(ci.getName(), nElements, Types.getTypeSize(elementType), Types.isReference(elementType));
+    Monitor m = new Monitor();
+    DynamicElementInfo ei = createElementInfo(ci, f, m, ti);
+
+    ei.setObjectRef(index);
+    set(index, ei);
+
+    attributes |= ATTR_ELEMENTS_CHANGED;
+
+    vm.notifyObjectCreated(ti, ei);
+
+    return ei;
+  }
+  
+  protected ClassInfo getArrayClassInfo (ThreadInfo ti, String elementType) {
     String type = "[" + elementType;
     ClassInfo ci = ClassInfo.getResolvedClassInfo(type);
 
-    if (!ci.isInitialized()){
+    if (!ci.isInitialized()) {
       // we do this explicitly here since there are no clinits for array classes
       ci.registerClass(ti);
       ci.setInitialized();
     }
 
-    Fields  f = ci.createArrayFields(type, nElements,
-                                     Types.getTypeSize(elementType),
-                                     Types.isReference(elementType));
-    Monitor  m = new Monitor();
-    DynamicElementInfo ei = createElementInfo(ci, f, m, ti);
-
-    int index = getNewElementInfoIndex(ci, ti, allocLocation);
-    ei.setObjectRef(index);
-    set(index, ei);
+    return ci;
+  }
+  
+  @Override
+  public int newArray(String elementType, int nElements, ThreadInfo ti, String allocLocation) {
+    // see newObject for OOM simulation
+    ClassInfo ci = getArrayClassInfo(ti, elementType);
     
-    attributes |= ATTR_ELEMENTS_CHANGED;
+    int index = getNewElementInfoIndex( ci, ti, allocLocation);
+    createArray( elementType, nElements, ci, ti, index);
 
-    vm.notifyObjectCreated(ti, ei);
+    return index;
+  }
 
-    // see newObject for 'outOfMemory' handling
+  @Override
+  public int newSystemArray(String elementType, int nElements, ThreadInfo ti, int anchor, String allocLocation) {
+    // see newObject for OOM simulation
+    ClassInfo ci = getArrayClassInfo(ti, elementType);
+    
+    int index = getNewSystemElementInfoIndex( ci, anchor, allocLocation);
+    createArray( elementType, nElements, ci, ti, index);
 
     return index;
   }
 
   
-  protected ElementInfo newStringElementInfo (String str, ThreadInfo ti, String allocLocation) {
-    if (str != null) {      
-      int length = str.length();
-      
-      // those two always get allocated together, so the allocation counts are guaranteed to be deterministic
-      int index = newObject(ClassInfo.stringClassInfo, ti, allocLocation);
-      int vref = newArray("C", length, ti, allocLocation);
-      
-      ElementInfo e = get(index);
-      // <2do> pcm - this is BAD, we shouldn't depend on private impl of
-      // external classes - replace with our own java.lang.String !
-      e.setReferenceField("value", vref);
+  
+  protected ElementInfo initializeStringObject( String str, int index, int vref) {
+    ElementInfo ei = get(index);
+    ei.setReferenceField("value", vref);
 
-      ElementInfo eVal = get(vref);
-      CharArrayFields cf = (CharArrayFields)eVal.getFields();
-      cf.setCharValues(str.toCharArray());
-
-      return e;
-
-    } else {
-      return null;
-    }
+    ElementInfo eVal = get(vref);
+    CharArrayFields cf = (CharArrayFields)eVal.getFields();
+    cf.setCharValues(str.toCharArray());
+    
+    return ei;
   }
+  
 
   public int newString(String str, ThreadInfo ti, String allocLocation){
-    ElementInfo ei = newStringElementInfo(str,ti,allocLocation);
-    return ei.getObjectRef();
+    if (str != null) {
+      int index = newObject(ClassInfo.stringClassInfo, ti, allocLocation);
+      int vref = newArray("C", str.length(), ti, allocLocation);
+      initializeStringObject(str, index, vref);      
+      return index;
+      
+    } else {
+      return MJIEnv.NULL;
+    }
+  }
+  
+  public int newSystemString (String str, ThreadInfo ti, int anchor, String allocLocation) {
+    if (str != null) {
+      int index = newSystemObject(ClassInfo.stringClassInfo, ti, anchor, allocLocation);
+      int vref = newSystemArray("C", str.length(), ti, anchor, allocLocation);
+      initializeStringObject(str, index, vref);      
+      return index;
+      
+    } else {
+      return MJIEnv.NULL;
+    }    
   }
 
   public int newInternString (String str, ThreadInfo ti, String allocLocation) {
     IntTable.Entry<String> e = internStrings.get(str);
     if (e == null){
-      ElementInfo ei = newStringElementInfo(str,ti,allocLocation);
-      
-      // new interned Strings are always pinned down
-      int objref = ei.getObjectRef();
-      ei.incPinDown();
-      addToPinDownList(objref);
-      addToInternStrings( str, objref);
+      if (str != null) {
+        int objref = newObject(ClassInfo.stringClassInfo, ti, allocLocation);
+        int vref = newArray("C", str.length(), ti, allocLocation);
+        ElementInfo ei = initializeStringObject(str, objref, vref);
 
-      return objref;
+        // new interned Strings are always pinned down
+        ei.incPinDown();
+        addToPinDownList(objref);
+        addToInternStrings(str, objref);
+
+        return objref;
+      
+      } else {
+        return MJIEnv.NULL;
+      }
 
     } else {
       return e.val;
@@ -365,17 +421,31 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   }
   
   //--- abstract accessors
+
+  /*
+   * these methods abstract away the container type used in GenericHeapImpl subclasses
+   */
   
   /**
-   * public reference lookup
+   * internal setter used during allocation
+   * @param index
+   * @param ei
+   */  
+  protected abstract void set (int index, ElementInfo ei);
+
+  /**
+   * public getter from Heap interface
    */
   @Override
   public abstract ElementInfo get (int ref);
   
   /**
-   * internal setter (used by generic sweep)
+   * internal remover used by generic sweep
    */
   protected abstract void remove (int ref);
+
+  
+  //--- iterators
   
   /**
    * return Iterator for all non-null ElementInfo entries

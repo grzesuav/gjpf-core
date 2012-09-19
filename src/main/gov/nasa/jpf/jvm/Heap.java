@@ -39,10 +39,15 @@ public interface Heap {
   //--- the allocator primitives
   int newArray (String elementType, int nElements, ThreadInfo ti, String location);
   int newObject (ClassInfo ci, ThreadInfo ti, String location);
+  
+  int newSystemArray (String elementType, int nElements, ThreadInfo ti, int anchor, String location);
+  int newSystemObject (ClassInfo ci, ThreadInfo ti, int anchor, String location);
 
   //--- convenience allocators
   int newString (String str, ThreadInfo ti, String location);
   int newInternString (String str, ThreadInfo ti, String location);
+  
+  int newSystemString (String str, ThreadInfo ti, int anchor, String location);
   
   Iterable<ElementInfo> liveObjects();
 

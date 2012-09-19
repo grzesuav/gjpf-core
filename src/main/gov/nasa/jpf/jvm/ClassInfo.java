@@ -33,6 +33,7 @@ import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
 import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.OATHash;
 import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.Source;
@@ -2353,10 +2354,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   ElementInfo createClassObject (ThreadInfo ti){
     Heap heap = JVM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
-    int clsObjRef = heap.newObject(classClassInfo, ti, "ClassInfo.createClassObject.clsObject");
+    int anchor = name.hashCode(); // 2do - this should also take the ClassLoader ref into account
+    int clsObjRef = heap.newSystemObject(classClassInfo, ti, anchor, "ClassInfo.createClassObject.clsObject");
     ElementInfo ei = heap.get(clsObjRef);
 
-    int clsNameRef = heap.newInternString(name, ti, "ClassInfo.createClassObject.clsName");
+    int clsNameRef = heap.newSystemString(name, ti, clsObjRef, "ClassInfo.createClassObject.clsName");
     ei.setReferenceField("name", clsNameRef);
 
     // link the class object to the StaticElementInfo
