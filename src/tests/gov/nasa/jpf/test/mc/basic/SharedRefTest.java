@@ -18,6 +18,10 @@
 //
 package gov.nasa.jpf.test.mc.basic;
 
+import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
 
 import org.junit.Test;
@@ -28,7 +32,6 @@ import org.junit.Test;
  * depend on race conditions that are most likely not experienced when running on
  * a normal VM
  *
- * Although not a thread conformance test, this is
  */
 public class SharedRefTest extends TestJPF implements Runnable {
   
@@ -86,7 +89,8 @@ public class SharedRefTest extends TestJPF implements Runnable {
 
   static SharedRefTest rStatic = new SharedRefTest( new SharedOrNot());
   
-  @Test public void testSharedStaticRoot () {
+  @Test
+  public void testSharedStaticRoot () {
     if (verifyAssertionError()) {
       Thread t = new Thread(rStatic);
 
@@ -96,5 +100,43 @@ public class SharedRefTest extends TestJPF implements Runnable {
     }
   }
   
+  //--- test explicit sharedness management
+  
+  static class Global {
+    public static Global x = new Global();
+   
+    int d;
+  }
+  
+  @Test
+  public void testShareControl () {
+    if (verifyNoPropertyViolation()) {
+      Verify.setShared( Global.class, false);
+      Verify.freezeSharedness( Global.class, true);
+
+      Verify.setShared( Global.x, false);
+      Verify.freezeSharedness( Global.x, true);
+      
+      // now references to Global.x should not break anymore
+     
+      Thread t = new Thread() {
+        public void run() {
+          System.out.println("T inc");
+          Global.x.d++;
+          System.out.println("T dec");
+          Global.x.d--;
+          assertTrue( Global.x.d == 0);
+        }
+      };
+      
+      t.start();
+      
+      System.out.println("M inc");
+      Global.x.d++;
+      System.out.println("M dec");
+      Global.x.d--;
+      assertTrue( Global.x.d == 0);
+    }
+  }
 
 }

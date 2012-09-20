@@ -574,13 +574,6 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
         }
       }
 
-System.out.println("@@ len: " + len + ", idx: " + idx + ", size: " + size);
-int n=0;
-for (int i=0; i<len; i++) {
-  if (data[i] != null) n++;
-}
-System.out.println("@@ counted: " + n);
-
       throw new NoSuchElementException();
     }
 

@@ -886,6 +886,32 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     return false;
   }
   
+  public static void setShared__Ljava_lang_Object_2Z__V (MJIEnv env, int clsObjRef, int objRef, boolean isShared) {
+    if (objRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(objRef);
+      if (ei != null){
+        if (ei.getClassInfo() == ClassInfo.classClassInfo) { // it's a class object, freeze the static fields
+          ei = env.getClassElementInfo(objRef);
+        }
+        ei.setShared( isShared);
+      }
+    }    
+  }
+
+  public static void freezeSharedness__Ljava_lang_Object_2Z__V (MJIEnv env, int clsObjRef, int objRef, boolean freeze) {
+    if (objRef != MJIEnv.NULL){
+      ElementInfo ei = env.getElementInfo(objRef);
+      if (ei != null) {
+        if (ei.getClassInfo() == ClassInfo.classClassInfo) { // it's a class object, freeze the static fields
+          ei = env.getClassElementInfo(objRef);
+        }
+        
+        ei.freezeSharedness(freeze);
+      }
+    }    
+  }
+
+  
   public static void setProperties___3Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int argRef) {
     if (argRef != MJIEnv.NULL) {
       Config conf = env.getConfig();

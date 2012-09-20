@@ -185,10 +185,12 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     JVM.getVM().getStaticArea().markChanged(objRef);
   }
 
+  /**
   public boolean isShared() {
     // static fields are always thread global
     return true;
   }
+  **/
 
   public int getStatus() {
     return status;

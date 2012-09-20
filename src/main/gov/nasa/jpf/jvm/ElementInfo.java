@@ -55,6 +55,9 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // object is shared
   public static final int   ATTR_SHARED        = 0x4000;
   
+  // ATTR_SHARED is frozen (has to be changed explicitly)
+  public static final int   ATTR_FREEZE_SHARED = 0x0100; 
+  
   
   //--- the upper two bytes are for transient (heap internal) use only, and are not stored
 
@@ -230,10 +233,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return (attributes & ATTR_FIELDS_CHANGED) != 0;
   }
 
-  public boolean hasRefTidChanged() {
-    return (attributes & ATTR_TREF_CHANGED) != 0;
-  }
-
   public String toString() {
     return ((ci != null ? ci.getName() : "ElementInfo") + '@' + Integer.toHexString(objRef));
   }
@@ -382,6 +381,19 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   
   //--- shared handling
   
+  public void freezeSharedness (boolean freeze) {
+    if (freeze) {
+      if ((attributes & ATTR_FREEZE_SHARED) == 0) {
+        attributes |= (ATTR_FREEZE_SHARED | ATTR_ATTRIBUTE_CHANGED);
+      }
+    } else {
+      if ((attributes & ATTR_FREEZE_SHARED) != 0) {
+        attributes &= ~ATTR_FREEZE_SHARED;
+        attributes |= ATTR_ATTRIBUTE_CHANGED;
+      }
+    }
+  }
+  
   public boolean isShared() {
     //return usingTi.getNumberOfLiveThreads() > 1;
     return ((attributes & ATTR_SHARED) != 0);
@@ -401,15 +413,22 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
   
   public boolean checkUpdatedSharedness (ThreadInfo ti) {
-    usingTi.add(ti);
+    if (usingTi.add(ti)) {
+      attributes |= ATTR_TREF_CHANGED;
+    }
     
-    if (usingTi.hasMultipleLiveThreads()) {
-      setShared(true);
-      return true;
+    if ((attributes & ATTR_FREEZE_SHARED) == 0) {
+      if (usingTi.hasMultipleLiveThreads()) {
+        setShared(true);
+        return true;
+
+      } else {
+        setShared(false);
+        return false;
+      }
       
     } else {
-      setShared(false);
-      return false;
+      return isShared();
     }
   }
   

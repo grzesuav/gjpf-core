@@ -326,6 +326,7 @@ public class Verify {
   public static void addObjectAttribute (Object o, int val) {}
   public static int[] getObjectAttributes (Object o) { return new int[0]; }
 
+  
   /**
    * this is the new boolean choice generator. Since there's no real
    * heuristic involved with boolean values, we skip the id (it's a
@@ -500,6 +501,14 @@ public class Verify {
 
   public static boolean isShared (Object o){
     return false; // native
+  }
+  
+  public static void setShared (Object o, boolean isShared) {
+    // native
+  }
+  
+  public static void freezeSharedness (Object o, boolean freeze) {
+    // native
   }
   
   public static void terminateSearch () {
