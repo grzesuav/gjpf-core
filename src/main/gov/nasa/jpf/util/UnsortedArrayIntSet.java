@@ -42,7 +42,7 @@ public class UnsortedArrayIntSet extends ArrayIntSet {
   
   
   @Override
-  public void add (int v) {
+  public boolean add (int v) {
     int len = size;
     if (len == 0){
       elements = new int[DEFAULT_CAPACITY];
@@ -52,7 +52,7 @@ public class UnsortedArrayIntSet extends ArrayIntSet {
       int i=0;
       for (; i<len; i++){
         if (a[i] == v){
-          return;
+          return false; // was already there
         }
       }
       
@@ -64,10 +64,11 @@ public class UnsortedArrayIntSet extends ArrayIntSet {
     }
     
     elements[size++] = v;
+    return true;
   }
 
   @Override
-  public void remove(int v) {
+  public boolean remove(int v) {
     int len = size;
     if (len > 0){
       int[] a = elements;
@@ -83,10 +84,12 @@ public class UnsortedArrayIntSet extends ArrayIntSet {
           }
           
           size--;
-          return;
+          return true;
         }
       }
-    }    
+    }
+    
+    return false; // wasn't there
   }
 
   @Override

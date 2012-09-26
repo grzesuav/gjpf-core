@@ -270,13 +270,23 @@ public class BitSet64 implements FixedBitSet, Cloneable, IntSet {
   }
   
   @Override
-  public void add(int i) {
-    set(i);
+  public boolean add(int i) {
+    if (get(i)) {
+      return false;
+    } else {
+      set(i);
+      return true;
+    }
   }
 
   @Override
-  public void remove(int i) {
-    clear(i);
+  public boolean remove(int i) {
+    if (get(i)) {
+      clear(i);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @Override

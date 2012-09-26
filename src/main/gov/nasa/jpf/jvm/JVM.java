@@ -278,6 +278,15 @@ public class JVM {
     return true;
   }
 
+  //--- ThreadInfo factory methods
+  protected ThreadInfo createMainThreadInfo() {
+    return new ThreadInfo(this);
+  }
+  
+  protected ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef) {
+    return new ThreadInfo( this, objRef, groupRef, runnableRef, nameRef);
+  }
+  
   /**
    * load and pushClinit startup classes, return 'true' if successful.
    *
@@ -296,7 +305,7 @@ public class JVM {
     }
     
     // we can't do anything without a main ThreadInfo
-    ThreadInfo tiMain = ThreadInfo.createMainThreadInfo(this);
+    ThreadInfo tiMain = createMainThreadInfo();
 
     // from here, we get into some bootstrapping process
     //  - first, we have to load class structures (fields, supers, interfaces..)
@@ -353,6 +362,7 @@ public class JVM {
     transitionOccurred = true;
   }
 
+  
   /**
    * be careful - everything that's executed from within here is not allowed
    * to depend on static class init having been done yet

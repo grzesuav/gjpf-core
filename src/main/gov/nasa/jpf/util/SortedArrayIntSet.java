@@ -104,11 +104,12 @@ public class SortedArrayIntSet extends ArrayIntSet {
   }
   
   @Override
-  public void add (int v){
+  public boolean add (int v){
     if (size == 0){
       elements = new int[DEFAULT_CAPACITY];
       elements[0] = v;
       size++;
+      return true;
       
     } else {
       int i = bisect(v);
@@ -121,12 +122,16 @@ public class SortedArrayIntSet extends ArrayIntSet {
         insertElement(i);
         elements[i] = v;
         size++;
+        return true;
+        
+      } else {
+        return false; // was already there
       }
     }
   }
     
   @Override
-  public void remove (int v) {
+  public boolean remove (int v) {
     int len = size;
     
     if (len > 0){
@@ -144,8 +149,12 @@ public class SortedArrayIntSet extends ArrayIntSet {
           }
           size = len;
         }
+        
+        return true;
       }
-    }    
+    }
+    
+    return false; // wasn't there
   }
   
 }

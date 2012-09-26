@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -166,7 +167,7 @@ public class ThreadInfo
   //--- the invariants
     
   // search global id, which is the basis for canonical order of threads
-  protected int gid;
+  protected int id;
   
   protected int objRef; // the java.lang.Thread object reference
   protected ClassInfo ci; // the classinfo associated with the thread object
@@ -320,7 +321,7 @@ public class ThreadInfo
    * we don't treat access of the corresponding field as a boundary step
    */
   static boolean porSyncDetection;
-
+  
   /**
    * break the current transition after this number of instructions.
    * This is a safeguard against paths that won't break because potentially
@@ -338,7 +339,7 @@ public class ThreadInfo
     currentThread = null;
     mainThread = null;
     
-    globalThreadInfos = new ObjVector<ThreadInfo>(16); // re-create to avoid memory leaks
+    globalTids = new SparseIntVector();
 
     String[] haltOnThrowSpecs = config.getStringArray("vm.halt_on_throw");
     if (haltOnThrowSpecs != null){
@@ -347,67 +348,63 @@ public class ThreadInfo
     
     ignoreUncaughtHandlers = config.getBoolean( "vm.ignore_uncaught_handler", true);
     passUncaughtHandler = config.getBoolean( "vm.pass_uncaught_handler", true);
+
+    //--- POR related configuration options
     porInEffect = config.getBoolean("vm.por");
     porFieldBoundaries = porInEffect && config.getBoolean("vm.por.field_boundaries");
     porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
+    
     maxTransitionLength = config.getInt("vm.max_transition_length", 5000);
+
+    ThreadTrackingPolicy.init(config);
     
     return true;
   }
-  
+    
   //--- factory methods
   // <2do> this is going to be a configurable factory method  
   
-  /** repository for global threads accessed by gid */
-  static ObjVector<ThreadInfo> globalThreadInfos;  // initialized by init
-  
-  
   /**
-   * WATCH OUT - this is only to be used by the VM, the returned object still
-   * needs to be initialized by calling initReferenceFields(objRef,...)
+   *  search global cache for dense ThreadInfo ids. We could just use objRef since those are
+   *  guaranteed to be global, but not dense
    */
-  protected static ThreadInfo createMainThreadInfo(JVM vm){
-    if (mainThread == null){
-      mainThread = new ThreadInfo(vm);
-      mainThread.gid = 0;
+  static SparseIntVector globalTids;  // initialized by init
+  
+  
+  protected int computeId (int objRef) {
+    int id = globalTids.get(objRef);
+    if (id == 0) {
+      id = globalTids.size() + 1; // mainThread is not in globalTids and always has id '0'
+      globalTids.set(objRef, id);
     }
-
-    currentThread = mainThread;
-    
-    mainThread.initFields(vm);
-    return mainThread;
+    return id;
   }
   
   /**
-   * this is our normal factory method for all but the mainThread, i.e. at the
-   * point of creation we already have all the required object references
-   */
-  public static ThreadInfo createThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef) {
-    int gid = objRef;
-    
-    ThreadInfo ti = globalThreadInfos.get(gid);
-    if (ti == null){
-      ti = new ThreadInfo(vm);
-      ti.gid = gid;
-      
-      globalThreadInfos.set(gid,ti);
-    } else {
-      //assert vm.getThreadList().getThreadInfoForId(gid) == null; // can't be in the threadlist
-    }
-    
-    ti.initFields(vm);
-    ti.initReferenceFields( objRef, groupRef, runnableRef, nameRef);
-    return ti;
-  }
-  
-  
-  /**
-   * Creates a new thread info. It is associated with the object
-   * passed and sets the target object as well.
+   * mainThread ctor called by the VM. Note we don't have a thread object yet (hen-and-egg problem
+   * since we can't allocate objects without a ThreadInfo)
    */
   protected ThreadInfo (JVM vm) {
+    assert mainThread == null;
+    
+    mainThread = this;
+    id = 0;
+    mainThread.initFields(vm);
+    
+    currentThread = mainThread;    
   }
 
+  /**
+   * the ctor for all explicitly (bytecode) created threads. At this point, there is at least
+   * a mainThread and we have a corresponding java.lang.Thread object
+   */
+  protected ThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef) {    
+    initFields(vm);
+    initReferenceFields(objRef, groupRef, runnableRef, nameRef);
+    
+    id = computeId(objRef);
+  }
+  
   protected void initFields(JVM vm){
     // 'gid' is set by the factory method
     // we can't set the 'id' field of the corresponding java.lang.Thread object until we have one
@@ -446,7 +443,7 @@ public class ThreadInfo
 
     threadData.name = vm.getElementInfo(nameRef).asString();
 
-    ei.setIntField( "id", gid);
+    ei.setIntField( "id", id);
     
     // note that we have to register here so that subsequent native peer calls can use the objRef
     // to lookup the ThreadInfo. This is a bit premature since the thread is not runnable yet,
@@ -1080,7 +1077,7 @@ public class ThreadInfo
    * NOT what we use for our canonical root set
    */
   public int getId () {
-    return gid;
+    return id;
   }
 
   /**
@@ -1088,7 +1085,7 @@ public class ThreadInfo
    * canonical root set
    */
   public int getGlobalId(){
-    return gid;
+    return id;
   }
   
   
@@ -2544,6 +2541,10 @@ public class ThreadInfo
       ss.clearAtomic();
       cleanupThreadObject(ei);
       vm.activateGC();  // stack is gone, so reachability might change
+      
+      // give the thread tracking policy a chance to remove this thread from
+      // object/class thread sets
+      ThreadTrackingPolicy.getPolicy().cleanupThreadTermination(this);
 
       if (tl.hasOtherNonDaemonRunnablesThan(this)){
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(this);
@@ -2704,16 +2705,16 @@ public class ThreadInfo
   void markRoots (Heap heap) {
 
     // 1. mark the Thread object itself
-    heap.markThreadRoot(objRef, gid);
+    heap.markThreadRoot(objRef, id);
 
     // 2. and its runnable
     if (targetRef != MJIEnv.NULL) {
-      heap.markThreadRoot(targetRef,gid);
+      heap.markThreadRoot(targetRef,id);
     }
 
     // 3. now all references on the stack
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
-      frame.markThreadRoots(heap, gid);
+      frame.markThreadRoots(heap, id);
     }
   }
 
@@ -2855,7 +2856,7 @@ public class ThreadInfo
     StringBuilder sb = new StringBuilder("thread ");
     sb.append(getThreadObjectClassInfo().getName());
     sb.append(":{id:");
-    sb.append(gid);
+    sb.append(id);
     sb.append(',');
     sb.append(threadData.getFieldValues());
     sb.append('}');
@@ -3458,7 +3459,7 @@ public class ThreadInfo
   }
 
   public String toString() {
-    return "ThreadInfo [name=" + getName() + ",id=" + gid + ",state=" + getStateName() + ']';
+    return "ThreadInfo [name=" + getName() + ",id=" + id + ",state=" + getStateName() + ']';
   }
 
   void setDaemon (boolean isDaemon) {
@@ -3503,7 +3504,7 @@ public class ThreadInfo
    * Comparison for sorting based on index.
    */
   public int compareTo (ThreadInfo that) {
-    return this.gid - that.gid;
+    return this.id - that.id;
   }
   
   /**

@@ -45,7 +45,7 @@ public class JPF_java_lang_Thread {
     
     // we only need to create the ThreadInfo - its initialization will take care
     // of proper linkage to the java.lang.Thread object (objRef)
-    ThreadInfo ti = ThreadInfo.createThreadInfo( vm, objRef, groupRef, runnableRef, nameRef);
+    vm.createThreadInfo( objRef, groupRef, runnableRef, nameRef);
   }
 
   

@@ -96,7 +96,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // so that order or thread id do not have a direct impact on heap symmetry
   // The "vm.por.global_tracking" property controls if the set of referencing threads is
   // search global or per-path. In the latter case, there can be missed paths
-  protected ThreadInfoSet usingTi;
+  protected ThreadInfoSet referencingThreads;
 
   // this is the reference value for the object represented by this ElementInfo
   // (note this is a slight misnomer for StaticElementInfos, which don't really
@@ -139,7 +139,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     ClassInfo ci;
     Fields fields;
     Monitor monitor;
-    ThreadInfoSet usingTi;
+    Memento<ThreadInfoSet> tsMemento;
     int attributes;
 
 
@@ -153,7 +153,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       this.attributes = (ei.attributes & ATTR_STORE_MASK);
       this.fields = ei.fields;
       this.monitor = ei.monitor;
-      this.usingTi = ei.usingTi;
+      
+      this.tsMemento = ThreadTrackingPolicy.getPolicy().getMemento(ei.referencingThreads);
 
       ei.markUnchanged();
     }
@@ -164,7 +165,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       ei.attributes = attributes;
       ei.fields = fields;
       ei.monitor = monitor;
-      ei.usingTi = usingTi;
+      
+      ei.referencingThreads = tsMemento.restore(ei.referencingThreads);
 
       ei.sid = 0;
       ei.updateLockingInfo();
@@ -195,8 +197,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
   
   static boolean init (Config config) {
-    DynamicElementInfo.init(config);
-    StaticElementInfo.init(config);
     return true;
   }
 
@@ -205,7 +205,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     fields = f;
     monitor = m;
 
-    usingTi = createThreadInfoSet(ti); // it's always initialized with one member
+    referencingThreads = createThreadInfoSet(ti); // initialization depends on subclass and policy
     
     assert ti != null; // we need that for our POR
   }
@@ -310,7 +310,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
 
   public int numberOfUserThreads() {
-    return usingTi.size();
+    return referencingThreads.size();
   }
 
 
@@ -411,14 +411,15 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       }
     }
   }
-  
-  public boolean checkUpdatedSharedness (ThreadInfo ti) {
-    if (usingTi.add(ti)) {
+    
+  public boolean checkUpdatedSharedness (ThreadInfo ti) {  
+    // <2do> this assumes a set that is global for all paths from creation of this object
+    if (referencingThreads.add(ti)) {
       attributes |= ATTR_TREF_CHANGED;
     }
     
     if ((attributes & ATTR_FREEZE_SHARED) == 0) {
-      if (usingTi.hasMultipleLiveThreads()) {
+      if (ThreadTrackingPolicy.getPolicy().isShared(referencingThreads)) {
         setShared(true);
         return true;
 
@@ -431,7 +432,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       return isShared();
     }
   }
-  
   
   
   /**
@@ -506,7 +506,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       if (!monitor.equals(other.monitor)){
         return false;
       }
-      if (usingTi != other.usingTi){
+      if (referencingThreads != other.referencingThreads){
         return false;
       }
 
@@ -2236,7 +2236,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       System.out.println("!!!!!! failed ElementInfo consistency: "  + this + ": " + failMsg);
 
       System.out.println("object: " + this);
-      System.out.println("usingTi: " + usingTi);
+      System.out.println("usingTi: " + referencingThreads);
       
       ThreadInfo tiLock = getLockingThread();
       if (tiLock != null) System.out.println("locked by: " + tiLock);

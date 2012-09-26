@@ -1,3 +1,21 @@
+//
+// Copyright (C) 2012 United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration
+// (NASA).  All Rights Reserved.
+//
+// This software is distributed under the NASA Open Source Agreement
+// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
+// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
+// directory tree for the complete NOSA document.
+//
+// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
+// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
+// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
+// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
+//
 package gov.nasa.jpf.util;
 
 import java.util.NoSuchElementException;
@@ -5,11 +23,14 @@ import java.util.NoSuchElementException;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 
-public class SortedArrayIntSetTest extends TestJPF {
+public abstract class ArrayIntSetTestBase extends TestJPF {
 
+  protected abstract ArrayIntSet createArrayIntSet();
+  protected abstract ArrayIntSet createArrayIntSet(int n);
+  
   @Test
   public void testInsert(){
-    SortedArrayIntSet s = new SortedArrayIntSet();
+    ArrayIntSet s = createArrayIntSet();
     s.add(42);
     s.add(43);
     s.add(41);
@@ -27,7 +48,7 @@ public class SortedArrayIntSetTest extends TestJPF {
   
   @Test
   public void testRemove(){
-    SortedArrayIntSet s = new SortedArrayIntSet();
+    ArrayIntSet s = createArrayIntSet();
     s.add(42);
     assertTrue(s.size() == 1);
     assertTrue(s.contains(42));
@@ -50,7 +71,7 @@ public class SortedArrayIntSetTest extends TestJPF {
   
   @Test
   public void testRemoveLast(){
-    SortedArrayIntSet s = new SortedArrayIntSet(2);
+    ArrayIntSet s = createArrayIntSet(2);
     s.add(1);
     s.add(2);
     
@@ -64,7 +85,7 @@ public class SortedArrayIntSetTest extends TestJPF {
   
   @Test
   public void testRemoveFirst(){
-    SortedArrayIntSet s = new SortedArrayIntSet(2);
+    ArrayIntSet s = createArrayIntSet(2);
     s.add(1);
     s.add(2);
     
@@ -79,7 +100,7 @@ public class SortedArrayIntSetTest extends TestJPF {
   
   @Test
   public void testIterator(){
-    SortedArrayIntSet s = new SortedArrayIntSet();
+    ArrayIntSet s = createArrayIntSet();
     s.add(1);
     s.add(2);
     s.add(3);
@@ -126,34 +147,38 @@ public class SortedArrayIntSetTest extends TestJPF {
   
   @Test
   public void testComparison(){
-    SortedArrayIntSet s1 = new SortedArrayIntSet();
-    s1.add(42);
-    s1.add(0);
-    s1.add(41);
+    int[][] a = {
+        {42, 0, 41},
+        {42, 41, 0},
+        {0, 42, 41},
+        {0, 41, 42},
+        {41, 0, 42},
+        {41, 42, 0}
+    };
     
-    SortedArrayIntSet s2 = new SortedArrayIntSet();
+    ArrayIntSet[] set = new ArrayIntSet[a.length];
     
-    assertFalse( s1.hashCode() == s2.hashCode());
-    assertFalse( s1.equals(s2));
+    for (int i=0; i< a.length; i++) {
+      set[i]= createArrayIntSet();
+      int[] v = a[i];
+      for (int j=0; j<v.length; j++) {
+        set[i].add(v[j]);
+      }
+    }
     
-    s2.add(0);
-    s2.add(41);
-    s2.add(42);
-
-    assertTrue( s1.hashCode() == s2.hashCode());
-    assertTrue( s1.equals(s2));
-    
+    ArrayIntSet s1 = null, s2 = null;
+    for (int i=1; i< a.length; i++) {
+      s1 = set[i-1];
+      s2 = set[i];
+      System.out.println("comparing " + s1 + " with " + s2);
+      
+      assertTrue(s1.hashCode() == s2.hashCode());
+      assertTrue(s1.equals(s2));
+    }
+        
+    // inverse test
     s2.remove(41);
     assertFalse( s1.hashCode() == s2.hashCode());
     assertFalse( s1.equals(s2));
-    
-    // all IntSets should hash/compare
-    IntSet s3 = new UnsortedArrayIntSet();
-    s3.add(0);
-    s3.add(41);
-    s3.add(42);
-    
-    assertTrue( s1.hashCode() == s3.hashCode());
-    assertTrue( s1.equals(s3));
   }
 }

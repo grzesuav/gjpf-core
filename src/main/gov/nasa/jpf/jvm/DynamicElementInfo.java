@@ -45,17 +45,7 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
       super.restore(dei);
       return dei;
     }
-  }
-
-  static SparseClusterArray<ThreadInfoSet> usingThreads;
-  
-  public static boolean init (Config conf){
-    if (conf.getBoolean("vm.por.global_tracking")){
-      usingThreads = new SparseClusterArray<ThreadInfoSet>();
-    }
-    return true;
-  }
-  
+  }  
   
   public DynamicElementInfo () {
   }
@@ -67,25 +57,12 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   }
 
   
+  // called during ElementInfo construction
   @Override
   protected ThreadInfoSet createThreadInfoSet(ThreadInfo ti){
-    ThreadInfoSet tis;
-    
-    if (usingThreads != null) { // we track referencing threads search globally
-      tis = usingThreads.get(objRef);
-      if (tis == null){
-        tis = new ThreadInfoSet(ti);
-        usingThreads.set(objRef,tis);
-      }
-      
-    } else { // we only track referencing threads in this path
-      tis = new ThreadInfoSet(ti);
-    }
-    
-    tis.add(ti);
-    
-    return tis;
+    return ThreadTrackingPolicy.getPolicy().getThreadInfoSet(ti, this);
   }
+
   
   @Override
   public boolean isObject(){

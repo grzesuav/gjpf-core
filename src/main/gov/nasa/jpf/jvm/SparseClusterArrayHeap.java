@@ -78,6 +78,9 @@ public class SparseClusterArrayHeap extends GenericHeapImpl {
 
   //--- the allocator primitives
 
+  // unfortunately, we can't directly use the ti.id since we depend on compaction for the purpose
+  // of our bitwise trie lookup
+  
   @Override
   protected int getNewElementInfoIndex (ClassInfo ci, ThreadInfo ti, String allocLocation) {
     int tid = (ti != null) ? ti.getId() : 0;

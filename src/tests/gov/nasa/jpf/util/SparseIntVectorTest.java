@@ -18,6 +18,24 @@ public class SparseIntVectorTest extends TestJPF {
   }
   
   @Test
+  public void testSetGet () {
+    SparseIntVector v = new SparseIntVector();
+
+    v.set(0, 10);
+    v.set(42, 11);
+    v.set(111111111, 12);
+    
+    assertTrue( v.get(0) == 10);
+    assertTrue( v.get(42) == 11);
+    assertTrue( v.get(111111111) == 12);
+    
+    assertTrue( v.get(10) == 0);
+    
+    v.clear(42);
+    assertTrue( v.get(42) == 0);
+  }
+  
+  @Test
   public void testSnapshot () {
     SparseIntVector v = new SparseIntVector();
 

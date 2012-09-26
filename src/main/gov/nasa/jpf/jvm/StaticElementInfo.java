@@ -88,16 +88,6 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     }
     **/
   }
-
-  static SparseClusterArray<ThreadInfoSet> usingThreads;
-  
-  public static boolean init (Config conf){
-    usingThreads = new SparseClusterArray<ThreadInfoSet>();
-    return true;
-  }
-
-
-  
   
   int classObjectRef = -1;
   int status = ClassInfo.UNINITIALIZED;
@@ -114,17 +104,12 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     // initial attributes?
   }
   
+  // called during ElementInfo construction
   @Override
   protected ThreadInfoSet createThreadInfoSet(ThreadInfo ti){
-    ThreadInfoSet tis = usingThreads.get(objRef);
-    if (tis == null){
-      tis = new ThreadInfoSet(ti);
-      usingThreads.set(objRef,tis);
-    }
-    tis.add(ti);
- 
-    return tis;
+    return ThreadTrackingPolicy.getPolicy().getThreadInfoSet(ti, this);
   }
+
   
   @Override
   public boolean isObject(){
