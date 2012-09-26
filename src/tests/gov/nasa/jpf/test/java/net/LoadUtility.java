@@ -40,10 +40,20 @@ public class LoadUtility extends TestJPF{
   }
 
   protected void movePkg(String from, String to) {
-    File file = new File(to);
-    if(!file.exists()) {
-      file = new File(from);
-      assertTrue(file.renameTo(new File(to)));
+    File dstFile = new File(to);
+    if(!dstFile.exists()) {
+      dstFile = new File(from);
+      assertTrue(dstFile.renameTo(new File(to)));
+    } else {
+      File srcFile = new File(from);
+      if(srcFile.exists()) {
+        // empty the directory
+        for(String name: srcFile.list()) {
+          assertTrue((new File(from + "/" + name)).delete());
+        }
+        // remove the directory
+        assertTrue(srcFile.delete());
+      }
     }
   }
 }

@@ -257,7 +257,7 @@ public class JVM {
    * (that's a true '42')
    */
   static boolean checkModelClassAccess () {
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Class");
+    ClassInfo ci = ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo();
     return (ci.getDeclaredInstanceField("cref") != null);
   }
 

@@ -19,8 +19,10 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -37,11 +39,16 @@ public class ANEWARRAY extends NewArrayInstruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    Heap heap = ti.getHeap();
-    arrayLength = ti.pop();
+    ClassInfo cls = ti.getMethod().getClassInfo();
 
-    if (arrayLength < 0){
-      return ti.createAndThrowException("java.lang.NegativeArraySizeException");
+    // resolve the component class first
+    String compType = Types.getTypeName(type);
+    if(Types.isReferenceSignature(type)) {
+      try {
+        cls.resolveReferencedClass(compType);
+      } catch(LoadOnJPFRequired lre) {
+        return ti.getPC();
+      }
     }
 
     // there is no clinit for array classes, but we still have  to create a class object
@@ -53,7 +60,13 @@ public class ANEWARRAY extends NewArrayInstruction {
       ci.registerClass(ti);
       ci.setInitialized();
     }
-    
+
+    arrayLength = ti.pop();
+    if (arrayLength < 0){
+      return ti.createAndThrowException("java.lang.NegativeArraySizeException");
+    }
+
+    Heap heap = ti.getHeap();
     if (heap.isOutOfMemory()) { // simulate OutOfMemoryError
       return ti.createAndThrowException("java.lang.OutOfMemoryError",
                                         "trying to allocate new " +

@@ -48,6 +48,14 @@ import java.util.ListIterator;
  */
 public class SystemClassLoader extends ClassLoaderInfo {
 
+  protected ClassInfo objectClassInfo;
+  protected ClassInfo classClassInfo;
+  protected ClassInfo stringClassInfo;
+  protected ClassInfo weakRefClassInfo;
+  protected ClassInfo refClassInfo;
+  protected ClassInfo enumClassInfo;
+  protected ClassInfo threadClassInfo;
+
   protected SystemClassLoader (JVM vm) {
     super(vm, MJIEnv.NULL, null, null);
     setSystemClassPath();
@@ -135,6 +143,9 @@ public class SystemClassLoader extends ClassLoaderInfo {
     startupClasses.add("java.io.PrintStream");
     startupClasses.add("java.io.InputStream");
     startupClasses.add("java.lang.System");
+    startupClasses.add("java.lang.ref.Reference");
+    startupClasses.add("java.lang.ref.WeakReference");
+    startupClasses.add("java.lang.Enum");
 
     // we could be more fancy and use wildcard patterns and the current classpath
     // to specify extra classes, but this could be VERY expensive. Projected use
@@ -178,10 +189,12 @@ public class SystemClassLoader extends ClassLoaderInfo {
   // it's parent is initialized
   // This code must be kept in sync with ClassInfo.registerClass()
   void registerStartupClass (ClassInfo ci) {
-        
+    updateCachedClassInfos(ci);
+
     if (!startupQueue.contains(ci)) {
-      if (ci.getSuperClass() != null) {
-        registerStartupClass( ci.getSuperClass());
+      if (ci.getSuperClassName() != null) {
+        ClassInfo sci = getResolvedClassInfo(ci.getSuperClassName());
+        registerStartupClass(sci);
       }
       
       for (String ifcName : ci.getAllInterfaces()) {
@@ -230,5 +243,38 @@ public class SystemClassLoader extends ClassLoaderInfo {
     registerStartupClasses(vm);
     createStartupClassObjects(vm.getCurrentThread());
     pushClinits(vm.getCurrentThread());
+  }
+
+  //-- ClassInfos cache management --
+
+  protected void updateCachedClassInfos (ClassInfo ci) {
+    String name = ci.name;      
+    if ((objectClassInfo == null) && name.equals("java.lang.Object")) {
+      objectClassInfo = ci;
+    } else if ((classClassInfo == null) && name.equals("java.lang.Class")) {
+      classClassInfo = ci;
+    } else if ((stringClassInfo == null) && name.equals("java.lang.String")) {
+      stringClassInfo = ci;
+    } else if ((weakRefClassInfo == null) && name.equals("java.lang.ref.WeakReference")) {
+      weakRefClassInfo = ci;
+    } else if ((refClassInfo == null) && name.equals("java.lang.ref.Reference")) {
+      refClassInfo = ci;
+    } else if ((enumClassInfo == null) && name.equals("java.lang.Enum")) {
+      enumClassInfo = ci;
+    } else if ((threadClassInfo == null) && name.equals("java.lang.Thread")) {
+      threadClassInfo = ci;
+    }
+  }
+
+  protected ClassInfo getObjectClassInfo() {
+    return objectClassInfo;
+  }
+
+  protected ClassInfo getClassClassInfo() {
+    return classClassInfo;
+  }
+
+  protected ClassInfo getStringClassInfo() {
+    return stringClassInfo;
   }
 }

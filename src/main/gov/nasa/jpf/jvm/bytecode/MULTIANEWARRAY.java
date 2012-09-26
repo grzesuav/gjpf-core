@@ -22,6 +22,7 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -57,6 +58,18 @@ public class MULTIANEWARRAY extends Instruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    ClassInfo cls = ti.getMethod().getClassInfo();
+    String compType = Types.getComponentTerminal(type);
+
+    // resolve the component class first
+    if(Types.isReferenceSignature(type)) {
+      try {
+        cls.resolveReferencedClass(compType);
+      } catch(LoadOnJPFRequired lre) {
+        return ti.getPC();
+      }
+    }
+
     arrayLengths = new int[dimensions];
 
     for (int i = dimensions - 1; i >= 0; i--) {

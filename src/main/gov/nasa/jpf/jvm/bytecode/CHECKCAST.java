@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -52,6 +53,24 @@ public class CHECKCAST extends Instruction {
 
     } else {
       boolean isValid = false;
+
+      if(Types.isReferenceSignature(type)) {
+        String t;
+        if(Types.isArray(type)) {
+          // retrieve the component terminal
+          t = Types.getComponentTerminal(type);
+        } else {
+          t = type;
+        }
+
+        ClassInfo cls = ti.getMethod().getClassInfo();
+        // resolve the referenced class
+        try {
+          cls.resolveReferencedClass(t);
+        } catch(LoadOnJPFRequired lre) {
+          return ti.getPC();
+        }
+      }
 
       ElementInfo e = ti.getElementInfo(objref);
       ClassInfo eci = e.getClassInfo();

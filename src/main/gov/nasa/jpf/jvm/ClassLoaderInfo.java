@@ -43,9 +43,9 @@ import gov.nasa.jpf.jvm.bytecode.Instruction;
 public class ClassLoaderInfo 
      implements Iterable<ClassInfo>, Comparable<ClassLoaderInfo>, Cloneable, Restorable<ClassLoaderInfo> {
 
-  // Map from the name of classes defined (directly loaded) by this classloader to
-  // the corresponding ClassInfos
-  protected Map<String,ClassInfo> definedClasses;
+  // Map that keeps the classes defined (directly loaded) by this loader and the
+  // ones that are resolved from these defined classes
+  protected Map<String,ClassInfo> resolvedClasses;
 
   // Represents the locations where this classloader can load classes form
   protected ClassPath cp;
@@ -92,7 +92,7 @@ public class ClassLoaderInfo
   }
 
   protected ClassLoaderInfo(JVM vm, int objRef, ClassPath cp, ClassLoaderInfo parent) {
-    definedClasses = new HashMap<String,ClassInfo>();
+    resolvedClasses = new HashMap<String,ClassInfo>();
 
     this.cp = cp;
     this.parent = parent;
@@ -216,7 +216,7 @@ public class ClassLoaderInfo
   /**
    * This is useful when there are multiple systemClassLoaders created.
    */
-  public static ClassLoaderInfo getCurrentSystemClassLoader() {
+  public static SystemClassLoader getCurrentSystemClassLoader() {
     ClassLoaderInfo cl = getCurrentClassLoader();
 
     ClassInfo ci = cl.getClassInfo();
@@ -225,7 +225,7 @@ public class ClassLoaderInfo
       ci = ci.getSuperClass();
     }
 
-    return ci.getClassLoaderInfo();
+    return (SystemClassLoader)ci.getClassLoaderInfo();
   }
 
   public ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {
@@ -235,20 +235,23 @@ public class ClassLoaderInfo
 
     String typeName = Types.getClassNameFromTypeName(className);
 
-    ClassInfo ci = definedClasses.get(typeName);
+    ClassInfo ci = getAlreadyResolvedClassInfo(typeName);
 
     if (ci == null) {
       ClassPath.Match match = getMatch(typeName);
       ci = ClassInfo.getResolvedClassInfo(className, this, match);
       if(ci.classLoader != this) {
-        // creates a new instance from ci using this classloader
-        ci = ci.getInstanceFor(this);
+        if(!ClassInfo.isBuiltinClass(typeName) || 
+            (isSystemClassLoader() && ClassInfo.isBuiltinClass(typeName))) {
+          // create a new instance from ci using this classloader
+          ci = ci.getInstanceFor(this);
+        }
       }
 
-      // this class loader just defined the class ci.
-      definedClasses.put(typeName, ci);
+      // cache the defined class
+      addResolvedClass(ci);
     }
-    
+
     return ci;
   }
 
@@ -259,20 +262,35 @@ public class ClassLoaderInfo
 
     String typeName = Types.getClassNameFromTypeName(className);
 
-    ClassInfo ci = definedClasses.get(typeName);
+    ClassInfo ci = getAlreadyResolvedClassInfo(typeName);
     
     if (ci == null) {
       ci = ClassInfo.getResolvedClassInfo(typeName, buffer, offset, length, this, match);
       if(ci.classLoader != this) {
-        // creates a new instance from ci using this classloader
-        ci = ci.getInstanceFor(this);
+        if(!ClassInfo.isBuiltinClass(typeName) || 
+            (isSystemClassLoader() && ClassInfo.isBuiltinClass(typeName))) {
+          // create a new instance from ci using this classloader
+          ci = ci.getInstanceFor(this);
+        }
       }
 
-      // this class loader just defined the class ci.
-      definedClasses.put(typeName, ci);
+      // cache the defined class
+      addResolvedClass(ci);
     }
-    
+
     return ci;
+  }
+
+  protected ClassInfo getAlreadyResolvedClassInfo(String cname) {
+    return resolvedClasses.get(cname);
+  }
+
+  protected void addResolvedClass(ClassInfo ci) {
+    resolvedClasses.put(ci.getName(), ci);
+  }
+
+  protected boolean hasResolved(String cname) {
+    return (resolvedClasses.get(cname)!=null);
   }
 
   /**
@@ -330,7 +348,10 @@ public class ClassLoaderInfo
 
     ClassInfo.logger.finer("resolving superclass: ", superName, " of ", ci.getName());
 
-    return loadClass(superName);
+    // resolve the superclass
+    ClassInfo superClass = ci.resolveReferencedClass(superName);
+
+    return superClass;
   }
 
   protected void loadInterfaces (ClassInfo ci) throws ClassInfoException {
@@ -345,7 +366,9 @@ public class ClassLoaderInfo
       }
 
       if(!loaded) {
-        ci.interfaces.add(loadClass(ifcName));
+        // resolve the interface
+        ClassInfo ifc = ci.resolveReferencedClass(ifcName);
+        ci.interfaces.add(ifc);
       }
     }
   }
@@ -367,15 +390,15 @@ public class ClassLoaderInfo
 
   protected ClassInfo loadClassOnJVM(String cname) {
     String className = Types.getClassNameFromTypeName(cname);
-    // Check if the given class is already defined by this classloader
-    ClassInfo ci = getDefinedClassInfo(className);
+    // Check if the given class is already resolved by this loader
+    ClassInfo ci = getAlreadyResolvedClassInfo(className);
 
     if (ci == null) {
       try {
         if(parent != null) {
           ci = parent.loadClassOnJVM(cname);
         } else {
-          ClassLoaderInfo systemClassLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
+          ClassLoaderInfo systemClassLoader = getCurrentSystemClassLoader();
           ci = systemClassLoader.getResolvedClassInfo(cname);
         }
       } catch(ClassInfoException cie) {
@@ -392,17 +415,17 @@ public class ClassLoaderInfo
 
   protected ClassInfo loadClassOnJPF(String cname) {
     String className = Types.getClassNameFromTypeName(cname);
-    // Check if the given class is already defined by this classloader
-    ClassInfo ci = getDefinedClassInfo(className);
+    // Check if the given class is already resolved by this loader
+    ClassInfo ci = getAlreadyResolvedClassInfo(className);
 
-    // If the class is not among the defined classes of this classloader, then
-    // do a round trip to execute the user code of loadClass(superName) 
+    // If the class has not been resolved, do a round trip to execute the 
+    // user code of loadClass(cname) 
     if(ci == null) {
       ThreadInfo ti = JVM.getVM().getCurrentThread();
       StackFrame frame = ti.getReturnedDirectCall();
 
       if(frame != null && frame.getMethodName().equals("[loadClass(" + cname + ")]")) {
-        // the round trip ends here. loadClass(superName) is already executed on JPF
+        // the round trip ends here. loadClass(cname) is already executed on JPF
         int clsObjRef = frame.pop();
 
         if (clsObjRef == MJIEnv.NULL){
@@ -443,7 +466,12 @@ public class ClassLoaderInfo
   }
 
   protected ClassInfo getDefinedClassInfo(String typeName){
-    return definedClasses.get(typeName);
+    ClassInfo ci = resolvedClasses.get(typeName);
+    if(ci != null && ci.classLoader == this) {
+      return ci;
+    } else {
+      return null;
+    }
   }
 
   // Note: JVM.registerStartupClass() must be kept in sync
@@ -575,7 +603,7 @@ public class ClassLoaderInfo
    * classloader. 
    */
   public Iterator<ClassInfo> iterator () {
-    return definedClasses.values().iterator();
+    return resolvedClasses.values().iterator();
   }
 
   /**
@@ -618,7 +646,7 @@ public class ClassLoaderInfo
 
   public Map<String, ClassLoaderInfo> getPackages() {
     Map<String, ClassLoaderInfo> pkgs = new HashMap<String, ClassLoaderInfo>();
-    for(String cname: definedClasses.keySet()) {
+    for(String cname: resolvedClasses.keySet()) {
       if(!ClassInfo.isBuiltinClass(cname) && cname.indexOf('.')!=-1) {
         pkgs.put(cname.substring(0, cname.lastIndexOf('.')), this);
       }

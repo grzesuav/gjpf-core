@@ -19,8 +19,10 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -51,6 +53,14 @@ public class INVOKESPECIAL extends InstanceInvocation {
 
     // we don't have to check for NULL objects since this is either a ctor, a 
     // private method, or a super method
+
+    // resolving the class referenced by InvokeSpecial
+    ClassInfo cls = ti.getMethod().getClassInfo();
+    try {
+      cls.resolveReferencedClass(cname);
+    } catch(LoadOnJPFRequired rre) {
+      return ti.getPC();
+    }
 
     MethodInfo mi = getInvokedMethod(ti);
 

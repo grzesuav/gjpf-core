@@ -18,7 +18,9 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -40,6 +42,24 @@ public class INSTANCEOF extends Instruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
+    if(Types.isReferenceSignature(type)) {
+      String t;
+      if(Types.isArray(type)) {
+        // retrieve the component terminal
+        t = Types.getComponentTerminal(type);
+      } else {
+        t = type;
+      }
+
+      ClassInfo cls = th.getMethod().getClassInfo();
+      // resolve the referenced class
+      try {
+        cls.resolveReferencedClass(t);
+      } catch(LoadOnJPFRequired lre) {
+        return th.getPC();
+      }
+    }
+
     int objref = th.pop();
 
     if (objref == -1) {

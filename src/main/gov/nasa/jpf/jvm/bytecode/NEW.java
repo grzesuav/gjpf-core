@@ -50,10 +50,11 @@ public class NEW extends Instruction implements AllocInstruction {
     Heap heap = ti.getHeap();
     ClassInfo ci;
 
+    // resolve the referenced class
+    ClassInfo cls = ti.getMethod().getClassInfo();
     try {
-      ClassLoaderInfo loader = ClassLoaderInfo.getCurrentClassLoader();
-      ci = loader.loadClass(cname);
-    } catch(LoadOnJPFRequired rre) {
+      ci = cls.resolveReferencedClass(cname);
+    } catch(LoadOnJPFRequired lre) {
       return ti.getPC();
     }
 

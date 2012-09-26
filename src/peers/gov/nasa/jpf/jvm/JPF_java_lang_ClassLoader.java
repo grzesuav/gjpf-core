@@ -85,7 +85,7 @@ public class JPF_java_lang_ClassLoader {
 
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
 
-    ClassInfo ci = cl.getDefinedClassInfo(cname);
+    ClassInfo ci = cl.getAlreadyResolvedClassInfo(cname);
     if(ci != null) {
       return ci.getClassObjectRef();
     }

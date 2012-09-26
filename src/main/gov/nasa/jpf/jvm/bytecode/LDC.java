@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -75,7 +76,14 @@ public class LDC extends Instruction {
         break;
 
       case CLASS:
-        ClassInfo ci = ClassInfo.getResolvedClassInfo(string);
+        ClassInfo ci;
+        // resolve the referenced class
+        try {
+          ClassInfo cls = ti.getMethod().getClassInfo();
+          ci = cls.resolveReferencedClass(string);
+        } catch(LoadOnJPFRequired lre) {
+          return ti.getPC();
+        }
 
         // LDC doesn't cause a <clinit> - we only register all required classes
         // to make sure we have class objects. <clinit>s are called prior to

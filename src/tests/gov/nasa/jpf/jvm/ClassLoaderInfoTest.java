@@ -48,12 +48,12 @@ public class ClassLoaderInfoTest extends TestJPF {
     SystemClassLoader cl1 = vm.getSystemClassLoader();
     // create a new systemClassLoader
     SystemClassLoader cl2 = vm.createSystemClassLoader();
-    // loades the startup classes through
+    // loades the startup classes
     cl2.loadStartUpClasses(vm);
 
 
     //--- Tests classloaders
-    assert cl1.definedClasses.size() == ClassInfo.getLoadedClasses().length;
+    assert cl1.resolvedClasses.size() == ClassInfo.getLoadedClasses().length;
     assert cl1.getGlobalId() != cl2.getGlobalId();
     assert cl1.staticArea != cl2.staticArea;
     assert cl1.parent == null;

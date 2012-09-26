@@ -137,6 +137,18 @@ public class Types {
     return type.substring(1);
   }
 
+  public static String getComponentTerminal (String type) {
+    if (type.charAt(0) != '[') {
+      throw new JPFException("not an array type: " + type);
+    }
+
+    if(isReferenceSignature(type)) {
+      return type.substring(type.indexOf('L') + 1 , type.indexOf(';'));
+    } else {
+      return type.substring(type.lastIndexOf('[') + 1);
+    }
+  }
+
   public static byte getBuiltinTypeFromSignature (String signature) {
     switch (signature.charAt(0)) {
     case 'B':
@@ -495,6 +507,12 @@ public class Types {
     int t = getBuiltinTypeFromSignature(type);
 
     return (t == T_ARRAY) || (t == T_REFERENCE);
+  }
+
+  public static boolean isArray (String type) {
+    int t = getBuiltinTypeFromSignature(type);
+
+    return (t == T_ARRAY);
   }
 
   public static byte getReturnBuiltinType (String signature) {
