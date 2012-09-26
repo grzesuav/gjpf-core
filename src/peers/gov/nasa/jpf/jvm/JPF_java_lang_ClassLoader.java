@@ -254,4 +254,26 @@ public class JPF_java_lang_ClassLoader {
 
     return pkgRef;
   }
+
+  public static void setDefaultAssertionStatus__Z__V (MJIEnv env, int objRef, boolean enabled) {
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
+    cl.setDefaultAssertionStatus(enabled);
+  }
+
+  public static void setPackageAssertionStatus__Ljava_lang_String_2Z__V (MJIEnv env, int objRef, int strRef, boolean enabled) {
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
+    String pkgName = env.getStringObject(strRef);
+    cl.setPackageAssertionStatus(pkgName, enabled);
+  }
+
+  public static void setClassAssertionStatus__Ljava_lang_String_2Z__V (MJIEnv env, int objRef, int strRef, boolean enabled) {
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
+    String clsName = env.getStringObject(strRef);
+    cl.setClassAssertionStatus(clsName, enabled);
+  }
+
+  public static void clearAssertionStatus____V (MJIEnv env, int objRef) {
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
+    cl.clearAssertionStatus();
+  }
 }

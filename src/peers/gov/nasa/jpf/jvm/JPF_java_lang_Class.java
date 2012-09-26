@@ -141,7 +141,7 @@ public class JPF_java_lang_Class {
 
   public static boolean desiredAssertionStatus____Z (MJIEnv env, int robj) {
     ClassInfo ci = env.getReferredClassInfo(robj);
-    return ci.areAssertionsEnabled();
+    return ci.desiredAssertionStatus();
   }
 
   public static int getClassObject (MJIEnv env, ClassInfo ci){

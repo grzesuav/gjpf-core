@@ -218,4 +218,12 @@ public abstract class ClassLoader {
   protected native Package getPackage(String name);
 
   protected native Package[] getPackages();
+
+  public native void setDefaultAssertionStatus(boolean enabled);
+
+  public native void setClassAssertionStatus(String className, boolean enabled);
+
+  public native void setPackageAssertionStatus(String packageName, boolean enabled);
+
+  public native void clearAssertionStatus();
 }

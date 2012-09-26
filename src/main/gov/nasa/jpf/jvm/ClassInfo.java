@@ -249,9 +249,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /** user defined attribute objects */
   protected Object attr;
-  
-  static StringSetMatcher enabledAssertionPatterns;
-  static StringSetMatcher disabledAssertionPatterns;
 
   protected boolean enableAssertions;
 
@@ -273,10 +270,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     fieldsFactory = config.getEssentialInstance("vm.fields_factory.class",
                                                 FieldsFactory.class);
-
-    enabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.enable_assertions"));
-    disabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.disable_assertions"));
-
 
     autoloadAnnotations = config.getNonEmptyStringSet("listener.autoload");
     if (autoloadAnnotations != null) {
@@ -816,7 +809,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     isAbstract = (modifiers & Modifier.ABSTRACT) != 0;
    // isEnum = isEnum0();
 
-    enableAssertions = getAssertionStatus();
+    setAssertionStatus();
 
     processJPFConfigAnnotation();
     loadAnnotationListeners();
@@ -1080,10 +1073,22 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return this;
   }
 
-  boolean getAssertionStatus () {
-    return StringSetMatcher.isMatch(name, enabledAssertionPatterns, disabledAssertionPatterns);
+  protected void setAssertionStatus() {
+    if(isInitialized()) {
+      return;
+    } else {
+      enableAssertions = classLoader.desiredAssertionStatus(name);
+    }
   }
-  
+
+  boolean getAssertionStatus () {
+    return enableAssertions;
+  }
+
+  public boolean desiredAssertionStatus() {
+    return classLoader.desiredAssertionStatus(name);
+  }
+
   public String getGenericSignature() {
     return genericSignature;
   }
@@ -2796,7 +2801,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ci.source = source;
 
       ci.attr = attr;
-      ci.enableAssertions = enableAssertions;
+      ci.setAssertionStatus();
       ci.releaseActions = releaseActions;
 
     } catch (CloneNotSupportedException cnsx){

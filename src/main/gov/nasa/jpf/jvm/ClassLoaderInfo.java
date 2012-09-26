@@ -33,6 +33,7 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.classfile.ClassFileException;
 import gov.nasa.jpf.classfile.ClassPath;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
+import gov.nasa.jpf.util.StringSetMatcher;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -77,16 +78,28 @@ public class ClassLoaderInfo
     ClassLoaderInfo cl;
     Memento<StaticArea> saMemento;
     Memento<ClassPath> cpMemento;
+    Map<String, Boolean> classAssertionStatus;
+    Map<String, Boolean> packageAssertionStatus;
+    boolean defaultAssertionStatus;
+    boolean isDefaultSet;
 
     ClMemento (ClassLoaderInfo cl){
       this.cl = cl;
       saMemento = cl.staticArea.getMemento();
       cpMemento = cl.cp.getMemento();
+      classAssertionStatus = new HashMap<String, Boolean>(cl.classAssertionStatus);
+      packageAssertionStatus = new HashMap<String, Boolean>(cl.packageAssertionStatus);
+      defaultAssertionStatus = cl.defaultAssertionStatus;
+      isDefaultSet = cl.isDefaultSet;
     }
 
     public ClassLoaderInfo restore(ClassLoaderInfo ignored) {
       saMemento.restore(cl.staticArea);
       cpMemento.restore(null);
+      cl.classAssertionStatus = this.classAssertionStatus;
+      cl.packageAssertionStatus = this.packageAssertionStatus;
+      cl.defaultAssertionStatus = this.defaultAssertionStatus;
+      cl.isDefaultSet = this.isDefaultSet;
       return cl;
     }
   }
@@ -589,6 +602,11 @@ public class ClassLoaderInfo
    */
   static void init (Config config) {
     ClassLoaderInfo.config = config;
+
+    gidManager = new GlobalIdManager();
+
+    enabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.enable_assertions"));
+    disabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.disable_assertions"));
   }
 
   /**
@@ -665,5 +683,72 @@ public class ClassLoaderInfo
       }
     }
     return pkgs;
+  }
+
+  //-------- assertion management --------
+  
+  // set in the jpf.properties file
+  static StringSetMatcher enabledAssertionPatterns;
+  static StringSetMatcher disabledAssertionPatterns;
+
+  protected Map<String, Boolean> classAssertionStatus = new HashMap<String, Boolean>();
+  protected Map<String, Boolean> packageAssertionStatus = new HashMap<String, Boolean>();
+  protected boolean defaultAssertionStatus = false;
+  protected boolean isDefaultSet = false;
+
+  protected boolean desiredAssertionStatus(String cname) {
+    // class level assertion can override all their assertion settings
+    Boolean result = classAssertionStatus.get(cname);
+    if (result != null) {
+      return result.booleanValue();
+    }
+
+    // package level assertion can override the default assertion settings
+    int dotIndex = cname.lastIndexOf(".");
+    if (dotIndex < 0) { // check for default package
+      result = packageAssertionStatus.get(null);
+      if (result != null) {
+        return result.booleanValue();
+      }
+    }
+
+    if(dotIndex > 0) {
+      String pkgName = cname;
+      while(dotIndex > 0) { // check for the class package and its upper level packages 
+        pkgName = pkgName.substring(0, dotIndex);
+        result = packageAssertionStatus.get(pkgName);
+        if (result != null) {
+          return result.booleanValue();
+        }
+        dotIndex = pkgName.lastIndexOf(".", dotIndex-1);
+      }
+    }
+
+    // class loader default, if it has been set, can override the settings
+    // specified by JVM arguments
+    if(isDefaultSet) {
+      return defaultAssertionStatus;
+    } else {
+      return StringSetMatcher.isMatch(cname, enabledAssertionPatterns, disabledAssertionPatterns);
+    }
+  }
+
+  public void setDefaultAssertionStatus(boolean enabled) {
+    isDefaultSet = true;
+    defaultAssertionStatus = enabled;
+  }
+
+  public void setClassAssertionStatus(String cname, boolean enabled) {
+    classAssertionStatus.put(cname, enabled);
+  }
+
+  public void setPackageAssertionStatus(String pname, boolean enabled) {
+    packageAssertionStatus.put(pname, enabled);
+  }
+
+  public void clearAssertionStatus() {
+    classAssertionStatus = new HashMap<String, Boolean>();
+    packageAssertionStatus = new HashMap<String, Boolean>();
+    defaultAssertionStatus = false;
   }
 }

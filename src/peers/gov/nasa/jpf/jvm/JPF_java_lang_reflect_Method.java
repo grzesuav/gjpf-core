@@ -495,7 +495,7 @@ public class JPF_java_lang_reflect_Method {
     
     StackFrame frame = ti.getReturnedDirectCall();
 
-    if (frame != null){ // we have returned from the direct call
+    if (frame != null && frame.getMethodName().equals("[reflection]")){ // we have returned from the direct call
       return createBoxedReturnValueObject( env, mi, frame);
 
     } else { // first time, set up direct call
