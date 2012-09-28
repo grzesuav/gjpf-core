@@ -43,11 +43,14 @@ public interface Heap {
   int newSystemArray (String elementType, int nElements, ThreadInfo ti, int anchor, String location);
   int newSystemObject (ClassInfo ci, ThreadInfo ti, int anchor, String location);
 
-  //--- convenience allocators
+  //--- convenience allocators that avoid constructor calls
   int newString (String str, ThreadInfo ti, String location);
+  int newSystemString (String str, ThreadInfo ti, int anchor, String location);
+  
   int newInternString (String str, ThreadInfo ti, String location);
   
-  int newSystemString (String str, ThreadInfo ti, int anchor, String location);
+  int newSystemThrowable (String throwableClass, String details, int[] stackSnapshot, int causeRef,
+                          ThreadInfo ti, int anchor, String location);
   
   Iterable<ElementInfo> liveObjects();
 

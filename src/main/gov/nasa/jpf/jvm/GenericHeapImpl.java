@@ -420,6 +420,12 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     internStrings.add(str, objref);
   }
   
+  public int newSystemThrowable (String throwableClass, String details, int[] stackSnapshot, int causeRef,
+                                 ThreadInfo ti, int anchor, String location) {
+    return -1;
+  }
+
+  
   //--- abstract accessors
 
   /*
