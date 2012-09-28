@@ -33,8 +33,6 @@ public interface MementoFactory {
 
   Memento<ThreadInfo> getMemento(ThreadInfo ti);
 
-  Memento<Heap> getMemento(DynamicArea heap);
-  Memento<Heap> getMemento(SparseClusterArrayHeap heap);
   Memento<Heap> getMemento(ObjVectorHeap heap);
 
   Memento<StaticArea> getMemento(StaticArea sa);

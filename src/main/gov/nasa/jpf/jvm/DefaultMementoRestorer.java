@@ -36,10 +36,6 @@ public class DefaultMementoRestorer extends MementoRestorer {
     return ti.getMemento();
   }
 
-  public Memento<Heap> getMemento(DynamicArea da) {
-    return da.getMemento();
-  }
-
   public Memento<StaticArea> getMemento(StaticArea sa) {
     return sa.getMemento();
   }
@@ -50,10 +46,6 @@ public class DefaultMementoRestorer extends MementoRestorer {
 
   public Memento<ElementInfo> getMemento(StaticElementInfo ei) {
     return ei.getMemento();
-  }
-
-  public Memento<Heap> getMemento(SparseClusterArrayHeap heap){
-    return heap.getMemento();
   }
   
   public Memento<Heap> getMemento(ObjVectorHeap heap){
