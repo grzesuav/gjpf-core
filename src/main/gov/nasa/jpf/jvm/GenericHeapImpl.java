@@ -431,9 +431,34 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     internStrings.add(str, objref);
   }
   
-  public int newSystemThrowable (String throwableClass, String details, int[] stackSnapshot, int causeRef,
+  
+  public int newSystemThrowable (ClassInfo ciThrowable, String details, int[] stackSnapshot, int causeRef,
                                  ThreadInfo ti, int anchor) {
-    return -1;
+    //--- the Throwable object itself
+    AllocationContext ctx = getSystemAllocationContext( ClassInfo.stringClassInfo, ti, anchor);
+    int xRef = getNewElementInfoIndex( ctx);
+    ElementInfo eiThrowable = createObject( ciThrowable, ti, xRef);
+    
+    //--- the detailMsg field
+    if (details != null) {
+      AllocationContext ctxString = ctx.extend(ClassInfo.stringClassInfo, xRef);
+      int msgRef = newString( details, ti, ctxString);
+      eiThrowable.setReferenceField("detailMessage", msgRef);
+    }
+
+    //--- the stack snapshot field
+    ClassInfo ciSnap = getArrayClassInfo(ti, "I");
+    AllocationContext ctxSnap = ctx.extend(ciSnap, xRef);
+    int snapRef = getNewElementInfoIndex( ctxSnap);
+    ElementInfo eiSnap = createArray( "I", stackSnapshot.length, ciSnap, ti, snapRef);
+    int[] snap = eiSnap.asIntArray();
+    System.arraycopy( stackSnapshot, 0, snap, 0, stackSnapshot.length);
+    eiThrowable.setReferenceField("snapshot", snapRef);
+
+    //--- the cause field
+    eiThrowable.setReferenceField("cause", (causeRef != MJIEnv.NULL)? causeRef : xRef);
+
+    return xRef;
   }
 
   

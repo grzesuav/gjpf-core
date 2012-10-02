@@ -49,7 +49,7 @@ public interface Heap {
   
   int newInternString (String str, ThreadInfo ti);
   
-  int newSystemThrowable (String throwableClass, String details, int[] stackSnapshot, int causeRef,
+  int newSystemThrowable (ClassInfo ci, String details, int[] stackSnapshot, int causeRef,
                           ThreadInfo ti, int anchor);
   
   Iterable<ElementInfo> liveObjects();

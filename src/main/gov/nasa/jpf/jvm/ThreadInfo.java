@@ -2092,33 +2092,13 @@ public class ThreadInfo
   }
 
   /**
-   * <2do> pcm - this is not correct! We have to call a proper ctor
-   * for the Throwable (for now, we just explicitly set the details)
-   * but since this is not used with user defined exceptionHandlers (it's only
-   * called from within the VM, i.e. with standard exceptionHandlers), we for
-   * now skip the hassle of doing direct calls that would change the
-   * call stack
+   * <2do> pcm - this is only valid for java.* and our own Throwables that don't
+   * need ctor execution since we only initialize the Throwable fields. This method
+   * is here to avoid round trips in case of exceptions
    */
   int createException (ClassInfo ci, String details, int causeRef){
-    Heap heap = vm.getHeap();
-    int objref = heap.newObject(ci, this);
-    int msgref = -1;
-
-    ElementInfo ei = heap.get(objref);
-
-    if (details != null) {
-      msgref = heap.newString(details, this);
-      ei.setReferenceField("detailMessage", msgref);
-    }
-
-    // store the stack snapshot
     int[] snap = getSnapshot(MJIEnv.NULL);
-    int aref = env.newIntArray(snap);
-    ei.setReferenceField("snapshot", aref);
-
-    ei.setReferenceField("cause", (causeRef != MJIEnv.NULL)? causeRef : objref);
-
-    return objref;
+    return vm.getHeap().newSystemThrowable(ci, details, snap, causeRef, this, 0);
   }
 
   /**
