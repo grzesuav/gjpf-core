@@ -67,7 +67,7 @@ public class LDC extends JVMInstruction {
     switch (type){
       case STRING:
         // too bad we can't cache it, since location might change between different paths
-        value = ti.getHeap().newInternString(string, ti, "LDC.execute.string");
+        value = ti.getHeap().newInternString(string, ti);
         ti.push(value, true);
         break;
 

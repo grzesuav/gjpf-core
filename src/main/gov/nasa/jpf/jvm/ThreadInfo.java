@@ -1911,7 +1911,7 @@ public class ThreadInfo
     }
 
     Heap heap = vm.getHeap();
-    int aref = heap.newArray("Ljava/lang/StackTraceElement;", nVisible, this, "ThreadInfo.createStackTraceElements");
+    int aref = heap.newArray("Ljava/lang/StackTraceElement;", nVisible, this);
     ElementInfo aei = heap.get(aref);
     for (int i=0; i<nVisible; i++){
       int eref = list[i].createJPFStackTraceElement();
@@ -2043,12 +2043,12 @@ public class ThreadInfo
         Heap heap = vm.getHeap();
 
         ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.StackTraceElement");
-        int sRef = heap.newObject(ci, ThreadInfo.this, "ThreadInfo.createJPFStackTraceElement");
+        int sRef = heap.newObject(ci, ThreadInfo.this);
 
         ElementInfo  sei = heap.get(sRef);
-        sei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this, "ThreadInfo.createJPFStackTraceElement.clsName"));
-        sei.setReferenceField("mthName", heap.newString(mthName, ThreadInfo.this, "ThreadInfo.createJPFStackTraceElement.mthName"));
-        sei.setReferenceField("fileName", heap.newString(fileName, ThreadInfo.this, "ThreadInfo.createJPFStackTraceElement.fileName"));
+        sei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this));
+        sei.setReferenceField("mthName", heap.newString(mthName, ThreadInfo.this));
+        sei.setReferenceField("fileName", heap.newString(fileName, ThreadInfo.this));
         sei.setIntField("line", line);
 
         return sRef;
@@ -2101,13 +2101,13 @@ public class ThreadInfo
    */
   int createException (ClassInfo ci, String details, int causeRef){
     Heap heap = vm.getHeap();
-    int objref = heap.newObject(ci, this, "ThreadInfo.createException");
+    int objref = heap.newObject(ci, this);
     int msgref = -1;
 
     ElementInfo ei = heap.get(objref);
 
     if (details != null) {
-      msgref = heap.newString(details, this, "ThreadInfo.createException.msg");
+      msgref = heap.newString(details, this);
       ei.setReferenceField("detailMessage", msgref);
     }
 

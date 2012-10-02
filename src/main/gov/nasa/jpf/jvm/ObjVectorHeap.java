@@ -89,14 +89,15 @@ public class ObjVectorHeap extends GenericHeapImpl {
     HashedAllocationContext.init(config);    
   }
   
-  protected AllocationContext getAllocationContext (ClassInfo ci, ThreadInfo ti, String loc) {
-    return HashedAllocationContext.getAllocationContext(ci, ti, loc);
+  // these are always called directly from the allocation primitive, i.e. the allocating site is at a fixed
+  // stack offset (callers caller)
+  protected AllocationContext getSUTAllocationContext (ClassInfo ci, ThreadInfo ti) {
+    return HashedAllocationContext.getSUTAllocationContext(ci, ti);
   }
-  
-  protected AllocationContext getSystemAllocationContext (ClassInfo ci, int anchor, String loc) {
-    return HashedAllocationContext.getSystemAllocationContext(ci, anchor, loc);
+  protected AllocationContext getSystemAllocationContext (ClassInfo ci, ThreadInfo ti, int anchor) {
+    return HashedAllocationContext.getSystemAllocationContext(ci, ti, anchor);
   }
-  
+    
   //--- heap interface
   
   /**
@@ -109,7 +110,8 @@ public class ObjVectorHeap extends GenericHeapImpl {
   
   //--- the allocator primitives (called from the newXX() template methods)
   
-  protected int getIndex (AllocationContext ctx) {
+  @Override
+  protected int getNewElementInfoIndex (AllocationContext ctx) {
     int idx;
     int cnt;
     
@@ -137,19 +139,7 @@ public class ObjVectorHeap extends GenericHeapImpl {
     
     return idx;
   }
-  
-  @Override
-  protected int getNewElementInfoIndex (ClassInfo ci, ThreadInfo ti, String loc) {
-    AllocationContext ctx = getAllocationContext(ci, ti, loc);
-    return getIndex(ctx);
-  }
-  
-  @Override
-  protected int getNewSystemElementInfoIndex (ClassInfo ci, int anchor, String loc) {
-    AllocationContext ctx = getSystemAllocationContext(ci, anchor, loc);
-    return getIndex(ctx);    
-  }
-  
+      
   //--- the container interface
   
   @Override

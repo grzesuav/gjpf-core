@@ -25,5 +25,6 @@ package gov.nasa.jpf.jvm;
  * Used for SGOID computation
  */
 public interface AllocationContext {
-  // nothing here yet
+  
+  AllocationContext extend (ClassInfo ci, int anchor);
 }

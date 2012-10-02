@@ -35,7 +35,7 @@ public class ObjVectorHeapTest extends TestJPF {
   }
 
   static void checkRef (String msg, String key, int ref) {
-    System.out.printf("%s ,object: %s, ref: %x", msg, key, ref);
+    System.out.printf("%s ,object: %s, ref: %d", msg, key, ref);
     
     int v = Verify.getValue(key);
     if (v == -1) {
@@ -45,7 +45,7 @@ public class ObjVectorHeapTest extends TestJPF {
       if (v == ref) {
         System.out.println(" seen");
       } else {
-        fail("different reference values, had:" + v + "new:" + ref);
+        fail("different reference values, had:" + v + ", new:" + ref);
       }
     }
   }

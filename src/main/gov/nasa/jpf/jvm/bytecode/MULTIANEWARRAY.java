@@ -45,7 +45,7 @@ public class MULTIANEWARRAY extends JVMInstruction {
 
   public static int allocateArray (Heap heap, String type, int[] dim, ThreadInfo ti, int d) {
     int l = dim[d];
-    int arrayRef = heap.newArray(type.substring(d + 1), l, ti, "MULTIANEWARRAY.allocateArray");
+    int arrayRef = heap.newArray(type.substring(d + 1), l, ti);
     ElementInfo e = heap.get(arrayRef);
 
     if (dim.length > (d + 1)) {

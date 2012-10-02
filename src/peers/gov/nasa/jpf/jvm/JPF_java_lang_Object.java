@@ -53,9 +53,9 @@ public class JPF_java_lang_Object {
           componentType = cci.getType();
         }
 
-        newref = heap.newArray(componentType, objinfo.arrayLength(), env.getThreadInfo(), "java_lang_Object.clone(array)");
+        newref = heap.newArray(componentType, objinfo.arrayLength(), env.getThreadInfo());
       } else {
-        newref = heap.newObject(ci, env.getThreadInfo(), "java_lang_Object.clone(object)");
+        newref = heap.newObject(ci, env.getThreadInfo());
       }
       ElementInfo newinfo = heap.get(newref);
 

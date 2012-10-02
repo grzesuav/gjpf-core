@@ -1099,7 +1099,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public ClassInfo getClassInfo() {
     return this;
   }
-
+  
   boolean getAssertionStatus () {
     return StringSetMatcher.isMatch(name, enabledAssertionPatterns, disabledAssertionPatterns);
   }
@@ -2355,10 +2355,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     Heap heap = JVM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
     int anchor = name.hashCode(); // 2do - this should also take the ClassLoader ref into account
-    int clsObjRef = heap.newSystemObject(classClassInfo, ti, anchor, "ClassInfo.createClassObject.clsObject");
+    int clsObjRef = heap.newSystemObject(classClassInfo, ti, anchor);
     ElementInfo ei = heap.get(clsObjRef);
 
-    int clsNameRef = heap.newSystemString(name, ti, clsObjRef, "ClassInfo.createClassObject.clsName");
+    int clsNameRef = heap.newSystemString(name, ti, clsObjRef);
     ei.setReferenceField("name", clsNameRef);
 
     // link the class object to the StaticElementInfo

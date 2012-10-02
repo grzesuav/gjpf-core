@@ -376,9 +376,9 @@ public class JVM {
     Heap heap = getHeap();
 
     ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
-    int objRef = heap.newObject( ciThread, ti, "JVM.initMainThread.thread");
+    int objRef = heap.newObject( ciThread, ti);
     int groupRef = createSystemThreadGroup(ti, objRef);
-    int nameRef = heap.newString("main", ti, "JVM.initMainThread.nameRef");
+    int nameRef = heap.newString("main", ti);
     
     //--- initialize the main Thread object
     ElementInfo ei = heap.get(objRef);
@@ -386,7 +386,7 @@ public class JVM {
     ei.setReferenceField("name", nameRef);
     ei.setIntField("priority", Thread.NORM_PRIORITY);
 
-    int permitRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), ti, "JVM.initMainThread.permit");
+    int permitRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), ti);
     ElementInfo eiPermitRef = heap.get(permitRef);
     eiPermitRef.setBooleanField("blockPark", true);
     ei.setReferenceField("permit", permitRef);
@@ -402,18 +402,18 @@ public class JVM {
     Heap heap = getHeap();
     
 // !!! <2do> we need to have a mainThread ti here, null doesn't work!! 
-    int ref = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti, "JVM.createSystemThreadGroup");
+    int ref = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti);
     ElementInfo ei = heap.get(ref);
 
     // since we can't call methods yet, we have to init explicitly (BAD)
     // <2do> - this isn't complete yet
 
-    int grpName = heap.newString("main", ti, "JVM.createSystemThreadGroup.grpName");
+    int grpName = heap.newString("main", ti);
     ei.setReferenceField("name", grpName);
 
     ei.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
 
-    int threadsRef = heap.newArray("Ljava/lang/Thread;", 4, ti, "JVM.createSystemThreadGroup.threads");
+    int threadsRef = heap.newArray("Ljava/lang/Thread;", 4, ti);
     ElementInfo eiThreads = heap.get(threadsRef);
     eiThreads.setReferenceElement(0, mainThreadRef);
 
@@ -602,10 +602,10 @@ public class JVM {
     }
 
     // create the args array object
-    int argsRef = heap.newArray("Ljava/lang/String;", args.length, tiMain, "JVM.pushMainEntry.args");
+    int argsRef = heap.newArray("Ljava/lang/String;", args.length, tiMain);
     ElementInfo argsElement = heap.get(argsRef);
     for (int i = 0; i < args.length; i++) {
-      int aRef = heap.newString(args[i], tiMain, "JVM.pushMainEntry.arg");
+      int aRef = heap.newString(args[i], tiMain);
       argsElement.setReferenceElement(i, aRef);
     }
     

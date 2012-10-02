@@ -164,7 +164,7 @@ public class JPF_java_lang_System {
 
     ThreadInfo thread = vm.getCurrentThread();
     Heap heap = vm.getHeap();
-    int javaClassPath = heap.newString(JAVA_CLASS_PATH, thread, "JPF_java_lang_System.getSUTJavaClassPath");
+    int javaClassPath = heap.newString(JAVA_CLASS_PATH, thread);
     
     DirectCallStackFrame frame = new DirectCallStackFrame(stub);
     frame.push(javaClassPath);

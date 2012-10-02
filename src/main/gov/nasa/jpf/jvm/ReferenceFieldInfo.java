@@ -81,7 +81,7 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
     if (sInit != null) {
       JVM vm = ti.getVM();
       Heap heap = vm.getHeap();
-      ref = heap.newString(sInit, ti, "ReferenceFieldInfo.initialize");
+      ref = heap.newString(sInit, ti);
     }
     ei.getFields().setReferenceValue( storageOffset, ref);
   }

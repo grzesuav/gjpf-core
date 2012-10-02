@@ -247,18 +247,14 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   // NOTE - this is where to assert if this index isn't occupied yet, since only concrete classes know
   // if there can be collisions, and how elements are stored
   
+  protected abstract AllocationContext getSUTAllocationContext (ClassInfo ci, ThreadInfo ti);
+  protected abstract AllocationContext getSystemAllocationContext (ClassInfo ci, ThreadInfo ti, int anchor);
+  
   /**
    * this is called for newXX(..) allocations that are SUT thread specific, i.e. in response to
    * a explicit NEW or xNEWARRAY instruction that should take the allocating thread into account 
    */
-  protected abstract int getNewElementInfoIndex (ClassInfo ci, ThreadInfo ti, String allocLocation);
-
-  /**
-   * this is to be called for newSystemXX(..) allocations, i.e. for objects that are automatically
-   * allocated by the VM in a context that should not be thread specific. For now, this is
-   * class object creation 
-   */
-  protected abstract int getNewSystemElementInfoIndex (ClassInfo ci, int anchor, String allocLocation);
+  protected abstract int getNewElementInfoIndex (AllocationContext ctx);
   
   //--- allocators
     
@@ -285,16 +281,18 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
 
     return ei;    
   }
-  
+    
   @Override
-  public int newObject(ClassInfo ci, ThreadInfo ti, String allocLocation) {
-    int index = getNewElementInfoIndex( ci, ti, allocLocation);
+  public int newObject(ClassInfo ci, ThreadInfo ti) {
+    AllocationContext ctx = getSUTAllocationContext( ci, ti);
+    int index = getNewElementInfoIndex( ctx);
     createObject( ci, ti, index);
     return index;
   }
 
-  public int newSystemObject (ClassInfo ci, ThreadInfo ti, int anchor, String allocLocation) {
-    int index = getNewSystemElementInfoIndex( ci, anchor, allocLocation);
+  public int newSystemObject (ClassInfo ci, ThreadInfo ti, int anchor) {
+    AllocationContext ctx = getSystemAllocationContext( ci, ti, anchor);
+    int index = getNewElementInfoIndex( ctx);
     createObject( ci, ti, index);
     return index;    
   }
@@ -329,22 +327,24 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   }
   
   @Override
-  public int newArray(String elementType, int nElements, ThreadInfo ti, String allocLocation) {
+  public int newArray(String elementType, int nElements, ThreadInfo ti) {
     // see newObject for OOM simulation
     ClassInfo ci = getArrayClassInfo(ti, elementType);
+    AllocationContext ctx = getSUTAllocationContext( ci, ti);
     
-    int index = getNewElementInfoIndex( ci, ti, allocLocation);
+    int index = getNewElementInfoIndex( ctx);
     createArray( elementType, nElements, ci, ti, index);
 
     return index;
   }
 
   @Override
-  public int newSystemArray(String elementType, int nElements, ThreadInfo ti, int anchor, String allocLocation) {
+  public int newSystemArray(String elementType, int nElements, ThreadInfo ti, int anchor) {
     // see newObject for OOM simulation
     ClassInfo ci = getArrayClassInfo(ti, elementType);
+    AllocationContext ctx = getSystemAllocationContext( ci, ti, anchor);
     
-    int index = getNewSystemElementInfoIndex( ci, anchor, allocLocation);
+    int index = getNewElementInfoIndex( ctx);
     createArray( elementType, nElements, ci, ti, index);
 
     return index;
@@ -363,45 +363,56 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     return ei;
   }
   
+  protected int newString (String str, ThreadInfo ti, AllocationContext ctx) {
+    //--- the string object itself
+    ClassInfo ciString = ClassInfo.stringClassInfo;
+    int sRef = getNewElementInfoIndex( ctx);
+    createObject( ciString, ti, sRef);
+    
+    //--- its char[] array
+    ClassInfo ciChars = getArrayClassInfo(ti, "C");
+    ctx = ctx.extend(ciChars, sRef);
+    int vRef = getNewElementInfoIndex( ctx);
+    createArray( "C", str.length(), ciChars, ti, vRef);
+    
+    initializeStringObject(str, sRef, vRef);      
+    return sRef;
+  }
 
-  public int newString(String str, ThreadInfo ti, String allocLocation){
+  public int newString(String str, ThreadInfo ti){
     if (str != null) {
-      int index = newObject(ClassInfo.stringClassInfo, ti, allocLocation);
-      int vref = newArray("C", str.length(), ti, allocLocation);
-      initializeStringObject(str, index, vref);      
-      return index;
+      AllocationContext ctx = getSUTAllocationContext( ClassInfo.stringClassInfo, ti);
+      return newString( str, ti, ctx);
       
     } else {
       return MJIEnv.NULL;
     }
   }
   
-  public int newSystemString (String str, ThreadInfo ti, int anchor, String allocLocation) {
+  public int newSystemString (String str, ThreadInfo ti, int anchor) {
     if (str != null) {
-      int index = newSystemObject(ClassInfo.stringClassInfo, ti, anchor, allocLocation);
-      int vref = newSystemArray("C", str.length(), ti, anchor, allocLocation);
-      initializeStringObject(str, index, vref);      
-      return index;
+      AllocationContext ctx = getSystemAllocationContext( ClassInfo.stringClassInfo, ti, anchor);
+      return newString(str, ti, ctx);
       
     } else {
       return MJIEnv.NULL;
     }    
   }
 
-  public int newInternString (String str, ThreadInfo ti, String allocLocation) {
+  public int newInternString (String str, ThreadInfo ti) {
     IntTable.Entry<String> e = internStrings.get(str);
     if (e == null){
       if (str != null) {
-        int objref = newObject(ClassInfo.stringClassInfo, ti, allocLocation);
-        int vref = newArray("C", str.length(), ti, allocLocation);
-        ElementInfo ei = initializeStringObject(str, objref, vref);
-
+        AllocationContext ctx = getSUTAllocationContext( ClassInfo.stringClassInfo, ti);
+        int index = newString( str, ti, ctx);
+        ElementInfo ei = get(index);
+        
         // new interned Strings are always pinned down
         ei.incPinDown();
-        addToPinDownList(objref);
-        addToInternStrings(str, objref);
+        addToPinDownList(index);
+        addToInternStrings(str, index);
 
-        return objref;
+        return index;
       
       } else {
         return MJIEnv.NULL;
@@ -421,7 +432,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   }
   
   public int newSystemThrowable (String throwableClass, String details, int[] stackSnapshot, int causeRef,
-                                 ThreadInfo ti, int anchor, String location) {
+                                 ThreadInfo ti, int anchor) {
     return -1;
   }
 

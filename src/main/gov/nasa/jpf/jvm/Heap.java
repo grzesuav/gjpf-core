@@ -37,20 +37,20 @@ public interface Heap {
   void setOutOfMemory(boolean isOutOfMemory);
 
   //--- the allocator primitives
-  int newArray (String elementType, int nElements, ThreadInfo ti, String location);
-  int newObject (ClassInfo ci, ThreadInfo ti, String location);
+  int newArray (String elementType, int nElements, ThreadInfo ti);
+  int newObject (ClassInfo ci, ThreadInfo ti);
   
-  int newSystemArray (String elementType, int nElements, ThreadInfo ti, int anchor, String location);
-  int newSystemObject (ClassInfo ci, ThreadInfo ti, int anchor, String location);
+  int newSystemArray (String elementType, int nElements, ThreadInfo ti, int anchor);
+  int newSystemObject (ClassInfo ci, ThreadInfo ti, int anchor);
 
   //--- convenience allocators that avoid constructor calls
-  int newString (String str, ThreadInfo ti, String location);
-  int newSystemString (String str, ThreadInfo ti, int anchor, String location);
+  int newString (String str, ThreadInfo ti);
+  int newSystemString (String str, ThreadInfo ti, int anchor);
   
-  int newInternString (String str, ThreadInfo ti, String location);
+  int newInternString (String str, ThreadInfo ti);
   
   int newSystemThrowable (String throwableClass, String details, int[] stackSnapshot, int causeRef,
-                          ThreadInfo ti, int anchor, String location);
+                          ThreadInfo ti, int anchor);
   
   Iterable<ElementInfo> liveObjects();
 
