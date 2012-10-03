@@ -173,24 +173,10 @@ public class ObjVectorHeap extends GenericHeapImpl {
     }
   }
 
-  
-  /**
-   * get a cloned version of the ElementInfo at 'ref', which can be modified
-   * This also replaces the object in the elementInfos, to allow snapshots of the
-   * elementInfo containter to be restored
-   */
-  @Override
   public ElementInfo getModifiable (int ref) {
-    if (ref < 0) {
-      return null;
-    } else {
-      ElementInfo ei = elementInfos.get(ref);
-      ElementInfo eiClone = ei.deepClone();
-      elementInfos.set(ref, eiClone);
-      return eiClone;
-    }
+    return get(ref);
   }
-  
+    
   
   @Override
   protected void remove(int ref) {

@@ -66,4 +66,26 @@ public class FreezingObjVectorHeap extends ObjVectorHeap {
   public Memento<Heap> getMemento(){
     return new FreezeMemento(this);
   }
+  
+  /**
+   * get a stored ElementInfo that is not frozen. If the one
+   * that is currently in the container is, replace it with a
+   * defrozen clone and return that clone 
+   */
+  @Override
+  public ElementInfo getModifiable (int ref) {
+    if (ref < 0) {
+      return null;
+    } else {
+      ElementInfo ei = elementInfos.get(ref);
+      if (ei.isFrozen()) {
+        ElementInfo eiClone = ei.deepClone();
+        elementInfos.set(ref, eiClone);
+        return eiClone;
+      } else {
+        return ei;
+      }
+    }
+  }
+
 }
