@@ -596,6 +596,14 @@ public class ObjVector<E> implements ReadOnlyObjList<E>, Cloneable {
     return new NonNullIterator();
   }
 
+  public void process (Processor<E> processor) {
+    for (int i=0; i<data.length; i++) {
+      Object o = data[i];
+      if (o != null) {
+        processor.process( (E)o);
+      }
+    }
+  }
 
   //--- misc (debugging etc.)
   

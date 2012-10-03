@@ -80,11 +80,14 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
       heap.markUnchanged();
     }
     
-    protected void restore (GenericHeapImpl heap) {
+    @Override
+    public Heap restore (Heap inSitu) {
+      GenericHeapImpl heap = (GenericHeapImpl) inSitu;
       heap.pinDownList = pinDownList;
       heap.internStrings = internStrings;
       heap.attributes = attributes;
       heap.liveBitValue = false; // always start with false after a restore
+      return inSitu;
     }
   }
   
@@ -476,10 +479,18 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   protected abstract void set (int index, ElementInfo ei);
 
   /**
-   * public getter from Heap interface
+   * public getter to access but not change ElementInfos
    */
   @Override
   public abstract ElementInfo get (int ref);
+  
+  
+  /**
+   * public getter to access modifiable ElementInfos;
+   */
+  @Override
+  public abstract ElementInfo getModifiable (int ref);
+  
   
   /**
    * internal remover used by generic sweep

@@ -43,8 +43,13 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // the first 8 bits constitute an unsigned pinDown count
   public static final int   ATTR_PINDOWN_MASK = 0xff;
 
+  // this ElementInfo is not allowed to be modified anymore since it has been state stored
+  // ElementInfos are constructed in a non-frozen state, and will be frozen upon heap store.
+  // This is the basis for lifting the change management from the fields level (fields,monitor,attributes)
+  // to the ElementInfo object level
+  public static final int   ATTR_IS_FROZEN     = 0x100;
 
-  // object doesn't change value
+  // object has an immutable type (no field value change)
   public static final int   ATTR_IMMUTABLE     = 0x1000;
 
   // The constructor for the object has returned.  Final fields can no longer break POR
@@ -75,14 +80,14 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_TREF_CHANGED | ATTR_ATTRIBUTE_CHANGED);
 
   // transient flag set if object is reachable from root object, i.e. can't be recycled
-  public static final int   ATTR_IS_MARKED       = 0x80000000;
+  public static final int   ATTR_IS_MARKED   = 0x80000000;
   
   // this bit is set/unset by the heap in order to identify live objects that have
   // already been unmarked. This is to avoid additional passes over the whole heap in
   // order to clean up dangling references etc.
   // NOTE - this bit should never be state stored - restored ElementInfo should never have it set
   public static final int   ATTR_LIVE_BIT    = 0x40000000;
-
+  
   public static final int   ATTR_MARKED_OR_LIVE_BIT = (ATTR_IS_MARKED | ATTR_LIVE_BIT);
 
 
@@ -378,6 +383,19 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return ((attributes & ATTR_IMMUTABLE) != 0);
   }
 
+  //--- freeze handling
+  
+  public void freeze() {
+    attributes |= ATTR_IS_FROZEN;
+  }
+
+  public void defreeze() {
+    attributes &= ~ATTR_IS_FROZEN;
+  }
+  
+  public boolean isFrozen() {
+    return ((attributes & ATTR_IS_FROZEN) != 0);    
+  }
   
   //--- shared handling
   
@@ -1633,7 +1651,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
   }
 
-  public Object clone() {
+  public ElementInfo clone() {
     try {
       return (ElementInfo) super.clone();
       
@@ -1643,6 +1661,23 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     }
   }
 
+  public ElementInfo deepClone() {
+    try {
+      ElementInfo ei = (ElementInfo) super.clone();
+      ei.fields = fields.clone();
+      ei.monitor = monitor.clone();
+      // what about fLockInfo and referencingThreads?
+      
+      ei.defreeze();
+      
+      return ei;
+      
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+      throw new InternalError("should not happen");
+    }
+    
+  }
 
   public boolean instanceOf(String type) {
     return Types.instanceOf(ci.getType(), type);

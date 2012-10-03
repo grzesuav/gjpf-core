@@ -37,25 +37,39 @@ public class ObjVectorHeap extends GenericHeapImpl {
 
   static class OVMemento extends GenericHeapImplMemento {
     IntTable.Snapshot<AllocationContext> ctxSnap;
-    ObjVector.MutatingSnapshot<ElementInfo,Memento<ElementInfo>> eiSnap;
-
+    
     OVMemento(ObjVectorHeap heap) {
       super(heap);
-      
       ctxSnap = heap.allocCounts.getSnapshot();
-      eiSnap = heap.elementInfos.getSnapshot(ei2mei);
     }
 
+    @Override
     public Heap restore(Heap inSitu) {
+      super.restore( inSitu);
+      
       ObjVectorHeap heap = (ObjVectorHeap)inSitu;
-      
-      super.restore( heap);
-            
       heap.allocCounts.restore(ctxSnap);
-      heap.elementInfos.restore(eiSnap, mei2ei);
-      
       return heap;
     }
+  }
+  
+  // an OVMemento that transforms ElementInfos into ElementInfoMementos upon storage
+  static class TransformingOVMemento extends OVMemento {
+    ObjVector.MutatingSnapshot<ElementInfo,Memento<ElementInfo>> eiSnap;
+
+    TransformingOVMemento (ObjVectorHeap heap){
+      super(heap);
+      eiSnap = heap.elementInfos.getSnapshot(ei2mei);      
+    }
+    
+    @Override
+    public Heap restore(Heap inSitu) {
+      super.restore(inSitu);
+      
+      ObjVectorHeap heap = (ObjVectorHeap)inSitu;
+      heap.elementInfos.restore(eiSnap, mei2ei);
+      return heap;
+    }    
   }
   
   static int nextSgoid;
@@ -151,7 +165,7 @@ public class ObjVectorHeap extends GenericHeapImpl {
    * we treat ref < 0 as NULL reference instead of throwing an exception
    */
   @Override
-  public ElementInfo get(int ref) {
+  public ElementInfo get (int ref) {
     if (ref < 0) {
       return null;
     } else {
@@ -159,6 +173,25 @@ public class ObjVectorHeap extends GenericHeapImpl {
     }
   }
 
+  
+  /**
+   * get a cloned version of the ElementInfo at 'ref', which can be modified
+   * This also replaces the object in the elementInfos, to allow snapshots of the
+   * elementInfo containter to be restored
+   */
+  @Override
+  public ElementInfo getModifiable (int ref) {
+    if (ref < 0) {
+      return null;
+    } else {
+      ElementInfo ei = elementInfos.get(ref);
+      ElementInfo eiClone = ei.deepClone();
+      elementInfos.set(ref, eiClone);
+      return eiClone;
+    }
+  }
+  
+  
   @Override
   protected void remove(int ref) {
     if (elementInfos.remove(ref) != null) {
@@ -191,7 +224,9 @@ public class ObjVectorHeap extends GenericHeapImpl {
   }
 
   public Memento<Heap> getMemento(){
-    return new OVMemento(this);
+    return new TransformingOVMemento(this);
+    //return new OVMemento(this);
   }
+
 
 }

@@ -29,6 +29,7 @@ public interface Heap {
   //--- this is the common heap client API
 
   ElementInfo get (int objref);
+  ElementInfo getModifiable (int objref);
 
   void gc();
 
