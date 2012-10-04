@@ -162,9 +162,33 @@ public class JPF_java_lang_Class {
   public static int forName__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
                                                                        int rcls,
                                                                        int clsNameRef) {
-    String            clsName = env.getStringObject(clsNameRef);
-    
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    String clsName = env.getStringObject(clsNameRef);
+
+    ThreadInfo ti = env.getThreadInfo();
+    MethodInfo mi = ti.getTopFrame().getPrevious().getMethodInfo();
+    // class of the method that includes the invocation of Class.forName() 
+    ClassInfo cls = mi.getClassInfo();
+
+    String name;
+    // for array type, the component terminal must be resolved
+    if(clsName.charAt(0)=='[') {
+      name = Types.getComponentTerminal(clsName);
+    } else{
+      name = clsName;
+    }
+
+    // make the classloader of the class including the invocation of 
+    // Class.forName() resolve the class with the given name
+    try {
+      cls.resolveReferencedClass(name);
+    } catch(LoadOnJPFRequired lre) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+
+    // The class obtained here is the same as the resolved one, except
+    // if it represents an array type
+    ClassInfo ci = cls.getClassLoaderInfo().getResolvedClassInfo(clsName);
 
     return getClassObject(env, ci);
   }
