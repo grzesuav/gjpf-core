@@ -89,8 +89,8 @@ public class KernelState implements Restorable<KernelState> {
   }
 
   public StaticArea getStaticArea() {
-    // <2do> - just to make it work for now
-    return classLoaders.get(0).staticArea;
+    ClassLoaderInfo loader = ClassLoaderInfo.getCurrentClassLoader();
+    return loader.getStaticArea();
   }
 
   /**

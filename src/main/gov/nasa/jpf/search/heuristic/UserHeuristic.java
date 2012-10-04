@@ -19,6 +19,7 @@
 package gov.nasa.jpf.search.heuristic;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.StaticArea;
@@ -41,7 +42,8 @@ public class UserHeuristic extends SimplePriorityHeuristic {
   protected int computeHeuristicValue () {
     
     // <2do> pcm - BAD, remove the VM nuts-and-bolts dependencies
-    StaticArea ss = vm.getStaticArea();
+    ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
+    StaticArea ss = systemLoader.getStaticArea();
     ElementInfo   p = ss.get("Main");
     // <2dp> - this is not initialized !
 
