@@ -727,9 +727,25 @@ public class JPF_java_lang_Class {
     int aref = MJIEnv.NULL;
     ThreadInfo ti = env.getThreadInfo();
     
+    MethodInfo mi = ti.getTopFrame().getPrevious().getMethodInfo();
+    // class of the method that includes the invocation of Class.getDeclaredClasses 
+    ClassInfo cls = mi.getClassInfo();
+
+    // first resolve all the inner classes
+    int length = innerClassNames.length;
+    ClassInfo[] resolvedInnerClass = new ClassInfo[length];
+    for(int i=0; i<length; i++) {
+      try {
+        resolvedInnerClass[i] = cls.resolveReferencedClass(innerClassNames[i]);
+      } catch(LoadOnJPFRequired lre) {
+        env.repeatInvocation();
+        return MJIEnv.NULL;
+      }
+    }
+
     aref = env.newObjectArray("Ljava/lang/Class;", innerClassNames.length);
-    for (int i=0; i<innerClassNames.length; i++){
-      ClassInfo ici = ClassInfo.getResolvedClassInfo(innerClassNames[i]);
+    for (int i=0; i<length; i++){
+      ClassInfo ici = resolvedInnerClass[i];
       if (!ici.isRegistered()) {
         ici.registerClass(ti);
       }
