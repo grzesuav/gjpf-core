@@ -19,10 +19,13 @@
 package java.net;
 
 import java.io.IOException;
+import java.security.CodeSource;
+import java.security.PermissionCollection;
 import java.security.SecureClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Vector;
+import java.util.jar.Manifest;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -99,5 +102,24 @@ public class URLClassLoader extends SecureClassLoader {
 
   public static URLClassLoader newInstance(URL[] urls, ClassLoader parent) {
     return (new URLClassLoader(urls, parent));
+  }
+
+  //--- unsupported methods
+
+  public URLClassLoader(URL[] urls, ClassLoader parent, URLStreamHandlerFactory factory) {
+    throw new UnsupportedOperationException();
+  }
+
+  public void close() throws IOException {
+    throw new UnsupportedOperationException();
+  }
+
+  protected Package definePackage(String name, Manifest man, URL url) 
+      throws IllegalArgumentException {
+    throw new UnsupportedOperationException();
+  }
+
+  protected PermissionCollection getPermissions(CodeSource codesource) {
+    throw new UnsupportedOperationException();
   }
 }

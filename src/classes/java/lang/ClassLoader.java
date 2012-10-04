@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.security.ProtectionDomain;
 import java.util.Enumeration;
 import java.util.Vector;
@@ -41,10 +42,6 @@ public abstract class ClassLoader {
   private int clRef;
 
   //--- internals
-
-  protected static boolean registerAsParallelCapable() {
-    return true; // dummy, in prep for jdk7
-  }
 
   protected ClassLoader() {
     // constructed on the native side
@@ -226,4 +223,35 @@ public abstract class ClassLoader {
   public native void setPackageAssertionStatus(String packageName, boolean enabled);
 
   public native void clearAssertionStatus();
+
+  //--- unsupported methods
+
+  protected static boolean registerAsParallelCapable() {
+    return true; // dummy, in prep for jdk7
+  }
+
+  protected Object getClassLoadingLock(String className) {
+    throw new UnsupportedOperationException();
+  }
+
+  protected final Class<?> defineClass(byte[] b, int off, int len) 
+      throws ClassFormatError {
+    throw new UnsupportedOperationException();
+  }
+
+  protected final Class<?> defineClass(String name, ByteBuffer b, ProtectionDomain protectionDomain) 
+      throws ClassFormatError {
+    throw new UnsupportedOperationException();
+  }
+
+  protected final void setSigners(Class<?> c, Object[] signers) {
+    throw new UnsupportedOperationException();
+  }
+
+  protected Package definePackage(String name, String specTitle, String specVersion, 
+                                  String specVendor, String implTitle, String implVersion,
+                                  String implVendor, URL sealBase) 
+                                      throws IllegalArgumentException {
+    throw new UnsupportedOperationException();
+  }
 }
