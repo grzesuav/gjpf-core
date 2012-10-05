@@ -56,7 +56,7 @@ public class AssertTest extends LoadUtility {
 
   @Test
   public void testSetClassAssertionStatus1() {
-    if (verifyNoPropertyViolation()) {
+    if (verifyAssertionErrorDetails("oops, assertion failed")) {
       ClassLoader cl = ClassLoader.getSystemClassLoader();
 
       // this should change the "desiredAssertionStatus()" return value to false, 
@@ -64,6 +64,9 @@ public class AssertTest extends LoadUtility {
       // been already initialized
       cl.setClassAssertionStatus("gov.nasa.jpf.test.vm.basic.AssertTest", false);
       assertFalse(AssertTest.class.desiredAssertionStatus());
+
+      // throw AssertionError
+      assert false : "oops, assertion failed";
     }
   }
 
