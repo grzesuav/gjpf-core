@@ -781,6 +781,18 @@ public class JPF_java_lang_Class {
     return env.newString(getCanonicalName(ci));
   }
 
+  public static boolean isAnnotation____Z (MJIEnv env, int clsObjRef){
+    ClassInfo ci = env.getReferredClassInfo(clsObjRef);
+    return (ci.getModifiers() & 0x2000) != 0;
+  }
+  
+  public static boolean isAnnotationPresent__Ljava_lang_Class_2__Z (MJIEnv env, int clsObjRef, int annoClsObjRef){
+    ClassInfo ci = env.getReferredClassInfo(clsObjRef);
+    ClassInfo ciAnno = env.getReferredClassInfo(annoClsObjRef);
+    
+    return ci.getAnnotation( ciAnno.getName()) != null;    
+  }
+  
   public static int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj){
     ClassInfo ci = env.getReferredClassInfo(robj);
     ArrayList<AnnotationInfo> declared = new ArrayList<AnnotationInfo>();

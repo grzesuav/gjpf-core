@@ -67,7 +67,10 @@ public class UnsortedArrayIntSet extends ArrayIntSet {
           if (len == 1){
             elements = null;
           } else {
-            System.arraycopy(a, i+1, a, i, len-i);
+            i++;
+            if (i < len) {
+              System.arraycopy(a, i, a, i-1, len-i);
+            }
           }
           
           size--;

@@ -58,16 +58,21 @@ public class UnsortedArrayIntSetTest extends TestJPF {
     assertFalse(s.contains(42));
     assertTrue(s.size() == 0);
     
+    
     s.add(42);
     s.add(42000);
     s.add(0);
-    assertTrue(s.size() == 3);
-    s.remove(42000);
-    assertTrue(s.size() == 2);
-    assertFalse(s.contains(42000));
-    s.remove(0);
+    System.out.println(s);
+    
+    s.remove(0); // remove last element
     assertFalse(s.contains(0));
+    assertTrue(s.size() == 2);
+    System.out.println(s);
+    
+    s.remove(42); // remove first element
+    assertFalse(s.contains(42));
     assertTrue(s.size() == 1);
+    System.out.println(s);
   }
   
   @Test

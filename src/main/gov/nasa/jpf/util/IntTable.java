@@ -170,7 +170,9 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
     int idx = getTableIndex(key);
     Entry<E> e = getHelper(key, idx);
     if (e == null) {
-      maybeRehash();
+      if (maybeRehash()){
+        idx = getTableIndex(key);
+      }
       doAdd(new Entry<E>(key,val), idx);
       size++;
     } else {

@@ -413,8 +413,6 @@ public class DynamicArea extends Area<DynamicElementInfo> implements Heap, Resto
       // <2do> pcm - this is BAD, we shouldn't depend on private impl of
       // external classes - replace with our own java.lang.String !
       e.setReferenceField("value", value);
-      e.setIntField("offset", 0);
-      e.setIntField("count", length);
 
       ElementInfo eVal = get(value);
       CharArrayFields cf = (CharArrayFields)eVal.getFields();

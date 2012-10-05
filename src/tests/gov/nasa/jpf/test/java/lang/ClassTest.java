@@ -526,6 +526,24 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
       assertTrue(Child2.class.getAnnotations().length == 1);
     }
   }
+  
+  @Test
+  public void testIsAnnotation(){
+    if (verifyNoPropertyViolation()){
+      assertFalse( Child2.class.isAnnotation());
+      assertTrue( A9.class.isAnnotation());
+    }
+  }
+  
+  @Test
+  public void testIsAnnotationPresent(){
+    if (verifyNoPropertyViolation()){
+      assertFalse( Child2.class.isAnnotationPresent(SuppressWarnings.class));
+      assertTrue( Child1.class.isAnnotationPresent(A10.class));
+      assertTrue( Child1.class.isAnnotationPresent(A9.class));
+      assertTrue( Child2.class.isAnnotationPresent(A9.class));
+    }    
+  }
 
   @Test
   public void getResourceTest() {
@@ -537,5 +555,5 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
       assertEquals(c.getResource("Class.class"),c.getResource("/java/lang/Class.class"));
       assertNull(c.getResource("not_existing_resources"));
     }
-  }
+  }  
 }

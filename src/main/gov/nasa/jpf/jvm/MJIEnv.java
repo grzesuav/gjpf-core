@@ -25,6 +25,7 @@ import gov.nasa.jpf.JPFListener;
 import gov.nasa.jpf.jvm.bytecode.Instruction;
 
 import java.util.Date;
+import java.util.Locale;
 
 
 /**
@@ -1089,6 +1090,41 @@ public class MJIEnv {
 
     return String.format(format,arg);
   }
+
+  public String format (Locale l,int fmtRef, int argRef){
+	    String format = getStringObject(fmtRef);
+	    int len = getArrayLength(argRef);
+	    Object[] arg = new Object[len];
+
+	    for (int i=0; i<len; i++){
+	      int ref = getReferenceArrayElement(argRef,i);
+	      if (ref != NULL) {
+	        String clsName = getClassName(ref);
+	        if (clsName.equals("java.lang.String")) {
+	          arg[i] = getStringObject(ref);
+	        } else if (clsName.equals("java.lang.Byte")) {
+	          arg[i] = getByteObject(ref);
+	        } else if (clsName.equals("java.lang.Char")) {
+	          arg[i] = getCharObject(ref);
+	        } else if (clsName.equals("java.lang.Short")) {
+	          arg[i] = getShortObject(ref);
+	        } else if (clsName.equals("java.lang.Integer")) {
+	          arg[i] = getIntegerObject(ref);
+	        } else if (clsName.equals("java.lang.Long")) {
+	          arg[i] = getLongObject(ref);
+	        } else if (clsName.equals("java.lang.Float")) {
+	          arg[i] = getFloatObject(ref);
+	        } else if (clsName.equals("java.lang.Double")) {
+	          arg[i] = getDoubleObject(ref);
+	        } else {
+	          // need a toString() here
+	          arg[i] = "??";
+	        }
+	      }
+	    }
+
+	    return String.format(l,format,arg);
+	  }
 
 
   public int newBoolean (boolean b){
