@@ -20,6 +20,9 @@
 package gov.nasa.jpf.classfile;
 
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.jvm.Memento;
+import gov.nasa.jpf.jvm.MementoFactory;
+import gov.nasa.jpf.jvm.Restorable;
 import gov.nasa.jpf.util.JPFLogger;
 
 import java.io.File;
@@ -29,7 +32,7 @@ import java.util.ArrayList;
  * this is a lookup mechanism for class files that is based on an ordered
  * list of directory or jar entries
  */
-public class ClassPath {
+public class ClassPath implements Restorable<ClassPath>{
 
   public static class Match {
     public final byte[] data;
@@ -49,6 +52,21 @@ public class ClassPath {
   
   ArrayList<ClassFileContainer> pathElements;
 
+  static class CPMemento implements Memento<ClassPath> {
+    ClassPath cp;
+    ArrayList<ClassFileContainer> pathElements;
+
+    CPMemento (ClassPath cp){
+      this.cp = cp;
+      this.pathElements = new ArrayList<ClassFileContainer>(cp.pathElements);
+    }
+
+    @Override
+    public ClassPath restore (ClassPath ignored) {
+      cp.pathElements = this.pathElements;
+      return cp;
+    }
+  }
 
   public ClassPath(){
     pathElements = new ArrayList<ClassFileContainer>();
@@ -60,6 +78,14 @@ public class ClassPath {
     for (String e : pathNames){
       addPathName(e);
     }
+  }
+
+  public Memento<ClassPath> getMemento (MementoFactory factory) {
+    return factory.getMemento(this);
+  }
+
+  public Memento<ClassPath> getMemento(){
+    return new CPMemento(this);
   }
 
   public void addPathName(String pathName){
@@ -147,5 +173,4 @@ public class ClassPath {
     long t2 = System.currentTimeMillis();
     System.out.println("elapsed time: " + (t2 - t1));
   }
-
 }

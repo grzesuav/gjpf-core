@@ -22,7 +22,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.Ref;
+import gov.nasa.jpf.jvm.ObjRef;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -93,8 +93,8 @@ public class INVOKECG extends JVMInstruction {
         boolean isLong = false;
         
         if (a != null){
-          if (a instanceof Ref){
-            ti.push(((Ref)a).getReference(), true);
+          if (a instanceof ObjRef){
+            ti.push(((ObjRef)a).getReference(), true);
           } else if (a instanceof Boolean){
             ti.push((Boolean)a ? 1 : 0, false);
           } else if (a instanceof Integer){

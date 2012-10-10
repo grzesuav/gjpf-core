@@ -22,6 +22,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Enumeration;
 
 import org.junit.Test;
@@ -124,17 +125,40 @@ public class ClassLoaderTest extends TestJPF {
     }
   }
 
+  @Test
+  public void testFoundResources() throws IOException {
+    if(verifyNoPropertyViolation()) {
+      TestClassLoader classLoader = new TestClassLoader();
+      Enumeration<URL> enm = classLoader.findResources("not_existing_resource"); 
+      assertNotNull(enm);
+      assertFalse(enm.hasMoreElements());
+    }
+  }
+
   private void testGetResourceImpl(ClassLoader classLoader) {
     assertNull(classLoader.getResource("not_existing_resource"));
     assertNotNull(classLoader.getResource("DiningPhil.class"));
+    assertNull(classLoader.getResource("ClassLoader.class"));
+    assertNotNull(classLoader.getResource("java/lang/ClassLoader.class"));
   }
 
   private void testGetResourcesImpl(ClassLoader classLoader) throws IOException{
     assertFalse(classLoader.getResources("not_existing_resources").hasMoreElements());
+
     Enumeration e = classLoader.getResources("DiningPhil.class");
     assertTrue(e.hasMoreElements());
     assertNotNull(e.nextElement());
     assertFalse(e.hasMoreElements());
+
+    e = classLoader.getResources("ClassLoader.class");
+    assertFalse(e.hasMoreElements());
+
+    // It should find at least two resources: 1. model class, 2. JDK class
+    e = classLoader.getResources("java/lang/ClassLoader.class");
+    assertTrue(e.hasMoreElements());
+    assertNotNull(e.nextElement());
+    assertTrue(e.hasMoreElements());
+    assertNotNull(e.nextElement());
   }
 
   private void testGetResourceAsStreamImpl(ClassLoader classLoader) throws IOException{
@@ -152,6 +176,10 @@ public class ClassLoaderTest extends TestJPF {
 
     public TestClassLoader(ClassLoader parent) {
       super(parent);
+    }
+
+    protected Enumeration<URL> findResources(String name) throws IOException {
+      return super.findResources(name);
     }
   }
 }

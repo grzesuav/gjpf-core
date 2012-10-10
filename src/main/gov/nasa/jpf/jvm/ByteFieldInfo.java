@@ -33,6 +33,10 @@ public class ByteFieldInfo extends SingleSlotFieldInfo {
      super(name, "B", modifiers, ci, idx, off);
   }
 
+  public ByteFieldInfo (String name, int modifiers, ClassInfo ci) {
+     super(name, "B", modifiers, ci);
+  }
+
   public void setConstantValue(Object constValue){
     if (constValue instanceof Integer){
       cv = constValue;

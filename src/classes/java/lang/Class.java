@@ -29,6 +29,7 @@ import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -61,6 +62,7 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
   
   private String name;
 
+  private ClassLoader classLoader;
   /**
    * this is the StaticArea ref of the class we refer to
    * (so that we don't have to convert to a Java String in the peer all the time)
@@ -115,10 +117,11 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
     return new ByteArrayInputStream(byteArray);
   }
 
-  public URL getResource (String name) {
-    name = null;  // Get rid of IDE warning
-    // <2do> if we support getResourceAsStream, we need to support this as well
-    throw new UnsupportedOperationException("Class.getResource() not yet supported in JPF");
+  private native String getResolvedName (String rname);
+
+  public URL getResource (String rname) {
+    String resolvedName = getResolvedName(rname);
+    return getClassLoader().getResource(resolvedName);
   }
 
   public Package getPackage() {
@@ -252,7 +255,9 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
 
   native public boolean desiredAssertionStatus ();
 
-  public native ClassLoader getClassLoader();
+  public ClassLoader getClassLoader() {
+    return classLoader;
+  }
 
   native ConstantPool getConstantPool();
 

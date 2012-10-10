@@ -91,23 +91,11 @@ public class JPF_java_lang_System {
   }
   
   public static int createSystemOut____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
-    try {
-      return createPrintStream(env,clsObjRef);
-
-    } catch (NoClassInfoException cx){
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
-      return MJIEnv.NULL;
-    }
+    return createPrintStream(env,clsObjRef);
   }
   
   public static int createSystemErr____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
-    try {
-      return createPrintStream(env,clsObjRef);
-
-    } catch (NoClassInfoException cx){
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
-      return MJIEnv.NULL;
-    }
+    return createPrintStream(env,clsObjRef);
   }
   
   static int getProperties (MJIEnv env, Properties p){
@@ -222,7 +210,8 @@ public class JPF_java_lang_System {
         // the special beasts first (if they weren't overridden with vm.system.properties)
         if (s == JAVA_CLASS_PATH) {
           // maybe we should just use vm.classpath
-          ClassPath cp = ClassInfo.getModelClassPath();
+          // NOTE: the curent classloader at the point it has to be a system classloader.
+          ClassPath cp = ClassLoaderInfo.getCurrentClassLoader().getClassPath();
           // <2do> should be consistent with path.separator (this is host VM notation)
           v = cp.toString();
           

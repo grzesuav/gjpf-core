@@ -34,21 +34,16 @@ public class JPF_java_util_concurrent_atomic_AtomicReferenceFieldUpdater extends
     String fname = env.getStringObject(fNameRef);
     FieldInfo fi = ci.getInstanceField(fname);
 
-    try {
-      ClassInfo fci = fi.getTypeClassInfo();
+    ClassInfo fci = fi.getTypeClassInfo();
 
-      ClassInfo fciCheck = env.getReferredClassInfo( fClsObjRef);
-      if (!fci.isInstanceOf(fciCheck)) {
-        // that's also just an approximation, but we need to check
-        env.throwException("java.lang.RuntimeException", "wrong field type");
-      }
-
-      int fidx = fi.getFieldIndex();
-      env.setIntField(objRef, "fieldId", fidx);
-
-    } catch (NoClassInfoException cx){
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
+    ClassInfo fciCheck = env.getReferredClassInfo( fClsObjRef);
+    if (!fci.isInstanceOf(fciCheck)) {
+      // that's also just an approximation, but we need to check
+      env.throwException("java.lang.RuntimeException", "wrong field type");
     }
+
+    int fidx = fi.getFieldIndex();
+    env.setIntField(objRef, "fieldId", fidx);
   }
 
   public static boolean compareAndSet__Ljava_lang_Object_2Ljava_lang_Object_2Ljava_lang_Object_2__Z

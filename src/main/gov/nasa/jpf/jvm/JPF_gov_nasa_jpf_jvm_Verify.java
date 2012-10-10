@@ -890,7 +890,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     if (objRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(objRef);
       if (ei != null){
-        if (ei.getClassInfo() == ClassInfo.classClassInfo) { // it's a class object, freeze the static fields
+        if (ei.getClassInfo() == ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo()) { // it's a class object, freeze the static fields
           ei = env.getClassElementInfo(objRef);
         }
         ei.setShared( isShared);
@@ -902,7 +902,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
     if (objRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(objRef);
       if (ei != null) {
-        if (ei.getClassInfo() == ClassInfo.classClassInfo) { // it's a class object, freeze the static fields
+        if (ei.getClassInfo() == ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo()) { // it's a class object, freeze the static fields
           ei = env.getClassElementInfo(objRef);
         }
         

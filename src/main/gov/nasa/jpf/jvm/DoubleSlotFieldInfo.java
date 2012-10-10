@@ -29,6 +29,11 @@ public abstract class DoubleSlotFieldInfo extends FieldInfo {
      super(name, signature, modifiers, ci, idx, off);
     }
 
+    protected DoubleSlotFieldInfo (String name, String signature, int modifiers,
+                          ClassInfo ci) {
+      super(name, signature, modifiers, ci);
+    }
+    
     public boolean is2SlotField(){
       return true;
     }

@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.StaticElementInfo;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -39,10 +40,14 @@ public class GETSTATIC extends StaticFieldInstruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    ClassInfo clsInfo;
 
-    ClassInfo clsInfo = getClassInfo();
-    if (clsInfo == null){
-      return ti.createAndThrowException("java.lang.NoClassDefFoundError", className);
+    // resolve the class of the referenced field first
+    ClassInfo cls = ti.getMethod().getClassInfo();
+    try {
+      ci = cls.resolveReferencedClass(className);
+    } catch(LoadOnJPFRequired lre) {
+      return ti.getPC();
     }
 
     FieldInfo fieldInfo = getFieldInfo();

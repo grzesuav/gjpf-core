@@ -167,7 +167,7 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   }
 
   protected void markAreaChanged(){
-    JVM.getVM().getStaticArea().markChanged(objRef);
+    ci.getClassLoaderInfo().getStaticArea().markChanged(objRef);
   }
 
   /**
@@ -225,7 +225,8 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     if (ci == getClassInfo()) {
       return this;
     } else {
-      return JVM.getVM().getStaticArea().get( ci.getName());
+      StaticArea sa = ci.getClassLoaderInfo().getStaticArea();
+      return sa.get( ci.getName());
     }
   }
   

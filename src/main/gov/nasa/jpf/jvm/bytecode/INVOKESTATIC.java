@@ -21,8 +21,10 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StaticElementInfo;
 import gov.nasa.jpf.jvm.SystemState;
@@ -82,11 +84,13 @@ public class INVOKESTATIC extends InvokeInstruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    
-    // need to check first if we can find the class
-    ClassInfo clsInfo = getClassInfo();
-    if (clsInfo == null){
-      return ti.createAndThrowException("java.lang.NoClassDefFoundError", cname);
+    ClassInfo clsInfo = ti.getMethod().getClassInfo();
+
+    // resolve the class of the invoked method first
+    try {
+      ci = clsInfo.resolveReferencedClass(cname);
+    } catch(LoadOnJPFRequired lre) {
+      return ti.getPC();
     }
 
     MethodInfo callee = getInvokedMethod(ti);

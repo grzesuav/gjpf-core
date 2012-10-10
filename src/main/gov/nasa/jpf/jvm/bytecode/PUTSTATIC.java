@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -40,10 +41,14 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    ClassInfo clsInfo;
 
-    ClassInfo clsInfo = getClassInfo();
-    if (clsInfo == null){
-      return ti.createAndThrowException("java.lang.NoClassDefFoundError", className);
+    // resolve the class of the referenced field first
+    ClassInfo cls = ti.getMethod().getClassInfo();
+    try {
+      ci = cls.resolveReferencedClass(className);
+    } catch(LoadOnJPFRequired lre) {
+      return ti.getPC();
     }
 
     FieldInfo fieldInfo = getFieldInfo();
@@ -51,7 +56,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
       return ti.createAndThrowException("java.lang.NoSuchFieldError",
           (className + '.' + fname));
     }
-        
+    
     // this can be actually different (can be a base)
     clsInfo = fi.getClassInfo();
 
@@ -60,10 +65,9 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
     if (!mi.isClinit(clsInfo) && requiresClinitExecution(ti, clsInfo)) {
       return ti.getPC();
     }
-    
-    ElementInfo ei = ks.statics.get(clsInfo.getName());
 
-    // note this will also set the shared attribute of the StaticElementInfo
+    ElementInfo ei = ks.getCurrentStaticArea().get(clsInfo.getName());
+
     if (isNewPorFieldBoundary(ti)) {
       if (createAndSetFieldCG(ss, ei, ti)) {
         return this;
@@ -80,7 +84,6 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
 
       if (fi.isReference()) {
         ei.setReferenceField(fi, ival);
-        
       } else {
         ei.set1SlotField(fi, ival);
       }

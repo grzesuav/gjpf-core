@@ -368,7 +368,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   
   protected int newString (String str, ThreadInfo ti, AllocationContext ctx) {
     //--- the string object itself
-    ClassInfo ciString = ClassInfo.stringClassInfo;
+    ClassInfo ciString = ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo();
     int sRef = getNewElementInfoIndex( ctx);
     createObject( ciString, ti, sRef);
     
@@ -384,7 +384,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
 
   public int newString(String str, ThreadInfo ti){
     if (str != null) {
-      AllocationContext ctx = getSUTAllocationContext( ClassInfo.stringClassInfo, ti);
+      AllocationContext ctx = getSUTAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), ti);
       return newString( str, ti, ctx);
       
     } else {
@@ -394,7 +394,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   
   public int newSystemString (String str, ThreadInfo ti, int anchor) {
     if (str != null) {
-      AllocationContext ctx = getSystemAllocationContext( ClassInfo.stringClassInfo, ti, anchor);
+      AllocationContext ctx = getSystemAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), ti, anchor);
       return newString(str, ti, ctx);
       
     } else {
@@ -406,7 +406,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     IntTable.Entry<String> e = internStrings.get(str);
     if (e == null){
       if (str != null) {
-        AllocationContext ctx = getSUTAllocationContext( ClassInfo.stringClassInfo, ti);
+        AllocationContext ctx = getSUTAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), ti);
         int index = newString( str, ti, ctx);
         ElementInfo ei = get(index);
         
@@ -438,13 +438,13 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   public int newSystemThrowable (ClassInfo ciThrowable, String details, int[] stackSnapshot, int causeRef,
                                  ThreadInfo ti, int anchor) {
     //--- the Throwable object itself
-    AllocationContext ctx = getSystemAllocationContext( ClassInfo.stringClassInfo, ti, anchor);
+    AllocationContext ctx = getSystemAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), ti, anchor);
     int xRef = getNewElementInfoIndex( ctx);
     ElementInfo eiThrowable = createObject( ciThrowable, ti, xRef);
     
     //--- the detailMsg field
     if (details != null) {
-      AllocationContext ctxString = ctx.extend(ClassInfo.stringClassInfo, xRef);
+      AllocationContext ctxString = ctx.extend(ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), xRef);
       int msgRef = newString( details, ti, ctxString);
       eiThrowable.setReferenceField("detailMessage", msgRef);
     }

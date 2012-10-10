@@ -36,17 +36,17 @@ public class NEW extends JVMInstruction implements AllocInstruction {
   public String getClassName(){    // Needed for Java Race Finder
     return(cname);
   }
-  
+
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     Heap heap = ti.getHeap();
     ClassInfo ci;
 
+    // resolve the referenced class
+    ClassInfo cls = ti.getMethod().getClassInfo();
     try {
-      ci = ClassInfo.getResolvedClassInfo(cname);
-
-    } catch (NoClassInfoException cx){
-      // can be any inherited class or required interface
-      return ti.createAndThrowException("java.lang.NoClassDefFoundError", cx.getMessage());
+      ci = cls.resolveReferencedClass(cname);
+    } catch(LoadOnJPFRequired lre) {
+      return ti.getPC();
     }
 
     if (!ci.isRegistered()){

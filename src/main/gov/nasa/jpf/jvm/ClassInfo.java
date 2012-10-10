@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.Stack;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -63,7 +64,7 @@ import java.util.logging.Level;
  * static and dynamic fields, methods, and information relevant to the
  * class.
  */
-public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, GenericSignatureHolder {
+public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, GenericSignatureHolder, Cloneable {
 
   //--- ClassInfo states, in chronological order
   // note the somewhat strange, decreasing values - >= 0 (=thread-id) means 
@@ -86,22 +87,20 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   static Config config;
 
   /**
-   * this is our classpath. Note that this actually might be
-   * turned into a call or ClassInfo instance field if we ever support
-   * ClassLoaders (for now we keep it simple)
-   */
-  protected static gov.nasa.jpf.classfile.ClassPath cp;
-
-  /**
    * ClassLoader that loaded this class.
    */
   protected static final ClassLoader thisClassLoader = ClassInfo.class.getClassLoader();
 
   /**
-   * Loaded classes, indexed by id number.
+   * Map from the classFileUrl of classes to their original ClassInfo instances
    */
-  protected static final ObjVector<ClassInfo> loadedClasses =
-    new ObjVector<ClassInfo>(100);
+   protected static Map<String,ClassInfo> loadedClasses = new HashMap<String, ClassInfo>();
+
+   /**
+    * Map from globalIds to instances of ClassInfos. This map includes all the ClassInfos
+    * defined by any classloaders.
+    */
+   protected static Map<Integer,ClassInfo> classes = new HashMap<Integer, ClassInfo>();
 
   /**
    * optionally used to determine atomic methods of a class (during class loading)
@@ -112,20 +111,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * our abstract factory to createAndInitialize object and class fields
    */
   protected static FieldsFactory fieldsFactory;
-
-
-  /*
-   * some distinguished ClassInfos we keep around for efficiency reasons
-   */
-  static final int NUMBER_OF_CACHED_CLASSES = 7;
-  static int remainingSysCi; // we keep track how many we still have to initialize
-  static ClassInfo objectClassInfo;
-  static ClassInfo classClassInfo;
-  static ClassInfo stringClassInfo;
-  static ClassInfo weakRefClassInfo;
-  static ClassInfo refClassInfo;
-  static ClassInfo enumClassInfo;
-  static ClassInfo threadClassInfo;
 
   
   static FieldInfo[] emptyFields = new FieldInfo[0];
@@ -153,10 +138,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   /** Generic type signatures of the class as per para. 4.4.4 of the revised VM spec */
   protected String genericSignature;
 
+  /** The classloader that defined (directly loaded) this class */
+  protected ClassLoaderInfo classLoader;
 
   // various class attributes
   protected boolean      isClass = true;
   protected boolean      isWeakReference = false;
+  protected boolean      isObjectClassInfo = false;
+  protected boolean      isStringClassInfo = false;
+  protected boolean      isRefClassInfo = false;
   protected boolean      isArray = false;
   protected boolean      isEnum = false;
   protected boolean      isReferenceArray = false;
@@ -214,6 +204,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * we can createAndInitialize objects of this type
    */
   protected ClassInfo  superClass;
+  protected String superClassName;
 
   protected String enclosingClassName;
   protected String enclosingMethodName;
@@ -222,6 +213,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
   /** direct ifcSet implemented by this class */
   protected Set<String> interfaceNames;
+
+  protected Set<ClassInfo> interfaces = new HashSet<ClassInfo>();
   
   /** cache of all interfaceNames (parent interfaceNames and interface parents) - lazy eval */
   protected Set<String> allInterfaces;
@@ -231,7 +224,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /** this is only set if the classfile has a SourceFile class attribute */
   protected String sourceFileName;
-  
+
+  /** 
+   * Uniform resource locater for the class file. NOTE: since for builtin classes
+   * there is no class file assigned is set to the typeName 
+   */ 
+  protected String classFileUrl;
+
   /** from where the corresponding classfile was loaded (if this is not a builtin) */
   protected ClassFileContainer container;
 
@@ -250,9 +249,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /** user defined attribute objects */
   protected Object attr;
-  
-  static StringSetMatcher enabledAssertionPatterns;
-  static StringSetMatcher disabledAssertionPatterns;
 
   protected boolean enableAssertions;
 
@@ -268,17 +264,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     setSourceRoots(config);
     //buildBCELModelClassPath(config);
-    buildModelClassPath(config);
 
     attributor = config.getEssentialInstance("vm.attributor.class",
                                                          Attributor.class);
 
     fieldsFactory = config.getEssentialInstance("vm.fields_factory.class",
                                                 FieldsFactory.class);
-
-    enabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.enable_assertions"));
-    disabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.disable_assertions"));
-
 
     autoloadAnnotations = config.getNonEmptyStringSet("listener.autoload");
     if (autoloadAnnotations != null) {
@@ -294,16 +285,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return true;
   }
 
-  public static gov.nasa.jpf.classfile.ClassPath getModelClassPath() {
-    return cp;
-  }
-
   public static boolean isObjectClassInfo (ClassInfo ci){
-    return ci == objectClassInfo;
+    return ci.isObjectClassInfo();
   }
 
   public static boolean isStringClassInfo (ClassInfo ci){
-    return ci == stringClassInfo;
+    return ci.isStringClassInfo();
   }
 
   class Initializer extends ClassFileReaderAdapter {
@@ -312,18 +299,18 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
       name = Types.getClassNameFromTypeName(clsName);
 
+      String requestedName = cf.getRequestedTypeName();
+      // check if the ClassFile does not represent a class with the requested name
+      if(requestedName!=null && !requestedName.equals(name)) {
+        throw new ClassInfoException("wrong class name, should be " + name + 
+            ", not " + requestedName, "java.lang.NoClassDefFoundError", name);
+      }
+
       // the enclosingClassName is set on demand since it requires loading enclosing class candidates
       // to verify their innerClass attributes
       
       int i = name.lastIndexOf('.');
       packageName = (i>0) ? name.substring(0, i) : "";
-
-      if (superClsName != null){
-        // this is where we get recursive
-        superClass = loadSuperClass( Types.getClassNameFromTypeName(superClsName));
-      }
-      
-      computeInheritedAnnotations(superClass);      
 
       modifiers = flags;
       isClass = ((flags & Modifier.INTERFACE) == 0);
@@ -331,6 +318,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       if (attributor != null){
         attributor.setElementInfoAttributes(ClassInfo.this);
       }
+
+      superClassName = superClsName;
     }
 
     @Override
@@ -429,6 +418,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     public void setInterfacesDone(ClassFile cf) {
       //loadInterfaceRec(null, ifcSet);
       interfaceNames =  Collections.unmodifiableSet(ifcSet);
+
+      // check if this is an interface and one of its super interfaces is the interface
+      // itself
+      if(isInterface() && interfaceNames.contains(name)) {
+        throw new ClassInfoException("a super interface of " + name + " is itself", 
+                                     "java.lang.ClassCircularityError", name);
+      }
     }
 
     //--- fields
@@ -700,21 +696,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     @Override
     public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
+      ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
       if (tag instanceof InfoObject){
         if (AnnotationInfo.annotationAttributes.get(annotationType) == null) {
-          curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType), cp);
+          curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType), cl.getClassPath());
         } else {
           curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
         }
-        if (tag instanceof ClassInfo) {
-          if (((InfoObject)tag).getAnnotation(curAi.getName()) == null) {
-            addAnnotation(curAi);
-          } else {
-            ((InfoObject)tag).getAnnotation(curAi.getName()).setInherited(false);
-          }
-        } else {
-          ((InfoObject)tag).setAnnotation(annotationIndex, curAi);
-        }
+
+        ((InfoObject)tag).setAnnotation(annotationIndex, curAi);
       }
     }
 
@@ -795,40 +785,37 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected ClassInfo(ClassFile cf) throws ClassFileException {
     Initializer reader = new Initializer();
     cf.parse(reader);
+    resolveClass();
   }
 
-  public ClassInfo(ClassFile cf, int uniqueId) throws ClassFileException {
+  public ClassInfo(ClassFile cf, ClassLoaderInfo classLoader, String url) throws ClassFileException {
+    this.classLoader = classLoader;
 
     Initializer reader = new Initializer();
     cf.parse(reader); // this does the heavy lifting for ClassInfo init
 
-    this.uniqueId = uniqueId;
-    
     staticDataSize = computeStaticDataSize();
-    instanceDataSize = computeInstanceDataSize();
-    instanceDataOffset = computeInstanceDataOffset();
-    nInstanceFields = (superClass != null) ?
-      superClass.nInstanceFields + iFields.length : iFields.length;
 
     source = null;
     if (sourceFileName == null){ // apparently some classfiles don't have a SourceFile attribute?
       sourceFileName = computeSourceFileName();
     }
 
-    // we need to set the cached ci's before checking WeakReferences and Enums
-    updateCachedClassInfos(this);
-
-    isWeakReference = isWeakReference0();
+    isStringClassInfo = isStringClassInfo0();
+    isObjectClassInfo = isObjectClassInfo0();
+    isRefClassInfo = isRefClassInfo0();
+   // isWeakReference = isWeakReference0();
     finalizer = getFinalizer0();
     isAbstract = (modifiers & Modifier.ABSTRACT) != 0;
-    isEnum = isEnum0();
+   // isEnum = isEnum0();
 
-    enableAssertions = getAssertionStatus();
+    setAssertionStatus();
 
     processJPFConfigAnnotation();
     loadAnnotationListeners();
 
-    loadedClasses.set(uniqueId, this);
+    classFileUrl = url;
+    addOriginalClass(this);
 
     // the 'sei' field gets initialized during registerClass(ti), since
     // it needs to be linked to a corresponding java.lang.Class object which
@@ -843,13 +830,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // ones are handled by the peer (by means of setting MethodInfo attributes)
     nativePeer = NativePeer.getNativePeer(this);
     checkUnresolvedNativeMethods();
-    
-    if (superClass != null){
-    // flatten so that it becomes more efficient to process at sweep time
-      releaseActions = superClass.releaseActions;
-    }
-    
-    JVM.getVM().notifyClassLoaded(this);
+
+    resolveClass();
   }
 
 
@@ -857,7 +839,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * ClassInfo ctor used for builtin types (arrays and primitive types)
    * i.e. classes we don't have class files for
    */
-  protected ClassInfo (String builtinClassName, int uniqueId) {
+  protected ClassInfo (String builtinClassName, ClassLoaderInfo classLoader) {
+    this.classLoader = classLoader;
+
     isArray = (builtinClassName.charAt(0) == '[');
     isReferenceArray = isArray && builtinClassName.endsWith(";");
     isBuiltin = true;
@@ -876,7 +860,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     sFields = emptyFields;
 
     if (isArray) {
-      superClass = objectClassInfo;
+      superClass = ClassLoaderInfo.getCurrentSystemClassLoader().getObjectClassInfo();
       interfaceNames = loadArrayInterfaces();
       methods = loadArrayMethods();
     } else {
@@ -887,16 +871,28 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     enableAssertions = true; // doesn't really matter - no code associated
 
-    this.uniqueId = uniqueId;
-    loadedClasses.set(uniqueId,this);
+    classFileUrl = name;
+    addOriginalClass(this);
     
     JVM.getVM().notifyClassLoaded(this);
+  }
+
+  private static void addOriginalClass(ClassInfo ci) {
+    if(ci.classFileUrl != null) {
+      loadedClasses.put(ci.classFileUrl, ci);
+    }
+  }
+
+  private static ClassInfo getOriginalClassInfo(String url) {
+    return loadedClasses.get(url);
   }
 
   /**
    * createAndInitialize a fully synthetic implementation of an Annotation proxy
    */
-  ClassInfo(ClassInfo annotationCls, String name, int uniqueId) {
+  ClassInfo(ClassInfo annotationCls, String name, ClassLoaderInfo classLoader, String url) {
+    this.classLoader = classLoader;
+
     this.name = name;
     isClass = true;
 
@@ -957,8 +953,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     instanceDataSize = computeInstanceDataSize();
     instanceDataOffset = 0;
 
-    this.uniqueId = uniqueId;
-    loadedClasses.set(uniqueId, this);
+    classFileUrl = url;
+    addOriginalClass(this);
     
     JVM.getVM().notifyClassLoaded(this);
   }
@@ -966,36 +962,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   protected String computeSourceFileName(){
     return name.replace('.', '/') + ".java";
-  }
-  
-  protected static void updateCachedClassInfos (ClassInfo ci) {
-
-    if (remainingSysCi > 0){
-      String name = ci.name;
-      
-      if ((objectClassInfo == null) && name.equals("java.lang.Object")) {
-        objectClassInfo = ci;
-        remainingSysCi--;
-      } else if ((classClassInfo == null) && name.equals("java.lang.Class")) {
-        classClassInfo = ci;
-        remainingSysCi--;
-      } else if ((stringClassInfo == null) && name.equals("java.lang.String")) {
-        stringClassInfo = ci;
-        remainingSysCi--;
-      } else if ((weakRefClassInfo == null) && name.equals("java.lang.ref.WeakReference")) {
-        weakRefClassInfo = ci;
-        remainingSysCi--;
-      } else if ((refClassInfo == null) && name.equals("java.lang.ref.Reference")) {
-        refClassInfo = ci;
-        remainingSysCi--;
-      } else if ((enumClassInfo == null) && name.equals("java.lang.Enum")) {
-        enumClassInfo = ci;
-        remainingSysCi--;
-      } else if ((threadClassInfo == null) && name.equals("java.lang.Thread")) {
-        threadClassInfo = ci;
-        remainingSysCi--;
-      }
-    }
   }
 
 
@@ -1006,7 +972,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * override this in case resolving annotation types is not wanted (e.g. for unit tests)
    */
   protected void checkAnnotationDefaultValues(AnnotationInfo ai){
-    ai.checkDefaultValues(cp);
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+    ai.checkDefaultValues(cl.getClassPath());
   }
 
   /**
@@ -1092,6 +1059,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
+  /**
+   * Returns the class loader that 
+   */
+  public ClassLoaderInfo getClassLoaderInfo() {
+    return classLoader;
+  }
 
   /**
    * required by InfoObject interface
@@ -1099,11 +1072,23 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public ClassInfo getClassInfo() {
     return this;
   }
-  
-  boolean getAssertionStatus () {
-    return StringSetMatcher.isMatch(name, enabledAssertionPatterns, disabledAssertionPatterns);
+
+  protected void setAssertionStatus() {
+    if(isInitialized()) {
+      return;
+    } else {
+      enableAssertions = classLoader.desiredAssertionStatus(name);
+    }
   }
-  
+
+  boolean getAssertionStatus () {
+    return enableAssertions;
+  }
+
+  public boolean desiredAssertionStatus() {
+    return classLoader.desiredAssertionStatus(name);
+  }
+
   public String getGenericSignature() {
     return genericSignature;
   }
@@ -1137,20 +1122,27 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public boolean isObjectClassInfo() {
-    return this == objectClassInfo;
+    return isObjectClassInfo;
   }
 
   public boolean isStringClassInfo() {
-    return this == stringClassInfo;
+    return isStringClassInfo;
   }
 
   public static ClassInfo getClassInfo(int uniqueId) {
-    if (uniqueId >= 0) {
-      return loadedClasses.get(uniqueId); 
-    } else {
-      return null; 
-    }
-  }  
+    return classes.get(uniqueId);
+  }
+
+  public static ClassInfo getResolvedSystemClassInfo(String className) {
+    ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
+    return systemLoader.getResolvedClassInfo(className);
+  }
+
+  public static ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+
+    return cl.getResolvedClassInfo(className);
+  }
 
   /**
    * obtain ClassInfo object for given class name
@@ -1179,7 +1171,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * additional state {resolved,registered,initialized}, and it is questionable
    * what a non-resolvable ClassInfo would be good for anyways
    */
-  public static ClassInfo getResolvedClassInfo (String className) throws NoClassInfoException {
+  public static ClassInfo getResolvedClassInfo (String className, ClassLoaderInfo cl, ClassPath.Match match) throws ClassInfoException {
 
     if (className == null) {
       return null;
@@ -1187,58 +1179,57 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     String typeName = Types.getClassNameFromTypeName(className);
 
-    // <2do> this is BAD - fix it!
-    int idx = JVM.getVM().getStaticArea().indexFor(typeName);
+    if (isBuiltinClass(typeName)) {
+      if(cl.isSystemClassLoader()) {
+        return new ClassInfo(typeName, cl);
+      } else {
+        return getResolvedSystemClassInfo(className);
+      }
+    }
 
-    ClassInfo ci = loadedClasses.get(idx);
+    String url = computeClassFileUrl(match, typeName, cl);
+    ClassInfo ci = getOriginalClassInfo(url);
 
+    // To avoid parsing the classfile more than once, if the same class defined by some
+    // other loader, return the ClassInfo and clone it.
     if (ci != null) {
       return ci;
     }
-    
-    if (isBuiltinClass(typeName)) {
-      // this is a array or builtin type class - there's no class file for this, it
-      // gets automatically generated by the VM
-      return new ClassInfo(typeName, idx);
-    }
-    
+
     logger.finer("resolve classinfo: ", className);
 
-    return loadClass(typeName, idx);
+    return defineClass(typeName, cl, match, url);
   }
 
-  private static ClassInfo loadClass(String typeName, int uniqueId){
+  private static ClassInfo defineClass(String typeName, ClassLoaderInfo cl, ClassPath.Match match, String url){
     try {
-      ClassPath.Match match = cp.findMatch(typeName);
       if (match == null){
-        throw new NoClassInfoException(typeName);
+        throw new ClassInfoException("the class, " + typeName + ", is not found in the classloader search path", 
+                                     "java.lang.ClassNotFoundException", typeName);
       }
 
       ClassFile cf = new ClassFile( typeName, match.getBytes());
       
       JVM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
-      
-      ClassInfo ci = new ClassInfo(cf, uniqueId);
+
+      ClassInfo ci = new ClassInfo(cf, cl, url);
       ci.setContainer(match.container);
 
-      if (!ci.getName().equals(typeName)){
-        throw new NoClassInfoException("wrong class name, should be " + ci.getName());
-      }
-      
       return ci;
       
     } catch (ClassFileException cfx){
-      throw new JPFException("error reading class " + typeName, cfx);
+      throw new ClassInfoException("error reading class " + typeName, 
+                                   "java.lang.NoClassDefFoundError", typeName);
     }
   }
 
-  private static ClassInfo loadClass(String typeName, byte[] data, int offset, int length, int uniqueId) {
+  private static ClassInfo defineClass(String typeName, byte[] data, int offset, int length, ClassLoaderInfo cl, String url) {
     try {
       ClassFile cf = new ClassFile( typeName, data, offset);
       
       JVM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
-      
-      return new ClassInfo(cf, uniqueId);
+
+      return new ClassInfo(cf, cl, url);
 
     } catch (ClassFileException cfx){
       throw new JPFException("error reading class " + typeName, cfx);
@@ -1246,28 +1237,40 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   }
 
-  public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length) throws NoClassInfoException {
+  public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length) throws ClassInfoException {
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+
+    // for now, we do not keep dynamic proxy classes, which are defined through 
+    // the java.lang.reflect.Proxy native peer, in the loadedClasses map
+    return cl.getResolvedClassInfo(className, buffer, offset, length, null);
+  }
+
+  public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length, ClassLoaderInfo cl, ClassPath.Match match) throws ClassInfoException {
     if (className == null) {
       return null;   
     }
     
     String typeName = Types.getClassNameFromTypeName(className);
-    
-    // <2do> this is BAD - fix it!
-    int idx = JVM.getVM().getStaticArea().indexFor(typeName);
-    
-    ClassInfo ci = loadedClasses.get(idx);
-    
-    if (ci != null) {
-      return ci;
-    } else if (isBuiltinClass(typeName)) {
-      // this is a array or builtin type class - there's no class file for this, it
-      // gets automatically generated by the VM
-      return new ClassInfo(typeName, idx);
 
-    } else {
-      return loadClass(typeName, buffer, offset, length, idx);
+    if (isBuiltinClass(typeName)) {
+      if(cl.isSystemClassLoader()) {
+        return new ClassInfo(typeName, cl);
+      } else {
+        return getResolvedSystemClassInfo(className);
+      }
     }
+
+    String url = (match != null)? computeClassFileUrl(match, typeName, cl): typeName;
+    ClassInfo ci = getOriginalClassInfo(url);
+
+    if (ci != null) {
+      if(!ci.isResolved()) {
+        ci.resolveClass();
+      }
+      return ci;
+    }
+
+    return defineClass(typeName, buffer, offset, length, cl, (match != null)? url: null);
   }
 
   /**
@@ -1278,15 +1281,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * @return null if class was not found
    */
   public static ClassInfo tryGetResolvedClassInfo (String className){
-    try {
-      return getResolvedClassInfo(className);
-    } catch (NoClassInfoException cx){
-      return null;
-    }
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+
+    return cl.tryGetResolvedClassInfo(className);
   }
 
   public static ClassInfo getAnnotationProxy (ClassInfo ciAnnotation){
-    StaticArea sa = JVM.getVM().getStaticArea();
+    StaticArea sa = JVM.getVM().getCurrentStaticArea();
     ThreadInfo ti = ThreadInfo.getCurrentThread();
 
     // make sure the annotationCls is initialized (no code there)
@@ -1297,12 +1298,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       }
     }
 
-    String cname = ciAnnotation.getName() + "$Proxy";
-    int idx = sa.indexFor(cname);
-    ClassInfo ci = loadedClasses.get(idx);
+    String url = computeProxyUrl(ciAnnotation);
+    ClassInfo ci = getOriginalClassInfo(url);
 
     if (ci == null){
-      ci = new ClassInfo(ciAnnotation, cname, idx);
+      String cname = ciAnnotation.getName() + "$Proxy";
+      ci = new ClassInfo(ciAnnotation, cname, ciAnnotation.classLoader, url);
       if (!ci.isInitialized()){
         ci.registerClass(ti);
         ci.setInitialized();
@@ -1341,8 +1342,34 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public void setContainer (ClassFileContainer c){
     container = c;
   }
+
+  protected static String computeClassFileUrl(ClassPath.Match match, String typeName, ClassLoaderInfo cl) {
+    // it has to be a built-in class or annotation proxy!
+    if(match == null) {
+      if(ClassInfo.isBuiltinClass(typeName)){
+        return typeName;
+      } else if(typeName.endsWith("$Proxy")) {
+        String annotationName = typeName.substring(0, typeName.lastIndexOf('$'));
+        ClassInfo annotationCls = cl.getDefinedClassInfo(annotationName);
+        return computeProxyUrl(annotationCls);
+      } else {
+        return null;
+      }
+    }
+    
+    return match.container.getURL() + typeName.replace('.', '/') + ".class";
+  }
+
+  // Builds urls for annotation class proxies
+  private static String computeProxyUrl(ClassInfo annotationCls) {
+    String annotationUrl = annotationCls.getClassFileUrl();
+    return annotationUrl.substring(0, annotationUrl.lastIndexOf(".class")) + "$Proxy";
+  }
   
-  
+  public String getClassFileUrl (){
+    return classFileUrl;
+  }
+
   //--- type based object release actions
   
   public boolean hasReleaseAction (ReleaseAction action){
@@ -1631,6 +1658,18 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return packageName;
   }
 
+  /**
+   * The uniqueId for ClassInfo is set to an integer where the two left bytes store the
+   * global id of the classloader that defines the class and the right two bytes store 
+   * the ref that refers to the class object in the JPF heap
+   * 
+   * @limit This requires that both the classloader.gid, and sei index should not exceed 
+   * 2^16
+   */
+  public void setUniqueId() {
+    uniqueId = (classLoader.gid << 16) + sei.getObjectRef();
+  }
+
   public int getUniqueId() {
     return uniqueId;
   }
@@ -1693,6 +1732,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     mi = null;
      
     return true;
+  }
+
+  public String getSuperClassName() {
+    return superClassName;
   }
 
   /**
@@ -1798,14 +1841,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * note this only returns true is this is really the java.lang.ref.Reference classInfo
    */
   public boolean isReferenceClassInfo () {
-    return (this == refClassInfo);
+    return isRefClassInfo;
   }
 
   /**
    * whether this refers to a primitive type.
    */
   public boolean isPrimitive() {
-    return superClass == null && this != objectClassInfo;
+    return superClass == null && !isObjectClassInfo();
   }
 
 
@@ -1892,14 +1935,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   public static void reset () {
     loadedClasses.clear();
-
-    remainingSysCi = NUMBER_OF_CACHED_CLASSES;
-    classClassInfo = null;
-    objectClassInfo = null;
-    stringClassInfo = null;
-    weakRefClassInfo = null;
-    refClassInfo = null;
-    enumClassInfo = null;
   }
 
   public static int getNumberOfLoadedClasses() {
@@ -1907,18 +1942,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public static ClassInfo[] getLoadedClasses() {
-    ClassInfo classes[] = new ClassInfo[loadedClasses.size()];
-    loadedClasses.toArray(classes);
-    return(classes);
-  }
-
-  public  ClassPath getClassPath(){
-    // <2do> this is only a hack - it needs to support a classloader chain
-    return cp;
-  }
-
-  public static String[] getClassPathElements() {
-    return cp.getPathNames();
+    return loadedClasses.values().toArray(new ClassInfo[loadedClasses.size()]);
   }
 
   public static String makeModelClassPath (Config config) {
@@ -1945,26 +1969,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return buf.toString();
   }
 
-  protected static void buildModelClassPath (Config config){
-    cp = new ClassPath();
-
-    for (File f : config.getPathArray("boot_classpath")){
-      cp.addPathName(f.getAbsolutePath());
-    }
-
-    for (File f : config.getPathArray("classpath")){
-      cp.addPathName(f.getAbsolutePath());
-    }
-
-    // finally, we load from the standard Java libraries
-    String v = System.getProperty("sun.boot.class.path");
-    if (v != null) {
-      for (String pn : v.split(File.pathSeparator)){
-        cp.addPathName(pn);
-      }
-    }
-  }
-
   protected static Set<String> loadArrayInterfaces () {
     Set<String> interfaces;
 
@@ -1987,7 +1991,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * @param set a Set to which the interface names (String) are added
    * @param ifcSet class to find interfaceNames for.
    */
-  void loadInterfaceRec (Set<String> set, Set<String> interfaces) throws NoClassInfoException {
+  void loadInterfaceRec (Set<String> set, Set<String> interfaces) throws ClassInfoException {
     if (interfaces != null) {
       for (String iname : interfaces) {
 
@@ -2005,7 +2009,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   /**
    * get the direct interface names of this class
    */
-  protected Set<String> loadInterfaces (String[] ifcNames) throws NoClassInfoException {
+  protected Set<String> loadInterfaces (String[] ifcNames) throws ClassInfoException {
     Set<String> interfaces = new HashSet<String>();
 
     for (String iname : ifcNames){
@@ -2164,11 +2168,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public Set<ClassInfo> getInterfaceClassInfos() {
-    Set<ClassInfo> set = new HashSet<ClassInfo>();
-    for (String ifcName : interfaceNames) {
-      set.add(getResolvedClassInfo(ifcName));
-    }
-    return set;
+    return interfaces;
   }
 
   /**
@@ -2302,15 +2302,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return false;
   }
 
-  /**
-   * this one is for clients that need to synchronously get an initialized classinfo.
-   * NOTE: we don't handle clinits here. If there is one, this will throw
-   * an exception. NO STATIC BLOCKS / FIELDS ALLOWED
-   */
-  public static ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+  public static ClassInfo getInitializedSystemClassInfo (String clsName, ThreadInfo ti){
+    ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
+    ClassInfo ci = systemLoader.getResolvedClassInfo(clsName);
 
-    ci.registerClass(ti); // this is safe to call on already loaded classes
+    systemLoader.registerClass(ti, ci); // this is safe to call on already loaded classes
 
     if (!ci.isInitialized()) {
       if (ci.initializeClass(ti)) {
@@ -2321,29 +2317,19 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return ci;
   }
 
+  /**
+   * this one is for clients that need to synchronously get an initialized classinfo.
+   * NOTE: we don't handle clinits here. If there is one, this will throw
+   * an exception. NO STATIC BLOCKS / FIELDS ALLOWED
+   */
+  public static ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
+    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
+    return cl.getInitializedClassInfo(clsName, ti);
+  }
+
   // Note: JVM.registerStartupClass() must be kept in sync
   public void registerClass (ThreadInfo ti){
-    // ti might be null if we are still in main thread creation
-
-    if (sei == null){
-      // do this recursively for superclasses and interfaceNames
-      if (superClass != null) {
-        superClass.registerClass(ti);
-      }
-
-      for (String ifcName : interfaceNames) {
-        ClassInfo ici = getResolvedClassInfo(ifcName); // already resolved at this point
-        ici.registerClass(ti);
-      }
-
-      logger.finer("registering class: ", name);
-
-      // register ourself in the static area
-      StaticArea sa = JVM.getVM().getStaticArea();
-      sei = sa.addClass(this, ti);
-
-      createClassObject(ti);
-    }
+    classLoader.registerClass(ti, this);
   }
 
   public boolean isRegistered () {
@@ -2355,6 +2341,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     Heap heap = JVM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
     int anchor = name.hashCode(); // 2do - this should also take the ClassLoader ref into account
+    ClassInfo classClassInfo = ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo();    
     int clsObjRef = heap.newSystemObject(classClassInfo, ti, anchor);
     ElementInfo ei = heap.get(clsObjRef);
 
@@ -2364,8 +2351,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // link the class object to the StaticElementInfo
     ei.setIntField("cref", sei.getObjectRef());
 
+    // link the class object to the classloader and its StaticArea 
+    ei.setReferenceField("classLoader", classLoader.getClassLoaderObjectRef());
+
     // link the StaticElementInfo to the class object
     sei.setClassObjectRef(ei.getObjectRef());
+
+    setUniqueId();
+    classes.put(uniqueId, this);
 
     return ei;
   }
@@ -2376,6 +2369,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   public boolean isInitialized () {
     return ((sei != null) && (sei.getStatus() == INITIALIZED));
+  }
+
+  public boolean isResolved () {
+    return (!isObjectClassInfo() && superClass != null);
   }
 
   public boolean needsInitialization () {
@@ -2535,20 +2532,73 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return new HashMap<String, MethodInfo>(0);
   }
 
-  protected ClassInfo loadSuperClass (String superName) {
-    if (this == objectClassInfo) {
-      return null;
-    } else {
+  /**
+   * It loads the class superclass and its interfaces, and it sets all the class
+   * data that depents on the superclass such as instance fields (their offsets
+   * is calculated based on superClass data)
+   */
+  protected void resolveClass() {
+    classLoader.resolveClass(this);
 
-      logger.finer("resolving superclass: ", superName, " of ", name);
+    computeInheritedAnnotations(superClass);
+    resolveInstanceFields();
 
-      ClassInfo sci = getResolvedClassInfo(superName);
-      if (sci == null){
-        throw new NoClassInfoException(superName);
-      }
+    isWeakReference = isWeakReference0();
+    isEnum = isEnum0();
 
-      return sci;
+    if (superClass != null){
+      // flatten so that it becomes more efficient to process at sweep time
+        releaseActions = superClass.releaseActions;
     }
+
+    JVM.getVM().notifyClassLoaded(this);
+  }
+
+  /**
+   * This method is called by the following bytecode instructions:
+   * anewarray, checkcast, getstatic, instanceof, invokespecial, 
+   * invokestatic, ldc, ldc_w, multianewarray, new, and putstatic
+   * 
+   * It loads the class referenced by these instructions and adds it to the 
+   * resolvedClasses map of the classLoader
+   */
+  public ClassInfo resolveReferencedClass(String cname) {
+    if(name.equals(cname)) {
+      return this;
+    }
+
+    // if the class has been already resolved just return it
+    ClassInfo ci = classLoader.getAlreadyResolvedClassInfo(cname);
+    if(ci != null) {
+      return ci;
+    }
+ 
+    // The defining class loader of the class initiate the load of referenced classes
+    ci = classLoader.loadClass(cname);
+    classLoader.addResolvedClass(ci);
+
+    return ci;
+  }
+
+  protected void resolveInstanceFields() {
+    int idx = 0, off = 0;
+
+    if(superClass != null) {
+      off = superClass.instanceDataSize;
+      idx = superClass.nInstanceFields;
+    }
+
+    for(FieldInfo fi: iFields) {
+      fi.setFieldIndex(idx);
+      fi.setStorageOffset(off);
+      idx++;
+      off += fi.getStorageSize();
+    }
+
+    instanceDataSize = computeInstanceDataSize();
+    instanceDataOffset = computeInstanceDataOffset();
+    nInstanceFields = (superClass != null) ?
+    superClass.nInstanceFields + iFields.length : iFields.length;
   }
 
   public String toString() {
@@ -2560,16 +2610,41 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     // we are only interested in non-empty method bodies, Object.finalize()
     // is a dummy
-    if ((mi != null) && (mi.getClassInfo() != objectClassInfo)) {
+    if ((mi != null) && (!mi.getClassInfo().isObjectClassInfo())) {
       return mi;
     }
 
     return null;
   }
 
+  private boolean isObjectClassInfo0 () {
+	if (name.equals("java.lang.Object")) {
+	  return true;
+	}
+	return false;
+  }
+
+  private boolean isStringClassInfo0 () {
+    if(name.equals("java.lang.String")) {
+      return true;
+    }
+    return false;
+  }
+
+  private boolean isRefClassInfo0 () {
+    if(name.equals("java.lang.ref.Reference")) {
+      return true;
+    }
+    return false;
+  }
+
   private boolean isWeakReference0 () {
-    for (ClassInfo ci = this; ci != objectClassInfo; ci = ci.superClass) {
-      if (ci == weakRefClassInfo) {
+	if(name.equals("java.lang.ref.WeakReference")) {
+      return true;
+	}
+
+    for (ClassInfo ci = this; !ci.isObjectClassInfo(); ci = ci.superClass) {
+      if (ci.isWeakReference()) {
         return true;
       }
     }
@@ -2578,42 +2653,17 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   private boolean isEnum0 () {
-    for (ClassInfo ci = this; ci != objectClassInfo; ci = ci.superClass) {
-      if (ci == enumClassInfo) {
+	if(name.equals("java.lang.Enum")) {
+      return true;
+	}
+
+    for (ClassInfo ci = this; !ci.isObjectClassInfo(); ci = ci.superClass) {
+      if (ci.isEnum()) {
         return true;
       }
     }
 
     return false;
-  }
-
-  public static String findResource (String resourceName){
-    // would have been nice to just delegate this to the BCEL ClassPath, but
-    // unfortunately BCELs getPath() doesn't indicate at all if the resource
-    // is in a jar :<
-    try {
-    for (String cpe : getClassPathElements()) {
-      if (cpe.endsWith(".jar")){
-        JarFile jar = new JarFile(cpe);
-        JarEntry e = jar.getJarEntry(resourceName);
-        if (e != null){
-          File f = new File(cpe);
-          return "jar:" + f.toURI().toURL().toString() + "!/" + resourceName;
-        }
-      } else {
-        File f = new File(cpe, resourceName);
-        if (f.exists()){
-          return f.toURI().toURL().toString();
-        }
-      }
-    }
-    } catch (MalformedURLException mfx){
-      return null;
-    } catch (IOException iox){
-      return null;
-    }
-
-    return null;
   }
 
   //--- the generic attribute API
@@ -2676,7 +2726,91 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return ObjectList.typedIterator(attr, attrType);
   }
 
-  // -- end attrs --  
+  // -- end attrs -- 
+
+  /**
+   * It creates an instance from a original ClassInfo instance. It doesn't copy sei & 
+   * uniqueId.
+   * 
+   * It is used for the cases where cl tries to load a class that the original version 
+   * of which has been loaded by some other classloader.
+   */
+  public ClassInfo getInstanceFor(ClassLoaderInfo cl) {
+    ClassInfo ci;
+
+    try {
+      ci = (ClassInfo)super.clone();
+      cl.resolveClass(ci);
+
+      ci.uniqueId = -1;
+      ci.sei = null;
+
+      ci.annotations = annotations;
+
+      ci.name = name;
+      ci.signature = signature;
+      ci.genericSignature = genericSignature;
+      ci.classLoader = cl;
+
+      ci.isClass = isClass;
+      ci.isWeakReference = isWeakReference;
+      ci.isObjectClassInfo = isObjectClassInfo;
+      ci.isStringClassInfo = isStringClassInfo;
+      ci.isRefClassInfo = isRefClassInfo;
+      ci.isArray = isArray;
+      ci.isEnum = isEnum;
+      ci.isReferenceArray = isReferenceArray;
+      ci.isAbstract = isAbstract;
+      ci.isBuiltin = isBuiltin;
+      ci.modifiers = modifiers;
+
+      ci.finalizer = finalizer;
+      ci.elementInfoAttrs = elementInfoAttrs;
+
+      ci.methods = new LinkedHashMap<String,MethodInfo>(methods);
+
+      ci.iFields = iFields.clone();
+      ci.instanceDataSize = instanceDataSize;
+      ci.instanceDataOffset = instanceDataOffset;
+      ci.nInstanceFields = nInstanceFields;
+
+      ci.sFields = sFields.clone();
+      ci.staticDataSize = staticDataSize;
+
+      ci.enclosingClassName = enclosingClassName;
+      ci.enclosingMethodName = enclosingMethodName;
+
+      ci.innerClassNames = innerClassNames.clone();
+      for(int i=0; i<innerClassNames.length; i++) {
+        ci.innerClassNames[i] = innerClassNames[i];
+      }
+
+      ci.superClassName = superClassName;
+      ci.interfaceNames = interfaceNames;
+      ci.allInterfaces = allInterfaces;
+
+      ci.packageName = packageName;
+      ci.sourceFileName = sourceFileName;
+
+      // we are going to get rid of this after classloader implementation?
+      ci.container = container;
+
+      if(nativePeer != null) {
+        ci.nativePeer = nativePeer.getInstanceFor(ci);
+      }
+
+      ci.source = source;
+
+      ci.attr = attr;
+      ci.setAssertionStatus();
+      ci.releaseActions = releaseActions;
+
+    } catch (CloneNotSupportedException cnsx){
+      cnsx.printStackTrace();
+      return null;
+    }
+    return ci;
+  }
 }
 
 

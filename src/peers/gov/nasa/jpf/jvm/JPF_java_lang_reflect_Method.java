@@ -84,31 +84,25 @@ public class JPF_java_lang_reflect_Method {
   }
   
   static int getParameterTypes( MJIEnv env, MethodInfo mi) {
-    try {
-      ThreadInfo ti = env.getThreadInfo();
-      String[] argTypeNames = mi.getArgumentTypeNames();
-      int[] ar = new int[argTypeNames.length];
+    ThreadInfo ti = env.getThreadInfo();
+    String[] argTypeNames = mi.getArgumentTypeNames();
+    int[] ar = new int[argTypeNames.length];
 
-      for (int i = 0; i < argTypeNames.length; i++) {
-        ClassInfo ci = ClassInfo.getResolvedClassInfo(argTypeNames[i]);
-        if (!ci.isRegistered()) {
-          ci.registerClass(ti);
-        }
-
-        ar[i] = ci.getClassObjectRef();
+    for (int i = 0; i < argTypeNames.length; i++) {
+      ClassInfo ci = ClassInfo.getResolvedClassInfo(argTypeNames[i]);
+      if (!ci.isRegistered()) {
+        ci.registerClass(ti);
       }
 
-      int aRef = env.newObjectArray("Ljava/lang/Class;", argTypeNames.length);
-      for (int i = 0; i < argTypeNames.length; i++) {
-        env.setReferenceArrayElement(aRef, i, ar[i]);
-      }
-
-      return aRef;
-
-    } catch (NoClassInfoException cx){
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
-      return MJIEnv.NULL;
+      ar[i] = ci.getClassObjectRef();
     }
+
+    int aRef = env.newObjectArray("Ljava/lang/Class;", argTypeNames.length);
+    for (int i = 0; i < argTypeNames.length; i++) {
+      env.setReferenceArrayElement(aRef, i, ar[i]);
+    }
+
+    return aRef;
   }
   
   public static int getParameterTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef){
@@ -116,35 +110,30 @@ public class JPF_java_lang_reflect_Method {
   }
   
   static int getExceptionTypes(MJIEnv env, MethodInfo mi) {
-    try {
-      ThreadInfo ti = env.getThreadInfo();
-      String[] exceptionNames = mi.getThrownExceptionClassNames();
-       
-      if (exceptionNames == null) {
-        exceptionNames = new String[0];
-      }
-       
-      int[] ar = new int[exceptionNames.length];
-       
-      for (int i = 0; i < exceptionNames.length; i++) {
-        ClassInfo ci = ClassInfo.getResolvedClassInfo(exceptionNames[i]);
-        if (!ci.isRegistered()) {
-          ci.registerClass(ti);
-        }
-         
-        ar[i] = ci.getClassObjectRef();
-      }
-       
-      int aRef = env.newObjectArray("Ljava/lang/Class;", exceptionNames.length);
-      for (int i = 0; i < exceptionNames.length; i++) {
-        env.setReferenceArrayElement(aRef, i, ar[i]);
-      }
-       
-      return aRef;
-    } catch (NoClassInfoException cx) {
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
-      return MJIEnv.NULL;
+    ThreadInfo ti = env.getThreadInfo();
+    String[] exceptionNames = mi.getThrownExceptionClassNames();
+     
+    if (exceptionNames == null) {
+      exceptionNames = new String[0];
     }
+     
+    int[] ar = new int[exceptionNames.length];
+     
+    for (int i = 0; i < exceptionNames.length; i++) {
+      ClassInfo ci = ClassInfo.getResolvedClassInfo(exceptionNames[i]);
+      if (!ci.isRegistered()) {
+        ci.registerClass(ti);
+      }
+       
+      ar[i] = ci.getClassObjectRef();
+    }
+     
+    int aRef = env.newObjectArray("Ljava/lang/Class;", exceptionNames.length);
+    for (int i = 0; i < exceptionNames.length; i++) {
+      env.setReferenceArrayElement(aRef, i, ar[i]);
+    }
+     
+    return aRef;
   }
   
   public static int getExceptionTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef) {
@@ -155,18 +144,12 @@ public class JPF_java_lang_reflect_Method {
     MethodInfo mi = getMethodInfo(env, objRef);
     ThreadInfo ti = env.getThreadInfo();
 
-    try {
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(mi.getReturnTypeName());
-      if (!ci.isRegistered()) {
-        ci.registerClass(ti);
-      }
-
-      return ci.getClassObjectRef();
-
-    } catch (NoClassInfoException cx){
-      env.throwException("java.lang.NoClassDefFoundError", cx.getMessage());
-      return MJIEnv.NULL;
+    ClassInfo ci = ClassInfo.getResolvedClassInfo(mi.getReturnTypeName());
+    if (!ci.isRegistered()) {
+      ci.registerClass(ti);
     }
+
+    return ci.getClassObjectRef();
   }
   
   public static int getDeclaringClass____Ljava_lang_Class_2 (MJIEnv env, int objRef){
@@ -479,14 +462,13 @@ public class JPF_java_lang_reflect_Method {
     }
   }
 
-  
   public static int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                                            int objRef, int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
     MethodInfo mi = getMethodInfo(env, mthRef);
     StackFrame frame = ti.getReturnedDirectCall();
     
-    if (frame == null){ // first time
+    if (frame == null || !frame.getMethodInfo().getName().equals(MethodInfo.REFLECTION_ID)){ // first time
       ClassInfo calleeClass = mi.getClassInfo();
       ElementInfo mth = ti.getElementInfo(mthRef);
       boolean accessible = (Boolean) mth.getFieldValueObject("isAccessible");
@@ -546,6 +528,7 @@ public class JPF_java_lang_reflect_Method {
     }
   }
   
+
   // this one has to collect annotations upwards in the inheritance chain
   static int getAnnotations (MJIEnv env, MethodInfo mi){
     String mname = mi.getName();

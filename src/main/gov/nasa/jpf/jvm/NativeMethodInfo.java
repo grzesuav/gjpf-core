@@ -189,6 +189,13 @@ public class NativeMethodInfo extends MethodInfo {
       return ti.createAndThrowException("java.lang.IllegalAccessException",
                                         "calling " + ci.getName() + '.' + getName());
     } catch (InvocationTargetException itx) {
+
+      // if loading a class throws an exception
+      if(itx.getTargetException() instanceof ClassInfoException) {
+        ClassInfoException cie = (ClassInfoException) itx.getTargetException();
+        return ti.createAndThrowException(cie.getExceptionClass(), cie.getMessage());
+      }
+
       if (itx.getTargetException() instanceof UncaughtException) {  // Native methods could 
         throw (UncaughtException) itx.getTargetException();
       } 

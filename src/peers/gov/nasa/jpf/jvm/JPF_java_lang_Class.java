@@ -132,7 +132,7 @@ public class JPF_java_lang_Class {
     // note this does NOT return the box class (e.g. java.lang.Integer), which
     // is a normal, functional class, but a primitive class (e.g. 'int') that
     // is rather a strange beast (not even Object derived)
-    StaticArea        sa = env.getStaticArea();
+    StaticArea        sa = env.getStaticArea(rcls);
     StaticElementInfo ei = sa.get(clsName);
     int               cref = ei.getClassObjectRef();
     env.setBooleanField(cref, "isPrimitive", true);
@@ -141,7 +141,7 @@ public class JPF_java_lang_Class {
 
   public static boolean desiredAssertionStatus____Z (MJIEnv env, int robj) {
     ClassInfo ci = env.getReferredClassInfo(robj);
-    return ci.areAssertionsEnabled();
+    return ci.desiredAssertionStatus();
   }
 
   public static int getClassObject (MJIEnv env, ClassInfo ci){
@@ -162,14 +162,34 @@ public class JPF_java_lang_Class {
   public static int forName__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
                                                                        int rcls,
                                                                        int clsNameRef) {
-    String            clsName = env.getStringObject(clsNameRef);
-    
-    ClassInfo ci = ClassInfo.tryGetResolvedClassInfo(clsName);
-    if (ci == null){
-      env.throwException("java.lang.ClassNotFoundException", clsName);
+    String clsName = env.getStringObject(clsNameRef);
+
+    ThreadInfo ti = env.getThreadInfo();
+    MethodInfo mi = ti.getTopFrame().getPrevious().getMethodInfo();
+    // class of the method that includes the invocation of Class.forName() 
+    ClassInfo cls = mi.getClassInfo();
+
+    String name;
+    // for array type, the component terminal must be resolved
+    if(clsName.charAt(0)=='[') {
+      name = Types.getComponentTerminal(clsName);
+    } else{
+      name = clsName;
+    }
+
+    // make the classloader of the class including the invocation of 
+    // Class.forName() resolve the class with the given name
+    try {
+      cls.resolveReferencedClass(name);
+    } catch(LoadOnJPFRequired lre) {
+      env.repeatInvocation();
       return MJIEnv.NULL;
     }
-    
+
+    // The class obtained here is the same as the resolved one, except
+    // if it represents an array type
+    ClassInfo ci = cls.getClassLoaderInfo().getResolvedClassInfo(clsName);
+
     return getClassObject(env, ci);
   }
 
@@ -182,9 +202,8 @@ public class JPF_java_lang_Class {
   public static int newInstance____Ljava_lang_Object_2 (MJIEnv env, int robj) {
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = ti.getReturnedDirectCall();
-    String id = "[init]";
 
-    if (frame == null){
+    if (frame == null || !frame.getMethodInfo().getName().equals(MethodInfo.REFLECTION_ID)){
       ClassInfo ci = env.getReferredClassInfo(robj);   // what are we
 
       if(ci.isAbstract()){ // not allowed to instantiate
@@ -209,7 +228,7 @@ public class JPF_java_lang_Class {
           return MJIEnv.NULL;
         }
 
-        MethodInfo stub = mi.createDirectCallStub(id);
+        MethodInfo stub = mi.createDirectCallStub(MethodInfo.REFLECTION_ID);
         frame = new DirectCallStackFrame(stub, 2,0);
         frame.push( objRef, true);
         frame.dup(); // (1) cache the object ref so that the bottom half can retrieve it
@@ -222,7 +241,7 @@ public class JPF_java_lang_Class {
       }
       
     } else {
-      while (!frame.getMethodInfo().getName().equals(id)){
+      while (!frame.getMethodInfo().getName().equals(MethodInfo.REFLECTION_ID)){
         // frame was the [clinit] direct call
         frame = frame.getPrevious();
       }
@@ -240,13 +259,6 @@ public class JPF_java_lang_Class {
     } else {
       return MJIEnv.NULL;
     }
-  }
-
-  public static int getClassLoader____Ljava_lang_ClassLoader_2 (MJIEnv env, int objref){
-    // <2do> - that's a shortcut hack for now, since we don't support user defined
-    // ClassLoaders yet
-    int clRef = env.getStaticReferenceField("java.lang.ClassLoader", "systemClassLoader");
-    return clRef;
   }
 
   static int getMethod (MJIEnv env, int clsRef, ClassInfo ciMethod, String mname, int argTypesRef,
@@ -331,8 +343,9 @@ public class JPF_java_lang_Class {
       addDeclaredMethodsRec(methods,sci);
     }
 
+    ClassLoaderInfo cl = ci.getClassLoaderInfo();
     for (String ifcName : ci.getInterfaces()){
-      ClassInfo ici = ClassInfo.getResolvedClassInfo(ifcName); // has to be already defined, so no exception
+      ClassInfo ici = cl.getResolvedClassInfo(ifcName); // has to be already defined, so no exception
       addDeclaredMethodsRec(methods,ici);
     }
 
@@ -649,17 +662,12 @@ public class JPF_java_lang_Class {
     // contrary to the API doc, this only returns the interfaces directly
     // implemented by this class, not it's bases
     // <2do> this is not exactly correct, since the interfaces should be ordered
-    Set<String> ifcNames = ci.getInterfaces();
-    aref = env.newObjectArray("Ljava/lang/Class;", ifcNames.size());
-    
+    Set<ClassInfo> interfaces = ci.getInterfaceClassInfos();
+    aref = env.newObjectArray("Ljava/lang/Class;", interfaces.size());
+
     int i=0;
-    for (String ifc : ifcNames){
-      ClassInfo ici = ClassInfo.getResolvedClassInfo(ifc);
-      if (!ici.isRegistered()) {
-        ici.registerClass(ti);
-      }
-      
-      env.setReferenceArrayElement(aref, i++, ici.getClassObjectRef());
+    for (ClassInfo ifc: interfaces){
+      env.setReferenceArrayElement(aref, i++, ifc.getClassObjectRef());
     }
     
     return aref;
@@ -722,9 +730,25 @@ public class JPF_java_lang_Class {
     int aref = MJIEnv.NULL;
     ThreadInfo ti = env.getThreadInfo();
     
+    MethodInfo mi = ti.getTopFrame().getPrevious().getMethodInfo();
+    // class of the method that includes the invocation of Class.getDeclaredClasses 
+    ClassInfo cls = mi.getClassInfo();
+
+    // first resolve all the inner classes
+    int length = innerClassNames.length;
+    ClassInfo[] resolvedInnerClass = new ClassInfo[length];
+    for(int i=0; i<length; i++) {
+      try {
+        resolvedInnerClass[i] = cls.resolveReferencedClass(innerClassNames[i]);
+      } catch(LoadOnJPFRequired lre) {
+        env.repeatInvocation();
+        return MJIEnv.NULL;
+      }
+    }
+
     aref = env.newObjectArray("Ljava/lang/Class;", innerClassNames.length);
-    for (int i=0; i<innerClassNames.length; i++){
-      ClassInfo ici = ClassInfo.getResolvedClassInfo(innerClassNames[i]);
+    for (int i=0; i<length; i++){
+      ClassInfo ici = resolvedInnerClass[i];
       if (!ici.isRegistered()) {
         ici.registerClass(ti);
       }
@@ -858,5 +882,33 @@ public class JPF_java_lang_Class {
   public static boolean isMemberClass____Z (MJIEnv env, int robj){
     ClassInfo ci = env.getReferredClassInfo(robj);
     return (ci.getEnclosingClassInfo() != null) && !isLocalOrAnonymousClass(ci);
+  }
+
+  /**
+   * Append the package name prefix of the class represented by robj, if the name is not 
+   * absolute. OW, remove leading "/". 
+   */
+  public static int getResolvedName__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int robj, int resRef){
+    String rname = env.getStringObject(resRef);
+    ClassInfo ci = env.getReferredClassInfo(robj);
+    if (rname == null) {
+      return MJIEnv.NULL;
+    }
+    if (!rname.startsWith("/")) {
+      ClassInfo c = ci;
+      while (c.isArray()) {
+          c = c.getComponentClassInfo();
+      }
+      String baseName = c.getName();
+      int index = baseName.lastIndexOf('.');
+      if (index != -1) {
+        rname = baseName.substring(0, index).replace('.', '/')
+            +"/"+rname;
+      }
+    } else {
+        rname = rname.substring(1);
+    }
+
+    return env.newString(rname);
   }
 }

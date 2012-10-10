@@ -148,7 +148,9 @@ public class JVM {
   // we want a (internal) mechanism that is on-demand only, i.e. processed
   // actions are removed from the list
   protected ArrayList<Runnable> postGcActions = new ArrayList<Runnable>();
-  
+
+  protected SystemClassLoader systemClassLoader;
+
   /**
    * be prepared this might throw JPFConfigExceptions
    */
@@ -203,6 +205,7 @@ public class JVM {
   }
 
   protected void initSubsystems (Config config) {
+    ClassLoaderInfo.init(config);
     ClassInfo.init(config);
     ThreadInfo.init(config);
     ElementInfo.init(config);
@@ -256,7 +259,7 @@ public class JVM {
    * (that's a true '42')
    */
   static boolean checkModelClassAccess () {
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Class");
+    ClassInfo ci = ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo();
     return (ci.getDeclaredInstanceField("cref") != null);
   }
 
@@ -298,6 +301,7 @@ public class JVM {
    * classes used by it)
    */
   public boolean initialize () {
+    ClassInfoException cie = null;
 
     if (!checkClassName(mainClassName)) {
       log.severe("Not a valid main class: " + mainClassName);
@@ -306,41 +310,65 @@ public class JVM {
     
     // we can't do anything without a main ThreadInfo
     ThreadInfo tiMain = createMainThreadInfo();
+    systemClassLoader = createSystemClassLoader();
 
     // from here, we get into some bootstrapping process
     //  - first, we have to load class structures (fields, supers, interfaces..)
     //  - second, we have to create a thread (so that we have a stack)
     //  - third, with that thread we have to create class objects
     //  - forth, we have to push the clinit methods on this stack
-    List<ClassInfo> clinitQueue = registerStartupClasses(tiMain);
+    try {
+      systemClassLoader.registerStartupClasses(this, tiMain);
 
-    if (clinitQueue== null) {
-      log.severe("error initializing startup classes (check 'classpath' and 'target')");
-      return false;
+      if (systemClassLoader.getStartupQueue() == null) {
+        log.severe("error initializing startup classes (check 'classpath' and 'target')");
+        return false;
+      }
+
+      if (!checkModelClassAccess()) {
+        log.severe( "error during VM runtime initialization: wrong model classes (check 'classpath')");
+        return false;
+      }
+    } catch (ClassInfoException e) {
+      // If loading a system class is failed, bail out immediately
+      if(e.checkSystemClassFailure()) {
+        throw new JPFException("loading the system class " + e.getFaildClass() + " faild");
+      }
+
+      // If loading of a non-system class failed, just store it & throw a JPF exception
+      // once the main thread is created
+      cie = e;
     }
 
-    if (!checkModelClassAccess()) {
-      log.severe( "error during VM runtime initialization: wrong model classes (check 'classpath')");
-      return false;
+    try {
+      // Collections.<clinit> yet because there's no stack before we have a tiMain
+      // thread. Let's hope none of the init classes creates threads in their <clinit>.
+      initMainThread(tiMain);
+
+      if(cie != null) {
+        tiMain.getEnv().throwException(cie.getExceptionClass(), cie.getMessage());
+        return false;
+      }
+
+      // now that we have a tiMain thread, we can finish the startup class init
+      systemClassLoader.createStartupClassObjects(tiMain);
+
+      // pushClinit the call stack with the clinits we've picked up, followed by tiMain()
+      pushMainEntry(tiMain);
+      systemClassLoader.pushClinits(tiMain);
+
+      initSystemState(tiMain);
+      registerThreadListCleanup();
+    } catch (ClassInfoException e) {
+      // If the main thread is not created due to an error thrown while loading a class, 
+      // bail out immediately
+      if(tiMain == null) {
+        throw new JPFException("loading of the class " + e.getFaildClass() + " faild");
+      } else{
+        tiMain.getEnv().throwException(e.getExceptionClass(), e.getMessage());
+        return false;
+      }
     }
-
-    // create the thread for the tiMain class
-    // note this is incomplete for Java 1.3 where Thread ctors rely on tiMain's
-    // 'inheritableThreadLocals' being set to 'Collections.EMPTY_SET', which
-    // pulls in the whole Collections/Random smash, but we can't execute the
-    // Collections.<clinit> yet because there's no stack before we have a tiMain
-    // thread. Let's hope none of the init classes creates threads in their <clinit>.
-    initMainThread(tiMain);
-
-    // now that we have a tiMain thread, we can finish the startup class init
-    createStartupClassObjects(clinitQueue, tiMain);
-
-    // pushClinit the call stack with the clinits we've picked up, followed by tiMain()
-    pushMainEntry(tiMain);
-    pushClinits(clinitQueue, tiMain);
-
-    initSystemState(tiMain);
-    registerThreadListCleanup();
     
     return true;
   }
@@ -362,7 +390,32 @@ public class JVM {
     transitionOccurred = true;
   }
 
-  
+  /**
+   * Creates & returns a system classLoader which is root in the classLaoders 
+   * hierarchy
+   */
+  protected SystemClassLoader createSystemClassLoader() {
+    //--- create the ClassLoaderInfo
+    SystemClassLoader cl = new SystemClassLoader(this);
+
+    // Note: that has to be set before loading java.lang.ClassLoader, otherwise its
+    // super class cannot be loaded
+    systemClassLoader = cl;
+
+    try {
+      //--- java.lang.ClassLoader is registered later along with other startup classes
+      ClassInfo ci = cl.getResolvedClassInfo("java.lang.ClassLoader");
+
+      //--- create java.lang.ClassLoader object corresponding to the systemClassLoader
+      cl.createClassLoaderObject(ci, null, ThreadInfo.mainThread);
+    } catch(ClassInfoException cie) {
+      throw new JPFException("loading of the class " + cie.getFaildClass() + 
+                                  " throws " + cie.getExceptionClass());
+    }
+
+    return cl;
+  }
+
   /**
    * be careful - everything that's executed from within here is not allowed
    * to depend on static class init having been done yet
@@ -425,7 +478,7 @@ public class JVM {
   }
 
   protected void registerThreadListCleanup(){
-    ClassInfo ciThread = ClassInfo.tryGetResolvedClassInfo("java.lang.Thread");
+    ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
     assert ciThread != null : "java.lang.Thread not loaded yet";
     
     ciThread.addReleaseAction( new ReleaseAction(){
@@ -454,130 +507,6 @@ public class JVM {
       }
       
       postGcActions.clear();
-    }
-  }
-  
-  protected List<ClassInfo> registerStartupClasses (ThreadInfo ti) {
-    ArrayList<String> list = new ArrayList<String>(128);
-    ArrayList<ClassInfo> queue = new ArrayList<ClassInfo>(32);
-
-    // bare essentials
-    list.add("java.lang.Object");
-    list.add("java.lang.Class");
-    list.add("java.lang.ClassLoader");
-
-    // the builtin types (and their arrays)
-    list.add("boolean");
-    list.add("[Z");
-    list.add("byte");
-    list.add("[B");
-    list.add("char");
-    list.add("[C");
-    list.add("short");
-    list.add("[S");
-    list.add("int");
-    list.add("[I");
-    list.add("long");
-    list.add("[J");
-    list.add("float");
-    list.add("[F");
-    list.add("double");
-    list.add("[D");
-    list.add("void");
-
-    // the box types
-    list.add("java.lang.Boolean");
-    list.add("java.lang.Character");
-    list.add("java.lang.Short");
-    list.add("java.lang.Integer");
-    list.add("java.lang.Long");
-    list.add("java.lang.Float");
-    list.add("java.lang.Double");
-
-    // the cache for box types
-    list.add("gov.nasa.jpf.BoxObjectCaches");
-
-    // standard system classes
-    list.add("java.lang.String");
-    list.add("java.lang.ThreadGroup");
-    list.add("java.lang.Thread");
-    list.add("java.lang.Thread$State");
-    list.add("java.io.PrintStream");
-    list.add("java.io.InputStream");
-    list.add("java.lang.System");
-
-    // we could be more fancy and use wildcard patterns and the current classpath
-    // to specify extra classes, but this could be VERY expensive. Projected use
-    // is mostly to avoid static init of single classes during the search
-    String[] extraStartupClasses = config.getStringArray("vm.extra_startup_classes");
-    if (extraStartupClasses != null) {      
-      for (String extraCls : extraStartupClasses) {
-        list.add(extraCls);
-      }
-    }
-
-    // last not least the application main class
-    list.add(mainClassName);
-
-    // now resolve all the entries in the list and queue the corresponding ClassInfos
-    for (String clsName : list) {
-      ClassInfo ci = ClassInfo.tryGetResolvedClassInfo(clsName);
-      if (ci != null) {
-        registerStartupClass(ci, queue, ti);
-      } else {
-        log.severe("can't find startup class ", clsName);
-        return null;
-      }
-    }
-
-    return queue;
-  }
-  
-
-  // note this has to be in order - we don't want to init a derived class before
-  // it's parent is initialized
-  // This code must be kept in sync with ClassInfo.registerClass()
-  void registerStartupClass (ClassInfo ci, List<ClassInfo> queue, ThreadInfo ti) {
-        
-    if (!queue.contains(ci)) {
-      if (ci.getSuperClass() != null) {
-        registerStartupClass( ci.getSuperClass(), queue, ti);
-      }
-      
-      for (String ifcName : ci.getAllInterfaces()) {
-        ClassInfo ici = ClassInfo.getResolvedClassInfo(ifcName);
-        registerStartupClass(ici, queue, ti);
-      }
-
-      ClassInfo.logger.finer("registering class: ", ci.getName());
-      queue.add(ci);
-
-      StaticArea sa = getStaticArea();
-      if (!sa.containsClass(ci.getName())){
-        sa.addClass(ci, ti);
-      }
-    }
-  }
-  
-  protected void createStartupClassObjects (List<ClassInfo> queue, ThreadInfo ti){
-    for (ClassInfo ci : queue) {
-      ci.createClassObject(ti);
-    }
-  }
-
-  protected void pushClinits (List<ClassInfo> queue, ThreadInfo ti) {
-    // we have to traverse backwards, since what gets pushed last is executed first
-    for (ListIterator<ClassInfo> it=queue.listIterator(queue.size()); it.hasPrevious(); ) {
-      ClassInfo ci = it.previous();
-
-      MethodInfo mi = ci.getMethod("<clinit>()V", false);
-      if (mi != null) {
-        MethodInfo stub = mi.createDirectCallStub("[clinit]");
-        StackFrame frame = new DirectCallStackFrame(stub);
-        ti.pushFrame(frame);
-      } else {
-        ci.setInitialized();
-      }
     }
   }
 
@@ -1494,7 +1423,7 @@ public class JVM {
   }
   
   public StaticElementInfo getClassReference (String name) {
-    return ss.ks.statics.get(name);
+    return ss.ks.getCurrentStaticArea().get(name);
   }
 
   public void print (String s) {
@@ -2005,6 +1934,10 @@ public class JVM {
     error_id = 0;
   }
 
+  public SystemClassLoader getSystemClassLoader() {
+    return systemClassLoader;
+  }
+
   public Heap getHeap() {
     return ss.getHeap();
   }
@@ -2032,13 +1965,16 @@ public class JVM {
   public boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti){
     return getThreadList().hasOnlyDaemonRunnablesOtherThan(ti);
   }
-  
+
+  public void registerClassLoader(ClassLoaderInfo cl) {
+    this.getKernelState().addClassLoader(cl);
+  }
+
   public int registerThread (ThreadInfo ti){
     getKernelState().changed();
     return getThreadList().add(ti);    
   }
-  
-  
+
   public boolean isAtomic() {
     return ss.isAtomic();
   }
@@ -2047,10 +1983,23 @@ public class JVM {
    * same for "loaded classes", but be advised it will probably go away at some point
    */
   public StaticArea getStaticArea () {
-    return ss.ks.statics;
+    return ss.ks.getStaticArea();
   }
 
-    
+  /**
+   * Returns the StaticArea of the current ClassLoader
+   */
+  public StaticArea getCurrentStaticArea() {
+    return ss.ks.getCurrentStaticArea();
+  }
+
+  /**
+   * Returns the ClassLoader with the given globalId
+   */
+  protected ClassLoaderInfo getClassLoader(int gid) {
+    return ss.ks.getClassLoader(gid);
+  }
+
   /**
    * <2do> this is where we will hook in a better time model
    */

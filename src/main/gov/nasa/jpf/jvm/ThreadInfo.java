@@ -747,7 +747,7 @@ public class ThreadInfo
     // fall victim to GC, and that does not cause NoUncaughtExcceptionsProperty violations
     if (throwableRef == MJIEnv.NULL){
       // if no throwable was provided (the normal case), throw a java.lang.ThreadDeath Error
-      ClassInfo cix = ClassInfo.getInitializedClassInfo("java.lang.ThreadDeath", this);
+      ClassInfo cix = ClassInfo.getInitializedSystemClassInfo("java.lang.ThreadDeath", this);
       throwableRef = createException(cix, null, MJIEnv.NULL);
     }
 
@@ -2042,7 +2042,7 @@ public class ThreadInfo
       } else {
         Heap heap = vm.getHeap();
 
-        ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.StackTraceElement");
+        ClassInfo ci = ClassInfo.getResolvedSystemClassInfo("java.lang.StackTraceElement");
         int sRef = heap.newObject(ci, ThreadInfo.this);
 
         ElementInfo  sei = heap.get(sRef);
@@ -2129,16 +2129,25 @@ public class ThreadInfo
 
   public Instruction createAndThrowException (String cname, String details) {
     try {
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(cname);
-      return createAndThrowException(ci, details);
-
-    } catch (NoClassInfoException cx){
+      ClassInfo ci = null;
       try {
-        ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.NoClassDefFoundError");
-        return createAndThrowException(ci, cx.getMessage());
-
-      } catch (NoClassInfoException cxx){
-        throw new JPFException("no java.lang.NoClassDefFoundError class");
+        ci = ClassInfo.getResolvedClassInfo(cname);
+      } catch(ClassInfoException cie) {
+        // the non-system class loader couldn't find the class, 
+        if(cie.getExceptionClass().equals("java.lang.ClassNotFoundException") &&
+        !ClassLoaderInfo.getCurrentClassLoader().isSystemClassLoader()) {
+          ci = ClassInfo.getResolvedSystemClassInfo(cname);
+        } else {
+          throw cie;
+        }
+      }
+      return createAndThrowException(ci, details);
+    } catch (ClassInfoException cie){
+      if(!cname.equals(cie.getExceptionClass())) {
+        ClassInfo ci = ClassInfo.getResolvedClassInfo(cie.getExceptionClass());
+        return createAndThrowException(ci, cie.getMessage());
+      } else {
+        throw cie;
       }
     }
   }
@@ -2253,9 +2262,13 @@ public class ThreadInfo
     vm.notifyExecuteInstruction(this, pc);
 
     if (!skipInstruction) {
-      // execute the next bytecode
-      nextPc = pc.execute(ss, ks, this);
-    }
+        // execute the next bytecode
+        try {
+          nextPc = pc.execute(ss, ks, this);
+        } catch (ClassInfoException cie) {
+          nextPc = this.createAndThrowException(cie.getExceptionClass(), cie.getMessage());
+        }
+      }
 
     // we also count the skipped ones
     executedInstructions++;
@@ -2298,7 +2311,11 @@ public class ThreadInfo
       log.fine( pc.getMethodInfo().getFullName() + " " + pc.getPosition() + " : " + pc);
     }
 
-    nextPc = pc.execute(ss, ks, this);
+    try {
+        nextPc = pc.execute(ss, ks, this);
+      } catch (ClassInfoException cie) {
+        nextPc = this.createAndThrowException(cie.getExceptionClass(), cie.getMessage());
+      }
 
     // we did not return from the last frame stack
     if (top != null) { // <2do> should probably bomb otherwise
@@ -2983,7 +3000,7 @@ public class ThreadInfo
 
       // that means we have to turn the exception into an InvocationTargetException
       if (mi.isReflectionCallStub()) {
-        ci               = ClassInfo.getInitializedClassInfo("java.lang.reflect.InvocationTargetException", this);
+        ci               = ClassInfo.getInitializedSystemClassInfo("java.lang.reflect.InvocationTargetException", this);
         exceptionObjRef  = createException(ci, cname, exceptionObjRef);
         cname            = ci.getName();
         ei               = heap.get(exceptionObjRef);

@@ -58,7 +58,6 @@ public class MJIEnv {
   MethodInfo              mi;
   ThreadInfo              ti;
   Heap                    heap;
-  StaticArea              sa;
 
   // those are various attributes set by the execution. note that
   // NativePeer.invoke never gets recursive in a roundtrip (at least if
@@ -79,7 +78,6 @@ public class MJIEnv {
     // this thread (where any access to the heap or sa would bomb)
     vm = ti.getVM();
     heap = vm.getHeap();
-    sa = vm.getStaticArea();
 
     exceptionRef = NULL;
   }
@@ -1349,7 +1347,7 @@ public class MJIEnv {
     ElementInfo ei = heap.get(clsObjRef);
     int         cref = ei.getIntField("cref");
 
-    ElementInfo cei = sa.get(cref);
+    ElementInfo cei = getStaticArea(clsObjRef).get(cref);
 
     return cei;
   }
@@ -1360,7 +1358,7 @@ public class MJIEnv {
 
   public ClassInfo getReferredClassInfo (int clsObjRef) {
     int         idx = getIntField(clsObjRef, "cref");
-    StaticArea  sa = getStaticArea();
+    StaticArea  sa = getStaticArea(clsObjRef);
     ElementInfo sei = sa.get(idx);
 
     return sei.getClassInfo();
@@ -1434,9 +1432,28 @@ public class MJIEnv {
   public Instruction getInstruction () {
     return ti.getPC();
   }
-  
-  StaticArea getStaticArea () {
-    return ti.getVM().getStaticArea();
+
+  /**
+   * It returns the StaticArea holding the given class
+   */
+  StaticArea getStaticArea (int clsObjRef) {
+    ElementInfo ei = getElementInfo(clsObjRef);
+    int clObjRef = ei.getReferenceField("classLoader");
+    ClassLoaderInfo cl = getClassLoaderInfo(clObjRef);
+    return cl.getStaticArea();
+  }
+
+  /**
+   * It returns the ClassLoaderInfo corresponding to the given classloader object
+   * reference
+   */
+  public ClassLoaderInfo getClassLoaderInfo(int clObjRef) {
+    if(clObjRef == MJIEnv.NULL) {
+      return null;
+    }
+
+    int gid = heap.get(clObjRef).getIntField("clRef");
+    return getVM().getClassLoader(gid);
   }
 
   public SystemState getSystemState () {
@@ -1521,7 +1538,7 @@ public class MJIEnv {
       String eCls = ev.getEnumClassName();
       String eConst = ev.getEnumConstName();
 
-      ClassInfo eci = ClassInfo.tryGetResolvedClassInfo(eCls);
+      ClassInfo eci = ClassInfo.getResolvedClassInfo(eCls);
       if (!eci.isInitialized()){
         throw new ClinitRequired(eci);
       }

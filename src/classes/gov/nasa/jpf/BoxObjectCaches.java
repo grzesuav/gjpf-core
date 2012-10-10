@@ -20,7 +20,7 @@
 package gov.nasa.jpf;
 
 /**
- * @author Nastaran
+ * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
  *
  * Refereces to the caches for the types Byte, Character, Short, Integer, 
  * Long.

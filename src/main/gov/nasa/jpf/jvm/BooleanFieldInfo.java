@@ -33,6 +33,10 @@ public class BooleanFieldInfo extends SingleSlotFieldInfo {
      super(name, "Z", modifiers, ci, idx, off);
   }
 
+  public BooleanFieldInfo (String name, int modifiers, ClassInfo ci) {
+     super(name, "Z", modifiers, ci);
+  }
+
   public void setConstantValue(Object constValue){
     if (constValue instanceof Integer){
       cv = constValue;

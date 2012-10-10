@@ -35,6 +35,11 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
     super(name, type, modifiers, ci, idx, off);
   }
 
+  public ReferenceFieldInfo (String name, String type, int modifiers,
+                             ClassInfo ci) {
+    super(name, type, modifiers, ci);
+  }
+
   public String valueToString (Fields f) {
     int i = f.getIntValue(storageOffset);
     if (i == -1) {
