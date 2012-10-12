@@ -370,6 +370,8 @@ public class JVM {
       }
     }
     
+    notifyVMInitialized();
+    
     return true;
   }
 
@@ -596,6 +598,20 @@ public class JVM {
     } else {
       return jpf.getReporter().hasToReportOutput(); // implicilty required
     }
+  }
+  
+  protected void notifyVMInitialized () {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].vmInitialized(this);
+      }
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during vmInitialized() notification", t);
+    }    
   }
 
   protected void notifyChoiceGeneratorRegistered (ChoiceGenerator<?>cg, ThreadInfo ti) {

@@ -34,6 +34,12 @@ import gov.nasa.jpf.classfile.ClassFile;
 public interface VMListener extends JPFListener {
   
   /**
+   * VM got initialized (but search is not yet running). This can be used to
+   * do type initialization in listeners, since the ClassLoader mechanism is now functional
+   */
+  void vmInitialized (JVM vm);
+  
+  /**
    * JVM is about to execute the next instruction
    */
   void executeInstruction (JVM vm);

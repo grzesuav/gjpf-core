@@ -50,6 +50,7 @@ public abstract class PropertyListenerAdapter extends GenericProperty implements
   }
 
   //--- the VMListener interface
+  public void vmInitialized(JVM vm) {}
   public void instructionExecuted(JVM vm) {}
   public void executeInstruction(JVM vm) {}
   public void threadStarted(JVM vm) {}

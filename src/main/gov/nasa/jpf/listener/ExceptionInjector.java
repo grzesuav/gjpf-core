@@ -111,7 +111,7 @@ public class ExceptionInjector extends ListenerAdapter {
       this.ci = ci;
       this.details = details;
     }
-
+    
     public String toString() {
       if (details == null){
         return ci.getName();
@@ -164,19 +164,7 @@ public class ExceptionInjector extends ListenerAdapter {
 
 
   public ExceptionInjector (Config config, JPF jpf){
-
-    throwFirst = config.getBoolean("ei.throw_first", false);
-    String[] xSpecs = config.getStringArray("ei.exception", new char[] {';'});
-
-    if (xSpecs != null){
-      for (String xSpec : xSpecs){
-        if (!parseException(xSpec)){
-          throw new JPFConfigException("invalid exception spec: " + xSpec);
-        }
-      }
-    }
-
-    printEntries();
+    // since we need to resolve ClassInfos, init is deferred until VM is initialized
   }
 
   boolean parseException (String xSpec){
@@ -374,6 +362,23 @@ public class ExceptionInjector extends ListenerAdapter {
     }
   }
 
+  public void vmInitialized (JVM vm) {
+    Config config = vm.getConfig();
+    
+    throwFirst = config.getBoolean("ei.throw_first", false);
+    String[] xSpecs = config.getStringArray("ei.exception", new char[] {';'});
+
+    if (xSpecs != null){
+      for (String xSpec : xSpecs){
+        if (!parseException(xSpec)){
+          throw new JPFConfigException("invalid exception spec: " + xSpec);
+        }
+      }
+    }
+
+    printEntries();
+  }
+  
   // for debugging purposes
   void printEntries () {
     for (ExceptionEntry e : targetClasses.values()){
