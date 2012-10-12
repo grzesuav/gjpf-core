@@ -84,10 +84,11 @@ public class JPF_java_lang_reflect_Constructor {
   
   public static int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                              int argsRef) {
+    String directCallId = "JPF_java_lang_reflect_Constructor.newInstance";
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = ti.getReturnedDirectCall();
 
-    if (frame == null || !frame.getMethodInfo().getName().equals(MethodInfo.REFLECTION_ID)){ // first time
+    if (frame == null || frame.getMethodInfo().getName() != directCallId){ // first time
       MethodInfo mi = getMethodInfo(env,mthRef);
       ClassInfo ci = mi.getClassInfo();
 
@@ -103,7 +104,7 @@ public class JPF_java_lang_reflect_Constructor {
       }
       
       int objRef = env.newObject(ci);
-      MethodInfo stub = mi.createDirectCallStub(MethodInfo.REFLECTION_ID);
+      MethodInfo stub = mi.createDirectCallStub( directCallId);
 
       frame = new DirectCallStackFrame(stub, stub.getMaxStack()+1, stub.getMaxLocals());
       frame.push(objRef, true);  // (1) we store the return object on the frame
@@ -119,7 +120,7 @@ public class JPF_java_lang_reflect_Constructor {
       return MJIEnv.NULL; // doesn't matter, we come back
       
     } else { // reflection call returned
-      while (!frame.getMethodInfo().getName().equals(MethodInfo.REFLECTION_ID)){
+      while (frame.getMethodInfo().getName() != directCallId){
         // frame was the [clinit] direct call
         frame = frame.getPrevious();
       }

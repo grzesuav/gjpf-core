@@ -37,9 +37,6 @@ import java.util.ArrayList;
 public class MethodInfo extends InfoObject implements Cloneable, GenericSignatureHolder  {
 
   static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.MethodInfo");
-
-  // the method name used for reflection direct calls
-  public static final String REFLECTION_ID = "[reflection]";
   
   static final int INIT_MTH_SIZE = 4096;
   protected static final ArrayList<MethodInfo> mthTable = new ArrayList<MethodInfo>(INIT_MTH_SIZE);
@@ -387,15 +384,15 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
    * NOTE - this only works in conjunction with a special StackFrame,
    * the caller has to make sure the right operands are pushed for the call arguments!
    */
-  public MethodInfo createDirectCallStub (String originator) {
-    return createCallStub(originator, DIRECT_CALL);
+  public MethodInfo createDirectCallStub (String id) {
+    return createCallStub(id, DIRECT_CALL);
   }
   public boolean isDirectCallStub() {
     return (globalId == DIRECT_CALL);
   }
 
-  public MethodInfo createReflectionCallStub() {
-    return createCallStub(REFLECTION_ID, REFLECTION_CALL);
+  public MethodInfo createReflectionCallStub (String id) {
+    return createCallStub(id, REFLECTION_CALL);
   }
   
   public boolean isReflectionCallStub() {

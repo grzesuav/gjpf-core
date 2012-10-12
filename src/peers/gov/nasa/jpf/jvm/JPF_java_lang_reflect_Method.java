@@ -464,11 +464,12 @@ public class JPF_java_lang_reflect_Method {
 
   public static int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                                            int objRef, int argsRef) {
+    String directCallId = "JPF_java_lang_reflect_Method.invoke"; 
     ThreadInfo ti = env.getThreadInfo();
     MethodInfo mi = getMethodInfo(env, mthRef);
     StackFrame frame = ti.getReturnedDirectCall();
     
-    if (frame == null || !frame.getMethodInfo().getName().equals(MethodInfo.REFLECTION_ID)){ // first time
+    if (frame == null || frame.getMethodInfo().getName() != directCallId){ // first time
       ClassInfo calleeClass = mi.getClassInfo();
       ElementInfo mth = ti.getElementInfo(mthRef);
       boolean accessible = (Boolean) mth.getFieldValueObject("isAccessible");
@@ -495,7 +496,7 @@ public class JPF_java_lang_reflect_Method {
         }
       }
       
-      MethodInfo stub = mi.createReflectionCallStub();
+      MethodInfo stub = mi.createReflectionCallStub( directCallId);
       frame = new DirectCallStackFrame(stub);
 
       if (!mi.isStatic()) {
@@ -519,7 +520,7 @@ public class JPF_java_lang_reflect_Method {
       return MJIEnv.NULL;
       
     } else { // we have returned from the direct call
-      while (!frame.getMethodInfo().getName().equals(MethodInfo.REFLECTION_ID)){
+      while (frame.getMethodInfo().getName() != directCallId){
         // frame was the [clinit] direct call
         frame = frame.getPrevious();
       }

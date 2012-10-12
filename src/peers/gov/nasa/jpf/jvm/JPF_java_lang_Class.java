@@ -200,10 +200,11 @@ public class JPF_java_lang_Class {
    * via the class object of the class to instantiate
    */
   public static int newInstance____Ljava_lang_Object_2 (MJIEnv env, int robj) {
+    String directCallId = "JPF_java_lang_Class.newInstance";
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = ti.getReturnedDirectCall();
 
-    if (frame == null || !frame.getMethodInfo().getName().equals(MethodInfo.REFLECTION_ID)){
+    if (frame == null || frame.getMethodInfo().getName() != directCallId){
       ClassInfo ci = env.getReferredClassInfo(robj);   // what are we
 
       if(ci.isAbstract()){ // not allowed to instantiate
@@ -228,7 +229,7 @@ public class JPF_java_lang_Class {
           return MJIEnv.NULL;
         }
 
-        MethodInfo stub = mi.createDirectCallStub(MethodInfo.REFLECTION_ID);
+        MethodInfo stub = mi.createDirectCallStub( directCallId);
         frame = new DirectCallStackFrame(stub, 2,0);
         frame.push( objRef, true);
         frame.dup(); // (1) cache the object ref so that the bottom half can retrieve it
@@ -241,7 +242,7 @@ public class JPF_java_lang_Class {
       }
       
     } else {
-      while (!frame.getMethodInfo().getName().equals(MethodInfo.REFLECTION_ID)){
+      while (frame.getMethodInfo().getName() != directCallId){
         // frame was the [clinit] direct call
         frame = frame.getPrevious();
       }
