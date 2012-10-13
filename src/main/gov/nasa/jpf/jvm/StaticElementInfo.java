@@ -104,6 +104,12 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     // initial attributes?
   }
   
+  @Override
+  public ElementInfo getModifiable() {
+    // TODO - this has to clone/replace this ElementInfo in the respective ClassLoader container
+    return this;
+  }
+  
   // called during ElementInfo construction
   @Override
   protected ThreadInfoSet createThreadInfoSet(ThreadInfo ti){

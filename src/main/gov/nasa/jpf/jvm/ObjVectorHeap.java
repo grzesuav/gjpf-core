@@ -174,7 +174,21 @@ public class ObjVectorHeap extends GenericHeapImpl {
   }
 
   public ElementInfo getModifiable (int ref) {
-    return get(ref);
+    
+    // ObjVectorHeap does not freeze ElementInfos
+    return get(ref); 
+    
+    /**
+    ElementInfo ei = elementInfos.get(ref);
+    
+    if (ei != null && ei.isFrozen()) {
+      ei = ei.clone();
+      ei.defreeze();
+      elementInfos.set(ref, ei);
+    }
+    
+    return ei;
+    **/
   }
     
   

@@ -124,7 +124,7 @@ public class JSONObject{
   
   public int fillObject(MJIEnv env, ClassInfo ci, ChoiceGenerator<?>[] cgs, String prefix) {
     int newObjRef = env.newObject(ci);
-    ElementInfo ei = env.getHeap().get(newObjRef);
+    ElementInfo ei = env.getHeap().getModifiable(newObjRef);
 
     // Fill all fields for this class until it has a super class
     while (ci != null) {
@@ -236,7 +236,7 @@ public class JSONObject{
     // Handle arrays of primitive types
     if (arrayElementType.equals("boolean")) {
        arrayRef = env.newBooleanArray(vals.length);
-       ElementInfo arrayEI = env.getHeap().get(arrayRef);
+       ElementInfo arrayEI = env.getHeap().getModifiable(arrayRef);
        boolean bools[] = arrayEI.asBooleanArray();
 
        for (int i = 0; i < vals.length; i++) {
@@ -244,7 +244,7 @@ public class JSONObject{
       }
     } else if (arrayElementType.equals("byte")) {
        arrayRef = env.newByteArray(vals.length);
-       ElementInfo arrayEI = env.getHeap().get(arrayRef);
+       ElementInfo arrayEI = env.getHeap().getModifiable(arrayRef);
        byte bytes[] = arrayEI.asByteArray();
 
        for (int i = 0; i < vals.length; i++) {
@@ -252,7 +252,7 @@ public class JSONObject{
       }
     } else if (arrayElementType.equals("short")) {
        arrayRef = env.newShortArray(vals.length);
-       ElementInfo arrayEI = env.getHeap().get(arrayRef);
+       ElementInfo arrayEI = env.getHeap().getModifiable(arrayRef);
        short shorts[] = arrayEI.asShortArray();
 
        for (int i = 0; i < vals.length; i++) {
@@ -260,7 +260,7 @@ public class JSONObject{
       }
     } else if (arrayElementType.equals("int")) {
       arrayRef = env.newIntArray(vals.length);
-      ElementInfo arrayEI = env.getHeap().get(arrayRef);
+      ElementInfo arrayEI = env.getHeap().getModifiable(arrayRef);
       int[] ints = arrayEI.asIntArray();
 
       for (int i = 0; i < vals.length; i++) {
@@ -268,7 +268,7 @@ public class JSONObject{
       }
     } else if (arrayElementType.equals("long")) {
       arrayRef = env.newLongArray(vals.length);
-      ElementInfo arrayEI = env.getHeap().get(arrayRef);
+      ElementInfo arrayEI = env.getHeap().getModifiable(arrayRef);
       long[] longs = arrayEI.asLongArray();
 
       for (int i = 0; i < vals.length; i++) {
@@ -276,7 +276,7 @@ public class JSONObject{
       }
     } else if (arrayElementType.equals("float")) {
       arrayRef = env.newFloatArray(vals.length);
-      ElementInfo arrayEI = env.getHeap().get(arrayRef);
+      ElementInfo arrayEI = env.getHeap().getModifiable(arrayRef);
       float[] floats = arrayEI.asFloatArray();
 
       for (int i = 0; i < vals.length; i++) {
@@ -284,7 +284,7 @@ public class JSONObject{
       }
     } else if (arrayElementType.equals("double")) {
       arrayRef = env.newDoubleArray(vals.length);
-      ElementInfo arrayEI = env.getHeap().get(arrayRef);
+      ElementInfo arrayEI = env.getHeap().getModifiable(arrayRef);
       double[] doubles = arrayEI.asDoubleArray();
 
       for (int i = 0; i < vals.length; i++) {
@@ -293,7 +293,7 @@ public class JSONObject{
     } else {
       // Not an array of primitive types
       arrayRef = env.newObjectArray(arrayElementType, vals.length);
-      ElementInfo arrayEI = env.getElementInfo(arrayRef);
+      ElementInfo arrayEI = env.getModifiableElementInfo(arrayRef);
 
       Fields fields = arrayEI.getFields();
 

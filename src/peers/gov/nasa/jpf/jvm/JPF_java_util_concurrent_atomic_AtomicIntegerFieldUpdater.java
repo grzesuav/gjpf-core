@@ -58,6 +58,7 @@ public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends A
 
     int v = ei.getIntField(fi);
     if (v == fExpect) {
+      ei = ei.getModifiable();
       ei.setIntField(fi, fUpdate);
       return true;
     } else {
@@ -79,7 +80,7 @@ public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends A
     }
 
     int fidx = env.getIntField(objRef, "fieldId");
-    ElementInfo ei = env.getElementInfo(tRef);
+    ElementInfo ei = env.getModifiableElementInfo(tRef);
     FieldInfo fi = env.getClassInfo(tRef).getInstanceField(fidx);
 
     ei.setIntField(fi, fNewValue);
@@ -111,7 +112,7 @@ public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends A
     }
 
     int fidx = env.getIntField(objRef, "fieldId");
-    ElementInfo ei = env.getElementInfo(tRef);
+    ElementInfo ei = env.getModifiableElementInfo(tRef);
     FieldInfo fi = env.getClassInfo(tRef).getInstanceField(fidx);
     int result = ei.getIntField(fi);
 
@@ -128,7 +129,7 @@ public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends A
     }
 
     int fidx = env.getIntField(objRef, "fieldId");
-    ElementInfo ei = env.getElementInfo(tRef);
+    ElementInfo ei = env.getModifiableElementInfo(tRef);
     FieldInfo fi = env.getClassInfo(tRef).getInstanceField(fidx);
     int result = ei.getIntField(fi);
 

@@ -502,7 +502,7 @@ public class JPF_java_lang_Class {
     int regIdx = JPF_java_lang_reflect_Field.registerFieldInfo(fi);
     
     int eidx = env.newObject(fci);
-    ElementInfo ei = env.getElementInfo(eidx);    
+    ElementInfo ei = env.getModifiableElementInfo(eidx);    
     ei.setIntField("regIdx", regIdx);
     
     return eidx;

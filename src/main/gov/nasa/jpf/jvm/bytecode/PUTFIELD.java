@@ -61,7 +61,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
       return ti.createAndThrowException("java.lang.NullPointerException",
                                  "referencing field '" + fname + "' on null object");
     }
-    ElementInfo ei = ti.getElementInfo(objRef);
+    ElementInfo ei = ti.getModifiableElementInfo(objRef);
     
     // check if this breaks the current transition
     // note this will also set the shared attribute of the field owner

@@ -93,7 +93,7 @@ public class JPF_sun_misc_Unsafe {
     ThreadInfo ti = env.getThreadInfo();
     int objRef = ti.getThreadObjectRef();
     int permitRef = env.getReferenceField( objRef, "permit");
-    ElementInfo ei = env.getElementInfo(permitRef);
+    ElementInfo ei = env.getModifiableElementInfo(permitRef);
 
     if (ti.isFirstStepInsn()){ // re-executed
 
@@ -150,7 +150,7 @@ public class JPF_sun_misc_Unsafe {
       
       SystemState ss = env.getSystemState();
       int permitRef = env.getReferenceField( objRef, "permit");
-      ElementInfo eiPermit = env.getElementInfo(permitRef);
+      ElementInfo eiPermit = env.getModifiableElementInfo(permitRef);
 
       if (tiParked.getLockObject() == eiPermit){
         // note that 'permit' is only used in park/unpark, so there never is more than
@@ -194,7 +194,7 @@ public class JPF_sun_misc_Unsafe {
 
   public static void putObject__Ljava_lang_Object_2JLjava_lang_Object_2__V (MJIEnv env, int unsafeRef,
                                                                             int objRef, long fieldOffset, int valRef) {
-    ElementInfo ei = env.getElementInfo(objRef);
+    ElementInfo ei = env.getModifiableElementInfo(objRef);
     if (!ei.isArray()) {
       FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
       ei.setReferenceField(fi, valRef);
@@ -235,7 +235,7 @@ public class JPF_sun_misc_Unsafe {
   
   public static void putBoolean__Ljava_lang_Object_2JZ__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, boolean val){
-    ElementInfo ei = env.getElementInfo(objRef);
+    ElementInfo ei = env.getModifiableElementInfo(objRef);
     if (!ei.isArray()) {
       FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
       ei.setBooleanField(fi, val);
@@ -265,7 +265,7 @@ public class JPF_sun_misc_Unsafe {
   
   public static void putByte__Ljava_lang_Object_2JB__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, byte val){
-    ElementInfo ei = env.getElementInfo(objRef);
+    ElementInfo ei = env.getModifiableElementInfo(objRef);
     if (!ei.isArray()) {
       FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
       ei.setByteField(fi, val);
@@ -296,7 +296,7 @@ public class JPF_sun_misc_Unsafe {
   
   public static void putChar__Ljava_lang_Object_2JC__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, char val){
-    ElementInfo ei = env.getElementInfo(objRef);
+    ElementInfo ei = env.getModifiableElementInfo(objRef);
     if (!ei.isArray()) {
       FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
       ei.setCharField(fi, val);
@@ -326,7 +326,7 @@ public class JPF_sun_misc_Unsafe {
   
   public static void putShort__Ljava_lang_Object_2JS__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, short val){
-    ElementInfo ei = env.getElementInfo(objRef);
+    ElementInfo ei = env.getModifiableElementInfo(objRef);
     if (!ei.isArray()) {
       FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
       ei.setShortField(fi, val);
@@ -354,7 +354,7 @@ public class JPF_sun_misc_Unsafe {
   
   public static void putInt__Ljava_lang_Object_2JI__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, int val){
-    ElementInfo ei = env.getElementInfo(objRef);
+    ElementInfo ei = env.getModifiableElementInfo(objRef);
     if (!ei.isArray()) {
       FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
       ei.setIntField(fi, val);
@@ -393,7 +393,7 @@ public class JPF_sun_misc_Unsafe {
 
   public static void putFloat__Ljava_lang_Object_2JF__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, float val){
-    ElementInfo ei = env.getElementInfo(objRef);
+    ElementInfo ei = env.getModifiableElementInfo(objRef);
     if (!ei.isArray()) {
       FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
       ei.setFloatField(fi, val);
@@ -423,7 +423,7 @@ public class JPF_sun_misc_Unsafe {
     
   public static void putLong__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, long val){
-    ElementInfo ei = env.getElementInfo(objRef);
+    ElementInfo ei = env.getModifiableElementInfo(objRef);
     if (!ei.isArray()) {
       FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
       ei.setLongField(fi, val);
@@ -458,7 +458,7 @@ public class JPF_sun_misc_Unsafe {
   
   public static void putDouble__Ljava_lang_Object_2JD__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, double val){
-    ElementInfo ei = env.getElementInfo(objRef);
+    ElementInfo ei = env.getModifiableElementInfo(objRef);
     if (!ei.isArray()) {
       FieldInfo fi = getRegisteredFieldInfo(fieldOffset);
       ei.setDoubleField(fi, val);
@@ -630,7 +630,7 @@ public class JPF_sun_misc_Unsafe {
       return;
     }
     
-    ElementInfo ei = env.getElementInfo(a.objRef);
+    ElementInfo ei = env.getModifiableElementInfo(a.objRef);
     ei.setByteElement(addr - a.startAdr, val);
   }
   
@@ -670,7 +670,7 @@ public class JPF_sun_misc_Unsafe {
     byte b1 = (byte)(0xff & val);
     byte b0 = (byte)(0xff & (val >>> 8));
     
-    ElementInfo ei = env.getElementInfo(a.objRef);
+    ElementInfo ei = env.getModifiableElementInfo(a.objRef);
 
     if (env.isBigEndianPlatform()){
       ei.setByteElement(addr,   b0);
@@ -728,7 +728,7 @@ public class JPF_sun_misc_Unsafe {
     byte b1 = (byte)(0xff & (val >>> 16));
     byte b0 = (byte)(0xff & (val >>> 24));    
     
-    ElementInfo ei = env.getElementInfo(a.objRef);
+    ElementInfo ei = env.getModifiableElementInfo(a.objRef);
 
     if (env.isBigEndianPlatform()){
       ei.setByteElement(addr,   b0);
@@ -807,7 +807,7 @@ public class JPF_sun_misc_Unsafe {
     byte b1 = (byte)(0xff & (val >>> 48));    
     byte b0 = (byte)(0xff & (val >>> 56));    
 
-    ElementInfo ei = env.getElementInfo(a.objRef);
+    ElementInfo ei = env.getModifiableElementInfo(a.objRef);
     int offset = addr - a.startAdr;
     
     if (env.isBigEndianPlatform()){

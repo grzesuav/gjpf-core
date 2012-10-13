@@ -42,7 +42,7 @@ public class MONITORENTER extends LockInstruction {
     }
 
     lastLockRef = objref;
-    ElementInfo ei = ks.heap.get(objref);
+    ElementInfo ei = ks.heap.getModifiable(objref);
 
     if (!ti.isFirstStepInsn()){ // check if we have a choicepoint
       if (!isLockOwner(ti, ei)){  // maybe its a recursive lock

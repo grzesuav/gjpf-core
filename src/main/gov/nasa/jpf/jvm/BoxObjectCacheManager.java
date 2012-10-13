@@ -65,13 +65,13 @@ public class BoxObjectCacheManager {
 
     int n = (byteHigh - byteLow) + 1;
     int aRef = ti.getHeap().newArray("Ljava/lang/Byte", n, ti);
-    ElementInfo ei = ti.getElementInfo(aRef);
+    ElementInfo ei = ti.getModifiableElementInfo(aRef);
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Byte");
     byte val = byteLow;
     for (int i = 0; i < n; i++) {
       int byteObj = ti.getHeap().newObject(ci, ti);
-      ti.getElementInfo(byteObj).setByteField("value", val++);
+      ti.getModifiableElementInfo(byteObj).setByteField("value", val++);
       ei.setReferenceElement(i, byteObj);
     }
 
@@ -104,12 +104,12 @@ public class BoxObjectCacheManager {
 
     int n = charHigh + 1;
     int aRef = ti.getHeap().newArray("Ljava/lang/Character", n, ti);
-    ElementInfo ei = ti.getElementInfo(aRef);
+    ElementInfo ei = ti.getModifiableElementInfo(aRef);
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Character");
     for (int i = 0; i < n; i++) {
       int charObj = ti.getHeap().newObject(ci, ti);
-      ti.getElementInfo(charObj).setCharField("value", (char) i);
+      ti.getModifiableElementInfo(charObj).setCharField("value", (char) i);
       ei.setReferenceElement(i, charObj);
     }
 
@@ -145,13 +145,13 @@ public class BoxObjectCacheManager {
 
     int n = (shortHigh - shortLow) + 1;
     int aRef = ti.getHeap().newArray("Ljava/lang/Short", n, ti);
-    ElementInfo ei = ti.getElementInfo(aRef);
+    ElementInfo ei = ti.getModifiableElementInfo(aRef);
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Short");
     short val = shortLow;
     for (int i = 0; i < n; i++) {
       int shortObj = ti.getHeap().newObject(ci, ti);
-      ti.getElementInfo(shortObj).setShortField("value", val++);
+      ti.getModifiableElementInfo(shortObj).setShortField("value", val++);
       ei.setReferenceElement(i, shortObj);
     }
 
@@ -187,12 +187,12 @@ public class BoxObjectCacheManager {
 
     int n = (intHigh - intLow) + 1;
     int aRef = ti.getHeap().newArray("Ljava/lang/Integer", n, ti);
-    ElementInfo ei = ti.getElementInfo(aRef);
+    ElementInfo ei = ti.getModifiableElementInfo(aRef);
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Integer");
     for (int i = 0; i < n; i++) {
       int intObj = ti.getHeap().newObject(ci, ti);
-      ti.getElementInfo(intObj).setIntField("value", i + intLow);
+      ti.getModifiableElementInfo(intObj).setIntField("value", i + intLow);
       ei.setReferenceElement(i, intObj);
     }
 
@@ -228,12 +228,12 @@ public class BoxObjectCacheManager {
 
     int n = (longHigh - longLow) + 1;
     int aRef = ti.getHeap().newArray("Ljava/lang/Long", n, ti);
-    ElementInfo ei = ti.getElementInfo(aRef);
+    ElementInfo ei = ti.getModifiableElementInfo(aRef);
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Long");
     for (int i = 0; i < n; i++) {
       int longObj = ti.getHeap().newObject(ci, ti);
-      ti.getElementInfo(longObj).setLongField("value", i + longLow);
+      ti.getModifiableElementInfo(longObj).setLongField("value", i + longLow);
       ei.setReferenceElement(i, longObj);
     }
 

@@ -39,7 +39,7 @@ public class JPF_java_io_File {
 
   static int createJPFFile(MJIEnv env, File file) {
     int newFileRef = env.newObject("java.io.File");
-    ElementInfo fileEI = env.getElementInfo(newFileRef);
+    ElementInfo fileEI = env.getModifiableElementInfo(newFileRef);
 
     int fileNameRef = env.newString(file.getPath());
     fileEI.setReferenceField("filename", fileNameRef);
@@ -160,7 +160,7 @@ public class JPF_java_io_File {
   public static int listRoots_____3Ljava_io_File_2(MJIEnv env, int classRef) {
     File[] roots = File.listRoots();
     int rootResultRef = env.newObjectArray("java.io.File", roots.length);
-    ElementInfo rootsEI = env.getElementInfo(rootResultRef);
+    ElementInfo rootsEI = env.getModifiableElementInfo(rootResultRef);
 
     for (int i = 0; i < roots.length; i++) {
       int rootFileRef = createJPFFile(env, roots[i]);

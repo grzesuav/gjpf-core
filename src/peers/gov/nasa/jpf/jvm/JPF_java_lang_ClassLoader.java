@@ -44,7 +44,7 @@ public class JPF_java_lang_ClassLoader {
     ClassLoaderInfo cl = new ClassLoaderInfo(env.getVM(), objRef, new ClassPath(), parent);
 
     //--- initialize the java.lang.ClassLoader object
-    ElementInfo ei = heap.get(objRef);
+    ElementInfo ei = heap.getModifiable(objRef);
     ei.setIntField("clRef", cl.getGlobalId());
 
     // we should use the following block if we ever decide to make systemClassLoader 
@@ -240,7 +240,7 @@ public class JPF_java_lang_ClassLoader {
 
   public static int createPackageObject(MJIEnv env, ClassInfo pkgClass, String pkgName, ClassLoaderInfo cl) {
     int pkgRef = env.newObject(pkgClass);
-    ElementInfo ei = env.getElementInfo(pkgRef);
+    ElementInfo ei = env.getModifiableElementInfo(pkgRef);
 
     ei.setReferenceField("pkgName", env.newString(pkgName));
     ei.setReferenceField("loader", cl.getClassLoaderObjectRef());

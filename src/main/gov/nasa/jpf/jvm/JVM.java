@@ -436,13 +436,13 @@ public class JVM {
     int nameRef = heap.newString("main", ti);
     
     //--- initialize the main Thread object
-    ElementInfo ei = heap.get(objRef);
+    ElementInfo ei = heap.getModifiable(objRef);
     ei.setReferenceField("group", groupRef);
     ei.setReferenceField("name", nameRef);
     ei.setIntField("priority", Thread.NORM_PRIORITY);
 
     int permitRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), ti);
-    ElementInfo eiPermitRef = heap.get(permitRef);
+    ElementInfo eiPermitRef = heap.getModifiable(permitRef);
     eiPermitRef.setBooleanField("blockPark", true);
     ei.setReferenceField("permit", permitRef);
 
@@ -458,7 +458,7 @@ public class JVM {
     
 // !!! <2do> we need to have a mainThread ti here, null doesn't work!! 
     int ref = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti);
-    ElementInfo ei = heap.get(ref);
+    ElementInfo ei = heap.getModifiable(ref);
 
     // since we can't call methods yet, we have to init explicitly (BAD)
     // <2do> - this isn't complete yet
@@ -469,7 +469,7 @@ public class JVM {
     ei.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
 
     int threadsRef = heap.newArray("Ljava/lang/Thread;", 4, ti);
-    ElementInfo eiThreads = heap.get(threadsRef);
+    ElementInfo eiThreads = heap.getModifiable(threadsRef);
     eiThreads.setReferenceElement(0, mainThreadRef);
 
     ei.setReferenceField("threads", threadsRef);
@@ -534,7 +534,7 @@ public class JVM {
 
     // create the args array object
     int argsRef = heap.newArray("Ljava/lang/String;", args.length, tiMain);
-    ElementInfo argsElement = heap.get(argsRef);
+    ElementInfo argsElement = heap.getModifiable(argsRef);
     for (int i = 0; i < args.length; i++) {
       int aRef = heap.newString(args[i], tiMain);
       argsElement.setReferenceElement(i, aRef);
@@ -1962,6 +1962,11 @@ public class JVM {
     return ss.getHeap().get(objref);
   }
 
+  public ElementInfo getModifiableElementInfo(int objref){
+    return ss.getHeap().getModifiable(objref);
+  }
+
+  
   public ThreadInfo getCurrentThread () {
     return ThreadInfo.currentThread;
   }

@@ -56,6 +56,14 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
     attributes = ci.getElementInfoAttrs();
   }
 
+  @Override
+  public ElementInfo getModifiable() {
+    if (!isFrozen()) {
+      return this;
+    } else {
+      return JVM.getVM().getHeap().getModifiable( objRef);
+    }
+  }
   
   // called during ElementInfo construction
   @Override

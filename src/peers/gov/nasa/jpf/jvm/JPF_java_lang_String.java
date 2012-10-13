@@ -246,19 +246,22 @@ public class JPF_java_lang_String {
 	}
 
 	public static int hashCode____I (MJIEnv env, int objref) {
-		int h = env.getIntField(objref, "hash");
+	  ElementInfo ei = env.getElementInfo(objref);
+		int h = ei.getIntField( "hash");
 
 		if (h == 0){
 			int vref = env.getReferenceField(objref, "value");
 
 			// now get the char array data, but be aware they are stored as ints
-			ElementInfo ei = env.getElementInfo(vref);
-			char[] values = ((CharArrayFields)ei.getFields()).asCharArray();
+			ElementInfo eiVal = env.getElementInfo(vref);
+			char[] values = eiVal.asCharArray();
 
 			for (int i=0; i<values.length; i++) {
 				h = 31*h + values[i];
 			}
-			env.setIntField(objref, "hash", h);
+			
+			ei = ei.getModifiable();
+			ei.setIntField( "hash", h);
 		}    
 
 		return h;
@@ -392,7 +395,7 @@ public class JPF_java_lang_String {
 		}
 
 		int vref = env.getReferenceField(objRef, "value");
-		ElementInfo ei = env.getElementInfo(vref);
+		ElementInfo ei = env.getModifiableElementInfo(vref);
 		char[] values = ((CharArrayFields) ei.getFields()).asCharArray();
 		int len = values.length;
 
