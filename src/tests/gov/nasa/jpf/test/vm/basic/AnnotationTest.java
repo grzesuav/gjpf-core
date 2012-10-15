@@ -274,6 +274,28 @@ public class AnnotationTest extends TestJPF {
     }
   }
 
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface A11 {
+      Class<?>[] value();
+  }
+
+  @Test
+  @A11({ AnnotationTest.class, Class.class })
+  public void testClassArrayValueOk() throws ClassNotFoundException, SecurityException, NoSuchMethodException {
+    if (verifyNoPropertyViolation()) {
+      Class<?> clazz = Class.forName(AnnotationTest.class.getName());
+      Method method = clazz.getDeclaredMethod("testClassArrayValueOk");
+      Annotation[] annotations = method.getAnnotations();
+      assertEquals(2, annotations.length);
+      assertNotNull(annotations[1]);
+
+      assertTrue(annotations[1] instanceof A11);
+      A11 ann = (A11) annotations[1];
+      assertTrue(ann.value()[0] == AnnotationTest.class);
+      assertTrue(ann.value()[1] == Class.class);
+    }
+  }
+
   //-------------------------------------------------------------------
   static class MyClass {
     @A1("the answer")
