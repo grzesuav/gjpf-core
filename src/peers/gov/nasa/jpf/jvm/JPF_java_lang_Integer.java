@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm;
 /**
  * MJI NativePeer class for java.lang.Integer library abstraction
  */
-public class JPF_java_lang_Integer {
+public class JPF_java_lang_Integer extends NativePeer {
   // <2do> at this point we deliberately do not override clinit
 
   public static int parseInt__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, 

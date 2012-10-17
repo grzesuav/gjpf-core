@@ -35,7 +35,7 @@ import java.nio.channels.FileChannel;
  * to FileInputStreams, which is terribly inefficient for frequent
  * restores (in which case a simple byte[] buffer would be more efficient)
  */
-public class JPF_java_io_FileDescriptor {
+public class JPF_java_io_FileDescriptor extends NativePeer {
 
   static JPFLogger logger = JPF.getLogger("java.io.FileDescriptor");
 
@@ -52,7 +52,7 @@ public class JPF_java_io_FileDescriptor {
   static int count=2;  // count out std handles
   static DynamicObjectArray<Object> content;
   
-  public static void init (Config conf){
+  public JPF_java_io_FileDescriptor (Config conf){
     content = new DynamicObjectArray<Object>();
     count = 2;
   }

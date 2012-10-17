@@ -22,7 +22,7 @@ package gov.nasa.jpf.jvm;
  * native peer for java.util.concurrent.atomic.AtomicLong
  * this implementation just cuts off native methods
  */
-public class JPF_java_util_concurrent_atomic_AtomicLong {
+public class JPF_java_util_concurrent_atomic_AtomicLong extends NativePeer {
   public static void $clinit____V (MJIEnv env, int rcls) {
     // don't let this one pass, it calls native methods from non-public Sun classes
   }

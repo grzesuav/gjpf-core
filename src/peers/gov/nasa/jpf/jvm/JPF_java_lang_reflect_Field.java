@@ -22,7 +22,7 @@ import gov.nasa.jpf.Config;
 
 import java.lang.reflect.Modifier;
 
-public class JPF_java_lang_reflect_Field {
+public class JPF_java_lang_reflect_Field extends NativePeer {
 
   // the registry is rather braindead, let's hope we don't have many lookups - 
   // using Fields is fine, but creating them is not efficient until we fix this
@@ -31,9 +31,10 @@ public class JPF_java_lang_reflect_Field {
   static FieldInfo[] registered;
   static int nRegistered;
   
-  public static void init (Config conf){
+  public static boolean init (Config conf){
     registered = new FieldInfo[NREG];
     nRegistered = 0;
+    return true;
   }
   
   static int registerFieldInfo (FieldInfo fi) {

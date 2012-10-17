@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm;
 /**
  * MJI NativePeer class for java.lang.Double library abstraction
  */
-public class JPF_java_lang_Double {
+public class JPF_java_lang_Double extends NativePeer {
   public static long doubleToLongBits__D__J (MJIEnv env, int rcls, double v0) {
     return Double.doubleToLongBits(v0);
   }

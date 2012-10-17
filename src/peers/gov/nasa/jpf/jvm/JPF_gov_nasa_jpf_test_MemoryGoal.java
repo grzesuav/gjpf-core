@@ -26,7 +26,7 @@ import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
 /**
  * native peer for MemoryGoal tests
  */
-public class JPF_gov_nasa_jpf_test_MemoryGoal {
+public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
 
   static Listener listener;
   

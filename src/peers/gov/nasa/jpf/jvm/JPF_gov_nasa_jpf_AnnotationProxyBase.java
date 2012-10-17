@@ -23,7 +23,7 @@ package gov.nasa.jpf.jvm;
  * native peer for Annotation Proxies
  * (saves us some bytecode interpretation shoe leather)
  */
-public class JPF_gov_nasa_jpf_AnnotationProxyBase {
+public class JPF_gov_nasa_jpf_AnnotationProxyBase extends NativePeer {
 
   public static int annotationType____Ljava_lang_Class_2 (MJIEnv env, int objref) {
     ClassInfo ciProxy = env.getClassInfo(objref);  // this would be the proxy

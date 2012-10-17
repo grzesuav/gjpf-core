@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * native peer for ResourceBundle
  */
-public class JPF_java_util_ResourceBundle {
+public class JPF_java_util_ResourceBundle extends NativePeer {
 
 
   public static int getClassContext_____3Ljava_lang_Class_2 (MJIEnv env, int clsRef){

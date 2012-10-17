@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm;
 /**
  * MJI NativePeer class for java.lang.reflect.Array library abstraction
  */
-public class JPF_java_lang_reflect_Array {
+public class JPF_java_lang_reflect_Array extends NativePeer {
   
   public static int getLength__Ljava_lang_Object_2__I (MJIEnv env, int clsObjRef, 
                                                     int objRef) {

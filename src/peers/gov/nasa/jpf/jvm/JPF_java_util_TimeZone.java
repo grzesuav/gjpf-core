@@ -29,7 +29,7 @@ import java.util.TimeZone;
  * considerably changed in Java 1.7 (OpenJDK) and we need a version that is compatible with
  * pre and post 1.7 releases
  */
-public class JPF_java_util_TimeZone {
+public class JPF_java_util_TimeZone extends NativePeer {
 
 
   //--- internals

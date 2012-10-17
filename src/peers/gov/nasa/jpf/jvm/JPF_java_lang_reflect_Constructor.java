@@ -31,11 +31,11 @@ import gov.nasa.jpf.util.RunRegistry;
  * Unfortunately, this is quite redundant to the Method peer, but Constructor
  * is not a Method subclass, and hence we can't rely on it's initialization
  */
-public class JPF_java_lang_reflect_Constructor {
+public class JPF_java_lang_reflect_Constructor extends NativePeer {
   
   static MethodInfoRegistry registry;
   
-  public static void init (Config conf) {
+  public static boolean init (Config conf) {
     // this is an example of how to handle cross-initialization between
     // native peers - this might also get explicitly called by the java.lang.Class
     // peer, since it creates Constructor objects. Here we have to make sure
@@ -50,6 +50,7 @@ public class JPF_java_lang_reflect_Constructor {
         }
       });
     }
+    return true;
   }
 
   static int createConstructorObject (MJIEnv env, ClassInfo ciCtor, MethodInfo mi){

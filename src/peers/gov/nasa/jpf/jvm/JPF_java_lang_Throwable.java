@@ -25,7 +25,7 @@ import java.io.StringWriter;
 /**
  * MJI NativePeer class for java.lang.Throwable library abstraction
  */
-public class JPF_java_lang_Throwable {
+public class JPF_java_lang_Throwable extends NativePeer {
   
     
   /**

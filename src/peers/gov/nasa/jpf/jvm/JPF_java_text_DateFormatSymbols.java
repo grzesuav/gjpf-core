@@ -2,7 +2,7 @@ package gov.nasa.jpf.jvm;
 
 import java.text.DateFormatSymbols;
 
-public class JPF_java_text_DateFormatSymbols {
+public class JPF_java_text_DateFormatSymbols extends NativePeer {
   
   public static void initializeData__Ljava_util_Locale_2__V (MJIEnv env, int objRef, int localeRef) {
     DateFormatSymbols dfs = new DateFormatSymbols();

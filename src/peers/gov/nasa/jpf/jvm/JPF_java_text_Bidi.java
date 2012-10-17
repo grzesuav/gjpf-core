@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
-public class JPF_java_text_Bidi {
+public class JPF_java_text_Bidi extends NativePeer {
 
   public static void $clinit____V (MJIEnv env, int clsObjRef) {
     // do nothing

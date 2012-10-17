@@ -29,7 +29,7 @@ import java.util.TimeZone;
 /**
  * this is just the minimal support for DateFormat.parse(String)
  */
-public class JPF_java_text_DateFormat {
+public class JPF_java_text_DateFormat extends NativePeer {
 
   static DateFormat getInstance (MJIEnv env, int objref) {
     Format fmt = JPF_java_text_Format.getInstance(env,objref);

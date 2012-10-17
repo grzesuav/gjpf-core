@@ -26,8 +26,7 @@ import java.text.DecimalFormatSymbols;
  * we need to intercept the initialization because it is requires
  * file io (properties) based on the Locale
  */
-public class JPF_java_text_DecimalFormatSymbols
-{
+public class JPF_java_text_DecimalFormatSymbols extends NativePeer {
   public static void initialize__Ljava_util_Locale_2__V (MJIEnv env, int objRef, int localeRef) {
     DecimalFormatSymbols dfs = new DecimalFormatSymbols();
     

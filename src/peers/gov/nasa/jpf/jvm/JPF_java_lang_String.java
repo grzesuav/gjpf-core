@@ -24,7 +24,7 @@ import java.util.Locale;
 /**
  * MJI NativePeer class for java.lang.String library abstraction
  */
-public class JPF_java_lang_String {
+public class JPF_java_lang_String extends NativePeer {
 	
 	public static int init___3CII__Ljava_lang_String_2(MJIEnv env, int objRef,int valueRef, int offset, int count){
 		char[]value=env.getCharArrayObject(valueRef);

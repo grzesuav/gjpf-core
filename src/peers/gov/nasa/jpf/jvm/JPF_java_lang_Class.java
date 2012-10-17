@@ -31,17 +31,18 @@ import java.util.Set;
 /**
  * MJI NativePeer class for java.lang.Class library abstraction
  */
-public class JPF_java_lang_Class {
+public class JPF_java_lang_Class extends NativePeer {
   
   static final String FIELD_CLASSNAME = "java.lang.reflect.Field";
   static final String METHOD_CLASSNAME = "java.lang.reflect.Method";
   static final String CONSTRUCTOR_CLASSNAME = "java.lang.reflect.Constructor";
   
-  public static void init (Config conf){
+  public static boolean init (Config conf){
     // we create Method and Constructor objects, so we better make sure these
     // classes are initialized (they already might be)
     JPF_java_lang_reflect_Method.init(conf);
-    JPF_java_lang_reflect_Constructor.init(conf);    
+    JPF_java_lang_reflect_Constructor.init(conf);
+    return true;
   }
   
   public static boolean isArray____Z (MJIEnv env, int robj) {

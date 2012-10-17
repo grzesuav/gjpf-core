@@ -26,7 +26,7 @@ package gov.nasa.jpf.jvm;
 /**
  * MJI NativePeer class for java.lang.Short library abstraction
  */
-public class JPF_java_lang_Short {
+public class JPF_java_lang_Short extends NativePeer {
   // <2do> at this point we deliberately do not override clinit
   
   public static short parseShort__Ljava_lang_String_2__S (MJIEnv env, 

@@ -23,7 +23,7 @@ package gov.nasa.jpf.jvm;
  * base class for atomic field updaters
  * NOTE - since all native methods are static, we have to be too
  */
-public class AtomicFieldUpdater {
+public class AtomicFieldUpdater extends NativePeer {
   
   static boolean isNewPorFieldBoundary(MJIEnv env, int updaterRef, int tRef) {
     ThreadInfo ti = env.getThreadInfo();

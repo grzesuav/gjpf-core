@@ -29,7 +29,7 @@ import java.nio.charset.CharsetEncoder;
  *
  * <2do> this needs to be de-staticed (see model class)
  */
-public class JPF_java_io_OutputStreamWriter {
+public class JPF_java_io_OutputStreamWriter extends NativePeer {
 
   static final int BUF_SIZE=128; // needs to be the same as in the model class!
   static CharsetEncoder encoder = Charset.defaultCharset().newEncoder();

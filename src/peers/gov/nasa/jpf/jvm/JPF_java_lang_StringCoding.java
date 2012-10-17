@@ -26,7 +26,7 @@ package gov.nasa.jpf.jvm;
  * but the java.lang.StringCoding class is unfortunately not public,
  * and it would be a pain to work around the access restrictions
  */
-public class JPF_java_lang_StringCoding {
+public class JPF_java_lang_StringCoding extends NativePeer {
 
   public static int decode___3BII___3C (MJIEnv env, int clsObjRef,
       int bref, int off, int len) {

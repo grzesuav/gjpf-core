@@ -39,14 +39,14 @@ import java.util.HashMap;
  * The data can be stored in/read from the file system, and is cached
  * to avoid DOS by means of model checking
  */
-public class JPF_gov_nasa_jpf_CachedROHttpConnection {
+public class JPF_gov_nasa_jpf_CachedROHttpConnection extends NativePeer {
 
   static JPFLogger logger = JPF.getLogger("http");
 
   static File cacheDir;
   static HashMap<String,byte[]> dataCache;
 
-  public static void init (Config conf){
+  public JPF_gov_nasa_jpf_CachedROHttpConnection (Config conf){
     String cacheDirPath = conf.getString("http.cache_dir");
     if (cacheDirPath != null){
       cacheDir = new File(cacheDirPath);

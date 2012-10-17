@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
-public class JPF_java_io_ObjectStreamClass {
+public class JPF_java_io_ObjectStreamClass extends NativePeer {
   public static void initNative____V (MJIEnv env, int clsObjRef) {
     // cut off
   }

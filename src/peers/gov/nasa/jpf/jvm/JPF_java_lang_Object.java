@@ -24,7 +24,7 @@ import gov.nasa.jpf.JPFException;
 /**
  * MJI NativePeer class for java.lang.Object library abstraction
  */
-public class JPF_java_lang_Object {
+public class JPF_java_lang_Object extends NativePeer {
   
   public static int getClass____Ljava_lang_Class_2 (MJIEnv env, int objref) {
     ClassInfo oci = env.getClassInfo(objref);

@@ -1,6 +1,6 @@
 package gov.nasa.jpf.jvm;
 
-public class JPF_java_io_ObjectOutputStream {
+public class JPF_java_io_ObjectOutputStream extends NativePeer {
 
   public static void doublesToBytes___3DI_3BII__ (MJIEnv env, int clsRef,
                                                   int daRef, int dOff,

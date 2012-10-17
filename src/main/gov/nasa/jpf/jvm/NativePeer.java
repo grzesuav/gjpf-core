@@ -20,9 +20,11 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.JPFLogger;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -84,10 +86,6 @@ public class NativePeer implements Cloneable {
     return packages;
   }
 
-  public NativePeer (Class<?> peerClass, ClassInfo ci) {
-    initialize(peerClass, ci, true);
-  }
-
   static Class<?> locatePeerCls (String clsName) {
     String cn = "JPF_" + clsName.replace('.', '_');
 
@@ -144,12 +142,77 @@ public class NativePeer implements Cloneable {
           logger.info("load peer: ", peerCls.getName());
         }
 
-        peer = new NativePeer(peerCls, ci);
+        peer = getInstance(peerCls, NativePeer.class);
+        peer.initialize(peerCls, ci, true);
+
         peers.put(clsName, peer);
       }
     }
 
     return peer;
+  }
+
+  public static <T> T getInstance(Class<?> cls, Class<T> type) throws JPFException {
+    Class<?>[] argTypes = Config.CONFIG_ARGTYPES;
+    Object[] args = config.CONFIG_ARGS;
+
+    return getInstance(cls, type, argTypes, args);
+  }
+
+  public static <T> T getInstance(Class<?> cls, Class<T> type, Class<?>[] argTypes,
+                     Object[] args) throws JPFException {
+    Object o = null;
+    Constructor<?> ctor = null;
+
+    if (cls == null) {
+      return null;
+    }
+
+    while (o == null) {
+      try {
+        ctor = cls.getConstructor(argTypes);
+        o = ctor.newInstance(args);
+      } catch (NoSuchMethodException nmx) {
+         
+        if ((argTypes.length > 1) || ((argTypes.length == 1) && (argTypes[0] != Config.class))) {
+          // fallback 1: try a single Config param
+          argTypes = Config.CONFIG_ARGTYPES;
+          args = config.CONFIG_ARGS;
+        } else if (argTypes.length > 0) {
+          // fallback 2: try the default ctor
+          argTypes = Config.NO_ARGTYPES;
+          args = Config.NO_ARGS;
+
+        } else {
+          // Ok, there is no suitable ctor, bail out
+          throw new JPFException("no suitable ctor found for the peer class " + cls.getName());
+        }
+      } catch (IllegalAccessException iacc) {
+        throw new JPFException("ctor not accessible: "
+            + config.getMethodSignature(ctor));
+      } catch (IllegalArgumentException iarg) {
+        throw new JPFException("illegal constructor arguments: "
+            + config.getMethodSignature(ctor));
+      } catch (InvocationTargetException ix) {
+        Throwable tx = ix.getCause();
+        throw new JPFException("exception " + tx + " occured in " 
+            + config.getMethodSignature(ctor));
+      } catch (InstantiationException ivt) {
+        throw new JPFException("abstract class cannot be instantiated");
+      } catch (ExceptionInInitializerError eie) {
+        throw new JPFException("static initialization failed:\n>> "
+            + eie.getException(), eie.getException());
+      }
+    }
+
+    // check type
+    if (!cls.isInstance(o)) {
+      throw new JPFException("instance not of type: "
+          + cls.getName());
+    }
+
+    System.out.println("ooo: " + o.getClass());
+    return type.cast(o); // safe according to above
   }
 
   static String getPeerDispatcherClassName (String clsName) {
@@ -200,8 +263,11 @@ public class NativePeer implements Cloneable {
   }
 
   
-  static final int MJI_MODIFIERS = Modifier.PUBLIC | Modifier.STATIC;
-  static final int MJI_TEST = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
+//  static final int MJI_MODIFIERS = Modifier.PUBLIC | Modifier.STATIC;
+//  static final int MJI_TEST = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
+  static final int MJI_MODIFIERS = Modifier.PUBLIC;
+  static final int MJI_TEST = Modifier.PUBLIC | Modifier.FINAL;
+
   
   private static boolean isMJICandidate (Method mth) {
     // only the public static ones are supposed to be native method impls

@@ -30,7 +30,7 @@ package gov.nasa.jpf.jvm;
  *
  * <2do> this might change with better modeling of high level java.util.concurrent constructs
  */
-public class JPF_sun_misc_Unsafe {
+public class JPF_sun_misc_Unsafe extends NativePeer {
 
   public  int getUnsafe____Lsun_misc_Unsafe_2 (MJIEnv env, int clsRef) {
     int objRef = env.getStaticReferenceField("sun.misc.Unsafe", "theUnsafe");

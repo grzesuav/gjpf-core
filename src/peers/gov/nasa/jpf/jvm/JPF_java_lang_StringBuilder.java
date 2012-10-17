@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
-public class JPF_java_lang_StringBuilder {
+public class JPF_java_lang_StringBuilder extends NativePeer {
   
   static int appendString (MJIEnv env, int objref, String s) {
     int slen = s.length();

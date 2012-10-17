@@ -25,7 +25,7 @@ import java.net.URLEncoder;
 /**
  * native peer for java.net.URLEncoder forwarding
  */
-public class JPF_java_net_URLEncoder {
+public class JPF_java_net_URLEncoder extends NativePeer {
 
   // simple host delegation
   public static int encode__Ljava_lang_String_2Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int clsObjRef,

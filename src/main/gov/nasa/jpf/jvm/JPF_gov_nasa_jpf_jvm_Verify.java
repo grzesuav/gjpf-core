@@ -46,7 +46,7 @@ import java.util.List;
  * native peer class for programmatic JPF interface (that can be used inside
  * of apps to verify - if you are aware of the danger that comes with it)
  */
-public class JPF_gov_nasa_jpf_jvm_Verify {
+public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   static final int MAX_COUNTERS = 10;
 
   static boolean isInitialized;
@@ -71,7 +71,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
   static int nextBitSet;
 
   
-  public static void init (Config conf) {
+  public static boolean init (Config conf) {
 
     if (!isInitialized){
       supportIgnorePath = conf.getBoolean("vm.verify.ignore_path");
@@ -91,6 +91,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify {
         }
       });
     }
+    return true;
   }
 
   public static int getValue__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, int keyRef) {

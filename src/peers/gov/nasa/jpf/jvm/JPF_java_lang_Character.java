@@ -22,7 +22,7 @@ package gov.nasa.jpf.jvm;
  * MJI NativePeer class for java.lang.Character library abstraction
  * Whoever is using this seriously is definitely screwed, performance-wise
  */
-public class JPF_java_lang_Character {
+public class JPF_java_lang_Character extends NativePeer {
   // <2do> at this point we deliberately do not override clinit
 
   public static boolean isDefined__C__Z (MJIEnv env, int clsObjRef, char c) {

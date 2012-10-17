@@ -28,7 +28,7 @@ import java.text.ParsePosition;
 // the java.text.Format native peer will be initialized first
 // (otherwise we shouldn't depend on static data of other native peers)
 
-public class JPF_java_text_DecimalFormat {
+public class JPF_java_text_DecimalFormat extends NativePeer {
 
   static final int INTEGER_STYLE=0;
   static final int NUMBER_STYLE=1;

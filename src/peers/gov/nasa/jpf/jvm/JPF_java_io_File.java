@@ -29,7 +29,7 @@ import java.net.URL;
  * slow, if a program uses this heavily we should keep the forwarding File
  * object around and modify the model class accordingly
  */
-public class JPF_java_io_File {
+public class JPF_java_io_File extends NativePeer {
 
   static File getFile(MJIEnv env, int objref) {
     int fnref = env.getReferenceField(objref, "filename");

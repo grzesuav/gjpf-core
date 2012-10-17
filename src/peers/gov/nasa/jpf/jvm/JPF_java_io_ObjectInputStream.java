@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
-public class JPF_java_io_ObjectInputStream {
+public class JPF_java_io_ObjectInputStream extends NativePeer {
 
   public static int latestUserDefinedLoader____Ljava_lang_ClassLoader_2 (MJIEnv env, int clsRef){
     // class loaders are not yet supported

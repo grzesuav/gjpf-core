@@ -22,7 +22,7 @@ import java.util.logging.Level;
 /**
  * this is only a skeleton to make basic logging work under JPF
  */
-public class JPF_java_util_logging_Level {
+public class JPF_java_util_logging_Level extends NativePeer {
   
   public static int getLocalizedName____Ljava_lang_String_2 (MJIEnv env, int objRef){
     Level level = null;    

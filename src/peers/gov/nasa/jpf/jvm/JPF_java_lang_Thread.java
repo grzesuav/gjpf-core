@@ -30,7 +30,7 @@ import gov.nasa.jpf.util.JPFLogger;
  * NOTE - this implementation depends on all live thread objects being
  * in ThreadList
  */
-public class JPF_java_lang_Thread {
+public class JPF_java_lang_Thread extends NativePeer {
 
   static JPFLogger log = JPF.getLogger("gov.nasa.jpf.jvm.ThreadInfo");
   

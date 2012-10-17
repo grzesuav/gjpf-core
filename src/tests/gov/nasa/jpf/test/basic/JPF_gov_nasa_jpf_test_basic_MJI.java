@@ -21,6 +21,7 @@ package gov.nasa.jpf.test.basic;
 import gov.nasa.jpf.jvm.DirectCallStackFrame;
 import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.NativePeer;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.UncaughtException;
@@ -28,7 +29,7 @@ import gov.nasa.jpf.jvm.UncaughtException;
 /**
  * native peer class for unit testing MJI
  */
-public class JPF_gov_nasa_jpf_test_basic_MJI {
+public class JPF_gov_nasa_jpf_test_basic_MJI extends NativePeer {
 
   // intercept <clinit>
   public static void $clinit (MJIEnv env, int rcls) {

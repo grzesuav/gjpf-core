@@ -25,7 +25,7 @@ import java.util.TimeZone;
  * native peer for JPFs concrete TimeZone class, which is just delegating to the
  * host VM so that we are independent of Java versions 
  */
-public class JPF_gov_nasa_jpf_DelegatingTimeZone {
+public class JPF_gov_nasa_jpf_DelegatingTimeZone extends NativePeer {
 
   //--- internals
   static TimeZone tz; // only used within (atomic) peer methods

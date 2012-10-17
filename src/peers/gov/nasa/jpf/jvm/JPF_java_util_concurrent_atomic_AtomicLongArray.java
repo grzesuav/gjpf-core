@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm;
 /**
  * native peer for java.util.concurrent.atomic.AtomicLongArray
  */
-public class JPF_java_util_concurrent_atomic_AtomicLongArray {
+public class JPF_java_util_concurrent_atomic_AtomicLongArray extends NativePeer {
 
   public static long getNative__I__J (MJIEnv env, int objRef, int index) {
     int arrayRef = env.getReferenceField(objRef, "array");

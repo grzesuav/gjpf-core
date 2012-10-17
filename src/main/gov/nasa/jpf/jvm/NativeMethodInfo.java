@@ -144,7 +144,7 @@ public class NativeMethodInfo extends MethodInfo {
       args = nativeFrame.getArguments();
 
       // this is the reflection call into the native peer
-      ret = mth.invoke(peer.getPeerClass(), args);
+      ret = mth.invoke(peer, args);
 
       if (env.hasException()) {
         // even though we should prefer throwing normal exceptionHandlers,

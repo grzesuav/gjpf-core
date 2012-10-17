@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm;
 /**
  * MJI NativePeer class for java.lang.Long library abstraction
  */
-public class JPF_java_lang_Long {
+public class JPF_java_lang_Long extends NativePeer {
   // <2do> at this point we deliberately do not override clinit
 
   public static long parseLong__Ljava_lang_String_2I__J (MJIEnv env, int clsObjRef, 

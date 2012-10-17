@@ -32,7 +32,7 @@ import java.util.Properties;
 /**
  * MJI NativePeer class for java.lang.System library abstraction
  */
-public class JPF_java_lang_System {
+public class JPF_java_lang_System extends NativePeer {
   
   public static void arraycopy__Ljava_lang_Object_2ILjava_lang_Object_2II__V (MJIEnv env, int clsObjRef,
                                                                               int srcArrayRef, int srcIdx, 

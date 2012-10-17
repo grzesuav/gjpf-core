@@ -35,7 +35,7 @@ import gov.nasa.jpf.util.StringMatcher;
  * example config:
  *   http.connection= http://*.dtd => gov.nasa.jpf.CachedROHttpConnection, http://foo.com/* -- x.y.MyHttpConnection
  */
-public class JPF_sun_net_www_protocol_http_Handler {
+public class JPF_sun_net_www_protocol_http_Handler extends NativePeer {
 
   static JPFLogger logger = JPF.getLogger("http");
 
@@ -52,7 +52,7 @@ public class JPF_sun_net_www_protocol_http_Handler {
 
   static MapEntry[] map;
 
-  public static void init (Config conf){
+  public JPF_sun_net_www_protocol_http_Handler (Config conf){
     String[] specs = conf.getCompactTrimmedStringArray("http.connection");
     if (specs != null){
       map = new MapEntry[specs.length];

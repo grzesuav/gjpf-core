@@ -23,11 +23,11 @@ import gov.nasa.jpf.Config;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class JPF_java_security_MessageDigest {
+public class JPF_java_security_MessageDigest extends NativePeer {
   
   static MessageDigest[] digests;
   
-  public static void init (Config conf){
+  public JPF_java_security_MessageDigest (Config conf){
     digests = new MessageDigest[32];
   }
   

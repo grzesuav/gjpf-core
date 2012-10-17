@@ -27,7 +27,7 @@ import gov.nasa.jpf.classfile.ClassPath;
  * 
  * Native peer for java.lang.ClassLoader
  */
-public class JPF_java_lang_ClassLoader {
+public class JPF_java_lang_ClassLoader extends NativePeer {
 
   public static void $init____V (MJIEnv env, int objRef) {
     ClassLoaderInfo systemCl = ClassLoaderInfo.getCurrentSystemClassLoader();

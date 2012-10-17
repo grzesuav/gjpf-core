@@ -149,9 +149,9 @@ public class Config extends Properties {
   public static final String LIST_SEPARATOR = ",";
   public static final String PATH_SEPARATOR = ","; // the default for automatic appends
 
-  static final Class<?>[] CONFIG_ARGTYPES = { Config.class };  
-  static final Class<?>[] NO_ARGTYPES = new Class<?>[0];
-  static final Object[] NO_ARGS = new Object[0];
+  public static final Class<?>[] CONFIG_ARGTYPES = { Config.class };  
+  public static final Class<?>[] NO_ARGTYPES = new Class<?>[0];
+  public static final Object[] NO_ARGS = new Object[0];
 
   public static final String TRUE = "true";
   public static final String FALSE = "false";
@@ -183,7 +183,7 @@ public class Config extends Properties {
   // an [optional] hashmap to keep objects we want to be singletons
   HashMap<String,Object> singletons;
   
-  final Object[] CONFIG_ARGS = { this };
+  public final Object[] CONFIG_ARGS = { this };
 
   String[] args; // our original (non-nullified) command line args
 
@@ -2016,7 +2016,7 @@ public class Config extends Properties {
     return type.cast(o); // safe according to above
   }
 
-  String getMethodSignature(Constructor<?> ctor) {
+  public String getMethodSignature(Constructor<?> ctor) {
     StringBuilder sb = new StringBuilder(ctor.getName());
     sb.append('(');
     Class<?>[] argTypes = ctor.getParameterTypes();

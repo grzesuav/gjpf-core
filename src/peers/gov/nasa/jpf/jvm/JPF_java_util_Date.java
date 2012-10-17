@@ -2,7 +2,7 @@ package gov.nasa.jpf.jvm;
 
 import java.util.Date;
 
-public class JPF_java_util_Date {
+public class JPF_java_util_Date extends NativePeer {
 
   static Date getDate (MJIEnv env, int dateRef){
     

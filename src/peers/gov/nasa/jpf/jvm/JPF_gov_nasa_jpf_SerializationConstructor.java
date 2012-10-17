@@ -1,7 +1,7 @@
 package gov.nasa.jpf.jvm;
 
 
-public class JPF_gov_nasa_jpf_SerializationConstructor {
+public class JPF_gov_nasa_jpf_SerializationConstructor extends NativePeer {
 
   /**
    * create a new instance, but only call the ctor of the first

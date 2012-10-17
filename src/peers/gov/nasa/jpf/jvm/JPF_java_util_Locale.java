@@ -20,7 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import java.util.Locale;
 
-public class JPF_java_util_Locale {
+public class JPF_java_util_Locale extends NativePeer {
 
   static Locale getLocale (MJIEnv env, int locref) {
 

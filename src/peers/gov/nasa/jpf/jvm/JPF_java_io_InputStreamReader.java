@@ -23,7 +23,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
-public class JPF_java_io_InputStreamReader {
+public class JPF_java_io_InputStreamReader extends NativePeer {
 
   static final int BUF_SIZE = 128;
   

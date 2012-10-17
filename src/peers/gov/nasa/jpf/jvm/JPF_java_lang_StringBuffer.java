@@ -22,7 +22,7 @@ package gov.nasa.jpf.jvm;
 /**
  * MJI NativePeer class for java.lang.StringBuffer library abstraction
  */
-public class JPF_java_lang_StringBuffer {
+public class JPF_java_lang_StringBuffer extends NativePeer {
   
   static boolean hasSharedField = false; // Java 1.4 has, 1.5 doesn't
   

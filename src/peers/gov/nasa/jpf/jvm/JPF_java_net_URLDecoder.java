@@ -25,7 +25,7 @@ import java.net.URLDecoder;
 /**
  * native peer for java.net.URLDecoder forwarding
  */
-public class JPF_java_net_URLDecoder {
+public class JPF_java_net_URLDecoder extends NativePeer {
 
   public static int decode__Ljava_lang_String_2Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int clsObjRef,
           int sRef, int encRef){

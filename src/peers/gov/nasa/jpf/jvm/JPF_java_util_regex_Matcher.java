@@ -29,11 +29,11 @@ import java.util.regex.Pattern;
  * native peer for a regex Matcher
  * this is just a delegatee peer
  */
-public class JPF_java_util_regex_Matcher {
+public class JPF_java_util_regex_Matcher extends NativePeer {
 
   static HashMap<Integer, Matcher> matchers;
  
-  public static void init (Config conf) {
+  public JPF_java_util_regex_Matcher (Config conf) {
     matchers = new HashMap<Integer,Matcher>();
   }
 

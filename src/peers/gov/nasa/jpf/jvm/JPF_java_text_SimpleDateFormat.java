@@ -28,7 +28,7 @@ import java.util.Date;
  * (incomplete) native peer for SimpleDateFormat. See Format for details
  * about native formatter delegation
  */
-public class JPF_java_text_SimpleDateFormat {
+public class JPF_java_text_SimpleDateFormat extends NativePeer {
 
   static SimpleDateFormat getInstance (MJIEnv env, int objref) {
     Format fmt = JPF_java_text_Format.getInstance(env,objref);

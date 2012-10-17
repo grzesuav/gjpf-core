@@ -23,7 +23,7 @@ import gov.nasa.jpf.Config;
 /**
  * just a dummy for now, to avoid UnsatisfiedLinkErrors
  */
-public class JPF_java_lang_Runtime {
+public class JPF_java_lang_Runtime extends NativePeer {
 
   public static void addShutdownHook__Ljava_lang_Thread_2__V (MJIEnv env, int objref, int threadRef) {
     // ignored for now

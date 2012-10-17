@@ -27,7 +27,7 @@ import java.util.HashMap;
  *
  * @author Owen O'Malley
  */
-public class JPF_java_io_RandomAccessFile {
+public class JPF_java_io_RandomAccessFile extends NativePeer {
 
 	// need to see whether the file is already in use
 	// if so, then we'll update the file data and length in the original file

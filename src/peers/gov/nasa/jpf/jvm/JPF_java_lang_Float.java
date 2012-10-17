@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm;
 /**
  * MJI NativePeer class for java.lang.Float library abstraction
  */
-public class JPF_java_lang_Float {
+public class JPF_java_lang_Float extends NativePeer {
   public static int floatToIntBits__F__I (MJIEnv env, int rcls, float v0) {
     return Float.floatToIntBits(v0);
   }

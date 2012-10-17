@@ -29,11 +29,11 @@ import java.util.HashMap;
  * we keep a map between real formatters and their JPF counterparts
  * (which are just proxies)
  */
-public class JPF_java_text_Format {
+public class JPF_java_text_Format extends NativePeer {
 
   static HashMap<Integer,Format> formatters;
 
-  public static void init (Config conf){
+  public JPF_java_text_Format (Config conf){
     formatters = new HashMap<Integer,Format>();
   }
   

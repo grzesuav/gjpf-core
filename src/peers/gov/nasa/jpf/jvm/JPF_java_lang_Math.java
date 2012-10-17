@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm;
 /**
  * MJI NativePeer class for java.lang.Math library abstraction
  */
-public class JPF_java_lang_Math {
+public class JPF_java_lang_Math extends NativePeer {
   
   // <2do> those are here to hide their implementation from traces, not to
   // increase performance. If we want to do that, we should probably inline

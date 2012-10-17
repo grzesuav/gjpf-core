@@ -19,6 +19,7 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.jvm.MJIEnv;
+import gov.nasa.jpf.jvm.NativePeer;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
@@ -29,7 +30,7 @@ import gov.nasa.jpf.jvm.Instruction;
  * peer for the regression test for on-demand state restoration by means of
  * ClosedMementos
  */
-public class JPF_gov_nasa_jpf_test_mc_basic_RestorerTest$X {
+public class JPF_gov_nasa_jpf_test_mc_basic_RestorerTest$X extends NativePeer {
 
   static class InsnExecCount {
     int count;    

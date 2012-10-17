@@ -5,6 +5,7 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.DirectCallStackFrame;
 import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.NativePeer;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 /**
  * native peer for our test class root
  */
-public class JPF_gov_nasa_jpf_util_test_TestJPF {
+public class JPF_gov_nasa_jpf_util_test_TestJPF extends NativePeer {
 
   static ClassInfo testClass;
   static MethodInfo testClassCtor;

@@ -22,7 +22,7 @@ package gov.nasa.jpf.jvm;
  * MJI NativePeer class to intercept all System.out and System.err
  * printing. We handle all of this native, since it's already slow enough
  */
-public class JPF_gov_nasa_jpf_ConsoleOutputStream {
+public class JPF_gov_nasa_jpf_ConsoleOutputStream extends NativePeer {
   
   /****************************************************************************
    * these are the native methods we intercept
