@@ -381,7 +381,7 @@ public class AnnotationTest extends TestJPF {
     }        
   }
   
-  /***************************************************/
+  //---------------------------------------------------------------
   
   @Retention(RetentionPolicy.RUNTIME)
   @Inherited
@@ -411,4 +411,29 @@ public class AnnotationTest extends TestJPF {
       assertTrue(Child2.class.getAnnotations().length == 1);
     }
   }
+  
+
+  //---------------------------------------------------------------
+  // test for RuntimeVisibleAnnotations attributes that in turn have
+  // element_value entries
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface A11 { // this one has the string value
+    String value();
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  @A11("Whatever")
+  @interface A12 {
+    // this one has a RuntimeVisibleAnnotation attribute for A11 with a
+    // String entry value
+  }
+
+  @A12 // causes loading of @C
+  @Test
+  public void testRecursiveRuntimeVisibleAnnotationValue(){
+    if (verifyNoPropertyViolation()){
+      // nothing to do other than just causing the loading of A12
+    }
+  }
+  
 }

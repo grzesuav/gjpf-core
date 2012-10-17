@@ -97,7 +97,6 @@ public class ClassFile {
     FileInputStream is = null;
     try {
       is = new FileInputStream(file);
-
       long len = file.length();
       if (len > Integer.MAX_VALUE || len <= 0){   // classfile of size > 2GB not supported
         error("cannot read file of size: " + len);
