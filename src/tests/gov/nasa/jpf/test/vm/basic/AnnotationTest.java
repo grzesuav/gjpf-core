@@ -417,18 +417,18 @@ public class AnnotationTest extends TestJPF {
   // test for RuntimeVisibleAnnotations attributes that in turn have
   // element_value entries
   @Retention(RetentionPolicy.RUNTIME)
-  @interface A11 { // this one has the string value
+  @interface A12 { // this one has the string value
     String value();
   }
 
   @Retention(RetentionPolicy.RUNTIME)
-  @A11("Whatever")
-  @interface A12 {
+  @A12("Whatever")
+  @interface A13 {
     // this one has a RuntimeVisibleAnnotation attribute for A11 with a
     // String entry value
   }
 
-  @A12 // causes loading of @C
+  @A13 // causes loading of @C
   @Test
   public void testRecursiveRuntimeVisibleAnnotationValue(){
     if (verifyNoPropertyViolation()){
