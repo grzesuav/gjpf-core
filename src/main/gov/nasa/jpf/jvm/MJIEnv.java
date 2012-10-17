@@ -1603,7 +1603,8 @@ public class MJIEnv {
       } else if (ftype.equals("java.lang.Class[]")){
         aref = newObjectArray("java.lang.Class", a.length);
         for (int i=0; i<a.length; i++){
-          ClassInfo cci = (ClassInfo)a[i];
+          String clsName = ((AnnotationInfo.ClassValue)a[i]).getName();
+          ClassInfo cci = ClassInfo.tryGetResolvedClassInfo(clsName);
           if (!cci.isInitialized()){
             throw new ClinitRequired(cci);
           }
