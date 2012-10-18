@@ -71,6 +71,13 @@ public class AnnotationInfo {
       }
     }
 
+    protected ArrayList<Entry> getEntries(){
+      if (entries == null){
+        entries = new ArrayList<Entry>();
+      }
+      return entries;
+    }
+    
     public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
       entries = null;
       annotationName = Types.getClassNameFromTypeName(clsName);
@@ -92,9 +99,6 @@ public class AnnotationInfo {
 
     public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
       if (name == ClassFile.ANNOTATIONDEFAULT_ATTR){
-        if (entries == null){
-          entries = new ArrayList<Entry>();
-        }
         cf.parseAnnotationDefaultAttr(this, key);
       }
     }
@@ -126,7 +130,7 @@ public class AnnotationInfo {
       if (arrayIndex >= 0){
         valElements[arrayIndex] = val;
       } else {
-        entries.add(new Entry(key, val));
+        getEntries().add(new Entry(key, val));
       }
     }
 
@@ -135,7 +139,7 @@ public class AnnotationInfo {
       if (arrayIndex >= 0){
         valElements[arrayIndex] = val;
       } else {
-        entries.add(new Entry(key, val));
+        getEntries().add(new Entry(key, val));
       }
     }
 
@@ -154,10 +158,10 @@ public class AnnotationInfo {
 
     public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName) {
-      if (key != null)
-        entries.add( new Entry(key, valElements));    
+      if (key != null){
+        getEntries().add( new Entry(key, valElements));
+      }
     }
-
   }
 
   public static class EnumValue {

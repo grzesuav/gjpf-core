@@ -274,6 +274,28 @@ public class AnnotationTest extends TestJPF {
     }
   }
 
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface A11 {
+      Class<?>[] value();
+  }
+
+  @Test
+  @A11({ AnnotationTest.class, Class.class })
+  public void testClassArrayValueOk() throws ClassNotFoundException, SecurityException, NoSuchMethodException {
+    if (verifyNoPropertyViolation()) {
+      Class<?> clazz = Class.forName(AnnotationTest.class.getName());
+      Method method = clazz.getDeclaredMethod("testClassArrayValueOk");
+      Annotation[] annotations = method.getAnnotations();
+      assertEquals(2, annotations.length);
+      assertNotNull(annotations[1]);
+
+      assertTrue(annotations[1] instanceof A11);
+      A11 ann = (A11) annotations[1];
+      assertTrue(ann.value()[0] == AnnotationTest.class);
+      assertTrue(ann.value()[1] == Class.class);
+    }
+  }
+
   //-------------------------------------------------------------------
   static class MyClass {
     @A1("the answer")
@@ -359,7 +381,7 @@ public class AnnotationTest extends TestJPF {
     }        
   }
   
-  /***************************************************/
+  //---------------------------------------------------------------
   
   @Retention(RetentionPolicy.RUNTIME)
   @Inherited
@@ -389,4 +411,29 @@ public class AnnotationTest extends TestJPF {
       assertTrue(Child2.class.getAnnotations().length == 1);
     }
   }
+  
+
+  //---------------------------------------------------------------
+  // test for RuntimeVisibleAnnotations attributes that in turn have
+  // element_value entries
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface A12 { // this one has the string value
+    String value();
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  @A12("Whatever")
+  @interface A13 {
+    // this one has a RuntimeVisibleAnnotation attribute for A11 with a
+    // String entry value
+  }
+
+  @A13 // causes loading of @C
+  @Test
+  public void testRecursiveRuntimeVisibleAnnotationValue(){
+    if (verifyNoPropertyViolation()){
+      // nothing to do other than just causing the loading of A12
+    }
+  }
+  
 }
