@@ -28,9 +28,9 @@ import java.util.TimeZone;
 public class JPF_gov_nasa_jpf_DelegatingTimeZone extends NativePeer {
 
   //--- internals
-  static TimeZone tz; // only used within (atomic) peer methods
+  TimeZone tz; // only used within (atomic) peer methods
   
-  private static TimeZone getTimeZone (MJIEnv env, int objRef){
+  private TimeZone getTimeZone (MJIEnv env, int objRef){
     int rawOffset = env.getIntField(objRef, "rawOffset");
     tz.setRawOffset(rawOffset);
     return tz;
@@ -38,7 +38,7 @@ public class JPF_gov_nasa_jpf_DelegatingTimeZone extends NativePeer {
 
   //--- native methods
   
-  public static void setID__Ljava_lang_String_2__V (MJIEnv env, int objRef, int idRef){
+  public void setID__Ljava_lang_String_2__V (MJIEnv env, int objRef, int idRef){
     String id = env.getStringObject(idRef);
     TimeZone tz = TimeZone.getTimeZone(id);
     int rawOffset = tz.getRawOffset();
@@ -47,19 +47,19 @@ public class JPF_gov_nasa_jpf_DelegatingTimeZone extends NativePeer {
     env.setIntField(objRef, "rawOffset", rawOffset);
   }
   
-  public static int getOffset__IIIIII__I (MJIEnv env, int objRef,
+  public int getOffset__IIIIII__I (MJIEnv env, int objRef,
       int era, int year, int month, int day, int dayOfWeek, int milliseconds){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.getOffset(era, year, month, day, dayOfWeek, milliseconds);
   }
     
-  public static boolean inDaylightTime__J__Z (MJIEnv env, int objRef, long time){
+  public boolean inDaylightTime__J__Z (MJIEnv env, int objRef, long time){
     Date date = new Date(time);
     TimeZone tz = getTimeZone( env, objRef);
     return tz.inDaylightTime(date);
   }
   
-  public static boolean useDaylightTime____Z (MJIEnv env, int objRef){
+  public boolean useDaylightTime____Z (MJIEnv env, int objRef){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.useDaylightTime();
   }

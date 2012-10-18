@@ -27,7 +27,7 @@ import java.util.List;
 public class JPF_java_util_ResourceBundle extends NativePeer {
 
 
-  public static int getClassContext_____3Ljava_lang_Class_2 (MJIEnv env, int clsRef){
+  public int getClassContext_____3Ljava_lang_Class_2 (MJIEnv env, int clsRef){
     ThreadInfo ti = env.getThreadInfo();
 
     List<StackFrame> list = ti.getInvokedStackFrames();

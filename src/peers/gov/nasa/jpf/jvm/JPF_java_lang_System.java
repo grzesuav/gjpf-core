@@ -34,7 +34,7 @@ import java.util.Properties;
  */
 public class JPF_java_lang_System extends NativePeer {
   
-  public static void arraycopy__Ljava_lang_Object_2ILjava_lang_Object_2II__V (MJIEnv env, int clsObjRef,
+  public void arraycopy__Ljava_lang_Object_2ILjava_lang_Object_2II__V (MJIEnv env, int clsObjRef,
                                                                               int srcArrayRef, int srcIdx, 
                                                                               int dstArrayRef, int dstIdx,
                                                                               int length) {
@@ -55,7 +55,7 @@ public class JPF_java_lang_System extends NativePeer {
     }
   }
 
-  public static int getenv__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef,
+  public int getenv__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef,
                                                                          int keyRef){
     String k = env.getStringObject(keyRef);
     String v = System.getenv(k);
@@ -90,11 +90,11 @@ public class JPF_java_lang_System extends NativePeer {
     return env.newObject(ci);
   }
   
-  public static int createSystemOut____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
+  public int createSystemOut____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
     return createPrintStream(env,clsObjRef);
   }
   
-  public static int createSystemErr____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
+  public int createSystemErr____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
     return createPrintStream(env,clsObjRef);
   }
   
@@ -238,7 +238,7 @@ public class JPF_java_lang_System extends NativePeer {
     HOST
   };
 
-  public static int getKeyValuePairs_____3Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
+  public int getKeyValuePairs_____3Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
     Config conf = env.getConfig();
     SystemPropertyPolicy sysPropSrc = conf.getEnum( "vm.sysprop.source", SystemPropertyPolicy.values(), SystemPropertyPolicy.SELECTED);
 
@@ -257,18 +257,18 @@ public class JPF_java_lang_System extends NativePeer {
   // (sort of "if ((t2 - t1) > d)"). Ok, we can't deal with
   // real time, but we could at least give some SystemState dependent
   // increment
-  public static long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
+  public long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
     return env.currentTimeMillis();
   }
 
   // <2do> - likewise. Java 1.5's way to measure relative time
-  public static long nanoTime____J (MJIEnv env, int clsObjRef) {
+  public long nanoTime____J (MJIEnv env, int clsObjRef) {
     return env.nanoTime();
   }  
   
   // this works on the assumption that we sure break the transition, and
   // then the search determines that it is an end state (all terminated)
-  public static void exit__I__V (MJIEnv env, int clsObjRef, int ret) {
+  public void exit__I__V (MJIEnv env, int clsObjRef, int ret) {
     SystemState ss = env.getSystemState();
     ThreadInfo[] liveThreads = env.getLiveThreads();
 
@@ -280,11 +280,11 @@ public class JPF_java_lang_System extends NativePeer {
     ss.setMandatoryNextChoiceGenerator( new BreakGenerator("exit", env.getThreadInfo(), true), "exit without break CG");
   }
 
-  public static void gc____V (MJIEnv env, int clsObjRef) {
+  public void gc____V (MJIEnv env, int clsObjRef) {
     env.getSystemState().activateGC();
   }
 
-  public static int identityHashCode__Ljava_lang_Object_2__I (MJIEnv env, int clsObjRef, int objref) {
+  public int identityHashCode__Ljava_lang_Object_2__I (MJIEnv env, int clsObjRef, int objref) {
     return (objref ^ 0xABCD);
   }
   

@@ -5,7 +5,7 @@ import gov.nasa.jpf.jvm.NativePeer;
 
 public class JPF_gov_nasa_jpf_test_mc_basic_AttrsTest extends NativePeer {
 
-  public static double goNative__DI__D (MJIEnv env, int objRef, double d, int i) {
+  public double goNative__DI__D (MJIEnv env, int objRef, double d, int i) {
 
     Object[] attrs = env.getArgAttributes();
 

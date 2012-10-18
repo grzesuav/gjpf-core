@@ -29,7 +29,7 @@ package gov.nasa.jpf.jvm;
 public class JPF_java_lang_Short extends NativePeer {
   // <2do> at this point we deliberately do not override clinit
   
-  public static short parseShort__Ljava_lang_String_2__S (MJIEnv env, 
+  public short parseShort__Ljava_lang_String_2__S (MJIEnv env, 
                                                           int clsObjRef, 
                                                           int strRef) {
     try {
@@ -41,7 +41,7 @@ public class JPF_java_lang_Short extends NativePeer {
     }
   }
 
-  public static short parseShort__Ljava_lang_String_2I__S (MJIEnv env, 
+  public short parseShort__Ljava_lang_String_2I__S (MJIEnv env, 
                                                             int clsObjRef, 
                                                             int strRef, int radix) {
     try {
@@ -53,11 +53,11 @@ public class JPF_java_lang_Short extends NativePeer {
     }
   }
 
-  public static int toString__S__Ljava_lang_String_2 (MJIEnv env, int objref, short val) {
+  public int toString__S__Ljava_lang_String_2 (MJIEnv env, int objref, short val) {
     return env.newString(Short.toString(val));
   }
 
-  public static int valueOf__S__Ljava_lang_Short_2 (MJIEnv env, int clsRef, short val) {
+  public int valueOf__S__Ljava_lang_Short_2 (MJIEnv env, int clsRef, short val) {
     return env.valueOfShort(val);
   }
 }

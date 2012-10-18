@@ -45,12 +45,12 @@ public class JPF_java_lang_Class extends NativePeer {
     return true;
   }
   
-  public static boolean isArray____Z (MJIEnv env, int robj) {
+  public boolean isArray____Z (MJIEnv env, int robj) {
     ClassInfo ci = env.getReferredClassInfo( robj);
     return ci.isArray();
   }
 
-  public static int getComponentType____Ljava_lang_Class_2 (MJIEnv env, int robj) {
+  public int getComponentType____Ljava_lang_Class_2 (MJIEnv env, int robj) {
     if (isArray____Z(env, robj)) {
       ThreadInfo ti = env.getThreadInfo();
       Instruction insn = ti.getPC();
@@ -67,7 +67,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return MJIEnv.NULL;
   }
 
-  public static boolean isInstance__Ljava_lang_Object_2__Z (MJIEnv env, int robj,
+  public boolean isInstance__Ljava_lang_Object_2__Z (MJIEnv env, int robj,
                                                          int r1) {
     ElementInfo sei = env.getClassElementInfo(robj);
     ClassInfo   ci = sei.getClassInfo();
@@ -75,12 +75,12 @@ public class JPF_java_lang_Class extends NativePeer {
     return (ciOther.isInstanceOf(ci.getName()));
   }
 
-  public static boolean isInterface____Z (MJIEnv env, int robj){
+  public boolean isInterface____Z (MJIEnv env, int robj){
     ClassInfo ci = env.getReferredClassInfo( robj);
     return ci.isInterface();
   }
   
-  public static boolean isAssignableFrom__Ljava_lang_Class_2__Z (MJIEnv env, int rcls,
+  public boolean isAssignableFrom__Ljava_lang_Class_2__Z (MJIEnv env, int rcls,
                                                               int r1) {
     ElementInfo sei1 = env.getClassElementInfo(rcls);
     ClassInfo   ci1 = sei1.getClassInfo();
@@ -91,7 +91,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return ci2.isInstanceOf( ci1.getName());
   }
   
-  public static int getAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj){    
+  public int getAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj){    
     ClassInfo ci = env.getReferredClassInfo( robj);
     AnnotationInfo[] ai = ci.getAnnotations();
 
@@ -103,7 +103,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
   
-  public static int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj,
+  public int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj,
                                                                                 int annoClsRef){
     ClassInfo ci = env.getReferredClassInfo( robj);
     ClassInfo aci = env.getReferredClassInfo(annoClsRef);
@@ -123,7 +123,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
   
-  public static int getPrimitiveClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
+  public int getPrimitiveClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
                                                             int rcls, int stringRef) {
     String clsName = env.getStringObject(stringRef);
 
@@ -140,7 +140,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return cref;
   }
 
-  public static boolean desiredAssertionStatus____Z (MJIEnv env, int robj) {
+  public boolean desiredAssertionStatus____Z (MJIEnv env, int robj) {
     ClassInfo ci = env.getReferredClassInfo(robj);
     return ci.desiredAssertionStatus();
   }
@@ -160,7 +160,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return ref;
   }
   
-  public static int forName__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
+  public int forName__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
                                                                        int rcls,
                                                                        int clsNameRef) {
     String clsName = env.getStringObject(clsNameRef);
@@ -200,7 +200,7 @@ public class JPF_java_lang_Class extends NativePeer {
    * We don't have to deal with class init here anymore, since this is called
    * via the class object of the class to instantiate
    */
-  public static int newInstance____Ljava_lang_Object_2 (MJIEnv env, int robj) {
+  public int newInstance____Ljava_lang_Object_2 (MJIEnv env, int robj) {
     String directCallId = "JPF_java_lang_Class.newInstance";
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = ti.getReturnedDirectCall();
@@ -253,7 +253,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
   
-  public static int getSuperclass____Ljava_lang_Class_2 (MJIEnv env, int robj) {
+  public int getSuperclass____Ljava_lang_Class_2 (MJIEnv env, int robj) {
     ClassInfo ci = env.getReferredClassInfo( robj);
     ClassInfo sci = ci.getSuperClass();
     if (sci != null) {
@@ -301,7 +301,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
   
-  public static int getDeclaredMethod__Ljava_lang_String_2_3Ljava_lang_Class_2__Ljava_lang_reflect_Method_2 (MJIEnv env, int clsRef,
+  public int getDeclaredMethod__Ljava_lang_String_2_3Ljava_lang_Class_2__Ljava_lang_reflect_Method_2 (MJIEnv env, int clsRef,
                                                                                                      int nameRef, int argTypesRef) {
     ClassInfo mci = getInitializedClassInfo(env, METHOD_CLASSNAME);
     if (mci == null) {
@@ -314,7 +314,7 @@ public class JPF_java_lang_Class extends NativePeer {
   }
 
   
-  public static int getDeclaredConstructor___3Ljava_lang_Class_2__Ljava_lang_reflect_Constructor_2 (MJIEnv env,
+  public int getDeclaredConstructor___3Ljava_lang_Class_2__Ljava_lang_reflect_Constructor_2 (MJIEnv env,
                                                                                                int clsRef,
                                                                                                int argTypesRef){
     ClassInfo mci = getInitializedClassInfo(env, CONSTRUCTOR_CLASSNAME);
@@ -327,7 +327,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return ctorRef;
   }
   
-  public static int getMethod__Ljava_lang_String_2_3Ljava_lang_Class_2__Ljava_lang_reflect_Method_2 (MJIEnv env, int clsRef,
+  public int getMethod__Ljava_lang_String_2_3Ljava_lang_Class_2__Ljava_lang_reflect_Method_2 (MJIEnv env, int clsRef,
                                                                                                      int nameRef, int argTypesRef) {
     ClassInfo mci = getInitializedClassInfo(env, METHOD_CLASSNAME);
     if (mci == null) {
@@ -363,7 +363,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
 
-  public static int getMethods_____3Ljava_lang_reflect_Method_2 (MJIEnv env, int objref) {
+  public int getMethods_____3Ljava_lang_reflect_Method_2 (MJIEnv env, int objref) {
     ClassInfo mci = getInitializedClassInfo(env, METHOD_CLASSNAME);
     if (mci == null) {
       env.repeatInvocation();
@@ -393,7 +393,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
   
-  public static int getDeclaredMethods_____3Ljava_lang_reflect_Method_2 (MJIEnv env, int objref) {
+  public int getDeclaredMethods_____3Ljava_lang_reflect_Method_2 (MJIEnv env, int objref) {
     ClassInfo mci = getInitializedClassInfo(env, METHOD_CLASSNAME);
     if (mci == null) {
       env.repeatInvocation();
@@ -453,15 +453,15 @@ public class JPF_java_lang_Class extends NativePeer {
     return aref;
   }
   
-  public static int getConstructors_____3Ljava_lang_reflect_Constructor_2 (MJIEnv env, int objref){
+  public int getConstructors_____3Ljava_lang_reflect_Constructor_2 (MJIEnv env, int objref){
     return getConstructors(env, objref, true);
   }  
   
-  public static int getDeclaredConstructors_____3Ljava_lang_reflect_Constructor_2 (MJIEnv env, int objref){
+  public int getDeclaredConstructors_____3Ljava_lang_reflect_Constructor_2 (MJIEnv env, int objref){
     return getConstructors(env, objref, false);
   }
   
-  public static int getConstructor___3Ljava_lang_Class_2__Ljava_lang_reflect_Constructor_2 (MJIEnv env, int clsRef,
+  public int getConstructor___3Ljava_lang_Class_2__Ljava_lang_reflect_Constructor_2 (MJIEnv env, int clsRef,
                                                                                        int argTypesRef){
     ClassInfo mci = getInitializedClassInfo(env, CONSTRUCTOR_CLASSNAME);
     if (mci == null) {
@@ -509,7 +509,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return eidx;
   }
   
-  public static int getDeclaredFields_____3Ljava_lang_reflect_Field_2 (MJIEnv env, int objRef) {
+  public int getDeclaredFields_____3Ljava_lang_reflect_Field_2 (MJIEnv env, int objRef) {
     ClassInfo fci = getInitializedClassInfo(env, FIELD_CLASSNAME);
     if (fci == null) {
       env.repeatInvocation();
@@ -535,7 +535,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return aref;
   }
   
-  public static int getFields_____3Ljava_lang_reflect_Field_2 (MJIEnv env, int clsRef){
+  public int getFields_____3Ljava_lang_reflect_Field_2 (MJIEnv env, int clsRef){
     ClassInfo fci = getInitializedClassInfo(env, FIELD_CLASSNAME);
     if (fci == null) {
       env.repeatInvocation();
@@ -613,20 +613,20 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
   
-  public static int getDeclaredField__Ljava_lang_String_2__Ljava_lang_reflect_Field_2 (MJIEnv env, int clsRef, int nameRef) {
+  public int getDeclaredField__Ljava_lang_String_2__Ljava_lang_reflect_Field_2 (MJIEnv env, int clsRef, int nameRef) {
     return getField(env,clsRef,nameRef, false);
   }  
  
-  public static int getField__Ljava_lang_String_2__Ljava_lang_reflect_Field_2 (MJIEnv env, int clsRef, int nameRef) {
+  public int getField__Ljava_lang_String_2__Ljava_lang_reflect_Field_2 (MJIEnv env, int clsRef, int nameRef) {
     return getField(env,clsRef,nameRef, true);    
   }
 
-  public static int getModifiers____I (MJIEnv env, int clsRef){
+  public int getModifiers____I (MJIEnv env, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
     return ci.getModifiers();
   }
   
-  public static int getEnumConstants (MJIEnv env, int clsRef){
+  public int getEnumConstants (MJIEnv env, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
     
     if (env.requiresClinitExecution(ci)){
@@ -656,7 +656,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return MJIEnv.NULL;
   }
     
-  static public int getInterfaces_____3Ljava_lang_Class_2 (MJIEnv env, int clsRef){
+  public int getInterfaces_____3Ljava_lang_Class_2 (MJIEnv env, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
     int aref = MJIEnv.NULL;
     ThreadInfo ti = env.getThreadInfo();
@@ -682,7 +682,7 @@ public class JPF_java_lang_Class extends NativePeer {
    * @author Sebastian Gfeller (sebastian.gfeller@gmail.com)
    * @author Tihomir Gvero (tihomir.gvero@gmail.com)
    */
-  public static int getByteArrayFromResourceStream(MJIEnv env, int clsRef, int nameRef) {
+  public int getByteArrayFromResourceStream(MJIEnv env, int clsRef, int nameRef) {
     String name = env.getStringObject(nameRef);
 
     // <2do> this is not loading from the classfile location! fix it
@@ -704,7 +704,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return env.newByteArray(content);
   }
 
-  public static int getEnclosingClass (MJIEnv env, int clsRef) {
+  public int getEnclosingClass____Ljava_lang_Class_2 (MJIEnv env, int clsRef) {
     ClassInfo ciEncl = env.getReferredClassInfo( clsRef).getEnclosingClassInfo();
     
     if (ciEncl == null){
@@ -726,7 +726,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return ciEncl.getClassObjectRef();
   }
 
-  public static int getDeclaredClasses (MJIEnv env, int clsRef){
+  public int getDeclaredClasses (MJIEnv env, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
     String[] innerClassNames =  ci.getInnerClasses();
     int aref = MJIEnv.NULL;
@@ -781,24 +781,24 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
 
-  public static int getCanonicalName____Ljava_lang_String_2 (MJIEnv env, int clsRef){
+  public int getCanonicalName____Ljava_lang_String_2 (MJIEnv env, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
     return env.newString(getCanonicalName(ci));
   }
 
-  public static boolean isAnnotation____Z (MJIEnv env, int clsObjRef){
+  public boolean isAnnotation____Z (MJIEnv env, int clsObjRef){
     ClassInfo ci = env.getReferredClassInfo(clsObjRef);
     return (ci.getModifiers() & 0x2000) != 0;
   }
   
-  public static boolean isAnnotationPresent__Ljava_lang_Class_2__Z (MJIEnv env, int clsObjRef, int annoClsObjRef){
+  public boolean isAnnotationPresent__Ljava_lang_Class_2__Z (MJIEnv env, int clsObjRef, int annoClsObjRef){
     ClassInfo ci = env.getReferredClassInfo(clsObjRef);
     ClassInfo ciAnno = env.getReferredClassInfo(annoClsObjRef);
     
     return ci.getAnnotation( ciAnno.getName()) != null;    
   }
   
-  public static int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj){
+  public int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj){
     ClassInfo ci = env.getReferredClassInfo(robj);
     ArrayList<AnnotationInfo> declared = new ArrayList<AnnotationInfo>();
     for (AnnotationInfo a : ci.getAnnotations()){
@@ -817,7 +817,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
 
-  public static int getEnclosingConstructor____Ljava_lang_reflect_Constructor_2 (MJIEnv env, int robj){
+  public int getEnclosingConstructor____Ljava_lang_reflect_Constructor_2 (MJIEnv env, int robj){
     ClassInfo mci = getInitializedClassInfo(env, CONSTRUCTOR_CLASSNAME);
     if (mci == null){
       env.repeatInvocation();
@@ -832,7 +832,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return MJIEnv.NULL;
   }
 
-  public static int getEnclosingMethod____Ljava_lang_reflect_Method_2 (MJIEnv env, int robj){
+  public int getEnclosingMethod____Ljava_lang_reflect_Method_2 (MJIEnv env, int robj){
     ClassInfo mci = getInitializedClassInfo(env, METHOD_CLASSNAME);
     if (mci == null){
       env.repeatInvocation();
@@ -847,7 +847,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return MJIEnv.NULL;
   }
 
-  public static boolean isAnonymousClass____Z (MJIEnv env, int robj){
+  public boolean isAnonymousClass____Z (MJIEnv env, int robj){
     ClassInfo ci = env.getReferredClassInfo(robj);
     String cname = null;
     if (ci.getName().contains("$")){
@@ -856,23 +856,23 @@ public class JPF_java_lang_Class extends NativePeer {
     return (cname == null) ? false : cname.matches("\\d+?");
   }
 
-  public static boolean isEnum____Z (MJIEnv env, int robj){
+  public boolean isEnum____Z (MJIEnv env, int robj){
     ClassInfo ci = env.getReferredClassInfo(robj);
     return ci.isEnum();
   }
 
   // Similar to getEnclosingClass() except it returns null for the case of
   // anonymous class.
-  public static int getDeclaringClass____Ljava_lang_Class_2 (MJIEnv env, int clsRef){
+  public int getDeclaringClass____Ljava_lang_Class_2 (MJIEnv env, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
     if (isLocalOrAnonymousClass(ci)){
       return MJIEnv.NULL;
     } else{
-      return getEnclosingClass(env, clsRef);
+      return getEnclosingClass____Ljava_lang_Class_2(env, clsRef);
     }
   }
 
-  public static boolean isLocalClass____Z (MJIEnv env, int robj){
+  public boolean isLocalClass____Z (MJIEnv env, int robj){
     ClassInfo ci = env.getReferredClassInfo(robj);
     return isLocalOrAnonymousClass(ci) && !isAnonymousClass____Z(env, robj);
   }
@@ -881,7 +881,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return (ci.getEnclosingMethodInfo() != null);
   }
 
-  public static boolean isMemberClass____Z (MJIEnv env, int robj){
+  public boolean isMemberClass____Z (MJIEnv env, int robj){
     ClassInfo ci = env.getReferredClassInfo(robj);
     return (ci.getEnclosingClassInfo() != null) && !isLocalOrAnonymousClass(ci);
   }
@@ -890,7 +890,7 @@ public class JPF_java_lang_Class extends NativePeer {
    * Append the package name prefix of the class represented by robj, if the name is not 
    * absolute. OW, remove leading "/". 
    */
-  public static int getResolvedName__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int robj, int resRef){
+  public int getResolvedName__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int robj, int resRef){
     String rname = env.getStringObject(resRef);
     ClassInfo ci = env.getReferredClassInfo(robj);
     if (rname == null) {

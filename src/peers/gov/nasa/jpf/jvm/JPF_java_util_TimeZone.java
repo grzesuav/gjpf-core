@@ -52,7 +52,7 @@ public class JPF_java_util_TimeZone extends NativePeer {
   //--- native methods
   
   //--- the factory methods
-  public static int getTimeZone__Ljava_lang_String_2__Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef, int idRef){
+  public int getTimeZone__Ljava_lang_String_2__Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef, int idRef){
     String id = env.getStringObject(idRef);
     TimeZone tz = TimeZone.getTimeZone(id);
     
@@ -75,7 +75,7 @@ public class JPF_java_util_TimeZone extends NativePeer {
     defaultRawOffset = tz.getRawOffset();
   }
   
-  public static int createDefaultZone____Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef){
+  public int createDefaultZone____Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef){
     int idRef = env.newString(defaultID);
 
     int tzRef = env.newObject("java.util.TimeZone");
@@ -86,24 +86,23 @@ public class JPF_java_util_TimeZone extends NativePeer {
   }
 
   
-  public static void setDefaultValues__Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef, int tzRef){
+  public void setDefaultValues__Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef, int tzRef){
     defaultID = env.getStringField(tzRef, "ID");
     defaultRawOffset = env.getIntField( tzRef, "rawOffset");
   }
   
   //--- the ID queries
-  public static int getAvailableIDs_____3Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
+  public int getAvailableIDs_____3Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
     String[] ids = TimeZone.getAvailableIDs();
     return env.newStringArray(ids);
   }
   
-  public static int getAvailableIDs__I___3Ljava_lang_String_2 (MJIEnv env, int clsObjRef, int rawOffset){
+  public int getAvailableIDs__I___3Ljava_lang_String_2 (MJIEnv env, int clsObjRef, int rawOffset){
     String[] ids = TimeZone.getAvailableIDs(rawOffset);
     return env.newStringArray(ids);    
   }
 
-  
-  public static void setID__Ljava_lang_String_2__V (MJIEnv env, int objRef, int idRef){
+  public void setID__Ljava_lang_String_2__V (MJIEnv env, int objRef, int idRef){
     String id = env.getStringObject(idRef);
     TimeZone tz = TimeZone.getTimeZone(id);
     
@@ -117,19 +116,19 @@ public class JPF_java_util_TimeZone extends NativePeer {
     env.setIntField(objRef, "rawOffset", rawOffset);
   }
   
-  public static int getOffset__IIIIII__I (MJIEnv env, int objRef,
+  public int getOffset__IIIIII__I (MJIEnv env, int objRef,
       int era, int year, int month, int day, int dayOfWeek, int milliseconds){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.getOffset(era, year, month, day, dayOfWeek, milliseconds);
   }
-    
-  public static int getOffset__J__I (MJIEnv env, int objRef, long date){
+
+  public int getOffset__J__I (MJIEnv env, int objRef, long date){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.getOffset(date);
   }
   
   // unfortunately, this is not public in Java 1.7, so we can't delegate w/o reflection
-  public static int getOffsets__J_3I__I (MJIEnv env, int objRef, long date, int offsetsRef){
+  public int getOffsets__J_3I__I (MJIEnv env, int objRef, long date, int offsetsRef){
     TimeZone tz = getTimeZone( env, objRef);
     
     int rawOffset = tz.getRawOffset();
@@ -145,24 +144,24 @@ public class JPF_java_util_TimeZone extends NativePeer {
     
     return (rawOffset + dstOffset);
   }
-  
-  public static boolean inDaylightTime__J__Z (MJIEnv env, int objRef, long time){
+
+  public boolean inDaylightTime__J__Z (MJIEnv env, int objRef, long time){
     Date date = new Date(time);
     TimeZone tz = getTimeZone( env, objRef);
     return tz.inDaylightTime(date);
   }
   
-  public static boolean useDaylightTime____Z (MJIEnv env, int objRef){
+  public boolean useDaylightTime____Z (MJIEnv env, int objRef){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.useDaylightTime();
   }
 
-  public static int getDSTSavings____I (MJIEnv env, int objRef){
+  public int getDSTSavings____I (MJIEnv env, int objRef){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.getDSTSavings();    
   }
     
-  public static int getDisplayName__ZILjava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objRef,
+  public int getDisplayName__ZILjava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objRef,
                                        boolean daylight, int style, int localeRef) {
     TimeZone tz = getTimeZone(env, objRef);
     Locale displayLocale = JPF_java_util_Locale.getLocale(env, localeRef);

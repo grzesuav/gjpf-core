@@ -25,22 +25,22 @@ import gov.nasa.jpf.Config;
  */
 public class JPF_java_lang_Runtime extends NativePeer {
 
-  public static void addShutdownHook__Ljava_lang_Thread_2__V (MJIEnv env, int objref, int threadRef) {
+  public void addShutdownHook__Ljava_lang_Thread_2__V (MJIEnv env, int objref, int threadRef) {
     // ignored for now
   }
 
-  public static long totalMemory____J (MJIEnv env, int objref) {
+  public long totalMemory____J (MJIEnv env, int objref) {
     // not really sure what to return here, since in reality this
     // value can be non-deterministic
     return 50000000;
   }
 
-  public static long maxMemory____J (MJIEnv env, int objref) {
+  public long maxMemory____J (MJIEnv env, int objref) {
     // yet another cut
     return 70000000;
   }
 
-  public static long freeMemory____J (MJIEnv env, int objref) {
+  public long freeMemory____J (MJIEnv env, int objref) {
     // we don't have an upper limit for our heap space, and we don't
     // keep track how much is used, so we just return a dummy
     
@@ -51,12 +51,12 @@ public class JPF_java_lang_Runtime extends NativePeer {
     return 10000000;
   }
   
-  public static void gc____V (MJIEnv env, int objref){
+  public void gc____V (MJIEnv env, int objref){
     env.gc();
   }
   
   
-  public static int availableProcessors____I (MJIEnv env, int objref){
+  public int availableProcessors____I (MJIEnv env, int objref){
     // this is what all these Runtime data acquisition APIs should look like
     // - since the value is oing to be used by the application, there should
     // be a way to vary it with a CG
@@ -67,7 +67,7 @@ public class JPF_java_lang_Runtime extends NativePeer {
     if (maxProcessors == 1) {
       return 1;
     } else {
-      return JPF_gov_nasa_jpf_jvm_Verify.getInt__II__I(env,-1, 1,maxProcessors);
+      return (new JPF_gov_nasa_jpf_jvm_Verify()).getInt__II__I(env,-1, 1,maxProcessors);
     }
   }
 }

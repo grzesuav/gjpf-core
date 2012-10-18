@@ -24,7 +24,7 @@ package gov.nasa.jpf.jvm;
 public class JPF_java_lang_Integer extends NativePeer {
   // <2do> at this point we deliberately do not override clinit
 
-  public static int parseInt__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, 
+  public int parseInt__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, 
                                                    int strRef) {
     try {
       return Integer.parseInt(env.getStringObject(strRef));
@@ -35,7 +35,7 @@ public class JPF_java_lang_Integer extends NativePeer {
     }
   }
 
-  public static int parseInt__Ljava_lang_String_2I__I (MJIEnv env, int clsObjRef, 
+  public int parseInt__Ljava_lang_String_2I__I (MJIEnv env, int clsObjRef, 
                                                     int strRef, int radix) {
     try {
       return Integer.parseInt(env.getStringObject(strRef), radix);
@@ -46,27 +46,27 @@ public class JPF_java_lang_Integer extends NativePeer {
     }
   }
 
-  public static int toBinaryString__I__Ljava_lang_String_2 (MJIEnv env, int objref, int val) {
+  public int toBinaryString__I__Ljava_lang_String_2 (MJIEnv env, int objref, int val) {
     return env.newString(Integer.toBinaryString(val));
   }
 
-  public static int toHexString__I__Ljava_lang_String_2 (MJIEnv env, int objref, int val) {
+  public int toHexString__I__Ljava_lang_String_2 (MJIEnv env, int objref, int val) {
     return env.newString(Integer.toHexString(val));
   }
 
-  public static int toOctalString__I__Ljava_lang_String_2 (MJIEnv env, int objref, int val) {
+  public int toOctalString__I__Ljava_lang_String_2 (MJIEnv env, int objref, int val) {
     return env.newString(Integer.toOctalString(val));
   }
 
-  public static int toString__I__Ljava_lang_String_2 (MJIEnv env, int objref, int val) {
+  public int toString__I__Ljava_lang_String_2 (MJIEnv env, int objref, int val) {
     return env.newString(Integer.toString(val));
   }
 
-  public static int toString__II__Ljava_lang_String_2 (MJIEnv env, int objref, int val, int radix) {
+  public int toString__II__Ljava_lang_String_2 (MJIEnv env, int objref, int val, int radix) {
     return env.newString(Integer.toString(val, radix));
   }
 
-  public static int valueOf__I__Ljava_lang_Integer_2 (MJIEnv env, int clsRef, int val) {
+  public int valueOf__I__Ljava_lang_Integer_2 (MJIEnv env, int clsRef, int val) {
     return env.valueOfInteger(val);
   }
 }

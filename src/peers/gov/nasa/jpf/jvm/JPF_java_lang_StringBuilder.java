@@ -20,7 +20,7 @@ package gov.nasa.jpf.jvm;
 
 public class JPF_java_lang_StringBuilder extends NativePeer {
   
-  static int appendString (MJIEnv env, int objref, String s) {
+  int appendString (MJIEnv env, int objref, String s) {
     int slen = s.length();
     int aref = env.getReferenceField(objref, "value");
     int alen = env.getArrayLength(aref);
@@ -52,7 +52,7 @@ public class JPF_java_lang_StringBuilder extends NativePeer {
     return objref;
   }
 
-  public static int append__Ljava_lang_String_2__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, int sref) {
+  public int append__Ljava_lang_String_2__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, int sref) {
     String s = env.getStringObject(sref);
     
     if (s == null) s = "null";
@@ -60,37 +60,37 @@ public class JPF_java_lang_StringBuilder extends NativePeer {
     return appendString(env, objref, s);
   }
   
-  public static int append__I__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, int i) {
+  public int append__I__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, int i) {
     String s = Integer.toString(i);
     
     return appendString(env, objref, s);
   }
 
-  public static int append__F__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, float f) {
+  public int append__F__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, float f) {
     String s = Float.toString(f);
     
     return appendString(env, objref, s);
   }
 
-  public static int append__D__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, double d) {
+  public int append__D__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, double d) {
     String s = Double.toString(d);
     
     return appendString(env, objref, s);
   }
   
-  public static int append__J__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, long l) {
+  public int append__J__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, long l) {
     String s = Long.toString(l);
     
     return appendString(env, objref, s);
   }
 
-  public static int append__Z__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, boolean b) {
+  public int append__Z__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, boolean b) {
     String s = b ? "true" : "false";
     
     return appendString(env, objref, s);
   }
   
-  public static int append__C__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, char c) {
+  public int append__C__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, char c) {
     int aref = env.getReferenceField(objref, "value");
     int alen = env.getArrayLength(aref);
     int count = env.getIntField(objref, "count");
@@ -115,7 +115,7 @@ public class JPF_java_lang_StringBuilder extends NativePeer {
     
   }
 
-  public static int toString____Ljava_lang_String_2 (MJIEnv env, int objref) {
+  public int toString____Ljava_lang_String_2 (MJIEnv env, int objref) {
     int aref = env.getReferenceField(objref, "value");
     int count = env.getIntField(objref, "count");
 

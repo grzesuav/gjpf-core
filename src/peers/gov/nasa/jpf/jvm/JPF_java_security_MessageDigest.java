@@ -25,13 +25,13 @@ import java.security.NoSuchAlgorithmException;
 
 public class JPF_java_security_MessageDigest extends NativePeer {
   
-  static MessageDigest[] digests;
+  MessageDigest[] digests;
   
   public JPF_java_security_MessageDigest (Config conf){
     digests = new MessageDigest[32];
   }
   
-  static int getNewIndex() {
+  int getNewIndex() {
     int n = digests.length;
     for (int i=0; i<n; i++){
       if (digests[i] == null){
@@ -45,12 +45,12 @@ public class JPF_java_security_MessageDigest extends NativePeer {
     return n;
   }
   
-  static MessageDigest getDigest (MJIEnv env, int objRef){
+  MessageDigest getDigest (MJIEnv env, int objRef){
     int id = env.getIntField(objRef, "id");
     return digests[id];
   }
   
-  public static int init0__Ljava_lang_String_2__I (MJIEnv env, int objRef, int algRef) {
+  public int init0__Ljava_lang_String_2__I (MJIEnv env, int objRef, int algRef) {
     String algorithm = env.getStringObject(algRef);
     
     try {
@@ -66,7 +66,7 @@ public class JPF_java_security_MessageDigest extends NativePeer {
     }
   }
   
-  public static int digest___3B___3B (MJIEnv env, int objRef, int inputRef){
+  public int digest___3B___3B (MJIEnv env, int objRef, int inputRef){
     MessageDigest md = getDigest(env, objRef);
     byte[] input = env.getByteArrayObject(inputRef);
     
@@ -74,7 +74,7 @@ public class JPF_java_security_MessageDigest extends NativePeer {
     return env.newByteArray(res);
   }
   
-  public static void finalize____ (MJIEnv env, int objRef){
+  public void finalize____ (MJIEnv env, int objRef){
     int id = env.getIntField(objRef, "id");
     digests[id] = null;
   }

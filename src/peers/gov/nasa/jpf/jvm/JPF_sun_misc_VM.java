@@ -23,7 +23,7 @@ package gov.nasa.jpf.jvm;
  */
 public class JPF_sun_misc_VM extends NativePeer {
   
-  public static void initialize____V (MJIEnv env, int clsObjRef){
+  public void initialize____V (MJIEnv env, int clsObjRef){
     // nothing here yet
   }
 }

@@ -22,15 +22,15 @@ package gov.nasa.jpf.jvm;
  * MJI NativePeer class for java.lang.Float library abstraction
  */
 public class JPF_java_lang_Float extends NativePeer {
-  public static int floatToIntBits__F__I (MJIEnv env, int rcls, float v0) {
+  public int floatToIntBits__F__I (MJIEnv env, int rcls, float v0) {
     return Float.floatToIntBits(v0);
   }
 
-  public static int floatToRawIntBits__F__I (MJIEnv env, int rcls, float v0) {
+  public int floatToRawIntBits__F__I (MJIEnv env, int rcls, float v0) {
     return Float.floatToRawIntBits(v0);
   }
 
-  public static float intBitsToFloat__I__F (MJIEnv env, int rcls, int v0) {
+  public float intBitsToFloat__I__F (MJIEnv env, int rcls, int v0) {
     return Float.intBitsToFloat(v0);
   }
   
@@ -38,12 +38,12 @@ public class JPF_java_lang_Float extends NativePeer {
   // cause an ArithmeticException to be raised if -check-fp-compare is set (default)
   // but -check-fp isn't, and Double.isInfinit is used to handle the cases
   // explicitly in the program (which is supposed to be the right way)
-  public static boolean isInfinite__F__Z (MJIEnv env, int rcls, float v) {
+  public boolean isInfinite__F__Z (MJIEnv env, int rcls, float v) {
     return Float.isInfinite(v);
   }
   
   // ditto (see isInfinite)
-  public static boolean isNaN__F__Z (MJIEnv env, int rcls, float v) {
+  public boolean isNaN__F__Z (MJIEnv env, int rcls, float v) {
     return Float.isNaN(v);
   }
 }

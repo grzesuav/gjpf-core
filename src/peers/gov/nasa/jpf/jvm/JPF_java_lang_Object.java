@@ -26,14 +26,14 @@ import gov.nasa.jpf.JPFException;
  */
 public class JPF_java_lang_Object extends NativePeer {
   
-  public static int getClass____Ljava_lang_Class_2 (MJIEnv env, int objref) {
+  public int getClass____Ljava_lang_Class_2 (MJIEnv env, int objref) {
     ClassInfo oci = env.getClassInfo(objref);
 
     return oci.getClassObjectRef();
   }
 
 
-  public static int clone____Ljava_lang_Object_2 (MJIEnv env, int objref) {
+  public int clone____Ljava_lang_Object_2 (MJIEnv env, int objref) {
     Heap heap = env.getHeap();
     ElementInfo objinfo = heap.get(objref);
     ClassInfo ci = objinfo.getClassInfo();
@@ -66,11 +66,11 @@ public class JPF_java_lang_Object extends NativePeer {
     }
   }
 
-  public static int hashCode____I (MJIEnv env, int objref) {
+  public int hashCode____I (MJIEnv env, int objref) {
     return (objref ^ 0xABCD);
   }
 
-  public static void registerNatives____V (MJIEnv env, int clsObjRef) {
+  public void registerNatives____V (MJIEnv env, int clsObjRef) {
     // nothing to do, we just intercept
   }
 
@@ -130,15 +130,15 @@ public class JPF_java_lang_Object extends NativePeer {
   
   // we intercept them both so that we don't get the java.lang.Object.wait() location
   // as the blocking insn
-  public static void wait____V (MJIEnv env, int objref){
+  public void wait____V (MJIEnv env, int objref){
     wait0(env,objref,0);
   }
   
-  public static void wait__J__V (MJIEnv env, int objref, long timeout) {
+  public void wait__J__V (MJIEnv env, int objref, long timeout) {
     wait0(env,objref,timeout);
   }
 
-  public static void notify____V (MJIEnv env, int objref) {
+  public void notify____V (MJIEnv env, int objref) {
     // IllegalMonitorStateExceptions are checked in the MJIEnv methods
 
     ThreadInfo ti = env.getThreadInfo();
@@ -160,7 +160,7 @@ public class JPF_java_lang_Object extends NativePeer {
     env.notify(objref);
   }
 
-  public static void notifyAll____V (MJIEnv env, int objref) {
+  public void notifyAll____V (MJIEnv env, int objref) {
     // IllegalMonitorStateExceptions are checked in the MJIEnv methods
 
     // usually, there is no non-determinism involved here, but

@@ -23,11 +23,11 @@ package gov.nasa.jpf.jvm;
  * this implementation just cuts off native methods
  */
 public class JPF_java_util_concurrent_atomic_AtomicLong extends NativePeer {
-  public static void $clinit____V (MJIEnv env, int rcls) {
+  public void $clinit____V (MJIEnv env, int rcls) {
     // don't let this one pass, it calls native methods from non-public Sun classes
   }
   
-  public static boolean compareAndSet__JJ__Z (MJIEnv env, int objRef, long expect, long update){
+  public boolean compareAndSet__JJ__Z (MJIEnv env, int objRef, long expect, long update){
     long value = env.getLongField(objRef, "value");
     if (value == expect){
       env.setLongField(objRef, "value", update);

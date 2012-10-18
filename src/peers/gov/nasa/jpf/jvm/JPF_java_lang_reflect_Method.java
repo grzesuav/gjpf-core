@@ -67,7 +67,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     return registry.getMethodInfo(env,objRef, "regIdx");
   }
   
-  public static int getName____Ljava_lang_String_2 (MJIEnv env, int objRef) {
+  public int getName____Ljava_lang_String_2 (MJIEnv env, int objRef) {
     MethodInfo mi = getMethodInfo(env, objRef);
     
     int nameRef = env.getReferenceField( objRef, "name");
@@ -79,7 +79,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     return nameRef;
   }
 
-  public static int getModifiers____I (MJIEnv env, int objRef){
+  public int getModifiers____I (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);
     return mi.getModifiers();
   }
@@ -106,7 +106,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     return aRef;
   }
   
-  public static int getParameterTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef){
+  public int getParameterTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef){
     return getParameterTypes(env, getMethodInfo(env, objRef));
   }
   
@@ -137,11 +137,11 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     return aRef;
   }
   
-  public static int getExceptionTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef) {
+  public int getExceptionTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef) {
     return getExceptionTypes(env, getMethodInfo(env, objRef));
   }
   
-  public static int getReturnType____Ljava_lang_Class_2 (MJIEnv env, int objRef){
+  public int getReturnType____Ljava_lang_Class_2 (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);
     ThreadInfo ti = env.getThreadInfo();
 
@@ -153,7 +153,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     return ci.getClassObjectRef();
   }
   
-  public static int getDeclaringClass____Ljava_lang_Class_2 (MJIEnv env, int objRef){
+  public int getDeclaringClass____Ljava_lang_Class_2 (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);    
     ClassInfo ci = mi.getClassInfo();
     // it's got to be registered, otherwise we wouldn't be able to acquire the Method object
@@ -463,7 +463,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     }
   }
 
-  public static int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
+  public int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                                            int objRef, int argsRef) {
     String directCallId = "JPF_java_lang_reflect_Method.invoke"; 
     ThreadInfo ti = env.getThreadInfo();
@@ -560,7 +560,8 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       return MJIEnv.NULL;
     }    
   }
-  public static int getAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
+
+  public int getAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
     return getAnnotations( env, getMethodInfo(env,mthRef));
   }
   
@@ -582,7 +583,8 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     
     return MJIEnv.NULL;
   }  
-  public static int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef, int annotationClsRef) {
+
+  public int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef, int annotationClsRef) {
     return getAnnotation(env, getMethodInfo(env,mthRef), annotationClsRef);
   }
   
@@ -596,7 +598,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       return MJIEnv.NULL;
     }    
   }
-  public static int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
+  public int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
     return getDeclaredAnnotations( env, getMethodInfo(env,mthRef));
   }
   
@@ -619,12 +621,11 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       return MJIEnv.NULL;
     }    
   }
-  public static int getParameterAnnotations_____3_3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
+  public int getParameterAnnotations_____3_3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int mthRef){
     return getParameterAnnotations( env, getMethodInfo(env,mthRef));
   }
-  
-  
-  public static int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){
+
+  public int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){
     StringBuilder sb = new StringBuilder();
     
     MethodInfo mi = getMethodInfo(env, objRef);
@@ -654,7 +655,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     return sref;
   }
 
-  public static boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int mthRef){
+  public boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int mthRef){
     ElementInfo ei = env.getElementInfo(mthRef);
     ClassInfo ci = ClassInfo.getResolvedClassInfo(JPF_java_lang_Class.METHOD_CLASSNAME);
 
@@ -681,7 +682,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     return false;
   }
 
-  public static int hashCode____I (MJIEnv env, int objRef){
+  public int hashCode____I (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);
     return mi.getClassName().hashCode() ^ mi.getName().hashCode();
   }

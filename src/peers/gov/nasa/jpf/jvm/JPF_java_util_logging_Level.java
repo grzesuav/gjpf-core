@@ -24,7 +24,7 @@ import java.util.logging.Level;
  */
 public class JPF_java_util_logging_Level extends NativePeer {
   
-  public static int getLocalizedName____Ljava_lang_String_2 (MJIEnv env, int objRef){
+  public int getLocalizedName____Ljava_lang_String_2 (MJIEnv env, int objRef){
     Level level = null;    
     int val = env.getIntField(objRef, "value");
     

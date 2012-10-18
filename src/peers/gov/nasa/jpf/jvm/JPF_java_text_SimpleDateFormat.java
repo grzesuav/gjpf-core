@@ -19,6 +19,8 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.Config;
+
 import java.text.DateFormat;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -30,26 +32,26 @@ import java.util.Date;
  */
 public class JPF_java_text_SimpleDateFormat extends NativePeer {
 
-  static SimpleDateFormat getInstance (MJIEnv env, int objref) {
+  SimpleDateFormat getInstance (MJIEnv env, int objref) {
     Format fmt = JPF_java_text_Format.getInstance(env,objref);
     assert fmt instanceof SimpleDateFormat;
 
     return (SimpleDateFormat)fmt;
   }
 
-  public static void init0____V (MJIEnv env, int objref) {
+  public void init0____V (MJIEnv env, int objref) {
     SimpleDateFormat fmt = new SimpleDateFormat();
     JPF_java_text_Format.putInstance(env,objref,fmt);
   }
 
-  public static void init0__Ljava_lang_String_2__V (MJIEnv env, int objref, int patternref) {
+  public void init0__Ljava_lang_String_2__V (MJIEnv env, int objref, int patternref) {
     String pattern = env.getStringObject(patternref);
 
     SimpleDateFormat fmt = new SimpleDateFormat(pattern);
     JPF_java_text_Format.putInstance(env,objref,fmt);
   }
 
-  public static void init0__II__V (MJIEnv env, int objref, int timeStyle, int dateStyle) {
+  public void init0__II__V (MJIEnv env, int objref, int timeStyle, int dateStyle) {
     // we are lost here - can't call this SimpleDateFormat ctor because it's package private
     // (this is called - and has to be intercepted - from the DateFormat.getInstance() factory)
 
@@ -67,7 +69,7 @@ public class JPF_java_text_SimpleDateFormat extends NativePeer {
   }
 
 
-  public static int format0 (MJIEnv env, int objref, long dateTime) {
+  public int format0 (MJIEnv env, int objref, long dateTime) {
     Date date = new Date(dateTime);
     SimpleDateFormat f = getInstance(env,objref);
     String s = f.format(date);

@@ -64,7 +64,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
     return ci;
   }
     
-  public static void writeByte__I__V (MJIEnv env, int this_ptr, int data) {
+  public void writeByte__I__V (MJIEnv env, int this_ptr, int data) {
     
     
     long current_posn = env.getLongField(this_ptr, current_position);
@@ -85,7 +85,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
   /**
    * This is a bit lame doing it this way, but it is easy.
    */
-  public static void write___3BII__V (MJIEnv env, int this_ptr, int data_array,
+  public void write___3BII__V (MJIEnv env, int this_ptr, int data_array,
                            int start, int len) {
     byte[] data_values = env.getByteArrayObject(data_array);
     for(int i=start; i < len; ++i) {
@@ -93,7 +93,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
     }
   }
 
-  public static void setLength__J__V(MJIEnv env, int this_ptr, long len) {
+  public void setLength__J__V(MJIEnv env, int this_ptr, long len) {
     long current_posn = env.getLongField(this_ptr, current_position);
     long current_len = env.getLongField(this_ptr, current_length);
     if (current_posn >= len && len < current_len) {
@@ -104,7 +104,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
     env.setLongField(getMapping(env,this_ptr), current_length, current_posn + 1);
   }
 
-  public static int read___3BII__I (MJIEnv env, int this_ptr, int data_array,
+  public int read___3BII__I (MJIEnv env, int this_ptr, int data_array,
                          int start, int len) {
     int i = 0;
     long current_posn = env.getLongField(this_ptr, current_position);
@@ -120,7 +120,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
     return i;
   }
 
-  public static byte readByte____B (MJIEnv env, int this_ptr) {
+  public byte readByte____B (MJIEnv env, int this_ptr) {
     long current_posn = env.getLongField(this_ptr, current_position);
     long current_len = env.getLongField(this_ptr, current_length);
     int chunk_size = env.getStaticIntField(RandomAccessFile, CHUNK_SIZE);

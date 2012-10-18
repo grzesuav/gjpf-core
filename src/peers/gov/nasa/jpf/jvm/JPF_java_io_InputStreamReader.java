@@ -29,15 +29,18 @@ public class JPF_java_io_InputStreamReader extends NativePeer {
   
   // <2do> decoder should be stored on a per-reader basis, since Charsets
   // might differ
-  static CharsetDecoder decoder = Charset.defaultCharset().newDecoder();
+  CharsetDecoder decoder;
   
   // ..same here - that's a shared resource with state! Only works for now
   // since all InputStreamReader decoding is protected by the same lock
-  static ByteBuffer in = ByteBuffer.allocate(BUF_SIZE);
-  static CharBuffer out = CharBuffer.allocate(BUF_SIZE);
+  ByteBuffer in = ByteBuffer.allocate(BUF_SIZE);
+  CharBuffer out = CharBuffer.allocate(BUF_SIZE);
  
+  public JPF_java_io_InputStreamReader() {
+    decoder = Charset.defaultCharset().newDecoder();
+  }
   
-  public static int decode___3BI_3CIZ__I (MJIEnv env, int objref,
+  public int decode___3BI_3CIZ__I (MJIEnv env, int objref,
                                          int bref, int len, int cref, int off,
                                          boolean endOfInput){
     int c = -1;
@@ -72,7 +75,7 @@ public class JPF_java_io_InputStreamReader extends NativePeer {
   // <2do> - that fails if we have a multi byte char and there is a backtrack
   // between decode() calls. Granted, that seems strange, but there is an
   // InputStream.read() in the loop which might just branch into user code
-  public static int decode__IZ__I (MJIEnv env, int objref, int b, boolean endOfInput){
+  public int decode__IZ__I (MJIEnv env, int objref, int b, boolean endOfInput){
     int c = -1;
     int lim = in.limit();
     

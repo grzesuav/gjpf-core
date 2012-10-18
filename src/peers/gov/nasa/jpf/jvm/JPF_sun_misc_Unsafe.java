@@ -32,12 +32,12 @@ package gov.nasa.jpf.jvm;
  */
 public class JPF_sun_misc_Unsafe extends NativePeer {
 
-  public  int getUnsafe____Lsun_misc_Unsafe_2 (MJIEnv env, int clsRef) {
+  public int getUnsafe____Lsun_misc_Unsafe_2 (MJIEnv env, int clsRef) {
     int objRef = env.getStaticReferenceField("sun.misc.Unsafe", "theUnsafe");
     return objRef;
   }
 
-  public static long objectFieldOffset__Ljava_lang_reflect_Field_2__J (MJIEnv env, int unsafeRef, int fieldRef) {
+  public long objectFieldOffset__Ljava_lang_reflect_Field_2__J (MJIEnv env, int unsafeRef, int fieldRef) {
     return fieldOffset__Ljava_lang_reflect_Field_2__I(env, unsafeRef, fieldRef);
   }
 
@@ -46,13 +46,13 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
    * to identify the corresponding FieldInfo, and that's much easier done with the Field
    * registration id
    */
-  public static int fieldOffset__Ljava_lang_reflect_Field_2__I (MJIEnv env, int unsafeRef, int fieldRef) {
+  public int fieldOffset__Ljava_lang_reflect_Field_2__I (MJIEnv env, int unsafeRef, int fieldRef) {
     //FieldInfo fi = JPF_java_lang_reflect_Field.getFieldInfo(env, fieldRef);
     //return fi.getStorageOffset();
     return env.getIntField(fieldRef, "regIdx");
   }
 
-  public static boolean compareAndSwapObject__Ljava_lang_Object_2JLjava_lang_Object_2Ljava_lang_Object_2__Z (MJIEnv env, int unsafeRef,
+  public boolean compareAndSwapObject__Ljava_lang_Object_2JLjava_lang_Object_2Ljava_lang_Object_2__Z (MJIEnv env, int unsafeRef,
                                                                                                              int objRef, long fieldOffset,
                                                                                                              int expectRef, int updateRef) {
     int actual = getObject__Ljava_lang_Object_2J__Ljava_lang_Object_2(env, unsafeRef, objRef, fieldOffset);
@@ -63,7 +63,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     return false;
   }
 
-  public static boolean compareAndSwapInt__Ljava_lang_Object_2JII__Z (MJIEnv env, int unsafeRef,
+  public boolean compareAndSwapInt__Ljava_lang_Object_2JII__Z (MJIEnv env, int unsafeRef,
                                                                       int objRef, long fieldOffset, int expect, int update) {
     int actual = getInt__Ljava_lang_Object_2J__I(env, unsafeRef, objRef, fieldOffset);
     if (actual == expect) {
@@ -73,7 +73,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     return false;
   }
 
-  public static boolean compareAndSwapLong__Ljava_lang_Object_2JJJ__Z (MJIEnv env, int unsafeRef,
+  public boolean compareAndSwapLong__Ljava_lang_Object_2JJJ__Z (MJIEnv env, int unsafeRef,
                                                                        int objRef, long fieldOffset, long expect, long update) {
     long actual = getLong__Ljava_lang_Object_2J__J(env, unsafeRef, objRef, fieldOffset);
     if (actual == expect) {
@@ -89,7 +89,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
   // park can be interrupted, but it doesn't throw an InterruptedException, and it doesn't clear the status
   // it can only be called from the current (parking) thread
 
-  public static void park__ZJ__V (MJIEnv env, int unsafeRef, boolean isAbsoluteTime, long timeout) {
+  public void park__ZJ__V (MJIEnv env, int unsafeRef, boolean isAbsoluteTime, long timeout) {
     ThreadInfo ti = env.getThreadInfo();
     int objRef = ti.getThreadObjectRef();
     int permitRef = env.getReferenceField( objRef, "permit");
@@ -138,7 +138,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
   }
 
-  public static void unpark__Ljava_lang_Object_2__V (MJIEnv env, int unsafeRef, int objRef) {
+  public void unpark__Ljava_lang_Object_2__V (MJIEnv env, int unsafeRef, int objRef) {
     ThreadInfo ti = env.getThreadInfo();
     
     if (!ti.isFirstStepInsn()){
@@ -171,12 +171,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
   }
 
-  public static void ensureClassInitialized__Ljava_lang_Class_2__V (MJIEnv env, int unsafeRef, int clsObjRef) {
+  public void ensureClassInitialized__Ljava_lang_Class_2__V (MJIEnv env, int unsafeRef, int clsObjRef) {
     // <2do> not sure if we have to do anyting here - if we have a class object, the class should already
     // be initialized
   }
 
-  public static int getObject__Ljava_lang_Object_2J__Ljava_lang_Object_2 (MJIEnv env, int unsafeRef,
+  public int getObject__Ljava_lang_Object_2J__Ljava_lang_Object_2 (MJIEnv env, int unsafeRef,
                                                                           int objRef, long fieldOffset) {
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -187,12 +187,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
   }
   
-  public static int getObjectVolatile__Ljava_lang_Object_2J__Ljava_lang_Object_2 (MJIEnv env, int unsafeRef,
+  public int getObjectVolatile__Ljava_lang_Object_2J__Ljava_lang_Object_2 (MJIEnv env, int unsafeRef,
       int objRef, long fieldOffset) {
     return getObject__Ljava_lang_Object_2J__Ljava_lang_Object_2( env, unsafeRef, objRef, fieldOffset);
   }  
 
-  public static void putObject__Ljava_lang_Object_2JLjava_lang_Object_2__V (MJIEnv env, int unsafeRef,
+  public void putObject__Ljava_lang_Object_2JLjava_lang_Object_2__V (MJIEnv env, int unsafeRef,
                                                                             int objRef, long fieldOffset, int valRef) {
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -203,12 +203,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
   }
   
-  public static void putObjectVolatile__Ljava_lang_Object_2JLjava_lang_Object_2__V (MJIEnv env, int unsafeRef,
+  public void putObjectVolatile__Ljava_lang_Object_2JLjava_lang_Object_2__V (MJIEnv env, int unsafeRef,
       int objRef, long fieldOffset, int valRef) {
     putObject__Ljava_lang_Object_2JLjava_lang_Object_2__V( env, unsafeRef, objRef, fieldOffset, valRef);
   }
 
-  public static void putOrderedObject__Ljava_lang_Object_2JLjava_lang_Object_2__V(
+  public void putOrderedObject__Ljava_lang_Object_2JLjava_lang_Object_2__V(
                                                                                   MJIEnv env,
                                                                                   int unsafeRef,
                                                                                   int objRef,
@@ -217,7 +217,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     putObject__Ljava_lang_Object_2JLjava_lang_Object_2__V(env, unsafeRef, objRef, fieldOffset, valRef);
   }
   
-  public static boolean getBoolean__Ljava_lang_Object_2J__Z(MJIEnv env,
+  public boolean getBoolean__Ljava_lang_Object_2J__Z(MJIEnv env,
                                                             int unsafeRef,
                                                             int objRef,
                                                             long fieldOffset) {
@@ -229,11 +229,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       return ei.getBooleanElement((int)fieldOffset);
     }
   }
-  public static boolean getBooleanVolatile__Ljava_lang_Object_2J__Z(MJIEnv env, int unsafeRef,int objRef,long fieldOffset) {
+
+  public boolean getBooleanVolatile__Ljava_lang_Object_2J__Z(MJIEnv env, int unsafeRef,int objRef,long fieldOffset) {
     return getBoolean__Ljava_lang_Object_2J__Z( env, unsafeRef, objRef, fieldOffset);
   }
   
-  public static void putBoolean__Ljava_lang_Object_2JZ__V (MJIEnv env, int unsafeRef,
+  public void putBoolean__Ljava_lang_Object_2JZ__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, boolean val){
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -243,11 +244,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       ei.setBooleanElement((int)fieldOffset, val);
     }
   }
-  public static void putBooleanVolatile__Ljava_lang_Object_2JZ__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, boolean val){
+
+  public void putBooleanVolatile__Ljava_lang_Object_2JZ__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, boolean val){
     putBoolean__Ljava_lang_Object_2JZ__V( env, unsafeRef, objRef, fieldOffset, val);
   }
-  
-  public static byte getByte__Ljava_lang_Object_2J__B(MJIEnv env,
+
+  public byte getByte__Ljava_lang_Object_2J__B(MJIEnv env,
                                                       int unsafeRef,
                                                       int objRef,
                                                       long fieldOffset) {
@@ -259,11 +261,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       return ei.getByteElement((int)fieldOffset);
     }
   }
-  public static byte getByteVolatile__Ljava_lang_Object_2J__B(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
+
+  public byte getByteVolatile__Ljava_lang_Object_2J__B(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
     return getByte__Ljava_lang_Object_2J__B(env, unsafeRef, objRef, fieldOffset);
   }
-  
-  public static void putByte__Ljava_lang_Object_2JB__V (MJIEnv env, int unsafeRef,
+
+  public void putByte__Ljava_lang_Object_2JB__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, byte val){
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -273,12 +276,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       ei.setByteElement((int)fieldOffset, val);
     }
   }
-  public static void putByteVolatile__Ljava_lang_Object_2JB__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, byte val){
+
+  public void putByteVolatile__Ljava_lang_Object_2JB__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, byte val){
     putByte__Ljava_lang_Object_2JB__V( env, unsafeRef, objRef, fieldOffset, val);
   }
-  
 
-  public static char getChar__Ljava_lang_Object_2J__C(MJIEnv env,
+  public char getChar__Ljava_lang_Object_2J__C(MJIEnv env,
                                                       int unsafeRef,
                                                       int objRef,
                                                       long fieldOffset) {
@@ -290,11 +293,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       return ei.getCharElement((int)fieldOffset);
     }
   }
-  public static char getCharVolatile__Ljava_lang_Object_2J__C(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
+
+  public char getCharVolatile__Ljava_lang_Object_2J__C(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
     return getChar__Ljava_lang_Object_2J__C( env, unsafeRef, objRef, fieldOffset);
   }
   
-  public static void putChar__Ljava_lang_Object_2JC__V (MJIEnv env, int unsafeRef,
+  public void putChar__Ljava_lang_Object_2JC__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, char val){
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -304,11 +308,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       ei.setCharElement((int)fieldOffset, val);
     }
   }
-  public static void putCharVolatile__Ljava_lang_Object_2JC__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, char val){
+
+  public void putCharVolatile__Ljava_lang_Object_2JC__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, char val){
     putChar__Ljava_lang_Object_2JC__V( env, unsafeRef, objRef, fieldOffset, val);
   }
   
-  public static short getShort__Ljava_lang_Object_2J__S(MJIEnv env,
+  public short getShort__Ljava_lang_Object_2J__S(MJIEnv env,
                                                         int unsafeRef,
                                                         int objRef,
                                                         long fieldOffset) {
@@ -320,11 +325,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       return ei.getShortElement((int)fieldOffset);
     }
   }
-  public static short getShortVolatile__Ljava_lang_Object_2J__S(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
+
+  public short getShortVolatile__Ljava_lang_Object_2J__S(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
     return getShort__Ljava_lang_Object_2J__S( env, unsafeRef, objRef, fieldOffset);
   }
   
-  public static void putShort__Ljava_lang_Object_2JS__V (MJIEnv env, int unsafeRef,
+  public void putShort__Ljava_lang_Object_2JS__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, short val){
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -334,11 +340,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       ei.setShortElement((int)fieldOffset, val);
     }
   }
-  public static void putShortVolatile__Ljava_lang_Object_2JS__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, short val){
+
+  public void putShortVolatile__Ljava_lang_Object_2JS__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, short val){
     putShort__Ljava_lang_Object_2JS__V( env, unsafeRef, objRef, fieldOffset, val);
   }  
 
-  public static int getInt__Ljava_lang_Object_2J__I(MJIEnv env, int unsafeRef,
+  public int getInt__Ljava_lang_Object_2J__I(MJIEnv env, int unsafeRef,
                                                     int objRef, long fieldOffset) {
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -348,11 +355,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       return ei.getIntElement((int)fieldOffset);
     }
   }
-  public static int getIntVolatile__Ljava_lang_Object_2J__I(MJIEnv env, int unsafeRef, int objRef, long fieldOffset) {
+
+  public int getIntVolatile__Ljava_lang_Object_2J__I(MJIEnv env, int unsafeRef, int objRef, long fieldOffset) {
     return getInt__Ljava_lang_Object_2J__I( env, unsafeRef, objRef, fieldOffset);
   }
   
-  public static void putInt__Ljava_lang_Object_2JI__V (MJIEnv env, int unsafeRef,
+  public void putInt__Ljava_lang_Object_2JI__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, int val){
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -362,11 +370,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       ei.setIntElement((int)fieldOffset, val);
     }
   }
-  public static void putIntVolatile__Ljava_lang_Object_2JI__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, int val){
+
+  public void putIntVolatile__Ljava_lang_Object_2JI__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, int val){
     putInt__Ljava_lang_Object_2JI__V(env, unsafeRef, objRef, fieldOffset, val);
   }  
 
-  public static void putOrderedInt__Ljava_lang_Object_2JI__V(MJIEnv env,
+  public void putOrderedInt__Ljava_lang_Object_2JI__V(MJIEnv env,
                                                              int unsafeRef,
                                                              int objRef,
                                                              long fieldOffset,
@@ -375,7 +384,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     putInt__Ljava_lang_Object_2JI__V(env, unsafeRef, objRef, fieldOffset, val);
   }
 
-  public static float getFloat__Ljava_lang_Object_2J__F(MJIEnv env,
+  public float getFloat__Ljava_lang_Object_2J__F(MJIEnv env,
                                                         int unsafeRef,
                                                         int objRef,
                                                         long fieldOffset) {
@@ -387,11 +396,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       return ei.getFloatElement((int)fieldOffset);
     }
   }
-  public static float getFloatVolatile__Ljava_lang_Object_2J__F(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
+
+  public float getFloatVolatile__Ljava_lang_Object_2J__F(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
     return getFloat__Ljava_lang_Object_2J__F( env, unsafeRef, objRef, fieldOffset);
   }  
 
-  public static void putFloat__Ljava_lang_Object_2JF__V (MJIEnv env, int unsafeRef,
+  public void putFloat__Ljava_lang_Object_2JF__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, float val){
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -401,11 +411,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       ei.setFloatElement((int)fieldOffset, val);
     }
   }
-  public static void putFloatVolatile__Ljava_lang_Object_2JF__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, float val){
+
+  public void putFloatVolatile__Ljava_lang_Object_2JF__V (MJIEnv env, int unsafeRef,int objRef, long fieldOffset, float val){
     putFloat__Ljava_lang_Object_2JF__V( env, unsafeRef, objRef, fieldOffset, val);
   }  
 
-  public static long getLong__Ljava_lang_Object_2J__J(MJIEnv env,
+  public long getLong__Ljava_lang_Object_2J__J(MJIEnv env,
                                                       int unsafeRef,
                                                       int objRef,
                                                       long fieldOffset) {
@@ -417,11 +428,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       return ei.getLongElement((int)fieldOffset);
     }
   }
-  public static long getLongVolatile__Ljava_lang_Object_2J__J(MJIEnv env, int unsafeRef, int objRef, long fieldOffset) {
+
+  public long getLongVolatile__Ljava_lang_Object_2J__J(MJIEnv env, int unsafeRef, int objRef, long fieldOffset) {
     return getLong__Ljava_lang_Object_2J__J( env, unsafeRef, objRef, fieldOffset);
   }
     
-  public static void putLong__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef,
+  public void putLong__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, long val){
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -431,16 +443,17 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       ei.setLongElement((int)fieldOffset, val);
     }
   }
-  public static void putLongVolatile__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, long val){
+
+  public void putLongVolatile__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, long val){
     putLong__Ljava_lang_Object_2JJ__V( env, unsafeRef, objRef, fieldOffset, val);
   }  
 
-  public static void putOrderedLong__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef,
+  public void putOrderedLong__Ljava_lang_Object_2JJ__V (MJIEnv env, int unsafeRef,
                                                         int objRef, long fieldOffset, long val) {
     putLong__Ljava_lang_Object_2JJ__V(env, unsafeRef, objRef, fieldOffset, val);
   }
 
-  public static double getDouble__Ljava_lang_Object_2J__D(MJIEnv env,
+  public double getDouble__Ljava_lang_Object_2J__D(MJIEnv env,
                                                          int unsafeRef,
                                                          int objRef,
                                                          long fieldOffset) {
@@ -452,11 +465,12 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       return ei.getDoubleElement((int)fieldOffset);
     }
   }
-  public static double getDoubleVolatile__Ljava_lang_Object_2J__D(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
+
+  public double getDoubleVolatile__Ljava_lang_Object_2J__D(MJIEnv env,int unsafeRef,int objRef,long fieldOffset) {
     return getDouble__Ljava_lang_Object_2J__D( env, unsafeRef, objRef, fieldOffset);
   }
   
-  public static void putDouble__Ljava_lang_Object_2JD__V (MJIEnv env, int unsafeRef,
+  public void putDouble__Ljava_lang_Object_2JD__V (MJIEnv env, int unsafeRef,
                                                        int objRef, long fieldOffset, double val){
     ElementInfo ei = env.getElementInfo(objRef);
     if (!ei.isArray()) {
@@ -466,15 +480,16 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       ei.setDoubleElement((int)fieldOffset, val);
     }
   }
-  public static void putDoubleVolatile__Ljava_lang_Object_2JD__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, double val){
+
+  public void putDoubleVolatile__Ljava_lang_Object_2JD__V (MJIEnv env, int unsafeRef, int objRef, long fieldOffset, double val){
     putDouble__Ljava_lang_Object_2JD__V( env, unsafeRef, objRef, fieldOffset, val);
   }
   
-  public static int arrayBaseOffset__Ljava_lang_Class_2__I (MJIEnv env, int unsafeRef, int clazz) {
+  public int arrayBaseOffset__Ljava_lang_Class_2__I (MJIEnv env, int unsafeRef, int clazz) {
     return 0;
   }
 
-  public static int arrayIndexScale__Ljava_lang_Class_2__I (MJIEnv env, int unsafeRef, int clazz) {
+  public int arrayIndexScale__Ljava_lang_Class_2__I (MJIEnv env, int unsafeRef, int clazz) {
     return 1;
   }
 
@@ -517,10 +532,10 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
   }
   
-  static Alloc firstAlloc;
+  Alloc firstAlloc;
   
   // for debugging purposes only
-  private static void dumpAllocs(){
+  private void dumpAllocs(){
     System.out.println("Unsafe allocated memory blocks:{");
     for (Alloc a = firstAlloc; a != null; a = a.next){
       System.out.print("  ");
@@ -529,7 +544,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     System.out.println('}');
   }
   
-  private static void sortInAlloc(Alloc newAlloc){
+  private void sortInAlloc(Alloc newAlloc){
     int startAdr = newAlloc.startAdr;
     
     if (firstAlloc == null){
@@ -550,7 +565,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
   }
   
-  private static Alloc getAlloc (int address){
+  private Alloc getAlloc (int address){
     for (Alloc a = firstAlloc; a != null; a = a.next){
       if (address >= a.startAdr && address <= a.endAdr){
         return a;
@@ -560,7 +575,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     return null;
   }
   
-  private static Alloc removeAlloc (int startAddress){
+  private Alloc removeAlloc (int startAddress){
     Alloc prev = null;
     for (Alloc a = firstAlloc; a != null; prev = a, a = a.next) {
       if (a.startAdr == startAddress){
@@ -578,7 +593,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
   }
   
   
-  public static long allocateMemory__J__J (MJIEnv env, int unsafeRef, long nBytes) {
+  public long allocateMemory__J__J (MJIEnv env, int unsafeRef, long nBytes) {
     if (nBytes < 0 || nBytes > Integer.MAX_VALUE) {
       env.throwException("java.lang.IllegalArgumentException", "invalid memory block size: " + nBytes);
       return 0;
@@ -596,7 +611,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     return alloc.startAdr;
   }
   
-  public static void freeMemory__J__V (MJIEnv env, int unsafeRef, long startAddress) {
+  public void freeMemory__J__V (MJIEnv env, int unsafeRef, long startAddress) {
     int addr = (int)startAddress;
 
     if (startAddress != MJIEnv.NULL){
@@ -609,7 +624,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
   }
   
-  public static byte getByte__J__B (MJIEnv env, int unsafeRef, long address) {
+  public byte getByte__J__B (MJIEnv env, int unsafeRef, long address) {
     int addr = (int)address;
     Alloc a = getAlloc(addr);
     
@@ -621,7 +636,8 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     ElementInfo ei = env.getElementInfo(a.objRef);
     return ei.getByteElement(addr - a.startAdr);
   }
-  public static void putByte__JB__V (MJIEnv env, int unsafeRef, long address, byte val) {
+
+  public void putByte__JB__V (MJIEnv env, int unsafeRef, long address, byte val) {
     int addr = (int)address;
     Alloc a = getAlloc(addr);
     
@@ -634,7 +650,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     ei.setByteElement(addr - a.startAdr, val);
   }
   
-  public static char getChar__J__C (MJIEnv env, int unsafeRef, long address) {
+  public char getChar__J__C (MJIEnv env, int unsafeRef, long address) {
     int addr = (int)address;
     Alloc a = getAlloc(addr);
     
@@ -657,8 +673,9 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
     
     return val;
-  }  
-  public static void putChar__JC__V (MJIEnv env, int unsafeRef, long address, char val) {
+  }
+
+  public void putChar__JC__V (MJIEnv env, int unsafeRef, long address, char val) {
     int addr = (int)address;
     Alloc a = getAlloc(addr);
     
@@ -680,8 +697,8 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
       ei.setByteElement(addr+1, b0);      
     }
   }
-  
-  public static int getInt__J__I (MJIEnv env, int unsafeRef, long address) {
+
+  public int getInt__J__I (MJIEnv env, int unsafeRef, long address) {
     int addr = (int)address;
     Alloc a = getAlloc(addr);
     
@@ -713,8 +730,9 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
     
     return val;
-  }  
-  public static void putInt__JI__V (MJIEnv env, int unsafeRef, long address, int val) {
+  }
+
+  public void putInt__JI__V (MJIEnv env, int unsafeRef, long address, int val) {
     int addr = (int)address;
     Alloc a = getAlloc(addr);
     
@@ -743,7 +761,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
   }
 
-  public static long getLong__J__J (MJIEnv env, int unsafeRef, long address) {
+  public long getLong__J__J (MJIEnv env, int unsafeRef, long address) {
     int addr = (int)address;
     Alloc a = getAlloc(addr);
     
@@ -788,8 +806,9 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     }
     
     return val;
-  }  
-  public static void putLong__JJ__V (MJIEnv env, int unsafeRef, long address, long val) {
+  }
+
+  public void putLong__JJ__V (MJIEnv env, int unsafeRef, long address, long val) {
     int addr = (int)address;
     Alloc a = getAlloc(addr);
     

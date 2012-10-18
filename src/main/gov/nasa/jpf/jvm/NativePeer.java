@@ -211,7 +211,6 @@ public class NativePeer implements Cloneable {
           + cls.getName());
     }
 
-    System.out.println("ooo: " + o.getClass());
     return type.cast(o); // safe according to above
   }
 
@@ -270,8 +269,13 @@ public class NativePeer implements Cloneable {
 
   
   private static boolean isMJICandidate (Method mth) {
-    // only the public static ones are supposed to be native method impls
-    // if there is a public static method with MJIEnv argument that we DO NOT
+    // only the public non-static method can be native peers
+    if(Modifier.isStatic(mth.getModifiers())) {
+      return false;
+    }
+
+    // only the public non-static ones are supposed to be native method impls
+    // if there is a public non-static method with MJIEnv argument that we DO NOT
     // want to be considered, we have to add a 'final' modifier (which is pointless
     // for statics but accepted by the compiler)
     if ((mth.getModifiers() & MJI_TEST) != MJI_MODIFIERS) {

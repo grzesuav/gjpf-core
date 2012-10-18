@@ -28,7 +28,7 @@ import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
  */
 public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
 
-  static Listener listener;
+  Listener listener;
   
   // <2do> that's too simple, because we should only measure what is
   // allocated from the invoked method, not the MethodTester. Needs a listener
@@ -83,7 +83,7 @@ public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
     }
   }
   
-  public static boolean preCheck__Lgov_nasa_jpf_test_TestContext_2Ljava_lang_reflect_Method_2__Z
+  public boolean preCheck__Lgov_nasa_jpf_test_TestContext_2Ljava_lang_reflect_Method_2__Z
                       (MJIEnv env, int objRef, int testContextRef, int methodRef){
     MethodInfo mi = JPF_java_lang_reflect_Method.getMethodInfo(env, methodRef);
     
@@ -93,7 +93,7 @@ public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
   }
   
   // what a terrible name!
-  public static boolean postCheck__Lgov_nasa_jpf_test_TestContext_2Ljava_lang_reflect_Method_2Ljava_lang_Object_2Ljava_lang_Throwable_2__Z 
+  public boolean postCheck__Lgov_nasa_jpf_test_TestContext_2Ljava_lang_reflect_Method_2Ljava_lang_Object_2Ljava_lang_Throwable_2__Z 
            (MJIEnv env, int objRef, int testContextRef, int methdRef, int resultRef, int exRef){
 
     long nMax = env.getLongField(objRef, "maxGrowth");

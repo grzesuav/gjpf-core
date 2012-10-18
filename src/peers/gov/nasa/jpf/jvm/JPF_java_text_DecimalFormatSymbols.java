@@ -27,7 +27,7 @@ import java.text.DecimalFormatSymbols;
  * file io (properties) based on the Locale
  */
 public class JPF_java_text_DecimalFormatSymbols extends NativePeer {
-  public static void initialize__Ljava_util_Locale_2__V (MJIEnv env, int objRef, int localeRef) {
+  public void initialize__Ljava_util_Locale_2__V (MJIEnv env, int objRef, int localeRef) {
     DecimalFormatSymbols dfs = new DecimalFormatSymbols();
     
     env.setCharField(objRef,"patternSeparator", dfs.getPatternSeparator());

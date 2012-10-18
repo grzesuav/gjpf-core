@@ -32,12 +32,16 @@ import java.nio.charset.CharsetEncoder;
 public class JPF_java_io_OutputStreamWriter extends NativePeer {
 
   static final int BUF_SIZE=128; // needs to be the same as in the model class!
-  static CharsetEncoder encoder = Charset.defaultCharset().newEncoder();
+  static CharsetEncoder encoder;
   
   static CharBuffer in = CharBuffer.allocate(BUF_SIZE);
   static ByteBuffer out = ByteBuffer.allocate(BUF_SIZE*6); // worst case UTF-8
-    
-  public static int encode___3CII_3B__I (MJIEnv env, int objref,
+
+  public JPF_java_io_OutputStreamWriter() {
+    encoder = Charset.defaultCharset().newEncoder();
+  }
+
+  public int encode___3CII_3B__I (MJIEnv env, int objref,
                                          int cref, int off, int len,
                                          int bref){
     if (len > BUF_SIZE){ // check for buffer overflow
@@ -63,7 +67,7 @@ public class JPF_java_io_OutputStreamWriter extends NativePeer {
     return n;
   }
   
-  public static int encode__Ljava_lang_String_2II_3B__I (MJIEnv env, int objref,
+  public int encode__Ljava_lang_String_2II_3B__I (MJIEnv env, int objref,
                                          int sref, int off, int len,
                                          int bref){
     int cref = env.getReferenceField(sref, "value");
@@ -71,7 +75,7 @@ public class JPF_java_io_OutputStreamWriter extends NativePeer {
     return encode___3CII_3B__I(env,objref,cref,off,len,bref);
   }
   
-  public static int encode__C_3B__I (MJIEnv env, int objref, char c, int bufref) {
+  public int encode__C_3B__I (MJIEnv env, int objref, char c, int bufref) {
     out.clear();
     
     in.clear();

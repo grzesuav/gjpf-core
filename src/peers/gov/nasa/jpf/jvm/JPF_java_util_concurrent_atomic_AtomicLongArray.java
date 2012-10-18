@@ -23,12 +23,12 @@ package gov.nasa.jpf.jvm;
  */
 public class JPF_java_util_concurrent_atomic_AtomicLongArray extends NativePeer {
 
-  public static long getNative__I__J (MJIEnv env, int objRef, int index) {
+  public long getNative__I__J (MJIEnv env, int objRef, int index) {
     int arrayRef = env.getReferenceField(objRef, "array");
     return env.getLongArrayElement(arrayRef, index);
   }
 
-  public static boolean compareAndSetNative__IJJ__Z (MJIEnv env, int objRef, int index, long expect, long update) {
+  public boolean compareAndSetNative__IJJ__Z (MJIEnv env, int objRef, int index, long expect, long update) {
     int arrayRef = env.getReferenceField(objRef, "array");
     long value = env.getLongArrayElement(arrayRef, index);
     if (value == expect) {

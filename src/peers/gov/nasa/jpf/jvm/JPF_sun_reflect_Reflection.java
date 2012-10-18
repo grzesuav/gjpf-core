@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm;
 
 public class JPF_sun_reflect_Reflection extends NativePeer {
 
-  public static int getCallerClass__I__Ljava_lang_Class_2(MJIEnv env, int clsObjRef, int offset){
+  public int getCallerClass__I__Ljava_lang_Class_2(MJIEnv env, int clsObjRef, int offset){
     ThreadInfo ti = env.getThreadInfo();
     
     StackFrame frame = ti.getTopFrame();

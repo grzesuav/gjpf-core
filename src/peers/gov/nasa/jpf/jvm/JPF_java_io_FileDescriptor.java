@@ -49,15 +49,15 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
   static final int FD_CLOSED = 2;
 
   
-  static int count=2;  // count out std handles
-  static DynamicObjectArray<Object> content;
+  int count=2;  // count out std handles
+  DynamicObjectArray<Object> content;
   
   public JPF_java_io_FileDescriptor (Config conf){
     content = new DynamicObjectArray<Object>();
     count = 2;
   }
   
-  public static int open__Ljava_lang_String_2I__I (MJIEnv env, int objref,
+  public int open__Ljava_lang_String_2I__I (MJIEnv env, int objref,
                                                    int fnameRef, int mode){
     String fname = env.getStringObject(fnameRef);
     if (mode == FD_READ){
@@ -70,7 +70,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }
   }
   
-  public static int openRead (String fname) {
+  public int openRead (String fname) {
     File file = new File(fname);
     if (file.exists()) {
       try {
@@ -94,7 +94,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     return -1;
   }
   
-  public static int openWrite (String fname){
+  public int openWrite (String fname){
     File file = new File(fname);
     try {
       FileOutputStream fos = new FileOutputStream(file);
@@ -114,7 +114,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     return -1;    
   }
   
-  public static void close0 (MJIEnv env, int objref) {
+  public void close0 (MJIEnv env, int objref) {
     int fd = env.getIntField(objref, "fd");
     
     try {
@@ -143,7 +143,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
   // that's a JPF specific thing - we backrack into
   // a state where the file was still open, and hence don't want to
   // change the FileDescriptor identify
-  static void reopen (MJIEnv env, int objref) throws IOException {
+  void reopen (MJIEnv env, int objref) throws IOException {
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
     
@@ -170,7 +170,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }
   }
   
-  public static void write__I__ (MJIEnv env, int objref, int b){
+  public void write__I__ (MJIEnv env, int objref, int b){
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
     
@@ -204,7 +204,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }    
   }
   
-  public static void write___3BII__ (MJIEnv env, int objref,
+  public void write___3BII__ (MJIEnv env, int objref,
                                      int bref, int offset, int len){
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
@@ -246,7 +246,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
   }
   
 
-  public static int read____I (MJIEnv env, int objref) {
+  public int read____I (MJIEnv env, int objref) {
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
         
@@ -285,7 +285,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }
   }
   
-  public static int read___3BII__I (MJIEnv env, int objref, int bufref, int offset, int len) {
+  public int read___3BII__I (MJIEnv env, int objref, int bufref, int offset, int len) {
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
         
@@ -329,7 +329,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }
   }
   
-  public static long skip__J__J (MJIEnv env, int objref, long nBytes) {
+  public long skip__J__J (MJIEnv env, int objref, long nBytes) {
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
         
@@ -364,7 +364,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }    
   }
   
-  public static void sync____ (MJIEnv env, int objref){
+  public void sync____ (MJIEnv env, int objref){
     int fd = env.getIntField(objref, "fd");
 
     try {
@@ -387,7 +387,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }        
   }
   
-  public static int available____I (MJIEnv env, int objref) {
+  public int available____I (MJIEnv env, int objref) {
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
     

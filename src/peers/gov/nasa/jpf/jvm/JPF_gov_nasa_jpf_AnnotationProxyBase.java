@@ -25,7 +25,7 @@ package gov.nasa.jpf.jvm;
  */
 public class JPF_gov_nasa_jpf_AnnotationProxyBase extends NativePeer {
 
-  public static int annotationType____Ljava_lang_Class_2 (MJIEnv env, int objref) {
+  public int annotationType____Ljava_lang_Class_2 (MJIEnv env, int objref) {
     ClassInfo ciProxy = env.getClassInfo(objref);  // this would be the proxy
     
     // we could also pull it out from the interfaces, but we know the naming scheme
@@ -36,7 +36,7 @@ public class JPF_gov_nasa_jpf_AnnotationProxyBase extends NativePeer {
     return ci.getClassObjectRef();
   }
   
-  public static int toString____Ljava_lang_String_2 (MJIEnv env, int objref){
+  public int toString____Ljava_lang_String_2 (MJIEnv env, int objref){
     StringBuffer sb = new StringBuffer();
     
     ClassInfo ci = env.getClassInfo(objref);

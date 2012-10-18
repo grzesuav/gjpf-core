@@ -24,7 +24,7 @@ package gov.nasa.jpf.jvm;
 public class JPF_java_lang_Long extends NativePeer {
   // <2do> at this point we deliberately do not override clinit
 
-  public static long parseLong__Ljava_lang_String_2I__J (MJIEnv env, int clsObjRef, 
+  public long parseLong__Ljava_lang_String_2I__J (MJIEnv env, int clsObjRef, 
                                                      int strRef, int radix) {
     try {
       return Long.parseLong(env.getStringObject(strRef), radix);
@@ -35,7 +35,7 @@ public class JPF_java_lang_Long extends NativePeer {
     }
   }
 
-  public static long parseLong__Ljava_lang_String_2__J (MJIEnv env, int clsObjRef, 
+  public long parseLong__Ljava_lang_String_2__J (MJIEnv env, int clsObjRef, 
                                                      int strRef) {
     try {
       return Long.parseLong(env.getStringObject(strRef));
@@ -46,27 +46,27 @@ public class JPF_java_lang_Long extends NativePeer {
     }
   }
 
-  public static int toBinaryString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
+  public int toBinaryString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
     return env.newString(Long.toBinaryString(val));
   }
 
-  public static int toHexString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
+  public int toHexString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
     return env.newString(Long.toHexString(val));
   }
 
-  public static int toOctalString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
+  public int toOctalString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
     return env.newString(Long.toOctalString(val));
   }
 
-  public static int toString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
+  public int toString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
     return env.newString(Long.toString(val));
   }
 
-  public static int toString__JI__Ljava_lang_String_2 (MJIEnv env, int objref, long val, int radix) {
+  public int toString__JI__Ljava_lang_String_2 (MJIEnv env, int objref, long val, int radix) {
     return env.newString(Long.toString(val, radix));
   }
 
-  public static int valueOf__J__Ljava_lang_Long_2 (MJIEnv env, int clsRef, long val) {
+  public int valueOf__J__Ljava_lang_Long_2 (MJIEnv env, int clsRef, long val) {
     return env.valueOfLong(val);
   }
 }

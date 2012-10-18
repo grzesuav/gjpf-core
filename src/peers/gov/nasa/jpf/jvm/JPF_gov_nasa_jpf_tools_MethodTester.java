@@ -24,12 +24,12 @@ package gov.nasa.jpf.jvm;
  */
 public class JPF_gov_nasa_jpf_tools_MethodTester extends NativePeer {
 
-  public static void log__Ljava_lang_String_2__V (MJIEnv env, int objRef, int msgRef){
+  public void log__Ljava_lang_String_2__V (MJIEnv env, int objRef, int msgRef){
     String msg = env.getStringObject(msgRef);
     System.out.println("@ " + msg);
   }
   
-  public static void error__Ljava_lang_String_2__V (MJIEnv env, int objRef, int msgRef){
+  public void error__Ljava_lang_String_2__V (MJIEnv env, int objRef, int msgRef){
     String msg = env.getStringObject(msgRef);
     System.err.println(msg);    
   }

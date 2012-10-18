@@ -19,19 +19,19 @@
 package gov.nasa.jpf.jvm;
 
 public class JPF_java_io_ObjectStreamClass extends NativePeer {
-  public static void initNative____V (MJIEnv env, int clsObjRef) {
+  public void initNative____V (MJIEnv env, int clsObjRef) {
     // cut off
   }
   
   // why is this here??
-  public static boolean hasStaticInitializer__Ljava_lang_Class_2__Z (MJIEnv env, int objRef, int clsRef){
+  public boolean hasStaticInitializer__Ljava_lang_Class_2__Z (MJIEnv env, int objRef, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
     MethodInfo mi = ci.getMethod("<clinit>()V", false);          
     return (mi != null);
   }
 
   // just a little accelerator
-  public static int getDeclaredSUID__Ljava_lang_Class_2__Ljava_lang_Long_2 (MJIEnv env, int objRef, int clsRef){
+  public int getDeclaredSUID__Ljava_lang_Class_2__Ljava_lang_Long_2 (MJIEnv env, int objRef, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
     FieldInfo fi = ci.getDeclaredStaticField("serialVersionUID");
     if (fi != null){

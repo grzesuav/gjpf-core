@@ -23,11 +23,11 @@ package gov.nasa.jpf.jvm;
 * this implementation just cuts off native methods
 */
 public class JPF_java_util_concurrent_atomic_AtomicInteger extends NativePeer {
- public static void $clinit____V (MJIEnv env, int rcls) {
+ public void $clinit____V (MJIEnv env, int rcls) {
    // don't let this one pass, it calls native methods from non-public Sun classes
  }
  
- public static boolean compareAndSet__II__Z (MJIEnv env, int objRef, int expect, int update){
+ public boolean compareAndSet__II__Z (MJIEnv env, int objRef, int expect, int update){
    int value = env.getIntField(objRef, "value");
    if (value == expect){
      env.setIntField(objRef, "value", update);

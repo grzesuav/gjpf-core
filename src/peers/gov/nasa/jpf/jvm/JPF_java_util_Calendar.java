@@ -5,7 +5,7 @@ import java.util.Locale;
 
 public class JPF_java_util_Calendar extends NativePeer {
 
-  public static void setWeekCountData__Ljava_util_Locale_2__ (MJIEnv env, int objref, int localeRef){
+  public void setWeekCountData__Ljava_util_Locale_2__ (MJIEnv env, int objref, int localeRef){
     Locale locale = JPF_java_util_Locale.getLocale(env, localeRef);
     Calendar c = Calendar.getInstance(locale);
     

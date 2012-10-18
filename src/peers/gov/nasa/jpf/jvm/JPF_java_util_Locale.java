@@ -57,45 +57,45 @@ public class JPF_java_util_Locale extends NativePeer {
     return locale;
   }
   
-  public static int getDisplayName__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
+  public int getDisplayName__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
     Locale locale = getLocale(env, locref);
     String name = locale.getDisplayName();
     return env.newString(name);
   }
   
-  public static int getDisplayVariant__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
+  public int getDisplayVariant__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
     Locale locale = getLocale(env, locref);
     String variant = locale.getDisplayVariant();
     return env.newString(variant);    
   }
   
-  public static int getDisplayCountry__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
+  public int getDisplayCountry__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
     Locale locale = getLocale(env, locref);
     String country = locale.getDisplayCountry();
     return env.newString(country);
 
   }
 
-  public static int getDisplayLanguage__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
+  public int getDisplayLanguage__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
     Locale locale = getLocale(env, locref);
     String language = locale.getDisplayLanguage();
     return env.newString(language);
   }
 
-  public static int getISO3Country____Ljava_lang_String_2 (MJIEnv env, int objref) {
+  public int getISO3Country____Ljava_lang_String_2 (MJIEnv env, int objref) {
     Locale locale = getLocale(env, objref);
     String s = locale.getISO3Country();
     return env.newString(s);    
   }
 
-  public static int getISO3Language____Ljava_lang_String_2 (MJIEnv env, int objref) {
+  public int getISO3Language____Ljava_lang_String_2 (MJIEnv env, int objref) {
     Locale locale = getLocale(env, objref);
     String s = locale.getISO3Language();
     return env.newString(s);
   }
 
   //--- the static ones
-  public static int getISOCountries_____3Ljava_lang_String_2 (MJIEnv env, int clsref) {
+  public int getISOCountries_____3Ljava_lang_String_2 (MJIEnv env, int clsref) {
     String[] s = Locale.getISOCountries();
 
     int aref = env.newObjectArray("java.lang.String", s.length);
@@ -106,7 +106,7 @@ public class JPF_java_util_Locale extends NativePeer {
     return aref;
   }
   
-  public static int getISOLanguages_____3Ljava_lang_String_2 (MJIEnv env, int clsref) {
+  public int getISOLanguages_____3Ljava_lang_String_2 (MJIEnv env, int clsref) {
     String[] s = Locale.getISOLanguages();
 
     int aref = env.newObjectArray("java.lang.String", s.length);

@@ -19,6 +19,8 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.Config;
+
 import java.text.DateFormat;
 import java.text.Format;
 import java.text.ParseException;
@@ -31,14 +33,14 @@ import java.util.TimeZone;
  */
 public class JPF_java_text_DateFormat extends NativePeer {
 
-  static DateFormat getInstance (MJIEnv env, int objref) {
+  DateFormat getInstance (MJIEnv env, int objref) {
     Format fmt = JPF_java_text_Format.getInstance(env,objref);
     assert fmt instanceof SimpleDateFormat;
 
     return (DateFormat)fmt;
   }
 
-  public static void setTimeZone__Ljava_util_TimeZone_2__V(MJIEnv env, int objref,int timeZoneRef) {
+  public void setTimeZone__Ljava_util_TimeZone_2__V(MJIEnv env, int objref,int timeZoneRef) {
     String timeZoneId = env.getStringField(timeZoneRef, "ID");
     TimeZone timeZone = TimeZone.getTimeZone(timeZoneId);
     DateFormat fmt = getInstance(env,objref);
@@ -47,7 +49,7 @@ public class JPF_java_text_DateFormat extends NativePeer {
     env.setReferenceField(calendarRef, "zone", timeZoneRef);
   }
 
-  public static int parse__Ljava_lang_String_2__Ljava_util_Date_2 (MJIEnv env, int objref, int strRef) {
+  public int parse__Ljava_lang_String_2__Ljava_util_Date_2 (MJIEnv env, int objref, int strRef) {
     DateFormat f = getInstance(env,objref);
     String s = env.getStringObject(strRef);
     try {
@@ -64,12 +66,12 @@ public class JPF_java_text_DateFormat extends NativePeer {
     }
   }
   
-  public static void setLenient__Z__V (MJIEnv env, int objref, boolean isLenient) {
+  public void setLenient__Z__V (MJIEnv env, int objref, boolean isLenient) {
     DateFormat f = getInstance(env,objref);
     f.setLenient(isLenient);
   }
   
-  public static int format__Ljava_util_Date_2__Ljava_lang_String_2 (MJIEnv env, int objref, int dateRef) {
+  public int format__Ljava_util_Date_2__Ljava_lang_String_2 (MJIEnv env, int objref, int dateRef) {
     DateFormat fmt = getInstance(env,objref);
     if (fmt != null) {
       Date d = env.getDateObject(dateRef);

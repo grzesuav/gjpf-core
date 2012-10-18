@@ -20,18 +20,18 @@ package gov.nasa.jpf.jvm;
 
 public class JPF_java_text_Bidi extends NativePeer {
 
-  public static void $clinit____V (MJIEnv env, int clsObjRef) {
+  public void $clinit____V (MJIEnv env, int clsObjRef) {
     // do nothing
   }
   
-  public static void nativeBidiChars (MJIEnv env, int clsObjRef,
+  public void nativeBidiChars (MJIEnv env, int clsObjRef,
                                       int bidiRef, int textRef, int textStart,
                                       int embeddingsRef, int embeddingsStart,
                                       int length, int flags) {
     // <2do> need to forward
   }
 
-  public static boolean requiresBidi (MJIEnv env, int clsObjRef,
+  public boolean requiresBidi (MJIEnv env, int clsObjRef,
                                       int textRef, int start, int limit) {
     // not supported for now
     return false;

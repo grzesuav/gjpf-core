@@ -43,8 +43,8 @@ public class JPF_gov_nasa_jpf_CachedROHttpConnection extends NativePeer {
 
   static JPFLogger logger = JPF.getLogger("http");
 
-  static File cacheDir;
-  static HashMap<String,byte[]> dataCache;
+  File cacheDir;
+  HashMap<String,byte[]> dataCache;
 
   public JPF_gov_nasa_jpf_CachedROHttpConnection (Config conf){
     String cacheDirPath = conf.getString("http.cache_dir");
@@ -69,7 +69,7 @@ public class JPF_gov_nasa_jpf_CachedROHttpConnection extends NativePeer {
     return fn;
   }
 
-  private static byte[] getDataFromCachedFile (String url){
+  private byte[] getDataFromCachedFile (String url){
     byte[] data = null;
     String cacheFileName = getCacheFileName(url);
     File cacheFile = new File(cacheDir, cacheFileName);
@@ -89,7 +89,7 @@ public class JPF_gov_nasa_jpf_CachedROHttpConnection extends NativePeer {
     return data;
   }
 
-  private static byte[] getDataFromURL (String surl){
+  private byte[] getDataFromURL (String surl){
     byte[] data = null;
 
     try {
@@ -132,7 +132,7 @@ public class JPF_gov_nasa_jpf_CachedROHttpConnection extends NativePeer {
     return data;
   }
 
-  public static int getContents__Ljava_lang_String_2___3B (MJIEnv env, int objRef, int surlRef){
+  public int getContents__Ljava_lang_String_2___3B (MJIEnv env, int objRef, int surlRef){
     String url = env.getStringObject(surlRef);
 
     // first we check if it's already cached in memory

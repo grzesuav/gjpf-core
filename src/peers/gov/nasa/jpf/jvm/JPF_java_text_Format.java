@@ -33,8 +33,9 @@ public class JPF_java_text_Format extends NativePeer {
 
   static HashMap<Integer,Format> formatters;
 
-  public JPF_java_text_Format (Config conf){
+  public static boolean init (Config conf){
     formatters = new HashMap<Integer,Format>();
+    return true;
   }
   
   static void putInstance (MJIEnv env, int objref, Format fmt) {

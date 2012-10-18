@@ -25,7 +25,7 @@ package gov.nasa.jpf.jvm;
  */
 public class JPF_java_util_concurrent_atomic_AtomicLongFieldUpdater extends AtomicFieldUpdater {
 
-  public static void $init__Ljava_lang_Class_2Ljava_lang_String_2__V (MJIEnv env, int objRef,
+  public void $init__Ljava_lang_Class_2Ljava_lang_String_2__V (MJIEnv env, int objRef,
                                  int tClsObjRef, int fNameRef) {
 
     // direct Object subclass, so we don't have to call a super ctor
@@ -45,7 +45,7 @@ public class JPF_java_util_concurrent_atomic_AtomicLongFieldUpdater extends Atom
     env.setIntField(objRef, "fieldId", fidx);
   }
 
-  public static boolean compareAndSet__Ljava_lang_Object_2JJ__Z
+  public boolean compareAndSet__Ljava_lang_Object_2JJ__Z
   (MJIEnv env, int objRef, int tRef, long fExpect, long fUpdate){
 
     if (isNewPorFieldBoundary(env, objRef, tRef) && createAndSetFieldCG(env, tRef)) {
@@ -65,12 +65,12 @@ public class JPF_java_util_concurrent_atomic_AtomicLongFieldUpdater extends Atom
     }
   }
 
-  public static boolean weakCompareAndSet__Ljava_lang_Object_2JJ__Z
+  public boolean weakCompareAndSet__Ljava_lang_Object_2JJ__Z
   (MJIEnv env, int objRef, int tRef, long fExpect, long fUpdate){
     return(compareAndSet__Ljava_lang_Object_2JJ__Z(env, objRef, tRef, fExpect, fUpdate));
   }
 
-  public static void set__Ljava_lang_Object_2J__
+  public void set__Ljava_lang_Object_2J__
   (MJIEnv env, int objRef, int tRef, long fNewValue){
 
     if (isNewPorFieldBoundary(env, objRef, tRef) && createAndSetFieldCG(env, tRef)) {
@@ -84,12 +84,12 @@ public class JPF_java_util_concurrent_atomic_AtomicLongFieldUpdater extends Atom
     ei.setLongField(fi, fNewValue);
   }
 
-  public static void lazySet__Ljava_lang_Object_2J__
+  public void lazySet__Ljava_lang_Object_2J__
   (MJIEnv env, int objRef, int tRef, long fNewValue){
      set__Ljava_lang_Object_2J__(env, objRef, tRef, fNewValue);
   }
 
-  public static long get__Ljava_lang_Object_2__J
+  public long get__Ljava_lang_Object_2__J
   (MJIEnv env, int objRef, int tRef){
 
     if (isNewPorFieldBoundary(env, objRef, tRef) && createAndSetFieldCG(env, tRef)) {
@@ -103,7 +103,7 @@ public class JPF_java_util_concurrent_atomic_AtomicLongFieldUpdater extends Atom
     return ei.getLongField(fi);
   }
 
-  public static long getAndSet__Ljava_lang_Object_2J__J
+  public long getAndSet__Ljava_lang_Object_2J__J
   (MJIEnv env, int objRef, int tRef, long fNewValue){
 
     if (isNewPorFieldBoundary(env, objRef, tRef) && createAndSetFieldCG(env, tRef)) {
@@ -120,7 +120,7 @@ public class JPF_java_util_concurrent_atomic_AtomicLongFieldUpdater extends Atom
     return result;
   }
 
-  public static long getAndAdd__Ljava_lang_Object_2J__J
+  public long getAndAdd__Ljava_lang_Object_2J__J
   (MJIEnv env, int objRef, int tRef, long fDelta){
 
     if (isNewPorFieldBoundary(env, objRef, tRef) && createAndSetFieldCG(env, tRef)) {

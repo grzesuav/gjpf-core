@@ -47,10 +47,16 @@ public class JPF_java_util_Random extends NativePeer {
   
   // we need this because cg.enumerate_random might be set on demand
   static class ConfigListener implements ConfigChangeListener {
+    JPF_java_util_Random nativeRandom;
+
+    public ConfigListener(JPF_java_util_Random nativeRandom) {
+      this.nativeRandom = nativeRandom;
+    }
+
     @Override
     public void propertyChanged(Config config, String key, String oldValue, String newValue) {
       if ("cg.enumerate_random".equals(key)) {
-        setEnumerateRandom(config);
+        nativeRandom.setEnumerateRandom(config);
       }
     }
     
@@ -60,15 +66,15 @@ public class JPF_java_util_Random extends NativePeer {
     }
   }
 
-  static boolean enumerateRandom;
+  boolean enumerateRandom;
   
   // those are only used if enumerateRandom is not set, i.e. we delegate to the host VM
-  static boolean reproducibleRandom;
-  static long constantSeed;
-  static int[] defaultIntSet; // in case we have an nextInt(), i.e. an unspecified upper boundary
-  static long[] defaultLongSet;
-  static double[] defaultDoubleSet;
-  static float[] defaultFloatSet;
+  boolean reproducibleRandom;
+  long constantSeed;
+  int[] defaultIntSet; // in case we have an nextInt(), i.e. an unspecified upper boundary
+  long[] defaultLongSet;
+  double[] defaultDoubleSet;
+  float[] defaultFloatSet;
 
   // since peer methods are atomic, we just keep one delegator instead of per-object,
   // which would have to rely on attributes and still require storing/restoring
@@ -99,14 +105,15 @@ public class JPF_java_util_Random extends NativePeer {
     AtomicLong al = (AtomicLong) unsafe.getObject(rand, seedFieldOffset);
     al.set(seed);
   }
+
   private static long getNativeSeed (Random rand){
     AtomicLong al = (AtomicLong) unsafe.getObject(rand, seedFieldOffset);
     return al.longValue();
   }
-  
+
   public JPF_java_util_Random (Config conf) {
     setEnumerateRandom(conf);
-    conf.addChangeListener(new ConfigListener());
+    conf.addChangeListener(new ConfigListener(this));
     
     reproducibleRandom = conf.getBoolean("vm.reproducible_random", true);
     constantSeed = conf.getLong("vm.random_seed", 42);
@@ -116,7 +123,7 @@ public class JPF_java_util_Random extends NativePeer {
     defaultFloatSet = conf.getFloatArray("vm.random_floats", Float.MIN_VALUE, 0, Float.MAX_VALUE);  
   }
 
-  static void setEnumerateRandom (Config conf) {
+  void setEnumerateRandom (Config conf) {
     enumerateRandom = conf.getBoolean("cg.enumerate_random", false);
 
     if (enumerateRandom){
@@ -124,13 +131,15 @@ public class JPF_java_util_Random extends NativePeer {
     }    
   }
   
-  static long computeDefaultSeed(){
+  long computeDefaultSeed(){
     Random rand = (reproducibleRandom) ? new Random(constantSeed) : new Random();
     return getNativeSeed( rand);
   }
+
   static void storeSeed (MJIEnv env, int objRef, long seed){
     env.setLongField(objRef, "seed", seed);
   }
+
   static long getSeed (MJIEnv env, int objRef){
     return env.getLongField(objRef, "seed");
   }
@@ -147,19 +156,19 @@ public class JPF_java_util_Random extends NativePeer {
   
   
   //--- the publics
-  public static void $init____V (MJIEnv env, int objRef){
+  public void $init____V (MJIEnv env, int objRef){
     long seed = computeDefaultSeed();
     storeSeed( env, objRef, seed);
   }
   
-  public static void $init__J__V (MJIEnv env, int objRef, long seedStarter){
+  public void $init__J__V (MJIEnv env, int objRef, long seedStarter){
     // note - the provided seedStarter is modified by java.util.Random, it is
     // NOT the internal value that is consecutively used
     Random rand = new Random(seedStarter);
     storeRandomState(env, objRef, rand);    
   }
   
-  public static void setSeed__J__V (MJIEnv env, int objRef, long seedStarter){
+  public void setSeed__J__V (MJIEnv env, int objRef, long seedStarter){
     // my, what an effort to change a long.
     restoreRandomState( env, objRef, delegatee);
     delegatee.setSeed(seedStarter); // compute the new internal value
@@ -167,9 +176,9 @@ public class JPF_java_util_Random extends NativePeer {
   }
   
 
-  public static boolean nextBoolean____Z (MJIEnv env, int objRef){
+  public boolean nextBoolean____Z (MJIEnv env, int objRef){
     if (enumerateRandom){
-      return JPF_gov_nasa_jpf_jvm_Verify.getBoolean____Z(env,-1);
+      return (new JPF_gov_nasa_jpf_jvm_Verify()).getBoolean____Z(env,-1);
 
     } else {
       restoreRandomState(env, objRef, delegatee);
@@ -179,9 +188,9 @@ public class JPF_java_util_Random extends NativePeer {
     }
   }
   
-  public static int nextInt__I__I (MJIEnv env, int objRef, int n){
+  public int nextInt__I__I (MJIEnv env, int objRef, int n){
     if (enumerateRandom){
-      return JPF_gov_nasa_jpf_jvm_Verify.getInt__II__I(env,-1,0,n-1);
+      return (new JPF_gov_nasa_jpf_jvm_Verify()).getInt__II__I(env,-1,0,n-1);
       
     } else {
       restoreRandomState(env, objRef, delegatee);
@@ -191,7 +200,7 @@ public class JPF_java_util_Random extends NativePeer {
     }
   }
   
-  public static int nextInt____I (MJIEnv env, int objRef){
+  public int nextInt____I (MJIEnv env, int objRef){
     if (enumerateRandom){
       return JPF_gov_nasa_jpf_jvm_Verify.getIntFromList(env, defaultIntSet);
       
@@ -203,7 +212,7 @@ public class JPF_java_util_Random extends NativePeer {
     }
   }
   
-  public static int next__I__I (MJIEnv env, int objRef, int nBits){
+  public int next__I__I (MJIEnv env, int objRef, int nBits){
     if (enumerateRandom){
       // <2do> we can't do this with an interval since it most likely would explode our state space
       return JPF_gov_nasa_jpf_jvm_Verify.getIntFromList(env, defaultIntSet);
@@ -216,7 +225,7 @@ public class JPF_java_util_Random extends NativePeer {
     }
   }
   
-  public static void nextBytes___3B__V (MJIEnv env, int objRef, int dataRef){
+  public void nextBytes___3B__V (MJIEnv env, int objRef, int dataRef){
     // <2do> this one is an even worse state exploder. We could use cascaded CGs,
     // but chances are this really kills us, so we just ignore 'enumerateRandom' for now
     
@@ -232,7 +241,7 @@ public class JPF_java_util_Random extends NativePeer {
     }
   }
   
-  public static long nextLong____J (MJIEnv env, int objRef){
+  public long nextLong____J (MJIEnv env, int objRef){
     if (enumerateRandom){
       return JPF_gov_nasa_jpf_jvm_Verify.getLongFromList(env, defaultLongSet);
       
@@ -244,7 +253,7 @@ public class JPF_java_util_Random extends NativePeer {
     }    
   }
 
-  public static float nextFloat____F (MJIEnv env, int objRef){
+  public float nextFloat____F (MJIEnv env, int objRef){
     if (enumerateRandom){
       return JPF_gov_nasa_jpf_jvm_Verify.getFloatFromList(env, defaultFloatSet);
       
@@ -256,7 +265,7 @@ public class JPF_java_util_Random extends NativePeer {
     }    
   }
 
-  public static double nextDouble____D (MJIEnv env, int objRef){
+  public double nextDouble____D (MJIEnv env, int objRef){
     if (enumerateRandom){
       return JPF_gov_nasa_jpf_jvm_Verify.getDoubleFromList(env, defaultDoubleSet);
       
@@ -268,7 +277,7 @@ public class JPF_java_util_Random extends NativePeer {
     }    
   }
 
-  public static double nextGaussian____D (MJIEnv env, int objRef){
+  public double nextGaussian____D (MJIEnv env, int objRef){
     // <2do> we don't support this yet, neither for enumerateRandom nor
     // delegation (which would require an additional 'haveNextGaussian' state)
     restoreRandomState(env, objRef, delegatee);

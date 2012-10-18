@@ -28,7 +28,7 @@ import java.net.URLEncoder;
 public class JPF_java_net_URLEncoder extends NativePeer {
 
   // simple host delegation
-  public static int encode__Ljava_lang_String_2Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int clsObjRef,
+  public int encode__Ljava_lang_String_2Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int clsObjRef,
           int sRef, int encRef){
     String s = env.getStringObject(sRef);
     String enc = env.getStringObject(encRef);

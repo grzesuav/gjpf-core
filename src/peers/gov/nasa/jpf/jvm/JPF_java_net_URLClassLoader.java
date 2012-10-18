@@ -30,7 +30,7 @@ import gov.nasa.jpf.classfile.ClassPath;
  */
 public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
 
-  public static void addURL0__Ljava_lang_String_2__V (MJIEnv env, int objRef, int urlRef) throws MalformedURLException {
+  public void addURL0__Ljava_lang_String_2__V (MJIEnv env, int objRef, int urlRef) throws MalformedURLException {
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
     ClassPath cp = cl.getClassPath();
     String url = env.getStringObject(urlRef);
@@ -50,7 +50,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
     cp.addPathName(path);
   }
 
-  public static int findClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
+  public int findClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
     String typeName = env.getStringObject(nameRef);
 
     // retrieve the classloader
@@ -80,7 +80,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
     }
   }
 
-  public static int findResource0__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
+  public int findResource0__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
     String rname = env.getStringObject(resRef);
 
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
@@ -90,7 +90,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
     return env.newString(resourcePath);
   }
 
-  public static int findResources0__Ljava_lang_String_2___3Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef) {
+  public int findResources0__Ljava_lang_String_2___3Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef) {
     String rname = env.getStringObject(resRef);
 
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);

@@ -669,7 +669,6 @@ public abstract class TestJPF implements JPFShell  {
     Config conf = jpf.getConfig();
 
     if (conf.getTarget() != null) {
-      JPF_gov_nasa_jpf_util_test_TestJPF.init();
       jpf.run();
     }
   }

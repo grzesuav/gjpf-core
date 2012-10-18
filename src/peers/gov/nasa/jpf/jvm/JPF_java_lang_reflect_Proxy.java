@@ -20,7 +20,7 @@ package gov.nasa.jpf.jvm;
 
 
 public class JPF_java_lang_reflect_Proxy extends NativePeer {
-  public static int defineClass0(MJIEnv env, int clsObjRef, int classLoaderRef, int nameRef, int bufferRef, int offset, int length) {  
+  public int defineClass0(MJIEnv env, int clsObjRef, int classLoaderRef, int nameRef, int bufferRef, int offset, int length) {  
     String clsName = env.getStringObject(nameRef);
     byte[] buffer = env.getByteArrayObject(bufferRef);
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName, buffer, offset, length);

@@ -50,7 +50,7 @@ public class JPF_sun_net_www_protocol_http_Handler extends NativePeer {
     }
   }
 
-  static MapEntry[] map;
+  MapEntry[] map;
 
   public JPF_sun_net_www_protocol_http_Handler (Config conf){
     String[] specs = conf.getCompactTrimmedStringArray("http.connection");
@@ -84,7 +84,7 @@ public class JPF_sun_net_www_protocol_http_Handler extends NativePeer {
 
   }
 
-  public static int getConnectionClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objref, int surlRef){
+  public int getConnectionClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objref, int surlRef){
     String url = env.getStringObject(surlRef);
 
     if (map != null){

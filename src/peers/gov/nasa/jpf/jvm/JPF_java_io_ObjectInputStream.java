@@ -20,12 +20,12 @@ package gov.nasa.jpf.jvm;
 
 public class JPF_java_io_ObjectInputStream extends NativePeer {
 
-  public static int latestUserDefinedLoader____Ljava_lang_ClassLoader_2 (MJIEnv env, int clsRef){
+  public int latestUserDefinedLoader____Ljava_lang_ClassLoader_2 (MJIEnv env, int clsRef){
     // class loaders are not yet supported
     return MJIEnv.NULL;
   }
   
-  public static void bytesToDoubles___3BI_3DII__ (MJIEnv env, int clsRef,
+  public void bytesToDoubles___3BI_3DII__ (MJIEnv env, int clsRef,
                                                   int baRef, int bOff,
                                                   int daRef, int dOff,
                                                   int nDoubles){
@@ -63,7 +63,7 @@ public class JPF_java_io_ObjectInputStream extends NativePeer {
     }
   }
 
-  public static void bytesToFloats___3BI_3FII__ (MJIEnv env, int clsRef,
+  public void bytesToFloats___3BI_3FII__ (MJIEnv env, int clsRef,
                                                  int baRef, int bOff,
                                                  int faRef, int fOff,
                                                  int nFloats){

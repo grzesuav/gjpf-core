@@ -28,7 +28,7 @@ package gov.nasa.jpf.jvm;
  */
 public class JPF_java_lang_StringCoding extends NativePeer {
 
-  public static int decode___3BII___3C (MJIEnv env, int clsObjRef,
+  public int decode___3BII___3C (MJIEnv env, int clsObjRef,
       int bref, int off, int len) {
 
     
@@ -40,17 +40,14 @@ public class JPF_java_lang_StringCoding extends NativePeer {
     return cref;
   }
   
-  public static int encode___3CII___3B (MJIEnv env, int clsObjRef,
+  public int encode___3CII___3B (MJIEnv env, int clsObjRef,
       int cref, int off, int len) {
 
     int bref = env.newByteArray(len);
     for (int i=0,j=off; i<len; i++,j++) {
       env.setByteArrayElement(bref, i, (byte)env.getCharArrayElement(cref,j));
     }
-    
-    return bref;
 
-    
+    return bref; 
   }
-  
 }
