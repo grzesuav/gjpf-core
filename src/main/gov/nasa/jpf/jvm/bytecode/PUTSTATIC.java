@@ -99,7 +99,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
 
     // this is kind of policy, but it seems more natural to overwrite
     // (if we want to accumulate, this has to happen in ElementInfo/Fields
-    ei.setFieldAttrNoClone(fi, attr);
+    ei.setFieldAttr(fi, attr);
 
     return getNext(ti);
   }

@@ -191,7 +191,6 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     if (status != newStatus) {
       status = newStatus;
       attributes |= ATTR_STATUS_CHANGED;
-      markAreaChanged();
     }
   }
 
@@ -226,16 +225,7 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   public FieldInfo getFieldInfo (int fieldIndex) {
     return getClassInfo().getStaticField(fieldIndex);
   }
-  
-  protected ElementInfo getElementInfo (ClassInfo ci) {
-    if (ci == getClassInfo()) {
-      return this;
-    } else {
-      StaticArea sa = ci.getClassLoaderInfo().getStaticArea();
-      return sa.get( ci.getName());
-    }
-  }
-  
+    
   /**
    * mark all our fields as static (shared) reachable. No need to set our own
    * attributes, since we reside in the StaticArea

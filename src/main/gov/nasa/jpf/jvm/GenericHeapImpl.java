@@ -77,7 +77,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
       internStrings = heap.internStrings;
       attributes = heap.attributes & ATTR_STORE_MASK;
       
-      heap.markUnchanged();
+      heap.setStored();
     }
     
     @Override
@@ -685,7 +685,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     attributes |= ATTR_ELEMENTS_CHANGED;
   }
 
-  public void markUnchanged() {
+  public void setStored() {
     attributes &= ~ATTR_ANY_CHANGED;
   }
   

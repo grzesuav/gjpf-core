@@ -69,8 +69,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   // BEWARE if you add or change values, make sure these are not used in derived classes !
   // <2do> this is efficient but fragile
-  public static final int   ATTR_FIELDS_CHANGED     = 0x10000;
-  public static final int   ATTR_MONITOR_CHANGED    = 0x20000;
+
   public static final int   ATTR_TREF_CHANGED       = 0x40000; // usingTi has changed
   public static final int   ATTR_ATTRIBUTE_CHANGED  = 0x80000; // refers only to sticky bits
 
@@ -78,7 +77,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   static final int   ATTR_STORE_MASK = 0x0000ffff;
 
-  static final int   ATTR_ANY_CHANGED = (ATTR_FIELDS_CHANGED | ATTR_MONITOR_CHANGED | ATTR_TREF_CHANGED | ATTR_ATTRIBUTE_CHANGED);
+  static final int   ATTR_ANY_CHANGED = (ATTR_TREF_CHANGED | ATTR_ATTRIBUTE_CHANGED);
 
   // transient flag set if object is reachable from root object, i.e. can't be recycled
   public static final int   ATTR_IS_MARKED   = 0x80000000;
@@ -231,14 +230,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   public boolean hasChanged() {
     return (attributes & ATTR_ANY_CHANGED) != 0;
-  }
-
-  public boolean hasMonitorChanged() {
-    return (attributes & ATTR_MONITOR_CHANGED) != 0;
-  }
-
-  public boolean haveFieldsChanged() {
-    return (attributes & ATTR_FIELDS_CHANGED) != 0;
   }
 
   public String toString() {
@@ -544,10 +535,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   abstract protected FieldInfo getDeclaredFieldInfo(String clsBase, String fname);
 
-  // this is only 'this' in case of a DynamicElementInfo, which is flattened.
-  // for StaticElementInfos, a returned FieldInfo can actually refer to a super class
-  abstract protected ElementInfo getElementInfo(ClassInfo ci);
-
   abstract protected FieldInfo getFieldInfo(String fname);
 
   protected abstract int getNumberOfFieldsOrElements();
@@ -578,7 +565,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setObjectAttr (Object a){
-    cloneFields().setObjectAttr(a);
+    checkIsModifiable();
+    fields.setObjectAttr(a);
   }
 
   /**
@@ -593,24 +581,18 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   
   public void addObjectAttr(Object a){
-    cloneFields().addObjectAttr(a);
-  }
-  public void removeObjectAttr(Object a){
-    cloneFields().removeObjectAttr(a);
-  }
-  public void replaceObjectAttr(Object oldAttr, Object newAttr){
-    cloneFields().replaceObjectAttr(oldAttr, newAttr);
-  }
-
-  public void addObjectAttrNoClone(Object a){
+    checkIsModifiable();
     fields.addObjectAttr(a);
   }
-  public void removeObjectAttrNoClone(Object a){
+  public void removeObjectAttr(Object a){
+    checkIsModifiable();
     fields.removeObjectAttr(a);
   }
-  public void replaceObjectAttrNoClone(Object oldAttr, Object newAttr){
+  public void replaceObjectAttr(Object oldAttr, Object newAttr){
+    checkIsModifiable();
     fields.replaceObjectAttr(oldAttr, newAttr);
   }
+
   
   /**
    * this only returns the first attr of this type, there can be more
@@ -629,10 +611,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return fields.objectAttrIterator(type);
   }
   
-  
-
-
-  
   //--- field attribute accessors
   
   public boolean hasFieldAttr() {
@@ -648,8 +626,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * one attribute at a time, or check/process result with ObjectList
    */
   public Object getFieldAttr (FieldInfo fi){
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    return ei.fields.getFieldAttr(fi.getFieldIndex());
+    return fields.getFieldAttr(fi.getFieldIndex());
   }
 
   /**
@@ -659,54 +636,26 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setFieldAttr (FieldInfo fi, Object attr){
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
+    checkIsModifiable();
+    
     int nFields = getNumberOfFieldsOrElements();
-    ei.cloneFields().setFieldAttr( nFields, fi.getFieldIndex(), attr);    
-  }
-
-  /**
-   * this replaces all of them - use only if you know 
-   *  - there will be only one attribute at a time
-   *  - you obtained the value you set by a previous getXAttr()
-   *  - you constructed a multi value list with ObjectList.createList()
-   */
-  public void setFieldAttrNoClone (FieldInfo fi, Object attr){
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    int nFields = getNumberOfFieldsOrElements();
-    ei.fields.setFieldAttr( nFields, fi.getFieldIndex(), attr);    
+    fields.setFieldAttr( nFields, fi.getFieldIndex(), attr);    
   }
 
   
   public void addFieldAttr (FieldInfo fi, Object a){
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
+    checkIsModifiable();
+    
     int nFields = getNumberOfFieldsOrElements();    
-    ei.cloneFields().addFieldAttr( nFields, fi.getFieldIndex(), a);
+    fields.addFieldAttr( nFields, fi.getFieldIndex(), a);
   }
   public void removeFieldAttr (FieldInfo fi, Object a){
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    int nFields = getNumberOfFieldsOrElements();    
-    ei.cloneFields().removeFieldAttr(fi.getFieldIndex(), a);
+    checkIsModifiable();
+    fields.removeFieldAttr(fi.getFieldIndex(), a);
   }
   public void replaceFieldAttr (FieldInfo fi, Object oldAttr, Object newAttr){
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    int nFields = getNumberOfFieldsOrElements();    
-    ei.cloneFields().replaceFieldAttr(fi.getFieldIndex(), oldAttr, newAttr);
-  }
-
-  public void addFieldAttrNoClone (FieldInfo fi, Object a){
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    int nFields = getNumberOfFieldsOrElements();    
-    ei.fields.addFieldAttr( nFields, fi.getFieldIndex(), a);
-  }
-  public void removeFieldAttrNoClone (FieldInfo fi, Object a){
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    int nFields = getNumberOfFieldsOrElements();    
-    ei.fields.removeFieldAttr(fi.getFieldIndex(), a);
-  }
-  public void replaceFieldAttrNoClone (FieldInfo fi, Object oldAttr, Object newAttr){
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might be static
-    int nFields = getNumberOfFieldsOrElements();    
-    ei.fields.replaceFieldAttr(fi.getFieldIndex(), oldAttr, newAttr);
+    checkIsModifiable();    
+    fields.replaceFieldAttr(fi.getFieldIndex(), oldAttr, newAttr);
   }
   
   /**
@@ -755,7 +704,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    */
   public void setElementAttr (int idx, Object attr){
     int nElements = getNumberOfFieldsOrElements();
-    cloneFields().setFieldAttr( nElements, idx, attr);
+    checkIsModifiable();
+    fields.setFieldAttr( nElements, idx, attr);
   }
 
   /**
@@ -771,16 +721,21 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   
   public void addElementAttr (int idx, Object a){
+    checkIsModifiable();
+    
     int nElements = getNumberOfFieldsOrElements();   
-    cloneFields().addFieldAttr( nElements, idx, a);
+    fields.addFieldAttr( nElements, idx, a);
   }
   public void removeElementAttr (int idx, Object a){
-    cloneFields().removeFieldAttr(idx, a);
+    checkIsModifiable();
+    fields.removeFieldAttr(idx, a);
   }
   public void replaceElementAttr (int idx, Object oldAttr, Object newAttr){
-    cloneFields().replaceFieldAttr(idx, oldAttr, newAttr);
+    checkIsModifiable();
+    fields.replaceFieldAttr(idx, oldAttr, newAttr);
   }
 
+/** <2do> those will be obsolete */
   public void addElementAttrNoClone (int idx, Object a){
     int nElements = getNumberOfFieldsOrElements();   
     fields.addFieldAttr( nElements, idx, a);
@@ -874,132 +829,121 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
   public void setBooleanField(FieldInfo fi, boolean newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+    
     if (fi.isBooleanField()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setBooleanValue( offset, newValue);
+      fields.setBooleanValue( offset, newValue);
     } else {
       throw new JPFException("not a boolean field: " + fi.getName());
     }
   }
 
   public void setByteField(FieldInfo fi, byte newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+    
     if (fi.isByteField()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setByteValue( offset, newValue);
+      fields.setByteValue( offset, newValue);
     } else {
       throw new JPFException("not a byte field: " + fi.getName());
     }
   }
 
   public void setCharField(FieldInfo fi, char newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+    
     if (fi.isCharField()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setCharValue( offset, newValue);
+      fields.setCharValue( offset, newValue);
     } else {
       throw new JPFException("not a char field: " + fi.getName());
     }
   }
 
   public void setShortField(FieldInfo fi, short newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+
     if (fi.isShortField()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setShortValue( offset, newValue);
+      fields.setShortValue( offset, newValue);
     } else {
       throw new JPFException("not a short field: " + fi.getName());
     }
   }
 
   public void setIntField(FieldInfo fi, int newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+
     if (fi.isIntField()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setIntValue( offset, newValue);
+      fields.setIntValue( offset, newValue);
     } else {
       throw new JPFException("not an int field: " + fi.getName());
     }
   }
 
   public void setLongField(FieldInfo fi, long newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+
     if (fi.isLongField()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setLongValue( offset, newValue);
+      fields.setLongValue( offset, newValue);
     } else {
       throw new JPFException("not a long field: " + fi.getName());
     }
   }
 
   public void setFloatField(FieldInfo fi, float newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+
     if (fi.isFloatField()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setFloatValue( offset, newValue);
+      fields.setFloatValue( offset, newValue);
     } else {
       throw new JPFException("not a float field: " + fi.getName());
     }
   }
 
   public void setDoubleField(FieldInfo fi, double newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+
     if (fi.isDoubleField()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setDoubleValue( offset, newValue);
+      fields.setDoubleValue( offset, newValue);
     } else {
       throw new JPFException("not a double field: " + fi.getName());
     }
   }
 
   public void setReferenceField(FieldInfo fi, int newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+
     if (fi.isReference()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setReferenceValue( offset, newValue);
+      fields.setReferenceValue( offset, newValue);
     } else {
       throw new JPFException("not a reference field: " + fi.getName());
     }
   }
 
   public void set1SlotField(FieldInfo fi, int newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+
     if (fi.is1SlotField()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setIntValue( offset, newValue);
+      fields.setIntValue( offset, newValue);
     } else {
       throw new JPFException("not a 1 slot field: " + fi.getName());
     }
   }
 
   public void set2SlotField(FieldInfo fi, long newValue) {
-    ElementInfo ei = getElementInfo(fi.getClassInfo()); // might not be 'this'
-                                                        // in case of a static
+    checkIsModifiable();
+
     if (fi.is2SlotField()) {
-      Fields f = ei.cloneFields();
       int offset = fi.getStorageOffset();
-      f.setLongValue( offset, newValue);
+      fields.setLongValue( offset, newValue);
     } else {
       throw new JPFException("not a 2 slot field: " + fi.getName());
     }
@@ -1012,14 +956,12 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   public int getDeclaredReferenceField(String fname, String clsBase) {
     FieldInfo fi = getDeclaredFieldInfo(clsBase, fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getReferenceField( fi);
+    return getReferenceField( fi);
   }
 
   public int getReferenceField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getReferenceField( fi);
+    return getReferenceField( fi);
   }
 
 
@@ -1027,106 +969,91 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     // be aware of that static fields are not flattened (they are unique), i.e.
     // the FieldInfo might actually refer to another ClassInfo/StaticElementInfo
     FieldInfo fi = getDeclaredFieldInfo(clsBase, fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getIntField( fi);
+    return getIntField( fi);
   }
 
   public int getIntField(String fname) {
     // be aware of that static fields are not flattened (they are unique), i.e.
     // the FieldInfo might actually refer to another ClassInfo/StaticElementInfo
     FieldInfo fi = getFieldInfo(fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getIntField( fi);
+    return getIntField( fi);
   }
 
   public void setDeclaredLongField(String fname, String clsBase, long value) {
+    checkIsModifiable();
+    
     FieldInfo fi = getDeclaredFieldInfo(clsBase, fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    ei.cloneFields().setLongValue( fi.getStorageOffset(), value);
+    fields.setLongValue( fi.getStorageOffset(), value);
   }
 
   public long getDeclaredLongField(String fname, String clsBase) {
     FieldInfo fi = getDeclaredFieldInfo(clsBase, fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getLongField( fi);
+    return getLongField( fi);
   }
 
   public long getLongField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getLongField( fi);
+    return getLongField( fi);
   }
 
   public boolean getDeclaredBooleanField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getBooleanField( fi);
+    return getBooleanField( fi);
   }
 
   public boolean getBooleanField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getBooleanField( fi);
+    return getBooleanField( fi);
   }
 
   public byte getDeclaredByteField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getByteField( fi);
+    return getByteField( fi);
   }
 
   public byte getByteField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getByteField( fi);
+    return getByteField( fi);
   }
 
   public char getDeclaredCharField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getCharField( fi);
+    return getCharField( fi);
   }
 
   public char getCharField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getCharField( fi);
+    return getCharField( fi);
   }
 
   public double getDeclaredDoubleField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getDoubleField( fi);
+    return getDoubleField( fi);
   }
 
   public double getDoubleField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getDoubleField( fi);
+    return getDoubleField( fi);
   }
 
   public float getDeclaredFloatField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getFloatField( fi);
+    return getFloatField( fi);
   }
 
   public float getFloatField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getFloatField( fi);
+    return getFloatField( fi);
   }
 
   public short getDeclaredShortField(String fname, String refType) {
     FieldInfo fi = getDeclaredFieldInfo(refType, fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getShortField( fi);
+    return getShortField( fi);
   }
 
   public short getShortField(String fname) {
     FieldInfo fi = getFieldInfo(fname);
-    ElementInfo ei = getElementInfo(fi.getClassInfo());
-    return ei.getShortField( fi);
+    return getShortField( fi);
   }
 
   /**
@@ -1288,12 +1215,11 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       }
     }
 
-    // clone destination fields before we do the block copy
     // NOTE - we have to clone the fields even in case System.arraycopy fails, since
     // the caller might handle ArrayStore/IndexOutOfBounds, and partial changes
     // have to be preserved
     // note also this preserves values in case of a self copy
-    cloneFields();
+    checkIsModifiable();
 
     Object srcVals = ((ArrayFields)eiSrc.getFields()).getValues();
     Object dstVals = ((ArrayFields)fields).getValues();
@@ -1320,39 +1246,48 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   public void setBooleanElement(int idx, boolean value){
     checkArray(idx);
-    cloneFields().setBooleanValue(idx, value);
+    checkIsModifiable();
+    fields.setBooleanValue(idx, value);
   }
   public void setByteElement(int idx, byte value){
     checkArray(idx);
-    cloneFields().setByteValue(idx, value);
+    checkIsModifiable();
+    fields.setByteValue(idx, value);
   }
   public void setCharElement(int idx, char value){
     checkArray(idx);
-    cloneFields().setCharValue(idx, value);
+    checkIsModifiable();
+    fields.setCharValue(idx, value);
   }
   public void setShortElement(int idx, short value){
     checkArray(idx);
-    cloneFields().setShortValue(idx, value);
+    checkIsModifiable();
+    fields.setShortValue(idx, value);
   }
   public void setIntElement(int idx, int value){
     checkArray(idx);
-    cloneFields().setIntValue(idx, value);
+    checkIsModifiable();
+    fields.setIntValue(idx, value);
   }
   public void setLongElement(int idx, long value) {
     checkArray(idx);
-    cloneFields().setLongValue(idx, value);
+    checkIsModifiable();
+    fields.setLongValue(idx, value);
   }
   public void setFloatElement(int idx, float value){
     checkArray(idx);
-    cloneFields().setFloatValue(idx, value);
+    checkIsModifiable();
+    fields.setFloatValue(idx, value);
   }
   public void setDoubleElement(int idx, double value){
     checkArray(idx);
-    cloneFields().setDoubleValue(idx, value);
+    checkIsModifiable();
+    fields.setDoubleValue(idx, value);
   }
   public void setReferenceElement(int idx, int value){
     checkArray(idx);
-    cloneFields().setReferenceValue(idx, value);
+    checkIsModifiable();
+    fields.setReferenceValue(idx, value);
   }
 
 
@@ -1656,27 +1591,31 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   public ElementInfo clone() {
     try {
-      return (ElementInfo) super.clone();
+      ElementInfo ei = (ElementInfo) super.clone();
+      ei.fields = fields.clone();
+      ei.monitor = monitor.clone();
+      
+      return ei;
       
     } catch (CloneNotSupportedException e) {
-      e.printStackTrace();
       throw new InternalError("should not happen");
     }
   }
 
+  // this is the one that should be used by heap
   public ElementInfo deepClone() {
     try {
       ElementInfo ei = (ElementInfo) super.clone();
       ei.fields = fields.clone();
       ei.monitor = monitor.clone();
-      // what about fLockInfo and referencingThreads?
+      
+      // referencingThreads is at least subtree global, hence doesn't need to be cloned
       
       ei.defreeze();
       
       return ei;
       
     } catch (CloneNotSupportedException e) {
-      e.printStackTrace();
       throw new InternalError("should not happen");
     }
     
@@ -1689,25 +1628,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   abstract public int getNumberOfFields();
 
   abstract public FieldInfo getFieldInfo(int fieldIndex);
-
-  public void log() { // <2do> replace this
-    if (haveFieldsChanged()) {
-      Debug.println(Debug.MESSAGE, "(fields have changed)");
-    }
-
-    int n = getNumberOfFields();
-    for (int i = 0; i < n; i++) {
-      FieldInfo fi = getFieldInfo(i);
-      Debug.println(Debug.MESSAGE, fi.getName() + ": "
-          + fi.valueToString(fields));
-    }
-
-    if (hasMonitorChanged()) {
-      Debug.println(Debug.MESSAGE, "(monitor has changed)");
-    }
-
-    //monitor.log();
-  }
 
   /**
    * threads that will grab our lock on their next execution have to be
@@ -1805,6 +1725,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    */
   public void unlock (ThreadInfo ti) {
 
+    checkIsModifiable();
+    
     /* If there is a compiler bug, we need to flag it.  Most compilers should 
      * generate balanced monitorenter and monitorexit instructions for all code 
      * paths.  The JVM is being used for more non-Java languages.  Some of these 
@@ -1845,13 +1767,11 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       }
 
       // leave the contenders - we need to know whom to block on subsequent lock
-      setMonitor();
 
       monitor.decLockCount();
       monitor.setLockingThread(null);
 
     } else { // recursive unlock
-      setMonitor();
       monitor.decLockCount();
     }
   }
@@ -2163,8 +2083,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     return ((attributes & ATTR_IS_MARKED) != 0) | (((attributes & ATTR_LIVE_BIT) == 0) ^ liveBitValue);
   }
 
-  protected abstract void markAreaChanged();
-
   public void markUnchanged() {
     attributes &= ~ATTR_ANY_CHANGED;
   }
@@ -2174,60 +2092,20 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
 
 
-  protected Fields cloneFields() {
-    if ((attributes & ATTR_FIELDS_CHANGED) == 0) {
-      fields = fields.clone();
-      attributes |= ATTR_FIELDS_CHANGED;
-      markAreaChanged();
-    }
-
-    return fields;
-  }
-
-
-  /**
-   * this has to be called every time we create a new monitor, so that we know it's
-   * not yet stored (mIndex = -1), and memory has changed (area)
-   */
-  void resetMonitorIndex () {
-    attributes |= ATTR_MONITOR_CHANGED;
-    markAreaChanged();
-  }
-
-  /**
-   * the setMonitorXX() calls have to preclude any monitor modification (changing
-   * lockingThread, lockCount, or blocked/waiter threads, since we have to make
-   * sure we don't modify an already pool-stored Monitor object
-   *
-   * this is not very nice, but for the sake of consistency (ThreadData objRef,
-   * Fields objRef etc.) we keep it. The plethora of setMonitorXX methods is due to
-   * some optimization, since we don't want to first pushClinit, then clone,
-   * and finally replace waiter/blocked arrays. Stupid thing is that is a Monitor
-   * optimization which is just here because of the associated mIndex == -1 check
-   */
-  void setMonitor () {
-    if ((attributes & ATTR_MONITOR_CHANGED) == 0) {
-      resetMonitorIndex();
-      monitor = monitor.clone();
+  protected void checkIsModifiable() {
+    if ((attributes & ATTR_IS_FROZEN) != 0) {
+      throw new JPFException("attempt to modify frozen object: " + this);
     }
   }
 
   void setMonitorWithLocked( ThreadInfo ti) {
-    if ((attributes & ATTR_MONITOR_CHANGED) != 0) {
-      monitor.addLocked(ti);
-    } else {
-      resetMonitorIndex();
-      monitor = monitor.cloneWithLocked(ti);
-    }
+    checkIsModifiable();
+    monitor.addLocked(ti);
   }
 
   void setMonitorWithoutLocked (ThreadInfo ti) {
-    if ((attributes & ATTR_MONITOR_CHANGED) != 0) { // no need to clone, it hasn't been pooled yet
-      monitor.removeLocked(ti);
-    } else {
-      resetMonitorIndex();
-      monitor = monitor.cloneWithoutLocked(ti);
-    }
+    checkIsModifiable();    
+    monitor.removeLocked(ti);
   }
 
   public boolean isLockedBy(ThreadInfo ti) {

@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.ObjVector;
+import gov.nasa.jpf.util.Processor;
 
 import java.util.Iterator;
 
@@ -114,6 +115,20 @@ public class ObjVectorHeap extends GenericHeapImpl {
     
   //--- heap interface
   
+  static class ElementInfoFreezer implements Processor<ElementInfo> {
+    @Override
+    public void process (ElementInfo ei) {
+      ei.freeze();
+    }
+  }
+  static ElementInfoFreezer freezer = new ElementInfoFreezer();
+  
+  @Override
+  public void setStored() {
+    super.setStored();
+    elementInfos.process(freezer);
+  }
+  
   /**
    * return number of non-null elements
    */
@@ -176,19 +191,17 @@ public class ObjVectorHeap extends GenericHeapImpl {
   public ElementInfo getModifiable (int ref) {
     
     // ObjVectorHeap does not freeze ElementInfos
-    return get(ref); 
+    // return get(ref); 
     
-    /**
     ElementInfo ei = elementInfos.get(ref);
     
     if (ei != null && ei.isFrozen()) {
-      ei = ei.clone();
+      ei = ei.deepClone();
       ei.defreeze();
       elementInfos.set(ref, ei);
     }
     
     return ei;
-    **/
   }
     
   

@@ -98,7 +98,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
 
     // this is kind of policy, but it seems more natural to overwrite
     // (if we want to accumulate, this has to happen in ElementInfo/Fields
-    ei.setFieldAttrNoClone(fi, attr);  // <2do> what if the value is the same but not the attr?
+    ei.setFieldAttr(fi, attr);  // <2do> what if the value is the same but not the attr?
 
     ti.pop(); // we already have the objRef
     lastThis = objRef;
