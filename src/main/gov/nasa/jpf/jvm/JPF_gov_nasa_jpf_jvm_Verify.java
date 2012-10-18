@@ -549,7 +549,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   
   public void setObjectAttribute__Ljava_lang_Object_2I__V (MJIEnv env, int clsRef, int oRef, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getElementInfo(oRef);
+      ElementInfo ei = env.getModifiableElementInfo(oRef);
       ei.setObjectAttr(Integer.valueOf(attr));
     }
   }
@@ -565,7 +565,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   
   public void addObjectAttribute__Ljava_lang_Object_2I__V (MJIEnv env, int clsRef, int oRef, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getElementInfo(oRef);
+      ElementInfo ei = env.getModifiableElementInfo(oRef);
       ei.addObjectAttr(Integer.valueOf(attr));
     }
   }
@@ -583,7 +583,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   public void setFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2I__V (MJIEnv env, int clsRef,
                                                                                     int oRef, int fnRef, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getElementInfo(oRef);
+      ElementInfo ei = env.getModifiableElementInfo(oRef);
       if (ei != null){
         String fname = env.getStringObject(fnRef);
         FieldInfo fi = ei.getFieldInfo(fname);
@@ -626,7 +626,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   public void addFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2I__V (MJIEnv env, int clsRef,
                                                                                     int oRef, int fnRef, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getElementInfo(oRef);
+      ElementInfo ei = env.getModifiableElementInfo(oRef);
       if (ei != null){
         String fname = env.getStringObject(fnRef);
         FieldInfo fi = ei.getFieldInfo(fname);
@@ -734,7 +734,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   public void setElementAttribute__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef,
                                                                     int oRef, int idx, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getElementInfo(oRef);
+      ElementInfo ei = env.getModifiableElementInfo(oRef);
 
       if (ei != null){
         if (ei.isArray()) {
@@ -783,7 +783,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   public void addElementAttribute__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef,
                                                                     int oRef, int idx, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getElementInfo(oRef);
+      ElementInfo ei = env.getModifiableElementInfo(oRef);
 
       if (ei != null){
         if (ei.isArray()) {
@@ -889,7 +889,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   
   public void setShared__Ljava_lang_Object_2Z__V (MJIEnv env, int clsObjRef, int objRef, boolean isShared) {
     if (objRef != MJIEnv.NULL){
-      ElementInfo ei = env.getElementInfo(objRef);
+      ElementInfo ei = env.getModifiableElementInfo(objRef);
       if (ei != null){
         if (ei.getClassInfo() == ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo()) { // it's a class object, freeze the static fields
           ei = env.getClassElementInfo(objRef);
@@ -901,7 +901,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
 
   public void freezeSharedness__Ljava_lang_Object_2Z__V (MJIEnv env, int clsObjRef, int objRef, boolean freeze) {
     if (objRef != MJIEnv.NULL){
-      ElementInfo ei = env.getElementInfo(objRef);
+      ElementInfo ei = env.getModifiableElementInfo(objRef);
       if (ei != null) {
         if (ei.getClassInfo() == ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo()) { // it's a class object, freeze the static fields
           ei = env.getClassElementInfo(objRef);

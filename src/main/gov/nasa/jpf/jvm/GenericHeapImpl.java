@@ -183,7 +183,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
 
   @Override
   public void registerPinDown(int objref){
-    ElementInfo ei = get(objref);
+    ElementInfo ei = getModifiable(objref);
     if (ei != null) {
       if (ei.incPinDown()){
         addToPinDownList(objref);
@@ -195,7 +195,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
 
   @Override
   public void releasePinDown(int objref){
-    ElementInfo ei = get(objref);
+    ElementInfo ei = getModifiable(objref);
     if (ei != null) {
       if (ei.decPinDown()){
         removeFromPinDownList(objref);
@@ -235,7 +235,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
         Fields f = ei.getFields();
         int    ref = f.getIntValue(0); // watch out, the 0 only works with our own WeakReference impl
         if (ref != -1) {
-          ElementInfo refEi = get(ref);
+          ElementInfo refEi = getModifiable(ref);
           if ((refEi == null) || (refEi.isNull())) {
             // we need to make sure the Fields are properly state managed
             ei.setReferenceField(ei.getFieldInfo(0), -1);
@@ -356,10 +356,10 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   
   
   protected ElementInfo initializeStringObject( String str, int index, int vref) {
-    ElementInfo ei = get(index);
+    ElementInfo ei = getModifiable(index);
     ei.setReferenceField("value", vref);
 
-    ElementInfo eVal = get(vref);
+    ElementInfo eVal = getModifiable(vref);
     CharArrayFields cf = (CharArrayFields)eVal.getFields();
     cf.setCharValues(str.toCharArray());
     
@@ -408,7 +408,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
       if (str != null) {
         AllocationContext ctx = getSUTAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), ti);
         int index = newString( str, ti, ctx);
-        ElementInfo ei = get(index);
+        ElementInfo ei = getModifiable(index);
         
         // new interned Strings are always pinned down
         ei.incPinDown();

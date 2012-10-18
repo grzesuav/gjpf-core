@@ -1061,7 +1061,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
 
   public boolean canEnter (ThreadInfo th) {
     if (isSynchronized()) {
-      ElementInfo ei = getBlockedObject(th, true);
+      ElementInfo ei = getBlockedObject(th, true, false);
 
       // <?> pcm - the other way round would be intuitive
       return ei.canLock(th);
@@ -1070,7 +1070,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     return true;
   }
 
-  public ElementInfo getBlockedObject (ThreadInfo th, boolean isBeforeCall) {
+  public ElementInfo getBlockedObject (ThreadInfo th, boolean isBeforeCall, boolean isModifiable) {
     int         objref;
     ElementInfo ei = null;
 
@@ -1084,7 +1084,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
         objref = isBeforeCall ? th.getCalleeThis(this) : th.getThis();
       }
 
-      ei = th.getElementInfo(objref);
+      ei = (isModifiable) ? th.getModifiableElementInfo(objref) : th.getElementInfo(objref);
 
       assert (ei != null) : ("inconsistent stack, no object or class ref: " +
                                getFullName() + " (" + objref +")");
@@ -1103,7 +1103,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
    */
   public void enter (ThreadInfo ti) {
     if (isSynchronized()) {
-      ElementInfo ei = getBlockedObject(ti, true);
+      ElementInfo ei = getBlockedObject(ti, true, true);
       ei.lock(ti);
 
       if (isStatic() && isClinit()) {
@@ -1130,7 +1130,7 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     // VMs are allowed to silently fix this, so it might run on some and fail on others)
     
     if (isSynchronized()) {
-      ElementInfo ei = getBlockedObject(ti, false);
+      ElementInfo ei = getBlockedObject(ti, false, true);
       if (ei.isLocked()){
         ei.unlock(ti);
       }

@@ -45,7 +45,7 @@ public class ObjectConverter {
       Class<?> javaClass = javaObject.getClass();
       String typeName = javaClass.getName();
       int newObjRef = env.newObject(typeName);
-      ElementInfo newObjEI = env.getElementInfo(newObjRef);
+      ElementInfo newObjEI = env.getModifiableElementInfo(newObjRef);
 
       ClassInfo ci = env.getClassInfo(newObjRef);
 
@@ -147,7 +147,7 @@ public class ObjectConverter {
 
     if (arrayElementClass == Character.TYPE) {
       arrRef = env.newCharArray(javaArrLength);
-      ElementInfo charArrRef = env.getElementInfo(arrRef);
+      ElementInfo charArrRef = env.getModifiableElementInfo(arrRef);
       char[] charArr = charArrRef.asCharArray();
 
       for (int i = 0; i < javaArrLength; i++) {
@@ -156,7 +156,7 @@ public class ObjectConverter {
     }
     else if (arrayElementClass == Byte.TYPE) {
       arrRef = env.newByteArray(javaArrLength);
-      ElementInfo byteArrRef = env.getElementInfo(arrRef);
+      ElementInfo byteArrRef = env.getModifiableElementInfo(arrRef);
       byte[] byteArr = byteArrRef.asByteArray();
 
       for (int i = 0; i < javaArrLength; i++) {
@@ -165,7 +165,7 @@ public class ObjectConverter {
     }
     else if (arrayElementClass == Short.TYPE) {
       arrRef = env.newShortArray(javaArrLength);
-      ElementInfo shortArrRef = env.getElementInfo(arrRef);
+      ElementInfo shortArrRef = env.getModifiableElementInfo(arrRef);
       short[] shortArr = shortArrRef.asShortArray();
 
       for (int i = 0; i < javaArrLength; i++) {
@@ -174,7 +174,7 @@ public class ObjectConverter {
     }
     else if (arrayElementClass == Integer.TYPE) {
       arrRef = env.newIntArray(javaArrLength);
-      ElementInfo intArrRef = env.getElementInfo(arrRef);
+      ElementInfo intArrRef = env.getModifiableElementInfo(arrRef);
       int[] intArr = intArrRef.asIntArray();
 
       for (int i = 0; i < javaArrLength; i++) {
@@ -183,7 +183,7 @@ public class ObjectConverter {
     }
     else if (arrayElementClass == Long.TYPE) {
       arrRef = env.newLongArray(javaArrLength);
-      ElementInfo longArrRef = env.getElementInfo(arrRef);
+      ElementInfo longArrRef = env.getModifiableElementInfo(arrRef);
       long[] longArr = longArrRef.asLongArray();
 
       for (int i = 0; i < javaArrLength; i++) {
@@ -192,7 +192,7 @@ public class ObjectConverter {
     }
     else if (arrayElementClass == Float.TYPE) {
       arrRef = env.newFloatArray(javaArrLength);
-      ElementInfo floatArrRef = env.getElementInfo(arrRef);
+      ElementInfo floatArrRef = env.getModifiableElementInfo(arrRef);
       float[] floatArr = floatArrRef.asFloatArray();
 
       for (int i = 0; i < javaArrLength; i++) {
@@ -201,7 +201,7 @@ public class ObjectConverter {
     }
     else if (arrayElementClass == Double.TYPE) {
       arrRef = env.newDoubleArray(javaArrLength);
-      ElementInfo floatArrRef = env.getElementInfo(arrRef);
+      ElementInfo floatArrRef = env.getModifiableElementInfo(arrRef);
       double[] doubleArr = floatArrRef.asDoubleArray();
 
       for (int i = 0; i < javaArrLength; i++) {
@@ -210,7 +210,7 @@ public class ObjectConverter {
     }
     else {
       arrRef = env.newObjectArray(arrayElementClass.getCanonicalName(), javaArrLength);
-      ElementInfo arrayEI = env.getElementInfo(arrRef);
+      ElementInfo arrayEI = env.getModifiableElementInfo(arrRef);
 
       Fields fields = arrayEI.getFields();
 

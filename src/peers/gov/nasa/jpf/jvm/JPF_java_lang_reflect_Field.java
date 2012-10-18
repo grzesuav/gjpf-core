@@ -466,7 +466,7 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
         return false;
       }
 
-      ElementInfo ei = fi.isStatic() ? fi.getClassInfo().getStaticElementInfo() : env.getElementInfo(obj);
+      ElementInfo ei = fi.isStatic() ? fi.getClassInfo().getStaticElementInfo() : env.getModifiableElementInfo(obj);
       ei.setFieldAttr(fi, attr);
 
       if ("boolean".equals(fieldType)){

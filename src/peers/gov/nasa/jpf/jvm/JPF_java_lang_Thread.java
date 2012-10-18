@@ -304,6 +304,7 @@ public class JPF_java_lang_Thread extends NativePeer {
       
       // since we use lock-free joins, we need to remove ourselves from the
       // lock contender list
+      ei = ei.getModifiable();
       ei.setMonitorWithoutLocked(tiJoiner);
       
       // note that we have to throw even if the thread to join to is not alive anymore

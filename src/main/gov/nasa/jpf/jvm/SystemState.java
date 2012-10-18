@@ -615,10 +615,6 @@ public class SystemState {
     return ks.threads.getNonDaemonThreadCount();
   }
 
-  public ElementInfo getObject (int reference) {
-    return ks.heap.get(reference);
-  }
-
   public int getThreadCount () {
     return ks.threads.length();
   }

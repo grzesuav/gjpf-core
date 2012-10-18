@@ -53,7 +53,7 @@ class BoxedBoolCreator implements Creator {
 
     if (read != null) {
       boolRef = env.newObject("java.lang.Boolean");
-      ElementInfo intEI = env.getElementInfo(boolRef);
+      ElementInfo intEI = env.getModifiableElementInfo(boolRef);
       intEI.setIntField("value", (read == true) ? 1 : 0);
     }
 
@@ -68,7 +68,7 @@ class BoxedByteCreator implements Creator {
 
     if (read != null) {
       byteRef = env.newObject("java.lang.Byte");
-      ElementInfo intEI = env.getElementInfo(byteRef);
+      ElementInfo intEI = env.getModifiableElementInfo(byteRef);
       intEI.setIntField("value", read.byteValue());
     }
 
@@ -83,7 +83,7 @@ class BoxedShortCreator implements Creator {
 
     if (read != null) {
       shortRef = env.newObject("java.lang.Short");
-      ElementInfo intEI = env.getElementInfo(shortRef);
+      ElementInfo intEI = env.getModifiableElementInfo(shortRef);
       intEI.setIntField("value", read.shortValue());
     }
 
@@ -98,7 +98,7 @@ class BoxedIntCreator implements Creator {
 
     if (read != null) {
       intRef = env.newObject("java.lang.Integer");
-      ElementInfo intEI = env.getElementInfo(intRef);
+      ElementInfo intEI = env.getModifiableElementInfo(intRef);
       intEI.setIntField("value", read.intValue());
     }
 
@@ -113,7 +113,7 @@ class BoxedLongCreator implements Creator {
 
     if (read != null) {
       longRef = env.newObject("java.lang.Long");
-      ElementInfo intEI = env.getElementInfo(longRef);
+      ElementInfo intEI = env.getModifiableElementInfo(longRef);
       intEI.setLongField("value", read.longValue());
     }
 
@@ -128,7 +128,7 @@ class BoxedFloatCreator implements Creator {
 
     if (read != null) {
       floatRef = env.newObject("java.lang.Float");
-      ElementInfo intEI = env.getElementInfo(floatRef);
+      ElementInfo intEI = env.getModifiableElementInfo(floatRef);
 
       Float flt = read.floatValue();
 
@@ -147,7 +147,7 @@ class BoxedDoubleCreator implements Creator {
 
     if (read != null) {
       doubleRef = env.newObject("java.lang.Double");
-      ElementInfo intEI = env.getElementInfo(doubleRef);
+      ElementInfo intEI = env.getModifiableElementInfo(doubleRef);
       intEI.setDoubleField("value", read.doubleValue());
     }
 

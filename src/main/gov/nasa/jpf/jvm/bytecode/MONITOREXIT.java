@@ -39,9 +39,9 @@ public class MONITOREXIT extends LockInstruction {
     }
 
     lastLockRef = objref;
-    ElementInfo ei = ks.heap.get(objref);
 
     if (!ti.isFirstStepInsn()){
+      ElementInfo ei = ks.heap.getModifiable(objref);
       
       // we only do this in the bottom half, but before potentially creating
       // a CG so that other threads that might become runnable are included

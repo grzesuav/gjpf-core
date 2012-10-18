@@ -119,7 +119,7 @@ public class ClassLoaderInfo
 
     vm.registerClassLoader(this);
 
-    ElementInfo ei = vm.getElementInfo(objRef);
+    ElementInfo ei = vm.getModifiableElementInfo(objRef);
 
     // For systemClassLoaders, this object is still null, since the class java.lang.ClassLoader 
     // class cannot be loaded before creating the systemClassLoader
@@ -648,7 +648,7 @@ public class ClassLoaderInfo
     heap.registerPinDown(objRef);
 
     //--- initialize the systemClassLoader object
-    ElementInfo ei = heap.get(objRef);
+    ElementInfo ei = heap.getModifiable(objRef);
     this.gid = this.computeId(objRef);
     ei.setIntField("clRef", gid);
 

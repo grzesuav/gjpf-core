@@ -331,6 +331,7 @@ public abstract class InvokeInstruction extends JVMInstruction {
             ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
             if (cg != null) {
               if (ss.setNextChoiceGenerator(cg)) {
+                ei = ei.getModifiable();
                 ei.registerLockContender(ti);  // Record that this thread would lock the object upon next execution
                 return true;
               }

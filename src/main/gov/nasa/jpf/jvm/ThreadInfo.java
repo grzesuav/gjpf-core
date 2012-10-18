@@ -434,7 +434,7 @@ public class ThreadInfo
   
   // initialize related JPF object references
   protected void initReferenceFields (int objRef, int groupRef, int runnableRef, int nameRef){
-    ElementInfo ei = vm.getElementInfo(objRef);
+    ElementInfo ei = vm.getModifiableElementInfo(objRef);
     
     this.objRef = objRef;
     this.targetRef = runnableRef;
@@ -772,7 +772,7 @@ public class ThreadInfo
       // remember there was a pending exception that has to be thrown the next
       // time this gets scheduled, and make sure the exception object does
       // not get GCed prematurely
-      ElementInfo eit = getElementInfo(objRef);
+      ElementInfo eit = getModifiableElementInfo(objRef);
       eit.setReferenceField("stopException", throwableRef);
     }
   }
@@ -1912,7 +1912,7 @@ public class ThreadInfo
 
     Heap heap = vm.getHeap();
     int aref = heap.newArray("Ljava/lang/StackTraceElement;", nVisible, this);
-    ElementInfo aei = heap.get(aref);
+    ElementInfo aei = heap.getModifiable(aref);
     for (int i=0; i<nVisible; i++){
       int eref = list[i].createJPFStackTraceElement();
       aei.setReferenceElement( i, eref);
@@ -2045,7 +2045,7 @@ public class ThreadInfo
         ClassInfo ci = ClassInfo.getResolvedSystemClassInfo("java.lang.StackTraceElement");
         int sRef = heap.newObject(ci, ThreadInfo.this);
 
-        ElementInfo  sei = heap.get(sRef);
+        ElementInfo  sei = heap.getModifiable(sRef);
         sei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this));
         sei.setReferenceField("mthName", heap.newString(mthName, ThreadInfo.this));
         sei.setReferenceField("fileName", heap.newString(fileName, ThreadInfo.this));
@@ -2479,6 +2479,10 @@ public class ThreadInfo
     return heap.get(ref);
   }
 
+  public ElementInfo getModifiableElementInfo (int ref) {
+    Heap heap = vm.getHeap();
+    return heap.getModifiable(ref);
+  }
 
   /**
    * this should only be called from the top half of the last DIRECTCALLRETURN of
@@ -2487,7 +2491,7 @@ public class ThreadInfo
    */
   public boolean exit(){
     int objref = getThreadObjectRef();
-    ElementInfo ei = getElementInfo(objref);
+    ElementInfo ei = getModifiableElementInfo(objref);
     SystemState ss = vm.getSystemState();
     ThreadList tl = vm.getThreadList();
     
@@ -2619,7 +2623,7 @@ public class ThreadInfo
   }
 
   public void interrupt () {
-    ElementInfo eiThread = getElementInfo(getThreadObjectRef());
+    ElementInfo eiThread = getModifiableElementInfo(getThreadObjectRef());
 
     State status = getState();
 

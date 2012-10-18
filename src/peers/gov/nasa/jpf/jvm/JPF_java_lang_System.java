@@ -44,7 +44,7 @@ public class JPF_java_lang_System extends NativePeer {
     }
 
     ElementInfo eiSrc = env.getElementInfo(srcArrayRef);
-    ElementInfo eiDst = env.getElementInfo(dstArrayRef);
+    ElementInfo eiDst = env.getModifiableElementInfo(dstArrayRef);
     
     try {
       eiDst.copyElements( env.getThreadInfo(), eiSrc ,srcIdx, dstIdx, length);

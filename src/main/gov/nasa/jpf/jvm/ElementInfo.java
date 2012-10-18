@@ -44,7 +44,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public static final int   ATTR_PINDOWN_MASK = 0xff;
 
   // this ElementInfo is not allowed to be modified anymore since it has been state stored
-  // ElementInfos are constructed in a non-frozen state, and will be frozen upon heap store.
+  // ElementInfos are constructed in a non-frozen state, and will be frozen upon
+  // heap store (usuall in the heap or ElementInfo memento ctor)
   // This is the basis for lifting the change management from the fields level (fields,monitor,attributes)
   // to the ElementInfo object level
   public static final int   ATTR_IS_FROZEN     = 0x100;
@@ -215,6 +216,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
     assert ti != null; // we need that for our POR
   }
 
+  public abstract ElementInfo getModifiable();
+  
   // we need to delegate this in case it is global
   protected abstract ThreadInfoSet createThreadInfoSet(ThreadInfo ti);
   

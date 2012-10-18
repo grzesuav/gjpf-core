@@ -53,7 +53,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     // note - it is the callers responsibility to ensure Method is properly initialized    
     int regIdx = registry.registerMethodInfo(mi);
     int eidx = env.newObject( ciMth);
-    ElementInfo ei = env.getElementInfo(eidx);
+    ElementInfo ei = env.getModifiableElementInfo(eidx);
     
     ei.setIntField("regIdx", regIdx);
     ei.setBooleanField("isAccessible", mi.isPublic());
@@ -170,13 +170,13 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       attr = frame.getLongOperandAttr();
       double v = frame.doublePop();
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"));
-      rei = env.getElementInfo(ret);
+      rei = env.getModifiableElementInfo(ret);
       rei.setDoubleField("value", v);
     } else if (rt == Types.T_FLOAT) {
       attr = frame.getOperandAttr();
       int v = frame.pop();
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"));
-      rei = env.getElementInfo(ret);
+      rei = env.getModifiableElementInfo(ret);
       rei.setIntField("value", v);
     } else if (rt == Types.T_LONG) {
       attr = frame.getLongOperandAttr();
@@ -472,8 +472,8 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     
     if (frame == null || frame.getMethodInfo().getName() != directCallId){ // first time
       ClassInfo calleeClass = mi.getClassInfo();
-      ElementInfo mth = ti.getElementInfo(mthRef);
-      boolean accessible = (Boolean) mth.getFieldValueObject("isAccessible");
+      ElementInfo eiMth = ti.getElementInfo(mthRef);
+      boolean accessible = (Boolean) eiMth.getFieldValueObject("isAccessible");
 
       if (mi.isStatic()) { // this might require class init and reexecution
         if (calleeClass.requiresClinitExecution(ti)) { // might cause another direct call
@@ -501,8 +501,8 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       frame = new DirectCallStackFrame(stub);
 
       if (!mi.isStatic()) {
-        ElementInfo obj = ti.getElementInfo(objRef);
-        ClassInfo objClass = obj.getClassInfo();
+        ElementInfo eiObj = ti.getElementInfo(objRef);
+        ClassInfo objClass = eiObj.getClassInfo();
         
         if (!objClass.isInstanceOf(calleeClass)) {
           env.throwException(IllegalArgumentException.class.getName(), "Object is not an instance of declaring class.  Actual = " + objClass + ".  Expected = " + calleeClass);

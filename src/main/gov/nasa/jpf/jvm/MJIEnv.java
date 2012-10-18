@@ -189,7 +189,7 @@ public class MJIEnv {
 
   public void addObjectAttr (int objref, Object a){
     if (objref != NULL){
-      ElementInfo ei = heap.get(objref);
+      ElementInfo ei = heap.getModifiable(objref);
       ei.addObjectAttr(a);
     }
   }
@@ -254,7 +254,7 @@ public class MJIEnv {
 
   public void addFieldAttr (int objref, String fname, Object a){
     if (objref != NULL){
-      ElementInfo ei = heap.get(objref);
+      ElementInfo ei = heap.getModifiable(objref);
       FieldInfo fi = ei.getFieldInfo(fname);
       ei.addFieldAttr(fi, a);
     }
@@ -317,7 +317,7 @@ public class MJIEnv {
   }
 
   public void addElementAttr (int objref, int idx, Object a){
-    ElementInfo ei = heap.get(objref);
+    ElementInfo ei = heap.getModifiable(objref);
     ei.addElementAttr(idx, a);
   }
 
@@ -342,7 +342,7 @@ public class MJIEnv {
   
   // the instance field setters
   public void setBooleanField (int objref, String fname, boolean val) {
-    heap.get(objref).setBooleanField(fname, val);
+    heap.getModifiable(objref).setBooleanField(fname, val);
   }
 
   public boolean getBooleanField (int objref, String fname) {
@@ -354,12 +354,12 @@ public class MJIEnv {
   }
 
   public void setBooleanArrayElement (int objref, int index, boolean value) {
-    heap.get(objref).setBooleanElement(index, value);
+    heap.getModifiable(objref).setBooleanElement(index, value);
   }
 
 
   public void setByteField (int objref, String fname, byte val) {
-    heap.get(objref).setByteField(fname, val);
+    heap.getModifiable(objref).setByteField(fname, val);
   }
 
   public byte getByteField (int objref, String fname) {
@@ -367,7 +367,7 @@ public class MJIEnv {
   }
 
   public void setCharField (int objref, String fname, char val) {
-    heap.get(objref).setCharField(fname, val);
+    heap.getModifiable(objref).setCharField(fname, val);
   }
 
   public char getCharField (int objref, String fname) {
@@ -375,7 +375,7 @@ public class MJIEnv {
   }
 
   public void setDoubleField (int objref, String fname, double val) {
-    heap.get(objref).setDoubleField(fname, val);
+    heap.getModifiable(objref).setDoubleField(fname, val);
   }
 
   public double getDoubleField (int objref, String fname) {
@@ -383,7 +383,7 @@ public class MJIEnv {
   }
 
   public void setFloatField (int objref, String fname, float val) {
-    heap.get(objref).setFloatField(fname, val);
+    heap.getModifiable(objref).setFloatField(fname, val);
   }
 
   public float getFloatField (int objref, String fname) {
@@ -392,7 +392,7 @@ public class MJIEnv {
 
 
   public void setByteArrayElement (int objref, int index, byte value) {
-    heap.get(objref).setByteElement(index, value);
+    heap.getModifiable(objref).setByteElement(index, value);
   }
 
   public byte getByteArrayElement (int objref, int index) {
@@ -400,19 +400,19 @@ public class MJIEnv {
   }
 
   public void setCharArrayElement (int objref, int index, char value) {
-    heap.get(objref).setCharElement(index, value);
+    heap.getModifiable(objref).setCharElement(index, value);
   }
 
   public void setIntArrayElement (int objref, int index, int value) {
-    heap.get(objref).setIntElement(index, value);
+    heap.getModifiable(objref).setIntElement(index, value);
   }
 
   public void setShortArrayElement (int objref, int index, short value) {
-    heap.get(objref).setShortElement(index, value);
+    heap.getModifiable(objref).setShortElement(index, value);
   }
 
   public void setFloatArrayElement (int objref, int index, float value) {
-    heap.get(objref).setFloatElement(index, Types.floatToInt(value));
+    heap.getModifiable(objref).setFloatElement(index, Types.floatToInt(value));
   }
 
   public float getFloatArrayElement (int objref, int index) {
@@ -423,7 +423,7 @@ public class MJIEnv {
     return heap.get(objref).getDoubleElement(index);
   }
   public void setDoubleArrayElement (int objref, int index, double value) {
-    heap.get(objref).setDoubleElement(index, value);
+    heap.getModifiable(objref).setDoubleElement(index, value);
   }
 
   public short getShortArrayElement (int objref, int index) {
@@ -439,13 +439,13 @@ public class MJIEnv {
   }
 
   public void setIntField (int objref, String fname, int val) {
-    ElementInfo ei = heap.get(objref);
+    ElementInfo ei = heap.getModifiable(objref);
     ei.setIntField(fname, val);
   }
 
   // these two are the workhorses
   public void setDeclaredIntField (int objref, String refType, String fname, int val) {
-    ElementInfo ei = heap.get(objref);
+    ElementInfo ei = heap.getModifiable(objref);
     ei.setDeclaredIntField(fname, refType, val);
   }
 
@@ -461,12 +461,12 @@ public class MJIEnv {
 
   // these two are the workhorses
   public void setDeclaredReferenceField (int objref, String refType, String fname, int val) {
-    ElementInfo ei = heap.get(objref);
+    ElementInfo ei = heap.getModifiable(objref);
     ei.setDeclaredReferenceField(fname, refType, val);
   }
 
   public void setReferenceField (int objref, String fname, int ref) {
-     ElementInfo ei = heap.get(objref);
+     ElementInfo ei = heap.getModifiable(objref);
      ei.setReferenceField(fname, ref);
   }
 
@@ -521,7 +521,7 @@ public class MJIEnv {
 
 
   public void setLongArrayElement (int objref, int index, long value) {
-    heap.get(objref).setLongElement(index, value);
+    heap.getModifiable(objref).setLongElement(index, value);
   }
 
   public long getLongArrayElement (int objref, int index) {
@@ -529,7 +529,7 @@ public class MJIEnv {
   }
 
   public void setLongField (int objref, String fname, long val) {
-    ElementInfo ei = heap.get(objref);
+    ElementInfo ei = heap.getModifiable(objref);
     ei.setLongField(fname, val);
   }
 
@@ -549,7 +549,7 @@ public class MJIEnv {
 //  }
 
   public void setReferenceArrayElement (int objref, int index, int eRef) {
-    heap.get(objref).setReferenceElement(index, eRef);
+    heap.getModifiable(objref).setReferenceElement(index, eRef);
   }
 
   public int getReferenceArrayElement (int objref, int index) {
@@ -838,6 +838,7 @@ public class MJIEnv {
     return new Double(getDoubleField(objref, "value"));
   }
 
+  // danger - the returned arrays could be used to modify contents of stored objects
 
   public byte[] getByteArrayObject (int objref) {
     ElementInfo ei = getElementInfo(objref);
@@ -1190,30 +1191,36 @@ public class MJIEnv {
 
   public void notify (int objref) {
     // objref can't be NULL since the corresponding INVOKE would have failed
-    ElementInfo ei = getElementInfo(objref);
+    ElementInfo ei = getModifiableElementInfo(objref);
+    notify(ei);
+  }
 
+  public void notify (ElementInfo ei) {
     if (!ei.isLockedBy(ti)){
       throwException("java.lang.IllegalMonitorStateException",
                                  "un-synchronized notify");
       return;
     }
 
-    ei.notifies(getSystemState(), ti);
+    ei.notifies(getSystemState(), ti); 
   }
-
+  
   public void notifyAll (int objref) {
     // objref can't be NULL since the corresponding INVOKE would have failed
     ElementInfo ei = getElementInfo(objref);
+    notifyAll(ei);
+  }
 
+  public void notifyAll (ElementInfo ei) {
     if (!ei.isLockedBy(ti)){
       throwException("java.lang.IllegalMonitorStateException",
                                  "un-synchronized notifyAll");
       return;
     }
 
-    ei.notifiesAll();
+    ei.notifiesAll();    
   }
-
+  
   public void registerPinDown(int objref){
     vm.getHeap().registerPinDown(objref);
   }
@@ -1385,6 +1392,11 @@ public class MJIEnv {
     return heap.get(objref);
   }
 
+  public ElementInfo getModifiableElementInfo (int objref) {
+    return heap.getModifiable(objref);
+  }
+
+  
   public int getStateId () {
     return JVM.getVM().getStateId();
   }
@@ -1506,7 +1518,7 @@ public class MJIEnv {
   
   // <2do> - naming? not very intuitive
   void lockNotified (int objref) {
-    ElementInfo ei = getElementInfo(objref);
+    ElementInfo ei = getModifiableElementInfo(objref);
     ei.lockNotified(ti);
   }
 
@@ -1591,7 +1603,8 @@ public class MJIEnv {
       } else if (ftype.equals("java.lang.Class[]")){
         aref = newObjectArray("java.lang.Class", a.length);
         for (int i=0; i<a.length; i++){
-          ClassInfo cci = (ClassInfo)a[i];
+          String clsName = ((AnnotationInfo.ClassValue)a[i]).getName();
+          ClassInfo cci = ClassInfo.tryGetResolvedClassInfo(clsName);
           if (!cci.isInitialized()){
             throw new ClinitRequired(cci);
           }

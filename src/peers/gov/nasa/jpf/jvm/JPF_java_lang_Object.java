@@ -35,8 +35,8 @@ public class JPF_java_lang_Object extends NativePeer {
 
   public int clone____Ljava_lang_Object_2 (MJIEnv env, int objref) {
     Heap heap = env.getHeap();
-    ElementInfo objinfo = heap.get(objref);
-    ClassInfo ci = objinfo.getClassInfo();
+    ElementInfo ei = heap.get(objref);
+    ClassInfo ci = ei.getClassInfo();
     if (!ci.isInstanceOf("java.lang.Cloneable")) {
       env.throwException("java.lang.CloneNotSupportedException",
           ci.getName() + " does not implement java.lang.Cloneable.");
@@ -53,14 +53,14 @@ public class JPF_java_lang_Object extends NativePeer {
           componentType = cci.getType();
         }
 
-        newref = heap.newArray(componentType, objinfo.arrayLength(), env.getThreadInfo());
+        newref = heap.newArray(componentType, ei.arrayLength(), env.getThreadInfo());
       } else {
         newref = heap.newObject(ci, env.getThreadInfo());
       }
       ElementInfo newinfo = heap.get(newref);
 
       // Ok, this is nasty but efficient
-      newinfo.fields = objinfo.getFields().clone();
+      newinfo.fields = ei.getFields().clone();
 
       return newref;
     }
@@ -78,11 +78,9 @@ public class JPF_java_lang_Object extends NativePeer {
     // IllegalMonitorStateExceptions are checked in the MJIEnv methods
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
-    ElementInfo ei = env.getElementInfo(objref);
-
+    ElementInfo ei = env.getModifiableElementInfo(objref);
 
     if (ti.isFirstStepInsn()) { // we already have a CG
-
       switch (ti.getState()) {
 
         // we can get here by direct call from ...Unsafe.park__ZJ__V()
@@ -143,9 +141,9 @@ public class JPF_java_lang_Object extends NativePeer {
 
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
+    ElementInfo ei = env.getModifiableElementInfo(objref);    
     
     if (!ti.isFirstStepInsn()) { // first time around
-      ElementInfo ei = env.getElementInfo(objref);
       
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createNotifyCG(ei, ti);
       if (ss.setNextChoiceGenerator(cg)){
@@ -157,7 +155,7 @@ public class JPF_java_lang_Object extends NativePeer {
         
     // this is a bit cluttered throughout the whole system, with the actual thread
     // notification (status change) taking place in the ElementInfo
-    env.notify(objref);
+    env.notify(ei);
   }
 
   public void notifyAll____V (MJIEnv env, int objref) {
@@ -170,9 +168,8 @@ public class JPF_java_lang_Object extends NativePeer {
     SystemState ss = env.getSystemState();
     
     if (!ti.isFirstStepInsn()) { // first time around
-      env.notifyAll(objref); // do that before we create a CG
-      
-      ElementInfo ei = env.getElementInfo(objref);
+      ElementInfo ei = env.getModifiableElementInfo(objref);
+      env.notifyAll(ei); // do that before we create a CG
       
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createNotifyAllCG(ei, ti);
       if (ss.setNextChoiceGenerator(cg)){

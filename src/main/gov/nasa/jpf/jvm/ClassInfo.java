@@ -2343,7 +2343,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     int anchor = name.hashCode(); // 2do - this should also take the ClassLoader ref into account
     ClassInfo classClassInfo = ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo();    
     int clsObjRef = heap.newSystemObject(classClassInfo, ti, anchor);
-    ElementInfo ei = heap.get(clsObjRef);
+    ElementInfo ei = heap.getModifiable(clsObjRef);
 
     int clsNameRef = heap.newSystemString(name, ti, clsObjRef);
     ei.setReferenceField("name", clsNameRef);
