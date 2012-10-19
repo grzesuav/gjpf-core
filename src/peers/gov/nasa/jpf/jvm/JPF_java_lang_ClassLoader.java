@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import java.util.Map;
 
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.classfile.ClassPath;
 
 /**
@@ -29,11 +30,13 @@ import gov.nasa.jpf.classfile.ClassPath;
  */
 public class JPF_java_lang_ClassLoader extends NativePeer {
 
+  @MJI
   public void $init____V (MJIEnv env, int objRef) {
     ClassLoaderInfo systemCl = ClassLoaderInfo.getCurrentSystemClassLoader();
     $init__Ljava_lang_ClassLoader_2__V (env, objRef, systemCl.getClassLoaderObjectRef());
   }
 
+  @MJI
   public void $init__Ljava_lang_ClassLoader_2__V (MJIEnv env, int objRef, int parentRef) {
     Heap heap = env.getHeap();
 
@@ -56,10 +59,12 @@ public class JPF_java_lang_ClassLoader extends NativePeer {
     ei.setReferenceField("parent", parentRef);
   }
 
+  @MJI
   public int getSystemClassLoader____Ljava_lang_ClassLoader_2 (MJIEnv env, int clsObjRef) {
     return ClassLoaderInfo.getCurrentSystemClassLoader().getClassLoaderObjectRef();
   }
 
+  @MJI
   public int getResource0__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
     String rname = env.getStringObject(resRef);
 
@@ -70,6 +75,7 @@ public class JPF_java_lang_ClassLoader extends NativePeer {
     return env.newString(resourcePath);
   }
 
+  @MJI
   public int getResources0__Ljava_lang_String_2___3Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef) {
     String rname = env.getStringObject(resRef);
 
@@ -80,6 +86,7 @@ public class JPF_java_lang_ClassLoader extends NativePeer {
     return env.newStringArray(resources);
   }
 
+  @MJI
   public int findLoadedClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
     String cname = env.getStringObject(nameRef);
 
@@ -93,6 +100,7 @@ public class JPF_java_lang_ClassLoader extends NativePeer {
     return MJIEnv.NULL;
   }
 
+  @MJI
   public int findSystemClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
     String cname = env.getStringObject(nameRef);
 
@@ -112,6 +120,7 @@ public class JPF_java_lang_ClassLoader extends NativePeer {
     return ci.getClassObjectRef();
   }
 
+  @MJI
   public int defineClass0__Ljava_lang_String_2_3BII__Ljava_lang_Class_2 
            (MJIEnv env, int objRef, int nameRef, int bufferRef, int offset, int length) {
     // retrieve ClassLoaderInfo instance
@@ -191,6 +200,7 @@ public class JPF_java_lang_ClassLoader extends NativePeer {
 
   static String pkg_class_name = "java.lang.Package";
 
+  @MJI
   public int getPackages_____3Ljava_lang_Package_2 (MJIEnv env, int objRef) {
     ClassLoaderInfo sysLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
     ClassInfo pkgClass = null; 
@@ -218,6 +228,7 @@ public class JPF_java_lang_ClassLoader extends NativePeer {
     return pkgArr;
   }
 
+  @MJI
   public int getPackage__Ljava_lang_String_2__Ljava_lang_Package_2 (MJIEnv env, int objRef, int nameRef) {
     ClassLoaderInfo sysLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
 
@@ -255,23 +266,27 @@ public class JPF_java_lang_ClassLoader extends NativePeer {
     return pkgRef;
   }
 
+  @MJI
   public void setDefaultAssertionStatus__Z__V (MJIEnv env, int objRef, boolean enabled) {
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
     cl.setDefaultAssertionStatus(enabled);
   }
 
+  @MJI
   public void setPackageAssertionStatus__Ljava_lang_String_2Z__V (MJIEnv env, int objRef, int strRef, boolean enabled) {
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
     String pkgName = env.getStringObject(strRef);
     cl.setPackageAssertionStatus(pkgName, enabled);
   }
 
+  @MJI
   public void setClassAssertionStatus__Ljava_lang_String_2Z__V (MJIEnv env, int objRef, int strRef, boolean enabled) {
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
     String clsName = env.getStringObject(strRef);
     cl.setClassAssertionStatus(clsName, enabled);
   }
 
+  @MJI
   public void clearAssertionStatus____V (MJIEnv env, int objRef) {
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
     cl.clearAssertionStatus();

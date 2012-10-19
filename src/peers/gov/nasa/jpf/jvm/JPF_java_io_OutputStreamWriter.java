@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -41,6 +43,7 @@ public class JPF_java_io_OutputStreamWriter extends NativePeer {
     encoder = Charset.defaultCharset().newEncoder();
   }
 
+  @MJI
   public int encode___3CII_3B__I (MJIEnv env, int objref,
                                          int cref, int off, int len,
                                          int bref){
@@ -67,6 +70,7 @@ public class JPF_java_io_OutputStreamWriter extends NativePeer {
     return n;
   }
   
+  @MJI
   public int encode__Ljava_lang_String_2II_3B__I (MJIEnv env, int objref,
                                          int sref, int off, int len,
                                          int bref){
@@ -75,6 +79,7 @@ public class JPF_java_io_OutputStreamWriter extends NativePeer {
     return encode___3CII_3B__I(env,objref,cref,off,len,bref);
   }
   
+  @MJI
   public int encode__C_3B__I (MJIEnv env, int objref, char c, int bufref) {
     out.clear();
     

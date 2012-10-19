@@ -22,6 +22,7 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.StringMatcher;
 
@@ -84,6 +85,7 @@ public class JPF_sun_net_www_protocol_http_Handler extends NativePeer {
 
   }
 
+  @MJI
   public int getConnectionClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objref, int surlRef){
     String url = env.getStringObject(surlRef);
 

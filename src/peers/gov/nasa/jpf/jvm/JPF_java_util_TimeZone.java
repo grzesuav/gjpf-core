@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -52,6 +54,7 @@ public class JPF_java_util_TimeZone extends NativePeer {
   //--- native methods
   
   //--- the factory methods
+  @MJI
   public int getTimeZone__Ljava_lang_String_2__Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef, int idRef){
     String id = env.getStringObject(idRef);
     TimeZone tz = TimeZone.getTimeZone(id);
@@ -75,6 +78,7 @@ public class JPF_java_util_TimeZone extends NativePeer {
     defaultRawOffset = tz.getRawOffset();
   }
   
+  @MJI
   public int createDefaultZone____Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef){
     int idRef = env.newString(defaultID);
 
@@ -85,23 +89,26 @@ public class JPF_java_util_TimeZone extends NativePeer {
     return tzRef;
   }
 
-  
+  @MJI
   public void setDefaultValues__Ljava_util_TimeZone_2 (MJIEnv env, int clsObjRef, int tzRef){
     defaultID = env.getStringField(tzRef, "ID");
     defaultRawOffset = env.getIntField( tzRef, "rawOffset");
   }
   
   //--- the ID queries
+  @MJI
   public int getAvailableIDs_____3Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
     String[] ids = TimeZone.getAvailableIDs();
     return env.newStringArray(ids);
   }
   
+  @MJI
   public int getAvailableIDs__I___3Ljava_lang_String_2 (MJIEnv env, int clsObjRef, int rawOffset){
     String[] ids = TimeZone.getAvailableIDs(rawOffset);
     return env.newStringArray(ids);    
   }
 
+  @MJI
   public void setID__Ljava_lang_String_2__V (MJIEnv env, int objRef, int idRef){
     String id = env.getStringObject(idRef);
     TimeZone tz = TimeZone.getTimeZone(id);
@@ -116,18 +123,21 @@ public class JPF_java_util_TimeZone extends NativePeer {
     env.setIntField(objRef, "rawOffset", rawOffset);
   }
   
+  @MJI
   public int getOffset__IIIIII__I (MJIEnv env, int objRef,
       int era, int year, int month, int day, int dayOfWeek, int milliseconds){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.getOffset(era, year, month, day, dayOfWeek, milliseconds);
   }
 
+  @MJI
   public int getOffset__J__I (MJIEnv env, int objRef, long date){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.getOffset(date);
   }
   
   // unfortunately, this is not public in Java 1.7, so we can't delegate w/o reflection
+  @MJI
   public int getOffsets__J_3I__I (MJIEnv env, int objRef, long date, int offsetsRef){
     TimeZone tz = getTimeZone( env, objRef);
     
@@ -145,22 +155,26 @@ public class JPF_java_util_TimeZone extends NativePeer {
     return (rawOffset + dstOffset);
   }
 
+  @MJI
   public boolean inDaylightTime__J__Z (MJIEnv env, int objRef, long time){
     Date date = new Date(time);
     TimeZone tz = getTimeZone( env, objRef);
     return tz.inDaylightTime(date);
   }
   
+  @MJI
   public boolean useDaylightTime____Z (MJIEnv env, int objRef){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.useDaylightTime();
   }
 
+  @MJI
   public int getDSTSavings____I (MJIEnv env, int objRef){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.getDSTSavings();    
   }
-    
+
+  @MJI
   public int getDisplayName__ZILjava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objRef,
                                        boolean daylight, int style, int localeRef) {
     TimeZone tz = getTimeZone(env, objRef);

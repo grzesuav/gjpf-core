@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.annotation.MJI;
 
 
 /**
@@ -26,13 +27,14 @@ import gov.nasa.jpf.JPFException;
  */
 public class JPF_java_lang_Object extends NativePeer {
   
+  @MJI
   public int getClass____Ljava_lang_Class_2 (MJIEnv env, int objref) {
     ClassInfo oci = env.getClassInfo(objref);
 
     return oci.getClassObjectRef();
   }
 
-
+  @MJI
   public int clone____Ljava_lang_Object_2 (MJIEnv env, int objref) {
     Heap heap = env.getHeap();
     ElementInfo ei = heap.get(objref);
@@ -66,10 +68,12 @@ public class JPF_java_lang_Object extends NativePeer {
     }
   }
 
+  @MJI
   public int hashCode____I (MJIEnv env, int objref) {
     return (objref ^ 0xABCD);
   }
 
+  @MJI
   public void registerNatives____V (MJIEnv env, int clsObjRef) {
     // nothing to do, we just intercept
   }
@@ -128,14 +132,17 @@ public class JPF_java_lang_Object extends NativePeer {
   
   // we intercept them both so that we don't get the java.lang.Object.wait() location
   // as the blocking insn
+  @MJI
   public void wait____V (MJIEnv env, int objref){
     wait0(env,objref,0);
   }
   
+  @MJI
   public void wait__J__V (MJIEnv env, int objref, long timeout) {
     wait0(env,objref,timeout);
   }
 
+  @MJI
   public void notify____V (MJIEnv env, int objref) {
     // IllegalMonitorStateExceptions are checked in the MJIEnv methods
 
@@ -158,6 +165,7 @@ public class JPF_java_lang_Object extends NativePeer {
     env.notify(ei);
   }
 
+  @MJI
   public void notifyAll____V (MJIEnv env, int objref) {
     // IllegalMonitorStateExceptions are checked in the MJIEnv methods
 

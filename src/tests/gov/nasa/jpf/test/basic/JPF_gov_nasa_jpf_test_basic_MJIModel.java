@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.test.basic;
 
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.jvm.DirectCallStackFrame;
 import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.MethodInfo;
@@ -29,15 +30,17 @@ import gov.nasa.jpf.jvm.UncaughtException;
 /**
  * native peer class for unit testing MJI
  */
-public class JPF_gov_nasa_jpf_test_basic_MJI extends NativePeer {
+public class JPF_gov_nasa_jpf_test_basic_MJIModel extends NativePeer {
 
   // intercept <clinit>
+  @MJI
   public void $clinit (MJIEnv env, int rcls) {
     System.out.println("# entering native <clinit>");
     env.setStaticIntField(rcls, "sdata", 42);
   }
 
   // intercept MJITest(int i) ctor
+  @MJI
   public void $init__I__V (MJIEnv env, int robj, int i) {
     // NOTE : if we directly intercept the ctor, then we also have
     // to take care of calling the proper superclass ctors
@@ -47,6 +50,7 @@ public class JPF_gov_nasa_jpf_test_basic_MJI extends NativePeer {
     env.setIntField(robj, "idata", i);
   }
 
+  @MJI
   public int nativeCreate2DimIntArray__II___3_3I (MJIEnv env, int robj, int size1,
                                               int size2) {
     System.out.println("# entering nativeCreate2DimIntArray()");
@@ -66,6 +70,7 @@ public class JPF_gov_nasa_jpf_test_basic_MJI extends NativePeer {
   }
 
   // check if the non-mangled name lookup works
+  @MJI
   public int nativeCreateIntArray (MJIEnv env, int robj, int size) {
     System.out.println("# entering nativeCreateIntArray()");
 
@@ -76,6 +81,7 @@ public class JPF_gov_nasa_jpf_test_basic_MJI extends NativePeer {
     return ar;
   }
 
+  @MJI
   public int nativeCreateStringArray (MJIEnv env, int robj, int size) {
     System.out.println("# entering nativeCreateStringArray()");
 
@@ -85,18 +91,21 @@ public class JPF_gov_nasa_jpf_test_basic_MJI extends NativePeer {
     return ar;
   }
 
+  @MJI
   public void nativeException____V (MJIEnv env, int robj) {
     System.out.println("# entering nativeException()");
     env.throwException("java.lang.UnsupportedOperationException", "caught me");
   }
 
   @SuppressWarnings("null")
+  @MJI
   public int nativeCrash (MJIEnv env, int robj) {
     System.out.println("# entering nativeCrash()");
     String s = null;
     return s.length();
   }
 
+  @MJI
   public int nativeInstanceMethod (MJIEnv env, int robj, double d,
                                           char c, boolean b, int i) {
     System.out.println("# entering nativeInstanceMethod() d=" + d +
@@ -109,6 +118,7 @@ public class JPF_gov_nasa_jpf_test_basic_MJI extends NativePeer {
     return 0;
   }
 
+  @MJI
   public long nativeStaticMethod__JLjava_lang_String_2__J (MJIEnv env, int rcls, long l,
                                                                   int stringRef) {
     System.out.println("# entering nativeStaticMethod()");
@@ -139,12 +149,14 @@ public class JPF_gov_nasa_jpf_test_basic_MJI extends NativePeer {
    *         JVM: nativeInnerRoundtrip
    */
 
+  @MJI
   public int nativeInnerRoundtrip__I__I (MJIEnv env, int robj, int a){
     System.out.println("# entering nativeInnerRoundtrip()");
 
     return a+2;
   }
 
+  @MJI
   public int nativeRoundtripLoop__I__I (MJIEnv env, int robj, int a) {
     System.out.println("# entering nativeRoundtripLoop(): " + a);
 
@@ -195,6 +207,7 @@ public class JPF_gov_nasa_jpf_test_basic_MJI extends NativePeer {
    * this shows how to synchronously JPF-execute a method from native peer or
    * listener code
    */
+  @MJI
   public int nativeHiddenRoundtrip__I__I (MJIEnv env, int robj, int a){
     System.out.println("# entering nativeHiddenRoundtrip: " + a);
     MethodInfo mi = env.getClassInfo(robj).getMethod("atomicStuff(I)I",false);

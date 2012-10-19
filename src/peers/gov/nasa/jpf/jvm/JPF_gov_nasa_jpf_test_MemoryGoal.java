@@ -20,6 +20,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
 
@@ -83,6 +84,7 @@ public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
     }
   }
   
+  @MJI
   public boolean preCheck__Lgov_nasa_jpf_test_TestContext_2Ljava_lang_reflect_Method_2__Z
                       (MJIEnv env, int objRef, int testContextRef, int methodRef){
     MethodInfo mi = JPF_java_lang_reflect_Method.getMethodInfo(env, methodRef);
@@ -93,6 +95,7 @@ public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
   }
   
   // what a terrible name!
+  @MJI
   public boolean postCheck__Lgov_nasa_jpf_test_TestContext_2Ljava_lang_reflect_Method_2Ljava_lang_Object_2Ljava_lang_Throwable_2__Z 
            (MJIEnv env, int objRef, int testContextRef, int methdRef, int resultRef, int exRef){
 

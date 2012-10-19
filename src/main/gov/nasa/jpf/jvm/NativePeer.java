@@ -22,6 +22,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.JPFLogger;
 
 import java.lang.reflect.Constructor;
@@ -261,24 +262,15 @@ public class NativePeer implements Cloneable {
     }
   }
 
-  
-//  static final int MJI_MODIFIERS = Modifier.PUBLIC | Modifier.STATIC;
-//  static final int MJI_TEST = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
-  static final int MJI_MODIFIERS = Modifier.PUBLIC;
-  static final int MJI_TEST = Modifier.PUBLIC | Modifier.FINAL;
-
-  
   private static boolean isMJICandidate (Method mth) {
-    // only the public non-static method can be native peers
-    if(Modifier.isStatic(mth.getModifiers())) {
+
+    // the native peer should be annotated with @MJI
+    if(!mth.isAnnotationPresent(MJI.class)) {
       return false;
     }
 
-    // only the public non-static ones are supposed to be native method impls
-    // if there is a public non-static method with MJIEnv argument that we DO NOT
-    // want to be considered, we have to add a 'final' modifier (which is pointless
-    // for statics but accepted by the compiler)
-    if ((mth.getModifiers() & MJI_TEST) != MJI_MODIFIERS) {
+    // this native peer should be Public
+    if(!Modifier.isPublic(mth.getModifiers())) {
       return false;
     }
 

@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -29,6 +31,7 @@ public class JPF_java_lang_Throwable extends NativePeer {
   /**
    * return array of StackTraceElement elements from the snapshot stored in the Throwable
    */
+  @MJI
   public int createStackTrace_____3Ljava_lang_StackTraceElement_2 (MJIEnv env, int objref) {
     int aref = env.getReferenceField(objref, "snapshot");
     int[] snap = env.getIntArrayObject(aref);
@@ -36,6 +39,7 @@ public class JPF_java_lang_Throwable extends NativePeer {
     return env.getThreadInfo().createStackTraceElements(snap);
   }
   
+  @MJI
   public int fillInStackTrace____Ljava_lang_Throwable_2 (MJIEnv env, int objref) {
     ThreadInfo ti = env.getThreadInfo();
     int[] snap = ti.getSnapshot(objref);
@@ -47,11 +51,13 @@ public class JPF_java_lang_Throwable extends NativePeer {
   }
     
   // native because we don't want to waste states
+  @MJI
   public void printStackTrace____V (MJIEnv env, int objRef) {
     env.getThreadInfo().printStackTrace(objRef);
   }
   
   // a helper method to get a string representation of the stacktrace
+  @MJI
   public int getStackTraceAsString____Ljava_lang_String_2 (MJIEnv env, int objRef) {
     ThreadInfo ti = env.getThreadInfo();
     StringWriter sw = new StringWriter();
@@ -64,6 +70,7 @@ public class JPF_java_lang_Throwable extends NativePeer {
     return env.newString(stackTrace);
   }
   
+  @MJI
   public int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){
     ClassInfo ci = env.getClassInfo(objRef);
     int msgRef = env.getReferenceField(objRef, "detailMessage");

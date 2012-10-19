@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.test.mc.basic;
 
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.NativePeer;
 
@@ -27,6 +28,7 @@ import gov.nasa.jpf.jvm.NativePeer;
  */
 public class JPF_gov_nasa_jpf_test_mc_basic_InvokeListenerTest extends NativePeer {
 
+  @MJI
   public double testNativeInstanceMethod__DI__D (MJIEnv env, int objref, double d, int c){
     return d+c;
   }

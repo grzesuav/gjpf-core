@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 
 /**
  * MJI NativePeer class for java.lang.StringBuffer library abstraction
@@ -25,7 +27,8 @@ package gov.nasa.jpf.jvm;
 public class JPF_java_lang_StringBuffer extends NativePeer {
   
   boolean hasSharedField = false; // Java 1.4 has, 1.5 doesn't
-  
+
+  @MJI
   public void $clinit____V (MJIEnv env, int clsObjRef) {
     // apparently, Java 1.5 has changed the implementation of class
     // StringBuffer so that it doesn't use the 'shared' state anymore
@@ -88,6 +91,8 @@ public class JPF_java_lang_StringBuffer extends NativePeer {
     return appendString(env, objref, s);
   }
 */
+
+  @MJI
   public int append__Ljava_lang_String_2__Ljava_lang_StringBuffer_2 (MJIEnv env, int objref, int sref) {
     String s = env.getStringObject(sref);    
     if (s == null) s = "null";
@@ -95,30 +100,35 @@ public class JPF_java_lang_StringBuffer extends NativePeer {
     return appendString(env, objref, s);
   }
   
+  @MJI
   public int append__I__Ljava_lang_StringBuffer_2 (MJIEnv env, int objref, int i) {
     String s = Integer.toString(i);
     
     return appendString(env, objref, s);
   }
 
+  @MJI
   public int append__F__Ljava_lang_StringBuffer_2 (MJIEnv env, int objref, float f) {
     String s = Float.toString(f);
     
     return appendString(env, objref, s);
   }
 
+  @MJI
   public int append__D__Ljava_lang_StringBuffer_2 (MJIEnv env, int objref, double d) {
     String s = Double.toString(d);
     
     return appendString(env, objref, s);
   }
   
+  @MJI
   public int append__J__Ljava_lang_StringBuffer_2 (MJIEnv env, int objref, long l) {
     String s = Long.toString(l);
     
     return appendString(env, objref, s);
   }
 
+  @MJI
   public int append__Z__Ljava_lang_StringBuffer_2 (MJIEnv env, int objref, boolean b) {
     String s = b ? "true" : "false";
     
@@ -131,6 +141,7 @@ public class JPF_java_lang_StringBuffer extends NativePeer {
   }
 */
  
+  @MJI
   public int append__C__Ljava_lang_StringBuffer_2 (MJIEnv env, int objref, char c) {
     int aref = env.getReferenceField(objref, "value");
     int alen = env.getArrayLength(aref);

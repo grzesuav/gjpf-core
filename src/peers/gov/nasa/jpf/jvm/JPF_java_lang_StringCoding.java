@@ -19,6 +19,8 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 /**
  * we are not really interested in model checking this, so we intercept
  * and ignore
@@ -28,6 +30,7 @@ package gov.nasa.jpf.jvm;
  */
 public class JPF_java_lang_StringCoding extends NativePeer {
 
+  @MJI
   public int decode___3BII___3C (MJIEnv env, int clsObjRef,
       int bref, int off, int len) {
 
@@ -40,6 +43,7 @@ public class JPF_java_lang_StringCoding extends NativePeer {
     return cref;
   }
   
+  @MJI
   public int encode___3CII___3B (MJIEnv env, int clsObjRef,
       int cref, int off, int len) {
 

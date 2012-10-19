@@ -18,12 +18,15 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 /**
  * <2do> hack around a hack - we need to override this as long as we don't
  * replace ObjectStreamClass 
  */
 public class JPF_sun_reflect_ReflectionFactory extends NativePeer {
 
+  @MJI
   public int newConstructorForSerialization__Ljava_lang_Class_2Ljava_lang_reflect_Constructor_2__Ljava_lang_reflect_Constructor_2 (MJIEnv env, int objRef,
                                                                                                                                           int clsRef, int ctorRef){
     // NOPE - unnless I miss my guess, this creates an artificial

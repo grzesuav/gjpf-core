@@ -19,12 +19,15 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 
 /**
  * a full peer for the AtomicIntegerFieldUpdater
  */
 public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends AtomicFieldUpdater {
 
+  @MJI
   public void $init__Ljava_lang_Class_2Ljava_lang_String_2__V(
       MJIEnv env, int objRef, int tClsObjRef, int fNameRef) {
 
@@ -45,6 +48,7 @@ public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends A
     env.setIntField(objRef, "fieldId", fidx);
   }
 
+  @MJI
   public boolean compareAndSet__Ljava_lang_Object_2II__Z(MJIEnv env,
       int objRef, int tRef, int fExpect, int fUpdate) {
 
@@ -66,12 +70,14 @@ public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends A
     }
   }
 
+  @MJI
   public boolean weakCompareAndSet__Ljava_lang_Object_2II__Z(MJIEnv env,
       int objRef, int tRef, int fExpect, int fUpdate) {
     return (compareAndSet__Ljava_lang_Object_2II__Z(env, objRef, tRef, fExpect,
         fUpdate));
   }
 
+  @MJI
   public void set__Ljava_lang_Object_2I__(MJIEnv env, int objRef,
       int tRef, int fNewValue) {
 
@@ -86,11 +92,13 @@ public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends A
     ei.setIntField(fi, fNewValue);
   }
 
+  @MJI
   public void lazySet__Ljava_lang_Object_2I__(MJIEnv env, int objRef,
       int tRef, int fNewValue) {
     set__Ljava_lang_Object_2I__(env, objRef, tRef, fNewValue);
   }
 
+  @MJI
   public int get__Ljava_lang_Object_2__I(MJIEnv env, int objRef, int tRef) {
 
     if (isNewPorFieldBoundary(env, objRef, tRef) && createAndSetFieldCG(env, tRef)) {
@@ -104,6 +112,7 @@ public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends A
     return ei.getIntField(fi);
   }
 
+  @MJI
   public int getAndSet__Ljava_lang_Object_2I__I(MJIEnv env, int objRef,
       int tRef, int fNewValue) {
 
@@ -121,6 +130,7 @@ public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends A
     return result;
   }
 
+  @MJI
   public int getAndAdd__Ljava_lang_Object_2I__I(MJIEnv env, int objRef,
       int tRef, int fDelta) {
 

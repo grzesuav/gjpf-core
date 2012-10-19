@@ -18,11 +18,13 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 /**
  * MJI NativePeer class for java.lang.reflect.Array library abstraction
  */
 public class JPF_java_lang_reflect_Array extends NativePeer {
-  
+  @MJI
   public int getLength__Ljava_lang_Object_2__I (MJIEnv env, int clsObjRef, 
                                                     int objRef) {
     if (objRef == MJIEnv.NULL) {
@@ -37,6 +39,7 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return env.getArrayLength(objRef);
   }
   
+  @MJI
   public int newArray__Ljava_lang_Class_2I__Ljava_lang_Object_2 (MJIEnv env, int clsRef,
                                                                         int componentTypeRef, int length) {
     ClassInfo ci = env.getReferredClassInfo(componentTypeRef);
@@ -60,6 +63,7 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return aRef;    
   }
   
+  @MJI
   public int multiNewArray__Ljava_lang_Class_2_3I__Ljava_lang_Object_2 (MJIEnv env, int clsRef,
                                                                                int componentTypeRef,
                                                                                int dimArrayRef) {
@@ -100,7 +104,8 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     
     return aRef;
   }
-  
+
+  @MJI
   public int get__Ljava_lang_Object_2I__Ljava_lang_Object_2 (MJIEnv env, int clsRef,
                                                                     int aref, int index){
     String at = env.getArrayType(aref);
@@ -165,6 +170,7 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return true;
   }
 
+  @MJI
   public boolean getBoolean__Ljava_lang_Object_2I__Z (MJIEnv env, int clsRef, int aref, int index) {
     if (check(env, aref, index)) {
       return env.getBooleanArrayElement(aref, index);
@@ -172,6 +178,7 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return false;
   }
 
+  @MJI
   public static byte getByte__Ljava_lang_Object_2I__B (MJIEnv env, int clsRef, int aref, int index) {
     if (check(env, aref, index)) {
       return env.getByteArrayElement(aref, index);
@@ -179,6 +186,7 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return 0;
   }
 
+  @MJI
   public char getChar__Ljava_lang_Object_2I__C (MJIEnv env, int clsRef, int aref, int index) {
     if (check(env, aref, index)) {
       return env.getCharArrayElement(aref, index);
@@ -186,6 +194,7 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return 0;
   }
 
+  @MJI
   public short getShort__Ljava_lang_Object_2I__S (MJIEnv env, int clsRef, int aref, int index) {
     if (check(env, aref, index)) {
       return env.getShortArrayElement(aref, index);
@@ -193,6 +202,7 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return 0;
   }
 
+  @MJI
   public int getInt__Ljava_lang_Object_2I__I (MJIEnv env, int clsRef, int aref, int index) {
     if (check(env, aref, index)) {
       return env.getIntArrayElement(aref, index);
@@ -200,6 +210,7 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return 0;
   }
 
+  @MJI
   public long getLong__Ljava_lang_Object_2I__J (MJIEnv env, int clsRef, int aref, int index) {
     if (check(env, aref, index)) {
       return env.getLongArrayElement(aref, index);
@@ -207,6 +218,7 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return 0;
   }
 
+  @MJI
   public float getFloat__Ljava_lang_Object_2I__F (MJIEnv env, int clsRef, int aref, int index) {
     if (check(env, aref, index)) {
       return env.getFloatArrayElement(aref, index);
@@ -214,6 +226,7 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return 0;
   }
 
+  @MJI
   public double getDouble__Ljava_lang_Object_2I__D (MJIEnv env, int clsRef, int aref, int index) {
     if (check(env, aref, index)) {
       return env.getDoubleArrayElement(aref, index);
@@ -221,48 +234,56 @@ public class JPF_java_lang_reflect_Array extends NativePeer {
     return 0;
   }
 
+  @MJI
   public void setBoolean__Ljava_lang_Object_2IZ__V (MJIEnv env, int clsRef, int aref, int index, boolean val) {
     if (check(env, aref, index)) {
       env.setBooleanArrayElement(aref, index, val);
     }
   }
 
+  @MJI
   public void setByte__Ljava_lang_Object_2IB__V (MJIEnv env, int clsRef, int aref, int index, byte val) {
     if (check(env, aref, index)) {
       env.setByteArrayElement(aref, index, val);
     }
   }
 
+  @MJI
   public void setChar__Ljava_lang_Object_2IC__V (MJIEnv env, int clsRef, int aref, int index, char val) {
     if (check(env, aref, index)) {
       env.setCharArrayElement(aref, index, val);
     }
   }
 
+  @MJI
   public void setShort__Ljava_lang_Object_2IS__V (MJIEnv env, int clsRef, int aref, int index, short val) {
     if (check(env, aref, index)) {
       env.setShortArrayElement(aref, index, val);
     }
   }
 
+  @MJI
   public void setInt__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef, int aref, int index, int val) {
     if (check(env, aref, index)) {
       env.setIntArrayElement(aref, index, val);
     }
   }
 
+  @MJI
   public void setLong__Ljava_lang_Object_2IJ__V (MJIEnv env, int clsRef, int aref, int index, long val) {
     if (check(env, aref, index)) {
       env.setLongArrayElement(aref, index, val);
     }
   }
 
+  @MJI
   public void setFloat__Ljava_lang_Object_2IF__V (MJIEnv env, int clsRef, int aref, int index, float val) {
     if (check(env, aref, index)) {
       env.setFloatArrayElement(aref, index, val);
     }
   }
 
+  @MJI
   public void setDouble__Ljava_lang_Object_2ID__V (MJIEnv env, int clsRef, int aref, int index, double val) {
     if (check(env, aref, index)) {
       env.setDoubleArrayElement(aref, index, val);

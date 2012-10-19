@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.annotation.MJI;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -50,6 +51,7 @@ public class JPF_java_security_MessageDigest extends NativePeer {
     return digests[id];
   }
   
+  @MJI
   public int init0__Ljava_lang_String_2__I (MJIEnv env, int objRef, int algRef) {
     String algorithm = env.getStringObject(algRef);
     
@@ -66,6 +68,7 @@ public class JPF_java_security_MessageDigest extends NativePeer {
     }
   }
   
+  @MJI
   public int digest___3B___3B (MJIEnv env, int objRef, int inputRef){
     MessageDigest md = getDigest(env, objRef);
     byte[] input = env.getByteArrayObject(inputRef);
@@ -74,6 +77,7 @@ public class JPF_java_security_MessageDigest extends NativePeer {
     return env.newByteArray(res);
   }
   
+  @MJI
   public void finalize____ (MJIEnv env, int objRef){
     int id = env.getIntField(objRef, "id");
     digests[id] = null;

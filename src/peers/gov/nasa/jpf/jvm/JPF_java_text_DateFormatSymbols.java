@@ -1,9 +1,11 @@
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 import java.text.DateFormatSymbols;
 
 public class JPF_java_text_DateFormatSymbols extends NativePeer {
-  
+  @MJI
   public void initializeData__Ljava_util_Locale_2__V (MJIEnv env, int objRef, int localeRef) {
     DateFormatSymbols dfs = new DateFormatSymbols();
     

@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -37,7 +39,7 @@ public class JPF_gov_nasa_jpf_DelegatingTimeZone extends NativePeer {
   }
 
   //--- native methods
-  
+  @MJI
   public void setID__Ljava_lang_String_2__V (MJIEnv env, int objRef, int idRef){
     String id = env.getStringObject(idRef);
     TimeZone tz = TimeZone.getTimeZone(id);
@@ -47,18 +49,21 @@ public class JPF_gov_nasa_jpf_DelegatingTimeZone extends NativePeer {
     env.setIntField(objRef, "rawOffset", rawOffset);
   }
   
+  @MJI
   public int getOffset__IIIIII__I (MJIEnv env, int objRef,
       int era, int year, int month, int day, int dayOfWeek, int milliseconds){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.getOffset(era, year, month, day, dayOfWeek, milliseconds);
   }
-    
+
+  @MJI
   public boolean inDaylightTime__J__Z (MJIEnv env, int objRef, long time){
     Date date = new Date(time);
     TimeZone tz = getTimeZone( env, objRef);
     return tz.inDaylightTime(date);
   }
   
+  @MJI
   public boolean useDaylightTime____Z (MJIEnv env, int objRef){
     TimeZone tz = getTimeZone( env, objRef);
     return tz.useDaylightTime();

@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 import java.util.Locale;
 
 public class JPF_java_util_Locale extends NativePeer {
@@ -57,18 +59,21 @@ public class JPF_java_util_Locale extends NativePeer {
     return locale;
   }
   
+  @MJI
   public int getDisplayName__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
     Locale locale = getLocale(env, locref);
     String name = locale.getDisplayName();
     return env.newString(name);
   }
   
+  @MJI
   public int getDisplayVariant__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
     Locale locale = getLocale(env, locref);
     String variant = locale.getDisplayVariant();
     return env.newString(variant);    
   }
   
+  @MJI
   public int getDisplayCountry__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
     Locale locale = getLocale(env, locref);
     String country = locale.getDisplayCountry();
@@ -76,18 +81,21 @@ public class JPF_java_util_Locale extends NativePeer {
 
   }
 
+  @MJI
   public int getDisplayLanguage__Ljava_util_Locale_2__Ljava_lang_String_2 (MJIEnv env, int objref, int locref) {
     Locale locale = getLocale(env, locref);
     String language = locale.getDisplayLanguage();
     return env.newString(language);
   }
 
+  @MJI
   public int getISO3Country____Ljava_lang_String_2 (MJIEnv env, int objref) {
     Locale locale = getLocale(env, objref);
     String s = locale.getISO3Country();
     return env.newString(s);    
   }
 
+  @MJI
   public int getISO3Language____Ljava_lang_String_2 (MJIEnv env, int objref) {
     Locale locale = getLocale(env, objref);
     String s = locale.getISO3Language();
@@ -95,6 +103,7 @@ public class JPF_java_util_Locale extends NativePeer {
   }
 
   //--- the static ones
+  @MJI
   public int getISOCountries_____3Ljava_lang_String_2 (MJIEnv env, int clsref) {
     String[] s = Locale.getISOCountries();
 
@@ -106,6 +115,7 @@ public class JPF_java_util_Locale extends NativePeer {
     return aref;
   }
   
+  @MJI
   public int getISOLanguages_____3Ljava_lang_String_2 (MJIEnv env, int clsref) {
     String[] s = Locale.getISOLanguages();
 

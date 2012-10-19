@@ -18,11 +18,14 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 /**
  * this is just a placeholder for now, we don't support its functionality
  */
 public class JPF_sun_misc_VM extends NativePeer {
   
+  @MJI
   public void initialize____V (MJIEnv env, int clsObjRef){
     // nothing here yet
   }

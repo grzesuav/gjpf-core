@@ -1,7 +1,10 @@
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 public class JPF_java_io_ObjectOutputStream extends NativePeer {
 
+  @MJI
   public void doublesToBytes___3DI_3BII__ (MJIEnv env, int clsRef,
                                                   int daRef, int dOff,
                                                   int baRef, int bOff,

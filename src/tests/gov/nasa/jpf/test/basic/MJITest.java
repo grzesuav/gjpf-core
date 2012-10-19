@@ -36,7 +36,7 @@ import org.junit.Test;
  */
 public class MJITest extends TestJPF {
 
-  static String TEST_CLASS = "gov.nasa.jpf.test.basic.MJI";
+  static String TEST_CLASS = "gov.nasa.jpf.test.basic.MJIModel";
 
   /**************************** tests **********************************/
 

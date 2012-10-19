@@ -18,8 +18,11 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 
 public class JPF_java_lang_reflect_Proxy extends NativePeer {
+  @MJI
   public int defineClass0(MJIEnv env, int clsObjRef, int classLoaderRef, int nameRef, int bufferRef, int offset, int length) {  
     String clsName = env.getStringObject(nameRef);
     byte[] buffer = env.getByteArrayObject(bufferRef);

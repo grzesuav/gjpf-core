@@ -22,7 +22,7 @@ package gov.nasa.jpf.test.basic;
 /**
  * model class for MJI test
  */
-public class MJI {
+public class MJIModel {
 
   static int sdata;
 
@@ -34,7 +34,7 @@ public class MJI {
   int idata = 0;
 
   public static void main (String[] args){
-    MJI test = new MJI();
+    MJIModel test = new MJIModel();
 
     // unfortunately. String.equals() is using MJI too, so we don't want to
     // rely on this to select the test methods
@@ -60,11 +60,11 @@ public class MJI {
   }
 
 
-  MJI () {
+  MJIModel () {
     // not intercepted
   }
 
-  MJI (int data) {
+  MJIModel (int data) {
     // only here to be intercepted
   }
 
@@ -74,7 +74,7 @@ public class MJI {
   }
 
   public void testNativeInit () {
-    MJI t = new MJI(42);
+    MJIModel t = new MJIModel(42);
     assert (t.idata == 42)  : "native '<init>' failed";
   }
 

@@ -22,6 +22,7 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFLogger;
 
@@ -45,7 +46,7 @@ public class JPF_gov_nasa_jpf_CachedROHttpConnection extends NativePeer {
 
   File cacheDir;
   HashMap<String,byte[]> dataCache;
-
+  
   public JPF_gov_nasa_jpf_CachedROHttpConnection (Config conf){
     String cacheDirPath = conf.getString("http.cache_dir");
     if (cacheDirPath != null){
@@ -132,6 +133,7 @@ public class JPF_gov_nasa_jpf_CachedROHttpConnection extends NativePeer {
     return data;
   }
 
+  @MJI
   public int getContents__Ljava_lang_String_2___3B (MJIEnv env, int objRef, int surlRef){
     String url = env.getStringObject(surlRef);
 

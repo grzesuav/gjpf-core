@@ -17,13 +17,15 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 import java.util.logging.Level;
 
 /**
  * this is only a skeleton to make basic logging work under JPF
  */
 public class JPF_java_util_logging_Level extends NativePeer {
-  
+  @MJI
   public int getLocalizedName____Ljava_lang_String_2 (MJIEnv env, int objRef){
     Level level = null;    
     int val = env.getIntField(objRef, "value");

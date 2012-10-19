@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -40,6 +42,7 @@ public class JPF_java_io_InputStreamReader extends NativePeer {
     decoder = Charset.defaultCharset().newDecoder();
   }
   
+  @MJI
   public int decode___3BI_3CIZ__I (MJIEnv env, int objref,
                                          int bref, int len, int cref, int off,
                                          boolean endOfInput){
@@ -75,6 +78,7 @@ public class JPF_java_io_InputStreamReader extends NativePeer {
   // <2do> - that fails if we have a multi byte char and there is a backtrack
   // between decode() calls. Granted, that seems strange, but there is an
   // InputStream.read() in the loop which might just branch into user code
+  @MJI
   public int decode__IZ__I (MJIEnv env, int objref, int b, boolean endOfInput){
     int c = -1;
     int lim = in.limit();

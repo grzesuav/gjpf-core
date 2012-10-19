@@ -1,5 +1,7 @@
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 
 public class JPF_gov_nasa_jpf_SerializationConstructor extends NativePeer {
 
@@ -7,6 +9,7 @@ public class JPF_gov_nasa_jpf_SerializationConstructor extends NativePeer {
    * create a new instance, but only call the ctor of the first
    * non-serializable superclass
    */
+  @MJI
   public int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                              int argsRef) {
     ThreadInfo ti = env.getThreadInfo();

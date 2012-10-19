@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.DynamicObjectArray;
 import gov.nasa.jpf.util.JPFLogger;
 
@@ -57,6 +58,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     count = 2;
   }
   
+  @MJI
   public int open__Ljava_lang_String_2I__I (MJIEnv env, int objref,
                                                    int fnameRef, int mode){
     String fname = env.getStringObject(fnameRef);
@@ -69,7 +71,8 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
       return -1;
     }
   }
-  
+
+  @MJI
   public int openRead (String fname) {
     File file = new File(fname);
     if (file.exists()) {
@@ -94,6 +97,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     return -1;
   }
   
+  @MJI
   public int openWrite (String fname){
     File file = new File(fname);
     try {
@@ -113,7 +117,8 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     
     return -1;    
   }
-  
+
+  @MJI
   public void close0 (MJIEnv env, int objref) {
     int fd = env.getIntField(objref, "fd");
     
@@ -170,6 +175,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }
   }
   
+  @MJI
   public void write__I__ (MJIEnv env, int objref, int b){
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
@@ -204,6 +210,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }    
   }
   
+  @MJI
   public void write___3BII__ (MJIEnv env, int objref,
                                      int bref, int offset, int len){
     int fd = env.getIntField(objref, "fd");
@@ -245,7 +252,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }        
   }
   
-
+  @MJI
   public int read____I (MJIEnv env, int objref) {
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
@@ -285,6 +292,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }
   }
   
+  @MJI
   public int read___3BII__I (MJIEnv env, int objref, int bufref, int offset, int len) {
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
@@ -329,6 +337,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }
   }
   
+  @MJI
   public long skip__J__J (MJIEnv env, int objref, long nBytes) {
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");
@@ -364,6 +373,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }    
   }
   
+  @MJI
   public void sync____ (MJIEnv env, int objref){
     int fd = env.getIntField(objref, "fd");
 
@@ -387,6 +397,7 @@ public class JPF_java_io_FileDescriptor extends NativePeer {
     }        
   }
   
+  @MJI
   public int available____I (MJIEnv env, int objref) {
     int fd = env.getIntField(objref, "fd");
     long off = env.getLongField(objref,"off");

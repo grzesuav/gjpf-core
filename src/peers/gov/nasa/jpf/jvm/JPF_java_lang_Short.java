@@ -23,12 +23,15 @@
  */
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 /**
  * MJI NativePeer class for java.lang.Short library abstraction
  */
 public class JPF_java_lang_Short extends NativePeer {
   // <2do> at this point we deliberately do not override clinit
-  
+
+  @MJI
   public short parseShort__Ljava_lang_String_2__S (MJIEnv env, 
                                                           int clsObjRef, 
                                                           int strRef) {
@@ -41,6 +44,7 @@ public class JPF_java_lang_Short extends NativePeer {
     }
   }
 
+  @MJI
   public short parseShort__Ljava_lang_String_2I__S (MJIEnv env, 
                                                             int clsObjRef, 
                                                             int strRef, int radix) {
@@ -53,10 +57,12 @@ public class JPF_java_lang_Short extends NativePeer {
     }
   }
 
+  @MJI
   public int toString__S__Ljava_lang_String_2 (MJIEnv env, int objref, short val) {
     return env.newString(Short.toString(val));
   }
 
+  @MJI
   public int valueOf__S__Ljava_lang_Short_2 (MJIEnv env, int clsRef, short val) {
     return env.valueOfShort(val);
   }

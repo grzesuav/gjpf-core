@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.jvm.Instruction;
 
 import java.util.HashMap;
@@ -63,7 +64,8 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
     
     return ci;
   }
-    
+
+  @MJI
   public void writeByte__I__V (MJIEnv env, int this_ptr, int data) {
     
     
@@ -85,6 +87,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
   /**
    * This is a bit lame doing it this way, but it is easy.
    */
+  @MJI
   public void write___3BII__V (MJIEnv env, int this_ptr, int data_array,
                            int start, int len) {
     byte[] data_values = env.getByteArrayObject(data_array);
@@ -93,6 +96,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
     }
   }
 
+  @MJI
   public void setLength__J__V(MJIEnv env, int this_ptr, long len) {
     long current_posn = env.getLongField(this_ptr, current_position);
     long current_len = env.getLongField(this_ptr, current_length);
@@ -104,6 +108,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
     env.setLongField(getMapping(env,this_ptr), current_length, current_posn + 1);
   }
 
+  @MJI
   public int read___3BII__I (MJIEnv env, int this_ptr, int data_array,
                          int start, int len) {
     int i = 0;
@@ -120,6 +125,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
     return i;
   }
 
+  @MJI
   public byte readByte____B (MJIEnv env, int this_ptr) {
     long current_posn = env.getLongField(this_ptr, current_position);
     long current_len = env.getLongField(this_ptr, current_length);

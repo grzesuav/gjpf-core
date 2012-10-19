@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 import java.lang.reflect.Modifier;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.MethodInfoRegistry;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
@@ -68,6 +69,7 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
     return registry.getMethodInfo(env,objRef, "regIdx");
   }
   
+  @MJI
   public int getName____Ljava_lang_String_2 (MJIEnv env, int objRef) {
     MethodInfo mi = getMethodInfo(env, objRef);
     
@@ -82,7 +84,7 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
   
   // <2do> .. and some more delegations to JPF_java_lang_Method
 
-  
+  @MJI
   public int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                              int argsRef) {
     String directCallId = "JPF_java_lang_reflect_Constructor.newInstance";
@@ -131,36 +133,41 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
     }
   }
     
+  @MJI
   public int getParameterTypes_____3Ljava_lang_Class_2 (MJIEnv env, int objRef){
     // kind of dangerous, but we don't refer to any fields and the underlying JPF construct
     // (MethodInfo) is the same, so we just delegate to avoid copying non-trivial code
     return JPF_java_lang_reflect_Method.getParameterTypes (env, getMethodInfo(env,objRef));
   }
 
-  
+  @MJI
   public int getAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int objRef){
     // <2do> check if ctor annotations are inherited, which is a bit off
     return JPF_java_lang_reflect_Method.getAnnotations( env, getMethodInfo(env,objRef));
   }
   
+  @MJI
   public int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int objRef){
     return JPF_java_lang_reflect_Method.getDeclaredAnnotations( env, getMethodInfo(env,objRef));
   }
   
+  @MJI
   public int getAnnotation__Ljava_lang_Class_2__Ljava_lang_annotation_Annotation_2 (MJIEnv env, int objRef, int annotationClsRef) {
     return JPF_java_lang_reflect_Method.getAnnotation( env, getMethodInfo(env,objRef), annotationClsRef);
   }
   
+  @MJI
   public int getParameterAnnotations_____3_3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int objRef){
     return JPF_java_lang_reflect_Method.getParameterAnnotations( env, getMethodInfo(env,objRef));
   }
 
-  
+  @MJI
   public int getModifiers____I (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);
     return mi.getModifiers();
   }
 
+  @MJI
   public int getDeclaringClass____Ljava_lang_Class_2 (MJIEnv env, int objRef){
     MethodInfo mi = getMethodInfo(env, objRef);    
     ClassInfo ci = mi.getClassInfo();
@@ -168,6 +175,7 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
     return ci.getClassObjectRef();
   }
   
+  @MJI
   public int toString____Ljava_lang_String_2 (MJIEnv env, int objRef){
     StringBuilder sb = new StringBuilder();
     
@@ -191,6 +199,7 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
     return sref;
   }
 
+  @MJI
   public boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int mthRef){
     ElementInfo ei = env.getElementInfo(mthRef);
     ClassInfo ci = ClassInfo.getResolvedClassInfo(JPF_java_lang_Class.CONSTRUCTOR_CLASSNAME);
@@ -217,6 +226,7 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
     return false;
   }
 
+  @MJI
   public int hashCode____I (MJIEnv env, int objRef){
     MethodInfo ctor = getMethodInfo(env, objRef);
     return ctor.getClassName().hashCode();

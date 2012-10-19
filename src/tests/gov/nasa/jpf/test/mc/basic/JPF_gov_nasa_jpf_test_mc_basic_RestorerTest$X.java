@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.test.mc.basic;
 
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.jvm.MJIEnv;
 import gov.nasa.jpf.jvm.NativePeer;
 import gov.nasa.jpf.jvm.StackFrame;
@@ -52,7 +53,8 @@ public class JPF_gov_nasa_jpf_test_mc_basic_RestorerTest$X extends NativePeer {
       insnAttr.count = count;
     }
   }
-  
+
+  @MJI
   public void $init (MJIEnv env, int objref){
     ThreadInfo ti = env.getThreadInfo();
     StackFrame caller = ti.getCallerStackFrame();

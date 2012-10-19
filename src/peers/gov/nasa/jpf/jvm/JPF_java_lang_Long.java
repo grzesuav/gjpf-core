@@ -18,12 +18,15 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 /**
  * MJI NativePeer class for java.lang.Long library abstraction
  */
 public class JPF_java_lang_Long extends NativePeer {
   // <2do> at this point we deliberately do not override clinit
 
+  @MJI
   public long parseLong__Ljava_lang_String_2I__J (MJIEnv env, int clsObjRef, 
                                                      int strRef, int radix) {
     try {
@@ -35,6 +38,7 @@ public class JPF_java_lang_Long extends NativePeer {
     }
   }
 
+  @MJI
   public long parseLong__Ljava_lang_String_2__J (MJIEnv env, int clsObjRef, 
                                                      int strRef) {
     try {
@@ -46,26 +50,32 @@ public class JPF_java_lang_Long extends NativePeer {
     }
   }
 
+  @MJI
   public int toBinaryString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
     return env.newString(Long.toBinaryString(val));
   }
 
+  @MJI
   public int toHexString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
     return env.newString(Long.toHexString(val));
   }
 
+  @MJI
   public int toOctalString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
     return env.newString(Long.toOctalString(val));
   }
 
+  @MJI
   public int toString__J__Ljava_lang_String_2 (MJIEnv env, int objref, long val) {
     return env.newString(Long.toString(val));
   }
 
+  @MJI
   public int toString__JI__Ljava_lang_String_2 (MJIEnv env, int objref, long val, int radix) {
     return env.newString(Long.toString(val, radix));
   }
 
+  @MJI
   public int valueOf__J__Ljava_lang_Long_2 (MJIEnv env, int clsRef, long val) {
     return env.valueOfLong(val);
   }

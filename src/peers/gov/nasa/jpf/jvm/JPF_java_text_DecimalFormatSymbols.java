@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 import java.text.DecimalFormatSymbols;
 
 /**
@@ -27,6 +29,7 @@ import java.text.DecimalFormatSymbols;
  * file io (properties) based on the Locale
  */
 public class JPF_java_text_DecimalFormatSymbols extends NativePeer {
+  @MJI
   public void initialize__Ljava_util_Locale_2__V (MJIEnv env, int objRef, int localeRef) {
     DecimalFormatSymbols dfs = new DecimalFormatSymbols();
     

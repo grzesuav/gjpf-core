@@ -20,6 +20,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.annotation.MJI;
 
 import java.text.DateFormat;
 import java.text.Format;
@@ -40,6 +41,7 @@ public class JPF_java_text_DateFormat extends NativePeer {
     return (DateFormat)fmt;
   }
 
+  @MJI
   public void setTimeZone__Ljava_util_TimeZone_2__V(MJIEnv env, int objref,int timeZoneRef) {
     String timeZoneId = env.getStringField(timeZoneRef, "ID");
     TimeZone timeZone = TimeZone.getTimeZone(timeZoneId);
@@ -49,6 +51,7 @@ public class JPF_java_text_DateFormat extends NativePeer {
     env.setReferenceField(calendarRef, "zone", timeZoneRef);
   }
 
+  @MJI
   public int parse__Ljava_lang_String_2__Ljava_util_Date_2 (MJIEnv env, int objref, int strRef) {
     DateFormat f = getInstance(env,objref);
     String s = env.getStringObject(strRef);
@@ -66,11 +69,13 @@ public class JPF_java_text_DateFormat extends NativePeer {
     }
   }
   
+  @MJI
   public void setLenient__Z__V (MJIEnv env, int objref, boolean isLenient) {
     DateFormat f = getInstance(env,objref);
     f.setLenient(isLenient);
   }
   
+  @MJI
   public int format__Ljava_util_Date_2__Ljava_lang_String_2 (MJIEnv env, int objref, int dateRef) {
     DateFormat fmt = getInstance(env,objref);
     if (fmt != null) {

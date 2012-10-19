@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFConfigException;
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.classfile.ClassPath;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.choice.BreakGenerator;
@@ -34,6 +35,7 @@ import java.util.Properties;
  */
 public class JPF_java_lang_System extends NativePeer {
   
+  @MJI
   public void arraycopy__Ljava_lang_Object_2ILjava_lang_Object_2II__V (MJIEnv env, int clsObjRef,
                                                                               int srcArrayRef, int srcIdx, 
                                                                               int dstArrayRef, int dstIdx,
@@ -55,6 +57,7 @@ public class JPF_java_lang_System extends NativePeer {
     }
   }
 
+  @MJI
   public int getenv__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef,
                                                                          int keyRef){
     String k = env.getStringObject(keyRef);
@@ -90,10 +93,12 @@ public class JPF_java_lang_System extends NativePeer {
     return env.newObject(ci);
   }
   
+  @MJI
   public int createSystemOut____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
     return createPrintStream(env,clsObjRef);
   }
   
+  @MJI
   public int createSystemErr____Ljava_io_PrintStream_2 (MJIEnv env, int clsObjRef){
     return createPrintStream(env,clsObjRef);
   }
@@ -139,6 +144,7 @@ public class JPF_java_lang_System extends NativePeer {
   
   static String JAVA_CLASS_PATH = "java.class.path";
   
+  @MJI
   public static String getSUTJavaClassPath(JVM vm) {
     ClassInfo system = ClassInfo.getResolvedClassInfo("java.lang.System");
     
@@ -238,6 +244,7 @@ public class JPF_java_lang_System extends NativePeer {
     HOST
   };
 
+  @MJI
   public int getKeyValuePairs_____3Ljava_lang_String_2 (MJIEnv env, int clsObjRef){
     Config conf = env.getConfig();
     SystemPropertyPolicy sysPropSrc = conf.getEnum( "vm.sysprop.source", SystemPropertyPolicy.values(), SystemPropertyPolicy.SELECTED);
@@ -257,17 +264,20 @@ public class JPF_java_lang_System extends NativePeer {
   // (sort of "if ((t2 - t1) > d)"). Ok, we can't deal with
   // real time, but we could at least give some SystemState dependent
   // increment
+  @MJI
   public long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
     return env.currentTimeMillis();
   }
 
   // <2do> - likewise. Java 1.5's way to measure relative time
+  @MJI
   public long nanoTime____J (MJIEnv env, int clsObjRef) {
     return env.nanoTime();
   }  
   
   // this works on the assumption that we sure break the transition, and
   // then the search determines that it is an end state (all terminated)
+  @MJI
   public void exit__I__V (MJIEnv env, int clsObjRef, int ret) {
     SystemState ss = env.getSystemState();
     ThreadInfo[] liveThreads = env.getLiveThreads();
@@ -280,10 +290,12 @@ public class JPF_java_lang_System extends NativePeer {
     ss.setMandatoryNextChoiceGenerator( new BreakGenerator("exit", env.getThreadInfo(), true), "exit without break CG");
   }
 
+  @MJI
   public void gc____V (MJIEnv env, int clsObjRef) {
     env.getSystemState().activateGC();
   }
 
+  @MJI
   public int identityHashCode__Ljava_lang_Object_2__I (MJIEnv env, int clsObjRef, int objref) {
     return (objref ^ 0xABCD);
   }

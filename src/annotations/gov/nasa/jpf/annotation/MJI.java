@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2009 United States Government as represented by the
+// Copyright (C) 2012 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,33 +16,17 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
+package gov.nasa.jpf.annotation;
 
-package gov.nasa.jpf.jvm;
-
-import gov.nasa.jpf.annotation.MJI;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * native peer for java.net.URLDecoder forwarding
+ * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
+ * 
+ * An annotation used to specify native peer methods
  */
-public class JPF_java_net_URLDecoder extends NativePeer {
-
-  @MJI
-  public int decode__Ljava_lang_String_2Ljava_lang_String_2__Ljava_lang_String_2(MJIEnv env, int clsObjRef,
-          int sRef, int encRef){
-    String s = env.getStringObject(sRef);
-    String enc = env.getStringObject(encRef);
-
-    try {
-      String e = URLDecoder.decode(s, enc);
-      return env.newString(e);
-
-    } catch (UnsupportedEncodingException x){
-      env.throwException("java.io.UnsupportedEncodingException", x.getMessage());
-      return MJIEnv.NULL;
-    }
-  }
+@Retention(RetentionPolicy.RUNTIME)
+public @interface MJI {
 
 }

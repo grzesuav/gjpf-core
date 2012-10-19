@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 /**
  * MJI NativePeer class for java.lang.Character library abstraction
  * Whoever is using this seriously is definitely screwed, performance-wise
@@ -25,88 +27,108 @@ package gov.nasa.jpf.jvm;
 public class JPF_java_lang_Character extends NativePeer {
   // <2do> at this point we deliberately do not override clinit
 
+  @MJI
   public boolean isDefined__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isDefined(c);
   }
 
+  @MJI
   public boolean isDigit__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isDigit(c);
   }
 
+  @MJI
   public boolean isISOControl__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isISOControl(c);
   }
 
+  @MJI
   public boolean isIdentifierIgnorable__C__Z (MJIEnv env, int clsObjRef, 
                                                   char c) {
     return Character.isIdentifierIgnorable(c);
   }
 
+  @MJI
   public boolean isJavaIdentifierPart__C__Z (MJIEnv env, int clsObjRef, 
                                                  char c) {
     return Character.isJavaIdentifierPart(c);
   }
 
+  @MJI
   public boolean isJavaIdentifierStart__C__Z (MJIEnv env, int clsObjRef, 
                                                   char c) {
     return Character.isJavaIdentifierStart(c);
   }
 
+  @MJI
   public boolean isJavaLetterOrDigit__C__Z (MJIEnv env, int clsObjRef, 
                                                 char c) {
     return Character.isJavaIdentifierPart(c);
   }
 
+  @MJI
   public boolean isJavaLetter__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isJavaIdentifierStart(c);
   }
 
+  @MJI
   public boolean isLetterOrDigit__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isLetterOrDigit(c);
   }
 
+  @MJI
   public boolean isLetter__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isLetter(c);
   }
 
+  @MJI
   public boolean isLowerCase__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isLowerCase(c);
   }
 
+  @MJI
   public int getNumericValue__C__I (MJIEnv env, int clsObjRef, char c) {
     return Character.getNumericValue(c);
   }
 
+  @MJI
   public boolean isSpaceChar__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isSpaceChar(c);
   }
 
+  @MJI
   public boolean isSpace__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isWhitespace(c);
   }
 
+  @MJI
   public boolean isTitleCase__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isTitleCase(c);
   }
 
+  @MJI
   public int getType__C__I (MJIEnv env, int clsObjRef, char c) {
     return Character.getType(c);
   }
 
+  @MJI
   public boolean isUnicodeIdentifierPart__C__Z (MJIEnv env, int clsObjRef, 
                                                     char c) {
     return Character.isUnicodeIdentifierPart(c);
   }
 
+  @MJI
   public boolean isUnicodeIdentifierStart__C__Z (MJIEnv env, int clsObjRef, 
                                                      char c) {
     return Character.isUnicodeIdentifierStart(c);
   }
 
+  @MJI
   public boolean isUpperCase__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isUpperCase(c);
   }
 
+  @MJI
   public boolean isWhitespace__C__Z (MJIEnv env, int clsObjRef, char c) {
     return Character.isWhitespace(c);
   }
@@ -119,6 +141,7 @@ public class JPF_java_lang_Character extends NativePeer {
   // be fast.
   // It is actually Ok to bypass the real clinit if we turn all the
   // important methods into native ones, i.e. delegate to the real thing.
+  @MJI
   public void $clinit____V (MJIEnv env, int clsObjRef) {
     env.setStaticByteField("java.lang.Character", "UNASSIGNED", (byte) 0);
     env.setStaticByteField("java.lang.Character", "UPPERCASE_LETTER", (byte) 1);
@@ -160,27 +183,33 @@ public class JPF_java_lang_Character extends NativePeer {
     env.setBooleanField(ci.getClassObjectRef(), "isPrimitive", true);
   }
 
+  @MJI
   public int digit__CI__I (MJIEnv env, int clsObjRef, char c, int radix) {
     return Character.digit(c, radix);
   }
 
+  @MJI
   public char forDigit__II__C (MJIEnv env, int clsObjRef, int digit, 
                                    int radix) {
     return Character.forDigit(digit, radix);
   }
 
+  @MJI
   public char toLowerCase__C__C (MJIEnv env, int clsObjRef, char c) {
     return Character.toLowerCase(c);
   }
 
+  @MJI
   public char toTitleCase__C__C (MJIEnv env, int clsObjRef, char c) {
     return Character.toTitleCase(c);
   }
 
+  @MJI
   public char toUpperCase__C__C (MJIEnv env, int clsObjRef, char c) {
     return Character.toUpperCase(c);
   }
 
+  @MJI
   public int valueOf__C__Ljava_lang_Character_2 (MJIEnv env, int clsRef, char val) {
     return env.valueOfCharacter(val);
   }

@@ -19,27 +19,32 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.annotation.MJI;
 
 /**
  * just a dummy for now, to avoid UnsatisfiedLinkErrors
  */
 public class JPF_java_lang_Runtime extends NativePeer {
 
+  @MJI
   public void addShutdownHook__Ljava_lang_Thread_2__V (MJIEnv env, int objref, int threadRef) {
     // ignored for now
   }
 
+  @MJI
   public long totalMemory____J (MJIEnv env, int objref) {
     // not really sure what to return here, since in reality this
     // value can be non-deterministic
     return 50000000;
   }
 
+  @MJI
   public long maxMemory____J (MJIEnv env, int objref) {
     // yet another cut
     return 70000000;
   }
 
+  @MJI
   public long freeMemory____J (MJIEnv env, int objref) {
     // we don't have an upper limit for our heap space, and we don't
     // keep track how much is used, so we just return a dummy
@@ -50,12 +55,13 @@ public class JPF_java_lang_Runtime extends NativePeer {
     
     return 10000000;
   }
-  
+
+  @MJI
   public void gc____V (MJIEnv env, int objref){
     env.gc();
   }
   
-  
+  @MJI
   public int availableProcessors____I (MJIEnv env, int objref){
     // this is what all these Runtime data acquisition APIs should look like
     // - since the value is oing to be used by the application, there should

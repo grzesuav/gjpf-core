@@ -20,6 +20,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.annotation.MJI;
 
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -47,12 +48,13 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
    * explicitly call the superclass ctors here (the 'id' handle gets
    * initialized in the java.text.Format ctor) 
    */
-  
+  @MJI
   public void init0____V (MJIEnv env, int objref) {
     DecimalFormat fmt = new DecimalFormat();
     JPF_java_text_Format.putInstance(env,objref,fmt);    
   }
   
+  @MJI
   public void init0__Ljava_lang_String_2__V (MJIEnv env, int objref, int patternref) {
     String pattern = env.getStringObject(patternref);
     
@@ -60,6 +62,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     JPF_java_text_Format.putInstance(env,objref,fmt);    
   }
   
+  @MJI
   public void init0__I__V (MJIEnv env, int objref, int style) {
     NumberFormat fmt = null;
     if (style == INTEGER_STYLE) {
@@ -74,6 +77,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     JPF_java_text_Format.putInstance(env,objref,fmt);    
   }
   
+  @MJI
   public void setMaximumFractionDigits__I__V (MJIEnv env, int objref, int newValue){
     NumberFormat fmt = getInstance(env,objref);
     if (fmt != null) {
@@ -81,6 +85,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     }
   }
 
+  @MJI
   public void setMaximumIntegerDigits__I__V (MJIEnv env, int objref, int newValue){
     NumberFormat fmt = getInstance(env,objref);
     if (fmt != null) {
@@ -88,6 +93,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     }
   }
 
+  @MJI
   public void setMinimumFractionDigits__I__V (MJIEnv env, int objref, int newValue){
     NumberFormat fmt = getInstance(env,objref);
     if (fmt != null) {
@@ -95,6 +101,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     }
   }
 
+  @MJI
   public void setMinimumIntegerDigits__I__V (MJIEnv env, int objref, int newValue){
     NumberFormat fmt = getInstance(env,objref);
     if (fmt != null) {
@@ -102,6 +109,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     }
   }
   
+  @MJI
   public int format__J__Ljava_lang_String_2 (MJIEnv env, int objref, long number) {
     NumberFormat fmt = getInstance(env,objref);
     if (fmt != null) {
@@ -113,6 +121,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     return MJIEnv.NULL;
   }
   
+  @MJI
   public int format__D__Ljava_lang_String_2 (MJIEnv env, int objref, double number) {
     NumberFormat fmt = getInstance(env,objref);
     if (fmt != null) {
@@ -124,6 +133,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     return MJIEnv.NULL;
   }
 
+  @MJI
   public void setParseIntegerOnly__Z__V(MJIEnv env, int objref, boolean value) {
     NumberFormat fmt = getInstance(env,objref);
     if (fmt != null) {
@@ -131,6 +141,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     }
   }
 
+  @MJI
   public boolean isParseIntegerOnly____Z(MJIEnv env, int objref) {
     NumberFormat fmt = getInstance(env,objref);
     if (fmt != null) {
@@ -139,6 +150,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     return false;
   }
 
+  @MJI
   public void setGroupingUsed__Z__V(MJIEnv env, int objref, boolean newValue) {
     NumberFormat fmt = getInstance(env,objref);
     if (fmt != null) {
@@ -146,6 +158,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     }
   }
 
+  @MJI
   public boolean isGroupingUsed____Z(MJIEnv env, int objref) {
     NumberFormat fmt = getInstance(env,objref);
     if (fmt != null) {
@@ -154,6 +167,7 @@ public class JPF_java_text_DecimalFormat extends NativePeer {
     return false;
   }
 
+  @MJI
   public int parse__Ljava_lang_String_2Ljava_text_ParsePosition_2__Ljava_lang_Number_2(MJIEnv env, int objref,int sourceRef,int parsePositionRef) {
     String source = env.getStringObject(sourceRef);
     ParsePosition parsePosition = createParsePositionFromRef(env,parsePositionRef);

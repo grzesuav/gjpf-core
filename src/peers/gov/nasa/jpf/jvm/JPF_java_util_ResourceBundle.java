@@ -19,6 +19,8 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 import java.util.List;
 
 /**
@@ -26,7 +28,7 @@ import java.util.List;
  */
 public class JPF_java_util_ResourceBundle extends NativePeer {
 
-
+  @MJI
   public int getClassContext_____3Ljava_lang_Class_2 (MJIEnv env, int clsRef){
     ThreadInfo ti = env.getThreadInfo();
 

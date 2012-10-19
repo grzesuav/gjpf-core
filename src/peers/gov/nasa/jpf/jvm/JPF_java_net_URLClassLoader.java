@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.classfile.ClassPath;
 
 /**
@@ -30,6 +31,7 @@ import gov.nasa.jpf.classfile.ClassPath;
  */
 public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
 
+  @MJI
   public void addURL0__Ljava_lang_String_2__V (MJIEnv env, int objRef, int urlRef) throws MalformedURLException {
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
     ClassPath cp = cl.getClassPath();
@@ -50,6 +52,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
     cp.addPathName(path);
   }
 
+  @MJI
   public int findClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
     String typeName = env.getStringObject(nameRef);
 
@@ -80,6 +83,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
     }
   }
 
+  @MJI
   public int findResource0__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef){
     String rname = env.getStringObject(resRef);
 
@@ -90,6 +94,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
     return env.newString(resourcePath);
   }
 
+  @MJI
   public int findResources0__Ljava_lang_String_2___3Ljava_lang_String_2 (MJIEnv env, int objRef, int resRef) {
     String rname = env.getStringObject(resRef);
 

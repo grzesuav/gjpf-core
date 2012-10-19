@@ -19,12 +19,15 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 /**
  * native peer for Annotation Proxies
  * (saves us some bytecode interpretation shoe leather)
  */
 public class JPF_gov_nasa_jpf_AnnotationProxyBase extends NativePeer {
 
+  @MJI
   public int annotationType____Ljava_lang_Class_2 (MJIEnv env, int objref) {
     ClassInfo ciProxy = env.getClassInfo(objref);  // this would be the proxy
     
@@ -36,6 +39,7 @@ public class JPF_gov_nasa_jpf_AnnotationProxyBase extends NativePeer {
     return ci.getClassObjectRef();
   }
   
+  @MJI
   public int toString____Ljava_lang_String_2 (MJIEnv env, int objref){
     StringBuffer sb = new StringBuffer();
     

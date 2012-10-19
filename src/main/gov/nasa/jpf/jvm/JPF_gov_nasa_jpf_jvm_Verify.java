@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
 import gov.nasa.jpf.jvm.choice.FloatChoiceFromList;
 import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
@@ -94,7 +95,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     return true;
   }
 
-  public int getValue__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, int keyRef) {
+  @MJI
+  public static int getValue__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, int keyRef) {
     if (map == null) {
       return -1;
     } else {
@@ -108,7 +110,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
   
-  public void putValue__Ljava_lang_String_2I__V (MJIEnv env, int clsObjRef, int keyRef, int val) {
+  @MJI
+  public static void putValue__Ljava_lang_String_2I__V (MJIEnv env, int clsObjRef, int keyRef, int val) {
     if (map == null) {
       map = new IntTable<String>();
     }
@@ -117,7 +120,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     map.put(key, val);
   }
   
-  public int getCounter__I__I (MJIEnv env, int clsObjRef, int counterId) {
+  @MJI
+  public static int getCounter__I__I (MJIEnv env, int clsObjRef, int counterId) {
     if ((counter == null) || (counterId < 0) || (counterId >= counter.length)) {
       return 0;
     }
@@ -125,7 +129,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     return counter[counterId];
   }
 
-  private void ensureCounterCapacity (int counterId){
+  private static void ensureCounterCapacity (int counterId){
     if (counter == null) {
       counter = new int[(counterId >= MAX_COUNTERS) ? counterId+1 : MAX_COUNTERS];
     } else if (counterId >= counter.length) {
@@ -135,14 +139,16 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }    
   }
   
-  public void resetCounter__I__V (MJIEnv env, int clsObjRef, int counterId) {
+  @MJI
+  public static void resetCounter__I__V (MJIEnv env, int clsObjRef, int counterId) {
     if ((counter == null) || (counterId < 0) || (counterId >= counter.length)) {
       return;
     }
     counter[counterId] = 0;
   }
 
-  public void setCounter__II__V (MJIEnv env, int clsObjRef, int counterId, int val) {
+  @MJI
+  public static void setCounter__II__V (MJIEnv env, int clsObjRef, int counterId, int val) {
     if (counterId < 0){
       return;
     }
@@ -151,7 +157,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     counter[counterId] = val;
   }
   
-  public int incrementCounter__I__I (MJIEnv env, int clsObjRef, int counterId) {
+  @MJI
+  public static int incrementCounter__I__I (MJIEnv env, int clsObjRef, int counterId) {
     if (counterId < 0) {
       return 0;
     }
@@ -174,39 +181,46 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-  public void setBitInBitSet__IIZ__V(MJIEnv env, int clsObjRef, int id, int bitNum, boolean value) {
+  @MJI
+  public static void setBitInBitSet__IIZ__V(MJIEnv env, int clsObjRef, int id, int bitNum, boolean value) {
     checkBitSetId(id);
     bitSets[id].set(bitNum, value);
   }
 
-  public boolean getBitInBitSet__II__Z(MJIEnv env, int clsObjRef, int id, int bitNum) {
+  @MJI
+  public static boolean getBitInBitSet__II__Z(MJIEnv env, int clsObjRef, int id, int bitNum) {
     checkBitSetId(id);
     return bitSets[id].get(bitNum);
   }
 
-  public long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
+  @MJI
+  public static long currentTimeMillis____J (MJIEnv env, int clsObjRef) {
     return System.currentTimeMillis();
   }
 
-  public String getType (int objRef, MJIEnv env) {
+  @MJI
+  public static String getType (int objRef, MJIEnv env) {
     return Types.getTypeName(env.getElementInfo(objRef).getType());
   }
 
-  public void addComment__Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int stringRef) {
+  @MJI
+  public static void addComment__Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int stringRef) {
     SystemState ss = env.getSystemState();
     String      cmt = env.getStringObject(stringRef);
     ss.getTrail().setAnnotation(cmt);
   }
 
   /** deprectated, just use assert */
-  public void assertTrue__Z__V (MJIEnv env, int clsObjRef, boolean b) {
+  @MJI
+  public static void assertTrue__Z__V (MJIEnv env, int clsObjRef, boolean b) {
     if (!b) {
       env.throwException("java.lang.AssertionError", "assertTrue failed");
     }
   }
 
   // those are evil - use with extreme care
-  public void beginAtomic____V (MJIEnv env, int clsObjRef) {
+  @MJI
+  public static void beginAtomic____V (MJIEnv env, int clsObjRef) {
     if (enableAtomic){
       ThreadInfo tiAtomic = env.getThreadInfo();
       if (!tiAtomic.isFirstStepInsn()){
@@ -222,7 +236,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
   
-  public void endAtomic____V (MJIEnv env, int clsObjRef) {
+  @MJI
+  public static void endAtomic____V (MJIEnv env, int clsObjRef) {
     if (enableAtomic){
       ThreadInfo tiAtomic = env.getThreadInfo();
 
@@ -238,27 +253,32 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-  public void busyWait__J__V (MJIEnv env, int clsObjRef, long duration) {
+  @MJI
+  public static void busyWait__J__V (MJIEnv env, int clsObjRef, long duration) {
     // nothing required here (we systematically explore scheduling
     // sequences anyway), but we need to intercept the call
   }
 
-  public void ignoreIf__Z__V (MJIEnv env, int clsObjRef, boolean cond) {
+  @MJI
+  public static void ignoreIf__Z__V (MJIEnv env, int clsObjRef, boolean cond) {
     if (supportIgnorePath) {
       env.getSystemState().setIgnored(cond);
     }
   }
 
-  public void interesting__Z__V (MJIEnv env, int clsObjRef, boolean cond) {
+  @MJI
+  public static void interesting__Z__V (MJIEnv env, int clsObjRef, boolean cond) {
     env.getSystemState().setInteresting(cond);
   }
 
-  public void breakTransition____V (MJIEnv env, int clsObjRef){
+  @MJI
+  public static void breakTransition____V (MJIEnv env, int clsObjRef){
     ThreadInfo ti = env.getThreadInfo();
     ti.breakTransition();
   }
 
-  public boolean isCalledFromClass__Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
+  @MJI
+  public static boolean isCalledFromClass__Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                            int clsNameRef) {
     String refClassName = env.getStringObject(clsNameRef);
     ThreadInfo ti = env.getThreadInfo();
@@ -313,7 +333,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     return ((ChoiceGenerator<T>)cg).getNextChoice();
   }
 
-  public boolean getBoolean____Z (MJIEnv env, int clsObjRef) {
+  @MJI
+  public static boolean getBoolean____Z (MJIEnv env, int clsObjRef) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
     ChoiceGenerator<?> cg;
@@ -330,7 +351,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-  public boolean getBoolean__Z__Z (MJIEnv env, int clsObjRef, boolean falseFirst) {
+  @MJI
+  public static boolean getBoolean__Z__Z (MJIEnv env, int clsObjRef, boolean falseFirst) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
     ChoiceGenerator<?> cg;
@@ -347,9 +369,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-
-
-  public int getInt__II__I (MJIEnv env, int clsObjRef, int min, int max) {
+  @MJI
+  public static int getInt__II__I (MJIEnv env, int clsObjRef, int min, int max) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
 
@@ -382,13 +403,14 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }    
   }
   
-  public int getIntFromList___3I__I (MJIEnv env, int clsObjRef, int valArrayRef){
+  @MJI
+  public static int getIntFromList___3I__I (MJIEnv env, int clsObjRef, int valArrayRef){
     int[] values = env.getIntArrayObject(valArrayRef);
     return getIntFromList( env, values);
   }
 
-
-  public int getInt__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, int idRef) {
+  @MJI
+  public static int getInt__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, int idRef) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
 
@@ -417,12 +439,14 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }    
   }
   
-  public long getLongFromList___3J__J (MJIEnv env, int clsObjRef, int valArrayRef){
+  @MJI
+  public static long getLongFromList___3J__J (MJIEnv env, int clsObjRef, int valArrayRef){
     long[] values = env.getLongArrayObject(valArrayRef);
     return getLongFromList( env, values);    
   }
   
-  public int getObject__Ljava_lang_String_2__Ljava_lang_Object_2 (MJIEnv env, int clsObjRef, int idRef) {
+  @MJI
+  public static int getObject__Ljava_lang_String_2__Ljava_lang_Object_2 (MJIEnv env, int clsObjRef, int idRef) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
 
@@ -437,7 +461,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-  public double getDouble__Ljava_lang_String_2__D (MJIEnv env, int clsObjRef, int idRef) {
+  @MJI
+  public static double getDouble__Ljava_lang_String_2__D (MJIEnv env, int clsObjRef, int idRef) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
 
@@ -452,6 +477,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
+  @MJI
   public static double getDoubleFromList (MJIEnv env, double[] values){
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
@@ -465,12 +491,13 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }    
   }
   
-  public double getDoubleFromList___3D__D (MJIEnv env, int clsObjRef, int valArrayRef){
+  @MJI
+  public static double getDoubleFromList___3D__D (MJIEnv env, int clsObjRef, int valArrayRef){
     double[] values = env.getDoubleArrayObject(valArrayRef);
     return getDoubleFromList( env, values);
   }
 
-  
+  @MJI
   public static float getFloatFromList (MJIEnv env, float[] values){
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
@@ -484,23 +511,26 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }    
   }
   
-  public float getFloatFromList___3F__F (MJIEnv env, int clsObjRef, int valArrayRef){
+  @MJI
+  public static float getFloatFromList___3F__F (MJIEnv env, int clsObjRef, int valArrayRef){
     float[] values = env.getFloatArrayObject(valArrayRef);
     return getFloatFromList( env, values);
   }
 
-
-  public void print__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int sRef, int val){
+  @MJI
+  public static void print__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int sRef, int val){
     String s = env.getStringObject(sRef);
     System.out.println(s + " : " + val);
   }
 
-  public void print__Ljava_lang_String_2Z__V (MJIEnv env, int clsRef, int sRef, boolean val){
+  @MJI
+  public static void print__Ljava_lang_String_2Z__V (MJIEnv env, int clsRef, int sRef, boolean val){
     String s = env.getStringObject(sRef);
     System.out.println(s + " : " + val);
   }
 
-  public void print___3Ljava_lang_String_2__V (MJIEnv env, int clsRef, int argsRef){
+  @MJI
+  public static void print___3Ljava_lang_String_2__V (MJIEnv env, int clsRef, int argsRef){
     int n = env.getArrayLength(argsRef);
     for (int i=0; i<n; i++){
       int aref = env.getReferenceArrayElement(argsRef, i);
@@ -509,7 +539,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-  public void println____V (MJIEnv env, int clsRef){
+  @MJI
+  public static void println____V (MJIEnv env, int clsRef){
     System.out.println();
   }
   
@@ -547,14 +578,16 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
   
-  public void setObjectAttribute__Ljava_lang_Object_2I__V (MJIEnv env, int clsRef, int oRef, int attr){
+  @MJI
+  public static void setObjectAttribute__Ljava_lang_Object_2I__V (MJIEnv env, int clsRef, int oRef, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getModifiableElementInfo(oRef);
+      ElementInfo ei = env.getElementInfo(oRef);
       ei.setObjectAttr(Integer.valueOf(attr));
     }
   }
   
-  public int getObjectAttribute__Ljava_lang_Object_2__I (MJIEnv env, int clsRef, int oRef){
+  @MJI
+  public static int getObjectAttribute__Ljava_lang_Object_2__I (MJIEnv env, int clsRef, int oRef){
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
       return getAttribute( env, ei.getObjectAttr());
@@ -563,14 +596,16 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     return 0;
   }
   
-  public void addObjectAttribute__Ljava_lang_Object_2I__V (MJIEnv env, int clsRef, int oRef, int attr){
+  @MJI
+  public static void addObjectAttribute__Ljava_lang_Object_2I__V (MJIEnv env, int clsRef, int oRef, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getModifiableElementInfo(oRef);
+      ElementInfo ei = env.getElementInfo(oRef);
       ei.addObjectAttr(Integer.valueOf(attr));
     }
   }
   
-  public int getObjectAttributes__Ljava_lang_Object_2___3I (MJIEnv env, int clsRef, int oRef){
+  @MJI
+  public static int getObjectAttributes__Ljava_lang_Object_2___3I (MJIEnv env, int clsRef, int oRef){
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
       return getAttributeList( env, ei.getObjectAttr());
@@ -579,11 +614,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     return MJIEnv.NULL;
   }
   
-
-  public void setFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2I__V (MJIEnv env, int clsRef,
+  @MJI
+  public static void setFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2I__V (MJIEnv env, int clsRef,
                                                                                     int oRef, int fnRef, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getModifiableElementInfo(oRef);
+      ElementInfo ei = env.getElementInfo(oRef);
       if (ei != null){
         String fname = env.getStringObject(fnRef);
         FieldInfo fi = ei.getFieldInfo(fname);
@@ -600,8 +635,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
   
-  
-  public int getFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2__I (MJIEnv env, int clsRef,
+  @MJI
+  public static int getFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2__I (MJIEnv env, int clsRef,
                                                                                     int oRef, int fnRef){
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
@@ -623,10 +658,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     return 0;
   }
   
-  public void addFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2I__V (MJIEnv env, int clsRef,
+  @MJI
+  public static void addFieldAttribute__Ljava_lang_Object_2Ljava_lang_String_2I__V (MJIEnv env, int clsRef,
                                                                                     int oRef, int fnRef, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getModifiableElementInfo(oRef);
+      ElementInfo ei = env.getElementInfo(oRef);
       if (ei != null){
         String fname = env.getStringObject(fnRef);
         FieldInfo fi = ei.getFieldInfo(fname);
@@ -643,8 +679,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-
-  public int getFieldAttributes__Ljava_lang_Object_2Ljava_lang_String_2___3I (MJIEnv env, int clsRef,
+  @MJI
+  public static int getFieldAttributes__Ljava_lang_Object_2Ljava_lang_String_2___3I (MJIEnv env, int clsRef,
                                                                                     int oRef, int fnRef){
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
@@ -666,8 +702,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     return MJIEnv.NULL;
   }
 
-  
-  public void setLocalAttribute__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int varRef, int attr) {
+  @MJI
+  public static void setLocalAttribute__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int varRef, int attr) {
     String slotName = env.getStringObject(varRef);
     StackFrame frame = env.getCallerStackFrame(); // we are executing in a NativeStackFrame
 
@@ -684,7 +720,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-  public int getLocalAttribute__Ljava_lang_String_2__I (MJIEnv env, int clsRef, int varRef) {
+  @MJI
+  public static int getLocalAttribute__Ljava_lang_String_2__I (MJIEnv env, int clsRef, int varRef) {
     String slotName = env.getStringObject(varRef);
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = env.getCallerStackFrame();
@@ -698,7 +735,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-  public void addLocalAttribute__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int varRef, int attr) {
+  @MJI
+  public static void addLocalAttribute__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int varRef, int attr) {
     String slotName = env.getStringObject(varRef);
     StackFrame frame = env.getCallerStackFrame(); // we are executing in a NativeStackFrame
 
@@ -715,7 +753,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
   
-  public int getLocalAttributes__Ljava_lang_String_2___3I (MJIEnv env, int clsRef, int varRef) {
+  @MJI
+  public static int getLocalAttributes__Ljava_lang_String_2___3I (MJIEnv env, int clsRef, int varRef) {
     String slotName = env.getStringObject(varRef);
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = env.getCallerStackFrame();
@@ -730,11 +769,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     return MJIEnv.NULL;
   }
   
-  
-  public void setElementAttribute__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef,
+  @MJI
+  public static void setElementAttribute__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef,
                                                                     int oRef, int idx, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getModifiableElementInfo(oRef);
+      ElementInfo ei = env.getElementInfo(oRef);
 
       if (ei != null){
         if (ei.isArray()) {
@@ -754,7 +793,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-  public int getElementAttribute__Ljava_lang_Object_2I__I (MJIEnv env, int clsRef,
+  @MJI
+  public static int getElementAttribute__Ljava_lang_Object_2I__I (MJIEnv env, int clsRef,
                                                                   int oRef, int idx){
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
@@ -779,11 +819,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     return 0;
   }
 
-  
-  public void addElementAttribute__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef,
+  @MJI
+  public static void addElementAttribute__Ljava_lang_Object_2II__V (MJIEnv env, int clsRef,
                                                                     int oRef, int idx, int attr){
     if (oRef != MJIEnv.NULL){
-      ElementInfo ei = env.getModifiableElementInfo(oRef);
+      ElementInfo ei = env.getElementInfo(oRef);
 
       if (ei != null){
         if (ei.isArray()) {
@@ -803,7 +843,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-  public int getElementAttributes__Ljava_lang_Object_2I___3I (MJIEnv env, int clsRef,
+  @MJI
+  public static int getElementAttributes__Ljava_lang_Object_2I___3I (MJIEnv env, int clsRef,
                                                                         int oRef, int idx){
     if (oRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(oRef);
@@ -831,7 +872,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   /**
    *  deprecated, use getBoolean()
    */
-  public boolean randomBool (MJIEnv env, int clsObjRef) {
+  @MJI
+  public static boolean randomBool (MJIEnv env, int clsObjRef) {
     //SystemState ss = env.getSystemState();
     //return (ss.random(2) != 0);
 
@@ -843,7 +885,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   /**
    * deprecated, use getInt
    */
-  public int random__I__I (MJIEnv env, int clsObjRef, int x) {
+  @MJI
+  public static int random__I__I (MJIEnv env, int clsObjRef, int x) {
    return getInt__II__I( env, clsObjRef, 0, x);
   }
 
@@ -851,32 +894,37 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     env.getSystemState().setBoring(b);
   }
 
-
-  public boolean isRunningInJPF____Z(MJIEnv env, int clsObjRef) {
+  @MJI
+  public static boolean isRunningInJPF____Z(MJIEnv env, int clsObjRef) {
     return true;
   }
 
-  public boolean vmIsMatchingStates____Z(MJIEnv env, int clsObjRef) {
+  @MJI
+  public static boolean vmIsMatchingStates____Z(MJIEnv env, int clsObjRef) {
     return env.getVM().getStateSet() != null;
   }
 
-  public void storeTrace__Ljava_lang_String_2Ljava_lang_String_2__V (MJIEnv env, int clsObjRef,
+  @MJI
+  public static void storeTrace__Ljava_lang_String_2Ljava_lang_String_2__V (MJIEnv env, int clsObjRef,
                                       int filenameRef, int commentRef) {
     String fileName = env.getStringObject(filenameRef);
     String comment = env.getStringObject(commentRef);
     env.getVM().storeTrace(fileName, comment, config.getBoolean("trace.verbose", false));
   }
 
-  public void terminateSearch____V (MJIEnv env, int clsObjRef) {
+  @MJI
+  public static void terminateSearch____V (MJIEnv env, int clsObjRef) {
     JPF jpf = env.getVM().getJPF();
     jpf.getSearch().terminate();
   }
 
-  public boolean isTraceReplay____Z (MJIEnv env, int clsObjRef) {
+  @MJI
+  public static boolean isTraceReplay____Z (MJIEnv env, int clsObjRef) {
     return env.getVM().isTraceReplay();
   }
 
-  public boolean isShared__Ljava_lang_Object_2__Z (MJIEnv env, int clsObjRef, int objRef){
+  @MJI
+  public static boolean isShared__Ljava_lang_Object_2__Z (MJIEnv env, int clsObjRef, int objRef){
     if (objRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(objRef);
       if (ei != null){
@@ -887,9 +935,10 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     return false;
   }
   
-  public void setShared__Ljava_lang_Object_2Z__V (MJIEnv env, int clsObjRef, int objRef, boolean isShared) {
+  @MJI
+  public static void setShared__Ljava_lang_Object_2Z__V (MJIEnv env, int clsObjRef, int objRef, boolean isShared) {
     if (objRef != MJIEnv.NULL){
-      ElementInfo ei = env.getModifiableElementInfo(objRef);
+      ElementInfo ei = env.getElementInfo(objRef);
       if (ei != null){
         if (ei.getClassInfo() == ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo()) { // it's a class object, freeze the static fields
           ei = env.getClassElementInfo(objRef);
@@ -899,9 +948,10 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }    
   }
 
-  public void freezeSharedness__Ljava_lang_Object_2Z__V (MJIEnv env, int clsObjRef, int objRef, boolean freeze) {
+  @MJI
+  public static void freezeSharedness__Ljava_lang_Object_2Z__V (MJIEnv env, int clsObjRef, int objRef, boolean freeze) {
     if (objRef != MJIEnv.NULL){
-      ElementInfo ei = env.getModifiableElementInfo(objRef);
+      ElementInfo ei = env.getElementInfo(objRef);
       if (ei != null) {
         if (ei.getClassInfo() == ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo()) { // it's a class object, freeze the static fields
           ei = env.getClassElementInfo(objRef);
@@ -912,8 +962,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }    
   }
 
-  
-  public void setProperties___3Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int argRef) {
+  @MJI
+  public static void setProperties___3Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int argRef) {
     if (argRef != MJIEnv.NULL) {
       Config conf = env.getConfig();
 
@@ -928,7 +978,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-  public int getProperty__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef, int keyRef) {
+  @MJI
+  public static int getProperty__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef, int keyRef) {
     if (keyRef != MJIEnv.NULL){
       Config conf = env.getConfig();
 
@@ -946,14 +997,15 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
 
-
-  public void printPathOutput__ZLjava_lang_String_2__V (MJIEnv env, int clsObjRef, boolean cond, int msgRef){
+  @MJI
+  public static void printPathOutput__ZLjava_lang_String_2__V (MJIEnv env, int clsObjRef, boolean cond, int msgRef){
     if (cond){
       printPathOutput__Ljava_lang_String_2__V(env,clsObjRef,msgRef);
     }
   }
 
-  public void printPathOutput__Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int msgRef){
+  @MJI
+  public static void printPathOutput__Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int msgRef){
     JVM vm = env.getVM();
 
     System.out.println();
@@ -982,7 +1034,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
 
 
   // the JSON object initialization
-  public int createFromJSON__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
+  @MJI
+  public static int createFromJSON__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
           MJIEnv env, int clsObjRef, int newObjClsRef, int jsonStringRef) {
     ThreadInfo ti = env.getThreadInfo();
     SystemState ss = env.getSystemState();
@@ -1028,7 +1081,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }
   }
   
-  public int readObjectFromFile__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
+  @MJI
+  public static int readObjectFromFile__Ljava_lang_Class_2Ljava_lang_String_2__Ljava_lang_Object_2(
           MJIEnv env, int clsObjRef, int newObjClsRef, int fileNameRef) {
     int typeNameRef = env.getReferenceField(newObjClsRef, "name");
     String typeName = env.getStringObject(typeNameRef);
@@ -1083,7 +1137,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     }    
   }
   
-  public void log__Ljava_lang_String_2ILjava_lang_String_2__V (MJIEnv env, int clsObjRef,
+  @MJI
+  public static void log__Ljava_lang_String_2ILjava_lang_String_2__V (MJIEnv env, int clsObjRef,
       int loggerIdRef, int logLevel, int msgRef){
     String loggerId = env.getStringObject(loggerIdRef);
     String msg = env.getStringObject(msgRef);
@@ -1092,7 +1147,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     log( logger, logLevel, msg);
   }
 
-  public void log__Ljava_lang_String_2ILjava_lang_String_2Ljava_lang_String_2__V (MJIEnv env, int clsObjRef,
+  @MJI
+  public static void log__Ljava_lang_String_2ILjava_lang_String_2Ljava_lang_String_2__V (MJIEnv env, int clsObjRef,
       int loggerIdRef, int logLevel, int arg1Ref, int arg2Ref){
     String loggerId = env.getStringObject(loggerIdRef);
     String msg = env.getStringObject(arg1Ref) + env.getStringObject(arg2Ref);
@@ -1101,8 +1157,8 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     log( logger, logLevel, msg);
   }
 
-  
-  public void log__Ljava_lang_String_2ILjava_lang_String_2_3Ljava_lang_Object_2__V (MJIEnv env, int clsObjRef,
+  @MJI
+  public static void log__Ljava_lang_String_2ILjava_lang_String_2_3Ljava_lang_Object_2__V (MJIEnv env, int clsObjRef,
       int loggerIdRef, int logLevel, int fmtRef, int argsRef){
     String loggerId = env.getStringObject(loggerIdRef);
     String fmt = env.getStringObject(fmtRef);
@@ -1125,5 +1181,4 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     
     log( logger, logLevel, msg);
   }
-
 }

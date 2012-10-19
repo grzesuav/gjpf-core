@@ -18,16 +18,20 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.annotation.MJI;
+
 /**
  * native peer for java.util.concurrent.atomic.AtomicLongArray
  */
 public class JPF_java_util_concurrent_atomic_AtomicLongArray extends NativePeer {
 
+  @MJI
   public long getNative__I__J (MJIEnv env, int objRef, int index) {
     int arrayRef = env.getReferenceField(objRef, "array");
     return env.getLongArrayElement(arrayRef, index);
   }
 
+  @MJI
   public boolean compareAndSetNative__IJJ__Z (MJIEnv env, int objRef, int index, long expect, long update) {
     int arrayRef = env.getReferenceField(objRef, "array");
     long value = env.getLongArrayElement(arrayRef, index);
