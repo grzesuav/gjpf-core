@@ -110,17 +110,6 @@ public class StaticArea extends Area<StaticElementInfo> implements Restorable<St
     }
   }
 
-  public void log () {
-    Debug.println(Debug.MESSAGE, "SA");
-
-    for (int i = 0; i < elements.size(); i++) {
-      ElementInfo ei = elements.get(i);
-      if (ei != null) {
-        ei.log();
-      }
-    }
-  }
-
   public void markRoots (Heap heap) {
     for (StaticElementInfo ei : this.elements()){
       ei.markStaticRoot(heap);

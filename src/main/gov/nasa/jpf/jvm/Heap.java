@@ -84,8 +84,9 @@ public interface Heap {
 
   boolean hasChanged();
   
-  void markUnchanged();
+  void setStored();
 
+  // <2do> this will go away
   void markChanged(int objref);
 
   void resetVolatiles();

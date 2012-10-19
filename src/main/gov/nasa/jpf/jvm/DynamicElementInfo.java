@@ -94,20 +94,6 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
     }
   }
 
-  protected void markAreaChanged(){
-    JVM.getVM().getHeap().markChanged(objRef);
-  }
-
-  public void setIntField(FieldInfo fi, int value) {
-    //checkFieldInfo(fi); // in case somebody caches and uses the wrong FieldInfo
-
-    if (!fi.isReference()) {
-      cloneFields().setIntValue( fi.getStorageOffset(), value);
-    } else {
-      throw new JPFException("reference field: " + fi.getName());
-    }
-  }
-
   public int getNumberOfFields () {
     return getClassInfo().getNumberOfInstanceFields();
   }
@@ -126,12 +112,6 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   }
   protected FieldInfo getDeclaredFieldInfo (String clsBase, String fname) {
     return ClassInfo.getResolvedClassInfo(clsBase).getDeclaredInstanceField(fname);
-  }
-
-  protected ElementInfo getElementInfo (ClassInfo ci) {
-    // DynamicElementInfo fields are always flattened, so there is no need to
-    // look up a Fields container
-    return this;
   }
 
   public ElementInfo getEnclosingElementInfo(){

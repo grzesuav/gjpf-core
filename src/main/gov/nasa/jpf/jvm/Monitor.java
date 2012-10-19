@@ -29,7 +29,7 @@ import java.util.Arrays;
  * object for synchronization purposes (locks and signals).
  * 
  */
-public class Monitor {
+public class Monitor implements Cloneable {
   
   static ThreadInfo[] emptySet = new ThreadInfo[0];
   
@@ -102,7 +102,17 @@ public class Monitor {
   }
 
   public Monitor clone () {
-    return new Monitor(lockingThread, lockCount, lockedThreads.clone());
+    try {
+      // no need to clone the empty set (which should be the majority of cases)
+      Monitor m = (Monitor) super.clone();
+      if (lockedThreads != emptySet) {
+        m.lockedThreads = lockedThreads.clone();
+      }
+      return m;
+      
+    } catch (CloneNotSupportedException cnsx) {
+      throw new InternalError("should not happen");
+    }
   }
   
   

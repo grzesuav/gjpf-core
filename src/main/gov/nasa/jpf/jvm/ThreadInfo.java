@@ -2580,7 +2580,7 @@ public class ThreadInfo
   
   void cleanupThreadGroup (int grpRef, int threadRef) {
     if (grpRef != MJIEnv.NULL) {
-      ElementInfo eiGrp = getElementInfo(grpRef);
+      ElementInfo eiGrp = getModifiableElementInfo(grpRef);
       int threadsRef = eiGrp.getReferenceField("threads");
       if (threadsRef != MJIEnv.NULL) {
         ElementInfo eiThreads = getElementInfo(threadsRef);
@@ -3181,8 +3181,11 @@ public class ThreadInfo
   protected int getGlobalUncaughtHandler(){
     ElementInfo ei = getElementInfo(objRef);
     ClassInfo ci = ei.getClassInfo();
+    FieldInfo fi = ci.getStaticField("defaultUncaughtExceptionHandler");
     
-    return ci.getStaticElementInfo().getReferenceField("defaultUncaughtExceptionHandler");
+    // the field is in our java.lang.Thread, but the concrete thread object class might differ
+    ClassInfo fci = fi.getClassInfo();
+    return fci.getStaticElementInfo().getReferenceField(fi);
   }
   
   protected Instruction callUncaughtHandler(ExceptionInfo xi, int handlerRef, String id){

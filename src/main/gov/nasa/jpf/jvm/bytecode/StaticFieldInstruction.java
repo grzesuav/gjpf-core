@@ -37,19 +37,31 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     super(fieldName, clsDescriptor, fieldDescriptor);
   }
 
-  public ClassInfo getClassInfo () {
+  /**
+   * on-demand initialize the ClassInfo and FieldInfo fields. Note that
+   * classinfo might not correspond with the static className, but can be one of
+   * the super classes. Rather than checking for this on each subsequent access,
+   * we get the right one that declares the field here
+   */
+  protected void initialize() {
+    ci = ClassInfo.getResolvedClassInfo(className);
+    fi = ci.getStaticField(fname);
+    ClassInfo fci = fi.getClassInfo();
+    if (fci != ci) {
+      ci = fci;
+    }
+  }
+
+  public ClassInfo getClassInfo() {
     if (ci == null) {
-      ci = ClassInfo.getResolvedClassInfo(className);
+      initialize();
     }
     return ci;
   }
 
-  public FieldInfo getFieldInfo () {
+  public FieldInfo getFieldInfo() {
     if (fi == null) {
-      ClassInfo ci = getClassInfo();
-      if (ci != null) {
-        fi = ci.getStaticField(fname);
-      }
+      initialize();
     }
     return fi;
   }

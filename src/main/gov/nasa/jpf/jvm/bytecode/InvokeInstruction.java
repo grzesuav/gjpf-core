@@ -341,6 +341,7 @@ public abstract class InvokeInstruction extends JVMInstruction {
         } else { // already locked by another thread, we have to block and therefore need a CG
           // the top half already did set the object shared
 
+          ei = ei.getModifiable();
           ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
 
           ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);

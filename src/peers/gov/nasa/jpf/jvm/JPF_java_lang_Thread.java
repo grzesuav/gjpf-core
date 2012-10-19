@@ -315,13 +315,12 @@ public class JPF_java_lang_Thread extends NativePeer {
     boolean isAlive = tiJoinee.isAlive();
 
     SystemState ss = env.getSystemState();
-    ElementInfo ei = env.getElementInfo(joineeRef); // the thread object to wait on
+    ElementInfo ei = env.getModifiableElementInfo(joineeRef); // the thread object to wait on
 
     if (tiJoiner.isInterrupted(true)){ // interrupt status is set, throw and bail
       
       // since we use lock-free joins, we need to remove ourselves from the
       // lock contender list
-      ei = ei.getModifiable();
       ei.setMonitorWithoutLocked(tiJoiner);
       
       // note that we have to throw even if the thread to join to is not alive anymore
