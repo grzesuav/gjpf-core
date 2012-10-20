@@ -55,7 +55,7 @@ public class ClassLoaderInfoTest extends TestJPF {
     //--- Tests classloaders
     assert cl1.resolvedClasses.size() == ClassInfo.getLoadedClasses().length;
     assert cl1.getGlobalId() != cl2.getGlobalId();
-    assert cl1.staticArea != cl2.staticArea;
+    assert cl1.statics != cl2.statics;
     assert cl1.parent == null;
     assert cl2.parent == null;
 

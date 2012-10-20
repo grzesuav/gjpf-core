@@ -205,8 +205,8 @@ public class SystemClassLoader extends ClassLoaderInfo {
       ClassInfo.logger.finer("registering class: ", ci.getName());
       startupQueue.add(ci);
 
-      if (!staticArea.containsClass(ci.getName())){
-        staticArea.addClass(ci, ti);
+      if (!statics.containsClass(ci.getName())){
+        statics.addClass(ci, ti);
       }
     }
   }

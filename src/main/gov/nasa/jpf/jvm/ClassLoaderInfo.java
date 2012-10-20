@@ -55,7 +55,7 @@ public class ClassLoaderInfo
   protected ClassInfo classInfo;
 
   // The area containing static fields and  classes
-  protected StaticArea staticArea;
+  protected Statics statics;
 
   protected boolean isSystemClassLoader = false;
 
@@ -86,7 +86,7 @@ public class ClassLoaderInfo
 
     ClMemento (ClassLoaderInfo cl){
       this.cl = cl;
-      saMemento = cl.staticArea.getMemento();
+      saMemento = cl.statics.getMemento();
       cpMemento = cl.cp.getMemento();
       classAssertionStatus = new HashMap<String, Boolean>(cl.classAssertionStatus);
       packageAssertionStatus = new HashMap<String, Boolean>(cl.packageAssertionStatus);
@@ -95,7 +95,7 @@ public class ClassLoaderInfo
     }
 
     public ClassLoaderInfo restore(ClassLoaderInfo ignored) {
-      saMemento.restore(cl.staticArea);
+      saMemento.restore(cl.statics);
       cpMemento.restore(null);
       cl.classAssertionStatus = this.classAssertionStatus;
       cl.packageAssertionStatus = this.packageAssertionStatus;
@@ -115,7 +115,7 @@ public class ClassLoaderInfo
     Class<?>[] argTypes = { Config.class, KernelState.class };
     Object[] args = { config, vm.getKernelState() };
 
-    this.staticArea = config.getEssentialInstance("vm.static.class", StaticArea.class, argTypes, args);
+    this.statics = config.getEssentialInstance("vm.statics.class", Statics.class, argTypes, args);
 
     vm.registerClassLoader(this);
 
@@ -596,7 +596,7 @@ public class ClassLoaderInfo
   }
 
   public StaticArea getStaticArea() {
-    return staticArea;
+    return statics;
   }
 
   public ClassPath getClassPath() {

@@ -38,10 +38,12 @@ public class ObjVectorHeap extends GenericHeapImpl {
 
   static class OVMemento extends GenericHeapImplMemento {
     IntTable.Snapshot<AllocationContext> ctxSnap;
+    ObjVector.Snapshot<ElementInfo> eiSnap;
     
     OVMemento(ObjVectorHeap heap) {
       super(heap);
       ctxSnap = heap.allocCounts.getSnapshot();
+      eiSnap = heap.elementInfos.getSnapshot();
     }
 
     @Override
@@ -50,16 +52,19 @@ public class ObjVectorHeap extends GenericHeapImpl {
       
       ObjVectorHeap heap = (ObjVectorHeap)inSitu;
       heap.allocCounts.restore(ctxSnap);
+      heap.elementInfos.restore(eiSnap);      
       return heap;
     }
   }
   
   // an OVMemento that transforms ElementInfos into ElementInfoMementos upon storage
   static class TransformingOVMemento extends OVMemento {
+    IntTable.Snapshot<AllocationContext> ctxSnap;
     ObjVector.MutatingSnapshot<ElementInfo,Memento<ElementInfo>> eiSnap;
 
     TransformingOVMemento (ObjVectorHeap heap){
       super(heap);
+      ctxSnap = heap.allocCounts.getSnapshot();
       eiSnap = heap.elementInfos.getSnapshot(ei2mei);      
     }
     
@@ -68,6 +73,7 @@ public class ObjVectorHeap extends GenericHeapImpl {
       super.restore(inSitu);
       
       ObjVectorHeap heap = (ObjVectorHeap)inSitu;
+      heap.allocCounts.restore(ctxSnap);
       heap.elementInfos.restore(eiSnap, mei2ei);
       return heap;
     }    
