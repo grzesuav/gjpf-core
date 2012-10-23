@@ -77,7 +77,7 @@ public class ClassLoaderInfo
   static class ClMemento implements Memento<ClassLoaderInfo> {
     // note that we don't have to store the invariants (gid, parent, isSystemClassLoader)
     ClassLoaderInfo cl;
-    Memento<StaticArea> saMemento;
+    Memento<Statics> staticsMemento;
     Memento<ClassPath> cpMemento;
     Map<String, Boolean> classAssertionStatus;
     Map<String, Boolean> packageAssertionStatus;
@@ -86,7 +86,7 @@ public class ClassLoaderInfo
 
     ClMemento (ClassLoaderInfo cl){
       this.cl = cl;
-      saMemento = cl.statics.getMemento();
+      staticsMemento = cl.statics.getMemento();
       cpMemento = cl.cp.getMemento();
       classAssertionStatus = new HashMap<String, Boolean>(cl.classAssertionStatus);
       packageAssertionStatus = new HashMap<String, Boolean>(cl.packageAssertionStatus);
@@ -95,7 +95,7 @@ public class ClassLoaderInfo
     }
 
     public ClassLoaderInfo restore(ClassLoaderInfo ignored) {
-      saMemento.restore(cl.statics);
+      staticsMemento.restore(cl.statics);
       cpMemento.restore(null);
       cl.classAssertionStatus = this.classAssertionStatus;
       cl.packageAssertionStatus = this.packageAssertionStatus;
@@ -207,11 +207,13 @@ public class ClassLoaderInfo
   public boolean isSystemClassLoader() {
     return isSystemClassLoader;
   }
-
+  
   public static ClassLoaderInfo getCurrentClassLoader() {
-    try {
-      ThreadInfo ti = ThreadInfo.getCurrentThread();
+    return getCurrentClassLoader( ThreadInfo.getCurrentThread());
+  }
 
+  public static ClassLoaderInfo getCurrentClassLoader(ThreadInfo ti) {
+    try {
       MethodInfo mi = ti.getTopFrame().getMethodInfo();
 
       ClassInfo ci = mi.getClassInfo();
@@ -360,6 +362,16 @@ public class ClassLoaderInfo
     ci.superClass = loadSuperClass(ci, ci.superClassName);
   }
 
+  
+  public ClassInfo getClassInfo (int id) {
+    ElementInfo ei = statics.get(id);
+    if (ei != null) {
+      return ei.getClassInfo();
+    } else {
+      return null;
+    }
+  }
+  
   /**
    * This method is only used in the case of non-systemClassLoaders. SystemClassLoader 
    * overrides this method.
@@ -496,7 +508,32 @@ public class ClassLoaderInfo
       return null;
     }
   }
+  
+  public ElementInfo getElementInfo (String typeName) {
+    ClassInfo ci = resolvedClasses.get(typeName);
+    if (ci != null) {
+      ClassLoaderInfo cli = ci.classLoader;
+      Statics st = cli.statics;
+      return st.get(ci.getId());
+      
+    } else {
+      return null; // not resolved
+    }
+  }
 
+  public ElementInfo getModifiableElementInfo (String typeName) {
+    ClassInfo ci = resolvedClasses.get(typeName);
+    if (ci != null) {
+      ClassLoaderInfo cli = ci.classLoader;
+      Statics st = cli.statics;
+      return st.getModifiable(ci.getId());
+      
+    } else {
+      return null; // not resolved
+    }
+  }
+
+  
   // Note: JVM.registerStartupClass() must be kept in sync
   public void registerClass (ThreadInfo ti, ClassInfo ci){
     // ti might be null if we are still in main thread creation
@@ -595,7 +632,7 @@ public class ClassLoaderInfo
     return null;
   }
 
-  public StaticArea getStaticArea() {
+  public Statics getStatics() {
     return statics;
   }
 

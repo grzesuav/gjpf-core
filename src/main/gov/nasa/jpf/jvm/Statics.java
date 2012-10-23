@@ -24,6 +24,11 @@ package gov.nasa.jpf.jvm;
  * ClassLoader namespace.
  * 
  * This container is only growing - we don't remove/recycle classes yet
+ * 
+ * Since Statics instances have to be obtained from their respective ClassLoaderInfo, and
+ * ClassLoaderInfos are the ones that map type names to ClassInfos, Statics does not include
+ * methods for name lookup. This allows implementors to use efficient lookup based on the numerical
+ * ClassInfo id (which is only unique within this Statics / ClassLoader namespace)
  */
 public interface Statics {
 
@@ -49,6 +54,12 @@ public interface Statics {
    * field values.  The 'id' argument has to be the result of a previous 'newClass()' call
    */
   ElementInfo getModifiable (int id);
+
+  
+  //--- housekeeping
+  
+  void markRoots (Heap heap);
+  void cleanUpDanglingReferences (Heap heap);
   
   
   //--- state management

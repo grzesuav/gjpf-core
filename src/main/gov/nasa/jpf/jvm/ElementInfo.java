@@ -485,7 +485,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   
   public void hash(HashData hd) {
-    hd.add(ci.getUniqueId());
+    hd.add(ci.getClassLoaderInfo().getGlobalId());
+    hd.add(ci.getId());
     fields.hash(hd);
     monitor.hash(hd);
     hd.add(attributes & ATTR_STORE_MASK);

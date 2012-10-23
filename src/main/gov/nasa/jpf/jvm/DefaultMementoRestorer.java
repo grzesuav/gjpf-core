@@ -38,7 +38,7 @@ public class DefaultMementoRestorer extends MementoRestorer {
     return ti.getMemento();
   }
 
-  public Memento<StaticArea> getMemento(StaticArea sa) {
+  public Memento<Statics> getMemento(ObjVectorStatics sa) {
     return sa.getMemento();
   }
 

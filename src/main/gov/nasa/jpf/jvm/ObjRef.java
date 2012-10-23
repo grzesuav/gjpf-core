@@ -29,12 +29,13 @@ package gov.nasa.jpf.jvm;
  */
 public class ObjRef {
   public static final ObjRef NULL = new ObjRef(-1);
-  int                        reference;
-  boolean                    isClass;
+  
+  int reference;
+  boolean isClass;
 
-  protected ObjRef (int r, boolean c) {
-    reference = r;
-    isClass = c;
+  protected ObjRef (int ref, boolean isCls) {
+    reference = ref;
+    isClass = isCls;
   }
 
   public ObjRef (int r) {

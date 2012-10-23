@@ -612,8 +612,8 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     
     //--- mark everything in our root set
     markPinDownList();
-    vm.getThreadList().markRoots(this); // mark thread stacks
-    vm.getStaticArea().markRoots(this); // mark objects referenced from StaticArea ElementInfos
+    vm.getThreadList().markRoots(this);      // mark thread stacks
+    vm.getClassLoaderList().markRoots(this); // mark all static references
 
     //--- trace all entries - this gets recursive
     markQueue.processQueue(elementInfoMarker);    

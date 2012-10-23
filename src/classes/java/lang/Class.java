@@ -63,9 +63,11 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
   private String name;
 
   private ClassLoader classLoader;
+  
   /**
-   * this is the StaticArea ref of the class we refer to
-   * (so that we don't have to convert to a Java String in the peer all the time)
+   * this is the (search global but class loader specific) id of the ClassInfo we
+   * refer to (so that we don't have to do name lookup all the time).
+   * Note this still requires the current ClassLoaderInfo in order to obtain the ClassInfo
    */
   private int cref;
 

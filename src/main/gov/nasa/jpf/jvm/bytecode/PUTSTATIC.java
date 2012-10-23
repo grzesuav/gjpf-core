@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
@@ -66,7 +67,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
       return ti.getPC();
     }
 
-    ElementInfo ei = ks.getCurrentStaticArea().get(clsInfo.getName());
+    ElementInfo ei = clsInfo.getModifiableElementInfo();
 
     if (isNewPorFieldBoundary(ti)) {
       if (createAndSetFieldCG(ss, ei, ti)) {

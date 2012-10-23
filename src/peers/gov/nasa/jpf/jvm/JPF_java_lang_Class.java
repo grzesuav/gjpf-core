@@ -134,19 +134,18 @@ public class JPF_java_lang_Class extends NativePeer {
   @MJI
   public int getPrimitiveClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
                                                             int rcls, int stringRef) {
-    String clsName = env.getStringObject(stringRef);
-
     // we don't really have to check for a valid class name here, since
     // this is a package default method that just gets called from
     // the clinit of box classes
     // note this does NOT return the box class (e.g. java.lang.Integer), which
     // is a normal, functional class, but a primitive class (e.g. 'int') that
     // is rather a strange beast (not even Object derived)
-    StaticArea        sa = env.getStaticArea(rcls);
-    StaticElementInfo ei = sa.get(clsName);
-    int               cref = ei.getClassObjectRef();
-    env.setBooleanField(cref, "isPrimitive", true);
-    return cref;
+    
+    ClassLoaderInfo scli = env.getSystemClassLoaderInfo(); // this is the one responsible for builtin classes
+    String primClsName = env.getStringObject(stringRef); // always initialized
+    
+    ClassInfo ci = scli.getResolvedClassInfo(primClsName);
+    return ci.getClassObjectRef();
   }
 
   @MJI

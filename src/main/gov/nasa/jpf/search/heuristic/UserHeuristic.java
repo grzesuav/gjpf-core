@@ -41,15 +41,12 @@ public class UserHeuristic extends SimplePriorityHeuristic {
 
   protected int computeHeuristicValue () {
     
-    // <2do> pcm - BAD, remove the VM nuts-and-bolts dependencies
+    // <2do> pcm - BAD, this is WAY too hardwired
     ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
-    StaticArea ss = systemLoader.getStaticArea();
-    ElementInfo   p = ss.get("Main");
-    // <2dp> - this is not initialized !
-
-    // this code is ugly because of the Reference interface
-    if (p != null) {
-      ElementInfo b = p.getObjectField("buffer");
+    ElementInfo ei = systemLoader.getElementInfo("Main");
+    if (ei != null) {
+      // this code is ugly because of the Reference interface
+      ElementInfo b = ei.getObjectField("buffer");
 
       if (b != null) {
         int current = b.getIntField("current");

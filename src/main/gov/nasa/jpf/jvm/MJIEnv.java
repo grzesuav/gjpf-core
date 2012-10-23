@@ -1364,11 +1364,10 @@ public class MJIEnv {
   }
 
   public ClassInfo getReferredClassInfo (int clsObjRef) {
-    int         idx = getIntField(clsObjRef, "cref");
-    StaticArea  sa = getStaticArea(clsObjRef);
-    ElementInfo sei = sa.get(idx);
-
-    return sei.getClassInfo();
+    int ciId = getIntField(clsObjRef, "cref");    
+    ClassLoaderInfo cli = ClassLoaderInfo.getCurrentClassLoader(ti);
+    
+    return cli.getClassInfo(ciId);
   }
 
   public ClassInfo getClassInfo (int objref) {
@@ -1468,6 +1467,12 @@ public class MJIEnv {
     return getVM().getClassLoader(gid);
   }
 
+  // <2do> that's not correct - it should return the current SystemClassLoader, NOT the startup SystemClassLoader
+  // (we can instantiate them explicitly)
+  public ClassLoaderInfo getSystemClassLoaderInfo() {
+    return vm.getSystemClassLoader();
+  }
+  
   public SystemState getSystemState () {
     return ti.getVM().getSystemState();
   }

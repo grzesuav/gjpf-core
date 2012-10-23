@@ -43,7 +43,7 @@ public interface MementoFactory {
 
   Memento<Heap> getMemento(ObjVectorHeap heap);
 
-  Memento<StaticArea> getMemento(StaticArea sa);
+  Memento<Statics> getMemento(Statics sa);
 
   Memento<ElementInfo> getMemento(DynamicElementInfo ei);
   Memento<ElementInfo> getMemento (StaticElementInfo ei);

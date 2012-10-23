@@ -36,7 +36,7 @@ public class ClassLoaderList implements Cloneable, Iterable<ClassLoaderInfo>, Re
       clMementos =  new Memento[len];
     
       for (int i=0; i<len; i++){
-        ClassLoaderInfo cl = classLoaders.get(0);
+        ClassLoaderInfo cl = classLoaders.get(i);
         Memento<ClassLoaderInfo> m = cl.getMemento();
         clMementos[i] = m;
       }
@@ -83,5 +83,13 @@ public class ClassLoaderList implements Cloneable, Iterable<ClassLoaderInfo>, Re
 
   public int size() {
     return classLoaders.size();
+  }
+  
+  public void markRoots (Heap heap) {
+    int len = classLoaders.size();
+    for (int i=0; i<len; i++) {
+      ClassLoaderInfo cli = classLoaders.get(i);
+      cli.getStatics().markRoots(heap);
+    }
   }
 }

@@ -1323,6 +1323,11 @@ public class JVM {
     return getKernelState().getThreadList();
   }
   
+  public ClassLoaderList getClassLoaderList() {
+    return getKernelState().getClassLoaderList();
+  }
+
+  
   /**
    * Bundles up the state of the system for export
    */
@@ -1436,10 +1441,6 @@ public class JVM {
 
   public <T extends ChoiceGenerator<?>> T getLastChoiceGeneratorOfType (Class<T> cgType){
     return ss.getLastChoiceGeneratorOfType(cgType);
-  }
-  
-  public StaticElementInfo getClassReference (String name) {
-    return ss.ks.getCurrentStaticArea().get(name);
   }
 
   public void print (String s) {
@@ -2000,12 +2001,6 @@ public class JVM {
     return ss.isAtomic();
   }
 
-  /**
-   * same for "loaded classes", but be advised it will probably go away at some point
-   */
-  public StaticArea getStaticArea () {
-    return ss.ks.getStaticArea();
-  }
 
   /**
    * Returns the StaticArea of the current ClassLoader

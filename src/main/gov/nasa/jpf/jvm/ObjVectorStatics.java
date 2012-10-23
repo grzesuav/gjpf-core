@@ -109,6 +109,17 @@ public class ObjVectorStatics implements Statics {
     return ei;
   }
 
+  //--- housekeeping
+  
+  void cleanUpDanglingReferences (Heap heap) {
+    ThreadInfo ti = ThreadInfo.getCurrentThread();
+    int tid = ti.getId();
+    boolean isThreadTermination = ti.isTerminated();
+    
+    for (ElementInfo e : elementInfos) {
+      e.cleanUp( heap, isThreadTermination, tid);
+    }
+  }
   
   //--- state restoration
   

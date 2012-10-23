@@ -140,7 +140,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /** The classloader that defined (directly loaded) this class */
   protected ClassLoaderInfo classLoader;
-
+  
   // various class attributes
   protected boolean      isClass = true;
   protected boolean      isWeakReference = false;
@@ -234,7 +234,17 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   /** from where the corresponding classfile was loaded (if this is not a builtin) */
   protected ClassFileContainer container;
 
-  /** A unique id associate with this class. */
+  
+  /**
+   *  a search global numeric id that is only unique within this ClassLoader namespace. Ids are
+   *  computed by the ClassLoaderInfo/Statics implementation during ClassInfo registration
+   */
+  protected int id;
+
+  /** A search global unique id associate with this class, which is comprised of the classLoader id
+   * and the (loader-specific) ClassInfo id.
+   * <2do> this is under review because it limits ClassLoader/Info id value ranges
+   */
   protected int uniqueId;
 
   /**
@@ -1287,15 +1297,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public static ClassInfo getAnnotationProxy (ClassInfo ciAnnotation){
-    StaticArea sa = JVM.getVM().getCurrentStaticArea();
     ThreadInfo ti = ThreadInfo.getCurrentThread();
 
     // make sure the annotationCls is initialized (no code there)
     if (!ciAnnotation.isInitialized()) {
-      if (!sa.containsClass(ciAnnotation.getName())) {
-        ciAnnotation.registerClass(ti);
-        ciAnnotation.setInitialized(); // no clinit
-      }
+      ciAnnotation.registerClass(ti);
+      ciAnnotation.setInitialized(); // no clinit
     }
 
     String url = computeProxyUrl(ciAnnotation);
@@ -1658,6 +1665,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return packageName;
   }
 
+  public int getId() {
+    return id;
+  }
+  
   /**
    * The uniqueId for ClassInfo is set to an integer where the two left bytes store the
    * global id of the classloader that defines the class and the right two bytes store 
@@ -1667,7 +1678,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * 2^16
    */
   public void setUniqueId() {
-    uniqueId = (classLoader.gid << 16) + sei.getObjectRef();
+    uniqueId = (classLoader.gid << 16) + id;
   }
 
   public int getUniqueId() {
@@ -2467,6 +2478,16 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return false;
   }
 
+  public ElementInfo getElementInfo() {
+    return classLoader.getStatics().get( id);
+  }
+
+  public ElementInfo getModifiableElementInfo() {
+    return classLoader.getStatics().getModifiable( id);
+  }
+
+  
+  /********** <2do> those are going away *******/
   protected void setStaticElementInfo (StaticElementInfo sei) {
     this.sei = sei;
   }
@@ -2474,6 +2495,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public StaticElementInfo getStaticElementInfo () {
     return sei;
   }
+  
 
   Fields createArrayFields (String type, int nElements, int typeSize, boolean isReferenceArray) {
     return fieldsFactory.createArrayFields( type, this,

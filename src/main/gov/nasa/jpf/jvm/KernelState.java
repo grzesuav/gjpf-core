@@ -131,6 +131,10 @@ public class KernelState implements Restorable<KernelState> {
     return threads;
   }
 
+  public ClassLoaderList getClassLoaderList() {
+    return classLoaders;
+  }
+  
   /**
    * interface for getting notified of changes to KernelState and everything
    * "below" it.
@@ -195,9 +199,11 @@ public class KernelState implements Restorable<KernelState> {
     cleanUpDanglingStaticReferences();
   }
 
+  
+  
   private void cleanUpDanglingStaticReferences() {
     for(ClassLoaderInfo cl: classLoaders) {
-      StaticArea sa = cl.getStaticArea();
+      Statics sa = cl.getStatics();
       sa.cleanUpDanglingReferences(heap);
     }
   }
