@@ -41,7 +41,7 @@ public interface MementoFactory {
 
   Memento<ClassPath> getMemento (ClassPath cp);
 
-  Memento<Heap> getMemento(ObjVectorHeap heap);
+  Memento<Heap> getMemento(Heap heap);
 
   Memento<Statics> getMemento(Statics sa);
 

@@ -23,9 +23,7 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.SparseClusterArray;
 
 /**
- * A specialized version of ElementInfo for use in the DynamicArea.
- * DynamicElementInfo objects represent heap objects
- * @see gov.nasa.jpf.jvm.ElementInfo
+ * A specialized version of ElementInfo that represents heap objects
  */
 public class DynamicElementInfo extends ElementInfo implements Restorable<ElementInfo> {
 

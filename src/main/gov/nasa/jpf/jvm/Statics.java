@@ -38,7 +38,7 @@ public interface Statics {
    * this returns the search global id which is unique within this ClassLoader namespace.
    * This id is also stored in the respective java.lang.Class object
    */
-  int newClass (ClassInfo ci, ThreadInfo ti);
+  StaticElementInfo newClass (ClassInfo ci, ThreadInfo ti);
   
   
   //--- accessors 
@@ -47,13 +47,13 @@ public interface Statics {
    * get an ElementInfo that might or might not be suitable for modification. This should only
    * be used when retrieving field values. The 'id' argument has to be the result of a previous 'newClass()' call
    */
-  ElementInfo get (int id);
+  StaticElementInfo get (int id);
   
   /**
    * get an ElementInfo that is guaranteed to be modifiable. This should be used when modifying
    * field values.  The 'id' argument has to be the result of a previous 'newClass()' call
    */
-  ElementInfo getModifiable (int id);
+  StaticElementInfo getModifiable (int id);
 
   
   //--- housekeeping
@@ -66,4 +66,8 @@ public interface Statics {
   
   Memento<Statics> getMemento(MementoFactory factory);
   Memento<Statics> getMemento();
+  
+  Iterable<StaticElementInfo> elementInfos();
+  
+  int size();
 }

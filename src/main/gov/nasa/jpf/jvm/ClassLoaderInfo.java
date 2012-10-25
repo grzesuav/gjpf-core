@@ -326,7 +326,7 @@ public class ClassLoaderInfo
   public ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
     ClassInfo ci = getResolvedClassInfo(clsName);
 
-    registerClass(ti, ci); // this is safe to call on already loaded classes
+    ci.registerClass(ti); // this is safe to call on already loaded classes
 
     if (!ci.isInitialized()) {
       if (ci.initializeClass(ti)) {
@@ -530,33 +530,6 @@ public class ClassLoaderInfo
       
     } else {
       return null; // not resolved
-    }
-  }
-
-  
-  // Note: JVM.registerStartupClass() must be kept in sync
-  public void registerClass (ThreadInfo ti, ClassInfo ci){
-    // ti might be null if we are still in main thread creation
-    StaticElementInfo sei = ci.sei;
-    ClassInfo superClass = ci.superClass;
-
-    if (sei == null){
-      // do this recursively for superclasses and interfaceNames
-      if (superClass != null) {
-        superClass.registerClass(ti);
-      }
-
-      for (ClassInfo ifc : ci.interfaces) {
-        ifc.registerClass(ti);
-      }
-
-      ClassInfo.logger.finer("registering class: ", ci.name);
-
-      // register ourself in the static area
-      StaticArea sa = ci.getClassLoaderInfo().getStaticArea();
-      sa.addClass(ci, ti);
-
-      ci.createClassObject(ti);
     }
   }
 

@@ -25,17 +25,8 @@ import gov.nasa.jpf.util.ObjectQueue;
 import gov.nasa.jpf.util.SparseClusterArray;
 
 /**
- * A specialized version of ElementInfo for use in the StaticArea.  The
- * StaticElementInfo is only used to store "static class fields" in the
- * StaticArea.  It specifically knows about the relationship amongst
- * classes, and will recursively lookup a data member if needed.
- * 
- * Note that refTid is not set in the constructor, but in the first
- * checkUpdatedSharedness() call, which always returns true (i.e. breaks)
- * on the first invocation. This is to handle the case of non-deterministic
- * class loading in symmetric threads - if each of them terminates before
- * the other hits the contended static field ref, none would ever consider this
- * to be a shared field and miss the race
+ * A specialized version of ElementInfo that is used for static fields. Each
+ * registered ClassInfo instance has its own StaticElementInfo instance
  */
 public final class StaticElementInfo extends ElementInfo implements Restorable<ElementInfo> {
 
@@ -172,9 +163,6 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     }
   }
 
-  protected void markAreaChanged(){
-    ci.getClassLoaderInfo().getStaticArea().markChanged(objRef);
-  }
 
   /**
   public boolean isShared() {
@@ -227,14 +215,9 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   }
     
   /**
-   * mark all our fields as static (shared) reachable. No need to set our own
-   * attributes, since we reside in the StaticArea
-   * @aspects: gc
+   * gc mark all objects stored in static reference fields
    */
   void markStaticRoot (Heap heap) {
-    // WATCH IT! this overrides the heap object behavior in our super class.
-    // See ElementInfo.markStaticRoot() for details
-    
     ClassInfo ci = getClassInfo();
     int n = ci.getNumberOfStaticFields();
     

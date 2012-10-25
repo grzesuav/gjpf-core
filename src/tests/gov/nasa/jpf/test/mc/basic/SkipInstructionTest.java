@@ -128,7 +128,7 @@ public class SkipInstructionTest extends TestJPF {
             int choice = cg.getNextChoice();
             Instruction lastInsn = mi.getLastInsn();
             assert lastInsn instanceof IRETURN : "last instruction not an IRETURN ";
-            StackFrame frame = ti.getClonedTopFrame(); // we are modifying it
+            StackFrame frame = ti.getModifiableTopFrame(); // we are modifying it
             System.out.println("listener is skipping method body of " + mi + " returning " + choice);
             frame.push(choice);
             ti.setNextPC(lastInsn);

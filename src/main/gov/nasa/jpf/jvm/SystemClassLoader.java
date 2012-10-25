@@ -192,28 +192,16 @@ public class SystemClassLoader extends ClassLoaderInfo {
     updateCachedClassInfos(ci);
 
     if (!startupQueue.contains(ci)) {
-      if (ci.getSuperClassName() != null) {
-        ClassInfo sci = getResolvedClassInfo(ci.getSuperClassName());
-        registerStartupClass(sci, ti);
-      }
-      
-      for (String ifcName : ci.getAllInterfaces()) {
-        ClassInfo ici = getResolvedClassInfo(ifcName);
-        registerStartupClass(ici, ti);
-      }
-
-      ClassInfo.logger.finer("registering class: ", ci.getName());
       startupQueue.add(ci);
-
-      if (!statics.containsClass(ci.getName())){
-        statics.addClass(ci, ti);
-      }
+      
+      // we can't create class objects until all the startup classes are registered and the  main thread is running
+      ci.registerClass(ti, false);
     }
   }
 
   protected void createStartupClassObjects (ThreadInfo ti){
     for (ClassInfo ci : startupQueue) {
-      ci.createClassObject(ti);
+      ci.createAndLinkClassObject(ti);
     }
   }
 

@@ -33,8 +33,8 @@ import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ReferenceProcessor;
 import gov.nasa.jpf.jvm.ReferenceQueue;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.StaticArea;
 import gov.nasa.jpf.jvm.StaticElementInfo;
+import gov.nasa.jpf.jvm.Statics;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.ThreadList;
 import gov.nasa.jpf.jvm.Instruction;
@@ -43,6 +43,7 @@ import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
 
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -56,13 +57,12 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   // indexed by method globalId
   final ObjVector<FramePolicy> methodCache    = new ObjVector<FramePolicy>();
 
-  // the Fields slots reference masks, indexed by class uniqueId
-  final ObjVector<FinalBitSet> instanceRefMasks = new ObjVector<FinalBitSet>();
-  final ObjVector<FinalBitSet> staticRefMasks   = new ObjVector<FinalBitSet>();
+  //--- search global bitmask caches
+  final HashMap<ClassInfo,FinalBitSet> instanceRefMasks = new HashMap<ClassInfo,FinalBitSet>();
+  final HashMap<ClassInfo,FinalBitSet> staticRefMasks   = new HashMap<ClassInfo,FinalBitSet>();
 
-  // the Fields slots filter masks, indexed by class uniqueid
-  final ObjVector<FinalBitSet> instanceFilterMasks = new ObjVector<FinalBitSet>();
-  final ObjVector<FinalBitSet> staticFilterMasks   = new ObjVector<FinalBitSet>();
+  final HashMap<ClassInfo,FinalBitSet> instanceFilterMasks = new HashMap<ClassInfo,FinalBitSet>();
+  final HashMap<ClassInfo,FinalBitSet> staticFilterMasks   = new HashMap<ClassInfo,FinalBitSet>();
 
 
   protected FilterConfiguration filter;
@@ -101,8 +101,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   }
 
   protected FinalBitSet getInstanceRefMask(ClassInfo ci) {
-    int cid = ci.getUniqueId();
-    FinalBitSet v = instanceRefMasks.get(cid);
+    FinalBitSet v = instanceRefMasks.get(ci);
     if (v == null) {
       BitArray b = new BitArray(ci.getInstanceDataSize());
       for (FieldInfo fi : filter.getMatchedInstanceFields(ci)) {
@@ -112,14 +111,13 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
       }
       v = FinalBitSet.create(b);
       if (v == null) throw new IllegalStateException("Null BitArray returned.");
-      instanceRefMasks.set(cid, v);
+      instanceRefMasks.put(ci, v);
     }
     return v;
   }
 
   protected FinalBitSet getStaticRefMask(ClassInfo ci) {
-    int cid = ci.getUniqueId();
-    FinalBitSet v = staticRefMasks.get(cid);
+    FinalBitSet v = staticRefMasks.get(ci);
     if (v == null) {
       BitArray b = new BitArray(ci.getStaticDataSize());
       for (FieldInfo fi : filter.getMatchedStaticFields(ci)) {
@@ -129,14 +127,13 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
       }
       v = FinalBitSet.create(b);
       if (v == null) throw new IllegalStateException("Null BitArray returned.");
-      staticRefMasks.set(cid, v);
+      staticRefMasks.put(ci, v);
     }
     return v;
   }
 
   protected FinalBitSet getInstanceFilterMask(ClassInfo ci) {
-    int cid = ci.getUniqueId();
-    FinalBitSet v = instanceFilterMasks.get(cid);
+    FinalBitSet v = instanceFilterMasks.get(ci);
     if (v == null) {
       BitArray b = new BitArray(ci.getInstanceDataSize());
       b.setAll();
@@ -149,14 +146,13 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
       }
       v = FinalBitSet.create(b);
       if (v == null) throw new IllegalStateException("Null BitArray returned.");
-      instanceFilterMasks.set(cid, v);
+      instanceFilterMasks.put(ci, v);
     }
     return v;
   }
 
   protected FinalBitSet getStaticFilterMask(ClassInfo ci) {
-    int cid = ci.getUniqueId();
-    FinalBitSet v = staticFilterMasks.get(cid);
+    FinalBitSet v = staticFilterMasks.get(ci);
     if (v == null) {
       BitArray b = new BitArray(ci.getStaticDataSize());
       b.setAll();
@@ -169,7 +165,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
       }
       v = FinalBitSet.create(b);
       if (v == null) throw new IllegalStateException("Null BitArray returned.");
-      staticFilterMasks.set(cid, v);
+      staticFilterMasks.put(ci, v);
     }
     return v;
   }
@@ -406,15 +402,15 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
 
     for (ClassLoaderInfo cl : ks.classLoaders) {
       if(cl.isAlive()) {
-        serializeStaticArea(cl.getStaticArea());
+        serializeStatics(cl.getStatics());
       }
     }
   }
 
-  protected void serializeStaticArea(StaticArea sa){
-    buf.add(sa.getLength());
+  protected void serializeStatics(Statics statics){
+    buf.add(statics.size());
 
-    for (StaticElementInfo sei : sa) {
+    for (StaticElementInfo sei : statics.elementInfos()) {
       serializeClass(sei);
     }
   }

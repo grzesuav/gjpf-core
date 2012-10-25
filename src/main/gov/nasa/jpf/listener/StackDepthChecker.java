@@ -58,7 +58,7 @@ public class StackDepthChecker extends ListenerAdapter {
       // therefore a bit harder since we have to set the next pc explicitly
 
       Instruction nextPc = ti.createAndThrowException("java.lang.StackOverflowError");
-      StackFrame topFrame = ti.getClonedTopFrame();
+      StackFrame topFrame = ti.getModifiableTopFrame();
       topFrame.setPC(nextPc);
     }
   }

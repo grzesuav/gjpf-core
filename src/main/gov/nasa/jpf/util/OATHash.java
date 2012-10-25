@@ -67,6 +67,12 @@ public class OATHash {
     return hashFinalize(h);
   }
   
+  public static int hash (long key) {
+    int h = hashMixin(0, (int)key);
+    h = hashMixin( h, (int)(key>>32));
+    return hashFinalize(h);
+  }
+  
   public static int hash (int key1, int key2, int key3) {
     int h = hashMixin( 0, key1);
     h = hashMixin( h, key2);

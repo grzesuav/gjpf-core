@@ -2001,14 +2001,6 @@ public class JVM {
     return ss.isAtomic();
   }
 
-
-  /**
-   * Returns the StaticArea of the current ClassLoader
-   */
-  public StaticArea getCurrentStaticArea() {
-    return ss.ks.getCurrentStaticArea();
-  }
-
   /**
    * Returns the ClassLoader with the given globalId
    */

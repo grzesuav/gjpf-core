@@ -47,10 +47,11 @@
 
     <mkdir dir="build"/>               <!-- the build root -->
     
-    <!-- the things that have to be in the classpath of whatever runs Ant -->
+    <!-- the things that have to be in the classpath of whatever runs Ant
     <available property="have_javac" classname="com.sun.tools.javac.Main"/>
     <fail unless="have_javac">no javac was found __or__ check http://babelfish.arc.nasa.gov/trac/jpf/wiki/install/build for possible solutions</fail>
-    
+    -->
+
     <available file="src/main"        type="dir" property="have_main"/>
     <available file="src/annotations" type="dir" property="have_annotations"/>
     <available file="src/peers"       type="dir" property="have_peers"/>

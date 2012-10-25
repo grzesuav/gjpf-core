@@ -22,7 +22,6 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.StaticArea;
 
 
 /**

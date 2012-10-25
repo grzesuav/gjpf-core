@@ -20,47 +20,31 @@ package gov.nasa.jpf.jvm;
 
 
 /**
- * helper class to store reference objects
- * <2do> check how 'isClass' correlates with ClassRef
- * 
- * <2do> - I'm a bit suspicious of that this is just a workaround for the
- * Static/DynamicElementInfo thing, and would go away if we get rid of
- * the statics
+ * helper class to store object references in a context where Integer is used for boxed 'int' values
  */
 public class ObjRef {
   public static final ObjRef NULL = new ObjRef(-1);
   
   int reference;
-  boolean isClass;
 
-  protected ObjRef (int ref, boolean isCls) {
+  protected ObjRef (int ref) {
     reference = ref;
-    isClass = isCls;
-  }
-
-  public ObjRef (int r) {
-    this(r, false);
-  }
-
-  public boolean isClass () {
-    return isClass;
   }
 
   public boolean isNull () {
-    return reference == -1;
+    return reference == MJIEnv.NULL;
   }
 
   public int getReference () {
     return reference;
   }
 
-  public Object clone () {
-    return new ObjRef(reference);
-  }
-
   public boolean equals (Object o) {
-    return (reference == ((ObjRef) o).reference) && 
-           (isClass == ((ObjRef) o).isClass);
+    if (o.getClass() == ObjRef.class) {
+      ObjRef other = (ObjRef)o;
+      return reference == other.reference;
+    }
+    return false;
   }
 
   public int hashCode () {
@@ -68,12 +52,6 @@ public class ObjRef {
   }
 
   public String toString () {
-    JVM vm = JVM.getVM();
-
-    if (isClass) { // StaticElementInfo
-      return vm.getCurrentStaticArea().get(reference).toString(); // this is SO ugly, remove this
-    } else {       // DynamicElementInfo
-      return (vm.getHeap().get(reference)).toString();
-    }
+    return "ObjRef(" + reference + ')';
   }
 }

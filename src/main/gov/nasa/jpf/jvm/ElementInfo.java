@@ -319,7 +319,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * phase1 is completed. ElementInfo is not an ideal place for this method, as
    * it has to access some innards of both ClassInfo (FieldInfo container) and
    * Fields. But on the other hand, we want to keep the whole heap traversal
-   * business as much centralized in ElementInfo and DynamicArea as possible
+   * business as much centralized in ElementInfo and Heap implementors
    */
   void markRecursive(Heap heap) {
     int i, n;
@@ -478,11 +478,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
     return false;
   }
-
-  protected void resurrect (Area<?> area, int index) {
-    setObjectRef(index);
-  }
-
   
   public void hash(HashData hd) {
     hd.add(ci.getClassLoaderInfo().getGlobalId());
@@ -1550,8 +1545,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       // here we can update ThreadInfo lock object info (so that we don't
       // have to store it separately)
 
-      // NOTE - the threads need to be restored *before* the Areas, or this is
-      // going to choke
+      // NOTE - the threads need to be restored *before* the ElementInfo containers,
+      // or this is going to choke
 
       // note that we add only once, i.e. rely on the monitor lockCount to
       // determine when to remove an object from our lock set

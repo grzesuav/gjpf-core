@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.ObjVector;
+import gov.nasa.jpf.util.Processor;
 
 /**
  * Statics implementation that uses a simple ObjVector as the underlying container.
@@ -30,7 +31,7 @@ import gov.nasa.jpf.util.ObjVector;
 public class ObjVectorStatics implements Statics {
 
   static class OVMemento implements Memento<Statics> {
-    ObjVector.Snapshot<ElementInfo> eiSnap;
+    ObjVector.Snapshot<StaticElementInfo> eiSnap;
     
     OVMemento (ObjVectorStatics statics){
       eiSnap = statics.elementInfos.getSnapshot();
@@ -44,7 +45,7 @@ public class ObjVectorStatics implements Statics {
     }
   }
   
-  protected ObjVector<ElementInfo> elementInfos;
+  protected ObjVector<StaticElementInfo> elementInfos;
   
   // search global class ids (for this ClassLoader only)
   // NOTE this is per instance so that each one is as dense as possible, but since
@@ -80,28 +81,28 @@ public class ObjVectorStatics implements Statics {
   }
   
   @Override
-  public int newClass(ClassInfo ci, ThreadInfo ti) {
+  public StaticElementInfo newClass(ClassInfo ci, ThreadInfo ti) {
     int id = computeId( ci);
     
     StaticElementInfo ei = createStaticElementInfo( ci, ti);
     elementInfos.set(id, ei);
     
-    return id;
+    return ei;
   }
 
   
   //--- accessors
   
   @Override
-  public ElementInfo get(int id) {
+  public StaticElementInfo get(int id) {
     return elementInfos.get(id);
   }
 
   @Override
-  public ElementInfo getModifiable(int id) {
-    ElementInfo ei = elementInfos.get(id);
+  public StaticElementInfo getModifiable(int id) {
+    StaticElementInfo ei = elementInfos.get(id);
     if (ei.isFrozen()) {
-      ei = ei.deepClone();
+      ei = (StaticElementInfo)ei.deepClone();
       ei.defreeze();
       elementInfos.set(id, ei);
     }
@@ -111,7 +112,8 @@ public class ObjVectorStatics implements Statics {
 
   //--- housekeeping
   
-  void cleanUpDanglingReferences (Heap heap) {
+  @Override
+  public void cleanUpDanglingReferences (Heap heap) {
     ThreadInfo ti = ThreadInfo.getCurrentThread();
     int tid = ti.getId();
     boolean isThreadTermination = ti.isTerminated();
@@ -125,11 +127,28 @@ public class ObjVectorStatics implements Statics {
   
   @Override
   public Memento<Statics> getMemento(MementoFactory factory) {
-    return null;
+    return factory.getMemento(this);
   }
 
   @Override
   public Memento<Statics> getMemento() {
-    return null;
+    return new OVMemento(this);
+  }
+  
+  @Override
+  public void markRoots(Heap heap) {
+    for (StaticElementInfo ei : elementInfos.elements()){
+      ei.markStaticRoot(heap);
+    }
+  }
+
+  @Override
+  public Iterable<StaticElementInfo> elementInfos() {
+    return elementInfos.elements();
+  }
+
+  @Override
+  public int size() {
+    return elementInfos.length();
   }
 }

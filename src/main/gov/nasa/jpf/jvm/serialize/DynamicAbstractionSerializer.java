@@ -31,8 +31,8 @@ import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ReferenceArrayFields;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.StaticArea;
 import gov.nasa.jpf.jvm.StaticElementInfo;
+import gov.nasa.jpf.jvm.Statics;
 import gov.nasa.jpf.util.FieldSpec;
 import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.JPFLogger;
@@ -351,16 +351,9 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
 
     for (ClassLoaderInfo cl : ks.classLoaders) {
       if(cl.isAlive()) {
-        serializeStaticArea(cl.getStaticArea());
+        serializeStatics(cl.getStatics());
       }
     }
   }
 
-  protected void serializeStaticArea(StaticArea sa){
-    // buf.add(sa.getLength());
-
-    for (StaticElementInfo sei : sa) {
-      serializeClass(sei);
-    }
-  }
 }

@@ -1351,12 +1351,12 @@ public class MJIEnv {
   }
 
   ElementInfo getClassElementInfo (int clsObjRef) {
-    ElementInfo ei = heap.get(clsObjRef);
-    int         cref = ei.getIntField("cref");
-
-    ElementInfo cei = getStaticArea(clsObjRef).get(cref);
-
-    return cei;
+    ClassInfo ci = getReferredClassInfo( clsObjRef);
+    if (ci != null) {
+      return ci.getElementInfo();
+    }
+    
+    return null;
   }
 
   ClassInfo getClassInfo () {
@@ -1442,16 +1442,6 @@ public class MJIEnv {
 
   public Instruction getInstruction () {
     return ti.getPC();
-  }
-
-  /**
-   * It returns the StaticArea holding the given class
-   */
-  StaticArea getStaticArea (int clsObjRef) {
-    ElementInfo ei = getElementInfo(clsObjRef);
-    int clObjRef = ei.getReferenceField("classLoader");
-    ClassLoaderInfo cl = getClassLoaderInfo(clObjRef);
-    return cl.getStaticArea();
   }
 
   /**

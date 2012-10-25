@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ObjRef;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -87,6 +88,8 @@ public class INVOKECG extends JVMInstruction {
   }
 
   void pushArguments (ThreadInfo ti, Object[] args, Object[] attrs){
+    StackFrame frame = ti.getModifiableTopFrame();
+    
     if (args != null){
       for (int i=0; i<args.length; i++){
         Object a = args[i];
@@ -94,31 +97,31 @@ public class INVOKECG extends JVMInstruction {
         
         if (a != null){
           if (a instanceof ObjRef){
-            ti.push(((ObjRef)a).getReference(), true);
+            frame.pushRef(((ObjRef)a).getReference());
           } else if (a instanceof Boolean){
-            ti.push((Boolean)a ? 1 : 0, false);
+            frame.push((Boolean)a ? 1 : 0, false);
           } else if (a instanceof Integer){
-            ti.push((Integer)a, false);
+            frame.push((Integer)a, false);
           } else if (a instanceof Long){
-            ti.longPush((Long)a);
+            frame.longPush((Long)a);
             isLong = true;
           } else if (a instanceof Double){
-            ti.longPush(Types.doubleToLong((Double)a));
+            frame.longPush(Types.doubleToLong((Double)a));
             isLong = true;
           } else if (a instanceof Byte){
-            ti.push((Byte)a, false);
+            frame.push((Byte)a, false);
           } else if (a instanceof Short){
-            ti.push((Short)a, false);
+            frame.push((Short)a, false);
           } else if (a instanceof Float){
-            ti.push(Types.floatToInt((Float)a), false);
+            frame.push(Types.floatToInt((Float)a), false);
           }
         }
 
         if (attrs != null && attrs[i] != null){
           if (isLong){
-            ti.setLongOperandAttrNoClone(attrs[i]);
+            frame.setLongOperandAttr(attrs[i]);
           } else {
-            ti.setOperandAttrNoClone(attrs[i]);
+            frame.setOperandAttr(attrs[i]);
           }
         }
       }

@@ -100,7 +100,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     * Map from globalIds to instances of ClassInfos. This map includes all the ClassInfos
     * defined by any classloaders.
     */
-   protected static Map<Integer,ClassInfo> classes = new HashMap<Integer, ClassInfo>();
+   protected static Map<Long,ClassInfo> classes = new HashMap<Long, ClassInfo>();
 
   /**
    * optionally used to determine atomic methods of a class (during class loading)
@@ -239,13 +239,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    *  a search global numeric id that is only unique within this ClassLoader namespace. Ids are
    *  computed by the ClassLoaderInfo/Statics implementation during ClassInfo registration
    */
-  protected int id;
+  protected int  id = -1;
 
   /** A search global unique id associate with this class, which is comprised of the classLoader id
-   * and the (loader-specific) ClassInfo id.
-   * <2do> this is under review because it limits ClassLoader/Info id value ranges
+   * and the (loader-specific) ClassInfo id. This is just a quick way to do search global checks for equality
    */
-  protected int uniqueId;
+  protected long uniqueId = -1;
 
   /**
    * this is the object we use to execute methods in the underlying JVM
@@ -887,6 +886,21 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     JVM.getVM().notifyClassLoaded(this);
   }
 
+  @Override
+  public int hashCode() {
+    return OATHash.hash(uniqueId);
+  }
+  
+  @Override
+  public boolean equals (Object o) {
+    if (o instanceof ClassInfo) {
+      ClassInfo other = (ClassInfo)o;
+      return ((id == other.id) && (classLoader.getGlobalId() == other.classLoader.getGlobalId()));
+    }
+    
+    return false;
+  }
+  
   private static void addOriginalClass(ClassInfo ci) {
     if(ci.classFileUrl != null) {
       loadedClasses.put(ci.classFileUrl, ci);
@@ -1163,7 +1177,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * ClassInfo constructor.
    *
    * Returned ClassInfo objects are not registered yet, i.e. still have to
-   * be added to the StaticArea, and don't have associated java.lang.Class
+   * be added to the ClassLoaderInfo's statics, and don't have associated java.lang.Class
    * objects until registerClass(ti) is called.
    *
    * Before any field or method access, the class also has to be initialized,
@@ -1668,20 +1682,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public int getId() {
     return id;
   }
-  
-  /**
-   * The uniqueId for ClassInfo is set to an integer where the two left bytes store the
-   * global id of the classloader that defines the class and the right two bytes store 
-   * the ref that refers to the class object in the JPF heap
-   * 
-   * @limit This requires that both the classloader.gid, and sei index should not exceed 
-   * 2^16
-   */
-  public void setUniqueId() {
-    uniqueId = (classLoader.gid << 16) + id;
-  }
 
-  public int getUniqueId() {
+  public long getUniqueId() {
     return uniqueId;
   }
 
@@ -2317,7 +2319,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
     ClassInfo ci = systemLoader.getResolvedClassInfo(clsName);
 
-    systemLoader.registerClass(ti, ci); // this is safe to call on already loaded classes
+    ci.registerClass(ti); // this is safe to call on already loaded classes
 
     if (!ci.isInitialized()) {
       if (ci.initializeClass(ti)) {
@@ -2338,17 +2340,49 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return cl.getInitializedClassInfo(clsName, ti);
   }
 
-  // Note: JVM.registerStartupClass() must be kept in sync
-  public void registerClass (ThreadInfo ti){
-    classLoader.registerClass(ti, this);
+  public void registerClass (ThreadInfo ti){  
+    registerClass(ti, true);
+  }
+    
+  /**
+   * this registers a ClassInfo in the corresponding ClassLoader statics so that we can cross-link from
+   * SUT code and access static fields.
+   *  
+   * Note: JVM.registerStartupClass() must be kept in sync
+   */
+  void registerClass (ThreadInfo ti, boolean createClassObject){
+    if (!isRegistered()) {
+      // do this recursively for superclasses and interfaceNames
+      // respective classes might be defined by another classloader, so we have to call their ClassInfo.registerClass()
+      
+      if (superClass != null) {
+        superClass.registerClass(ti);
+      }
+
+      for (ClassInfo ifc : interfaces) {
+        ifc.registerClass(ti);
+      }
+    }
+    
+    ClassInfo.logger.finer("registering class: ", name);
+    
+    Statics statics = classLoader.getStatics();
+    StaticElementInfo sei = statics.newClass(this, ti);
+    
+    id = sei.getObjectRef();  // kind of a misnomer, it's really an id
+    uniqueId = (classLoader.getGlobalId() << 32) | id;
+    classes.put(uniqueId, this);
+    
+    if (createClassObject) {
+      createAndLinkClassObject( ti);
+    }
   }
 
   public boolean isRegistered () {
-    return (sei != null);
+    return (id != -1);
   }
 
-  // note this requires 'sei' to be already set
-  ElementInfo createClassObject (ThreadInfo ti){
+  ElementInfo createAndLinkClassObject (ThreadInfo ti){
     Heap heap = JVM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
     int anchor = name.hashCode(); // 2do - this should also take the ClassLoader ref into account
@@ -2359,18 +2393,16 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     int clsNameRef = heap.newSystemString(name, ti, clsObjRef);
     ei.setReferenceField("name", clsNameRef);
 
-    // link the class object to the StaticElementInfo
-    ei.setIntField("cref", sei.getObjectRef());
+    // link the SUT class object to this ClassInfo
+    ei.setIntField("cref", id);
 
-    // link the class object to the classloader and its StaticArea 
+    // link the SUT class object to the classloader 
     ei.setReferenceField("classLoader", classLoader.getClassLoaderObjectRef());
 
-    // link the StaticElementInfo to the class object
+    // link the statics entry to the SUT class object
+    StaticElementInfo sei = classLoader.getStatics().getModifiable(id);
     sei.setClassObjectRef(ei.getObjectRef());
-
-    setUniqueId();
-    classes.put(uniqueId, this);
-
+    
     return ei;
   }
 
@@ -2503,8 +2535,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   /**
-   * Creates the fields for a class.  This gets called by the StaticArea
-   * when a class is loaded.
+   * Creates the fields for a class.  This gets called during registration of a ClassInfo
    */
   Fields createStaticFields () {
     return fieldsFactory.createStaticFields(this);

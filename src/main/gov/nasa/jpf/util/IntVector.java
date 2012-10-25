@@ -89,6 +89,16 @@ public final class IntVector implements Comparable<IntVector>, Cloneable {
     return true;
   }
 
+  public void add (long x) {
+    if (size+2 > data.length) {
+      ensureCapacity(size+2);
+    }
+    data[size] = (int)(x >> 32);
+    size++;
+    data[size] = (int)x;
+    size++;    
+  }
+  
   public void add(int x1, int x2) {
     if (size+2 > data.length) {
       ensureCapacity(size+2);

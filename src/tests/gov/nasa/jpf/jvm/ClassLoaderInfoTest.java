@@ -93,8 +93,8 @@ public class ClassLoaderInfoTest extends TestJPF {
 
     ThreadInfo ti = vm.getCurrentThread();
     // classes need to be registered before retrieving the uniqueIds
-    cl1.registerClass(ti, ci1);
-    cl2.registerClass(ti, ci2);
+    ci1.registerClass(ti);
+    ci2.registerClass(ti);
     assert ci1.getUniqueId() != ci2.getUniqueId();  
     // cl2 loaded java.util.ArrayList earlier than cl2, therefore 
     // ClassInfo.loadedClasses must contain ci2 and not ci1

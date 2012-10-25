@@ -88,18 +88,6 @@ public class KernelState implements Restorable<KernelState> {
     return new KsMemento(this);
   }
 
-  public StaticArea getStaticArea() {
-    ClassLoaderInfo loader = ClassLoaderInfo.getCurrentClassLoader();
-    return loader.getStaticArea();
-  }
-
-  /**
-   * Returns the StaticArea of the current ClassLoader
-   */
-  public StaticArea getCurrentStaticArea() {
-    return ClassLoaderInfo.getCurrentClassLoader().getStaticArea();
-  }
-
   /**
    * Adds the given loader to the list of existing class loaders. 
    */
@@ -207,23 +195,4 @@ public class KernelState implements Restorable<KernelState> {
       sa.cleanUpDanglingReferences(heap);
     }
   }
-
-//  public void hash (HashData hd) {
-//    heap.hash(hd);
-//    statics.hash(hd);
-//    threads.hash(hd);
-//  }
-
-//  public void hash (HashData hd) {
-//    heap.hash(hd);
-//    hashStatics(hd);
-//    threads.hash(hd);
-//  }
-//
-//  private void hashStatics (HashData hd) {
-//    for(ClassLoaderInfo cl: classLoaders) {
-//      StaticArea sa = cl.getStaticArea();
-//      sa.hash(hd);
-//    }
-//  }
 }
