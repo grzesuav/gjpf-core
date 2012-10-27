@@ -55,6 +55,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
   protected ClassInfo refClassInfo;
   protected ClassInfo enumClassInfo;
   protected ClassInfo threadClassInfo;
+  protected ClassInfo charArrayClassInfo;
 
   protected SystemClassLoader (JVM vm) {
     super(vm, MJIEnv.NULL, null, null);
@@ -174,31 +175,17 @@ public class SystemClassLoader extends ClassLoaderInfo {
     for (String clsName : startupClasses) {
       ClassInfo ci = getResolvedClassInfo(clsName);
       if (ci != null) {
-        registerStartupClass(ci, ti);
+        ci.registerStartupClass( ti, startupQueue);
       } else {
         JVM.log.severe("can't find startup class ", clsName);
       }
-    }
+    }    
   }
 
   protected ArrayList<ClassInfo> getStartupQueue() {
     return startupQueue;
   }
   
-  // note this has to be in order - we don't want to init a derived class before
-  // it's parent is initialized
-  // This code must be kept in sync with ClassInfo.registerClass()
-  void registerStartupClass (ClassInfo ci, ThreadInfo ti) {
-    updateCachedClassInfos(ci);
-
-    if (!startupQueue.contains(ci)) {
-      startupQueue.add(ci);
-      
-      // we can't create class objects until all the startup classes are registered and the  main thread is running
-      ci.registerClass(ti, false);
-    }
-  }
-
   protected void createStartupClassObjects (ThreadInfo ti){
     for (ClassInfo ci : startupQueue) {
       ci.createAndLinkClassObject(ti);
@@ -243,6 +230,8 @@ public class SystemClassLoader extends ClassLoaderInfo {
       classClassInfo = ci;
     } else if ((stringClassInfo == null) && name.equals("java.lang.String")) {
       stringClassInfo = ci;
+    } else if ((charArrayClassInfo == null) && name.equals("[C")) {
+      charArrayClassInfo = ci;
     } else if ((weakRefClassInfo == null) && name.equals("java.lang.ref.WeakReference")) {
       weakRefClassInfo = ci;
     } else if ((refClassInfo == null) && name.equals("java.lang.ref.Reference")) {
@@ -264,5 +253,9 @@ public class SystemClassLoader extends ClassLoaderInfo {
 
   protected ClassInfo getStringClassInfo() {
     return stringClassInfo;
+  }
+  
+  protected ClassInfo getCharArrayClassInfo() {
+    return charArrayClassInfo;
   }
 }

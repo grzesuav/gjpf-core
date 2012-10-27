@@ -63,7 +63,7 @@ public class GETSTATIC extends StaticFieldInstruction {
       return ti.getPC();
     }
 
-    ElementInfo ei = clsInfo.getElementInfo();
+    ElementInfo ei = clsInfo.getStaticElementInfo();
 
     if (ei == null){
       throw new JPFException("attempt to access field: " + fname + " of uninitialized class: " + clsInfo.getName());

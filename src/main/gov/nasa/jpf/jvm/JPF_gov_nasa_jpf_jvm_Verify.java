@@ -940,8 +940,9 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     if (objRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(objRef);
       if (ei != null){
-        if (ei.getClassInfo() == ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo()) { // it's a class object, freeze the static fields
-          ei = env.getClassElementInfo(objRef);
+        if (ei.getClassInfo() == ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo()) {
+          // it's a class object, set static fields shared
+          ei = env.getStaticElementInfo(objRef);
         }
         ei.setShared( isShared);
       }
@@ -953,8 +954,9 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
     if (objRef != MJIEnv.NULL){
       ElementInfo ei = env.getElementInfo(objRef);
       if (ei != null) {
-        if (ei.getClassInfo() == ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo()) { // it's a class object, freeze the static fields
-          ei = env.getClassElementInfo(objRef);
+        if (ei.getClassInfo() == ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo()) { 
+          // it's a class object, freeze sharedness of static fields
+          ei = env.getStaticElementInfo(objRef);
         }
         
         ei.freezeSharedness(freeze);

@@ -584,7 +584,7 @@ public class MJIEnv {
     ci.getStaticElementInfo().setBooleanField(fname, value);
   }
   public void setStaticBooleanField (int clsObjRef, String fname, boolean val) {
-    ElementInfo cei = getClassElementInfo(clsObjRef);
+    ElementInfo cei = getStaticElementInfo(clsObjRef);
     cei.setBooleanField(fname, val);
   }
   
@@ -622,7 +622,7 @@ public class MJIEnv {
   }
   
   public double getStaticDoubleField (int clsObjRef, String fname) {
-    ElementInfo cei = getClassElementInfo(clsObjRef);
+    ElementInfo cei = getStaticElementInfo(clsObjRef);
     return cei.getDoubleField(fname);
   }
 
@@ -647,7 +647,7 @@ public class MJIEnv {
   }
 
   public void setStaticIntField (int clsObjRef, String fname, int val) {
-    ElementInfo cei = getClassElementInfo(clsObjRef);
+    ElementInfo cei = getStaticElementInfo(clsObjRef);
     cei.setIntField(fname, val);
   }
 
@@ -657,7 +657,7 @@ public class MJIEnv {
   }
   
   public int getStaticIntField (int clsObjRef, String fname) {
-    ElementInfo cei = getClassElementInfo(clsObjRef);
+    ElementInfo cei = getStaticElementInfo(clsObjRef);
     return cei.getIntField(fname);
   }
 
@@ -672,7 +672,7 @@ public class MJIEnv {
   }
 
   public void setStaticLongField (int clsObjRef, String fname, long val) {
-    ElementInfo cei = getClassElementInfo(clsObjRef);
+    ElementInfo cei = getStaticElementInfo(clsObjRef);
     cei.setLongField(fname, val);
   }
 
@@ -699,7 +699,7 @@ public class MJIEnv {
   }
 
   public void setStaticReferenceField (int clsObjRef, String fname, int objref) {
-    ElementInfo cei = getClassElementInfo(clsObjRef);
+    ElementInfo cei = getStaticElementInfo(clsObjRef);
 
     // <2do> - we should REALLY check for type compatibility here
     cei.setReferenceField(fname, objref);
@@ -711,7 +711,7 @@ public class MJIEnv {
   }
 
   public int getStaticReferenceField (int clsObjRef, String fname) {
-    ElementInfo cei = getClassElementInfo(clsObjRef);
+    ElementInfo cei = getStaticElementInfo(clsObjRef);
     return cei.getReferenceField(fname);
   }
 
@@ -1350,10 +1350,10 @@ public class MJIEnv {
     setCallEnvironment(null);
   }
 
-  ElementInfo getClassElementInfo (int clsObjRef) {
+  ElementInfo getStaticElementInfo (int clsObjRef) {
     ClassInfo ci = getReferredClassInfo( clsObjRef);
     if (ci != null) {
-      return ci.getElementInfo();
+      return ci.getStaticElementInfo();
     }
     
     return null;

@@ -213,11 +213,9 @@ public class ClassLoaderInfo
   }
 
   public static ClassLoaderInfo getCurrentClassLoader(ThreadInfo ti) {
-    try {
-      MethodInfo mi = ti.getTopFrame().getMethodInfo();
-
+    MethodInfo mi = ti.getTopMethod();
+    if (mi != null) {
       ClassInfo ci = mi.getClassInfo();
-
       if(ci != null) {
         return ci.getClassLoaderInfo();
       } else {
@@ -231,13 +229,15 @@ public class ClassLoaderInfo
           }
         }
       }
-    } catch(NullPointerException e) {
-      return JVM.getVM().getSystemClassLoader();
     }
 
     return JVM.getVM().getSystemClassLoader();
   }
 
+  protected void updateCachedClassInfos (ClassInfo ci) {
+    // nothing here, overridden by SystemClassLoaderInfo for standard classes such as java.lang.String
+  }
+  
   /**
    * This is useful when there are multiple systemClassLoaders created.
    */

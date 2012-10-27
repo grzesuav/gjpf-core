@@ -73,7 +73,7 @@ public class JPF_java_lang_Class extends NativePeer {
   @MJI
   public boolean isInstance__Ljava_lang_Object_2__Z (MJIEnv env, int robj,
                                                          int r1) {
-    ElementInfo sei = env.getClassElementInfo(robj);
+    ElementInfo sei = env.getStaticElementInfo(robj);
     ClassInfo   ci = sei.getClassInfo();
     ClassInfo   ciOther = env.getClassInfo(r1);
     return (ciOther.isInstanceOf(ci.getName()));
@@ -88,10 +88,10 @@ public class JPF_java_lang_Class extends NativePeer {
   @MJI
   public boolean isAssignableFrom__Ljava_lang_Class_2__Z (MJIEnv env, int rcls,
                                                               int r1) {
-    ElementInfo sei1 = env.getClassElementInfo(rcls);
+    ElementInfo sei1 = env.getStaticElementInfo(rcls);
     ClassInfo   ci1 = sei1.getClassInfo();
 
-    ElementInfo sei2 = env.getClassElementInfo(r1);
+    ElementInfo sei2 = env.getStaticElementInfo(r1);
     ClassInfo   ci2 = sei2.getClassInfo();
 
     return ci2.isInstanceOf( ci1.getName());

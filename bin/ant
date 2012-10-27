@@ -57,14 +57,22 @@ case $UNAME in
     ;;
            
   Darwin*) 
-    # check if we have a pre-OpenJDK Java where sun.tools.javac.Main should be in classes.jar
     if [ -z "$JAVA_HOME" ]; then
-       JAVA_HOME=/System/Library/Frameworks/JavaVM.framework/Home
+        # that should work on 10.6, 10.7 and 10.8
+       	JAVA_HOME=`/usr/libexec/java_home`
     fi
-    if [ -f "$JAVA_HOME/lib/tools.jar" ]; then
-        # this is OpenJDK
-        CP="$JAVA_HOME/lib/tools.jar:${CP}"
+    # JDK 6 uses $JAVA_HOME/../Classes/classes.jar
+    J_HOME=`dirname $JAVA_HOME`
+    JAVAC_JAR=`find $J_HOME -name tools.jar`
+    if [ -z "$JAVAC_JAR" ]; then
+       	JAVAC_JAR=`find $J_HOME -name classes.jar`
+       	if [ -z "$JAVAC_JAR" ]; then
+            echo "no bytecode compiler found: $JAVAC_JAR"
+            exit 1
+        fi
     fi
+    echo "using javac from ${JAVAC_JAR}"
+    CP="${JAVAC_JAR}:${CP}"    
     ;;
            
   *)

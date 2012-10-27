@@ -54,7 +54,7 @@ public class INVOKECLINIT extends INVOKESTATIC {
     MethodInfo callee = getInvokedMethod(ti);
     ClassInfo ci = callee.getClassInfo();
     
-    ElementInfo ei = ti.getElementInfo(ci.getClassObjectRef());
+    ElementInfo ei = ti.getModifiableElementInfo(ci.getClassObjectRef());
 
     // first time around - reexecute if the scheduling policy gives us a choice point
     if (!ti.isFirstStepInsn()) {

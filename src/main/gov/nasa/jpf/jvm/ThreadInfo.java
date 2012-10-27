@@ -2583,7 +2583,7 @@ public class ThreadInfo
       ElementInfo eiGrp = getModifiableElementInfo(grpRef);
       int threadsRef = eiGrp.getReferenceField("threads");
       if (threadsRef != MJIEnv.NULL) {
-        ElementInfo eiThreads = getElementInfo(threadsRef);
+        ElementInfo eiThreads = getModifiableElementInfo(threadsRef);
         if (eiThreads.isArray()) {
           int nthreads = eiGrp.getIntField("nthreads");
 

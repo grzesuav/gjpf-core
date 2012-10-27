@@ -367,13 +367,15 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   }
   
   protected int newString (String str, ThreadInfo ti, AllocationContext ctx) {
+    SystemClassLoader sysCl = ClassLoaderInfo.getCurrentSystemClassLoader();
+    
     //--- the string object itself
-    ClassInfo ciString = ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo();
+    ClassInfo ciString = sysCl.getStringClassInfo();
     int sRef = getNewElementInfoIndex( ctx);
     createObject( ciString, ti, sRef);
     
     //--- its char[] array
-    ClassInfo ciChars = getArrayClassInfo(ti, "C");
+    ClassInfo ciChars = sysCl.getCharArrayClassInfo();
     ctx = ctx.extend(ciChars, sRef);
     int vRef = getNewElementInfoIndex( ctx);
     createArray( "C", str.length(), ciChars, ti, vRef);

@@ -18,9 +18,9 @@
 //
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.ObjVector;
-import gov.nasa.jpf.util.Processor;
 
 /**
  * Statics implementation that uses a simple ObjVector as the underlying container.
@@ -56,6 +56,13 @@ public class ObjVectorStatics implements Statics {
   
   //--- construction
   
+  public ObjVectorStatics (Config conf) {
+    elementInfos = new ObjVector<StaticElementInfo>();
+    
+    nextId = 0;
+    ids = new IntTable<String>();
+  }
+  
   protected int computeId (ClassInfo ci) {
     String clsName = ci.getName();
     IntTable.Entry<String> e = ids.get(clsName);
@@ -85,6 +92,7 @@ public class ObjVectorStatics implements Statics {
     int id = computeId( ci);
     
     StaticElementInfo ei = createStaticElementInfo( ci, ti);
+    ei.setObjectRef(id);
     elementInfos.set(id, ei);
     
     return ei;

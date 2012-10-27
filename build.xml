@@ -23,7 +23,6 @@
   <property file="local.properties"/>
 
   <!-- compiler settings -->
-  <property name="src_level"     value="6"/>
   <property name="debug"         value="on"/>
   <property name="deprecation"   value="on"/>
 
@@ -89,13 +88,13 @@
   <target name="-compile-annotations" if="have_annotations">
     <mkdir dir="build/annotations"/>
     <javac srcdir="src/annotations" destdir="build/annotations" includeantruntime="false"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}" classpath=""/>
+           debug="${debug}" deprecation="${deprecation}" classpath=""/>
   </target>
 
   <target name="-compile-main" if="have_main">
     <mkdir dir="build/main"/>
     <javac srcdir="src/main" destdir="build/main" includeantruntime="false"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
+           debug="${debug}" deprecation="${deprecation}"
            classpathref="lib.path"/>
 
   </target>
@@ -103,14 +102,14 @@
   <target name="-compile-peers" if="have_peers" depends="-compile-main" >
     <mkdir dir="build/peers"/>
     <javac srcdir="src/peers" destdir="build/peers" includeantruntime="false"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
+           debug="${debug}" deprecation="${deprecation}"
            classpathref="lib.path"/>
   </target>
   
   <target name="-compile-classes" if="have_classes" depends="-compile-annotations,-compile-main" >
     <mkdir dir="build/classes"/>
     <javac srcdir="src/classes" destdir="build/classes" includeantruntime="false"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}">
+           debug="${debug}" deprecation="${deprecation}">
       <classpath>
         <path refid="lib.path"/>
         <pathelement location="build/annotations"/>
@@ -121,7 +120,7 @@
   <target name="-compile-tests" if="have_tests" depends="-compile-annotations,-compile-main">
     <mkdir dir="build/tests"/>
     <javac srcdir="src/tests" destdir="build/tests" includeantruntime="false"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
+           debug="${debug}" deprecation="${deprecation}"
            includes="*,gov/nasa/jpf/**,classloader_specific_tests/**">
       <classpath>
         <path refid="lib.path"/>
@@ -133,7 +132,7 @@
   <target name="-compile-examples" if="have_examples" depends="-compile-annotations,-compile-main">
     <mkdir dir="build/examples" />
     <javac srcdir="src/examples" destdir="build/examples" includeantruntime="false"
-           debug="${debug}" source="${src_level}" deprecation="${deprecation}"
+           debug="${debug}" deprecation="${deprecation}"
            classpathref="lib.path"/>
   </target>
 

@@ -193,11 +193,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   /** the storage size of static fields of this class (stored as an int[]) */
   protected int staticDataSize;
 
-  /** where to get static field values from - it can be used quite frequently
-   * (to find out if the class needs initialization, so cache it.
-   * BEWARE - this is volatile (has to be reset&restored during backtrack */
-  StaticElementInfo sei;
-
   /**
    * we only set the superClassName upon creation, it is instantiated into
    * a ClassInfo by resolveClass(), which is required to be called before
@@ -1344,6 +1339,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public ElementInfo getClassObject(){
+    StaticElementInfo sei = getStaticElementInfo();
+    
     if (sei != null){
       int objref = sei.getClassObjectRef();
       return JVM.getVM().getElementInfo(objref);
@@ -1353,6 +1350,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public int getClassObjectRef () {
+    StaticElementInfo sei = getStaticElementInfo();    
     return (sei != null) ? sei.getClassObjectRef() : -1;
   }
 
@@ -2340,17 +2338,36 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return cl.getInitializedClassInfo(clsName, ti);
   }
 
-  public void registerClass (ThreadInfo ti){  
-    registerClass(ti, true);
-  }
     
+  void registerStartupClass (ThreadInfo ti, List<ClassInfo> queue) {
+    if (!isRegistered()) {
+      // do this recursively for superclasses and interfaceNames
+      // respective classes might be defined by another classloader, so we have to call their ClassInfo.registerClass()
+      
+      if (superClass != null) {
+        superClass.registerStartupClass(ti, queue);
+      }
+
+      for (ClassInfo ifc : interfaces) {
+        ifc.registerStartupClass(ti, queue);
+      }
+    }
+    
+    if (!queue.contains(this)) {
+      queue.add(this);
+      classLoader.updateCachedClassInfos(this);
+      ClassInfo.logger.finer("registering startup class: ", name);
+      createAndLinkStaticElementInfo( ti);
+    }
+  }
+  
   /**
    * this registers a ClassInfo in the corresponding ClassLoader statics so that we can cross-link from
    * SUT code and access static fields.
    *  
    * Note: JVM.registerStartupClass() must be kept in sync
    */
-  void registerClass (ThreadInfo ti, boolean createClassObject){
+  public void registerClass (ThreadInfo ti){
     if (!isRegistered()) {
       // do this recursively for superclasses and interfaceNames
       // respective classes might be defined by another classloader, so we have to call their ClassInfo.registerClass()
@@ -2366,20 +2383,21 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     ClassInfo.logger.finer("registering class: ", name);
     
+    createAndLinkStaticElementInfo( ti);
+    createAndLinkClassObject( ti);
+  }
+
+  public boolean isRegistered () {
+    return (id != -1);
+  }
+  
+  void createAndLinkStaticElementInfo (ThreadInfo ti) {
     Statics statics = classLoader.getStatics();
     StaticElementInfo sei = statics.newClass(this, ti);
     
     id = sei.getObjectRef();  // kind of a misnomer, it's really an id
     uniqueId = (classLoader.getGlobalId() << 32) | id;
-    classes.put(uniqueId, this);
-    
-    if (createClassObject) {
-      createAndLinkClassObject( ti);
-    }
-  }
-
-  public boolean isRegistered () {
-    return (id != -1);
+    classes.put(uniqueId, this);    
   }
 
   ElementInfo createAndLinkClassObject (ThreadInfo ti){
@@ -2407,10 +2425,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public boolean isInitializing () {
+    StaticElementInfo sei = getStaticElementInfo();
     return ((sei != null) && (sei.getStatus() >= 0));
   }
 
   public boolean isInitialized () {
+    StaticElementInfo sei = getStaticElementInfo();
     return ((sei != null) && (sei.getStatus() == INITIALIZED));
   }
 
@@ -2419,10 +2439,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public boolean needsInitialization () {
+    StaticElementInfo sei = getStaticElementInfo();
     return ((sei == null) || (sei.getStatus() > INITIALIZED));
   }
 
   public void setInitializing(ThreadInfo ti) {
+    StaticElementInfo sei = getModifiableStaticElementInfo();
     sei.setStatus(ti.getId());
   }
   
@@ -2431,6 +2453,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       registerClass(ti); // this sets sei
     }
 
+    StaticElementInfo sei = getStaticElementInfo();
     if (sei.getStatus() == UNINITIALIZED){
       if (initializeClass(ti)) {
         return true; // there are new <clinit> frames on the stack, execute them
@@ -2441,6 +2464,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
   
   public void setInitialized() {
+    StaticElementInfo sei = getModifiableStaticElementInfo();
     sei.setStatus(INITIALIZED);
 
     // we don't emit classLoaded() notifications for non-builtin classes
@@ -2485,6 +2509,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * @return true if we pushed a &lt;clinit&gt; frame
    */
   protected boolean pushClinit (ThreadInfo ti) {
+    StaticElementInfo sei = getModifiableStaticElementInfo();
     int stat = sei.getStatus();
     
     if (stat != INITIALIZED) {
@@ -2510,24 +2535,21 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return false;
   }
 
-  public ElementInfo getElementInfo() {
-    return classLoader.getStatics().get( id);
+  public StaticElementInfo getStaticElementInfo() {
+    if (id != -1) {
+      return classLoader.getStatics().get( id);
+    } else {
+      return null;
+    }
   }
 
-  public ElementInfo getModifiableElementInfo() {
-    return classLoader.getStatics().getModifiable( id);
+  public StaticElementInfo getModifiableStaticElementInfo() {
+    if (id != -1) {
+      return classLoader.getStatics().getModifiable( id);
+    } else {
+      return null;      
+    }
   }
-
-  
-  /********** <2do> those are going away *******/
-  protected void setStaticElementInfo (StaticElementInfo sei) {
-    this.sei = sei;
-  }
-
-  public StaticElementInfo getStaticElementInfo () {
-    return sei;
-  }
-  
 
   Fields createArrayFields (String type, int nElements, int typeSize, boolean isReferenceArray) {
     return fieldsFactory.createArrayFields( type, this,
@@ -2795,8 +2817,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ci = (ClassInfo)super.clone();
       cl.resolveClass(ci);
 
+      ci.id = -1;
       ci.uniqueId = -1;
-      ci.sei = null;
 
       ci.annotations = annotations;
 
