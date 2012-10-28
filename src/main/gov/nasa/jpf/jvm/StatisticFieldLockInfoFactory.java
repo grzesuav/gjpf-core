@@ -81,27 +81,27 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
   }
   
   public FieldLockInfo createFieldLockInfo (ThreadInfo ti, ElementInfo ei, FieldInfo fi) {
-    List<ElementInfo> currentLocks = ti.getLockedObjects();
-    int n = currentLocks.size();
+    int[] currentLockRefs = ti.getLockedObjectReferences();
+    int nLocks = currentLockRefs.length;
 
-    if (n == 0) {
+    if (nLocks == 0) {
       return FieldLockInfo.empty; // not protected, never will
       
     } else {
       
       if (AGRESSIVE) {
-        ElementInfo eiLockCandidate = strongProtectionCandidate(ei,fi,currentLocks);
-        if (eiLockCandidate != null) {
+        int lockCandidateRef = strongProtectionCandidate(ei,fi,currentLockRefs);
+        if (lockCandidateRef != -1) {
           // NOTE we raise the checklevel
-          return new SingleLockFli( ti, eiLockCandidate.getObjectRef(), CHECK_THRESHOLD);
+          return new SingleLockFli( ti, lockCandidateRef, CHECK_THRESHOLD);
         }
       }
       
-      if (n == 1) { // most common case
-        return new SingleLockFli( ti, currentLocks.get(0).getObjectRef(), 0);
+      if (nLocks == 1) { // most common case
+        return new SingleLockFli( ti, currentLockRefs[0], 0);
       
       } else {
-        return new MultiLockFli( ti, fi, currentLocks);
+        return new MultiLockFli( ti, fi, currentLockRefs);
       }
     }
   }
@@ -116,47 +116,51 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
    * For instance fields, this would be a lock with a distance <= 1.
    * For static fields, the corresponding class object is a good candidate.
    */
-  ElementInfo strongProtectionCandidate (ElementInfo ei, FieldInfo fi, List<ElementInfo> currentLocks) {
-    int n = currentLocks.size();
+  int strongProtectionCandidate (ElementInfo ei, FieldInfo fi, int[] currentLockRefs) {
+    int n = currentLockRefs.length;
+    Heap heap = JVM.getVM().getHeap();
 
     if (fi.isStatic()) { // static field, check for class object locking
       ClassInfo ci = fi.getClassInfo();
       int cref = ci.getClassObjectRef();
 
       for (int i=0; i<n; i++) {
-        ElementInfo e = currentLocks.get(i); // the locked object
-        if (e.getObjectRef() == cref) {
-          log.info("sync-detection: " + ei + " assumed to be synced on class object: " + e);
-          return e;
+        if (currentLockRefs[i] == cref) {
+          ElementInfo e = heap.get(cref);
+          log.info("sync-detection: " + ei + " assumed to be synced on class object: @" + e);
+          return cref;
         }
       }
 
     } else { // instance field, use lock distance as a heuristic
+      int objRef = ei.getObjectRef();
+      
       for (int i=0; i<n; i++) {
-        ElementInfo e = currentLocks.get(i); // the locked object
-        int eidx = e.getObjectRef();
+        int eidx = currentLockRefs[i];
 
         // case 1: synchronization on field owner itself
-        if (ei == e) {
+        if (eidx == objRef) {
           log.info("sync-detection: " + ei + " assumed to be synced on itself");
-          return e;
+          return objRef;
         }
 
-        // case 2: synchronization on owner of object holding field (sync wrapper)
-        if (e.hasRefField(ei.getObjectRef())) {
-          log.info("sync-detection: " + ei + " assumed to be synced on object wrapper: " + e);
-          return e;
-        }
-
-        // case 3: synchronization on sibling field that is a private lock object
+        ElementInfo e = heap.get(eidx);
+        
+        // case 2: synchronization on sibling field that is a private lock object
         if (ei.hasRefField(eidx)) {
           log.info("sync-detection: "+ ei + " assumed to be synced on sibling: " + e);
-          return e;
+          return eidx;
+        }
+        
+        // case 3: synchronization on owner of object holding field (sync wrapper)
+        if (e.hasRefField(objRef)) {
+          log.info("sync-detection: " + ei + " assumed to be synced on object wrapper: " + e);
+          return eidx;
         }
       }
     }
 
-    return null;
+    return -1;
   }
 
   
@@ -198,14 +202,13 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
     
 
     public FieldLockInfo checkProtection (ThreadInfo ti, ElementInfo ei, FieldInfo fi) {
-      List<ElementInfo> currentLocks = ti.getLockedObjects();
-      int n = currentLocks.size();
+      int[] currentLockRefs = ti.getLockedObjectReferences();
+      int nLocks = currentLockRefs.length;
       
       checkLevel++;
       
-      for (int i=0; i<n; i++) {
-        ElementInfo lei = currentLocks.get(i);
-        if (lei.getObjectRef() == lockRef) {
+      for (int i=0; i<nLocks; i++) {
+        if (currentLockRefs[i] == lockRef) {
           return this;
         }
       }
@@ -239,13 +242,8 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
     int[] lockRefSet;
       
     // this is only used once during prototype generation
-    public MultiLockFli (ThreadInfo ti, FieldInfo fi, List<ElementInfo> currentLocks) {
-      int n = currentLocks.size();
-      lockRefSet = new int[n];
-      
-      for (int i=0; i<n; i++) {
-        lockRefSet[i] = currentLocks.get(i).getObjectRef();
-      }
+    public MultiLockFli (ThreadInfo ti, FieldInfo fi, int[] currentLockRefs) {
+      lockRefSet = currentLockRefs;
     }
     
     protected int[] getCandidateLockSet() {
@@ -254,8 +252,8 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
       
 
     public FieldLockInfo checkProtection (ThreadInfo ti, ElementInfo ei, FieldInfo fi) {
-      List<ElementInfo> currentLocks = ti.getLockedObjects();
-      int nLocks = currentLocks.size();
+      int[] currentLockRefs = ti.getLockedObjectReferences();      
+      int nLocks = currentLockRefs.length;
           
       checkLevel++;
 
@@ -268,8 +266,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
         int[] newLset = new int[lockRefSet.length];
 
         for (int i=0; i<nLocks; i++) { // get the set intersection
-          ElementInfo lei = currentLocks.get(i);
-          int leidx = lei.getObjectRef();
+          int leidx = currentLockRefs[i];
 
           for (int j=0; j<lockRefSet.length; j++) {
             if (lockRefSet[j] == leidx) {

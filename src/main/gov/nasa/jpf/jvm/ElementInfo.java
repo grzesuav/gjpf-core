@@ -160,8 +160,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       this.monitor = ei.monitor;
       
       this.tsMemento = ThreadTrackingPolicy.getPolicy().getMemento(ei.referencingThreads);
-
-      ei.markUnchanged();
+      
+ei.freeze(); // it's stored now
     }
 
     public ElementInfo restore (ElementInfo ei){
@@ -229,7 +229,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   public abstract Memento<ElementInfo> getMemento();
 
   public boolean hasChanged() {
-    return (attributes & ATTR_ANY_CHANGED) != 0;
+    return !isFrozen();
+    //return (attributes & ATTR_ANY_CHANGED) != 0;
   }
 
   public String toString() {
@@ -450,8 +451,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
    * this is called before the system attempts to reclaim the object. If
    * we return 'false', the object will *not* be removed
    */
-  protected boolean recycle () {
-
+  protected boolean recycle () {  
     // this is required to avoid loosing field lock assumptions
     // when the system sequentialized threads with conflicting assumptions,
     // but the offending object goes out of scope before the system backtracks
@@ -1860,6 +1860,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   // this is used from a context where we don't require a lock, e.g. Unsafe.park()/unpark()
   public void wait (ThreadInfo ti, long timeout, boolean hasToHoldLock){
+    checkIsModifiable();
+    
     boolean holdsLock = monitor.getLockingThread() == ti;
 
     if (hasToHoldLock){

@@ -179,8 +179,6 @@ public class JPF_java_lang_Character extends NativePeer {
     ClassInfo ci = ClassInfo.getResolvedClassInfo("char");
     env.setStaticReferenceField("java.lang.Character", "TYPE", 
                              ci.getClassObjectRef());
-
-    env.setBooleanField(ci.getClassObjectRef(), "isPrimitive", true);
   }
 
   @MJI

@@ -46,6 +46,8 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   protected static Transformer<ElementInfo,Memento<ElementInfo>> ei2mei = new Transformer<ElementInfo,Memento<ElementInfo>>(){
     public Memento<ElementInfo> transform (ElementInfo ei){
       Memento<ElementInfo> m = null;
+      return ei.getMemento();
+/** @@
       if (!ei.hasChanged()) {
         m = ei.cachedMemento;
       }
@@ -54,6 +56,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
         ei.cachedMemento = m;
       }
       return m;
+**/
     }
   };
 
@@ -281,7 +284,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     // the NEWxx bytecode) because our allocs are used from within the
     // exception handling of the resulting OutOfMemoryError (and we would
     // have to override it, since the VM should guarantee proper exceptions)
-
+    
     return ei;    
   }
     

@@ -367,7 +367,6 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     // We could spend all day to compute the perfect order-independent hash function,
     // but since our StateSet isn't guaranteed to be collision free anyway, we
     // rather shoot for something that can be nicely JITed
-
     int n = lockedObjects.size();
     buf.add(n);
     

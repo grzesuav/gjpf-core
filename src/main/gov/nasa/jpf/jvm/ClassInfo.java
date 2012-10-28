@@ -2411,6 +2411,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     int clsNameRef = heap.newSystemString(name, ti, clsObjRef);
     ei.setReferenceField("name", clsNameRef);
 
+    ei.setBooleanField("isPrimitive", isPrimitive());
+    
     // link the SUT class object to this ClassInfo
     ei.setIntField("cref", id);
 

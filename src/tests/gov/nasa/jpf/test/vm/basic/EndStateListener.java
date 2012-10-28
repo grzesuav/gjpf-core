@@ -43,7 +43,7 @@ public class EndStateListener extends ListenerAdapter {
         assert ti.isTerminated();
 
         // check if none of the threads still holds a lock
-        assert ti.getLockedObjects().isEmpty();
+        assert !ti.hasLockedObjects();
       }
     }
   }

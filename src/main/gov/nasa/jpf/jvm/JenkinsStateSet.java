@@ -159,7 +159,7 @@ public class JenkinsStateSet extends SerializingStateSet {
       growFingerprint(lastStateId);
       fingerprints[lastStateId] = hash;      
     }
-
+    
     return lastStateId;
   }
   

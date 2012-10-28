@@ -57,6 +57,7 @@ public class ThreadInfo
      implements Iterable<StackFrame>, Comparable<ThreadInfo>, Cloneable, Restorable<ThreadInfo> {
 
   static JPFLogger log = JPF.getLogger("gov.nasa.jpf.jvm.ThreadInfo");
+  static int[] emptyLockRefs = new int[0];
 
   //--- our internal thread states
   public enum State {
@@ -235,7 +236,7 @@ public class ThreadInfo
    * unfortunately, we cannot organize this as a stack, since it might get
    * restored (from the heap) in random order
    */
-  LinkedList<ElementInfo> lockedObjects;
+  int[] lockedObjectReferences;
 
   /**
    * !! this is also volatile -> has to be reset after backtrack
@@ -425,7 +426,7 @@ public class ThreadInfo
     top = null;
     stackDepth = 0;
 
-    lockedObjects = new LinkedList<ElementInfo>();
+    lockedObjectReferences = emptyLockRefs;
 
     markUnchanged();
     attributes |= ATTR_DATA_CHANGED; 
@@ -484,7 +485,15 @@ public class ThreadInfo
   }
 
   public boolean holdsLock (ElementInfo ei) {
-    return lockedObjects.contains(ei);
+    int objRef = ei.getObjectRef();
+    
+    for (int i=0; i<lockedObjectReferences.length; i++) {
+      if (lockedObjectReferences[i] == objRef) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   public JVM getVM () {
@@ -1219,24 +1228,26 @@ public class ThreadInfo
   public int getLockCount () {
     return threadData.lockCount;
   }
-  
+
+  // avoid use in performance critical code
   public List<ElementInfo> getLockedObjects () {
+    List<ElementInfo> lockedObjects = new LinkedList<ElementInfo>();
+    Heap heap = vm.getHeap();
+    
+    for (int i=0; i<lockedObjectReferences.length; i++) {
+      ElementInfo ei = heap.get(lockedObjectReferences[i]);
+      lockedObjects.add(ei);
+    }
+    
     return lockedObjects;
   }
 
+  public boolean hasLockedObjects() {
+    return lockedObjectReferences.length > 0;
+  }
+  
   public int[] getLockedObjectReferences () {
-    int nLocks = lockedObjects.size();
-    if (nLocks > 0) {
-      int[] a = new int[lockedObjects.size()];
-      int i = 0;
-      for (ElementInfo e : lockedObjects) {
-        a[i++] = e.getObjectRef();
-      }
-      return a;
-
-    } else {
-      return emptyRefArray;
-    }
+    return lockedObjectReferences;
   }
 
   public long getLongLocal (String lname) {
@@ -1805,7 +1816,7 @@ public class ThreadInfo
    */
   void resetVolatiles () {
     // resetting lock sets goes here
-    lockedObjects = new LinkedList<ElementInfo>();
+    lockedObjectReferences = emptyLockRefs;
 
     // the ref of the object we are blocked on or waiting for
     lockRef = -1;
@@ -1815,17 +1826,44 @@ public class ThreadInfo
    * this is used when restoring states
    */
   void updateLockedObject (ElementInfo ei) {
-    lockedObjects.add(ei);
+    int n = lockedObjectReferences.length;    
+    int[] a = new int[n+1];
+    System.arraycopy(lockedObjectReferences, 0, a, 0, n);
+    a[n] = ei.getObjectRef();
+    lockedObjectReferences = a;
+    
     // don't notify here, it's just a restore
   }
 
   void addLockedObject (ElementInfo ei) {
-    lockedObjects.add(ei);
+    int n = lockedObjectReferences.length;    
+    int[] a = new int[n+1];
+    System.arraycopy(lockedObjectReferences, 0, a, 0, n);
+    a[n] = ei.getObjectRef();
+    lockedObjectReferences = a;
+    
     vm.notifyObjectLocked(this, ei);
   }
 
   void removeLockedObject (ElementInfo ei) {
-    lockedObjects.remove(ei);
+    int objRef = ei.getObjectRef();
+    int n = lockedObjectReferences.length;
+    
+    if (n == 1) {
+      assert lockedObjectReferences[0] == objRef;
+      lockedObjectReferences = emptyLockRefs;
+      
+    } else {
+      int[] a = new int[n - 1];
+
+      for (int i = 0, j = 0; i < n; i++) {
+        if (lockedObjectReferences[i] != objRef) {
+          a[j++] = lockedObjectReferences[i];
+        }
+      }
+      lockedObjectReferences = a;
+    }
+    
     vm.notifyObjectUnlocked(this, ei);
   }
 
@@ -1846,17 +1884,6 @@ public class ThreadInfo
       return null;
     }
   }
-
-  LinkedList<ElementInfo> cloneLockedObjects() {
-    LinkedList<ElementInfo> lo = new LinkedList<ElementInfo>();
-
-    for (ElementInfo ei : lockedObjects) {
-      lo.add((ElementInfo)ei.clone());
-    }
-
-    return lo;
-  }
-
 
   /**
    * Returns the number of stack frames.
@@ -2605,7 +2632,6 @@ public class ThreadInfo
               }
 
               // <2do> we should probably also check if we have to set it destroyed
-
               return;
             }
           }
@@ -3539,6 +3565,8 @@ public class ThreadInfo
       String mname = mi.getUniqueName();
       checkAssertion( mname.equals("wait(J") || mname.equals("park(ZJ"), "timedout thread outside timeout method: " + mi.getFullName());
     }
+  
+    List<ElementInfo> lockedObjects = getLockedObjects();
     
     if (lockRef != -1){
       // object we are blocked on has to exist
@@ -3547,9 +3575,9 @@ public class ThreadInfo
       
       // we have to be in the lockedThreads list of that objects monitor
       checkAssertion( ei.isLocking(this), "thread blocked on non-locking object: " + ei);
-      
+        
       // can't be blocked on a lock we own (but could be in waiting before giving it up)
-      if (!isWaiting() && lockedObjects != null && !lockedObjects.isEmpty()){
+      if (!isWaiting() && lockedObjectReferences.length > 0){
         for (ElementInfo lei : lockedObjects){
             checkAssertion( lei.getObjectRef() != lockRef, "non-waiting thread blocked on owned lock: " + lei);
         }

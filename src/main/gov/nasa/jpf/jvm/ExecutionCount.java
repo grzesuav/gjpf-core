@@ -92,9 +92,7 @@ public class ExecutionCount {
   public int getIncCount (ThreadInfo ti){
     IntTable.Entry<PreciseAllocationContext> e = getExecEntry(ti);
     e.val++;
-    
-//System.out.println("@@ " + name + " [" + e.key.ti.getId() + ',' + Integer.toHexString(e.key.hashCode()) + "] = " + e.val);
-    
+
     return e.val;
   }
   
