@@ -46,6 +46,7 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   }  
   
   public DynamicElementInfo () {
+    // for restoration
   }
 
   public DynamicElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti) {
@@ -55,7 +56,7 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   }
 
   @Override
-  public ElementInfo getModifiable() {
+  public ElementInfo getModifiableInstance() {
     if (!isFrozen()) {
       return this;
     } else {
@@ -80,7 +81,15 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   }
 
   public Memento<ElementInfo> getMemento(){
-    return new DEIMemento(this);
+    /**/
+    if (isFrozen()) {
+      if (cachedMemento != null) {
+        return cachedMemento;
+      }
+    }
+    /**/
+    cachedMemento = new DEIMemento(this);
+    return cachedMemento;
   }
 
   @Override

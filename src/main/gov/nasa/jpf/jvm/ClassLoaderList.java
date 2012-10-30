@@ -18,46 +18,79 @@
 //
 package gov.nasa.jpf.jvm;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
+/**
+ * container for all ClassLoaderInfos that are in the current state.
+ * It is important to keep this as canonically (search globally) sorted list so that
+ * we can use the iterator for state matching
+ */
 public class ClassLoaderList implements Cloneable, Iterable<ClassLoaderInfo>, Restorable<ClassLoaderList> {
 
-  /** the list of the class loaders */
-  public ArrayList<ClassLoaderInfo> classLoaders;
+  /** the ordered list of the class loaders */
+  ClassLoaderInfo[] classLoaders;
 
-  static class ClListMemento implements Memento<ClassLoaderList> {
+  static class CllMemento implements Memento<ClassLoaderList> {
     Memento<ClassLoaderInfo>[] clMementos;
 
-    ClListMemento(ClassLoaderList cll) {
-      ArrayList<ClassLoaderInfo> classLoaders = cll.classLoaders;
-      int len = classLoaders.size();
-
+    CllMemento (ClassLoaderList cll) {
+      ClassLoaderInfo[] classLoaders = cll.classLoaders;
+      
+      int len = classLoaders.length;
       clMementos =  new Memento[len];
     
       for (int i=0; i<len; i++){
-        ClassLoaderInfo cl = classLoaders.get(i);
+        ClassLoaderInfo cl = classLoaders[i];
         Memento<ClassLoaderInfo> m = cl.getMemento();
         clMementos[i] = m;
       }
     }
 
-    public ClassLoaderList restore(ClassLoaderList cll){
+    public ClassLoaderList restore (ClassLoaderList cll){
       int len = clMementos.length;
-      ArrayList<ClassLoaderInfo> classLoaders = new ArrayList<ClassLoaderInfo>();
+      ClassLoaderInfo[] classLoaders = new ClassLoaderInfo[len];
       for (int i=0; i<len; i++){
         Memento<ClassLoaderInfo> m = clMementos[i];
         ClassLoaderInfo cl = m.restore(null);
-        classLoaders.add(cl);
+        classLoaders[i] = cl;
       }
       cll.classLoaders = classLoaders;
 
       return cll;
     }
   }
+  
+  class CllIterator implements Iterator<ClassLoaderInfo>{
+    int next = 0;
+    
+    @Override
+    public boolean hasNext() {
+      if (classLoaders != null) {
+        return next < classLoaders.length;
+      } else {
+        return false;
+      }
+    }
+
+    @Override
+    public ClassLoaderInfo next() {
+      if (classLoaders != null) {
+        if (next < classLoaders.length) {
+          return classLoaders[next++];
+        }
+      }
+      
+      throw new NoSuchElementException();
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
+  }
 
   public ClassLoaderList() {
-    classLoaders = new ArrayList<ClassLoaderInfo>();
   }
 
   public Memento<ClassLoaderList> getMemento (MementoFactory factory) {
@@ -65,30 +98,53 @@ public class ClassLoaderList implements Cloneable, Iterable<ClassLoaderInfo>, Re
   }
 
   public Memento<ClassLoaderList> getMemento(){
-    return new ClListMemento(this);
+    return new CllMemento(this);
   }
 
   public Iterator<ClassLoaderInfo> iterator () {
-    return classLoaders.iterator();
+    return new CllIterator();
   }
 
-  public void add(ClassLoaderInfo cl) {
-    classLoaders.add(cl);
+  public void add (ClassLoaderInfo cli) {
+    int id = cli.getGlobalId();
+    
+    if (classLoaders == null) {
+      classLoaders = new ClassLoaderInfo[1];
+      classLoaders[0] = cli;
+      
+    } else { // sort it in
+      int len = classLoaders.length;
+      ClassLoaderInfo[] a = new ClassLoaderInfo[len+1];
+      
+      for (int i=0; i<len; i++) {
+        ClassLoaderInfo c = classLoaders[i];
+        if (c.getGlobalId() > id) {
+          System.arraycopy(classLoaders, i, a, i+1, (len-i));
+          a[i] = cli;
+          classLoaders = a;
+          return;
+        } else {
+          a[i] = c;
+        }
+      }
+      
+      a[len] = cli;
+      classLoaders = a;
+    }
   }
 
   public ClassLoaderInfo get(int i) {
-    // <2do> - just to make it work for now
-    return classLoaders.get(0);
+    return classLoaders[i];
   }
 
   public int size() {
-    return classLoaders.size();
+    return classLoaders.length;
   }
   
   public void markRoots (Heap heap) {
-    int len = classLoaders.size();
+    int len = classLoaders.length;
     for (int i=0; i<len; i++) {
-      ClassLoaderInfo cli = classLoaders.get(i);
+      ClassLoaderInfo cli = classLoaders[i];
       cli.getStatics().markRoots(heap);
     }
   }

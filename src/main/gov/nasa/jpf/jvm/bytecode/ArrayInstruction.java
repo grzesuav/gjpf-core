@@ -76,7 +76,8 @@ public abstract class ArrayInstruction extends JVMInstruction {
     //return false;
 
     // ei is the array object
-    return (!ti.checkPorFieldBoundary() && ei.checkUpdatedSharedness(ti));
+    ei = ei.getInstanceWithUpdatedSharedness(ti);
+    return (!ti.checkPorFieldBoundary() && ei.isShared());
   }
 
   /**

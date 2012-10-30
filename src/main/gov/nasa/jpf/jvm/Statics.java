@@ -67,6 +67,9 @@ public interface Statics {
   Memento<Statics> getMemento(MementoFactory factory);
   Memento<Statics> getMemento();
   
+  /**
+   * this needs to be a canonical iterator
+   */
   Iterable<StaticElementInfo> elementInfos();
   
   int size();

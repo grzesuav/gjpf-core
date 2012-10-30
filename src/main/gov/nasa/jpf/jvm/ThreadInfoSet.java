@@ -37,6 +37,7 @@ public interface ThreadInfoSet extends Cloneable {
   boolean hasMultipleLiveThreads ();
   boolean hasMultipleRunnableThreads ();
   
+  
   Memento<ThreadInfoSet> getMemento();
   
   int size();

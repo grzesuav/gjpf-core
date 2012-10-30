@@ -1086,6 +1086,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   /**
+   * the container this is stored in
+   */
+  public Statics getStatics() {
+    return classLoader.getStatics();
+  }
+  
+  /**
    * required by InfoObject interface
    */
   public ClassInfo getClassInfo() {

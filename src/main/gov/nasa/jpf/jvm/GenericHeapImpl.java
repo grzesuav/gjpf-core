@@ -45,25 +45,13 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
 
   protected static Transformer<ElementInfo,Memento<ElementInfo>> ei2mei = new Transformer<ElementInfo,Memento<ElementInfo>>(){
     public Memento<ElementInfo> transform (ElementInfo ei){
-      Memento<ElementInfo> m = null;
       return ei.getMemento();
-/** @@
-      if (!ei.hasChanged()) {
-        m = ei.cachedMemento;
-      }
-      if (m == null) {
-        m = ei.getMemento();
-        ei.cachedMemento = m;
-      }
-      return m;
-**/
     }
   };
 
   protected static Transformer<Memento<ElementInfo>,ElementInfo> mei2ei = new Transformer<Memento<ElementInfo>,ElementInfo>(){
     public ElementInfo transform(Memento<ElementInfo> m) {
       ElementInfo ei = m.restore(null);
-      ei.cachedMemento = m;
       return ei;
     }
   };

@@ -62,7 +62,7 @@ public class JPF_java_util_concurrent_atomic_AtomicIntegerFieldUpdater extends A
 
     int v = ei.getIntField(fi);
     if (v == fExpect) {
-      ei = ei.getModifiable();
+      ei = ei.getModifiableInstance();
       ei.setIntField(fi, fUpdate);
       return true;
     } else {

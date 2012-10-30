@@ -109,9 +109,10 @@ public class ObjVectorStatics implements Statics {
   @Override
   public StaticElementInfo getModifiable(int id) {
     StaticElementInfo ei = elementInfos.get(id);
+    
     if (ei.isFrozen()) {
       ei = (StaticElementInfo)ei.deepClone();
-      ei.defreeze();
+      // freshly created ElementInfos are not frozen, so we don't have to defreeze
       elementInfos.set(id, ei);
     }
     

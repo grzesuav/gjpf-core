@@ -944,7 +944,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
           // it's a class object, set static fields shared
           ei = env.getStaticElementInfo(objRef);
         }
-        ei.setShared( isShared);
+        
+        if (ei.isShared() != isShared) {
+          ei = ei.getModifiableInstance();
+          ei.setShared( isShared);
+        }
       }
     }    
   }
@@ -958,8 +962,11 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
           // it's a class object, freeze sharedness of static fields
           ei = env.getStaticElementInfo(objRef);
         }
-        
-        ei.freezeSharedness(freeze);
+
+        if (ei.isSharednessFrozen() != freeze) {
+          ei = ei.getModifiableInstance();
+          ei.freezeSharedness(freeze);
+        }
       }
     }    
   }

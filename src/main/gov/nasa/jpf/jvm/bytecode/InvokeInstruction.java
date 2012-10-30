@@ -327,11 +327,12 @@ public abstract class InvokeInstruction extends JVMInstruction {
       if (ei.getLockingThread() != ti) {  // maybe its a recursive lock
 
         if (ei.canLock(ti)) { // we can lock the object, check if we need a CG
-          if (ei.checkUpdatedSharedness(ti)) { // is this a shared object?
+          ei = ei.getInstanceWithUpdatedSharedness(ti);
+          if (ei.isShared()) {
             ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
             if (cg != null) {
               if (ss.setNextChoiceGenerator(cg)) {
-                ei = ei.getModifiable();
+                ei = ei.getModifiableInstance();
                 ei.registerLockContender(ti);  // Record that this thread would lock the object upon next execution
                 return true;
               }
@@ -341,7 +342,7 @@ public abstract class InvokeInstruction extends JVMInstruction {
         } else { // already locked by another thread, we have to block and therefore need a CG
           // the top half already did set the object shared
 
-          ei = ei.getModifiable();
+          ei = ei.getModifiableInstance();
           ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
 
           ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);

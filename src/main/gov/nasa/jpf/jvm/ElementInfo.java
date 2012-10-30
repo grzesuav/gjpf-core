@@ -58,11 +58,11 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
   public static final int   ATTR_CONSTRUCTED   = 0x2000;
   
-  // object is shared
+  // object is shared between threads
   public static final int   ATTR_SHARED        = 0x4000;
   
-  // ATTR_SHARED is frozen (has to be changed explicitly)
-  public static final int   ATTR_FREEZE_SHARED = 0x0100; 
+  // ATTR_SHARED is frozen (has to be changed explicitly, will not be updated by checkUpdatedSharedness)
+  public static final int   ATTR_FREEZE_SHARED = 0x8000; 
   
   
   //--- the upper two bytes are for transient (heap internal) use only, and are not stored
@@ -70,7 +70,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   // BEWARE if you add or change values, make sure these are not used in derived classes !
   // <2do> this is efficient but fragile
 
-  public static final int   ATTR_TREF_CHANGED       = 0x40000; // usingTi has changed
+  public static final int   ATTR_TREF_CHANGED       = 0x40000; // referencingThreads have changed
   public static final int   ATTR_ATTRIBUTE_CHANGED  = 0x80000; // refers only to sticky bits
 
   //--- useful flag sets & masks
@@ -161,7 +161,8 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
       
       this.tsMemento = ThreadTrackingPolicy.getPolicy().getMemento(ei.referencingThreads);
       
-ei.freeze(); // it's stored now
+      ei.freeze(); // it's stored now
+      ei.cachedMemento = this;
     }
 
     public ElementInfo restore (ElementInfo ei){
@@ -176,6 +177,9 @@ ei.freeze(); // it's stored now
       ei.sid = 0;
       ei.updateLockingInfo();
       ei.markUnchanged();
+      ei.cachedMemento = this;
+      
+      ei.freeze(); // we still need to clone on the next change
 
       return ei;
     }
@@ -215,7 +219,7 @@ ei.freeze(); // it's stored now
     assert ti != null; // we need that for our POR
   }
 
-  public abstract ElementInfo getModifiable();
+  public abstract ElementInfo getModifiableInstance();
   
   // we need to delegate this in case it is global
   protected abstract ThreadInfoSet createThreadInfoSet(ThreadInfo ti);
@@ -397,14 +401,20 @@ ei.freeze(); // it's stored now
   public void freezeSharedness (boolean freeze) {
     if (freeze) {
       if ((attributes & ATTR_FREEZE_SHARED) == 0) {
+        checkIsModifiable();
         attributes |= (ATTR_FREEZE_SHARED | ATTR_ATTRIBUTE_CHANGED);
       }
     } else {
       if ((attributes & ATTR_FREEZE_SHARED) != 0) {
+        checkIsModifiable();
         attributes &= ~ATTR_FREEZE_SHARED;
         attributes |= ATTR_ATTRIBUTE_CHANGED;
       }
     }
+  }
+  
+  public boolean isSharednessFrozen () {
+    return (attributes & ATTR_FREEZE_SHARED) != 0;
   }
   
   public boolean isShared() {
@@ -415,35 +425,48 @@ ei.freeze(); // it's stored now
   public void setShared (boolean isShared) {
     if (isShared) {
       if ((attributes & ATTR_SHARED) == 0) {
+        checkIsModifiable();
         attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
       }
     } else {
       if ((attributes & ATTR_SHARED) != 0) {
+        checkIsModifiable();
         attributes &= ~ATTR_SHARED;
         attributes |= ATTR_ATTRIBUTE_CHANGED;
       }
     }
   }
     
-  public boolean checkUpdatedSharedness (ThreadInfo ti) {  
-    // <2do> this assumes a set that is global for all paths from creation of this object
-    if (referencingThreads.add(ti)) {
-      attributes |= ATTR_TREF_CHANGED;
+  /**
+   * update referencingThreads and set shared flag accordingly (if not frozen)
+   * 
+   * NOTE - this might return a new (cloned) ElementInfo in case the state stored/restored
+   * flag has been changed. Use only from system code that is aware of the potential ElementInfo
+   * identity change (doesn't use a reference to the old one) 
+   */
+  public ElementInfo getInstanceWithUpdatedSharedness (ThreadInfo ti) {
+    // we don't check for modifiability here since 'referencingThreads' is either search global
+    // or subtree global (for all paths from creation of this object), i.e. the ThreadInfoSet
+    // instance will not change when we backtrack
+ 
+    // we update the referencingThreads no matter what (this is NOT state stored/restored)
+    referencingThreads.add(ti);
+    
+    // we only update the (state-stored) SHARED flag if sharedness is not frozen
+    if ((attributes & ATTR_FREEZE_SHARED) == 0) {      
+      // note that we can only go from non-shared to shared, but not vice versa (this is
+      // in response to a reference from a live thread)
+      if (ThreadTrackingPolicy.getPolicy().isShared(referencingThreads)) {
+        if ((attributes & ATTR_SHARED) == 0) {
+          // make sure we clone first (in case of need)
+          ElementInfo ei = getModifiableInstance();
+          ei.attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
+          return ei;
+        }
+      }
     }
     
-    if ((attributes & ATTR_FREEZE_SHARED) == 0) {
-      if (ThreadTrackingPolicy.getPolicy().isShared(referencingThreads)) {
-        setShared(true);
-        return true;
-
-      } else {
-        setShared(false);
-        return false;
-      }
-      
-    } else {
-      return isShared();
-    }
+    return this;
   }
   
   
@@ -1590,7 +1613,7 @@ ei.freeze(); // it's stored now
       ElementInfo ei = (ElementInfo) super.clone();
       ei.fields = fields.clone();
       ei.monitor = monitor.clone();
-      
+
       return ei;
       
     } catch (CloneNotSupportedException e) {
@@ -1607,6 +1630,7 @@ ei.freeze(); // it's stored now
       
       // referencingThreads is at least subtree global, hence doesn't need to be cloned
       
+      ei.cachedMemento = null;
       ei.defreeze();
       
       return ei;

@@ -48,7 +48,8 @@ public class MONITORENTER extends LockInstruction {
       if (!isLockOwner(ti, ei)){  // maybe its a recursive lock
 
         if (ei.canLock(ti)) { // we can lock the object, the CG is optional
-          if (ei.checkUpdatedSharedness(ti)) { // is this a shared object?
+          ei = ei.getInstanceWithUpdatedSharedness(ti); 
+          if (ei.isShared()) {
             ChoiceGenerator<?> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
             if (cg != null) {
               if (ss.setNextChoiceGenerator(cg)) {

@@ -50,8 +50,9 @@ public class MONITOREXIT extends LockInstruction {
       if (ei.getLockCount() == 0){ // this gave up the lock, check for CG
         // this thread obviously has referenced the object before, but other
         // referencers might have terminated so we want to update anyways
-        if (ei.checkUpdatedSharedness(ti)) {
-          ChoiceGenerator cg = ss.getSchedulerFactory().createMonitorExitCG(ei, ti);
+        ei = ei.getInstanceWithUpdatedSharedness(ti); 
+        if (ei.isShared()) {
+          ChoiceGenerator<?> cg = ss.getSchedulerFactory().createMonitorExitCG(ei, ti);
           if (cg != null) {
             if (ss.setNextChoiceGenerator(cg)) {
               return this;

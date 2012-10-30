@@ -255,7 +255,7 @@ public class JPF_java_lang_String extends NativePeer {
         h = 31 * h + values[i];
       }
 
-      ei = ei.getModifiable();
+      ei = ei.getModifiableInstance();
       ei.setIntField("hash", h);
     }
 

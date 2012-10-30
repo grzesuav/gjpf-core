@@ -905,7 +905,9 @@ public class MJIEnv {
   
   public boolean isSchedulingRelevantObject(int objref){
     if (objref != NULL){
-      return heap.get(objref).checkUpdatedSharedness(ti);
+      ElementInfo ei = heap.get(objref);
+      ei = ei.getInstanceWithUpdatedSharedness(ti);
+      return ei.isShared();
     }
 
     return false;

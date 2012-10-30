@@ -96,9 +96,13 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   }
   
   @Override
-  public ElementInfo getModifiable() {
-    // TODO - this has to clone/replace this ElementInfo in the respective ClassLoader container
-    return this;
+  public ElementInfo getModifiableInstance() {
+    if (!isFrozen()) {
+      return this;
+    } else {
+      Statics statics = ci.getStatics();
+      return statics.getModifiable( objRef);
+    }
   }
   
   // called during ElementInfo construction

@@ -49,7 +49,7 @@ public class RETURN extends ReturnInstruction {
         ClassInfo mi_ci = mi.getClassInfo();  // Get the method's class.
 
         if (ei_ci == mi_ci) { // If the object's class and the method's class are equal, then the thread is returning from the object's constructor.
-          ei = ei.getModifiable();
+          ei = ei.getModifiableInstance();
           ei.setConstructed();
         }
       }

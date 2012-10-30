@@ -201,8 +201,8 @@ public class ObjVectorHeap extends GenericHeapImpl {
       ElementInfo ei = elementInfos.get(ref);
 
       if (ei != null && ei.isFrozen()) {
-        ei = ei.deepClone();
-        ei.defreeze();
+        ei = ei.deepClone(); 
+        // freshly created ElementInfos are not frozen, so we don't have to defreeze
         elementInfos.set(ref, ei);
       }
 

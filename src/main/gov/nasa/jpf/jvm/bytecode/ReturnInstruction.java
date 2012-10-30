@@ -129,7 +129,8 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
         ElementInfo ei = ti.getElementInfo(objref);
 
         if (ei.getLockCount() == 0){
-          if (ei.checkUpdatedSharedness(ti)) {
+          ei = ei.getInstanceWithUpdatedSharedness(ti); 
+          if (ei.isShared()) {
             ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createSyncMethodExitCG(ei, ti);
             if (cg != null) {
               if (ss.setNextChoiceGenerator(cg)) {

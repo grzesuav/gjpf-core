@@ -64,7 +64,8 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
 
     // no use to break if there is no other thread, or the object is not shared
     // (but note this might change in a following execution path)
-    if (!ei.checkUpdatedSharedness(ti)){
+    ei = ei.getInstanceWithUpdatedSharedness(ti);
+    if (!ei.isShared()){
       return false;
     }
     if (ei.isImmutable()){

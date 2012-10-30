@@ -133,12 +133,12 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
       }
 
       ElementInfo ei = fi.getClassInfo().getStaticElementInfo();
-      if (ei.isImmutable()){
+      ei = ei.getInstanceWithUpdatedSharedness(ti);
+      
+      if (!ei.isShared() || ei.isImmutable()){
         return false;
       }
-      if (!ei.checkUpdatedSharedness(ti)){
-        return false;
-      }
+      
       if (isLockProtected(ti, ei)) {
         return false;
       }
