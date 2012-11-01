@@ -672,7 +672,7 @@ public class MJIEnv {
   }
 
   public void setStaticLongField (int clsObjRef, String fname, long val) {
-    ElementInfo cei = getStaticElementInfo(clsObjRef);
+    ElementInfo cei = getModifiableStaticElementInfo(clsObjRef);
     cei.setLongField(fname, val);
   }
 
@@ -695,11 +695,11 @@ public class MJIEnv {
     ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
 
     // <2do> - we should REALLY check for type compatibility here
-    ci.getStaticElementInfo().setReferenceField(fname, objref);
+    ci.getModifiableStaticElementInfo().setReferenceField(fname, objref);
   }
 
   public void setStaticReferenceField (int clsObjRef, String fname, int objref) {
-    ElementInfo cei = getStaticElementInfo(clsObjRef);
+    ElementInfo cei = getModifiableStaticElementInfo(clsObjRef);
 
     // <2do> - we should REALLY check for type compatibility here
     cei.setReferenceField(fname, objref);
@@ -1360,16 +1360,31 @@ public class MJIEnv {
     
     return null;
   }
+  
+  ElementInfo getModifiableStaticElementInfo (int clsObjRef) {
+    ClassInfo ci = getReferredClassInfo( clsObjRef);
+    if (ci != null) {
+      return ci.getModifiableStaticElementInfo();
+    }
+    
+    return null;
+  }
+  
 
   ClassInfo getClassInfo () {
     return ciMth;
   }
 
   public ClassInfo getReferredClassInfo (int clsObjRef) {
-    int ciId = getIntField(clsObjRef, "cref");    
-    ClassLoaderInfo cli = ClassLoaderInfo.getCurrentClassLoader(ti);
-    
-    return cli.getClassInfo(ciId);
+    ElementInfo ei = getElementInfo(clsObjRef);
+    if (ei.getClassInfo().getName().equals("java.lang.Class")) {
+      long uniqueId = ei.getLongField( "uniqueId");
+      ClassInfo ci = ClassInfo.getClassInfo(uniqueId);
+      return ci;
+      
+    } else {
+      throw new JPFException("not a java.lang.Class object: " + ei);
+    }
   }
 
   public ClassInfo getClassInfo (int objref) {

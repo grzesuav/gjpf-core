@@ -175,19 +175,19 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
 
     if (rt == Types.T_DOUBLE) {
       attr = frame.getLongOperandAttr();
-      double v = frame.doublePop();
+      double v = frame.popDouble();
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"));
       rei = env.getModifiableElementInfo(ret);
       rei.setDoubleField("value", v);
     } else if (rt == Types.T_FLOAT) {
       attr = frame.getOperandAttr();
-      int v = frame.pop();
+      float v = frame.popFloat();
       ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"));
       rei = env.getModifiableElementInfo(ret);
-      rei.setIntField("value", v);
+      rei.setFloatField("value", v);
     } else if (rt == Types.T_LONG) {
       attr = frame.getLongOperandAttr();
-      long v = frame.longPop();
+      long v = frame.popLong();
       ret = env.valueOfLong(v);
     } else if (rt == Types.T_BYTE) {
       attr = frame.getOperandAttr();
@@ -298,7 +298,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     {
       double v = eiArg.getDoubleField("value");
       if (destType == Types.T_DOUBLE){      
-        frame.longPush(Double.doubleToLongBits(v));
+        frame.pushLong(Double.doubleToLongBits(v));
         frame.setOperandAttr(attr);
         return true;
       }
@@ -313,7 +313,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
-        frame.longPush(Double.doubleToLongBits(v));
+        frame.pushLong(Double.doubleToLongBits(v));
         frame.setLongOperandAttr(attr);
         return true;
       }
@@ -324,7 +324,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       long v = eiArg.getLongField("value");
       switch (destType){
       case Types.T_LONG:
-        frame.longPush(v);
+        frame.pushLong(v);
         frame.setLongOperandAttr(attr);
         return true;
       case Types.T_FLOAT:
@@ -332,7 +332,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
-        frame.longPush( Double.doubleToLongBits((double)v));
+        frame.pushLong( Double.doubleToLongBits((double)v));
         frame.setLongOperandAttr(attr);
         return true;
       }
@@ -347,7 +347,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         frame.setOperandAttr(attr);
         return true;
       case Types.T_LONG:
-        frame.longPush(v);
+        frame.pushLong(v);
         frame.setLongOperandAttr(attr);
         return true;        
       case Types.T_FLOAT:
@@ -355,7 +355,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
-        frame.longPush( Double.doubleToLongBits((double)v));
+        frame.pushLong( Double.doubleToLongBits((double)v));
         frame.setLongOperandAttr(attr);
         return true;
       }
@@ -371,7 +371,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         frame.setOperandAttr(attr);
         return true;
       case Types.T_LONG:
-        frame.longPush(v);
+        frame.pushLong(v);
         frame.setLongOperandAttr(attr);
         return true;        
       case Types.T_FLOAT:
@@ -379,7 +379,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
-        frame.longPush( Double.doubleToLongBits((double)v));
+        frame.pushLong( Double.doubleToLongBits((double)v));
         frame.setLongOperandAttr(attr);
         return true;
       }
@@ -396,7 +396,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         frame.setOperandAttr(attr);
         return true;
       case Types.T_LONG:
-        frame.longPush(v);
+        frame.pushLong(v);
         frame.setLongOperandAttr(attr);
         return true;
       case Types.T_FLOAT:
@@ -404,7 +404,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
-        frame.longPush( Double.doubleToLongBits((double)v));
+        frame.pushLong( Double.doubleToLongBits((double)v));
         frame.setLongOperandAttr(attr);
         return true;
       }
@@ -420,7 +420,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         frame.setOperandAttr(attr);
         return true;
       case Types.T_LONG:
-        frame.longPush(v);
+        frame.pushLong(v);
         frame.setLongOperandAttr(attr);
         return true;        
       case Types.T_FLOAT:
@@ -428,7 +428,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         frame.setOperandAttr(attr);
         return true;
       case Types.T_DOUBLE:
-        frame.longPush( Double.doubleToLongBits((double)v));
+        frame.pushLong( Double.doubleToLongBits((double)v));
         frame.setLongOperandAttr(attr);
         return true;
       }

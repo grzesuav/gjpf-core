@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.jvm.DynamicElementInfo.DEIMemento;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.ObjectQueue;
 import gov.nasa.jpf.util.SparseClusterArray;
@@ -122,7 +123,14 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   }
 
   public Memento<ElementInfo> getMemento(){
-    return new SEIMemento(this);
+    if (isFrozen()) {
+      if (cachedMemento != null) {
+        return cachedMemento;
+      }
+    }
+
+    cachedMemento = new SEIMemento(this);
+    return cachedMemento;
   }
   
   @Override
@@ -180,6 +188,8 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   }
   
   void setStatus (int newStatus) {
+    checkIsModifiable();
+    
     if (status != newStatus) {
       status = newStatus;
       attributes |= ATTR_STATUS_CHANGED;
@@ -228,7 +238,8 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
     for (int i=0; i<n; i++) {
       FieldInfo fi = ci.getStaticField(i);
       if (fi.isReference()) {
-        heap.markStaticRoot(fields.getIntValue(fi.getStorageOffset()));
+        int objref = fields.getIntValue(fi.getStorageOffset());
+        heap.markStaticRoot(objref);
       }
     }
     
@@ -241,6 +252,8 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   }
   
   public void setClassObjectRef(int r) {
+    checkIsModifiable();
+    
     classObjectRef = r;
     attributes |= ATTR_COR_CHANGED;
   }

@@ -65,7 +65,7 @@ public class ObjVectorHeap extends GenericHeapImpl {
     TransformingOVMemento (ObjVectorHeap heap){
       super(heap);
       ctxSnap = heap.allocCounts.getSnapshot();
-      eiSnap = heap.elementInfos.getSnapshot(ei2mei);      
+      eiSnap = heap.elementInfos.getSnapshot(ei2mei);
     }
     
     @Override
@@ -75,6 +75,7 @@ public class ObjVectorHeap extends GenericHeapImpl {
       ObjVectorHeap heap = (ObjVectorHeap)inSitu;
       heap.allocCounts.restore(ctxSnap);
       heap.elementInfos.restore(eiSnap, mei2ei);
+
       return heap;
     }    
   }

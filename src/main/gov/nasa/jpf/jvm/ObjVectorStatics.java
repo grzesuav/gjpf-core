@@ -18,9 +18,14 @@
 //
 package gov.nasa.jpf.jvm;
 
+import java.util.Iterator;
+
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.jvm.ObjVectorHeap.ElementInfoFreezer;
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.ObjVector;
+import gov.nasa.jpf.util.Processor;
+import gov.nasa.jpf.util.Transformer;
 
 /**
  * Statics implementation that uses a simple ObjVector as the underlying container.
@@ -33,6 +38,9 @@ public class ObjVectorStatics implements Statics {
   static class OVMemento implements Memento<Statics> {
     ObjVector.Snapshot<StaticElementInfo> eiSnap;
     
+    protected OVMemento() {
+    }
+    
     OVMemento (ObjVectorStatics statics){
       eiSnap = statics.elementInfos.getSnapshot();
     }
@@ -44,6 +52,36 @@ public class ObjVectorStatics implements Statics {
       return statics;
     }
   }
+  
+/**
+  protected static Transformer<StaticElementInfo,Memento<StaticElementInfo>> ei2mei = new Transformer<StaticElementInfo,Memento<StaticElementInfo>>(){
+    public Memento<StaticElementInfo> transform (StaticElementInfo ei){
+      return (Memento<StaticElementInfo>)ei.getMemento();
+    }
+  };
+
+  protected static Transformer<Memento<ElementInfo>,ElementInfo> mei2ei = new Transformer<Memento<ElementInfo>,ElementInfo>(){
+    public ElementInfo transform(Memento<ElementInfo> m) {
+      ElementInfo ei = m.restore(null);
+      return ei;
+    }
+  };
+  static class TransformingOVMemento implements Memento<Statics> {
+    ObjVector.MutatingSnapshot<StaticElementInfo,Memento<StaticElementInfo>> eiSnap;
+    
+    TransformingOVMemento (ObjVectorStatics statics){
+      eiSnap = statics.elementInfos.getSnapshot(ei2mei);
+    }
+    
+    @Override
+    public Statics restore (Statics inSitu) {
+      ObjVectorStatics statics = (ObjVectorStatics) inSitu;
+      statics.elementInfos.restore(eiSnap, mei2ei);
+System.out.println("@@ restore static with 86: " + statics.get(86));
+      return statics;
+    }
+  }
+**/
   
   protected ObjVector<StaticElementInfo> elementInfos;
   
@@ -103,7 +141,7 @@ public class ObjVectorStatics implements Statics {
   
   @Override
   public StaticElementInfo get(int id) {
-    return elementInfos.get(id);
+    return (StaticElementInfo)elementInfos.get(id);
   }
 
   @Override
@@ -127,12 +165,25 @@ public class ObjVectorStatics implements Statics {
     int tid = ti.getId();
     boolean isThreadTermination = ti.isTerminated();
     
-    for (ElementInfo e : elementInfos) {
+    for (ElementInfo e : this) {
       e.cleanUp( heap, isThreadTermination, tid);
     }
   }
   
   //--- state restoration
+  
+  static class Freezer implements Processor<StaticElementInfo> {
+    @Override
+    public void process (StaticElementInfo ei) {
+      ei.freeze();
+    }
+  }
+  static Freezer freezer = new Freezer();
+  
+  @Override
+  public void setStored() {
+    elementInfos.process(freezer);
+  }
   
   @Override
   public Memento<Statics> getMemento(MementoFactory factory) {
@@ -141,18 +192,26 @@ public class ObjVectorStatics implements Statics {
 
   @Override
   public Memento<Statics> getMemento() {
+    setStored();
+    
+    //return new TransformingOVMemento(this);
     return new OVMemento(this);
   }
   
   @Override
+  public Iterator<ElementInfo> iterator(){
+    return ((ObjVector)elementInfos).nonNullIterator();
+  }
+  
+  @Override
   public void markRoots(Heap heap) {
-    for (StaticElementInfo ei : elementInfos.elements()){
+    for (StaticElementInfo ei : liveStatics()){
       ei.markStaticRoot(heap);
     }
   }
 
   @Override
-  public Iterable<StaticElementInfo> elementInfos() {
+  public Iterable<StaticElementInfo> liveStatics() {
     return elementInfos.elements();
   }
 

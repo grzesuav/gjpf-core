@@ -129,14 +129,14 @@ public class StackFrameTest extends TestJPF {
     StackFrame frame = new StackFrame(0, 2);
 
     long value = 0x123456780ABCDEFL;
-    frame.longPush(value);
+    frame.pushLong(value);
 
     Object obj_Long = frame.getLocalValueObject(new LocalVarInfo("testLong", "J", "J", 0, 0, 0));
     assert obj_Long != null;
     assert obj_Long instanceof Long;
 
     long result_getLocValObj = (Long) obj_Long;
-    long result_popLong = frame.longPop();
+    long result_popLong = frame.popLong();
 
     assert result_getLocValObj == value;
     assert result_popLong == value;
@@ -154,14 +154,14 @@ public class StackFrameTest extends TestJPF {
 
     double value = Math.PI;
 
-    frame.doublePush(value);
+    frame.pushDouble(value);
 
     Object obj_Double = frame.getLocalValueObject(new LocalVarInfo("testDouble", "D", "D", 0, 0, frame.getTopPos() - 1));
     assert obj_Double != null;
     assert obj_Double instanceof Double;
 
     double result_getLocValObj = (Double) obj_Double;
-    double result_popLong = frame.doublePop();
+    double result_popLong = frame.popDouble();
 
     assert result_getLocValObj == value;
     assert result_popLong == value;

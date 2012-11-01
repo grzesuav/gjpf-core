@@ -81,13 +81,12 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
   }
 
   public Memento<ElementInfo> getMemento(){
-    /**/
     if (isFrozen()) {
       if (cachedMemento != null) {
         return cachedMemento;
       }
     }
-    /**/
+
     cachedMemento = new DEIMemento(this);
     return cachedMemento;
   }

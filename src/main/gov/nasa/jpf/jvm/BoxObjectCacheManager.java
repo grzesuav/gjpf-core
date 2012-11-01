@@ -76,7 +76,7 @@ public class BoxObjectCacheManager {
     }
 
     ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(boxObjectCaches);
-    cacheClass.getStaticElementInfo().setReferenceField("byteCache", aRef);
+    cacheClass.getModifiableStaticElementInfo().setReferenceField("byteCache", aRef);
     return aRef;
   }
 
@@ -92,7 +92,7 @@ public class BoxObjectCacheManager {
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Byte");
     int byteObj = ti.getHeap().newObject(ci, ti);
-    ti.getElementInfo(byteObj).setByteField("value", b);
+    ti.getModifiableElementInfo(byteObj).setByteField("value", b);
     return byteObj;
   }
 
@@ -114,7 +114,7 @@ public class BoxObjectCacheManager {
     }
 
     ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(boxObjectCaches);
-    cacheClass.getStaticElementInfo().setReferenceField("charCache", aRef);
+    cacheClass.getModifiableStaticElementInfo().setReferenceField("charCache", aRef);
     return aRef;
   }
 
@@ -130,7 +130,7 @@ public class BoxObjectCacheManager {
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Character");
     int charObj = ti.getHeap().newObject(ci, ti);
-    ti.getElementInfo(charObj).setCharField("value", c);
+    ti.getModifiableElementInfo(charObj).setCharField("value", c);
     return charObj;
   }
 
@@ -156,7 +156,7 @@ public class BoxObjectCacheManager {
     }
 
     ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(boxObjectCaches);
-    cacheClass.getStaticElementInfo().setReferenceField("shortCache", aRef);
+    cacheClass.getModifiableStaticElementInfo().setReferenceField("shortCache", aRef);
     return aRef;
   }
 
@@ -172,7 +172,7 @@ public class BoxObjectCacheManager {
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Short");
     int shortObj = ti.getHeap().newObject(ci, ti);
-    ti.getElementInfo(shortObj).setShortField("value", s);
+    ti.getModifiableElementInfo(shortObj).setShortField("value", s);
     return shortObj;
   }
 
@@ -197,7 +197,7 @@ public class BoxObjectCacheManager {
     }
 
     ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(boxObjectCaches);
-    cacheClass.getStaticElementInfo().setReferenceField("intCache", aRef);
+    cacheClass.getModifiableStaticElementInfo().setReferenceField("intCache", aRef);
     return aRef;
   }
 
@@ -213,7 +213,7 @@ public class BoxObjectCacheManager {
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Integer");
     int intObj = ti.getHeap().newObject(ci, ti);
-    ti.getElementInfo(intObj).setIntField("value", i);
+    ti.getModifiableElementInfo(intObj).setIntField("value", i);
     return intObj;
   }
 
@@ -238,7 +238,7 @@ public class BoxObjectCacheManager {
     }
 
     ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(boxObjectCaches);
-    cacheClass.getStaticElementInfo().setReferenceField("longCache", aRef);
+    cacheClass.getModifiableStaticElementInfo().setReferenceField("longCache", aRef);
     return aRef;
   }
 
@@ -254,7 +254,7 @@ public class BoxObjectCacheManager {
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Long");
     int longObj = ti.getHeap().newObject(ci, ti);
-    ti.getElementInfo(longObj).setLongField("value", l);
+    ti.getModifiableElementInfo(longObj).setLongField("value", l);
     return longObj;
   }
 }

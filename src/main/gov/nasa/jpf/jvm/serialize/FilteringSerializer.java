@@ -409,7 +409,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   protected void serializeStatics(Statics statics){
     buf.add(statics.size());
 
-    for (StaticElementInfo sei : statics.elementInfos()) {
+    for (StaticElementInfo sei : statics.liveStatics()) {
       serializeClass(sei);
     }
   }

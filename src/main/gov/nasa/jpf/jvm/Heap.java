@@ -19,12 +19,10 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.util.HashData;
-
 /**
  * this is our implementation independent model of the heap
  */
-public interface Heap {
+public interface Heap extends Iterable<ElementInfo> {
 
   //--- this is the common heap client API
 

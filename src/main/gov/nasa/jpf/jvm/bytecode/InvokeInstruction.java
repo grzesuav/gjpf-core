@@ -223,11 +223,11 @@ public abstract class InvokeInstruction extends JVMInstruction {
         break;
 
       case Types.T_LONG:
-        args[i] = new Long(frame.longPeek(off));
+        args[i] = new Long(frame.peekLong(off));
         off+=2;
         break;
       case Types.T_DOUBLE:
-        args[i] = new Double(Types.longToDouble(frame.longPeek(off)));
+        args[i] = new Double(Types.longToDouble(frame.peekLong(off)));
         off+=2;
         break;
 

@@ -1074,6 +1074,7 @@ public class ThreadInfo
     boolean status =  ei.getBooleanField("interrupted");
 
     if (resetStatus && status) {
+      ei = ei.getModifiableInstance();
       ei.setBooleanField("interrupted", false);
     }
 
@@ -1364,6 +1365,10 @@ public class ThreadInfo
     return getElementInfo(objRef);
   }
 
+  public ElementInfo getModifiableThreadObject() {
+    return getModifiableElementInfo(objRef);
+  }
+  
   public ElementInfo getObjectReturnValue () {
     return vm.getElementInfo(peek());
   }
@@ -2699,28 +2704,28 @@ public class ThreadInfo
    * Peeks the top long value from the top stack frame.
    */
   public long longPeek () {
-    return top.longPeek();
+    return top.peekLong();
   }
 
   /**
    * Peeks a long value from the top stack frame.
    */
   public long longPeek (int n) {
-    return top.longPeek(n);
+    return top.peekLong(n);
   }
 
   /**
    * Pops the top long value from the top stack frame.
    */
   public long longPop () {
-    return topClone().longPop();
+    return topClone().popLong();
   }
 
   /**
    * Pushes a long value of the top stack frame.
    */
   public void longPush (long v) {
-    topClone().longPush(v);
+    topClone().pushLong(v);
   }
 
 
@@ -2972,7 +2977,7 @@ public class ThreadInfo
   Instruction throwStopException (){
 
     // <2do> maybe we should do a little sanity check first
-    ElementInfo ei = getThreadObject();
+    ElementInfo ei = getModifiableThreadObject();
 
     int xRef = ei.getReferenceField("stopException");
     ei.setReferenceField("stopException", MJIEnv.NULL);

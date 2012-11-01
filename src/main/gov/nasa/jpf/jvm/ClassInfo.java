@@ -1155,7 +1155,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return isStringClassInfo;
   }
 
-  public static ClassInfo getClassInfo(int uniqueId) {
+  public static ClassInfo getClassInfo(long uniqueId) {
     return classes.get(uniqueId);
   }
 
@@ -2386,16 +2386,17 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       for (ClassInfo ifc : interfaces) {
         ifc.registerClass(ti);
       }
+      
+      ClassInfo.logger.finer("registering class: ", name);
+      
+      createAndLinkStaticElementInfo( ti);
+      createAndLinkClassObject( ti); 
     }
-    
-    ClassInfo.logger.finer("registering class: ", name);
-    
-    createAndLinkStaticElementInfo( ti);
-    createAndLinkClassObject( ti);
   }
 
   public boolean isRegistered () {
-    return (id != -1);
+    //return (id != -1);
+    return getStaticElementInfo() != null;
   }
   
   void createAndLinkStaticElementInfo (ThreadInfo ti) {
@@ -2403,7 +2404,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     StaticElementInfo sei = statics.newClass(this, ti);
     
     id = sei.getObjectRef();  // kind of a misnomer, it's really an id
-    uniqueId = (classLoader.getGlobalId() << 32) | id;
+    
+    uniqueId = ((long)classLoader.getGlobalId() << 32) | id;
     classes.put(uniqueId, this);    
   }
 
@@ -2421,7 +2423,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     ei.setBooleanField("isPrimitive", isPrimitive());
     
     // link the SUT class object to this ClassInfo
-    ei.setIntField("cref", id);
+    ei.setLongField("uniqueId", uniqueId);
 
     // link the SUT class object to the classloader 
     ei.setReferenceField("classLoader", classLoader.getClassLoaderObjectRef());
@@ -2518,7 +2520,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * @return true if we pushed a &lt;clinit&gt; frame
    */
   protected boolean pushClinit (ThreadInfo ti) {
-    StaticElementInfo sei = getModifiableStaticElementInfo();
+    StaticElementInfo sei = getStaticElementInfo();
     int stat = sei.getStatus();
     
     if (stat != INITIALIZED) {

@@ -1667,26 +1667,26 @@ public class StackFrame implements Cloneable {
     return sw.toString();
   }
 
-  public long longPeek () {
+  public long peekLong () {
     return Types.intsToLong( slots[top], slots[top-1]);
   }
 
-  public long longPeek (int n) {
+  public long peekLong (int n) {
     int i = top - n;
     return Types.intsToLong( slots[i], slots[i-1]);
   }
 
-  public void longPush (long v) {
+  public void pushLong (long v) {
     push(Types.hiLong(v));
     push(Types.loLong(v));
   }
 
-  public void doublePush (double v) {
+  public void pushDouble (double v) {
     push(Types.hiDouble(v));
     push(Types.loDouble(v));
   }
 
-  public double doublePop () {
+  public double popDouble () {
     int i = top;
 
     int lo = slots[i--];
@@ -1702,7 +1702,7 @@ public class StackFrame implements Cloneable {
     return Types.intsToDouble(lo, hi);
   }
 
-  public long longPop () {
+  public long popLong () {
     int i = top;
 
     int lo = slots[i--];
@@ -1748,6 +1748,18 @@ public class StackFrame implements Cloneable {
     top = t;
   }
 
+  public float popFloat() {    
+    int v = slots[top];
+
+    if (attrs != null){ // just to avoid memory leaks
+      attrs[top] = null;
+    }
+
+    top--;
+
+    return Float.intBitsToFloat(v);
+  }
+  
   public int pop () {
     //assert (top >= stackBase) : "stack empty";
     

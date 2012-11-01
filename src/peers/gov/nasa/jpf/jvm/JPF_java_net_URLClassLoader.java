@@ -55,7 +55,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
   @MJI
   public int findClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
     String typeName = env.getStringObject(nameRef);
-
+    
     // retrieve the classloader
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
 

@@ -73,11 +73,6 @@ public class JPF_java_lang_Object extends NativePeer {
     return (objref ^ 0xABCD);
   }
 
-  @MJI
-  public void registerNatives____V (MJIEnv env, int clsObjRef) {
-    // nothing to do, we just intercept
-  }
-
   static void wait0(MJIEnv env, int objref, long timeout) {
     // IllegalMonitorStateExceptions are checked in the MJIEnv methods
     ThreadInfo ti = env.getThreadInfo();
@@ -143,6 +138,12 @@ public class JPF_java_lang_Object extends NativePeer {
   }
 
   @MJI
+  public void wait__JI__V (MJIEnv env, int objref, long timeout, int nanos) {
+    wait0(env,objref,timeout);
+  }
+
+  
+  @MJI
   public void notify____V (MJIEnv env, int objref) {
     // IllegalMonitorStateExceptions are checked in the MJIEnv methods
 
@@ -188,4 +189,13 @@ public class JPF_java_lang_Object extends NativePeer {
     }
   }
 
+  @MJI
+  public int toString____Ljava_lang_String_2 (MJIEnv env, int objref) {
+    ClassInfo ci = env.getClassInfo(objref);
+    int hc = hashCode____I(env,objref);
+    
+    String s = ci.getName() + '@' + hc;
+    int sref = env.newString(s);
+    return sref;
+  }
 }

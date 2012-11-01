@@ -30,7 +30,7 @@ package gov.nasa.jpf.jvm;
  * methods for name lookup. This allows implementors to use efficient lookup based on the numerical
  * ClassInfo id (which is only unique within this Statics / ClassLoader namespace)
  */
-public interface Statics {
+public interface Statics extends Iterable<ElementInfo> {
 
   //--- construction
   
@@ -58,19 +58,18 @@ public interface Statics {
   
   //--- housekeeping
   
+  Iterable<StaticElementInfo> liveStatics();
+  
   void markRoots (Heap heap);
   void cleanUpDanglingReferences (Heap heap);
   
   
   //--- state management
   
+  void setStored();
+  
   Memento<Statics> getMemento(MementoFactory factory);
   Memento<Statics> getMemento();
-  
-  /**
-   * this needs to be a canonical iterator
-   */
-  Iterable<StaticElementInfo> elementInfos();
   
   int size();
 }

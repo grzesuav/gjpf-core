@@ -65,11 +65,9 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
   private ClassLoader classLoader;
   
   /**
-   * this is the (search global but class loader specific) id of the ClassInfo we
-   * refer to (so that we don't have to do name lookup all the time).
-   * Note this still requires the current ClassLoaderInfo in order to obtain the ClassInfo
+   * search global id of the corresponding ClassInfo, which factors in the classloader
    */
-  private int cref;
+  private long uniqueId;
 
   /**
    * to be set during <clinit> of the corresponding class

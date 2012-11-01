@@ -255,12 +255,12 @@ public class JVM {
    * do we see our model classes? Some of them cannot be used from the standard CLASSPATH, because they
    * are tightly coupled with the JPF core (e.g. java.lang.Class, java.lang.Thread,
    * java.lang.StackTraceElement etc.)
-   * Our strategy here is kind of lame - we just look into java.lang.Class, if we find the 'int cref' field
+   * Our strategy here is kind of lame - we just look into java.lang.Class if we find the 'uniqueId' field
    * (that's a true '42')
    */
   static boolean checkModelClassAccess () {
     ClassInfo ci = ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo();
-    return (ci.getDeclaredInstanceField("cref") != null);
+    return (ci.getDeclaredInstanceField("uniqueId") != null);
   }
 
   static boolean checkClassName (String clsName) {

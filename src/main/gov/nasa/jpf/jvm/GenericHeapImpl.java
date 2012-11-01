@@ -281,6 +281,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     AllocationContext ctx = getSUTAllocationContext( ci, ti);
     int index = getNewElementInfoIndex( ctx);
     createObject( ci, ti, index);
+
     return index;
   }
 
@@ -591,6 +592,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
         } else {
         }
         **/
+
         ei.processReleaseActions();
         
         // <2do> still have to process finalizers here, which might make the object live again
