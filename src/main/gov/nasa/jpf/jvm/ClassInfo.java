@@ -890,7 +890,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public boolean equals (Object o) {
     if (o instanceof ClassInfo) {
       ClassInfo other = (ClassInfo)o;
-      return ((id == other.id) && (classLoader.getGlobalId() == other.classLoader.getGlobalId()));
+      if (classLoader.getGlobalId() == other.classLoader.getGlobalId()) {
+        // beware of ClassInfos that are not registered yet - in this case we have to compare names
+        if (((id != -1) && (id == other.id)) || name.equals(other.name)) {
+          return true;
+        }
+      }
     }
     
     return false;

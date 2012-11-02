@@ -392,7 +392,7 @@ public class ClassLoaderInfo
   protected void loadInterfaces (ClassInfo ci) throws ClassInfoException {
     for (String ifcName : ci.interfaceNames) {
       ClassInfo.logger.finer("resolving interface: ", ifcName, " of ", ci.getName());
-
+      
       boolean loaded = false;
       for (ClassInfo ifc: ci.interfaces) {
         if(ifc.getName().equals(ifcName)) {
