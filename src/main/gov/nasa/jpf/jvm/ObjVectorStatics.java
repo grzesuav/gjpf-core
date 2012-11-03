@@ -21,11 +21,8 @@ package gov.nasa.jpf.jvm;
 import java.util.Iterator;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.ObjVectorHeap.ElementInfoFreezer;
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.ObjVector;
-import gov.nasa.jpf.util.Processor;
-import gov.nasa.jpf.util.Transformer;
 
 /**
  * Statics implementation that uses a simple ObjVector as the underlying container.
@@ -36,12 +33,10 @@ import gov.nasa.jpf.util.Transformer;
 public class ObjVectorStatics implements Statics {
 
   static class OVMemento implements Memento<Statics> {
-    ObjVector.Snapshot<StaticElementInfo> eiSnap;
-    
-    protected OVMemento() {
-    }
+    ObjVector.Snapshot<ElementInfo> eiSnap;
     
     OVMemento (ObjVectorStatics statics){
+      statics.elementInfos.process( ElementInfo.storer);
       eiSnap = statics.elementInfos.getSnapshot();
     }
     
@@ -49,41 +44,13 @@ public class ObjVectorStatics implements Statics {
     public Statics restore(Statics inSitu) {
       ObjVectorStatics statics = (ObjVectorStatics) inSitu;
       statics.elementInfos.restore(eiSnap);
+      statics.elementInfos.process( ElementInfo.restorer);
+      
       return statics;
     }
   }
   
-/**
-  protected static Transformer<StaticElementInfo,Memento<StaticElementInfo>> ei2mei = new Transformer<StaticElementInfo,Memento<StaticElementInfo>>(){
-    public Memento<StaticElementInfo> transform (StaticElementInfo ei){
-      return (Memento<StaticElementInfo>)ei.getMemento();
-    }
-  };
-
-  protected static Transformer<Memento<ElementInfo>,ElementInfo> mei2ei = new Transformer<Memento<ElementInfo>,ElementInfo>(){
-    public ElementInfo transform(Memento<ElementInfo> m) {
-      ElementInfo ei = m.restore(null);
-      return ei;
-    }
-  };
-  static class TransformingOVMemento implements Memento<Statics> {
-    ObjVector.MutatingSnapshot<StaticElementInfo,Memento<StaticElementInfo>> eiSnap;
-    
-    TransformingOVMemento (ObjVectorStatics statics){
-      eiSnap = statics.elementInfos.getSnapshot(ei2mei);
-    }
-    
-    @Override
-    public Statics restore (Statics inSitu) {
-      ObjVectorStatics statics = (ObjVectorStatics) inSitu;
-      statics.elementInfos.restore(eiSnap, mei2ei);
-System.out.println("@@ restore static with 86: " + statics.get(86));
-      return statics;
-    }
-  }
-**/
-  
-  protected ObjVector<StaticElementInfo> elementInfos;
+  protected ObjVector<ElementInfo> elementInfos;
   
   // search global class ids (for this ClassLoader only)
   // NOTE this is per instance so that each one is as dense as possible, but since
@@ -95,7 +62,7 @@ System.out.println("@@ restore static with 86: " + statics.get(86));
   //--- construction
   
   public ObjVectorStatics (Config conf) {
-    elementInfos = new ObjVector<StaticElementInfo>();
+    elementInfos = new ObjVector<ElementInfo>();
     
     nextId = 0;
     ids = new IntTable<String>();
@@ -141,12 +108,13 @@ System.out.println("@@ restore static with 86: " + statics.get(86));
   
   @Override
   public StaticElementInfo get(int id) {
+    // the cast sucks, but otherwise we run into the Processor covariance problem 
     return (StaticElementInfo)elementInfos.get(id);
   }
 
   @Override
   public StaticElementInfo getModifiable(int id) {
-    StaticElementInfo ei = elementInfos.get(id);
+    StaticElementInfo ei = (StaticElementInfo)elementInfos.get(id);
     
     if (ei.isFrozen()) {
       ei = (StaticElementInfo)ei.deepClone();
@@ -172,19 +140,6 @@ System.out.println("@@ restore static with 86: " + statics.get(86));
   
   //--- state restoration
   
-  static class Freezer implements Processor<StaticElementInfo> {
-    @Override
-    public void process (StaticElementInfo ei) {
-      ei.freeze();
-    }
-  }
-  static Freezer freezer = new Freezer();
-  
-  @Override
-  public void setStored() {
-    elementInfos.process(freezer);
-  }
-  
   @Override
   public Memento<Statics> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
@@ -192,12 +147,10 @@ System.out.println("@@ restore static with 86: " + statics.get(86));
 
   @Override
   public Memento<Statics> getMemento() {
-    setStored();
-    
-    //return new TransformingOVMemento(this);
     return new OVMemento(this);
   }
   
+  @SuppressWarnings("rawtypes")
   @Override
   public Iterator<ElementInfo> iterator(){
     return ((ObjVector)elementInfos).nonNullIterator();
@@ -210,9 +163,10 @@ System.out.println("@@ restore static with 86: " + statics.get(86));
     }
   }
 
+  @SuppressWarnings("rawtypes")
   @Override
   public Iterable<StaticElementInfo> liveStatics() {
-    return elementInfos.elements();
+    return (Iterable)elementInfos.elements();
   }
 
   @Override

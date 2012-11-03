@@ -106,7 +106,7 @@ public class ClassLoaderList implements Cloneable, Iterable<ClassLoaderInfo>, Re
   }
 
   public void add (ClassLoaderInfo cli) {
-    int id = cli.getGlobalId();
+    int id = cli.getId();
     
     if (classLoaders == null) {
       classLoaders = new ClassLoaderInfo[1];
@@ -118,7 +118,7 @@ public class ClassLoaderList implements Cloneable, Iterable<ClassLoaderInfo>, Re
       
       for (int i=0; i<len; i++) {
         ClassLoaderInfo c = classLoaders[i];
-        if (c.getGlobalId() > id) {
+        if (c.getId() > id) {
           System.arraycopy(classLoaders, i, a, i+1, (len-i));
           a[i] = cli;
           classLoaders = a;
@@ -135,6 +135,18 @@ public class ClassLoaderList implements Cloneable, Iterable<ClassLoaderInfo>, Re
 
   public ClassLoaderInfo get(int i) {
     return classLoaders[i];
+  }
+  
+  public ClassLoaderInfo getClassLoaderInfoWithId (int id) {
+    int len = classLoaders.length;
+    for (int i=0; i<len; i++) {
+      ClassLoaderInfo c = classLoaders[i];
+      if (c.getId() == id) {
+        return c;
+      }
+    }
+    
+    return null;
   }
 
   public int size() {

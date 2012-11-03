@@ -18,68 +18,20 @@
 //
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.DynamicElementInfo.DEIMemento;
 import gov.nasa.jpf.util.HashData;
-import gov.nasa.jpf.util.ObjectQueue;
-import gov.nasa.jpf.util.SparseClusterArray;
 
 /**
  * A specialized version of ElementInfo that is used for static fields. Each
  * registered ClassInfo instance has its own StaticElementInfo instance
  */
-public final class StaticElementInfo extends ElementInfo implements Restorable<ElementInfo> {
+public final class StaticElementInfo extends ElementInfo {
 
   // this is kind of dangerous - make sure these flags are still unused in ElementInfo
   static final int ATTR_COR_CHANGED    = 0x100000;
   static final int ATTR_STATUS_CHANGED = 0x200000;
 
   static final int ATTR_ANY_CHANGED = ElementInfo.ATTR_ANY_CHANGED | ATTR_COR_CHANGED | ATTR_STATUS_CHANGED;
-
-  // our default memento implementation
-  static class SEIMemento extends EIMemento<StaticElementInfo> {
-    int classObjectRef;
-    int status;
-
-    SEIMemento (StaticElementInfo ei) {
-      super(ei);
-
-      this.classObjectRef = ei.classObjectRef;
-      this.status = ei.status;
-    }
-
-    @Override
-    public ElementInfo restore (ElementInfo ei){
-      StaticElementInfo sei = (ei != null) ? (StaticElementInfo) ei : get();
-      if (sei == null){
-        sei = new StaticElementInfo();
-      }
-
-      super.restore(sei);
-
-      sei.status = status;
-      sei.classObjectRef = classObjectRef;
-
-      return sei;
-    }
-
-    /** for debugging purposes
-    public boolean equals(Object o){
-      if (o instanceof SEIMemento){
-        SEIMemento other = (SEIMemento)o;
-        if (!super.equals(o)) return false;
-        if (classObjectRef != other.classObjectRef) return false;
-        if (status != other.status) return false;
-        return true;
-      }
-      return false;
-    }
-    public String toString() {
-      return "SEIMemento {{" +super.toString() + "},classObjRef="+classObjectRef+",status="+status+"}";
-    }
-    **/
-  }
   
   int classObjectRef = -1;
   int status = ClassInfo.UNINITIALIZED;
@@ -116,21 +68,6 @@ public final class StaticElementInfo extends ElementInfo implements Restorable<E
   @Override
   public boolean isObject(){
     return false;
-  }
-  
-  public Memento<ElementInfo> getMemento(MementoFactory factory) {
-    return factory.getMemento(this);
-  }
-
-  public Memento<ElementInfo> getMemento(){
-    if (isFrozen()) {
-      if (cachedMemento != null) {
-        return cachedMemento;
-      }
-    }
-
-    cachedMemento = new SEIMemento(this);
-    return cachedMemento;
   }
   
   @Override

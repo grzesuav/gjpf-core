@@ -62,22 +62,23 @@ public class BoxObjectCacheManager {
   public static int initByteCache (ThreadInfo ti) {
     byteLow = (byte) ti.getVM().getConfig().getInt("vm.cache.low_byte", defLow);
     byteHigh = (byte) ti.getVM().getConfig().getInt("vm.cache.high_byte", defHigh);
-
     int n = (byteHigh - byteLow) + 1;
-    int aRef = ti.getHeap().newArray("Ljava/lang/Byte", n, ti);
-    ElementInfo ei = ti.getModifiableElementInfo(aRef);
+
+    Heap heap = ti.getHeap();
+    ElementInfo eiArray = heap.newArray("Ljava/lang/Byte", n, ti);
+    int arrayRef = eiArray.getObjectRef();
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Byte");
     byte val = byteLow;
     for (int i = 0; i < n; i++) {
-      int byteObj = ti.getHeap().newObject(ci, ti);
-      ti.getModifiableElementInfo(byteObj).setByteField("value", val++);
-      ei.setReferenceElement(i, byteObj);
+      ElementInfo eiByte = heap.newObject(ci, ti);
+      eiByte.setByteField("value", val++);
+      eiArray.setReferenceElement(i, eiByte.getObjectRef());
     }
 
     ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(boxObjectCaches);
-    cacheClass.getModifiableStaticElementInfo().setReferenceField("byteCache", aRef);
-    return aRef;
+    cacheClass.getModifiableStaticElementInfo().setReferenceField("byteCache", arrayRef);
+    return arrayRef;
   }
 
   public static int valueOfByte (ThreadInfo ti, byte b) {
@@ -91,9 +92,9 @@ public class BoxObjectCacheManager {
     if (b >= byteLow && b <= byteHigh) { return ti.getElementInfo(byteCache).getReferenceElement(b - byteLow); }
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Byte");
-    int byteObj = ti.getHeap().newObject(ci, ti);
-    ti.getModifiableElementInfo(byteObj).setByteField("value", b);
-    return byteObj;
+    ElementInfo eiByte = ti.getHeap().newObject(ci, ti);
+    eiByte.setByteField("value", b);
+    return eiByte.getObjectRef();
   }
 
   // Character cache bound
@@ -101,21 +102,22 @@ public class BoxObjectCacheManager {
 
   public static int initCharCache (ThreadInfo ti) {
     charHigh = ti.getVM().getConfig().getInt("vm.cache.high_char", defHigh);
-
     int n = charHigh + 1;
-    int aRef = ti.getHeap().newArray("Ljava/lang/Character", n, ti);
-    ElementInfo ei = ti.getModifiableElementInfo(aRef);
+    
+    Heap heap = ti.getHeap();    
+    ElementInfo eiArray = heap.newArray("Ljava/lang/Character", n, ti);
+    int arrayRef = eiArray.getObjectRef();
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Character");
     for (int i = 0; i < n; i++) {
-      int charObj = ti.getHeap().newObject(ci, ti);
-      ti.getModifiableElementInfo(charObj).setCharField("value", (char) i);
-      ei.setReferenceElement(i, charObj);
+      ElementInfo eiChar = heap.newObject(ci, ti);
+      eiChar.setCharField("value", (char) i);
+      eiArray.setReferenceElement(i, eiChar.getObjectRef());
     }
 
     ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(boxObjectCaches);
-    cacheClass.getModifiableStaticElementInfo().setReferenceField("charCache", aRef);
-    return aRef;
+    cacheClass.getModifiableStaticElementInfo().setReferenceField("charCache", arrayRef);
+    return arrayRef;
   }
 
   public static int valueOfCharacter (ThreadInfo ti, char c) {
@@ -129,9 +131,9 @@ public class BoxObjectCacheManager {
     if (c >= 0 && c <= charHigh) { return ti.getElementInfo(charCache).getReferenceElement(c); }
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Character");
-    int charObj = ti.getHeap().newObject(ci, ti);
-    ti.getModifiableElementInfo(charObj).setCharField("value", c);
-    return charObj;
+    ElementInfo eiChar = ti.getHeap().newObject(ci, ti);
+    eiChar.setCharField("value", c);
+    return eiChar.getObjectRef();
   }
 
   // Short cache bounds
@@ -142,22 +144,23 @@ public class BoxObjectCacheManager {
   public static int initShortCache (ThreadInfo ti) {
     shortLow = (short) ti.getVM().getConfig().getInt("vm.cache.low_short", defLow);
     shortHigh = (short) ti.getVM().getConfig().getInt("vm.cache.high_short", defHigh);
-
     int n = (shortHigh - shortLow) + 1;
-    int aRef = ti.getHeap().newArray("Ljava/lang/Short", n, ti);
-    ElementInfo ei = ti.getModifiableElementInfo(aRef);
+    
+    Heap heap = ti.getHeap();    
+    ElementInfo eiArray = heap.newArray("Ljava/lang/Short", n, ti);
+    int arrayRef = eiArray.getObjectRef();
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Short");
     short val = shortLow;
     for (int i = 0; i < n; i++) {
-      int shortObj = ti.getHeap().newObject(ci, ti);
-      ti.getModifiableElementInfo(shortObj).setShortField("value", val++);
-      ei.setReferenceElement(i, shortObj);
+      ElementInfo eiShort = heap.newObject(ci, ti);
+      eiShort.setShortField("value", val++);
+      eiArray.setReferenceElement(i, eiShort.getObjectRef());
     }
 
     ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(boxObjectCaches);
-    cacheClass.getModifiableStaticElementInfo().setReferenceField("shortCache", aRef);
-    return aRef;
+    cacheClass.getModifiableStaticElementInfo().setReferenceField("shortCache", arrayRef);
+    return arrayRef;
   }
 
   public static int valueOfShort (ThreadInfo ti, short s) {
@@ -171,9 +174,9 @@ public class BoxObjectCacheManager {
     if (s >= shortLow && s <= shortHigh) { return ti.getElementInfo(shortCache).getReferenceElement(s - shortLow); }
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Short");
-    int shortObj = ti.getHeap().newObject(ci, ti);
-    ti.getModifiableElementInfo(shortObj).setShortField("value", s);
-    return shortObj;
+    ElementInfo eiShort = ti.getHeap().newObject(ci, ti);
+    eiShort.setShortField("value", s);
+    return eiShort.getObjectRef();
   }
 
   // Integer cache bounds
@@ -184,21 +187,22 @@ public class BoxObjectCacheManager {
   public static int initIntCache (ThreadInfo ti) {
     intLow = ti.getVM().getConfig().getInt("vm.cache.low_int", defLow);
     intHigh = ti.getVM().getConfig().getInt("vm.cache.high_int", defHigh);
-
     int n = (intHigh - intLow) + 1;
-    int aRef = ti.getHeap().newArray("Ljava/lang/Integer", n, ti);
-    ElementInfo ei = ti.getModifiableElementInfo(aRef);
+    
+    Heap heap = ti.getHeap();    
+    ElementInfo eiArray = heap.newArray("Ljava/lang/Integer", n, ti);
+    int arrayRef = eiArray.getObjectRef();
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Integer");
     for (int i = 0; i < n; i++) {
-      int intObj = ti.getHeap().newObject(ci, ti);
-      ti.getModifiableElementInfo(intObj).setIntField("value", i + intLow);
-      ei.setReferenceElement(i, intObj);
+      ElementInfo eiInteger = heap.newObject(ci, ti);
+      eiInteger.setIntField("value", i + intLow);
+      eiArray.setReferenceElement(i, eiInteger.getObjectRef());
     }
 
     ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(boxObjectCaches);
-    cacheClass.getModifiableStaticElementInfo().setReferenceField("intCache", aRef);
-    return aRef;
+    cacheClass.getModifiableStaticElementInfo().setReferenceField("intCache", arrayRef);
+    return arrayRef;
   }
 
   public static int valueOfInteger (ThreadInfo ti, int i) {
@@ -212,9 +216,9 @@ public class BoxObjectCacheManager {
     if (i >= intLow && i <= intHigh) { return ti.getElementInfo(intCache).getReferenceElement(i - intLow); }
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Integer");
-    int intObj = ti.getHeap().newObject(ci, ti);
-    ti.getModifiableElementInfo(intObj).setIntField("value", i);
-    return intObj;
+    ElementInfo eiInteger = ti.getHeap().newObject(ci, ti);
+    eiInteger.setIntField("value", i);
+    return eiInteger.getObjectRef();
   }
 
   // Long cache bounds
@@ -225,21 +229,22 @@ public class BoxObjectCacheManager {
   public static int initLongCache (ThreadInfo ti) {
     longLow = ti.getVM().getConfig().getInt("vm.cache.low_long", defLow);
     longHigh = ti.getVM().getConfig().getInt("vm.cache.high_long", defHigh);
-
     int n = (longHigh - longLow) + 1;
-    int aRef = ti.getHeap().newArray("Ljava/lang/Long", n, ti);
-    ElementInfo ei = ti.getModifiableElementInfo(aRef);
+    
+    Heap heap = ti.getHeap();    
+    ElementInfo eiArray = heap.newArray("Ljava/lang/Long", n, ti);
+    int arrayRef = eiArray.getObjectRef();
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Long");
     for (int i = 0; i < n; i++) {
-      int longObj = ti.getHeap().newObject(ci, ti);
-      ti.getModifiableElementInfo(longObj).setLongField("value", i + longLow);
-      ei.setReferenceElement(i, longObj);
+      ElementInfo eiLong = heap.newObject(ci, ti);
+      eiLong.setLongField("value", i + longLow);
+      eiArray.setReferenceElement(i, eiLong.getObjectRef());
     }
 
     ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(boxObjectCaches);
-    cacheClass.getModifiableStaticElementInfo().setReferenceField("longCache", aRef);
-    return aRef;
+    cacheClass.getModifiableStaticElementInfo().setReferenceField("longCache", arrayRef);
+    return arrayRef;
   }
 
   public static int valueOfLong (ThreadInfo ti, long l) {
@@ -253,8 +258,8 @@ public class BoxObjectCacheManager {
     if (l >= longLow && l <= longHigh) { return ti.getElementInfo(longCache).getReferenceElement((int) l - longLow); }
 
     ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Long");
-    int longObj = ti.getHeap().newObject(ci, ti);
-    ti.getModifiableElementInfo(longObj).setLongField("value", l);
-    return longObj;
+    ElementInfo eiLong = ti.getHeap().newObject(ci, ti);
+    eiLong.setLongField("value", l);
+    return eiLong.getObjectRef();
   }
 }

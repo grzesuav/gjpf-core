@@ -67,7 +67,7 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
   /**
    * search global id of the corresponding ClassInfo, which factors in the classloader
    */
-  private long uniqueId;
+  private int nativeId;
 
   /**
    * to be set during <clinit> of the corresponding class

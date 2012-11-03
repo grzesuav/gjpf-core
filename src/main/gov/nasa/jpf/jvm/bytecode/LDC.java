@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.KernelState;
@@ -67,7 +68,8 @@ public class LDC extends JVMInstruction {
     switch (type){
       case STRING:
         // too bad we can't cache it, since location might change between different paths
-        value = ti.getHeap().newInternString(string, ti);
+        ElementInfo eiValue = ti.getHeap().newInternString(string, ti); 
+        value = eiValue.getObjectRef();
         ti.push(value, true);
         break;
 

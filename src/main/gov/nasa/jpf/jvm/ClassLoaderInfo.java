@@ -44,6 +44,10 @@ import gov.nasa.jpf.util.StringSetMatcher;
 public class ClassLoaderInfo 
      implements Iterable<ClassInfo>, Comparable<ClassLoaderInfo>, Cloneable, Restorable<ClassLoaderInfo> {
 
+  // the model class field name where we store our id 
+  static final String ID_FIELD = "nativeId";
+  
+  
   // Map that keeps the classes defined (directly loaded) by this loader and the
   // ones that are resolved from these defined classes
   protected Map<String,ClassInfo> resolvedClasses;
@@ -62,7 +66,7 @@ public class ClassLoaderInfo
   protected boolean roundTripRequired = false;
 
   // Search global id, which is the basis for canonical order of classloaders
-  protected int gid;
+  protected int id;
 
   // The java.lang.ClassLoader object reference
   protected int objRef;
@@ -124,8 +128,8 @@ public class ClassLoaderInfo
     // For systemClassLoaders, this object is still null, since the class java.lang.ClassLoader 
     // class cannot be loaded before creating the systemClassLoader
     if(ei!=null) {
-      this.gid = this.computeId(objRef);
-      ei.setIntField("clRef", gid);
+      this.id = this.computeId(objRef);
+      ei.setIntField( ID_FIELD, id);
       if(parent != null) {
         ei.setReferenceField("parent", parent.objRef);
       }
@@ -146,8 +150,8 @@ public class ClassLoaderInfo
    * this is our internal, search global id that is used for the
    * canonical root set
    */
-  public int getGlobalId() {
-    return gid;
+  public int getId() {
+    return id;
   }
 
   /**
@@ -634,7 +638,7 @@ public class ClassLoaderInfo
    * Comparison for sorting based on index.
    */
   public int compareTo (ClassLoaderInfo that) {
-    return this.gid - that.gid;
+    return this.id - that.id;
   }
 
   /**
@@ -652,15 +656,15 @@ public class ClassLoaderInfo
     Heap heap = JVM.getVM().getHeap();
 
     //--- create ClassLoader object of type ci which corresponds to this ClassLoader
-    int objRef = heap.newObject( ci, ti);
+    ElementInfo ei = heap.newObject( ci, ti);
+    int oRef = ei.getObjectRef();
 
     //--- make sure that the classloader object is not garbage collected 
-    heap.registerPinDown(objRef);
+    heap.registerPinDown(oRef);
 
     //--- initialize the systemClassLoader object
-    ElementInfo ei = heap.getModifiable(objRef);
-    this.gid = this.computeId(objRef);
-    ei.setIntField("clRef", gid);
+    this.id = this.computeId(oRef);
+    ei.setIntField(ID_FIELD, id);
 
     int parentRef;
     if(parent == null) {
@@ -670,7 +674,7 @@ public class ClassLoaderInfo
     }
     ei.setReferenceField("parent", parentRef);
 
-    this.objRef = objRef;
+    this.objRef = oRef;
 
     return ei;
   }

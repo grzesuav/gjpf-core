@@ -36,19 +36,21 @@ public interface Heap extends Iterable<ElementInfo> {
   void setOutOfMemory(boolean isOutOfMemory);
 
   //--- the allocator primitives
-  int newArray (String elementType, int nElements, ThreadInfo ti);
-  int newObject (ClassInfo ci, ThreadInfo ti);
+  ElementInfo newArray (String elementType, int nElements, ThreadInfo ti);
+  ElementInfo newObject (ClassInfo ci, ThreadInfo ti);
   
-  int newSystemArray (String elementType, int nElements, ThreadInfo ti, int anchor);
-  int newSystemObject (ClassInfo ci, ThreadInfo ti, int anchor);
+  ElementInfo newSystemArray (String elementType, int nElements, ThreadInfo ti, int anchor);
+  ElementInfo newSystemObject (ClassInfo ci, ThreadInfo ti, int anchor);
 
   //--- convenience allocators that avoid constructor calls
-  int newString (String str, ThreadInfo ti);
-  int newSystemString (String str, ThreadInfo ti, int anchor);
+  // (those are mostly used for their reference values since they already have initialized fields,
+  // but to keep it consistent we use ElementInfo return types)
+  ElementInfo newString (String str, ThreadInfo ti);
+  ElementInfo newSystemString (String str, ThreadInfo ti, int anchor);
   
-  int newInternString (String str, ThreadInfo ti);
+  ElementInfo newInternString (String str, ThreadInfo ti);
   
-  int newSystemThrowable (ClassInfo ci, String details, int[] stackSnapshot, int causeRef,
+  ElementInfo newSystemThrowable (ClassInfo ci, String details, int[] stackSnapshot, int causeRef,
                           ThreadInfo ti, int anchor);
   
   Iterable<ElementInfo> liveObjects();
@@ -81,8 +83,7 @@ public interface Heap extends Iterable<ElementInfo> {
   void queueMark (int objref);
 
   boolean hasChanged();
-  
-  void setStored();
+
 
   // <2do> this will go away
   void markChanged(int objref);

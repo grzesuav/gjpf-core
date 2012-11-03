@@ -20,11 +20,11 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.util.*;
+import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.ObjectList;
+import gov.nasa.jpf.util.Processor;
 
 import java.io.PrintWriter;
-import java.lang.ref.SoftReference;
-import java.util.List;
 
 /**
  * Describes an element of memory containing the field values of a class or an
@@ -33,7 +33,7 @@ import java.util.List;
  *
  * @see gov.nasa.jpf.jvm.FieldInfo
  */
-public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> {
+public abstract class ElementInfo implements Cloneable {
 
 
   //--- the lower 2 bytes of the attribute field are sticky (state stored/restored)
@@ -136,74 +136,28 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   protected int sid;
 
 
-  /**
-   * our default cachedMemento type
-   */
-  static public abstract class EIMemento<EI extends ElementInfo> extends SoftReference<EI> implements Memento<ElementInfo> {
-    int ref;
-    ClassInfo ci;
-    Fields fields;
-    Monitor monitor;
-    Memento<ThreadInfoSet> tsMemento;
-    int attributes;
-
-
-    public EIMemento (EI ei){
-      super(ei);
-
-      ei.markUnchanged(); // we don't want any of the change flags
-
-      this.ref = ei.objRef;
-      this.ci = ei.ci;
-      this.attributes = (ei.attributes & ATTR_STORE_MASK);
-      this.fields = ei.fields;
-      this.monitor = ei.monitor;
-      
-      this.tsMemento = ThreadTrackingPolicy.getPolicy().getMemento(ei.referencingThreads);
-      
-      ei.freeze(); // it's stored now
-      ei.cachedMemento = this;
-    }
-
-    public ElementInfo restore (ElementInfo ei){
-      ei.objRef = ref;
-      ei.ci = ci;
-      ei.attributes = attributes;
-      ei.fields = fields;
-      ei.monitor = monitor;
-      
-      ei.referencingThreads = tsMemento.restore(ei.referencingThreads);
-
+  // helpers for state storage/restore processing, to avoid explicit iterators on
+  // respective ElementInfo containers (heap,statics)
+  
+  static class Restorer implements Processor<ElementInfo> {
+    @Override
+    public void process (ElementInfo ei) {
+      ei.attributes &= ElementInfo.ATTR_STORE_MASK;
       ei.sid = 0;
       ei.updateLockingInfo();
       ei.markUnchanged();
-      ei.cachedMemento = this;
-      
-      ei.freeze(); // we still need to clone on the next change
-
-      return ei;
-    }
-
-    /** for debugging purposes
-    public boolean equals(Object o){
-      if (o instanceof EIMemento){
-        EIMemento other = (EIMemento)o;
-        if (ref != other.ref) return false;
-     *  if (ciMth != other.ciMth) return false;
-        if (fields != other.fields) return false;
-        if (monitor != other.monitor) return false;
-        if (usingTi != other.usingTi) return false;
-        if (attributes != other.attributes) return false;
-        return true;
-      }
-      return false;
-    }
-    public String toString() {
-     return "EIMemento {ref="+ref+",attributes="+Integer.toHexString(attributes)+
-             ",fields="+fields+",monitor="+monitor+",refTid="+refTid+"}";
-    }
-    **/
+    }        
   }
+  static Restorer restorer = new Restorer();
+  
+  static class Storer implements Processor<ElementInfo> {
+    @Override
+    public void process (ElementInfo ei) {
+      ei.freeze();
+    }
+  }
+  static Storer storer = new Storer();
+  
   
   static boolean init (Config config) {
     return true;
@@ -229,8 +183,6 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
 
   protected ElementInfo() {
   }
-
-  public abstract Memento<ElementInfo> getMemento();
 
   public boolean hasChanged() {
     return !isFrozen();
@@ -503,7 +455,7 @@ public abstract class ElementInfo implements Cloneable, Restorable<ElementInfo> 
   }
   
   public void hash(HashData hd) {
-    hd.add(ci.getClassLoaderInfo().getGlobalId());
+    hd.add(ci.getClassLoaderInfo().getId());
     hd.add(ci.getId());
     fields.hash(hd);
     monitor.hash(hd);

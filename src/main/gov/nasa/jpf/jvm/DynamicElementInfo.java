@@ -25,25 +25,7 @@ import gov.nasa.jpf.util.SparseClusterArray;
 /**
  * A specialized version of ElementInfo that represents heap objects
  */
-public class DynamicElementInfo extends ElementInfo implements Restorable<ElementInfo> {
-
-  // our default memento implementation
-  static class DEIMemento extends EIMemento<DynamicElementInfo> {
-    DEIMemento (DynamicElementInfo ei) {
-      super(ei);
-    }
-
-    @Override
-    public ElementInfo restore (ElementInfo ei){
-      DynamicElementInfo dei = (ei != null) ? (DynamicElementInfo) ei : get();
-      if (dei == null){
-        dei = new DynamicElementInfo();
-      }
-
-      super.restore(dei);
-      return dei;
-    }
-  }  
+public class DynamicElementInfo extends ElementInfo {
   
   public DynamicElementInfo () {
     // for restoration
@@ -76,21 +58,6 @@ public class DynamicElementInfo extends ElementInfo implements Restorable<Elemen
     return true;
   }
   
-  public Memento<ElementInfo> getMemento(MementoFactory factory) {
-    return factory.getMemento(this);
-  }
-
-  public Memento<ElementInfo> getMemento(){
-    if (isFrozen()) {
-      if (cachedMemento != null) {
-        return cachedMemento;
-      }
-    }
-
-    cachedMemento = new DEIMemento(this);
-    return cachedMemento;
-  }
-
   @Override
   protected int getNumberOfFieldsOrElements(){
     if (fields instanceof ArrayFields){

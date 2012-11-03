@@ -48,7 +48,7 @@ public class JPF_java_lang_ClassLoader extends NativePeer {
 
     //--- initialize the java.lang.ClassLoader object
     ElementInfo ei = heap.getModifiable(objRef);
-    ei.setIntField("clRef", cl.getGlobalId());
+    ei.setIntField( ClassLoaderInfo.ID_FIELD, cl.getId());
 
     // we should use the following block if we ever decide to make systemClassLoader 
     // unavailable if(parent.isSystemClassLoader) {

@@ -1943,14 +1943,13 @@ public class ThreadInfo
     }
 
     Heap heap = vm.getHeap();
-    int aref = heap.newArray("Ljava/lang/StackTraceElement;", nVisible, this);
-    ElementInfo aei = heap.getModifiable(aref);
+    ElementInfo eiArray = heap.newArray("Ljava/lang/StackTraceElement;", nVisible, this);
     for (int i=0; i<nVisible; i++){
       int eref = list[i].createJPFStackTraceElement();
-      aei.setReferenceElement( i, eref);
+      eiArray.setReferenceElement( i, eref);
     }
 
-    return aref;
+    return eiArray.getObjectRef();
   }
 
   void print (PrintWriter pw, String s) {
@@ -2071,19 +2070,18 @@ public class ThreadInfo
     int createJPFStackTraceElement() {
       if (ignore) {
         return MJIEnv.NULL;
+        
       } else {
         Heap heap = vm.getHeap();
-
         ClassInfo ci = ClassInfo.getResolvedSystemClassInfo("java.lang.StackTraceElement");
-        int sRef = heap.newObject(ci, ThreadInfo.this);
+        ElementInfo ei = heap.newObject(ci, ThreadInfo.this);
 
-        ElementInfo  sei = heap.getModifiable(sRef);
-        sei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this));
-        sei.setReferenceField("mthName", heap.newString(mthName, ThreadInfo.this));
-        sei.setReferenceField("fileName", heap.newString(fileName, ThreadInfo.this));
-        sei.setIntField("line", line);
+        ei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this).getObjectRef());
+        ei.setReferenceField("mthName", heap.newString(mthName, ThreadInfo.this).getObjectRef());
+        ei.setReferenceField("fileName", heap.newString(fileName, ThreadInfo.this).getObjectRef());
+        ei.setIntField("line", line);
 
-        return sRef;
+        return ei.getObjectRef();
       }
     }
 
@@ -2130,7 +2128,7 @@ public class ThreadInfo
    */
   int createException (ClassInfo ci, String details, int causeRef){
     int[] snap = getSnapshot(MJIEnv.NULL);
-    return vm.getHeap().newSystemThrowable(ci, details, snap, causeRef, this, 0);
+    return vm.getHeap().newSystemThrowable(ci, details, snap, causeRef, this, 0).getObjectRef();
   }
 
   /**

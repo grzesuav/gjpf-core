@@ -45,7 +45,4 @@ public interface MementoFactory {
 
   Memento<Statics> getMemento(Statics sa);
 
-  Memento<ElementInfo> getMemento(DynamicElementInfo ei);
-  Memento<ElementInfo> getMemento (StaticElementInfo ei);
-
 }

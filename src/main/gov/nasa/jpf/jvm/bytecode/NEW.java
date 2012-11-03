@@ -65,14 +65,8 @@ public class NEW extends JVMInstruction implements AllocInstruction {
                                         "trying to allocate new " + cname);
     }
 
-    /**
-    if (ss.getRestorer(executeGid) == null){ // first encounter for this transition
-      ss.putRestorer( executeGid, executeGid.createRestorer());      
-    }
-    int id = executeGid.computeId(ti);
-    **/
-       
-    int objRef = heap.newObject(ci, ti);
+    ElementInfo ei = heap.newObject(ci, ti);
+    int objRef = ei.getObjectRef();
     newObjRef = objRef;
 
     // pushes the return value onto the stack

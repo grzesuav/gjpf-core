@@ -39,10 +39,13 @@ public class JPF_java_lang_Object extends NativePeer {
     Heap heap = env.getHeap();
     ElementInfo ei = heap.get(objref);
     ClassInfo ci = ei.getClassInfo();
+    ElementInfo eiClone = null;
+    
     if (!ci.isInstanceOf("java.lang.Cloneable")) {
       env.throwException("java.lang.CloneNotSupportedException",
           ci.getName() + " does not implement java.lang.Cloneable.");
       return -1;  // meaningless
+      
     } else {
       int newref;
       if (ci.isArray()) {
@@ -55,16 +58,16 @@ public class JPF_java_lang_Object extends NativePeer {
           componentType = cci.getType();
         }
 
-        newref = heap.newArray(componentType, ei.arrayLength(), env.getThreadInfo());
+        eiClone = heap.newArray(componentType, ei.arrayLength(), env.getThreadInfo());
+        
       } else {
-        newref = heap.newObject(ci, env.getThreadInfo());
+        eiClone = heap.newObject(ci, env.getThreadInfo());
       }
-      ElementInfo newinfo = heap.get(newref);
-
+      
       // Ok, this is nasty but efficient
-      newinfo.fields = ei.getFields().clone();
+      eiClone.fields = ei.getFields().clone();
 
-      return newref;
+      return eiClone.getObjectRef();
     }
   }
 

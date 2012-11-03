@@ -103,7 +103,7 @@ public class KernelState implements Restorable<KernelState> {
 
     while(it.hasNext()) {
       ClassLoaderInfo cl = it.next();
-      if(cl.getGlobalId() == gid) {
+      if(cl.getId() == gid) {
         return cl;
       }
     }

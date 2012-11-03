@@ -66,8 +66,6 @@ public interface Statics extends Iterable<ElementInfo> {
   
   //--- state management
   
-  void setStored();
-  
   Memento<Statics> getMemento(MementoFactory factory);
   Memento<Statics> getMemento();
   

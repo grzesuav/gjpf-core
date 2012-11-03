@@ -21,7 +21,6 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.ObjVector;
-import gov.nasa.jpf.util.Processor;
 
 import java.util.Iterator;
 
@@ -35,13 +34,16 @@ import java.util.Iterator;
  * has to be used (we don't try to resolve collisions here)
  */
 public class ObjVectorHeap extends GenericHeapImpl {
-
+  
   static class OVMemento extends GenericHeapImplMemento {
     IntTable.Snapshot<AllocationContext> ctxSnap;
     ObjVector.Snapshot<ElementInfo> eiSnap;
     
     OVMemento(ObjVectorHeap heap) {
       super(heap);
+      
+      heap.elementInfos.process(ElementInfo.storer);
+      
       ctxSnap = heap.allocCounts.getSnapshot();
       eiSnap = heap.elementInfos.getSnapshot();
     }
@@ -52,32 +54,12 @@ public class ObjVectorHeap extends GenericHeapImpl {
       
       ObjVectorHeap heap = (ObjVectorHeap)inSitu;
       heap.allocCounts.restore(ctxSnap);
-      heap.elementInfos.restore(eiSnap);      
-      return heap;
-    }
-  }
-  
-  // an OVMemento that transforms ElementInfos into ElementInfoMementos upon storage
-  static class TransformingOVMemento extends OVMemento {
-    IntTable.Snapshot<AllocationContext> ctxSnap;
-    ObjVector.MutatingSnapshot<ElementInfo,Memento<ElementInfo>> eiSnap;
-
-    TransformingOVMemento (ObjVectorHeap heap){
-      super(heap);
-      ctxSnap = heap.allocCounts.getSnapshot();
-      eiSnap = heap.elementInfos.getSnapshot(ei2mei);
-    }
-    
-    @Override
-    public Heap restore(Heap inSitu) {
-      super.restore(inSitu);
+      heap.elementInfos.restore(eiSnap);
       
-      ObjVectorHeap heap = (ObjVectorHeap)inSitu;
-      heap.allocCounts.restore(ctxSnap);
-      heap.elementInfos.restore(eiSnap, mei2ei);
-
+      heap.elementInfos.process(ElementInfo.restorer);
+      
       return heap;
-    }    
+    }
   }
   
   static int nextSgoid;
@@ -121,20 +103,6 @@ public class ObjVectorHeap extends GenericHeapImpl {
   }
     
   //--- heap interface
-  
-  static class ElementInfoFreezer implements Processor<ElementInfo> {
-    @Override
-    public void process (ElementInfo ei) {
-      ei.freeze();
-    }
-  }
-  static ElementInfoFreezer freezer = new ElementInfoFreezer();
-  
-  @Override
-  public void setStored() {
-    super.setStored();
-    elementInfos.process(freezer);
-  }
   
   /**
    * return number of non-null elements
@@ -211,7 +179,6 @@ public class ObjVectorHeap extends GenericHeapImpl {
     }
   }
     
-  
   @Override
   protected void remove(int ref) {
     if (elementInfos.remove(ref) != null) {
@@ -244,8 +211,7 @@ public class ObjVectorHeap extends GenericHeapImpl {
   }
 
   public Memento<Heap> getMemento(){
-    return new TransformingOVMemento(this);
-    //return new OVMemento(this);
+    return new OVMemento(this);
   }
 
 

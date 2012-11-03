@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPFShell;
 import gov.nasa.jpf.util.JPFSiteUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -42,15 +43,26 @@ import java.util.Properties;
  */
 public class RunJPF extends Run {
 
-  public static final int HELP  = 1;
-  public static final int SHOW  = 2;
-  public static final int LOG   = 4;
-  public static final int BUILD_INFO = 8;
-  public static final int ADD_PROJECT = 16;
-  public static final int VERSION = 32;
+  public static final int HELP         = 0x1;
+  public static final int SHOW         = 0x2;
+  public static final int LOG          = 0x4;
+  public static final int BUILD_INFO   = 0x8;
+  public static final int ADD_PROJECT  = 0x10;
+  public static final int VERSION      = 0x20;
+  public static final int DELAY_START  = 0x40;
+  public static final int DELAY_EXIT   = 0x80;
 
   static final String JPF_CLASSNAME = "gov.nasa.jpf.JPF";
 
+  static void delay (String msg) {
+    System.out.println(msg);
+    try {
+      System.in.read();
+    } catch (IOException iox) {
+      // we don't care
+    }    
+  }
+  
   public static void main (String[] args) {
     try {
       int options = getOptions(args);
@@ -63,6 +75,10 @@ public class RunJPF extends Run {
       if (isOptionEnabled(ADD_PROJECT, options)){
         addProject(args);
         return;
+      }
+      
+      if (isOptionEnabled(DELAY_START, options)) {
+        delay("press any key to start");
       }
       
       if (isOptionEnabled(LOG, options)) {
@@ -101,6 +117,12 @@ public class RunJPF extends Run {
           error("cannot find 'public static start(Config,String[])' in " + JPF_CLASSNAME);
         }
       }
+      
+      if (isOptionEnabled(DELAY_EXIT, options)) {
+        delay("press any key to exit");
+      }
+
+      
     } catch (NoClassDefFoundError ncfx){
       ncfx.printStackTrace();
     } catch (ClassNotFoundException cnfx){
@@ -109,6 +131,7 @@ public class RunJPF extends Run {
       // should already be handled by JPF
       ix.getCause().printStackTrace();
     }
+    
   }
 
   public static int getOptions (String[] args){
@@ -138,6 +161,14 @@ public class RunJPF extends Run {
           args[i] = null;
           mask |= ADD_PROJECT;
 
+        } else if ("-delay-start".equals(a)) {
+          args[i] = null;
+          mask |= DELAY_START;
+          
+        } else if ("-delay-exit".equals(a)) {
+          args[i] = null;
+          mask |= DELAY_EXIT;
+          
         } else if ("-version".equals(a)){
           args[i] = null;
           mask |= VERSION;

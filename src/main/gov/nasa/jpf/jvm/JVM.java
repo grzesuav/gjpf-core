@@ -260,7 +260,7 @@ public class JVM {
    */
   static boolean checkModelClassAccess () {
     ClassInfo ci = ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo();
-    return (ci.getDeclaredInstanceField("uniqueId") != null);
+    return ci.checkIfValidClassClassInfo();
   }
 
   static boolean checkClassName (String clsName) {
@@ -431,23 +431,23 @@ public class JVM {
     Heap heap = getHeap();
 
     ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
-    int objRef = heap.newObject( ciThread, ti);
-    int groupRef = createSystemThreadGroup(ti, objRef);
-    int nameRef = heap.newString("main", ti);
+    ElementInfo eiThread = heap.newObject( ciThread, ti);
+    int threadRef = eiThread.getObjectRef();
+    int groupRef = createSystemThreadGroup(ti, threadRef);
+    ElementInfo eiName = heap.newString("main", ti);
+    int nameRef = eiName.getObjectRef();
     
     //--- initialize the main Thread object
-    ElementInfo ei = heap.getModifiable(objRef);
-    ei.setReferenceField("group", groupRef);
-    ei.setReferenceField("name", nameRef);
-    ei.setIntField("priority", Thread.NORM_PRIORITY);
+    eiThread.setReferenceField("group", groupRef);
+    eiThread.setReferenceField("name", nameRef);
+    eiThread.setIntField("priority", Thread.NORM_PRIORITY);
 
-    int permitRef = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), ti);
-    ElementInfo eiPermitRef = heap.getModifiable(permitRef);
-    eiPermitRef.setBooleanField("blockPark", true);
-    ei.setReferenceField("permit", permitRef);
+    ElementInfo eiPermit = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), ti);
+    eiPermit.setBooleanField("blockPark", true);
+    eiThread.setReferenceField("permit", eiPermit.getObjectRef());
 
     //--- initialize the ThreadInfo reference fields
-    ti.initReferenceFields(objRef, groupRef, MJIEnv.NULL, nameRef);
+    ti.initReferenceFields(threadRef, groupRef, MJIEnv.NULL, nameRef);
   
     //--- set the thread running
     ti.setState(ThreadInfo.State.RUNNING);
@@ -456,27 +456,23 @@ public class JVM {
   protected int createSystemThreadGroup (ThreadInfo ti, int mainThreadRef) {
     Heap heap = getHeap();
     
-// !!! <2do> we need to have a mainThread ti here, null doesn't work!! 
-    int ref = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti);
-    ElementInfo ei = heap.getModifiable(ref);
+    ElementInfo eiThreadGrp = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti);
 
     // since we can't call methods yet, we have to init explicitly (BAD)
     // <2do> - this isn't complete yet
 
-    int grpName = heap.newString("main", ti);
-    ei.setReferenceField("name", grpName);
+    ElementInfo eiGrpName = heap.newString("main", ti);
+    eiThreadGrp.setReferenceField("name", eiGrpName.getObjectRef());
 
-    ei.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
+    eiThreadGrp.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
 
-    int threadsRef = heap.newArray("Ljava/lang/Thread;", 4, ti);
-    ElementInfo eiThreads = heap.getModifiable(threadsRef);
+    ElementInfo eiThreads = heap.newArray("Ljava/lang/Thread;", 4, ti);
     eiThreads.setReferenceElement(0, mainThreadRef);
 
-    ei.setReferenceField("threads", threadsRef);
+    eiThreadGrp.setReferenceField("threads", eiThreads.getObjectRef());
+    eiThreadGrp.setIntField("nthreads", 1);
 
-    ei.setIntField("nthreads", 1);
-
-    return ref;
+    return eiThreadGrp.getObjectRef();
   }
 
   protected void registerThreadListCleanup(){
@@ -533,17 +529,16 @@ public class JVM {
     }
 
     // create the args array object
-    int argsRef = heap.newArray("Ljava/lang/String;", args.length, tiMain);
-    ElementInfo argsElement = heap.getModifiable(argsRef);
+    ElementInfo eiArgs = heap.newArray("Ljava/lang/String;", args.length, tiMain);
     for (int i = 0; i < args.length; i++) {
-      int aRef = heap.newString(args[i], tiMain);
-      argsElement.setReferenceElement(i, aRef);
+      ElementInfo eiElement = heap.newString(args[i], tiMain);
+      eiArgs.setReferenceElement(i, eiElement.getObjectRef());
     }
     
     // create the direct call stub
     MethodInfo mainStub = miMain.createDirectCallStub("[main]");
     DirectCallStackFrame frame = new DirectCallStackFrame(mainStub);
-    frame.pushRef(argsRef);
+    frame.pushRef(eiArgs.getObjectRef());
     // <2do> set RUNSTART pc if we want to catch synchronized tiMain() defects 
     
     tiMain.pushFrame(frame);

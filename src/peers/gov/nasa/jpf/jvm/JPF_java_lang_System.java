@@ -158,10 +158,10 @@ public class JPF_java_lang_System extends NativePeer {
 
     ThreadInfo thread = vm.getCurrentThread();
     Heap heap = vm.getHeap();
-    int javaClassPath = heap.newString(JAVA_CLASS_PATH, thread);
+    ElementInfo eiClassPath = heap.newString(JAVA_CLASS_PATH, thread);
     
     DirectCallStackFrame frame = new DirectCallStackFrame(stub);
-    frame.push(javaClassPath);
+    frame.push(eiClassPath.getObjectRef());
     
     try {
       thread.executeMethodHidden(frame);

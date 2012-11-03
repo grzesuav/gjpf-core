@@ -557,9 +557,9 @@ public class JPF_java_lang_String extends NativePeer {
     Heap heap = env.getHeap();
 
     String s = env.getStringObject(robj);
-    robj = heap.newInternString(s, env.getThreadInfo());
+    ElementInfo ei = heap.newInternString(s, env.getThreadInfo());
 
-    return robj;
+    return ei.getObjectRef();
   }
 
   @MJI

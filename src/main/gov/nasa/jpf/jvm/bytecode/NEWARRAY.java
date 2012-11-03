@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.Heap;
@@ -62,7 +63,9 @@ public class NEWARRAY extends NewArrayInstruction {
                                         "[" + arrayLength + "]");
     }
     
-    int arrayRef = heap.newArray(type, arrayLength, ti);
+    ElementInfo eiArray = heap.newArray(type, arrayLength, ti);
+    int arrayRef = eiArray.getObjectRef();
+    
     ti.push(arrayRef, true);
 
     return getNext(ti);

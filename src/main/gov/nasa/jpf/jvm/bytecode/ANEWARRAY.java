@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ClassLoaderInfo;
@@ -75,7 +76,8 @@ public class ANEWARRAY extends NewArrayInstruction {
                                         "[" + arrayLength + "]");
     }
 
-    int aRef = heap.newArray(type, arrayLength, ti);
+    ElementInfo eiArray = heap.newArray(type, arrayLength, ti);
+    int aRef = eiArray.getObjectRef();
     
     // pushes the object reference on the top stack frame
     ti.push(aRef, true);

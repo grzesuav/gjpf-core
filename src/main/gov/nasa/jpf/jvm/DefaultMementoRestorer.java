@@ -37,14 +37,6 @@ public class DefaultMementoRestorer extends MementoRestorer {
   public Memento<ThreadInfo> getMemento(ThreadInfo ti) {
     return ti.getMemento();
   }
-
-  public Memento<ElementInfo> getMemento(DynamicElementInfo ei) {
-    return ei.getMemento();
-  }
-
-  public Memento<ElementInfo> getMemento(StaticElementInfo ei) {
-    return ei.getMemento();
-  }
   
   public Memento<Heap> getMemento(Heap heap){
     return heap.getMemento();

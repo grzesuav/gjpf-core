@@ -46,16 +46,15 @@ public class MULTIANEWARRAY extends JVMInstruction {
 
   public static int allocateArray (Heap heap, String type, int[] dim, ThreadInfo ti, int d) {
     int l = dim[d];
-    int arrayRef = heap.newArray(type.substring(d + 1), l, ti);
-    ElementInfo e = heap.getModifiable(arrayRef);
+    ElementInfo eiArray = heap.newArray(type.substring(d + 1), l, ti);
 
     if (dim.length > (d + 1)) {
       for (int i = 0; i < l; i++) {
-        e.setReferenceElement(i, allocateArray(heap, type, dim, ti, d + 1));
+        eiArray.setReferenceElement(i, allocateArray(heap, type, dim, ti, d + 1));
       }
     }
 
-    return arrayRef;
+    return eiArray.getObjectRef();
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {

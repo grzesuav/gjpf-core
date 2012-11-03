@@ -81,6 +81,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   // 'INITIALIZING' is any number >=0, which is the thread objRef that executes the clinit
   public static final int INITIALIZED = -2;
 
+  static final String ID_FIELD = "nativeId"; 
 
   static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.ClassInfo");
 
@@ -92,15 +93,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected static final ClassLoader thisClassLoader = ClassInfo.class.getClassLoader();
 
   /**
-   * Map from the classFileUrl of classes to their original ClassInfo instances
+   * Map from the classFileUrl of classes to their original ClassInfo instances. This search
+   * global map is used to make sure we only read classfiles once
    */
    protected static Map<String,ClassInfo> loadedClasses = new HashMap<String, ClassInfo>();
-
-   /**
-    * Map from globalIds to instances of ClassInfos. This map includes all the ClassInfos
-    * defined by any classloaders.
-    */
-   protected static Map<Long,ClassInfo> classes = new HashMap<Long, ClassInfo>();
 
   /**
    * optionally used to determine atomic methods of a class (during class loading)
@@ -890,7 +886,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public boolean equals (Object o) {
     if (o instanceof ClassInfo) {
       ClassInfo other = (ClassInfo)o;
-      if (classLoader.getGlobalId() == other.classLoader.getGlobalId()) {
+      if (classLoader.getId() == other.classLoader.getId()) {
         // beware of ClassInfos that are not registered yet - in this case we have to compare names
         if (((id != -1) && (id == other.id)) || name.equals(other.name)) {
           return true;
@@ -1158,10 +1154,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   public boolean isStringClassInfo() {
     return isStringClassInfo;
-  }
-
-  public static ClassInfo getClassInfo(long uniqueId) {
-    return classes.get(uniqueId);
   }
 
   public static ClassInfo getResolvedSystemClassInfo(String className) {
@@ -2408,10 +2400,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     Statics statics = classLoader.getStatics();
     StaticElementInfo sei = statics.newClass(this, ti);
     
-    id = sei.getObjectRef();  // kind of a misnomer, it's really an id
-    
-    uniqueId = ((long)classLoader.getGlobalId() << 32) | id;
-    classes.put(uniqueId, this);    
+    id = sei.getObjectRef();  // kind of a misnomer, it's really an id    
+    uniqueId = ((long)classLoader.getId() << 32) | id;
   }
 
   ElementInfo createAndLinkClassObject (ThreadInfo ti){
@@ -2419,27 +2409,31 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     int anchor = name.hashCode(); // 2do - this should also take the ClassLoader ref into account
     ClassInfo classClassInfo = ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo();    
-    int clsObjRef = heap.newSystemObject(classClassInfo, ti, anchor);
-    ElementInfo ei = heap.getModifiable(clsObjRef);
-
-    int clsNameRef = heap.newSystemString(name, ti, clsObjRef);
-    ei.setReferenceField("name", clsNameRef);
+    ElementInfo ei = heap.newSystemObject(classClassInfo, ti, anchor);
+    int clsObjRef = ei.getObjectRef();
+    
+    ElementInfo eiClsName = heap.newSystemString(name, ti, clsObjRef);
+    ei.setReferenceField("name", eiClsName.getObjectRef());
 
     ei.setBooleanField("isPrimitive", isPrimitive());
     
     // link the SUT class object to this ClassInfo
-    ei.setLongField("uniqueId", uniqueId);
+    ei.setIntField( ID_FIELD, id);
 
     // link the SUT class object to the classloader 
     ei.setReferenceField("classLoader", classLoader.getClassLoaderObjectRef());
 
     // link the statics entry to the SUT class object
     StaticElementInfo sei = classLoader.getStatics().getModifiable(id);
-    sei.setClassObjectRef(ei.getObjectRef());
+    sei.setClassObjectRef( clsObjRef);
     
     return ei;
   }
 
+  boolean checkIfValidClassClassInfo() {
+    return getDeclaredInstanceField( ID_FIELD) != null;
+  }
+  
   public boolean isInitializing () {
     StaticElementInfo sei = getStaticElementInfo();
     return ((sei != null) && (sei.getStatus() >= 0));

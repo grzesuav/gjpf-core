@@ -54,7 +54,7 @@ public class ClassLoaderInfoTest extends TestJPF {
 
     //--- Tests classloaders
     assert cl1.resolvedClasses.size() == ClassInfo.getLoadedClasses().length;
-    assert cl1.getGlobalId() != cl2.getGlobalId();
+    assert cl1.getId() != cl2.getId();
     assert cl1.statics != cl2.statics;
     assert cl1.parent == null;
     assert cl2.parent == null;
@@ -63,11 +63,11 @@ public class ClassLoaderInfoTest extends TestJPF {
 
     int cl1ObjRef = cl1.objRef;
     ElementInfo ei1 = heap.get(cl1ObjRef);
-    assert ei1.getIntField("clRef") == cl1.getGlobalId();
+    assert ei1.getIntField( ClassLoaderInfo.ID_FIELD) == cl1.getId();
 
     int cl2ObjRef = cl2.objRef;
     ElementInfo ei2 = heap.get(cl2ObjRef);
-    assert ei2.getIntField("clRef") == cl2.getGlobalId();
+    assert ei2.getIntField( ClassLoaderInfo.ID_FIELD) == cl2.getId();
 
 
     //--- Tests classes which are already loaded by both classLoaders
