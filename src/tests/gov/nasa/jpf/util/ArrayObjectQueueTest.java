@@ -212,7 +212,7 @@ public class ArrayObjectQueueTest extends TestJPF {
     q.add(g);
     
     EProcessor proc = new EProcessor(q);
-    q.processQueue(proc);
+    q.process(proc);
     
     assertTrue(a.visited);
     assertTrue(b.visited);

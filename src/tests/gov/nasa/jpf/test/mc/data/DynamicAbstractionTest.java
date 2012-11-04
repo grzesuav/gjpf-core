@@ -121,21 +121,26 @@ public class DynamicAbstractionTest extends TestJPF {
     }
     
     if (verifyNoPropertyViolation(SERIALIZER_ARG,
-                                  "+das.classes.include=*$SomeIgnoredClass",
-                                  "+das.methods.exclude=*",
+                                  "+das.classes.include=*$MyClass", // only consider MyClass instance and static data
+                                  "+das.methods.exclude=*",  // make sure we don't match this stackframe ('i' changes)
                                   "+vm.max_transition_length=MAX")){
       MyClass matchedObject = new MyClass();
       SomeIgnoredClass ignoredObject = new SomeIgnoredClass();
       
-      matchedObject.data = Verify.getInt(0, 2); // 1st CG
-      System.out.println(" " + matchedObject.data);
+      matchedObject.data = Verify.getInt(0, 2); // (1) 1st CG
+      System.out.print(" matchedObject.data=");
+      System.out.println( matchedObject.data);
       
       for (int i=0; i<2; i++){
         ignoredObject.data = i;
-        System.out.println("    " + ignoredObject.data);
+        System.out.print("    ignoredObject.data=");
+        System.out.println( ignoredObject.data);
 
-        Verify.breakTransition(); // matching point for someObject
-        System.out.printf("new state for matched=%d, ignored=%d\n", matchedObject.data, ignoredObject.data);
+        Verify.breakTransition(); // (2) matching point for someObject
+        
+        // if we get here we had a new state (i.e. wasn't matched)
+        // NOTE we don't get here for matchedObject.data=0 because that would match with the state before (1)
+        System.out.printf("         new state for matched=%d, ignored=%d\n", matchedObject.data, ignoredObject.data);
         Verify.incrementCounter(0); // should be only reached once for matchedObject.data={1,2}
       }
     }

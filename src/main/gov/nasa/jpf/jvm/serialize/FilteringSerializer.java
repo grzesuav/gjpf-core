@@ -24,24 +24,25 @@ import gov.nasa.jpf.jvm.ArrayFields;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.ElementInfoProcessor;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.Fields;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ReferenceProcessor;
-import gov.nasa.jpf.jvm.ReferenceQueue;
 import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.StaticElementInfo;
 import gov.nasa.jpf.jvm.Statics;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.ThreadList;
 import gov.nasa.jpf.jvm.Instruction;
+import gov.nasa.jpf.util.ArrayObjectQueue;
 import gov.nasa.jpf.util.BitArray;
 import gov.nasa.jpf.util.FinalBitSet;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.ObjVector;
+import gov.nasa.jpf.util.ObjectQueue;
+import gov.nasa.jpf.util.Processor;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,10 +53,10 @@ import java.util.List;
  *
  * <2do> rework filter policies
  */
-public class FilteringSerializer extends AbstractSerializer implements ElementInfoProcessor, ReferenceProcessor {
+public class FilteringSerializer extends AbstractSerializer implements ReferenceProcessor, Processor<ElementInfo> {
 
   // indexed by method globalId
-  final ObjVector<FramePolicy> methodCache    = new ObjVector<FramePolicy>();
+  final ObjVector<FramePolicy> methodCache = new ObjVector<FramePolicy>();
 
   //--- search global bitmask caches
   final HashMap<ClassInfo,FinalBitSet> instanceRefMasks = new HashMap<ClassInfo,FinalBitSet>();
@@ -64,11 +65,13 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   final HashMap<ClassInfo,FinalBitSet> instanceFilterMasks = new HashMap<ClassInfo,FinalBitSet>();
   final HashMap<ClassInfo,FinalBitSet> staticFilterMasks   = new HashMap<ClassInfo,FinalBitSet>();
 
-
   protected FilterConfiguration filter;
 
   protected transient IntVector buf = new IntVector(4096);
 
+  // the reference queue for heap traversal
+  protected ObjectQueue<ElementInfo> refQueue;
+  
   Heap heap;
 
 
@@ -170,17 +173,12 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     return v;
   }
 
-
-  //--- the methods that implement the heap traversal
-
-  protected ReferenceQueue refQueue;
-
   protected void initReferenceQueue() {
     // note - this assumes all heap objects are in an unmarked state, but this
     // is true if we execute outside the gc
 
     if (refQueue == null){
-      refQueue = new ReferenceQueue();
+      refQueue = new ArrayObjectQueue<ElementInfo>();
     } else {
       refQueue.clear();
     }
@@ -243,7 +241,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
   // <2do> we don't strictly need the lockCount since this has to show in the
   // stack frames. However, we should probably add monitor serialization to
   // better support specialized subclasses
-  public void processElementInfo(ElementInfo ei) {
+  public void process (ElementInfo ei) {
     Fields fields = ei.getFields();
     ClassInfo ci = ei.getClassInfo();
     buf.add(ci.getUniqueId());
@@ -256,7 +254,6 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     }
   }
   
-
   protected void processReferenceQueue () {
     refQueue.process(this);
     
@@ -396,7 +393,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     }    
   }
   
-  protected void serializeStatics(){
+  protected void serializeClassLoaders(){
     buf.add(ks.classLoaders.size());
 
     for (ClassLoaderInfo cl : ks.classLoaders) {
@@ -445,7 +442,7 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
 
     //--- serialize all live objects and loaded classes
     serializeStackFrames();
-    serializeStatics();
+    serializeClassLoaders();
     processReferenceQueue();
     
     //--- now serialize the thread states (which might refer to live objects)
@@ -457,4 +454,15 @@ public class FilteringSerializer extends AbstractSerializer implements ElementIn
     return buf.toArray();
   }
 
+  protected void dumpData() {
+    int n = buf.size();
+    System.out.print("serialized data: [");
+    for (int i=0; i<n; i++) {
+      if (i>0) {
+        System.out.print(',');
+      }
+      System.out.print(buf.get(i));
+    }
+    System.out.println(']');
+  }
 }

@@ -41,5 +41,5 @@ public interface ObjectQueue<E> extends Iterable<E> {
   E poll();
   E remove() throws NoSuchElementException;
   
-  void processQueue (Processor<E> processor);
+  void process (Processor<E> processor);
 }

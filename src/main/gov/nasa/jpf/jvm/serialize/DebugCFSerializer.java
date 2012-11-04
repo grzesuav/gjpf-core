@@ -60,19 +60,19 @@ public class DebugCFSerializer extends CFSerializer implements DebugStateSeriali
     super.processReferenceQueue();
   }
   
-  public void processElementInfo(ElementInfo ei) {
-    super.processElementInfo(ei);
+  public void process (ElementInfo ei) {
+    super.process( ei);
     
     FinalBitSet filtered = !ei.isArray() ? getInstanceFilterMask(ei.getClassInfo()) : null;
     os.print(ei, filtered);
     os.println();
   }
   
-  protected void serializeStatics(){
+  protected void serializeClassLoaders(){
     os.println();
     os.printCommentLine("--- classes");
     os.println();
-    super.serializeStatics();
+    super.serializeClassLoaders();
   }
   
   protected void serializeClass (StaticElementInfo sei){

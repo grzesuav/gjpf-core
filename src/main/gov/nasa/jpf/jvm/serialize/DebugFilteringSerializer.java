@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2010 United States Government as represented by the
+// Copyright (C) 2012 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -17,12 +17,24 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm;
+package gov.nasa.jpf.jvm.serialize;
+
+import java.io.OutputStream;
+
+import gov.nasa.jpf.jvm.DebugStateSerializer;
 
 /**
- * interface for processing ElementInfo collections
+ * a FilteringSerializer that stores the serialized program state in a 
+ * readable/diffable format.
+ * 
+ * Automatically used by Debug..StateSet if the configured vm.serializer.class is FilteringSerializer
  */
-public interface ElementInfoProcessor {
+public class DebugFilteringSerializer extends FilteringSerializer implements DebugStateSerializer {
 
-  void processElementInfo (ElementInfo ei);
+  @Override
+  public void setOutputStream(OutputStream os) {
+    // TODO Auto-generated method stub
+
+  }
+
 }

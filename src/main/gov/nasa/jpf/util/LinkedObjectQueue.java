@@ -152,7 +152,7 @@ public class LinkedObjectQueue<E> implements ObjectQueue<E> {
     return new FIFOIterator();
   }
   
-  public void processQueue( Processor<E> proc) {
+  public void process( Processor<E> proc) {
     for (Entry e = first; e != null; ) {
       proc.process( (E)e.obj);
 

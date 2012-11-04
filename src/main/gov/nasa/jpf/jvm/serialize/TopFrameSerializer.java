@@ -66,7 +66,7 @@ public class TopFrameSerializer extends CFSerializer {
   }
 
   @Override
-  protected void serializeStatics(){
+  protected void serializeClassLoaders(){
     // totally ignore statics
   }
 }

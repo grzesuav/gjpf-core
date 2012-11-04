@@ -602,7 +602,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     vm.getClassLoaderList().markRoots(this); // mark all static references
 
     //--- trace all entries - this gets recursive
-    markQueue.processQueue(elementInfoMarker);    
+    markQueue.process(elementInfoMarker);    
   }
   
   @Override

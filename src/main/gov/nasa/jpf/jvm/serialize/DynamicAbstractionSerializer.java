@@ -47,7 +47,7 @@ import java.util.List;
  */
 public class DynamicAbstractionSerializer extends FilteringSerializer {
 
-  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.DynamicAbstractionSerializer");
+  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.serialize.DynamicAbstractionSerializer");
 
   static class FieldAbstraction {
     FieldSpec fspec;
@@ -166,6 +166,8 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
         refQueue.add(ei);
       }
     }
+    
+    // we DON'T add the reference value to the buffer here
   }
 
   protected void processField(Fields fields, int[] slotValues, FieldInfo fi, FinalBitSet filtered) {
@@ -286,7 +288,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
 
   // <2do> this should also allow abstraction of whole objects, so that
   // we can hash combinations/relations of field values
-  public void processElementInfo(ElementInfo ei) {
+  public void process (ElementInfo ei) {
     Fields fields = ei.getFields();
     ClassInfo ci = ei.getClassInfo();
 
@@ -299,8 +301,8 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
         processNamedFields(ci, fields);
       }
 
-    } else {
-      // we check for live objects along all stack frames, so we should do the same here
+    } else { // ignored class
+      // we check for live non-ignored objects along all stack frames, so we should do the same for all objects
       if (fields instanceof ArrayFields) {
         if (fields instanceof ReferenceArrayFields) {
           processReferenceArray((ReferenceArrayFields) fields);
@@ -312,7 +314,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
   }
 
   @Override
-  protected void serializeFrame(StackFrame frame) {
+  protected void serializeFrame (StackFrame frame) {
     MethodInfo mi = frame.getMethodInfo();
     
     if (StringSetMatcher.isMatch(mi.getFullName(), includeMethods, excludeMethods)){
@@ -326,7 +328,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
     }
   }
 
-  protected void serializeClass(StaticElementInfo sei) {
+  protected void serializeClass (StaticElementInfo sei) {
     ClassInfo ci = sei.getClassInfo();
     Fields fields = sei.getFields();
 
@@ -346,14 +348,21 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
     }
   }
 
-  protected void serializeStatics(){
-    buf.add(ks.classLoaders.size());
-
+  protected void serializeClassLoaders(){
+    // we don't care about the number of classloaders
+    
     for (ClassLoaderInfo cl : ks.classLoaders) {
       if(cl.isAlive()) {
-        serializeStatics(cl.getStatics());
+        serializeStatics( cl.getStatics());
       }
     }
   }
 
+  protected void serializeStatics(Statics statics){
+    // we don't care about the number of statics entries
+
+    for (StaticElementInfo sei : statics.liveStatics()) {
+      serializeClass(sei);
+    }
+  }
 }

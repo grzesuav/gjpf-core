@@ -63,14 +63,14 @@ public class AdaptiveSerializer extends CFSerializer {
   }
 
   //@Override
-  protected void serializeStatics(){
+  protected void serializeClassLoaders(){
     // for thread CGs we skip this - assuming that this is only relevant if there is
     // a class object lock, which is covered by the thread lock info
     if (!isSchedulingPoint){
       // <2do> this seems too conservative - we should only serialize what is
       // used from this thread, which can be collected at class load time
       // by looking at GET/PUTSTATIC targets (and their superclasses)
-      super.serializeStatics();
+      super.serializeClassLoaders();
     }
   }
 }
