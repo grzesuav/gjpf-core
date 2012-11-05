@@ -25,6 +25,7 @@ import gov.nasa.jpf.util.BitSet64;
 import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.OATHash;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.PrintUtils;
 
@@ -1435,6 +1436,21 @@ public class StackFrame implements Cloneable {
   
   public boolean hasAnyRef () {
     return isRef.cardinality() > 0;
+  }
+  
+  public int mixinExecutionStateHash (int h) {
+    h = OATHash.hashMixin( h, mi.getGlobalId());
+    
+    if (pc != null){
+      h = OATHash.hashMixin(h, pc.getInstructionIndex());
+      // we don't need the bytecode since there can only be one insn with this index in this method
+    }
+    
+    for (int i=0; i<top; i++) {
+      h = OATHash.hashMixin(h, slots[i]);
+    }
+   
+    return h;
   }
 
   protected void hash (HashData hd) {

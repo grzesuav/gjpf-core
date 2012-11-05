@@ -22,7 +22,7 @@ import gov.nasa.jpf.util.OATHash;
 
 /**
  * helper class for search global object id (SGOID) computation. This
- * captures both allocatin context and count.
+ * captures both allocation context and count.
  * 
  * NOTE: this is used as a key for associative arrays, but we do
  * allow destructive updates via init() in order to enable key
@@ -31,12 +31,14 @@ import gov.nasa.jpf.util.OATHash;
  */
 public class Allocation {
   
-  AllocationContext context;
-  int count;
+  final AllocationContext context;
+  final int count;
+  final int hash;
   
-  public void init (AllocationContext context, int count){
+  public Allocation (AllocationContext context, int count){
     this.context = context;
     this.count = count;
+    this.hash = OATHash.hash(context.hashCode(), count);
   }
   
   @Override
@@ -44,7 +46,7 @@ public class Allocation {
     if (o instanceof Allocation) {
       Allocation other = (Allocation)o;
       
-      if (other.count == count) {
+      if (other.hash == hash) {
         if (other.context.equals(context)) {
           return true;
         }
@@ -56,7 +58,6 @@ public class Allocation {
   
   @Override
   public int hashCode() {
-    // <2do> do we need to cache this?
-    return OATHash.hash(context.hashCode(), count);
+    return hash;
   }
 }

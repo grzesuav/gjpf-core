@@ -22,6 +22,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.ObjVector;
 
+import java.util.HashMap;
 import java.util.Iterator;
 
 /**
@@ -65,7 +66,6 @@ public class ObjVectorHeap extends GenericHeapImpl {
   static int nextSgoid;
   static IntTable<Allocation> sgoids;
   
-  Allocation alloc; // used as a key cache
   IntTable<AllocationContext> allocCounts;
   
   ObjVector<ElementInfo> elementInfos;
@@ -82,7 +82,6 @@ public class ObjVectorHeap extends GenericHeapImpl {
     sgoids = new IntTable<Allocation>();
     nextSgoid = 0;
     
-    alloc = new Allocation();
     allocCounts = new IntTable<AllocationContext>();
     elementInfos = new ObjVector<ElementInfo>();
   }
@@ -90,16 +89,19 @@ public class ObjVectorHeap extends GenericHeapImpl {
   //--- to be overridden by subclasses that use different AllocationContext implementations
   
   protected void initAllocationContext(Config config) {
-    HashedAllocationContext.init(config);    
+    HashedAllocationContext.init(config);
+    //PreciseAllocationContext.init(config);
   }
   
   // these are always called directly from the allocation primitive, i.e. the allocating site is at a fixed
   // stack offset (callers caller)
   protected AllocationContext getSUTAllocationContext (ClassInfo ci, ThreadInfo ti) {
     return HashedAllocationContext.getSUTAllocationContext(ci, ti);
+    //return PreciseAllocationContext.getSUTAllocationContext(ci, ti);
   }
   protected AllocationContext getSystemAllocationContext (ClassInfo ci, ThreadInfo ti, int anchor) {
     return HashedAllocationContext.getSystemAllocationContext(ci, ti, anchor);
+    //return PreciseAllocationContext.getSystemAllocationContext(ci, ti, anchor);
   }
     
   //--- heap interface
@@ -119,26 +121,21 @@ public class ObjVectorHeap extends GenericHeapImpl {
     int idx;
     int cnt;
     
-    IntTable.Entry<AllocationContext> cntEntry = allocCounts.get(ctx);
-    if (cntEntry == null) {
-      allocCounts.put(ctx, 1);
-      cnt = 1;
-    } else {
-      cnt = ++cntEntry.val;
-    }
+    IntTable.Entry<AllocationContext> cntEntry = allocCounts.getInc(ctx);
+    cnt = cntEntry.val;
     
-    alloc.init(ctx, cnt);
+    Allocation alloc = new Allocation(ctx, cnt);
+    
     IntTable.Entry<Allocation> sgoidEntry = sgoids.get(alloc);
     if (sgoidEntry != null) { // we already had this one
       idx = sgoidEntry.val;
       
     } else { // new entry
-      idx = nextSgoid++;
+      idx = ++nextSgoid;
       sgoids.put(alloc, idx);
-      alloc = new Allocation(); // !! create new one so that we don't modify a stored key
     }
     
-    // we do this here since we know how elements are stored
+    // sanity check - we do this here (and not in our super class) since we know how elements are stored
     assert elementInfos.get(idx) == null;
     
     return idx;

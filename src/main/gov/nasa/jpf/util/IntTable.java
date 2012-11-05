@@ -43,8 +43,8 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
    * in the table.
    */  
   public static class Entry<E> implements Cloneable {
-    public    final E  key;
-    public    int      val;
+    public final E key;
+    public final int val;
     protected Entry<E> next;
     
     protected Entry(E k, int v) {
@@ -114,38 +114,49 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
   public static class Snapshot<E> {
     protected final int tblSize;
     protected final int tblPow;
-    protected final SnapshotEntry<E>[] data;
-        
+    
+    protected final int[] indices;
+    protected final E[] keys;
+    protected final int[] vals;
+    
     @SuppressWarnings("unchecked")
     protected Snapshot (IntTable<E> t){
       Entry<E>[] tbl = t.table;
       int nEntries = t.size;
-      
+            
       tblSize = tbl.length;
       tblPow = t.tblPow;
-      data = (SnapshotEntry<E>[]) new SnapshotEntry[nEntries];
+      
+      indices = new int[nEntries];
+      keys = (E[]) new Object[nEntries];
+      vals = new int[nEntries];
       
       int j = 0;
       for (int i=0; i<tbl.length && j<nEntries; i++){
         Entry<E> e = tbl[i];
         if (e != null){
           if (e.next == null){ // just one entry under this head
-            SnapshotEntry<E> se = new SnapshotEntry<E>(i, e);
-            data[j++] = se;
+            
+            indices[j] = i;
+            keys[j] = e.key;
+            vals[j] = e.val;
+            j++;
             
           } else {
             // we have to store in reverse order so that restore preserves it
             // we do the revert here because storing happens once, whereas restore can happen many times
-            int n = 0;
-            for (Entry<E> ee = e; ee != null; ee = ee.next){
+            int n = 1;
+            for (Entry<E> ee = e.next; ee != null; ee = ee.next){
               n++;
             }
 
             int k = j+n-1;
             j += n;
-            for (; e != null; e = e.next){
-              SnapshotEntry<E> se = new SnapshotEntry<E>(i, e);
-              data[k--] = se;
+            for (; e != null; e = e.next){  
+              indices[k] = i;
+              keys[k] = e.key;
+              vals[k] = e.val;
+              k--;
             }
           }
         }
@@ -163,6 +174,7 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
   
   protected Entry<E> nullEntry = null;
   
+  Snapshot<E> lastSnapshot;   // cache for the last snapshot (nulled once the IntTable is changed)
   
   public IntTable() {
     this(INIT_TBL_POW);
@@ -174,25 +186,34 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
   }
   
   public Snapshot<E> getSnapshot(){
-    return new Snapshot<E>(this);
+    if (lastSnapshot == null) {
+      lastSnapshot = new Snapshot<E>(this);
+    }
+    
+    return lastSnapshot;
   }
   
   @SuppressWarnings("unchecked")
   public void restore (Snapshot<E> snapshot){
     Entry<E>[] tbl = (Entry<E>[]) new Entry[snapshot.tblSize];
     
-    SnapshotEntry<E>[] data = snapshot.data;
-    for (int i=0; i<data.length; i++){
-      SnapshotEntry<E> se = data[i];
-      int idx = se.index;
-      tbl[idx] = new Entry<E>(se.key, se.val, tbl[idx]);
+    int[] indices = snapshot.indices;
+    E[] keys = snapshot.keys;
+    int[] vals = snapshot.vals; 
+    int nEntries = vals.length;
+    
+    for (int i=0; i<nEntries; i++){
+      int idx = indices[i];
+      tbl[idx] = new Entry<E>( keys[i], vals[i], tbl[idx]);
     }
     
     table = tbl;
-    size = data.length;
+    size = nEntries;
     mask = table.length -1;
     nextRehash = (int) Math.ceil(MAX_LOAD * table.length);
     tblPow = snapshot.tblPow;
+    
+    lastSnapshot = snapshot;
   }
 
   // this is a deep copy (needs to be because entries are reused when growing the table)
@@ -246,6 +267,8 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
       return false;
       
     } else {
+      lastSnapshot = null;
+      size = 0;
       Entry<E>[] old = table;
       int oldTblLength = old.length;
       newTable(tblPow + 1);
@@ -273,6 +296,9 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
   protected void addEntry(Entry<E> e, int idx) {
     e.next = table[idx];
     table[idx] = e;
+    
+    size++;
+    lastSnapshot = null;
   }
   
   // helper for searching
@@ -290,6 +316,24 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
     return null; // not found
   }
 
+  // helper for value update
+  protected void replaceEntryValue( int idx, Entry<E> oldEntry, int newValue) {
+    Entry<E> last = null;
+    
+    for (Entry<E> e = table[idx]; e != null; e = e.next, last = e) {
+      if (e == oldEntry) {
+        Entry<E> newEntry = new Entry<E>(oldEntry.key, newValue);
+        newEntry.next = e.next;
+        lastSnapshot = null;
+        
+        if (last == null) {
+          table[idx] = newEntry;
+        } else {
+          last.next = newEntry;
+        }
+      }
+    }    
+  }
   
   //--- public methods
   
@@ -299,7 +343,7 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
   }
   
   /** ONLY USE IF YOU ARE SURE NO PREVIOUS BINDING FOR key EXISTS. */
-  public Entry<E> add(E key, int val) {
+  public Entry<E> add (E key, int val) {
     Entry<E> e = new Entry<E>(key,val);
     if (key == null) {
       nullEntry = e;
@@ -307,37 +351,73 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
       maybeRehash();
       addEntry(e, getTableIndex(key));
     }
-    size++;
+    
     return e;
   }
   
   /** lookup, returning null if no binding. */
-  public Entry<E> get(E key) {
+  public Entry<E> get (E key) {
     return getEntry(key, getTableIndex(key));
   }
   
+  /**
+   * a little optimization to speed up counter increments
+   */
+  public Entry<E> getInc (E key){
+    int idx = getTableIndex(key);
+    
+    Entry<E> last = null;
+    for (Entry<E> e = table[idx]; e != null; e = e.next) {
+      if (e.key == key || e.key.equals(key)) { // found it, replace entry
+        Entry<E> newEntry = new Entry<E>(key, e.val+1, e.next);
+        lastSnapshot = null;
+        
+        if (last == null) {
+          table[idx] = newEntry;
+        } else {
+          last.next = newEntry;
+        }
+        
+        return newEntry;
+        
+      } else {
+        last = e;
+      }
+    }
+    
+    // it wasn't there, add a new entry with value 1
+    Entry<E> newEntry = new Entry<E>( key, 1);
+    if (maybeRehash()) {
+      idx = getTableIndex(key);
+    }
+    addEntry( newEntry, idx);
+
+    return newEntry;
+  }
+  
   /** just like HashMap put. */
-  public void put(E key, int val) {
+  public void put(E key, int val) {    
     if (key == null) {
       if (nullEntry == null) {
         nullEntry = new Entry<E>(null,val);
         size++;
       } else {
-        nullEntry.val = val;
+        nullEntry = new Entry<E>(null, val);
       }
       return;
     }
     
     int idx = getTableIndex(key);
     Entry<E> e = getEntry(key, idx);
-    if (e == null) {
+    if (e == null) { // wasn't there
       if (maybeRehash()){
         idx = getTableIndex(key);
       }
       addEntry(new Entry<E>(key,val), idx);
-      size++;
+      
     } else {
-      e.val = val;
+      replaceEntryValue( idx, e, val);
+      lastSnapshot = null;
     }
   }
 
@@ -356,20 +436,24 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
         }
         cur.next = null;
         size--;
+        lastSnapshot = null;
+    
         return cur;
       }
       prev = cur;
       cur = cur.next;
     }
+    
     return null; // not found
   }
   
   
   /** empties the table, leaving it capacity the same. */
   public void clear() {
-    Arrays.fill(table, null);
+    table = (Entry<E>[]) new Entry[table.length];
     nullEntry = null;
     size = 0;
+    lastSnapshot = null;
   }
   
   /** returns the next val to be assigned by a call to pool() on a fresh key. */
@@ -395,7 +479,6 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
       }
       e = new Entry<E>(key,size);
       addEntry(e, idx);
-      size++;
     }
     return e;
   }
@@ -481,5 +564,16 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
       }
     }
     System.out.println('}');
+  }
+  
+  public int computeSize() {
+    int n=0;
+    for (int i=0; i<table.length; i++){
+      for (Entry<E> e = table[i]; e != null; e = e.next){
+        n++;
+      }
+    }
+    
+    return n;
   }
 }

@@ -3432,6 +3432,16 @@ public class ThreadInfo
     }
   }
 
+  public int mixinExecutionStateHash(int h) {
+    for (StackFrame frame = top; frame != null; frame = frame.prev) {
+      if (!frame.isNative()) {
+        h = frame.mixinExecutionStateHash(h);
+      }
+    }
+    
+    return h;
+  }
+  
   public boolean hasDataChanged() {
     return (attributes & ATTR_DATA_CHANGED) != 0;
   }

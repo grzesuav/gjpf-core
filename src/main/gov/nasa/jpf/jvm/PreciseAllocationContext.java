@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm;
 
+import static gov.nasa.jpf.util.OATHash.hash;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.OATHash;
 
@@ -31,7 +32,7 @@ import java.util.HashMap;
  * note that we pool (i.e. use static factory methods) in order to avoid
  * creating a myriad of redundant objects
  */
-public class PreciseAllocationContext {
+public class PreciseAllocationContext implements AllocationContext {
 
   // this is search global, i.e. does not have to be backtracked, but has to be
   // re-initialized between JPF runs (everything that changes hashCode)
@@ -62,7 +63,7 @@ public class PreciseAllocationContext {
     return true;
   }
   
-  public static synchronized PreciseAllocationContext getExecutionContext (ThreadInfo ti){
+  public static synchronized PreciseAllocationContext getSUTExecutionContext (ClassInfo ci, ThreadInfo ti){
     int stackDepth = ti.getStackDepth();
     int h = 0;
     
@@ -140,6 +141,10 @@ public class PreciseAllocationContext {
     }
   }
   
+  // for automatic field init allocations
+  public AllocationContext extend (ClassInfo ci, int anchor) {
+    return new PreciseAllocationContext(ti, cc, OATHash.hash(hashCode, ci.hashCode()));
+  }
   
   /** mostly for debugging purposes */
   public String toString(){

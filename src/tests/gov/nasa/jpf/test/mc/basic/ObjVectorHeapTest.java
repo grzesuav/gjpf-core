@@ -95,6 +95,7 @@ public class ObjVectorHeapTest extends TestJPF {
       checkRef("from M ", "X.class", getReferenceValue(clsX));
       
       int n = Verify.getInt(1, 3); // CG #2
+      System.out.println("-- M next X[] arraysize = " + n);
       X[] xs = new X[n];
       for (int i=0; i<xs.length; i++) {
         xs[i] = new X("xs-" + i);
