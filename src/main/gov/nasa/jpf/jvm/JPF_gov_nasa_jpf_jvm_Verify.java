@@ -46,6 +46,9 @@ import java.util.List;
 /**
  * native peer class for programmatic JPF interface (that can be used inside
  * of apps to verify - if you are aware of the danger that comes with it)
+ * 
+ * this peer is a bit different in that it only uses static fields and methods because
+ * its use is supposed to be JPF global (without classloader namespaces)
  */
 public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   static final int MAX_COUNTERS = 10;
@@ -705,7 +708,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   @MJI
   public static void setLocalAttribute__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int varRef, int attr) {
     String slotName = env.getStringObject(varRef);
-    StackFrame frame = env.getCallerStackFrame(); // we are executing in a NativeStackFrame
+    StackFrame frame = env.getModifiableCallerStackFrame(); // we are executing in a NativeStackFrame
 
     if (!frame.getMethodInfo().isStatic() &&  slotName.equals("this")) {
       frame.setLocalAttr(0, Integer.valueOf(attr)); // only for instance methods of course
@@ -738,7 +741,7 @@ public class JPF_gov_nasa_jpf_jvm_Verify extends NativePeer {
   @MJI
   public static void addLocalAttribute__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int varRef, int attr) {
     String slotName = env.getStringObject(varRef);
-    StackFrame frame = env.getCallerStackFrame(); // we are executing in a NativeStackFrame
+    StackFrame frame = env.getModifiableCallerStackFrame(); // we are executing in a NativeStackFrame
 
     if (!frame.getMethodInfo().isStatic() &&  slotName.equals("this")) {
       frame.addLocalAttr(0, Integer.valueOf(attr)); // only for instance methods of course

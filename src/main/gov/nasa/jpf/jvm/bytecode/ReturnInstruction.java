@@ -37,10 +37,13 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
   // to store where we came from
   protected StackFrame returnFrame;
 
+  abstract public int getReturnTypeSize();
+  abstract protected Object getReturnedOperandAttr(StackFrame frame);
+  
   // note these are only callable from within the same execute - thread interleavings
   // would cause races
-  abstract protected void storeReturnValue (ThreadInfo th);
-  abstract protected void pushReturnValue (ThreadInfo th);
+  abstract protected void getAndSaveReturnValue (StackFrame frame);
+  abstract protected void pushReturnValue (StackFrame frame);
 
   public abstract Object getReturnValue(ThreadInfo ti);
 
@@ -64,13 +67,17 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
   //--- attribute accessors
   
   // the accessors are here to save the client some effort regarding the
-  // return type (slot size)
+  // return type (slot size).
+  // Since these are all public methods that can be called by listeners,
+  // we stick to the ThreadInfo argument
   
   public boolean hasReturnAttr (ThreadInfo ti){
-    return ti.hasOperandAttr();
+    StackFrame frame = ti.getTopFrame();
+    return frame.hasOperandAttr();
   }
   public boolean hasReturnAttr (ThreadInfo ti, Class<?> type){
-    return ti.hasOperandAttr(type);
+    StackFrame frame = ti.getTopFrame();
+    return frame.hasOperandAttr(type);
   }
   
   /**
@@ -81,7 +88,8 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
    * the value is pushed during the execute(). Use ObjectList to access values
    */
   public Object getReturnAttr (ThreadInfo ti){
-    return ti.getOperandAttr();
+    StackFrame frame = ti.getTopFrame();
+    return frame.getOperandAttr();
   }
 
   /**
@@ -93,11 +101,13 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
    * we don't clone since pushing a return value already changed the caller frame
    */
   public void setReturnAttr (ThreadInfo ti, Object a){
-    ti.setOperandAttrNoClone(a);
+    StackFrame frame = ti.getModifiableTopFrame();
+    frame.setOperandAttr(a);
   }
   
   public void addReturnAttr (ThreadInfo ti, Object attr){
-    ti.addOperandAttrNoClone(attr);
+    StackFrame frame = ti.getModifiableTopFrame();
+    frame.addOperandAttr(attr);
   }
 
   /**
@@ -110,7 +120,7 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
   public <T> T getNextReturnAttr (ThreadInfo ti, Class<T> type, Object prev){
     return ti.getNextOperandAttr(type, prev);
   }
-  public Iterator returnAttrIterator (ThreadInfo ti){
+  public Iterator<?> returnAttrIterator (ThreadInfo ti){
     return ti.operandAttrIterator();
   }
   public <T> Iterator<T> returnAttrIterator (ThreadInfo ti, Class<T> type){
@@ -143,25 +153,25 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
       }
     }
 
-    returnFrame = ti.getTopFrame();
-    Object attr = getReturnAttr(ti); // do this before we pop
-    storeReturnValue(ti);
-
+    StackFrame frame = ti.getModifiableTopFrame();
+    returnFrame = frame;
+    Object attr = getReturnedOperandAttr(frame); // the return attr - get this before we pop
+    getAndSaveReturnValue(frame);
     
     // note that this is never the first frame, since we start all threads (incl. main)
     // through a direct call
-    StackFrame top = ti.popFrame();
+    frame = ti.popAndGetModifiableTopFrame();
 
     // remove args, push return value and continue with next insn
     // (DirectCallStackFrames don't use this)
-    ti.removeArguments(mi);
-    pushReturnValue(ti);
+    frame.removeArguments(mi);
+    pushReturnValue(frame);
 
     if (attr != null) {
       setReturnAttr(ti, attr);
     }
 
-    return top.getPC().getNext();
+    return frame.getPC().getNext();
   }
   
   public void accept(InstructionVisitor insVisitor) {

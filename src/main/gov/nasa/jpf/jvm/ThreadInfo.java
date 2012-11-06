@@ -265,9 +265,7 @@ public class ThreadInfo
       stackDepth = ti.stackDepth; // we just copy this for efficiency reasons
       attributes = (ti.attributes & ATTR_STORE_MASK);
 
-      for (StackFrame frame = top; frame != null && frame.hasChanged(); frame = frame.getPrevious()){
-        frame.setChanged(false);
-      }
+      ti.freeze();
       ti.markUnchanged();
     }
 
@@ -459,6 +457,12 @@ public class ThreadInfo
 
   public Memento<ThreadInfo> getMemento(){
     return new TiMemento(this);
+  }
+  
+  void freeze() {
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()) {
+      frame.freeze();
+    }
   }
 
   //--- cached mementos are only supposed to be accessed from the Restorer
@@ -860,9 +864,6 @@ public class ThreadInfo
     return Types.intToBoolean(getLocalVariable(lindex));
   }
 
-  public boolean getBooleanReturnValue () {
-    return Types.intToBoolean(peek());
-  }
 
   public byte getByteLocal (String lname) {
     return (byte) getLocalVariable(lname);
@@ -870,11 +871,6 @@ public class ThreadInfo
 
   public byte getByteLocal (int lindex) {
     return (byte) getLocalVariable(lindex);
-  }
-
-
-  public byte getByteReturnValue () {
-    return (byte) peek();
   }
 
   public Iterator<StackFrame> iterator () {
@@ -925,18 +921,6 @@ public class ThreadInfo
     return list;
   }
 
-  public List<StackFrame> getChangedStackFrames() {
-    ArrayList<StackFrame> list = new ArrayList<StackFrame>();
-
-    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
-      if (!frame.hasChanged()){
-        list.add(frame);
-      }
-    }
-
-    return list;
-  }
-
   public int getStackDepth() {
     return stackDepth;
   }
@@ -973,6 +957,46 @@ public class ThreadInfo
 
     return null;
   }
+  
+  // this is ugly - it can modify deeper stack frames
+  public StackFrame getModifiableLastNonSyntheticStackFrame (){
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      if (!frame.isSynthetic()){
+        if (frame.isFrozen()) {
+          StackFrame newFrame = frame.clone();
+          
+          if (frame == top) {
+            frame = newFrame;
+            top = newFrame;
+            
+          } else {
+            // Ughh, now we have to clone all frozen frames above
+            StackFrame fLast = null;
+            for (StackFrame f = getModifiableTopFrame(); f != frame; f = f
+                .getPrevious()) {
+              if (f.isFrozen()) {
+                f = f.clone();
+                if (fLast != null) {
+                  fLast.setPrevious(f);
+                }
+              }
+              fLast = f;
+            }
+            if (fLast != null) {
+              fLast.setPrevious(newFrame);
+            }
+
+            frame = newFrame;
+          }
+        }
+        
+        return frame;
+      }
+    }
+
+    return null;
+  }
+  
 
   /**
    * Returns the this pointer of the callee from the stack.
@@ -1018,10 +1042,6 @@ public class ThreadInfo
     return (char) getLocalVariable(lindex);
   }
 
-  public char getCharReturnValue () {
-    return (char) peek();
-  }
-
   /**
    * Returns the class information.
    */
@@ -1053,20 +1073,12 @@ public class ThreadInfo
     return Types.intToFloat(getLocalVariable(lindex));
   }
 
-  public float getFloatReturnValue () {
-    return Types.intToFloat(peek());
-  }
-
   public int getIntLocal (String lname) {
     return getLocalVariable(lname);
   }
 
   public int getIntLocal (int lindex) {
     return getLocalVariable(lindex);
-  }
-
-  public int getIntReturnValue () {
-    return peek();
   }
 
   public boolean isInterrupted (boolean resetStatus) {
@@ -1151,7 +1163,7 @@ public class ThreadInfo
    * Sets the value of a local variable.
    */
   public void setLocalVariable (int idx, int v, boolean ref) {
-    topClone().setLocalVariable(idx, v, ref);
+    getModifiableTopFrame().setLocalVariable(idx, v, ref);
   }
 
   /**
@@ -1263,7 +1275,7 @@ public class ThreadInfo
    * Sets the value of a long local variable.
    */
   public void setLongLocalVariable (int idx, long v) {
-    topClone().setLongLocalVariable(idx, v);
+    getModifiableTopFrame().setLongLocalVariable(idx, v);
   }
 
   /**
@@ -1368,10 +1380,7 @@ public class ThreadInfo
   public ElementInfo getModifiableThreadObject() {
     return getModifiableElementInfo(objRef);
   }
-  
-  public ElementInfo getObjectReturnValue () {
-    return vm.getElementInfo(peek());
-  }
+
 
   //------------------- attribute accessors
   
@@ -1399,7 +1408,7 @@ public class ThreadInfo
    *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setOperandAttr (Object attr) {
-    topClone().setOperandAttr(attr);
+    getModifiableTopFrame().setOperandAttr(attr);
   }
   public void setOperandAttrNoClone (Object attr) {
     top.setOperandAttr(attr);
@@ -1423,21 +1432,21 @@ public class ThreadInfo
   }
     
   public void addOperandAttr (Object attr) {
-    topClone().addOperandAttr(attr);
+    getModifiableTopFrame().addOperandAttr(attr);
   }
   public void addOperandAttrNoClone (Object attr) {
     top.addOperandAttr(attr);
   }
 
   public void removeOperandAttr (Object attr) {
-    topClone().removeOperandAttr(attr);
+    getModifiableTopFrame().removeOperandAttr(attr);
   }
   public void removeOperandAttrNoClone (Object attr) {
     top.removeOperandAttr(attr);
   }
   
   public void replaceOperandAttr (Object oldAttr, Object newAttr) {
-    topClone().replaceOperandAttr(oldAttr, newAttr);
+    getModifiableTopFrame().replaceOperandAttr(oldAttr, newAttr);
   }
   public void replaceOperandAttrNoClone (Object oldAttr, Object newAttr) {
     top.replaceOperandAttr(oldAttr, newAttr);
@@ -1468,7 +1477,7 @@ public class ThreadInfo
    *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setOperandAttr (int opStackOffset, Object attr) {
-    topClone().setOperandAttr(opStackOffset, attr);
+    getModifiableTopFrame().setOperandAttr(opStackOffset, attr);
   }
   public void setOperandAttrNoClone (int opStackOffset, Object attr) {
     top.setOperandAttr(opStackOffset, attr);
@@ -1493,21 +1502,21 @@ public class ThreadInfo
   }
     
   public void addOperandAttr (int opStackOffset, Object attr) {
-    topClone().addOperandAttr(opStackOffset,attr);
+    getModifiableTopFrame().addOperandAttr(opStackOffset,attr);
   }
   public void addOperandAttrNoClone (int opStackOffset, Object attr) {
     top.addOperandAttr(opStackOffset,attr);
   }
 
   public void removeOperandAttr (int opStackOffset, Object attr) {
-    topClone().removeOperandAttr(opStackOffset,attr);
+    getModifiableTopFrame().removeOperandAttr(opStackOffset,attr);
   }
   public void removeOperandAttrNoClone (int opStackOffset, Object attr) {
     top.removeOperandAttr(opStackOffset,attr);
   }
   
   public void replaceOperandAttr (int opStackOffset, Object oldAttr, Object newAttr) {
-    topClone().replaceOperandAttr(opStackOffset,oldAttr, newAttr);
+    getModifiableTopFrame().replaceOperandAttr(opStackOffset,oldAttr, newAttr);
   }
   public void replaceOperandAttrNoClone (int opStackOffset, Object oldAttr, Object newAttr) {
     top.replaceOperandAttr(opStackOffset,oldAttr, newAttr);
@@ -1538,7 +1547,7 @@ public class ThreadInfo
    *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setLongOperandAttr (Object attr) {
-    topClone().setLongOperandAttr(attr);
+    getModifiableTopFrame().setLongOperandAttr(attr);
   }
   public void setLongOperandAttrNoClone (Object attr) {
     top.setLongOperandAttr(attr);
@@ -1563,21 +1572,21 @@ public class ThreadInfo
   }
     
   public void addLongOperandAttr (Object attr) {
-    topClone().addLongOperandAttr(attr);
+    getModifiableTopFrame().addLongOperandAttr(attr);
   }
   public void addLongOperandAttrNoClone (Object attr) {
     top.addLongOperandAttr(attr);
   }
 
   public void removeLongOperandAttr (Object attr) {
-    topClone().removeLongOperandAttr(attr);
+    getModifiableTopFrame().removeLongOperandAttr(attr);
   }
   public void removeLongOperandAttrNoClone (Object attr) {
     top.removeLongOperandAttr(attr);
   }
   
   public void replaceLongOperandAttr (Object oldAttr, Object newAttr) {
-    topClone().replaceLongOperandAttr(oldAttr, newAttr);
+    getModifiableTopFrame().replaceLongOperandAttr(oldAttr, newAttr);
   }
   public void replaceLongOperandAttrNoClone (Object oldAttr, Object newAttr) {
     top.replaceLongOperandAttr(oldAttr, newAttr);
@@ -1608,7 +1617,7 @@ public class ThreadInfo
    *  - you constructed a multi value list with ObjectList.createList()
    */
   public void setLocalAttr (int localIndex, Object a){
-    topClone().setLocalAttr(localIndex, a);
+    getModifiableTopFrame().setLocalAttr(localIndex, a);
   }
   public void setLocalAttrNoClone (int localIndex, Object a){
     top.setLocalAttr(localIndex, a);
@@ -1633,21 +1642,21 @@ public class ThreadInfo
   }
     
   public void addLocalAttr (int localIndex, Object attr) {
-    topClone().addLocalAttr(localIndex,attr);
+    getModifiableTopFrame().addLocalAttr(localIndex,attr);
   }
   public void addLocalAttrNoClone (int localIndex, Object attr) {
     top.addLocalAttr(localIndex,attr);
   }
 
   public void removeLocalAttr (int localIndex, Object attr) {
-    topClone().removeLocalAttr(localIndex,attr);
+    getModifiableTopFrame().removeLocalAttr(localIndex,attr);
   }
   public void removeLocalAttrNoClone (int localIndex, Object attr) {
     top.removeLocalAttr(localIndex,attr);
   }
   
   public void replaceLocalAttr (int localIndex, Object oldAttr, Object newAttr) {
-    topClone().replaceLocalAttr(localIndex,oldAttr, newAttr);
+    getModifiableTopFrame().replaceLocalAttr(localIndex,oldAttr, newAttr);
   }
   public void replaceLocalAttrNoClone (int localIndex, Object oldAttr, Object newAttr) {
     top.replaceLocalAttr(localIndex,oldAttr, newAttr);
@@ -1675,11 +1684,11 @@ public class ThreadInfo
    * Sets the program counter of the top stack frame.
    */
   public void setPC (Instruction pc) {
-    topClone().setPC(pc);
+    getModifiableTopFrame().setPC(pc);
   }
 
   public void advancePC () {
-    topClone().advancePC();
+    getModifiableTopFrame().advancePC();
   }
 
   /**
@@ -1703,10 +1712,6 @@ public class ThreadInfo
 
   public short getShortLocal (int lindex) {
     return (short) getLocalVariable(lindex);
-  }
-
-  public short getShortReturnValue () {
-    return (short) peek();
   }
 
   /**
@@ -1755,10 +1760,6 @@ public class ThreadInfo
 
   public String getStringLocal (int lindex) {
     return vm.getElementInfo(getLocalVariable(lindex)).asString();
-  }
-
-  public String getStringReturnValue () {
-    return vm.getElementInfo(peek()).asString();
   }
 
   /**
@@ -1876,7 +1877,7 @@ public class ThreadInfo
    * Clears the operand stack of all value.
    */
   public void clearOperandStack () {
-    topClone().clearOperandStack();
+    getModifiableTopFrame().clearOperandStack();
   }
 
   public Object clone() {
@@ -2180,48 +2181,6 @@ public class ThreadInfo
         throw cie;
       }
     }
-  }
-
-  /**
-   * Duplicates a value on the top stack frame.
-   */
-  public void dup () {
-    topClone().dup();
-  }
-
-  /**
-   * Duplicates a long value on the top stack frame.
-   */
-  public void dup2 () {
-    topClone().dup2();
-  }
-
-  /**
-   * Duplicates a long value on the top stack frame.
-   */
-  public void dup2_x1 () {
-    topClone().dup2_x1();
-  }
-
-  /**
-   * Duplicates a long value on the top stack frame.
-   */
-  public void dup2_x2 () {
-    topClone().dup2_x2();
-  }
-
-  /**
-   * Duplicates a value on the top stack frame.
-   */
-  public void dup_x1 () {
-    topClone().dup_x1();
-  }
-
-  /**
-   * Duplicates a value on the top stack frame.
-   */
-  public void dup_x2 () {
-    topClone().dup_x2();
   }
 
   /**
@@ -2716,14 +2675,14 @@ public class ThreadInfo
    * Pops the top long value from the top stack frame.
    */
   public long longPop () {
-    return topClone().popLong();
+    return getModifiableTopFrame().popLong();
   }
 
   /**
    * Pushes a long value of the top stack frame.
    */
   public void longPush (long v) {
-    topClone().pushLong(v);
+    getModifiableTopFrame().pushLong(v);
   }
 
 
@@ -2766,53 +2725,6 @@ public class ThreadInfo
   }
 
   /**
-   * Peeks the top value from the top stack frame.
-   */
-  public int peek () {
-    if (top != null) {
-      return top.peek();
-    } else {
-      // <?> not really sure what to do here, but if the stack is gone, so is the thread
-      return -1;
-    }
-  }
-
-  /**
-   * Peeks a int value from the top stack frame.
-   */
-  public int peek (int n) {
-    if (top != null) {
-      return top.peek(n);
-    } else {
-      // <?> see peek()
-      return -1;
-    }
-  }
-
-
-  /**
-   * Pops the top value from the top stack frame.
-   */
-  public int pop () {
-    if (top != null) {
-      return topClone().pop();
-    } else {
-      // <?> see peek()
-      return -1;
-    }
-  }
-
-  /**
-   * Pops a set of values from the top stack frame.
-   */
-  public void pop (int n) {
-    if (top != null) {
-      topClone().pop(n);
-    }
-  }
-
-
-  /**
    * Adds a new stack frame for a new called method.
    */
   public void pushFrame (StackFrame frame) {
@@ -2832,7 +2744,7 @@ public class ThreadInfo
   /**
    * Removes a stack frame
    */
-  public StackFrame popFrame() {
+  public void popFrame() {
     StackFrame frame = top;
 
     //--- do our housekeeping
@@ -2843,10 +2755,19 @@ public class ThreadInfo
     // there always is one since we start all threads through directcalls
     top = frame.getPrevious();
     stackDepth--;
+  }
+
+  public StackFrame popAndGetModifiableTopFrame() {
+    popFrame();
+
+    if (top.isFrozen()) {
+      top = top.clone();
+    }
     
     return top;
   }
-
+  
+  
   /**
    * removing DirectCallStackFrames is a bit different (only happens from
    * DIRECTCALLRETURN insns)
@@ -2919,49 +2840,38 @@ public class ThreadInfo
 
   //--- those are the transfer operations between operand stack and locals
   public void push (int v, boolean ref) {
-    topClone().push(v, ref);
+    getModifiableTopFrame().push(v, ref);
   }
 
   public void pushRef (int ref) {
-    topClone().pushRef(ref);
+    getModifiableTopFrame().pushRef(ref);
   }
 
   public void push (int v) {
-    topClone().push(v);
+    getModifiableTopFrame().push(v);
   }
 
   public void pushLocal (int localIndex){
-    topClone().pushLocal(localIndex);
+    getModifiableTopFrame().pushLocal(localIndex);
   }
 
   public void pushLongLocal (int localIndex){
-    topClone().pushLongLocal(localIndex);
+    getModifiableTopFrame().pushLongLocal(localIndex);
   }
 
   public void storeOperand (int localIndex){
-    topClone().storeOperand(localIndex);
+    getModifiableTopFrame().storeOperand(localIndex);
   }
 
   public void storeLongOperand (int localIndex){
-    topClone().storeLongOperand(localIndex);
-  }
-
-  /**
-   * Removes the arguments of a method call.
-   */
-  public void removeArguments (MethodInfo mi) {
-    int i = mi.getArgumentsSize();
-
-    if (i != 0) {
-      pop(i);
-    }
+    getModifiableTopFrame().storeLongOperand(localIndex);
   }
 
   /**
    * Swaps two entry on the stack.
    */
   public void swap () {
-    topClone().swap();
+    getModifiableTopFrame().swap();
   }
 
   boolean haltOnThrow (String exceptionClassName){
@@ -3247,7 +3157,7 @@ public class ThreadInfo
       unwindToFirstFrame(); // this will take care of notifying
       pendingException = null;
       
-      topClone().advancePC();
+      getModifiableTopFrame().advancePC();
       assert top.getPC() instanceof ReturnInstruction : "topframe PC not a ReturnInstruction: " + top.getPC();
       return top;
 
@@ -3406,15 +3316,9 @@ public class ThreadInfo
   
   protected void markUnchanged() {
     attributes &= ~ATTR_ANY_CHANGED;
-
-    for (StackFrame f = top; f != null && f.hasChanged(); f = f.getPrevious()){
-      f.setChanged(false);
-    }
   }
 
   protected void markTfChanged(StackFrame frame) {
-    frame.setChanged(true);
-
     attributes |= ATTR_STACK_CHANGED;
     vm.kernelStateChanged();
   }
@@ -3457,8 +3361,8 @@ public class ThreadInfo
   /**
    * Returns a clone of the top stack frame.
    */
-  protected StackFrame topClone () {
-    if (!top.hasChanged()) {
+  public StackFrame getModifiableTopFrame () {
+    if (top.isFrozen()) {
       top = top.clone();
       markTfChanged(top);
     }
@@ -3473,17 +3377,9 @@ public class ThreadInfo
   }
 
   /**
-   * this is going to be used to directly manipulate the Stackframes in lieu
-   * of the various forwarding operations such as dup(), push() etc.
+   * note that we don't provide a modifiable version of this. All modifications
+   * should only happen in the executing (top) frame
    */
-  public StackFrame getModifiableTopFrame(){
-    if (!top.hasChanged()) {
-      top = top.clone();
-      markTfChanged(top);
-    }
-    return top;    
-  }
-  
   public StackFrame getStackFrameExecuting (Instruction insn, int offset){
     int n = offset;
     StackFrame frame = top;
@@ -3615,12 +3511,6 @@ public class ThreadInfo
       }
     }
 
-    if (!isStore){
-      // all stack frames have to be set to unchanged
-      for (StackFrame f = top; f != null; f = f.getPrevious()){
-        checkAssertion( !f.hasChanged(), "changed stackframe upon restore: " + f);
-      }
-    }
   }
   
   protected void checkAssertion(boolean cond, String failMsg){

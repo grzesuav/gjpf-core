@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -30,13 +31,15 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class LSHL extends JVMInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
-    long v1 = th.pop();
-    long v2 = th.longPop();
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
 
-    th.longPush(v2 << v1);
+    int v1 = frame.pop();
+    long v2 = frame.popLong();
 
-    return getNext(th);
+    frame.pushLong(v2 << v1);
+
+    return getNext(ti);
   }
 
   public int getByteCode () {

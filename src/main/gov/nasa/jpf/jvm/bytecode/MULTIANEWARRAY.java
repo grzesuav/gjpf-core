@@ -24,6 +24,7 @@ import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.LoadOnJPFRequired;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -71,9 +72,10 @@ public class MULTIANEWARRAY extends JVMInstruction {
     }
 
     arrayLengths = new int[dimensions];
+    StackFrame frame = ti.getModifiableTopFrame();
 
     for (int i = dimensions - 1; i >= 0; i--) {
-      arrayLengths[i] = ti.pop();
+      arrayLengths[i] = frame.pop();
     }
 
     // there is no clinit for array classes, but we still have  to create a class object
@@ -87,7 +89,7 @@ public class MULTIANEWARRAY extends JVMInstruction {
     int arrayRef = allocateArray(ti.getHeap(), type, arrayLengths, ti, 0);
 
     // put the result (the array reference) on the stack
-    ti.push(arrayRef, true);
+    frame.pushRef(arrayRef);
 
     return getNext(ti);
   }

@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
@@ -52,7 +53,9 @@ public abstract class SwitchInstruction extends JVMInstruction {
   }
 
   protected Instruction executeConditional (SystemState ss, KernelState ks, ThreadInfo ti){
-    int value = ti.pop();
+    StackFrame frame = ti.getModifiableTopFrame();
+
+    int value = frame.pop();
 
     lastIdx = DEFAULT;
 
@@ -88,7 +91,8 @@ public abstract class SwitchInstruction extends JVMInstruction {
       IntIntervalGenerator cg = ss.getCurrentChoiceGenerator("switchAll", IntIntervalGenerator.class);
       assert (cg != null) : "no IntIntervalGenerator";
       
-      int idx = ti.pop(); // but we are not using it
+      StackFrame frame = ti.getModifiableTopFrame();
+      int idx = frame.pop(); // but we are not using it
       idx = cg.getNextChoice();
       
       if (idx == matches.length){ // default branch

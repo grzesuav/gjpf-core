@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -59,7 +60,7 @@ public abstract class IfInstruction extends JVMInstruction {
    * (not ideal to have this public, but some listeners might need it for
    * skipping the insn, plus we require it for subclass factorization)
    */
-  public abstract boolean popConditionValue(ThreadInfo ti);
+  public abstract boolean popConditionValue(StackFrame frame);
   
   public Instruction getTarget() {
     if (target == null) {
@@ -69,7 +70,9 @@ public abstract class IfInstruction extends JVMInstruction {
   }
   
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    conditionValue = popConditionValue(ti);
+    StackFrame frame = ti.getModifiableTopFrame();
+
+    conditionValue = popConditionValue(frame);
     if (conditionValue) {
       return getTarget();
     } else {
@@ -88,8 +91,9 @@ public abstract class IfInstruction extends JVMInstruction {
         return this;
 
       } else {
+        StackFrame frame = ti.getModifiableTopFrame();
         // some listener did override the CG, fallback to normal operation
-        conditionValue = popConditionValue(ti);
+        conditionValue = popConditionValue(frame);
         if (conditionValue) {
           return getTarget();
         } else {
@@ -101,7 +105,8 @@ public abstract class IfInstruction extends JVMInstruction {
       BooleanChoiceGenerator cg = ss.getCurrentChoiceGenerator("ifAll", BooleanChoiceGenerator.class);
       assert (cg != null) : "no BooleanChoiceGenerator";
       
-      popConditionValue(ti); // we are not interested in concrete values
+      StackFrame frame = ti.getModifiableTopFrame();
+      popConditionValue(frame); // we are not interested in concrete values
       
       conditionValue = cg.getNextChoice();
       

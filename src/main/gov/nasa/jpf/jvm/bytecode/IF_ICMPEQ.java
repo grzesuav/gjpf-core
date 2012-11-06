@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.StackFrame;
 
 
 /**
@@ -32,9 +32,9 @@ public class IF_ICMPEQ extends IfInstruction {
   }
 
 
-  public boolean popConditionValue (ThreadInfo ti) {
-    int v1 = ti.pop();
-    int v2 = ti.pop();
+  public boolean popConditionValue (StackFrame frame) {
+    int v1 = frame.pop();
+    int v2 = frame.pop();
 
     return (v1 == v2);
   }

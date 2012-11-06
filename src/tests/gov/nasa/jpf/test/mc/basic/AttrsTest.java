@@ -85,38 +85,6 @@ public class AttrsTest extends TestJPF {
     }
   }
 
-  public static class DoubleListener extends ListenerAdapter {
-
-    public DoubleListener () {}
-
-    public void instructionExecuted (JVM vm){
-      Instruction insn = vm.getLastInstruction();
-      MethodInfo mi = insn.getMethodInfo();
-
-      if (insn instanceof DSTORE){
-        if (mi.getName().equals("testDoublePropagation")){
-          DSTORE dstore = (DSTORE)insn;
-          ThreadInfo ti = vm.getLastThreadInfo();
-          String localName = dstore.getLocalVariableName();
-          int localIndex = dstore.getLocalVariableIndex();
-
-          if (localName.equals("d")){
-            ti.setLocalAttr(localIndex, ATTR);
-
-          } else if (localName.equals("r")){
-            Object a = ti.getLocalAttr(localIndex, ATTR_CLASS);
-            System.out.println("'r' attribute: " + a);
-            /** get's overwritten in the model class
-            if (a != ATTR){
-              throw new JPFException("attribute propagation failed");
-            }
-            **/
-          }
-        }
-
-      }
-    }
-  }
 
   public static class InvokeListener extends ListenerAdapter {
 
@@ -172,19 +140,61 @@ public class AttrsTest extends TestJPF {
       assert attr == 42;
     }
   }
+  
+  //----------------------------------------------------------------------------------------------
+  
+  public static class DoubleListener extends ListenerAdapter {
+
+    public DoubleListener () {}
+
+    public void instructionExecuted (JVM vm){
+      Instruction insn = vm.getLastInstruction();
+      MethodInfo mi = insn.getMethodInfo();
+
+      if (insn instanceof DSTORE){
+        if (mi.getName().equals("testDoublePropagation")){
+          DSTORE dstore = (DSTORE)insn;
+          ThreadInfo ti = vm.getLastThreadInfo();
+          String localName = dstore.getLocalVariableName();
+          int localIndex = dstore.getLocalVariableIndex();
+
+          if (localName.equals("d")){
+            System.out.print("listener setting 'd' attr = ");
+            ti.setLocalAttr(localIndex, ATTR);
+            Object a = ti.getLocalAttr(localIndex);
+            System.out.println( a);
+
+          } else if (localName.equals("r")){
+            Object a = ti.getLocalAttr(localIndex, ATTR_CLASS);
+            System.out.println("'r' attribute: " + a);
+            
+            /** get's overwritten in the model class
+            if (a != ATTR){
+              throw new JPFException("attribute propagation failed");
+            }
+            **/
+          }
+        }
+
+      }
+    }
+  }
 
   @Test public void testDoublePropagation () {
     if (verifyNoPropertyViolation("+listener=.test.mc.basic.AttrsTest$DoubleListener")) {
       double d = 42.0; // this gets attributed
-      Verify.setLocalAttribute("d", 42);  // this overwrites whatever the ISTORE listener did set on 'd'
+      Verify.setLocalAttribute("d", 42);  // this overwrites whatever the DSTORE listener did set on 'd'
+      int attr = Verify.getLocalAttribute("d");
+      assert attr == 42;
 
+      // some noise on the stack
       iDouble = echoDouble(d);
       sDouble = iDouble;
 
       //double r = sDouble; // now r should have the same attribute
       double r = echoDouble(d);
 
-      int attr = Verify.getLocalAttribute("r");
+      attr = Verify.getLocalAttribute("r");
       Verify.print("@ 'r' attribute after assignment: " + attr);
       Verify.println();
 

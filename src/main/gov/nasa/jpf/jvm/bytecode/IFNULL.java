@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.jvm.StackFrame;
 
 /**
  * DOCUMENT ME!
@@ -30,8 +30,8 @@ public class IFNULL extends IfInstruction {
   }
 
 
-  public boolean popConditionValue (ThreadInfo ti) {
-    return (ti.pop() == -1);
+  public boolean popConditionValue (StackFrame frame) {
+    return (frame.pop() == -1);
   }
 
   public int getByteCode () {

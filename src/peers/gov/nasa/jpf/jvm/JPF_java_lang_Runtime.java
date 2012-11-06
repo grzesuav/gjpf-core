@@ -73,7 +73,7 @@ public class JPF_java_lang_Runtime extends NativePeer {
     if (maxProcessors == 1) {
       return 1;
     } else {
-      return (new JPF_gov_nasa_jpf_jvm_Verify()).getInt__II__I(env,-1, 1,maxProcessors);
+      return JPF_gov_nasa_jpf_jvm_Verify.getInt__II__I(env,-1, 1,maxProcessors);
     }
   }
 }

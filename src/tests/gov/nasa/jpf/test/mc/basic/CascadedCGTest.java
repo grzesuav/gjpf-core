@@ -24,6 +24,7 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Verify;
@@ -138,8 +139,10 @@ public class CascadedCGTest extends TestJPF {
             // we can reexecute
             if (!ti.willReExecuteInstruction()){
               // restore old operand stack contents
-              ti.pop();
-              ti.push(getInsn.getLastThis());
+              StackFrame frame = ti.getModifiableTopFrame();
+
+              frame.pop();
+              frame.pushRef( getInsn.getLastThis());
             }
 
             cg = new IntChoiceFromSet("fieldReplace", 42, 43);
@@ -149,9 +152,11 @@ public class CascadedCGTest extends TestJPF {
             System.out.println("# listener registered: " + cg);
 
           } else {
+            StackFrame frame = ti.getModifiableTopFrame();
+
             int v = cg.getNextChoice();
-            int n = ti.pop();
-            ti.push(v);
+            int n = frame.pop();
+            frame.push(v);
 
             System.out.println("# listener replacing " + n + " with " + v);
           }

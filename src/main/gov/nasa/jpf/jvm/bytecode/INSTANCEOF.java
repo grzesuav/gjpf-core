@@ -22,6 +22,7 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.LoadOnJPFRequired;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -42,7 +43,7 @@ public class INSTANCEOF extends JVMInstruction {
     type = Types.getTypeSignature(typeName, false);
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
     if(Types.isReferenceSignature(type)) {
       String t;
       if(Types.isArray(type)) {
@@ -52,26 +53,27 @@ public class INSTANCEOF extends JVMInstruction {
         t = type;
       }
 
-      ClassInfo cls = th.getMethod().getClassInfo();
+      ClassInfo cls = ti.getMethod().getClassInfo();
       // resolve the referenced class
       try {
         cls.resolveReferencedClass(t);
       } catch(LoadOnJPFRequired lre) {
-        return th.getPC();
+        return ti.getPC();
       }
     }
 
-    int objref = th.pop();
+    StackFrame frame = ti.getModifiableTopFrame();
+    int objref = frame.pop();
 
     if (objref == -1) {
-      th.push(0, false);
-    } else if (ks.heap.get(objref).instanceOf(type)) {
-      th.push(1, false);
+      frame.push(0);
+    } else if (ti.getElementInfo(objref).instanceOf(type)) {
+      frame.push(1);
     } else {
-      th.push(0, false);
+      frame.push(0);
     }
 
-    return getNext(th);
+    return getNext(ti);
   }
   
   public String getType() {

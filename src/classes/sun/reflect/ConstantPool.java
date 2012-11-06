@@ -18,11 +18,11 @@ public class ConstantPool {
     throw new UnsupportedOperationException("sun.reflect.ConstantPool not supported yet");
   }
 
-  public Class getClassAt(int index) {
+  public Class<?> getClassAt(int index) {
     throw new UnsupportedOperationException("sun.reflect.ConstantPool not supported yet");
   }
 
-  public Class getClassAtIfLoaded(int index) {
+  public Class<?> getClassAtIfLoaded(int index) {
     throw new UnsupportedOperationException("sun.reflect.ConstantPool not supported yet");
   }
 

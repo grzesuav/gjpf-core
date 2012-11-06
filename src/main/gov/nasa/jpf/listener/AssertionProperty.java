@@ -25,6 +25,7 @@ import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.ATHROW;
 import gov.nasa.jpf.jvm.Instruction;
@@ -81,9 +82,11 @@ public class AssertionProperty extends PropertyListenerAdapter {
       ThreadInfo ti = vm.getLastThreadInfo();
       
       Heap heap = vm.getHeap();
-      int xobjref = ti.peek();
+      StackFrame frame = ti.getTopFrame();
+      int xobjref = frame.peek();
       ElementInfo ei = heap.get(xobjref);
       ClassInfo ci = ei.getClassInfo();
+      
       if (ci.getName().equals("java.lang.AssertionError")) {
         int msgref = ei.getReferenceField("detailMessage");
         ElementInfo eiMsg = heap.get(msgref);
@@ -95,7 +98,9 @@ public class AssertionProperty extends PropertyListenerAdapter {
         if (goOn) {
           log.warning(msg);
 
-          ti.pop(); // ensure operand stack integrity (ATHROW pops)
+          frame = ti.getModifiableTopFrame();
+          frame.pop(); // ensure operand stack integrity (ATHROW pops)
+          
           ti.skipInstruction(insn.getNext());
 
         } else {

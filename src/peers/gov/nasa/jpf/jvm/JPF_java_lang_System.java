@@ -156,19 +156,19 @@ public class JPF_java_lang_System extends NativePeer {
     MethodInfo stub = getProperty.createDirectCallStub("getSUTJavaClassPath");
     stub.setFirewall(true);
 
-    ThreadInfo thread = vm.getCurrentThread();
+    ThreadInfo ti = vm.getCurrentThread();
     Heap heap = vm.getHeap();
-    ElementInfo eiClassPath = heap.newString(JAVA_CLASS_PATH, thread);
+    ElementInfo eiClassPath = heap.newString(JAVA_CLASS_PATH, ti);
     
     DirectCallStackFrame frame = new DirectCallStackFrame(stub);
     frame.push(eiClassPath.getObjectRef());
     
     try {
-      thread.executeMethodHidden(frame);
+      ti.executeMethodHidden(frame);
     } catch (UncaughtException e) {
-       thread.clearPendingException();
-       thread.popFrame();
-       thread.advancePC();
+       ti.clearPendingException();
+       StackFrame caller = ti.popAndGetModifiableTopFrame();
+       caller.advancePC();
        return null;
     }
     

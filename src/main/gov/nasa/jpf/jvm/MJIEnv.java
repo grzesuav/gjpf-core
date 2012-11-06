@@ -1700,6 +1700,13 @@ public class MJIEnv {
     // we provide a little helper to get the caller
     return ti.getLastNonSyntheticStackFrame();
   }
+
+  public StackFrame getModifiableCallerStackFrame() {
+    // since native methods are now executed within their own stack frames
+    // we provide a little helper to get the caller
+    return ti.getModifiableLastNonSyntheticStackFrame();
+  }
+
   
   public int valueOfBoolean(boolean b) {
     return BoxObjectCacheManager.valueOfBoolean(ti, b);

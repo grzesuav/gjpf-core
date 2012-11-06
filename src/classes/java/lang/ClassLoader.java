@@ -101,8 +101,9 @@ public abstract class ClassLoader {
     return list.elements();
   }
 
+  @SuppressWarnings({"unchecked","rawtypes"})
   public Enumeration<URL> getResources(String name) throws IOException {
-    Enumeration[] resEnum = new Enumeration[2];
+    Enumeration<URL>[] resEnum = (Enumeration<URL>[])new Enumeration[2];
 
     if(parent == null) {
       resEnum[0] = getSystemClassLoader().getResourcesURL(name);
@@ -111,7 +112,7 @@ public abstract class ClassLoader {
     }
     resEnum[1] = findResources(name);
 
-    return new CompoundEnumeration(resEnum);
+    return new CompoundEnumeration<URL>(resEnum);
   }
 
   /**

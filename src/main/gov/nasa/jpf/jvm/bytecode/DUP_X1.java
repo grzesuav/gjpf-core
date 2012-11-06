@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -30,10 +31,12 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class DUP_X1 extends JVMInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
-    th.dup_x1();
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
 
-    return getNext(th);
+    frame.dup_x1();
+
+    return getNext(ti);
   }
 
   public int getByteCode () {

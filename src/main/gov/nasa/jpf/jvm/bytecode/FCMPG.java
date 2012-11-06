@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -31,13 +32,15 @@ import gov.nasa.jpf.jvm.Types;
  */
 public class FCMPG extends JVMInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
-    float v1 = Types.intToFloat(th.pop());
-    float v2 = Types.intToFloat(th.pop());
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
     
-    th.push(conditionValue(v1, v2), false);
+    float v1 = frame.popFloat();
+    float v2 = frame.popFloat();
+    
+    frame.push(conditionValue(v1, v2), false);
 
-    return getNext(th);
+    return getNext(ti);
   }
   
   protected int conditionValue(float v1, float v2) {

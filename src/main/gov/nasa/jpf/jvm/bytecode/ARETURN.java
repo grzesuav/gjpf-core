@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -28,12 +29,20 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 public class ARETURN extends ReturnInstruction {
   int ret;
   
-  protected void storeReturnValue (ThreadInfo th) {
-    ret = th.pop();
+  public int getReturnTypeSize() {
+    return 1;
   }
   
-  protected void pushReturnValue (ThreadInfo th) {
-    th.push(ret, true);
+  protected Object getReturnedOperandAttr (StackFrame frame) {
+    return frame.getOperandAttr();
+  }
+  
+  protected void getAndSaveReturnValue (StackFrame frame) {
+    ret = frame.pop();
+  }
+  
+  protected void pushReturnValue (StackFrame frame) {
+    frame.pushRef(ret);
   }
 
   public int getReturnValue () {
@@ -42,7 +51,8 @@ public class ARETURN extends ReturnInstruction {
   
   public Object getReturnValue(ThreadInfo ti) {
     if (!isCompleted(ti)) { // we have to pull it from the operand stack
-      ret = ti.peek();
+      StackFrame frame = ti.getTopFrame();
+      ret = frame.peek();
     }
     
     if (ret == -1) {

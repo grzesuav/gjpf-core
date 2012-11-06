@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -58,7 +59,9 @@ public class TABLESWITCH extends SwitchInstruction implements gov.nasa.jpf.jvm.T
   }
 
   protected Instruction executeConditional (SystemState ss, KernelState ks, ThreadInfo ti){
-    int value = ti.pop();
+    StackFrame frame = ti.getModifiableTopFrame();
+
+    int value = frame.pop();
     int i = value-min;
     int pc;
 

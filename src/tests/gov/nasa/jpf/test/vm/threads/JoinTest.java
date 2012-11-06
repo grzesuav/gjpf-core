@@ -143,7 +143,7 @@ public class JoinTest extends TestJPF {
 
       // poor man's join
       while (t.isAlive()){
-        Thread.currentThread().yield();
+        Thread.yield();
       }
 
       try {

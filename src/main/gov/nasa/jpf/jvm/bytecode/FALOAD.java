@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
@@ -28,10 +29,10 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class FALOAD extends ArrayLoadInstruction {
 
-  protected void push (ThreadInfo ti, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+  protected void push (StackFrame frame, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
     ei.checkArrayBounds(index);
     float value = ei.getFloatElement(index);
-    ti.push( Float.floatToIntBits(value));
+    frame.push( Float.floatToIntBits(value));
   }
 
   public int getByteCode () {

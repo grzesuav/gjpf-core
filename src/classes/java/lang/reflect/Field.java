@@ -67,7 +67,7 @@ public final class Field extends AccessibleObject implements Member {
 
   public native <T extends Annotation> T getAnnotation( Class<T> annotationCls);
   
-  public native Class getDeclaringClass ();
+  public native Class<?> getDeclaringClass ();
   
   public native boolean isSynthetic ();
 

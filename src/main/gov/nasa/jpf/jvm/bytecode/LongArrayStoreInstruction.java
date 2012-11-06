@@ -44,11 +44,11 @@ public abstract class LongArrayStoreInstruction extends ArrayStoreInstruction {
   }
   
   protected int peekArrayRef(ThreadInfo ti) {
-    return ti.peek(3);  // ..,ref,idx,long(value)
+    return ti.getTopFrame().peek(3);  // ..,ref,idx,long(value)
   }
 
   protected int peekIndex(ThreadInfo ti){
-    return ti.peek(2);
+    return ti.getTopFrame().peek(2);
   }
   
   public void accept(InstructionVisitor insVisitor) {

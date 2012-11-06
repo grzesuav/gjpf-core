@@ -209,7 +209,7 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
     return name.substring(idx+1);
   }
 
-  static native Class getPrimitiveClass (String clsName);
+  static native Class<?> getPrimitiveClass (String clsName);
 
    /**
     * this one is in JPF reflection land, it's 'native' for us
@@ -245,6 +245,7 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
     return (T) o;
   }
   
+  @SuppressWarnings("unchecked")
   public <U> Class<? extends U> asSubclass(Class<U> clazz) {
     if (clazz.isAssignableFrom(this)) {
       return (Class<? extends U>) this;

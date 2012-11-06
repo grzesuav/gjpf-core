@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -31,10 +32,14 @@ import gov.nasa.jpf.jvm.Types;
  */
 public class FNEG extends JVMInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
-    th.push(Types.floatToInt(-Types.intToFloat(th.pop())), false);
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    float v = frame.popFloat();
+    
+    ti.push(Types.floatToInt(-v), false);
 
-    return getNext(th);
+    return getNext(ti);
   }
 
   public int getByteCode () {

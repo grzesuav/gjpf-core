@@ -25,6 +25,7 @@ import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.LoadOnJPFRequired;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -63,7 +64,9 @@ public class ANEWARRAY extends NewArrayInstruction {
       ci.setInitialized();
     }
 
-    arrayLength = ti.pop();
+    StackFrame frame = ti.getModifiableTopFrame();
+
+    arrayLength = frame.pop();
     if (arrayLength < 0){
       return ti.createAndThrowException("java.lang.NegativeArraySizeException");
     }
@@ -80,7 +83,7 @@ public class ANEWARRAY extends NewArrayInstruction {
     int aRef = eiArray.getObjectRef();
     
     // pushes the object reference on the top stack frame
-    ti.push(aRef, true);
+    frame.push(aRef, true);
     
     return getNext(ti);
   }

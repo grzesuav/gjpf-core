@@ -55,12 +55,28 @@ import java.util.Iterator;
  */
 public class StackFrame implements Cloneable {
   
+  /**
+   * this StackFrame is not allowed to be modified anymore because it has been state stored.
+   * Set during state storage and checked upon each modification, causing exceptions on attempts
+   * to modify a frozen instance. The flag is reset in clones
+   */
+  public static final int   ATTR_IS_FROZEN     = 0x100;
+  
+  static final int   ATTR_STORE_MASK = 0x0000ffff;
+  
    /**
     * the previous StackFrame (usually the caller, null if first). To be set when
     * the frame is pushed on the ThreadInfo callstack
     */
   protected StackFrame prev;
-    
+
+  /**
+   * state management related attributes similar to ElementInfo. The lower 16 bits
+   * are stored/restored, the upper 16 bits are for transient use
+   */
+  protected int attributes;
+
+  
   protected int top;                // top index of the operand stack (NOT size)
                                     // this points to the last pushed value
 
@@ -87,8 +103,6 @@ public class StackFrame implements Cloneable {
 
   protected Instruction pc;         // the next insn to execute (program counter)
   protected MethodInfo mi;          // which method is executed in this frame
-
-  protected boolean changed;
 
   static final int[] EMPTY_ARRAY = new int[0];
   static final FixedBitSet EMPTY_BITSET = new BitSet64();
@@ -1104,12 +1118,14 @@ public class StackFrame implements Cloneable {
     
     top = stackBase-1;
   }
-
+  
   // this is a deep copy
   public StackFrame clone () {
     try {
       StackFrame sf = (StackFrame) super.clone();
 
+      sf.defreeze();
+      
       sf.slots = slots.clone();
       sf.isRef = isRef.clone();
 
@@ -1117,23 +1133,35 @@ public class StackFrame implements Cloneable {
         sf.attrs = attrs.clone();
       }
 
-      sf.frameAttr = frameAttr;
-      
-      sf.changed = false; // has to be set explicitly
+      // frameAttr is not cloned to allow search global use 
 
       return sf;
     } catch (CloneNotSupportedException cnsx) {
       throw new JPFException(cnsx);
     }
   }
-
-  public boolean hasChanged() {
-    return changed;
+  
+  //--- change management
+  
+  protected void checkIsModifiable() {
+    if ((attributes & ATTR_IS_FROZEN) != 0) {
+      throw new JPFException("attempt to modify frozen stackframe: " + this);
+    }
+  }
+  
+  public void freeze() {
+    attributes |= ATTR_IS_FROZEN;
   }
 
-  public void setChanged(boolean hasChanged) {
-    changed = hasChanged;
+  public void defreeze() {
+    attributes &= ~ATTR_IS_FROZEN;
   }
+  
+  public boolean isFrozen() {
+    return ((attributes & ATTR_IS_FROZEN) != 0);    
+  }
+  
+  
 
   // all the dupses don't have any GC side effect (everything is already
   // on the stack), so skip the GC requests associated with push()/pop()
@@ -1603,8 +1631,8 @@ public class StackFrame implements Cloneable {
   }
 
   protected void printContentsOn(PrintWriter pw){
-    pw.print("changed=");
-    pw.print(changed);
+    pw.print("isFrozen=");
+    pw.print(isFrozen());
     pw.print(",mi=");
     pw.print( mi != null ? mi.getUniqueName() : "null");
     pw.print(",top="); pw.print(top);
@@ -1683,8 +1711,17 @@ public class StackFrame implements Cloneable {
     return sw.toString();
   }
 
+  public float peekFloat() {
+    return Float.intBitsToFloat(slots[top]);
+  }
+  
+  public double peekDouble() {
+    long bits = (((long)slots[top-1]) << 32) | (long)slots[top];
+    return Double.longBitsToDouble(bits);
+  }
+  
   public long peekLong () {
-    return Types.intsToLong( slots[top], slots[top-1]);
+    return (((long)slots[top-1]) << 32) | (long)slots[top]; 
   }
 
   public long peekLong (int n) {
@@ -1693,15 +1730,20 @@ public class StackFrame implements Cloneable {
   }
 
   public void pushLong (long v) {
-    push(Types.hiLong(v));
-    push(Types.loLong(v));
+    push( (int) (v>>32));
+    push( (int) v);
   }
 
   public void pushDouble (double v) {
-    push(Types.hiDouble(v));
-    push(Types.loDouble(v));
+    long l = Double.doubleToLongBits(v);
+    push( (int) (l>>32));
+    push( (int) l);
   }
 
+  public void pushFloat (float v) {
+    push( Float.floatToIntBits(v));
+  }
+  
   public double popDouble () {
     int i = top;
 
@@ -1742,6 +1784,14 @@ public class StackFrame implements Cloneable {
     return slots[top-offset];
   }
 
+  public void removeArguments (MethodInfo mi) {
+    int i = mi.getArgumentsSize();
+
+    if (i != 0) {
+      pop(i);
+    }
+  }
+  
   public void pop (int n) {
     //assert (top >= stackBase) : "stack empty";
 
@@ -1800,7 +1850,7 @@ public class StackFrame implements Cloneable {
 
     return v;
   }
-
+  
   public void pushLocal (int index) {
     top++;
     slots[top] = slots[index];

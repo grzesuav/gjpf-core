@@ -94,22 +94,30 @@
   <target name="-compile-main" if="have_main">
     <mkdir dir="build/main"/>
     <javac srcdir="src/main" destdir="build/main" includeantruntime="false"
-           debug="${debug}" deprecation="${deprecation}"
-           classpathref="lib.path"/>
+           debug="${debug}" deprecation="${deprecation}" classpathref="lib.path">
+    	<!--
+        <compilerarg value="-XDenableSunApiLintControl"/>
+        <compilerarg value="-Xlint:all"/>
+        -->
+    </javac>
 
   </target>
   
   <target name="-compile-peers" if="have_peers" depends="-compile-main" >
     <mkdir dir="build/peers"/>
     <javac srcdir="src/peers" destdir="build/peers" includeantruntime="false"
-           debug="${debug}" deprecation="${deprecation}"
-           classpathref="lib.path"/>
+           debug="${debug}" deprecation="${deprecation}" classpathref="lib.path">
+    	<compilerarg value="-XDenableSunApiLintControl"/>
+    	<compilerarg value="-Xlint:all,-sunapi,-serial"/>    	
+     </javac>
   </target>
   
   <target name="-compile-classes" if="have_classes" depends="-compile-annotations,-compile-main" >
     <mkdir dir="build/classes"/>
     <javac srcdir="src/classes" destdir="build/classes" includeantruntime="false"
            debug="${debug}" deprecation="${deprecation}">
+      <compilerarg value="-XDenableSunApiLintControl"/>
+      <compilerarg value="-Xlint:all,-sunapi"/>   
       <classpath>
         <path refid="lib.path"/>
         <pathelement location="build/annotations"/>
@@ -122,6 +130,8 @@
     <javac srcdir="src/tests" destdir="build/tests" includeantruntime="false"
            debug="${debug}" deprecation="${deprecation}"
            includes="*,gov/nasa/jpf/**,classloader_specific_tests/**">
+      <compilerarg value="-XDenableSunApiLintControl"/>
+      <compilerarg value="-Xlint:all,-sunapi,-serial,-rawtypes,-unchecked"/>   
       <classpath>
         <path refid="lib.path"/>
         <pathelement location="build/annotations"/>

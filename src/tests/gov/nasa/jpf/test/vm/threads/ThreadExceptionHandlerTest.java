@@ -102,7 +102,7 @@ public class ThreadExceptionHandlerTest extends TestJPF {
       Thread ct = Thread.currentThread();
       assertEquals(ct.getUncaughtExceptionHandler(),
               ct.getThreadGroup());
-      assertNull(ct.getDefaultUncaughtExceptionHandler());
+      assertNull(Thread.getDefaultUncaughtExceptionHandler());
     }
   }
 
@@ -133,7 +133,7 @@ public class ThreadExceptionHandlerTest extends TestJPF {
                                   "+vm.pass_uncaught_handler")){
       n = 0;
       Thread w = new Thread(new TestRunnable());
-      w.setDefaultUncaughtExceptionHandler(new NPEHandler());
+      Thread.setDefaultUncaughtExceptionHandler(new NPEHandler());
       w.start();
       try {
         w.join();
@@ -152,10 +152,10 @@ public class ThreadExceptionHandlerTest extends TestJPF {
     if (verifyNoPropertyViolation()){
       Thread w = new Thread(new TestRunnable2());
       w.setUncaughtExceptionHandler(new NPEHandler());
-      w.setDefaultUncaughtExceptionHandler(new NPEHandler());
+      Thread.setDefaultUncaughtExceptionHandler(new NPEHandler());
       assertNotNull(w.getUncaughtExceptionHandler());
       assertNotNull(w.getThreadGroup());
-      assertNotNull(w.getDefaultUncaughtExceptionHandler());
+      assertNotNull(Thread.getDefaultUncaughtExceptionHandler());
       w.start();
       try {
         w.join();
@@ -163,7 +163,7 @@ public class ThreadExceptionHandlerTest extends TestJPF {
       }
       assertNull(w.getUncaughtExceptionHandler());
       assertNull(w.getThreadGroup());
-      assertNotNull(w.getDefaultUncaughtExceptionHandler());
+      assertNotNull(Thread.getDefaultUncaughtExceptionHandler());
     }
   }
 
@@ -194,7 +194,7 @@ public class ThreadExceptionHandlerTest extends TestJPF {
                                   "+vm.pass_uncaught_handler")){
       n = 0;
       Thread w = new Thread(new NPEHandler2("test"), new TestRunnable()); // n = 2
-      w.setDefaultUncaughtExceptionHandler(new NPEHandler()); // n = 1
+      Thread.setDefaultUncaughtExceptionHandler(new NPEHandler()); // n = 1
       w.start();
       try {
         w.join();
@@ -215,7 +215,7 @@ public class ThreadExceptionHandlerTest extends TestJPF {
       Thread w =
               new Thread(new NPEHandler4(new NPEHandler3("parent"), "child"),
               new TestRunnable());
-      w.setDefaultUncaughtExceptionHandler(new NPEHandler());
+      Thread.setDefaultUncaughtExceptionHandler(new NPEHandler());
       w.start();
       try {
         w.join();
@@ -233,7 +233,7 @@ public class ThreadExceptionHandlerTest extends TestJPF {
 				 "+vm.ignore_uncaught_handler=false",
                                  "+vm.pass_uncaught_handler")){
       Thread w = new Thread(new TestRunnable());
-      w.setDefaultUncaughtExceptionHandler(new NPEHandlerExc());
+      Thread.setDefaultUncaughtExceptionHandler(new NPEHandlerExc());
       w.start();
       try {
         w.join();

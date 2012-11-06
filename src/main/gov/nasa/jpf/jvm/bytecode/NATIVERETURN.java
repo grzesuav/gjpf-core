@@ -47,21 +47,22 @@ public class NATIVERETURN extends ReturnInstruction {
       // NativeMethodInfo is never synchronized, so no thread CG here
     }
 
-    storeReturnValue(ti);
+    StackFrame frame = ti.getModifiableTopFrame();
+    getAndSaveReturnValue(frame);
 
     // NativeStackFrame can never can be the first stack frame, so no thread CG
 
-    StackFrame top = ti.popFrame();
+    frame = ti.popAndGetModifiableTopFrame();
 
     // remove args, push return value and continue with next insn
-    ti.removeArguments(mi);
-    pushReturnValue(ti);
+    frame.removeArguments(mi);
+    pushReturnValue(frame);
 
     if (retAttr != null) {
       setReturnAttr(ti, retAttr);
     }
 
-    return top.getPC().getNext();
+    return frame.getPC().getNext();
   }
 
   @Override
@@ -89,8 +90,8 @@ public class NATIVERETURN extends ReturnInstruction {
   }
 
   @Override
-  protected void storeReturnValue(ThreadInfo ti) {
-    NativeStackFrame nativeFrame = (NativeStackFrame)ti.getTopFrame();
+  protected void getAndSaveReturnValue(StackFrame frame) {
+    NativeStackFrame nativeFrame = (NativeStackFrame)frame;
 
     returnFrame = nativeFrame;
 
@@ -99,8 +100,33 @@ public class NATIVERETURN extends ReturnInstruction {
     retType = nativeFrame.getMethodInfo().getReturnTypeCode();
   }
 
+  public int getReturnTypeSize() {
+    switch (retType) {
+    case Types.T_BOOLEAN:
+    case Types.T_BYTE:
+    case Types.T_CHAR:
+    case Types.T_SHORT:
+    case Types.T_INT:
+    case Types.T_FLOAT:
+      return 1;
+      
+    case Types.T_LONG:
+    case Types.T_DOUBLE:
+      return 2;
+
+    default:
+      return 1;
+    }
+  }
+
+  // this is only called internally right before we return
+  protected Object getReturnedOperandAttr (StackFrame frame) {
+    return retAttr;
+  }
+
+  
   @Override
-  protected void pushReturnValue (ThreadInfo ti) {
+  protected void pushReturnValue (StackFrame fr) {
     int  ival;
     long lval;
     int  retSize = 1;
@@ -112,52 +138,51 @@ public class NATIVERETURN extends ReturnInstruction {
       switch (retType) {
       case Types.T_BOOLEAN:
         ival = Types.booleanToInt(((Boolean) ret).booleanValue());
-        ti.push(ival, false);
+        fr.push(ival);
         break;
 
       case Types.T_BYTE:
-        ti.push(((Byte) ret).byteValue(), false);
+        fr.push(((Byte) ret).byteValue());
         break;
 
       case Types.T_CHAR:
-        ti.push(((Character) ret).charValue(), false);
+        fr.push(((Character) ret).charValue());
         break;
 
       case Types.T_SHORT:
-        ti.push(((Short) ret).shortValue(), false);
+        fr.push(((Short) ret).shortValue());
         break;
 
       case Types.T_INT:
-        ti.push(((Integer) ret).intValue(), false);
+        fr.push(((Integer) ret).intValue());
         break;
 
       case Types.T_LONG:
-        ti.longPush(((Long) ret).longValue());
+        fr.pushLong(((Long)ret).longValue());
         retSize=2;
         break;
 
       case Types.T_FLOAT:
         ival = Types.floatToInt(((Float) ret).floatValue());
-        ti.push(ival, false);
+        fr.push(ival);
         break;
 
       case Types.T_DOUBLE:
         lval = Types.doubleToLong(((Double) ret).doubleValue());
-        ti.longPush(lval);
+        fr.pushLong(lval);
         retSize=2;
         break;
 
       default:
         // everything else is supposed to be a reference
-        ti.push(((Integer) ret).intValue(), true);
+        fr.push(((Integer) ret).intValue(), true);
       }
 
       if (retAttr != null) {
-        StackFrame frame = ti.getTopFrame(); // no need to clone anymore after pushing the value
         if (retSize == 1) {
-          frame.setOperandAttr(retAttr);
+          fr.setOperandAttr(retAttr);
         } else {
-          frame.setLongOperandAttr(retAttr);
+          fr.setLongOperandAttr(retAttr);
         }
       }
     }

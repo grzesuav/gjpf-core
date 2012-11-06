@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -30,11 +31,11 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class POP extends JVMInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
-    // just discards an element from the stack
-    th.pop();
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    frame.pop();
 
-    return getNext(th);
+    return getNext(ti);
   }
 
   public int getByteCode () {

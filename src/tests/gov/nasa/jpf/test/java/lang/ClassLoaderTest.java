@@ -79,21 +79,21 @@ public class ClassLoaderTest extends TestJPF {
   @Test
   public void testGetSystemResource() {
     if(verifyNoPropertyViolation()) {
-      testGetResourceImpl(new TestClassLoader().getSystemClassLoader());
+      testGetResourceImpl( TestClassLoader.getSystemClassLoader());
     }
   }
 
   @Test
   public void testGetSystemResources() throws IOException{
     if(verifyNoPropertyViolation()) {
-      testGetResourcesImpl(new TestClassLoader().getSystemClassLoader());
+      testGetResourcesImpl( TestClassLoader.getSystemClassLoader());
     }
   }
 
   @Test
   public void testGetSystemResourceAsStream() throws IOException{
     if(verifyNoPropertyViolation()) {
-      testGetResourceAsStreamImpl(new TestClassLoader().getSystemClassLoader());
+      testGetResourceAsStreamImpl( TestClassLoader.getSystemClassLoader());
     }
   }
 
@@ -101,9 +101,9 @@ public class ClassLoaderTest extends TestJPF {
   public void testGetSystemClassLoader() {
     if(verifyNoPropertyViolation()) {
       ClassLoader classLoader = new TestClassLoader();
-      assertNotNull(classLoader.getSystemClassLoader());
-      assertNull(classLoader.getSystemClassLoader().getParent());
-      assertFalse(classLoader.equals(classLoader.getSystemClassLoader()));
+      assertNotNull(ClassLoader.getSystemClassLoader());
+      assertNull(ClassLoader.getSystemClassLoader().getParent());
+      assertFalse(classLoader.equals(ClassLoader.getSystemClassLoader()));
     }
   }
 
@@ -112,7 +112,7 @@ public class ClassLoaderTest extends TestJPF {
     if(verifyNoPropertyViolation()) {
       ClassLoader classLoader = new TestClassLoader();
       assertNotNull(classLoader.getParent());
-      assertEquals(classLoader.getParent(),classLoader.getSystemClassLoader());
+      assertEquals(classLoader.getParent(),ClassLoader.getSystemClassLoader());
     }
   }
 
@@ -145,7 +145,7 @@ public class ClassLoaderTest extends TestJPF {
   private void testGetResourcesImpl(ClassLoader classLoader) throws IOException{
     assertFalse(classLoader.getResources("not_existing_resources").hasMoreElements());
 
-    Enumeration e = classLoader.getResources("DiningPhil.class");
+    Enumeration<?> e = classLoader.getResources("DiningPhil.class");
     assertTrue(e.hasMoreElements());
     assertNotNull(e.nextElement());
     assertFalse(e.hasMoreElements());

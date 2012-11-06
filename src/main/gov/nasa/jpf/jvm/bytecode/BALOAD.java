@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.BooleanArrayFields;
 import gov.nasa.jpf.jvm.ByteArrayFields;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Fields;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -32,7 +33,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class BALOAD extends ArrayLoadInstruction {
 
-  protected void push (ThreadInfo ti, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+  protected void push (StackFrame frame, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
     ei.checkArrayBounds(index);
 
     int value = 0;
@@ -43,7 +44,7 @@ public class BALOAD extends ArrayLoadInstruction {
       value = ei.getBooleanElement(index) ? 1 : 0;
     }
 
-    ti.push( value);
+    frame.push( value);
   }
 
 

@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
@@ -28,10 +29,10 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class IALOAD extends ArrayLoadInstruction {
 
-  protected void push (ThreadInfo ti, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+  protected void push (StackFrame frame, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
     ei.checkArrayBounds(index);
     int value = ei.getIntElement(index);
-    ti.push( value);
+    frame.push( value);
   }
 
   public int getByteCode () {

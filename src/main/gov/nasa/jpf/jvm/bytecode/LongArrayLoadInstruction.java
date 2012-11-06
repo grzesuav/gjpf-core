@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -28,10 +29,10 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public abstract class LongArrayLoadInstruction extends ArrayLoadInstruction {
 
-  protected void push (ThreadInfo th, ElementInfo e, int index)
+  protected void push (StackFrame frame, ElementInfo e, int index)
                 throws ArrayIndexOutOfBoundsExecutiveException {
     e.checkArrayBounds(index);
-    th.longPush(e.getLongElement(index));
+    frame.pushLong(e.getLongElement(index));
   }
   
   protected int getElementSize () {

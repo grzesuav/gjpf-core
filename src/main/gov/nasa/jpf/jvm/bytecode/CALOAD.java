@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -29,9 +30,9 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class CALOAD extends ArrayLoadInstruction {
 
-  protected void push (ThreadInfo th, ElementInfo e, int index) throws ArrayIndexOutOfBoundsExecutiveException {
+  protected void push (StackFrame frame, ElementInfo e, int index) throws ArrayIndexOutOfBoundsExecutiveException {
     e.checkArrayBounds(index);
-    th.push( e.getCharElement(index), isReference());
+    frame.push( e.getCharElement(index), isReference());
   }
 
   public int getByteCode () {

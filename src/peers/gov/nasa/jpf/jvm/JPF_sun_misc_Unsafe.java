@@ -114,7 +114,9 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
         case INTERRUPTED:
           ti.resetLockRef();
           ti.setRunning();
+          break;
         default:
+          // nothing
       }
 
     } else { // first time

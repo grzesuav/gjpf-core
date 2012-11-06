@@ -52,8 +52,10 @@ public class SkipInstructionTest extends TestJPF {
           System.out.println("now intercepting: " + pc);
 
           // simulate the operand stack behavior of the skipped insn
-          ti.pop();
-          ti.push(42, false);
+          StackFrame frame = ti.getModifiableTopFrame();
+
+          frame.pop();
+          frame.push(42);
 
           ti.skipInstruction(pc.getNext());
         }

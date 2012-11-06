@@ -6,7 +6,7 @@ public class SerializationConstructor<T> extends Constructor<T> {
 
   // those are set by the the sun.reflect.ReflectionFactory
   Class<T> mdc;
-  Constructor firstNonSerializableCtor;
+  Constructor<?> firstNonSerializableCtor;
   
   public Class<T> getDeclaringClass() {
     return mdc;

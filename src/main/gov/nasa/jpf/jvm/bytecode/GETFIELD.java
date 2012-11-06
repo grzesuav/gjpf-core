@@ -22,6 +22,7 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -37,7 +38,9 @@ public class GETFIELD extends InstanceFieldInstruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    int objRef = ti.peek(); // don't pop yet, we might re-execute
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    int objRef = frame.peek(); // don't pop yet, we might re-execute
     lastThis = objRef;
     if (objRef == -1) {
       return ti.createAndThrowException("java.lang.NullPointerException",
@@ -59,7 +62,7 @@ public class GETFIELD extends InstanceFieldInstruction {
       }
     }
 
-    ti.pop(); // Ok, now we can remove the object ref from the stack
+    frame.pop(); // Ok, now we can remove the object ref from the stack
     Object attr = ei.getFieldAttr(fi);
 
     // We could encapsulate the push in ElementInfo, but not the GET, so we keep it at a similiar level
@@ -68,23 +71,23 @@ public class GETFIELD extends InstanceFieldInstruction {
       lastValue = ival;
       
       if (fi.isReference()){
-        ti.pushRef(ival);
+        frame.pushRef(ival);
         
       } else {
-        ti.push(ival);
+        frame.push(ival);
       }
       
       if (attr != null) {
-        ti.setOperandAttrNoClone(attr);
+        frame.setOperandAttr(attr);
       }
 
     } else {  // 2 slotter
       long lval = ei.get2SlotField(fi);
       lastValue = lval;
 
-      ti.longPush(lval);
+      frame.pushLong( lval);
       if (attr != null) {
-        ti.setLongOperandAttrNoClone(attr);
+        frame.setLongOperandAttr(attr);
       }
     }
 
@@ -92,7 +95,8 @@ public class GETFIELD extends InstanceFieldInstruction {
   }
 
   public ElementInfo peekElementInfo (ThreadInfo ti) {
-    int objRef = ti.peek();
+    StackFrame frame = ti.getTopFrame();
+    int objRef = frame.peek();
     ElementInfo ei = ti.getElementInfo(objRef);
     return ei;
   }

@@ -390,7 +390,7 @@ public class VarRecorder extends ListenerAdapter {
     ti     = jvm.getLastThreadInfo();
     offset = calcOffset(type, store);
 
-    return(ti.peek(offset));
+    return(ti.getTopFrame().peek(offset));
   }
 
   private final static int calcOffset(byte type, boolean store) {

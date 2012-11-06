@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -35,8 +36,9 @@ public class MONITORENTER extends LockInstruction {
 
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    int objref = ti.peek();      // Don't pop yet before we know we really execute
+    StackFrame frame = ti.getTopFrame();
 
+    int objref = frame.peek();      // Don't pop yet before we know we really execute
     if (objref == -1){
       return ti.createAndThrowException("java.lang.NullPointerException", "Attempt to acquire lock for null object");
     }
@@ -79,7 +81,8 @@ public class MONITORENTER extends LockInstruction {
     }
 
     // this is only executed in the bottom half
-    ti.pop();
+    frame = ti.getModifiableTopFrame(); // now we need to modify it
+    frame.pop();
     ei.lock(ti);  // Still have to increment the lockCount
     
     return getNext(ti);

@@ -68,15 +68,15 @@ public class System {
 
   static JavaLangAccess createJavaLangAccess () {
     return new JavaLangAccess(){
-      public ConstantPool getConstantPool(Class cls) {
+      public ConstantPool getConstantPool(Class<?> cls) {
         throw new UnsupportedOperationException("JavaLangAccess.getConstantPool() not supported yet");
         //return cls.getConstantPool();
       }
-      public void setAnnotationType(Class cls, AnnotationType type) {
+      public void setAnnotationType(Class<?> cls, AnnotationType type) {
         throw new UnsupportedOperationException("JavaLangAccess.setAnnotationType() not supported yet");
         //cls.setAnnotationType(type);
       }
-      public AnnotationType getAnnotationType(Class cls) {
+      public AnnotationType getAnnotationType(Class<?> cls) {
         throw new UnsupportedOperationException("JavaLangAccess.getAnnotationType() not supported yet");
         //return cls.getAnnotationType();
       }
@@ -129,7 +129,7 @@ public class System {
   public static native void gc();
   public static native void runFinalization();
   public static native void runFinalizersOnExit(boolean cond);
-  static native Class getCallerClass();
+  static native Class<?> getCallerClass();
   public static native int identityHashCode (Object o);
 
 
@@ -139,7 +139,7 @@ public class System {
 
   //--- environment
   public static native String getenv (String key);
-  public static Map getenv() {
+  public static Map<String,String> getenv() {
     throw new UnsupportedOperationException("getenv() not yet supported");
   }
 

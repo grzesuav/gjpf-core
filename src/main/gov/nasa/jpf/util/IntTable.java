@@ -94,19 +94,6 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
       return false;
     }
   }
-
-  static class SnapshotEntry<E> {
-    final int index;
-    final E key;
-    final int val;
-    // we don't need the link
-    
-    protected SnapshotEntry (int idx, Entry<E> e){
-      index = idx;
-      key = e.key; // keys are supposed to be invariant, so no clone
-      val = e.val;
-    }
-  }
   
   /**
    * helper class to store a compact, invariant representation of this table

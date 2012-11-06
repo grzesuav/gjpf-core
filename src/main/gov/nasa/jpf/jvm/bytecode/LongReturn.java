@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 import java.util.Iterator;
@@ -29,12 +30,20 @@ public abstract class LongReturn extends ReturnInstruction {
 
   protected long ret;
   
-  protected void storeReturnValue (ThreadInfo th) {
-    ret = th.longPop();
+  public int getReturnTypeSize() {
+    return 2;
+  }
+  
+  protected Object getReturnedOperandAttr (StackFrame frame) {
+    return frame.getLongOperandAttr();
+  }
+  
+  protected void getAndSaveReturnValue (StackFrame frame) {
+    ret = frame.popLong();
   }
 
-  protected void pushReturnValue (ThreadInfo th) {
-    th.longPush(ret);
+  protected void pushReturnValue (StackFrame frame) {
+    frame.pushLong(ret);
   }
 
   //--- attribute accessors 

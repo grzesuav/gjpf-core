@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.Heap;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -39,7 +40,9 @@ public class NEWARRAY extends NewArrayInstruction {
   }
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    arrayLength = ti.pop();
+    StackFrame frame = ti.getModifiableTopFrame();
+
+    arrayLength = frame.pop();
     Heap heap = ti.getHeap();
 
     if (arrayLength < 0){
@@ -66,7 +69,7 @@ public class NEWARRAY extends NewArrayInstruction {
     ElementInfo eiArray = heap.newArray(type, arrayLength, ti);
     int arrayRef = eiArray.getObjectRef();
     
-    ti.push(arrayRef, true);
+    frame.pushRef(arrayRef);
 
     return getNext(ti);
   }

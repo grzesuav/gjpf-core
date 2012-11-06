@@ -22,6 +22,7 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -58,15 +59,24 @@ public class RETURN extends ReturnInstruction {
     return super.execute(ss, ks, ti);
   }
 
+  public int getReturnTypeSize() {
+    return 0;
+  }
+  
+  protected Object getReturnedOperandAttr (StackFrame frame) {
+    return null;
+  }
+
+  
   public Object getReturnAttr (ThreadInfo ti){
     return null; // no return value
   }
 
-  protected void storeReturnValue (ThreadInfo th) {
+  protected void getAndSaveReturnValue (StackFrame frame) {
     // we don't have any
   }
 
-  protected void pushReturnValue (ThreadInfo th) {
+  protected void pushReturnValue (StackFrame frame) {
     // nothing to do
   }
 

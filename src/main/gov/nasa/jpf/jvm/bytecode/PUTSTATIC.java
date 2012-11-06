@@ -25,6 +25,7 @@ import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.LoadOnJPFRequired;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -75,12 +76,13 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
       }
     }
 
+    StackFrame frame = ti.getModifiableTopFrame();
     Object attr = null; // attr handling has to be consistent with PUTFIELD
 
     if (fi.getStorageSize() == 1) {
       attr = ti.getOperandAttr();
 
-      int ival = ti.pop();
+      int ival = frame.pop();
       lastValue = ival;
 
       if (fi.isReference()) {
@@ -90,9 +92,9 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
       }
 
     } else {
-      attr = ti.getLongOperandAttr();
+      attr = frame.getLongOperandAttr();
 
-      long lval = ti.longPop();
+      long lval = frame.popLong();
       lastValue = lval;
 
       ei.set2SlotField(fi, lval);

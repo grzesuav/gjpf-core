@@ -22,6 +22,7 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -32,7 +33,9 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 public class MONITOREXIT extends LockInstruction {
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
-    int objref = ti.peek();
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    int objref = frame.peek();
     if (objref == -1) {
       return ti.createAndThrowException("java.lang.NullPointerException",
                                         "attempt to release lock for null object");
@@ -62,7 +65,8 @@ public class MONITOREXIT extends LockInstruction {
       }
     }
 
-    ti.pop();
+    frame = ti.getModifiableTopFrame(); // now we need to modify it
+    frame.pop();
 
     return getNext(ti);
   }

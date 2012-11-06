@@ -24,6 +24,7 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
 import gov.nasa.jpf.jvm.bytecode.ArrayStoreInstruction;
@@ -172,16 +173,18 @@ public class VarTracker extends ListenerAdapter {
       // a little extra work - we need to keep track of variable names, because
       // we cannot easily retrieve them in a subsequent xASTORE, which follows
       // a pattern like:  ..GETFIELD.. some-stack-operations .. xASTORE
-      int objRef = ti.peek();
+      StackFrame frame = ti.getTopFrame();
+      int objRef = frame.peek();
       if (objRef != -1) {
-        ElementInfo ei = jvm.getHeap().get(objRef);
+        ElementInfo ei = ti.getElementInfo(objRef);
         if (ei.isArray()) {
           varId = ((VariableAccessor)insn).getVariableId();
           
           // <2do> unfortunately, we can't filter here because we don't know yet
           // how the array ref will be used (we would only need the attr for
           // subsequent xASTOREs)
-          ti.addOperandAttr( varId);
+          frame = ti.getModifiableTopFrame();
+          frame.addOperandAttr( varId);
         }
       }
     }

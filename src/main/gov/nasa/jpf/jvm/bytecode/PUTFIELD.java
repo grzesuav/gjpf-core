@@ -22,6 +22,7 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -45,6 +46,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
    */
 
   public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
 
     FieldInfo fi = getFieldInfo();
     if (fi == null) {
@@ -53,7 +55,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     }
 
     int storageSize = fi.getStorageSize();
-    int objRef = ti.peek( (storageSize == 1) ? 1 : 2);
+    int objRef = frame.peek( (storageSize == 1) ? 1 : 2);
     lastThis = objRef;
 
     // if this produces an NPE, force the error w/o further ado
@@ -70,14 +72,14 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
         return this;
       }
     }
-
+    
     // start the real execution by getting the value from the operand stack
     Object attr = null; // attr handling has to be consistent with PUTSTATIC
 
     if (storageSize == 1){
       attr = ti.getOperandAttr();
 
-      int ival = ti.pop();
+      int ival = frame.pop();
       lastValue = ival;
 
       if (fi.isReference()) {
@@ -88,9 +90,9 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
       }
 
     } else {
-        attr = ti.getLongOperandAttr();
+        attr = frame.getLongOperandAttr();
 
-        long lval = ti.longPop();
+        long lval = frame.popLong();
         lastValue = lval;
 
         ei.set2SlotField(fi, lval);
@@ -100,7 +102,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     // (if we want to accumulate, this has to happen in ElementInfo/Fields
     ei.setFieldAttr(fi, attr);  // <2do> what if the value is the same but not the attr?
 
-    ti.pop(); // we already have the objRef
+    frame.pop(); // we already have the objRef
     lastThis = objRef;
 
     return getNext(ti);
@@ -109,7 +111,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
   public ElementInfo peekElementInfo (ThreadInfo ti) {
     FieldInfo fi = getFieldInfo();
     int storageSize = fi.getStorageSize();
-    int objRef = ti.peek( (storageSize == 1) ? 1 : 2);
+    int objRef = ti.getTopFrame().peek( (storageSize == 1) ? 1 : 2);
     ElementInfo ei = ti.getElementInfo( objRef);
 
     return ei;

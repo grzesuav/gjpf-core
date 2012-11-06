@@ -38,6 +38,7 @@ import sun.misc.Unsafe;
  * stored as object attributes, but that would only partly solve the problem
  * because we still would have to backtrack the internal state of such objects
  */
+@SuppressWarnings("sunapi")
 public class JPF_java_util_Random extends NativePeer {
 
   static class Delegatee extends Random {
@@ -183,7 +184,7 @@ public class JPF_java_util_Random extends NativePeer {
   @MJI
   public boolean nextBoolean____Z (MJIEnv env, int objRef){
     if (enumerateRandom){
-      return (new JPF_gov_nasa_jpf_jvm_Verify()).getBoolean____Z(env,-1);
+      return JPF_gov_nasa_jpf_jvm_Verify.getBoolean____Z(env,-1);
 
     } else {
       restoreRandomState(env, objRef, delegatee);
@@ -196,7 +197,7 @@ public class JPF_java_util_Random extends NativePeer {
   @MJI
   public int nextInt__I__I (MJIEnv env, int objRef, int n){
     if (enumerateRandom){
-      return (new JPF_gov_nasa_jpf_jvm_Verify()).getInt__II__I(env,-1,0,n-1);
+      return JPF_gov_nasa_jpf_jvm_Verify.getInt__II__I(env,-1,0,n-1);
       
     } else {
       restoreRandomState(env, objRef, delegatee);

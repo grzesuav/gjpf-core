@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -31,11 +32,13 @@ import gov.nasa.jpf.jvm.Types;
  */
 public class F2I extends JVMInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
-    //float v = Types.intToFloat(th.pop());
-    th.push((int) Types.intToFloat(th.pop()), false);
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    float v = frame.popFloat();
+    
+    frame.push((int)v);
 
-    return getNext(th);
+    return getNext(ti);
   }
 
   public int getByteCode () {

@@ -15,11 +15,11 @@ import sun.reflect.annotation.AnnotationType;
 
 public interface JavaLangAccess {
 
-    ConstantPool getConstantPool(Class klass);
+    ConstantPool getConstantPool(Class<?> klass);
 
-    void setAnnotationType(Class klass, AnnotationType annotationType);
+    void setAnnotationType(Class<?> klass, AnnotationType annotationType);
 
-    AnnotationType getAnnotationType(Class klass);
+    AnnotationType getAnnotationType(Class<?> klass);
 
     <E extends Enum<E>> E[] getEnumConstantsShared(Class<E> klass);
 

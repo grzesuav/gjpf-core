@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -30,10 +31,14 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class I2S extends JVMInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
-    th.push((short) th.pop(), false);
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
 
-    return getNext(th);
+    int v = frame.pop();
+    
+    frame.push((short)v);
+
+    return getNext(ti);
   }
 
   public int getByteCode () {

@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -31,18 +32,20 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class ARRAYLENGTH extends JVMInstruction {
   
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
-    int objref = th.pop();
+  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+
+    int objref = frame.pop();
 
     if (objref == -1){
-      return th.createAndThrowException("java.lang.NullPointerException",
+      return ti.createAndThrowException("java.lang.NullPointerException",
                                         "array length of null object");
     }
 
     ElementInfo ei = ks.heap.get(objref);
-    th.push(ei.arrayLength(), false);
+    frame.push(ei.arrayLength(), false);
 
-    return getNext(th);
+    return getNext(ti);
   }
 
   public int getByteCode () {

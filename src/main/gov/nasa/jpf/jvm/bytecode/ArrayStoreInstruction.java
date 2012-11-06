@@ -22,6 +22,7 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.StackFrame;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -50,10 +51,12 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction implements 
     int esize = getElementSize();
     Object attr = esize == 1 ? ti.getOperandAttr() : ti.getLongOperandAttr();
 
-    popValue(ti);
-    index = ti.pop();
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    popValue(frame);
+    index = frame.pop();
     // don't set 'arrayRef' before we do the CG check (would kill loop optimization)
-    arrayRef = ti.pop();
+    arrayRef = frame.pop();
 
     Instruction xInsn = checkArrayStoreException(ti, e);
     if (xInsn != null){
@@ -74,18 +77,18 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction implements 
    * this is for pre-exec use
    */
   protected int peekArrayRef(ThreadInfo ti) {
-    return ti.peek(2);
+    return ti.getTopFrame().peek(2);
   }
 
   protected int peekIndex(ThreadInfo ti){
-    return ti.peek(1);
+    return ti.getTopFrame().peek(1);
   }
 
   protected Instruction checkArrayStoreException(ThreadInfo ti, ElementInfo ei){
     return null;
   }
 
-  protected abstract void popValue(ThreadInfo ti);
+  protected abstract void popValue(StackFrame frame);
 
   protected abstract void setField (ElementInfo e, int index)
                     throws ArrayIndexOutOfBoundsExecutiveException;
