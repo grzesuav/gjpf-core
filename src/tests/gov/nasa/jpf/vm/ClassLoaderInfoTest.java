@@ -25,7 +25,7 @@ import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Heap;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.SystemClassLoader;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -41,12 +41,12 @@ public class ClassLoaderInfoTest extends TestJPF {
   @Test
   public void testSystemClassLoader() {
     //--- Sets up the JPF environment
-    // just use some dummy class to be able to initialize jpf & jvm 
+    // just use some dummy class to be able to initialize jpf & vm 
     String[] args = {"+target=HelloWorld"};
     Config config = JPF.createConfig(args);
     JPF jpf = new JPF(config);
     ClassLoaderInfo.config = config;
-    JVM vm = jpf.getVM();
+    VM vm = jpf.getVM();
     vm.initialize();
 
 

@@ -21,7 +21,7 @@ package gov.nasa.jpf.vm;
 
 
 public interface StateSerializer {
-  void attach(JVM jvm);
+  void attach(VM vm);
   
   /**
    * serialize the current state and return as int[] 

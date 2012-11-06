@@ -35,7 +35,7 @@ import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -162,9 +162,9 @@ public class VarTracker extends ListenerAdapter {
   // <2do> - general purpose listeners should not use types such as String for storing
   // attributes, there is no good way to make sure you retrieve your own attributes
       
-  public void instructionExecuted(JVM jvm) {
-    Instruction insn = jvm.getLastInstruction();
-    ThreadInfo ti = jvm.getLastThreadInfo();
+  public void instructionExecuted(VM vm) {
+    Instruction insn = vm.getLastInstruction();
+    ThreadInfo ti = vm.getLastThreadInfo();
     String varId;
     
     if ( ((((insn instanceof GETFIELD) || (insn instanceof GETSTATIC)))

@@ -39,12 +39,12 @@ public class ConstInsnPathTime extends ListenerAdapter implements TimeModel {
     }
   }
   
-  JVM vm;
+  VM vm;
   int perInsnTime; // simple constant time assumed for each instruction
   
   long transitionStartTime;
   
-  public ConstInsnPathTime (JVM vm, Config conf){
+  public ConstInsnPathTime (VM vm, Config conf){
     perInsnTime = conf.getInt("vm.time.per_insn", 1);
     
     vm.addListener(this);
@@ -60,7 +60,7 @@ public class ConstInsnPathTime extends ListenerAdapter implements TimeModel {
   
   //-- the listener interface
   @Override
-  public void choiceGeneratorRegistered(JVM vm){
+  public void choiceGeneratorRegistered(VM vm){
     ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
     ChoiceGenerator<?> cgPrev = cg.getPreviousChoiceGenerator();
     ThreadInfo tiCurrent = vm.getCurrentThread();
@@ -86,7 +86,7 @@ public class ConstInsnPathTime extends ListenerAdapter implements TimeModel {
   }
   
   @Override
-  public void choiceGeneratorAdvanced(JVM vm){
+  public void choiceGeneratorAdvanced(VM vm){
     ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
     TimeVal tv = cg.getAttr(TimeVal.class);
     if (tv != null){

@@ -21,7 +21,7 @@ package gov.nasa.jpf.vm;
 
 
 public interface StateRestorer<Saved> {
-  void attach(JVM jvm);
+  void attach(VM vm);
   
   /**
    * get saved version of current KernelState. 

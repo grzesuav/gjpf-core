@@ -24,7 +24,7 @@ import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.SystemState;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Verify;
@@ -43,7 +43,7 @@ public class CGNotificationTest extends TestJPF {
 
     static ArrayList<String> sequence;
 
-    public void choiceGeneratorRegistered(JVM vm) {
+    public void choiceGeneratorRegistered(VM vm) {
       ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
       System.out.println("# CG registered: " + cg);
       sequence.add("registered " + cg.getId());
@@ -51,7 +51,7 @@ public class CGNotificationTest extends TestJPF {
       assert cg.hasMoreChoices();
     }
 
-    public void choiceGeneratorSet(JVM vm) {
+    public void choiceGeneratorSet(VM vm) {
       ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
       System.out.println("# CG set:        " + cg);
       sequence.add("set " + cg.getId());
@@ -59,13 +59,13 @@ public class CGNotificationTest extends TestJPF {
       assert cg.hasMoreChoices();
     }
 
-    public void choiceGeneratorAdvanced(JVM vm) {
+    public void choiceGeneratorAdvanced(VM vm) {
       ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
       System.out.println("#   CG advanced: " + cg);
       sequence.add("advance " + cg.getId() + ' ' + cg.getNextChoice());
     }
 
-    public void choiceGeneratorProcessed(JVM vm) {
+    public void choiceGeneratorProcessed(VM vm) {
       ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
       System.out.println("# CG processed:  " + cg);
       sequence.add("processed " + cg.getId());
@@ -73,7 +73,7 @@ public class CGNotificationTest extends TestJPF {
       assert !cg.hasMoreChoices();
     }
 
-    public void instructionExecuted(JVM vm){
+    public void instructionExecuted(VM vm){
       Instruction insn = vm.getLastInstruction();
       ThreadInfo ti = vm.getLastThreadInfo();
       SystemState ss = vm.getSystemState();

@@ -27,8 +27,8 @@ import gov.nasa.jpf.Config;
  */
 public class SystemTime implements TimeModel {
 
-  public SystemTime(JVM vm, Config conf){
-    // we don't need these, but it speeds up JVM initialization
+  public SystemTime(VM vm, Config conf){
+    // we don't need these, but it speeds up VM initialization
   }
   
   public long currentTimeMillis() {

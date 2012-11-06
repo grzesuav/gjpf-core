@@ -24,9 +24,9 @@ import gov.nasa.jpf.vm.ClassInfo;
 import org.junit.Test;
 
 /*
- * JVM.registerStartupClass must be kept in sync with ClassInfo.registerClass.
+ * VM.registerStartupClass must be kept in sync with ClassInfo.registerClass.
  * This test ensures that the interfaces of the main class are registered 
- * properly.  The old JVM.registerStartupClass code wasn't initializing the
+ * properly.  The old VM.registerStartupClass code wasn't initializing the
  * class object of the interfaces.
  */
 public class InitializeInterfaceClassObjectRefTest extends TestJPF implements InitializeInterfaceClassObjectRefTestInterface

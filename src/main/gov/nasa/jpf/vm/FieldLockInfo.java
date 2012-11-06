@@ -95,7 +95,7 @@ public abstract class FieldLockInfo implements Cloneable  {
   }
 
   void appendLockSet (StringBuilder sb, int[] lockSet) {
-    Heap heap = JVM.getVM().getHeap();
+    Heap heap = VM.getVM().getHeap();
 
     if ((lockSet == null) || (lockSet.length == 0)) {
       sb.append( "{}");

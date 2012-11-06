@@ -22,7 +22,7 @@ package gov.nasa.jpf.vm;
 public interface Backtracker {
   static interface RestorableState {};
   
-  void attach(JVM jvm);
+  void attach(VM vm);
   
   // the backtracking interface (depth first search only)
   boolean backtrack ();

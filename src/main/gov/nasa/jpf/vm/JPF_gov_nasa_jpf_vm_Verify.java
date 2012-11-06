@@ -1018,7 +1018,7 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
 
   @MJI
   public static void printPathOutput__Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int msgRef){
-    JVM vm = env.getVM();
+    VM vm = env.getVM();
 
     System.out.println();
     if (msgRef != MJIEnv.NULL){

@@ -24,7 +24,7 @@ import gov.nasa.jpf.util.Left;
 import gov.nasa.jpf.util.RepositoryEntry;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.Path;
 import gov.nasa.jpf.vm.Step;
@@ -349,7 +349,7 @@ public class ConsolePublisher extends Publisher {
   }
 
   protected void publishSnapshot() {
-    JVM vm = reporter.getVM();
+    VM vm = reporter.getVM();
 
     // not so nice - we have to delegate this since it's using a lot of internals, and is also
     // used in debugging

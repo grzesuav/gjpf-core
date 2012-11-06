@@ -20,7 +20,7 @@ package gov.nasa.jpf.search.heuristic;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +57,7 @@ public abstract class HeuristicSearch extends Search {
   protected boolean isBeamSearch;
 
   
-  public HeuristicSearch (Config config, JVM vm) {
+  public HeuristicSearch (Config config, VM vm) {
     super(config, vm);
     
     useAstar = config.getBoolean("search.heuristic.astar");

@@ -66,7 +66,7 @@ public class NoUncaughtExceptionsProperty extends GenericProperty {
     uncaughtXi = null;
   }
   
-  public boolean check (Search search, JVM vm) {
+  public boolean check (Search search, VM vm) {
     return (uncaughtXi == null);
   }
 

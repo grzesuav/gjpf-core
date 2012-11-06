@@ -110,7 +110,7 @@ public class VerifyTest extends TestJPF {
   /**
    * This test ensures that stateBacktracked() is called even if the transistion 
    * is ignored.  This is important for listeners that keep a state that must 
-   * match the JVM's state exactly and the state is updated in the middle of 
+   * match the VM's state exactly and the state is updated in the middle of 
    * transitions.  This is not possible if a backtrack happens on an ignored 
    * transition and the stateBacktracked is not called.
    */

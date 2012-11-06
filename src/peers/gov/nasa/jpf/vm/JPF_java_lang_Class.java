@@ -742,7 +742,7 @@ public class JPF_java_lang_Class extends NativePeer {
       throw new RuntimeException(e);
     }
     // Now if everything worked, the content should be in the byte buffer.
-    // We put this buffer into the JPF JVM.
+    // We put this buffer into the JPF VM.
     return env.newByteArray(content);
   }
 

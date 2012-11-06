@@ -27,7 +27,7 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.FieldSpec;
 import gov.nasa.jpf.util.VarSpec;
 import gov.nasa.jpf.vm.FieldInfo;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
@@ -185,7 +185,7 @@ public class NumericValueChecker extends PropertyListenerAdapter {
   }
 
 
-  JVM vm;
+  VM vm;
   Visitor visitor;
 
   // the stuff we monitor
@@ -254,13 +254,13 @@ public class NumericValueChecker extends PropertyListenerAdapter {
   }
 
   @Override
-  public void instructionExecuted (JVM vm){
+  public void instructionExecuted (VM vm){
     this.vm = vm;
     ((JVMInstruction)vm.getLastInstruction()).accept(visitor);
   }
 
   @Override
-  public boolean check(Search search, JVM vm) {
+  public boolean check(Search search, VM vm) {
     return (error == null);
   }
 

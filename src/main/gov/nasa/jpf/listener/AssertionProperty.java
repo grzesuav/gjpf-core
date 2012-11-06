@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Heap;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -52,7 +52,7 @@ public class AssertionProperty extends PropertyListenerAdapter {
     goOn = config.getBoolean("ap.go_on",false);
   }
   
-  public boolean check(Search search, JVM vm) {
+  public boolean check(Search search, VM vm) {
     return (msg == null);
   }
 
@@ -75,7 +75,7 @@ public class AssertionProperty extends PropertyListenerAdapter {
     return s;
   }
 
-  public void executeInstruction (JVM vm){
+  public void executeInstruction (VM vm){
     Instruction insn = vm.getLastInstruction();
     
     if (insn instanceof ATHROW) {

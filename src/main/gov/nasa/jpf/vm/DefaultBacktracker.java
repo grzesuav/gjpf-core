@@ -30,9 +30,9 @@ public class DefaultBacktracker<KState> implements Backtracker {
   protected SystemState ss;
   protected StateRestorer<KState> restorer;
   
-  public void attach(JVM jvm) {
-    ss = jvm.getSystemState();
-    restorer = jvm.getRestorer();
+  public void attach(VM vm) {
+    ss = vm.getSystemState();
+    restorer = vm.getRestorer();
   }
 
   //--- the backtrack support (depth first only)

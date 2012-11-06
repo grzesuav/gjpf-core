@@ -28,7 +28,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.SystemState;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -46,7 +46,7 @@ public class CascadedCGTest extends TestJPF {
   public static class IntChoiceCascader extends ListenerAdapter {
     static int result;
 
-    public void instructionExecuted(JVM vm) {
+    public void instructionExecuted(VM vm) {
       Instruction insn = vm.getLastInstruction();
       ThreadInfo ti = vm.getLastThreadInfo();
       SystemState ss = vm.getSystemState();
@@ -119,7 +119,7 @@ public class CascadedCGTest extends TestJPF {
 
   public static class FieldAccessCascader extends ListenerAdapter {
 
-    public void instructionExecuted(JVM vm) {
+    public void instructionExecuted(VM vm) {
       Instruction insn = vm.getLastInstruction();
       ThreadInfo ti = vm.getLastThreadInfo();
       SystemState ss = vm.getSystemState();
@@ -171,16 +171,16 @@ public class CascadedCGTest extends TestJPF {
     public void stateAdvanced(Search search){
       System.out.println("#------ " + search.getStateId() + " isNew: " + search.isNewState() + ", isEnd: " + search.isEndState());
     }
-    public void threadScheduled(JVM vm){
+    public void threadScheduled(VM vm){
       System.out.println("# running thread: " + vm.getLastThreadInfo());
     }
-    public void threadTerminated(JVM vm){
+    public void threadTerminated(VM vm){
       System.out.println("# terminated thread: " + vm.getLastThreadInfo());
     }
-    public void threadStarted(JVM vm){
+    public void threadStarted(VM vm){
       System.out.println("# started thread: " + vm.getLastThreadInfo());
     }
-    public void choiceGeneratorAdvanced (JVM vm) {
+    public void choiceGeneratorAdvanced (VM vm) {
       System.out.println("# choice: " + vm.getLastChoiceGenerator());
     }
   }

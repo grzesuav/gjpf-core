@@ -23,7 +23,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.test.TestJPF;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 
 import java.util.ArrayList;
@@ -61,7 +61,7 @@ public class MethodListenerTest extends TestJPF {
       trace.clear();
     }
 
-    public void methodEntered (JVM vm){
+    public void methodEntered (VM vm){
       MethodInfo mi = vm.getLastMethodInfo();
       assertSame(mi, vm.getCurrentThread().getMethod());
 
@@ -83,7 +83,7 @@ public class MethodListenerTest extends TestJPF {
       }
     }
 
-    public void methodExited (JVM vm){
+    public void methodExited (VM vm){
       if (traceActive){
         MethodInfo mi = vm.getLastMethodInfo();
         assertSame(mi, vm.getCurrentThread().getMethod());
@@ -104,7 +104,7 @@ public class MethodListenerTest extends TestJPF {
       }
     }
 
-    public void exceptionThrown (JVM vm){
+    public void exceptionThrown (VM vm){
       if (traceActive){
         String xCls = vm.getLastElementInfo().getClassInfo().getName();
         trace.add("X " + xCls);

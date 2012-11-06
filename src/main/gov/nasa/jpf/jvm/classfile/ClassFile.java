@@ -139,7 +139,7 @@ public class ClassFile {
    * on-the-fly classfile instrumentation with 3rd party libraries
    * 
    * BEWARE - like getData(), this method can cause parsing to fail if the
-   * provided data does not conform to the JVM specs. In particular, this
+   * provided data does not conform to the VM specs. In particular, this
    * method should ONLY be called before executing parse(ClassFileReader) and
    * will otherwise throw a JPFException
    */

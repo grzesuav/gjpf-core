@@ -30,7 +30,7 @@ import gov.nasa.jpf.util.JPFSiteUtils;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Reflection;
 import gov.nasa.jpf.vm.ExceptionInfo;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.NotDeadlockedProperty;
 
 import java.io.PrintStream;
@@ -736,7 +736,7 @@ public abstract class TestJPF implements JPFShell  {
       fail("JPF found unexpected errors: " + (errors.get(0)).getDescription());
     }
 
-    JVM vm = jpf.getVM();
+    VM vm = jpf.getVM();
     if (vm != null) {
       ExceptionInfo xi = vm.getPendingException();
       if (xi != null) {
@@ -779,7 +779,7 @@ public abstract class TestJPF implements JPFShell  {
       return jpf;
     }
 
-    ExceptionInfo xi = JVM.getVM().getPendingException();
+    ExceptionInfo xi = VM.getVM().getPendingException();
     if (xi == null) {
       fail("JPF failed to catch exception executing: ", args, ("expected " + xClassName));
     } else {

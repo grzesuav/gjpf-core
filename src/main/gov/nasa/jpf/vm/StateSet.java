@@ -28,7 +28,7 @@ public interface StateSet {
   
   static final int UNKNOWN_ID = -1;
 
-  void attach(JVM jvm);
+  void attach(VM vm);
   
   /**
    * check if a state is already in the set, and add it if not. Answer

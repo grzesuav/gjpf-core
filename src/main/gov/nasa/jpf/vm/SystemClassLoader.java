@@ -41,7 +41,7 @@ import java.util.ListIterator;
  *           | Application CL |
  *           ------------------
  *           
- * Since in the standard JVM user does not have any control over the built-in 
+ * Since in the standard VM user does not have any control over the built-in 
  * classloaders hierarchy, in JPF, we model all three by an instance of 
  * SystemClassLoader which is responsible to load classes from Java API, 
  * standard extensions packages, and the local file system.     
@@ -57,7 +57,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
   protected ClassInfo threadClassInfo;
   protected ClassInfo charArrayClassInfo;
 
-  protected SystemClassLoader (JVM vm) {
+  protected SystemClassLoader (VM vm) {
     super(vm, MJIEnv.NULL, null, null);
     setSystemClassPath();
     isSystemClassLoader = true;
@@ -96,7 +96,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
     return getResolvedClassInfo(cname);
   }
 
-  private ArrayList<String> getStartupClasses(JVM vm) {
+  private ArrayList<String> getStartupClasses(VM vm) {
     ArrayList<String> startupClasses = new ArrayList<String>(128);
 
     // bare essentials
@@ -167,7 +167,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
   // it keeps the startup classes
   ArrayList<ClassInfo> startupQueue = new ArrayList<ClassInfo>(32);
 
-  protected void registerStartupClasses (JVM vm, ThreadInfo ti) {
+  protected void registerStartupClasses (VM vm, ThreadInfo ti) {
     ArrayList<String> startupClasses = getStartupClasses(vm);
     startupQueue = new ArrayList<ClassInfo>(32);
 
@@ -177,7 +177,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
       if (ci != null) {
         ci.registerStartupClass( ti, startupQueue);
       } else {
-        JVM.log.severe("can't find startup class ", clsName);
+        VM.log.severe("can't find startup class ", clsName);
       }
     }    
   }
@@ -214,7 +214,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
    *   2. Resolves
    *   3. Initializes
    */
-  protected void loadStartUpClasses(JVM vm, ThreadInfo ti) {
+  protected void loadStartUpClasses(VM vm, ThreadInfo ti) {
     registerStartupClasses(vm, ti);
     createStartupClassObjects(vm.getCurrentThread());
     pushClinits(vm.getCurrentThread());

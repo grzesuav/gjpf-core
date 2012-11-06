@@ -23,13 +23,13 @@ public abstract class AbstractRestorer<Saved> implements StateRestorer<Saved>, K
 
   protected Saved cached = null;
 
-  JVM vm;
+  VM vm;
   protected KernelState ks = null;
 
   
-  public void attach(JVM jvm) {
-    vm = jvm;
-    ks = jvm.getKernelState();
+  public void attach(VM vm) {
+    this.vm = vm;
+    this.ks = vm.getKernelState();
   }
   
   public Saved getRestorableData() {

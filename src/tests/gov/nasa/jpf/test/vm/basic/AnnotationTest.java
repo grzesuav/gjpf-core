@@ -25,7 +25,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.AnnotationInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 
 import java.lang.annotation.Annotation;
@@ -303,7 +303,7 @@ public class AnnotationTest extends TestJPF {
   }
   
   public static class DataListener extends ListenerAdapter {
-    public void executeInstruction(JVM vm){
+    public void executeInstruction(VM vm){
       Instruction insn = vm.getLastInstruction();
       if (insn instanceof GETFIELD){
         FieldInfo fi = ((GETFIELD)insn).getFieldInfo();
@@ -336,7 +336,7 @@ public class AnnotationTest extends TestJPF {
   
   //-------------------------------------------------------------------
   public static class ArgListener extends ListenerAdapter {
-    public void executeInstruction (JVM vm){
+    public void executeInstruction (VM vm){
       Instruction insn = vm.getLastInstruction();
       if (insn instanceof InvokeInstruction){
         MethodInfo mi = ((InvokeInstruction)insn).getInvokedMethod();

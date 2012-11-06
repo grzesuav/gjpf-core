@@ -19,7 +19,7 @@
 package gov.nasa.jpf.search.heuristic;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadChoiceGenerator;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -36,7 +36,7 @@ public class MinimizePreemption extends SimplePriorityHeuristic {
   // added at the end of the queue (or discarded if queue is full)
   int threshold;
   
-  public MinimizePreemption (Config config, JVM vm) {
+  public MinimizePreemption (Config config, VM vm) {
     super(config,vm);
     
     threshold = config.getInt("search.mp.threshold", Integer.MAX_VALUE);

@@ -18,7 +18,7 @@
 //
 
 /**
- * you guess what that one does - just like a normal JVM
+ * you guess what that one does - just like a normal VM
  */
 public class HelloWorld {
   public static void main(String[] args){

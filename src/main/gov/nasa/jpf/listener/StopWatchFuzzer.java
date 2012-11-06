@@ -24,7 +24,7 @@ import gov.nasa.jpf.jvm.bytecode.LSUB;
 import gov.nasa.jpf.jvm.bytecode.NATIVERETURN;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.choice.IntChoiceFromSet;
@@ -67,20 +67,20 @@ public class StopWatchFuzzer extends ListenerAdapter {
   
   static String CG_ID = "LCMP_fuzzer";
   
-  public void classLoaded( JVM jvm){
+  public void classLoaded( VM vm){
     if (miCurrentTimeMillis == null){
-      ClassInfo ci = jvm.getLastClassInfo();
+      ClassInfo ci = vm.getLastClassInfo();
       if (ci.getName().equals("java.lang.System")) {
         miCurrentTimeMillis = ci.getMethod("currentTimeMillis()J", false); // its got to be there
       }
     }
   }
   
-  public void instructionExecuted( JVM jvm){
-    Instruction insn = jvm.getLastInstruction();
+  public void instructionExecuted( VM vm){
+    Instruction insn = vm.getLastInstruction();
     
     if (insn instanceof NATIVERETURN){
-      ThreadInfo ti = jvm.getLastThreadInfo();
+      ThreadInfo ti = vm.getLastThreadInfo();
       if (insn.isCompleted(ti)){
         if (((NATIVERETURN)insn).getMethodInfo() == miCurrentTimeMillis){
           // the two top operand slots hold the 'long' time value
@@ -90,11 +90,11 @@ public class StopWatchFuzzer extends ListenerAdapter {
     }
   }
   
-  public void executeInstruction( JVM jvm){
-    Instruction insn = jvm.getLastInstruction();
+  public void executeInstruction( VM vm){
+    Instruction insn = vm.getLastInstruction();
 
     if (insn instanceof LSUB){  // propagate TimeVal attrs
-      ThreadInfo ti = jvm.getLastThreadInfo();
+      ThreadInfo ti = vm.getLastThreadInfo();
       
       // check if any of the operands have TimeVal attributes
       // attributes are stored on the first slot of a long val
@@ -107,18 +107,18 @@ public class StopWatchFuzzer extends ListenerAdapter {
       }
        
     } else if (insn instanceof LCMP){ // create and set CG if operand has TimeVal attr
-      ThreadInfo ti = jvm.getLastThreadInfo();
+      ThreadInfo ti = vm.getLastThreadInfo();
       
       if (!ti.isFirstStepInsn()){ // this is the first time we see this insn
         if (ti.hasOperandAttr(1, TimeVal.class) || ti.hasOperandAttr(3, TimeVal.class)){
           IntChoiceFromSet cg = new IntChoiceFromSet( CG_ID, -1, 0, 1);
-          if (jvm.setNextChoiceGenerator(cg)){
+          if (vm.setNextChoiceGenerator(cg)){
             ti.skipInstruction(insn); // reexecute after breaking the transition
           }
         }
         
       } else { // it is the beginning of a transition, push the choice and proceed
-        IntChoiceFromSet cg = jvm.getCurrentChoiceGenerator(CG_ID, IntChoiceFromSet.class);
+        IntChoiceFromSet cg = vm.getCurrentChoiceGenerator(CG_ID, IntChoiceFromSet.class);
         if (cg != null){
           int choice = cg.getNextChoice();
           // pop the operands 

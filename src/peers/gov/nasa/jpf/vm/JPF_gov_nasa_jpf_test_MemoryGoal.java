@@ -24,7 +24,7 @@ import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.NativePeer;
@@ -53,7 +53,7 @@ public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
       this.mi = mi;
     }
     
-    public void objectCreated (JVM vm){
+    public void objectCreated (VM vm){
       if (active){
         ElementInfo ei = vm.getLastElementInfo();
         
@@ -62,7 +62,7 @@ public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
       }
     }
     
-    public void objectReleased (JVM vm){
+    public void objectReleased (VM vm){
       if (active){
         ElementInfo ei = vm.getLastElementInfo();
         
@@ -71,7 +71,7 @@ public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
       }      
     }
     
-    public void instructionExecuted (JVM vm){
+    public void instructionExecuted (VM vm){
       Instruction insn = vm.getLastInstruction();
       if (!active) {
         if (insn.getMethodInfo() == mi){

@@ -25,7 +25,7 @@ import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
@@ -64,7 +64,7 @@ public class TraceStorer extends ListenerAdapter {
   boolean verbose;
   
   Search search;
-  JVM vm;
+  VM vm;
   
   public TraceStorer (Config config, JPF jpf){
     
@@ -113,7 +113,7 @@ public class TraceStorer extends ListenerAdapter {
     }
   }
   
-  public void instructionExecuted (JVM vm){
+  public void instructionExecuted (VM vm){
     if (storeCalls != null){
       Instruction insn = vm.getLastInstruction();
       if (insn instanceof InvokeInstruction) {
@@ -130,7 +130,7 @@ public class TraceStorer extends ListenerAdapter {
     }
   }
   
-  public void threadStarted(JVM vm) {
+  public void threadStarted(VM vm) {
     if (storeThreads != null){
       ThreadInfo ti = vm.getLastThreadInfo();
       String tname = ti.getName();

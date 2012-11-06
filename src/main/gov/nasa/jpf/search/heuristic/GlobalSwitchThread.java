@@ -19,7 +19,7 @@
 package gov.nasa.jpf.search.heuristic;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 
 
 /**
@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.JVM;
 public class GlobalSwitchThread extends SimplePriorityHeuristic {
   private int[] threads;
 
-  public GlobalSwitchThread (Config config, JVM vm) {
+  public GlobalSwitchThread (Config config, VM vm) {
     super(config, vm);
     
     int threadHistorySize = config.getInt("search.heuristic.thread_history_size", 10);

@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.DirectCallStackFrame;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Heap;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.NativePeer;
@@ -158,7 +158,7 @@ public class JPF_java_lang_System extends NativePeer {
   static String JAVA_CLASS_PATH = "java.class.path";
   
   @MJI
-  public static String getSUTJavaClassPath(JVM vm) {
+  public static String getSUTJavaClassPath(VM vm) {
     ClassInfo system = ClassInfo.getResolvedClassInfo("java.lang.System");
     
     if (system == null) {

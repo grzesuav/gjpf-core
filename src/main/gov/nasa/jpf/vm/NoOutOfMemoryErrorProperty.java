@@ -36,7 +36,7 @@ public class NoOutOfMemoryErrorProperty extends GenericProperty {
     m_triggered = false;
   }
   
-  public boolean check(Search search, JVM vm) {
+  public boolean check(Search search, VM vm) {
     return(m_triggered);
   }
 }

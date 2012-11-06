@@ -44,7 +44,7 @@ import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.ExceptionInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.NoUncaughtExceptionsProperty;
 import gov.nasa.jpf.vm.NotDeadlockedProperty;
@@ -101,7 +101,7 @@ public class SimpleDot extends ListenerAdapter {
   protected boolean showTarget;
   protected boolean printFile;
 
-  protected JVM vm;
+  protected VM vm;
   protected String app;
   protected File file;
   protected PrintWriter pw;
@@ -221,12 +221,12 @@ public class SimpleDot extends ListenerAdapter {
   }
 
   @Override
-  public void threadStarted (JVM vm){
+  public void threadStarted (VM vm){
     lastTi = vm.getLastThreadInfo();
   }
 
   @Override
-  public void objectWait (JVM vm){
+  public void objectWait (VM vm){
     lastEi = vm.getLastElementInfo();
   }
 

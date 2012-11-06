@@ -29,7 +29,7 @@ import java.util.Locale;
 
 /**
  * MJIEnv is the call environment for "native" methods, i.e. code that
- * is executed by the JVM, not by JPF.
+ * is executed by the VM, not by JPF.
  *
  * Since library abstractions are supposed to be "user code", we provide
  * this class as a (little bit of) insulation towards the inner JPF workings.
@@ -53,7 +53,7 @@ import java.util.Locale;
 public class MJIEnv {
   public static final int NULL = -1;
 
-  JVM                     vm;
+  VM                     vm;
   ClassInfo               ciMth;  // the ClassInfo of the method this is called from
   MethodInfo              mi;
   ThreadInfo              ti;
@@ -82,7 +82,7 @@ public class MJIEnv {
     exceptionRef = NULL;
   }
 
-  public JVM getVM () {
+  public VM getVM () {
     return vm;
   }
 
@@ -725,7 +725,7 @@ public class MJIEnv {
   }
 
   /**
-   * turn JPF String object into a JVM String object
+   * turn JPF String object into a VM String object
    * (this is a method available for non gov..jvm NativePeer classes)
    */
   public String getStringObject (int objref) {
@@ -1422,7 +1422,7 @@ public class MJIEnv {
 
   
   public int getStateId () {
-    return JVM.getVM().getStateId();
+    return VM.getVM().getStateId();
   }
 
   void clearException(){
@@ -1458,7 +1458,7 @@ public class MJIEnv {
   
   //--- those are not public since they refer to JPF internals
   public KernelState getKernelState () {
-    return JVM.getVM().getKernelState();
+    return VM.getVM().getKernelState();
   }
 
   public MethodInfo getMethodInfo () {

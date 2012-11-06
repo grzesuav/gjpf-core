@@ -37,7 +37,7 @@ import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.SystemState;
@@ -251,14 +251,14 @@ public class Perturbator extends ListenerAdapter {
     }
   }
 
-  public void classLoaded (JVM jvm){
+  public void classLoaded (VM vm){
     // this one takes the watchlists, finds out if the loaded class matches
     // any of the watch entries, and in case it does fully initializes
     // the corresponding Perturbation object with the target construct
     // (MethodInfo, FieldInfo) we use to identify relevant ops during
     // instruction execution notifications
 
-    ClassInfo ci = jvm.getLastClassInfo();
+    ClassInfo ci = vm.getLastClassInfo();
     String clsName = ci.getName();
 
     for (FieldPerturbation p : fieldWatchList){
@@ -342,7 +342,7 @@ public class Perturbator extends ListenerAdapter {
   		return p.sref.equals(invokeInsn.getFilePos());
   }
 
-  public void executeInstruction (JVM vm){
+  public void executeInstruction (VM vm){
     Instruction insn = vm.getLastInstruction();
     ThreadInfo ti = vm.getLastThreadInfo();
     
@@ -419,7 +419,7 @@ public class Perturbator extends ListenerAdapter {
     }
   }
 
-  public void instructionExecuted(JVM vm) {
+  public void instructionExecuted(VM vm) {
     Instruction insn = vm.getLastInstruction();
     ThreadInfo ti = vm.getLastThreadInfo();
     

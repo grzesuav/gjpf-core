@@ -20,7 +20,7 @@ package gov.nasa.jpf.search;
 
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 
 
 /**
@@ -29,7 +29,7 @@ import gov.nasa.jpf.vm.JVM;
  */
 public class DFSearch extends Search {
 
-  public DFSearch (Config config, JVM vm) {
+  public DFSearch (Config config, VM vm) {
   	super(config,vm);
   }
 

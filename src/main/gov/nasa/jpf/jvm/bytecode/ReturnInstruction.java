@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -140,7 +140,7 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
         if (ei.getLockCount() == 0){
           ei = ei.getInstanceWithUpdatedSharedness(ti); 
           if (ei.isShared()) {
-            JVM vm = ti.getVM();
+            VM vm = ti.getVM();
             ChoiceGenerator<ThreadInfo> cg = vm.getSchedulerFactory().createSyncMethodExitCG(ei, ti);
             if (cg != null) {
               if (vm.setNextChoiceGenerator(cg)) {

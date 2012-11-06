@@ -66,7 +66,7 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
 
   private int maxNumOfPreemptions;
 
-  public ContextBoundingSchedulerFactory(Config config, JVM vm, SystemState ss) {
+  public ContextBoundingSchedulerFactory(Config config, VM vm, SystemState ss) {
     super(config, vm, ss);
     if (config.containsKey("cg.max_number_of_preemptions"))
       maxNumOfPreemptions = config.getInt("cg.max_number_of_preemptions");
@@ -78,7 +78,7 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
     if (maxNumOfPreemptions == -1)
       return list;
 
-    SystemState ss = JVM.getVM().getSystemState();
+    SystemState ss = VM.getVM().getSystemState();
     ContextBoundingThreadChoiceFromSet previousCG = (ContextBoundingThreadChoiceFromSet) 
         ss.getLastChoiceGeneratorOfType(ContextBoundingThreadChoiceFromSet.class);
     if (previousCG != null) {

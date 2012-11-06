@@ -42,7 +42,7 @@ public class DynamicElementInfo extends ElementInfo {
     if (!isFrozen()) {
       return this;
     } else {
-      return JVM.getVM().getHeap().getModifiable( objRef);
+      return VM.getVM().getHeap().getModifiable( objRef);
     }
   }
   
@@ -77,7 +77,7 @@ public class DynamicElementInfo extends ElementInfo {
 
   public ElementInfo getReferencedElementInfo (FieldInfo fi) {
     assert fi.isReference();
-    return JVM.getVM().getHeap().get(getIntField(fi));
+    return VM.getVM().getHeap().get(getIntField(fi));
   }
 
   public FieldInfo getFieldInfo (String fname) {
@@ -103,7 +103,7 @@ public class DynamicElementInfo extends ElementInfo {
 
     int vref = getDeclaredReferenceField("value", "java.lang.String");    
     if (vref != -1){
-      ElementInfo eVal = JVM.getVM().getHeap().get(vref);
+      ElementInfo eVal = VM.getVM().getHeap().get(vref);
       char[] value = eVal.asCharArray();
       return new String(value);
     } else {
@@ -122,7 +122,7 @@ public class DynamicElementInfo extends ElementInfo {
     }
 
     int vref = getDeclaredReferenceField("value", "java.lang.String");
-    ElementInfo e = JVM.getVM().getHeap().get(vref);
+    ElementInfo e = VM.getVM().getHeap().get(vref);
     CharArrayFields cf = (CharArrayFields)e.getFields();
     char[] v = cf.asCharArray();
     

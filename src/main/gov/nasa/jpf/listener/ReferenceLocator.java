@@ -24,7 +24,7 @@ import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -69,7 +69,7 @@ public class ReferenceLocator extends ListenerAdapter {
     pw.println();
   }
   
-  public void objectCreated (JVM vm){
+  public void objectCreated (VM vm){
     ElementInfo ei = vm.getLastElementInfo();
     int ref = ei.getObjectRef();
     
@@ -79,7 +79,7 @@ public class ReferenceLocator extends ListenerAdapter {
     } 
   }
   
-  public void objectReleased (JVM vm){
+  public void objectReleased (VM vm){
     ElementInfo ei = vm.getLastElementInfo();
     int ref = ei.getObjectRef();
     
@@ -88,7 +88,7 @@ public class ReferenceLocator extends ListenerAdapter {
     }
   }
   
-  public void instructionExecuted (JVM vm){
+  public void instructionExecuted (VM vm){
     Instruction insn = vm.getLastInstruction();
     ThreadInfo ti = vm.getLastThreadInfo();
     

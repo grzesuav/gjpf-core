@@ -24,7 +24,7 @@ import gov.nasa.jpf.vm.ChoiceGeneratorBase;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Heap;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ReferenceChoiceGenerator;
 
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public class TypedObjectChoice extends ChoiceGeneratorBase<Integer> implements R
   public TypedObjectChoice (Config conf, String id)  {
     super(id);
     
-    Heap heap = JVM.getVM().getHeap();
+    Heap heap = VM.getVM().getHeap();
     
     type = conf.getString(id + ".type");
     if (type == null) {

@@ -27,7 +27,7 @@ import gov.nasa.jpf.jvm.bytecode.LRETURN;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -53,7 +53,7 @@ public class AttrsTest extends TestJPF {
 
     public IntListener () {}
 
-    public void instructionExecuted (JVM vm){
+    public void instructionExecuted (VM vm){
       Instruction insn = vm.getLastInstruction();
       MethodInfo mi = insn.getMethodInfo();
 
@@ -88,7 +88,7 @@ public class AttrsTest extends TestJPF {
 
   public static class InvokeListener extends ListenerAdapter {
 
-    public void instructionExecuted (JVM vm){
+    public void instructionExecuted (VM vm){
       Instruction insn = vm.getLastInstruction();
       if (insn instanceof InvokeInstruction) {
         InvokeInstruction call = (InvokeInstruction)insn;
@@ -147,7 +147,7 @@ public class AttrsTest extends TestJPF {
 
     public DoubleListener () {}
 
-    public void instructionExecuted (JVM vm){
+    public void instructionExecuted (VM vm){
       Instruction insn = vm.getLastInstruction();
       MethodInfo mi = insn.getMethodInfo();
 
@@ -427,7 +427,7 @@ public class AttrsTest extends TestJPF {
     
     public MixedAttrTypeListener() {}
     
-    public void executeInstruction (JVM vm){
+    public void executeInstruction (VM vm){
       ThreadInfo ti = vm.getLastThreadInfo();
       Instruction insn = vm.getLastInstruction();
       
@@ -471,7 +471,7 @@ public class AttrsTest extends TestJPF {
       }
     }
     
-    public void instructionExecuted (JVM vm){
+    public void instructionExecuted (VM vm){
       ThreadInfo ti = vm.getLastThreadInfo();
       Instruction insn = vm.getLastInstruction();
 

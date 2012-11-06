@@ -41,7 +41,7 @@ import sun.reflect.annotation.AnnotationType;
  * MJI model class for java.lang.Class library abstraction
  *
  * This is a JPF specific version of a system class because we can't use the real,
- * platform JVM specific version (it's native all over the place, its field
+ * platform VM specific version (it's native all over the place, its field
  * structure isn't documented, most of its methods are private, hence we can't
  * even instantiate it properly).
  *

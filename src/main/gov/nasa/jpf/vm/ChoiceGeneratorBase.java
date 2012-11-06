@@ -62,7 +62,7 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
   // within the same transition. Note this is NOT set for the last CG registered
   protected boolean isCascaded;
 
-  // in case this is initalized from a JVM context
+  // in case this is initalized from a VM context
   public static void init(Config config) {
 
     SystemState.ChoiceRandomizationPolicy randomization = config.getEnum("cg.randomize_choices",

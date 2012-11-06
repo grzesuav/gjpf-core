@@ -24,7 +24,7 @@ import gov.nasa.jpf.search.DFSearch;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.heuristic.BFSHeuristic;
 import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 import java.util.ArrayList;
@@ -101,7 +101,7 @@ public class LockedStackDepth extends ListenerAdapter
       return(result);
    }
 
-   public void objectLocked(JVM vm)
+   public void objectLocked(VM vm)
    {
       ThreadInfo thread;
       ElementInfo lock;
@@ -130,7 +130,7 @@ public class LockedStackDepth extends ListenerAdapter
       new Operation(lock, depth);
    }
 
-   public void objectUnlocked(JVM vm)
+   public void objectUnlocked(VM vm)
    {
       ThreadInfo thread;
       ElementInfo lock;

@@ -36,7 +36,7 @@ import gov.nasa.jpf.vm.ClassInfoException;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ExceptionHandler;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -746,7 +746,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
    */
 
   //-------- the listener interface
-  public void classLoaded(JVM vm) {
+  public void classLoaded(VM vm) {
     ClassInfo ci = vm.getLastClassInfo();
     String clsName = ci.getName();
 
@@ -764,7 +764,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
   MethodInfo lastMi = null;
   MethodCoverage lastMc = null;
 
-  MethodCoverage getMethodCoverage(JVM vm) {
+  MethodCoverage getMethodCoverage(VM vm) {
     Instruction insn = vm.getLastInstruction();
 
     if (!insn.isExtendedInstruction()) {
@@ -811,7 +811,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
     return mi.getAnnotation("gov.nasa.jpf.Requirement");
   }
 
-  public void instructionExecuted(JVM vm) {
+  public void instructionExecuted(VM vm) {
     Instruction insn = vm.getLastInstruction();
     MethodCoverage mc = getMethodCoverage(vm);
 
@@ -830,7 +830,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
     }
   }
 
-  public void choiceGeneratorSet(JVM vm) {
+  public void choiceGeneratorSet(VM vm) {
     /*** should be an option
     Instruction insn = vm.getLastInstruction();
     MethodCoverage mc = getMethodCoverage(vm);

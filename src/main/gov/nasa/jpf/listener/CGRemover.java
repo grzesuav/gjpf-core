@@ -29,7 +29,7 @@ import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 
 import java.util.ArrayList;
@@ -216,7 +216,7 @@ public class CGRemover extends ListenerAdapter {
     }
   }
 
-  protected boolean removeCG (JVM vm, Category cat, ChoiceGenerator<?> cg){
+  protected boolean removeCG (VM vm, Category cat, ChoiceGenerator<?> cg){
     if (cat != null){
       if (cat.cgClass.isAssignableFrom(cg.getClass())){
         vm.getSystemState().removeNextChoiceGenerator();
@@ -231,7 +231,7 @@ public class CGRemover extends ListenerAdapter {
   //--- VMListener interface
 
   // this is where we turn Categories into MethodInfos and Instructions to watch out for
-  public void classLoaded (JVM vm){
+  public void classLoaded (VM vm){
     ClassInfo ci = vm.getLastClassInfo();
 
     for (Category cat : categories){
@@ -240,7 +240,7 @@ public class CGRemover extends ListenerAdapter {
   }
 
   // this is our main purpose in life
-  public void choiceGeneratorRegistered (JVM vm){
+  public void choiceGeneratorRegistered (VM vm){
     ChoiceGenerator<?> cg = vm.getNextChoiceGenerator();
     Instruction insn = cg.getInsn();
 

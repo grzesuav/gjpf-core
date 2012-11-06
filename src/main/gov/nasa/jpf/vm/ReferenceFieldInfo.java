@@ -45,7 +45,7 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
     if (i == -1) {
       return "null";
     } else {
-      return (JVM.getVM().getHeap().get(i)).toString();
+      return (VM.getVM().getHeap().get(i)).toString();
     }
   }
 
@@ -84,7 +84,7 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
   public void initialize (ElementInfo ei, ThreadInfo ti) {
     int ref = init;
     if (sInit != null) {
-      JVM vm = ti.getVM();
+      VM vm = ti.getVM();
       Heap heap = vm.getHeap();
       ref = heap.newString(sInit, ti).getObjectRef();
     }
@@ -96,7 +96,7 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
     if (i == -1) {
       return null;
     } else {
-      Heap heap = JVM.getVM().getHeap();
+      Heap heap = VM.getVM().getHeap();
       return heap.get(i);
     }
   }

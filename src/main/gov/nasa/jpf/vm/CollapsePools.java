@@ -20,25 +20,25 @@ abstract class CollapsePools {
 
     public StackFrame poolStackFrame(StackFrame o) {
       StackFrame p = stackFramePool.pool(o);
-      if (JVM.CHECK_CONSISTENCY) assert p.equals(o);
+      if (VM.CHECK_CONSISTENCY) assert p.equals(o);
       return p;
     }
 
     public Fields poolFields(Fields o) {
       Fields p = fieldsPool.pool(o);
-      if (JVM.CHECK_CONSISTENCY) assert p.equals(o);
+      if (VM.CHECK_CONSISTENCY) assert p.equals(o);
       return p;
     }
 
     public ThreadData poolThreadData(ThreadData o) {
       ThreadData p = threadDataPool.pool(o);
-      if (JVM.CHECK_CONSISTENCY) assert p.equals(o);
+      if (VM.CHECK_CONSISTENCY) assert p.equals(o);
       return p;
     }
 
     public Monitor poolMonitor(Monitor o) {
       Monitor p = monitorPool.pool(o);
-      if (JVM.CHECK_CONSISTENCY) assert p.equals(o);
+      if (VM.CHECK_CONSISTENCY) assert p.equals(o);
       return p;
     }
   }
@@ -58,7 +58,7 @@ abstract class CollapsePools {
     
     public StackFrame poolStackFrame(StackFrame o) {
       StackFrame p = stackFramePool.get(o);
-      if (JVM.CHECK_CONSISTENCY) assert p.equals(o);
+      if (VM.CHECK_CONSISTENCY) assert p.equals(o);
       return p;
     }
 

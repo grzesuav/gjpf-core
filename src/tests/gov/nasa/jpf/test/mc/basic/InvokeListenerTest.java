@@ -26,7 +26,7 @@ import gov.nasa.jpf.jvm.bytecode.VirtualInvocation;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -41,7 +41,7 @@ public class InvokeListenerTest extends TestJPF {
   //--- this is only used outside JPF execution
   public static class Listener extends ListenerAdapter {
 
-    void checkArgs (JVM vm, boolean isPostExec){
+    void checkArgs (VM vm, boolean isPostExec){
       Instruction insn = vm.getLastInstruction();
 
       if (insn instanceof InvokeInstruction){
@@ -101,11 +101,11 @@ public class InvokeListenerTest extends TestJPF {
       System.out.println(")");
     }
 
-    public void executeInstruction (JVM vm){
+    public void executeInstruction (VM vm){
       checkArgs(vm, false);
     }
 
-    public void instructionExecuted (JVM vm){
+    public void instructionExecuted (VM vm){
       checkArgs(vm, true);
     }
 

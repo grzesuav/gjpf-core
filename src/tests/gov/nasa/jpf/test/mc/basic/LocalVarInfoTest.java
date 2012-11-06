@@ -22,7 +22,7 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.LocalVariableInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MethodInfo;
 
@@ -46,7 +46,7 @@ public class LocalVarInfoTest extends TestJPF {
       log = new ArrayList<String>();
     }
     
-    public void methodEntered (JVM vm){
+    public void methodEntered (VM vm){
       MethodInfo mi = vm.getLastMethodInfo();
       if (mi.getUniqueName().equals("testLookup()V")){
         logMethod = mi;
@@ -62,14 +62,14 @@ public class LocalVarInfoTest extends TestJPF {
       }
     }
     
-    public void methodExited (JVM vm){
+    public void methodExited (VM vm){
       MethodInfo mi = vm.getLastMethodInfo();
       if (mi == logMethod){
         logMethod = null;
       }      
     }
     
-    public void instructionExecuted(JVM vm){
+    public void instructionExecuted(VM vm){
       Instruction insn = vm.getLastInstruction();
       if (insn.getMethodInfo() == logMethod){
         System.out.printf(" %2d: %s", insn.getPosition(), insn);

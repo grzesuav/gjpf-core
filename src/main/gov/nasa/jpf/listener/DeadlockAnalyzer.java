@@ -27,7 +27,7 @@ import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -70,7 +70,7 @@ public class DeadlockAnalyzer extends ListenerAdapter {
     ThreadOp prevTransition;
     ThreadOp prevOp;
 
-    ThreadOp (JVM vm, OpType type) {
+    ThreadOp (VM vm, OpType type) {
       ti = vm.getLastThreadInfo();
       ei = vm.getLastElementInfo();
       insn = getReportInsn(ti); // we haven't had the executeInsn notification yet
@@ -155,7 +155,7 @@ public class DeadlockAnalyzer extends ListenerAdapter {
   int maxHistory;
   String format;
   
-  JVM vm;
+  VM vm;
   Search search;
   
   public DeadlockAnalyzer (Config config, JPF jpf){
@@ -172,7 +172,7 @@ public class DeadlockAnalyzer extends ListenerAdapter {
     return (format.equalsIgnoreCase("essential"));
   }
   
-  void addOp (JVM vm, OpType opType){
+  void addOp (VM vm, OpType opType){
     ThreadOp op = new ThreadOp(vm, opType);
     if (lastOp == null){
       lastOp = op;
@@ -428,35 +428,35 @@ public class DeadlockAnalyzer extends ListenerAdapter {
 
   //--- VM listener interface
   
-  public void objectLocked (JVM vm) {
+  public void objectLocked (VM vm) {
     addOp(vm,OpType.lock);
   }
 
-  public void objectUnlocked (JVM vm) {
+  public void objectUnlocked (VM vm) {
     addOp(vm,OpType.unlock);
   }
 
-  public void objectWait (JVM vm) {
+  public void objectWait (VM vm) {
     addOp(vm,OpType.wait);
   }
 
-  public void objectNotify (JVM vm) {
+  public void objectNotify (VM vm) {
     addOp(vm,OpType.notify);
   }
 
-  public void objectNotifyAll (JVM vm) {
+  public void objectNotifyAll (VM vm) {
     addOp(vm,OpType.notifyAll);
   }
 
-  public void threadBlocked (JVM vm){
+  public void threadBlocked (VM vm){
     addOp(vm,OpType.block);
   }
   
-  public void threadStarted (JVM vm){
+  public void threadStarted (VM vm){
     addOp(vm,OpType.started);    
   }
   
-  public void threadTerminated (JVM vm){
+  public void threadTerminated (VM vm){
     addOp(vm,OpType.terminated);
   }
   

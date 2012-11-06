@@ -25,7 +25,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.SystemState;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Verify;
@@ -47,12 +47,12 @@ public class BreakTest extends TestJPF {
       nCG = 0;
     }
 
-    public void choiceGeneratorSet (JVM vm) {
+    public void choiceGeneratorSet (VM vm) {
       System.out.println("CG set: " + vm.getLastChoiceGenerator());
       nCG++;
     }
 
-    public void choiceGeneratorAdvanced (JVM vm) {
+    public void choiceGeneratorAdvanced (VM vm) {
       System.out.println("CG advanced: " + vm.getLastChoiceGenerator());
     }
   }
@@ -63,7 +63,7 @@ public class BreakTest extends TestJPF {
   //--- test setIgnored
 
   public static class FieldIgnorer extends BreakListener {
-    public void instructionExecuted(JVM vm) {
+    public void instructionExecuted(VM vm) {
       Instruction insn = vm.getLastInstruction();
       ThreadInfo ti = vm.getLastThreadInfo();
       SystemState ss = vm.getSystemState();
@@ -97,7 +97,7 @@ public class BreakTest extends TestJPF {
   //--- testSimpleBreak
 
   public static class FieldBreaker extends BreakListener {
-    public void instructionExecuted(JVM vm) {
+    public void instructionExecuted(VM vm) {
       Instruction insn = vm.getLastInstruction();
       ThreadInfo ti = vm.getLastThreadInfo();
       SystemState ss = vm.getSystemState();
@@ -131,7 +131,7 @@ public class BreakTest extends TestJPF {
   //--- test CG chain break
 
   public static class FooCallBreaker extends BreakListener {
-    public void instructionExecuted(JVM vm) {
+    public void instructionExecuted(VM vm) {
       Instruction insn = vm.getLastInstruction();
       ThreadInfo ti = vm.getLastThreadInfo();
       SystemState ss = vm.getSystemState();
@@ -189,7 +189,7 @@ public class BreakTest extends TestJPF {
   //--- test ignore after setting nextCG
 
   public static class VerifyNextIntBreaker extends BreakListener {
-    public void choiceGeneratorRegistered(JVM vm) {
+    public void choiceGeneratorRegistered(VM vm) {
       ThreadInfo ti = vm.getLastThreadInfo();
       SystemState ss = vm.getSystemState();
       

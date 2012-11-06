@@ -36,7 +36,7 @@ import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.DoubleChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.IntChoiceGenerator;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadChoiceGenerator;
 
@@ -153,7 +153,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
     return (grouper);
   }
 
-  public void choiceGeneratorSet(JVM vm) {
+  public void choiceGeneratorSet(VM vm) {
     ChoiceGenerator generator;
     int i;
 

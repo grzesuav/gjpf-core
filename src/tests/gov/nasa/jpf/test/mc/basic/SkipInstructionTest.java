@@ -25,7 +25,7 @@ import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -42,7 +42,7 @@ public class SkipInstructionTest extends TestJPF {
   public static class GetFieldListener extends ListenerAdapter {
     
     @Override
-    public void executeInstruction(JVM vm) {
+    public void executeInstruction(VM vm) {
       ThreadInfo ti = vm.getCurrentThread();
       Instruction pc = ti.getPC();
 
@@ -96,7 +96,7 @@ public class SkipInstructionTest extends TestJPF {
     MethodInfo interceptedMethod;
     
     @Override
-    public void classLoaded (JVM vm) {
+    public void classLoaded (VM vm) {
       ClassInfo ci = vm.getLastClassInfo();
       if (ci.getName().equals("gov.nasa.jpf.test.mc.basic.SkipInstructionTest")) {
         interceptedMethod = ci.getMethod("foo(II)I", false);
@@ -106,7 +106,7 @@ public class SkipInstructionTest extends TestJPF {
     }
         
     @Override
-    public void instructionExecuted (JVM vm) {
+    public void instructionExecuted (VM vm) {
       ThreadInfo ti = vm.getLastThreadInfo();
       Instruction insn = vm.getLastInstruction();
       MethodInfo mi = ti.getTopMethod();

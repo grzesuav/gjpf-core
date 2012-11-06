@@ -28,7 +28,7 @@ import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LogManager;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.RunRegistry;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.NoOutOfMemoryErrorProperty;
 import gov.nasa.jpf.vm.VMListener;
 
@@ -100,7 +100,7 @@ public class JPF implements Runnable {
   Search search;
 
   /** Reference to the virtual machine used by the search */
-  JVM vm;
+  VM vm;
 
   /** the report generator */
   Reporter reporter;
@@ -272,9 +272,9 @@ public class JPF implements Runnable {
       
       Class<?>[] vmArgTypes = { JPF.class, Config.class };
       Object[] vmArgs = { this, config };
-      vm = config.getEssentialInstance("vm.class", JVM.class, vmArgTypes, vmArgs);
+      vm = config.getEssentialInstance("vm.class", VM.class, vmArgTypes, vmArgs);
 
-      Class<?>[] searchArgTypes = { Config.class, JVM.class };
+      Class<?>[] searchArgTypes = { Config.class, VM.class };
       Object[] searchArgs = { config, vm };
       search = config.getEssentialInstance("search.class", Search.class,
                                                 searchArgTypes, searchArgs);
@@ -492,7 +492,7 @@ public class JPF implements Runnable {
   /**
    * return the VM object. This can be null if the initialization has failed
    */
-  public JVM getVM() {
+  public VM getVM() {
     return vm;
   }
 

@@ -21,7 +21,7 @@ package gov.nasa.jpf.search.heuristic;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 
 
 /**
@@ -34,7 +34,7 @@ import gov.nasa.jpf.vm.JVM;
 public class UserHeuristic extends SimplePriorityHeuristic {
   static final int defaultValue = 1000;
 
-  public UserHeuristic (Config config, JVM vm) {
+  public UserHeuristic (Config config, VM vm) {
     super(config, vm);
   }
 

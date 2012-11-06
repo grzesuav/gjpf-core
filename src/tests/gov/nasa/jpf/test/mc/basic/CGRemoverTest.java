@@ -24,7 +24,7 @@ import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 
 import org.junit.Test;
@@ -48,7 +48,7 @@ public class CGRemoverTest extends TestJPF {
 
   public static class R1Listener extends ListenerAdapter {
     
-    public void choiceGeneratorSet (JVM vm){
+    public void choiceGeneratorSet (VM vm){
       ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
       Instruction insn = cg.getInsn();
 

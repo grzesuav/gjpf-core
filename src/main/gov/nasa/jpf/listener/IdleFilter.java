@@ -28,7 +28,7 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.DynamicObjectArray;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -136,9 +136,9 @@ public class IdleFilter extends PropertyListenerAdapter {
   }
 
   // ----------------------------------------------------- VMListener interface
-  public void instructionExecuted(JVM jvm) {
-    Instruction insn = jvm.getLastInstruction();
-    ThreadInfo ti = jvm.getLastThreadInfo();
+  public void instructionExecuted(VM vm) {
+    Instruction insn = vm.getLastInstruction();
+    ThreadInfo ti = vm.getLastThreadInfo();
 
     int tid = ti.getId();
     ts = threadStats.get(tid);
@@ -151,7 +151,7 @@ public class IdleFilter extends PropertyListenerAdapter {
       ts.backJumps++;
 
       int loopStackDepth = ti.getStackDepth();
-      int loopPc = jvm.getNextInstruction().getPosition();
+      int loopPc = vm.getNextInstruction().getPosition();
 
       if ((loopStackDepth != ts.loopStackDepth) || (loopPc != ts.loopStartPc)) {
         // new loop, reset
@@ -184,7 +184,7 @@ public class IdleFilter extends PropertyListenerAdapter {
 
               case PRUNE:
                 // cut this sucker off - we declare this a visited state
-                jvm.ignoreState();
+                vm.ignoreState();
                 log.warning("pruned thread: " + ti.getName() +
                         "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");
                 break;
@@ -239,8 +239,8 @@ public class IdleFilter extends PropertyListenerAdapter {
   }
   
   // thread ids are reused, so we have to clean up
-  public void threadTerminated (JVM jvm){
-    ThreadInfo ti = jvm.getLastThreadInfo();
+  public void threadTerminated (VM vm){
+    ThreadInfo ti = vm.getLastThreadInfo();
     int tid = ti.getId();
     threadStats.set(tid, null);
   }

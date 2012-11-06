@@ -32,7 +32,7 @@ import gov.nasa.jpf.util.TypeSpec;
 import gov.nasa.jpf.vm.AllocInstruction;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
@@ -96,7 +96,7 @@ public class OOMEInjector extends ListenerAdapter {
   }
   
   @Override
-  public void classLoaded (JVM vm){
+  public void classLoaded (VM vm){
     ClassInfo ci = vm.getLastClassInfo();
     String fname = ci.getSourceFileName();
     
@@ -123,7 +123,7 @@ public class OOMEInjector extends ListenerAdapter {
   }
   
   @Override
-  public void executeInstruction (JVM vm){
+  public void executeInstruction (VM vm){
     Instruction insn = vm.getLastInstruction();
     if (insn instanceof AllocInstruction){
       ThreadInfo ti = vm.getLastThreadInfo();
@@ -138,7 +138,7 @@ public class OOMEInjector extends ListenerAdapter {
   }
   
   @Override
-  public void instructionExecuted (JVM vm){
+  public void instructionExecuted (VM vm){
     Instruction insn = vm.getLastInstruction();
     
     if (insn instanceof InvokeInstruction){

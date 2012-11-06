@@ -22,7 +22,7 @@ import gov.nasa.jpf.JPFListener;
 import gov.nasa.jpf.jvm.classfile.ClassFile;
 
 /**
- * interface to register for callbacks by the JVM
+ * interface to register for callbacks by the VM
  * Observer role in equally named pattern
  * 
  * Note that we only have notifications for generic events, NOT for conditions that
@@ -37,63 +37,63 @@ public interface VMListener extends JPFListener {
    * VM got initialized (but search is not yet running). This can be used to
    * do type initialization in listeners, since the ClassLoader mechanism is now functional
    */
-  void vmInitialized (JVM vm);
+  void vmInitialized (VM vm);
   
   /**
-   * JVM is about to execute the next instruction
+   * VM is about to execute the next instruction
    */
-  void executeInstruction (JVM vm);
+  void executeInstruction (VM vm);
   
   /**
-   * JVM has executed the next instruction
+   * VM has executed the next instruction
    * (can be used to analyze branches, monitor PUTFIELD / GETFIELD and
    * INVOKExx / RETURN instructions)
    */
-  void instructionExecuted (JVM vm);
+  void instructionExecuted (VM vm);
   
   /**
    * new Thread entered run() method
    */
-  void threadStarted (JVM vm);
+  void threadStarted (VM vm);
     
   /**
    * thread waits to acquire a lock
   // NOTE: vm.getLastThreadInfo() does NOT have to be the running thread, as this
   // notification can occur as a result of a lock operation in the current thread
    */
-  void threadBlocked (JVM vm);
+  void threadBlocked (VM vm);
   
   /**
    * thread is waiting for signal
    */
-  void threadWaiting (JVM vm);
+  void threadWaiting (VM vm);
 
   /**
    * thread got notified
    */
-  void threadNotified (JVM vm);
+  void threadNotified (VM vm);
     
   /**
    * thread got interrupted
    */
-  void threadInterrupted (JVM vm);
+  void threadInterrupted (VM vm);
   
   /**
    * Thread exited run() method
    */
-  void threadTerminated (JVM vm);
+  void threadTerminated (VM vm);
 
   /**
-   * new thread was scheduled by JVM
+   * new thread was scheduled by VM
    */
-  void threadScheduled (JVM vm); // this might go into the choice generator notifications
+  void threadScheduled (VM vm); // this might go into the choice generator notifications
 
   /**
    * a new classfile is about to be parsed. This notification allows replacement
    * of the related classfile data via ClassFile.{get/set}Data() and can be
    * used to do on-the-fly classfile instrumentation with 3rd party libraries 
    */
-  public void loadClass (JVM vm, ClassFile cf);
+  public void loadClass (VM vm, ClassFile cf);
   
   /**
    * new class was loaded. This is notified after the ClassInfo has been
@@ -103,63 +103,63 @@ public interface VMListener extends JPFListener {
    * used by listeners etc. in order to enable efficient identify based filters
    * in the performance critical instruction notifications
    */
-  void classLoaded (JVM vm);
+  void classLoaded (VM vm);
   
   /**
    * new object was created
    */
-  void objectCreated (JVM vm);
+  void objectCreated (VM vm);
   
   /**
    * object was garbage collected (after potential finalization)
    */
-  void objectReleased (JVM vm);
+  void objectReleased (VM vm);
   
   /**
    * notify if an object lock was taken (this includes automatic
    * surrender during a wait())
    */
-  void objectLocked (JVM vm);
+  void objectLocked (VM vm);
   
   /**
    * notify if an object lock was released (this includes automatic
    * reacquisition after a notify())
    */
-  void objectUnlocked (JVM vm);
+  void objectUnlocked (VM vm);
   
   /**
    * notify if a wait() is executed
    */
-  void objectWait (JVM vm);
+  void objectWait (VM vm);
   
   /**
    * notify if an object notifies a single waiter
    */
-  void objectNotify (JVM vm);
+  void objectNotify (VM vm);
 
   /**
    * notify if an object notifies all waiters
    */
-  void objectNotifyAll (JVM vm);
+  void objectNotifyAll (VM vm);
   
-  void gcBegin (JVM vm);
+  void gcBegin (VM vm);
   
-  void gcEnd (JVM vm);
+  void gcEnd (VM vm);
   
   /**
    * exception was thrown
    */
-  void exceptionThrown (JVM vm);
+  void exceptionThrown (VM vm);
 
   /**
    * exception causes top frame to be purged
    */
-  void exceptionBailout (JVM vm);
+  void exceptionBailout (VM vm);
 
   /**
    * exception handled by current top frame
    */
-  void exceptionHandled (JVM vm);
+  void exceptionHandled (VM vm);
 
   /**
    * next ChoiceGenerator was registered, which means this is the end of the current transition
@@ -169,7 +169,7 @@ public interface VMListener extends JPFListener {
    * listener in this case has to make sure the operand stack is in a consistent state for
    * continued execution because there might be a bottom half of an Instruction.execute() missing)
    */
-  void choiceGeneratorRegistered (JVM vm);
+  void choiceGeneratorRegistered (VM vm);
 
   /**
    * a new ChoiceGenerator was set, which means we are at the beginning of a new transition.
@@ -177,7 +177,7 @@ public interface VMListener extends JPFListener {
    * NOTE - this notification happens before the KernelState is stored, i.e. listeners are NOT
    * allowed to alter the KernelState (e.g. by changing field values or thread states)
    */
-  void choiceGeneratorSet (JVM vm);
+  void choiceGeneratorSet (VM vm);
   
   /**
    * the next choice was requested from a previously registered ChoiceGenerator
@@ -185,7 +185,7 @@ public interface VMListener extends JPFListener {
    * NOTE - this notification happens before the KernelState is stored, i.e. listeners are NOT
    * allowed to alter the KernelState (e.g. by changing field values or thread states)
    */
-  void choiceGeneratorAdvanced (JVM vm);
+  void choiceGeneratorAdvanced (VM vm);
   
   /**
    * a ChoiceGnerator has returned all his choices
@@ -193,20 +193,20 @@ public interface VMListener extends JPFListener {
    * NOTE - this notification happens before the KernelState is stored, i.e. listeners are NOT
    * allowed to alter the KernelState (e.g. by changing field values or thread states)
    */
-  void choiceGeneratorProcessed (JVM vm);
+  void choiceGeneratorProcessed (VM vm);
 
   /**
    * method body was entered. This is notified before the first instruction
    * is executed
    */
-  void methodEntered (JVM vm);
+  void methodEntered (VM vm);
 
   /**
    * method body was left. This is notified after the last instruction had
    * been executed
    * NOTE - this is also notified when a StackFrame is dropped due to unhandled exceptions
    */
-  void methodExited (JVM vm);
+  void methodExited (VM vm);
 
 }
 

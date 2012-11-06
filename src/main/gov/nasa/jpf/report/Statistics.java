@@ -28,7 +28,7 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadChoiceGenerator;
 
@@ -79,7 +79,7 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     }
   }
   
-  public void gcBegin (JVM vm) {
+  public void gcBegin (VM vm) {
     int heapSize = vm.getHeap().size();
     if (heapSize > maxLiveObjects){
       maxLiveObjects = heapSize;
@@ -88,11 +88,11 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     gcCycles++;
   }
   
-  public void instructionExecuted (JVM vm){
+  public void instructionExecuted (VM vm){
     insns++;
   }
 
-  public void choiceGeneratorSet (JVM vm){
+  public void choiceGeneratorSet (VM vm){
     ChoiceGenerator<?> cg = vm.getChoiceGenerator();
     if (cg instanceof ThreadChoiceGenerator){
       threadCGs++;
@@ -119,11 +119,11 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     }
   }
   
-  public void objectCreated (JVM vm){
+  public void objectCreated (VM vm){
     nNewObjects++;
   }
   
-  public void objectReleased (JVM vm){
+  public void objectReleased (VM vm){
     nReleasedObjects++;
   }
   

@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * the class that encapsulates not only the current execution state of the VM
  * (the KernelState), but also the part of it's history that is required
- * by JVM to backtrack, plus some potential annotations that can be used to
+ * by VM to backtrack, plus some potential annotations that can be used to
  * control the search (i.e. forward/backtrack calls)
  */
 public class SystemState {
@@ -59,7 +59,7 @@ public class SystemState {
    * restore), we have to use a RestorableMemento
    * <2do> this separation is error prone and fragile. It depends on correct
    * ChoiceGenerator deepCopy() implementations and a separate state acquisition
-   * for restorable states. Currently, the gate for this is JVM.getRestorableState(),
+   * for restorable states. Currently, the gate for this is VM.getRestorableState(),
    * but this could be bypassed.
    */
   static class Memento {
@@ -246,11 +246,11 @@ public class SystemState {
   /**
    * Creates a new system state.
    */
-  public SystemState (Config config, JVM vm) {
+  public SystemState (Config config, VM vm) {
     ks = new KernelState(config);
     id = StateSet.UNKNOWN_ID;
 
-    Class<?>[] argTypes = { Config.class, JVM.class, SystemState.class };
+    Class<?>[] argTypes = { Config.class, VM.class, SystemState.class };
     Object[] args = { config, vm, this };
     schedulerFactory = config.getEssentialInstance("vm.scheduler_factory.class",
                                                     SchedulerFactory.class,
@@ -469,7 +469,7 @@ public class SystemState {
     if (isIgnored){
       // if this transition is already marked as ignored, we are not allowed
       // to set nextCg because 'isIgnored' results in a shortcut backtrack that
-      // is not handed back to the Search (its solely in JVM forward)
+      // is not handed back to the Search (its solely in VM forward)
       return false;
     }
 
@@ -715,12 +715,12 @@ public class SystemState {
    * in case the initialization does not produce a next choice and we have to
    * backtrack.
    *
-   * @see JVM.forward()
+   * @see VM.forward()
    * 
    * @return 'true' if there is a next choice, i.e. a next transition to execute.
    * 'false' if there is no next choice and the system has to backtrack
    */
-  public boolean initializeNextTransition(JVM vm) {
+  public boolean initializeNextTransition(VM vm) {
 
     // set this before any choiceGeneratorSet or choiceGeneratorAdvanced
     // notification (which can override it)
@@ -759,9 +759,9 @@ public class SystemState {
    * Note this gets called *after* storing the KernelState, i.e. is allowed to
    * modify thread states and fields
    *
-   * @see JVM.forward()
+   * @see VM.forward()
    */
-  public void executeNextTransition (JVM vm){
+  public void executeNextTransition (VM vm){
      // do we have a thread context switch? (this sets execThread)
     setExecThread( vm);
 
@@ -773,7 +773,7 @@ public class SystemState {
     execThread.executeTransition(this);    
   }
 
-  protected void setExecThread( JVM vm){
+  protected void setExecThread( VM vm){
     ThreadChoiceGenerator tcg = getCurrentSchedulingPoint();
     if (tcg != null){
       ThreadInfo tiNext = tcg.getNextChoice();
@@ -792,7 +792,7 @@ public class SystemState {
   // the number of advanced choice generators in this step
   protected int nAdvancedCGs;
 
-  protected void advance( JVM vm, ChoiceGenerator<?> cg){
+  protected void advance( VM vm, ChoiceGenerator<?> cg){
     while (true) {
       if (cg.hasMoreChoices()){
         cg.advance();
@@ -811,7 +811,7 @@ public class SystemState {
     }
   }
 
-  protected void advanceAllCascadedParents( JVM vm, ChoiceGenerator<?> cg){
+  protected void advanceAllCascadedParents( VM vm, ChoiceGenerator<?> cg){
     ChoiceGenerator<?> parent = cg.getCascadedParent();
     if (parent != null){
       advanceAllCascadedParents(vm, parent);
@@ -819,7 +819,7 @@ public class SystemState {
     advance(vm, cg);
   }
 
-  protected boolean advanceCascadedParent (JVM vm, ChoiceGenerator<?> cg){
+  protected boolean advanceCascadedParent (VM vm, ChoiceGenerator<?> cg){
     if (cg.hasMoreChoices()){
       advance(vm,cg);
       return true;
@@ -839,7 +839,7 @@ public class SystemState {
     }
   }
 
-  protected boolean advanceCurCg (JVM vm){
+  protected boolean advanceCurCg (VM vm){
     nAdvancedCGs = 0;
 
     ChoiceGenerator<?> cg = curCg;
@@ -868,7 +868,7 @@ public class SystemState {
 
 
 
-  protected void notifyChoiceGeneratorSet (JVM vm, ChoiceGenerator<?> cg){
+  protected void notifyChoiceGeneratorSet (VM vm, ChoiceGenerator<?> cg){
     ChoiceGenerator<?> parent = cg.getCascadedParent();
     if (parent != null) {
       notifyChoiceGeneratorSet(vm, parent);
@@ -897,7 +897,7 @@ public class SystemState {
     return ks.isTerminated();
   }
 
-  // the three primitive ops used from within JVM.forward()
+  // the three primitive ops used from within VM.forward()
 
 
 }

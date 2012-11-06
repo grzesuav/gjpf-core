@@ -36,7 +36,7 @@ package gov.nasa.jpf.vm;
  *    * if the representation is not a ClassFile structure, loading throws an
  *      instance of ClassFormatError
  * 
- * If this exception is thrown during the initialization of JVM, and the failed
+ * If this exception is thrown during the initialization of VM, and the failed
  * class is a system class, or creating of the main thread in not successful, we 
  * immediately bail out by throwing JPFException.
  * 
@@ -46,9 +46,9 @@ package gov.nasa.jpf.vm;
  *    1. a native peer method,  
  *    2. Intruction.execute(),
  *    3. ThreadInfo.creatAndThrowException()
- *    4. JVM.initialize() // here it is handled only if it a non-system class
+ *    4. VM.initialize() // here it is handled only if it a non-system class
  * 
- * If this exception is thrown by a Listener, the host JVM throws JPFListenerException.
+ * If this exception is thrown by a Listener, the host VM throws JPFListenerException.
  * 
  */
 public class ClassInfoException extends RuntimeException{

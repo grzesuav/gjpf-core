@@ -25,7 +25,7 @@ import gov.nasa.jpf.JPFListener;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListenerAdapter;
 import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.Path;
 
 import java.io.IOException;
@@ -51,7 +51,7 @@ public class Reporter extends SearchListenerAdapter {
   protected Config conf;
   protected JPF jpf;
   protected Search search;
-  protected JVM vm;
+  protected VM vm;
 
   protected Date started, finished;
   protected Statistics stat; // the object that collects statistics
@@ -259,7 +259,7 @@ public class Reporter extends SearchListenerAdapter {
     return finished;
   }
     
-  public JVM getVM() {
+  public VM getVM() {
     return vm;
   }
 

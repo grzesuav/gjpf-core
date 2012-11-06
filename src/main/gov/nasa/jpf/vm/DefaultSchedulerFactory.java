@@ -30,7 +30,7 @@ import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
 public class DefaultSchedulerFactory implements SchedulerFactory {
 
-  protected JVM vm;
+  protected VM vm;
   protected SystemState ss;
 
   //--- those are configured
@@ -41,7 +41,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   boolean breakArrayAccess;
   boolean breakSingleChoice;
 
-  public DefaultSchedulerFactory (Config config, JVM vm, SystemState ss) {
+  public DefaultSchedulerFactory (Config config, VM vm, SystemState ss) {
     this.vm = vm;
     this.ss = ss;
 

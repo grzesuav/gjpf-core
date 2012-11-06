@@ -25,7 +25,7 @@ import gov.nasa.jpf.annotation.JPFOption;
 import gov.nasa.jpf.annotation.JPFOptions;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -52,7 +52,7 @@ public class BudgetChecker extends ListenerAdapter {
   long mStart;
   MemoryMXBean mxb;
   
-  JVM vm;
+  VM vm;
   Search search;
   long insnCount;
 
@@ -177,7 +177,7 @@ public class BudgetChecker extends ListenerAdapter {
     }
   }
       
-  public void instructionExecuted (JVM vm) {
+  public void instructionExecuted (VM vm) {
     if ((insnCount++ % CHECK_INTERVAL) == CHECK_INTERVAL1) {
 
       if (timeExceeded() || heapExceeded() || insnExceeded()) {

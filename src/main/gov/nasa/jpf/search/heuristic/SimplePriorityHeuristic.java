@@ -19,7 +19,7 @@
 package gov.nasa.jpf.search.heuristic;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 
 /**
  * a heuristic that is based on static priorities that are determined
@@ -29,7 +29,7 @@ public abstract class SimplePriorityHeuristic extends HeuristicSearch {
 
   StaticPriorityQueue queue;
   
-  public SimplePriorityHeuristic (Config config, JVM vm) {
+  public SimplePriorityHeuristic (Config config, VM vm) {
     super(config,vm);
 
     queue = new StaticPriorityQueue(config);    
@@ -37,7 +37,7 @@ public abstract class SimplePriorityHeuristic extends HeuristicSearch {
 
   protected abstract int computeHeuristicValue ();
 
-  protected int computeAstarPathCost (JVM vm) {
+  protected int computeAstarPathCost (VM vm) {
     return vm.getPathLength();
   }
   

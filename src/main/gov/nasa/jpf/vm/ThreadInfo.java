@@ -227,7 +227,7 @@ public class ThreadInfo
    * <2do> If we keep 'list' as a field, 'vm' might be moved over there
    * (all threads in the list share the same VM)
    */
-  JVM vm;
+  VM vm;
 
   /**
    * !! this is a volatile object, i.e. it has to be re-computed explicitly
@@ -383,7 +383,7 @@ public class ThreadInfo
    * mainThread ctor called by the VM. Note we don't have a thread object yet (hen-and-egg problem
    * since we can't allocate objects without a ThreadInfo)
    */
-  protected ThreadInfo (JVM vm) {
+  protected ThreadInfo (VM vm) {
     assert mainThread == null;
     
     mainThread = this;
@@ -397,14 +397,14 @@ public class ThreadInfo
    * the ctor for all explicitly (bytecode) created threads. At this point, there is at least
    * a mainThread and we have a corresponding java.lang.Thread object
    */
-  protected ThreadInfo (JVM vm, int objRef, int groupRef, int runnableRef, int nameRef) {    
+  protected ThreadInfo (VM vm, int objRef, int groupRef, int runnableRef, int nameRef) {    
     initFields(vm);
     initReferenceFields(objRef, groupRef, runnableRef, nameRef);
     
     id = computeId(objRef);
   }
   
-  protected void initFields(JVM vm){
+  protected void initFields(VM vm){
     // 'gid' is set by the factory method
     // we can't set the 'id' field of the corresponding java.lang.Thread object until we have one
     
@@ -500,7 +500,7 @@ public class ThreadInfo
     return false;
   }
 
-  public JVM getVM () {
+  public VM getVM () {
     return vm;
   }
 

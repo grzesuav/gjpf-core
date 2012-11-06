@@ -60,7 +60,7 @@ import java.util.logging.Level;
 
 
 /**
- * Describes the JVM's view of a java class.  Contains descriptions of the
+ * Describes the VM's view of a java class.  Contains descriptions of the
  * static and dynamic fields, methods, and information relevant to the
  * class.
  */
@@ -238,7 +238,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected long uniqueId = -1;
 
   /**
-   * this is the object we use to execute methods in the underlying JVM
+   * this is the object we use to execute methods in the underlying VM
    * (it replaces Reflection)
    */
   private NativePeer nativePeer;
@@ -824,7 +824,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // be advised - we don't have fields initialized before initializeClass(ti,insn)
     // gets called
 
-    // Used to execute native methods (in JVM land).
+    // Used to execute native methods (in VM land).
     // This needs to be initialized AFTER we get our
     // MethodInfos, since it does a reverse lookup to determine which
     // ones are handled by the peer (by means of setting MethodInfo attributes)
@@ -874,7 +874,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     classFileUrl = name;
     addOriginalClass(this);
     
-    JVM.getVM().notifyClassLoaded(this);
+    VM.getVM().notifyClassLoaded(this);
   }
 
   @Override
@@ -976,7 +976,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     classFileUrl = url;
     addOriginalClass(this);
     
-    JVM.getVM().notifyClassLoaded(this);
+    VM.getVM().notifyClassLoaded(this);
   }
 
 
@@ -1057,7 +1057,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
             try {
               JPFListener listener = config.getInstance(key, JPFListener.class, defClsName);
               
-              JPF jpf = JVM.getVM().getJPF(); // <2do> that's a BAD access path
+              JPF jpf = VM.getVM().getJPF(); // <2do> that's a BAD access path
               jpf.addUniqueTypeListener(listener);
 
               if (logger.isLoggable(Level.INFO)){
@@ -1233,7 +1233,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
       ClassFile cf = new ClassFile( typeName, match.getBytes());
       
-      JVM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
+      VM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
 
       ClassInfo ci = new ClassInfo(cf, cl, url);
       ci.setContainer(match.container);
@@ -1250,7 +1250,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     try {
       ClassFile cf = new ClassFile( typeName, data, offset);
       
-      JVM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
+      VM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
 
       return new ClassInfo(cf, cl, url);
 
@@ -1347,7 +1347,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     if (sei != null){
       int objref = sei.getClassObjectRef();
-      return JVM.getVM().getElementInfo(objref);
+      return VM.getVM().getElementInfo(objref);
     }
 
     return null;
@@ -2369,7 +2369,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * this registers a ClassInfo in the corresponding ClassLoader statics so that we can cross-link from
    * SUT code and access static fields.
    *  
-   * Note: JVM.registerStartupClass() must be kept in sync
+   * Note: VM.registerStartupClass() must be kept in sync
    */
   public void registerClass (ThreadInfo ti){
     if (!isRegistered()) {
@@ -2405,7 +2405,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   ElementInfo createAndLinkClassObject (ThreadInfo ti){
-    Heap heap = JVM.getVM().getHeap(); // ti can be null (during main thread initialization)
+    Heap heap = VM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
     int anchor = name.hashCode(); // 2do - this should also take the ClassLoader ref into account
     ClassInfo classClassInfo = ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo();    
@@ -2636,7 +2636,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         releaseActions = superClass.releaseActions;
     }
 
-    JVM.getVM().notifyClassLoaded(this);
+    VM.getVM().notifyClassLoaded(this);
   }
 
   /**

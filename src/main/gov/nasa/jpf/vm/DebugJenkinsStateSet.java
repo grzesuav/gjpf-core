@@ -74,11 +74,11 @@ public class DebugJenkinsStateSet extends JenkinsStateSet {
   }
   
   @Override
-  public void attach(JVM vm){
+  public void attach(VM vm){
     // we use our own serializer
     vm.setSerializer( serializer);
     
-    // <2do> this is a bit hack'ish - why does the JVM keep the serializer anyways,
+    // <2do> this is a bit hack'ish - why does the VM keep the serializer anyways,
     // if it is only used here
     super.attach(vm);
   }

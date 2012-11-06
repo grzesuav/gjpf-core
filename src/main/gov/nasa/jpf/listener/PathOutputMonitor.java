@@ -24,7 +24,7 @@ import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.Path;
 import gov.nasa.jpf.vm.Transition;
 
@@ -119,7 +119,7 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
   }
 
   //---- our instance data
-  JVM vm;
+  VM vm;
   
   //--- this is where we store the outputs (line-wise)
   // <2do> not very space efficient
@@ -285,7 +285,7 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
   
   //----------- the listener interface
   
-  public boolean check(Search search, JVM vm) {
+  public boolean check(Search search, VM vm) {
     return (errorMsg == null);
   }
 

@@ -31,7 +31,7 @@ import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Fields;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ReferenceArrayFields;
 import gov.nasa.jpf.vm.StackFrame;
@@ -61,7 +61,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
 
   public class Attributor extends ListenerAdapter {
 
-    public void classLoaded(JVM vm) {
+    public void classLoaded(VM vm) {
       ClassInfo ci = vm.getLastClassInfo();
       String clsName = ci.getName();
 
@@ -147,7 +147,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
   }
   
   @Override
-  public void attach (JVM vm){
+  public void attach (VM vm){
     super.attach(vm);
     
     if (fieldAbstractions != null){

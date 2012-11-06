@@ -35,7 +35,7 @@ import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Fields;
 import gov.nasa.jpf.vm.Heap;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ReferenceProcessor;
 import gov.nasa.jpf.vm.StackFrame;
@@ -76,14 +76,14 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
 
 
   @Override
-  public void attach(JVM jvm) {
-    super.attach(jvm);
+  public void attach(VM vm) {
+    super.attach(vm);
     
-    filter = jvm.getConfig().getInstance("filter.class", FilterConfiguration.class);
+    filter = vm.getConfig().getInstance("filter.class", FilterConfiguration.class);
     if (filter == null) {
       filter = new DefaultFilterConfiguration();
     }
-    filter.init(jvm.getConfig());
+    filter.init(vm.getConfig());
   }
 
   protected FramePolicy getFramePolicy(MethodInfo mi) {

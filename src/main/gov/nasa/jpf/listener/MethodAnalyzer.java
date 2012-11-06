@@ -30,7 +30,7 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -146,7 +146,7 @@ public class MethodAnalyzer extends ListenerAdapter {
 
   // execution environment
 
-  JVM vm;
+  VM vm;
   Search search;
 
   OpType opType;
@@ -182,7 +182,7 @@ public class MethodAnalyzer extends ListenerAdapter {
   }
 
 
-  void addOp (JVM vm, OpType opType, MethodInfo mi, ThreadInfo ti, ElementInfo ei, int stackDepth){
+  void addOp (VM vm, OpType opType, MethodInfo mi, ThreadInfo ti, ElementInfo ei, int stackDepth){
     if (!(skipInit && isFirstTransition)) {
       MethodOp op = new MethodOp(opType, mi, ti, ei, stackDepth);
       if (lastOp == null){
@@ -303,7 +303,7 @@ public class MethodAnalyzer extends ListenerAdapter {
 
   //--- VMlistener interface
   
-  public void instructionExecuted (JVM vm) {
+  public void instructionExecuted (VM vm) {
     Instruction insn = vm.getLastInstruction();
     ThreadInfo ti;
     MethodInfo mi;

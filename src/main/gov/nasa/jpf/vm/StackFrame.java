@@ -291,7 +291,7 @@ public class StackFrame implements Cloneable {
           return new Double(Double.longBitsToDouble(Types.intsToLong(slots[slotIdx + 1], v)));
         default:  // reference
           if (v >= 0) {
-            return JVM.getVM().getHeap().get(v);
+            return VM.getVM().getHeap().get(v);
           }
       }
     }
@@ -302,7 +302,7 @@ public class StackFrame implements Cloneable {
   public Object getFieldValue (String id) {
     // try instance fields first
     if (thisRef != -1) {  // it's an instance method
-      ElementInfo ei = JVM.getVM().getHeap().get(thisRef);
+      ElementInfo ei = VM.getVM().getHeap().get(thisRef);
       Object v = ei.getFieldValueObject(id);
       if (v != null) {
         return v;
@@ -938,7 +938,7 @@ public class StackFrame implements Cloneable {
     }
 
     if (activateGc) {
-        JVM.getVM().getSystemState().activateGC();
+        VM.getVM().getSystemState().activateGC();
     }
   }
 
@@ -1800,7 +1800,7 @@ public class StackFrame implements Cloneable {
     // <2do> get rid of this !
     for (int i=top; i>t; i--) {
       if (isRef.get(i) && (slots[i] != -1)) {
-        JVM.getVM().getSystemState().activateGC();
+        VM.getVM().getSystemState().activateGC();
         break;
       }
     }
@@ -1834,7 +1834,7 @@ public class StackFrame implements Cloneable {
     // <2do> get rid of this
     if (isRef.get(top)) {
       if (v != -1) {
-        JVM.getVM().getSystemState().activateGC();
+        VM.getVM().getSystemState().activateGC();
       }
     }
 
@@ -1930,7 +1930,7 @@ public class StackFrame implements Cloneable {
     //}
 
     if (ref != -1) {
-      JVM.getVM().getSystemState().activateGC();
+      VM.getVM().getSystemState().activateGC();
     }
   }
 
@@ -1944,7 +1944,7 @@ public class StackFrame implements Cloneable {
     //}
 
     if (ref && (v != -1)) {
-      JVM.getVM().getSystemState().activateGC();
+      VM.getVM().getSystemState().activateGC();
     }
   }
 

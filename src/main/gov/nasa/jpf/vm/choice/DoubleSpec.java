@@ -23,7 +23,7 @@ package gov.nasa.jpf.vm.choice;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StaticElementInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -51,7 +51,7 @@ public class DoubleSpec {
   }
 
   public static double resolveVar(String spec){
-    JVM vm = JVM.getVM();
+    VM vm = VM.getVM();
     String[] varId = spec.split("[.]+");
 
     double ret;

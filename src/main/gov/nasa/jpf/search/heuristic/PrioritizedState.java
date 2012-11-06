@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.search.heuristic;
 
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 
 /**
  * HeuristicState with a scalar, static priority.
@@ -28,7 +28,7 @@ public class PrioritizedState extends HeuristicState implements Comparable<Prior
 
   int heuristicValue; // watch out, this is inverted: 0 is max priority
 
-  public PrioritizedState(JVM vm, int heuristicValue) {
+  public PrioritizedState(VM vm, int heuristicValue) {
     super(vm);
     
     this.heuristicValue = heuristicValue;

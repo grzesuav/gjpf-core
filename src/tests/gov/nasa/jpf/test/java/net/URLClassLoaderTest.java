@@ -144,7 +144,7 @@ public class URLClassLoaderTest extends LoadUtility {
 
       assertSame(c1, c2);
       assertSame(c1, c3);
-      // this test fails on the host JVM, cause java.lang.Class is loaded by
+      // this test fails on the host VM, cause java.lang.Class is loaded by
       // bootstrap classloader and therefore c1.getClassLoader() returns null,
       // but the test passes on JPF.
       assertSame(c1.getClassLoader(), systemCl);

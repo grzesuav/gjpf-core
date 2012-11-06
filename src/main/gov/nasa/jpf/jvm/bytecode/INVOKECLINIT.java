@@ -22,7 +22,7 @@ import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -63,7 +63,7 @@ public class INVOKECLINIT extends INVOKESTATIC {
         ei.block(ti);
       }
       
-      JVM vm = ti.getVM();
+      VM vm = ti.getVM();
       ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
       if (vm.setNextChoiceGenerator(cg)){
         if (!ti.isBlocked()) {

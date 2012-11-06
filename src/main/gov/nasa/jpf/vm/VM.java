@@ -39,7 +39,7 @@ import java.util.ListIterator;
  * This class represents the virtual machine. The virtual machine is able to
  * move backward and forward one transition at a time.
  */
-public class JVM {
+public class VM {
 
   /**
    * this is a debugging aid to control compilation of expensive consistency checks
@@ -48,7 +48,7 @@ public class JVM {
    */
   public static final boolean CHECK_CONSISTENCY = false;
   
-  protected static JPFLogger log = JPF.getLogger("gov.nasa.jpf.vm.JVM");
+  protected static JPFLogger log = JPF.getLogger("gov.nasa.jpf.vm.VM");
 
   /**
    * our execution context
@@ -65,7 +65,7 @@ public class JVM {
    * <2do> - this is a hack to be removed once there are no static references
    * anymore
    */
-  protected static JVM jvm;
+  protected static VM vm;
 
   static {
     initStaticFields();
@@ -134,7 +134,7 @@ public class JVM {
   
   protected Config config; // that's for the options we use only once
 
-  // JVM options we use frequently
+  // VM options we use frequently
   protected boolean runGc;
   protected boolean treeOutput;
   protected boolean pathOutput;
@@ -154,12 +154,12 @@ public class JVM {
   /**
    * be prepared this might throw JPFConfigExceptions
    */
-  public JVM (JPF jpf, Config conf) {
+  public VM (JPF jpf, Config conf) {
     this.jpf = jpf; // so that we know who instantiated us
 
     // <2do> that's really a bad hack and should be removed once we
     // have cleaned up the reference chains
-    jvm = this;
+    vm = this;
 
     config = conf;
 
@@ -179,9 +179,9 @@ public class JVM {
 
   /**
    * just here for unit test mockups, don't use as implicit base ctor in
-   * JVM derived classes
+   * VM derived classes
    */
-  protected JVM (){}
+  protected VM (){}
 
   public JPF getJPF() {
     return jpf;
@@ -218,7 +218,7 @@ public class JVM {
   }
 
   protected void initTimeModel (Config config){
-    Class<?>[] argTypes = { JVM.class, Config.class };
+    Class<?>[] argTypes = { VM.class, Config.class };
     Object[] args = { this, config };
     timeModel = config.getEssentialInstance("vm.time.class", TimeModel.class, argTypes, args);
   }
@@ -1683,7 +1683,7 @@ public class JVM {
 
   /**
    * store the current SystemState's Trail in our path, after updating it
-   * with whatever annotations the JVM wants to add.
+   * with whatever annotations the VM wants to add.
    * This is supposed to be called after each transition we want to keep
    */
   public void updatePath () {
@@ -1748,7 +1748,7 @@ public class JVM {
       lastTrailInfo = path.getLast();
 
       try {
-        ss.executeNextTransition(jvm);
+        ss.executeNextTransition(vm);
 
       } catch (UncaughtException e) {
         // we don't pass this up since it means there were insns executed and we are
@@ -1930,13 +1930,13 @@ public class JVM {
   /**
    * <2do> this is a band aid to bundle all these legacy reference chains
    * from JPFs past. The goal is to replace them with proper accessors (normally
-   * through ThreadInfo, MJIEnv or JVM, which all act as facades) wherever possible,
-   * and use JVM.getVM() where there is no access to such a facade. Once this
-   * has been completed, we can start refactoring the users of JVM.getVM() to
+   * through ThreadInfo, MJIEnv or VM, which all act as facades) wherever possible,
+   * and use VM.getVM() where there is no access to such a facade. Once this
+   * has been completed, we can start refactoring the users of VM.getVM() to
    * get access to a suitable facade. 
    */
-  public static JVM getVM () {
-    return jvm;
+  public static VM getVM () {
+    return vm;
   }
 
   /**

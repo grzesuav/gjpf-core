@@ -31,7 +31,7 @@ package gov.nasa.jpf.vm;
  *         NOTE: All classes obtained from getResolvedClassInfo in
  *         BoxObjectCacheManager are safe, and there is no need to check if they
  *         are initialized. The wrappers and BoxObjectCaches are initialized in
- *         JVM.intialize(), and there are no clinit for array classes.
+ *         VM.intialize(), and there are no clinit for array classes.
  *         
  *         NOTE: the initXCache allocations are system allocations, whereas the
  *         valueOfX() allocations are rooted in SUT code

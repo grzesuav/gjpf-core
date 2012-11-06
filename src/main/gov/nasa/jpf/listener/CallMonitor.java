@@ -22,7 +22,7 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -32,7 +32,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public class CallMonitor extends ListenerAdapter {
 
-  public void instructionExecuted (JVM vm) {
+  public void instructionExecuted (VM vm) {
     Instruction insn = vm.getLastInstruction();
     ThreadInfo ti = vm.getLastThreadInfo();
     

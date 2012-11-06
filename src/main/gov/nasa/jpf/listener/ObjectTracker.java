@@ -32,7 +32,7 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.InfoObject;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -185,7 +185,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
   }
   
   //--- Property interface
-  public boolean check (Search search, JVM vm) {
+  public boolean check (Search search, VM vm) {
     if (violation != null){
       return false;
     }
@@ -207,7 +207,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
   
   //--- VMListener interface
   
-  public void objectCreated (JVM vm) {
+  public void objectCreated (VM vm) {
     ElementInfo ei = vm.getLastElementInfo();
     ClassInfo ci = ei.getClassInfo();
     
@@ -221,7 +221,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
     }
   }
   
-  public void objectReleased (JVM vm) {
+  public void objectReleased (VM vm) {
     ElementInfo ei = vm.getLastElementInfo();
     int ref = ei.getObjectRef();
     
@@ -235,7 +235,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
   }
 
   
-  public void instructionExecuted (JVM vm){
+  public void instructionExecuted (VM vm){
     ThreadInfo ti = vm.getLastThreadInfo();
     Instruction insn = vm.getLastInstruction();
     

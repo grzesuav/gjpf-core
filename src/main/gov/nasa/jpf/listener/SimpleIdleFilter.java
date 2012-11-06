@@ -6,7 +6,7 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 import java.util.logging.Logger;
@@ -66,14 +66,14 @@ public class SimpleIdleFilter extends ListenerAdapter {
 	  }
 
 	  // ----------------------------------------------------- VMListener interface
-	  public void instructionExecuted(JVM jvm) {
-	    Instruction insn = jvm.getLastInstruction();
+	  public void instructionExecuted(VM vm) {
+	    Instruction insn = vm.getLastInstruction();
 
        if (!insn.isBackJump()) {     // Put this test first for a performance optimization.
          return;
        }
 
-	    ThreadInfo ti = jvm.getLastThreadInfo();
+	    ThreadInfo ti = vm.getLastThreadInfo();
 
 	    int tid = ti.getId();
 	    ts = threadStats.get(tid);
@@ -85,7 +85,7 @@ public class SimpleIdleFilter extends ListenerAdapter {
        ts.backJumps++;
 
        int loopStackDepth = ti.getStackDepth();
-       int loopPc = jvm.getNextInstruction().getPosition();
+       int loopPc = vm.getNextInstruction().getPosition();
 
        if ((loopStackDepth != ts.loopStackDepth) || (loopPc != ts.loopStartPc)) {
          // new loop, reset

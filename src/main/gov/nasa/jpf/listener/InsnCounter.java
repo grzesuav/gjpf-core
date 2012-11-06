@@ -21,7 +21,7 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 
 /**
  * simple tools to gather statistics about instructions executed by JPF.
@@ -39,8 +39,8 @@ public class InsnCounter extends ListenerAdapter {
   }
     
   //----------------------------------------------------- VMListener interface
-  public void instructionExecuted(JVM jvm) {
-    Instruction insn = jvm.getLastInstruction();
+  public void instructionExecuted(VM vm) {
+    Instruction insn = vm.getLastInstruction();
     int bc = insn.getByteCode();
     
     if (opCodes[bc] == null) {

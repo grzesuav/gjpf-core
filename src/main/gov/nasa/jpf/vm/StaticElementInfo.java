@@ -201,7 +201,7 @@ public final class StaticElementInfo extends ElementInfo {
 
   protected ElementInfo getReferencedElementInfo (FieldInfo fi){
     assert fi.isReference();
-    Heap heap = JVM.getVM().getHeap();
+    Heap heap = VM.getVM().getHeap();
     return heap.get(getIntField(fi));
   }
 

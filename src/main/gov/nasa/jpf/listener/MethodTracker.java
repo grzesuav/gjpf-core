@@ -26,7 +26,7 @@ import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.VirtualInvocation;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -70,7 +70,7 @@ public class MethodTracker extends ListenerAdapter {
     out.println();
   }
 
-  public void executeInstruction (JVM vm) {
+  public void executeInstruction (VM vm) {
     Instruction insn = vm.getLastInstruction();
     MethodInfo mi = insn.getMethodInfo();
     ThreadInfo ti = vm.getLastThreadInfo();

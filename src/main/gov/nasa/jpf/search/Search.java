@@ -30,7 +30,7 @@ import gov.nasa.jpf.report.Reporter;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Misc;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.Path;
 import gov.nasa.jpf.vm.ThreadList;
 import gov.nasa.jpf.vm.Transition;
@@ -52,7 +52,7 @@ public abstract class Search {
   protected ArrayList<Error> errors = new ArrayList<Error>();
 
   protected int       depth = 0;
-  protected JVM       vm;
+  protected VM       vm;
 
   protected ArrayList<Property> properties;
 
@@ -110,7 +110,7 @@ public abstract class Search {
   /** storage to keep track of state depths */
   protected final IntVector stateDepth = new IntVector();
 
-  protected Search (Config config, JVM vm) {
+  protected Search (Config config, VM vm) {
     this.vm = vm;
     this.config = config;
 
@@ -247,7 +247,7 @@ public abstract class Search {
     return !errors.isEmpty();
   }
 
-  public JVM getVM() {
+  public VM getVM() {
     return vm;
   }
 

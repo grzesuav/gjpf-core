@@ -23,7 +23,7 @@ import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListener;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.VMListener;
 
 /**
@@ -33,36 +33,36 @@ import gov.nasa.jpf.vm.VMListener;
 public abstract class ListenerAdapter implements VMListener, SearchListener, PublisherExtension {
 
   //--- the VMListener interface
-  public void vmInitialized(JVM vm) {}
-  public void instructionExecuted(JVM vm) {}
-  public void executeInstruction(JVM vm) {}
-  public void threadStarted(JVM vm) {}
-  public void threadWaiting (JVM vm) {}
-  public void threadNotified (JVM vm) {}
-  public void threadInterrupted (JVM vm) {}
-  public void threadScheduled (JVM vm) {}
-  public void threadBlocked (JVM vm) {}
-  public void threadTerminated(JVM vm) {}
-  public void loadClass (JVM vm, ClassFile cf) {}
-  public void classLoaded(JVM vm) {}
-  public void objectCreated(JVM vm) {}
-  public void objectReleased(JVM vm) {}
-  public void objectLocked (JVM vm) {}
-  public void objectUnlocked (JVM vm) {}
-  public void objectWait (JVM vm) {}
-  public void objectNotify (JVM vm) {}
-  public void objectNotifyAll (JVM vm) {}
-  public void gcBegin(JVM vm) {}
-  public void gcEnd(JVM vm) {}
-  public void exceptionThrown(JVM vm) {}
-  public void exceptionBailout(JVM vm) {}
-  public void exceptionHandled(JVM vm) {}
-  public void choiceGeneratorRegistered (JVM vm) {}
-  public void choiceGeneratorSet (JVM vm) {}
-  public void choiceGeneratorAdvanced (JVM vm) {}
-  public void choiceGeneratorProcessed (JVM vm) {}
-  public void methodEntered (JVM vm) {}
-  public void methodExited (JVM vm) {}
+  public void vmInitialized(VM vm) {}
+  public void instructionExecuted(VM vm) {}
+  public void executeInstruction(VM vm) {}
+  public void threadStarted(VM vm) {}
+  public void threadWaiting (VM vm) {}
+  public void threadNotified (VM vm) {}
+  public void threadInterrupted (VM vm) {}
+  public void threadScheduled (VM vm) {}
+  public void threadBlocked (VM vm) {}
+  public void threadTerminated(VM vm) {}
+  public void loadClass (VM vm, ClassFile cf) {}
+  public void classLoaded(VM vm) {}
+  public void objectCreated(VM vm) {}
+  public void objectReleased(VM vm) {}
+  public void objectLocked (VM vm) {}
+  public void objectUnlocked (VM vm) {}
+  public void objectWait (VM vm) {}
+  public void objectNotify (VM vm) {}
+  public void objectNotifyAll (VM vm) {}
+  public void gcBegin(VM vm) {}
+  public void gcEnd(VM vm) {}
+  public void exceptionThrown(VM vm) {}
+  public void exceptionBailout(VM vm) {}
+  public void exceptionHandled(VM vm) {}
+  public void choiceGeneratorRegistered (VM vm) {}
+  public void choiceGeneratorSet (VM vm) {}
+  public void choiceGeneratorAdvanced (VM vm) {}
+  public void choiceGeneratorProcessed (VM vm) {}
+  public void methodEntered (VM vm) {}
+  public void methodExited (VM vm) {}
 
 
   //--- the SearchListener interface

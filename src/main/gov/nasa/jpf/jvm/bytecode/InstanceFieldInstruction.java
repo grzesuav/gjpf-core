@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
@@ -146,7 +146,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
    */
   public ElementInfo getLastElementInfo () {
     if (lastThis != -1) {
-      return JVM.getVM().getHeap().get(lastThis); // <2do> remove - should be in clients
+      return VM.getVM().getHeap().get(lastThis); // <2do> remove - should be in clients
     }
 
     return null;

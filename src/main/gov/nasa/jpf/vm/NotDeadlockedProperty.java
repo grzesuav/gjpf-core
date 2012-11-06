@@ -37,7 +37,7 @@ public class NotDeadlockedProperty extends GenericProperty {
   }
   
   public String getErrorMessage () {
-    JVM vm = search.getVM();
+    VM vm = search.getVM();
     StringWriter sw = new StringWriter();
     PrintWriter pw = new PrintWriter(sw);
 
@@ -60,7 +60,7 @@ public class NotDeadlockedProperty extends GenericProperty {
   }
 
   @Override
-  public boolean check (Search search, JVM vm) {
+  public boolean check (Search search, VM vm) {
     if (vm.isDeadlocked()){
       if (vm.isAtomic()){
         tiAtomic = vm.getCurrentThread();

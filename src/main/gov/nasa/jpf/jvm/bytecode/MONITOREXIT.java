@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -54,7 +54,7 @@ public class MONITOREXIT extends LockInstruction {
         // referencers might have terminated so we want to update anyways
         ei = ei.getInstanceWithUpdatedSharedness(ti); 
         if (ei.isShared()) {
-          JVM vm  = ti.getVM();
+          VM vm  = ti.getVM();
           ChoiceGenerator<?> cg = vm.getSchedulerFactory().createMonitorExitCG(ei, ti);
           if (cg != null) {
             if (vm.setNextChoiceGenerator(cg)) {

@@ -76,7 +76,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     }
   }
   
-  protected JVM vm;
+  protected VM vm;
 
   // list of pinned down references (this is only efficient for a small number of objects)
   // this is copy-on-first-write
@@ -120,7 +120,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   //--- constructors
 
   public GenericHeapImpl (Config config, KernelState ks){
-    vm = JVM.getVM();
+    vm = VM.getVM();
 
     pinDownList = new IntVector(256);
     attributes |= ATTR_PINDOWN_CHANGED; // no need to clone on next add

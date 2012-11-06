@@ -68,7 +68,7 @@ public class Thread implements Runnable {
   ThreadLocal.ThreadLocalMap inheritableThreadLocals;
 
   // this is what we use for sun.misc.Unsafe.park()/unpark()
-  // this is accessed from the native peer, JVM.createMainThread() and sun.misc.Unsafe
+  // this is accessed from the native peer, VM.createMainThread() and sun.misc.Unsafe
   static class Permit {
     boolean blockPark = true; // this is used to remember unpark() calls before park() (they don't accumulate)
   }

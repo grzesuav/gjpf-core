@@ -8,7 +8,7 @@ import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.SystemState;
 
 import java.io.FileNotFoundException;
@@ -23,7 +23,7 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
   enum Format { CG, CHOICE };
 
   Config config;
-  JVM vm;
+  VM vm;
   Search search;
   
   protected PrintWriter pw;

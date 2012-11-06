@@ -58,7 +58,7 @@ public class Verify {
    * register the peer class, which is only done from within a JPF execution
    * context. Be aware of that this migh actually load the real Verify class.
    * The sequence usually is
-   *   JPF(Verify) -> JVM(JPF_gov_nasa_jpf_vm_Verify) -> JVM(Verify)
+   *   JPF(Verify) -> VM(JPF_gov_nasa_jpf_vm_Verify) -> VM(Verify)
    */
   public static void setPeerClass (Class<?> cls) {
     peer = cls;

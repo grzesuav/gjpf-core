@@ -21,7 +21,7 @@ package gov.nasa.jpf.test.vm.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.ThreadList;
 
@@ -33,7 +33,7 @@ public class EndStateListener extends ListenerAdapter {
   public void stateAdvanced (Search search){
     if (search.isEndState()){
 
-      JVM vm = search.getVM();
+      VM vm = search.getVM();
       ThreadList tl = vm.getThreadList();
 
       for (ThreadInfo ti : tl){

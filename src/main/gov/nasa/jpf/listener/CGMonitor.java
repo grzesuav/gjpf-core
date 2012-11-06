@@ -23,7 +23,7 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 public class CGMonitor extends ListenerAdapter {
@@ -53,7 +53,7 @@ public class CGMonitor extends ListenerAdapter {
     }
   }
   
-  public void choiceGeneratorAdvanced (JVM vm) {
+  public void choiceGeneratorAdvanced (VM vm) {
     ChoiceGenerator<?> cg = vm.getChoiceGenerator();
     
     printPrefix('.');
@@ -65,7 +65,7 @@ public class CGMonitor extends ListenerAdapter {
     isFirstInsn = true;
   }
 
-  public void instructionExecuted (JVM vm) {
+  public void instructionExecuted (VM vm) {
     if (showInsn && isFirstInsn) {
       ThreadInfo ti = vm.getCurrentThread();
       Instruction insn = vm.getLastInstruction();

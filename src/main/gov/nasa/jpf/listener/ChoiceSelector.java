@@ -30,7 +30,7 @@ import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ChoicePoint;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 import java.util.Random;
@@ -102,7 +102,7 @@ public class ChoiceSelector extends ListenerAdapter {
       depthReached = false;
     }
 
-    JVM vm = jpf.getVM();
+    VM vm = jpf.getVM();
     trace = ChoicePoint.readTrace(config.getString("choice.use_trace"),
                                        vm.getMainClassName(), vm.getArgs());
     searchAfterTrace = config.getBoolean("choice.search_after_trace", true);
@@ -113,7 +113,7 @@ public class ChoiceSelector extends ListenerAdapter {
     singleChoice = !(depthReached && callSeen && threadsAlive);
   }
 
-  public void choiceGeneratorAdvanced (JVM vm) {
+  public void choiceGeneratorAdvanced (VM vm) {
     ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
     int n = cg.getTotalNumberOfChoices();
 
@@ -136,7 +136,7 @@ public class ChoiceSelector extends ListenerAdapter {
     }
   }
 
-  public void threadStarted(JVM vm) {
+  public void threadStarted(VM vm) {
     if (singleChoice && (threadSet != null)) {
       ThreadInfo ti = vm.getLastThreadInfo();
       String tname = ti.getName();
@@ -147,7 +147,7 @@ public class ChoiceSelector extends ListenerAdapter {
     }
   }
 
-  public void executeInstruction(JVM vm) {
+  public void executeInstruction(VM vm) {
     if (singleChoice && !callSeen && (calls != null)) {
       Instruction insn = vm.getLastInstruction();
       ThreadInfo ti = vm.getLastThreadInfo();

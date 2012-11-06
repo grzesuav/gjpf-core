@@ -26,7 +26,7 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
@@ -296,7 +296,7 @@ public class ExceptionInjector extends ListenerAdapter {
   /**
    * get the target insns/methods
    */
-  public void classLoaded (JVM vm){
+  public void classLoaded (VM vm){
     ClassInfo ci = vm.getLastClassInfo();
 
     nextClassEntry:
@@ -345,7 +345,7 @@ public class ExceptionInjector extends ListenerAdapter {
     }
   }
 
-  public void executeInstruction (JVM vm){
+  public void executeInstruction (VM vm){
     ThreadInfo ti = vm.getLastThreadInfo();
     Instruction insn = vm.getLastInstruction();
 
@@ -362,7 +362,7 @@ public class ExceptionInjector extends ListenerAdapter {
     }
   }
 
-  public void vmInitialized (JVM vm) {
+  public void vmInitialized (VM vm) {
     Config config = vm.getConfig();
     
     throwFirst = config.getBoolean("ei.throw_first", false);

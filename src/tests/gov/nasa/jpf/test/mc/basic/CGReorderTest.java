@@ -24,7 +24,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.DoubleChoiceGenerator;
 import gov.nasa.jpf.vm.IntChoiceGenerator;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.SystemState;
 import gov.nasa.jpf.vm.Verify;
 import gov.nasa.jpf.vm.choice.DoubleChoiceFromList;
@@ -41,7 +41,7 @@ public class CGReorderTest extends TestJPF {
 
   public static class ReverseListener extends ListenerAdapter {  
     @Override
-    public void choiceGeneratorSet (JVM vm){
+    public void choiceGeneratorSet (VM vm){
       ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
       if (cg instanceof IntIntervalGenerator){
         System.out.println("reverse choice enumeration order");
@@ -51,7 +51,7 @@ public class CGReorderTest extends TestJPF {
 
     int lastVal = Integer.MAX_VALUE;
     @Override
-    public void choiceGeneratorAdvanced (JVM vm){
+    public void choiceGeneratorAdvanced (VM vm){
       ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
       if (cg instanceof IntIntervalGenerator){
         int v = ((IntChoiceGenerator)cg).getNextChoice();
@@ -76,7 +76,7 @@ public class CGReorderTest extends TestJPF {
     ChoiceGenerator<?> reorderedCG;
     
     @Override
-    public void choiceGeneratorRegistered (JVM vm){
+    public void choiceGeneratorRegistered (VM vm){
       ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
       // make sure we are not getting recursive (could also use setId())
       if (cg instanceof DoubleChoiceFromList && cg != reorderedCG){ 
@@ -97,7 +97,7 @@ public class CGReorderTest extends TestJPF {
 
     double lastVal = Double.MAX_VALUE;
     @Override
-    public void choiceGeneratorAdvanced (JVM vm){
+    public void choiceGeneratorAdvanced (VM vm){
       ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
       if (cg instanceof DoubleChoiceGenerator){
         double v = ((DoubleChoiceGenerator)cg).getNextChoice();

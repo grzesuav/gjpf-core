@@ -27,7 +27,7 @@ import gov.nasa.jpf.util.UnsortedArrayIntSet;
  */
 public class TidSet extends UnsortedArrayIntSet implements ThreadInfoSet, Memento<ThreadInfoSet> {
   
-  protected JVM vm;
+  protected VM vm;
   
   public TidSet (ThreadInfo ti){
     vm = ti.getVM();

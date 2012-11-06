@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.SystemState;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -53,7 +53,7 @@ public abstract class ArrayInstruction extends JVMInstruction {
     // have been on the operand-stack for a while, and the preceeding
     // GET_FIELD already was a scheduling point (i.e. we can't cache it)
     
-    JVM vm = ti.getVM();
+    VM vm = ti.getVM();
     ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSharedArrayAccessCG(ei, ti);
     if (vm.setNextChoiceGenerator(cg)){
       // we need to set the array access info (ref, index) before it is

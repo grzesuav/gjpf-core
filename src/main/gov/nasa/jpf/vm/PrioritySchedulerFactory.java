@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
  */
 public class PrioritySchedulerFactory extends DefaultSchedulerFactory {
 
-  public PrioritySchedulerFactory (Config config, JVM vm, SystemState ss) {
+  public PrioritySchedulerFactory (Config config, VM vm, SystemState ss) {
     super(config, vm, ss);
   }
   

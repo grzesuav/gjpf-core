@@ -144,9 +144,9 @@ public class JPF_gov_nasa_jpf_test_basic_MJIModel extends NativePeer {
    * the call chain is:
    *
    *   JPF: testRoundtripLoop
-   *     JVM: nativeRoundTripLoop  x 3
+   *     VM: nativeRoundTripLoop  x 3
    *       JPF: roundtrip
-   *         JVM: nativeInnerRoundtrip
+   *         VM: nativeInnerRoundtrip
    */
 
   @MJI

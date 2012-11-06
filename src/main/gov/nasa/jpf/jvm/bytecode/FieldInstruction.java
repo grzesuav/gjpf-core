@@ -25,7 +25,7 @@ import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.FieldLockInfo;
 import gov.nasa.jpf.vm.FieldLockInfoFactory;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.SystemState;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
@@ -199,7 +199,7 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
 
   
   protected boolean createAndSetFieldCG ( ElementInfo ei, ThreadInfo ti) {
-    JVM vm = ti.getVM();
+    VM vm = ti.getVM();
     ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSharedFieldAccessCG(ei, ti);
     if (cg != null) {
       if (vm.setNextChoiceGenerator(cg)){

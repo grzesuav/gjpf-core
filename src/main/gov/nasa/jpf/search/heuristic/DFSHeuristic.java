@@ -19,7 +19,7 @@
 package gov.nasa.jpf.search.heuristic;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 
 
 /**
@@ -27,7 +27,7 @@ import gov.nasa.jpf.vm.JVM;
  */
 public class DFSHeuristic extends SimplePriorityHeuristic {
   
-  public DFSHeuristic (Config conf, JVM vm) {
+  public DFSHeuristic (Config conf, VM vm) {
     super(conf, vm);
   }
 

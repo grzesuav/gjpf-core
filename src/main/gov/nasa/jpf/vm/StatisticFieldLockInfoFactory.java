@@ -118,7 +118,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
    */
   int strongProtectionCandidate (ElementInfo ei, FieldInfo fi, int[] currentLockRefs) {
     int n = currentLockRefs.length;
-    Heap heap = JVM.getVM().getHeap();
+    Heap heap = VM.getVM().getHeap();
 
     if (fi.isStatic()) { // static field, check for class object locking
       ClassInfo ci = fi.getClassInfo();

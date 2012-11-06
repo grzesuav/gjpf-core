@@ -30,7 +30,7 @@ import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.SystemState;
 
 import java.io.PrintWriter;
@@ -113,7 +113,7 @@ public class ErrorTraceGenerator extends PropertyListenerAdapter implements Publ
   }
   
 	public void propertyViolated(Search search) {
-		JVM vm = search.getVM();
+		VM vm = search.getVM();
     SystemState ss = vm.getSystemState();
     trace = ss.getChoiceGenerators();
 	}

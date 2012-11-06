@@ -20,7 +20,7 @@ package gov.nasa.jpf.search;
 
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 
 
 /**
@@ -39,7 +39,7 @@ import gov.nasa.jpf.vm.JVM;
  */
 public class Simulation extends Search {
   
-  public Simulation (Config config, JVM vm) {
+  public Simulation (Config config, VM vm) {
     super(config, vm);
   }
 

@@ -29,7 +29,7 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -147,15 +147,15 @@ public class ExecTracker extends ListenerAdapter {
 
   /******************************************* VMListener interface *********/
 
-  public void gcEnd(JVM vm) {
+  public void gcEnd(VM vm) {
     out.println("\t\t # garbage collection");
   }
 
   //--- the ones we are interested in
-  public void instructionExecuted(JVM jvm) {
+  public void instructionExecuted(VM vm) {
     
     if (skip) {
-      Instruction insn = jvm.getLastInstruction();
+      Instruction insn = vm.getLastInstruction();
       MethodInfo mi = insn.getMethodInfo();
       if (mi == miMain) {
         skip = false; // start recording
@@ -164,7 +164,7 @@ public class ExecTracker extends ListenerAdapter {
       }
     }
     
-    ThreadInfo ti = jvm.getLastThreadInfo();
+    ThreadInfo ti = vm.getLastThreadInfo();
     int nNoSrc = 0;
     
     if (linePrefix == null) {
@@ -173,7 +173,7 @@ public class ExecTracker extends ListenerAdapter {
     
     // that's pretty redundant to what is done in the ConsolePublisher, but we don't want 
     // presentation functionality in Step anymore
-    Instruction insn = jvm.getLastInstruction();
+    Instruction insn = vm.getLastInstruction();
     if (printSrc) {
       String line = insn.getSourceLine();
       if (line != null){
@@ -245,28 +245,28 @@ public class ExecTracker extends ListenerAdapter {
     }
   }
 
-  public void threadStarted(JVM jvm) {
-    ThreadInfo ti = jvm.getLastThreadInfo();
+  public void threadStarted(VM vm) {
+    ThreadInfo ti = vm.getLastThreadInfo();
 
     out.println( "\t\t # thread started: " + ti.getName() + " index: " + ti.getId());
   }
 
-  public void threadTerminated(JVM jvm) {
-    ThreadInfo ti = jvm.getLastThreadInfo();
+  public void threadTerminated(VM vm) {
+    ThreadInfo ti = vm.getLastThreadInfo();
     
     out.println( "\t\t # thread terminated: " + ti.getName() + " index: " + ti.getId());
   }
   
-  public void notifyExceptionThrown (JVM jvm) {
-    ElementInfo ei = jvm.getLastElementInfo();
-    MethodInfo mi = jvm.getLastThreadInfo().getMethod();
+  public void notifyExceptionThrown (VM vm) {
+    ElementInfo ei = vm.getLastElementInfo();
+    MethodInfo mi = vm.getLastThreadInfo().getMethod();
     out.println("\t\t\t\t # exception: " + ei + " in " + mi);
   }
   
-  public void choiceGeneratorAdvanced (JVM jvm) {
-    out.println("\t\t # choice: " + jvm.getLastChoiceGenerator());
+  public void choiceGeneratorAdvanced (VM vm) {
+    out.println("\t\t # choice: " + vm.getLastChoiceGenerator());
     
-    //jvm.dumpThreadStates();
+    //vm.dumpThreadStates();
   }
   
   /****************************************** private stuff ******/

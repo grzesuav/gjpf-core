@@ -14,7 +14,7 @@ import java.util.HashSet;
  * Ignoring constants probably isn't beneficial with the FilteringSerializer
  * but could be a big win with AbstractingSerializer, which garbage-collects
  * no-longer-reachable objects--that is, garbage collection in its
- * representation, not in JVM.
+ * representation, not in VM.
  *
  * @author peterd
  */

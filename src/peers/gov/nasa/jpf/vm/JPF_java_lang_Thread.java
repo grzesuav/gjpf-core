@@ -27,7 +27,7 @@ import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.DirectCallStackFrame;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.NativePeer;
@@ -53,7 +53,7 @@ public class JPF_java_lang_Thread extends NativePeer {
   @MJI
   public void init0__Ljava_lang_ThreadGroup_2Ljava_lang_Runnable_2Ljava_lang_String_2J__V (MJIEnv env,
                          int objRef, int groupRef, int runnableRef, int nameRef, long stackSize) {
-    JVM vm = env.getVM();
+    VM vm = env.getVM();
     
     // we only need to create the ThreadInfo - its initialization will take care
     // of proper linkage to the java.lang.Thread object (objRef)
@@ -75,7 +75,7 @@ public class JPF_java_lang_Thread extends NativePeer {
   @MJI
   public void dumpStack____V (MJIEnv env, int clsObjRef){
     ThreadInfo ti = env.getThreadInfo();
-    ti.printStackTrace(); // this is not correct, we should go through JVM.print
+    ti.printStackTrace(); // this is not correct, we should go through VM.print
   }
 
   @MJI
@@ -167,7 +167,7 @@ public class JPF_java_lang_Thread extends NativePeer {
   public void start____V (MJIEnv env, int objref) {
     ThreadInfo tiCurrent = env.getThreadInfo();
     SystemState ss = env.getSystemState();
-    JVM vm = tiCurrent.getVM();
+    VM vm = tiCurrent.getVM();
     
     ThreadInfo tiStartee = env.getThreadInfoForObjRef(objref);
 

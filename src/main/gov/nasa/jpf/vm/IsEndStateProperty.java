@@ -30,7 +30,7 @@ class IsEndStateProperty extends GenericProperty {
     return "End State Reached";
   }
 
-  public boolean check (Search search, JVM vm) {
+  public boolean check (Search search, VM vm) {
     return vm.isEndState();
   }
 }

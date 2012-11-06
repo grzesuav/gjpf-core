@@ -38,7 +38,7 @@ import gov.nasa.jpf.util.StringSetMatcher;
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
  *  
- * Represents the classloader construct in JVM which is responsible for loading
+ * Represents the classloader construct in VM which is responsible for loading
  * classes.
  */
 public class ClassLoaderInfo 
@@ -109,7 +109,7 @@ public class ClassLoaderInfo
     }
   }
 
-  protected ClassLoaderInfo(JVM vm, int objRef, ClassPath cp, ClassLoaderInfo parent) {
+  protected ClassLoaderInfo(VM vm, int objRef, ClassPath cp, ClassLoaderInfo parent) {
     resolvedClasses = new HashMap<String,ClassInfo>();
 
     this.cp = cp;
@@ -168,7 +168,7 @@ public class ClassLoaderInfo
     return objRef;
   }
 
-//  protected int computeGlobalId (JVM vm){
+//  protected int computeGlobalId (VM vm){
 //    ThreadInfo tiExec = vm.getCurrentThread();
 //    Instruction insn = null;
 //    
@@ -235,7 +235,7 @@ public class ClassLoaderInfo
       }
     }
 
-    return JVM.getVM().getSystemClassLoader();
+    return VM.getVM().getSystemClassLoader();
   }
 
   protected void updateCachedClassInfos (ClassInfo ci) {
@@ -460,7 +460,7 @@ public class ClassLoaderInfo
     // If the class has not been resolved, do a round trip to execute the 
     // user code of loadClass(cname) 
     if(ci == null) {
-      ThreadInfo ti = JVM.getVM().getCurrentThread();
+      ThreadInfo ti = VM.getVM().getCurrentThread();
       StackFrame frame = ti.getReturnedDirectCall();
 
       if(frame != null && frame.getMethodName().equals("[loadClass(" + cname + ")]")) {
@@ -484,10 +484,10 @@ public class ClassLoaderInfo
   }
 
   protected void pushloadClassFrame(String superName) {
-    ThreadInfo ti = JVM.getVM().getCurrentThread();
+    ThreadInfo ti = VM.getVM().getCurrentThread();
 
     // obtain the class of this ClassLoader
-    ClassInfo clClass = JVM.getVM().getClassInfo(objRef);
+    ClassInfo clClass = VM.getVM().getClassInfo(objRef);
 
     // retrieve the loadClass() method of this ClassLoader class
     MethodInfo mi = clClass.getMethod("loadClass(Ljava/lang/String;)Ljava/lang/Class;", true);
@@ -622,7 +622,7 @@ public class ClassLoaderInfo
   }
 
   /**
-   * This is invoked by JVM.initSubsystems()
+   * This is invoked by VM.initSubsystems()
    */
   static void init (Config config) {
     ClassLoaderInfo.config = config;
@@ -653,7 +653,7 @@ public class ClassLoaderInfo
    * Creates a classLoader object in the heap
    */
   protected ElementInfo createClassLoaderObject(ClassInfo ci, ClassLoaderInfo parent, ThreadInfo ti) {
-    Heap heap = JVM.getVM().getHeap();
+    Heap heap = VM.getVM().getHeap();
 
     //--- create ClassLoader object of type ci which corresponds to this ClassLoader
     ElementInfo ei = heap.newObject( ci, ti);
@@ -751,7 +751,7 @@ public class ClassLoaderInfo
     }
 
     // class loader default, if it has been set, can override the settings
-    // specified by JVM arguments
+    // specified by VM arguments
     if(isDefaultSet) {
       return defaultAssertionStatus;
     } else {

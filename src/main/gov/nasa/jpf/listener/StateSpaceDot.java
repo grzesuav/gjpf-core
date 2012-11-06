@@ -23,7 +23,7 @@ import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.Step;
 import gov.nasa.jpf.vm.Transition;
 
@@ -97,7 +97,7 @@ public class StateSpaceDot extends ListenerAdapter {
 
   public StateSpaceDot(Config conf, JPF jpf) {
 
-    JVM vm = jpf.getVM();
+    VM vm = jpf.getVM();
     vm.recordSteps(true);
   }
 

@@ -31,7 +31,7 @@ import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Heap;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -183,7 +183,7 @@ public class HeapTracker extends PropertyListenerAdapter {
   /**
    * return 'false' if property is violated
    */
-  public boolean check (Search search, JVM vm) {
+  public boolean check (Search search, VM vm) {
     if (throwOutOfMemory) {
       // in this case we don't want to stop the program, but see if it
       // behaves gracefully - don't report a property violation
@@ -308,16 +308,16 @@ public class HeapTracker extends PropertyListenerAdapter {
 
 
   /******************************************* VMListener interface *********/
-  public void gcBegin(JVM vm) {
+  public void gcBegin(VM vm) {
     /**
      System.out.println();
-     System.out.println( "----- gc cycle: " + jvm.getDynamicArea().getGcNumber()
-     + ", state: " + jvm.getStateId());
+     System.out.println( "----- gc cycle: " + vm.getDynamicArea().getGcNumber()
+     + ", state: " + vm.getStateId());
      **/
   }
 
-  public void gcEnd(JVM jvm) {
-    Heap heap = jvm.getHeap();
+  public void gcEnd(VM vm) {
+    Heap heap = vm.getHeap();
 
     int n = 0;
     int nShared = 0;
@@ -367,10 +367,10 @@ public class HeapTracker extends PropertyListenerAdapter {
     return StringSetMatcher.isMatch(clsName, includes, excludes);
   }
 
-  public void objectCreated(JVM jvm) {
-    ElementInfo ei = jvm.getLastElementInfo();
+  public void objectCreated(VM vm) {
+    ElementInfo ei = vm.getLastElementInfo();
     int idx = ei.getObjectRef();
-    ThreadInfo ti = jvm.getLastThreadInfo();
+    ThreadInfo ti = vm.getLastThreadInfo();
     int line = ti.getLine();
     MethodInfo mi = ti.getMethod();
     SourceRef sr = null;
@@ -407,14 +407,14 @@ public class HeapTracker extends PropertyListenerAdapter {
     if (throwOutOfMemory) {
       if (((maxHeapSizeLimit >=0) && (stat.heapSize > maxHeapSizeLimit)) ||
           ((maxLiveLimit >=0) && ((stat.nNew - stat.nReleased) > maxLiveLimit))){
-        jvm.getHeap().setOutOfMemory(true);
+        vm.getHeap().setOutOfMemory(true);
       }
     }
   }
 
 
-  public void objectReleased(JVM jvm) {
-    ElementInfo ei = jvm.getLastElementInfo();
+  public void objectReleased(VM vm) {
+    ElementInfo ei = vm.getLastElementInfo();
 
     if (!isRelevantType(ei)) {
       return;

@@ -21,7 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
@@ -300,7 +300,7 @@ public abstract class InvokeInstruction extends JVMInstruction {
 
   /**
    * <2do> - this relies on same order of arguments and LocalVariableTable entries, which
-   * seems to hold for javac, but is not required by the JVM spec, which only
+   * seems to hold for javac, but is not required by the VM spec, which only
    * says that arguments are stored in consecutive slots starting at 0
    */
   public Object getArgumentValue (String id, ThreadInfo ti){
@@ -326,7 +326,7 @@ public abstract class InvokeInstruction extends JVMInstruction {
   protected boolean checkSyncCG (ElementInfo ei, ThreadInfo ti){
     if (!ti.isFirstStepInsn()) {
       if (ei.getLockingThread() != ti) {  // maybe its a recursive lock
-        JVM vm = ti.getVM();
+        VM vm = ti.getVM();
 
         if (ei.canLock(ti)) { // we can lock the object, check if we need a CG
           ei = ei.getInstanceWithUpdatedSharedness(ti);

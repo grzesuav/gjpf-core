@@ -29,7 +29,7 @@ public class RestorableVMState {
   Transition lastTransition;
   
   /* these are the icky parts - the history is kept as stacks inside the
-   * JVM (for restoration reasons), hence we have to copy it if we want
+   * VM (for restoration reasons), hence we have to copy it if we want
    * to restore a state. Since this is really expensive, it has to be done
    * on demand, with varying degrees of information
    */
@@ -37,9 +37,9 @@ public class RestorableVMState {
   
   Backtracker.RestorableState bkstate;
   
-  JVM vm;
+  VM vm;
   
-  RestorableVMState (JVM vm) {
+  RestorableVMState (VM vm) {
     this.vm = vm;
 
     path = vm.getClonedPath();

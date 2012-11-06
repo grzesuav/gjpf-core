@@ -20,7 +20,7 @@ package gov.nasa.jpf.search;
 
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.RestorableVMState;
 
 
@@ -35,7 +35,7 @@ import gov.nasa.jpf.vm.RestorableVMState;
 public class RandomSearch extends Search {
   int path_limit = 0;
   
-  public RandomSearch (Config config, JVM vm) {
+  public RandomSearch (Config config, VM vm) {
     super(config, vm);
     
     path_limit = config.getInt("search.RandomSearch.path_limit", 0);

@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
@@ -185,7 +185,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
     excludes = StringSetMatcher.getNonEmpty(conf.getStringArray("race.exclude"));
   }
   
-  public boolean check(Search search, JVM vm) {
+  public boolean check(Search search, VM vm) {
     return (race == null);
   }
 
@@ -251,7 +251,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
   // from the operand stack, and not cached in the insn from a previous exec
   // (all the insns we look at are pre-exec, i.e. don't have their caches
   // updated yet)
-  public void choiceGeneratorSet(JVM vm) {
+  public void choiceGeneratorSet(VM vm) {
     ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
 
     if (cg instanceof ThreadChoiceFromSet) {
@@ -260,10 +260,10 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
     }
   }
 
-  public void executeInstruction (JVM jvm) {
+  public void executeInstruction (VM vm) {
     if (race != null) {
       // we're done, report as quickly as possible
-      ThreadInfo ti = jvm.getLastThreadInfo();
+      ThreadInfo ti = vm.getLastThreadInfo();
       //ti.skipInstruction();
       ti.breakTransition();
     }

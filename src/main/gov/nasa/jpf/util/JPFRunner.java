@@ -4,7 +4,7 @@ import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
-import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.SystemState;
 
 import java.awt.Color;
@@ -96,7 +96,7 @@ public class JPFRunner extends JFrame {
         lVisited.setText(Integer.toString(nVisited));
       }
       
-      JVM vm = search.getVM();
+      VM vm = search.getVM();
       SystemState ss = vm.getSystemState();
       
       nInsn += ss.getTrail().getStepCount();
