@@ -19,8 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -38,7 +36,7 @@ public class FCONST extends JVMInstruction {
     value = Float.floatToIntBits(f);
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
+  public Instruction execute (ThreadInfo th) {
     th.push(value, false);
 
     return getNext(th);

@@ -20,9 +20,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
@@ -46,7 +44,7 @@ public class RUNSTART extends JVMInstruction {
     this.position = -1;
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     // this insn is never stored in any MethodInfo
     return mi.getInstruction(0);
   }

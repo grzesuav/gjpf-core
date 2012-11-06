@@ -19,9 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
@@ -32,7 +30,7 @@ import gov.nasa.jpf.jvm.Types;
  */
 public class FCMPL extends JVMInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
     float v1 = frame.popFloat();

@@ -19,8 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -30,7 +28,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class LREM extends JVMInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
+  public Instruction execute (ThreadInfo th) {
     long v1 = th.longPop();
     long v2 = th.longPop();
 

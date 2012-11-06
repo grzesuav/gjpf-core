@@ -20,8 +20,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
@@ -43,7 +41,7 @@ public class WIDE extends JVMInstruction {
   }
 
   @Override
-  public Instruction execute(SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute(ThreadInfo ti) {
     // nothing, BCEL doesn't even pass this on;
     return getNext(ti);
   }

@@ -19,8 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -35,7 +33,7 @@ public class JSR_W extends JVMInstruction {
     target = targetPc;
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
+  public Instruction execute (ThreadInfo th) {
     th.push(getNext(th).getPosition(), false);
 
     return mi.getInstructionAt(target);

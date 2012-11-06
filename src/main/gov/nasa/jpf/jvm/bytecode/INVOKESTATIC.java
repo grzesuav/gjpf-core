@@ -83,7 +83,7 @@ public class INVOKESTATIC extends InvokeInstruction {
     return !ci.isStaticMethodAbstractionDeterministic(ti, mi);
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     ClassInfo clsInfo = ti.getMethod().getClassInfo();
 
     // resolve the class of the invoked method first
@@ -109,7 +109,7 @@ public class INVOKESTATIC extends InvokeInstruction {
 
     if (callee.isSynchronized()) {
       ElementInfo ei = clsInfo.getClassObject();
-      if (checkSyncCG(ei, ss, ti)){
+      if (checkSyncCG(ei, ti)){
         return this;
       }
     }

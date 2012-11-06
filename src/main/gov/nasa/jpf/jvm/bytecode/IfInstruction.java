@@ -69,7 +69,7 @@ public abstract class IfInstruction extends JVMInstruction {
     return target;
   }
   
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
     conditionValue = popConditionValue(frame);

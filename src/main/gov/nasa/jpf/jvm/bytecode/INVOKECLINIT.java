@@ -22,9 +22,8 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
@@ -49,7 +48,7 @@ public class INVOKECLINIT extends INVOKESTATIC {
     super(ci.getSignature(), "<clinit>", "()V");
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     
     MethodInfo callee = getInvokedMethod(ti);
     ClassInfo ci = callee.getClassInfo();
@@ -64,8 +63,9 @@ public class INVOKECLINIT extends INVOKESTATIC {
         ei.block(ti);
       }
       
-      ChoiceGenerator cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
-      if (ss.setNextChoiceGenerator(cg)){
+      JVM vm = ti.getVM();
+      ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
+      if (vm.setNextChoiceGenerator(cg)){
         if (!ti.isBlocked()) {
           // record that this thread would lock the object upon next execution
           ei.registerLockContender(ti);

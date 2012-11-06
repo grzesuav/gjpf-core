@@ -1409,6 +1409,9 @@ public class JVM {
     return ss.setNextChoiceGenerator(cg);
   }
   
+  public void setMandatoryNextChoiceGenerator (ChoiceGenerator<?> cg, String failMsg){
+    ss.setMandatoryNextChoiceGenerator(cg, failMsg);
+  }
   
   /**
    * return the latest registered ChoiceGenerator used in this transition

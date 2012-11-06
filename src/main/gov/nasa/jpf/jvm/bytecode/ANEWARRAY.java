@@ -23,10 +23,8 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.Heap;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
@@ -41,7 +39,7 @@ public class ANEWARRAY extends NewArrayInstruction {
     type = Types.getTypeSignature(typeDescriptor, true);
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     ClassInfo cls = ti.getMethod().getClassInfo();
 
     // resolve the component class first

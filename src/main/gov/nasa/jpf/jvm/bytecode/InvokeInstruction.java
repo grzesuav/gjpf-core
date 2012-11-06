@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.LocalVarInfo;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.StackFrame;
@@ -322,16 +323,17 @@ public abstract class InvokeInstruction extends JVMInstruction {
   }
 
 
-  protected boolean checkSyncCG (ElementInfo ei, SystemState ss, ThreadInfo ti){
+  protected boolean checkSyncCG (ElementInfo ei, ThreadInfo ti){
     if (!ti.isFirstStepInsn()) {
       if (ei.getLockingThread() != ti) {  // maybe its a recursive lock
+        JVM vm = ti.getVM();
 
         if (ei.canLock(ti)) { // we can lock the object, check if we need a CG
           ei = ei.getInstanceWithUpdatedSharedness(ti);
           if (ei.isShared()) {
-            ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
+            ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
             if (cg != null) {
-              if (ss.setNextChoiceGenerator(cg)) {
+              if (vm.setNextChoiceGenerator(cg)) {
                 ei = ei.getModifiableInstance();
                 ei.registerLockContender(ti);  // Record that this thread would lock the object upon next execution
                 return true;
@@ -345,8 +347,8 @@ public abstract class InvokeInstruction extends JVMInstruction {
           ei = ei.getModifiableInstance();
           ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
 
-          ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
-          ss.setMandatoryNextChoiceGenerator(cg, "blocking sync without CG");
+          ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
+          vm.setMandatoryNextChoiceGenerator(cg, "blocking sync without CG");
           return true;
         }
       }

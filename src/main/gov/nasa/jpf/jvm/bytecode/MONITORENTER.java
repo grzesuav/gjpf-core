@@ -22,9 +22,8 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -35,7 +34,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
 public class MONITORENTER extends LockInstruction {
 
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getTopFrame();
 
     int objref = frame.peek();      // Don't pop yet before we know we really execute
@@ -44,17 +43,18 @@ public class MONITORENTER extends LockInstruction {
     }
 
     lastLockRef = objref;
-    ElementInfo ei = ks.heap.getModifiable(objref);
+    ElementInfo ei = ti.getModifiableElementInfo(objref);
 
     if (!ti.isFirstStepInsn()){ // check if we have a choicepoint
       if (!isLockOwner(ti, ei)){  // maybe its a recursive lock
+        JVM vm = ti.getVM();
 
         if (ei.canLock(ti)) { // we can lock the object, the CG is optional
           ei = ei.getInstanceWithUpdatedSharedness(ti); 
           if (ei.isShared()) {
-            ChoiceGenerator<?> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
+            ChoiceGenerator<?> cg = vm.getSchedulerFactory().createMonitorEnterCG(ei, ti);
             if (cg != null) {
-              if (ss.setNextChoiceGenerator(cg)) {
+              if (vm.setNextChoiceGenerator(cg)) {
                 ei.registerLockContender(ti);  // Record that this thread would lock the object upon next execution
                 return this;
               }
@@ -66,9 +66,9 @@ public class MONITORENTER extends LockInstruction {
 
           ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
 
-          ChoiceGenerator<?> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, ti);
+          ChoiceGenerator<?> cg = vm.getSchedulerFactory().createMonitorEnterCG(ei, ti);
           if (cg != null) {
-            if (ss.setNextChoiceGenerator(cg)) {
+            if (vm.setNextChoiceGenerator(cg)) {
               return this;
             } else {
               throw new JPFException("listener did override ChoiceGenerator for blocking MONITOR_ENTER");

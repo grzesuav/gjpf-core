@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
@@ -45,15 +46,16 @@ public abstract class ArrayInstruction extends JVMInstruction {
     return 1;
   }
   
-  protected boolean createAndSetArrayCG ( SystemState ss, ElementInfo ei, ThreadInfo ti,
+  protected boolean createAndSetArrayCG ( ElementInfo ei, ThreadInfo ti,
                                 int aref, int idx, boolean isRead) {
     // unfortunately we can't do the field filtering here because
     // there is no field info for array instructions - the reference might
     // have been on the operand-stack for a while, and the preceeding
     // GET_FIELD already was a scheduling point (i.e. we can't cache it)
     
-    ChoiceGenerator cg = ss.getSchedulerFactory().createSharedArrayAccessCG(ei, ti);
-    if (ss.setNextChoiceGenerator(cg)){
+    JVM vm = ti.getVM();
+    ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSharedArrayAccessCG(ei, ti);
+    if (vm.setNextChoiceGenerator(cg)){
       // we need to set the array access info (ref, index) before it is
       // lost from the insn cache (insn might get reexecuted later-on
       // on non-shared object

@@ -169,7 +169,7 @@ public abstract class Instruction {
    * execute() in the listener. It would be better if we factor this
    * 'prepareExecution' out of execute()
    */
-  public abstract Instruction execute(SystemState ss, KernelState ks, ThreadInfo ti);
+  public abstract Instruction execute(ThreadInfo ti);
 
   public String toString() {
     return getMnemonic();

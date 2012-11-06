@@ -22,10 +22,8 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ClassLoaderInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -47,7 +45,7 @@ public class INVOKESPECIAL extends InstanceInvocation {
     return 0xB7;
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     int argSize = getArgSize();
     int objRef = ti.getCalleeThis( argSize);
     lastObj = objRef;
@@ -69,10 +67,10 @@ public class INVOKESPECIAL extends InstanceInvocation {
       return ti.createAndThrowException("java.lang.NoSuchMethodException", "Calling " + cname + '.' + mname);
     }
 
-    ElementInfo ei = ks.heap.get(objRef);
+    ElementInfo ei = ti.getElementInfo(objRef);
 
     if (mi.isSynchronized()){
-      if (checkSyncCG(ei, ss, ti)){
+      if (checkSyncCG(ei, ti)){
         return this;
       }
     }

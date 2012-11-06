@@ -21,9 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -34,7 +32,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public abstract class ArrayLoadInstruction extends ArrayInstruction {
   
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
     // we need to get the object first, to check if it is shared
@@ -45,7 +43,7 @@ public abstract class ArrayLoadInstruction extends ArrayInstruction {
     ElementInfo e = ti.getElementInfo(aref);
 
     if (isNewPorBoundary(e, ti)) {
-      if (createAndSetArrayCG(ss,e,ti, aref,peekIndex(ti),true)) {
+      if (createAndSetArrayCG(e,ti, aref,peekIndex(ti),true)) {
         return this;
       }
     }

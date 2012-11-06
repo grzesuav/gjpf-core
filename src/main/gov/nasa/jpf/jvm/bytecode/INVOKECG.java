@@ -20,11 +20,9 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.ObjRef;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 import gov.nasa.jpf.jvm.choice.InvocationCG;
@@ -52,16 +50,16 @@ public class INVOKECG extends JVMInstruction {
     this.invokes = invokes;
   }
   
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     
     if (!ti.isFirstStepInsn()) {
       InvocationCG cg = new InvocationCG( "INVOKECG", invokes);
-      if (ss.setNextChoiceGenerator(cg)){
+      if (ti.getVM().setNextChoiceGenerator(cg)){
         return this;
       }
       
     } else {
-      InvocationCG cg = ss.getCurrentChoiceGenerator( "INVOKECG", InvocationCG.class);
+      InvocationCG cg = ti.getVM().getCurrentChoiceGenerator( "INVOKECG", InvocationCG.class);
       assert (cg != null) : "no current InvocationCG";
 
       Invocation call = cg.getNextChoice();

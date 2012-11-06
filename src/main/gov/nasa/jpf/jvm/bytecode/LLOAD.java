@@ -19,8 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -34,7 +32,7 @@ public class LLOAD extends LocalVariableInstruction {
     super(localVarIndex);
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
+  public Instruction execute (ThreadInfo th) {
     //th.longPush(th.getLongLocalVariable(index));
     th.pushLongLocal(index);
 

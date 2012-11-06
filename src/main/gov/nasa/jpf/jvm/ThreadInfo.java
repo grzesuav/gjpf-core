@@ -2253,7 +2253,7 @@ public class ThreadInfo
     if (!skipInstruction) {
         // execute the next bytecode
         try {
-          nextPc = pc.execute(ss, ks, this);
+          nextPc = pc.execute(this);
         } catch (ClassInfoException cie) {
           nextPc = this.createAndThrowException(cie.getExceptionClass(), cie.getMessage());
         }
@@ -2301,7 +2301,7 @@ public class ThreadInfo
     }
 
     try {
-        nextPc = pc.execute(ss, ks, this);
+        nextPc = pc.execute(this);
       } catch (ClassInfoException cie) {
         nextPc = this.createAndThrowException(cie.getExceptionClass(), cie.getMessage());
       }
@@ -3412,7 +3412,7 @@ public class ThreadInfo
   MJIEnv getMJIEnv () {
     return env;
   }
-
+  
   void setName (String newName) {
     threadDataClone().name = newName;
 
@@ -3436,15 +3436,13 @@ public class ThreadInfo
     return threadData.priority;
   }
 
-
-
-
   /**
    * Comparison for sorting based on index.
    */
   public int compareTo (ThreadInfo that) {
     return this.id - that.id;
   }
+  
   
   /**
    * only for debugging purposes

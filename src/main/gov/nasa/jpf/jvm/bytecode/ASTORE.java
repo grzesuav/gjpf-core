@@ -19,8 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -34,7 +32,7 @@ public class ASTORE extends LocalVariableInstruction implements StoreInstruction
     super(index);
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
+  public Instruction execute (ThreadInfo th) {
     //** warning: an ASTORE should store an object reference. However **//
     //**          it is used for subroutines program counters as well.  **//
     

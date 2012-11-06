@@ -21,9 +21,8 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.KernelState;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 import java.util.Iterator;
@@ -129,7 +128,7 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
   
   // -- end attribute accessors --
   
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
 
     if (!ti.isFirstStepInsn()) {
       mi.leave(ti);  // takes care of unlocking before potentially creating a CG
@@ -141,9 +140,10 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
         if (ei.getLockCount() == 0){
           ei = ei.getInstanceWithUpdatedSharedness(ti); 
           if (ei.isShared()) {
-            ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createSyncMethodExitCG(ei, ti);
+            JVM vm = ti.getVM();
+            ChoiceGenerator<ThreadInfo> cg = vm.getSchedulerFactory().createSyncMethodExitCG(ei, ti);
             if (cg != null) {
-              if (ss.setNextChoiceGenerator(cg)) {
+              if (vm.setNextChoiceGenerator(cg)) {
                 ti.skipInstructionLogging();
                 return this; // re-execute
               }

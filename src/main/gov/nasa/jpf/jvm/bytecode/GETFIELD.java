@@ -21,9 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -37,7 +35,7 @@ public class GETFIELD extends InstanceFieldInstruction {
     super(fieldName, classType, fieldDescriptor);
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
     
     int objRef = frame.peek(); // don't pop yet, we might re-execute
@@ -57,7 +55,7 @@ public class GETFIELD extends InstanceFieldInstruction {
     
     // check if this breaks the current transition
     if (isNewPorFieldBoundary(ti, fi, objRef)) {
-      if (createAndSetFieldCG(ss, ei, ti)) {
+      if (createAndSetFieldCG( ei, ti)) {
         return this;
       }
     }

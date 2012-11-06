@@ -52,7 +52,7 @@ public abstract class SwitchInstruction extends JVMInstruction {
     return targets.length;
   }
 
-  protected Instruction executeConditional (SystemState ss, KernelState ks, ThreadInfo ti){
+  protected Instruction executeConditional (ThreadInfo ti){
     StackFrame frame = ti.getModifiableTopFrame();
 
     int value = frame.pop();
@@ -69,10 +69,10 @@ public abstract class SwitchInstruction extends JVMInstruction {
     return mi.getInstructionAt(target);
   }
   
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     // this can be overridden by subclasses, so we have to delegate the conditional execution
     // to avoid getting recursive in executeAllBranches()
-    return executeConditional(ss,ks,ti);
+    return executeConditional(ti);
   }
 
   /** useful for symbolic execution modes */
@@ -84,7 +84,7 @@ public abstract class SwitchInstruction extends JVMInstruction {
 
       } else {
         // listener did override CG, fall back to conditional execution
-        return executeConditional(ss,ks,ti);
+        return executeConditional(ti);
       }
       
     } else {

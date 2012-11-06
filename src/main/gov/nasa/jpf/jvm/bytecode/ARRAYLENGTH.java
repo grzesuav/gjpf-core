@@ -20,9 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -32,7 +30,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class ARRAYLENGTH extends JVMInstruction {
   
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
     int objref = frame.pop();
@@ -42,7 +40,7 @@ public class ARRAYLENGTH extends JVMInstruction {
                                         "array length of null object");
     }
 
-    ElementInfo ei = ks.heap.get(objref);
+    ElementInfo ei = ti.getElementInfo(objref);
     frame.push(ei.arrayLength(), false);
 
     return getNext(ti);

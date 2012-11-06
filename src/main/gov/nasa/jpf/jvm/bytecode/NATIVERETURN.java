@@ -20,10 +20,8 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.NativeStackFrame;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
@@ -41,7 +39,7 @@ public class NATIVERETURN extends ReturnInstruction {
   // this is more simple than a normal ReturnInstruction because NativeMethodInfos
   // are not synchronized, and NativeStackFrames are never the first frame in a thread
   @Override
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     if (!ti.isFirstStepInsn()) {
       mi.leave(ti);  // takes care of unlocking before potentially creating a CG
       // NativeMethodInfo is never synchronized, so no thread CG here

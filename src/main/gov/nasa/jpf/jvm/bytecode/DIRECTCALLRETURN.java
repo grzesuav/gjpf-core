@@ -20,9 +20,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 /**
@@ -59,7 +57,7 @@ public class DIRECTCALLRETURN extends JVMInstruction implements gov.nasa.jpf.jvm
   }
 
   @Override
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     // pop the current frame but do not advance the new top frame, and do
     // not touch its operand stack
     

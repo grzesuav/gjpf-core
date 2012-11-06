@@ -22,9 +22,7 @@ import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.Heap;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
@@ -39,7 +37,7 @@ public class NEWARRAY extends NewArrayInstruction {
     type = Types.getElementDescriptorOfType(typeCode);
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
     arrayLength = frame.pop();

@@ -21,9 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -45,7 +43,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
    * only meaningful in instructionExecuted notification
    */
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
     FieldInfo fi = getFieldInfo();
@@ -68,7 +66,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     // check if this breaks the current transition
     // note this will also set the shared attribute of the field owner
     if (isNewPorFieldBoundary(ti, fi, objRef)) {
-      if (createAndSetFieldCG(ss, ei, ti)) {
+      if (createAndSetFieldCG(ei, ti)) {
         return this;
       }
     }

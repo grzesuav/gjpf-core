@@ -100,7 +100,7 @@ public class StopWatchFuzzer extends ListenerAdapter {
       // attributes are stored on the first slot of a long val
       if (ti.hasOperandAttr(1, TimeVal.class) || ti.hasOperandAttr(3, TimeVal.class)){      
         // execute insn (this pops the 4 top operand slots and pushes the long result
-        ti.skipInstruction(insn.execute(jvm.getSystemState(), jvm.getKernelState(), ti));
+        ti.skipInstruction(insn.execute(ti));
       
         // propagate TimeVal attr
         ti.addLongOperandAttr(timeValAttr);

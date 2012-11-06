@@ -19,8 +19,6 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
@@ -31,7 +29,7 @@ import gov.nasa.jpf.jvm.Types;
  */
 public class DNEG extends JVMInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo th) {
+  public Instruction execute (ThreadInfo th) {
     th.longPush(Types.doubleToLong(-Types.longToDouble(th.longPop())));
 
     return getNext(th);

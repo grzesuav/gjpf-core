@@ -21,9 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -34,7 +32,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public abstract class ArrayStoreInstruction extends ArrayInstruction implements StoreInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     int aref = peekArrayRef(ti); // need to be poly, could be LongArrayStore
     if (aref == -1) {
       return ti.createAndThrowException("java.lang.NullPointerException");
@@ -43,7 +41,7 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction implements 
     ElementInfo e = ti.getModifiableElementInfo(aref);
 
     if (isNewPorBoundary(e, ti)) {
-      if (createAndSetArrayCG(ss,e,ti, aref, peekIndex(ti), false)) {
+      if (createAndSetArrayCG(e,ti, aref, peekIndex(ti), false)) {
         return this;
       }
     }

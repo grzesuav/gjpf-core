@@ -22,10 +22,8 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.Heap;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
 
@@ -58,7 +56,7 @@ public class MULTIANEWARRAY extends JVMInstruction {
     return eiArray.getObjectRef();
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     ClassInfo cls = ti.getMethod().getClassInfo();
     String compType = Types.getComponentTerminal(type);
 

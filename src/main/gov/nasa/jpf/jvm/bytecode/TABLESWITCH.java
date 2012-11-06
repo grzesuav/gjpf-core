@@ -58,7 +58,7 @@ public class TABLESWITCH extends SwitchInstruction implements gov.nasa.jpf.jvm.T
     }
   }
 
-  protected Instruction executeConditional (SystemState ss, KernelState ks, ThreadInfo ti){
+  protected Instruction executeConditional (ThreadInfo ti){
     StackFrame frame = ti.getModifiableTopFrame();
 
     int value = frame.pop();

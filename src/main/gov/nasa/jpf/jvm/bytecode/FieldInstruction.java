@@ -25,6 +25,7 @@ import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
 import gov.nasa.jpf.jvm.FieldLockInfo;
 import gov.nasa.jpf.jvm.FieldLockInfoFactory;
+import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.jvm.Types;
@@ -197,10 +198,11 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
   }
 
   
-  protected boolean createAndSetFieldCG ( SystemState ss, ElementInfo ei, ThreadInfo ti) {
-    ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSharedFieldAccessCG(ei, ti);
+  protected boolean createAndSetFieldCG ( ElementInfo ei, ThreadInfo ti) {
+    JVM vm = ti.getVM();
+    ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSharedFieldAccessCG(ei, ti);
     if (cg != null) {
-      if (ss.setNextChoiceGenerator(cg)){
+      if (vm.setNextChoiceGenerator(cg)){
         ti.skipInstructionLogging(); // <2do> Hmm, might be more confusing not to see it
         return true;
       }

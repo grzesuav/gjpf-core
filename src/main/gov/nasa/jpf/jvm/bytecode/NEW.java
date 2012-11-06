@@ -37,7 +37,7 @@ public class NEW extends JVMInstruction implements AllocInstruction {
     return(cname);
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     Heap heap = ti.getHeap();
     ClassInfo ci;
 

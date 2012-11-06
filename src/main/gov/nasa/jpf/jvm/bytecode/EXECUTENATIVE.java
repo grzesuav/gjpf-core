@@ -20,10 +20,8 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.MethodInfo;
 import gov.nasa.jpf.jvm.NativeMethodInfo;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 import java.lang.reflect.Method;
@@ -64,7 +62,7 @@ public class EXECUTENATIVE extends JVMInstruction {
 	  insVisitor.visit(this);
   }
 
-  public Instruction execute(SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute(ThreadInfo ti) {
 
     // we don't have to enter/leave or push/pop a frame, that's all done
     // in NativeMethodInfo.execute()

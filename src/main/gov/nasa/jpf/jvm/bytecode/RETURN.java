@@ -21,9 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -33,7 +31,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  */
 public class RETURN extends ReturnInstruction {
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
 
     // Constructors don't return anything so this is the only instruction that can be used to return from a constructor.
 
@@ -42,7 +40,7 @@ public class RETURN extends ReturnInstruction {
     if (mi.isInit()) {  // Check to see if this method is a constructor.
 
       int objref = ti.getThis();
-      ElementInfo ei = ks.heap.get(objref); // Get the object.
+      ElementInfo ei = ti.getElementInfo(objref); // Get the object.
 
       if (!ei.isConstructed()) {  // Don't bother doing the following work if the object is already constructed.
 
@@ -56,7 +54,7 @@ public class RETURN extends ReturnInstruction {
       }
     }
 
-    return super.execute(ss, ks, ti);
+    return super.execute(ti);
   }
 
   public int getReturnTypeSize() {

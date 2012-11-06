@@ -23,10 +23,8 @@ import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.jvm.ElementInfo;
 import gov.nasa.jpf.jvm.FieldInfo;
-import gov.nasa.jpf.jvm.KernelState;
 import gov.nasa.jpf.jvm.LoadOnJPFRequired;
 import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.jvm.ThreadInfo;
 
 
@@ -42,7 +40,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
     super(fieldName, clsDescriptor, fieldDescriptor);
   }
 
-  public Instruction execute (SystemState ss, KernelState ks, ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
     ClassInfo clsInfo;
 
     // resolve the class of the referenced field first
@@ -71,7 +69,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
     ElementInfo ei = clsInfo.getModifiableStaticElementInfo();
 
     if (isNewPorFieldBoundary(ti)) {
-      if (createAndSetFieldCG(ss, ei, ti)) {
+      if (createAndSetFieldCG( ei, ti)) {
         return this;
       }
     }
