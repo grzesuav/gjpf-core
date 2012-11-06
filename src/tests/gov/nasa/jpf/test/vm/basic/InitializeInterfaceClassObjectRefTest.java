@@ -18,8 +18,8 @@
 //
 package gov.nasa.jpf.test.vm.basic;
 
-import gov.nasa.jpf.jvm.ClassInfo;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.ClassInfo;
 
 import org.junit.Test;
 
@@ -34,7 +34,7 @@ public class InitializeInterfaceClassObjectRefTest extends TestJPF implements In
    @Test
    public void test()
    {
-      if (verifyUnhandledExceptionDetails(RuntimeException.class.getName(), "This test throws an expected exception.", "+log.finest+=,gov.nasa.jpf.jvm.ClassInfo"))
+      if (verifyUnhandledExceptionDetails(RuntimeException.class.getName(), "This test throws an expected exception.", "+log.finest+=,gov.nasa.jpf.vm.ClassInfo"))
       {
          // Throw an exception to avoid backtracking.  Backtracking will wipe out the class object ref.
          throw new RuntimeException("This test throws an expected exception.");

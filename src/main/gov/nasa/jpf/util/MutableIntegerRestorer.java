@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.jvm.ClosedMemento;
+import gov.nasa.jpf.vm.ClosedMemento;
 
 /**
  * on-demand restorer for MutableInteger instances

@@ -22,10 +22,10 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.Step;
-import gov.nasa.jpf.jvm.Transition;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.Step;
+import gov.nasa.jpf.vm.Transition;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;

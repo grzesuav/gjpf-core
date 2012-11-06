@@ -21,10 +21,10 @@ package gov.nasa.jpf.test.basic;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.Verify;
 
 import org.junit.Test;
 

@@ -21,20 +21,20 @@ package gov.nasa.jpf.test.mc.basic;
 
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.FieldInfo;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.SystemState;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
-import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
-import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.FieldInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.StackFrame;
+import gov.nasa.jpf.vm.SystemState;
+import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.Verify;
+import gov.nasa.jpf.vm.choice.IntChoiceFromSet;
+import gov.nasa.jpf.vm.choice.IntIntervalGenerator;
 
 import org.junit.Test;
 

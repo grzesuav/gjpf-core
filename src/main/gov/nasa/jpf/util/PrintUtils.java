@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.jvm.MJIEnv;
+import gov.nasa.jpf.vm.MJIEnv;
 
 import java.io.PrintStream;
 

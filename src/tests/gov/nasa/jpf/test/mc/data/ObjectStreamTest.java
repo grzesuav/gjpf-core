@@ -18,8 +18,8 @@
 //
 package gov.nasa.jpf.test.mc.data;
 
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 import java.io.File;
 import java.io.Serializable;

@@ -19,15 +19,15 @@
 package gov.nasa.jpf.test.mc.data;
 
 
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 import java.util.Random;
 
 import org.junit.Test;
 
 /**
- * test of gov.nasa.jpf.jvm.Verify nondeterministic data initailization
+ * test of gov.nasa.jpf.vm.Verify nondeterministic data initailization
  */
 public class RandomTest extends TestJPF {
   private void run (int n){

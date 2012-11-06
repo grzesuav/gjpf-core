@@ -18,8 +18,8 @@
 //
 package gov.nasa.jpf.test.mc.data;
 
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 import org.junit.Test;
 
@@ -49,7 +49,7 @@ public class DataChoiceTest extends TestJPF {
       Verify.resetCounter(0);
     }
 
-    if (verifyNoPropertyViolation("+my_int_from_set.class=gov.nasa.jpf.jvm.choice.IntChoiceFromSet",
+    if (verifyNoPropertyViolation("+my_int_from_set.class=gov.nasa.jpf.vm.choice.IntChoiceFromSet",
             "+my_int_from_set.values=1,2,3,intField,localVar")) {
       int localVar = 43;  // read by choice generator
 
@@ -97,7 +97,7 @@ public class DataChoiceTest extends TestJPF {
       Verify.resetCounter(0);
     }
 
-    if (verifyNoPropertyViolation("+my_double_from_set.class=gov.nasa.jpf.jvm.choice.DoubleChoiceFromSet",
+    if (verifyNoPropertyViolation("+my_double_from_set.class=gov.nasa.jpf.vm.choice.DoubleChoiceFromSet",
             "+my_double_from_set.values=42.0,43.5,doubleField,localVar")) {
 
       double localVar = 4200.0; // read by choice generator
@@ -147,7 +147,7 @@ public class DataChoiceTest extends TestJPF {
       Verify.resetCounter(0);
     }
 
-    if (verifyNoPropertyViolation("+my_typed_object.class=gov.nasa.jpf.jvm.choice.TypedObjectChoice",
+    if (verifyNoPropertyViolation("+my_typed_object.class=gov.nasa.jpf.vm.choice.TypedObjectChoice",
             "+my_typed_object.type=" + MyType.class.getName())) {
 
       MyType o1 = new MyType("one");

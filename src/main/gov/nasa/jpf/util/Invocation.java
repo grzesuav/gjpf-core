@@ -19,11 +19,11 @@
 
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.ObjRef;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.ObjRef;
 
 /**
  * a record that includes all information to perform a call

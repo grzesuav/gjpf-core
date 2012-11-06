@@ -19,8 +19,9 @@
 
 package gov.nasa.jpf.test.mc.data;
 
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
+
 import org.junit.Test;
 
 /**
@@ -76,7 +77,7 @@ public class PerturbatorTest extends TestJPF {
                                   "+perturb.fields=data",
                                   "+perturb.data.class=.perturb.IntOverUnder",
                                   "+perturb.data.field=gov.nasa.jpf.test.mc.data.PerturbatorTest.data",
-                                  "+perturb.data.location=PerturbatorTest.java:87",
+                                  "+perturb.data.location=PerturbatorTest.java:88",
                                   "+perturb.data.delta=1")){
       System.out.println("instance field location perturbation test");
 
@@ -119,7 +120,7 @@ public class PerturbatorTest extends TestJPF {
 
                                   "+perturb.foo.class=.perturb.IntOverUnder",
                                   "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foo(int)",
-                                  "+perturb.foo.location=PerturbatorTest.java:136",
+                                  "+perturb.foo.location=PerturbatorTest.java:137",
                                   "+perturb.foo.delta=1",
 
                                   "+perturb.bar.class=.perturb.IntOverUnder",
@@ -203,7 +204,7 @@ public class PerturbatorTest extends TestJPF {
                                   "+perturb.params=foo,zoo",
                                   "+perturb.foo.class=.perturb.GenericDataAbstractor",
                                   "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foobar(long,double)",
-                                  "+perturb.foo.location=PerturbatorTest.java:233",        // <<<<<<<<< update if file is changed!
+                                  "+perturb.foo.location=PerturbatorTest.java:234",        // <<<<<<<<< update if file is changed!
                                   "+perturb.zoo.class=.perturb.GenericDataAbstractor",
                                   "+perturb.zoo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.zoo(int,boolean)"
     )) {

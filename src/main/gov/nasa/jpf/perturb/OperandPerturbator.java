@@ -19,8 +19,8 @@
 
 package gov.nasa.jpf.perturb;
 
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.StackFrame;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.StackFrame;
 
 
 /**

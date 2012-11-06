@@ -21,14 +21,14 @@ package gov.nasa.jpf.util.json;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.BooleanChoiceGenerator;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
-import gov.nasa.jpf.jvm.choice.DoubleThresholdGenerator;
-import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
-import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
-import gov.nasa.jpf.jvm.choice.RandomIntIntervalGenerator;
+import gov.nasa.jpf.vm.BooleanChoiceGenerator;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.choice.DoubleChoiceFromList;
+import gov.nasa.jpf.vm.choice.DoubleThresholdGenerator;
+import gov.nasa.jpf.vm.choice.IntChoiceFromSet;
+import gov.nasa.jpf.vm.choice.IntIntervalGenerator;
+import gov.nasa.jpf.vm.choice.RandomIntIntervalGenerator;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;

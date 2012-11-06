@@ -44,7 +44,7 @@ public class HarnessTest extends TestJPF {
 
   @Test
   public void verifyRuntimeException() {
-    if (verifyPropertyViolation(new TypeRef("gov.nasa.jpf.jvm.NoUncaughtExceptionsProperty"))) {
+    if (verifyPropertyViolation(new TypeRef("gov.nasa.jpf.vm.NoUncaughtExceptionsProperty"))) {
       System.out.println("** this is verifyRuntimeException() - JPF should find an unhandled exception");
 
       throw new RuntimeException("Bang!");

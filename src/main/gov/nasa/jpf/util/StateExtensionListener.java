@@ -19,9 +19,9 @@
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.SystemState;
 
 /**
  * generic listener that keeps track of state extensions, using

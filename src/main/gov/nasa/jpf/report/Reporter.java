@@ -22,11 +22,11 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFListener;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.Path;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListenerAdapter;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.Path;
 
 import java.io.IOException;
 import java.io.InputStream;

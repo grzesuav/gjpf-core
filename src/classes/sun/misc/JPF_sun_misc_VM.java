@@ -18,7 +18,7 @@
 //
 package sun.misc;
 
-import gov.nasa.jpf.jvm.MJIEnv;
+import gov.nasa.jpf.vm.MJIEnv;
 
 /**
  * this is just a stub for sun.misc.VM, which we don't really support

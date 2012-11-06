@@ -19,15 +19,15 @@
 package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.bytecode.LCMP;
 import gov.nasa.jpf.jvm.bytecode.LSUB;
 import gov.nasa.jpf.jvm.bytecode.NATIVERETURN;
-import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.choice.IntChoiceFromSet;
 
 
 /**

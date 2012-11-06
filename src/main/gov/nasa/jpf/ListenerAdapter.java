@@ -18,13 +18,13 @@
 //
 package gov.nasa.jpf;
 
-import gov.nasa.jpf.classfile.ClassFile;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.VMListener;
+import gov.nasa.jpf.jvm.classfile.ClassFile;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListener;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.VMListener;
 
 /**
  * Adapter class that dummy implements both VMListener and SearchListener interfaces

@@ -18,7 +18,7 @@
 //
 package java.io;
 
-import gov.nasa.jpf.jvm.Verify;
+import gov.nasa.jpf.vm.Verify;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;

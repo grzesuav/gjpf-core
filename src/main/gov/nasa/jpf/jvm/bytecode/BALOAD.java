@@ -18,13 +18,13 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.ArrayIndexOutOfBoundsExecutiveException;
-import gov.nasa.jpf.jvm.BooleanArrayFields;
-import gov.nasa.jpf.jvm.ByteArrayFields;
-import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.Fields;
-import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.vm.ArrayIndexOutOfBoundsExecutiveException;
+import gov.nasa.jpf.vm.BooleanArrayFields;
+import gov.nasa.jpf.vm.ByteArrayFields;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.Fields;
+import gov.nasa.jpf.vm.StackFrame;
+import gov.nasa.jpf.vm.ThreadInfo;
 
 
 /**

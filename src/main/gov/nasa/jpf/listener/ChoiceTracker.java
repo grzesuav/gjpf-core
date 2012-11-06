@@ -3,13 +3,13 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.SystemState;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -154,13 +154,13 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
         switch (format){
           case CHOICE:
             line = choice.toString();
-            if (line.startsWith("gov.nasa.jpf.jvm.")){
+            if (line.startsWith("gov.nasa.jpf.vm.")){
               line = line.substring(17);
             }
             break;
           case CG:
             line = cg.toString();
-            if (line.startsWith("gov.nasa.jpf.jvm.choice.")){
+            if (line.startsWith("gov.nasa.jpf.vm.choice.")){
               line = line.substring(24);
             }
             break;

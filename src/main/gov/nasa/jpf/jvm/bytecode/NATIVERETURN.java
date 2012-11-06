@@ -19,11 +19,11 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.NativeStackFrame;
-import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.Types;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.NativeStackFrame;
+import gov.nasa.jpf.vm.StackFrame;
+import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.Types;
 
 /**
  * synthetic return instruction for native method invocations, so that

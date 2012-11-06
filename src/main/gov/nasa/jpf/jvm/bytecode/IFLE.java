@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.StackFrame;
+import gov.nasa.jpf.vm.StackFrame;
 
 /**
  * Branch if int comparison with zero succeeds

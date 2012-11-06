@@ -19,8 +19,8 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
  * modifies following insn, no stack manipulation

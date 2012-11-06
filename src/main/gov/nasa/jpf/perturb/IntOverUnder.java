@@ -20,10 +20,10 @@
 package gov.nasa.jpf.perturb;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.IntChoiceGenerator;
-import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.choice.IntChoiceFromSet;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.IntChoiceGenerator;
+import gov.nasa.jpf.vm.StackFrame;
+import gov.nasa.jpf.vm.choice.IntChoiceFromSet;
 
 /**
  * simple +/- delta perturbation of integer operand values

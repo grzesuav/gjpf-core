@@ -23,9 +23,9 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.annotation.JPFOption;
 import gov.nasa.jpf.annotation.JPFOptions;
-import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.JVM;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;

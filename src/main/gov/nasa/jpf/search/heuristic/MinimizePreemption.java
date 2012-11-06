@@ -19,9 +19,9 @@
 package gov.nasa.jpf.search.heuristic;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.ThreadChoiceGenerator;
-import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.ThreadChoiceGenerator;
+import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
  * a simple heuristic that tries to minimize preemptive scheduling, i.e.

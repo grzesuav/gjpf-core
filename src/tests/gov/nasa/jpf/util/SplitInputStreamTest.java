@@ -18,8 +18,8 @@
 //
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

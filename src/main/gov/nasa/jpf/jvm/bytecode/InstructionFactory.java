@@ -19,19 +19,19 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.NativeMethodInfo;
 import gov.nasa.jpf.util.Invocation;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.NativeMethodInfo;
 
 import java.util.List;
 
 /**
  * this is the new InstructionFactory
  */
-public class InstructionFactory implements gov.nasa.jpf.jvm.InstructionFactory {
+public class InstructionFactory implements gov.nasa.jpf.vm.InstructionFactory {
 
   public InstructionFactory(){
     // nothing here

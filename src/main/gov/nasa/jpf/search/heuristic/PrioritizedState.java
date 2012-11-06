@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.search.heuristic;
 
-import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.vm.JVM;
 
 /**
  * HeuristicState with a scalar, static priority.

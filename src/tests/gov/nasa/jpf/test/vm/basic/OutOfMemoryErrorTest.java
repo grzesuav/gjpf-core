@@ -33,7 +33,7 @@ public class OutOfMemoryErrorTest extends TestJPF
       ArrayList<byte[]> hold;
       byte hog[];
       
-      if (verifyPropertyViolation(new TypeRef("gov.nasa.jpf.jvm.NoOutOfMemoryErrorProperty")))
+      if (verifyPropertyViolation(new TypeRef("gov.nasa.jpf.vm.NoOutOfMemoryErrorProperty")))
       {
          hold = new ArrayList<byte[]>();
          

@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.util.json;
 
-import gov.nasa.jpf.jvm.MJIEnv;
+import gov.nasa.jpf.vm.MJIEnv;
 
 /**
  * Creates new JPF from JSON value.

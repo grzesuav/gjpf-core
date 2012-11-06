@@ -19,8 +19,8 @@
 
 package gov.nasa.jpf.util.json;
 
-import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.MJIEnv;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.MJIEnv;
 
 import java.util.HashMap;
 

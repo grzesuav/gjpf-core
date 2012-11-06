@@ -18,9 +18,6 @@
 //
 package gov.nasa.jpf;
 
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.NoOutOfMemoryErrorProperty;
-import gov.nasa.jpf.jvm.VMListener;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.report.Reporter;
@@ -31,6 +28,9 @@ import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LogManager;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.RunRegistry;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.NoOutOfMemoryErrorProperty;
+import gov.nasa.jpf.vm.VMListener;
 
 import java.io.File;
 import java.util.ArrayList;

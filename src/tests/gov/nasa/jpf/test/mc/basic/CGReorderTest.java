@@ -20,15 +20,15 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.DoubleChoiceGenerator;
-import gov.nasa.jpf.jvm.IntChoiceGenerator;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.SystemState;
-import gov.nasa.jpf.jvm.Verify;
-import gov.nasa.jpf.jvm.choice.DoubleChoiceFromList;
-import gov.nasa.jpf.jvm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.DoubleChoiceGenerator;
+import gov.nasa.jpf.vm.IntChoiceGenerator;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.SystemState;
+import gov.nasa.jpf.vm.Verify;
+import gov.nasa.jpf.vm.choice.DoubleChoiceFromList;
+import gov.nasa.jpf.vm.choice.IntIntervalGenerator;
 
 import java.util.Comparator;
 

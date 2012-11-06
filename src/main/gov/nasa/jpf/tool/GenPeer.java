@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.tool;
 
-import gov.nasa.jpf.jvm.Types;
+import gov.nasa.jpf.vm.Types;
 
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
@@ -32,8 +32,8 @@ import java.util.ArrayList;
  * model class, and creates the corresponding native peer methods
  */
 public class GenPeer {
-  static final String SYS_PKG = "gov.nasa.jpf.jvm";
-  static final String MJI_ENV = "gov.nasa.jpf.jvm.MJIEnv";
+  static final String SYS_PKG = "gov.nasa.jpf.vm";
+  static final String MJI_ENV = "gov.nasa.jpf.vm.MJIEnv";
   static final String INDENT = "  ";
   static final String METHOD_PREFIX = "public static";
   static final String ENV_ARG = "MJIEnv env";
@@ -350,7 +350,7 @@ public class GenPeer {
   static void showUsage () {
     System.out.println(
           "usage:   'GenPeer [<option>..] <className> [<method>..]'");
-    System.out.println("options:  -s  : system peer class (gov.nasa.jpf.jvm)");
+    System.out.println("options:  -s  : system peer class (gov.nasa.jpf.vm)");
     System.out.println("          -ci : create <clinit> MJI method");
     System.out.println("          -m  : create mangled method names");
     System.out.println("          -a  : create MJI methods for all target class methods");

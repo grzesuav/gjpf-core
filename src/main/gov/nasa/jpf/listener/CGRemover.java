@@ -22,15 +22,15 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
 import gov.nasa.jpf.util.MethodSpec;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.MethodInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,7 +46,7 @@ import java.util.List;
  * still add new CGs after they got removed here. THIS IS ONLY AN OPTIMIZATION
  * TOOL THAT SHOULD BE USED IN A WELL KNOWN APPLICATION CONTEXT.
  *
- *  cgrm.thread.cg_class = gov.nasa.jpf.jvm.ThreadChoiceGenerator
+ *  cgrm.thread.cg_class = gov.nasa.jpf.vm.ThreadChoiceGenerator
  *  cgrm.thread.locations = Foobar.java:42                // either a LocationSpec
  *  cgrm.thread.method_bodies = a.SomeClass.someMethod()  // ..or a MethodSpec for a body
  *  cgrm.thread.method_calls = b.A.foo(int)               // ..or a MethodSpec for a call

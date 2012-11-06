@@ -3,9 +3,9 @@ package gov.nasa.jpf.util;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.SystemState;
 
 import java.awt.Color;
 import java.awt.Container;

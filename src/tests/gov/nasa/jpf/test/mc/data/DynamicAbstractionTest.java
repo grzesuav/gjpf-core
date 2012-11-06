@@ -18,9 +18,9 @@
 //
 package gov.nasa.jpf.test.mc.data;
 
-import gov.nasa.jpf.jvm.Verify;
-import gov.nasa.jpf.jvm.serialize.AbstractionAdapter;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
+import gov.nasa.jpf.vm.serialize.AbstractionAdapter;
 
 import org.junit.Test;
 
@@ -29,7 +29,7 @@ import org.junit.Test;
  */
 public class DynamicAbstractionTest extends TestJPF {
   
-  static final String SERIALIZER_ARG = "+vm.serializer.class=.jvm.serialize.DynamicAbstractionSerializer";
+  static final String SERIALIZER_ARG = "+vm.serializer.class=.vm.serialize.DynamicAbstractionSerializer";
   
   static class MyClass {
     int data;

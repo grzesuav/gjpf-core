@@ -19,9 +19,9 @@
 package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.JVM;
 
 /**
  * simple tools to gather statistics about instructions executed by JPF.

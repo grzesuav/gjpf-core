@@ -22,8 +22,8 @@ package gov.nasa.jpf.test.mc.basic;
 import org.junit.Test;
 
 import gov.nasa.jpf.annotation.FilterField;
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 /**
  * regression test for stateless (non-matching) execution mode

@@ -36,7 +36,7 @@
  * see JPF_Crossing.java for the code of getTotal() and setTotal(int).
  */
 
-import gov.nasa.jpf.jvm.Verify;
+import gov.nasa.jpf.vm.Verify;
 
 class Constants {
 

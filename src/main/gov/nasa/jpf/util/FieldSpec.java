@@ -19,8 +19,8 @@
 
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.FieldInfo;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.FieldInfo;
 
 /**
  * utility class that can match FieldInfos against specs.

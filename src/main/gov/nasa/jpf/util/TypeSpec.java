@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.vm.ClassInfo;
 
 /**
  * wildcard supporting type specification to be used for JPF configuration.

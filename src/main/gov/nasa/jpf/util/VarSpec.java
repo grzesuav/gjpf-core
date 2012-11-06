@@ -20,8 +20,8 @@
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.jvm.LocalVarInfo;
-import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.vm.LocalVarInfo;
+import gov.nasa.jpf.vm.MethodInfo;
 
 /**
  * utility class to specify local variables in JPF options

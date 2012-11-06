@@ -20,15 +20,15 @@ package gov.nasa.jpf.report;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.Path;
-import gov.nasa.jpf.jvm.Step;
-import gov.nasa.jpf.jvm.Transition;
-import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.util.Left;
 import gov.nasa.jpf.util.RepositoryEntry;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.Path;
+import gov.nasa.jpf.vm.Step;
+import gov.nasa.jpf.vm.Transition;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;

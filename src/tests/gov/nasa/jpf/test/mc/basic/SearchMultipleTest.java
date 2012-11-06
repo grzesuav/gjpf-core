@@ -19,8 +19,8 @@
 
 package gov.nasa.jpf.test.mc.basic;
 
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 import org.junit.Test;
 

@@ -21,12 +21,12 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.PropertyListenerAdapter;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.Path;
-import gov.nasa.jpf.jvm.Transition;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.Path;
+import gov.nasa.jpf.vm.Transition;
 
 import java.io.BufferedReader;
 import java.io.File;

@@ -18,8 +18,8 @@
 //
 package gov.nasa.jpf.test.java.concurrent;
 
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 

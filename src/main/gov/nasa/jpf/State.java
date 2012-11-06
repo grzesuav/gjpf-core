@@ -18,8 +18,8 @@
 //
 package gov.nasa.jpf;
 
-import gov.nasa.jpf.jvm.RestorableVMState;
 import gov.nasa.jpf.search.SearchState;
+import gov.nasa.jpf.vm.RestorableVMState;
 
 /**
  * abstraction of JPF execution state that can be queried and stored by

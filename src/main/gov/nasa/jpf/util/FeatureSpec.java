@@ -20,7 +20,7 @@
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.vm.ClassInfo;
 
 /**
  * common base class for MethodSpec and FieldSpec

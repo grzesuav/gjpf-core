@@ -21,16 +21,16 @@ package gov.nasa.jpf.util.json;
 
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.ClassInfo;
-import gov.nasa.jpf.jvm.ClinitRequired;
-import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.FieldInfo;
-import gov.nasa.jpf.jvm.Fields;
-import gov.nasa.jpf.jvm.MJIEnv;
-import gov.nasa.jpf.jvm.ThreadInfo;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.ObjectConverter;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClinitRequired;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.FieldInfo;
+import gov.nasa.jpf.vm.Fields;
+import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.ThreadInfo;
 
 import java.util.HashMap;
 import java.util.Set;

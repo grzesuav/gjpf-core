@@ -171,7 +171,7 @@
 
       <fileset dir="build/main">
           <!-- we need this one in case a SUT uses the Verify API -->
-          <include name="gov/nasa/jpf/jvm/Verify.class"/>
+          <include name="gov/nasa/jpf/vm/Verify.class"/>
 
           <!-- these are required if we run TestJPF derived test classes -->
           <include name="gov/nasa/jpf/JPFShell.class"/>

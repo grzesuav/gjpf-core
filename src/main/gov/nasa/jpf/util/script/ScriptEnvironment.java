@@ -19,9 +19,9 @@
 package gov.nasa.jpf.util.script;
 
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
 import gov.nasa.jpf.util.StateExtensionClient;
 import gov.nasa.jpf.util.StateExtensionListener;
+import gov.nasa.jpf.vm.ChoiceGenerator;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;

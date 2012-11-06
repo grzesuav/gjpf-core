@@ -2,10 +2,10 @@ package gov.nasa.jpf.util.script;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.SystemState;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.DynamicObjectArray;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.SystemState;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;

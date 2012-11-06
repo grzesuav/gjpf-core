@@ -1,6 +1,6 @@
 package gov.nasa.jpf.util.script;
 
-import gov.nasa.jpf.jvm.ChoiceGeneratorBase;
+import gov.nasa.jpf.vm.ChoiceGeneratorBase;
 
 /**
  * abstract ChoiceGenerator root for Event based generators

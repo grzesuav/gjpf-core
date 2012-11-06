@@ -20,12 +20,12 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.ChoiceGenerator;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.Instruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.MethodInfo;
 
 import org.junit.Test;
 
@@ -66,7 +66,7 @@ public class CGRemoverTest extends TestJPF {
   public void testSyncLocation() {
     if (verifyNoPropertyViolation("+listener=.listener.CGRemover,.test.mc.basic.CGRemoverTest$R1Listener",
             "+log.info=gov.nasa.jpf.CGRemover",
-            "+cgrm.sync.cg_class=gov.nasa.jpf.jvm.ThreadChoiceGenerator",
+            "+cgrm.sync.cg_class=gov.nasa.jpf.vm.ThreadChoiceGenerator",
             "+cgrm.sync.locations=CGRemoverTest.java:45,CGRemoverTest.java:75")){
       R1 o = new R1();
       Thread t = new Thread(o);
@@ -81,7 +81,7 @@ public class CGRemoverTest extends TestJPF {
   public void testSyncCall() {
     if (verifyNoPropertyViolation("+listener=.listener.CGRemover,.test.mc.basic.CGRemoverTest$R1Listener",
             "+log.info=gov.nasa.jpf.CGRemover",
-            "+cgrm.sync.cg_class=gov.nasa.jpf.jvm.ThreadChoiceGenerator",
+            "+cgrm.sync.cg_class=gov.nasa.jpf.vm.ThreadChoiceGenerator",
             "+cgrm.sync.method_calls=gov.nasa.jpf.test.mc.basic.CGRemoverTest$R1.getData()")){
       R1 o = new R1();
       Thread t = new Thread(o);
@@ -95,7 +95,7 @@ public class CGRemoverTest extends TestJPF {
   public void testSyncBody() {
     if (verifyNoPropertyViolation("+listener=.listener.CGRemover,.test.mc.basic.CGRemoverTest$R1Listener",
             "+log.info=gov.nasa.jpf.CGRemover",
-            "+cgrm.sync.cg_class=gov.nasa.jpf.jvm.ThreadChoiceGenerator",
+            "+cgrm.sync.cg_class=gov.nasa.jpf.vm.ThreadChoiceGenerator",
             "+cgrm.sync.method_bodies=gov.nasa.jpf.test.mc.basic.CGRemoverTest$R1.run(),gov.nasa.jpf.test.mc.basic.CGRemoverTest.testSyncBody()")){
       R1 o = new R1();
       Thread t = new Thread(o);

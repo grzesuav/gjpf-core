@@ -19,13 +19,13 @@
 package gov.nasa.jpf.test.basic;
 
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.jvm.DirectCallStackFrame;
-import gov.nasa.jpf.jvm.MJIEnv;
-import gov.nasa.jpf.jvm.MethodInfo;
-import gov.nasa.jpf.jvm.NativePeer;
-import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.UncaughtException;
+import gov.nasa.jpf.vm.DirectCallStackFrame;
+import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.NativePeer;
+import gov.nasa.jpf.vm.StackFrame;
+import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.UncaughtException;
 
 /**
  * native peer class for unit testing MJI

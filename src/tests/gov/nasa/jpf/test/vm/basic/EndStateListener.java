@@ -20,10 +20,10 @@
 package gov.nasa.jpf.test.vm.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.JVM;
-import gov.nasa.jpf.jvm.ThreadInfo;
-import gov.nasa.jpf.jvm.ThreadList;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.JVM;
+import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.ThreadList;
 
 /**
  * listener that checks SUT and JPF consistency in program end states

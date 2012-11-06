@@ -19,9 +19,9 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.Instruction;
-import gov.nasa.jpf.jvm.StackFrame;
-import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
+import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
  * this is used to return from a DirectCallStackFrame
@@ -37,7 +37,7 @@ import gov.nasa.jpf.jvm.ThreadInfo;
  * that the ReturnInstruction of the called method does not have to handle
  * direct calls specifically
  */
-public class DIRECTCALLRETURN extends JVMInstruction implements gov.nasa.jpf.jvm.ReturnInstruction {
+public class DIRECTCALLRETURN extends JVMInstruction implements gov.nasa.jpf.vm.ReturnInstruction {
 
   @Override
   public boolean isExtendedInstruction() {

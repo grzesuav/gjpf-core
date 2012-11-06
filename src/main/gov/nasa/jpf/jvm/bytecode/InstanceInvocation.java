@@ -19,8 +19,8 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.ThreadInfo;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
  * base class for INVOKEVIRTUAL, INVOKESPECIAL and INVOLEINTERFACE

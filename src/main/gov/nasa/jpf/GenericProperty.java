@@ -18,8 +18,8 @@
 //
 package gov.nasa.jpf;
 
-import gov.nasa.jpf.jvm.JVM;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.JVM;
 
 import java.io.PrintWriter;
 

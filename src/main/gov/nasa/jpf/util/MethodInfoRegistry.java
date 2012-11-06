@@ -19,8 +19,8 @@
 
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.jvm.MJIEnv;
-import gov.nasa.jpf.jvm.MethodInfo;
+import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.MethodInfo;
 
 /**
  * just a little helper for java.lang.reflect peers

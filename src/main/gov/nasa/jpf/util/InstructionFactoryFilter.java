@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.jvm.ClassInfo;
+import gov.nasa.jpf.vm.ClassInfo;
 
 /**
  * utility class that can be used by InstructionFactory implementations to

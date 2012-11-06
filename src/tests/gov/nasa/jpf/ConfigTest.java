@@ -22,7 +22,7 @@ public class ConfigTest extends TestJPF {
     Config conf = new Config(args);
 
     String val = conf.getString("vm.class");
-    assert "gov.nasa.jpf.jvm.JVM".equals(val);
+    assert "gov.nasa.jpf.vm.JVM".equals(val);
 
     val = conf.getTarget(); // from configTest.jpf
     assert "urgh.org.MySystemUnderTest".equals(val);

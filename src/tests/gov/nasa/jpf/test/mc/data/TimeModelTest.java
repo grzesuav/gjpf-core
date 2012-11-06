@@ -18,8 +18,8 @@
 //
 package gov.nasa.jpf.test.mc.data;
 
-import gov.nasa.jpf.jvm.Verify;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 import org.junit.Test;
 
@@ -31,7 +31,7 @@ public class TimeModelTest extends TestJPF {
   @Test
   public void testSystemTime(){
     
-    if (verifyNoPropertyViolation("+vm.time.class=.jvm.SystemTime")){
+    if (verifyNoPropertyViolation("+vm.time.class=.vm.SystemTime")){
       long t1 = System.currentTimeMillis();
       System.out.printf("t1 = %d\n", t1);
       
@@ -55,7 +55,7 @@ public class TimeModelTest extends TestJPF {
       Verify.resetCounter(1);
     }
     
-    if (verifyNoPropertyViolation("+vm.time.class=.jvm.ConstInsnPathTime")){
+    if (verifyNoPropertyViolation("+vm.time.class=.vm.ConstInsnPathTime")){
       long t1 = System.currentTimeMillis();
       System.out.printf("t1 = %d\n", t1);
       

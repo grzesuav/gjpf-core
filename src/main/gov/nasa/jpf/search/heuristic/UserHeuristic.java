@@ -19,9 +19,9 @@
 package gov.nasa.jpf.search.heuristic;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.jvm.ClassLoaderInfo;
-import gov.nasa.jpf.jvm.ElementInfo;
-import gov.nasa.jpf.jvm.JVM;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.JVM;
 
 
 /**
