@@ -25,6 +25,8 @@ import gov.nasa.jpf.annotation.JPFOption;
 import gov.nasa.jpf.annotation.JPFOptions;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 
 import java.lang.management.ManagementFactory;
@@ -160,6 +162,7 @@ public class BudgetChecker extends ListenerAdapter {
     return false;
   }
   
+  @Override
   public void stateAdvanced (Search search) {    
     if (timeExceeded() || heapExceeded()) {
       search.notifySearchConstraintHit(message);
@@ -177,7 +180,8 @@ public class BudgetChecker extends ListenerAdapter {
     }
   }
       
-  public void instructionExecuted (VM vm) {
+  @Override
+  public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
     if ((insnCount++ % CHECK_INTERVAL) == CHECK_INTERVAL1) {
 
       if (timeExceeded() || heapExceeded() || insnExceeded()) {

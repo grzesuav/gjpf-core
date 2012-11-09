@@ -39,6 +39,7 @@ public class StateExtensionListener <T> extends ListenerAdapter {
     states = new DynamicObjectArray<T>();
   }
 
+  @Override
   public void stateAdvanced (Search search) {
     int idx = search.getStateId();
 
@@ -48,6 +49,7 @@ public class StateExtensionListener <T> extends ListenerAdapter {
     }
   }
 
+  @Override
   public void stateBacktracked (Search search) {
     int idx = search.getStateId();
 
@@ -58,6 +60,7 @@ public class StateExtensionListener <T> extends ListenerAdapter {
     }
   }
 
+  @Override
   public void stateRestored (Search search) {
     int idx = search.getStateId();
 

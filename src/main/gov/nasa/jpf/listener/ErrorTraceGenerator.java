@@ -112,9 +112,10 @@ public class ErrorTraceGenerator extends PropertyListenerAdapter implements Publ
     }
   }
   
-	public void propertyViolated(Search search) {
-		VM vm = search.getVM();
+  @Override
+  public void propertyViolated(Search search) {
+    VM vm = search.getVM();
     SystemState ss = vm.getSystemState();
     trace = ss.getChoiceGenerators();
-	}
+  }
 }

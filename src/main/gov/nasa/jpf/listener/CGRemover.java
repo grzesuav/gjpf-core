@@ -29,6 +29,7 @@ import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 
@@ -231,16 +232,16 @@ public class CGRemover extends ListenerAdapter {
   //--- VMListener interface
 
   // this is where we turn Categories into MethodInfos and Instructions to watch out for
-  public void classLoaded (VM vm){
-    ClassInfo ci = vm.getLastClassInfo();
-
+  @Override
+  public void classLoaded (VM vm, ClassInfo loadedClass){
     for (Category cat : categories){
-      processClass(ci, cat);
+      processClass(loadedClass, cat);
     }
   }
 
   // this is our main purpose in life
-  public void choiceGeneratorRegistered (VM vm){
+  @Override
+  public void choiceGeneratorRegistered (VM vm, ChoiceGenerator<?> nextCG, ThreadInfo ti, Instruction executedInsn){
     ChoiceGenerator<?> cg = vm.getNextChoiceGenerator();
     Instruction insn = cg.getInsn();
 

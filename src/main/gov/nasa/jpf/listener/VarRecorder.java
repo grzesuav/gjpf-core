@@ -66,64 +66,61 @@ public class VarRecorder extends ListenerAdapter {
     recordArrays = config.getBoolean("var_recorder.arrays", true);
   }
 
-  public void executeInstruction(VM vm) {
-    Instruction inst;
+  @Override
+  public void executeInstruction(VM vm, ThreadInfo ti, Instruction insnToExecute) {
     String name, value;
     byte type;
 
-    if (!canRecord(vm))
+    if (!canRecord(vm, insnToExecute))
       return;
 
-    inst = vm.getLastInstruction();
-    if (!(inst instanceof StoreInstruction))
-      if (!(inst instanceof ArrayLoadInstruction))
+    if (!(insnToExecute instanceof StoreInstruction))
+      if (!(insnToExecute instanceof ArrayLoadInstruction))
         return;
 
-    type = getType(vm);
-    name = getName(vm, type);
+    type = getType(ti, insnToExecute);
+    name = getName(ti, insnToExecute, type);
 
-    if (inst instanceof ArrayLoadInstruction) {
-      setComment(vm, name, "", "", true);
-      saveVariableType(vm, type);
+    if (insnToExecute instanceof ArrayLoadInstruction) {
+      setComment(vm, ti, name, "", "", true);
+      saveVariableType(ti, type);
     } else {
-      value = getValue(vm, type);
-      setComment(vm, name, " <- ", value, true);
+      value = getValue(ti, insnToExecute, type);
+      setComment(vm, ti, name, " <- ", value, true);
     }
   }
 
-  public void instructionExecuted(VM vm) {
-    Instruction inst;
+  @Override
+  public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
     String name, value;
     byte type;
 
-    if (!canRecord(vm))
+    if (!canRecord(vm, executedInsn))
       return;
 
-    inst = vm.getLastInstruction();
-    if (inst instanceof StoreInstruction) {
-      name = pendingComment.remove(vm.getLastThreadInfo());
-      setComment(vm, name, "", "", false);
+    if (executedInsn instanceof StoreInstruction) {
+      name = pendingComment.remove(ti);
+      setComment(vm, ti, name, "", "", false);
       return;
     }
 
-    type  = getType(vm);
-    value = getValue(vm, type);
+    type  = getType(ti, executedInsn);
+    value = getValue(ti, executedInsn, type);
 
-    if (inst instanceof ArrayLoadInstruction)
-      name = pendingComment.remove(vm.getLastThreadInfo());
+    if (executedInsn instanceof ArrayLoadInstruction)
+      name = pendingComment.remove(ti);
     else
-      name = getName(vm, type);
+      name = getName(ti, executedInsn, type);
 
-    if (isArrayReference(vm))
-      saveVariableName(vm, name);
+    if (isArrayReference(vm, ti))
+      saveVariableName(ti, name);
     else
-      saveVariableType(vm, type);
+      saveVariableType(ti, type);
 
-    setComment(vm, name, " -> ", value, false);
+    setComment(vm, ti, name, " -> ", value, false);
   }
 
-  private final void setComment(VM vm, String name, String operator, String value, boolean pending) {
-    ThreadInfo ti;
+  private final void setComment(VM vm, ThreadInfo ti, String name, String operator, String value, boolean pending) {
     Step step;
     String comment;
 
@@ -136,7 +133,6 @@ public class VarRecorder extends ListenerAdapter {
     comment = name + operator + value;
 
     if (pending) {
-      ti = vm.getLastThreadInfo();
       pendingComment.put(ti, comment);
     } else {
       step = vm.getLastStep();
@@ -144,15 +140,12 @@ public class VarRecorder extends ListenerAdapter {
     }
   }
 
-  private final boolean canRecord(VM vm) {
+  private final boolean canRecord(VM vm, Instruction inst) {
     ClassInfo ci;
     MethodInfo mi;
-    Instruction inst;
 
     if (vm.getLastStep() == null)
       return(false);
-
-    inst = vm.getLastInstruction();
 
     if (!(inst instanceof VariableAccessor))
       if (!(inst instanceof ArrayInstruction))
@@ -176,19 +169,14 @@ public class VarRecorder extends ListenerAdapter {
 
   // <2do> general purpose listeners should not use anonymous attribute types such as String
   
-  private final void saveVariableName(VM vm, String name) {
-    ThreadInfo ti;
-
-    ti = vm.getLastThreadInfo();
+  private final void saveVariableName(ThreadInfo ti, String name) {
     ti.addOperandAttr(name);
   }
 
-  private final void saveVariableType(VM vm, byte type) {
-    ThreadInfo ti;
+  private final void saveVariableType(ThreadInfo ti, byte type) {
     StackFrame frame;
     String str;
 
-    ti = vm.getLastThreadInfo();
     frame = ti.getTopFrame();
     if (frame.getTopPos() < 0)
       return;
@@ -197,13 +185,11 @@ public class VarRecorder extends ListenerAdapter {
     frame.addOperandAttr(str);
   }
 
-  private final boolean isArrayReference(VM vm) {
-    ThreadInfo ti;
+  private final boolean isArrayReference(VM vm, ThreadInfo ti) {
     StackFrame frame;
     ElementInfo ei;
     int objRef;
 
-    ti    = vm.getLastThreadInfo();
     frame = ti.getTopFrame();
 
     if (frame.getTopPos() < 0)
@@ -223,21 +209,17 @@ public class VarRecorder extends ListenerAdapter {
     return(ei.isArray());
   }
 
-  private byte getType(VM vm) {
-    ThreadInfo ti;
+  private byte getType(ThreadInfo ti, Instruction inst) {
     StackFrame frame;
     FieldInfo fi;
-    Instruction inst;
     String type;
 
-    ti = vm.getLastThreadInfo();
     frame = ti.getTopFrame();
     if ((frame.getTopPos() >= 0) && (frame.isOperandRef())) {
       return (Types.T_REFERENCE);
     }
 
     type = null;
-    inst = vm.getLastInstruction();
 
     if (((recordLocals) && (inst instanceof LocalVariableInstruction))
             || ((recordFields) && (inst instanceof FieldInstruction))) {
@@ -313,13 +295,10 @@ public class VarRecorder extends ListenerAdapter {
     }
   }
 
-  private String getName(VM vm, byte type) {
-    Instruction inst;
+  private String getName(ThreadInfo ti, Instruction inst, byte type) {
     String name;
     int index;
     boolean store;
-
-    inst = vm.getLastInstruction();
 
     if (((recordLocals) && (inst instanceof LocalVariableInstruction)) ||
         ((recordFields) && (inst instanceof FieldInstruction))) {
@@ -331,23 +310,19 @@ public class VarRecorder extends ListenerAdapter {
 
     if ((recordArrays) && (inst instanceof ArrayInstruction)) {
       store  = inst instanceof StoreInstruction;
-      name   = getArrayName(vm, type, store);
-      index  = getArrayIndex(vm, type, store);
+      name   = getArrayName(ti, type, store);
+      index  = getArrayIndex(ti, type, store);
       return(name + '[' + index + ']');
     }
 
     return(null);
   }
 
-  private String getValue(VM vm, byte type) {
-    ThreadInfo ti;
+  private String getValue(ThreadInfo ti, Instruction inst, byte type) {
     StackFrame frame;
-    Instruction inst;
     int lo, hi;
 
-    ti    = vm.getLastThreadInfo();
     frame = ti.getTopFrame();
-    inst  = vm.getLastInstruction();
 
     if (((recordLocals) && (inst instanceof LocalVariableInstruction)) ||
         ((recordFields) && (inst instanceof FieldInstruction)))
@@ -362,17 +337,15 @@ public class VarRecorder extends ListenerAdapter {
     }
 
     if ((recordArrays) && (inst instanceof ArrayInstruction))
-      return(getArrayValue(vm, type));
+      return(getArrayValue(ti, type));
 
     return(null);
   }
 
-  private String getArrayName(VM vm, byte type, boolean store) {
-    ThreadInfo ti;
+  private String getArrayName(ThreadInfo ti, byte type, boolean store) {
     String attr;
     int offset;
 
-    ti     = vm.getLastThreadInfo();
     offset = calcOffset(type, store) + 1;
     // <2do> String is really not a good attribute type to retrieve!
     attr   = ti.getOperandAttr(offset, String.class); 
@@ -383,11 +356,9 @@ public class VarRecorder extends ListenerAdapter {
     return("?");
   }
 
-  private int getArrayIndex(VM vm, byte type, boolean store) {
-    ThreadInfo ti;
+  private int getArrayIndex(ThreadInfo ti, byte type, boolean store) {
     int offset;
 
-    ti     = vm.getLastThreadInfo();
     offset = calcOffset(type, store);
 
     return(ti.getTopFrame().peek(offset));
@@ -400,12 +371,10 @@ public class VarRecorder extends ListenerAdapter {
     return(Types.getTypeSize(type));
   }
 
-  private String getArrayValue(VM vm, byte type) {
-    ThreadInfo ti;
+  private String getArrayValue(ThreadInfo ti, byte type) {
     StackFrame frame;
     int lo, hi;
 
-    ti    = vm.getLastThreadInfo();
     frame = ti.getTopFrame();
     lo    = frame.peek();
     hi    = frame.getTopPos() >= 1 ? frame.peek(1) : 0;

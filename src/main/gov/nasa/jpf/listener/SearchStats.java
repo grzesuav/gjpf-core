@@ -59,7 +59,7 @@ public class SearchStats extends ListenerAdapter {
   /*
    * SearchListener interface
    */  
-  
+  @Override
   public void stateAdvanced(Search search) {
     steps += search.getTransition().getStepCount();
    
@@ -86,23 +86,28 @@ public class SearchStats extends ListenerAdapter {
     }
   }
 
+  @Override
   public void stateProcessed(Search search) {
     processedStates++;
   }
 
+  @Override
   public void stateBacktracked(Search search) {
     searchLevel = search.getDepth();
     backtracks++;
   }
 
+  @Override
   public void stateRestored(Search search) {
     searchLevel = search.getDepth();
     restoredStates++;
   }
 
+  @Override
   public void propertyViolated(Search search) {
   }
 
+  @Override
   public void searchStarted(Search search) {
     if (search instanceof HeuristicSearch) {
       isHeuristic = true;
@@ -116,6 +121,7 @@ public class SearchStats extends ListenerAdapter {
     maxMemory = rt.maxMemory();
   }
 
+  @Override
   public void searchConstraintHit(Search search) {
   }
 
@@ -141,6 +147,7 @@ public class SearchStats extends ListenerAdapter {
     out.println(" ms)");
   }
   
+  @Override
   public void searchFinished(Search search) {
     report("------ Search statistics: ------");
   }

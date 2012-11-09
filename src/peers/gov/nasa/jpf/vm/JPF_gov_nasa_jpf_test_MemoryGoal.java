@@ -53,32 +53,30 @@ public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
       this.mi = mi;
     }
     
-    public void objectCreated (VM vm){
-      if (active){
-        ElementInfo ei = vm.getLastElementInfo();
-        
+    @Override
+    public void objectCreated (VM vm, ThreadInfo ti, ElementInfo ei){
+      if (active){        
         nAlloc++;
         nAllocBytes += ei.getHeapSize(); // just an approximation
       }
     }
     
-    public void objectReleased (VM vm){
+    @Override
+    public void objectReleased (VM vm, ThreadInfo ti, ElementInfo ei){
       if (active){
-        ElementInfo ei = vm.getLastElementInfo();
-        
         nFree++;
         nFreeBytes += ei.getHeapSize(); // just an approximation
       }      
     }
-    
-    public void instructionExecuted (VM vm){
-      Instruction insn = vm.getLastInstruction();
+
+    @Override
+    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
       if (!active) {
-        if (insn.getMethodInfo() == mi){
+        if (executedInsn.getMethodInfo() == mi){
           active = true;
         }
       } else {
-        if ((insn instanceof ReturnInstruction) && (insn.getMethodInfo() == mi)){
+        if ((executedInsn instanceof ReturnInstruction) && (executedInsn.getMethodInfo() == mi)){
           active = false;
         }
       }

@@ -42,8 +42,7 @@ public class SkipInstructionTest extends TestJPF {
   public static class GetFieldListener extends ListenerAdapter {
     
     @Override
-    public void executeInstruction(VM vm) {
-      ThreadInfo ti = vm.getCurrentThread();
+    public void executeInstruction(VM vm, ThreadInfo ti, Instruction insnToExecute) {
       Instruction pc = ti.getPC();
 
       if (pc instanceof GETFIELD) {
@@ -96,8 +95,7 @@ public class SkipInstructionTest extends TestJPF {
     MethodInfo interceptedMethod;
     
     @Override
-    public void classLoaded (VM vm) {
-      ClassInfo ci = vm.getLastClassInfo();
+    public void classLoaded (VM vm, ClassInfo ci) {
       if (ci.getName().equals("gov.nasa.jpf.test.mc.basic.SkipInstructionTest")) {
         interceptedMethod = ci.getMethod("foo(II)I", false);
         assert interceptedMethod != null : "foo(II)I not found";
@@ -106,17 +104,14 @@ public class SkipInstructionTest extends TestJPF {
     }
         
     @Override
-    public void instructionExecuted (VM vm) {
-      ThreadInfo ti = vm.getLastThreadInfo();
-      Instruction insn = vm.getLastInstruction();
-      MethodInfo mi = ti.getTopMethod();
-      
+    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
+      MethodInfo mi = ti.getTopFrameMethodInfo();
       if (mi == interceptedMethod) {
         System.out.println("in " + mi);
 
         if (!ti.isFirstStepInsn()) {
-          System.out.println("in top half: " + insn);
-          if (insn instanceof InvokeInstruction) { // we just entered the interceptedMethod
+          System.out.println("in top half: " + executedInsn);
+          if (executedInsn instanceof InvokeInstruction) { // we just entered the interceptedMethod
             IntChoiceFromList cg = new IntChoiceFromList("Test", 42, 43);
             if (vm.setNextChoiceGenerator(cg)) {
               return; // we are done here, next insn in this method will skip to return
@@ -124,7 +119,7 @@ public class SkipInstructionTest extends TestJPF {
           }
         } else {
           // note - this is the first insn WITHIN the interceptedMethod
-          System.out.println("in bottom half: " + insn);
+          System.out.println("in bottom half: " + executedInsn);
           IntChoiceFromList cg = vm.getCurrentChoiceGenerator("Test", IntChoiceFromList.class);
           if (cg != null) {
             int choice = cg.getNextChoice();

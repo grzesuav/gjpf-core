@@ -77,6 +77,7 @@ public class StateTracker extends ListenerAdapter {
     }
   }
 
+  @Override
   public void stateRestored(Search search) {
     id = search.getStateId();
     depth = search.getDepth();
@@ -85,10 +86,12 @@ public class StateTracker extends ListenerAdapter {
   }
 
   //--- the ones we are interested in
+  @Override
   public void searchStarted(Search search) {
     out.println("----------------------------------- search started");
   }
 
+  @Override
   public void stateAdvanced(Search search) {
     id = search.getStateId();
     depth = search.getDepth();
@@ -104,6 +107,7 @@ public class StateTracker extends ListenerAdapter {
     }
   }
 
+  @Override
   public void stateBacktracked(Search search) {
     id = search.getStateId();
     depth = search.getDepth();
@@ -111,6 +115,7 @@ public class StateTracker extends ListenerAdapter {
     detail = null;
   }
 
+  @Override
   public void searchFinished(Search search) {
     out.println("----------------------------------- search finished");
   }

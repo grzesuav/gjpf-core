@@ -113,32 +113,32 @@ public class ChoiceSelector extends ListenerAdapter {
     singleChoice = !(depthReached && callSeen && threadsAlive);
   }
 
-  public void choiceGeneratorAdvanced (VM vm) {
-    ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
-    int n = cg.getTotalNumberOfChoices();
+  @Override
+  public void choiceGeneratorAdvanced (VM vm, ChoiceGenerator<?> currentCG) {
+    int n = currentCG.getTotalNumberOfChoices();
 
     if (trace != null) { // this is a replay
 
       // <2do> maybe that should just be a warning, and then a single choice
-      assert cg.getClass().getName().equals(trace.getCgClassName()) :
+      assert currentCG.getClass().getName().equals(trace.getCgClassName()) :
         "wrong choice generator class, expecting: " + trace.getCgClassName()
-        + ", read: " + cg.getClass().getName();
+        + ", read: " + currentCG.getClass().getName();
 
-      cg.select(trace.getChoice());
+      currentCG.select(trace.getChoice());
 
     } else {
       if (singleChoice) {
         if (n > 1) {
           int r = random.nextInt(n);
-          cg.select(r); // sets it done, so we never backtrack into it
+          currentCG.select(r); // sets it done, so we never backtrack into it
         }
       }
     }
   }
 
-  public void threadStarted(VM vm) {
+  @Override
+  public void threadStarted(VM vm, ThreadInfo ti) {
     if (singleChoice && (threadSet != null)) {
-      ThreadInfo ti = vm.getLastThreadInfo();
       String tname = ti.getName();
       if (threadSet.matchesAny( tname)){
         threadsAlive = true;
@@ -147,12 +147,11 @@ public class ChoiceSelector extends ListenerAdapter {
     }
   }
 
-  public void executeInstruction(VM vm) {
+  @Override
+  public void executeInstruction(VM vm, ThreadInfo ti, Instruction insnToExecute) {
     if (singleChoice && !callSeen && (calls != null)) {
-      Instruction insn = vm.getLastInstruction();
-      ThreadInfo ti = vm.getLastThreadInfo();
-      if (insn instanceof InvokeInstruction) {
-        String mthName = ((InvokeInstruction)insn).getInvokedMethod(ti).getBaseName();
+      if (insnToExecute instanceof InvokeInstruction) {
+        String mthName = ((InvokeInstruction)insnToExecute).getInvokedMethod(ti).getBaseName();
 
         if (calls.matchesAny(mthName)){
           callSeen = true;
@@ -162,6 +161,7 @@ public class ChoiceSelector extends ListenerAdapter {
     }
   }
 
+  @Override
   public void stateAdvanced(Search search) {
 
     if (trace != null) {

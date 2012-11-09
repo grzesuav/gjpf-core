@@ -39,16 +39,19 @@ public class EndlessLoopDetector extends IdleFilter {
     action = Action.BREAK;
   }
 
+  @Override
   public void stateAdvanced(Search search) {
     if (brokeTransition && search.isVisitedState()) {
       foundEndlessLoop = true;
     }
   }
 
+  @Override
   public boolean check(Search search, VM vm) {
     return !foundEndlessLoop;
   }
 
+  @Override
   public void reset () {
     foundEndlessLoop = false;
   }

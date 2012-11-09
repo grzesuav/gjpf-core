@@ -587,7 +587,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
         ei.processReleaseActions();
         
         // <2do> still have to process finalizers here, which might make the object live again
-        vm.notifyObjectReleased(ei);
+        vm.notifyObjectReleased(ti, ei);
         remove(ei.getObjectRef());
       }
     }    

@@ -51,7 +51,7 @@ public class INSTANCEOF extends JVMInstruction {
         t = type;
       }
 
-      ClassInfo cls = ti.getMethod().getClassInfo();
+      ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
       // resolve the referenced class
       try {
         cls.resolveReferencedClass(t);

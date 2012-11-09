@@ -1300,7 +1300,7 @@ public class ThreadInfo
    * returns the current method in the top stack frame, which is always a
    * bytecode method (executed by JPF)
    */
-  public MethodInfo getTopMethod () {
+  public MethodInfo getTopFrameMethodInfo () {
     if (top != null) {
       return top.getMethodInfo();
     } else {
@@ -1308,22 +1308,10 @@ public class ThreadInfo
     }
   }
 
-  /**
-   * returns the currently executing MethodInfo, which can be a native/MJI method
-   */
-  public MethodInfo getMethod() {
-    MethodInfo mi = vm.getLastMethodInfo();
-    if (mi != null){
-      return mi;
-    } else {
-      return getTopMethod();
-    }
-  }
-
   public boolean isInCtor () {
     // <2do> - hmm, if we don't do this the whole stack, we miss factored
     // init funcs
-    MethodInfo mi = getMethod();
+    MethodInfo mi = getTopFrameMethodInfo();
     if (mi != null) {
       return mi.isCtor();
     } else {
@@ -1789,12 +1777,12 @@ public class ThreadInfo
       return false;
     }
 
-    return getMethod().isStatic()
+    return getTopFrameMethodInfo().isStatic()
       ? false : r.getObjectRef() == getLocalVariable(0);
   }
 
   public boolean atMethod (String mname) {
-    return top != null && getMethod().getFullName().equals(mname);
+    return top != null && getTopFrameMethodInfo().getFullName().equals(mname);
   }
 
   public boolean atPosition (int position) {

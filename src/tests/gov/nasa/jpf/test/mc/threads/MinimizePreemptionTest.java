@@ -119,6 +119,7 @@ public class MinimizePreemptionTest extends TestJPF {
     }
     
     // for the next queued state - preemption count should never decrease
+    @Override
     public void stateRestored(Search search){
       int nPreemptions = getPreemptions(search);
       System.out.println("   explore state with " + nPreemptions + " preemptions");

@@ -32,13 +32,12 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public class CallMonitor extends ListenerAdapter {
 
-  public void instructionExecuted (VM vm) {
-    Instruction insn = vm.getLastInstruction();
-    ThreadInfo ti = vm.getLastThreadInfo();
+  @Override
+  public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
     
-    if (insn instanceof InvokeInstruction) {
-      if (insn.isCompleted(ti) && !ti.isInstructionSkipped()) {
-        InvokeInstruction call = (InvokeInstruction)insn;
+    if (executedInsn instanceof InvokeInstruction) {
+      if (executedInsn.isCompleted(ti) && !ti.isInstructionSkipped()) {
+        InvokeInstruction call = (InvokeInstruction)executedInsn;
         MethodInfo mi = call.getInvokedMethod();
         Object[] args = call.getArgumentValues(ti);
         ClassInfo ci = mi.getClassInfo();

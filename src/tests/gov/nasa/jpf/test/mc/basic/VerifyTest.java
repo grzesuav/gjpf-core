@@ -131,6 +131,7 @@ public class VerifyTest extends TestJPF {
 
     private static int m_backtrackedCount;
 
+    @Override
     public void stateBacktracked(Search search) {
       m_backtrackedCount++;
     }

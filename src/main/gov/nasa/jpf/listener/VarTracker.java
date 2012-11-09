@@ -87,6 +87,7 @@ public class VarTracker extends ListenerAdapter {
     jpf.addPublisherExtension(ConsolePublisher.class, this);
   }
 
+  @Override
   public void publishPropertyViolation (Publisher publisher) {
     PrintWriter pw = publisher.getOut();
     publisher.publishTopicStart("field access ");
@@ -128,6 +129,7 @@ public class VarTracker extends ListenerAdapter {
     }
   }
   
+  @Override
   public void stateAdvanced(Search search) {
     
     if (search.isNewState()) { // don't count twice
@@ -161,15 +163,13 @@ public class VarTracker extends ListenerAdapter {
   
   // <2do> - general purpose listeners should not use types such as String for storing
   // attributes, there is no good way to make sure you retrieve your own attributes
-      
-  public void instructionExecuted(VM vm) {
-    Instruction insn = vm.getLastInstruction();
-    ThreadInfo ti = vm.getLastThreadInfo();
+  @Override
+  public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
     String varId;
     
-    if ( ((((insn instanceof GETFIELD) || (insn instanceof GETSTATIC)))
-            && ((FieldInstruction)insn).isReferenceField()) ||
-         (insn instanceof ALOAD)) {
+    if ( ((((executedInsn instanceof GETFIELD) || (executedInsn instanceof GETSTATIC)))
+            && ((FieldInstruction)executedInsn).isReferenceField()) ||
+         (executedInsn instanceof ALOAD)) {
       // a little extra work - we need to keep track of variable names, because
       // we cannot easily retrieve them in a subsequent xASTORE, which follows
       // a pattern like:  ..GETFIELD.. some-stack-operations .. xASTORE
@@ -178,7 +178,7 @@ public class VarTracker extends ListenerAdapter {
       if (objRef != -1) {
         ElementInfo ei = ti.getElementInfo(objRef);
         if (ei.isArray()) {
-          varId = ((VariableAccessor)insn).getVariableId();
+          varId = ((VariableAccessor)executedInsn).getVariableId();
           
           // <2do> unfortunately, we can't filter here because we don't know yet
           // how the array ref will be used (we would only need the attr for
@@ -192,8 +192,8 @@ public class VarTracker extends ListenerAdapter {
     // because we don't know yet if the state this leads into has already been
     // visited, and we want to detect only var changes that lead to *new* states
     // (objective is to find out why we have new states)
-    else if (insn instanceof StoreInstruction) {
-      if (insn instanceof ArrayStoreInstruction) {
+    else if (executedInsn instanceof StoreInstruction) {
+      if (executedInsn instanceof ArrayStoreInstruction) {
         // did we have a name for the array?
         // stack is ".. ref idx [l]value => .."
         // <2do> String is not a good attribute type to retrieve
@@ -204,10 +204,10 @@ public class VarTracker extends ListenerAdapter {
           varId = "?[]";
         }
       } else {
-        varId = ((VariableAccessor)insn).getVariableId();
+        varId = ((VariableAccessor)executedInsn).getVariableId();
       }
       
-      if (isMethodRelevant(insn.getMethodInfo()) && isVarRelevant(varId)) {
+      if (isMethodRelevant(executedInsn.getMethodInfo()) && isVarRelevant(varId)) {
         queue.add(new VarChange(varId));
         lastThread = ti;
       }

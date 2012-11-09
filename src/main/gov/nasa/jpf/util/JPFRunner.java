@@ -86,7 +86,8 @@ public class JPFRunner extends JFrame {
       sb.append(s);
       lTime.setText(sb.toString());
     }
-    
+
+    @Override
     public void stateAdvanced (Search search) {
       if (search.isNewState()) {
         nNew++;
@@ -105,7 +106,8 @@ public class JPFRunner extends JFrame {
       checkStop(search);
       updateTime();
     }
-    
+
+    @Override
     public void stateBacktracked (Search search) {
       nBacktrack++;
       lBack.setText(Integer.toString(nBacktrack));
@@ -113,17 +115,20 @@ public class JPFRunner extends JFrame {
       checkStop(search);
       updateTime();
     }
-    
+
+    @Override
     public void stateRestored (Search search) {
       checkStop(search);
       updateTime();
     }
-    
+
+    @Override
     public void searchStarted (Search search) {
       lStatus.setText("running..");
       updateTime();
     }
-    
+
+    @Override
     public void searchFinished (Search search) {
       if (!foundErrors) {
         lStatus.setText("finished");
@@ -133,7 +138,8 @@ public class JPFRunner extends JFrame {
       
       inspector.updateTraceContents();
     }
-    
+
+    @Override
     public void propertyViolated (Search search) {
       List<Error> errors = search.getErrors();
       StringBuilder sb = new StringBuilder();
@@ -148,10 +154,12 @@ public class JPFRunner extends JFrame {
       foundErrors = true;
     }
 
+    @Override
     public void searchConstraintHit (Search search) {
       updateTime();
     }
 
+    @Override
     public void stateProcessed (Search search) {
       updateTime();
     }

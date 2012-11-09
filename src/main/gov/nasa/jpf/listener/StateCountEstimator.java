@@ -49,6 +49,7 @@ public class StateCountEstimator extends ListenerAdapter
       m_logPeriod = config.getInt("jpf.state_count_estimator.log_period", 0);
    }
 
+   @Override
    public void searchStarted(Search search)
    {
       m_nextLog     = 0;
@@ -56,11 +57,13 @@ public class StateCountEstimator extends ListenerAdapter
       m_startTime   = System.currentTimeMillis();
    }
 
+   @Override
    public void searchFinished(Search search)
    {
       log(search);
    }
 
+   @Override
    public void stateProcessed(Search search)
    {
       if (m_nextLog > System.currentTimeMillis())

@@ -42,7 +42,7 @@ public class NEW extends JVMInstruction implements AllocInstruction {
     ClassInfo ci;
 
     // resolve the referenced class
-    ClassInfo cls = ti.getMethod().getClassInfo();
+    ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
     try {
       ci = cls.resolveReferencedClass(cname);
     } catch(LoadOnJPFRequired lre) {

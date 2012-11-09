@@ -221,13 +221,13 @@ public class SimpleDot extends ListenerAdapter {
   }
 
   @Override
-  public void threadStarted (VM vm){
-    lastTi = vm.getLastThreadInfo();
+  public void threadStarted (VM vm, ThreadInfo ti){
+    lastTi = ti;
   }
 
   @Override
-  public void objectWait (VM vm){
-    lastEi = vm.getLastElementInfo();
+  public void objectWait (VM vm, ThreadInfo ti, ElementInfo ei){
+    lastEi = ei;
   }
 
   @Override

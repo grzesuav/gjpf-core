@@ -35,14 +35,17 @@ public class CGMonitor extends ListenerAdapter {
     showInsn = conf.getBoolean("cg.show_insn");
   }
   
+  @Override
   public void stateAdvanced (Search search) {
     depth++;
   }
   
+  @Override
   public void stateBacktracked (Search search) {
     depth--;
   }
   
+  @Override
   public void stateRestored (Search search) {
     depth = search.getDepth();    
   }
@@ -53,7 +56,8 @@ public class CGMonitor extends ListenerAdapter {
     }
   }
   
-  public void choiceGeneratorAdvanced (VM vm) {
+  @Override
+  public void choiceGeneratorAdvanced (VM vm, ChoiceGenerator<?> currentCG) {
     ChoiceGenerator<?> cg = vm.getChoiceGenerator();
     
     printPrefix('.');
@@ -65,21 +69,20 @@ public class CGMonitor extends ListenerAdapter {
     isFirstInsn = true;
   }
 
-  public void instructionExecuted (VM vm) {
+  @Override
+  public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
     if (showInsn && isFirstInsn) {
-      ThreadInfo ti = vm.getCurrentThread();
-      Instruction insn = vm.getLastInstruction();
       
       //printPrefix(' ');
       
       System.out.print(" : [");
       System.out.print(ti.getId());
       System.out.print("] ");
-      System.out.print(insn);
+      System.out.print(executedInsn);
       System.out.print(" (in ");
-      System.out.print(insn.getMethodInfo().getFullName());
+      System.out.print(executedInsn.getMethodInfo().getFullName());
       System.out.print(":");
-      System.out.print(insn.getInstructionIndex());
+      System.out.print(executedInsn.getInstructionIndex());
       System.out.println(')');
       
       isFirstInsn = false;

@@ -185,10 +185,12 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
     excludes = StringSetMatcher.getNonEmpty(conf.getStringArray("race.exclude"));
   }
   
+  @Override
   public boolean check(Search search, VM vm) {
     return (race == null);
   }
 
+  @Override
   public void reset() {
     race = null;
   }
@@ -251,19 +253,19 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
   // from the operand stack, and not cached in the insn from a previous exec
   // (all the insns we look at are pre-exec, i.e. don't have their caches
   // updated yet)
-  public void choiceGeneratorSet(VM vm) {
-    ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
+  @Override
+  public void choiceGeneratorSet(VM vm, ChoiceGenerator<?> newCG) {
 
-    if (cg instanceof ThreadChoiceFromSet) {
-      ThreadInfo[] threads = ((ThreadChoiceFromSet)cg).getAllThreadChoices();
+    if (newCG instanceof ThreadChoiceFromSet) {
+      ThreadInfo[] threads = ((ThreadChoiceFromSet)newCG).getAllThreadChoices();
       checkRace(threads);
     }
   }
 
-  public void executeInstruction (VM vm) {
+  @Override
+  public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute) {
     if (race != null) {
       // we're done, report as quickly as possible
-      ThreadInfo ti = vm.getLastThreadInfo();
       //ti.skipInstruction();
       ti.breakTransition();
     }

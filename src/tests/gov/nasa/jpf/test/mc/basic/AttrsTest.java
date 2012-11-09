@@ -53,15 +53,14 @@ public class AttrsTest extends TestJPF {
 
     public IntListener () {}
 
-    public void instructionExecuted (VM vm){
-      Instruction insn = vm.getLastInstruction();
-      MethodInfo mi = insn.getMethodInfo();
+    @Override
+    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInstn, Instruction executedInsn){
+      MethodInfo mi = executedInsn.getMethodInfo();
 
       // not very efficient, but who cares - it's a small test
-      if (insn instanceof ISTORE){
+      if (executedInsn instanceof ISTORE){
         if (mi.getName().equals("testIntPropagation")){
-          ISTORE istore = (ISTORE)insn;
-          ThreadInfo ti = vm.getLastThreadInfo();
+          ISTORE istore = (ISTORE)executedInsn;
           String localName = istore.getLocalVariableName();
           int localIndex = istore.getLocalVariableIndex();
 
@@ -88,11 +87,10 @@ public class AttrsTest extends TestJPF {
 
   public static class InvokeListener extends ListenerAdapter {
 
-    public void instructionExecuted (VM vm){
-      Instruction insn = vm.getLastInstruction();
-      if (insn instanceof InvokeInstruction) {
-        InvokeInstruction call = (InvokeInstruction)insn;
-        ThreadInfo ti = vm.getLastThreadInfo();
+    @Override
+    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInstn, Instruction executedInsn){
+      if (executedInsn instanceof InvokeInstruction) {
+        InvokeInstruction call = (InvokeInstruction)executedInsn;
         MethodInfo mi = call.getInvokedMethod();
         String mName = mi.getName();
         if (mName.equals("goModel") || mName.equals("goNative")) {
@@ -147,14 +145,13 @@ public class AttrsTest extends TestJPF {
 
     public DoubleListener () {}
 
-    public void instructionExecuted (VM vm){
-      Instruction insn = vm.getLastInstruction();
-      MethodInfo mi = insn.getMethodInfo();
+    @Override
+    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
+      MethodInfo mi = executedInsn.getMethodInfo();
 
-      if (insn instanceof DSTORE){
+      if (executedInsn instanceof DSTORE){
         if (mi.getName().equals("testDoublePropagation")){
-          DSTORE dstore = (DSTORE)insn;
-          ThreadInfo ti = vm.getLastThreadInfo();
+          DSTORE dstore = (DSTORE)executedInsn;
           String localName = dstore.getLocalVariableName();
           int localIndex = dstore.getLocalVariableIndex();
 
@@ -427,12 +424,11 @@ public class AttrsTest extends TestJPF {
     
     public MixedAttrTypeListener() {}
     
-    public void executeInstruction (VM vm){
-      ThreadInfo ti = vm.getLastThreadInfo();
-      Instruction insn = vm.getLastInstruction();
+    @Override
+    public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
       
-      if (insn instanceof INVOKEVIRTUAL){
-        MethodInfo callee = ((INVOKEVIRTUAL)insn).getInvokedMethod();
+      if (insnToExecute instanceof INVOKEVIRTUAL){
+        MethodInfo callee = ((INVOKEVIRTUAL)insnToExecute).getInvokedMethod();
         if (callee.getUniqueName().equals("foo(J)J")){
           System.out.println("--- pre-exec foo() invoke interception, setting arg attrs");
           
@@ -446,8 +442,8 @@ public class AttrsTest extends TestJPF {
 
         }
         
-      } else if (insn instanceof LRETURN){
-        MethodInfo mi = insn.getMethodInfo();
+      } else if (insnToExecute instanceof LRETURN){
+        MethodInfo mi = insnToExecute.getMethodInfo();
         if (mi.getUniqueName().equals("foo(J)J")){
           System.out.println("--- pre-exec foo() return interception");
           StackFrame frame = ti.getTopFrame();
@@ -471,12 +467,11 @@ public class AttrsTest extends TestJPF {
       }
     }
     
-    public void instructionExecuted (VM vm){
-      ThreadInfo ti = vm.getLastThreadInfo();
-      Instruction insn = vm.getLastInstruction();
+    @Override
+    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
 
-      if (insn instanceof INVOKEVIRTUAL){
-        MethodInfo callee = ((INVOKEVIRTUAL)insn).getInvokedMethod();
+      if (executedInsn instanceof INVOKEVIRTUAL){
+        MethodInfo callee = ((INVOKEVIRTUAL)executedInsn).getInvokedMethod();
         if (callee.getUniqueName().equals("foo(J)J")){
           System.out.println("--- post-exec foo() invoke interception");
  
@@ -505,8 +500,8 @@ public class AttrsTest extends TestJPF {
           }
         }
         
-      } else if (insn instanceof LRETURN){
-        MethodInfo mi = insn.getMethodInfo();
+      } else if (executedInsn instanceof LRETURN){
+        MethodInfo mi = executedInsn.getMethodInfo();
         if (mi.getUniqueName().equals("foo(J)J")){
           System.out.println("--- post-exec foo() return interception");
           for (Object a: ti.longOperandAttrIterator()){

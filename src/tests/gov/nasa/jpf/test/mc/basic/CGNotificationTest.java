@@ -43,43 +43,42 @@ public class CGNotificationTest extends TestJPF {
 
     static ArrayList<String> sequence;
 
-    public void choiceGeneratorRegistered(VM vm) {
-      ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
-      System.out.println("# CG registered: " + cg);
-      sequence.add("registered " + cg.getId());
+    @Override
+    public void choiceGeneratorRegistered(VM vm, ChoiceGenerator<?> nextCG, ThreadInfo ti, Instruction executedInsn) {
+      System.out.println("# CG registered: " + nextCG);
+      sequence.add("registered " + nextCG.getId());
 
-      assert cg.hasMoreChoices();
+      assert nextCG.hasMoreChoices();
     }
 
-    public void choiceGeneratorSet(VM vm) {
-      ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
-      System.out.println("# CG set:        " + cg);
-      sequence.add("set " + cg.getId());
+    @Override
+    public void choiceGeneratorSet(VM vm, ChoiceGenerator<?> newCG) {
+      System.out.println("# CG set:        " + newCG);
+      sequence.add("set " + newCG.getId());
 
-      assert cg.hasMoreChoices();
+      assert newCG.hasMoreChoices();
     }
 
-    public void choiceGeneratorAdvanced(VM vm) {
-      ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
-      System.out.println("#   CG advanced: " + cg);
-      sequence.add("advance " + cg.getId() + ' ' + cg.getNextChoice());
+    @Override
+    public void choiceGeneratorAdvanced(VM vm, ChoiceGenerator<?> currentCG) {
+      System.out.println("#   CG advanced: " + currentCG);
+      sequence.add("advance " + currentCG.getId() + ' ' + currentCG.getNextChoice());
     }
 
-    public void choiceGeneratorProcessed(VM vm) {
-      ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
-      System.out.println("# CG processed:  " + cg);
-      sequence.add("processed " + cg.getId());
+    @Override
+    public void choiceGeneratorProcessed(VM vm, ChoiceGenerator<?> processedCG) {
+      System.out.println("# CG processed:  " + processedCG);
+      sequence.add("processed " + processedCG.getId());
 
-      assert !cg.hasMoreChoices();
+      assert !processedCG.hasMoreChoices();
     }
 
-    public void instructionExecuted(VM vm){
-      Instruction insn = vm.getLastInstruction();
-      ThreadInfo ti = vm.getLastThreadInfo();
+    @Override
+    public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction lastInsn){
       SystemState ss = vm.getSystemState();
 
-      if (insn instanceof EXECUTENATIVE) { // break on native method exec
-        EXECUTENATIVE exec = (EXECUTENATIVE) insn;
+      if (lastInsn instanceof EXECUTENATIVE) { // break on native method exec
+        EXECUTENATIVE exec = (EXECUTENATIVE) lastInsn;
 
         if (exec.getExecutedMethodName().equals("getInt")){// this insn did create a CG
           if (!ti.isFirstStepInsn()){

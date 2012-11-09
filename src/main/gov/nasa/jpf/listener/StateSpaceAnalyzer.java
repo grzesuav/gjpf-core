@@ -153,8 +153,8 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
     return (grouper);
   }
 
-  public void choiceGeneratorSet(VM vm) {
-    ChoiceGenerator generator;
+  @Override
+  public void choiceGeneratorSet(VM vm, ChoiceGenerator<?> newCG) {
     int i;
 
     // NOTE: we get this from SystemState.nextSuccessor, i.e. when the CG
@@ -168,13 +168,13 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
     // machine has multiple processors, a better solution would be to have a 
     // background thread process the generators.
 
-    generator = vm.getLastChoiceGenerator();
-    m_choiceCount += generator.getTotalNumberOfChoices();
+    m_choiceCount += newCG.getTotalNumberOfChoices();
 
     for (i = m_groupers.size(); --i >= 0; )
-      m_groupers.get(i).add(generator);
+      m_groupers.get(i).add(newCG);
   }
 
+  @Override
   public void searchStarted(Search search) {
     int i;
     
@@ -185,6 +185,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
     m_terminateTime = m_maxTime + System.currentTimeMillis();
   }
 
+  @Override
   public void stateAdvanced(Search search) {
     if (shouldTerminate(search)) {
       search.terminate();
@@ -211,6 +212,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
     return (false);
   }
 
+  @Override
   public void publishFinished(Publisher publisher) {
     CGGrouper groupers[];
 

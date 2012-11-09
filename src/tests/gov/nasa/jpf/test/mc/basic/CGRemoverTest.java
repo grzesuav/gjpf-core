@@ -47,10 +47,10 @@ public class CGRemoverTest extends TestJPF {
   }
 
   public static class R1Listener extends ListenerAdapter {
-    
-    public void choiceGeneratorSet (VM vm){
-      ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
-      Instruction insn = cg.getInsn();
+
+    @Override
+    public void choiceGeneratorSet (VM vm, ChoiceGenerator<?> newCG){
+      Instruction insn = newCG.getInsn();
 
       if (insn instanceof InvokeInstruction){
         MethodInfo mi = ((InvokeInstruction)insn).getInvokedMethod();

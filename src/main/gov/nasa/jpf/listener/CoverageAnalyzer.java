@@ -31,6 +31,7 @@ import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.AnnotationInfo;
+import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassInfoException;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
@@ -746,8 +747,8 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
    */
 
   //-------- the listener interface
-  public void classLoaded(VM vm) {
-    ClassInfo ci = vm.getLastClassInfo();
+  @Override
+  public void classLoaded(VM vm, ClassInfo ci) {
     String clsName = ci.getName();
 
     if (loadedOnly) {
@@ -764,8 +765,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
   MethodInfo lastMi = null;
   MethodCoverage lastMc = null;
 
-  MethodCoverage getMethodCoverage(VM vm) {
-    Instruction insn = vm.getLastInstruction();
+  MethodCoverage getMethodCoverage(Instruction insn) {
 
     if (!insn.isExtendedInstruction()) {
       MethodInfo mi = insn.getMethodInfo();
@@ -811,15 +811,15 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
     return mi.getAnnotation("gov.nasa.jpf.Requirement");
   }
 
-  public void instructionExecuted(VM vm) {
-    Instruction insn = vm.getLastInstruction();
-    MethodCoverage mc = getMethodCoverage(vm);
+  @Override
+  public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
+    MethodCoverage mc = getMethodCoverage(executedInsn);
 
     if (mc != null) {
-      mc.setExecuted(vm.getLastThreadInfo(), insn);
+      mc.setExecuted(ti, executedInsn);
 
       if (showRequirements) {
-        if (insn.getPosition() == 0) { // first insn in method, check for Requirements
+        if (executedInsn.getPosition() == 0) { // first insn in method, check for Requirements
           AnnotationInfo ai = getRequirementsAnnotation(mc.getMethodInfo());
           if (ai != null) {
             String[] ids = ai.getValueAsStringArray();
@@ -830,7 +830,8 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
     }
   }
 
-  public void choiceGeneratorSet(VM vm) {
+  @Override
+  public void choiceGeneratorSet(VM vm, ChoiceGenerator<?> newCG) {
     /*** should be an option
     Instruction insn = vm.getLastInstruction();
     MethodCoverage mc = getMethodCoverage(vm);
@@ -1201,6 +1202,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
   }
 
 
+  @Override
   public void publishFinished(Publisher publisher) {
 
     if (clsEntries == null) {

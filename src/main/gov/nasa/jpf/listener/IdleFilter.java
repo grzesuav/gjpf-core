@@ -119,6 +119,7 @@ public class IdleFilter extends PropertyListenerAdapter {
 
   }
   
+  @Override
   public void stateAdvanced(Search search) {
     ts.backJumps = 0;
     ts.isCleared = false;
@@ -128,6 +129,7 @@ public class IdleFilter extends PropertyListenerAdapter {
     brokeTransition = false;
   }
 
+  @Override
   public void stateBacktracked(Search search) {
     ts.backJumps = 0;
     ts.isCleared = false;
@@ -136,9 +138,8 @@ public class IdleFilter extends PropertyListenerAdapter {
   }
 
   // ----------------------------------------------------- VMListener interface
-  public void instructionExecuted(VM vm) {
-    Instruction insn = vm.getLastInstruction();
-    ThreadInfo ti = vm.getLastThreadInfo();
+  @Override
+  public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
 
     int tid = ti.getId();
     ts = threadStats.get(tid);
@@ -147,18 +148,18 @@ public class IdleFilter extends PropertyListenerAdapter {
       threadStats.set(tid, ts);
     }
 
-    if (insn.isBackJump()) {
+    if (executedInsn.isBackJump()) {
       ts.backJumps++;
 
       int loopStackDepth = ti.getStackDepth();
-      int loopPc = vm.getNextInstruction().getPosition();
+      int loopPc = nextInsn.getPosition();
 
       if ((loopStackDepth != ts.loopStackDepth) || (loopPc != ts.loopStartPc)) {
         // new loop, reset
         ts.isCleared = false;
         ts.loopStackDepth = loopStackDepth;
         ts.loopStartPc = loopPc;
-        ts.loopEndPc = insn.getPosition();
+        ts.loopEndPc = executedInsn.getPosition();
         ts.backJumps = 0;
         
       } else {
@@ -166,16 +167,16 @@ public class IdleFilter extends PropertyListenerAdapter {
           if (ts.backJumps > maxBackJumps) {
 
             ti.reschedule(false); // this breaks the executePorStep loop
-            MethodInfo mi = insn.getMethodInfo();
+            MethodInfo mi = executedInsn.getMethodInfo();
             ClassInfo ci = mi.getClassInfo();
-            int line = mi.getLineNumber(insn);
+            int line = mi.getLineNumber(executedInsn);
             String file = ci.getSourceFileName();
 
             switch (action) {
               case JUMP:
                 // pretty bold, we jump past the loop end and go on from there
 
-                Instruction next = insn.getNext();
+                Instruction next = executedInsn.getNext();
                 ti.setNextPC(next);
 
                 log.warning("jumped past loop in: " + ti.getName() +
@@ -224,10 +225,10 @@ public class IdleFilter extends PropertyListenerAdapter {
       // we assume this is not an idle loop and terminate the checks
       // <2do> this is too restrictive - we should leave this to state matching
       
-      if ((insn instanceof InvokeInstruction)
-          || (insn instanceof ArrayStoreInstruction)) {
+      if ((executedInsn instanceof InvokeInstruction)
+          || (executedInsn instanceof ArrayStoreInstruction)) {
         int stackDepth = ti.getStackDepth();
-        int pc = insn.getPosition();
+        int pc = executedInsn.getPosition();
 
         if (stackDepth == ts.loopStackDepth) {
           if ((pc >= ts.loopStartPc) && (pc < ts.loopEndPc)) {
@@ -239,8 +240,8 @@ public class IdleFilter extends PropertyListenerAdapter {
   }
   
   // thread ids are reused, so we have to clean up
-  public void threadTerminated (VM vm){
-    ThreadInfo ti = vm.getLastThreadInfo();
+  @Override
+  public void threadTerminated (VM vm, ThreadInfo ti){
     int tid = ti.getId();
     threadStats.set(tid, null);
   }

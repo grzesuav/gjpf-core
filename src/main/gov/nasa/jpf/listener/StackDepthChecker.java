@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -45,9 +46,9 @@ public class StackDepthChecker extends ListenerAdapter {
   }
   
   @Override
-  public void methodEntered (VM vm){
+  public void methodEntered (VM vm, ThreadInfo thread, MethodInfo mi){
     
-    ThreadInfo ti = vm.getCurrentThread();
+    ThreadInfo ti = ThreadInfo.getCurrentThread();
     int depth = ti.getStackDepth(); // note this is only an approximation since it also returns natives and overlays
     
     if (depth > maxDepth){

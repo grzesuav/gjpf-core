@@ -60,15 +60,14 @@ public class ConstInsnPathTime extends ListenerAdapter implements TimeModel {
   
   //-- the listener interface
   @Override
-  public void choiceGeneratorRegistered(VM vm){
-    ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
-    ChoiceGenerator<?> cgPrev = cg.getPreviousChoiceGenerator();
+  public void choiceGeneratorRegistered(VM vm, ChoiceGenerator<?> nextCG, ThreadInfo ti, Instruction executedInsn){
+    ChoiceGenerator<?> cgPrev = nextCG.getPreviousChoiceGenerator();
     ThreadInfo tiCurrent = vm.getCurrentThread();
     long t = tiCurrent.getExecutedInstructions() * perInsnTime;
     
     TimeVal tv = null;
     
-    if (cg.isCascaded()){
+    if (nextCG.isCascaded()){
       // there's got to be a previous one, and its associated with the same insn
       tv = cgPrev.getAttr(TimeVal.class);
       
@@ -82,13 +81,12 @@ public class ConstInsnPathTime extends ListenerAdapter implements TimeModel {
       }
     }
     
-    cg.addAttr( tv);
+    nextCG.addAttr( tv);
   }
   
   @Override
-  public void choiceGeneratorAdvanced(VM vm){
-    ChoiceGenerator<?> cg = vm.getLastChoiceGenerator();
-    TimeVal tv = cg.getAttr(TimeVal.class);
+  public void choiceGeneratorAdvanced(VM vm, ChoiceGenerator<?> currentCG){
+    TimeVal tv = currentCG.getAttr(TimeVal.class);
     if (tv != null){
       transitionStartTime = tv.time;
     } else {

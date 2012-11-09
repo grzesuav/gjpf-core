@@ -52,6 +52,7 @@ public class AssertionProperty extends PropertyListenerAdapter {
     goOn = config.getBoolean("ap.go_on",false);
   }
   
+  @Override
   public boolean check(Search search, VM vm) {
     return (msg == null);
   }
@@ -75,11 +76,10 @@ public class AssertionProperty extends PropertyListenerAdapter {
     return s;
   }
 
-  public void executeInstruction (VM vm){
-    Instruction insn = vm.getLastInstruction();
+  @Override
+  public void executeInstruction (VM vm, ThreadInfo ti, Instruction insn){
     
     if (insn instanceof ATHROW) {
-      ThreadInfo ti = vm.getLastThreadInfo();
       
       Heap heap = vm.getHeap();
       StackFrame frame = ti.getTopFrame();
@@ -111,6 +111,7 @@ public class AssertionProperty extends PropertyListenerAdapter {
     }
   }
   
+  @Override
   public void reset() {
     msg = null;
   }

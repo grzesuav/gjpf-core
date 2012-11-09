@@ -217,7 +217,7 @@ public class ClassLoaderInfo
   }
 
   public static ClassLoaderInfo getCurrentClassLoader(ThreadInfo ti) {
-    MethodInfo mi = ti.getTopMethod();
+    MethodInfo mi = ti.getTopFrameMethodInfo();
     if (mi != null) {
       ClassInfo ci = mi.getClassInfo();
       if(ci != null) {

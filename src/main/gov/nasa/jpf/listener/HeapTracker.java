@@ -183,6 +183,7 @@ public class HeapTracker extends PropertyListenerAdapter {
   /**
    * return 'false' if property is violated
    */
+  @Override
   public boolean check (Search search, VM vm) {
     if (throwOutOfMemory) {
       // in this case we don't want to stop the program, but see if it
@@ -205,6 +206,7 @@ public class HeapTracker extends PropertyListenerAdapter {
   }
 
   /******************************************* SearchListener interface *****/
+  @Override
   public void searchStarted(Search search) {
     super.searchStarted(search);
 
@@ -219,6 +221,7 @@ public class HeapTracker extends PropertyListenerAdapter {
     stat = (PathStat)stat.clone();
   }
 
+  @Override
   public void stateAdvanced(Search search) {
 
     if (search.isNewState()) {
@@ -234,6 +237,7 @@ public class HeapTracker extends PropertyListenerAdapter {
     }
   }
 
+  @Override
   public void stateBacktracked(Search search) {
     nBacktrack++;
 
@@ -243,6 +247,7 @@ public class HeapTracker extends PropertyListenerAdapter {
   }
 
   /******************************************* PublisherExtension interface ****/
+  @Override
   public void publishFinished (Publisher publisher) {
     PrintWriter pw = publisher.getOut();
     publisher.publishTopicStart("heap statistics");
@@ -308,6 +313,7 @@ public class HeapTracker extends PropertyListenerAdapter {
 
 
   /******************************************* VMListener interface *********/
+  @Override
   public void gcBegin(VM vm) {
     /**
      System.out.println();
@@ -316,6 +322,7 @@ public class HeapTracker extends PropertyListenerAdapter {
      **/
   }
 
+  @Override
   public void gcEnd(VM vm) {
     Heap heap = vm.getHeap();
 
@@ -367,12 +374,11 @@ public class HeapTracker extends PropertyListenerAdapter {
     return StringSetMatcher.isMatch(clsName, includes, excludes);
   }
 
-  public void objectCreated(VM vm) {
-    ElementInfo ei = vm.getLastElementInfo();
+  @Override
+  public void objectCreated(VM vm, ThreadInfo ti, ElementInfo ei) {
     int idx = ei.getObjectRef();
-    ThreadInfo ti = vm.getLastThreadInfo();
     int line = ti.getLine();
-    MethodInfo mi = ti.getMethod();
+    MethodInfo mi = ti.getTopFrameMethodInfo();
     SourceRef sr = null;
 
     if (!isRelevantType(ei)) {
@@ -412,9 +418,8 @@ public class HeapTracker extends PropertyListenerAdapter {
     }
   }
 
-
-  public void objectReleased(VM vm) {
-    ElementInfo ei = vm.getLastElementInfo();
+  @Override
+  public void objectReleased(VM vm, ThreadInfo ti, ElementInfo ei) {
 
     if (!isRelevantType(ei)) {
       return;

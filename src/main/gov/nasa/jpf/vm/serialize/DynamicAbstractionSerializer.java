@@ -61,14 +61,13 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
 
   public class Attributor extends ListenerAdapter {
 
-    public void classLoaded(VM vm) {
-      ClassInfo ci = vm.getLastClassInfo();
-      String clsName = ci.getName();
+    @Override
+    public void classLoaded(VM vm, ClassInfo loadedClass) {
 
-      if (!ci.isArray() && !ci.isPrimitive()) {
+      if (!loadedClass.isArray() && !loadedClass.isPrimitive()) {
 
         if (!fieldAbstractions.isEmpty()) {
-          for (FieldInfo fi : ci.getDeclaredInstanceFields()) {
+          for (FieldInfo fi : loadedClass.getDeclaredInstanceFields()) {
             for (FieldAbstraction fabs : fieldAbstractions) {
               if (fabs.fspec.matches(fi)) {
                 logger.info("setting instance field abstraction ", fabs.abstraction.getClass().getName(),
@@ -78,7 +77,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
             }
           }
 
-          for (FieldInfo fi : ci.getDeclaredStaticFields()) {
+          for (FieldInfo fi : loadedClass.getDeclaredStaticFields()) {
             for (FieldAbstraction fabs : fieldAbstractions) {
               if (fabs.fspec.matches(fi)) {
                 logger.info("setting static field abstraction ", fabs.abstraction.getClass().getName(),

@@ -27,7 +27,9 @@ import gov.nasa.jpf.jvm.bytecode.LockInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadChoiceGenerator;
@@ -79,6 +81,7 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     }
   }
   
+  @Override
   public void gcBegin (VM vm) {
     int heapSize = vm.getHeap().size();
     if (heapSize > maxLiveObjects){
@@ -88,12 +91,14 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     gcCycles++;
   }
   
-  public void instructionExecuted (VM vm){
+  @Override
+  public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
     insns++;
   }
 
-  public void choiceGeneratorSet (VM vm){
-    ChoiceGenerator<?> cg = vm.getChoiceGenerator();
+  @Override
+  public void choiceGeneratorSet (VM vm, ChoiceGenerator<?> newCG){
+    ChoiceGenerator<?> cg = VM.getVM().getChoiceGenerator();
     if (cg instanceof ThreadChoiceGenerator){
       threadCGs++;
 
@@ -119,14 +124,17 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     }
   }
   
-  public void objectCreated (VM vm){
+  @Override
+  public void objectCreated (VM vm, ThreadInfo ti, ElementInfo ei){
     nNewObjects++;
   }
   
-  public void objectReleased (VM vm){
+  @Override
+  public void objectReleased (VM vm, ThreadInfo ti, ElementInfo ei){
     nReleasedObjects++;
   }
   
+  @Override
   public void stateAdvanced (Search search){
     long m = Runtime.getRuntime().totalMemory();
     if (m > maxUsed) {
@@ -147,18 +155,22 @@ public class Statistics extends ListenerAdapter implements Cloneable {
     }
   }
   
+  @Override
   public void stateBacktracked (Search search){
     backtracked++;
   }
   
+  @Override
   public void stateProcessed (Search search){
     processed++;
   }
 
+  @Override
   public void stateRestored (Search search){
     restored++;
   }
-    
+  
+  @Override
   public void searchConstraintHit (Search search){
     constraints++;
   }

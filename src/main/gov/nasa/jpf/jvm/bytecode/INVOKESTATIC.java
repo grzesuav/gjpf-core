@@ -84,7 +84,7 @@ public class INVOKESTATIC extends InvokeInstruction {
   }
 
   public Instruction execute (ThreadInfo ti) {
-    ClassInfo clsInfo = ti.getMethod().getClassInfo();
+    ClassInfo clsInfo = ti.getTopFrameMethodInfo().getClassInfo();
 
     // resolve the class of the invoked method first
     try {

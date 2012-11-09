@@ -285,6 +285,7 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
   
   //----------- the listener interface
   
+  @Override
   public boolean check(Search search, VM vm) {
     return (errorMsg == null);
   }
@@ -317,13 +318,14 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
     return s;
   }
   
+  @Override
   public void reset () {
     errorMsg = null;
     violatedSpecs.clear();
     offendingOutput = null;
   }
 
-  
+  @Override
   public void stateAdvanced(Search search) {
     if (search.isEndState()) {
       
@@ -367,6 +369,7 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
     }
   }
   
+  @Override
   public void searchFinished (Search search) {
     if (allSpecs != null && !matchesAll(allSpecs, pathOutputs)) {
       log.warning("pom.all violated");
@@ -374,6 +377,7 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
     }
   }
   
+  @Override
   public void publishFinished (Publisher publisher) {
     
     if (printOutput) {

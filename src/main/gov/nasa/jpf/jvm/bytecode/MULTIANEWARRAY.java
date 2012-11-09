@@ -57,7 +57,7 @@ public class MULTIANEWARRAY extends JVMInstruction {
   }
 
   public Instruction execute (ThreadInfo ti) {
-    ClassInfo cls = ti.getMethod().getClassInfo();
+    ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
     String compType = Types.getComponentTerminal(type);
 
     // resolve the component class first

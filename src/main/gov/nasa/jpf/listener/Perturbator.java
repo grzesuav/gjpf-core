@@ -251,28 +251,28 @@ public class Perturbator extends ListenerAdapter {
     }
   }
 
-  public void classLoaded (VM vm){
+  @Override
+  public void classLoaded (VM vm, ClassInfo loadedClass){
     // this one takes the watchlists, finds out if the loaded class matches
     // any of the watch entries, and in case it does fully initializes
     // the corresponding Perturbation object with the target construct
     // (MethodInfo, FieldInfo) we use to identify relevant ops during
     // instruction execution notifications
 
-    ClassInfo ci = vm.getLastClassInfo();
-    String clsName = ci.getName();
+    String clsName = loadedClass.getName();
 
     for (FieldPerturbation p : fieldWatchList){
       FieldSpec fs = p.fieldSpec;
-      if (fs.isMatchingType(ci)){
-        addFieldPerturbations( p, ci, ci.getDeclaredInstanceFields());
-        addFieldPerturbations( p, ci, ci.getDeclaredStaticFields());
+      if (fs.isMatchingType(loadedClass)){
+        addFieldPerturbations( p, loadedClass, loadedClass.getDeclaredInstanceFields());
+        addFieldPerturbations( p, loadedClass, loadedClass.getDeclaredStaticFields());
       }
     }
 
     for (ReturnPerturbation p : returnWatchList){
       MethodSpec ms = p.mthSpec;
-      if (ms.isMatchingType(ci)){
-        for (MethodInfo mi : ci.getDeclaredMethodInfos()){
+      if (ms.isMatchingType(loadedClass)){
+        for (MethodInfo mi : loadedClass.getDeclaredMethodInfos()){
           if (ms.matches(mi)){
             Class<? extends ChoiceGenerator<?>> returnCGType = mi.getReturnChoiceGeneratorType();
             Class<? extends ChoiceGenerator<?>> perturbatorCGType = p.perturbator.getChoiceGeneratorType();
@@ -289,8 +289,8 @@ public class Perturbator extends ListenerAdapter {
 
     for (ParamsPerturbation p : paramsWatchList){
       MethodSpec ms = p.mthSpec;
-      if (ms.isMatchingType(ci)){
-        for (MethodInfo mi : ci.getDeclaredMethodInfos()){
+      if (ms.isMatchingType(loadedClass)){
+        for (MethodInfo mi : loadedClass.getDeclaredMethodInfos()){
           if (ms.matches(mi)){
           	// We simply associate the method with the parameters perturbator
             Class<? extends ChoiceGenerator<?>> perturbatorCGType = p.perturbator.getChoiceGeneratorType();
@@ -342,16 +342,15 @@ public class Perturbator extends ListenerAdapter {
   		return p.sref.equals(invokeInsn.getFilePos());
   }
 
-  public void executeInstruction (VM vm){
-    Instruction insn = vm.getLastInstruction();
-    ThreadInfo ti = vm.getLastThreadInfo();
+  @Override
+  public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
     
-    if (insn instanceof GETFIELD){
-      FieldInfo fi = ((InstanceFieldInstruction)insn).getFieldInfo();
+    if (insnToExecute instanceof GETFIELD){
+      FieldInfo fi = ((InstanceFieldInstruction)insnToExecute).getFieldInfo();
       FieldPerturbation e = perturbedFields.get(fi);
 
       if (e != null) {  // managed field
-        if (isMatchingInstructionLocation(e,insn)) {
+        if (isMatchingInstructionLocation(e,insnToExecute)) {
           if (!ti.isFirstStepInsn()){
             // save the current stackframe so that we can restore it before
             // we re-execute
@@ -360,8 +359,8 @@ public class Perturbator extends ListenerAdapter {
         }
       }
 
-    } else if (insn instanceof ReturnInstruction){
-      MethodInfo mi = insn.getMethodInfo();
+    } else if (insnToExecute instanceof ReturnInstruction){
+      MethodInfo mi = insnToExecute.getMethodInfo();
       ReturnPerturbation e = perturbedReturns.get(mi);
 
       if (e != null && isRelevantCallLocation(ti, e)){
@@ -374,7 +373,7 @@ public class Perturbator extends ListenerAdapter {
           // value because its already on the operand stack
           ChoiceGenerator<?> cg = e.perturbator.createChoiceGenerator("perturbReturn", ti.getTopFrame(), new Integer(0));
           if (ss.setNextChoiceGenerator(cg)){
-            ti.skipInstruction(insn);
+            ti.skipInstruction(insnToExecute);
           }
         } else {
           // re-executing, modify the operand stack top and execute
@@ -384,14 +383,14 @@ public class Perturbator extends ListenerAdapter {
           }
         }
       }
-    } else if (insn instanceof InvokeInstruction) {
+    } else if (insnToExecute instanceof InvokeInstruction) {
     	// first get the method info object corresponding to the invoked method
     	// We can't use getMethodInfo as the method returned may not be the actual
     	// method invoked, but rather its caller
-    	MethodInfo mi = ((InvokeInstruction) insn).getInvokedMethod();
+    	MethodInfo mi = ((InvokeInstruction) insnToExecute).getInvokedMethod();
     	ParamsPerturbation e = perturbedParams.get(mi);
     	
-      if (e != null && isRelevantCallLocation(insn, e)){
+      if (e != null && isRelevantCallLocation(insnToExecute, e)){
         SystemState ss = vm.getSystemState();
 
         if (!ti.isFirstStepInsn()) {
@@ -404,7 +403,7 @@ public class Perturbator extends ListenerAdapter {
           if (cg != null) {
             log.info("--- Creating choice generator: " + mi.getFullName() + " for thread: " + ti);
             if (ss.setNextChoiceGenerator(cg)) {
-              ti.skipInstruction(insn);
+              ti.skipInstruction(insnToExecute);
             }
           }
         } else {
@@ -419,15 +418,14 @@ public class Perturbator extends ListenerAdapter {
     }
   }
 
-  public void instructionExecuted(VM vm) {
-    Instruction insn = vm.getLastInstruction();
-    ThreadInfo ti = vm.getLastThreadInfo();
+  @Override
+  public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
     
-    if (insn instanceof GETFIELD){
-      FieldInfo fi = ((InstanceFieldInstruction)insn).getFieldInfo();
+    if (executedInsn instanceof GETFIELD){
+      FieldInfo fi = ((InstanceFieldInstruction)executedInsn).getFieldInfo();
       FieldPerturbation p = perturbedFields.get(fi);
       if (p != null){
-        if (isMatchingInstructionLocation(p, insn)) {  // none or managed filePos
+        if (isMatchingInstructionLocation(p, executedInsn)) {  // none or managed filePos
           StackFrame frame = ti.getTopFrame();
           SystemState ss = vm.getSystemState();
 
@@ -447,7 +445,7 @@ public class Perturbator extends ListenerAdapter {
               // to pre-exec state from last 'this' or classobject ref, but then
               // we have to deal with different field value sizes
               ti.setTopFrame(savedFrame);
-              ti.setNextPC(insn); // reexecute
+              ti.setNextPC(executedInsn); // reexecute
 
               savedFrame = null;
             }

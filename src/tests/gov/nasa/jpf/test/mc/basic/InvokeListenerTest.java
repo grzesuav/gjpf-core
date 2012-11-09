@@ -41,12 +41,9 @@ public class InvokeListenerTest extends TestJPF {
   //--- this is only used outside JPF execution
   public static class Listener extends ListenerAdapter {
 
-    void checkArgs (VM vm, boolean isPostExec){
-      Instruction insn = vm.getLastInstruction();
-
+    void checkArgs (ThreadInfo ti, Instruction insn, boolean isPostExec){
       if (insn instanceof InvokeInstruction){
         InvokeInstruction call = (InvokeInstruction)insn;
-        ThreadInfo ti = vm.getLastThreadInfo();
         MethodInfo mi = call.getInvokedMethod(ti);
         String miSignature = mi.getUniqueName();
         String mname = mi.getName();
@@ -101,12 +98,14 @@ public class InvokeListenerTest extends TestJPF {
       System.out.println(")");
     }
 
-    public void executeInstruction (VM vm){
-      checkArgs(vm, false);
+    @Override
+    public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
+      checkArgs(ti, insnToExecute, false);
     }
 
-    public void instructionExecuted (VM vm){
-      checkArgs(vm, true);
+    @Override
+    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
+      checkArgs(ti, executedInsn, true);
     }
 
   }

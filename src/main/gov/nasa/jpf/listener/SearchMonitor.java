@@ -93,7 +93,7 @@ public class SearchMonitor extends ListenerAdapter {
   /*
    * SearchListener interface
    */  
-  
+  @Override
   public void stateAdvanced(Search search) {
     
     steps += search.getTransition().getStepCount();
@@ -132,26 +132,31 @@ public class SearchMonitor extends ListenerAdapter {
     checkReport();
   }
 
+  @Override
   public void stateProcessed(Search search) {
     processedStates++;
     checkReport();
   }
 
+  @Override
   public void stateBacktracked(Search search) {
     searchLevel = search.getDepth();
     backtracks++;
     checkReport();
   }
 
+  @Override
   public void stateRestored(Search search) {
     searchLevel = search.getDepth();
     restoredStates++;
     checkReport();
   }
 
+  @Override
   public void propertyViolated(Search search) {
   }
 
+  @Override
   public void searchStarted(Search search) {
     connect();
     
@@ -168,6 +173,7 @@ public class SearchMonitor extends ListenerAdapter {
     reportNumber = 1;
   }
 
+  @Override
   public void searchConstraintHit(Search search) {
 	if (constraintHit == null) {  
 	  constraintHit = search.getSearchConstraint();
@@ -175,6 +181,7 @@ public class SearchMonitor extends ListenerAdapter {
 	}
   }
 
+  @Override
   public void searchFinished(Search search) {
     report("------------------------------------ statistics");
     if (constraintHit != null) {    	

@@ -259,7 +259,7 @@ public class MethodAnalyzer extends ListenerAdapter {
   
   //--- SearchListener interface
   // <2do> this is the same as DeadlockAnalyzer, except of xxOp type -> refactor
-  
+  @Override
   public void stateAdvanced (Search search){
     
     if (search.isNewState() && (lastOp != null)) {
@@ -277,6 +277,7 @@ public class MethodAnalyzer extends ListenerAdapter {
     isFirstTransition = false;
   }
   
+  @Override
   public void stateBacktracked (Search search){
     int stateId = search.getStateId();
     while ((lastTransition != null) && (lastTransition.stateId > stateId)){
@@ -285,12 +286,13 @@ public class MethodAnalyzer extends ListenerAdapter {
     lastOp = null;
   }
   
-  
+  @Override
   public void stateStored (Search search) {
     // always called after stateAdvanced
     storedTransition.put(search.getStateId(), lastTransition);
   }
   
+  @Override
   public void stateRestored (Search search) {
     int stateId = search.getStateId();
     MethodOp op = storedTransition.get(stateId);
@@ -302,16 +304,15 @@ public class MethodAnalyzer extends ListenerAdapter {
 
 
   //--- VMlistener interface
-  
-  public void instructionExecuted (VM vm) {
-    Instruction insn = vm.getLastInstruction();
+  @Override
+  public void instructionExecuted (VM vm, ThreadInfo thread, Instruction nextInsn, Instruction executedInsn) {
     ThreadInfo ti;
     MethodInfo mi;
     ElementInfo ei = null;
     
-    if (insn instanceof InvokeInstruction) {
-      InvokeInstruction call = (InvokeInstruction)insn;
-      ti = vm.getLastThreadInfo();
+    if (executedInsn instanceof InvokeInstruction) {
+      InvokeInstruction call = (InvokeInstruction)executedInsn;
+      ti = thread;
       mi = call.getInvokedMethod(ti);
             
       if (isAnalyzedMethod(mi)) {
@@ -336,9 +337,9 @@ public class MethodAnalyzer extends ListenerAdapter {
         addOp(vm,type,mi,ti,ei, ti.getStackDepth());
       }
       
-    } else if (insn instanceof ReturnInstruction) {
-      ReturnInstruction ret = (ReturnInstruction)insn;
-      ti = vm.getLastThreadInfo();
+    } else if (executedInsn instanceof ReturnInstruction) {
+      ReturnInstruction ret = (ReturnInstruction)executedInsn;
+      ti = thread;
       StackFrame frame = ret.getReturnFrame();
       mi = frame.getMethodInfo();
 
@@ -356,7 +357,7 @@ public class MethodAnalyzer extends ListenerAdapter {
   }
   
   //--- the PubisherExtension part
-  
+  @Override
   public void publishPropertyViolation (Publisher publisher) {
 
     if (firstOp == null && lastTransition != null){ // do this just once

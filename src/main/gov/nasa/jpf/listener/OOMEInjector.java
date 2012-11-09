@@ -96,13 +96,12 @@ public class OOMEInjector extends ListenerAdapter {
   }
   
   @Override
-  public void classLoaded (VM vm){
-    ClassInfo ci = vm.getLastClassInfo();
-    String fname = ci.getSourceFileName();
+  public void classLoaded (VM vm, ClassInfo loadedClass){
+    String fname = loadedClass.getSourceFileName();
     
     for (TypeSpec typeSpec : types){
-      if (typeSpec.matches(ci)){
-        ci.addAttr(throwOOME);
+      if (typeSpec.matches(loadedClass)){
+        loadedClass.addAttr(throwOOME);
       }
     }
 
@@ -110,7 +109,7 @@ public class OOMEInjector extends ListenerAdapter {
     // we also want to cover statis methods of this class
     for (LocationSpec locSpec : locations){
       if (locSpec.matchesFile(fname)){
-        for (MethodInfo mi : ci.getDeclaredMethodInfos()){
+        for (MethodInfo mi : loadedClass.getDeclaredMethodInfos()){
           markMatchingInstructions(mi, locSpec);
         }
       }
@@ -123,11 +122,9 @@ public class OOMEInjector extends ListenerAdapter {
   }
   
   @Override
-  public void executeInstruction (VM vm){
-    Instruction insn = vm.getLastInstruction();
-    if (insn instanceof AllocInstruction){
-      ThreadInfo ti = vm.getLastThreadInfo();
-      if (checkCallerForOOM(ti.getTopFrame(), insn)){
+  public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
+    if (insnToExecute instanceof AllocInstruction){
+      if (checkCallerForOOM(ti.getTopFrame(), insnToExecute)){
         // we could use Heap.setOutOfMemory(true), but then we would have to reset
         // if the app handles it so that it doesn't throw outside the specified locations.
         // This would require more effort than throwing explicitly
@@ -138,26 +135,23 @@ public class OOMEInjector extends ListenerAdapter {
   }
   
   @Override
-  public void instructionExecuted (VM vm){
-    Instruction insn = vm.getLastInstruction();
+  public void instructionExecuted (VM vm, ThreadInfo ti, Instruction insn, Instruction executedInsn){
     
-    if (insn instanceof InvokeInstruction){
-      ThreadInfo ti = vm.getLastThreadInfo();
+    if (executedInsn instanceof InvokeInstruction){
       StackFrame frame = ti.getTopFrame();
       
-      if (frame.getPC() != insn){ // means the call did succeed
-        if (checkCallerForOOM(frame.getPrevious(), insn)){
+      if (frame.getPC() != executedInsn){ // means the call did succeed
+        if (checkCallerForOOM(frame.getPrevious(), executedInsn)){
           frame.addFrameAttr(throwOOME); // propagate caller OOME context
         }
       }
       
-    } else if (insn instanceof NEW){
+    } else if (executedInsn instanceof NEW){
       if (!types.isEmpty()){
-        int objRef = ((NEW) insn).getNewObjectRef();
+        int objRef = ((NEW) executedInsn).getNewObjectRef();
         if (objRef != MJIEnv.NULL) {
           ClassInfo ci = vm.getClassInfo(objRef);
           if (ci.hasAttr(OOME.class)) {
-            ThreadInfo ti = vm.getLastThreadInfo();
             Instruction nextInsn = ti.createAndThrowException("java.lang.OutOfMemoryError");
             ti.setNextPC(nextInsn);
           }

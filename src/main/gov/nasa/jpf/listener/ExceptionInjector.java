@@ -296,16 +296,16 @@ public class ExceptionInjector extends ListenerAdapter {
   /**
    * get the target insns/methods
    */
-  public void classLoaded (VM vm){
-    ClassInfo ci = vm.getLastClassInfo();
+  @Override
+  public void classLoaded (VM vm, ClassInfo loadedClass){
 
     nextClassEntry:
-    for (ExceptionEntry e = targetClasses.get(ci.getName()); e != null; e = e.next){
+    for (ExceptionEntry e = targetClasses.get(loadedClass.getName()); e != null; e = e.next){
       String method = e.getMethod();
       int line = e.getLine();
 
       if (method != null){  // method or method/line-offset
-        for (MethodInfo mi : ci.getDeclaredMethodInfos()){
+        for (MethodInfo mi : loadedClass.getDeclaredMethodInfos()){
           if (mi.getUniqueName().startsWith(method)){
             if (line >= 0){ // line offset
               int[] ln = mi.getLineNumbers();
@@ -319,7 +319,7 @@ public class ExceptionInjector extends ListenerAdapter {
 
       } else { // absolute line number
         if (line >= 0){
-          for (MethodInfo mi : ci.getDeclaredMethodInfos()) {
+          for (MethodInfo mi : loadedClass.getDeclaredMethodInfos()) {
             int[] ln = mi.getLineNumbers();
             if (checkTargetInsn(e, mi, ln, line)) {
               continue nextClassEntry;
@@ -330,11 +330,11 @@ public class ExceptionInjector extends ListenerAdapter {
     }
 
     if (targetBases != null){
-      for (; ci != null; ci = ci.getSuperClass()) {
+      for (; loadedClass != null; loadedClass = loadedClass.getSuperClass()) {
         nextBaseEntry:
-        for (ExceptionEntry e = targetBases.get(ci.getName()); e != null; e = e.next){
+        for (ExceptionEntry e = targetBases.get(loadedClass.getName()); e != null; e = e.next){
           String method = e.getMethod();
-          for (MethodInfo mi : ci.getDeclaredMethodInfos()){
+          for (MethodInfo mi : loadedClass.getDeclaredMethodInfos()){
             if (mi.getUniqueName().startsWith(method)){
               targetMethods.put(mi, e);
               continue nextBaseEntry;
@@ -345,13 +345,12 @@ public class ExceptionInjector extends ListenerAdapter {
     }
   }
 
-  public void executeInstruction (VM vm){
-    ThreadInfo ti = vm.getLastThreadInfo();
-    Instruction insn = vm.getLastInstruction();
+  @Override
+  public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
 
-    ExceptionEntry e = targetInstructions.get(insn);
-    if ((e == null) && insn instanceof InvokeInstruction){
-      MethodInfo mi = ((InvokeInstruction) insn).getInvokedMethod();
+    ExceptionEntry e = targetInstructions.get(insnToExecute);
+    if ((e == null) && insnToExecute instanceof InvokeInstruction){
+      MethodInfo mi = ((InvokeInstruction) insnToExecute).getInvokedMethod();
       e = targetMethods.get(mi);
     }
 
@@ -362,6 +361,7 @@ public class ExceptionInjector extends ListenerAdapter {
     }
   }
 
+  @Override
   public void vmInitialized (VM vm) {
     Config config = vm.getConfig();
     

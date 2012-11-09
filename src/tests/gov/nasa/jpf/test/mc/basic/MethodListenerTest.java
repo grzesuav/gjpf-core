@@ -23,6 +23,8 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 
@@ -57,13 +59,14 @@ public class MethodListenerTest extends TestJPF {
       return prefix;
     }
 
+    @Override
     public void searchStarted(Search search) {
       trace.clear();
     }
 
-    public void methodEntered (VM vm){
-      MethodInfo mi = vm.getLastMethodInfo();
-      assertSame(mi, vm.getCurrentThread().getMethod());
+    @Override
+    public void methodEntered (VM vm, ThreadInfo ti, MethodInfo mi){
+      assertSame(mi, ThreadInfo.getCurrentThread().getTopFrameMethodInfo());
 
       if (CLSNAME.equals(mi.getClassName())){
         String mthName = mi.getName();
@@ -83,10 +86,10 @@ public class MethodListenerTest extends TestJPF {
       }
     }
 
-    public void methodExited (VM vm){
+    @Override
+    public void methodExited (VM vm, ThreadInfo ti, MethodInfo mi){
       if (traceActive){
-        MethodInfo mi = vm.getLastMethodInfo();
-        assertSame(mi, vm.getCurrentThread().getMethod());
+        assertSame(mi, ThreadInfo.getCurrentThread().getTopFrameMethodInfo());
         
         if (CLSNAME.equals(mi.getClassName())){
           level--;
@@ -104,9 +107,10 @@ public class MethodListenerTest extends TestJPF {
       }
     }
 
-    public void exceptionThrown (VM vm){
+    @Override
+    public void exceptionThrown (VM vm, ThreadInfo ti, ElementInfo ei){
       if (traceActive){
-        String xCls = vm.getLastElementInfo().getClassInfo().getName();
+        String xCls = ei.getClassInfo().getName();
         trace.add("X " + xCls);
         System.out.println("X " + xCls);
       }

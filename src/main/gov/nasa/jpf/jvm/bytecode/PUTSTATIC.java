@@ -44,7 +44,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
     ClassInfo clsInfo;
 
     // resolve the class of the referenced field first
-    ClassInfo cls = ti.getMethod().getClassInfo();
+    ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
     try {
       ci = cls.resolveReferencedClass(className);
     } catch(LoadOnJPFRequired lre) {

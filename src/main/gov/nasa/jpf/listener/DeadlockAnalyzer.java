@@ -70,9 +70,9 @@ public class DeadlockAnalyzer extends ListenerAdapter {
     ThreadOp prevTransition;
     ThreadOp prevOp;
 
-    ThreadOp (VM vm, OpType type) {
-      ti = vm.getLastThreadInfo();
-      ei = vm.getLastElementInfo();
+    ThreadOp (ThreadInfo ti, ElementInfo ei, OpType type) {
+      this.ti = ti;
+      this.ei = ei;
       insn = getReportInsn(ti); // we haven't had the executeInsn notification yet
       opType = type;
       
@@ -172,8 +172,8 @@ public class DeadlockAnalyzer extends ListenerAdapter {
     return (format.equalsIgnoreCase("essential"));
   }
   
-  void addOp (VM vm, OpType opType){
-    ThreadOp op = new ThreadOp(vm, opType);
+  void addOp (ThreadInfo ti, ElementInfo ei, OpType opType){
+    ThreadOp op = new ThreadOp(ti, ei, opType);
     if (lastOp == null){
       lastOp = op;
     } else {
@@ -428,46 +428,56 @@ public class DeadlockAnalyzer extends ListenerAdapter {
 
   //--- VM listener interface
   
-  public void objectLocked (VM vm) {
-    addOp(vm,OpType.lock);
+  @Override
+  public void objectLocked (VM vm, ThreadInfo ti, ElementInfo ei) {
+    addOp(ti, ei, OpType.lock);
   }
 
-  public void objectUnlocked (VM vm) {
-    addOp(vm,OpType.unlock);
+  @Override
+  public void objectUnlocked (VM vm, ThreadInfo ti, ElementInfo ei) {
+    addOp(ti, ei, OpType.unlock);
   }
 
-  public void objectWait (VM vm) {
-    addOp(vm,OpType.wait);
+  @Override
+  public void objectWait (VM vm, ThreadInfo ti, ElementInfo ei) {
+    addOp(ti, ei, OpType.wait);
   }
 
-  public void objectNotify (VM vm) {
-    addOp(vm,OpType.notify);
+  @Override
+  public void objectNotify (VM vm, ThreadInfo ti, ElementInfo ei) {
+    addOp(ti, ei, OpType.notify);
   }
 
-  public void objectNotifyAll (VM vm) {
-    addOp(vm,OpType.notifyAll);
+  @Override
+  public void objectNotifyAll (VM vm, ThreadInfo ti, ElementInfo ei) {
+    addOp(ti, ei, OpType.notifyAll);
   }
 
-  public void threadBlocked (VM vm){
-    addOp(vm,OpType.block);
+  @Override
+  public void threadBlocked (VM vm, ThreadInfo ti, ElementInfo ei){
+    addOp(ti, ei, OpType.block);
   }
   
-  public void threadStarted (VM vm){
-    addOp(vm,OpType.started);    
+  @Override
+  public void threadStarted (VM vm, ThreadInfo ti){
+    addOp(ti, null, OpType.started);    
   }
   
-  public void threadTerminated (VM vm){
-    addOp(vm,OpType.terminated);
+  @Override
+  public void threadTerminated (VM vm, ThreadInfo ti){
+    addOp(ti, null, OpType.terminated);
   }
   
   //--- SearchListener interface
 
+  @Override
   public void stateAdvanced (Search search){
     if (search.isNewState()) {
       storeLastTransition();
     }
   }
 
+  @Override
   public void stateBacktracked (Search search){
     int stateId = search.getStateId();
     while ((lastTransition != null) && (lastTransition.stateId > stateId)){
@@ -479,11 +489,13 @@ public class DeadlockAnalyzer extends ListenerAdapter {
   // for HeuristicSearches. Ok, that's braindead but at least no need for cloning
   HashMap<Integer,ThreadOp> storedTransition = new HashMap<Integer,ThreadOp>();
   
+  @Override
   public void stateStored (Search search) {
     // always called after stateAdvanced
     storedTransition.put(search.getStateId(), lastTransition);
   }
   
+  @Override
   public void stateRestored (Search search) {
     int stateId = search.getStateId();
     ThreadOp op = storedTransition.get(stateId);
@@ -493,7 +505,7 @@ public class DeadlockAnalyzer extends ListenerAdapter {
     }
   }
   
-  
+  @Override
   public void publishPropertyViolation (Publisher publisher) {
     PrintWriter pw = publisher.getOut();
     publisher.publishTopicStart("thread ops " + publisher.getLastErrorId());

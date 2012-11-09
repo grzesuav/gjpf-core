@@ -70,33 +70,32 @@ public class MethodTracker extends ListenerAdapter {
     out.println();
   }
 
-  public void executeInstruction (VM vm) {
-    Instruction insn = vm.getLastInstruction();
-    MethodInfo mi = insn.getMethodInfo();
-    ThreadInfo ti = vm.getLastThreadInfo();
+  @Override
+  public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute) {
+    MethodInfo mi = insnToExecute.getMethodInfo();
 
     if (mi != lastMi) {
       logMethodCall(ti, mi, ti.getStackDepth());
       lastMi = mi;
 
-    } else if (insn instanceof InvokeInstruction) {
+    } else if (insnToExecute instanceof InvokeInstruction) {
       MethodInfo callee;
 
       // that's the only little gist of it - if this is a VirtualInvocation,
       // we have to dig the callee out by ourselves (it's not known
       // before execution)
 
-      if (insn instanceof VirtualInvocation) {
-        VirtualInvocation callInsn = (VirtualInvocation)insn;
+      if (insnToExecute instanceof VirtualInvocation) {
+        VirtualInvocation callInsn = (VirtualInvocation)insnToExecute;
         int objref = callInsn.getCalleeThis(ti);
         callee = callInsn.getInvokedMethod(ti, objref);
 
-      } else if (insn instanceof INVOKESPECIAL) {
-        INVOKESPECIAL callInsn = (INVOKESPECIAL)insn;
+      } else if (insnToExecute instanceof INVOKESPECIAL) {
+        INVOKESPECIAL callInsn = (INVOKESPECIAL)insnToExecute;
         callee = callInsn.getInvokedMethod(ti);
 
       } else {
-        InvokeInstruction callInsn = (InvokeInstruction)insn;
+        InvokeInstruction callInsn = (InvokeInstruction)insnToExecute;
         callee = callInsn.getInvokedMethod(ti);
       }
 
@@ -105,7 +104,7 @@ public class MethodTracker extends ListenerAdapter {
           logMethodCall(ti, callee, ti.getStackDepth()+1);
         }
       } else {
-        out.println("ERROR: unknown callee of: " + insn);
+        out.println("ERROR: unknown callee of: " + insnToExecute);
       }
     }
   }
@@ -113,7 +112,7 @@ public class MethodTracker extends ListenerAdapter {
   /*
    * those are not really required, but mark the transition boundaries
    */
-
+  @Override
   public void stateRestored(Search search) {
     int id = search.getStateId();
     out.println("----------------------------------- [" +
@@ -121,10 +120,12 @@ public class MethodTracker extends ListenerAdapter {
   }
 
   //--- the ones we are interested in
+  @Override
   public void searchStarted(Search search) {
     out.println("----------------------------------- search started");
   }
 
+  @Override
   public void stateAdvanced(Search search) {
     int id = search.getStateId();
 
@@ -145,6 +146,7 @@ public class MethodTracker extends ListenerAdapter {
     lastMi = null;
   }
 
+  @Override
   public void stateBacktracked(Search search) {
     int id = search.getStateId();
 
@@ -154,6 +156,7 @@ public class MethodTracker extends ListenerAdapter {
                        search.getDepth() + "] backtrack: " + id);
   }
 
+  @Override
   public void searchFinished(Search search) {
     out.println("----------------------------------- search finished");
   }

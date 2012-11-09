@@ -68,7 +68,7 @@ public abstract class FieldLockInfo implements Cloneable  {
   }
 
   void lockAssumptionFailed (ThreadInfo ti, ElementInfo ei, FieldInfo fi) {
-    String src = ti.getMethod().getClassInfo().getSourceFileName();
+    String src = ti.getTopFrameMethodInfo().getClassInfo().getSourceFileName();
     int line = ti.getLine();
 
     StringBuilder sb = new StringBuilder( "unprotected field access of: ");

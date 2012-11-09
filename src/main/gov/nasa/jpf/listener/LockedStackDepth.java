@@ -101,14 +101,13 @@ public class LockedStackDepth extends ListenerAdapter
       return(result);
    }
 
-   public void objectLocked(VM vm)
+   @Override
+   public void objectLocked(VM vm, ThreadInfo thread, ElementInfo ei)
    {
-      ThreadInfo thread;
       ElementInfo lock;
       Integer depth;
 
-      lock   = vm.getLastElementInfo();
-      thread = vm.getLastThreadInfo();
+      lock   = ei;
 
       logStack(thread);
 
@@ -130,17 +129,15 @@ public class LockedStackDepth extends ListenerAdapter
       new Operation(lock, depth);
    }
 
-   public void objectUnlocked(VM vm)
+   @Override
+   public void objectUnlocked(VM vm, ThreadInfo thread, ElementInfo ei)
    {
-      ThreadInfo thread;
       ElementInfo lock;
       Integer depth;
 
-      thread = vm.getLastThreadInfo();
-
       logStack(thread);
 
-      lock   = vm.getLastElementInfo();
+      lock   = ei;
       depth  = new Operation(lock, null).getOldDepth();
 
       assert !m_state.containsKey(makeKey(lock));
@@ -164,6 +161,7 @@ public class LockedStackDepth extends ListenerAdapter
       }
    }
 
+   @Override
    public void searchStarted(Search search)
    {
       m_operations.clear();
@@ -172,6 +170,7 @@ public class LockedStackDepth extends ListenerAdapter
       m_current = null;
    }
 
+   @Override
    public void stateAdvanced(Search search)
    {
       Integer id;
@@ -187,6 +186,7 @@ public class LockedStackDepth extends ListenerAdapter
       logState();
    }
 
+   @Override
    public void stateProcessed(Search search)
    {
       Integer id;
@@ -203,11 +203,13 @@ public class LockedStackDepth extends ListenerAdapter
          s_logger.fine("State Processed: " + id);
    }
 
+   @Override
    public void stateBacktracked(Search search)
    {
       switchTo(search);
    }
 
+   @Override
    public void stateRestored(Search search)
    {
       switchTo(search);

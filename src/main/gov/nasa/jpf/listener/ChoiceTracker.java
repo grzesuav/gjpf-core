@@ -96,6 +96,7 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
     }
   }
 
+  @Override
   public void propertyViolated (Search search) {
         
     if (!isReportExtension) {
@@ -187,6 +188,7 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
 
   //--- the PublisherExtension interface
 
+  @Override
   public void publishPropertyViolation (Publisher publisher) {
     pw = publisher.getOut();
     publisher.publishTopicStart("choice trace " + publisher.getLastErrorId());

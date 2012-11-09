@@ -27,6 +27,7 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.FieldSpec;
 import gov.nasa.jpf.util.VarSpec;
 import gov.nasa.jpf.vm.FieldInfo;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MethodInfo;
@@ -130,7 +131,7 @@ public class NumericValueChecker extends PropertyListenerAdapter {
 
     void checkVarInsn (LocalVariableInstruction insn){
       if (varChecks != null){
-        ThreadInfo ti = vm.getLastThreadInfo();
+        ThreadInfo ti = ThreadInfo.getCurrentThread();
         StackFrame frame = ti.getTopFrame();
         int slotIdx = insn.getLocalVariableIndex();
 
@@ -254,9 +255,9 @@ public class NumericValueChecker extends PropertyListenerAdapter {
   }
 
   @Override
-  public void instructionExecuted (VM vm){
+  public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
     this.vm = vm;
-    ((JVMInstruction)vm.getLastInstruction()).accept(visitor);
+    ((JVMInstruction)executedInsn).accept(visitor);
   }
 
   @Override

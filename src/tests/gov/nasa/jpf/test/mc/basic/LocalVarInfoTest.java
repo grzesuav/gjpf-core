@@ -22,6 +22,7 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.LocalVariableInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MethodInfo;
@@ -45,9 +46,9 @@ public class LocalVarInfoTest extends TestJPF {
     public TestLookupListener(){
       log = new ArrayList<String>();
     }
-    
-    public void methodEntered (VM vm){
-      MethodInfo mi = vm.getLastMethodInfo();
+
+    @Override
+    public void methodEntered (VM vm, ThreadInfo ti, MethodInfo mi){
       if (mi.getUniqueName().equals("testLookup()V")){
         logMethod = mi;
         System.out.println("---- " + mi.getUniqueName() + " entered");
@@ -61,24 +62,24 @@ public class LocalVarInfoTest extends TestJPF {
         assertTrue( lvs.length == 3);
       }
     }
-    
-    public void methodExited (VM vm){
-      MethodInfo mi = vm.getLastMethodInfo();
+
+    @Override
+    public void methodExited (VM vm, ThreadInfo ti, MethodInfo mi){
       if (mi == logMethod){
         logMethod = null;
       }      
     }
-    
-    public void instructionExecuted(VM vm){
-      Instruction insn = vm.getLastInstruction();
-      if (insn.getMethodInfo() == logMethod){
-        System.out.printf(" %2d: %s", insn.getPosition(), insn);
-        if (insn instanceof LocalVariableInstruction){
-          LocalVariableInstruction lvinsn = (LocalVariableInstruction)insn;
+
+    @Override
+    public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
+      if (executedInsn.getMethodInfo() == logMethod){
+        System.out.printf(" %2d: %s", executedInsn.getPosition(), executedInsn);
+        if (executedInsn instanceof LocalVariableInstruction){
+          LocalVariableInstruction lvinsn = (LocalVariableInstruction)executedInsn;
           LocalVarInfo lv = lvinsn.getLocalVarInfo(); 
           System.out.print(" : " + lv);
 
-          log.add( insn.getClass().getSimpleName() + " " + lv.getName());
+          log.add( executedInsn.getClass().getSimpleName() + " " + lv.getName());
         }
         System.out.println();
       }

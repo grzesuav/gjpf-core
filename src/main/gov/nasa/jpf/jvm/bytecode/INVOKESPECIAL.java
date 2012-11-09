@@ -54,7 +54,7 @@ public class INVOKESPECIAL extends InstanceInvocation {
     // private method, or a super method
 
     // resolving the class referenced by InvokeSpecial
-    ClassInfo cls = ti.getMethod().getClassInfo();
+    ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
     try {
       cls.resolveReferencedClass(cname);
     } catch(LoadOnJPFRequired rre) {

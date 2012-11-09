@@ -25,6 +25,7 @@ import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.AnnotationInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 
@@ -303,10 +304,11 @@ public class AnnotationTest extends TestJPF {
   }
   
   public static class DataListener extends ListenerAdapter {
-    public void executeInstruction(VM vm){
-      Instruction insn = vm.getLastInstruction();
-      if (insn instanceof GETFIELD){
-        FieldInfo fi = ((GETFIELD)insn).getFieldInfo();
+
+    @Override
+    public void executeInstruction(VM vm, ThreadInfo ti, Instruction insnToExecute){
+      if (insnToExecute instanceof GETFIELD){
+        FieldInfo fi = ((GETFIELD)insnToExecute).getFieldInfo();
         if (fi.getName().equals("data")){
           AnnotationInfo ai = fi.getAnnotation("gov.nasa.jpf.test.vm.basic.AnnotationTest$A1");
           System.out.println("annotation for " + fi.getFullName() + " = " + ai);
@@ -336,10 +338,11 @@ public class AnnotationTest extends TestJPF {
   
   //-------------------------------------------------------------------
   public static class ArgListener extends ListenerAdapter {
-    public void executeInstruction (VM vm){
-      Instruction insn = vm.getLastInstruction();
-      if (insn instanceof InvokeInstruction){
-        MethodInfo mi = ((InvokeInstruction)insn).getInvokedMethod();
+
+    @Override
+    public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
+      if (insnToExecute instanceof InvokeInstruction){
+        MethodInfo mi = ((InvokeInstruction)insnToExecute).getInvokedMethod();
         if (mi.getName().equals("foo")){
           System.out.println("-- called method: " + mi.getUniqueName());
           

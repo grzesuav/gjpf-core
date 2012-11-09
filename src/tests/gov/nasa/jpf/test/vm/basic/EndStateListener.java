@@ -30,6 +30,7 @@ import gov.nasa.jpf.vm.ThreadList;
  */
 public class EndStateListener extends ListenerAdapter {
 
+  @Override
   public void stateAdvanced (Search search){
     if (search.isEndState()){
 

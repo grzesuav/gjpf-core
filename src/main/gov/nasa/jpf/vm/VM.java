@@ -97,13 +97,6 @@ public class VM {
    * (even if there are no listeners using it) that can easily lead to inconsistencies
    */
   protected Transition      lastTrailInfo;
-  protected ClassInfo       lastClassInfo;
-  protected ThreadInfo      lastThreadInfo;
-  protected Instruction     lastInstruction;
-  protected Instruction     nextInstruction;
-  protected ElementInfo     lastElementInfo;
-  protected MethodInfo      lastMethodInfo;
-  protected ChoiceGenerator<?> lastChoiceGenerator;
 
   protected boolean isTraceReplay; // can be set by listeners to indicate this is a replay
 
@@ -608,14 +601,9 @@ public class VM {
 
   protected void notifyChoiceGeneratorRegistered (ChoiceGenerator<?>cg, ThreadInfo ti) {
     try {
-      lastThreadInfo = ti;
-      lastInstruction = ti.getPC();
-      lastChoiceGenerator = cg;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].choiceGeneratorRegistered(this);
+        listeners[i].choiceGeneratorRegistered(this, cg, ti, ti.getPC());
       }
-      lastChoiceGenerator = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -627,11 +615,9 @@ public class VM {
 
   protected void notifyChoiceGeneratorSet (ChoiceGenerator<?>cg) {
     try {
-      lastChoiceGenerator = cg;
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].choiceGeneratorSet(this);
+        listeners[i].choiceGeneratorSet(this, cg);
       }
-      lastChoiceGenerator = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -643,12 +629,9 @@ public class VM {
 
   protected void notifyChoiceGeneratorAdvanced (ChoiceGenerator<?>cg) {
     try {
-      lastChoiceGenerator = cg;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].choiceGeneratorAdvanced(this);
+        listeners[i].choiceGeneratorAdvanced(this, cg);
       }
-      lastChoiceGenerator = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -660,12 +643,9 @@ public class VM {
 
   protected void notifyChoiceGeneratorProcessed (ChoiceGenerator<?>cg) {
     try {
-      lastChoiceGenerator = cg;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].choiceGeneratorProcessed(this);
+        listeners[i].choiceGeneratorProcessed(this, cg);
       }
-      lastChoiceGenerator = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -677,17 +657,9 @@ public class VM {
 
   protected void notifyExecuteInstruction (ThreadInfo ti, Instruction insn) {
     try {
-      lastThreadInfo = ti;
-      nextInstruction = insn;
-      lastInstruction = insn; // <2do> debatable - we need to revisit the whole last... business (see header)
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].executeInstruction(this);
+        listeners[i].executeInstruction(this, ti, insn);
       }
-
-      //nextInstruction = null;
-      //lastInstruction = null;
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -699,18 +671,10 @@ public class VM {
 
   protected void notifyInstructionExecuted (ThreadInfo ti, Instruction insn, Instruction nextInsn) {
     try {
-      lastThreadInfo = ti;
-      lastInstruction = insn;
-      nextInstruction = nextInsn;
-
       //listener.instructionExecuted(this);
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].instructionExecuted(this);
+        listeners[i].instructionExecuted(this, ti, nextInsn, insn);
       }
-
-      //nextInstruction = null;
-      //lastInstruction = null;
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -722,12 +686,9 @@ public class VM {
 
   protected void notifyThreadStarted (ThreadInfo ti) {
     try {
-      lastThreadInfo = ti;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].threadStarted(this);
+        listeners[i].threadStarted(this, ti);
       }
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -741,13 +702,9 @@ public class VM {
   // notification can occur as a result of a lock operation in the current thread
   protected void notifyThreadBlocked (ThreadInfo ti) {
     try {
-      lastThreadInfo = ti;
-      lastElementInfo = ti.getLockObject();
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].threadBlocked(this);
+        listeners[i].threadBlocked(this, ti, ti.getLockObject());
       }
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -759,12 +716,9 @@ public class VM {
 
   protected void notifyThreadWaiting (ThreadInfo ti) {
     try {
-      lastThreadInfo = ti;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].threadWaiting(this);
+        listeners[i].threadWaiting(this, ti);
       }
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -776,12 +730,9 @@ public class VM {
 
   protected void notifyThreadNotified (ThreadInfo ti) {
     try {
-      lastThreadInfo = ti;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].threadNotified(this);
+        listeners[i].threadNotified(this, ti);
       }
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -793,12 +744,9 @@ public class VM {
 
   protected void notifyThreadInterrupted (ThreadInfo ti) {
     try {
-      lastThreadInfo = ti;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].threadInterrupted(this);
+        listeners[i].threadInterrupted(this, ti);
       }
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -810,12 +758,9 @@ public class VM {
 
   protected void notifyThreadTerminated (ThreadInfo ti) {
     try {
-      lastThreadInfo = ti;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].threadTerminated(this);
+        listeners[i].threadTerminated(this, ti);
       }
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -827,12 +772,9 @@ public class VM {
 
   protected void notifyThreadScheduled (ThreadInfo ti) {
     try {
-      lastThreadInfo = ti;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].threadScheduled(this);
+        listeners[i].threadScheduled(this, ti);
       }
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -858,12 +800,9 @@ public class VM {
 
   protected void notifyClassLoaded(ClassInfo ci) {
     try {
-      lastClassInfo = ci;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].classLoaded(this);
+        listeners[i].classLoaded(this, ci);
       }
-      //lastClassInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -875,15 +814,9 @@ public class VM {
 
   protected void notifyObjectCreated(ThreadInfo ti, ElementInfo ei) {
     try {
-      lastThreadInfo = ti;
-      lastElementInfo = ei;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].objectCreated(this);
+        listeners[i].objectCreated(this, ti, ei);
       }
-
-      //lastElementInfo = null;
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -893,14 +826,11 @@ public class VM {
     }
   }
 
-  protected void notifyObjectReleased(ElementInfo ei) {
+  protected void notifyObjectReleased(ThreadInfo ti, ElementInfo ei) {
     try {
-      lastElementInfo = ei;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].objectReleased(this);
+        listeners[i].objectReleased(this, ti, ei);
       }
-      //lastElementInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -912,15 +842,9 @@ public class VM {
 
   protected void notifyObjectLocked(ThreadInfo ti, ElementInfo ei) {
     try {
-      lastThreadInfo = ti;
-      lastElementInfo = ei;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].objectLocked(this);
+        listeners[i].objectLocked(this, ti, ei);
       }
-
-      //lastElementInfo = null;
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -932,15 +856,9 @@ public class VM {
 
   protected void notifyObjectUnlocked(ThreadInfo ti, ElementInfo ei) {
     try {
-      lastThreadInfo = ti;
-      lastElementInfo = ei;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].objectUnlocked(this);
+        listeners[i].objectUnlocked(this, ti, ei);
       }
-
-      //lastElementInfo = null;
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -952,15 +870,9 @@ public class VM {
 
   protected void notifyObjectWait(ThreadInfo ti, ElementInfo ei) {
     try {
-      lastThreadInfo = ti;
-      lastElementInfo = ei;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].objectWait(this);
+        listeners[i].objectWait(this, ti, ei);
       }
-
-      //lastElementInfo = null;
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -972,15 +884,9 @@ public class VM {
 
   protected void notifyObjectNotifies(ThreadInfo ti, ElementInfo ei) {
     try {
-      lastThreadInfo = ti;
-      lastElementInfo = ei;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].objectNotify(this);
+        listeners[i].objectNotify(this, ti, ei);
       }
-
-      //lastElementInfo = null;
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -992,15 +898,9 @@ public class VM {
 
   protected void notifyObjectNotifiesAll(ThreadInfo ti, ElementInfo ei) {
     try {
-      lastThreadInfo = ti;
-      lastElementInfo = ei;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].objectNotifyAll(this);
+        listeners[i].objectNotifyAll(this, ti, ei);
       }
-
-      //lastElementInfo = null;
-      //lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -1015,7 +915,6 @@ public class VM {
       for (int i = 0; i < listeners.length; i++) {
         listeners[i].gcBegin(this);
       }
-
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -1041,15 +940,9 @@ public class VM {
 
   protected void notifyExceptionThrown(ThreadInfo ti, ElementInfo ei) {
     try {
-      lastThreadInfo = ti;
-      lastElementInfo = ei;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].exceptionThrown(this);
+        listeners[i].exceptionThrown(this, ti, ei);
       }
-
-      lastElementInfo = null;
-      lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -1061,11 +954,9 @@ public class VM {
 
   protected void notifyExceptionBailout(ThreadInfo ti) {
     try {
-      lastThreadInfo = ti;
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].exceptionBailout(this);
+        listeners[i].exceptionBailout(this, ti);
       }
-      lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -1077,11 +968,9 @@ public class VM {
 
   protected void notifyExceptionHandled(ThreadInfo ti) {
     try {
-      lastThreadInfo = ti;
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].exceptionHandled(this);
+        listeners[i].exceptionHandled(this, ti);
       }
-      lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -1093,14 +982,9 @@ public class VM {
 
   protected void notifyMethodEntered(ThreadInfo ti, MethodInfo mi) {
     try {
-      lastThreadInfo = ti;
-      lastMethodInfo = mi;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].methodEntered(this);
+        listeners[i].methodEntered(this, ti, mi);
       }
-      lastMethodInfo = null;
-      lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
@@ -1112,30 +996,15 @@ public class VM {
 
   protected void notifyMethodExited(ThreadInfo ti, MethodInfo mi) {
     try {
-      lastThreadInfo = ti;
-      lastMethodInfo = mi;
-
       for (int i = 0; i < listeners.length; i++) {
-        listeners[i].methodExited(this);
+        listeners[i].methodExited(this, ti, mi);
       }
-      lastMethodInfo = null;
-      lastThreadInfo = null;
     } catch (UncaughtException x) {
       throw x;
     } catch (JPF.ExitException x) {
       throw x;
     } catch (Throwable t) {
       throw new JPFListenerException("exception during methodExited() notification", t);
-    }
-  }
-
-
-  // VMListener acquisition
-  public int getThreadNumber () {
-    if (lastThreadInfo != null) {
-      return lastThreadInfo.getId();
-    } else {
-      return -1;
     }
   }
 
@@ -1181,76 +1050,6 @@ public class VM {
       return null;
     }
     return path.get(path.size() - 1);
-  }
-
-  /**
-   * answer the ClassInfo that was loaded most recently
-   * part of the VMListener state acqusition (only valid from inside of
-   * notification)
-   */
-  public ClassInfo getLastClassInfo () {
-    return lastClassInfo;
-  }
-
-  /**
-   * answer the ThreadInfo that was most recently started or finished
-   * part of the VMListener state acqusition (only valid from inside of
-   * notification)
-   */
-  public ThreadInfo getLastThreadInfo () {
-    return lastThreadInfo;
-  }
-
-  /**
-   * answer the MethodInfo that was most recently entered or exited (only
-   * valid from inside notification)
-   */
-  public MethodInfo getLastMethodInfo () {
-    return lastMethodInfo;
-  }
-
-  /**
-   * answer the last executed Instruction
-   * part of the VMListener state acqusition (only valid from inside of
-   * notification)
-   */
-  public Instruction getLastInstruction () {
-    return lastInstruction;
-  }
-
-  /**
-   * answer the next Instruction to execute in the current thread
-   * part of the VMListener state acqusition (only valid from inside of
-   * notification)
-   */
-  public Instruction getNextInstruction () {
-    return nextInstruction;
-  }
-
-  /**
-   * answer the Object that was most recently created or collected
-   * part of the VMListener state acqusition (only valid from inside of
-   * object related notification)
-   *
-   * NOTE - this is currently not set for instructionExecuted notifications
-   */
-  public ElementInfo getLastElementInfo () {
-    return lastElementInfo;
-  }
-
-  /**
-   * return the most recently used CoiceGenerator
-   */
-  public ChoiceGenerator<?>getLastChoiceGenerator () {
-    return lastChoiceGenerator;
-  }
-
-  /**
-   * answer the ClassInfo that was loaded most recently
-   * part of the VMListener state acquisition
-   */
-  public ClassInfo getClassInfo () {
-    return lastClassInfo;
   }
 
   public ClassInfo getClassInfo (int objref) {

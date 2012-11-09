@@ -23,6 +23,12 @@ import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.search.SearchListener;
+import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.VMListener;
 
@@ -49,58 +55,103 @@ public abstract class PropertyListenerAdapter extends GenericProperty implements
     // override if the property has any local state
   }
 
-  //--- the VMListener interface
+//--- the VMListener interface
+  @Override
   public void vmInitialized(VM vm) {}
-  public void instructionExecuted(VM vm) {}
-  public void executeInstruction(VM vm) {}
-  public void threadStarted(VM vm) {}
-  public void threadWaiting (VM vm) {}
-  public void threadNotified (VM vm) {}
-  public void threadInterrupted (VM vm) {}
-  public void threadScheduled (VM vm) {}
-  public void threadBlocked (VM vm) {}
-  public void threadTerminated(VM vm) {}
+  @Override
+  public void instructionExecuted(VM vm, ThreadInfo currentThread, Instruction nextInstruction, Instruction executedInstruction) {}
+  @Override
+  public void executeInstruction(VM vm, ThreadInfo currentThread, Instruction instructionToExecute) {}
+  @Override
+  public void threadStarted(VM vm, ThreadInfo startedThread) {}
+  @Override
+  public void threadWaiting (VM vm, ThreadInfo waitingThread) {}
+  @Override
+  public void threadNotified (VM vm, ThreadInfo notifiedThread) {}
+  @Override
+  public void threadInterrupted (VM vm, ThreadInfo interruptedThread) {}
+  @Override
+  public void threadScheduled (VM vm, ThreadInfo scheduledThread) {}
+  @Override
+  public void threadBlocked (VM vm, ThreadInfo blockedThread, ElementInfo lock) {}
+  @Override
+  public void threadTerminated(VM vm, ThreadInfo terminatedThread) {}
+  @Override
   public void loadClass (VM vm, ClassFile cf) {}
-  public void classLoaded(VM vm) {}
-  public void objectCreated(VM vm) {}
-  public void objectReleased(VM vm) {}
-  public void objectLocked (VM vm) {}
-  public void objectUnlocked (VM vm) {}
-  public void objectWait (VM vm) {}
-  public void objectNotify (VM vm) {}
-  public void objectNotifyAll (VM vm) {}
+  @Override
+  public void classLoaded(VM vm, ClassInfo loadedClass) {}
+  @Override
+  public void objectCreated(VM vm, ThreadInfo currentThread, ElementInfo newObject) {}
+  @Override
+  public void objectReleased(VM vm, ThreadInfo currentThread, ElementInfo releasedObject) {}
+  @Override
+  public void objectLocked (VM vm, ThreadInfo currentThread, ElementInfo lockedObject) {}
+  @Override
+  public void objectUnlocked (VM vm, ThreadInfo currentThread, ElementInfo unlockedObject) {}
+  @Override
+  public void objectWait (VM vm, ThreadInfo currentThread, ElementInfo waitingObject) {}
+  @Override
+  public void objectNotify (VM vm, ThreadInfo currentThread, ElementInfo notifyingObject) {}
+  @Override
+  public void objectNotifyAll (VM vm, ThreadInfo currentThread, ElementInfo notifyingObject) {}
+  @Override
   public void gcBegin(VM vm) {}
+  @Override
   public void gcEnd(VM vm) {}
-  public void exceptionThrown(VM vm) {}
-  public void exceptionBailout(VM vm) {}
-  public void exceptionHandled(VM vm) {}
-  public void choiceGeneratorRegistered (VM vm) {}
-  public void choiceGeneratorSet (VM vm) {}
-  public void choiceGeneratorAdvanced (VM vm) {}
-  public void choiceGeneratorProcessed (VM vm) {}
-  public void methodEntered (VM vm) {}
-  public void methodExited (VM vm) {}
+  @Override
+  public void exceptionThrown(VM vm, ThreadInfo currentThread, ElementInfo thrownException) {}
+  @Override
+  public void exceptionBailout(VM vm, ThreadInfo currentThread) {}
+  @Override
+  public void exceptionHandled(VM vm, ThreadInfo currentThread) {}
+  @Override
+  public void choiceGeneratorRegistered (VM vm, ChoiceGenerator<?> nextCG, ThreadInfo currentThread, Instruction executedInstruction) {}
+  @Override
+  public void choiceGeneratorSet (VM vm, ChoiceGenerator<?> newCG) {}
+  @Override
+  public void choiceGeneratorAdvanced (VM vm, ChoiceGenerator<?> currentCG) {}
+  @Override
+  public void choiceGeneratorProcessed (VM vm, ChoiceGenerator<?> processedCG) {}
+  @Override
+  public void methodEntered (VM vm, ThreadInfo currentThread, MethodInfo enteredMethod) {}
+  @Override
+  public void methodExited (VM vm, ThreadInfo currentThread, MethodInfo exitedMethod) {}
 
 
   //--- the SearchListener interface
+  @Override
   public void stateAdvanced(Search search) {}
+  @Override
   public void stateProcessed(Search search) {}
+  @Override
   public void stateBacktracked(Search search) {}
+  @Override
   public void statePurged(Search search) {}
+  @Override
   public void stateStored(Search search) {}
+  @Override
   public void stateRestored(Search search) {}
+  @Override
   public void propertyViolated(Search search) {}
+  @Override
   public void searchStarted(Search search) {
     search.addProperty(this);
   }
+  @Override
   public void searchConstraintHit(Search search) {}
+  @Override
   public void searchFinished(Search search) {}
 
 
   //--- PublisherExtension interface
+  @Override
   public void publishStart (Publisher publisher) {}
+  @Override
   public void publishTransition (Publisher publisher) {}
+  @Override
   public void publishPropertyViolation (Publisher publisher) {}
+  @Override
   public void publishConstraintHit (Publisher publisher) {}
+  @Override
   public void publishFinished (Publisher publisher) {}
 }

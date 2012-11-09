@@ -46,13 +46,12 @@ public class CascadedCGTest extends TestJPF {
   public static class IntChoiceCascader extends ListenerAdapter {
     static int result;
 
-    public void instructionExecuted(VM vm) {
-      Instruction insn = vm.getLastInstruction();
-      ThreadInfo ti = vm.getLastThreadInfo();
+    @Override
+    public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
       SystemState ss = vm.getSystemState();
 
-      if (insn instanceof EXECUTENATIVE) { // break on native method exec
-        EXECUTENATIVE exec = (EXECUTENATIVE) insn;
+      if (executedInsn instanceof EXECUTENATIVE) { // break on native method exec
+        EXECUTENATIVE exec = (EXECUTENATIVE) executedInsn;
 
         if (exec.getExecutedMethodName().equals("getInt")){// this insn did create a CG
           if (!ti.isFirstStepInsn()){
@@ -119,13 +118,12 @@ public class CascadedCGTest extends TestJPF {
 
   public static class FieldAccessCascader extends ListenerAdapter {
 
-    public void instructionExecuted(VM vm) {
-      Instruction insn = vm.getLastInstruction();
-      ThreadInfo ti = vm.getLastThreadInfo();
+    @Override
+    public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
       SystemState ss = vm.getSystemState();
 
-      if (insn instanceof GETFIELD){
-        GETFIELD getInsn = (GETFIELD) insn;
+      if (executedInsn instanceof GETFIELD){
+        GETFIELD getInsn = (GETFIELD) executedInsn;
         FieldInfo fi = getInsn.getFieldInfo();
         if (fi.getName().equals("mySharedField")){
 
@@ -165,23 +163,34 @@ public class CascadedCGTest extends TestJPF {
     }
 
     //--- those are just for debugging purposes
+    @Override
     public void stateBacktracked(Search search) {
       System.out.println("#------ [" + search.getDepth() + "] backtrack: " + search.getStateId());
     }
+    
+    @Override
     public void stateAdvanced(Search search){
       System.out.println("#------ " + search.getStateId() + " isNew: " + search.isNewState() + ", isEnd: " + search.isEndState());
     }
-    public void threadScheduled(VM vm){
-      System.out.println("# running thread: " + vm.getLastThreadInfo());
+    
+    @Override
+    public void threadScheduled(VM vm, ThreadInfo ti){
+      System.out.println("# running thread: " + ti);
     }
-    public void threadTerminated(VM vm){
-      System.out.println("# terminated thread: " + vm.getLastThreadInfo());
+    
+    @Override
+    public void threadTerminated(VM vm, ThreadInfo ti){
+      System.out.println("# terminated thread: " + ti);
     }
-    public void threadStarted(VM vm){
-      System.out.println("# started thread: " + vm.getLastThreadInfo());
+    
+    @Override
+    public void threadStarted(VM vm, ThreadInfo ti){
+      System.out.println("# started thread: " + ti);
     }
-    public void choiceGeneratorAdvanced (VM vm) {
-      System.out.println("# choice: " + vm.getLastChoiceGenerator());
+    
+    @Override
+    public void choiceGeneratorAdvanced (VM vm, ChoiceGenerator<?> currentCG) {
+      System.out.println("# choice: " + currentCG);
     }
   }
 
