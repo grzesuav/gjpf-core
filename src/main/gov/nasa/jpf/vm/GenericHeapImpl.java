@@ -213,8 +213,9 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
         Fields f = ei.getFields();
         int    ref = f.getIntValue(0); // watch out, the 0 only works with our own WeakReference impl
         if (ref != -1) {
-          ElementInfo refEi = getModifiable(ref);
+          ElementInfo refEi = get(ref);
           if ((refEi == null) || (refEi.isNull())) {
+            ei = ei.getModifiableInstance();
             // we need to make sure the Fields are properly state managed
             ei.setReferenceField(ei.getFieldInfo(0), -1);
           }
