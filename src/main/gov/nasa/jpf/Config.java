@@ -278,26 +278,9 @@ public class Config extends Properties {
       }
 
       if (path == null) {
-    	  // check the current dir and any of its parents for a site.properties
-        String userDir = System.getProperty("user.dir");
-        File dir = new File( userDir);
-        for (; dir!= null && path == null; dir = dir.getParentFile()){
-          File f = new File( dir, "site.properties");
-          if (f.isFile()){
-            path = f.getAbsolutePath();
-          }
-        }
-    	  
-        if (path == null){
-          // fall back to ${user.home}/[.]jpf/site.properties
-          String userHome = System.getProperty("user.home");
-          File f = new File(userHome, "jpf/site.properties");
-          if (!f.isFile()) {
-            f = new File(userHome, ".jpf/site.properties");
-          }
-          if (f.isFile()) {
-            path = f.getAbsolutePath();
-          }
+        File siteProps = JPFSiteUtils.getStandardSiteProperties();
+        if (siteProps != null){
+          path = siteProps.getAbsolutePath();
         }
       }
     }

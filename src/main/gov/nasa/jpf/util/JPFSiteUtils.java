@@ -200,23 +200,19 @@ public class JPFSiteUtils {
    * @return null if it doesn't exist
    */
   public static File getSiteCoreDir() {
-    String userHome = System.getProperty("user.home");
-    File f = new File( userHome, "jpf/site.properties");
-    if (!f.isFile()){
-      f = new File( userHome, ".jpf/site.properties");
-      if (!f.isFile()){
-        return null;
+    
+    File siteProps = getStandardSiteProperties();
+    
+    if (siteProps != null){
+      String path = getMatchFromFile(siteProps.getAbsolutePath(), "jpf-core");
+      if (path != null) {
+        File coreDir = new File(path);
+        if (coreDir.isDirectory()) {
+          return coreDir;
+        }
       }
     }
-
-    String path = getMatchFromFile(f.getAbsolutePath(), "jpf-core");
-    if (path != null){
-      File coreDir = new File(path);
-      if (coreDir.isDirectory()){
-        return coreDir;
-      }
-    }
-
+    
     return null;
   }
 
@@ -274,11 +270,30 @@ public class JPFSiteUtils {
     return projectId;
   }
   
-  public static File getStandardSiteProperties(){
-    File dir = new File(System.getProperty("user.home"), ".jpf");
-    File site = new File(dir, "site.properties");
+  public static File getStandardSiteProperties(){    
+    String userDir = System.getProperty("user.dir");
+    File dir = new File(userDir);
+    for (; dir != null; dir = dir.getParentFile()) {
+      File f = new File(dir, "site.properties");
+      if (f.isFile()) {
+        return f;
+      }
+    }
+
+    String[] jpfDirCandidates = { ".jpf", "jpf" };
+    String userHome = System.getProperty("user.home");
     
-    return site;
+    for (String jpfDir : jpfDirCandidates){
+      dir = new File(userHome, jpfDir);
+      if (dir.isDirectory()) {
+        File f = new File(dir, "site.properties");
+        if (f.isFile()) {
+          return f;
+        }
+      }
+    }
+    
+    return null;
   }
 
   
