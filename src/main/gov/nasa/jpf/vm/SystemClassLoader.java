@@ -60,8 +60,11 @@ public class SystemClassLoader extends ClassLoaderInfo {
   protected SystemClassLoader (VM vm) {
     super(vm, MJIEnv.NULL, null, null);
     setSystemClassPath();
-    isSystemClassLoader = true;
     classInfo = getResolvedClassInfo("java.lang.ClassLoader");
+  }
+
+  public boolean isSystemClassLoader() {
+    return true;
   }
 
   /**

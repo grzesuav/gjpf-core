@@ -61,8 +61,6 @@ public class ClassLoaderInfo
   // The area containing static fields and  classes
   protected Statics statics;
 
-  protected boolean isSystemClassLoader = false;
-
   protected boolean roundTripRequired = false;
 
   // Search global id, which is the basis for canonical order of classloaders
@@ -209,7 +207,7 @@ public class ClassLoaderInfo
   }
 
   public boolean isSystemClassLoader() {
-    return isSystemClassLoader;
+    return false;
   }
   
   public static ClassLoaderInfo getCurrentClassLoader() {
