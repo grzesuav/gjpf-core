@@ -142,7 +142,7 @@ public class VM {
   // actions are removed from the list
   protected ArrayList<Runnable> postGcActions = new ArrayList<Runnable>();
 
-  protected SystemClassLoader systemClassLoader;
+  protected SystemClassLoaderInfo systemClassLoader;
 
   /**
    * be prepared this might throw JPFConfigExceptions
@@ -386,9 +386,9 @@ public class VM {
    * Creates & returns a system classLoader which is root in the classLaoders 
    * hierarchy
    */
-  protected SystemClassLoader createSystemClassLoader() {
+  protected SystemClassLoaderInfo createSystemClassLoader() {
     //--- create the ClassLoaderInfo
-    SystemClassLoader cl = new SystemClassLoader(this);
+    SystemClassLoaderInfo cl = new SystemClassLoaderInfo(this);
 
     // Note: that has to be set before loading java.lang.ClassLoader, otherwise its
     // super class cannot be loaded
@@ -1745,7 +1745,7 @@ public class VM {
     error_id = 0;
   }
 
-  public SystemClassLoader getSystemClassLoader() {
+  public SystemClassLoaderInfo getSystemClassLoader() {
     return systemClassLoader;
   }
 

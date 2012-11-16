@@ -243,7 +243,7 @@ public class ClassLoaderInfo
   /**
    * This is useful when there are multiple systemClassLoaders created.
    */
-  public static SystemClassLoader getCurrentSystemClassLoader() {
+  public static SystemClassLoaderInfo getCurrentSystemClassLoader() {
     ClassLoaderInfo cl = getCurrentClassLoader();
 
     ClassInfo ci = cl.getClassInfo();
@@ -252,7 +252,7 @@ public class ClassLoaderInfo
       ci = ci.getSuperClass();
     }
 
-    return (SystemClassLoader)ci.getClassLoaderInfo();
+    return (SystemClassLoaderInfo)ci.getClassLoaderInfo();
   }
 
   public ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {

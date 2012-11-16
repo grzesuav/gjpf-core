@@ -46,7 +46,7 @@ import java.util.ListIterator;
  * SystemClassLoader which is responsible to load classes from Java API, 
  * standard extensions packages, and the local file system.     
  */
-public class SystemClassLoader extends ClassLoaderInfo {
+public class SystemClassLoaderInfo extends ClassLoaderInfo {
 
   protected ClassInfo objectClassInfo;
   protected ClassInfo classClassInfo;
@@ -57,7 +57,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
   protected ClassInfo threadClassInfo;
   protected ClassInfo charArrayClassInfo;
 
-  protected SystemClassLoader (VM vm) {
+  protected SystemClassLoaderInfo (VM vm) {
     super(vm, MJIEnv.NULL, null, null);
     setSystemClassPath();
     classInfo = getResolvedClassInfo("java.lang.ClassLoader");

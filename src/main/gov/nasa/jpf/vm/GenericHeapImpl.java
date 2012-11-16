@@ -348,7 +348,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   }
   
   protected ElementInfo newString (String str, ThreadInfo ti, AllocationContext ctx) {
-    SystemClassLoader sysCl = ClassLoaderInfo.getCurrentSystemClassLoader();
+    SystemClassLoaderInfo sysCl = ClassLoaderInfo.getCurrentSystemClassLoader();
     
     //--- the string object itself
     ClassInfo ciString = sysCl.getStringClassInfo();

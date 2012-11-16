@@ -26,7 +26,7 @@ import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Heap;
 import gov.nasa.jpf.vm.VM;
-import gov.nasa.jpf.vm.SystemClassLoader;
+import gov.nasa.jpf.vm.SystemClassLoaderInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 import org.junit.Test;
@@ -52,9 +52,9 @@ public class ClassLoaderInfoTest extends TestJPF {
 
     //--- Gets systemClassLoaders
     // gets the systemClassLoader which already loaded the startup classes
-    SystemClassLoader cl1 = vm.getSystemClassLoader();
+    SystemClassLoaderInfo cl1 = vm.getSystemClassLoader();
     // create a new systemClassLoader
-    SystemClassLoader cl2 = vm.createSystemClassLoader();
+    SystemClassLoaderInfo cl2 = vm.createSystemClassLoader();
     // loades the startup classes
     cl2.loadStartUpClasses(vm, vm.getCurrentThread());
 
