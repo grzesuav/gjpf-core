@@ -170,41 +170,43 @@ public class VarRecorder extends ListenerAdapter {
   // <2do> general purpose listeners should not use anonymous attribute types such as String
   
   private final void saveVariableName(ThreadInfo ti, String name) {
-    ti.addOperandAttr(name);
+    StackFrame frame = ti.getModifiableTopFrame();
+    frame.addOperandAttr(name);
   }
 
   private final void saveVariableType(ThreadInfo ti, byte type) {
     StackFrame frame;
     String str;
 
-    frame = ti.getTopFrame();
-    if (frame.getTopPos() < 0)
+    frame = ti.getModifiableTopFrame();
+    if (frame.getTopPos() < 0) {
       return;
+    }
 
     str = encodeType(type);
     frame.addOperandAttr(str);
   }
 
   private final boolean isArrayReference(VM vm, ThreadInfo ti) {
-    StackFrame frame;
-    ElementInfo ei;
-    int objRef;
+    StackFrame frame = ti.getTopFrame();
 
-    frame = ti.getTopFrame();
-
-    if (frame.getTopPos() < 0)
+    if (frame.getTopPos() < 0) {
       return(false);
+    }
 
-    if (!frame.isOperandRef())
+    if (!frame.isOperandRef()) {
       return(false);
+    }
 
-    objRef = frame.peek();
-    if (objRef == -1)
+    int objRef = frame.peek();
+    if (objRef == -1) {
       return(false);
+    }
 
-    ei = vm.getHeap().get(objRef);
-    if (ei == null)
+    ElementInfo ei = ti.getElementInfo(objRef);
+    if (ei == null) {
       return(false);
+    }
 
     return(ei.isArray());
   }
@@ -348,10 +350,12 @@ public class VarRecorder extends ListenerAdapter {
 
     offset = calcOffset(type, store) + 1;
     // <2do> String is really not a good attribute type to retrieve!
-    attr   = ti.getOperandAttr(offset, String.class); 
+    StackFrame frame = ti.getTopFrame();
+    attr   = frame.getOperandAttr( offset, String.class); 
 
-    if (attr != null)
+    if (attr != null) {
       return(attr);
+    }
 
     return("?");
   }

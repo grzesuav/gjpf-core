@@ -30,20 +30,23 @@ import gov.nasa.jpf.vm.Types;
  */
 public class FNEG extends JVMInstruction {
 
+  @Override
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
     
     float v = frame.popFloat();
     
-    ti.push(Types.floatToInt(-v), false);
+    frame.pushFloat( -v);
 
     return getNext(ti);
   }
 
+  @Override
   public int getByteCode () {
     return 0x76;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

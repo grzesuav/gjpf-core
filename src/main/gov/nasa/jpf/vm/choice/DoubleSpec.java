@@ -23,6 +23,7 @@ package gov.nasa.jpf.vm.choice;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StaticElementInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -59,7 +60,9 @@ public class DoubleSpec {
     case 1: { // variable name
       ThreadInfo ti = ThreadInfo.getCurrentThread();
       try {
-        ret = ti.getDoubleLocal(varId[0]);
+        StackFrame frame = ti.getTopFrame();
+
+        ret = frame.getDoubleLocalVariable(varId[0]);
         // that throws an exception (a few calls down) if  
         // the name is not found...
       }

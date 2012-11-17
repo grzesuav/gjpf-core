@@ -37,6 +37,7 @@ public class NEW extends JVMInstruction implements AllocInstruction {
     return(cname);
   }
 
+  @Override
   public Instruction execute (ThreadInfo ti) {
     Heap heap = ti.getHeap();
     ClassInfo ci;
@@ -70,7 +71,8 @@ public class NEW extends JVMInstruction implements AllocInstruction {
     newObjRef = objRef;
 
     // pushes the return value onto the stack
-    ti.push(objRef, true);
+    StackFrame frame = ti.getModifiableTopFrame();
+    frame.pushRef( objRef);
 
     return getNext(ti);
   }

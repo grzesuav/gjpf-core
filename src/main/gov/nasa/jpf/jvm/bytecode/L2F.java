@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
 
@@ -29,16 +30,22 @@ import gov.nasa.jpf.vm.Types;
  */
 public class L2F extends JVMInstruction {
 
-  public Instruction execute (ThreadInfo th) {
-    th.push(Types.floatToInt(/*(float)*/ th.longPop()), false);
-
-    return getNext(th);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    long v = frame.popLong();
+    frame.pushFloat( (float)v);
+    
+    return getNext(ti);
   }
 
+  @Override
   public int getByteCode () {
     return 0x89;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

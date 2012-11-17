@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -28,19 +29,26 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public class LADD extends JVMInstruction {
 
-  public Instruction execute (ThreadInfo th) {
-    long v1 = th.longPop();
-    long v2 = th.longPop();
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    long v1 = frame.popLong();
+    long v2 = frame.popLong();
+    
+    long r = v1 + v2;
+    
+    frame.pushLong(r);
 
-    th.longPush(v1 + v2);
-
-    return getNext(th);
+    return getNext(ti);
   }
 
+  @Override
   public int getByteCode () {
     return 0x61;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

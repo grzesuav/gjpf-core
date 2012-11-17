@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -28,17 +29,21 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public class ACONST_NULL extends JVMInstruction {
   
-  public Instruction execute (ThreadInfo th) {
-    // pushes a null onto the stack
-    th.push(-1, true);
-
-    return getNext(th);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.pushRef(-1);
+    
+    return getNext(ti);
   }
 
+  @Override
   public int getByteCode () {
     return 0x01;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

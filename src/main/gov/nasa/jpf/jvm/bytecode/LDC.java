@@ -22,6 +22,7 @@ import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
 
@@ -62,18 +63,21 @@ public class LDC extends JVMInstruction {
   }
 
 
+  @Override
   public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
     switch (type){
       case STRING:
         // too bad we can't cache it, since location might change between different paths
         ElementInfo eiValue = ti.getHeap().newInternString(string, ti); 
         value = eiValue.getObjectRef();
-        ti.push(value, true);
+        frame.pushRef(value);
         break;
 
       case INT:
       case FLOAT:
-        ti.push(value, false);
+        frame.push(value);
         break;
 
       case CLASS:
@@ -83,7 +87,7 @@ public class LDC extends JVMInstruction {
           ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
           ci = cls.resolveReferencedClass(string);
         } catch(LoadOnJPFRequired lre) {
-          return ti.getPC();
+          return frame.getPC();
         }
 
         // LDC doesn't cause a <clinit> - we only register all required classes
@@ -93,7 +97,7 @@ public class LDC extends JVMInstruction {
           ci.registerClass(ti);
         }
 
-        ti.push(ci.getClassObjectRef(), true);
+        frame.pushRef( ci.getClassObjectRef());
 
         break;
     }

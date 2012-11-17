@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -27,26 +28,31 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * ... => ..., value
  */
 public class SIPUSH extends JVMInstruction {
-  private int value;
+  protected int value;
 
   public SIPUSH(int value){
     this.value = value;
   }
 
-  public Instruction execute (ThreadInfo th) {
-    th.push(value, false);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.push(value);
 
-    return getNext(th);
+    return getNext(ti);
   }
 
   public int getLength() {
     return 3; // opcode, b1, b2
   }
   
+  @Override
   public int getByteCode () {
     return 0x11;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

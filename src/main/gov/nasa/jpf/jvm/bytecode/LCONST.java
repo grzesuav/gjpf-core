@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -34,12 +35,16 @@ public class LCONST extends JVMInstruction {
     this.value = value;
   }
 
-  public Instruction execute (ThreadInfo th) {
-    th.longPush(value);
-
-    return getNext(th);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.pushLong(value);
+    
+    return getNext(ti);
   }
 
+  @Override
   public int getByteCode () {
     if (value == 0) {
       return 0x09;
@@ -48,6 +53,7 @@ public class LCONST extends JVMInstruction {
     }
   }
   
+  @Override
   public String getMnemonic () {
     if (value == 0) {
       return "lconst_0";
@@ -56,12 +62,13 @@ public class LCONST extends JVMInstruction {
     }    
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 
   public long getValue() {
-	return value;
+	  return value;
   }
   
 }

@@ -114,16 +114,20 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
    * if you don't use client private types or the provided type is too general
    */
   public <T> T getReturnAttr (ThreadInfo ti, Class<T> type){
-    return ti.getOperandAttr(type);
+    StackFrame frame = ti.getTopFrame();
+    return frame.getOperandAttr(type);
   }
   public <T> T getNextReturnAttr (ThreadInfo ti, Class<T> type, Object prev){
-    return ti.getNextOperandAttr(type, prev);
+    StackFrame frame = ti.getTopFrame();
+    return frame.getNextOperandAttr(type, prev);
   }
   public Iterator<?> returnAttrIterator (ThreadInfo ti){
-    return ti.operandAttrIterator();
+    StackFrame frame = ti.getTopFrame();
+    return frame.operandAttrIterator();
   }
   public <T> Iterator<T> returnAttrIterator (ThreadInfo ti, Class<T> type){
-    return ti.operandAttrIterator(type);
+    StackFrame frame = ti.getTopFrame();
+    return frame.operandAttrIterator(type);
   }
   
   // -- end attribute accessors --

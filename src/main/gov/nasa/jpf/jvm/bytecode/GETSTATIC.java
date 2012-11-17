@@ -24,6 +24,7 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -74,25 +75,30 @@ public class GETSTATIC extends StaticFieldInstruction {
     }
    
     Object attr = ei.getFieldAttr(fieldInfo);
+    StackFrame frame = ti.getModifiableTopFrame();
 
     if (size == 1) {
       int ival = ei.get1SlotField(fieldInfo);
       lastValue = ival;
 
-      ti.push(ival, fieldInfo.isReference());
+      if (fieldInfo.isReference()) {
+        frame.pushRef(ival);
+      } else {
+        frame.push(ival);
+      }
       
       if (attr != null) {
-        ti.setOperandAttrNoClone(attr);
+        frame.setOperandAttr(attr);
       }
 
     } else {
       long lval = ei.get2SlotField(fieldInfo);
       lastValue = lval;
       
-      ti.longPush(lval);
+      frame.pushLong(lval);
       
       if (attr != null) {
-        ti.setLongOperandAttrNoClone(attr);
+        frame.setLongOperandAttr(attr);
       }
     }
         

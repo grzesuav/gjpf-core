@@ -508,14 +508,37 @@ public class ThreadInfo
    * answers if is this the first instruction within the current transition.
    * This is mostly used to tell the top- from the bottom-half of a native method
    * or Instruction.execute(), so that only one (the top half) registers the CG
+   * (top = register CG and reschedule insn, bottom = re-execute insn and process choice
+   * at beginning of new transition)
    * 
-   * This can be used in both pre- and post-exec notification listeners, although
+   * This can be used in both pre- and post-exec notification listeners, 
    * the executedInstructions number is incremented before notifying
    * instructionExecuted()
+   * 
+   * this method depends on the sequence of operations in ThreadInfo.executeInstruction,
+   * which is:
+   *   nextPc = null
+   *   notify executeInstruction
+   *   nextPc = insn.execute
+   *   increment executedInstructions
+   *   notify instructionExecuted
    */
   public boolean isFirstStepInsn() {
     int nInsn = executedInstructions;
-    return ( nInsn == 0 || (nextPc != null && nInsn == 1));
+    
+    if (nInsn == 0) {
+      // that would be a break in execute() or instructionExecuted()
+      return true;
+      
+    } else if (nInsn == 1 && nextPc != null) {
+      // that is for setting the CG in executeInsn or execute, and then testing in
+      // instructionExecuted. Note that nextPc is reset before pre-exec notification
+      // and hence should only be non-null from insn.execute() up to the next
+      // ThreadInfo.executeInstruction()
+      return true;
+    }
+    
+    return false;
   }
 
   /**
@@ -855,24 +878,6 @@ public class ThreadInfo
     return threadData.getState().name();
   }
 
-
-  public boolean getBooleanLocal (String lname) {
-    return Types.intToBoolean(getLocalVariable(lname));
-  }
-
-  public boolean getBooleanLocal (int lindex) {
-    return Types.intToBoolean(getLocalVariable(lindex));
-  }
-
-
-  public byte getByteLocal (String lname) {
-    return (byte) getLocalVariable(lname);
-  }
-
-  public byte getByteLocal (int lindex) {
-    return (byte) getLocalVariable(lindex);
-  }
-
   public Iterator<StackFrame> iterator () {
     return new StackIterator();
   }
@@ -1034,14 +1039,6 @@ public class ThreadInfo
     return getCalleeThis(Types.getArgumentsSize(call.getInvokedMethodSignature()) + 1) == r.getObjectRef();
   }
 
-  public char getCharLocal (String lname) {
-    return (char) getLocalVariable(lname);
-  }
-
-  public char getCharLocal (int lindex) {
-    return (char) getLocalVariable(lindex);
-  }
-
   /**
    * Returns the class information.
    */
@@ -1049,36 +1046,8 @@ public class ThreadInfo
     return ci;
   }
 
-  public double getDoubleLocal (String lname) {
-    return Types.longToDouble(getLongLocalVariable(lname));
-  }
-
-  public double getDoubleLocal (int lindex) {
-    return Types.longToDouble(getLongLocalVariable(lindex));
-  }
-
-  public double getDoubleReturnValue () {
-    return Types.longToDouble(longPeek());
-  }
-
   public MJIEnv getEnv() {
     return env;
-  }
-
-  public float getFloatLocal (String lname) {
-    return Types.intToFloat(getLocalVariable(lname));
-  }
-
-  public float getFloatLocal (int lindex) {
-    return Types.intToFloat(getLocalVariable(lindex));
-  }
-
-  public int getIntLocal (String lname) {
-    return getLocalVariable(lname);
-  }
-
-  public int getIntLocal (int lindex) {
-    return getLocalVariable(lindex);
   }
 
   public boolean isInterrupted (boolean resetStatus) {
@@ -1154,48 +1123,6 @@ public class ThreadInfo
     }
   }
   
-  public LocalVarInfo[] getLocalVars() {
-    return top.getLocalVars();
-  }
-  
-
-  /**
-   * Sets the value of a local variable.
-   */
-  public void setLocalVariable (int idx, int v, boolean ref) {
-    getModifiableTopFrame().setLocalVariable(idx, v, ref);
-  }
-
-  /**
-   * Returns the value of a local variable.
-   */
-  public int getLocalVariable (int idx) {
-    return top.getLocalVariable(idx);
-  }
-
-  /**
-   * Gets the value of a local variable from its name.
-   */
-  public int getLocalVariable (String name) {
-    return top.getLocalVariable(name);
-  }
-
-  /**
-   * Checks if a local variable is a reference.
-   */
-  public boolean isLocalVariableRef (int idx) {
-    return top.isLocalVariableRef(idx);
-  }
-
-
-  /**
-   * Gets the type associated with a local variable.
-   */
-  public String getLocalVariableType (String name) {
-    return top.getLocalVariableType(name);
-  }
-
-  
   //--- suspend/resume modeling
   // modeling this with a count is an approximation. In reality it behaves
   // rather like a race that /sometimes/ causes the resume to fail, but its
@@ -1263,39 +1190,6 @@ public class ThreadInfo
     return lockedObjectReferences;
   }
 
-  public long getLongLocal (String lname) {
-    return getLongLocalVariable(lname);
-  }
-
-  public long getLongLocal (int lindex) {
-    return getLongLocalVariable(lindex);
-  }
-
-  /**
-   * Sets the value of a long local variable.
-   */
-  public void setLongLocalVariable (int idx, long v) {
-    getModifiableTopFrame().setLongLocalVariable(idx, v);
-  }
-
-  /**
-   * Returns the value of a long local variable.
-   */
-  public long getLongLocalVariable (int idx) {
-    return top.getLongLocalVariable(idx);
-  }
-
-  /**
-   * Gets the value of a long local variable from its name.
-   */
-  public long getLongLocalVariable (String name) {
-    return top.getLongLocalVariable(name);
-  }
-
-  public long getLongReturnValue () {
-    return longPeek();
-  }
-
   /**
    * returns the current method in the top stack frame, which is always a
    * bytecode method (executed by JPF)
@@ -1346,13 +1240,6 @@ public class ThreadInfo
   }
 
 
-  public ElementInfo getObjectLocal (String lname) {
-    return vm.getElementInfo(getLocalVariable(lname));
-  }
-
-  public ElementInfo getObjectLocal (int lindex) {
-    return vm.getElementInfo(getLocalVariable(lindex));
-  }
 
   /**
    * Returns the object reference.
@@ -1368,305 +1255,7 @@ public class ThreadInfo
   public ElementInfo getModifiableThreadObject() {
     return getModifiableElementInfo(objRef);
   }
-
-
-  //------------------- attribute accessors
   
-  //--- top single-slot operand attr accessors
-  
-  public boolean hasOperandAttr(){
-    return top.hasOperandAttr();
-  }  
-  public boolean hasOperandAttr(Class<?> type){
-    return top.hasOperandAttr(type);
-  }
-  
-  /**
-   * this returns all of them - use either if you know there will be only
-   * one attribute at a time, or check/process result with ObjectList
-   */
-  public Object getOperandAttr () {
-    return top.getOperandAttr();
-  }
-  
-  /**
-   * this replaces all of them - use only if you know 
-   *  - there will be only one attribute at a time
-   *  - you obtained the value you set by a previous getXAttr()
-   *  - you constructed a multi value list with ObjectList.createList()
-   */
-  public void setOperandAttr (Object attr) {
-    getModifiableTopFrame().setOperandAttr(attr);
-  }
-  public void setOperandAttrNoClone (Object attr) {
-    top.setOperandAttr(attr);
-  }
-
-  /**
-   * this only returns the first attr of this type, there can be more
-   * if you don't use client private types or the provided type is too general
-   */
-  public <T> T getOperandAttr (Class<T> attrType){
-    return top.getOperandAttr(attrType);
-  }
-  public <T> T getNextOperandAttr (Class<T> attrType, Object prev){
-    return top.getNextOperandAttr(attrType, prev);
-  }
-  public Iterator operandAttrIterator (){
-    return top.operandAttrIterator();
-  }
-  public <T> Iterator<T> operandAttrIterator (Class<T> attrType){
-    return top.operandAttrIterator(attrType);
-  }
-    
-  public void addOperandAttr (Object attr) {
-    getModifiableTopFrame().addOperandAttr(attr);
-  }
-  public void addOperandAttrNoClone (Object attr) {
-    top.addOperandAttr(attr);
-  }
-
-  public void removeOperandAttr (Object attr) {
-    getModifiableTopFrame().removeOperandAttr(attr);
-  }
-  public void removeOperandAttrNoClone (Object attr) {
-    top.removeOperandAttr(attr);
-  }
-  
-  public void replaceOperandAttr (Object oldAttr, Object newAttr) {
-    getModifiableTopFrame().replaceOperandAttr(oldAttr, newAttr);
-  }
-  public void replaceOperandAttrNoClone (Object oldAttr, Object newAttr) {
-    top.replaceOperandAttr(oldAttr, newAttr);
-  }
-  
-
-  //--- offset operand attr accessors
-  
-  public boolean hasOperandAttr(int opStackOffset){
-    return top.hasOperandAttr(opStackOffset);
-  }  
-  public boolean hasOperandAttr(int opStackOffset, Class<?> type){
-    return top.hasOperandAttr(opStackOffset, type);
-  }
-  
-  /**
-   * this returns all of them - use either if you know there will be only
-   * one attribute at a time, or check/process result with ObjectList
-   */
-  public Object getOperandAttr (int opStackOffset) {
-    return top.getOperandAttr(opStackOffset);
-  }
-  
-  /**
-   * this replaces all of them - use only if you know 
-   *  - there will be only one attribute at a time
-   *  - you obtained the value you set by a previous getXAttr()
-   *  - you constructed a multi value list with ObjectList.createList()
-   */
-  public void setOperandAttr (int opStackOffset, Object attr) {
-    getModifiableTopFrame().setOperandAttr(opStackOffset, attr);
-  }
-  public void setOperandAttrNoClone (int opStackOffset, Object attr) {
-    top.setOperandAttr(opStackOffset, attr);
-  }
-
-  /**
-   * this only returns the first attr of this type, there can be more
-   * if you don't use client private types or the provided type is too general
-   */
-  public <T> T getOperandAttr( int opStackOffset, Class<T> attrType){
-    return top.getOperandAttr( opStackOffset, attrType);
-  }
-  public <T> T getNextOperandAttr( int opStackOffset, Class<T> attrType, Object prev){
-    return top.getNextOperandAttr( opStackOffset, attrType, prev);
-  }
-  
-  public ObjectList.Iterator operandAttrIterator (int opStackOffset){
-    return top.operandAttrIterator(opStackOffset);
-  }
-  public <T> ObjectList.TypedIterator<T> operandAttrIterator (int opStackOffset, Class<T> attrType){
-    return top.operandAttrIterator(opStackOffset, attrType);
-  }
-    
-  public void addOperandAttr (int opStackOffset, Object attr) {
-    getModifiableTopFrame().addOperandAttr(opStackOffset,attr);
-  }
-  public void addOperandAttrNoClone (int opStackOffset, Object attr) {
-    top.addOperandAttr(opStackOffset,attr);
-  }
-
-  public void removeOperandAttr (int opStackOffset, Object attr) {
-    getModifiableTopFrame().removeOperandAttr(opStackOffset,attr);
-  }
-  public void removeOperandAttrNoClone (int opStackOffset, Object attr) {
-    top.removeOperandAttr(opStackOffset,attr);
-  }
-  
-  public void replaceOperandAttr (int opStackOffset, Object oldAttr, Object newAttr) {
-    getModifiableTopFrame().replaceOperandAttr(opStackOffset,oldAttr, newAttr);
-  }
-  public void replaceOperandAttrNoClone (int opStackOffset, Object oldAttr, Object newAttr) {
-    top.replaceOperandAttr(opStackOffset,oldAttr, newAttr);
-  }
-  
-  
-  //--- top double-slot operand attr accessors
-
-  public boolean hasLongOperandAttr(){
-    return top.hasLongOperandAttr();
-  }  
-  public boolean hasLongOperandAttr(Class<?> type){
-    return top.hasLongOperandAttr(type);
-  }
-  
-  /**
-   * this returns all of them - use either if you know there will be only
-   * one attribute at a time, or check/process result with ObjectList
-   */  
-  public Object getLongOperandAttr () {
-    return top.getLongOperandAttr();
-  }
-  
-  /**
-   * this replaces all of them - use only if you know 
-   *  - there will be only one attribute at a time
-   *  - you obtained the value you set by a previous getXAttr()
-   *  - you constructed a multi value list with ObjectList.createList()
-   */
-  public void setLongOperandAttr (Object attr) {
-    getModifiableTopFrame().setLongOperandAttr(attr);
-  }
-  public void setLongOperandAttrNoClone (Object attr) {
-    top.setLongOperandAttr(attr);
-  }
-  
-  /**
-   * this only returns the first attr of this type, there can be more
-   * if you don't use client private types or the provided type is too general
-   */
-  public <T> T getLongOperandAttr (Class<T> attrType){
-    return top.getLongOperandAttr(attrType);
-  }
-  public <T> T getNextLongOperandAttr (Class<T> attrType, Object prev){
-    return top.getNextLongOperandAttr(attrType, prev);
-  }
-
-  public ObjectList.Iterator longOperandAttrIterator (){
-    return top.longOperandAttrIterator();
-  }
-  public <T> ObjectList.TypedIterator<T> longOperandAttrIterator (Class<T> attrType){
-    return top.longOperandAttrIterator(attrType);
-  }
-    
-  public void addLongOperandAttr (Object attr) {
-    getModifiableTopFrame().addLongOperandAttr(attr);
-  }
-  public void addLongOperandAttrNoClone (Object attr) {
-    top.addLongOperandAttr(attr);
-  }
-
-  public void removeLongOperandAttr (Object attr) {
-    getModifiableTopFrame().removeLongOperandAttr(attr);
-  }
-  public void removeLongOperandAttrNoClone (Object attr) {
-    top.removeLongOperandAttr(attr);
-  }
-  
-  public void replaceLongOperandAttr (Object oldAttr, Object newAttr) {
-    getModifiableTopFrame().replaceLongOperandAttr(oldAttr, newAttr);
-  }
-  public void replaceLongOperandAttrNoClone (Object oldAttr, Object newAttr) {
-    top.replaceLongOperandAttr(oldAttr, newAttr);
-  }
-  
-  
-  //--- local var attribute accessors
-
-  public boolean hasLocalAttr(int localIndex){
-    return top.hasLocalAttr(localIndex);
-  }
-  public boolean hasLocalAttr(int localIndex, Class<?> type){
-    return top.hasLocalAttr(localIndex, type);
-  }
-  
-  /**
-   * this returns all of them - use either if you know there will be only
-   * one attribute at a time, or check/process result with ObjectList
-   */  
-  public Object getLocalAttr (int localIndex) {
-    return top.getLocalAttr(localIndex);
-  }
-  
-  /**
-   * this replaces all of them - use only if you know 
-   *  - there will be only one attribute at a time
-   *  - you obtained the value you set by a previous getXAttr()
-   *  - you constructed a multi value list with ObjectList.createList()
-   */
-  public void setLocalAttr (int localIndex, Object a){
-    getModifiableTopFrame().setLocalAttr(localIndex, a);
-  }
-  public void setLocalAttrNoClone (int localIndex, Object a){
-    top.setLocalAttr(localIndex, a);
-  }
-  
-  /**
-   * this only returns the first attr of this type, there can be more
-   * if you don't use client private types or the provided type is too general
-   */
-  public <T> T getLocalAttr( int localIndex, Class<T> attrType){
-    return top.getLocalAttr( localIndex, attrType);
-  }
-  public <T> T getNextLocalAttr( int localIndex, Class<T> attrType, Object prev){
-    return top.getNextLocalAttr( localIndex, attrType, prev);
-  }
-  
-  public ObjectList.Iterator localAttrIterator (int localIndex){
-    return top.localAttrIterator(localIndex);
-  }
-  public <T> ObjectList.TypedIterator<T> localAttrIterator (int localIndex, Class<T> attrType){
-    return top.localAttrIterator(localIndex, attrType);
-  }
-    
-  public void addLocalAttr (int localIndex, Object attr) {
-    getModifiableTopFrame().addLocalAttr(localIndex,attr);
-  }
-  public void addLocalAttrNoClone (int localIndex, Object attr) {
-    top.addLocalAttr(localIndex,attr);
-  }
-
-  public void removeLocalAttr (int localIndex, Object attr) {
-    getModifiableTopFrame().removeLocalAttr(localIndex,attr);
-  }
-  public void removeLocalAttrNoClone (int localIndex, Object attr) {
-    top.removeLocalAttr(localIndex,attr);
-  }
-  
-  public void replaceLocalAttr (int localIndex, Object oldAttr, Object newAttr) {
-    getModifiableTopFrame().replaceLocalAttr(localIndex,oldAttr, newAttr);
-  }
-  public void replaceLocalAttrNoClone (int localIndex, Object oldAttr, Object newAttr) {
-    top.replaceLocalAttr(localIndex,oldAttr, newAttr);
-  }
-  
-
-  // -- end attribute accessors --
-  
-  
-  /**
-   * Checks if the top operand is a reference.
-   */
-  public boolean isOperandRef () {
-    return top.isOperandRef();
-  }
-
-  /**
-   * Checks if an operand is a reference.
-   */
-  public boolean isOperandRef (int idx) {
-    return top.isOperandRef(idx);
-  }
 
   /**
    * Sets the program counter of the top stack frame.
@@ -1694,13 +1283,6 @@ public class ThreadInfo
     return nextPc;
   }
 
-  public short getShortLocal (String lname) {
-    return (short) getLocalVariable(lname);
-  }
-
-  public short getShortLocal (int lindex) {
-    return (short) getLocalVariable(lindex);
-  }
 
   /**
    * get the current stack trace of this thread
@@ -1742,14 +1324,6 @@ public class ThreadInfo
     v = null;  // Get rid of IDE warnings
   }
 
-  public String getStringLocal (String lname) {
-    return vm.getElementInfo(getLocalVariable(lname)).asString();
-  }
-
-  public String getStringLocal (int lindex) {
-    return vm.getElementInfo(getLocalVariable(lindex)).asString();
-  }
-
   /**
    * Returns the object reference of the target.
    */
@@ -1768,8 +1342,8 @@ public class ThreadInfo
     return getElementInfo(getThis());
   }
 
-  public boolean isThis (ElementInfo r) {
-    if (r == null) {
+  public boolean isThis (ElementInfo ei) {
+    if (ei == null) {
       return false;
     }
 
@@ -1777,8 +1351,12 @@ public class ThreadInfo
       return false;
     }
 
-    return getTopFrameMethodInfo().isStatic()
-      ? false : r.getObjectRef() == getLocalVariable(0);
+    if (getTopFrameMethodInfo().isStatic()) {
+      return false;
+    } else {
+      int thisRef = top.getThis();
+      return ei.getObjectRef() == thisRef;
+    }
   }
 
   public boolean atMethod (String mname) {
@@ -1861,12 +1439,6 @@ public class ThreadInfo
     vm.notifyObjectUnlocked(this, ei);
   }
 
-  /**
-   * Clears the operand stack of all value.
-   */
-  public void clearOperandStack () {
-    getModifiableTopFrame().clearOperandStack();
-  }
 
   public Object clone() {
     try {
@@ -2646,35 +2218,6 @@ public class ThreadInfo
   }
 
   /**
-   * Peeks the top long value from the top stack frame.
-   */
-  public long longPeek () {
-    return top.peekLong();
-  }
-
-  /**
-   * Peeks a long value from the top stack frame.
-   */
-  public long longPeek (int n) {
-    return top.peekLong(n);
-  }
-
-  /**
-   * Pops the top long value from the top stack frame.
-   */
-  public long longPop () {
-    return getModifiableTopFrame().popLong();
-  }
-
-  /**
-   * Pushes a long value of the top stack frame.
-   */
-  public void longPush (long v) {
-    getModifiableTopFrame().pushLong(v);
-  }
-
-
-  /**
    * mark all objects during gc phase1 which are reachable from this threads
    * root set (Thread object, Runnable, stack)
    * @aspects: gc
@@ -2825,43 +2368,6 @@ public class ThreadInfo
     }
   }
 
-
-  //--- those are the transfer operations between operand stack and locals
-  public void push (int v, boolean ref) {
-    getModifiableTopFrame().push(v, ref);
-  }
-
-  public void pushRef (int ref) {
-    getModifiableTopFrame().pushRef(ref);
-  }
-
-  public void push (int v) {
-    getModifiableTopFrame().push(v);
-  }
-
-  public void pushLocal (int localIndex){
-    getModifiableTopFrame().pushLocal(localIndex);
-  }
-
-  public void pushLongLocal (int localIndex){
-    getModifiableTopFrame().pushLongLocal(localIndex);
-  }
-
-  public void storeOperand (int localIndex){
-    getModifiableTopFrame().storeOperand(localIndex);
-  }
-
-  public void storeLongOperand (int localIndex){
-    getModifiableTopFrame().storeLongOperand(localIndex);
-  }
-
-  /**
-   * Swaps two entry on the stack.
-   */
-  public void swap () {
-    getModifiableTopFrame().swap();
-  }
-
   boolean haltOnThrow (String exceptionClassName){
     if ((haltOnThrow != null) && (haltOnThrow.matchesAny(exceptionClassName))){
       return true;
@@ -3004,13 +2510,15 @@ public class ThreadInfo
       // according to the VM spec, before transferring control to the handler we have
       // to reset the operand stack to contain only the exception reference
       // (4.9.2 - "4. merge the state of the operand stack..")
-      clearOperandStack();
-      push(exceptionObjRef, true);
+      handlerFrame = getModifiableTopFrame();
+      
+      handlerFrame.clearOperandStack();
+      handlerFrame.pushRef(exceptionObjRef);
 
       // jump to the exception handler and set pc so that listeners can see it
       int handlerOffset = matchingHandler.getHandler();
       insn = handlerFrame.getMethodInfo().getInstructionAt(handlerOffset);
-      setPC(insn);
+      handlerFrame.setPC(insn);
 
       // notify before we reset the pendingException
       vm.notifyExceptionHandled(this);

@@ -78,7 +78,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
     Object attr = null; // attr handling has to be consistent with PUTFIELD
 
     if (fi.getStorageSize() == 1) {
-      attr = ti.getOperandAttr();
+      attr = frame.getOperandAttr();
 
       int ival = frame.pop();
       lastValue = ival;

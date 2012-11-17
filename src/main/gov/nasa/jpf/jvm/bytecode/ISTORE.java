@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -32,11 +33,14 @@ public class ISTORE extends LocalVariableInstruction implements StoreInstruction
     super(localVarIndex);
   }
 
-  public Instruction execute (ThreadInfo th) {
-    //th.setLocalVariable(index, th.pop(), false);
-    th.storeOperand(index);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.storeOperand(index);
+    
+    return getNext(ti);
 
-    return getNext(th);
   }
 
   public int getLength() {
@@ -47,6 +51,7 @@ public class ISTORE extends LocalVariableInstruction implements StoreInstruction
     }
   }
   
+  @Override
   public int getByteCode () {
     switch (index) {
     case 0: return 0x3b;
@@ -61,6 +66,7 @@ public class ISTORE extends LocalVariableInstruction implements StoreInstruction
     return "istore";
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

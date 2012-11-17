@@ -1023,10 +1023,28 @@ public class StackFrame implements Cloneable {
     isRef.clear(index);
   }
 
-  public long getLongLocalVariable (int i) {
-    return Types.intsToLong(slots[i + 1], slots[i]);
+  public long getLongLocalVariable (int idx) {
+    return Types.intsToLong(slots[idx + 1], slots[idx]);
+  }
+  
+  public double getDoubleLocalVariable (int idx) {
+    return Types.intsToDouble(slots[idx + 1], slots[idx]);
   }
 
+  public float getFloatLocalVariable (int idx) {
+    int bits = slots[idx];
+    return Float.intBitsToFloat(bits);
+  }
+
+  public double getDoubleLocalVariable (String name) {
+    int idx = getLocalVariableSlotIndex(name);
+    if (idx >= 0) {
+      return getDoubleLocalVariable(idx);
+    } else {
+      throw new JPFException("long local variable not found: " + name);
+    }    
+  }
+  
   public long getLongLocalVariable (String name) {
     int idx = getLocalVariableSlotIndex(name);
 
@@ -1716,12 +1734,13 @@ public class StackFrame implements Cloneable {
   }
   
   public double peekDouble() {
-    long bits = (((long)slots[top-1]) << 32) | (long)slots[top];
-    return Double.longBitsToDouble(bits);
+    int i = top;
+    return Types.intsToDouble( slots[i], slots[i-1]);
   }
   
   public long peekLong () {
-    return (((long)slots[top-1]) << 32) | (long)slots[top]; 
+    int i = top;
+    return Types.intsToLong( slots[i], slots[i-1]);
   }
 
   public long peekLong (int n) {

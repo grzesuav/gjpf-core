@@ -197,7 +197,8 @@ public class VarTracker extends ListenerAdapter {
         // did we have a name for the array?
         // stack is ".. ref idx [l]value => .."
         // <2do> String is not a good attribute type to retrieve
-        String attr = ti.getOperandAttr(1, String.class);
+        StackFrame frame = ti.getTopFrame();
+        String attr = frame.getOperandAttr(1, String.class);
         if (attr != null) {
           varId = attr + "[]";
         } else {

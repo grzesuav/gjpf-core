@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
 
@@ -29,16 +30,22 @@ import gov.nasa.jpf.vm.Types;
  */
 public class DNEG extends JVMInstruction {
 
-  public Instruction execute (ThreadInfo th) {
-    th.longPush(Types.doubleToLong(-Types.longToDouble(th.longPop())));
-
-    return getNext(th);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    double v = frame.popDouble();
+    frame.pushDouble(-v);
+    
+    return getNext(ti);
   }
 
+  @Override
   public int getByteCode () {
     return 0x77;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

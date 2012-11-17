@@ -30,13 +30,16 @@ import gov.nasa.jpf.vm.Types;
  */
 public class FCMPL extends JVMInstruction {
 
+  @Override
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
     float v1 = frame.popFloat();
     float v2 = frame.popFloat();
     
-    ti.push(conditionValue(v1, v2), false);
+    int condVal = conditionValue(v1, v2);
+    
+    frame.push(condVal);
 
     return getNext(ti);
   }
@@ -53,10 +56,12 @@ public class FCMPL extends JVMInstruction {
     }      
   }
 
+  @Override
   public int getByteCode () {
     return 0x95;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

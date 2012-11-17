@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
 
@@ -29,20 +30,26 @@ import gov.nasa.jpf.vm.Types;
  */
 public class DMUL extends JVMInstruction {
 
-  public Instruction execute (ThreadInfo th) {
-    double v1 = Types.longToDouble(th.longPop());
-    double v2 = Types.longToDouble(th.longPop());
-    
-    double r = v1 * v2;    
-    th.longPush(Types.doubleToLong(r));
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
 
-    return getNext(th);
+    double v1 = frame.popDouble();
+    double v2 = frame.popDouble();
+    
+    double r = v2 * v1;
+    
+    frame.pushDouble(r);
+    
+    return getNext(ti);
   }
 
+  @Override
   public int getByteCode () {
     return 0x6B;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

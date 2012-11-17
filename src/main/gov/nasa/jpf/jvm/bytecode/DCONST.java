@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -27,28 +28,32 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * ... => ..., <d>
  */
 public class DCONST extends JVMInstruction {
-  private long value;
+  private double value;
 
   public DCONST() {} // this is going away
 
   public DCONST (double d){
-    value = Double.doubleToLongBits(d);
+    value = d;
   }
 
-  public Instruction execute (ThreadInfo th) {
-    th.longPush(value);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    frame.pushDouble(value);
 
-    return getNext(th);
+    return getNext(ti);
   }
   
-  public long getValue(){
+  public double getValue(){
 	  return value;
   }
 
+  @Override
   public int getByteCode () {
     return 0x0E;  // ? DCONST_0 0x0E , DCONST_1 0x0F
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

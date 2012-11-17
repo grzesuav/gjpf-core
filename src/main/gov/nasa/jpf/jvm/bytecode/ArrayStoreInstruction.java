@@ -47,9 +47,9 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction implements 
     }
 
     int esize = getElementSize();
-    Object attr = esize == 1 ? ti.getOperandAttr() : ti.getLongOperandAttr();
-
     StackFrame frame = ti.getModifiableTopFrame();
+
+    Object attr = esize == 1 ? frame.getOperandAttr() : frame.getLongOperandAttr();
     
     popValue(frame);
     index = frame.pop();

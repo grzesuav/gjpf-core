@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -35,10 +36,13 @@ public class BIPUSH extends JVMInstruction {
     this.value = value;
   }
 
-  public Instruction execute (ThreadInfo th) {
-    th.push(value, false);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
 
-    return getNext(th);
+    frame.push(value);
+
+    return getNext(ti);
   }
   
   public int getValue(){
@@ -49,10 +53,12 @@ public class BIPUSH extends JVMInstruction {
     return 2; // opcode, byte
   }
 
+  @Override
   public int getByteCode () {
     return 0x10;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

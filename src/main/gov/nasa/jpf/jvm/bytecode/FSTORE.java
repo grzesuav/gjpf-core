@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -32,11 +33,13 @@ public class FSTORE extends LocalVariableInstruction implements StoreInstruction
     super(localVarIndex);
   }
 
-  public Instruction execute (ThreadInfo th) {
-    //th.setLocalVariable(index, th.pop(), false);
-    th.storeOperand(index);
-
-    return getNext(th);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.storeOperand(index);
+    
+    return getNext(ti);
   }
 
   public int getLength() {
