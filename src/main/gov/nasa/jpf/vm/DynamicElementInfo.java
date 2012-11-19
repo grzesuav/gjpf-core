@@ -31,10 +31,14 @@ public class DynamicElementInfo extends ElementInfo {
     // for restoration
   }
 
-  public DynamicElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti) {
-    super(ci, f, m, ti);
+  public DynamicElementInfo (int objref, ClassInfo ci, Fields f, Monitor m, ThreadInfo ti) {
+    super(objref, ci, f, m, ti);
 
     attributes = ci.getElementInfoAttrs();
+
+    // <2do> not ideal, should be in superclass (but doesn't work for SEIs)
+    referencingThreads = createThreadInfoSet(ti); // initialization depends on subclass and policy
+    setSharednessFromReferencingThreads();
   }
 
   @Override

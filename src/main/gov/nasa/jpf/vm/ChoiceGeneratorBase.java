@@ -30,6 +30,17 @@ import java.util.Random;
  */
 public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
 
+  /**
+   * choice randomization policies, which can be set from JPF configuration
+   */
+  static enum ChoiceRandomizationPolicy {
+    VAR_SEED,    // randomize choices using a different seed for every JPF run 
+    FIXED_SEED,  // randomize choices using a fixed seed for each JPF run (reproducible, seed can be specified as cg.seed)
+    NONE         // don't randomize choices
+  };
+  
+  static ChoiceRandomizationPolicy randomization;
+  
   // the marker for the current choice used in String conversion
   public static final char MARKER = '>';
   protected static Random random = new Random(42);
@@ -62,20 +73,25 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
   // within the same transition. Note this is NOT set for the last CG registered
   protected boolean isCascaded;
 
-  // in case this is initalized from a VM context
+  // in case this is initialized from a VM context
   public static void init(Config config) {
 
-    SystemState.ChoiceRandomizationPolicy randomization = config.getEnum("cg.randomize_choices",
-            SystemState.ChoiceRandomizationPolicy.values(), SystemState.ChoiceRandomizationPolicy.NONE);
+    randomization = config.getEnum("cg.randomize_choices", 
+                                   ChoiceRandomizationPolicy.values(), ChoiceRandomizationPolicy.NONE);
 
     // if the randomize_choices is set to random then we need to 
     // pick the seed based on the system time. 
 
-    if (randomization == SystemState.ChoiceRandomizationPolicy.VAR_SEED) {
+    if (randomization == ChoiceRandomizationPolicy.VAR_SEED) {
       random.setSeed(System.currentTimeMillis());
-    } else if (randomization == SystemState.ChoiceRandomizationPolicy.FIXED_SEED){
-      random.setSeed( config.getLong("cg.seed", 42));      
+    } else if (randomization == ChoiceRandomizationPolicy.FIXED_SEED){
+      long seed = config.getLong("cg.seed", 42);
+      random.setSeed( seed);
     }
+  }
+  
+  public static boolean useRandomization() {
+    return (randomization != ChoiceRandomizationPolicy.NONE);
   }
 
   /**
@@ -104,8 +120,6 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
     return clone;
   }
   
-  
-
   public String getId() {
     return id;
   }

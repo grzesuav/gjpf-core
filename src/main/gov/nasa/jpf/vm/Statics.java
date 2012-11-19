@@ -35,10 +35,16 @@ public interface Statics extends Iterable<ElementInfo> {
   //--- construction
   
   /**
+   * startup classes are registered and initialized in two steps since object
+   * creation has to be deferred until we have at least Object and Class ClassInfos
+   */
+  StaticElementInfo newStartupClass (ClassInfo ci, ThreadInfo ti);
+  
+  /**
    * this returns the search global id which is unique within this ClassLoader namespace.
    * This id is also stored in the respective java.lang.Class object
    */
-  StaticElementInfo newClass (ClassInfo ci, ThreadInfo ti);
+  StaticElementInfo newClass (ClassInfo ci, ThreadInfo ti, ElementInfo eiClsObj);
   
   
   //--- accessors 

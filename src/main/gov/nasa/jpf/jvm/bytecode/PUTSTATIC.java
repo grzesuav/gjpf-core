@@ -63,6 +63,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
     // this tries to avoid endless recursion, but is too restrictive, and
     // causes NPE's with the infamous, synthetic  'class$0' fields
     if (!mi.isClinit(clsInfo) && requiresClinitExecution(ti, clsInfo)) {
+      // note - this returns the next insn in the topmost clinit that just got pushed
       return ti.getPC();
     }
 

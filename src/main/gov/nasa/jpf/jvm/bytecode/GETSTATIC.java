@@ -57,8 +57,9 @@ public class GETSTATIC extends StaticFieldInstruction {
 
     // this can be actually different (can be a base)
     clsInfo = fieldInfo.getClassInfo();
-
+    
     if (!mi.isClinit(clsInfo) && requiresClinitExecution(ti, clsInfo)) {
+      // note - this returns the next insn in the topmost clinit that just got pushed
       return ti.getPC();
     }
 

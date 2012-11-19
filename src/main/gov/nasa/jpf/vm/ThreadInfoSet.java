@@ -30,9 +30,14 @@ package gov.nasa.jpf.vm;
  */
 public interface ThreadInfoSet extends Cloneable {
 
+  /**
+   * @return true if the thread wasn't in the set yet and was added
+   */
   boolean add (ThreadInfo ti);
   
   boolean remove (ThreadInfo ti);
+  
+  boolean contains (ThreadInfo ti);
   
   boolean hasMultipleLiveThreads ();
   boolean hasMultipleRunnableThreads ();

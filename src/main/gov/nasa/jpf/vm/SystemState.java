@@ -209,17 +209,6 @@ public class SystemState {
   // number of new allocs within a single transition exceeds this value
   int maxAllocGC;
   int nAlloc;
-  
-  /**
-   * choice randomization policies, which can be set from JPF configuration
-   */
-  static enum ChoiceRandomizationPolicy {
-    VAR_SEED,    // randomize choices using a different seed for every JPF run 
-    FIXED_SEED,  // randomize choices using a fixed seed for each JPF run (reproducible, seed can be specified as cg.seed)
-    NONE         // don't randomize choices
-  };
-  
-  ChoiceRandomizationPolicy randomization = ChoiceRandomizationPolicy.NONE;
 
   /** NOTE: this has changed its meaning again. Now it once more is an
    * optimization that can be used by applications calling Verify.begin/endAtomic(),
@@ -236,9 +225,6 @@ public class SystemState {
 
   /** the policy object used to create scheduling related ChoiceGenerators */
   SchedulerFactory schedulerFactory;
-
-  /** do we want CGs to randomize the order in which they return choices? */
-  boolean randomizeChoices = false;
 
   /** do we want executed insns to be recorded */
   boolean recordSteps;
@@ -257,15 +243,6 @@ public class SystemState {
                                                     argTypes, args);
 
     // we can't yet initialize the trail until we have the start thread
-
-   
-    randomization = config.getEnum("cg.randomize_choices", ChoiceRandomizationPolicy.values(), 
-    						ChoiceRandomizationPolicy.NONE);
-   
-    if(randomization != ChoiceRandomizationPolicy.NONE) {
-    	randomizeChoices = true;
-    }
-    
     
     maxAllocGC = config.getInt("vm.max_alloc_gc", Integer.MAX_VALUE);
     if (maxAllocGC <= 0){
@@ -474,8 +451,10 @@ public class SystemState {
     }
 
     if (cg != null){
-      // first, check if we have to randomize it (might create a new one)
-      if (randomizeChoices) {
+      // first, check if we have to randomize it. Note this might change the CG
+      // instance since some algorithmic CG types need to be transformed into
+      // explicit choice lists
+      if (ChoiceGeneratorBase.useRandomization()) {
         cg = cg.randomize();
       }
 

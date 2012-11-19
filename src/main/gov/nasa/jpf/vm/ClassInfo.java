@@ -2342,37 +2342,19 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return cl.getInitializedClassInfo(clsName, ti);
   }
 
-    
-  void registerStartupClass (ThreadInfo ti, List<ClassInfo> queue) {
-    if (!isRegistered()) {
-      // do this recursively for superclasses and interfaceNames
-      // respective classes might be defined by another classloader, so we have to call their ClassInfo.registerClass()
-      
-      if (superClass != null) {
-        superClass.registerStartupClass(ti, queue);
-      }
-
-      for (ClassInfo ifc : interfaces) {
-        ifc.registerStartupClass(ti, queue);
-      }
-    }
-    
-    if (!queue.contains(this)) {
-      queue.add(this);
-      classLoader.updateCachedClassInfos(this);
-      ClassInfo.logger.finer("registering startup class: ", name);
-      createAndLinkStaticElementInfo( ti);
-    }
+  public boolean isRegistered () {
+    //return (id != -1);
+    return getStaticElementInfo() != null;
   }
   
   /**
    * this registers a ClassInfo in the corresponding ClassLoader statics so that we can cross-link from
    * SUT code and access static fields.
-   *  
-   * Note: VM.registerStartupClass() must be kept in sync
    */
-  public void registerClass (ThreadInfo ti){
-    if (!isRegistered()) {
+  public StaticElementInfo registerClass (ThreadInfo ti){
+    StaticElementInfo sei = getStaticElementInfo();
+    
+    if (sei == null) {
       // do this recursively for superclasses and interfaceNames
       // respective classes might be defined by another classloader, so we have to call their ClassInfo.registerClass()
       
@@ -2386,25 +2368,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       
       ClassInfo.logger.finer("registering class: ", name);
       
-      createAndLinkStaticElementInfo( ti);
-      createAndLinkClassObject( ti); 
+      ElementInfo ei = createClassObject( ti);
+      sei = createAndLinkStaticElementInfo( ti, ei);
     }
-  }
-
-  public boolean isRegistered () {
-    //return (id != -1);
-    return getStaticElementInfo() != null;
-  }
-  
-  void createAndLinkStaticElementInfo (ThreadInfo ti) {
-    Statics statics = classLoader.getStatics();
-    StaticElementInfo sei = statics.newClass(this, ti);
     
-    id = sei.getObjectRef();  // kind of a misnomer, it's really an id    
-    uniqueId = ((long)classLoader.getId() << 32) | id;
+    return sei;
   }
 
-  ElementInfo createAndLinkClassObject (ThreadInfo ti){
+  ElementInfo createClassObject (ThreadInfo ti){
     Heap heap = VM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
     int anchor = name.hashCode(); // 2do - this should also take the ClassLoader ref into account
@@ -2417,19 +2388,73 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     ei.setBooleanField("isPrimitive", isPrimitive());
     
-    // link the SUT class object to this ClassInfo
-    ei.setIntField( ID_FIELD, id);
+    // setting the ID_FIELD is done in registerClass once we have a StaticElementInfo
 
     // link the SUT class object to the classloader 
     ei.setReferenceField("classLoader", classLoader.getClassLoaderObjectRef());
-
-    // link the statics entry to the SUT class object
-    StaticElementInfo sei = classLoader.getStatics().getModifiable(id);
-    sei.setClassObjectRef( clsObjRef);
     
     return ei;
   }
+  
+  StaticElementInfo createAndLinkStaticElementInfo (ThreadInfo ti, ElementInfo eiClsObj) {
+    Statics statics = classLoader.getStatics();
+    StaticElementInfo sei = statics.newClass(this, ti, eiClsObj);
+    
+    id = sei.getObjectRef();  // kind of a misnomer, it's really an id    
+    uniqueId = ((long)classLoader.getId() << 32) | id;
+    
+    eiClsObj.setIntField( ID_FIELD, id);      
+    
+    return sei;
+  }
 
+  
+  // for startup classes, the order of initialization is reversed since we can't create
+  // heap objects before we have a minimal set of registered classes
+  
+  void registerStartupClass(ThreadInfo ti, List<ClassInfo> queue) {
+    if (!isRegistered()) {
+      // do this recursively for superclasses and interfaceNames
+      // respective classes might be defined by another classloader, so we have
+      // to call their ClassInfo.registerClass()
+
+      if (superClass != null) {
+        superClass.registerStartupClass(ti, queue);
+      }
+
+      for (ClassInfo ifc : interfaces) {
+        ifc.registerStartupClass(ti, queue);
+      }
+    }
+
+    if (!queue.contains(this)) {
+      queue.add(this);
+      classLoader.updateCachedClassInfos(this);
+      ClassInfo.logger.finer("registering startup class: ", name);
+      createStartupStaticElementInfo(ti);
+    }
+  }
+  
+  StaticElementInfo createStartupStaticElementInfo (ThreadInfo ti) {
+    Statics statics = classLoader.getStatics();
+    StaticElementInfo sei = statics.newStartupClass(this, ti);
+    
+    id = sei.getObjectRef();  // kind of a misnomer, it's really an id    
+    uniqueId = ((long)classLoader.getId() << 32) | id;
+    
+    return sei;
+  }
+  
+  ElementInfo createAndLinkStartupClassObject (ThreadInfo ti) {
+    StaticElementInfo sei = getStaticElementInfo();
+    ElementInfo ei = createClassObject(ti);
+    
+    sei.setClassObjectRef(ei.getObjectRef());
+    ei.setIntField( ID_FIELD, id);      
+    
+    return ei;
+  }
+  
   boolean checkIfValidClassClassInfo() {
     return getDeclaredInstanceField( ID_FIELD) != null;
   }
@@ -2458,21 +2483,29 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     sei.setStatus(ti.getId());
   }
   
+  /**
+   * checks if the class is registered and makes sure the requesting thread is recorded as
+   * a referencingThread for both the static fields and the class object.
+   * 
+   * @return true if this method pushed any clinit frames on the stack that will be
+   * executed next within this thread
+   */
   public boolean requiresClinitExecution (ThreadInfo ti){
-    if (!isRegistered()) {
-      registerClass(ti); // this sets sei
+    StaticElementInfo sei = getStaticElementInfo();    
+    if (sei == null) {
+      sei = registerClass(ti);      
     }
-
-    StaticElementInfo sei = getStaticElementInfo();
+    
     if (sei.getStatus() == UNINITIALIZED){
       if (initializeClass(ti)) {
-        return true; // there are new <clinit> frames on the stack, execute them
+        // there are new <clinit> frames on the stack
+        return true;
       }
     }
 
     return false;
   }
-  
+    
   public void setInitialized() {
     StaticElementInfo sei = getModifiableStaticElementInfo();
     sei.setStatus(INITIALIZED);
@@ -2496,6 +2529,18 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // push clinits of class hierarchy (upwards, since call stack is LIFO)
     for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
       if (ci.pushClinit(ti)) {
+        // NOTE - since clinits are synchronized and hence cause CGs, we have to make sure
+        // the respective ClassInfo StaticElements and class objects referencingThread sets
+        // are properly updated so that potential contention by other threads is detected
+        StaticElementInfo sei = ci.getStaticElementInfo();
+        //if (!sei.isReferencedByThread(ti)) {
+          sei = (StaticElementInfo) sei.getInstanceWithUpdatedSharedness(ti);
+
+          int objref = sei.getClassObjectRef();
+          ElementInfo ei = ti.getElementInfo(objref);
+          ei = ei.getInstanceWithUpdatedSharedness(ti);
+        //}
+        
         // we can't do setInitializing() yet because there is no global lock that
         // covers the whole clinit chain, and we might have a context switch before executing
         // a already pushed subclass clinit - there can be races as to which thread

@@ -188,7 +188,7 @@ public class SystemClassLoader extends ClassLoaderInfo {
   
   protected void createStartupClassObjects (ThreadInfo ti){
     for (ClassInfo ci : startupQueue) {
-      ci.createAndLinkClassObject(ti);
+      ci.createAndLinkStartupClassObject(ti);
     }
   }
 

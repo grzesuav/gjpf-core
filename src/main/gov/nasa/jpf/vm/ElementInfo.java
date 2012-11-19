@@ -163,12 +163,13 @@ public abstract class ElementInfo implements Cloneable {
     return true;
   }
 
-  protected ElementInfo(ClassInfo c, Fields f, Monitor m, ThreadInfo ti) {
+  protected ElementInfo (int id, ClassInfo c, Fields f, Monitor m, ThreadInfo ti) {
+    
+    objRef = id;
+    
     ci = c;
     fields = f;
     monitor = m;
-
-    referencingThreads = createThreadInfoSet(ti); // initialization depends on subclass and policy
     
     assert ti != null; // we need that for our POR
   }
@@ -388,13 +389,34 @@ public abstract class ElementInfo implements Cloneable {
       }
     }
   }
-    
+
+  /**
+   * NOTE - this should only be called internally if we know the object is
+   * modifiable (e.g. from the ctor)
+   */
+  void setSharednessFromReferencingThreads () {
+    if (ThreadTrackingPolicy.getPolicy().isShared(referencingThreads)) {
+      if ((attributes & ATTR_SHARED) == 0) {
+        checkIsModifiable();
+        attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
+      }
+    }
+  }
+  
+  public boolean isReferencedByThread (ThreadInfo ti) {
+    return referencingThreads.contains(ti);
+  }
+  
   /**
    * update referencingThreads and set shared flag accordingly (if not frozen)
    * 
    * NOTE - this might return a new (cloned) ElementInfo in case the state stored/restored
    * flag has been changed. Use only from system code that is aware of the potential ElementInfo
    * identity change (doesn't use a reference to the old one) 
+   * 
+   * <2do> changing the referencingThreads set without requiring a modifiable ElementInfo is
+   * debatable since it restricts the ThreadTrackingPolicy (e.g. if we ever want to implement a 
+   * path local policy)
    */
   public ElementInfo getInstanceWithUpdatedSharedness (ThreadInfo ti) {
     // we don't check for modifiability here since 'referencingThreads' is either search global
@@ -403,11 +425,13 @@ public abstract class ElementInfo implements Cloneable {
  
     // we update the referencingThreads no matter what (this is NOT state stored/restored)
     referencingThreads.add(ti);
-    
-    // we only update the (state-stored) SHARED flag if sharedness is not frozen
-    if ((attributes & ATTR_FREEZE_SHARED) == 0) {      
-      // note that we can only go from non-shared to shared, but not vice versa (this is
-      // in response to a reference from a live thread)
+
+    // the thread might already have been in referencingThreads, but we might get here after
+    // backtracking. In this case the ATTR_SHARED attribute might have been reset and we have to check
+    // if it needs updating (in case sharedness is not frozen)
+    if ((attributes & ATTR_FREEZE_SHARED) == 0) {
+      // note that we can only go from non-shared to shared, but not vice versa
+      // (this is in response to a reference from a live thread)
       if (ThreadTrackingPolicy.getPolicy().isShared(referencingThreads)) {
         if ((attributes & ATTR_SHARED) == 0) {
           // make sure we clone first (in case of need)

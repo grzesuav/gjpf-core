@@ -40,11 +40,17 @@ public final class StaticElementInfo extends ElementInfo {
   public StaticElementInfo () {
   }
 
-  public StaticElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti, int classObjRef) {
-    super(ci, f, m, ti);
+  public StaticElementInfo (int id, ClassInfo ci, Fields f, Monitor m, ThreadInfo ti, ElementInfo eiClsObj) {
+    super(id, ci, f, m, ti);
 
-    classObjectRef = classObjRef;
+    if (eiClsObj != null) {
+      classObjectRef = eiClsObj.getObjectRef();
+    }
 
+    // <2do> not ideal, should be in superclass, but we need the classObjectRef for init
+    referencingThreads = createThreadInfoSet(ti); // initialization depends on subclass and policy
+    setSharednessFromReferencingThreads();
+    
     // initial attributes?
   }
   
