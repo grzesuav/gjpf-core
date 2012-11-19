@@ -51,6 +51,11 @@ public class TidSet extends UnsortedArrayIntSet implements ThreadInfoSet, Mement
   //--- set query
   
   @Override
+  public boolean contains (ThreadInfo ti) {
+    return contains( ti.getId());
+  }
+  
+  @Override
   public boolean hasMultipleLiveThreads(){
     if (size == 0){
       return false;
@@ -94,6 +99,21 @@ public class TidSet extends UnsortedArrayIntSet implements ThreadInfoSet, Mement
       
       return false;
     }
+  }
+  
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(getClass().getName());
+    sb.append('{');
+    for (int i = 0; i<size; i++) {
+      if (i>0) {
+        sb.append(',');
+      }
+      sb.append(elements[i]);
+    }
+    sb.append('}');
+    
+    return sb.toString();
   }
 
   

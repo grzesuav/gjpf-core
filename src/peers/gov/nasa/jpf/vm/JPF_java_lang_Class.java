@@ -616,7 +616,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return aref;
   }
     
-  static int getField (MJIEnv env, int clsRef, int nameRef, boolean isRecursiveLookup) {
+  static int getField (MJIEnv env, int clsRef, int nameRef, boolean isRecursiveLookup) {    
     ClassInfo ci = env.getReferredClassInfo( clsRef);
     String fname = env.getStringObject(nameRef);
     FieldInfo fi = null;

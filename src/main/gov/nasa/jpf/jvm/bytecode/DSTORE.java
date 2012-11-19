@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
@@ -31,17 +32,20 @@ public class DSTORE extends LocalVariableInstruction implements StoreInstruction
     super(localVarIndex);
   }
 
-  public Instruction execute (ThreadInfo th) {
-    //th.setLongLocalVariable(index, th.longPop());
-    th.storeLongOperand(index);
-
-    return getNext(th);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.storeLongOperand(index);
+    
+    return getNext(ti);
   }
 
   public int getLength() {
     return 2; // opcode, index
   }
-  
+
+  @Override
   public int getByteCode () {
     switch (index) {
       case 0: return 0x47;
@@ -57,6 +61,7 @@ public class DSTORE extends LocalVariableInstruction implements StoreInstruction
     return "dstore";
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -36,20 +37,28 @@ public class IINC extends JVMInstruction {
 		this.increment = increment;
 	}
 
-	public Instruction execute (ThreadInfo th) {
-		th.setLocalVariable(index, th.getLocalVariable(index) + increment, false);
+	@Override
+	public Instruction execute (ThreadInfo ti) {
+	  StackFrame frame = ti.getModifiableTopFrame();
+	  
+	  int v = frame.getLocalVariable(index);
+	  v += increment;
+	  
+	  frame.setLocalVariable(index, v, false);
 
-		return getNext(th);
+		return getNext(ti);
 	}
 
 	public int getLength() {
 		return 3; // opcode, index, const
 	}
 
+	@Override
 	public int getByteCode () {
 		return 0x84; // ?? wide
 	}
 
+	@Override
 	public void accept(InstructionVisitor insVisitor) {
 		insVisitor.visit(this);
 	}

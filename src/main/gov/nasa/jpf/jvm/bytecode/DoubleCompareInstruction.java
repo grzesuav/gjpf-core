@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2006 United States Government as represented by the
+// Copyright (C) 2012 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 // 
@@ -16,44 +16,31 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
+
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
-
 /**
- * Return from subroutine
- *   No change
+ * base class for double double compare instructions
  */
-public class RET extends JVMInstruction {
-  private int index;
-
-  public RET( int index){
-    this.index = index;
-  }
+public abstract class DoubleCompareInstruction extends JVMInstruction {
 
   @Override
   public Instruction execute (ThreadInfo ti) {
-    StackFrame frame = ti.getTopFrame();
-    int jumpTgt = frame.getLocalVariable(index);
-    return mi.getInstructionAt(jumpTgt);
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    double v1 = frame.popDouble();
+    double v2 = frame.popDouble();
+    
+    int condVal = conditionValue(v1, v2);
+    
+    frame.push( condVal);
+    
+    return getNext(ti);
   }
 
-  public int getLength() {
-    return 2; // opcode, insnIndex
-  }
-  
-  public int getByteCode () {
-    return 0xA9; // ?? wide
-  }
-  
-  public void accept(InstructionVisitor insVisitor) {
-	  insVisitor.visit(this);
-  }
-
-  public int getIndex() {
-	return index;
-  }
+  protected abstract int conditionValue (double v1, double v2);
 }

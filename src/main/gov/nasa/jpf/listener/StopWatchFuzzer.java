@@ -24,6 +24,7 @@ import gov.nasa.jpf.jvm.bytecode.LSUB;
 import gov.nasa.jpf.jvm.bytecode.NATIVERETURN;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -83,7 +84,8 @@ public class StopWatchFuzzer extends ListenerAdapter {
       if (executedInsn.isCompleted(ti)){
         if (((NATIVERETURN)executedInsn).getMethodInfo() == miCurrentTimeMillis){
           // the two top operand slots hold the 'long' time value
-          ti.addLongOperandAttr( timeValAttr);
+          StackFrame frame = ti.getModifiableTopFrame();
+          frame.addLongOperandAttr( timeValAttr);
         }
       }
     }
@@ -93,21 +95,24 @@ public class StopWatchFuzzer extends ListenerAdapter {
   public void executeInstruction(VM vm, ThreadInfo ti, Instruction insnToExecute){
 
     if (insnToExecute instanceof LSUB){  // propagate TimeVal attrs
-      
+      StackFrame frame = ti.getTopFrame();
       // check if any of the operands have TimeVal attributes
       // attributes are stored on the first slot of a long val
-      if (ti.hasOperandAttr(1, TimeVal.class) || ti.hasOperandAttr(3, TimeVal.class)){      
+      if (frame.hasOperandAttr(1, TimeVal.class) || frame.hasOperandAttr(3, TimeVal.class)){      
         // execute insn (this pops the 4 top operand slots and pushes the long result
         ti.skipInstruction(insnToExecute.execute(ti));
       
-        // propagate TimeVal attr
-        ti.addLongOperandAttr(timeValAttr);
+        // propagate TimeVal attr, now we need a modifiable frame
+        frame = ti.getModifiableTopFrame();
+        frame.addLongOperandAttr(timeValAttr);
       }
        
     } else if (insnToExecute instanceof LCMP){ // create and set CG if operand has TimeVal attr
       
       if (!ti.isFirstStepInsn()){ // this is the first time we see this insn
-        if (ti.hasOperandAttr(1, TimeVal.class) || ti.hasOperandAttr(3, TimeVal.class)){
+        StackFrame frame = ti.getTopFrame();
+        
+        if (frame.hasOperandAttr(1, TimeVal.class) || frame.hasOperandAttr(3, TimeVal.class)){
           IntChoiceFromSet cg = new IntChoiceFromSet( CG_ID, -1, 0, 1);
           if (vm.setNextChoiceGenerator(cg)){
             ti.skipInstruction(insnToExecute); // reexecute after breaking the transition
@@ -118,14 +123,14 @@ public class StopWatchFuzzer extends ListenerAdapter {
         IntChoiceFromSet cg = vm.getCurrentChoiceGenerator(CG_ID, IntChoiceFromSet.class);
         if (cg != null){
           int choice = cg.getNextChoice();
+          StackFrame frame = ti.getModifiableTopFrame();
+          
           // pop the operands 
-          ti.longPop(); // be aware of this is the first change of the top frame in this transition
-          ti.longPop();
+          frame.popLong();
+          frame.popLong();
           
-          // push the choice
-          ti.push(choice);
+          frame.push(choice);
           
-          // skip the insn
           ti.skipInstruction(insnToExecute.getNext());
         }
       }

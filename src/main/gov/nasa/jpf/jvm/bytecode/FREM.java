@@ -30,6 +30,7 @@ import gov.nasa.jpf.vm.Types;
  */
 public class FREM extends JVMInstruction {
 
+  @Override
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
@@ -42,15 +43,17 @@ public class FREM extends JVMInstruction {
 
     float r = v2 % v1;
     
-    ti.push(Types.floatToInt(r), false);
+    frame.pushFloat(r);
 
     return getNext(ti);
   }
 
+  @Override
   public int getByteCode () {
     return 0x72;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

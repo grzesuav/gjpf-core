@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -28,24 +29,30 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public class LDIV extends JVMInstruction {
 
-  public Instruction execute (ThreadInfo th) {
-    long v1 = th.longPop();
-    long v2 = th.longPop();
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    long v1 = frame.popLong();
+    long v2 = frame.popLong();
 
     if (v1 == 0) {
-      return th.createAndThrowException("java.lang.ArithmeticException",
-                                        "long division by zero");
+      return ti.createAndThrowException("java.lang.ArithmeticException", "long division by zero");
     }
+    
+    long r = v2 / v1;
+    
+    frame.pushLong(r);
 
-    th.longPush(v2 / v1);
-
-    return getNext(th);
+    return getNext(ti);
   }
 
+  @Override
   public int getByteCode () {
     return 0x6D;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

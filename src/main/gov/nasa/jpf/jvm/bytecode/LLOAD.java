@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -32,11 +33,13 @@ public class LLOAD extends LocalVariableInstruction {
     super(localVarIndex);
   }
 
-  public Instruction execute (ThreadInfo th) {
-    //th.longPush(th.getLongLocalVariable(index));
-    th.pushLongLocal(index);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.pushLongLocal(index);
 
-    return getNext(th);
+    return getNext(ti);
   }
 
   public int getLength() {

@@ -95,8 +95,7 @@ public class INVOKESTATIC extends InvokeInstruction {
 
     MethodInfo callee = getInvokedMethod(ti);
     if (callee == null) {
-      return ti.createAndThrowException("java.lang.NoSuchMethodException",
-                                   cname + '.' + mname);
+      return ti.createAndThrowException("java.lang.NoSuchMethodException", cname + '.' + mname);
     }
 
     // this can be actually different than (can be a base)
@@ -104,6 +103,7 @@ public class INVOKESTATIC extends InvokeInstruction {
     
     if (requiresClinitExecution(ti, clsInfo)) {
       // do class initialization before continuing
+      // note - this returns the next insn in the topmost clinit that just got pushed
       return ti.getPC();
     }
 

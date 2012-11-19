@@ -328,7 +328,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
   
   protected void createStartupClassObjects (){
     for (ClassInfo ci : startupQueue) {
-      ci.createAndLinkClassObject(tiMain);
+      ci.createAndLinkStartupClassObject(tiMain);
     }
   }
 

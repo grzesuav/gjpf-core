@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -27,22 +28,26 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * ... => ..., <i>
  */
 public class ICONST extends JVMInstruction {
-  private int value;
+  protected int value;
 
   public ICONST(int value){
     this.value = value;
   }
 
-  public Instruction execute (ThreadInfo th) {
-    th.push(value, false);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.push(value);
 
-    return getNext(th);
+    return getNext(ti);
   }
 
   public int getValue() {
     return value;
   }
   
+  @Override
   public int getByteCode () {
     assert ((value >= -1) && (value < 6)) : ("illegal iconst value: " + value);
 
@@ -68,6 +73,7 @@ public class ICONST extends JVMInstruction {
     }
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

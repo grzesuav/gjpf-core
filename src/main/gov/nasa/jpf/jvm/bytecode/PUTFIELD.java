@@ -75,7 +75,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     Object attr = null; // attr handling has to be consistent with PUTSTATIC
 
     if (storageSize == 1){
-      attr = ti.getOperandAttr();
+      attr = frame.getOperandAttr();
 
       int ival = frame.pop();
       lastValue = ival;

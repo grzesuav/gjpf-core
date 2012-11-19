@@ -49,10 +49,12 @@ public abstract class LongReturn extends ReturnInstruction {
   //--- attribute accessors 
   
   public boolean hasReturnAttr (ThreadInfo ti){
-    return ti.hasLongOperandAttr();
+    StackFrame frame = ti.getTopFrame();
+    return frame.hasLongOperandAttr();
   }
   public boolean hasReturnAttr (ThreadInfo ti, Class<?> type){
-    return ti.hasLongOperandAttr(type);
+    StackFrame frame = ti.getTopFrame();
+    return frame.hasLongOperandAttr(type);
   }
   
   /**
@@ -63,7 +65,8 @@ public abstract class LongReturn extends ReturnInstruction {
    * the value is pushed during the execute(). Use ObjectList to access values
    */
   public Object getReturnAttr (ThreadInfo ti){
-    return ti.getLongOperandAttr();
+    StackFrame frame = ti.getTopFrame();
+    return frame.getLongOperandAttr();
   }
   
   /**
@@ -75,7 +78,8 @@ public abstract class LongReturn extends ReturnInstruction {
    * we don't clone since pushing a return value already changed the caller frame
    */
   public void setReturnAttr (ThreadInfo ti, Object a){
-    ti.setLongOperandAttrNoClone(a);
+    StackFrame frame = ti.getModifiableTopFrame();
+    frame.setLongOperandAttr(a);
   }
 
   /**
@@ -83,20 +87,25 @@ public abstract class LongReturn extends ReturnInstruction {
    * if you don't use client private types or the provided type is too general
    */
   public <T> T getReturnAttr (ThreadInfo ti, Class<T> type){
-    return ti.getLongOperandAttr(type);
+    StackFrame frame = ti.getTopFrame();
+    return frame.getLongOperandAttr(type);
   }
   public <T> T getNextReturnAttr (ThreadInfo ti, Class<T> type, Object prev){
-    return ti.getNextLongOperandAttr(type, prev);
+    StackFrame frame = ti.getTopFrame();
+    return frame.getNextLongOperandAttr(type, prev);
   }
   public Iterator returnAttrIterator (ThreadInfo ti){
-    return ti.longOperandAttrIterator();
+    StackFrame frame = ti.getTopFrame();
+    return frame.longOperandAttrIterator();
   }
   public <T> Iterator<T> returnAttrIterator (ThreadInfo ti, Class<T> type){
-    return ti.longOperandAttrIterator(type);
+    StackFrame frame = ti.getTopFrame();
+    return frame.longOperandAttrIterator(type);
   }
   
   public void addReturnAttr (ThreadInfo ti, Object attr){
-    ti.addLongOperandAttrNoClone(attr);
+    StackFrame frame = ti.getModifiableTopFrame();
+    frame.addLongOperandAttr(attr);
   }
 
 

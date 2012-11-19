@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -28,16 +29,21 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public class SWAP extends JVMInstruction {
 
-  public Instruction execute (ThreadInfo th) {
-    th.swap();
-
-    return getNext(th);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.swap();
+    
+    return getNext(ti);
   }
 
+  @Override
   public int getByteCode () {
     return 0x5F;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

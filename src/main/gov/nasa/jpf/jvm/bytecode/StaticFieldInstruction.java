@@ -122,11 +122,6 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
         return false;
       }
 
-      if (mi.isClinit() && (fi.getClassInfo() == mi.getClassInfo())) {
-        // clinits are all synchronized, so they don't count
-        return false;
-      }
-
       if (isMonitorEnterPrologue()) {
         // if this is a GET followed by a MONITOR_ENTER then we just break on the monitor
         return false;
@@ -140,6 +135,11 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
       }
       
       if (isLockProtected(ti, ei)) {
+        return false;
+      }
+      
+      if (mi.isClinit() && (fi.getClassInfo() == mi.getClassInfo())) {
+        // clinits are all synchronized, so they don't count
         return false;
       }
     }

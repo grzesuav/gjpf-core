@@ -54,7 +54,7 @@ public class AttrsTest extends TestJPF {
     public IntListener () {}
 
     @Override
-    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInstn, Instruction executedInsn){
+    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
       MethodInfo mi = executedInsn.getMethodInfo();
 
       // not very efficient, but who cares - it's a small test
@@ -65,12 +65,16 @@ public class AttrsTest extends TestJPF {
           int localIndex = istore.getLocalVariableIndex();
 
           if (localName.equals("i")){
-            ti.setLocalAttr(localIndex, ATTR);
-            Object a = ti.getLocalAttr(localIndex, ATTR_CLASS);
+            StackFrame frame = ti.getModifiableTopFrame();
+            frame.setLocalAttr(localIndex, ATTR);
+            
+            Object a = frame.getLocalAttr(localIndex, ATTR_CLASS);
             System.out.println("'i' attribute set to: " + a);
 
           } else if (localName.equals("j")){
-            Object a = ti.getLocalAttr(localIndex, ATTR_CLASS);
+            StackFrame frame = ti.getTopFrame();
+            
+            Object a = frame.getLocalAttr(localIndex, ATTR_CLASS);
             System.out.println("'j' attribute: " + a);
 
             /** get's overwritten in the model class
@@ -88,7 +92,7 @@ public class AttrsTest extends TestJPF {
   public static class InvokeListener extends ListenerAdapter {
 
     @Override
-    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInstn, Instruction executedInsn){
+    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
       if (executedInsn instanceof InvokeInstruction) {
         InvokeInstruction call = (InvokeInstruction)executedInsn;
         MethodInfo mi = call.getInvokedMethod();
@@ -127,10 +131,10 @@ public class AttrsTest extends TestJPF {
       int i = 42; // this gets attributed
       Verify.setLocalAttribute("i", 42); // this overwrites whatever the ISTORE listener did set on 'i'
 
-      iInt = echoInt(i);
-      sInt = iInt;
-      int j = sInt; // now j should have the initial i attribute, and value 42
-
+      iInt = echoInt(i); // return val -> instance field
+      sInt = iInt; // instance field -> static field
+      int j = sInt; // static field -> local - now j should have the initial i attribute, and value 42
+      
       int attr = Verify.getLocalAttribute("j");
       Verify.print("@ 'j' attribute after assignment: " + attr);
       Verify.println();
@@ -156,13 +160,16 @@ public class AttrsTest extends TestJPF {
           int localIndex = dstore.getLocalVariableIndex();
 
           if (localName.equals("d")){
+            StackFrame frame = ti.getModifiableTopFrame();
+
             System.out.print("listener setting 'd' attr = ");
-            ti.setLocalAttr(localIndex, ATTR);
-            Object a = ti.getLocalAttr(localIndex);
+            frame.setLocalAttr(localIndex, ATTR);
+            Object a = frame.getLocalAttr(localIndex);
             System.out.println( a);
 
           } else if (localName.equals("r")){
-            Object a = ti.getLocalAttr(localIndex, ATTR_CLASS);
+            StackFrame frame = ti.getTopFrame();
+            Object a = frame.getLocalAttr(localIndex, ATTR_CLASS);
             System.out.println("'r' attribute: " + a);
             
             /** get's overwritten in the model class
@@ -432,21 +439,25 @@ public class AttrsTest extends TestJPF {
         if (callee.getUniqueName().equals("foo(J)J")){
           System.out.println("--- pre-exec foo() invoke interception, setting arg attrs");
           
-          // we are still in the caller stackframe
-          ti.addLongOperandAttr("foo-arg");
-          ti.addLongOperandAttr(Long.valueOf(ti.longPeek()));
+          StackFrame frame = ti.getModifiableTopFrame();
           
-          for (Object a: ti.longOperandAttrIterator()){
+          // we are still in the caller stackframe
+          frame.addLongOperandAttr("foo-arg");
+          
+          Long v = Long.valueOf( frame.peekLong());
+          frame.addLongOperandAttr( v);
+          
+          System.out.println("   operand attrs:");
+          for (Object a: frame.longOperandAttrIterator()){
             System.out.println(a);
           }
-
         }
         
       } else if (insnToExecute instanceof LRETURN){
         MethodInfo mi = insnToExecute.getMethodInfo();
         if (mi.getUniqueName().equals("foo(J)J")){
           System.out.println("--- pre-exec foo() return interception");
-          StackFrame frame = ti.getTopFrame();
+          StackFrame frame = ti.getModifiableTopFrame();
           int varIdx = frame.getLocalVariableSlotIndex("x");
           Object attr = frame.getLocalAttr(varIdx);
 
@@ -475,7 +486,7 @@ public class AttrsTest extends TestJPF {
         if (callee.getUniqueName().equals("foo(J)J")){
           System.out.println("--- post-exec foo() invoke interception");
  
-          StackFrame frame = ti.getTopFrame(); // we are now in the callee
+          StackFrame frame = ti.getModifiableTopFrame(); // we are now in the callee
           int varIdx = frame.getLocalVariableSlotIndex("x");
 
           for (Object a: frame.localAttrIterator(varIdx)){
@@ -503,18 +514,20 @@ public class AttrsTest extends TestJPF {
       } else if (executedInsn instanceof LRETURN){
         MethodInfo mi = executedInsn.getMethodInfo();
         if (mi.getUniqueName().equals("foo(J)J")){
+          StackFrame frame = ti.getTopFrame();
+          
           System.out.println("--- post-exec foo() return interception");
-          for (Object a: ti.longOperandAttrIterator()){
+          for (Object a: frame.longOperandAttrIterator()){
             System.out.println(a);
           }
           
-          String a = ti.getLongOperandAttr(String.class);
+          String a = frame.getLongOperandAttr(String.class);
           assertTrue( a.equals("returned"));
           
-          a = ti.getNextLongOperandAttr(String.class, a);
+          a = frame.getNextLongOperandAttr(String.class, a);
           assertTrue( a.equals("foo-arg"));
           
-          a = ti.getNextLongOperandAttr(String.class, a);
+          a = frame.getNextLongOperandAttr(String.class, a);
           assertTrue(a == null);
         }        
       }

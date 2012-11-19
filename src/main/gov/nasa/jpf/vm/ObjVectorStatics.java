@@ -81,11 +81,11 @@ public class ObjVectorStatics implements Statics {
     }
   }
   
-  protected StaticElementInfo createStaticElementInfo (ClassInfo ci, ThreadInfo ti) {
+  protected StaticElementInfo createStaticElementInfo (int id, ClassInfo ci, ThreadInfo ti, ElementInfo eiClsObj) {
     Fields   f = ci.createStaticFields();
     Monitor  m = new Monitor();
 
-    StaticElementInfo ei = new StaticElementInfo( ci, f, m, ti, ci.getClassObjectRef());
+    StaticElementInfo ei = new StaticElementInfo( id, ci, f, m, ti, eiClsObj);
 
     ci.initializeStaticData(ei, ti);
 
@@ -93,11 +93,22 @@ public class ObjVectorStatics implements Statics {
   }
   
   @Override
-  public StaticElementInfo newClass(ClassInfo ci, ThreadInfo ti) {
+  public StaticElementInfo newClass (ClassInfo ci, ThreadInfo ti, ElementInfo eiClsObj) {
+    assert (eiClsObj != null);
+    
     int id = computeId( ci);
     
-    StaticElementInfo ei = createStaticElementInfo( ci, ti);
-    ei.setObjectRef(id);
+    StaticElementInfo ei = createStaticElementInfo( id, ci, ti, eiClsObj);
+    elementInfos.set(id, ei);
+    
+    return ei;
+  }
+
+  @Override
+  public StaticElementInfo newStartupClass (ClassInfo ci, ThreadInfo ti) {
+    int id = computeId( ci);
+    
+    StaticElementInfo ei = createStaticElementInfo( id, ci, ti, null);
     elementInfos.set(id, ei);
     
     return ei;

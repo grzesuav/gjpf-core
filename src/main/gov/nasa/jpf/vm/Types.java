@@ -974,7 +974,8 @@ public class Types {
   }
 
   public static double intsToDouble (int l, int h) {
-    return longToDouble(intsToLong(l, h));
+    long bits = ((long) h << 32) | (/*(long)*/ l & 0xFFFFFFFFL);
+    return Double.longBitsToDouble(bits);
   }
 
   public static long intsToLong (int l, int h) {

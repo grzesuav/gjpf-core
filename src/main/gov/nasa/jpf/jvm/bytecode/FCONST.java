@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -27,29 +28,34 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * ... => ..., <f>
  */
 public class FCONST extends JVMInstruction {
-  private int value;
+  protected float value;
 
 
   public FCONST(){} // this is going away
 
   public FCONST(float f){
-    value = Float.floatToIntBits(f);
+    value = f;
   }
 
-  public Instruction execute (ThreadInfo th) {
-    th.push(value, false);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.pushFloat(value);
 
-    return getNext(th);
+    return getNext(ti);
   }
 
-  public int getValue(){
+  public float getValue(){
 	  return value;
   }
   
+  @Override
   public int getByteCode () {
     return 0x0B; // ?? FCONST_0, _1, _2
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

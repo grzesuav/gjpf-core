@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -43,16 +44,19 @@ public class LDC2_W extends JVMInstruction {
     type = Type.DOUBLE;
   }
 
-  public Instruction execute (ThreadInfo th) {
-    th.longPush(value);
-
-    return getNext(th);
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    
+    frame.pushLong(value);
+    return getNext(ti);
   }
 
   public int getLength() {
     return 3; // opcode, index1, index2
   }
-  
+
+  @Override
   public int getByteCode () {
     return 0x14;
   }
@@ -73,6 +77,7 @@ public class LDC2_W extends JVMInstruction {
     return value;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

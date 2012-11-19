@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
 
@@ -35,7 +36,8 @@ public class DRETURN extends LongReturn {
 
   public Object getReturnValue(ThreadInfo ti) {
     if (!isCompleted(ti)) { // we have to pull it from the operand stack
-      ret = ti.longPeek();
+      StackFrame frame = ti.getTopFrame();
+      ret = frame.peekLong();
     }
 
     return new Double(Types.longToDouble(ret));

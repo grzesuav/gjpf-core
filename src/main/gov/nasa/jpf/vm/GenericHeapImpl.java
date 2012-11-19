@@ -138,8 +138,8 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   }
 
 
-  protected DynamicElementInfo createElementInfo (ClassInfo ci, Fields f, Monitor m, ThreadInfo ti){
-    return new DynamicElementInfo(ci,f,m,ti);
+  protected DynamicElementInfo createElementInfo (int objref, ClassInfo ci, Fields f, Monitor m, ThreadInfo ti){
+    return new DynamicElementInfo( objref,ci,f,m,ti);
   }
   
   //--- pinDown handling
@@ -240,14 +240,13 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   
   //--- allocators
     
-  protected ElementInfo createObject (ClassInfo ci, ThreadInfo ti, int index) {
+  protected ElementInfo createObject (ClassInfo ci, ThreadInfo ti, int objref) {
     // create the thing itself
     Fields f = ci.createInstanceFields();
     Monitor m = new Monitor();
-    ElementInfo ei = createElementInfo(ci, f, m, ti);
-
-    ei.setObjectRef(index);
-    set(index, ei);
+    ElementInfo ei = createElementInfo( objref, ci, f, m, ti);
+    
+    set(objref, ei);
 
     attributes |= ATTR_ELEMENTS_CHANGED;
 
@@ -281,14 +280,13 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     return ei;
   }
   
-  protected ElementInfo createArray (String elementType, int nElements, ClassInfo ci, ThreadInfo ti, int index) {
+  protected ElementInfo createArray (String elementType, int nElements, ClassInfo ci, ThreadInfo ti, int objref) {
 
     Fields f = ci.createArrayFields(ci.getName(), nElements, Types.getTypeSize(elementType), Types.isReference(elementType));
     Monitor m = new Monitor();
-    DynamicElementInfo ei = createElementInfo(ci, f, m, ti);
+    DynamicElementInfo ei = createElementInfo( objref, ci, f, m, ti);
 
-    ei.setObjectRef(index);
-    set(index, ei);
+    set(objref, ei);
 
     attributes |= ATTR_ELEMENTS_CHANGED;
 
