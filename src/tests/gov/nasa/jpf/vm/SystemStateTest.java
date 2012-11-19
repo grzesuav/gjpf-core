@@ -35,7 +35,7 @@ import org.junit.Test;
  */
 public class SystemStateTest extends TestJPF {
 
-  static class MyJVM extends VM {
+  static class MyJVM extends SingleProcessVM {
 
     protected void notifyChoiceGeneratorSet (ChoiceGenerator<?>cg) {
       System.out.println("notifyChoiceGeneratorSet: " + cg);

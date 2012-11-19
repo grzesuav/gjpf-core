@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.classfile.ClassPath;
 
 import java.io.File;
@@ -57,14 +58,150 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
   protected ClassInfo threadClassInfo;
   protected ClassInfo charArrayClassInfo;
 
-  protected SystemClassLoaderInfo (VM vm) {
+  protected String mainClassName;
+  protected String[] args;  /** tiMain() arguments */
+  protected ThreadInfo tiMain;
+  protected VM vm;
+
+  protected SystemClassLoaderInfo (VM vm, String mainClassName, String[] args) {
     super(vm, MJIEnv.NULL, null, null);
+    this.mainClassName = mainClassName;
+    this.args = args;
+    this.tiMain = vm.createMainThreadInfo();
+    this.vm = vm;
     setSystemClassPath();
     classInfo = getResolvedClassInfo("java.lang.ClassLoader");
   }
 
+  public String getMainClassName() {
+    return mainClassName;
+  }
+
+  public String[] getArgs() {
+    return args;
+  }
+
+  public ThreadInfo getMainThread() {
+    return tiMain;
+  }
+
+  public ClassInfo getMainClassInfo () {
+    return ClassInfo.getResolvedClassInfo(mainClassName);
+  }
+
   public boolean isSystemClassLoader() {
     return true;
+  }
+
+  static boolean checkClassName (String clsName) {
+    if ( !clsName.matches("[a-zA-Z_$][a-zA-Z_$0-9.]*")) {
+      return false;
+    }
+
+    // well, those two could be part of valid class names, but
+    // in all likeliness somebody specified a filename instead of
+    // a classname
+    if (clsName.endsWith(".java")) {
+      return false;
+    }
+    if (clsName.endsWith(".class")) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * be careful - everything that's executed from within here is not allowed
+   * to depend on static class init having been done yet
+   *
+   * we have to do the initialization excplicitly here since we can't execute
+   * bytecode yet (which would need a ThreadInfo context)
+   */
+  protected void initMainThread () {
+    
+    //--- now create & initialize all the related JPF objects
+    Heap heap = vm.getHeap();
+
+    ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
+    ElementInfo eiThread = heap.newObject( ciThread, tiMain);
+    int threadRef = eiThread.getObjectRef();
+    int groupRef = createSystemThreadGroup(tiMain, threadRef);
+    ElementInfo eiName = heap.newString("main", tiMain);
+    int nameRef = eiName.getObjectRef();
+    
+    //--- initialize the main Thread object
+    eiThread.setReferenceField("group", groupRef);
+    eiThread.setReferenceField("name", nameRef);
+    eiThread.setIntField("priority", Thread.NORM_PRIORITY);
+
+    ElementInfo eiPermit = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), tiMain);
+    eiPermit.setBooleanField("blockPark", true);
+    eiThread.setReferenceField("permit", eiPermit.getObjectRef());
+
+    //--- initialize the ThreadInfo reference fields
+    tiMain.initReferenceFields(threadRef, groupRef, MJIEnv.NULL, nameRef);
+  
+    //--- set the thread running
+    tiMain.setState(ThreadInfo.State.RUNNING);
+  }
+
+  protected int createSystemThreadGroup (ThreadInfo ti, int mainThreadRef) {
+    Heap heap = vm.getHeap();
+    
+    ElementInfo eiThreadGrp = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti);
+
+    // since we can't call methods yet, we have to init explicitly (BAD)
+    // <2do> - this isn't complete yet
+
+    ElementInfo eiGrpName = heap.newString("main", ti);
+    eiThreadGrp.setReferenceField("name", eiGrpName.getObjectRef());
+
+    eiThreadGrp.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
+
+    ElementInfo eiThreads = heap.newArray("Ljava/lang/Thread;", 4, ti);
+    eiThreads.setReferenceElement(0, mainThreadRef);
+
+    eiThreadGrp.setReferenceField("threads", eiThreads.getObjectRef());
+    eiThreadGrp.setIntField("nthreads", 1);
+
+    return eiThreadGrp.getObjectRef();
+  }
+
+  /**
+   * override this method if you want your tiMain class entry to be anything else
+   * than "public static void tiMain(String[] args)"
+   * 
+   * Note that we do a directcall here so that we always have a first frame that
+   * can't execute SUT code. That way, we can handle synchronized entry points
+   * via normal InvokeInstructions, and thread termination processing via
+   * DIRECTCALLRETURN
+   */
+  protected void pushMainEntry () {
+    Heap heap = vm.getHeap();
+    
+    ClassInfo ciMain = ClassInfo.getResolvedClassInfo(mainClassName);
+    MethodInfo miMain = ciMain.getMethod("main([Ljava/lang/String;)V", false);
+
+    // do some sanity checks if this is a valid tiMain()
+    if (miMain == null || !miMain.isStatic()) {
+      throw new JPFException("no main() method in " + ciMain.getName());
+    }
+
+    // create the args array object
+    ElementInfo eiArgs = heap.newArray("Ljava/lang/String;", args.length, tiMain);
+    for (int i = 0; i < args.length; i++) {
+      ElementInfo eiElement = heap.newString(args[i], tiMain);
+      eiArgs.setReferenceElement(i, eiElement.getObjectRef());
+    }
+    
+    // create the direct call stub
+    MethodInfo mainStub = miMain.createDirectCallStub("[main]");
+    DirectCallStackFrame frame = new DirectCallStackFrame(mainStub);
+    frame.pushRef(eiArgs.getObjectRef());
+    // <2do> set RUNSTART pc if we want to catch synchronized tiMain() defects 
+    
+    tiMain.pushFrame(frame);
   }
 
   /**
@@ -170,7 +307,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
   // it keeps the startup classes
   ArrayList<ClassInfo> startupQueue = new ArrayList<ClassInfo>(32);
 
-  protected void registerStartupClasses (VM vm, ThreadInfo ti) {
+  protected void registerStartupClasses (VM vm) {
     ArrayList<String> startupClasses = getStartupClasses(vm);
     startupQueue = new ArrayList<ClassInfo>(32);
 
@@ -178,7 +315,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     for (String clsName : startupClasses) {
       ClassInfo ci = getResolvedClassInfo(clsName);
       if (ci != null) {
-        ci.registerStartupClass( ti, startupQueue);
+        ci.registerStartupClass( tiMain, startupQueue);
       } else {
         VM.log.severe("can't find startup class ", clsName);
       }
@@ -189,13 +326,13 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     return startupQueue;
   }
   
-  protected void createStartupClassObjects (ThreadInfo ti){
+  protected void createStartupClassObjects (){
     for (ClassInfo ci : startupQueue) {
-      ci.createAndLinkClassObject(ti);
+      ci.createAndLinkClassObject(tiMain);
     }
   }
 
-  protected void pushClinits (ThreadInfo ti) {
+  protected void pushClinits () {
     // we have to traverse backwards, since what gets pushed last is executed first
     for (ListIterator<ClassInfo> it=startupQueue.listIterator(startupQueue.size()); it.hasPrevious(); ) {
       ClassInfo ci = it.previous();
@@ -204,7 +341,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
       if (mi != null) {
         MethodInfo stub = mi.createDirectCallStub("[clinit]");
         StackFrame frame = new DirectCallStackFrame(stub);
-        ti.pushFrame(frame);
+        tiMain.pushFrame(frame);
       } else {
         ci.setInitialized();
       }
@@ -218,9 +355,35 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
    *   3. Initializes
    */
   protected void loadStartUpClasses(VM vm, ThreadInfo ti) {
-    registerStartupClasses(vm, ti);
-    createStartupClassObjects(vm.getCurrentThread());
-    pushClinits(vm.getCurrentThread());
+    registerStartupClasses(vm);
+    createStartupClassObjects();
+    pushClinits();
+  }
+
+  /**
+   * Creates a classLoader object in the heap
+   */
+  protected ElementInfo createSystemClassLoaderObject(ClassInfo ci) {
+    Heap heap = vm.getHeap();
+
+    //--- create ClassLoader object of type ci which corresponds to this ClassLoader
+    ElementInfo ei = heap.newObject( ci, tiMain);
+    int oRef = ei.getObjectRef();
+
+    //--- make sure that the classloader object is not garbage collected 
+    heap.registerPinDown(oRef);
+
+    //--- initialize the systemClassLoader object
+    this.id = this.computeId(oRef);
+    ei.setIntField(ID_FIELD, id);
+
+    int parentRef = MJIEnv.NULL;
+
+    ei.setReferenceField("parent", parentRef);
+
+    this.objRef = oRef;
+
+    return ei;
   }
 
   //-- ClassInfos cache management --

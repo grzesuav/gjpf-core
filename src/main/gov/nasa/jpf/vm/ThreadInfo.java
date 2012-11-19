@@ -77,7 +77,6 @@ public class ThreadInfo
   static final int[] emptyRefArray = new int[0];
 
   static ThreadInfo currentThread;
-  static ThreadInfo mainThread;
 
   protected class StackIterator implements Iterator<StackFrame> {
     StackFrame frame = top;
@@ -336,7 +335,6 @@ public class ThreadInfo
    */
   static boolean init (Config config) {
     currentThread = null;
-    mainThread = null;
     
     globalTids = new SparseIntVector();
 
@@ -384,13 +382,12 @@ public class ThreadInfo
    * since we can't allocate objects without a ThreadInfo)
    */
   protected ThreadInfo (VM vm) {
-    assert mainThread == null;
-    
-    mainThread = this;
+    // assert mainThread == null;
+
     id = 0;
-    mainThread.initFields(vm);
+    initFields(vm);
     
-    currentThread = mainThread;    
+    currentThread = this;    
   }
 
   /**
@@ -476,7 +473,7 @@ public class ThreadInfo
   }
 
   public static ThreadInfo getMainThread () {
-    return mainThread;
+    return VM.getVM().getSystemClassLoader().getMainThread();
   }
 
   public static ThreadInfo getCurrentThread() {

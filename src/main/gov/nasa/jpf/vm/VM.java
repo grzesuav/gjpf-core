@@ -39,7 +39,7 @@ import java.util.ListIterator;
  * This class represents the virtual machine. The virtual machine is able to
  * move backward and forward one transition at a time.
  */
-public class VM {
+public abstract class VM {
 
   /**
    * this is a debugging aid to control compilation of expensive consistency checks
@@ -80,9 +80,6 @@ public class VM {
   // state restoration (backtracking).
   // this needs to be cleaned up and the principle reinstated
 
-
-  protected String mainClassName;
-  protected String[] args;  /** tiMain() arguments */
 
   protected Path path;  /** execution path to current state */
   protected StringBuilder out;  /** buffer to store output along path execution */
@@ -142,8 +139,6 @@ public class VM {
   // actions are removed from the list
   protected ArrayList<Runnable> postGcActions = new ArrayList<Runnable>();
 
-  protected SystemClassLoaderInfo systemClassLoader;
-
   /**
    * be prepared this might throw JPFConfigExceptions
    */
@@ -181,13 +176,12 @@ public class VM {
   }
 
   public void initFields (Config config) {
-    mainClassName = config.getTarget(); // we don't get here if it wasn't set
-    args = config.getTargetArgs();
-
-    path = new Path(mainClassName);
+    path = new Path("fix-this!");
     out = null;
 
     ss = new SystemState(config, this);
+
+    initSystemClassLoaders(config);
 
     stateSet = config.getInstance("vm.storage.class", StateSet.class);
     if (stateSet != null) stateSet.attach(this);
@@ -196,6 +190,8 @@ public class VM {
 
     newStateId = -1;
   }
+
+  public abstract void initSystemClassLoaders(Config config);
 
   protected void initSubsystems (Config config) {
     ClassLoaderInfo.init(config);
@@ -241,6 +237,10 @@ public class VM {
     return isBigEndian;
   }
 
+  public boolean isSingleProcess() {
+    return true;
+  }
+
   /**
    * do we see our model classes? Some of them cannot be used from the standard CLASSPATH, because they
    * are tightly coupled with the JPF core (e.g. java.lang.Class, java.lang.Thread,
@@ -279,91 +279,8 @@ public class VM {
   protected ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef) {
     return new ThreadInfo( this, objRef, groupRef, runnableRef, nameRef);
   }
-  
-  /**
-   * load and pushClinit startup classes, return 'true' if successful.
-   *
-   * This loads a bunch of core library classes, initializes the tiMain thread,
-   * and then all the required startup classes, but excludes the static init of
-   * the tiMain class. Note that whatever gets executed in here should NOT contain
-   * any non-determinism, since we are not backtrackable yet, i.e.
-   * non-determinism in clinits should be constrained to the app class (and
-   * classes used by it)
-   */
-  public boolean initialize () {
-    ClassInfoException cie = null;
 
-    if (!checkClassName(mainClassName)) {
-      log.severe("Not a valid main class: " + mainClassName);
-      return false;
-    }
-    
-    // we can't do anything without a main ThreadInfo
-    ThreadInfo tiMain = createMainThreadInfo();
-    systemClassLoader = createSystemClassLoader();
-
-    // from here, we get into some bootstrapping process
-    //  - first, we have to load class structures (fields, supers, interfaces..)
-    //  - second, we have to create a thread (so that we have a stack)
-    //  - third, with that thread we have to create class objects
-    //  - forth, we have to push the clinit methods on this stack
-    try {
-      systemClassLoader.registerStartupClasses(this, tiMain);
-
-      if (systemClassLoader.getStartupQueue() == null) {
-        log.severe("error initializing startup classes (check 'classpath' and 'target')");
-        return false;
-      }
-
-      if (!checkModelClassAccess()) {
-        log.severe( "error during VM runtime initialization: wrong model classes (check 'classpath')");
-        return false;
-      }
-    } catch (ClassInfoException e) {
-      // If loading a system class is failed, bail out immediately
-      if(e.checkSystemClassFailure()) {
-        throw new JPFException("loading the system class " + e.getFaildClass() + " faild");
-      }
-
-      // If loading of a non-system class failed, just store it & throw a JPF exception
-      // once the main thread is created
-      cie = e;
-    }
-
-    try {
-      // Collections.<clinit> yet because there's no stack before we have a tiMain
-      // thread. Let's hope none of the init classes creates threads in their <clinit>.
-      initMainThread(tiMain);
-
-      if(cie != null) {
-        tiMain.getEnv().throwException(cie.getExceptionClass(), cie.getMessage());
-        return false;
-      }
-
-      // now that we have a tiMain thread, we can finish the startup class init
-      systemClassLoader.createStartupClassObjects(tiMain);
-
-      // pushClinit the call stack with the clinits we've picked up, followed by tiMain()
-      pushMainEntry(tiMain);
-      systemClassLoader.pushClinits(tiMain);
-
-      initSystemState(tiMain);
-      registerThreadListCleanup();
-    } catch (ClassInfoException e) {
-      // If the main thread is not created due to an error thrown while loading a class, 
-      // bail out immediately
-      if(tiMain == null) {
-        throw new JPFException("loading of the class " + e.getFaildClass() + " faild");
-      } else{
-        tiMain.getEnv().throwException(e.getExceptionClass(), e.getMessage());
-        return false;
-      }
-    }
-    
-    notifyVMInitialized();
-    
-    return true;
-  }
+  public abstract boolean initialize ();
 
   protected void initSystemState (ThreadInfo mainThread){
     ss.setStartThread(mainThread);
@@ -386,83 +303,22 @@ public class VM {
    * Creates & returns a system classLoader which is root in the classLaoders 
    * hierarchy
    */
-  protected SystemClassLoaderInfo createSystemClassLoader() {
+  protected SystemClassLoaderInfo createSystemClassLoader(String mainClassName, String[] args) {
     //--- create the ClassLoaderInfo
-    SystemClassLoaderInfo cl = new SystemClassLoaderInfo(this);
-
-    // Note: that has to be set before loading java.lang.ClassLoader, otherwise its
-    // super class cannot be loaded
-    systemClassLoader = cl;
+    SystemClassLoaderInfo cl = new SystemClassLoaderInfo(this, mainClassName, args);
 
     try {
       //--- java.lang.ClassLoader is registered later along with other startup classes
       ClassInfo ci = cl.getResolvedClassInfo("java.lang.ClassLoader");
 
       //--- create java.lang.ClassLoader object corresponding to the systemClassLoader
-      cl.createClassLoaderObject(ci, null, ThreadInfo.mainThread);
+      cl.createSystemClassLoaderObject(ci);
     } catch(ClassInfoException cie) {
       throw new JPFException("loading of the class " + cie.getFaildClass() + 
                                   " throws " + cie.getExceptionClass());
     }
 
     return cl;
-  }
-
-  /**
-   * be careful - everything that's executed from within here is not allowed
-   * to depend on static class init having been done yet
-   *
-   * we have to do the initialization excplicitly here since we can't execute
-   * bytecode yet (which would need a ThreadInfo context)
-   */
-  protected void initMainThread (ThreadInfo ti) {
-    
-    //--- now create & initialize all the related JPF objects
-    Heap heap = getHeap();
-
-    ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
-    ElementInfo eiThread = heap.newObject( ciThread, ti);
-    int threadRef = eiThread.getObjectRef();
-    int groupRef = createSystemThreadGroup(ti, threadRef);
-    ElementInfo eiName = heap.newString("main", ti);
-    int nameRef = eiName.getObjectRef();
-    
-    //--- initialize the main Thread object
-    eiThread.setReferenceField("group", groupRef);
-    eiThread.setReferenceField("name", nameRef);
-    eiThread.setIntField("priority", Thread.NORM_PRIORITY);
-
-    ElementInfo eiPermit = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), ti);
-    eiPermit.setBooleanField("blockPark", true);
-    eiThread.setReferenceField("permit", eiPermit.getObjectRef());
-
-    //--- initialize the ThreadInfo reference fields
-    ti.initReferenceFields(threadRef, groupRef, MJIEnv.NULL, nameRef);
-  
-    //--- set the thread running
-    ti.setState(ThreadInfo.State.RUNNING);
-  }
-
-  protected int createSystemThreadGroup (ThreadInfo ti, int mainThreadRef) {
-    Heap heap = getHeap();
-    
-    ElementInfo eiThreadGrp = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti);
-
-    // since we can't call methods yet, we have to init explicitly (BAD)
-    // <2do> - this isn't complete yet
-
-    ElementInfo eiGrpName = heap.newString("main", ti);
-    eiThreadGrp.setReferenceField("name", eiGrpName.getObjectRef());
-
-    eiThreadGrp.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
-
-    ElementInfo eiThreads = heap.newArray("Ljava/lang/Thread;", 4, ti);
-    eiThreads.setReferenceElement(0, mainThreadRef);
-
-    eiThreadGrp.setReferenceField("threads", eiThreads.getObjectRef());
-    eiThreadGrp.setIntField("nthreads", 1);
-
-    return eiThreadGrp.getObjectRef();
   }
 
   protected void registerThreadListCleanup(){
@@ -498,43 +354,6 @@ public class VM {
     }
   }
 
-  /**
-   * override this method if you want your tiMain class entry to be anything else
-   * than "public static void tiMain(String[] args)"
-   * 
-   * Note that we do a directcall here so that we always have a first frame that
-   * can't execute SUT code. That way, we can handle synchronized entry points
-   * via normal InvokeInstructions, and thread termination processing via
-   * DIRECTCALLRETURN
-   */
-  protected void pushMainEntry (ThreadInfo tiMain) {
-    Heap heap = getHeap();
-    
-    ClassInfo ciMain = ClassInfo.getResolvedClassInfo(mainClassName);
-    MethodInfo miMain = ciMain.getMethod("main([Ljava/lang/String;)V", false);
-
-    // do some sanity checks if this is a valid tiMain()
-    if (miMain == null || !miMain.isStatic()) {
-      throw new JPFException("no main() method in " + ciMain.getName());
-    }
-
-    // create the args array object
-    ElementInfo eiArgs = heap.newArray("Ljava/lang/String;", args.length, tiMain);
-    for (int i = 0; i < args.length; i++) {
-      ElementInfo eiElement = heap.newString(args[i], tiMain);
-      eiArgs.setReferenceElement(i, eiElement.getObjectRef());
-    }
-    
-    // create the direct call stub
-    MethodInfo mainStub = miMain.createDirectCallStub("[main]");
-    DirectCallStackFrame frame = new DirectCallStackFrame(mainStub);
-    frame.pushRef(eiArgs.getObjectRef());
-    // <2do> set RUNSTART pc if we want to catch synchronized tiMain() defects 
-    
-    tiMain.pushFrame(frame);
-  }
-
-  
   public void addListener (VMListener newListener) {
     log.info("VMListener added: ", newListener);
     listeners = Misc.appendElement(listeners, newListener);
@@ -1061,15 +880,15 @@ public class VM {
   }
 
   public String getMainClassName () {
-    return mainClassName;
+    return getSystemClassLoader().getMainClassName();
   }
 
   public ClassInfo getMainClassInfo () {
-    return ClassInfo.getResolvedClassInfo(mainClassName);
+    return ClassInfo.getResolvedClassInfo(getSystemClassLoader().getMainClassName());
   }
 
   public String[] getArgs () {
-    return args;
+    return getSystemClassLoader().getArgs();
   }
 
   /**
@@ -1375,7 +1194,7 @@ public class VM {
   }
 
   public void storeTrace (String fileName, String comment, boolean verbose) {
-    ChoicePoint.storeTrace(fileName, mainClassName, args, comment,
+    ChoicePoint.storeTrace(fileName, getMainClassName(), getArgs(), comment,
                            ss.getChoiceGenerators(), verbose);
   }
 
@@ -1745,9 +1564,7 @@ public class VM {
     error_id = 0;
   }
 
-  public SystemClassLoaderInfo getSystemClassLoader() {
-    return systemClassLoader;
-  }
+  public abstract SystemClassLoaderInfo getSystemClassLoader();
 
   public Heap getHeap() {
     return ss.getHeap();

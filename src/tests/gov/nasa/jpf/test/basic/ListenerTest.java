@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.SingleProcessVM;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.Verify;
 
@@ -38,7 +39,7 @@ public class ListenerTest extends TestJPF {
     }
   }
   
-  public static class TestVM extends VM {
+  public static class TestVM extends SingleProcessVM {
     public TestVM (JPF jpf, Config config){
       super(jpf, config);
       

@@ -648,36 +648,6 @@ public class ClassLoaderInfo
   }
 
   /**
-   * Creates a classLoader object in the heap
-   */
-  protected ElementInfo createClassLoaderObject(ClassInfo ci, ClassLoaderInfo parent, ThreadInfo ti) {
-    Heap heap = VM.getVM().getHeap();
-
-    //--- create ClassLoader object of type ci which corresponds to this ClassLoader
-    ElementInfo ei = heap.newObject( ci, ti);
-    int oRef = ei.getObjectRef();
-
-    //--- make sure that the classloader object is not garbage collected 
-    heap.registerPinDown(oRef);
-
-    //--- initialize the systemClassLoader object
-    this.id = this.computeId(oRef);
-    ei.setIntField(ID_FIELD, id);
-
-    int parentRef;
-    if(parent == null) {
-      parentRef = MJIEnv.NULL;
-    } else {
-      parentRef = parent.objRef;
-    }
-    ei.setReferenceField("parent", parentRef);
-
-    this.objRef = oRef;
-
-    return ei;
-  }
-
-  /**
    * For now, this always returns true, and it used while the classloader is being
    * serialized. That is going to be changed if we ever consider unloading the
    * classes. For now, it is just added in analogy to ThreadInfo
