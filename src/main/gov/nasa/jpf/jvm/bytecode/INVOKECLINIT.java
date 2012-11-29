@@ -39,8 +39,6 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * but we have no method to do the wait in, unless we significantly complicate the
  * direct call stubs, which would obfuscate observability (debugging dynamically
  * generated code isn't very appealing). 
- * 
- * <2do> pcm - maybe we should move this into the jpf.jvm package, it's artificial anyways 
  */
 public class INVOKECLINIT extends INVOKESTATIC {
 
@@ -48,43 +46,28 @@ public class INVOKECLINIT extends INVOKESTATIC {
     super(ci.getSignature(), "<clinit>", "()V");
   }
 
-  public Instruction execute (ThreadInfo ti) {
-    
+  public Instruction execute (ThreadInfo ti) {    
     MethodInfo callee = getInvokedMethod(ti);
     ClassInfo ci = callee.getClassInfo();
-    
-    ElementInfo ei = ti.getModifiableElementInfo(ci.getClassObjectRef());
+    ElementInfo ei = ci.getModifiableClassObject();
 
-    // first time around - reexecute if the scheduling policy gives us a choice point
     if (!ti.isFirstStepInsn()) {
-      
+      // if we can't acquire the lock, it means somebody else is initializing concurrently
       if (!ei.canLock(ti)) {
-        // block first, so that we don't get this thread in the list of CGs
+        //ei = ei.getInstanceWithUpdatedSharedness(ti);
         ei.block(ti);
+        
+        VM vm = ti.getVM();
+        ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
+        if (vm.setNextChoiceGenerator(cg)){ 
+          return this;   // repeat exec, keep insn on stack
+        }        
       }
       
-      VM vm = ti.getVM();
-      ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
-      if (vm.setNextChoiceGenerator(cg)){
-        if (!ti.isBlocked()) {
-          // record that this thread would lock the object upon next execution
-          ei.registerLockContender(ti);
-        }
-        return this;   // repeat exec, keep insn on stack
-      }
-      
-      assert !ti.isBlocked() : "scheduling policy did not return ChoiceGenerator for blocking INVOKE";
-      
-    } else {
-      // if we got here, we can execute, and have the lock
-      // but there still might have been another thread that passed us with the init
-      // note that the state in this case would be INITIALIZED, otherwise we wouldn't
-      // have gotten the lock
+    } else { // re-execution after being blocked
+      // if we got here, we can execute, and have the lock but there still might have been
+      // another thread that passed us with the clinit
       if (!ci.needsInitialization()) {
-        // we never got the lock it (that would have happened in MethodInfo.enter(), but
-        // registerLockContender added it to the lockedThreads list of the monnitor,
-        // and ti might be blocked on it (if we couldn't lock in the top half above)
-        ei.unregisterLockContender(ti);
         return getNext();
       }
     }

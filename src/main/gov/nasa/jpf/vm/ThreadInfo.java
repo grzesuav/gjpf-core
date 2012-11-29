@@ -398,10 +398,9 @@ public class ThreadInfo
    * a mainThread and we have a corresponding java.lang.Thread object
    */
   protected ThreadInfo (VM vm, int objRef, int groupRef, int runnableRef, int nameRef) {    
+    id = computeId(objRef);
     initFields(vm);
     initReferenceFields(objRef, groupRef, runnableRef, nameRef);
-    
-    id = computeId(objRef);
   }
   
   protected void initFields(VM vm){
@@ -442,8 +441,6 @@ public class ThreadInfo
 
     threadData.name = vm.getElementInfo(nameRef).asString();
 
-    ei.setIntField( "id", id);
-    
     // note that we have to register here so that subsequent native peer calls can use the objRef
     // to lookup the ThreadInfo. This is a bit premature since the thread is not runnable yet,
     // but chances are it will be started soon, so we don't waste another data structure to do the mapping
