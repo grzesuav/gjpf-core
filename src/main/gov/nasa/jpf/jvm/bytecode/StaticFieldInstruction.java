@@ -92,6 +92,21 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     return !ti.isFirstStepInsn() && ti.usePorFieldBoundaries() && isSchedulingRelevant(ti);
   }
 
+  @Override
+  protected boolean isSkippedFinalField (ElementInfo ei) {
+    // NOTE - we only encounter this for references, other static finals
+    // will be inlined by the compiler
+    if (skipFinals && fi.isFinal()) {
+      return true;
+    }
+
+    if (skipStaticFinals && fi.isFinal()) {
+      return true;
+    }
+    
+    return false;
+  }
+  
   protected boolean isSchedulingRelevant (ThreadInfo ti) {
 
     // this should filter out the bulk in most real apps (library code)
@@ -112,16 +127,6 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
         return true;
       }
 
-      // NOTE - we only encounter this for references, other static finals
-      // will be inlined by the compiler
-      if (skipFinals && fi.isFinal()) {
-        return false;
-      }
-
-      if (skipStaticFinals && fi.isFinal()) {
-        return false;
-      }
-
       if (isMonitorEnterPrologue()) {
         // if this is a GET followed by a MONITOR_ENTER then we just break on the monitor
         return false;
@@ -131,6 +136,10 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
       ei = ei.getInstanceWithUpdatedSharedness(ti);
       
       if (!ei.isShared() || ei.isImmutable()){
+        return false;
+      }
+
+      if (isSkippedFinalField(ei)) {
         return false;
       }
       

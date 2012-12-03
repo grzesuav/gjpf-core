@@ -541,7 +541,20 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
       System.out.print(s);
     }
   }
+  
+  @MJI
+  public static void print__Ljava_lang_String_2__V (MJIEnv env, int clsRef, int sRef){
+    String s = env.getStringObject(sRef);
+    System.out.print(s);
+  }
 
+  @MJI
+  public static void println__Ljava_lang_String_2__V (MJIEnv env, int clsRef, int sRef){
+    String s = env.getStringObject(sRef);
+    System.out.println(s);
+  }
+
+  
   @MJI
   public static void println____V (MJIEnv env, int clsRef){
     System.out.println();

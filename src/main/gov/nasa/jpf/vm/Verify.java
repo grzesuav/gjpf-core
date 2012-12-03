@@ -272,6 +272,10 @@ public class Verify {
     System.out.print(s);
   }
 
+  public static void println (String s) {
+    System.out.println(s);
+  }
+  
   public static void print (String s, int i) {
     System.out.print(s + " : " + i);
   }

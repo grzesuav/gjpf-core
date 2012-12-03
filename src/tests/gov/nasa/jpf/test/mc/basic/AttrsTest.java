@@ -40,7 +40,7 @@ import org.junit.Test;
  */
 public class AttrsTest extends TestJPF {
 
-//------------ this part we only need outside the JPF execution
+//------------ this part we only need outside of JPF execution
   static class AttrType {
     public String toString() {
       return "<an AttrType>";
@@ -75,47 +75,13 @@ public class AttrsTest extends TestJPF {
             StackFrame frame = ti.getTopFrame();
             
             Object a = frame.getLocalAttr(localIndex, ATTR_CLASS);
-            System.out.println("'j' attribute: " + a);
-
-            /** get's overwritten in the model class
-            if (a != ATTR){
-              throw new JPFException("attribute propagation failed");
-            }
-            **/
+            System.out.println("'j' AttrType attribute: " + a);
           }
         }
       }
     }
   }
-
-
-  public static class InvokeListener extends ListenerAdapter {
-
-    @Override
-    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
-      if (executedInsn instanceof InvokeInstruction) {
-        InvokeInstruction call = (InvokeInstruction)executedInsn;
-        MethodInfo mi = call.getInvokedMethod();
-        String mName = mi.getName();
-        if (mName.equals("goModel") || mName.equals("goNative")) {
-          Object[] a = call.getArgumentAttrs(ti);
-          assert a != null & a.length == 3;
-
-          System.out.println("listener notified of: " + mName + "(), attributes= "
-                             + a[0] + ',' + a[1] + ',' + a[2]);
-
-          // note - this is only acceptable if we know exactly there are just
-          // single attrs
-          
-          assert a[0] instanceof Integer && a[1] instanceof Integer;
-          assert (((Integer)a[0]).intValue() == 1) &&
-                 (((Integer)a[1]).intValue() == 2) &&
-                 (((Integer)a[2]).intValue() == 3);
-        }
-      }
-    }
-  }
-
+  
   static int sInt;
   int iInt;
 
@@ -130,16 +96,17 @@ public class AttrsTest extends TestJPF {
     if (verifyNoPropertyViolation("+listener=.test.mc.basic.AttrsTest$IntListener")) {
       int i = 42; // this gets attributed
       Verify.setLocalAttribute("i", 42); // this overwrites whatever the ISTORE listener did set on 'i'
+      int attr = Verify.getLocalAttribute("i");
+      Verify.println("'i' attribute after Verify.setLocalAttribute(\"i\",42): " + attr);
+      assertTrue( attr == 42);
 
       iInt = echoInt(i); // return val -> instance field
       sInt = iInt; // instance field -> static field
       int j = sInt; // static field -> local - now j should have the initial i attribute, and value 42
       
-      int attr = Verify.getLocalAttribute("j");
-      Verify.print("@ 'j' attribute after assignment: " + attr);
-      Verify.println();
-
-      assert attr == 42;
+      attr = Verify.getLocalAttribute("j");
+      Verify.println("'j' attribute after assignment: " + attr);
+      assertTrue( attr == 42);
     }
   }
   
@@ -206,6 +173,36 @@ public class AttrsTest extends TestJPF {
     }
   }
 
+  
+  //-----------------------------------------------------------------------------------------------
+
+  public static class InvokeListener extends ListenerAdapter {
+
+    @Override
+    public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
+      if (executedInsn instanceof InvokeInstruction) {
+        InvokeInstruction call = (InvokeInstruction)executedInsn;
+        MethodInfo mi = call.getInvokedMethod();
+        String mName = mi.getName();
+        if (mName.equals("goModel") || mName.equals("goNative")) {
+          Object[] a = call.getArgumentAttrs(ti);
+          assert a != null & a.length == 3;
+
+          System.out.println("listener notified of: " + mName + "(), attributes= "
+                             + a[0] + ',' + a[1] + ',' + a[2]);
+
+          // note - this is only acceptable if we know exactly there are just
+          // single attrs
+          
+          assert a[0] instanceof Integer && a[1] instanceof Integer;
+          assert (((Integer)a[0]).intValue() == 1) &&
+                 (((Integer)a[1]).intValue() == 2) &&
+                 (((Integer)a[2]).intValue() == 3);
+        }
+      }
+    }
+  }
+  
   @Test public void testInvokeListener () {
     if (verifyNoPropertyViolation("+listener=.test.mc.basic.AttrsTest$InvokeListener")) {
       Verify.setLocalAttribute("this", 1);

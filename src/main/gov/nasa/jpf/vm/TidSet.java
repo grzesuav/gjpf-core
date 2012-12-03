@@ -23,7 +23,7 @@ import gov.nasa.jpf.util.UnsortedArrayIntSet;
 
 /**
  * set that stores threads via (search global) thread ids. Used to detect shared objects/classes,
- * created by configured ThreadTrackingPolicy factory
+ * created by configured SharedObjectPolicy factory
  */
 public class TidSet extends UnsortedArrayIntSet implements ThreadInfoSet, Memento<ThreadInfoSet> {
   

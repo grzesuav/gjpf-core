@@ -53,7 +53,7 @@ public class DynamicElementInfo extends ElementInfo {
   // called during ElementInfo construction
   @Override
   protected ThreadInfoSet createThreadInfoSet(ThreadInfo ti){
-    return ThreadTrackingPolicy.getPolicy().getThreadInfoSet(ti, this);
+    return SharedObjectPolicy.getPolicy().getThreadInfoSet(ti, this);
   }
 
   

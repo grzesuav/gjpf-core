@@ -35,6 +35,17 @@ public class GETFIELD extends InstanceFieldInstruction {
     super(fieldName, classType, fieldDescriptor);
   }
 
+  @Override
+  protected void popOperands1 (StackFrame frame) {
+    frame.pop(); // .. val => ..
+  }
+  
+  @Override
+  protected void popOperands2 (StackFrame frame) {
+    frame.pop(2);  // .. highVal, lowVal => ..
+  }
+  
+  @Override
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
     
@@ -55,7 +66,7 @@ public class GETFIELD extends InstanceFieldInstruction {
     
     // check if this breaks the current transition
     if (isNewPorFieldBoundary(ti, fi, objRef)) {
-      if (createAndSetFieldCG( ei, ti)) {
+      if (createAndSetSharedFieldAccessCG( ei, ti)) {
         return this;
       }
     }

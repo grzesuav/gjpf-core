@@ -22,7 +22,7 @@ package gov.nasa.jpf.vm;
 /**
  * interface to abstract the referencing set of threadinfos per object/class
  * Used to detect shared objects/classes 
- * Instances are created through a configured factory (ThreadTrackingPolicy)
+ * Instances are created through a configured factory (SharedObjectPolicy)
  * 
  * We abstract the container so that the way we identify threads is not exposed
  * to the client, and implementations can use either ThreadInfo references or

@@ -31,8 +31,8 @@ public class MissedPathTest extends TestJPF {
     boolean pass;
   }
   
-  static class MissedPath extends Thread {
-    X myX;
+  static class InstanceFieldPropagation extends Thread {
+    X myX; // initially not set
 
     public void run() {
       if (myX != null){
@@ -45,9 +45,9 @@ public class MissedPathTest extends TestJPF {
   }
 
   @Test
-  public void testGlobalTracking () {
-    if (verifyAssertionErrorDetails("gotcha", "+vm.thread_tracking.class=.vm.GlobalTrackingPolicy")) {
-      MissedPath mp = new MissedPath();
+  public void testInstanceFieldPropagation () {
+    if (verifyAssertionErrorDetails("gotcha", "+vm.por.break_on_exposure=true")) {
+      InstanceFieldPropagation mp = new InstanceFieldPropagation();
       mp.start();
       
       X x = new X();
@@ -58,5 +58,40 @@ public class MissedPathTest extends TestJPF {
       System.out.println("M: x.pass=true");
       x.pass = true;     // (1) need to break BEFORE assignment or no error
     }
+  }
+  
+  //----------------------------------------------------------------------------------
+  
+  static class Y {
+    X x;
+  }
+  
+  static Y globalY; // initially not set
+  
+  static class StaticFieldPropagation extends Thread {
+    public void run(){
+      if (globalY != null){
+        if (!globalY.x.pass){  // (2) won't fail unless main is between (0) and (1)
+          throw new AssertionError("gotcha");
+        }
+      }
+    }
+  }
+  
+  @Test
+  public void testStaticFieldPropagation () {
+    if (verifyAssertionErrorDetails("gotcha", "+vm.por.break_on_exposure=true")) {
+      StaticFieldPropagation mp = new StaticFieldPropagation();
+      mp.start();
+
+      X x = new X();
+      Y y = new Y();
+      y.x = x;
+      
+      globalY = y;       // (0) x not shared until this GOT executed
+
+      //Thread.yield();  // this would expose the error
+      x.pass = true;     // (1) need to break BEFORE assignment or no error
+    }    
   }
 }
