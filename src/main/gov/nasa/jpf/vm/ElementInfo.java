@@ -350,7 +350,7 @@ public abstract class ElementInfo implements Cloneable {
   }
   
   //--- shared handling
-  
+    
   public void freezeSharedness (boolean freeze) {
     if (freeze) {
       if ((attributes & ATTR_FREEZE_SHARED) == 0) {
@@ -395,12 +395,16 @@ public abstract class ElementInfo implements Cloneable {
    * modifiable (e.g. from the ctor)
    */
   void setSharednessFromReferencingThreads () {
-    if (ThreadTrackingPolicy.getPolicy().isShared(referencingThreads)) {
+    if (SharedObjectPolicy.getPolicy().isShared(referencingThreads)) {
       if ((attributes & ATTR_SHARED) == 0) {
         checkIsModifiable();
         attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
       }
     }
+  }
+  
+  public boolean isReferencedBySameThreads (ElementInfo eiOther) {
+    return referencingThreads.equals(eiOther.referencingThreads);
   }
   
   public boolean isReferencedByThread (ThreadInfo ti) {
@@ -415,7 +419,7 @@ public abstract class ElementInfo implements Cloneable {
    * identity change (doesn't use a reference to the old one) 
    * 
    * <2do> changing the referencingThreads set without requiring a modifiable ElementInfo is
-   * debatable since it restricts the ThreadTrackingPolicy (e.g. if we ever want to implement a 
+   * debatable since it restricts the SharedObjectPolicy (e.g. if we ever want to implement a 
    * path local policy)
    */
   public ElementInfo getInstanceWithUpdatedSharedness (ThreadInfo ti) {
@@ -432,7 +436,7 @@ public abstract class ElementInfo implements Cloneable {
     if ((attributes & ATTR_FREEZE_SHARED) == 0) {
       // note that we can only go from non-shared to shared, but not vice versa
       // (this is in response to a reference from a live thread)
-      if (ThreadTrackingPolicy.getPolicy().isShared(referencingThreads)) {
+      if (SharedObjectPolicy.getPolicy().isShared(referencingThreads)) {
         if ((attributes & ATTR_SHARED) == 0) {
           // make sure we clone first (in case of need)
           ElementInfo ei = getModifiableInstance();

@@ -309,11 +309,16 @@ public class ThreadInfo
   /** is on-the-fly partial order in effect? */
   static boolean porInEffect;
 
-  /** do we treat access of fields referring to objects that are reachable
-   * from different threads as boundary steps (i.e. starting a new Transition)?
+  /** do we treat access of fields referring to objects that are referenced from
+   * different threads as transition breaks?
    */
   static boolean porFieldBoundaries;
 
+  /** do we also break on reference field puts after assignment, i.e. potential
+   * exposure of the referenced object
+   */
+  static boolean porBreakOnExposure;
+  
   /** detect field synchronization (find locks which are used to synchronize
    * field access - if we have viable candidates, and we find the locks taken,
    * we don't treat access of the corresponding field as a boundary step
@@ -349,11 +354,13 @@ public class ThreadInfo
     //--- POR related configuration options
     porInEffect = config.getBoolean("vm.por");
     porFieldBoundaries = porInEffect && config.getBoolean("vm.por.field_boundaries");
+    porBreakOnExposure = porFieldBoundaries && config.getBoolean("vm.por.break_on_exposure");
+    
     porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
     
     maxTransitionLength = config.getInt("vm.max_transition_length", 5000);
 
-    ThreadTrackingPolicy.init(config);
+    SharedObjectPolicy.init(config);
     
     return true;
   }
@@ -395,10 +402,9 @@ public class ThreadInfo
    * a mainThread and we have a corresponding java.lang.Thread object
    */
   protected ThreadInfo (VM vm, int objRef, int groupRef, int runnableRef, int nameRef) {    
+    id = computeId(objRef);
     initFields(vm);
     initReferenceFields(objRef, groupRef, runnableRef, nameRef);
-    
-    id = computeId(objRef);
   }
   
   protected void initFields(VM vm){
@@ -439,8 +445,6 @@ public class ThreadInfo
 
     threadData.name = vm.getElementInfo(nameRef).asString();
 
-    ei.setIntField( "id", id);
-    
     // note that we have to register here so that subsequent native peer calls can use the objRef
     // to lookup the ThreadInfo. This is a bit premature since the thread is not runnable yet,
     // but chances are it will be started soon, so we don't waste another data structure to do the mapping
@@ -563,6 +567,10 @@ public class ThreadInfo
     return porFieldBoundaries;
   }
 
+  public boolean useBreakOnExposure () {
+    return porBreakOnExposure;
+  }
+  
   public boolean usePorSyncDetection () {
     return porSyncDetection;
   }
@@ -2091,7 +2099,7 @@ public class ThreadInfo
       
       // give the thread tracking policy a chance to remove this thread from
       // object/class thread sets
-      ThreadTrackingPolicy.getPolicy().cleanupThreadTermination(this);
+      SharedObjectPolicy.getPolicy().cleanupThreadTermination(this);
 
       if (tl.hasOtherNonDaemonRunnablesThan(this)){
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(this);

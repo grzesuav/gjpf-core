@@ -22,7 +22,7 @@ package gov.nasa.jpf.vm;
 import gov.nasa.jpf.util.SparseObjVector;
 
 /**
- * a ThreadTrackingPolicy that uses search global ThreadInfoSets, i.e.
+ * a SharedObjectPolicy that uses search global ThreadInfoSets, i.e.
  * we remember thread access of all previously executed paths.
  * 
  * For instances, we use the object reference value to retrieve cached values
@@ -31,7 +31,7 @@ import gov.nasa.jpf.util.SparseObjVector;
  * Note that this policy requires search global object ids (SGOID), i.e. only works
  * with Heap implementations providing SGOIDs
  */
-public class GlobalTrackingPolicy extends ThreadTrackingPolicy {
+public class GlobalTrackingPolicy extends SharedObjectPolicy {
 
   // our global ThreadInfoSet cache
   protected SparseObjVector<ThreadInfoSet> globalCache = new SparseObjVector<ThreadInfoSet>(1024);

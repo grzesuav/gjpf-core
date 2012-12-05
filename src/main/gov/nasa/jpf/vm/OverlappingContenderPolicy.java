@@ -36,7 +36,7 @@ package gov.nasa.jpf.vm;
  * on that access.
  * Unfortunately, this case has a tendency to happen in simple race examples  
  */
-public class OverlappingContenderPolicy extends ThreadTrackingPolicy {
+public class OverlappingContenderPolicy extends SharedObjectPolicy {
 
   @Override
   public ThreadInfoSet getThreadInfoSet(ThreadInfo allocThread, DynamicElementInfo ei) {

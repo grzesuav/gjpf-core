@@ -40,72 +40,57 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
     super(fieldName, clsDescriptor, fieldDescriptor);
   }
 
-  public Instruction execute (ThreadInfo ti) {
-    ClassInfo clsInfo;
-
-    // resolve the class of the referenced field first
-    ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
-    try {
-      ci = cls.resolveReferencedClass(className);
-    } catch(LoadOnJPFRequired lre) {
-      return ti.getPC();
-    }
-
-    FieldInfo fieldInfo = getFieldInfo();
-    if (fieldInfo == null) {
-      return ti.createAndThrowException("java.lang.NoSuchFieldError",
-          (className + '.' + fname));
-    }
-    
-    // this can be actually different (can be a base)
-    clsInfo = fi.getClassInfo();
-
-    // this tries to avoid endless recursion, but is too restrictive, and
-    // causes NPE's with the infamous, synthetic  'class$0' fields
-    if (!mi.isClinit(clsInfo) && requiresClinitExecution(ti, clsInfo)) {
-      // note - this returns the next insn in the topmost clinit that just got pushed
-      return ti.getPC();
-    }
-
-    ElementInfo ei = clsInfo.getModifiableStaticElementInfo();
-
-    if (isNewPorFieldBoundary(ti)) {
-      if (createAndSetFieldCG( ei, ti)) {
-        return this;
-      }
-    }
-
-    StackFrame frame = ti.getModifiableTopFrame();
-    Object attr = null; // attr handling has to be consistent with PUTFIELD
-
-    if (fi.getStorageSize() == 1) {
-      attr = frame.getOperandAttr();
-
-      int ival = frame.pop();
-      lastValue = ival;
-
-      if (fi.isReference()) {
-        ei.setReferenceField(fi, ival);
-      } else {
-        ei.set1SlotField(fi, ival);
-      }
-
-    } else {
-      attr = frame.getLongOperandAttr();
-
-      long lval = frame.popLong();
-      lastValue = lval;
-
-      ei.set2SlotField(fi, lval);
-    }
-
-    // this is kind of policy, but it seems more natural to overwrite
-    // (if we want to accumulate, this has to happen in ElementInfo/Fields
-    ei.setFieldAttr(fi, attr);
-
-    return getNext(ti);
+  @Override
+  protected void popOperands1 (StackFrame frame) {
+    frame.pop(); // .. val => ..
   }
+  
+  @Override
+  protected void popOperands2 (StackFrame frame) {
+    frame.pop(2);  // .. highVal, lowVal => ..
+  }
+  
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    
+    if (!ti.isFirstStepInsn()) { // top half
+      StackFrame frame = ti.getTopFrame();
+      
+      // resolve the class of the referenced field first
+      ClassInfo ciMth = frame.getMethodInfo().getClassInfo();
+      try {
+        ci = ciMth.resolveReferencedClass(className);
+      } catch(LoadOnJPFRequired lre) {
+        return ti.getPC();
+      }
 
+      if (getFieldInfo() == null) {
+        return ti.createAndThrowException("java.lang.NoSuchFieldError", (className + '.' + fname));
+      }
+      
+      if (!mi.isClinit(ci) && requiresClinitExecution(ti, ci)) {
+        // note - this returns the next insn in the topmost clinit that just got pushed
+        return ti.getPC();
+      }
+      
+      ElementInfo ei = ci.getStaticElementInfo();
+      if (isNewPorFieldBoundary(ti)) {
+        if (createAndSetSharedFieldAccessCG( ei, ti)) {
+          return this;
+        }
+      }
+      
+      return put( ti, frame, ei);
+      
+    } else { // re-execution
+      // no need to redo the exception checks, we already had them in the top half
+      ElementInfo ei = ci.getStaticElementInfo();
+      StackFrame frame = ti.getTopFrame();
+
+      return put( ti, frame, ei);      
+    }
+  }
+  
   public int getLength() {
     return 3; // opcode, index1, index2
   }

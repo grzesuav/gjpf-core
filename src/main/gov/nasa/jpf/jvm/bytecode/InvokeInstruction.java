@@ -325,11 +325,12 @@ public abstract class InvokeInstruction extends JVMInstruction {
 
   protected boolean checkSyncCG (ElementInfo ei, ThreadInfo ti){
     if (!ti.isFirstStepInsn()) {
+      ei = ei.getInstanceWithUpdatedSharedness(ti);
+      
       if (ei.getLockingThread() != ti) {  // maybe its a recursive lock
         VM vm = ti.getVM();
 
         if (ei.canLock(ti)) { // we can lock the object, check if we need a CG
-          ei = ei.getInstanceWithUpdatedSharedness(ti);
           if (ei.isShared()) {
             ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
             if (cg != null) {
@@ -342,9 +343,8 @@ public abstract class InvokeInstruction extends JVMInstruction {
           }
 
         } else { // already locked by another thread, we have to block and therefore need a CG
-          // the top half already did set the object shared
-
           ei = ei.getModifiableInstance();
+          // the top half already did set the object shared
           ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
 
           ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);

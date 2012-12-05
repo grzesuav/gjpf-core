@@ -21,19 +21,32 @@ package gov.nasa.jpf.vm;
 import gov.nasa.jpf.Config;
 
 /**
- * policy encapsulation for keeping track of threads referencing objects/static fields
- * This is mostly used by POR to detect shared objects/classes
+ * abstraction for configured policy object that is responsible for detecting shared objects and classes
+ * The interface has to support both
+ * <ul>
+ *   <li> tracking (actual access) based policies
+ *        ("what <em>is</em> shared")</li>
+ *   <li> conservative reachability based policies
+ *        ("what <em>could be</em> shared")</li>
+ * </ul> 
+ * 
+ * The interface is intentionally kept generic to support both policies since tracking - while being
+ * far more efficient in terms of states and speed - can either miss some paths or cause state spaces
+ * to depend on search history, thus leading to different search graphs for randomized searches.
+ * Missed paths only happen in cases where there is very little interaction between threads and
+ * defects only happen along single paths. The second case is mostly of interest for comparative
+ * studies and not very relevant for bug finding
  */
-public abstract class ThreadTrackingPolicy {
+public abstract class SharedObjectPolicy {
 
-  protected static ThreadTrackingPolicy singleton;
+  protected static SharedObjectPolicy singleton;
   
   public static boolean init (Config config) {
-    singleton = config.getEssentialInstance("vm.thread_tracking.class", ThreadTrackingPolicy.class);
+    singleton = config.getEssentialInstance("vm.por.shared.class", SharedObjectPolicy.class);
     return true;
   }
 
-  public static ThreadTrackingPolicy getPolicy() {
+  public static SharedObjectPolicy getPolicy() {
     return singleton;
   }
   

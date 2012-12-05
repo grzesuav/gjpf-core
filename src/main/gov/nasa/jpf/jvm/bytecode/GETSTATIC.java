@@ -38,6 +38,17 @@ public class GETSTATIC extends StaticFieldInstruction {
     super(fieldName, clsDescriptor, fieldDescriptor);
   }
 
+  @Override
+  protected void popOperands1 (StackFrame frame) {
+    // nothing to pop
+  }
+  
+  @Override
+  protected void popOperands2 (StackFrame frame) {
+    // nothing to pop
+  }
+
+  @Override
   public Instruction execute (ThreadInfo ti) {
     ClassInfo clsInfo;
 
@@ -70,7 +81,7 @@ public class GETSTATIC extends StaticFieldInstruction {
     }
 
     if (isNewPorFieldBoundary(ti)) {
-      if (createAndSetFieldCG( ei, ti)) {
+      if (createAndSetSharedFieldAccessCG( ei, ti)) {
         return this;
       }
     }

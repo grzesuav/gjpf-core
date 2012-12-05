@@ -53,6 +53,23 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
     return fi;
   }
 
+  @Override
+  protected boolean isSkippedFinalField (ElementInfo ei) {
+    // cutting off finals might loose interesting defects where the
+    // reference escapes from a ctor that has a context switch before
+    // the field init. 'final' only means "can only be assigned once",
+    // it doesn't mean no read can happen before this assignment
+    if (skipFinals && fi.isFinal()) {
+      return true;
+    }
+
+    if (skipConstructedFinals && fi.isFinal() && ei.isConstructed()) {
+      return true;
+    }
+    
+    return false;
+  }
+  
   protected boolean isSchedulingRelevant (ThreadInfo ti, int objRef) {
 
     // this should filter out the bulk in most real apps (library code)
@@ -84,15 +101,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
         return true;
       }
 
-      // cutting off finals might loose interesting defects where the
-      // reference escapes from a ctor that has a context switch before
-      // the field init. 'final' only means "can only be assigned once",
-      // it doesn't mean no read can happen before this assignment
-      if (skipFinals && fi.isFinal()) {
-        return false;
-      }
-
-      if (skipConstructedFinals && fi.isFinal() && ei.isConstructed()) {
+      if (isSkippedFinalField(ei)) {
         return false;
       }
 
@@ -105,8 +114,9 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
       }
 
       if (isMonitorEnterPrologue()) {
-        // a little optimization for getfields that are only used to
-        // push lock objects on the stack for a subsequent monitorenter
+        // a little optimization for GETs that are only used to
+        // push lock objects on the stack for a subsequent MONITORENTER - there is no point
+        // breaking on both the GET /and/ the MONITORENTER if nothing happens in between 
         return false;
       }
 

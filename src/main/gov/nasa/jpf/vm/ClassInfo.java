@@ -1359,6 +1359,18 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     return null;
   }
+  
+  public ElementInfo getModifiableClassObject(){
+    StaticElementInfo sei = getStaticElementInfo();
+    
+    if (sei != null){
+      int objref = sei.getClassObjectRef();
+      return VM.getVM().getModifiableElementInfo(objref);
+    }
+
+    return null;
+  }
+  
 
   public int getClassObjectRef () {
     StaticElementInfo sei = getStaticElementInfo();    
@@ -2539,17 +2551,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // push clinits of class hierarchy (upwards, since call stack is LIFO)
     for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
       if (ci.pushClinit(ti)) {
-        // NOTE - since clinits are synchronized and hence cause CGs, we have to make sure
-        // the respective ClassInfo StaticElements and class objects referencingThread sets
-        // are properly updated so that potential contention by other threads is detected
-        StaticElementInfo sei = ci.getStaticElementInfo();
-        //if (!sei.isReferencedByThread(ti)) {
-          sei = (StaticElementInfo) sei.getInstanceWithUpdatedSharedness(ti);
-
-          int objref = sei.getClassObjectRef();
-          ElementInfo ei = ti.getElementInfo(objref);
-          ei = ei.getInstanceWithUpdatedSharedness(ti);
-        //}
+        
+        // note - we don't treat registration/initialization of a class as
+        // a sharedness-changing operation since it is done automatically by
+        // the VM and the triggering action in the SUT (e.g. static field access or method call)
+        // is the one that should update sharedness and/or break the transition accordingly
         
         // we can't do setInitializing() yet because there is no global lock that
         // covers the whole clinit chain, and we might have a context switch before executing

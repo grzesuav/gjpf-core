@@ -443,6 +443,12 @@ public class JPF_java_lang_Thread extends NativePeer {
   }
 
   @MJI
+  public long getId____J (MJIEnv env, int objref) {
+    ThreadInfo ti = env.getThreadInfoForObjRef(objref);
+    return ti.getId();
+  }
+  
+  @MJI
   public void stop____V (MJIEnv env, int threadRef) {
     stop__Ljava_lang_Throwable_2__V(env, threadRef, -1);
   }
