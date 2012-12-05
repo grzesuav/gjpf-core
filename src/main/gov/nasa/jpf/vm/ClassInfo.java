@@ -142,6 +142,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected boolean      isWeakReference = false;
   protected boolean      isObjectClassInfo = false;
   protected boolean      isStringClassInfo = false;
+  protected boolean      isThreadClassInfo = false;
   protected boolean      isRefClassInfo = false;
   protected boolean      isArray = false;
   protected boolean      isEnum = false;
@@ -303,7 +304,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       // check if the ClassFile does not represent a class with the requested name
       if(requestedName!=null && !requestedName.equals(name)) {
         throw new ClassInfoException("wrong class name, should be " + name + 
-            ", not " + requestedName, "java.lang.NoClassDefFoundError", name);
+            ", not " + requestedName, classLoader, "java.lang.NoClassDefFoundError", name);
       }
 
       // the enclosingClassName is set on demand since it requires loading enclosing class candidates
@@ -423,7 +424,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       // itself
       if(isInterface() && interfaceNames.contains(name)) {
         throw new ClassInfoException("a super interface of " + name + " is itself", 
-                                     "java.lang.ClassCircularityError", name);
+                                     classLoader, "java.lang.ClassCircularityError", name);
       }
     }
 
@@ -696,10 +697,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     @Override
     public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
-      ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
       if (tag instanceof InfoObject){
         if (AnnotationInfo.annotationAttributes.get(annotationType) == null) {
-          curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType), cl.getClassPath());
+          curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType), classLoader.getClassPath());
         } else {
           curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
         }
@@ -802,6 +802,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
 
     isStringClassInfo = isStringClassInfo0();
+    isThreadClassInfo = isThreadClassInfo0();
     isObjectClassInfo = isObjectClassInfo0();
     isRefClassInfo = isRefClassInfo0();
    // isWeakReference = isWeakReference0();
@@ -860,7 +861,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     sFields = emptyFields;
 
     if (isArray) {
-      superClass = ClassLoaderInfo.getCurrentSystemClassLoader().getObjectClassInfo();
+      if(classLoader.isSystemClassLoader()) {
+        superClass = ((SystemClassLoaderInfo)classLoader).getObjectClassInfo();
+      } else {
+        superClass = ClassLoaderInfo.getCurrentSystemClassLoader().getObjectClassInfo();
+      }
       interfaceNames = loadArrayInterfaces();
       methods = loadArrayMethods();
     } else {
@@ -975,7 +980,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     classFileUrl = url;
     addOriginalClass(this);
-    
     VM.getVM().notifyClassLoaded(this);
   }
 
@@ -992,8 +996,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * override this in case resolving annotation types is not wanted (e.g. for unit tests)
    */
   protected void checkAnnotationDefaultValues(AnnotationInfo ai){
-    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
-    ai.checkDefaultValues(cl.getClassPath());
+    ai.checkDefaultValues(classLoader.getClassPath());
   }
 
   /**
@@ -1156,6 +1159,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return isStringClassInfo;
   }
 
+  public boolean isThreadClassInfo() {
+    return isThreadClassInfo;
+  }
+
   public static ClassInfo getResolvedSystemClassInfo(String className) {
     ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
     return systemLoader.getResolvedClassInfo(className);
@@ -1227,7 +1234,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   private static ClassInfo defineClass(String typeName, ClassLoaderInfo cl, ClassPath.Match match, String url){
     try {
       if (match == null){
-        throw new ClassInfoException("the class, " + typeName + ", is not found in the classloader search path", 
+        throw new ClassInfoException("the class, " + typeName + ", is not found in the classloader search path", cl, 
                                      "java.lang.ClassNotFoundException", typeName);
       }
 
@@ -1241,7 +1248,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       return ci;
       
     } catch (ClassFileException cfx){
-      throw new ClassInfoException("error reading class " + typeName, 
+      throw new ClassInfoException("error reading class " + typeName, cl, 
                                    "java.lang.NoClassDefFoundError", typeName);
     }
   }
@@ -2379,7 +2386,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     Heap heap = VM.getVM().getHeap(); // ti can be null (during main thread initialization)
 
     int anchor = name.hashCode(); // 2do - this should also take the ClassLoader ref into account
-    ClassInfo classClassInfo = ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo();    
+
+    SystemClassLoaderInfo systemClassLoader = ClassLoaderInfo.getCurrentSystemClassLoader(ti);
+
+    ClassInfo classClassInfo = systemClassLoader.getClassClassInfo();    
     ElementInfo ei = heap.newSystemObject(classClassInfo, ti, anchor);
     int clsObjRef = ei.getObjectRef();
     
@@ -2454,7 +2464,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     return ei;
   }
-  
+
   boolean checkIfValidClassClassInfo() {
     return getDeclaredInstanceField( ID_FIELD) != null;
   }
@@ -2796,6 +2806,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return false;
   }
 
+  private boolean isThreadClassInfo0 () {
+    if(name.equals("java.lang.Thread")) {
+      return true;
+    }
+    return false;
+  }
+
   //--- the generic attribute API
 
   public boolean hasAttr () {
@@ -2886,6 +2903,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ci.isWeakReference = isWeakReference;
       ci.isObjectClassInfo = isObjectClassInfo;
       ci.isStringClassInfo = isStringClassInfo;
+      ci.isThreadClassInfo = isThreadClassInfo;
       ci.isRefClassInfo = isRefClassInfo;
       ci.isArray = isArray;
       ci.isEnum = isEnum;

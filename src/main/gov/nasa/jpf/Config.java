@@ -160,6 +160,9 @@ public class Config extends Properties {
 
   static final String IGNORE_VALUE = "-";
 
+  // maximum number of processes for distributed applications
+  public static int MAX_NUM_PRC = 16;
+
   // do we want to log the config init
   public static boolean log = false;
 
@@ -1105,6 +1108,10 @@ public class Config extends Properties {
     return getString(TARGET_KEY);
   }
 
+  public String[] getProcessesTargets() {
+    return getStringEnumeration(TARGET_KEY, MAX_NUM_PRC);
+  }
+
   public void setTarget (String target){
     setProperty(TARGET_KEY,target);
   }
@@ -1115,6 +1122,21 @@ public class Config extends Properties {
       args = new String[0];
     }
     return args;
+  }
+
+  public List<String[]> getProcessesTargetArgs() {
+    String[] targets = getStringEnumeration(TARGET_KEY, MAX_NUM_PRC);
+    List<String[]> prcTargetArgs = new ArrayList<String[]>();
+
+    for(int i = 0; i<targets.length; i++) {
+
+      String key = TARGET_ARGS_KEY + "." + i;
+      String[] args = getStringArray(key);
+
+      prcTargetArgs.add(args);
+    }
+
+    return prcTargetArgs;
   }
 
   public void setTargetArgs (String... args) {

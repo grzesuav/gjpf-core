@@ -53,17 +53,23 @@ package gov.nasa.jpf.vm;
  */
 public class ClassInfoException extends RuntimeException{
 
+  ClassLoaderInfo classLoader;
   String exceptionClass;
   String faildClass;
 
-  public ClassInfoException(String details, String exceptionClass, String faildClass) {
+  public ClassInfoException(String details, ClassLoaderInfo cl, String exceptionClass, String faildClass) {
     super(details);
+    this.classLoader = cl;
     this.exceptionClass = exceptionClass;
     this.faildClass = faildClass;
   }
 
   public boolean checkSystemClassFailure() {
     return (faildClass.startsWith("java."));
+  }
+
+  public ClassLoaderInfo getClassLoaderInfo() {
+    return classLoader;
   }
 
   public String getFaildClass() {

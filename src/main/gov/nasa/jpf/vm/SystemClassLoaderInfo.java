@@ -86,7 +86,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
   }
 
   public ClassInfo getMainClassInfo () {
-    return ClassInfo.getResolvedClassInfo(mainClassName);
+    return getResolvedClassInfo(mainClassName);
   }
 
   public boolean isSystemClassLoader() {
@@ -123,10 +123,10 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     //--- now create & initialize all the related JPF objects
     Heap heap = vm.getHeap();
 
-    ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
+    ClassInfo ciThread = getResolvedClassInfo("java.lang.Thread");
     ElementInfo eiThread = heap.newObject( ciThread, tiMain);
     int threadRef = eiThread.getObjectRef();
-    int groupRef = createSystemThreadGroup(tiMain, threadRef);
+    int groupRef = createSystemThreadGroup(threadRef);
     ElementInfo eiName = heap.newString("main", tiMain);
     int nameRef = eiName.getObjectRef();
     
@@ -135,7 +135,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     eiThread.setReferenceField("name", nameRef);
     eiThread.setIntField("priority", Thread.NORM_PRIORITY);
 
-    ElementInfo eiPermit = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.Thread$Permit"), tiMain);
+    ElementInfo eiPermit = heap.newObject(getResolvedClassInfo("java.lang.Thread$Permit"), tiMain);
     eiPermit.setBooleanField("blockPark", true);
     eiThread.setReferenceField("permit", eiPermit.getObjectRef());
 
@@ -146,20 +146,20 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     tiMain.setState(ThreadInfo.State.RUNNING);
   }
 
-  protected int createSystemThreadGroup (ThreadInfo ti, int mainThreadRef) {
+  protected int createSystemThreadGroup (int mainThreadRef) {
     Heap heap = vm.getHeap();
     
-    ElementInfo eiThreadGrp = heap.newObject(ClassInfo.getResolvedClassInfo("java.lang.ThreadGroup"), ti);
+    ElementInfo eiThreadGrp = heap.newObject(getResolvedClassInfo("java.lang.ThreadGroup"), tiMain);
 
     // since we can't call methods yet, we have to init explicitly (BAD)
     // <2do> - this isn't complete yet
 
-    ElementInfo eiGrpName = heap.newString("main", ti);
+    ElementInfo eiGrpName = heap.newString("main", tiMain);
     eiThreadGrp.setReferenceField("name", eiGrpName.getObjectRef());
 
     eiThreadGrp.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
 
-    ElementInfo eiThreads = heap.newArray("Ljava/lang/Thread;", 4, ti);
+    ElementInfo eiThreads = heap.newArray("Ljava/lang/Thread;", 4, tiMain);
     eiThreads.setReferenceElement(0, mainThreadRef);
 
     eiThreadGrp.setReferenceField("threads", eiThreads.getObjectRef());
@@ -180,7 +180,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
   protected void pushMainEntry () {
     Heap heap = vm.getHeap();
     
-    ClassInfo ciMain = ClassInfo.getResolvedClassInfo(mainClassName);
+    ClassInfo ciMain = getResolvedClassInfo(mainClassName);
     MethodInfo miMain = ciMain.getMethod("main([Ljava/lang/String;)V", false);
 
     // do some sanity checks if this is a valid tiMain()
@@ -299,7 +299,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     }
 
     // last not least the application main class
-    startupClasses.add(vm.getMainClassName());
+    startupClasses.add(mainClassName);
 
     return startupClasses;
   }

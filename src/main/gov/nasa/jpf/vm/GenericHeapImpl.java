@@ -297,7 +297,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   
   protected ClassInfo getArrayClassInfo (ThreadInfo ti, String elementType) {
     String type = "[" + elementType;
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(type);
+    ClassInfo ci = ClassLoaderInfo.getCurrentClassLoader(ti).getResolvedClassInfo(type);
 
     if (!ci.isInitialized()) {
       // we do this explicitly here since there are no clinits for array classes
@@ -346,7 +346,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   }
   
   protected ElementInfo newString (String str, ThreadInfo ti, AllocationContext ctx) {
-    SystemClassLoaderInfo sysCl = ClassLoaderInfo.getCurrentSystemClassLoader();
+    SystemClassLoaderInfo sysCl = ClassLoaderInfo.getCurrentSystemClassLoader(ti);
     
     //--- the string object itself
     ClassInfo ciString = sysCl.getStringClassInfo();
@@ -366,7 +366,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   @Override
   public ElementInfo newString(String str, ThreadInfo ti){
     if (str != null) {
-      AllocationContext ctx = getSUTAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), ti);
+      AllocationContext ctx = getSUTAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader(ti).getStringClassInfo(), ti);
       return newString( str, ti, ctx);
       
     } else {
@@ -377,7 +377,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   @Override
   public ElementInfo newSystemString (String str, ThreadInfo ti, int anchor) {
     if (str != null) {
-      AllocationContext ctx = getSystemAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), ti, anchor);
+      AllocationContext ctx = getSystemAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader(ti).getStringClassInfo(), ti, anchor);
       return newString(str, ti, ctx);
       
     } else {
@@ -390,7 +390,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     IntTable.Entry<String> e = internStrings.get(str);
     if (e == null){
       if (str != null) {
-        AllocationContext ctx = getSUTAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), ti);
+        AllocationContext ctx = getSUTAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader(ti).getStringClassInfo(), ti);
         ElementInfo ei = newString( str, ti, ctx);
         int index = ei.getObjectRef();
         
@@ -421,14 +421,15 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   
   public ElementInfo newSystemThrowable (ClassInfo ciThrowable, String details, int[] stackSnapshot, int causeRef,
                                  ThreadInfo ti, int anchor) {
+    ClassInfo stringClassInfo = ClassLoaderInfo.getCurrentSystemClassLoader(ti).getStringClassInfo();
     //--- the Throwable object itself
-    AllocationContext ctx = getSystemAllocationContext( ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), ti, anchor);
+    AllocationContext ctx = getSystemAllocationContext( stringClassInfo, ti, anchor);
     int xRef = getNewElementInfoIndex( ctx);
     ElementInfo eiThrowable = createObject( ciThrowable, ti, xRef);
     
     //--- the detailMsg field
     if (details != null) {
-      AllocationContext ctxString = ctx.extend(ClassLoaderInfo.getCurrentSystemClassLoader().getStringClassInfo(), xRef);
+      AllocationContext ctxString = ctx.extend(stringClassInfo, xRef);
       ElementInfo eiMsg = newString( details, ti, ctxString);
       eiThrowable.setReferenceField("detailMessage", eiMsg.getObjectRef());
     }

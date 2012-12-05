@@ -84,6 +84,10 @@ public abstract class VM {
   protected Path path;  /** execution path to current state */
   protected StringBuilder out;  /** buffer to store output along path execution */
 
+  // cache to keep the current system loader
+  // Note - for MultiProcessesVM, this is only used temporary during the 
+  // initialization
+  protected SystemClassLoaderInfo systemClassLoader;
 
   /**
    * various caches for VMListener state acquisition. NOTE - these are only
@@ -248,8 +252,8 @@ public abstract class VM {
    * Our strategy here is kind of lame - we just look into java.lang.Class if we find the 'uniqueId' field
    * (that's a true '42')
    */
-  static boolean checkModelClassAccess () {
-    ClassInfo ci = ClassLoaderInfo.getCurrentSystemClassLoader().getClassClassInfo();
+  static boolean checkModelClassAccess (SystemClassLoaderInfo systemLoader) {
+    ClassInfo ci = systemLoader.getClassClassInfo();
     return ci.checkIfValidClassClassInfo();
   }
 
@@ -618,6 +622,7 @@ public abstract class VM {
   }
 
   protected void notifyClassLoaded(ClassInfo ci) {
+    System.out.println("just loaded --> " + ci.name);
     try {
       for (int i = 0; i < listeners.length; i++) {
         listeners[i].classLoaded(this, ci);
@@ -877,18 +882,6 @@ public abstract class VM {
     } else {
       return null;
     }
-  }
-
-  public String getMainClassName () {
-    return getSystemClassLoader().getMainClassName();
-  }
-
-  public ClassInfo getMainClassInfo () {
-    return ClassInfo.getResolvedClassInfo(getSystemClassLoader().getMainClassName());
-  }
-
-  public String[] getArgs () {
-    return getSystemClassLoader().getArgs();
   }
 
   /**
@@ -1565,6 +1558,20 @@ public abstract class VM {
   }
 
   public abstract SystemClassLoaderInfo getSystemClassLoader();
+
+  public abstract SystemClassLoaderInfo getSystemClassLoader(ThreadInfo ti);
+
+  public String getMainClassName () {
+    return getSystemClassLoader().getMainClassName();
+  }
+
+  public ClassInfo getMainClassInfo () {
+    return ClassInfo.getResolvedClassInfo(getSystemClassLoader().getMainClassName());
+  }
+
+  public String[] getArgs () {
+    return getSystemClassLoader().getArgs();
+  }
 
   public Heap getHeap() {
     return ss.getHeap();

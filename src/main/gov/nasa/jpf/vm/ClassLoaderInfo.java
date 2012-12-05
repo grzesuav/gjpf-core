@@ -233,26 +233,25 @@ public class ClassLoaderInfo
       }
     }
 
-    return VM.getVM().getSystemClassLoader();
+    return getCurrentSystemClassLoader(ti);
   }
 
   protected void updateCachedClassInfos (ClassInfo ci) {
     // nothing here, overridden by SystemClassLoaderInfo for standard classes such as java.lang.String
   }
-  
+
   /**
    * This is useful when there are multiple systemClassLoaders created.
    */
   public static SystemClassLoaderInfo getCurrentSystemClassLoader() {
-    ClassLoaderInfo cl = getCurrentClassLoader();
+    return getCurrentSystemClassLoader( ThreadInfo.getCurrentThread()); 
+  }
 
-    ClassInfo ci = cl.getClassInfo();
-
-    while(!ci.getName().equals("java.lang.ClassLoader")) {
-      ci = ci.getSuperClass();
-    }
-
-    return (SystemClassLoaderInfo)ci.getClassLoaderInfo();
+  /**
+   * This is useful when there are multiple systemClassLoaders created.
+   */
+  public static SystemClassLoaderInfo getCurrentSystemClassLoader(ThreadInfo ti) {
+    return VM.getVM().getSystemClassLoader(ti);
   }
 
   public ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {
@@ -467,7 +466,7 @@ public class ClassLoaderInfo
 
         if (clsObjRef == MJIEnv.NULL){
           throw new ClassInfoException(cname + ", is not found in the classloader search path", 
-                                       "java.lang.NoClassDefFoundError", cname);
+                                       this, "java.lang.NoClassDefFoundError", cname);
           } else {
             return ti.getEnv().getReferredClassInfo(clsObjRef);
           }
