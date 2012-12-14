@@ -110,7 +110,7 @@ public class SingleProcessVM extends VM {
       systemClassLoader.pushClinits();
 
       initSystemState(tiMain);
-      registerThreadListCleanup();
+      systemClassLoader.registerThreadListCleanup();
     } catch (ClassInfoException e) {
       // If the main thread is not created due to an error thrown while loading a class, 
       // bail out immediately

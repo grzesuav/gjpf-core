@@ -332,22 +332,6 @@ public abstract class VM {
     return cl;
   }
 
-  protected void registerThreadListCleanup(){
-    ClassInfo ciThread = ClassInfo.getResolvedClassInfo("java.lang.Thread");
-    assert ciThread != null : "java.lang.Thread not loaded yet";
-    
-    ciThread.addReleaseAction( new ReleaseAction(){
-      public void release(ElementInfo ei) {
-        ThreadList tl = getThreadList();
-        int objRef = ei.getObjectRef();
-        ThreadInfo ti = tl.getThreadInfoForObjRef(objRef);
-        if (tl.remove(ti)){        
-          getKernelState().changed();    
-        }
-      }
-    });    
-  }
-
   public void addPostGcAction (Runnable r){
     postGcActions.add(r);
   }

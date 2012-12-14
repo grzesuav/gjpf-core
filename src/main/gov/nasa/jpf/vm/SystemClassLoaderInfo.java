@@ -348,6 +348,22 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     }
   }
 
+  protected void registerThreadListCleanup(){
+    ClassInfo ciThread = getResolvedClassInfo("java.lang.Thread");
+    assert ciThread != null : "java.lang.Thread not loaded yet";
+    
+    ciThread.addReleaseAction( new ReleaseAction(){
+      public void release(ElementInfo ei) {
+        ThreadList tl = vm.getThreadList();
+        int objRef = ei.getObjectRef();
+        ThreadInfo ti = tl.getThreadInfoForObjRef(objRef);
+        if (tl.remove(ti)){        
+          vm.getKernelState().changed();    
+        }
+      }
+    });    
+  }
+
   /**
    * This loads the startup classes. Loading includes the following steps:
    *   1. Defines
