@@ -137,6 +137,8 @@ public abstract class VM {
   // <2do> there are probably many places where this should be used
   protected boolean isBigEndian;
 
+  protected boolean initialized;
+
   // a list of actions to be run post GC. This is a bit redundant to VMListener,
   // but in addition to avoid the per-instruction execution overhead of a VMListener
   // we want a (internal) mechanism that is on-demand only, i.e. processed
@@ -162,6 +164,7 @@ public abstract class VM {
     indentOutput = config.getBoolean("vm.indent_output",false);
 
     isBigEndian = getPlatformEndianness(config);
+    initialized = false;
     
     initTimeModel(config);
 
@@ -241,6 +244,10 @@ public abstract class VM {
     return isBigEndian;
   }
 
+  public boolean isInitialized() {
+    return initialized;
+  }
+  
   public boolean isSingleProcess() {
     return true;
   }

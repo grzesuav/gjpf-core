@@ -121,7 +121,8 @@ public class SingleProcessVM extends VM {
         return false;
       }
     }
-    
+
+    initialized = true;
     notifyVMInitialized();
     
     return true;
