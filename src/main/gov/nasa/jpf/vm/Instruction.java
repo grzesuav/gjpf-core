@@ -27,7 +27,7 @@ import gov.nasa.jpf.util.Source;
  * common root of all JPF bytecode instruction classes 
  * 
  */
-public abstract class Instruction {
+public abstract class Instruction implements Cloneable {
 
   protected int insnIndex;        // code[] index of instruction
   protected int position;     // accumulated bytecode position (prev pos + prev bc-length)
@@ -379,4 +379,23 @@ public abstract class Instruction {
   }
 
   // -- end attrs --
+
+  /**
+   * this is overridden by any Instruction that use a cache for class or 
+   * method to provide a type safe cloning
+   */
+  public Instruction typeSafeClone(MethodInfo mi) {
+    Instruction clone = null;
+
+    try {
+      clone = (Instruction) super.clone();
+
+      // reset the method that this insn belongs to
+      clone.mi = mi;
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+
+    return clone;
+  }
 }

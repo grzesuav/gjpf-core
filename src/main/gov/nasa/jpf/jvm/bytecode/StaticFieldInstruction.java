@@ -21,6 +21,8 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StaticElementInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -158,6 +160,24 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
 
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+
+  @Override
+  public Instruction typeSafeClone(MethodInfo mi) {
+    StaticFieldInstruction clone = null;
+
+    try {
+      clone = (StaticFieldInstruction) super.clone();
+
+      // reset the method that this insn belongs to
+      clone.mi = mi;
+
+      clone.ci = null;
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+
+    return clone;
   }
 }
 

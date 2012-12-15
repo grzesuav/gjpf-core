@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.BooleanChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.KernelState;
+import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.SystemState;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -129,5 +130,23 @@ public abstract class IfInstruction extends JVMInstruction {
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+
+  @Override
+  public Instruction typeSafeClone(MethodInfo mi) {
+    IfInstruction clone = null;
+
+    try {
+      clone = (IfInstruction) super.clone();
+
+      // reset the method that this insn belongs to
+      clone.mi = mi;
+
+      clone.target = null;
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+
+    return clone;
   }
 }

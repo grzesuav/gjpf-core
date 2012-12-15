@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -65,5 +66,23 @@ public class GOTO extends JVMInstruction {
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+
+  @Override
+  public Instruction typeSafeClone(MethodInfo mi) {
+    GOTO clone = null;
+
+    try {
+      clone = (GOTO) super.clone();
+
+      // reset the method that this insn belongs to
+      clone.mi = mi;
+
+      clone.target = null;
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+
+    return clone;
   }
 }

@@ -141,4 +141,23 @@ public abstract class VirtualInvocation extends InstanceInvocation {
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
+
+  @Override
+  public Instruction typeSafeClone(MethodInfo clonedMethod) {
+    VirtualInvocation clone = null;
+
+    try {
+      clone = (VirtualInvocation) super.clone();
+
+      // reset the method that this insn belongs to
+      clone.mi = clonedMethod;
+
+      clone.lastCalleeCi = null;
+      clone.invokedMethod = null;
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+
+    return clone;
+  }
 }

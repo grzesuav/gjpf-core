@@ -162,5 +162,25 @@ public class INVOKESTATIC extends InvokeInstruction {
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
+
+  @Override
+  public Instruction typeSafeClone(MethodInfo mi) {
+    INVOKESTATIC clone = null;
+
+    try {
+      clone = (INVOKESTATIC) super.clone();
+
+      // reset the method that this insn belongs to
+      clone.mi = mi;
+
+      clone.invokedMethod = null;
+      clone.lastObj = Integer.MIN_VALUE;
+      clone.ci = null;
+    } catch (CloneNotSupportedException e) {
+      e.printStackTrace();
+    }
+
+    return clone;
+  }
 }
 

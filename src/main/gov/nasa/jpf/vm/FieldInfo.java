@@ -45,7 +45,7 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
   protected final String signature; // "I", "[Lx/Y;" etc.
   protected int storageSize;
 
-  protected final ClassInfo ci; // class this field belongs to
+  protected ClassInfo ci; // class this field belongs to
   protected int fieldIndex; // declaration ordinal
 
   // where in the corresponding Fields object do we store the value
@@ -389,4 +389,21 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
 
   // -- end attrs --
 
+  /**
+   * Creates a field for a given class, by cloning this FieldInfo
+   * and reseting the class that the field belongs to
+   */
+  public FieldInfo getInstanceFor(ClassInfo ci) {
+    FieldInfo clone;
+
+    try {
+      clone = (FieldInfo)super.clone();
+      clone.ci = ci;
+    } catch (CloneNotSupportedException cnsx){
+      cnsx.printStackTrace();
+      return null;
+    }
+
+    return clone;
+  }
 }

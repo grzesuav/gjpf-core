@@ -613,7 +613,6 @@ public abstract class VM {
   }
 
   protected void notifyClassLoaded(ClassInfo ci) {
-    System.out.println("just loaded --> " + ci.name);
     try {
       for (int i = 0; i < listeners.length; i++) {
         listeners[i].classLoaded(this, ci);

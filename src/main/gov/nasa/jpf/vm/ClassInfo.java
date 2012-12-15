@@ -64,7 +64,7 @@ import java.util.logging.Level;
  * static and dynamic fields, methods, and information relevant to the
  * class.
  */
-public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, GenericSignatureHolder, Cloneable {
+public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, GenericSignatureHolder {
 
   //--- ClassInfo states, in chronological order
   // note the somewhat strange, decreasing values - >= 0 (=thread-id) means 
@@ -2893,76 +2893,43 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     try {
       ci = (ClassInfo)super.clone();
+
+      ci.classLoader = cl;
+      ci.interfaces = new HashSet<ClassInfo>();
       cl.resolveClass(ci);
 
       ci.id = -1;
       ci.uniqueId = -1;
 
-      ci.annotations = annotations;
+      ci.methods = (Map<String, MethodInfo>)((HashMap<String, MethodInfo>) methods).clone();
 
-      ci.name = name;
-      ci.signature = signature;
-      ci.genericSignature = genericSignature;
-      ci.classLoader = cl;
-
-      ci.isClass = isClass;
-      ci.isWeakReference = isWeakReference;
-      ci.isObjectClassInfo = isObjectClassInfo;
-      ci.isStringClassInfo = isStringClassInfo;
-      ci.isThreadClassInfo = isThreadClassInfo;
-      ci.isRefClassInfo = isRefClassInfo;
-      ci.isArray = isArray;
-      ci.isEnum = isEnum;
-      ci.isReferenceArray = isReferenceArray;
-      ci.isAbstract = isAbstract;
-      ci.isBuiltin = isBuiltin;
-      ci.modifiers = modifiers;
-
-      ci.finalizer = finalizer;
-      ci.elementInfoAttrs = elementInfoAttrs;
-
-      ci.methods = new LinkedHashMap<String,MethodInfo>(methods);
-
-      ci.iFields = iFields.clone();
-      ci.instanceDataSize = instanceDataSize;
-      ci.instanceDataOffset = instanceDataOffset;
-      ci.nInstanceFields = nInstanceFields;
-
-      ci.sFields = sFields.clone();
-      ci.staticDataSize = staticDataSize;
-
-      ci.enclosingClassName = enclosingClassName;
-      ci.enclosingMethodName = enclosingMethodName;
-
-      ci.innerClassNames = innerClassNames.clone();
-      for(int i=0; i<innerClassNames.length; i++) {
-        ci.innerClassNames[i] = innerClassNames[i];
+      for(Map.Entry<String, MethodInfo> e: ci.methods.entrySet()) {
+        MethodInfo mi = e.getValue();
+        e.setValue(mi.getInstanceFor(ci));
       }
 
-      ci.superClassName = superClassName;
-      ci.interfaceNames = interfaceNames;
-      ci.allInterfaces = allInterfaces;
+      ci.iFields = new FieldInfo[iFields.length];
+      for(int i=0; i<iFields.length; i++) {
+        ci.iFields[i] = iFields[i].getInstanceFor(ci);
+      }
 
-      ci.packageName = packageName;
-      ci.sourceFileName = sourceFileName;
-
-      // we are going to get rid of this after classloader implementation?
-      ci.container = container;
+      ci.sFields = new FieldInfo[sFields.length];
+      for(int i=0; i<sFields.length; i++) {
+        ci.sFields[i] = sFields[i].getInstanceFor(ci);
+      }
 
       if(nativePeer != null) {
         ci.nativePeer = nativePeer.getInstanceFor(ci);
       }
 
-      ci.source = source;
-
-      ci.attr = attr;
       ci.setAssertionStatus();
-      ci.releaseActions = releaseActions;
 
     } catch (CloneNotSupportedException cnsx){
       cnsx.printStackTrace();
       return null;
     }
+
+    VM.getVM().notifyClassLoaded(ci);
     return ci;
   }
 }

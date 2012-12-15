@@ -1332,4 +1332,35 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     }
   }
 
+  /**
+   * Creates a method for a given class, by cloning this MethodInfo
+   * and all the instructions belong to the method
+   */
+  public MethodInfo getInstanceFor(ClassInfo ci) {
+    MethodInfo clone;
+
+    try {
+      clone = (MethodInfo)super.clone();
+      clone.ci = ci;
+
+      clone.globalId = mthTable.size();
+      mthTable.add(this);
+
+      if(code == null) {
+        clone.code = null;
+      } else {
+        clone.code = new Instruction[code.length];
+
+        for(int i=0; i<code.length; i++) {
+          clone.code[i] = code[i].typeSafeClone(clone);
+        }
+      }
+
+    } catch (CloneNotSupportedException cnsx){
+      cnsx.printStackTrace();
+      return null;
+    }
+
+    return clone;
+  }
 }

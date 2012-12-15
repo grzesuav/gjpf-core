@@ -26,7 +26,7 @@ package gov.nasa.jpf.vm;
  * so far, it's used to factorize the annotation support, but we can also
  * move the attributes up here
  */
-public abstract class InfoObject {
+public abstract class InfoObject implements Cloneable {
 
   static AnnotationInfo[] NO_ANNOTATIONS = new AnnotationInfo[0];
   

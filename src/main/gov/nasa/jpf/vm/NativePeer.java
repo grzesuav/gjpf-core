@@ -404,18 +404,18 @@ public class NativePeer implements Cloneable {
   }
 
   public NativePeer getInstanceFor(ClassInfo ci) {
-    NativePeer nativePeer = null;
+    NativePeer clone = null;
 
     try {
-      nativePeer = (NativePeer)super.clone();
-      nativePeer.ci = ci;
-      nativePeer.methods = new HashMap<String, Method>(methods);
-      nativePeer.peerClass = peerClass;
+      clone = (NativePeer)super.clone();
+      clone.ci = ci;
+      clone.methods = new HashMap<String, Method>(methods);
+      clone.peerClass = peerClass;
     } catch (CloneNotSupportedException e) {
       e.printStackTrace();
     }
 
-    return nativePeer;
+    return clone;
   }
 }
 
