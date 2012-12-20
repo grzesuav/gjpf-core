@@ -20,6 +20,7 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFTargetException;
 import gov.nasa.jpf.JPFException;
 
 /**
@@ -40,7 +41,16 @@ public class SingleProcessVM extends VM {
 
   @Override
   public void initSystemClassLoaders (Config config) {
+    checkTarget(config);
     systemClassLoader = createSystemClassLoader(config.getTarget(), config.getTargetArgs());
+  }
+
+  @Override
+  public void checkTarget(Config config) {
+    String target = config.getTarget();
+    if (target == null || (target.length() == 0)) {
+      throw new JPFTargetException("no target class specified, terminating");
+    }
   }
 
   /**

@@ -1992,7 +1992,9 @@ public class Config extends Properties {
             + getMethodSignature(ctor));
       } catch (InvocationTargetException ix) {
         Throwable tx = ix.getTargetException();
-        if (tx instanceof JPFConfigException) {
+        if (tx instanceof JPFTargetException) {
+          throw new JPFConfigException(tx.getMessage()); 
+        } else if (tx instanceof JPFConfigException) {
           throw new JPFConfigException(tx.getMessage() + "\n> used within \"" + key
               + "\" instantiation of " + cls);
         } else {

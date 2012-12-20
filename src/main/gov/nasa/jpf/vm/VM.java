@@ -200,6 +200,8 @@ public abstract class VM {
 
   public abstract void initSystemClassLoaders(Config config);
 
+  public abstract void checkTarget(Config config);
+
   protected void initSubsystems (Config config) {
     ClassLoaderInfo.init(config);
     ClassInfo.init(config);

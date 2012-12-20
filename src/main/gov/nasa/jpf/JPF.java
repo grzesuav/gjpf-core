@@ -249,12 +249,7 @@ public class JPF implements Runnable {
       logger = initLogging(config);
     }
 
-    String tgt = config.getTarget();
-    if (tgt == null || (tgt.length() == 0)) {
-      logger.severe("no target class specified, terminating");
-    } else {
-      initialize();
-    }
+    initialize();
   }
 
   /**

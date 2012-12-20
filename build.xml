@@ -221,6 +221,7 @@
         <include name="gov/nasa/jpf/JPFShell.class"/>
         <include name="gov/nasa/jpf/JPFException.class"/>
         <include name="gov/nasa/jpf/JPFConfigException.class"/>
+        <include name="gov/nasa/jpf/JPFTargetException.class"/>
         <include name="gov/nasa/jpf/util/JPFSiteUtils.class"/>
         <include name="gov/nasa/jpf/util/FileUtils.class"/>
         <include name="gov/nasa/jpf/util/StringMatcher.class"/>
