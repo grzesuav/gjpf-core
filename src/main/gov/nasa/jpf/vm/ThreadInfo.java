@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -341,7 +342,7 @@ public class ThreadInfo
   static boolean init (Config config) {
     currentThread = null;
     
-    globalTids = new SparseIntVector();
+    globalTids = new HashMap<Integer, Integer>();
 
     String[] haltOnThrowSpecs = config.getStringArray("vm.halt_on_throw");
     if (haltOnThrowSpecs != null){
@@ -372,15 +373,17 @@ public class ThreadInfo
    *  search global cache for dense ThreadInfo ids. We could just use objRef since those are
    *  guaranteed to be global, but not dense
    */
-  static SparseIntVector globalTids;  // initialized by init
+  static Map<Integer, Integer> globalTids;  // initialized by init
   
   
   protected int computeId (int objRef) {
-    int id = globalTids.get(objRef);
-    if (id == 0) {
-      id = globalTids.size() + 1; // mainThread is not in globalTids and always has id '0'
-      globalTids.set(objRef, id);
+    Integer id = globalTids.get(objRef);
+    
+    if(id == null) {
+      id = globalTids.size();
+      globalTids.put(objRef, id);
     }
+
     return id;
   }
   
@@ -389,7 +392,6 @@ public class ThreadInfo
    * since we can't allocate objects without a ThreadInfo)
    */
   protected ThreadInfo (VM vm) {
-    id = 0;
     initFields(vm);
   }
 
