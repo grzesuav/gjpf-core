@@ -167,7 +167,8 @@ public class ConsolePublisher extends Publisher {
     publishTopicStart("system under test");
 
     String mainCls = conf.getTarget();
-    if (mainCls != null) {
+    String[] mainPrcCls = conf.getProcessesTargets();
+    if (mainCls != null || mainPrcCls!=null) {
       String mainPath = reporter.getSuT();
       if (mainPath != null) {
         out.println("application: " + mainPath);

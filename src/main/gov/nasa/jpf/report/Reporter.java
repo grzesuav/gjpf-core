@@ -398,10 +398,7 @@ public class Reporter extends SearchListenerAdapter {
   }
 
   public String getSuT() {
-    // it would be better to know from where we loaded the class file, but BCEL doesn't tell us
-    String mainCls = vm.getMainClassName();
-    ClassInfo ciMain = ClassInfo.getResolvedClassInfo(mainCls);
-    return ciMain.getSourceFileName();
+    return vm.getSuT();
   }
   
   public String getJava (){

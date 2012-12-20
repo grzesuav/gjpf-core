@@ -149,4 +149,10 @@ public class SingleProcessVM extends VM {
   public SystemClassLoaderInfo getSystemClassLoader(ThreadInfo ti) {
     return systemClassLoader;
   }
+
+  @Override
+  public String getSuT() {
+    ClassInfo ciMain = systemClassLoader.getMainClassInfo();
+    return ciMain.getSourceFileName();
+  }
 }

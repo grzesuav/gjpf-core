@@ -1557,6 +1557,8 @@ public abstract class VM {
     return getSystemClassLoader().getMainClassName();
   }
 
+  public abstract String getSuT();
+
   public ClassInfo getMainClassInfo () {
     return ClassInfo.getResolvedClassInfo(getSystemClassLoader().getMainClassName());
   }
