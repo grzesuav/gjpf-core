@@ -1133,6 +1133,10 @@ public class Config extends Properties {
       String key = TARGET_ARGS_KEY + "." + i;
       String[] args = getStringArray(key);
 
+      if (args == null) {
+        args = new String[0];
+      }
+
       prcTargetArgs.add(args);
     }
 

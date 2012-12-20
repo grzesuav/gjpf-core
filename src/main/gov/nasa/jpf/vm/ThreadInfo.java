@@ -389,12 +389,8 @@ public class ThreadInfo
    * since we can't allocate objects without a ThreadInfo)
    */
   protected ThreadInfo (VM vm) {
-    // assert mainThread == null;
-
     id = 0;
     initFields(vm);
-    
-    currentThread = this;    
   }
 
   /**

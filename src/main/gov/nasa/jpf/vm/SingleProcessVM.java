@@ -72,6 +72,8 @@ public class SingleProcessVM extends VM {
       return false;
     }
 
+    ThreadInfo.currentThread = systemClassLoader.getMainThread();
+
     // from here, we get into some bootstrapping process
     //  - first, we have to load class structures (fields, supers, interfaces..)
     //  - second, we have to create a thread (so that we have a stack)
