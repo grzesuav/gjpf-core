@@ -116,6 +116,11 @@ public class SimpleDot extends ListenerAdapter {
   public SimpleDot( Config config, JPF jpf){
     app = config.getTarget();
 
+    // To handle the case of distributed Java applications
+    if(app == null) {
+      app = config.getProcessesTargets()[0];
+    }
+
     String fname = config.getString("dot.file");
     if (fname == null){
       fname = Misc.stripToLastDot(app);
