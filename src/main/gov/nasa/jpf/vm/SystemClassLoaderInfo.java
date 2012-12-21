@@ -139,7 +139,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     eiPermit.setBooleanField("blockPark", true);
     eiThread.setReferenceField("permit", eiPermit.getObjectRef());
 
-    tiMain.computeId(threadRef);
+    tiMain.id = tiMain.computeId(threadRef);
 
     //--- initialize the ThreadInfo reference fields
     tiMain.initReferenceFields(threadRef, groupRef, MJIEnv.NULL, nameRef);
