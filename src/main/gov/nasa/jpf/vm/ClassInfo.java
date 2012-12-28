@@ -843,7 +843,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     this.classLoader = classLoader;
 
     isArray = (builtinClassName.charAt(0) == '[');
-    isReferenceArray = isArray && builtinClassName.endsWith(";");
+    isReferenceArray = isArray && (builtinClassName.endsWith(";") || builtinClassName.charAt(1) == '[');
     isBuiltin = true;
 
     name = builtinClassName;

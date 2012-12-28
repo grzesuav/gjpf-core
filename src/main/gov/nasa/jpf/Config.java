@@ -1014,9 +1014,6 @@ public class Config extends Properties {
     String[] nativeLibs = getCompactStringArray("native_libraries");
 
     JPFClassLoader cl = new JPFClassLoader( urls, nativeLibs, parent);
-
-    //for (URL url : urls) System.out.println("@@ " + url);
-
     loader = cl;
 
     return cl;

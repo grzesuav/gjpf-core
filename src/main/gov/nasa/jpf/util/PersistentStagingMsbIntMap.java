@@ -19,9 +19,6 @@
 
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.util.PersistentIntMap.Node;
-import gov.nasa.jpf.util.PersistentIntMap.Result;
-
 import java.io.PrintStream;
 
 public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
@@ -408,6 +405,16 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
       node = stagingNode;
     }
     node.process(this, processor);
+  }
+  
+  @Override
+  protected Object getNodeOrValue (Node<V> node, int idx) {
+    Object nv = node.getNodeOrValue(idx);
+    if (nv == sourceNode) {
+      return stagingNode;
+    } else {
+      return nv;
+    }
   }
   
   public void printOn (PrintStream ps) {

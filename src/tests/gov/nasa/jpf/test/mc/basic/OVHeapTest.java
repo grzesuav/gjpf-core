@@ -25,9 +25,9 @@ import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.Verify;
 
 /**
- * unit test for ObjVectorHeap
+ * unit test for OVHeap
  */
-public class ObjVectorHeapTest extends TestJPF {
+public class OVHeapTest extends TestJPF {
   
   static int getReferenceValue (Object o) {
     int h = System.identityHashCode(o);
@@ -70,7 +70,7 @@ public class ObjVectorHeapTest extends TestJPF {
     
   @Test
   public void testSGOIDs() {
-    if (verifyNoPropertyViolation("+vm.heap.class=.vm.ObjVectorHeap")) {
+    if (verifyNoPropertyViolation("+vm.heap.class=.vm.OVHeap")) {
       Thread t = new Thread() {
         public void run() {
           Class<?> cls = X.class;

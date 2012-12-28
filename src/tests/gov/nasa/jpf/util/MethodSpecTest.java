@@ -67,6 +67,10 @@ public class MethodSpecTest extends TestJPF {
     System.out.println(ms);
     assertTrue(ms != null);
 
+    spec = "java.*"; // not what you think - the class spec is "java" and the method is "*"
+    ms = MethodSpec.createMethodSpec(spec);
+    System.out.println(ms);
+    
 
     //--- should all produce null
 

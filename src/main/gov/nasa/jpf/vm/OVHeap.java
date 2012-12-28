@@ -34,18 +34,16 @@ import java.util.Iterator;
  * is a chance of collisions, in which case a different heap type
  * has to be used (we don't try to resolve collisions here)
  */
-public class ObjVectorHeap extends GenericHeapImpl {
+public class OVHeap extends GenericSGOIDHeap {
   
-  static class OVMemento extends GenericHeapImplMemento {
-    IntTable.Snapshot<AllocationContext> ctxSnap;
+  //--- state management
+  static class OVMemento extends GenericSGOIDHeapMemento {
     ObjVector.Snapshot<ElementInfo> eiSnap;
     
-    OVMemento(ObjVectorHeap heap) {
+    OVMemento(OVHeap heap) {
       super(heap);
       
-      heap.elementInfos.process(ElementInfo.storer);
-      
-      ctxSnap = heap.allocCounts.getSnapshot();
+      heap.elementInfos.process(ElementInfo.storer);      
       eiSnap = heap.elementInfos.getSnapshot();
     }
 
@@ -53,20 +51,15 @@ public class ObjVectorHeap extends GenericHeapImpl {
     public Heap restore(Heap inSitu) {
       super.restore( inSitu);
       
-      ObjVectorHeap heap = (ObjVectorHeap)inSitu;
-      heap.allocCounts.restore(ctxSnap);
-      heap.elementInfos.restore(eiSnap);
-      
+      OVHeap heap = (OVHeap)inSitu;
+      heap.elementInfos.restore(eiSnap);      
       heap.elementInfos.process(ElementInfo.restorer);
       
       return heap;
     }
   }
   
-  static int nextSgoid;
-  static IntTable<Allocation> sgoids;
-  
-  IntTable<AllocationContext> allocCounts;
+  //--- instance data
   
   ObjVector<ElementInfo> elementInfos;
   int size;  // non-null elements - we need to maintain this ourselves since ObjVector size is different
@@ -74,38 +67,14 @@ public class ObjVectorHeap extends GenericHeapImpl {
   
   //--- constructors
   
-  public ObjVectorHeap (Config config, KernelState ks){
+  public OVHeap (Config config, KernelState ks){
     super(config, ks);
     
-    // static inits
-    initAllocationContext(config);
-    sgoids = new IntTable<Allocation>();
-    nextSgoid = 0;
-    
-    allocCounts = new IntTable<AllocationContext>();
     elementInfos = new ObjVector<ElementInfo>();
   }
+      
+  //--- the container interface
 
-  //--- to be overridden by subclasses that use different AllocationContext implementations
-  
-  protected void initAllocationContext(Config config) {
-    HashedAllocationContext.init(config);
-    //PreciseAllocationContext.init(config);
-  }
-  
-  // these are always called directly from the allocation primitive, i.e. the allocating site is at a fixed
-  // stack offset (callers caller)
-  protected AllocationContext getSUTAllocationContext (ClassInfo ci, ThreadInfo ti) {
-    return HashedAllocationContext.getSUTAllocationContext(ci, ti);
-    //return PreciseAllocationContext.getSUTAllocationContext(ci, ti);
-  }
-  protected AllocationContext getSystemAllocationContext (ClassInfo ci, ThreadInfo ti, int anchor) {
-    return HashedAllocationContext.getSystemAllocationContext(ci, ti, anchor);
-    //return PreciseAllocationContext.getSystemAllocationContext(ci, ti, anchor);
-  }
-    
-  //--- heap interface
-  
   /**
    * return number of non-null elements
    */
@@ -113,35 +82,6 @@ public class ObjVectorHeap extends GenericHeapImpl {
   public int size() {
     return size;
   }
-  
-  //--- the allocator primitives (called from the newXX() template methods)
-  
-  @Override
-  protected int getNewElementInfoIndex (AllocationContext ctx) {
-    int idx;
-    int cnt;
-    
-    IntTable.Entry<AllocationContext> cntEntry = allocCounts.getInc(ctx);
-    cnt = cntEntry.val;
-    
-    Allocation alloc = new Allocation(ctx, cnt);
-    
-    IntTable.Entry<Allocation> sgoidEntry = sgoids.get(alloc);
-    if (sgoidEntry != null) { // we already had this one
-      idx = sgoidEntry.val;
-      
-    } else { // new entry
-      idx = ++nextSgoid;
-      sgoids.put(alloc, idx);
-    }
-    
-    // sanity check - we do this here (and not in our super class) since we know how elements are stored
-    assert elementInfos.get(idx) == null;
-    
-    return idx;
-  }
-      
-  //--- the container interface
   
   @Override
   protected void set (int index, ElementInfo ei) {
@@ -203,10 +143,12 @@ public class ObjVectorHeap extends GenericHeapImpl {
     // we don't have any
   }
 
+  @Override
   public Memento<Heap> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
   }
 
+  @Override
   public Memento<Heap> getMemento(){
     return new OVMemento(this);
   }

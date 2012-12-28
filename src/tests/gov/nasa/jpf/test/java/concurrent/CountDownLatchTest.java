@@ -21,7 +21,7 @@ public class CountDownLatchTest extends TestJPF {
   //@Ignore("detects deadlock with exposure CG??")
   @Test
   public void testCountDown() throws InterruptedException {
-    if (verifyNoPropertyViolation("+vm.time.model=ConstantZero", "+vm.por.break_on_exposure=false")) {
+    if (verifyNoPropertyViolation("+vm.time.model=ConstantZero", "+vm.por.break_on_exposure=true")) {
 
       final CountDownLatch    latch     = new CountDownLatch(N);
       final Exchanger<Object> exchanger = new Exchanger<Object>();

@@ -222,6 +222,37 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
   }
       
   @Test
+  public void testIterator() {
+    PersistentIntMap<Integer> t = createPersistentIntMap();
+    
+    //--- empty map test
+    System.out.println("check empty map iterator");
+    for (Integer v : t) {
+      fail("map should be empty");
+    }
+    
+    //--- populate a dense map
+    int max = 446; //100;
+    for (int i=0; i<max; i++) {
+      t = t.set(i, Integer.valueOf(i));
+    }
+
+    //--- check for the right number of entries 
+    System.out.println("check map with size: " + max);
+    int n=0;
+    for (Integer v : t) {
+      n++;
+      if (n > 0) {
+        System.out.print(',');
+      }
+      System.out.print(v);
+    }
+    System.out.println();
+    assertTrue( n == max);
+    
+  }
+  
+  @Test
   public void testLargeTable() {
     long t1, t2;
     int N = 40000; // table size

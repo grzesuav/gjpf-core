@@ -36,7 +36,12 @@ import java.util.BitSet;
  *   "x.y.Foo.*"
  *   "java.util.HashMap.add(java.lang.Object,^java.lang.Object)"
  *   "*.*(x.y.MyClass)"
- *
+ *   
+ * Note: with a single '*' we can't tell if this is for the typename
+ * or the method, so something like "java.*" is probably not doing
+ * what you expect - it uses the wildcard for the method and 'java' for
+ * the type
+ *   
  * <2do> we should extend this to allow alternatives
  */
 public class MethodSpec extends FeatureSpec {
