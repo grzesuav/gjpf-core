@@ -48,7 +48,7 @@ import gov.nasa.jpf.vm.ThreadList;
 public class CFSerializer extends FilteringSerializer {
 
   // we flip this on every serialization, which helps us to avoid passes
-  // over the serialized objects to reset their sids. This work by resetting
+  // over the serialized objects to reset their sids. This works by resetting
   // the sid to 0 upon backtrack, and counting either upwards from 1 or downwards
   // from -1, but store the absolute value in the serialization stream
   boolean positiveSid;
