@@ -114,4 +114,36 @@ public class PersistentStagingMsbIntMapTest extends PersistentIntMapTestBase {
     dump(t, new IntegerProcessor());
     t.printOn(System.out);
   }
+  
+  static PersistentIntMap<Integer> set (PersistentIntMap<Integer> t, int i){
+    return t.set(i, Integer.valueOf(i));
+  }
+  
+  public void test186() {
+    PersistentIntMap<Integer> t = new PersistentStagingMsbIntMap<Integer>();
+    t = set( t,  88);
+    t = set( t,  182);
+    t = set( t,  183);
+    t = set( t,  184);
+    t = set( t,  185);
+    t = set( t,  91);
+    t = set( t,  97);
+    t = set( t,  186);
+    t = set( t,  187);
+    t = set( t,  100);
+    t = set( t,  188);
+    t = set( t,  189);
+    t = set( t,  190);
+    t = set( t,  191);
+    t = set( t,  192);
+    t = set( t,  193);
+    t = set( t,  103);
+    
+    //t = t.set(88, 88);
+    //t = t.set(97, 97);
+    //t = t.set(186, 186);
+    
+    dump(t, new IntegerProcessor());
+    t.printOn(System.out);
+  }
 }

@@ -585,8 +585,10 @@ public abstract class PersistentIntMap<V> implements Iterable<V> {
           return null;
           
         } else if (newLen == 1){ // reduce node
-          int idx = Integer.bitCount( bitmap & (newBitmap -1));
-          Object o=a[idx];
+          int i = Integer.bitCount( bitmap & (newBitmap -1));
+          Object o=a[i];
+          int idx = Integer.numberOfTrailingZeros(newBitmap);
+          
           return new OneNode<V>( idx, o);
           
         } else { // still a BitmapNode

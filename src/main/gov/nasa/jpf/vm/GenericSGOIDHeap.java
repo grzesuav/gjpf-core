@@ -109,7 +109,7 @@ public abstract class GenericSGOIDHeap extends GenericHeap {
     }
     
     // sanity check - we do this here (and not in our super class) since we know how elements are stored
-    assert get(idx) == null;
+//    assert get(idx) == null;
     
     return idx;
   }

@@ -94,7 +94,7 @@ public class PSIMHeap extends GenericSGOIDHeap {
       } else { // object is no longer reachable  
         // no finalizer support yet
         ei.processReleaseActions();
-        
+System.out.println("@@ remove " + ei.getObjectRef());
         // <2do> still have to process finalizers here, which might make the object live again
         vm.notifyObjectReleased( ti, ei);
         return true;
@@ -127,6 +127,7 @@ public class PSIMHeap extends GenericSGOIDHeap {
   @Override
   protected void set(int index, ElementInfo ei) {
     elementInfos = elementInfos.set(index, ei);
+System.out.println("@@ set " + index);
   }
 
   @Override
@@ -150,6 +151,7 @@ public class PSIMHeap extends GenericSGOIDHeap {
       if (ei != null && ei.isFrozen()) {
         ei = ei.deepClone(); 
         // freshly created ElementInfos are not frozen, so we don't have to defreeze
+System.out.println("@@ set* " + ref);
         elementInfos = elementInfos.set(ref, ei);
       }
 

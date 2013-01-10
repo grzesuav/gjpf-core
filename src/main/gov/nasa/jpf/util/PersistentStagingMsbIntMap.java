@@ -21,6 +21,14 @@ package gov.nasa.jpf.util;
 
 import java.io.PrintStream;
 
+/**
+ * this is a msb-first PersistentIntMap that keeps track of the node that was last modified (AKA "stagingNode"),
+ * not requiring it to be linked into the trie until an operation occurs that will shift the staging node.
+ * The general idea is to avoid path copying (from the value node up to the root) for most of the operations
+ * on consecutive key values. In general, the downside of PersistentIntMap is that more than the changed
+ * value needs to be stored (node containing the value, and all its parent nodes), and the container becomes
+ * more efficient the smaller this overhead is.
+ */
 public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   
   protected final int stagingBase;
@@ -139,12 +147,16 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   
   @Override
   public PersistentMsbIntMap<V> set (int key, V value, Result<V> result){ 
-    int fsh = getLsbShift(key);  
+    int fsh = getLsbShift(key);  // final keyblock shift
     int k = (key >>> fsh);
     result.clear();
     
+System.out.print("@@ set ");
+printKeyBlocks(key);
+
     int sb = (k | 0x1f) << fsh;
     if (sb == stagingBase){       // stagingNode hit (this should be the statistically dominant case)
+System.out.println("@@   hit");
       int levelIdx = k & 0x1f;
       Node<V> newStagingNode = setStageNodeValue( stagingNode, levelIdx, value, result);
       if (newStagingNode != stagingNode) {
@@ -162,12 +174,13 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
       }
       
     } else {                             // stagingNode miss
-      int ish = getMsbShift(key);
+System.out.println("@@   miss");
+      int ish = getMsbShift(key);  // initial keyblock shift
       
       if (root == null){                 // the very first node  
         Node<V> newRoot = createNode( ish, fsh, key, value, null, result);
         Node<V> newStagingNode = result.valueNode;
-        int newStagingBase = key | (0x1f << (ish - (result.valueNodeLevel * 5)));
+        int newStagingBase = sb; // since this is the first node, the value has to be stored in it
         return new PersistentStagingMsbIntMap<V>( 1, newRoot, ish, newStagingNode, newStagingBase, newStagingNode);
 
       } else {                           // set new & merge old stagingNode

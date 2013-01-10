@@ -422,6 +422,30 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
   }
   
 
+  public void test3457() {
+    PersistentIntMap<Integer> t = createPersistentIntMap();
+    t = t.set(0, 0);
+    t = t.set(3456, 3456);
+    t = t.set(3457, 3457);
+    t = t.set(3458, 3458);
+    System.out.println("@@@@ 3457: " + t.get(3457));
+
+    t.printOn(System.out);
+    
+    t = t.remove(3456);
+    //t = t.remove(3458);
+    
+    t = t.removeAllSatisfying(new Predicate<Integer>() {
+      public boolean isTrue(Integer i) {
+        return (i == 3458);
+      }
+    });
+    
+    t.printOn(System.out);
+    System.out.println("@@@@ 3457: " + t.get(3457));
+  }
+  
+
   final static int NSTATES = 20000;
   final static int NOBJECTS = 2000;
   final static int NGC = 400;
