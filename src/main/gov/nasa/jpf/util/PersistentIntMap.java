@@ -976,13 +976,13 @@ public abstract class PersistentIntMap<V> implements Iterable<V> {
      * Ideally, these should be in PersistentStagingMsbIntMap, not here (see above)
      */
     protected Node<V> valueNode;
-    protected int valueNodeLevel;
+    protected int valueNodeLevel;  // distance from rootNode level downwards
     protected boolean merged;
     
     public void clear(){
       changeCount = 0;
       valueNode = null;
-      valueNodeLevel = -1;
+      valueNodeLevel = -1; // its incremented before traversal
       merged = false;
     }
     

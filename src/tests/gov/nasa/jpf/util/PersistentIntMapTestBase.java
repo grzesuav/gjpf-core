@@ -428,7 +428,7 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
     t = t.set(3456, 3456);
     t = t.set(3457, 3457);
     t = t.set(3458, 3458);
-    System.out.println("@@@@ 3457: " + t.get(3457));
+    System.out.println("3457: " + t.get(3457));
 
     t.printOn(System.out);
     
@@ -442,7 +442,7 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
     });
     
     t.printOn(System.out);
-    System.out.println("@@@@ 3457: " + t.get(3457));
+    System.out.println("3457: " + t.get(3457));
   }
   
 
@@ -542,6 +542,24 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
     t2 = System.currentTimeMillis();
     System.out.println("ObjVector (" + NSTATES + " cycles): " + (t2 - t1));
 
+  }
+
+  //--- debugging helpers
+  static PersistentIntMap<Integer> addRemove (PersistentIntMap<Integer> t, int[] keys){
+    for (int i = 0; i<keys.length; i++){
+      int k = keys[i];
+      if (k < 0){
+        t = t.remove( -k);
+      } else {
+        t = t.set( k, Integer.valueOf(k));
+      }
+    }
+    
+    return t;
+  }
+  
+  static PersistentIntMap<Integer> set (PersistentIntMap<Integer> t, int i){
+    return t.set(i, Integer.valueOf(i));
   }
 
 }

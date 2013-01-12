@@ -19,14 +19,10 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.PersistentIntMap;
 import gov.nasa.jpf.util.PersistentIntMap.Result;
-import gov.nasa.jpf.util.PersistentLsbIntMap;
-import gov.nasa.jpf.util.PersistentMsbIntMap;
 import gov.nasa.jpf.util.PersistentStagingMsbIntMap;
 import gov.nasa.jpf.util.Predicate;
-import gov.nasa.jpf.util.Processor;
 
 import java.util.Iterator;
 
@@ -94,7 +90,6 @@ public class PSIMHeap extends GenericSGOIDHeap {
       } else { // object is no longer reachable  
         // no finalizer support yet
         ei.processReleaseActions();
-System.out.println("@@ remove " + ei.getObjectRef());
         // <2do> still have to process finalizers here, which might make the object live again
         vm.notifyObjectReleased( ti, ei);
         return true;
@@ -127,7 +122,6 @@ System.out.println("@@ remove " + ei.getObjectRef());
   @Override
   protected void set(int index, ElementInfo ei) {
     elementInfos = elementInfos.set(index, ei);
-System.out.println("@@ set " + index);
   }
 
   @Override
@@ -151,7 +145,6 @@ System.out.println("@@ set " + index);
       if (ei != null && ei.isFrozen()) {
         ei = ei.deepClone(); 
         // freshly created ElementInfos are not frozen, so we don't have to defreeze
-System.out.println("@@ set* " + ref);
         elementInfos = elementInfos.set(ref, ei);
       }
 

@@ -61,7 +61,6 @@ import java.io.PrintStream;
  *                   5 |  0
  *              [.. .X....V]           0
  *              
- *  
  */
 public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   
@@ -70,6 +69,8 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   static <V> Node<V> createNode (int shift, int finalShift, int key, V value, V nodeValue, Result<V> result){
     int idx = ((key>>>shift) & 0x01f);
     Node<V> node;
+    
+    result.valueNodeLevel++;
     
     if (shift == finalShift) {
       if (nodeValue != null) {
