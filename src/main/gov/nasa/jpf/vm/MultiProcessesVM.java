@@ -54,7 +54,7 @@ public class MultiProcessesVM extends VM {
     systemClassLoaders = new SystemClassLoaderInfo[NUM_PRC];
 
     for(int i=0; i<NUM_PRC; i++) {
-      systemClassLoaders[i] = createSystemClassLoader(target[i], targetArgs.get(i));
+      systemClassLoaders[i] = createSystemClassLoader(target[i], i, targetArgs.get(i));
     }
   }
 

@@ -54,7 +54,8 @@ public class ClassLoaderInfoTest extends TestJPF {
     // gets the systemClassLoader which already loaded the startup classes
     SystemClassLoaderInfo cl1 = vm.getSystemClassLoader();
     // create a new systemClassLoader
-    SystemClassLoaderInfo cl2 = vm.createSystemClassLoader(config.getTarget(), config.getTargetArgs());
+    int id = cl1.getMainThread().getId() + 1;
+    SystemClassLoaderInfo cl2 = vm.createSystemClassLoader(config.getTarget(), id, config.getTargetArgs());
     // loades the startup classes
     cl2.loadStartUpClasses(vm, vm.getCurrentThread());
 

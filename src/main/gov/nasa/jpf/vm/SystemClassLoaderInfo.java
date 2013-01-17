@@ -63,11 +63,11 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
   protected ThreadInfo tiMain;
   protected VM vm;
 
-  protected SystemClassLoaderInfo (VM vm, String mainClassName, String[] args) {
+  protected SystemClassLoaderInfo (VM vm, String mainClassName, int mainThreadId, String[] args) {
     super(vm, MJIEnv.NULL, null, null);
     this.mainClassName = mainClassName;
     this.args = args;
-    this.tiMain = vm.createMainThreadInfo();
+    this.tiMain = vm.createMainThreadInfo(mainThreadId);
     this.vm = vm;
     setSystemClassPath();
     classInfo = getResolvedClassInfo("java.lang.ClassLoader");
@@ -139,7 +139,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     eiPermit.setBooleanField("blockPark", true);
     eiThread.setReferenceField("permit", eiPermit.getObjectRef());
 
-    tiMain.id = tiMain.computeId(threadRef);
+    ThreadInfo.addId(threadRef, tiMain.id);
 
     //--- initialize the ThreadInfo reference fields
     tiMain.initReferenceFields(threadRef, groupRef, MJIEnv.NULL, nameRef);

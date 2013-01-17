@@ -285,8 +285,8 @@ public abstract class VM {
   }
 
   //--- ThreadInfo factory methods
-  protected ThreadInfo createMainThreadInfo() {
-    return new ThreadInfo(this);
+  protected ThreadInfo createMainThreadInfo(int id) {
+    return new ThreadInfo(this, id);
   }
   
   protected ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef) {
@@ -316,9 +316,9 @@ public abstract class VM {
    * Creates & returns a system classLoader which is root in the classLaoders 
    * hierarchy
    */
-  protected SystemClassLoaderInfo createSystemClassLoader(String mainClassName, String[] args) {
+  protected SystemClassLoaderInfo createSystemClassLoader(String mainClassName, int mainThreadId, String[] args) {
     //--- create the ClassLoaderInfo
-    SystemClassLoaderInfo cl = new SystemClassLoaderInfo(this, mainClassName, args);
+    SystemClassLoaderInfo cl = new SystemClassLoaderInfo(this, mainClassName, mainThreadId, args);
 
     try {
       //--- java.lang.ClassLoader is registered later along with other startup classes

@@ -42,7 +42,8 @@ public class SingleProcessVM extends VM {
   @Override
   public void initSystemClassLoaders (Config config) {
     checkTarget(config);
-    systemClassLoader = createSystemClassLoader(config.getTarget(), config.getTargetArgs());
+    int mainThreadId = 0;
+    systemClassLoader = createSystemClassLoader(config.getTarget(), mainThreadId, config.getTargetArgs());
   }
 
   @Override

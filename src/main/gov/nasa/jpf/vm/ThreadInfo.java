@@ -381,18 +381,23 @@ public class ThreadInfo
     
     if(id == null) {
       id = globalTids.size();
-      globalTids.put(objRef, id);
+      addId(objRef, id);
     }
 
     return id;
+  }
+
+  static void addId(int objRef, int id) {
+    globalTids.put(objRef, id);
   }
   
   /**
    * mainThread ctor called by the VM. Note we don't have a thread object yet (hen-and-egg problem
    * since we can't allocate objects without a ThreadInfo)
    */
-  protected ThreadInfo (VM vm) {
+  protected ThreadInfo (VM vm, int id) {
     initFields(vm);
+    this.id = id;
   }
 
   /**
