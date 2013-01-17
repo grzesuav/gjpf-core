@@ -87,10 +87,10 @@ public class MultiProcessesVM extends VM {
 
   protected void registerStartupClasses() {
     for(SystemClassLoaderInfo cl: systemClassLoaders) {
-      // temporarily cache the systemClassLoader
-      systemClassLoader = cl;
+      // temporarily cache the systemClassLoader & currentThread
+      setCache(cl);
       cl.registerStartupClasses(this);
-      systemClassLoader = null;
+      resetCache();
     }
   }
 
@@ -114,10 +114,10 @@ public class MultiProcessesVM extends VM {
 
   protected void initMainThreads() {
     for(SystemClassLoaderInfo cl: systemClassLoaders) {
-      // temporarily cache the systemClassLoader
-      systemClassLoader = cl;
+      // temporarily cache the systemClassLoader & currentThread
+      setCache(cl);
       cl.initMainThread();
-      systemClassLoader = null;
+      resetCache();
     }
   }
 
@@ -141,10 +141,7 @@ public class MultiProcessesVM extends VM {
 
   protected void registerThreadListCleanup() {
     for(SystemClassLoaderInfo cl: systemClassLoaders) {
-      // temporarily cache the systemClassLoader
-      systemClassLoader = cl;
       cl.registerThreadListCleanup();
-      systemClassLoader = null;
     }
   }
 
@@ -155,8 +152,6 @@ public class MultiProcessesVM extends VM {
     if (!checkTergetClassNames()) {
       return false;
     }
-
-    ThreadInfo.currentThread = systemClassLoaders[0].getMainThread();
 
     // from here, we get into some bootstrapping process
     //  - first, we have to load class structures (fields, supers, interfaces..)
@@ -221,10 +216,21 @@ public class MultiProcessesVM extends VM {
       }
     }
 
+    setCache(systemClassLoaders[0]);
     initialized = true;
     notifyVMInitialized();
 
     return true;
+  }
+
+  protected void setCache(SystemClassLoaderInfo cl) {
+    systemClassLoader = cl;
+    ThreadInfo.currentThread = cl.getMainThread();
+  }
+
+  protected void resetCache() {
+    systemClassLoader = null;
+    ThreadInfo.currentThread = null;
   }
 
   @Override
