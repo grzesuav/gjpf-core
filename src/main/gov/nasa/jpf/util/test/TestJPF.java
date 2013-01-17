@@ -110,7 +110,14 @@ public abstract class TestJPF implements JPFShell  {
       if (testKeys.length > 0){
         for (String key : testKeys){
           String val = globalConf.getString(key);
+          // <2do> this is a hack to avoid the problem of not being able to store
+          // empty/nil/null values in the global config (they are removed during global config init)
+          if (val.equals("REMOVE")){
+            val = null;
+          }
+          
           key = key.substring(5);
+          
           list.add(new GlobalArg(key,val));
         }
       }
@@ -624,7 +631,11 @@ public abstract class TestJPF implements JPFShell  {
       for (GlobalArg ga : globalArgs) {
         String key = ga.key;
         String val = ga.val;
-        conf.put(key, val);
+        if (val != null){
+          conf.put(key, val);
+        } else {
+          conf.remove(key);
+        }
       }
     }
 

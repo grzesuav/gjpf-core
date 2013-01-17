@@ -116,10 +116,10 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
 
     if (node == sourceNode) {
       // takes care of old staging node parent of new staging node, in which
-      // case we can do
-      // the merge on-the-fly (in descending branch of recursion)
+      // case we can do the merge on-the-fly (in descending branch of recursion)
       node = stagingNode;
       result.merged = true;
+System.out.println("@@@@@@@ AGHH: " + key);
     }
 
     return super.assoc(shift, finalShift, key, value, node, result);
@@ -160,6 +160,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   }
 
   boolean isStagingHit (int key, int fsh) {
+/**/
     int sb = 0;
     if (stagingBase != -1) {
       
@@ -179,6 +180,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
     }
 
     return false;
+/**/
   }
   
   @Override
@@ -187,6 +189,8 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
     int k = (key >>> fsh);
     result.clear();
 
+System.out.print( "@@ set "); printKeyBlocks( key); System.out.println(" @@      => " + value);
+    
     if (isStagingHit(key, fsh)) { // stagingNode hit (this should be the statistically dominant case)
       int levelIdx = k & 0x1f;
       Node<V> newStagingNode = setStageNodeValue(stagingNode, levelIdx, value,
@@ -201,7 +205,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
           newSource = sourceNode;
         }
         return new PersistentStagingMsbIntMap<V>(size + result.changeCount,
-            newRoot, rootShift, newStagingNode, stagingBase, newSource);
+                                                 newRoot, rootShift, newStagingNode, stagingBase, newSource);
       } else { // it was already there
         return this;
       }
@@ -213,15 +217,13 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
         Node<V> newRoot = createNode(ish, fsh, key, value, null, result);
         Node<V> newStagingNode = result.valueNode;
         int newStagingBase = key | (0x1f << fsh);
-        return new PersistentStagingMsbIntMap<V>(1, newRoot, ish,
-            newStagingNode, newStagingBase, newStagingNode);
+        return new PersistentStagingMsbIntMap<V>(1, newRoot, ish, newStagingNode, newStagingBase, newStagingNode);
 
       } else { // set new & merge old stagingNode
         Node<V> newRoot;
         int newRootShift;
 
-        if (ish <= rootShift) { // new key can be added to current root (key
-                                // smaller than previous ones)
+        if (ish <= rootShift) { // new key can be added to current root (key smaller than previous max)
           newRoot = assoc(rootShift, fsh, key, value, root, result);
           newRootShift = rootShift;
 
@@ -257,9 +259,9 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
 
   public V get(int key) {
     int fsh = getLsbShift(key);
-
-    int k = (key >>> fsh);
+    
     if (isStagingHit(key, fsh)) { // we have a staging hit
+//System.out.println("@@    hit " + key);
       fsh = getLsbShift(stagingBase);
       int idx = (key >>> fsh) & 0x1f;      
       Object o = stagingNode.getElement(idx);
@@ -430,8 +432,7 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   }
 
   @Override
-  protected Node<V> removeAllSatisfying(Node<V> node, Predicate<V> pred,
-      Result<V> result) {
+  protected Node<V> removeAllSatisfying (Node<V> node, Predicate<V> pred, Result<V> result) {
     if (node == sourceNode) {
       node = stagingNode;
     }
@@ -440,16 +441,17 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
   }
 
   @Override
-  public PersistentStagingMsbIntMap<V> removeAllSatisfying(
-      Predicate<V> predicate, Result<V> result) {
+  public PersistentStagingMsbIntMap<V> removeAllSatisfying (Predicate<V> predicate, Result<V> result) {
     if (root != null) {
       result.clear();
-      Node<V> newRoot = (Node<V>) root.removeAllSatisfying(this, predicate,
-          result);
-
-      // this always merges the stagingNode
-      return new PersistentStagingMsbIntMap<V>(size + result.getSizeChange(),
-          newRoot, rootShift, null, -1, null);
+      Node<V> newRoot = (Node<V>) root.removeAllSatisfying(this, predicate, result);
+      if (root != newRoot){
+        // stagingNode got merged in
+        return new PersistentStagingMsbIntMap<V>(size + result.getSizeChange(),
+                      newRoot, rootShift, null, -1, null);
+      } else {
+        return this;
+      }
 
     } else {
       return this;
