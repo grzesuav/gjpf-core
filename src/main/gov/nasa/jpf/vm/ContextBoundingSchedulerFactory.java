@@ -99,8 +99,8 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
     return (isPossibleToPreempt && numOfPreemptions >= maxNumOfPreemptions) ? new ThreadInfo[] { currentThread } : list;
   }
 
-  protected ChoiceGenerator<ThreadInfo> getRunnableCG(String id) {
-    ThreadInfo[] choices = getRunnablesIfChoices();
+  protected ChoiceGenerator<ThreadInfo> getRunnableCG(String id, ThreadInfo ti) {
+    ThreadInfo[] choices = getRunnablesIfChoices(ti);
     if (choices != null) {
       return createContextBoundingThreadChoiceFromSet(id, choices, true);
     } else {
@@ -115,7 +115,7 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
         ss.setBlockedInAtomicSection();
       }
 
-      return createContextBoundingThreadChoiceFromSet("monitorEnter", getRunnables(), true);
+      return createContextBoundingThreadChoiceFromSet("monitorEnter", getRunnables(ti), true);
 
     } else {
       if (ss.isAtomic()) {
@@ -132,7 +132,7 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
       ss.setBlockedInAtomicSection();
     }
 
-    return createContextBoundingThreadChoiceFromSet("wait",getRunnables(), true);
+    return createContextBoundingThreadChoiceFromSet("wait",getRunnables(ti), true);
   }
 
   public ChoiceGenerator<ThreadInfo> createNotifyCG(ElementInfo ei,

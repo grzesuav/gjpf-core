@@ -75,7 +75,7 @@ public class PrioritySchedulerFactory extends DefaultSchedulerFactory {
       return null;
     }
     
-    return new ThreadChoiceFromSet("start",getRunnables(), true);
+    return new ThreadChoiceFromSet("start",getRunnables(newThread), true);
   }
   
   public ChoiceGenerator<ThreadInfo> createMonitorExitCG (ElementInfo ei, ThreadInfo ti) {
@@ -83,7 +83,7 @@ public class PrioritySchedulerFactory extends DefaultSchedulerFactory {
       return null;
     }
     
-    return new ThreadChoiceFromSet("monitorExit",getRunnables(), true);
+    return new ThreadChoiceFromSet("monitorExit",getRunnables(ti), true);
   }
 
 }

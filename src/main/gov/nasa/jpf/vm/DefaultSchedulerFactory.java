@@ -67,8 +67,8 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     return list;
   }
 
-  protected ChoiceGenerator<ThreadInfo> getRunnableCG (String id) {
-    ThreadInfo[] choices = getRunnablesIfChoices();
+  protected ChoiceGenerator<ThreadInfo> getRunnableCG (String id, ThreadInfo ti) {
+    ThreadInfo[] choices = getRunnablesIfChoices(ti);
     if (choices != null) {
       return new ThreadChoiceFromSet( id, choices, true);
     } else {
@@ -77,7 +77,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   }
 
   protected ChoiceGenerator<ThreadInfo> getSyncCG (String id, ElementInfo ei, ThreadInfo ti) {
-    return getRunnableCG(id);
+    return getRunnableCG(id, ti);
   }
 
 
@@ -86,7 +86,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   /**
    * get list of all runnable threads
    */
-  protected ThreadInfo[] getRunnables() {
+  protected ThreadInfo[] getRunnables(ThreadInfo ti) {
     ThreadList tl = vm.getThreadList();
     return filter(tl.getRunnableThreads());
   }
@@ -94,7 +94,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   /**
    * return a list of runnable choices, or null if there is only one
    */
-  protected ThreadInfo[] getRunnablesIfChoices() {
+  protected ThreadInfo[] getRunnablesIfChoices(ThreadInfo ti) {
     ThreadList tl = vm.getThreadList();
     int n = tl.getRunnableThreadCount();
 
@@ -124,7 +124,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
         ss.setBlockedInAtomicSection();
       }
 
-      return new ThreadChoiceFromSet( id, getRunnables(), true);
+      return new ThreadChoiceFromSet( id, getRunnables(ti), true);
 
     } else {
       if (ss.isAtomic()) {
@@ -170,7 +170,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       ss.setBlockedInAtomicSection();
     }
 
-    return new ThreadChoiceFromSet( WAIT, getRunnables(), true);
+    return new ThreadChoiceFromSet( WAIT, getRunnables(ti), true);
   }
 
   public ChoiceGenerator<ThreadInfo> createNotifyCG (ElementInfo ei, ThreadInfo ti) {
@@ -215,12 +215,12 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       ss.setBlockedInAtomicSection();
     }
 
-    return new ThreadChoiceFromSet( PARK, getRunnables(), true);
+    return new ThreadChoiceFromSet( PARK, getRunnables(tiPark), true);
   }
   
   public ChoiceGenerator<ThreadInfo> createUnparkCG (ThreadInfo tiUnparked) {
     // note that tiUnparked is already runnable at this point
-    return getRunnableCG( UNPARK);
+    return getRunnableCG( UNPARK, tiUnparked);
   }
   
   public ChoiceGenerator<ThreadInfo> createSharedArrayAccessCG (ElementInfo ei, ThreadInfo ti) {
@@ -293,7 +293,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
         // we might loose paths (Thread.start() will warn about it)
         return null;
       }
-      return getRunnableCG( THREAD_START);
+      return getRunnableCG( THREAD_START, newThread);
 
     } else {
       return null;
@@ -301,11 +301,11 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   }
 
   public ChoiceGenerator<ThreadInfo> createBeginAtomicCG (ThreadInfo atomicThread) {
-    return getRunnableCG( BEGIN_ATOMIC);
+    return getRunnableCG( BEGIN_ATOMIC, atomicThread);
   }
 
   public ChoiceGenerator<ThreadInfo> createEndAtomicCG (ThreadInfo atomicThread) {
-    return getRunnableCG( END_ATOMIC);
+    return getRunnableCG( END_ATOMIC, atomicThread);
   }
 
 
@@ -314,7 +314,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       if (ss.isAtomic()) {
         return null;
       }
-      return getRunnableCG( THREAD_YIELD);
+      return getRunnableCG( THREAD_YIELD, yieldThread);
 
     } else {
       return null;
@@ -326,7 +326,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       return null;
     }
 
-    return getRunnableCG( THREAD_INTERRUPT);
+    return getRunnableCG( THREAD_INTERRUPT, interruptedThread);
   }
 
   public ChoiceGenerator<ThreadInfo> createThreadSleepCG (ThreadInfo sleepThread, long millis, int nanos) {
@@ -336,7 +336,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       }
 
       // we treat this as a simple reschedule
-      return getRunnableCG( THREAD_SLEEP);
+      return getRunnableCG( THREAD_SLEEP, sleepThread);
 
     } else {
       return null;
@@ -357,15 +357,15 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     }
   }
 
-  public ChoiceGenerator<ThreadInfo> createThreadSuspendCG () {
-    return getRunnableCG( THREAD_SUSPEND);
+  public ChoiceGenerator<ThreadInfo> createThreadSuspendCG (ThreadInfo suspendedThread) {
+    return getRunnableCG( THREAD_SUSPEND, suspendedThread);
   }
 
-  public ChoiceGenerator<ThreadInfo> createThreadResumeCG () {
-    return getRunnableCG( THREAD_RESUME);
+  public ChoiceGenerator<ThreadInfo> createThreadResumeCG (ThreadInfo resumedThread) {
+    return getRunnableCG( THREAD_RESUME, resumedThread);
   }
 
-  public ChoiceGenerator<ThreadInfo> createThreadStopCG () {
+  public ChoiceGenerator<ThreadInfo> createThreadStopCG (ThreadInfo stoppedThread) {
     return null; // left mover, there will be still a terminateCG
     //return getRunnableCG( THREAD_STOP);
   }

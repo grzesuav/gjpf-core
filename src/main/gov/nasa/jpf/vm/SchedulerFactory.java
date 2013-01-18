@@ -94,15 +94,15 @@ public interface SchedulerFactory {
 
   /** used by Thread.suspend() */
   public static final String THREAD_SUSPEND = "THREAD_SUSPEND";
-  ChoiceGenerator<ThreadInfo> createThreadSuspendCG ();
+  ChoiceGenerator<ThreadInfo> createThreadSuspendCG (ThreadInfo suspendedThread);
 
   /** used by Thread.resume() */
   public static final String THREAD_RESUME = "THREAD_RESUME";
-  ChoiceGenerator<ThreadInfo> createThreadResumeCG ();
+  ChoiceGenerator<ThreadInfo> createThreadResumeCG (ThreadInfo resumedThread);
 
   /** used by Thread.stop() */
   public static final String THREAD_STOP = "THREAD_STOP";
-  ChoiceGenerator<ThreadInfo> createThreadStopCG ();
+  ChoiceGenerator<ThreadInfo> createThreadStopCG (ThreadInfo stoppedThread);
 
   /** used by Verify.beginAtomic() */
   public static final String BEGIN_ATOMIC = "BEGIN_ATOMIC";

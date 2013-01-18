@@ -280,7 +280,7 @@ public class JPF_java_lang_Thread extends NativePeer {
 
     if (!currentThread.isFirstStepInsn()) {
       if (target.suspend()){
-        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG();
+        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG(currentThread);
         if (ss.setNextChoiceGenerator(cg)) {
           env.repeatInvocation();
           return;
@@ -306,7 +306,7 @@ public class JPF_java_lang_Thread extends NativePeer {
 
     if (!currentThread.isFirstStepInsn()) {
       if (target.resume()){
-        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG();
+        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG(currentThread);
         if (ss.setNextChoiceGenerator(cg)) {
           env.repeatInvocation();
           return;
@@ -468,7 +468,7 @@ public class JPF_java_lang_Thread extends NativePeer {
       // rethrowing), we might turn this into a right mover since it terminates tiStop
 
       SystemState ss = env.getSystemState();
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStopCG();
+      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStopCG(tiCurrent);
       if (ss.setNextChoiceGenerator(cg)) {
         env.repeatInvocation();
         return;
