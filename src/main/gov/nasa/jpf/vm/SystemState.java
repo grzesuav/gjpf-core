@@ -872,10 +872,6 @@ public class SystemState {
     }
   }
 
-  public boolean isEndState () {
-    return ks.isTerminated();
-  }
-
   // the three primitive ops used from within VM.forward()
 
 

@@ -160,18 +160,6 @@ public class KernelState implements Restorable<KernelState> {
     return threads.isDeadlocked();
   }
 
-  /**
-   * The program is terminated if there are no alive threads, and there is no nonDaemon left.
-   * 
-   * NOTE - this is only approximated in real life. Daemon threads can still run for a few cycles
-   * after the last non-daemon died, which opens an interesting source of errors we
-   * actually might want to check for
-   */
-  public boolean isTerminated () {
-    //return !threads.anyAliveThread();
-    return !threads.hasMoreThreadsToRun();
-  }
-
   public int getThreadCount () {
     return threads.length();
   }

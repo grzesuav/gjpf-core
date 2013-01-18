@@ -1508,10 +1508,6 @@ public abstract class VM {
     return ss.isDeadlocked();
   }
 
-  public boolean isTerminated () {
-    return ss.ks.isTerminated();
-  }
-
   public Exception getException () {
     return ss.getUncaughtException();
   }

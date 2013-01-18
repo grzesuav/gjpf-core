@@ -157,10 +157,17 @@ public class SingleProcessVM extends VM {
     return ciMain.getSourceFileName();
   }
 
+  /**
+   * The program is terminated if there are no alive threads, and there is no nonDaemon left.
+   * 
+   * NOTE - this is only approximated in real life. Daemon threads can still run for a few cycles
+   * after the last non-daemon died, which opens an interesting source of errors we
+   * actually might want to check for
+   */
   @Override
   public boolean isEndState () {
     // note this uses 'alive', not 'runnable', hence isEndStateProperty won't
     // catch deadlocks - but that would be NoDeadlockProperty anyway
-    return ss.isEndState();
+    return !getThreadList().hasMoreThreadsToRun();
   }
 }
