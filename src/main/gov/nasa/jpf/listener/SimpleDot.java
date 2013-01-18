@@ -54,6 +54,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.HashSet;
 
 /**
@@ -107,6 +108,7 @@ public class SimpleDot extends ListenerAdapter {
   protected PrintWriter pw;
 
   protected int lastId = -1;    // where we come from
+  protected String lastErrorId;
   protected ElementInfo lastEi;
   protected ThreadInfo lastTi;  // the last started thread
 
@@ -177,6 +179,7 @@ public class SimpleDot extends ListenerAdapter {
       String eid = "e" + search.getNumberOfErrors();
       printTransition(getStateId(lastId), eid, getLastChoice(), getError(search));
       printErrorState(eid);
+      lastErrorId = eid;
 
     } else if (search.isNewState()) {
 
@@ -201,7 +204,12 @@ public class SimpleDot extends ListenerAdapter {
     long edgeId = ((long)lastId << 32) | id;
 
     if (!seenEdges.contains(edgeId)) {
-      printBacktrack(getStateId(lastId), getStateId(id));
+      if(lastErrorId!=null) {
+        printBacktrack(lastErrorId, getStateId(id));
+        lastErrorId = null;
+      } else {
+        printBacktrack(getStateId(lastId), getStateId(id));
+      }
       seenEdges.add(edgeId);
     }
     lastId = id;
