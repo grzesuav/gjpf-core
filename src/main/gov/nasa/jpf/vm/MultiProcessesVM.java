@@ -286,4 +286,11 @@ public class MultiProcessesVM extends VM {
 
     return SuT;
   }
+
+  @Override
+  public boolean isEndState () {
+    // note this uses 'alive', not 'runnable', hence isEndStateProperty won't
+    // catch deadlocks - but that would be NoDeadlockProperty anyway
+    return ss.isEndState();
+  }
 }

@@ -1476,11 +1476,13 @@ public abstract class VM {
     }
   }
 
-  public boolean isEndState () {
-    // note this uses 'alive', not 'runnable', hence isEndStateProperty won't
-    // catch deadlocks - but that would be NoDeadlockProperty anyway
-    return ss.isEndState();
-  }
+  /**
+   * We made this to be overriden by Single/MultiprcessesVM implementations,
+   * since for MultiprcessesVM one can decide when to terminate (after the
+   * the termination of all processes or only one process).
+   * todo - that needs to be specified through the properties file
+   */
+  public abstract boolean isEndState ();
 
   public boolean isVisitedState(){
     return !isNewState();

@@ -156,4 +156,11 @@ public class SingleProcessVM extends VM {
     ClassInfo ciMain = systemClassLoader.getMainClassInfo();
     return ciMain.getSourceFileName();
   }
+
+  @Override
+  public boolean isEndState () {
+    // note this uses 'alive', not 'runnable', hence isEndStateProperty won't
+    // catch deadlocks - but that would be NoDeadlockProperty anyway
+    return ss.isEndState();
+  }
 }
