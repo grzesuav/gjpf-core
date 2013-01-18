@@ -2115,6 +2115,44 @@ public class ThreadInfo
     }
   }
 
+  /** 
+   * it looks all the way up into the thread group hierarchy until it gets 
+   * to the main group which is the only group without any parents
+   */
+  protected int getMainGroupRef() {
+    int grpRef = getThreadGroupRef();
+    int mainGrpRef = -1;
+    ElementInfo grp = vm.getElementInfo(grpRef);
+    
+    while(grp != null) {
+      mainGrpRef = grpRef;
+      // set grp to the parent of prg
+      grpRef = grp.getReferenceField("parent");
+      grp = vm.getElementInfo(grpRef);
+    }
+
+    return mainGrpRef;
+  }
+
+  /** 
+   * it looks all the way up into the thread group hierarchy to see if
+   * the thread belongs to the given group
+   */
+  protected boolean belongsToGroup(int grp) {
+    int grpRef = getThreadGroupRef();
+    ElementInfo ei = vm.getElementInfo(grpRef);
+    
+    while(ei != null) {
+      if(grp == grpRef) {
+        return true;
+      }
+      // set thGrp to the parent of the group represented by ei
+      grpRef = ei.getReferenceField("parent");
+      ei = vm.getElementInfo(grpRef);
+    }
+
+    return false;
+  }
 
   /**
    * this is called upon ThreadInfo.exit(), i.e. the Thread object can be still
