@@ -1148,10 +1148,6 @@ public abstract class ElementInfo implements Cloneable {
     }
   }
 
-
-  abstract ElementInfo getReferencedElementInfo (FieldInfo fi);
-
-
   protected void checkArray(int index) {
     if (fields instanceof ArrayFields) { // <2do> should check for !long array
       if ((index < 0) || (index >= ((ArrayFields)fields).arrayLength())) {

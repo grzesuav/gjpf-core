@@ -10,6 +10,11 @@ import java.util.HashSet;
  * Marks static final field of primitive or known immutable type to be
  * filtered.  In theory, these could be critical to state, but that would
  * be highly irregular.
+ * 
+ * NOTE - final does not really mean constant, so we only ignore fields
+ * here that are initialized from lexical constants, i.e. a constpool entry.
+ * Others might involve data choice generators
+ * 
  * <br><br>
  * Ignoring constants probably isn't beneficial with the FilteringSerializer
  * but could be a big win with AbstractingSerializer, which garbage-collects
@@ -35,7 +40,7 @@ public class IgnoreConstants implements StaticAmmendment {
   
   public boolean ammendFieldInclusion(FieldInfo fi, boolean sofar) {
     assert fi.isStatic();
-    if (fi.isFinal()) {
+    if (fi.isFinal() && fi.getConstantValue() != null) {
       if (knownImmutables.contains(fi.getType())) {
         return POLICY_IGNORE; 
       }

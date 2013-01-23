@@ -41,15 +41,15 @@ import gov.nasa.jpf.util.Transformer;
  * The concrete Heap implementors have to provide the ElementInfo collection
  * and associated getters, allocators and iterators
  */
-public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
+public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   
-  static abstract class GenericHeapImplMemento implements Memento<Heap> {
+  static abstract class GenericHeapMemento implements Memento<Heap> {
     // those can be simply copied
     int attributes;
     IntVector pinDownList;
     IntTable<String> internStrings;
     
-    protected GenericHeapImplMemento (GenericHeapImpl heap){
+    protected GenericHeapMemento (GenericHeap heap){
       // these are copy-on-first-write, so we don't have to clone
       pinDownList = heap.pinDownList;
       internStrings = heap.internStrings;
@@ -60,7 +60,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
     
     @Override
     public Heap restore (Heap inSitu) {
-      GenericHeapImpl heap = (GenericHeapImpl) inSitu;
+      GenericHeap heap = (GenericHeap) inSitu;
       heap.pinDownList = pinDownList;
       heap.internStrings = internStrings;
       heap.attributes = attributes;
@@ -72,7 +72,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   
   protected class ElementInfoMarker implements Processor<ElementInfo>{
     public void process (ElementInfo ei) {
-      ei.markRecursive( GenericHeapImpl.this); // this might in turn call queueMark
+      ei.markRecursive( GenericHeap.this); // this might in turn call queueMark
     }
   }
   
@@ -119,7 +119,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   
   //--- constructors
 
-  public GenericHeapImpl (Config config, KernelState ks){
+  public GenericHeap (Config config, KernelState ks){
     vm = VM.getVM();
 
     pinDownList = new IntVector(256);
@@ -453,7 +453,7 @@ public abstract class GenericHeapImpl implements Heap, Iterable<ElementInfo> {
   //--- abstract accessors
 
   /*
-   * these methods abstract away the container type used in GenericHeapImpl subclasses
+   * these methods abstract away the container type used in GenericHeap subclasses
    */
   
   /**

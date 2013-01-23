@@ -608,6 +608,29 @@ public class Types {
       }
   }
 
+  public static String getBoxedType (byte type) {
+	  switch (type) {
+	  case Types.T_BOOLEAN:
+		  return "Boolean";
+	  case Types.T_BYTE:
+		  return "Byte";
+	  case Types.T_CHAR:
+		  return "Character";
+	  case Types.T_SHORT:
+		  return "Short";
+	  case Types.T_INT:
+		  return "Integer";
+	  case Types.T_LONG:
+		  return "Long";
+	  case Types.T_FLOAT:
+		  return "Float";
+	  case Types.T_DOUBLE:
+		  return "Double";
+	  default:
+		  return null;
+	  }
+  }
+  
   public static byte getUnboxedType (String typeName){
     if (typeName.startsWith("java.lang.")){
       typeName = typeName.substring(10);

@@ -79,11 +79,6 @@ public class DynamicElementInfo extends ElementInfo {
     return getClassInfo().getInstanceField(fieldIndex);
   }
 
-  public ElementInfo getReferencedElementInfo (FieldInfo fi) {
-    assert fi.isReference();
-    return VM.getVM().getHeap().get(getIntField(fi));
-  }
-
   public FieldInfo getFieldInfo (String fname) {
     return getClassInfo().getInstanceField(fname);
   }
@@ -94,7 +89,8 @@ public class DynamicElementInfo extends ElementInfo {
   public ElementInfo getEnclosingElementInfo(){
     for (FieldInfo fi : getClassInfo().getDeclaredInstanceFields()){
       if (fi.getName().startsWith("this$")){
-        return getReferencedElementInfo(fi);
+        int objref = getReferenceField(fi);
+        return VM.getVM().getElementInfo(objref);
       }
     }
     return null;

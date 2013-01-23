@@ -38,7 +38,7 @@ public class TestJPFHelper {
       try {
         Class<?> cls = Class.forName(args[0]);
         args = Misc.arrayWithoutFirst(args, 1);
-
+        
         if (!Reflection.tryCallMain(cls,args)){
           runWithoutMain(cls,args);
         }

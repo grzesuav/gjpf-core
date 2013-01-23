@@ -30,19 +30,19 @@ import gov.nasa.jpf.util.ObjVector;
  * The ids used to retrieve ElementInfos are dense and search global, computation is based 
  * on the assumption that each ClassLoader can only define one class per binary class name
  */
-public class ObjVectorStatics implements Statics {
+public class OVStatics implements Statics {
 
   static class OVMemento implements Memento<Statics> {
     ObjVector.Snapshot<ElementInfo> eiSnap;
     
-    OVMemento (ObjVectorStatics statics){
+    OVMemento (OVStatics statics){
       statics.elementInfos.process( ElementInfo.storer);
       eiSnap = statics.elementInfos.getSnapshot();
     }
     
     @Override
     public Statics restore(Statics inSitu) {
-      ObjVectorStatics statics = (ObjVectorStatics) inSitu;
+      OVStatics statics = (OVStatics) inSitu;
       statics.elementInfos.restore(eiSnap);
       statics.elementInfos.process( ElementInfo.restorer);
       
@@ -61,7 +61,7 @@ public class ObjVectorStatics implements Statics {
   
   //--- construction
   
-  public ObjVectorStatics (Config conf) {
+  public OVStatics (Config conf) {
     elementInfos = new ObjVector<ElementInfo>();
     
     nextId = 0;

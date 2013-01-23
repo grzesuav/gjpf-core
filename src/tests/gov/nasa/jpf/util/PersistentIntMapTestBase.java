@@ -222,6 +222,37 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
   }
       
   @Test
+  public void testIterator() {
+    PersistentIntMap<Integer> t = createPersistentIntMap();
+    
+    //--- empty map test
+    System.out.println("check empty map iterator");
+    for (Integer v : t) {
+      fail("map should be empty");
+    }
+    
+    //--- populate a dense map
+    int max = 446; //100;
+    for (int i=0; i<max; i++) {
+      t = t.set(i, Integer.valueOf(i));
+    }
+
+    //--- check for the right number of entries 
+    System.out.println("check map with size: " + max);
+    int n=0;
+    for (Integer v : t) {
+      n++;
+      if (n > 0) {
+        System.out.print(',');
+      }
+      System.out.print(v);
+    }
+    System.out.println();
+    assertTrue( n == max);
+    
+  }
+  
+  @Test
   public void testLargeTable() {
     long t1, t2;
     int N = 40000; // table size
@@ -391,6 +422,30 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
   }
   
 
+  public void test3457() {
+    PersistentIntMap<Integer> t = createPersistentIntMap();
+    t = t.set(0, 0);
+    t = t.set(3456, 3456);
+    t = t.set(3457, 3457);
+    t = t.set(3458, 3458);
+    System.out.println("3457: " + t.get(3457));
+
+    t.printOn(System.out);
+    
+    t = t.remove(3456);
+    //t = t.remove(3458);
+    
+    t = t.removeAllSatisfying(new Predicate<Integer>() {
+      public boolean isTrue(Integer i) {
+        return (i == 3458);
+      }
+    });
+    
+    t.printOn(System.out);
+    System.out.println("3457: " + t.get(3457));
+  }
+  
+
   final static int NSTATES = 20000;
   final static int NOBJECTS = 2000;
   final static int NGC = 400;
@@ -487,6 +542,24 @@ public abstract class PersistentIntMapTestBase extends TestJPF {
     t2 = System.currentTimeMillis();
     System.out.println("ObjVector (" + NSTATES + " cycles): " + (t2 - t1));
 
+  }
+
+  //--- debugging helpers
+  static PersistentIntMap<Integer> addRemove (PersistentIntMap<Integer> t, int[] keys){
+    for (int i = 0; i<keys.length; i++){
+      int k = keys[i];
+      if (k < 0){
+        t = t.remove( -k);
+      } else {
+        t = t.set( k, Integer.valueOf(k));
+      }
+    }
+    
+    return t;
+  }
+  
+  static PersistentIntMap<Integer> set (PersistentIntMap<Integer> t, int i){
+    return t.set(i, Integer.valueOf(i));
   }
 
 }

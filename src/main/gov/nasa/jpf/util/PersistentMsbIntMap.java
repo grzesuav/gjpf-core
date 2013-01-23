@@ -22,9 +22,45 @@ package gov.nasa.jpf.util;
 import java.io.PrintStream;
 
 /**
- * an immutable Vector that is implemented as a bitwise trie with 32-element nodes. Trie levels are
- * ordered in most significant bit order on top, so that consecutive key values are stored in the
- * same (terminal) nodes.
+ * an immutable int->object map that is implemented as a bitwise trie with 32-element nodes. Trie levels are
+ * ordered in most significant key bit on top so that consecutive key values are stored in the
+ * same (terminal) node.
+ * 
+ * Since the key is broken up into bit blocks from the left, the trie is not automatically minimal height
+ * (like the PersistentLsbIntMap) - trailing 0-blocks are not stored as nodes but are collapsed into
+ * the last non-0-block node, e.g.
+ * 
+ *   k=1216,V : 0.0.0.0.1.6.0.
+ *                       | |
+ *            initialShift | (10)
+ *                finalShift  (5)
+ *              
+ * assuming a rootShift (=largest left-most key block) of 15 (e.g. because of a previous
+ * key value of 98306 :  0.0.0.0.3.0.0.2. ), this would be stored as 
+ *   
+ *              0                    shift
+ *     [.. ..r..r]                    15  (rootShift)
+ *              |   1
+ *           [.. ...r.]               10
+ *                  |  6
+ *               [.. ..V.....]         5
+ *               
+ *  The downside is that the same key can now be mapped into different shift levels, depending on
+ *  previous entries. Assume for instance there was a previous entry of
+ *  
+ *    k=1221,X : 0.0.0.0.1.6.5.
+ *    
+ *  This would mean the same entry (k=1216,V) is now stored at shift level 0
+ *  
+ *              0                    shift
+ *     [.. ..r..r]                    15  (rootShift)
+ *              |   1
+ *           [.. ...r.]               10
+ *                  |  6
+ *               [.. ..r.....]         5
+ *                   5 |  0
+ *              [.. .X....V]           0
+ *              
  */
 public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   
@@ -33,6 +69,8 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   static <V> Node<V> createNode (int shift, int finalShift, int key, V value, V nodeValue, Result<V> result){
     int idx = ((key>>>shift) & 0x01f);
     Node<V> node;
+    
+    result.valueNodeLevel++;
     
     if (shift == finalShift) {
       if (nodeValue != null) {
@@ -88,8 +126,11 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
   
   //--- instance fields
   
-  // for msb first mode, we keep track of the initial shift to save cloning empty top nodes
-  // (minimize trie height)
+  /*
+   *  for msb first mode, we keep track of the initial shift to save cloning empty top nodes
+   * (minimize trie height). This is especially effective for consecutive keys with a low
+   * max key value (e.g. [0..31] changes only require a single node) 
+   */
   final protected int rootShift;
   
   
@@ -307,4 +348,20 @@ public class PersistentMsbIntMap<V> extends PersistentIntMap<V> {
     }
   }  
 
+  //--- debugging
+  void printKeyBlocks(int key) {
+    int ish = getMsbShift(key);
+    int fsh = getLsbShift(key);
+    
+    System.out.print("key=" + key + " (ish=" + ish + ",fsh=" + fsh + ") : ");    
+    
+    for (int shift=ish; shift>=0; shift-=5) {
+      System.out.print((key>>shift) & 0x1f);
+      if (shift > 0) {
+        System.out.print('.');
+      }
+    }
+    
+    System.out.println();
+  }
 }

@@ -140,7 +140,6 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
               // this is a potential exposure point, re-execute AFTER having done the assignment,
               // but BEFORE popping the operand stack
               if (createAndSetSharedObjectExposureCG(eiFieldValue, ti)) {
-                //System.out.println("@@ possible exposure of " + eiFieldValue + " from " + getFileLocation());
                 return this;
               }
             }

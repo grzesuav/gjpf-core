@@ -21,6 +21,7 @@ package gov.nasa.jpf.util;
 
 import java.io.PrintStream;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * Persistent (immutable) associative array that maps integer keys to generic objects.
@@ -130,7 +131,7 @@ import java.util.Iterator;
  * true for remove operations</i>
  *  
  */
-public abstract class PersistentIntMap<V> {
+public abstract class PersistentIntMap<V> implements Iterable<V> {
   
   /**
    * Abstract root class for all node types. This type needs to be internal, no instances
@@ -194,8 +195,16 @@ public abstract class PersistentIntMap<V> {
      */
     protected abstract Node<V> removeAllSatisfying(PersistentIntMap<V> map, Predicate<V> pred, Result<V> result);
     
-    
+    /**
+     * iterator free processing
+     */
     protected abstract void process (PersistentIntMap<V> map, Processor<V> proc);
+    
+    /*
+     * those are only for internal implementation of iterators
+     */
+    protected abstract int getNumberOfNodesOrValues();
+    protected abstract Object getNodeOrValue (int i);
     
     protected abstract V getNodeValue();
     
@@ -342,6 +351,15 @@ public abstract class PersistentIntMap<V> {
       } else {
         proc.process((V)nodeOrValue);
       }
+    }
+    
+    protected int getNumberOfNodesOrValues() {
+      return 1;
+    }
+    
+    protected Object getNodeOrValue (int idx) {
+      assert idx == 0;
+      return nodeOrValue;
     }
     
     public void printOn (PrintStream ps, int level) {
@@ -567,8 +585,10 @@ public abstract class PersistentIntMap<V> {
           return null;
           
         } else if (newLen == 1){ // reduce node
-          int idx = Integer.bitCount( bitmap & (newBitmap -1));
-          Object o=a[idx];
+          int i = Integer.bitCount( bitmap & (newBitmap -1));
+          Object o=a[i];
+          int idx = Integer.numberOfTrailingZeros(newBitmap);
+          
           return new OneNode<V>( idx, o);
           
         } else { // still a BitmapNode
@@ -595,6 +615,14 @@ public abstract class PersistentIntMap<V> {
           proc.process((V)o);
         }
       }
+    }
+    
+    protected int getNumberOfNodesOrValues() {
+      return nodesOrValues.length;
+    }
+    
+    protected Object getNodeOrValue (int idx) {
+      return nodesOrValues[idx];
     }
     
     public void printOn (PrintStream ps, int level) {
@@ -714,6 +742,14 @@ public abstract class PersistentIntMap<V> {
       }
     }
     
+    protected int getNumberOfNodesOrValues() {
+      return nodesOrValues.length;
+    }
+    
+    protected Object getNodeOrValue (int idx) {
+      return nodesOrValues[idx];
+    }
+    
     public Node<V> removeAllSatisfying (PersistentIntMap<V> map, Predicate<V> pred, Result<V> result){
       Object[] nv = nodesOrValues;
       Object[] a = null; // deferred initialized
@@ -800,6 +836,95 @@ public abstract class PersistentIntMap<V> {
     }
   }
 
+  /**
+   * this is less efficient than using map.process(processor), but required to use PersistentIntMaps in lieu of ordinary containers
+   * Since PersistentIntMaps are bounded recursive data structures, we have to model a stack explicitly, but at least we know it is
+   * not exceeding a depth of 6+1 (5 bit index blocks)
+   * 
+   * Note - there are no empty nodes. Each one has at least a single child node or value
+   */
+  protected class NodeIterator implements Iterator<V> {
+
+    Node<V> node;
+    int nodeIdx, maxNodeIdx;
+    
+    Node<V>[] parentNodeStack;
+    int[] parentIdxStack;
+    int top;
+    int nVisited, nTotal;
+    
+    
+    @SuppressWarnings("unchecked")
+    public NodeIterator (PersistentIntMap<V> map){
+      node = map.root;
+      if (node != null) {
+        maxNodeIdx = node.getNumberOfNodesOrValues();
+        
+        // nodeIdx = 0;
+        // nVisited = 0;
+        // top = 0;
+        
+        parentNodeStack = new Node[6];
+        parentIdxStack = new int[6];
+            
+        nTotal = map.size;
+      }
+    }
+    
+    @Override
+    public boolean hasNext() {
+      return nVisited < nTotal;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public V next() {
+      if (nVisited >= nTotal) {
+        throw new NoSuchElementException();
+      }
+      
+      int idx = nodeIdx;
+      Object nv = getNodeOrValue(node, idx);
+      
+      //--- descend
+      while (nv instanceof Node) {
+        parentNodeStack[top] = node; // push current node on stack
+        parentIdxStack[top] = idx;
+        top++;
+        
+        node = (Node<V>)nv;
+        idx = nodeIdx = 0;
+        maxNodeIdx = node.getNumberOfNodesOrValues();
+        
+        nv = node.getNodeOrValue(0);
+      }
+      
+      //--- a value, finally
+      nVisited++;
+      idx++;
+
+      if (idx == maxNodeIdx) { // done, no more child nodes/values for this node
+        while (top > 0) { // go up
+          top--;
+          node = parentNodeStack[top];
+          nodeIdx = ++parentIdxStack[top];
+          maxNodeIdx = node.getNumberOfNodesOrValues();
+          if (nodeIdx < maxNodeIdx) break;
+        }
+      } else {
+        nodeIdx = idx;
+      }
+
+      //assert (nVisited == nTotal) || (nodeIdx < maxNodeIdx);
+      return (V) nv;
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException("PersistentIntMap iterators don't support removal");
+    }
+    
+  }
   
   /**
    * Result objects hold the results of operations performed on a PersistentMap.
@@ -851,13 +976,13 @@ public abstract class PersistentIntMap<V> {
      * Ideally, these should be in PersistentStagingMsbIntMap, not here (see above)
      */
     protected Node<V> valueNode;
-    protected int valueNodeLevel;
+    protected int valueNodeLevel;  // distance from rootNode level downwards
     protected boolean merged;
     
     public void clear(){
       changeCount = 0;
       valueNode = null;
-      valueNodeLevel = -1;
+      valueNodeLevel = -1; // its incremented before traversal
       merged = false;
     }
     
@@ -1023,6 +1148,11 @@ public abstract class PersistentIntMap<V> {
     return size==0;
   }
   
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  public Iterator<V> iterator(){
+    return new NodeIterator(this);
+  }
+  
   protected Node<V> assocNodeValue (Node<V> node, V value, Result<V> result){
     Object o = node.getElement(0);
 
@@ -1082,6 +1212,11 @@ public abstract class PersistentIntMap<V> {
 
   protected void processNode (Node<V> node, Processor<V> processor) {
     node.process(this, processor);
+  }
+  
+  // only for internal iterator implementation
+  protected Object getNodeOrValue(Node<V> node, int idx) {
+    return node.getNodeOrValue(idx);
   }
   
   //--- public API methods
