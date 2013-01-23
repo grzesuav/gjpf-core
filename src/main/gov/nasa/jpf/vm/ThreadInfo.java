@@ -54,7 +54,7 @@ import java.util.logging.Logger;
  *
  * <2do> remove EXECUTENATIVE,INVOKESTATIC .bytecode dependencies
  */
-public class ThreadInfo
+public class ThreadInfo extends InfoObject
      implements Iterable<StackFrame>, Comparable<ThreadInfo>, Cloneable, Restorable<ThreadInfo> {
 
   static JPFLogger log = JPF.getLogger("gov.nasa.jpf.vm.ThreadInfo");
@@ -243,7 +243,6 @@ public class ThreadInfo
    * the reference of the object if this thread is blocked or waiting for
    */
   int lockRef = -1;
-
 
   Memento<ThreadInfo> cachedMemento; // cache for unchanged ThreadInfos
 
@@ -2070,8 +2069,11 @@ public class ThreadInfo
       // if this is the last non-daemon and there are only daemons left (which
       // would be killed by our termination) we have to give them a chance to
       // run BEFORE we terminate, to catch errors in those daemons we might have
-      // triggered in our last transition. In a way, this simulates preemption on
-      // non-CG insns within our last transition
+      // triggered in our last transition. Even if a daemon has a proper CG
+      // on the trigger that would expose the error subsequently, it would not be
+      // scheduled anymore but hard terminated. This is even true if the trigger
+      // is the last operation in the daemon since a host VM might preempt
+      // on every instruction, not just CG insns (see .test.mc.DaemonTest)
       if (tl.hasOnlyDaemonRunnablesOtherThan(this)){
         if (yield()){
           return false;

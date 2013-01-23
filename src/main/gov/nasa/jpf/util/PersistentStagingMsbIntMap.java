@@ -119,7 +119,6 @@ public class PersistentStagingMsbIntMap<V> extends PersistentMsbIntMap<V> {
       // case we can do the merge on-the-fly (in descending branch of recursion)
       node = stagingNode;
       result.merged = true;
-System.out.println("@@@@@@@ AGHH: " + key);
     }
 
     return super.assoc(shift, finalShift, key, value, node, result);
@@ -189,8 +188,6 @@ System.out.println("@@@@@@@ AGHH: " + key);
     int k = (key >>> fsh);
     result.clear();
 
-System.out.print( "@@ set "); printKeyBlocks( key); System.out.println(" @@      => " + value);
-    
     if (isStagingHit(key, fsh)) { // stagingNode hit (this should be the statistically dominant case)
       int levelIdx = k & 0x1f;
       Node<V> newStagingNode = setStageNodeValue(stagingNode, levelIdx, value,
@@ -261,7 +258,6 @@ System.out.print( "@@ set "); printKeyBlocks( key); System.out.println(" @@     
     int fsh = getLsbShift(key);
     
     if (isStagingHit(key, fsh)) { // we have a staging hit
-//System.out.println("@@    hit " + key);
       fsh = getLsbShift(stagingBase);
       int idx = (key >>> fsh) & 0x1f;      
       Object o = stagingNode.getElement(idx);
@@ -272,7 +268,6 @@ System.out.print( "@@ set "); printKeyBlocks( key); System.out.println(" @@     
       }
 
     } else { // look it up in the trie
-      // return super.get(key);
       if (root != null) {
         int shift = rootShift;
         Node<V> node = root;

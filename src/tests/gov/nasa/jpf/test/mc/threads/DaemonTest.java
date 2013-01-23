@@ -31,6 +31,7 @@ public class DaemonTest extends TestJPF {
   static class T1 extends Thread {
 
     boolean blowUp = false;
+    //Boolean blowUp = false;
 
     T1() {
       setDaemon(true);
