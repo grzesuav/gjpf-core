@@ -34,7 +34,7 @@ import java.util.ArrayList;
  * information associated with a method. Each method in JPF
  * is represented by a MethodInfo object
  */
-public class MethodInfo extends InfoObject implements Cloneable, GenericSignatureHolder  {
+public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
 
   static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.vm.MethodInfo");
   

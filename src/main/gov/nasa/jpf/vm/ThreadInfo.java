@@ -55,7 +55,7 @@ import java.util.logging.Logger;
  * <2do> remove EXECUTENATIVE,INVOKESTATIC .bytecode dependencies
  */
 public class ThreadInfo extends InfoObject
-     implements Iterable<StackFrame>, Comparable<ThreadInfo>, Cloneable, Restorable<ThreadInfo> {
+     implements Iterable<StackFrame>, Comparable<ThreadInfo>, Restorable<ThreadInfo> {
 
   static JPFLogger log = JPF.getLogger("gov.nasa.jpf.vm.ThreadInfo");
   static int[] emptyLockRefs = new int[0];
