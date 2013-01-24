@@ -39,9 +39,7 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
    * get list of all runnable threads in the same process as ti
    */
   protected ThreadInfo[] getRunnables(ThreadInfo ti) {
-    ThreadList tl = vm.getThreadList();
-    int mainGrpRef = ti.getMainGroupRef();
-    return filter(tl.getRunnableThreadsInGroup(mainGrpRef));
+    return filter(((MultiProcessesVM)vm).getRunnableAppThreads(ti));
   }
 
   /**
@@ -49,27 +47,21 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
    *  in the same process as ti
    */
   protected ThreadInfo[] getRunnablesIfChoices(ThreadInfo ti) {
-    ThreadList tl = vm.getThreadList();
-    int mainGrpRef = ti.getMainGroupRef();
-    int n = tl.getRunnableThreadCountInGroup(mainGrpRef);
+    int n = ((MultiProcessesVM)vm).getRunnableAppThreadCount(ti);
 
     if ((n > 1) || (n == 1 && breakSingleChoice)){
-      return filter(tl.getRunnableThreadsInGroup(mainGrpRef));
+      return filter(((MultiProcessesVM)vm).getRunnableAppThreads(ti));
     } else {
       return null;
     }
   }
 
   protected ThreadInfo[] getRunnablesWith (ThreadInfo ti) {
-    ThreadList tl = vm.getThreadList();
-    int mainGrpRef = ti.getMainGroupRef();
-    return filter( tl.getRunnableThreadsWithInGroup(ti, mainGrpRef));
+    return filter(((MultiProcessesVM)vm).getRunnableAppThreadsWith(ti));
   }
 
   protected ThreadInfo[] getRunnablesWithout (ThreadInfo ti) {
-    ThreadList tl = vm.getThreadList();
-    int mainGrpRef = ti.getMainGroupRef();
-    return filter( tl.getRunnableThreadsWithoutInGroup(ti, mainGrpRef));
+    return filter(((MultiProcessesVM)vm).getRunnableAppThreadsWithout(ti));
   }
 
   /************************************ the public interface towards the insns ***/

@@ -228,29 +228,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
   }
 
   /**
-   * It collects all the threads with groups that are rooted in the
-   * same main group. In the other words, it obtains threads that 
-   * belong to the same Java process. 
-   */
-  public ThreadInfo[] getThreadsInGroup(int grp) {
-
-    ThreadInfo[] grpThreads = new ThreadInfo[0];
-
-    for(int i=0; i<threads.length; i++) {
-      if(threads[i].belongsToGroup(grp)) {
-        int n = grpThreads.length;
-        ThreadInfo[] temp = new ThreadInfo[n+1];
-        System.arraycopy(grpThreads, 0, temp, 0, n);
-
-        temp[n] = threads[i];
-        grpThreads = temp;
-      }
-    }
-
-    return grpThreads;
-  }
-
-  /**
    * Returns the array of threads.
    */
   public ThreadInfo[] getThreads() {
@@ -361,10 +338,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return hasMoreThreadsToRun(threads);
   }
 
-  public boolean hasMoreThreadsToRunInGroup(int grp) {
-    return hasMoreThreadsToRun(getThreadsInGroup(grp));
-  }
-
   /**
    * return if there are still runnables, and there is at least one
    * non-daemon thread left in the given threads list
@@ -402,10 +375,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return getRunnableThreadCount(threads);
   }
 
-  public int getRunnableThreadCountInGroup (int grp) {
-    return getRunnableThreadCount(getThreadsInGroup(grp));
-  }
-
   protected int getRunnableThreadCount(ThreadInfo[] threads) {
     int n = 0;
 
@@ -420,10 +389,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
 
   public ThreadInfo[] getRunnableThreads() {
     return getRunnableThreads(threads);
-  }
-
-  public ThreadInfo[] getRunnableThreadsInGroup(int grp) {
-    return getRunnableThreads(getThreadsInGroup(grp));
   }
 
   protected ThreadInfo[] getRunnableThreads(ThreadInfo[] threads) {
@@ -444,12 +409,7 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
   }
 
   public ThreadInfo[] getRunnableThreadsWith (ThreadInfo ti) {
-
     return getRunnableThreadsWith(ti, threads);
-  }
-
-  public ThreadInfo[] getRunnableThreadsWithInGroup (ThreadInfo ti, int grp) {
-    return getRunnableThreadsWith(ti, getThreadsInGroup(grp));
   }
 
   protected ThreadInfo[] getRunnableThreadsWith (ThreadInfo ti, ThreadInfo[] threads) {
@@ -471,10 +431,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
 
   public ThreadInfo[] getRunnableThreadsWithout( ThreadInfo ti) {
     return getRunnableThreadsWithout(ti, threads);
-  }
-
-  public ThreadInfo[] getRunnableThreadsWithoutInGroup( ThreadInfo ti, int grp) {
-    return getRunnableThreadsWithout(ti, getThreadsInGroup(grp));
   }
 
   protected ThreadInfo[] getRunnableThreadsWithout( ThreadInfo ti, ThreadInfo[] threads) {

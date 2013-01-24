@@ -324,4 +324,49 @@ public class MultiProcessesVM extends VM {
   public boolean isEndState () {
     return !getThreadList().hasMoreThreadsToRun();
   }
+
+  //----------- Methods for acquiring ThreadInfos within an application ----------//
+
+  /**
+   * Returns all the threads that belong to the same application as ti
+   */
+  public ThreadInfo[] getAppThreads(ThreadInfo ti) {
+    ThreadInfo[] appThreads = new ThreadInfo[0];
+    ThreadInfo[] threads = getThreadList().getThreads();
+
+    AppAttr attr = ti.getAttr(AppAttr.class);
+
+    for(int i=0; i<threads.length; i++) {
+      if(threads[i].getAttr(AppAttr.class)==attr) {
+        int n = appThreads.length;
+        ThreadInfo[] temp = new ThreadInfo[n+1];
+        System.arraycopy(appThreads, 0, temp, 0, n);
+
+        temp[n] = threads[i];
+        appThreads = temp;
+      }
+    }
+
+    return appThreads;
+  }
+
+  public ThreadInfo[] getRunnableAppThreads(ThreadInfo ti) {
+    ThreadInfo[] appThreads = getAppThreads(ti);
+    return getThreadList().getRunnableThreads(appThreads);
+  }
+
+  public int getRunnableAppThreadCount (ThreadInfo ti) {
+    ThreadInfo[] appThreads = getAppThreads(ti);
+    return getThreadList().getRunnableThreadCount(appThreads);
+  }
+
+  public ThreadInfo[] getRunnableAppThreadsWith (ThreadInfo ti) {
+    ThreadInfo[] appThreads = getAppThreads(ti);
+    return getThreadList().getRunnableThreadsWith(ti, appThreads);
+  }
+
+  public ThreadInfo[] getRunnableAppThreadsWithout( ThreadInfo ti) {
+    ThreadInfo[] appThreads = getAppThreads(ti);
+    return getThreadList().getRunnableThreadsWithout(ti, appThreads);
+  }
 }
