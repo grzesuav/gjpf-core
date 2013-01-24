@@ -24,6 +24,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFTargetException;
+import gov.nasa.jpf.SystemAttribute;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -43,6 +44,19 @@ public class MultiProcessesVM extends VM {
     super(jpf, conf);
   }
 
+  /**
+   * This is used to identify the threads that belongs to the same application. 
+   * For the main threads, new attrs are created, and for all others we just copy 
+   * the attr from the corresponding main thread
+   */
+  public static class AppAttr implements SystemAttribute {
+    int appId;
+
+    public AppAttr(int appId) {
+      this.appId = appId;
+    }
+  }
+
   @Override
   public void initSystemClassLoaders (Config config) {
     checkTarget(config);
@@ -56,6 +70,25 @@ public class MultiProcessesVM extends VM {
     for(int i=0; i<NUM_PRC; i++) {
       systemClassLoaders[i] = createSystemClassLoader(target[i], i, targetArgs.get(i));
     }
+  }
+
+  // this is used to count the applications, and it is used as id
+  // for AppAttrs
+  private int appsCounter = 0;
+
+  @Override
+  protected ThreadInfo createMainThreadInfo(int id) {
+    ThreadInfo mainThread = new ThreadInfo(this, id);
+    mainThread.setAttr(new AppAttr(appsCounter++));
+    return mainThread;
+  }
+
+  @Override
+  protected ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef) {
+    ThreadInfo newThread = new ThreadInfo( this, objRef, groupRef, runnableRef, nameRef);
+    Object attr = ThreadInfo.getMainThread().getAttr(AppAttr.class);
+    newThread.setAttr(attr);
+    return newThread;
   }
 
   @Override

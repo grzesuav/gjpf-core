@@ -47,6 +47,16 @@ public class SingleProcessVM extends VM {
   }
 
   @Override
+  protected ThreadInfo createMainThreadInfo(int id) {
+    return new ThreadInfo(this, id);
+  }
+
+  @Override
+  protected ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef) {
+    return new ThreadInfo( this, objRef, groupRef, runnableRef, nameRef);
+  }
+
+  @Override
   public void checkTarget(Config config) {
     String target = config.getTarget();
     if (target == null || (target.length() == 0)) {

@@ -285,13 +285,9 @@ public abstract class VM {
   }
 
   //--- ThreadInfo factory methods
-  protected ThreadInfo createMainThreadInfo(int id) {
-    return new ThreadInfo(this, id);
-  }
+  protected abstract ThreadInfo createMainThreadInfo(int id);
   
-  protected ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef) {
-    return new ThreadInfo( this, objRef, groupRef, runnableRef, nameRef);
-  }
+  protected abstract ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef);
 
   public abstract boolean initialize ();
 
