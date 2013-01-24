@@ -2074,7 +2074,7 @@ public class ThreadInfo extends InfoObject
       // scheduled anymore but hard terminated. This is even true if the trigger
       // is the last operation in the daemon since a host VM might preempt
       // on every instruction, not just CG insns (see .test.mc.DaemonTest)
-      if (tl.hasOnlyDaemonRunnablesOtherThan(this)){
+      if (vm.hasOnlyDaemonRunnablesOtherThan(this)){
         if (yield()){
           return false;
         }

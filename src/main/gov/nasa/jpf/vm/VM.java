@@ -1588,9 +1588,7 @@ public abstract class VM {
     return getThreadList().hasOtherNonDaemonRunnablesThan(ti);
   }
 
-  public boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti){
-    return getThreadList().hasOnlyDaemonRunnablesOtherThan(ti);
-  }
+  public abstract boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti);
 
   public void registerClassLoader(ClassLoaderInfo cl) {
     this.getKernelState().addClassLoader(cl);

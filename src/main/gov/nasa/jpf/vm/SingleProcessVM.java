@@ -210,4 +210,22 @@ public class SingleProcessVM extends VM {
 
     return (hasNonDaemons && hasBlockedThreads);
   }
+
+  @Override
+  public boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti){
+    ThreadInfo[] threads = getThreadList().getThreads();
+    int n = threads.length;
+
+    for (int i=0; i<n; i++) {
+      ThreadInfo t = threads[i];
+      if (t != ti) {
+        if (t.isRunnable() && t.isDaemon()) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
 }

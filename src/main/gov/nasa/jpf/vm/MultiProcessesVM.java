@@ -49,7 +49,7 @@ public class MultiProcessesVM extends VM {
    * For the main threads, new attrs are created, and for all others we just copy 
    * the attr from the corresponding main thread
    */
-  public static class AppAttr implements SystemAttribute {
+  protected static class AppAttr implements SystemAttribute {
     int appId;
 
     public AppAttr(int appId) {
@@ -86,8 +86,8 @@ public class MultiProcessesVM extends VM {
   @Override
   protected ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef) {
     ThreadInfo newThread = new ThreadInfo( this, objRef, groupRef, runnableRef, nameRef);
-    Object attr = ThreadInfo.getMainThread().getAttr(AppAttr.class);
-    newThread.setAttr(attr);
+    Object attr = ThreadInfo.getCurrentThread().getAttr(AppAttr.class);
+    newThread.addAttr(attr);
     return newThread;
   }
 
@@ -353,6 +353,23 @@ public class MultiProcessesVM extends VM {
     }
 
     return (hasNonDaemons && hasBlockedThreads);
+  }
+
+  @Override
+  public boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti){
+    ThreadInfo[] appThreads = getAppThreads(ti);
+    int n = appThreads.length;
+
+    for (int i=0; i<n; i++) {
+      ThreadInfo t = appThreads[i];
+      if (t != ti) {
+        if (t.isRunnable() && t.isDaemon()) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   //----------- Methods for acquiring ThreadInfos within an application ----------//

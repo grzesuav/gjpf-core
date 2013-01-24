@@ -498,21 +498,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return false;
   }
 
-  boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti){
-    int n = threads.length;
-
-    for (int i=0; i<n; i++) {
-      ThreadInfo t = threads[i];
-      if (t != ti) {
-        if (t.isRunnable() && t.isDaemon()) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
   public void dump () {
     int i=0;
     for (ThreadInfo t : threads) {
