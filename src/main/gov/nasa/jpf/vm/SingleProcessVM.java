@@ -180,4 +180,34 @@ public class SingleProcessVM extends VM {
     // catch deadlocks - but that would be NoDeadlockProperty anyway
     return !getThreadList().hasMoreThreadsToRun();
   }
+
+  @Override
+  public boolean isDeadlocked () { 
+    boolean hasNonDaemons = false;
+    boolean hasBlockedThreads = false;
+
+    if (ss.isBlockedInAtomicSection()) {
+      return true; // blocked in atomic section
+    }
+
+    ThreadInfo[] threads = getThreadList().getThreads();
+
+    for (int i = 0; i < threads.length; i++) {
+      ThreadInfo ti = threads[i];
+      
+      if (ti.isAlive()){
+        hasNonDaemons |= !ti.isDaemon();
+
+        // shortcut - if there is at least one runnable, we are not deadlocked
+        if (ti.isTimeoutRunnable()) { // willBeRunnable() ?
+          return false;
+        }
+
+        // means it is not NEW or TERMINATED, i.e. live & blocked
+        hasBlockedThreads = true;
+      }
+    }
+
+    return (hasNonDaemons && hasBlockedThreads);
+  }
 }

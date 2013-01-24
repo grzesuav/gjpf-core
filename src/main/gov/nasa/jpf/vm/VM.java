@@ -1500,9 +1500,7 @@ public abstract class VM {
     return (getPendingException() != null);
   }
 
-  public boolean isDeadlocked () {
-    return ss.isDeadlocked();
-  }
+  public abstract boolean isDeadlocked ();
 
   public Exception getException () {
     return ss.getUncaughtException();

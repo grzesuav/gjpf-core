@@ -512,29 +512,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
 
     return false;
   }
-  
-  boolean isDeadlocked () {
-    boolean hasNonDaemons = false;
-    boolean hasBlockedThreads = false;
-
-    for (int i = 0; i < threads.length; i++) {
-      ThreadInfo ti = threads[i];
-      
-      if (ti.isAlive()){
-        hasNonDaemons |= !ti.isDaemon();
-
-        // shortcut - if there is at least one runnable, we are not deadlocked
-        if (ti.isTimeoutRunnable()) { // willBeRunnable() ?
-          return false;
-        }
-
-        // means it is not NEW or TERMINATED, i.e. live & blocked
-        hasBlockedThreads = true;
-      }
-    }
-
-    return (hasNonDaemons && hasBlockedThreads);
-  }
 
   public void dump () {
     int i=0;

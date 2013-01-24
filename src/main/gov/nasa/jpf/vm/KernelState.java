@@ -156,10 +156,6 @@ public class KernelState implements Restorable<KernelState> {
     listeners.push(cl);
   }
 
-  boolean isDeadlocked () {
-    return threads.isDeadlocked();
-  }
-
   public int getThreadCount () {
     return threads.length();
   }

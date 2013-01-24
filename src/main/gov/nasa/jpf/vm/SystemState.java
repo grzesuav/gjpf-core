@@ -294,6 +294,10 @@ public class SystemState {
     return (atomicLevel > 0);
   }
 
+  public boolean isBlockedInAtomicSection() {
+    return isBlockedInAtomicSection;
+  }
+
   public void setBlockedInAtomicSection() {
     isBlockedInAtomicSection = true;
   }
@@ -604,14 +608,6 @@ public class SystemState {
 
   public int getLiveThreadCount () {
     return ks.threads.getLiveThreadCount();
-  }
-
-  public boolean isDeadlocked () {
-    if (isBlockedInAtomicSection) {
-      return true; // blocked in atomic section
-    }
-
-    return ks.isDeadlocked();
   }
 
   public UncaughtException getUncaughtException () {

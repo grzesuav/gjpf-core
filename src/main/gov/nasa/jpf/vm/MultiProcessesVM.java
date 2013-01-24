@@ -325,6 +325,36 @@ public class MultiProcessesVM extends VM {
     return !getThreadList().hasMoreThreadsToRun();
   }
 
+  @Override
+  public boolean isDeadlocked () { 
+    boolean hasNonDaemons = false;
+    boolean hasBlockedThreads = false;
+
+    if (ss.isBlockedInAtomicSection()) {
+      return true; // blocked in atomic section
+    }
+
+    ThreadInfo[] appThreads = getAppThreads(ThreadInfo.getCurrentThread());
+
+    for (int i = 0; i < appThreads.length; i++) {
+      ThreadInfo ti = appThreads[i];
+      
+      if (ti.isAlive()){
+        hasNonDaemons |= !ti.isDaemon();
+
+        // shortcut - if there is at least one runnable, we are not deadlocked
+        if (ti.isTimeoutRunnable()) { // willBeRunnable() ?
+          return false;
+        }
+
+        // means it is not NEW or TERMINATED, i.e. live & blocked
+        hasBlockedThreads = true;
+      }
+    }
+
+    return (hasNonDaemons && hasBlockedThreads);
+  }
+
   //----------- Methods for acquiring ThreadInfos within an application ----------//
 
   /**
