@@ -75,7 +75,7 @@ public class INVOKECLINIT extends INVOKESTATIC {
     // enter the method body, return its first insn
     // (this would take the lock, reset the lockRef etc., so make sure all these
     // side effects are dealt with if we bail out)
-    return callee.execute(ti);
+    return ti.execute(callee);
   }
 
   public boolean isExtendedInstruction() {
