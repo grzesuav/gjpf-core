@@ -272,6 +272,23 @@ public class PSIntMapTest extends TestJPF {
     }
     len -= 31;
     
+    // remove all but one from bitmap node
+    pred = new Predicate<Integer>(){
+      public boolean isTrue (Integer n){
+        return (n == 64);
+      }
+    };
+    m = m.removeAllSatisfying(pred);
+    pred = new Predicate<Integer>(){
+      public boolean isTrue (Integer n){
+        return (n >= 64 && n < 95);
+      }
+    };
+    m = m.removeAllSatisfying(pred);
+    for (int i=64; i<95; i++){
+      assertTrue( m.get(i) == null);
+    }    
+    assertTrue( m.get(95) != null);
   }  
   
   @Test

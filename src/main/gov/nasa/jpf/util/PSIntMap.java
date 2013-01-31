@@ -345,49 +345,55 @@ public class PSIntMap <V> implements Iterable<V> {
       }
     }
 
+    /**
+     * get the position of the (n+1)'th set bit in bitmap
+     */
     @Override
     int storageToLevelIndex (int n){
-      // get the position of the n'th set bit in bitmap
-      // this is not the most efficient implementation for sparse bitmaps, but
-      // should be better for dense ones
+      int v = bitmap;
+      /**/
+      switch (n){
+        case 30: v &= v-1;
+        case 29: v &= v-1;
+        case 28: v &= v-1;
+        case 27: v &= v-1;
+        case 26: v &= v-1;
+        case 25: v &= v-1;
+        case 24: v &= v-1;
+        case 23: v &= v-1;
+        case 22: v &= v-1;
+        case 21: v &= v-1;
+        case 20: v &= v-1;
+        case 19: v &= v-1;
+        case 18: v &= v-1;
+        case 17: v &= v-1;
+        case 16: v &= v-1;
+        case 15: v &= v-1;
+        case 14: v &= v-1;
+        case 13: v &= v-1;
+        case 12: v &= v-1;
+        case 11: v &= v-1;
+        case 10: v &= v-1;
+        case 9: v &= v-1;
+        case 8: v &= v-1;
+        case 7: v &= v-1;
+        case 6: v &= v-1;
+        case 5: v &= v-1;
+        case 4: v &= v-1;
+        case 3: v &= v-1;
+        case 2: v &= v-1;
+        case 1: v &= v-1;
+      }
+      /**/
       
-      int bm = bitmap;
-      int j=-1;
-
-      j += (bm & 1); if (j == n) return 0; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 1; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 2; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 3; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 4; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 5; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 6; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 7; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 8; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 9; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 10; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 11; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 12; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 13; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 14; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 15; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 16; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 17; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 18; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 19; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 20; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 21; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 22; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 23; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 24; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 25; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 26; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 27; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 28; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 29; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 30; bm >>>= 1;
-      j += (bm & 1); if (j == n) return 31; bm >>>= 1;
-            
-      return -1;
+      /**
+      for (int i=n; i>0; i--){
+        v &= v-1; // remove n-1 least significant bits
+      }
+      **/
+      
+      v = v & ~(v-1); // reduce to the least significant bit
+      return TrailingMultiplyDeBruijnBitPosition[((v & -v) * 0x077CB531) >>> 27];
     }
     
     @Override
@@ -487,7 +493,7 @@ public class PSIntMap <V> implements Iterable<V> {
         
       } else if (newLen == 1) { // just one value left - reduce to OneNode
         int i = Integer.bitCount( bitmap & (newBitmap -1));
-        int idx = Integer.numberOfTrailingZeros(newBitmap);  
+        int idx = Integer.numberOfTrailingZeros(newBitmap);
         return new OneNode<E>( idx, elem[i]);
         
       } else { // some values removed - reduced BitmapNode
@@ -577,10 +583,7 @@ public class PSIntMap <V> implements Iterable<V> {
 
     @Override
     int storageToLevelIndex (int i){
-      if (i >= 0 && i <= 31){
-        return i;
-      }
-      return -1;
+      return i;
     }
 
     
@@ -797,6 +800,16 @@ public class PSIntMap <V> implements Iterable<V> {
   //--- auxiliary data and functions
   
   static final int BASE_MASK = ~0x1f;
+  
+  static final int TrailingMultiplyDeBruijnBitPosition[] = {
+    0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 
+    31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
+  };
+  
+  static int getNumberOfTrailingZeros (int v){
+    return TrailingMultiplyDeBruijnBitPosition[((v & -v) * 0x077CB531) >>> 27];
+  }
+  
   
   // the values are the respective block levels
   static final int LeadingMultiplyDeBruijnBitPosition[] = {
