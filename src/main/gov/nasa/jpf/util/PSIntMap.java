@@ -28,10 +28,10 @@ import java.util.NoSuchElementException;
  * <p>
  * The 32bit keys are broken up into 5bit blocks that represent the trie levels, each 5bit block
  * (0..31) being the index for the respective child node or value.
- * 
+ * For instance, a key/value pair of 12345->'x' is stored as
  * <blockquote><pre>
  *   level:     6    5     4     3     2     1     0
- *              00.00000.00000.00000.01100.00001.11001  = 12345
+ *   key:       00.00000.00000.00000.01100.00001.11001  = 12345
  *   block-val:  0     0     0     0    12     1    25
  * 
  *       Node0
@@ -157,11 +157,9 @@ public class PSIntMap <V> implements Iterable<V> {
   /**
    * Node that has only one element and hence does not need an array.
    * This can also be the element at index 0, in which case this element
-   * has to be newElements Node, or otherwise the value would be directly stored in the
+   * has to be a Node, or otherwise the value would be directly stored in the
    * parent elements.
-   * If the element changes from newElements Node into newElements value, this OneNode gets
-   * demoted into newElements parent value element
-   * If newElements new Element is added, this OneNode gets promoted into newElements BitmapNode
+   * If a new element is added, this OneNode gets promoted into a BitmapNode
    */
   protected static class OneNode<E> extends Node<E> {
     E e;
@@ -293,19 +291,19 @@ public class PSIntMap <V> implements Iterable<V> {
    * A node that holds between 2 and 31 elements.
    * 
    * We use bitmap based element array compaction - the corresponding bit block of the key
-   * [0..31] is used as an index into newElements bitmap. The elements are stored in newElements dense
+   * [0..31] is used as an index into a bitmap. The elements are stored in a dense
    * array at indices corresponding to the number of set bitmap bits to the right of the
    * respective index in the bitmap, e.g. for
    * 
    * <blockquote><pre> 
-   *   key = 289 =  b...01001.00001, shift = 5, node already contains newElements key 97 =>
+   *   key = 289 =  b...01001.00001, shift = 5, node already contains key 97 =>
    *     idx = (key >>> shift) & 0x1f = b01001 = 9
    *     bitmap =  1000001000 (bit 3 from key 97)
    *     element index = 1 (one set bit to the right of bit 9)
    * </pre></blockquote>
    * <p>
-   * If the bit count of newElements BitmapNode is 2 and an element is removed, this gets demoted into newElements OneNode.
-   * If the bit count of newElements BitmapNode is 31 and an element is added, this gets promoted into newElements FullNode
+   * If the bit count of a BitmapNode is 2 and an element is removed, this gets demoted into q OneNode.
+   * If the bit count of a BitmapNode is 31 and an element is added, this gets promoted into a FullNode
    */
   protected static class BitmapNode<E> extends Node<E> {
     final E[] elements;
