@@ -26,6 +26,17 @@ import java.util.NoSuchElementException;
 /**
  * Persistent (immutable) associative array that maps integer keys to generic reference values.
  * <p>
+ * PSIntMap is implemented as a bitwise trie which processes key bits in msb order
+ * (from left to right) and has the same depth along all paths (i.e. values are only kept at the
+ * terminal node level, which corresponds to the rightmost bit block in the key).
+ * 
+ * This particular implementation was chosen to optimize performance for dense key value domains,
+ * e.g. keys that are computed from counters. More specifically, PSIntMap was designed to be a
+ * suitable basis for JPF Heap implementations with their characteristic usage pattern:
+ *   ..
+ *   transition{ ..alloc( n),..alloc(n+1),..alloc(n+2), ..}, garbage-collection{ remove(x),remove(y),..}
+ *   ..
+ * 
  * The 32bit keys are broken up into 5bit blocks that represent the trie levels, each 5bit block
  * (0..31) being the index for the respective child node or value.
  * For instance, a key/value pair of 12345->'x' is stored as
@@ -34,13 +45,13 @@ import java.util.NoSuchElementException;
  *   key:       00.00000.00000.00000.01100.00001.11001  = 12345
  *   block-val:  0     0     0     0    12     1    25
  * 
- *       Node0
+ *       Node0 (level 2 : nodes)
  *         ... 
- *         12 -> Node1
- *                 ...
- *                 1 -> Node2
- *                        ...
- *                        25 -> 'x'
+ *         [12] -> Node1 (level 1 : nodes)
+ *                   ...
+ *                   [1] -> Node2 (level 0 : values)
+ *                            ...
+ *                           [25] -> 'x'
  *</pre></blockquote>
  * The main benefit of using this representation is that existing maps are never modified (are
  * persistent) and hence a previous state can be restored by simply keeping the reference of
@@ -78,7 +89,7 @@ import java.util.NoSuchElementException;
  *  
  * Being a persistent data structure, the main property of PersistentIntMaps is that all
  * add/remove operations (set,remove,removeAllSatisfying) have to return new PersistenIntMap
- * instances, no destructive update is allowed. Normal usage patterns therefore looks like this:
+ * instances, no destructive update is allowed. Normal usage patterns therefore look like this:
  * 
  * <blockquote><pre>
  *   PSIntMap<String> map = PSIntMap<String>();
@@ -97,6 +108,24 @@ import java.util.NoSuchElementException;
  *       System.out.println(val);
  *     });
  * </pre></blockquote>
+ * 
+ * NOTE: bitwise tries are inherently recursive data structures, which would naturally lend
+ * itself to implementations using recursive methods (over nodes). However, the recursion
+ * is always bounded (finite number of key bits), and we need to keep track of the terminal
+ * (value) node that was modified, which means we would have to return two values from
+ * every recursion level (new current level node and new (terminal) stagingNode), thus
+ * requiring additional allocation per map operation ( e.g. 'result' object to keep track
+ * of transient state, as in "node = node.assoc(..key, value, result)") or per recursive call
+ * ( result: {node,stagingNode}, as in "result = node.assoc( ..key, value)"). The first solution
+ * would allow to create/store a result object on the caller site, but this could compromise
+ * map consistency in case of concurrent map operations. Both solutions are counter-productive
+ * in a sense that PSIntMap is optimized to minimize allocation count, which is the crux of
+ * persistent data structures.
+ * 
+ * The approach that is taken here is to manually unroll the recursion by means of explicit
+ * operand stacks, which leads to methods with large number of local variables (to avoid
+ * array allocation) and large switch statements to set respective fields. The resulting
+ * programming style should only be acceptable for critical runtime optimizations.
  */ 
 
 public class PSIntMap <V> implements Iterable<V> {
@@ -107,6 +136,11 @@ public class PSIntMap <V> implements Iterable<V> {
    * Abstract root class for all node types. This type needs to be internal, no instances
    * are allowed to be visible outside the PersistentIntMap class hierarchy in order to guarantee
    * invariant data.
+   * 
+   * NOTE - since this is an internal type, we forego a lot of argument range checks in
+   * the Node subclasses, assuming that all internal use has been tested and bugs will not
+   * cause silent corruption of node data but will lead to follow-on exceptions such as
+   * ArrayIndexOutOfBounds etc.
    */
   protected abstract static class Node<E> {
     
@@ -156,9 +190,6 @@ public class PSIntMap <V> implements Iterable<V> {
   
   /**
    * Node that has only one element and hence does not need an array.
-   * This can also be the element at index 0, in which case this element
-   * has to be a Node, or otherwise the value would be directly stored in the
-   * parent elements.
    * If a new element is added, this OneNode gets promoted into a BitmapNode
    */
   protected static class OneNode<E> extends Node<E> {
@@ -296,11 +327,16 @@ public class PSIntMap <V> implements Iterable<V> {
    * respective index in the bitmap, e.g. for
    * 
    * <blockquote><pre> 
-   *   key = 289 =  b...01001.00001, shift = 5, node already contains key 97 =>
-   *     idx = (key >>> shift) & 0x1f = b01001 = 9
-   *     bitmap =  1000001000 (bit 3 from key 97)
-   *     element index = 1 (one set bit to the right of bit 9)
+   *   key = 289 =  0b01001.00001, shift = 5, assuming node already contains key 97 = 0b00011.00001 =>
+   *     idx = (key >>> shift) & 0x1f = 0b01001 = 9
+   *     bitmap =  1000001000  : bit 9 from key 289 (0b01001.), bit 3 from key 97 (0b00011.)
+   *     node element index for key 289 (level index 9) = 1 (one set bit to the right of bit 9)
    * </pre></blockquote>
+   * 
+   * While storage index computation seems complicated and expensive, there are efficient algorithms to
+   * count leading/trailing bits by means of binary operations and minimal branching, which is
+   * suitable for JIT compilation (see http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogLookup)
+   * 
    * <p>
    * If the bit count of a BitmapNode is 2 and an element is removed, this gets demoted into q OneNode.
    * If the bit count of a BitmapNode is 31 and an element is added, this gets promoted into a FullNode
@@ -831,13 +867,54 @@ public class PSIntMap <V> implements Iterable<V> {
   
   //--- instance data
   
-  final protected int size;
-  final protected int rootLevel;
-  final protected Node rootNode;
+  final protected int size;       // number of values in this map
+  final protected int rootLevel;  // bit block level of the root node (highest non-0 bit block of all keys in map)
+  final protected Node rootNode;  // topmost node of trie
   
-  final protected Node<V> stagingNode;
-  final protected int stagingNodeBase;
-  final protected Node targetNode;
+  /*
+   * the following fields are used to cache consecutive key operations with the goal of avoiding
+   * path copies from the modified value node all the way up to the root node. As long as the same value
+   * node is modified (hence msb key block traversal) we just need to keep track which position in the
+   * trie the stagingNode refers to (stagingNodeMask), and only have to create a new stagingNode with the
+   * updated values. Once we have a key operation that refers to a different value node position (staging miss),
+   * we merge the old stagingNode back into the trie. If we do this after inserting the new key, only
+   * nodes from the old stagingNode parent up to the first node that is on the new key path have to be copied,
+   * the merge node (on the new stagingNode path) can be safely modified since it has only been created during
+   * the ongoing map operation. Example:
+   *                                          key    value
+   * last mod key/value (old stagingNode) : a.c.e -> Y    => stagingNodeMask = a.c.FF
+   * new key/value (new stagingNode)      : a.b.d -> X
+   * 
+   *                            a
+   *                    n0: [...n1...]            root node (level 2)
+   *                           /
+   *                 b    c   /
+   *          n1:  [.n2...n3.]                    
+   *                /       \
+   *           d   /         \                                                  e
+   *    n2:  [.X..]      n3:  [.....]             value nodes (level 0)     [...X...]
+   *      new stagingNode       old targetNode  <-------------------------- old stagingNode
+   *    (= new targetNode)
+   * 
+   * In this case, the sequence of operations is as follows:
+   * <ol>
+   *   <li> insert new key/value pair (a.b.d)->X into the trie, which is a stagingNode miss since
+   *        stagingNodeMasks are different (a.b.FF != a.c.FF). This leads to copied/new nodes n2,n1,n0
+   *   <li> check if old stagingNode differs from targetNode (had several consecutive modifications), if
+   *        targetNode != stagingNode then merge old stagingNode <em>after</em> n2,n1,n0 creation
+   *   <li> since n1 is already a new node that is not shared with any prior version of this map,
+   *        its [c] element can be simply set to the old stagingNode, i.e. the merge does not require
+   *        any additional allocation. Note that n1 has to contain a [c] element since we always link
+   *        new stagingNodes into the trie upon creation. This means the number of elements in n1
+   *        (and hence the node type) does not change, i.e. setting the new [c] element involves
+   *        just a single AASTORE instruction
+   *   <li> set stagingNode = targetNode = n2
+   * </ol>
+   */
+  
+  final protected Node<V> stagingNode; // last modified value node (not linked into the trie upon subsequent modification)
+  final protected int stagingNodeMask; // key mask for stagingNode (key | 0x1f)
+  final protected Node targetNode;     // original stagingNode state that is linked into the trie
   
   /**
    * the only public constructor
@@ -848,16 +925,16 @@ public class PSIntMap <V> implements Iterable<V> {
     this.rootNode = null;
     this.targetNode = null;
     this.stagingNode = null;
-    this.stagingNodeBase = 0;
+    this.stagingNodeMask = 0;
   }
   
-  protected PSIntMap (int size, int rootLevel, Node rootNode, Node<V> stagingNode, Node<V> targetNode, int stagingNodeBase){
+  protected PSIntMap (int size, int rootLevel, Node rootNode, Node<V> stagingNode, Node<V> targetNode, int stagingNodeMask){
     this.size = size;
     this.rootLevel = rootLevel;
     this.rootNode = rootNode;
     this.stagingNode = stagingNode;
     this.targetNode = targetNode;
-    this.stagingNodeBase = stagingNodeBase;
+    this.stagingNodeMask = stagingNodeMask;
   }
   
   //--- public API
@@ -867,7 +944,7 @@ public class PSIntMap <V> implements Iterable<V> {
   }
   
   public V get (int key){
-    if (stagingNodeBase == (key | 0x1f)){
+    if (stagingNodeMask == (key | 0x1f)){
       int idx = key & 0x1f;
       return stagingNode.getElementAtLevelIndex(idx);
       
@@ -910,7 +987,7 @@ public class PSIntMap <V> implements Iterable<V> {
     Node<Node> n2=null, n3=null, n4=null, n5=null, n6=null;
     int i1, i2=0, i3=0, i4=0, i5=0, i6=0;
     
-    int k = stagingNodeBase;
+    int k = stagingNodeMask;
     Node<Node> n = rootNode;
     
     switch (rootLevel){
@@ -974,7 +1051,7 @@ public class PSIntMap <V> implements Iterable<V> {
    * The old stagingNode itself does not need to be cloned.
    */
   protected void mergeStagingNode (int key, int newRootLevel, Node newRootNode){
-    int k = stagingNodeBase;
+    int k = stagingNodeMask;
     int mergeLevel = getStartLevel( key ^ k); // block of first differing bit
     Node<Node> mergeNode = newRootNode;
     int shift = newRootLevel*5;
@@ -1154,17 +1231,17 @@ public class PSIntMap <V> implements Iterable<V> {
   }
   
   public PSIntMap<V> remove (int key){
-    int newSb = key | 0x1f;
+    int newSm = key | 0x1f;
 
-    if (newSb == stagingNodeBase){ // staging node hit - this should be the dominant case
+    if (newSm == stagingNodeMask){ // staging node hit - this should be the dominant case
       int i = key & 0x1f;
       Node<V> n = stagingNode;
       if ((n.getElementAtLevelIndex(i)) != null) { // key is in the stagingNode
         n = n.cloneWithRemoved(i);
         if (n == null){ // staging node is empty, remove target node
-          return remove(newSb, true);
+          return remove(newSm, true);
         } else { // non-empty staging node, just replace it
-          return new PSIntMap<V>( size-1, rootLevel, rootNode, n, targetNode, newSb);
+          return new PSIntMap<V>( size-1, rootLevel, rootNode, n, targetNode, newSm);
         }
         
       } else { // key wasn't in the stagingNode
@@ -1186,9 +1263,9 @@ public class PSIntMap <V> implements Iterable<V> {
       return remove(key);
     }
     
-    int newSb = key | 0x1f;
+    int newSm = key | 0x1f;
     
-    if (newSb == stagingNodeBase){ // staging node hit - this should be the dominant case
+    if (newSm == stagingNodeMask){ // staging node hit - this should be the dominant case
       int i = key & 0x1f;
       Node<V> n = stagingNode;
       int newSize = size;
@@ -1198,7 +1275,7 @@ public class PSIntMap <V> implements Iterable<V> {
       } else {
         n = n.cloneWithReplaced(i, value);
       }
-      return new PSIntMap<V>( newSize, rootLevel, rootNode, n, targetNode, newSb);
+      return new PSIntMap<V>( newSize, rootLevel, rootNode, n, targetNode, newSm);
       
     } else { // staging node miss
       int newRootLevel = getStartLevel(key);
@@ -1213,7 +1290,7 @@ public class PSIntMap <V> implements Iterable<V> {
   }
   
   protected PSIntMap<V> setInNewRootLevel (int newRootLevel, int key, V value){
-    int newSb = key | 0x1f;
+    int newSm = key | 0x1f;
 
     Node<Node> nOld;
     if (stagingNode != targetNode){
@@ -1244,7 +1321,7 @@ public class PSIntMap <V> implements Iterable<V> {
     i = (key >>> shift); // no remainBmp needed, top level
     Node<Node> newRootNode = (nOld == null) ? new OneNode( i, nNew) : new BitmapNode<Node>(i, nNew, nOld);
 
-    return new PSIntMap<V>(size + 1, newRootLevel, newRootNode, newStagingNode, newStagingNode, newSb);
+    return new PSIntMap<V>(size + 1, newRootLevel, newRootNode, newStagingNode, newStagingNode, newSm);
   }  
   
   /**
