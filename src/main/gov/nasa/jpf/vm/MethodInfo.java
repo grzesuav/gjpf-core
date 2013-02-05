@@ -371,11 +371,6 @@ public class MethodInfo extends InfoObject implements Cloneable, GenericSignatur
     return new CodeBuilder(ifact, null, this);
   }
 
-  public CodeBuilder createCodeBuilder(ClassFile cf){
-    InstructionFactory ifact = getInstructionFactory();
-    return new CodeBuilder(ifact, cf, this);
-  }
-
   /**
    * NOTE - this only works in conjunction with a special StackFrame,
    * the caller has to make sure the right operands are pushed for the call arguments!

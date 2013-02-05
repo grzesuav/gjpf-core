@@ -82,10 +82,11 @@ public class VM {
 
 
   protected String mainClassName;
-  protected String[] args;  /** tiMain() arguments */
+  protected String mainEntry;   // the main entry method name + signature 
+  protected String[] args;      // command line arguments
 
-  protected Path path;  /** execution path to current state */
-  protected StringBuilder out;  /** buffer to store output along path execution */
+  protected Path path;          // execution path to current state
+  protected StringBuilder out;  // buffer to store output along path execution
 
 
   /**
@@ -498,39 +499,54 @@ public class VM {
     }
   }
 
-  /**
-   * override this method if you want your tiMain class entry to be anything else
-   * than "public static void tiMain(String[] args)"
-   * 
-   * Note that we do a directcall here so that we always have a first frame that
-   * can't execute SUT code. That way, we can handle synchronized entry points
-   * via normal InvokeInstructions, and thread termination processing via
-   * DIRECTCALLRETURN
-   */
-  protected void pushMainEntry (ThreadInfo tiMain) {
-    Heap heap = getHeap();
+  protected MethodInfo getMainEntryMethod(){
+    String mthName = config.getProperty("vm.main_entry", "main([Ljava/lang/String;)V");
     
     ClassInfo ciMain = ClassInfo.getResolvedClassInfo(mainClassName);
-    MethodInfo miMain = ciMain.getMethod("main([Ljava/lang/String;)V", false);
+    MethodInfo miMain = ciMain.getMethod(mthName, true);
 
-    // do some sanity checks if this is a valid tiMain()
+    //--- do some sanity checks if this is a valid entry method
     if (miMain == null || !miMain.isStatic()) {
-      throw new JPFException("no main() method in " + ciMain.getName());
-    }
-
-    // create the args array object
-    ElementInfo eiArgs = heap.newArray("Ljava/lang/String;", args.length, tiMain);
-    for (int i = 0; i < args.length; i++) {
-      ElementInfo eiElement = heap.newString(args[i], tiMain);
-      eiArgs.setReferenceElement(i, eiElement.getObjectRef());
+      throw new JPFException("no static entry method: " + ciMain.getName() + '.' + mthName);
     }
     
-    // create the direct call stub
+    // signature will be checked by caller
+    mainEntry = miMain.getUniqueName();
+    
+    return miMain;
+  }
+  
+  protected void pushMainEntryArgs( ThreadInfo tiMain, MethodInfo miMain, StackFrame frame){
+    String sig = miMain.getSignature();
+    Heap heap = getHeap();
+    
+    if (sig.contains("([Ljava/lang/String;)")){
+      ElementInfo eiArgs = heap.newArray("Ljava/lang/String;", args.length, tiMain);
+      for (int i = 0; i < args.length; i++) {
+        ElementInfo eiArg = heap.newString(args[i], tiMain);
+        eiArgs.setReferenceElement(i, eiArg.getObjectRef());
+      }
+      frame.pushRef(eiArgs.getObjectRef());
+
+    } else if (sig.contains("(Ljava/lang/String;)")){
+      ElementInfo eiArg = heap.newString(args[0], tiMain);
+      frame.pushRef(eiArg.getObjectRef());
+      
+    } else if (!sig.contains("()")){
+      throw new JPFException("unsupported main entry signature: " + miMain.getFullName());
+    }
+  }
+  
+  /**
+   * override this if the main entry is computed at runtime
+   * (it can be configured with "vm.main_entry")
+   */
+  protected void pushMainEntry (ThreadInfo tiMain) {
+    MethodInfo miMain = getMainEntryMethod();
+
     MethodInfo mainStub = miMain.createDirectCallStub("[main]");
     DirectCallStackFrame frame = new DirectCallStackFrame(mainStub);
-    frame.pushRef(eiArgs.getObjectRef());
-    // <2do> set RUNSTART pc if we want to catch synchronized tiMain() defects 
-    
+    pushMainEntryArgs(tiMain, miMain, frame);    
     tiMain.pushFrame(frame);
   }
 

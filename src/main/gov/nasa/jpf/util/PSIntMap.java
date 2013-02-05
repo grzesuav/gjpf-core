@@ -892,7 +892,7 @@ public class PSIntMap <V> implements Iterable<V> {
    *          n1:  [.n2...n3.]                    
    *                /       \
    *           d   /         \                                                  e
-   *    n2:  [.X..]      n3:  [.....]             value nodes (level 0)     [...X...]
+   *    n2:  [.X..]      n3:  [.....]             value nodes (level 0)     [...Y...]
    *      new stagingNode       old targetNode  <-------------------------- old stagingNode
    *    (= new targetNode)
    * 
@@ -1738,6 +1738,20 @@ public class PSIntMap <V> implements Iterable<V> {
         return nValues;
       }
     }
+  }
+  
+  public V[] values (){
+    final Object[] values = new Object[size];
+    Processor<V> flattener = new Processor<V>(){
+      int i=0;
+      public void process (V v){
+        values[i] = v;
+      }
+    };
+    
+    process(flattener);
+    
+    return (V[])values;
   }
   
   //--- debugging
