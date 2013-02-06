@@ -63,26 +63,6 @@ public class INVOKESTATIC extends InvokeInstruction {
     return getClassInfo().getStaticElementInfo().getClassObjectRef();
   }
 
-  public boolean isExecutable (SystemState ss, KernelState ks, ThreadInfo ti) {
-    MethodInfo mi = getInvokedMethod();
-    if (mi == null) {
-      return true; // execute so that we get the exception
-    }
-
-    return mi.isExecutable(ti);
-  }
-
-  public boolean examineAbstraction (SystemState ss, KernelState ks,
-                                     ThreadInfo ti) {
-    MethodInfo mi = getInvokedMethod(ti);
-
-   if (mi == null) {
-      return true;
-    }
-
-    return !ci.isStaticMethodAbstractionDeterministic(ti, mi);
-  }
-
   public Instruction execute (ThreadInfo ti) {
     ClassInfo clsInfo = ti.getTopFrameMethodInfo().getClassInfo();
 
@@ -115,7 +95,7 @@ public class INVOKESTATIC extends InvokeInstruction {
     }
         
     // enter the method body, return its first insn
-    return callee.execute(ti);
+    return ti.execute(callee);
   }
   
   public MethodInfo getInvokedMethod (ThreadInfo ti){

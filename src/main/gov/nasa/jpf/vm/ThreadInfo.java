@@ -2040,6 +2040,114 @@ public class ThreadInfo extends InfoObject
     return heap.getModifiable(ref);
   }
 
+  public ElementInfo getBlockedObject (MethodInfo mi, boolean isBeforeCall, boolean isModifiable) {
+    int         objref;
+    ElementInfo ei = null;
+
+    if (mi.isSynchronized()) {
+      if (mi.isStatic()) {
+        objref = mi.getClassInfo().getClassObjectRef();
+      } else {
+        // NOTE 'inMethod' doesn't work for natives, because getThis() pulls 'this' from the stack frame, 
+        // which we don't have (and don't need) for natives
+        objref = isBeforeCall ? getCalleeThis(mi) : getThis();
+      }
+
+      ei = (isModifiable) ? getModifiableElementInfo(objref) : getElementInfo(objref);
+
+      assert (ei != null) : ("inconsistent stack, no object or class ref: " +
+                               mi.getFullName() + " (" + objref +")");
+    }
+
+    return ei;
+  }
+  
+  public boolean canEnter (MethodInfo mi) {
+    if (mi.isSynchronized()) {
+      ElementInfo ei = getBlockedObject(mi, true, false);
+
+      // <?> pcm - the other way round would be intuitive
+      return ei.canLock(this);
+    }
+
+    return true;
+  }
+
+  /**
+   * locking, stackframe push and enter notification
+   */
+  public void enter (MethodInfo mi) {
+    if (mi.isSynchronized()) {
+      ElementInfo ei = getBlockedObject(mi, true, true);
+      ei.lock(this);
+
+      if (mi.isClinit()) {
+        mi.getClassInfo().setInitializing(this);
+      }
+    }
+
+    // we need to do this after locking
+    pushFrame( createStackFrame(mi));
+
+    vm.notifyMethodEntered(this, mi);
+  }
+  
+  /**
+   * unlocking and exit notification
+   */
+  public void leave (MethodInfo mi) {
+    
+    // <2do> - that's not really enough, we might have suspicious bytecode that fails
+    // to release locks acquired by monitor_enter (e.g. by not having a handler that
+    // monitor_exits & re-throws). That's probably shifted into the bytecode verifier
+    // in the future (i.e. outside JPF), but maybe we should add an explicit test here
+    // and report an error if the code does asymmetric locking (according to the specs,
+    // VMs are allowed to silently fix this, so it might run on some and fail on others)
+    
+    if (mi.isSynchronized()) {
+      ElementInfo ei = getBlockedObject(mi, false, true);
+      if (ei.isLocked()){
+        ei.unlock(this);
+      }
+      
+      if (mi.isClinit()) {
+        // we just released the lock on the class object, returning from a clinit
+        // now we can consider this class to be initialized.
+        // NOTE this is still part of the RETURN insn of clinit, so ClassInfo.isInitialized
+        // is protected
+        mi.getClassInfo().setInitialized();
+      }
+    }
+
+    vm.notifyMethodExited(this, mi);
+  }
+
+  /**
+   * this needs to be here because ThreadInfo should be the factory for StackFrames
+   * (e.g. because of Dalvik)
+   */
+  protected StackFrame createStackFrame (MethodInfo mi){
+    // this is only the lesser of two evils - we could do multi-method dispatch
+    // through an additional MethodInfo indirection, but we want to keep StackFrame
+    // creation within one overridable method
+    if (mi instanceof NativeMethodInfo){
+      NativeMethodInfo nmi = (NativeMethodInfo)mi;
+      Object[] args = nmi.getArguments(this);
+      return new NativeStackFrame( nmi, top, args);
+      
+    } else {
+      return new StackFrame(mi, top);
+    }
+  }
+  
+  /**
+   * execute  method invocation
+   */
+  public Instruction execute (MethodInfo mi) {
+    enter(mi);
+    return getPC();
+  }
+  
   /**
    * this should only be called from the top half of the last DIRECTCALLRETURN of
    * a thread.
@@ -2678,7 +2786,7 @@ public class ThreadInfo extends InfoObject
   protected void unwindTo (StackFrame newTopFrame){
     for (StackFrame frame = top; (frame != null) && (frame != newTopFrame); frame = frame.getPrevious()) {
       MethodInfo mi = frame.getMethodInfo();
-      mi.leave(this); // that takes care of releasing locks
+      leave(mi); // that takes care of releasing locks
       vm.notifyExceptionBailout(this); // notify before we pop the frame
       popFrame();
     }
@@ -2689,7 +2797,7 @@ public class ThreadInfo extends InfoObject
 
     for (frame = top; frame.getPrevious() != null; frame = frame.getPrevious()) {
       MethodInfo mi = frame.getMethodInfo();
-      mi.leave(this); // that takes care of releasing locks
+      leave(mi); // that takes care of releasing locks
       vm.notifyExceptionBailout(this); // notify before we pop the frame
       popFrame();
     }

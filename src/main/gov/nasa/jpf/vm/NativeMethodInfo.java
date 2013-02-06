@@ -120,13 +120,6 @@ public class NativeMethodInfo extends MethodInfo {
     return -1; // we have no line numbers
   }
 
-  @Override
-  protected StackFrame createStackFrame (ThreadInfo ti){
-    StackFrame caller = ti.getTopFrame();
-    Object[] args = getArguments(ti);
-    return new NativeStackFrame(this, caller, args);
-  }
-
   public Instruction executeNative (ThreadInfo ti) {
     Object   ret = null;
     Object[] args = null;

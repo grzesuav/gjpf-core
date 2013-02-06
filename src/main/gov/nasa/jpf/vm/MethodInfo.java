@@ -371,11 +371,6 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     return new CodeBuilder(ifact, null, this);
   }
 
-  public CodeBuilder createCodeBuilder(ClassFile cf){
-    InstructionFactory ifact = getInstructionFactory();
-    return new CodeBuilder(ifact, cf, this);
-  }
-
   /**
    * NOTE - this only works in conjunction with a special StackFrame,
    * the caller has to make sure the right operands are pushed for the call arguments!
@@ -580,13 +575,6 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   public String getBaseName() {
     return getClassName() + '.' + name;
   }
-  
-  public boolean isExecutable (ThreadInfo ti) {
-    // <2do> well, that doesn't take into account if executability depends on values
-    // but 'isExecutable' is going away anyways
-    return canEnter(ti);
-  }
-
     
   public boolean isCtor () {
     return (name.equals("<init>"));
@@ -1054,103 +1042,7 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   public String getUniqueName () {
     return uniqueName;
   }
-
-  public boolean canEnter (ThreadInfo th) {
-    if (isSynchronized()) {
-      ElementInfo ei = getBlockedObject(th, true, false);
-
-      // <?> pcm - the other way round would be intuitive
-      return ei.canLock(th);
-    }
-
-    return true;
-  }
-
-  public ElementInfo getBlockedObject (ThreadInfo th, boolean isBeforeCall, boolean isModifiable) {
-    int         objref;
-    ElementInfo ei = null;
-
-    if (isSynchronized()) {
-      if (isStatic()) {
-        objref = ci.getClassObjectRef();
-      } else {
-        // NOTE 'inMethod' doesn't work for natives, because th.getThis()
-        // pulls 'this' from the stack frame, which we don't have (and don't need)
-        // for natives
-        objref = isBeforeCall ? th.getCalleeThis(this) : th.getThis();
-      }
-
-      ei = (isModifiable) ? th.getModifiableElementInfo(objref) : th.getElementInfo(objref);
-
-      assert (ei != null) : ("inconsistent stack, no object or class ref: " +
-                               getFullName() + " (" + objref +")");
-    }
-
-    return ei;
-  }
-
-  // override this if there is a need for a special StackFrame
-  protected StackFrame createStackFrame (ThreadInfo ti){
-    return new StackFrame(this, ti.getTopFrame());
-  }
-
-  /**
-   * locking, stackframe push and enter notification
-   */
-  public void enter (ThreadInfo ti) {
-    if (isSynchronized()) {
-      ElementInfo ei = getBlockedObject(ti, true, true);
-      ei.lock(ti);
-
-      if (isStatic() && isClinit()) {
-        ci.setInitializing(ti);
-      }
-    }
-
-    // we need to do this after locking
-    ti.pushFrame( createStackFrame(ti));
-
-    ti.getVM().notifyMethodEntered(ti, this);
-  }
-
-  /**
-   * unlocking and exit notification
-   */
-  public void leave (ThreadInfo ti) {
-    
-    // <2do> - that's not really enough, we might have suspicious bytecode that fails
-    // to release locks acquired by monitor_enter (e.g. by not having a handler that
-    // monitor_exits & re-throws). That's probably shifted into the bytecode verifier
-    // in the future (i.e. outside JPF), but maybe we should add an explicit test here
-    // and report an error if the code does asymmetric locking (according to the specs,
-    // VMs are allowed to silently fix this, so it might run on some and fail on others)
-    
-    if (isSynchronized()) {
-      ElementInfo ei = getBlockedObject(ti, false, true);
-      if (ei.isLocked()){
-        ei.unlock(ti);
-      }
-      
-      if (isStatic() && isClinit()) {
-        // we just released the lock on the class object, returning from a clinit
-        // now we can consider this class to be initialized.
-        // NOTE this is still part of the RETURN insn of clinit, so ClassInfo.isInitialized
-        // is protected
-        ci.setInitialized();
-      }
-    }
-
-    ti.getVM().notifyMethodExited(ti, this);
-  }
   
-  /**
-   * execute this method invocation
-   */
-  public Instruction execute (ThreadInfo ti) {
-    enter(ti);
-    return ti.getPC();
-  }
-
   public boolean hasCode(){
     return (code != null);
   }

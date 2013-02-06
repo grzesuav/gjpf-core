@@ -75,7 +75,7 @@ public class INVOKESPECIAL extends InstanceInvocation {
       }
     }
 
-    return mi.execute(ti);
+    return ti.execute(mi);
   }
 
   /**

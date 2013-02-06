@@ -66,7 +66,7 @@ public abstract class VirtualInvocation extends InstanceInvocation {
       }
     }
 
-    return mi.execute(ti);    // this will lock the object if necessary
+    return ti.execute(mi);
   }
   
   /**

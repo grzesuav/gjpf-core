@@ -84,6 +84,7 @@ public abstract class VM {
   protected Path path;  /** execution path to current state */
   protected StringBuilder out;  /** buffer to store output along path execution */
 
+  protected String mainEntry;   // the main entry method name + signature 
   // cache to keep the current system loader
   // Note - for MultiProcessesVM, this is only used temporary during the 
   // initialization
@@ -347,6 +348,59 @@ public abstract class VM {
     }
   }
 
+  protected MethodInfo getMainEntryMethod(){
+    String mthName = config.getProperty("vm.main_entry", "main([Ljava/lang/String;)V");
+    
+    ClassInfo ciMain = ClassInfo.getResolvedClassInfo(getMainClassName());
+    MethodInfo miMain = ciMain.getMethod(mthName, true);
+
+    //--- do some sanity checks if this is a valid entry method
+    if (miMain == null || !miMain.isStatic()) {
+      throw new JPFException("no static entry method: " + ciMain.getName() + '.' + mthName);
+    }
+    
+    // signature will be checked by caller
+    mainEntry = miMain.getUniqueName();
+    
+    return miMain;
+  }
+  
+  protected void pushMainEntryArgs( ThreadInfo tiMain, MethodInfo miMain, StackFrame frame){
+    String sig = miMain.getSignature();
+    Heap heap = getHeap();
+    
+    String[] args = getArgs();
+    if (sig.contains("([Ljava/lang/String;)")){
+      ElementInfo eiArgs = heap.newArray("Ljava/lang/String;", args.length, tiMain);
+      for (int i = 0; i < args.length; i++) {
+        ElementInfo eiArg = heap.newString(args[i], tiMain);
+        eiArgs.setReferenceElement(i, eiArg.getObjectRef());
+      }
+      frame.pushRef(eiArgs.getObjectRef());
+
+    } else if (sig.contains("(Ljava/lang/String;)")){
+      ElementInfo eiArg = heap.newString(args[0], tiMain);
+      frame.pushRef(eiArg.getObjectRef());
+      
+    } else if (!sig.contains("()")){
+      throw new JPFException("unsupported main entry signature: " + miMain.getFullName());
+    }
+  }
+  
+  /**
+   * override this if the main entry is computed at runtime
+   * (it can be configured with "vm.main_entry")
+   */
+  protected void pushMainEntry (ThreadInfo tiMain) {
+    MethodInfo miMain = getMainEntryMethod();
+
+    MethodInfo mainStub = miMain.createDirectCallStub("[main]");
+    DirectCallStackFrame frame = new DirectCallStackFrame(mainStub);
+    pushMainEntryArgs(tiMain, miMain, frame);    
+    tiMain.pushFrame(frame);
+  }
+
+  
   public void addListener (VMListener newListener) {
     log.info("VMListener added: ", newListener);
     listeners = Misc.appendElement(listeners, newListener);

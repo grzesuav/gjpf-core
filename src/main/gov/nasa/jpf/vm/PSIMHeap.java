@@ -19,10 +19,7 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.util.PersistentIntMap;
-import gov.nasa.jpf.util.PersistentIntMap.Result;
-import gov.nasa.jpf.util.PersistentMsbIntMap;
-import gov.nasa.jpf.util.PersistentStagingMsbIntMap;
+import gov.nasa.jpf.util.PSIntMap;
 import gov.nasa.jpf.util.Predicate;
 
 import java.util.Iterator;
@@ -47,7 +44,7 @@ public class PSIMHeap extends GenericSGOIDHeap {
    * this sucks - we need a memento in order to store/restore allocCounts, internStrings and pinDownList
    */
   static class PSIMMemento extends GenericSGOIDHeapMemento {
-    PersistentIntMap<ElementInfo> eiSnap;
+    PSIntMap<ElementInfo> eiSnap;
     
     PSIMMemento (PSIMHeap heap) {
       super(heap);
@@ -91,7 +88,6 @@ public class PSIMHeap extends GenericSGOIDHeap {
       } else { // object is no longer reachable  
         // no finalizer support yet
         ei.processReleaseActions();
-System.out.println("@@ release " + ei.getObjectRef() + "  : " + ei);
         // <2do> still have to process finalizers here, which might make the object live again
         vm.notifyObjectReleased( ti, ei);
         return true;
@@ -100,20 +96,14 @@ System.out.println("@@ release " + ei.getObjectRef() + "  : " + ei);
   }
   
   SweepPredicate sweepPredicate;
-  Result<ElementInfo> sweepResult;
-  
-  PersistentIntMap<ElementInfo> elementInfos;
+  PSIntMap<ElementInfo> elementInfos;
   
   
   public PSIMHeap (Config config, KernelState ks) {
     super(config,ks);
     
-    elementInfos = new PersistentStagingMsbIntMap<ElementInfo>();
-    //elementInfos = new PersistentLsbIntMap<ElementInfo>();
-    //elementInfos = new PersistentMsbIntMap<ElementInfo>();
-    
+    elementInfos = new PSIntMap<ElementInfo>();    
     sweepPredicate = new SweepPredicate();
-    sweepResult = new Result<ElementInfo>();
   }
   
   @Override
@@ -124,21 +114,14 @@ System.out.println("@@ release " + ei.getObjectRef() + "  : " + ei);
   @Override
   protected void set(int index, ElementInfo ei) {
     elementInfos = elementInfos.set(index, ei);
-assert elementInfos.get(index) == ei;
   }
 
   @Override
   public ElementInfo get(int ref) {
     if (ref < 0) {
-System.out.println("@@ BANG");
       return null;
-    } else {
-ElementInfo ei = elementInfos.get(ref);
-System.out.println("@@ get " + ref + " (" + Integer.toHexString(ref) + ") => " + ei);
-assert ei.getObjectRef() == ref;
-return ei;
-      
-      //return elementInfos.get(ref);
+    } else {      
+      return elementInfos.get(ref);
     }
   }
 
@@ -154,7 +137,6 @@ return ei;
       if (ei != null && ei.isFrozen()) {
         ei = ei.deepClone(); 
         // freshly created ElementInfos are not frozen, so we don't have to defreeze
-System.out.println("@@@ setModifiable " + ei);
         elementInfos = elementInfos.set(ref, ei);
       }
 
@@ -164,14 +146,13 @@ System.out.println("@@@ setModifiable " + ei);
 
   @Override
   protected void remove(int ref) {
-System.out.println("@@ remove " + ref);
     elementInfos = elementInfos.remove(ref);
   }
   
   @Override
   protected void sweep () {
     sweepPredicate.setContext();
-    elementInfos = elementInfos.removeAllSatisfying( sweepPredicate, sweepResult);
+    elementInfos = elementInfos.removeAllSatisfying( sweepPredicate);
   }
   
   @Override

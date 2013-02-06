@@ -20,7 +20,6 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.IntTable;
-import gov.nasa.jpf.util.PersistentIntMap;
 import gov.nasa.jpf.vm.GenericHeap.GenericHeapMemento;
 
 /**
@@ -31,7 +30,6 @@ public abstract class GenericSGOIDHeap extends GenericHeap {
 
   static class GenericSGOIDHeapMemento extends GenericHeapMemento {
     IntTable.Snapshot<AllocationContext> ctxSnap;
-    PersistentIntMap<ElementInfo> eiSnap;
     
     GenericSGOIDHeapMemento (GenericSGOIDHeap heap) {
       super(heap);
