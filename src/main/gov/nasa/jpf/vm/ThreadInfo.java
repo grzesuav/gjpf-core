@@ -28,8 +28,8 @@ import gov.nasa.jpf.util.*;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
-import java.io.File;
 import java.io.PrintWriter;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -141,6 +141,9 @@ public class ThreadInfo extends InfoObject
       return exceptionInfo;
     }
   }
+  
+  //--- instance fields
+  
     
   // transient, not state stored
   protected ExceptionInfo pendingException;
@@ -166,7 +169,10 @@ public class ThreadInfo extends InfoObject
 
   
   //--- the invariants
-    
+
+  // we need this mostly for getting our SystemClassLoader
+  protected ApplicationContext appCtx;
+  
   // search global id, which is the basis for canonical order of threads
   protected int id;
   
@@ -183,20 +189,18 @@ public class ThreadInfo extends InfoObject
   static final int ATTR_STACK_CHANGED      = 0x20000;
   static final int ATTR_ATTRIBUTE_CHANGED  = 0x80000;
 
-
-  //--- state stored/restored part
-  
+  //--- state stored/restored attributes  
   // this is a typical "orthogonal" thread state we have to remember, but
   // that should not affect any locking, blocking, notifying or such
   static final int ATTR_STOPPED = 0x0001;
 
   //--- change sets
   static final int ATTR_ANY_CHANGED = (ATTR_DATA_CHANGED | ATTR_STACK_CHANGED | ATTR_ATTRIBUTE_CHANGED);
-
   static final int ATTR_SET_STOPPED = (ATTR_STOPPED | ATTR_ATTRIBUTE_CHANGED);
 
   protected int attributes;
 
+  
   /** counter for executed instructions along current transition */
   protected int executedInstructions;
 
@@ -368,9 +372,10 @@ public class ThreadInfo extends InfoObject
   //--- factory methods
   // <2do> this is going to be a configurable factory method  
   
-  /**
-   *  search global cache for dense ThreadInfo ids. We could just use objRef since those are
-   *  guaranteed to be global, but not dense
+  /*
+   * search global cache for dense ThreadInfo ids. We could just use objRef since those are
+   * guaranteed to be global, but not dense. The ids are search global, i.e. there is no
+   * need to store/restore, but it needs to be (re)set during init()  
    */
   static Map<Integer, Integer> globalTids;  // initialized by init
   
@@ -394,17 +399,19 @@ public class ThreadInfo extends InfoObject
    * mainThread ctor called by the VM. Note we don't have a thread object yet (hen-and-egg problem
    * since we can't allocate objects without a ThreadInfo)
    */
-  protected ThreadInfo (VM vm, int id) {
+  protected ThreadInfo (VM vm, int id, ApplicationContext appCtx) {
     initFields(vm);
     this.id = id;
+    this.appCtx = appCtx;
   }
 
   /**
    * the ctor for all explicitly (bytecode) created threads. At this point, there is at least
    * a mainThread and we have a corresponding java.lang.Thread object
    */
-  protected ThreadInfo (VM vm, int objRef, int groupRef, int runnableRef, int nameRef) {    
+  protected ThreadInfo (VM vm, int objRef, int groupRef, int runnableRef, int nameRef, ThreadInfo parent) {    
     id = computeId(objRef);
+    this.appCtx = parent.getApplicationContext();
     initFields(vm);
     initReferenceFields(objRef, groupRef, runnableRef, nameRef);
   }
@@ -478,14 +485,9 @@ public class ThreadInfo extends InfoObject
     cachedMemento = memento;
   }
 
-  public static ThreadInfo getMainThread () {
-    return VM.getVM().getSystemClassLoader().getMainThread();
-  }
-
   public static ThreadInfo getCurrentThread() {
     return currentThread;
   }
-
 
   public boolean isExecutingAtomically () {
     return vm.getSystemState().isAtomic();
@@ -936,6 +938,10 @@ public class ThreadInfo extends InfoObject
   public int getStackDepth() {
     return stackDepth;
   }
+  
+  public MethodInfo getEntryMethod(){    
+    return appCtx.getEntryMethod();
+  }
 
   public StackFrame getCallerStackFrame (int offset){
     int n = offset;
@@ -1046,6 +1052,14 @@ public class ThreadInfo extends InfoObject
     return getCalleeThis(Types.getArgumentsSize(call.getInvokedMethodSignature()) + 1) == r.getObjectRef();
   }
 
+  public ApplicationContext getApplicationContext(){
+    return appCtx;
+  }
+  
+  public SystemClassLoaderInfo getSystemClassLoaderInfo(){
+    return appCtx.sysCl;
+  }
+  
   /**
    * Returns the class information.
    */

@@ -20,6 +20,7 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
@@ -31,8 +32,9 @@ import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 import java.io.PrintWriter;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 
 
 /**
@@ -47,6 +49,8 @@ public abstract class VM {
    * unconditional assertions for mandatory consistency checks)
    */
   public static final boolean CHECK_CONSISTENCY = false;
+  
+  protected static final String[] EMPTY_ARGS = new String[0];
   
   protected static JPFLogger log = JPF.getLogger("gov.nasa.jpf.vm.VM");
 
@@ -83,12 +87,6 @@ public abstract class VM {
 
   protected Path path;  /** execution path to current state */
   protected StringBuilder out;  /** buffer to store output along path execution */
-
-  protected String mainEntry;   // the main entry method name + signature 
-  // cache to keep the current system loader
-  // Note - for MultiProcessesVM, this is only used temporary during the 
-  // initialization
-  protected SystemClassLoaderInfo systemClassLoader;
 
   /**
    * various caches for VMListener state acquisition. NOTE - these are only
@@ -189,8 +187,6 @@ public abstract class VM {
 
     ss = new SystemState(config, this);
 
-    initSystemClassLoaders(config);
-
     stateSet = config.getInstance("vm.storage.class", StateSet.class);
     if (stateSet != null) stateSet.attach(this);
     backtracker = config.getEssentialInstance("vm.backtracker.class", Backtracker.class);
@@ -198,10 +194,6 @@ public abstract class VM {
 
     newStateId = -1;
   }
-
-  public abstract void initSystemClassLoaders(Config config);
-
-  public abstract void checkTarget(Config config);
 
   protected void initSubsystems (Config config) {
     ClassLoaderInfo.init(config);
@@ -262,12 +254,12 @@ public abstract class VM {
    * Our strategy here is kind of lame - we just look into java.lang.Class if we find the 'uniqueId' field
    * (that's a true '42')
    */
-  static boolean checkModelClassAccess (SystemClassLoaderInfo systemLoader) {
+  static boolean checkSystemClassCompatibility (SystemClassLoaderInfo systemLoader) {
     ClassInfo ci = systemLoader.getClassClassInfo();
     return ci.checkIfValidClassClassInfo();
   }
 
-  static boolean checkClassName (String clsName) {
+  static boolean isValidClassName (String clsName) {
     if ( !clsName.matches("[a-zA-Z_$][a-zA-Z_$0-9.]*")) {
       return false;
     }
@@ -286,12 +278,310 @@ public abstract class VM {
   }
 
   //--- ThreadInfo factory methods
-  protected abstract ThreadInfo createMainThreadInfo(int id);
+  protected ThreadInfo createMainThreadInfo (int id, ApplicationContext appCtx){
+    ThreadInfo tiMain = new ThreadInfo( this, id, appCtx);
+    ThreadInfo.currentThread = tiMain; // we still need this for listeners that process startup class loading events
+    return tiMain;
+  }
   
-  protected abstract ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef);
+  protected ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef){
+    ThreadInfo tiCurrent = ThreadInfo.getCurrentThread();
+    return new ThreadInfo( this, objRef, groupRef, runnableRef, nameRef, tiCurrent);
+  }
 
+  /**
+   * the minimal set of system classes we need for initialization
+   */
+  protected List<String> getStartupSystemClassNames() {
+    ArrayList<String> startupClasses = new ArrayList<String>(64);
+
+    // bare essentials
+    startupClasses.add("java.lang.Object");
+    startupClasses.add("java.lang.Class");
+    startupClasses.add("java.lang.ClassLoader");
+
+    // the builtin types (and their arrays)
+    startupClasses.add("boolean");
+    startupClasses.add("[Z");
+    startupClasses.add("byte");
+    startupClasses.add("[B");
+    startupClasses.add("char");
+    startupClasses.add("[C");
+    startupClasses.add("short");
+    startupClasses.add("[S");
+    startupClasses.add("int");
+    startupClasses.add("[I");
+    startupClasses.add("long");
+    startupClasses.add("[J");
+    startupClasses.add("float");
+    startupClasses.add("[F");
+    startupClasses.add("double");
+    startupClasses.add("[D");
+    startupClasses.add("void");
+
+    // the box types
+    startupClasses.add("java.lang.Boolean");
+    startupClasses.add("java.lang.Character");
+    startupClasses.add("java.lang.Short");
+    startupClasses.add("java.lang.Integer");
+    startupClasses.add("java.lang.Long");
+    startupClasses.add("java.lang.Float");
+    startupClasses.add("java.lang.Double");
+    startupClasses.add("java.lang.Byte");
+
+    // the cache for box types
+    startupClasses.add("gov.nasa.jpf.BoxObjectCaches");
+
+    // standard system classes
+    startupClasses.add("java.lang.String");
+    startupClasses.add("java.lang.Thread");
+    startupClasses.add("java.lang.ThreadGroup");
+    startupClasses.add("java.lang.Thread$State");
+    startupClasses.add("java.lang.Thread$Permit");
+    startupClasses.add("java.io.PrintStream");
+    startupClasses.add("java.io.InputStream");
+    startupClasses.add("java.lang.System");
+    startupClasses.add("java.lang.ref.Reference");
+    startupClasses.add("java.lang.ref.WeakReference");
+    startupClasses.add("java.lang.Enum");
+
+    // we could be more fancy and use wildcard patterns and the current classpath
+    // to specify extra classes, but this could be VERY expensive. Projected use
+    // is mostly to avoid static init of single classes during the search
+    String[] extraStartupClasses = config.getStringArray("vm.extra_startup_classes");
+    if (extraStartupClasses != null) {      
+      for (String extraCls : extraStartupClasses) {
+        startupClasses.add(extraCls);
+      }
+    }
+
+    // the main class has to be handled separately since it might be VM specific
+
+    return startupClasses;
+  }
+
+  /**
+   * return a list of ClassInfos for essential system types
+   * 
+   * If system classes are not found, or are not valid JPF model classes, we throw
+   * a JPFConfigException and exit
+   * 
+   * returned ClassInfos are not yet registered in Statics and don't have class objects
+   */
+  protected List<ClassInfo> getStartupSystemClassInfos (SystemClassLoaderInfo sysCl, ThreadInfo tiMain){
+    LinkedList<ClassInfo> list = new LinkedList<ClassInfo>();
+    
+    try {
+      for (String clsName : getStartupSystemClassNames()) {
+        ClassInfo ci = sysCl.getResolvedClassInfo(clsName);
+        ci.registerStartupClass( tiMain, list); // takes care of superclasses and interfaces
+      }
+    } catch (ClassInfoException e){
+      throw new JPFConfigException("cannot load system class " + e.getFailedClass());
+    } 
+    
+    return list;
+  }
+  
+  /**
+   * this adds the application main class and its supers to the list of startup classes 
+   */
+  protected ClassInfo getMainClassInfo (SystemClassLoaderInfo sysCl, String mainClassName, ThreadInfo tiMain, List<ClassInfo> list){
+    try {
+      ClassInfo ciMain = sysCl.getResolvedClassInfo(mainClassName);
+      ciMain.registerStartupClass(tiMain, list); // this might add a couple more
+      
+      return ciMain;
+      
+    } catch (ClassInfoException e){
+      throw new JPFConfigException("cannot load application class " + e.getFailedClass());
+    }
+  }
+  
+  protected void createSystemClassLoaderObject (SystemClassLoaderInfo sysCl, ThreadInfo tiMain) {
+    Heap heap = getHeap();
+
+    // create ClassLoader object for the ClassLoader type defined by this SystemClassLoaderInfo
+    // NOTE - this requires the SystemClassLoaderInfo cache to be initialized
+    ClassInfo ciCl = sysCl.getClassLoaderClassInfo();
+    ElementInfo ei = heap.newObject( ciCl, tiMain);
+    //ei.setReferenceField("parent", MJIEnv.NULL);
+    heap.registerPinDown(ei.getObjectRef());
+
+    sysCl.setClassLoaderObject(ei);
+  }
+
+  
+  /**
+   * we need to initialize the ThreadGroup object explicitly because the main thread is not yet runnable
+   */
+  protected int createMainThreadGroup (SystemClassLoaderInfo sysCl, ThreadInfo tiMain, int mainThreadRef) {
+    Heap heap = getHeap();
+    
+    ClassInfo ciGroup = sysCl.getResolvedClassInfo("java.lang.ThreadGroup");
+    ElementInfo eiThreadGrp = heap.newObject( ciGroup, tiMain);
+
+    // since we can't call methods yet, we have to init fields explicitly
+
+    ElementInfo eiGrpName = heap.newString("main", tiMain);
+    eiThreadGrp.setReferenceField("name", eiGrpName.getObjectRef());
+
+    eiThreadGrp.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
+
+    ElementInfo eiThreads = heap.newArray("Ljava/lang/Thread;", 4, tiMain);
+    eiThreads.setReferenceElement(0, mainThreadRef);
+
+    eiThreadGrp.setReferenceField("threads", eiThreads.getObjectRef());
+    eiThreadGrp.setIntField("nthreads", 1);
+
+    return eiThreadGrp.getObjectRef();
+  }
+  
+  /**
+   * we need to initialize the Thread object explicitly because the main thread is not yet runnable  
+   */
+  protected void createMainThreadObject (SystemClassLoaderInfo sysCl, ThreadInfo tiMain){
+    //--- now create & initialize all the related JPF objects
+    Heap heap = getHeap();
+
+    ClassInfo ciThread = sysCl.threadClassInfo;
+    ElementInfo eiThread = heap.newObject( ciThread, tiMain);
+    int threadRef = eiThread.getObjectRef();
+    int groupRef = createMainThreadGroup(sysCl, tiMain, threadRef);
+    ElementInfo eiName = heap.newString("main", tiMain);
+    int nameRef = eiName.getObjectRef();
+    
+    //--- initialize the main Thread object
+    eiThread.setReferenceField("group", groupRef);
+    eiThread.setReferenceField("name", nameRef);
+    eiThread.setIntField("priority", Thread.NORM_PRIORITY);
+
+    ClassInfo ciPermit = sysCl.getResolvedClassInfo("java.lang.Thread$Permit");
+    ElementInfo eiPermit = heap.newObject( ciPermit, tiMain);
+    eiPermit.setBooleanField("blockPark", true);
+    eiThread.setReferenceField("permit", eiPermit.getObjectRef());
+
+    ThreadInfo.addId(threadRef, tiMain.id);
+
+    //--- initialize the ThreadInfo reference fields
+    tiMain.initReferenceFields(threadRef, groupRef, MJIEnv.NULL, nameRef);
+  
+    //--- set the thread running
+    tiMain.setState(ThreadInfo.State.RUNNING);
+  }
+  
+  protected void pushMainEntryArgs (MethodInfo miMain, String[] args, ThreadInfo tiMain, StackFrame frame){
+    String sig = miMain.getSignature();
+    Heap heap = getHeap();
+    
+    if (sig.contains("([Ljava/lang/String;)")){
+      ElementInfo eiArgs = heap.newArray("Ljava/lang/String;", args.length, tiMain);
+      for (int i = 0; i < args.length; i++) {
+        ElementInfo eiArg = heap.newString(args[i], tiMain);
+        eiArgs.setReferenceElement(i, eiArg.getObjectRef());
+      }
+      frame.pushRef(eiArgs.getObjectRef());
+
+    } else if (sig.contains("(Ljava/lang/String;)")){
+      if (args.length > 1){
+        ElementInfo eiArg = heap.newString(args[0], tiMain);
+        frame.pushRef(eiArg.getObjectRef());
+      } else {
+        frame.pushRef(MJIEnv.NULL);
+      }
+      
+    } else if (!sig.contains("()")){
+      throw new JPFException("unsupported main entry signature: " + miMain.getFullName());
+    }
+  }
+  
+  protected void pushMainEntry (MethodInfo miMain, String[] args, ThreadInfo tiMain) {
+    MethodInfo mainStub = miMain.createDirectCallStub("[main]");
+    DirectCallStackFrame frame = new DirectCallStackFrame(mainStub);
+    pushMainEntryArgs( miMain, args, tiMain, frame);    
+    tiMain.pushFrame(frame);
+  }
+
+  protected MethodInfo getMainEntryMethodInfo (String mthName, ClassInfo ciMain) {
+    MethodInfo miMain = ciMain.getMethod(mthName, true);
+
+    //--- do some sanity checks if this is a valid entry method
+    if (miMain == null || !miMain.isStatic()) {
+      throw new JPFConfigException("no static entry method: " + ciMain.getName() + '.' + mthName);
+    }
+    
+    return miMain;
+  }
+  
+  protected void pushClinits (List<ClassInfo> startupClasses, ThreadInfo tiMain) {
+    for (ClassInfo ci : startupClasses){
+      MethodInfo mi = ci.getMethod("<clinit>()V", false);
+      if (mi != null) {
+        MethodInfo stub = mi.createDirectCallStub("[clinit]");
+        StackFrame frame = new DirectCallStackFrame(stub);
+        tiMain.pushFrame(frame);
+      } else {
+        ci.setInitialized();
+      }      
+    }
+  }
+
+  /**
+   * this is the main initialization point that sets up startup objects threads and callstacks.
+   * If this returns false VM initialization cannot proceed and JPF will terminate
+   */
   public abstract boolean initialize ();
+  
+  /**
+   * create and initialize the main thread for the given ApplicationContext.
+   * This is called from VM.initialize() implementations, the caller has to handle exceptions that should be reported
+   * differently (JPFConfigException, ClassInfoException)
+   */
+  protected ThreadInfo initializeMainThread (ApplicationContext appCtx, int tid){
+    SystemClassLoaderInfo sysCl = appCtx.sysCl;
+    
+    ThreadInfo tiMain = createMainThreadInfo(tid, appCtx);
+    List<ClassInfo> startupClasses = getStartupSystemClassInfos(sysCl, tiMain);
+    ClassInfo ciMain = getMainClassInfo(sysCl, appCtx.mainClassName, tiMain, startupClasses);
 
+    if (!checkSystemClassCompatibility( sysCl)){
+      throw new JPFConfigException("non-JPF system classes, check classpath");
+    }
+    
+    // create essential objects (we can't call ctors yet)
+    createSystemClassLoaderObject(sysCl, tiMain);
+    for (ClassInfo ci : startupClasses) {
+      ci.createAndLinkStartupClassObject(tiMain);
+    }
+    createMainThreadObject(sysCl, tiMain);
+    
+    // note that StackFrames have to be pushed in reverse order
+    MethodInfo miMain = getMainEntryMethodInfo(appCtx.mainEntry, ciMain);
+    appCtx.setEntryMethod(miMain);
+    pushMainEntry(miMain, appCtx.args, tiMain);
+    Collections.reverse(startupClasses);
+    pushClinits(startupClasses, tiMain);
+
+    registerThreadListCleanup(sysCl.getThreadClassInfo());
+
+    return tiMain;
+  }
+  
+  protected void registerThreadListCleanup (ClassInfo ciThread){
+    assert ciThread != null : "java.lang.Thread not loaded yet";
+    
+    ciThread.addReleaseAction( new ReleaseAction(){
+      public void release (ElementInfo ei) {
+        ThreadList tl = getThreadList();
+        int objRef = ei.getObjectRef();
+        ThreadInfo ti = tl.getThreadInfoForObjRef(objRef);
+        if (tl.remove(ti)){        
+          vm.getKernelState().changed();    
+        }
+      }
+    });
+  }
+  
   protected void initSystemState (ThreadInfo mainThread){
     ss.setStartThread(mainThread);
 
@@ -308,29 +598,7 @@ public abstract class VM {
 
     transitionOccurred = true;
   }
-
-  /**
-   * Creates & returns a system classLoader which is root in the classLaoders 
-   * hierarchy
-   */
-  protected SystemClassLoaderInfo createSystemClassLoader(String mainClassName, int mainThreadId, String[] args) {
-    //--- create the ClassLoaderInfo
-    SystemClassLoaderInfo cl = new SystemClassLoaderInfo(this, mainClassName, mainThreadId, args);
-
-    try {
-      //--- java.lang.ClassLoader is registered later along with other startup classes
-      ClassInfo ci = cl.getResolvedClassInfo("java.lang.ClassLoader");
-
-      //--- create java.lang.ClassLoader object corresponding to the systemClassLoader
-      cl.createSystemClassLoaderObject(ci);
-    } catch(ClassInfoException cie) {
-      throw new JPFException("loading of the class " + cie.getFaildClass() + 
-                                  " throws " + cie.getExceptionClass());
-    }
-
-    return cl;
-  }
-
+  
   public void addPostGcAction (Runnable r){
     postGcActions.add(r);
   }
@@ -347,59 +615,6 @@ public abstract class VM {
       postGcActions.clear();
     }
   }
-
-  protected MethodInfo getMainEntryMethod(){
-    String mthName = config.getProperty("vm.main_entry", "main([Ljava/lang/String;)V");
-    
-    ClassInfo ciMain = ClassInfo.getResolvedClassInfo(getMainClassName());
-    MethodInfo miMain = ciMain.getMethod(mthName, true);
-
-    //--- do some sanity checks if this is a valid entry method
-    if (miMain == null || !miMain.isStatic()) {
-      throw new JPFException("no static entry method: " + ciMain.getName() + '.' + mthName);
-    }
-    
-    // signature will be checked by caller
-    mainEntry = miMain.getUniqueName();
-    
-    return miMain;
-  }
-  
-  protected void pushMainEntryArgs( ThreadInfo tiMain, MethodInfo miMain, StackFrame frame){
-    String sig = miMain.getSignature();
-    Heap heap = getHeap();
-    
-    String[] args = getArgs();
-    if (sig.contains("([Ljava/lang/String;)")){
-      ElementInfo eiArgs = heap.newArray("Ljava/lang/String;", args.length, tiMain);
-      for (int i = 0; i < args.length; i++) {
-        ElementInfo eiArg = heap.newString(args[i], tiMain);
-        eiArgs.setReferenceElement(i, eiArg.getObjectRef());
-      }
-      frame.pushRef(eiArgs.getObjectRef());
-
-    } else if (sig.contains("(Ljava/lang/String;)")){
-      ElementInfo eiArg = heap.newString(args[0], tiMain);
-      frame.pushRef(eiArg.getObjectRef());
-      
-    } else if (!sig.contains("()")){
-      throw new JPFException("unsupported main entry signature: " + miMain.getFullName());
-    }
-  }
-  
-  /**
-   * override this if the main entry is computed at runtime
-   * (it can be configured with "vm.main_entry")
-   */
-  protected void pushMainEntry (ThreadInfo tiMain) {
-    MethodInfo miMain = getMainEntryMethod();
-
-    MethodInfo mainStub = miMain.createDirectCallStub("[main]");
-    DirectCallStackFrame frame = new DirectCallStackFrame(mainStub);
-    pushMainEntryArgs(tiMain, miMain, frame);    
-    tiMain.pushFrame(frame);
-  }
-
   
   public void addListener (VMListener newListener) {
     log.info("VMListener added: ", newListener);
@@ -1229,7 +1444,7 @@ public abstract class VM {
   }
 
   public void storeTrace (String fileName, String comment, boolean verbose) {
-    ChoicePoint.storeTrace(fileName, getMainClassName(), getArgs(), comment,
+    ChoicePoint.storeTrace(fileName, getSUTName(), comment,
                            ss.getChoiceGenerators(), verbose);
   }
 
@@ -1595,23 +1810,8 @@ public abstract class VM {
     error_id = 0;
   }
 
-  public abstract SystemClassLoaderInfo getSystemClassLoader();
-
-  public abstract SystemClassLoaderInfo getSystemClassLoader(ThreadInfo ti);
-
-  public String getMainClassName () {
-    return getSystemClassLoader().getMainClassName();
-  }
-
-  public abstract String getSuT();
-
-  public ClassInfo getMainClassInfo () {
-    return ClassInfo.getResolvedClassInfo(getSystemClassLoader().getMainClassName());
-  }
-
-  public String[] getArgs () {
-    return getSystemClassLoader().getArgs();
-  }
+  public abstract String getSUTName();
+  public abstract String getSUTDescription();
 
   public Heap getHeap() {
     return ss.getHeap();

@@ -398,7 +398,7 @@ public class Reporter extends SearchListenerAdapter {
   }
 
   public String getSuT() {
-    return vm.getSuT();
+    return vm.getSUTDescription();
   }
   
   public String getJava (){

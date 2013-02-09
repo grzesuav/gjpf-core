@@ -609,14 +609,33 @@ public class Misc {
     }
   }
 
-  public int setBit (int val, int idx){
+  public static int setBit (int val, int idx){
     return (val | (1<<idx));
   }
   
-  public int clearBit (int val, int idx){
+  public static int clearBit (int val, int idx){
     return (val & ~(1<<idx));
   }
 
+  public static String upToFirst( String s, char c){
+    int i = s.indexOf(c);
+    if (i >= 0){
+      return s.substring(0, i);
+    } else {
+      return s;
+    }
+  }
+  
+  public static String fromFirst( String s, char c){
+    int i = s.indexOf(c);
+    if (i >= 0){
+      return s.substring(i);
+    } else {
+      return s;
+    }
+  }
+  
+  
   /*=================== PRIVATE STUFF ===================*/
 
   private static final class Iteratorable<E> implements Iterable<E> {

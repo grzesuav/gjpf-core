@@ -614,7 +614,9 @@ public abstract class TestJPF implements JPFShell  {
    */
   protected JPF createAndRunJPF (String[] args) {
     JPF jpf = createJPF(args);
-    runJPF(jpf);
+    if (jpf != null){
+      jpf.run();
+    }
     return jpf;
   }
 
@@ -651,37 +653,23 @@ public abstract class TestJPF implements JPFShell  {
     // --- if we have any specific test property overrides, do so
     conf.promotePropertyCategory("test.");
 
-    if (conf.getTarget() != null) {
-      getOptions(args);
-      
-      if (showConfig || showConfigSources){
-        PrintWriter pw = new PrintWriter(System.out, true);
-        if (showConfigSources){
-          conf.printSources(pw);        
-        }
-        
-        if (showConfig) {
-          conf.print(pw);
-        }
-        pw.flush();
+    getOptions(args);
+
+    if (showConfig || showConfigSources) {
+      PrintWriter pw = new PrintWriter(System.out, true);
+      if (showConfigSources) {
+        conf.printSources(pw);
       }
-      
-      jpf = new JPF(conf);
+
+      if (showConfig) {
+        conf.print(pw);
+      }
+      pw.flush();
     }
+
+    jpf = new JPF(conf);
 
     return jpf;
-  }
-
-  protected void runJPF (JPF jpf) {
-    if (jpf == null) {
-      return;
-    }
-
-    Config conf = jpf.getConfig();
-
-    if (conf.getTarget() != null) {
-      jpf.run();
-    }
   }
 
 

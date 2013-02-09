@@ -41,71 +41,53 @@ public class ClassLoaderInfoTest extends TestJPF {
   @Test
   public void testSystemClassLoader() {
     //--- Sets up the JPF environment
-    // just use some dummy class to be able to initialize jpf & vm 
-    String[] args = {"+target=HelloWorld"};
-    Config config = JPF.createConfig(args);
+    String[] args = { "+vm.class=.vm.MultiProcessVM", "+target.1=HelloWorld", "+target.2=HelloWorld" };
+    Config config = new Config(args);
     JPF jpf = new JPF(config);
-    ClassLoaderInfo.config = config;
     VM vm = jpf.getVM();
-    vm.initialize();
-
-
-    //--- Gets systemClassLoaders
-    // gets the systemClassLoader which already loaded the startup classes
-    SystemClassLoaderInfo cl1 = vm.getSystemClassLoader();
-    // create a new systemClassLoader
-    int id = cl1.getMainThread().getId() + 1;
-    SystemClassLoaderInfo cl2 = vm.createSystemClassLoader(config.getTarget(), id, config.getTargetArgs());
-    // loades the startup classes
-    cl2.loadStartUpClasses(vm, vm.getCurrentThread());
-
-
-    //--- Tests classloaders
-    assert cl1.resolvedClasses.size() == ClassInfo.getLoadedClasses().length;
-    assert cl1.getId() != cl2.getId();
-    assert cl1.statics != cl2.statics;
-    assert cl1.parent == null;
-    assert cl2.parent == null;
-
     Heap heap = vm.getHeap();
 
+    vm.initialize(); // this should instantiate two SystemClassLoaders
+
+    ThreadInfo[] threads = vm.getLiveThreads();
+    assertTrue( threads.length == 2);
+
+    //--- app 0
+    SystemClassLoaderInfo cl0 = threads[0].getSystemClassLoaderInfo();
+    assertTrue( cl0 != null);
+    assertTrue( cl0.parent == null);
+
+    int cl0ObjRef = cl0.objRef;
+    assertTrue( cl0ObjRef != MJIEnv.NULL);
+    ElementInfo ei0 = heap.get(cl0ObjRef);
+    assertTrue( ei0.getIntField( ClassLoaderInfo.ID_FIELD) == cl0.getId());
+    
+    //--- app 1
+    SystemClassLoaderInfo cl1 = threads[1].getSystemClassLoaderInfo();
+    assertTrue( cl1 != null);
+    assertTrue( cl0.parent == null);
+    
     int cl1ObjRef = cl1.objRef;
+    assertTrue( cl1ObjRef != MJIEnv.NULL);
     ElementInfo ei1 = heap.get(cl1ObjRef);
-    assert ei1.getIntField( ClassLoaderInfo.ID_FIELD) == cl1.getId();
+    assertTrue( ei1.getIntField( ClassLoaderInfo.ID_FIELD) == cl1.getId());
+    
+    //--- compare them
+    assertTrue( cl0 != cl1);
+    assertTrue( cl0.getId() != cl1.getId());
+    assertTrue( cl0.statics != cl1.statics);
+    assertTrue( cl0ObjRef != cl1ObjRef);
 
-    int cl2ObjRef = cl2.objRef;
-    ElementInfo ei2 = heap.get(cl2ObjRef);
-    assert ei2.getIntField( ClassLoaderInfo.ID_FIELD) == cl2.getId();
-
-
-    //--- Tests classes which are already loaded by both classLoaders
+    //--- compare the loaded classes
+    ClassInfo ci0 = cl0.getResolvedClassInfo("java.lang.Class");
     ClassInfo ci1 = cl1.getResolvedClassInfo("java.lang.Class");
-    ClassInfo ci2 = cl2.getResolvedClassInfo("java.lang.Class");
 
-    assert ci1 != ci2;
-    assert ci1.getName().equals(ci2.getName());
-    assert ci1.getClassFileUrl().equals(ci2.getClassFileUrl());
-    assert ci1.getUniqueId() != ci2.getUniqueId();
-    // cl1 loaded java.lang.Class earlier than cl2, therefore 
-    // ClassInfo.loadedClasses must contain ci1 and not ci2
-    assert ci1 == ClassInfo.loadedClasses.get(ci2.getClassFileUrl());
+    assertTrue( ci0 != ci1);
+    assertTrue( ci0.getUniqueId() != ci1.getUniqueId());
 
-
-    //--- Tests classes which are going to be loaded by both classLoaders
-    ci2 = cl2.getResolvedClassInfo("java.util.ArrayList");
-    ci1 = cl1.getResolvedClassInfo("java.util.ArrayList");
-
-    assert ci1 != ci2;
-    assert ci1.getName().equals(ci2.getName());
-    assert ci1.getClassFileUrl().equals(ci2.getClassFileUrl());
-
-    ThreadInfo ti = vm.getCurrentThread();
-    // classes need to be registered before retrieving the uniqueIds
-    ci1.registerClass(ti);
-    ci2.registerClass(ti);
-    assert ci1.getUniqueId() != ci2.getUniqueId();  
-    // cl2 loaded java.util.ArrayList earlier than cl2, therefore 
-    // ClassInfo.loadedClasses must contain ci2 and not ci1
-    assert ci2 == ClassInfo.loadedClasses.get(ci1.getClassFileUrl());
+    assertTrue( ci0.getName().equals(ci1.getName()));
+    assertTrue( ci0.getClassFileUrl().equals(ci1.getClassFileUrl()));
+    
+    //--- should compare on-demand loaded classes here..
   }
 }

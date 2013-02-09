@@ -65,7 +65,7 @@ public class ChoicePoint {
   }
 
   public static void storeTrace (String fileName,
-                                 String mainClass, String[] args, String comment,
+                                 String sutName, String comment,
                                  ChoiceGenerator[] trace, boolean verbose) {
     int i;
     if (fileName != null) {
@@ -81,13 +81,7 @@ public class ChoicePoint {
 
         // store the main app class and args here, so that we can do at least some checking
         pw.print( "application: ");
-        pw.println( mainClass);
-
-        for (i=0; i<args.length; i++) {
-          pw.print(' ');
-          pw.print( args[i]);
-        }
-        pw.println();
+        pw.println( sutName);
 
         // keep a String->id map so that we don't have to store thousands of redundant strings
         HashMap<String,Integer> map = new HashMap<String,Integer>();
@@ -217,7 +211,7 @@ public class ChoicePoint {
    *  {arg}
    *  "["searchLevel"]" (choiceGeneratorName | '#'cgID) nChoice
    */
-  public static ChoicePoint readTrace (String fileName, String mainClass, String[] args) {
+  public static ChoicePoint readTrace (String fileName, String sutName) {
     ChoicePoint firstCp = null, cp = null;
     StreamTokenizer scanner = createScanner(fileName);
 
@@ -227,11 +221,7 @@ public class ChoicePoint {
 
     try {
     match(scanner, "application:");
-    match(scanner, mainClass);
-
-    for (int i=0; i<args.length; i++) {
-      match(scanner, args[i]);
-    }
+    match(scanner, sutName);
 
     HashMap<String,String> map = new HashMap<String,String>();
     int clsId = 0;

@@ -102,12 +102,7 @@ public class ChoiceTracker extends ListenerAdapter implements PublisherExtension
     if (!isReportExtension) {
 
       pw.print("// application: ");
-      pw.print(config.getTarget());
-      for (String s : config.getTargetArgs()) {
-        pw.print(s);
-        pw.print(' ');
-      }
-      pw.println();
+      pw.println( search.getVM().getSUTDescription());
 
       if (cgClasses == null) {
         pw.println("// trace over all CG classes");

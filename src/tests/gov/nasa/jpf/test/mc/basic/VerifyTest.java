@@ -54,10 +54,10 @@ public class VerifyTest extends TestJPF {
 
   @Test public void testProperties () {
 
-    if (verifyNoPropertyViolation()) {
-      String target = Verify.getProperty("target");
-      System.out.println("got target=" + target);
-      assert target.equals(TestJPFHelper.class.getName());
+    if (verifyNoPropertyViolation("+hum=didum")) {
+      String target = Verify.getProperty("hum");
+      System.out.println("got hum=" + target);
+      assert target.equals("didum");
 
       Verify.setProperties("foo=bar");
       String p = Verify.getProperty("foo");

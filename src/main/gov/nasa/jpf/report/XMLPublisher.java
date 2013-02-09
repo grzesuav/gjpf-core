@@ -106,7 +106,7 @@ public class XMLPublisher extends Publisher {
   
   protected void publishSuT() {
     out.println("  <sut>");
-    String mainCls = conf.getTarget();
+    String mainCls = reporter.getSuT();
     if (mainCls != null) {
       String mainPath = reporter.getSuT();
       if (mainPath != null) {

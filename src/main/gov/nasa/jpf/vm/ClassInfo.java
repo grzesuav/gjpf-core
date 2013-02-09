@@ -2396,7 +2396,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     int anchor = name.hashCode(); // 2do - this should also take the ClassLoader ref into account
 
-    SystemClassLoaderInfo systemClassLoader = ClassLoaderInfo.getCurrentSystemClassLoader(ti);
+    SystemClassLoaderInfo systemClassLoader = ti.getSystemClassLoaderInfo();
 
     ClassInfo classClassInfo = systemClassLoader.getClassClassInfo();    
     ElementInfo ei = heap.newSystemObject(classClassInfo, ti, anchor);
@@ -2431,24 +2431,23 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   // for startup classes, the order of initialization is reversed since we can't create
   // heap objects before we have a minimal set of registered classes
   
-  void registerStartupClass(ThreadInfo ti, List<ClassInfo> queue) {
+  void registerStartupClass(ThreadInfo ti, List<ClassInfo> list) {
     if (!isRegistered()) {
       // do this recursively for superclasses and interfaceNames
       // respective classes might be defined by another classloader, so we have
       // to call their ClassInfo.registerClass()
 
       if (superClass != null) {
-        superClass.registerStartupClass(ti, queue);
+        superClass.registerStartupClass(ti, list);
       }
 
       for (ClassInfo ifc : interfaces) {
-        ifc.registerStartupClass(ti, queue);
+        ifc.registerStartupClass(ti, list);
       }
     }
 
-    if (!queue.contains(this)) {
-      queue.add(this);
-      classLoader.updateCachedClassInfos(this);
+    if (!list.contains(this)) {
+      list.add(this);
       ClassInfo.logger.finer("registering startup class: ", name);
       createStartupStaticElementInfo(ti);
     }

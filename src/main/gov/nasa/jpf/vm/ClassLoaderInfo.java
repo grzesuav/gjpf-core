@@ -233,25 +233,11 @@ public class ClassLoaderInfo
       }
     }
 
-    return getCurrentSystemClassLoader(ti);
+    return ti.getSystemClassLoaderInfo();
   }
 
-  protected void updateCachedClassInfos (ClassInfo ci) {
-    // nothing here, overridden by SystemClassLoaderInfo for standard classes such as java.lang.String
-  }
-
-  /**
-   * This is useful when there are multiple systemClassLoaders created.
-   */
   public static SystemClassLoaderInfo getCurrentSystemClassLoader() {
-    return getCurrentSystemClassLoader( ThreadInfo.getCurrentThread()); 
-  }
-
-  /**
-   * This is useful when there are multiple systemClassLoaders created.
-   */
-  public static SystemClassLoaderInfo getCurrentSystemClassLoader(ThreadInfo ti) {
-    return VM.getVM().getSystemClassLoader(ti);
+    return ThreadInfo.getCurrentThread().getSystemClassLoaderInfo(); 
   }
 
   public ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {

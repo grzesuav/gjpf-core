@@ -94,12 +94,12 @@ import java.util.regex.Pattern;
  * settings that are used to initialize class loading by the host VM and JPF
  *
  * (3) one *.jpf application properties - this specifies all the settings for a
- * specific JPF run, esp. listener and target/target_args.
+ * specific JPF run, esp. listener and target/target.args.
  * app properties can be specified as the sole JPF argument, i.e. instead of
  * a SUT classname
  *     ..
  *     target = x.Y.MySystemUnderTest
- *     target_args = one,two
+ *     target.args = one,two
  *     ..
  *     listener = z.MyListener
  *
@@ -133,9 +133,6 @@ import java.util.regex.Pattern;
 
 @SuppressWarnings("serial")
 public class Config extends Properties {
-
-  public static final String TARGET_KEY = "target";
-  public static final String TARGET_ARGS_KEY = "target_args";
 
   static final char   KEY_PREFIX = '@';
   public static final String REQUIRES_KEY = "@requires";
@@ -174,7 +171,7 @@ public class Config extends Properties {
   }
 
   ClassLoader loader = Config.class.getClassLoader();
-  
+    
   // where did we initialize from
   ArrayList<Object> sources = new ArrayList<Object>();
   
@@ -188,16 +185,18 @@ public class Config extends Properties {
   
   public final Object[] CONFIG_ARGS = { this };
 
-  String[] args; // our original (non-nullified) command line args
-
+  // the original command line args that were passed into the constructor
+  String[] args;
+  
+  // non-property/option command line args (starting from the first arg that is not prepened by '-','+')
+  String[] freeArgs;
 
   /**
    * the standard Config constructor that processes the whole properties stack
-   * @param args - usually command line args (incl. '+' options) 
    */
-  public Config (String[] args)  {
-    this.args = args;
-    String[] a = args.clone(); // we might nullify some of them
+  public Config (String[] cmdLineArgs)  {
+    args = cmdLineArgs;
+    String[] a = cmdLineArgs.clone(); // we might nullify some of them
 
     String appProperties = getAppPropertiesLocation(a);
     String siteProperties = getSitePropertiesLocation(a, appProperties);
@@ -581,21 +580,18 @@ public class Config extends Properties {
    * argument syntax:
    *          {'+'<key>['='<val>'] | '-'<driver-arg>} {<free-arg>}
    *
-   * (1) null args are ignored
-   * (2) all config args start with '+'
+   * (1) null cmdLineArgs are ignored
+   * (2) all config cmdLineArgs start with '+'
    * (3) if '=' is ommitted, a 'true' value is assumed
    * (4) if <val> is ommitted, a 'null' value is assumed
    * (5) no spaces around '='
-   * (6) all '-' driver-args are ignored
-   * (7) if 'target' is already set (from 'jpf.app' property or
-   *     "*.jpf" free-arg), all remaining <free-args> are 'target_args'
-   *     otherwise 'target' is set to the first free-arg
+   * (6) all '-' driver-cmdLineArgs are ignored
    */
 
-  protected void loadArgs (String[] args) {
+  protected void loadArgs (String[] cmdLineArgs) {
 
-    for (int i=0; i<args.length; i++){
-      String a = args[i];
+    for (int i=0; i<cmdLineArgs.length; i++){
+      String a = cmdLineArgs[i];
 
       if (a != null && a.length() > 0){
         switch (a.charAt(0)){
@@ -606,19 +602,11 @@ public class Config extends Properties {
           case '-': // driver arg, ignore
             continue;
 
-          default:  // target args to follow
+          default:  // free (non property/option) cmdLineArgs to follow
 
-            if (getString(TARGET_KEY) == null){ // no 'target' yet
-              setTarget(a);
-              i++;
-            }
-
-            int n = args.length - i;
-            if (n > 0){ // we (might) have 'target_args'
-              String[] targetArgs = new String[n];
-              System.arraycopy(args, i, targetArgs, 0, n);
-              setTargetArgs(targetArgs);
-            }
+            int n = cmdLineArgs.length - i;
+            freeArgs = new String[n];
+            System.arraycopy(cmdLineArgs, i, freeArgs, 0, n);
 
             return;
         }
@@ -1100,63 +1088,13 @@ public class Config extends Properties {
     throw new JPFConfigException(msg);
   }
 
-  //------------------------ special properties
-  public String getTarget() {
-    return getString(TARGET_KEY);
-  }
-
-  public String[] getProcessesTargets() {
-    return getStringEnumeration(TARGET_KEY, MAX_NUM_PRC);
-  }
-
-  public void setTarget (String target){
-    setProperty(TARGET_KEY,target);
-  }
-
-  public String[] getTargetArgs() {
-    String[] args = getStringArray(TARGET_ARGS_KEY);
-    if (args == null){
-      args = new String[0];
-    }
-    return args;
-  }
-
-  public List<String[]> getProcessesTargetArgs() {
-    String[] targets = getStringEnumeration(TARGET_KEY, MAX_NUM_PRC);
-    List<String[]> prcTargetArgs = new ArrayList<String[]>();
-
-    for(int i = 0; i<targets.length; i++) {
-
-      String key = TARGET_ARGS_KEY + "." + i;
-      String[] args = getStringArray(key);
-
-      if (args == null) {
-        args = new String[0];
-      }
-
-      prcTargetArgs.add(args);
-    }
-
-    return prcTargetArgs;
-  }
-
-  public void setTargetArgs (String... args) {
-    StringBuilder sb = new StringBuilder();
-    for (int i=0, n = 0; i < args.length; i++) {
-      String a = args[i];
-      if (a != null) {
-        if (n++ > 0) {
-          sb.append(LIST_SEPARATOR);
-        }
-        // we expand to be consistent with an explicit 'target_args' spec
-        sb.append(expandString(null, a));
-      }
-    }
-    if (sb.length() > 0) {
-      setProperty(TARGET_ARGS_KEY, sb.toString());
-    }
-  }
-
+  /**
+   * return any command line args that are not options or properties
+   * (this usually contains the application class and arguments)
+   */
+  public String[] getFreeArgs(){
+    return freeArgs;
+  } 
 
   //----------------------- type specific accessors
 
@@ -1993,9 +1931,7 @@ public class Config extends Properties {
             + getMethodSignature(ctor));
       } catch (InvocationTargetException ix) {
         Throwable tx = ix.getTargetException();
-        if (tx instanceof JPFTargetException) {
-          throw new JPFConfigException(tx.getMessage()); 
-        } else if (tx instanceof JPFConfigException) {
+        if (tx instanceof JPFConfigException) {
           throw new JPFConfigException(tx.getMessage() + "\n> used within \"" + key
               + "\" instantiation of " + cls);
         } else {

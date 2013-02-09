@@ -2,7 +2,7 @@
 
 target = urgh.org.MySystemUnderTest
 
-target_args = a,b,c
+target.args = a,b,c
 
 #key expansion
 name = mySUT

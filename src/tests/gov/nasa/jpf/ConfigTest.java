@@ -24,7 +24,7 @@ public class ConfigTest extends TestJPF {
     String val = conf.getString("vm.class");
     assert "gov.nasa.jpf.vm.SingleProcessVM".equals(val);
 
-    val = conf.getTarget(); // from configTest.jpf
+    val = conf.getString("target"); // from configTest.jpf
     assert "urgh.org.MySystemUnderTest".equals(val);
 
     // that's testing key expansion and the builtin "config_path"
@@ -43,7 +43,9 @@ public class ConfigTest extends TestJPF {
     String[] args = {"urgh.org.MySystemUnderTest"};
 
     Config conf = new Config( args);
-    assert "urgh.org.MySystemUnderTest".equals(conf.getTarget());
+    String[] freeArgs = conf.getFreeArgs();
+    assertTrue( freeArgs.length == 1);
+    assertTrue( "urgh.org.MySystemUnderTest".equals(freeArgs[0]));
   }
 
   @Test
@@ -55,7 +57,7 @@ public class ConfigTest extends TestJPF {
     Config conf = new Config( args);
     conf.printEntries();
 
-    assert "urgh.org.MySystemUnderTest".equals(conf.getTarget());
+    assert "urgh.org.MySystemUnderTest".equals(conf.getString("target"));
   }
 
   @Test
@@ -68,10 +70,18 @@ public class ConfigTest extends TestJPF {
     Config conf = new Config(args);
     conf.printEntries();
 
-    String[] ta = conf.getTargetArgs();
-    assert ta.length == 2;
-    assert "x".equals(ta[0]);
-    assert "y".equals(ta[1]);
+    String[] ta = conf.getStringArray("target.args");
+    assert ta != null;
+    assert ta.length == 3;
+    assert "a".equals(ta[0]);
+    assert "b".equals(ta[1]);
+    assert "c".equals(ta[2]);
+    
+    String[] freeArgs = conf.getFreeArgs();
+    assert freeArgs != null;
+    assert freeArgs.length == 2;
+    assert "x".equals(freeArgs[0]);
+    assert "y".equals(freeArgs[1]);
   }
 
   @Test

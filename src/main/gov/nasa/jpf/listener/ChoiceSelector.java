@@ -103,8 +103,7 @@ public class ChoiceSelector extends ListenerAdapter {
     }
 
     VM vm = jpf.getVM();
-    trace = ChoicePoint.readTrace(config.getString("choice.use_trace"),
-                                       vm.getMainClassName(), vm.getArgs());
+    trace = ChoicePoint.readTrace(config.getString("choice.use_trace"), vm.getSUTName());
     searchAfterTrace = config.getBoolean("choice.search_after_trace", true);
     vm.setTraceReplay(trace != null);
   }

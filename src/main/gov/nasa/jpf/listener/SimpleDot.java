@@ -23,6 +23,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
+import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.Property;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
@@ -116,18 +117,6 @@ public class SimpleDot extends ListenerAdapter {
   HashSet<Long> seenEdges;
 
   public SimpleDot( Config config, JPF jpf){
-    app = config.getTarget();
-
-    // To handle the case of distributed Java applications
-    if(app == null) {
-      app = config.getProcessesTargets()[0];
-    }
-
-    String fname = config.getString("dot.file");
-    if (fname == null){
-      fname = Misc.stripToLastDot(app);
-      fname += ".dot";
-    }
 
     graphAttrs = config.getString("dot.graph_attr", GRAPH_ATTRS);
     genericNodeAttrs = config.getString("dot.node_attr", GENERIC_NODE_ATTRS);
@@ -143,6 +132,22 @@ public class SimpleDot extends ListenerAdapter {
     printFile = config.getBoolean("dot.print_file", false);
     showTarget = config.getBoolean("dot.show_target", false);
 
+    // app and filename are not known until the search is started
+    
+    jpf.addPublisherExtension(ConsolePublisher.class, this);
+  }
+
+  void initialize (VM vm){
+    Config config = vm.getConfig();
+    
+    app = vm.getSUTName();
+    
+    String fname = config.getString("dot.file");
+    if (fname == null){
+      fname = app.replace('.', '_');
+      fname += ".dot";
+    }
+
     try {
       file = new File(fname);
       FileWriter fw = new FileWriter(file);
@@ -150,17 +155,18 @@ public class SimpleDot extends ListenerAdapter {
     } catch (IOException iox){
       throw new JPFConfigException("unable to open SimpleDot output file: " + fname);
     }
-
-    jpf.addPublisherExtension(ConsolePublisher.class, this);
+    
+    seenEdges = new HashSet<Long>();
   }
-
+  
   //--- the listener interface
 
   @Override
   public void searchStarted(Search search){
     vm = search.getVM();
-    seenEdges = new HashSet<Long>();
-
+    
+    initialize(vm);
+    
     printHeader();
     printStartState("S");
   }

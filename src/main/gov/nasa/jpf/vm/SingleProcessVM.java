@@ -20,8 +20,9 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.JPFTargetException;
-import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.JPFConfigException;
+import gov.nasa.jpf.util.Misc;
+
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -33,140 +34,112 @@ import gov.nasa.jpf.JPFException;
  */
 public class SingleProcessVM extends VM {
 
+  ApplicationContext appCtx; // we only have one
+  
   protected SingleProcessVM (){}
 
   public SingleProcessVM (JPF jpf, Config conf) {
     super(jpf, conf);
+    
+    appCtx = createApplicationContext();
   }
-
-  @Override
-  public void initSystemClassLoaders (Config config) {
-    checkTarget(config);
-    int mainThreadId = 0;
-    systemClassLoader = createSystemClassLoader(config.getTarget(), mainThreadId, config.getTargetArgs());
-  }
-
-  @Override
-  protected ThreadInfo createMainThreadInfo(int id) {
-    return new ThreadInfo(this, id);
-  }
-
-  @Override
-  protected ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef) {
-    return new ThreadInfo( this, objRef, groupRef, runnableRef, nameRef);
-  }
-
-  @Override
-  public void checkTarget(Config config) {
-    String target = config.getTarget();
-    if (target == null || (target.length() == 0)) {
-      throw new JPFTargetException("no target class specified, terminating");
+  
+  protected ApplicationContext createApplicationContext (){
+    String clsName;
+    String[] args = null;
+    
+    String[] freeArgs = config.getFreeArgs();
+    clsName = config.getProperty("target"); // explicit 'target' takes precedence
+    
+    if (clsName == null){
+      if (freeArgs != null){ // if it is non-null, there is at least one entry
+        // note that application property filenames have been removed by Config since they are part of its initialization
+        clsName = freeArgs[0];
+        
+        if (freeArgs.length > 1){ // if there is no 'target' command line overrides 'target.args'
+          args = Misc.arrayWithoutFirst(freeArgs, 1);
+        } else {
+          args = config.asStringArray("target.args");
+        }
+      }
+    } else {
+      // since there was a 'target', 'target.args' override command line
+      args = config.getStringArray("target.args");
+      if (freeArgs != null){
+        log.warning("ignored command line args starting with ", freeArgs[0]);
+      }
     }
-  }
-
-  /**
-   * load and pushClinit startup classes, return 'true' if successful.
-   *
-   * This loads a bunch of core library classes, initializes the tiMain thread,
-   * and then all the required startup classes, but excludes the static init of
-   * the tiMain class. Note that whatever gets executed in here should NOT contain
-   * any non-determinism, since we are not backtrackable yet, i.e.
-   * non-determinism in clinits should be constrained to the app class (and
-   * classes used by it)
-   */
-  @Override
-  public boolean initialize () {
-    ClassInfoException cie = null;
-
-    if (!checkClassName(systemClassLoader.getMainClassName())) {
-      log.severe("Not a valid main class: " + systemClassLoader.getMainClassName());
-      return false;
+    
+    // sanity checks
+    if (args == null){
+      args = EMPTY_ARGS;
     }
+    if (clsName == null){
+      throw new JPFConfigException("no target class specified, terminating");
+    }
+    if (!isValidClassName(clsName)){
+      throw new JPFConfigException("main class not a valid class name: " + clsName);      
+    }
+    
+    // can be any static method that has a (String[]), (String) or () signature
+    String mainEntry = config.getProperty("target.entry", "main([Ljava/lang/String;)V");
 
-    ThreadInfo.currentThread = systemClassLoader.getMainThread();
+    SystemClassLoaderInfo sysCl = new SystemClassLoaderInfo(this,0);
+    
+    return new ApplicationContext( clsName, mainEntry, args, sysCl);
+  }
+  
 
-    // from here, we get into some bootstrapping process
-    //  - first, we have to load class structures (fields, supers, interfaces..)
-    //  - second, we have to create a thread (so that we have a stack)
-    //  - third, with that thread we have to create class objects
-    //  - forth, we have to push the clinit methods on this stack
+  @Override
+  public boolean initialize(){
     try {
-      systemClassLoader.registerStartupClasses(this);
+      ThreadInfo tiMain = initializeMainThread(appCtx, 0);
 
-      if (systemClassLoader.getStartupQueue() == null) {
-        log.severe("error initializing startup classes (check 'classpath' and 'target')");
-        return false;
+      if (tiMain == null) {
+        return false; // bail out
       }
-
-      if (!checkModelClassAccess(systemClassLoader)) {
-        log.severe( "error during VM runtime initialization: wrong model classes (check 'classpath')");
-        return false;
-      }
-    } catch (ClassInfoException e) {
-      // If loading a system class is failed, bail out immediately
-      if(e.checkSystemClassFailure()) {
-        throw new JPFException("loading the system class " + e.getFaildClass() + " faild");
-      }
-
-      // If loading of a non-system class failed, just store it & throw a JPF exception
-      // once the main thread is created
-      cie = e;
-    }
-
-    ThreadInfo tiMain = systemClassLoader.getMainThread();
-
-    try {
-      // Collections.<clinit> yet because there's no stack before we have a tiMain
-      // thread. Let's hope none of the init classes creates threads in their <clinit>.
-      systemClassLoader.initMainThread();
-
-      if(cie != null) {
-        tiMain.getEnv().throwException(cie.getExceptionClass(), cie.getMessage());
-        return false;
-      }
-
-      // now that we have a tiMain thread, we can finish the startup class init
-      systemClassLoader.createStartupClassObjects();
-
-      // pushClinit the call stack with the clinits we've picked up, followed by tiMain()
-      systemClassLoader.pushMainEntry();
-      systemClassLoader.pushClinits();
 
       initSystemState(tiMain);
-      systemClassLoader.registerThreadListCleanup();
-    } catch (ClassInfoException e) {
-      // If the main thread is not created due to an error thrown while loading a class, 
-      // bail out immediately
-      if(tiMain == null) {
-        throw new JPFException("loading of the class " + e.getFaildClass() + " faild");
-      } else{
-        tiMain.getEnv().throwException(e.getExceptionClass(), e.getMessage());
-        return false;
-      }
+      initialized = true;
+      notifyVMInitialized();
+      return true;
+      
+    } catch (JPFConfigException cfe){
+      log.severe(cfe.getMessage());
+      return false;
+    } catch (ClassInfoException cie){
+      log.severe(cie.getMessage());
+      return false;
     }
+    // all other exceptions are JPF errors that should cause stack traces
+  }
 
-    initialized = true;
-    notifyVMInitialized();
+  @Override
+  public String getSUTName() {
+    return appCtx.mainClassName;
+  }
+
+  @Override
+  public String getSUTDescription(){
+    StringBuilder sb = new StringBuilder();
+    sb.append(appCtx.mainClassName);
+    sb.append('.');
+    sb.append(Misc.upToFirst( appCtx.mainEntry, '('));
     
-    return true;
+    sb.append('(');
+    String[] args = appCtx.args;
+    for (int i=0; i<args.length; i++){
+      if (i>0){
+        sb.append(',');
+      }
+      sb.append('"');
+      sb.append(args[i]);
+      sb.append('"');
+    }
+    sb.append(')');
+    return sb.toString();
   }
-
-  @Override
-  public SystemClassLoaderInfo getSystemClassLoader() {
-    return systemClassLoader;
-  }
-
-  @Override
-  public SystemClassLoaderInfo getSystemClassLoader(ThreadInfo ti) {
-    return systemClassLoader;
-  }
-
-  @Override
-  public String getSuT() {
-    ClassInfo ciMain = systemClassLoader.getMainClassInfo();
-    return ciMain.getSourceFileName();
-  }
-
+  
   /**
    * The program is terminated if there are no alive threads, and there is no nonDaemon left.
    * 

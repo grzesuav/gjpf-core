@@ -55,25 +55,25 @@ public class ClassInfoException extends RuntimeException{
 
   ClassLoaderInfo classLoader;
   String exceptionClass;
-  String faildClass;
+  String failedClass;
 
   public ClassInfoException(String details, ClassLoaderInfo cl, String exceptionClass, String faildClass) {
     super(details);
     this.classLoader = cl;
     this.exceptionClass = exceptionClass;
-    this.faildClass = faildClass;
+    this.failedClass = faildClass;
   }
 
   public boolean checkSystemClassFailure() {
-    return (faildClass.startsWith("java."));
+    return (failedClass.startsWith("java."));
   }
 
   public ClassLoaderInfo getClassLoaderInfo() {
     return classLoader;
   }
 
-  public String getFaildClass() {
-    return faildClass;
+  public String getFailedClass() {
+    return failedClass;
   }
 
   public String getExceptionClass() {

@@ -165,35 +165,7 @@ public class ConsolePublisher extends Publisher {
 
   protected void publishSuT() {
     publishTopicStart("system under test");
-
-    String mainCls = conf.getTarget();
-    String[] mainPrcCls = conf.getProcessesTargets();
-    if (mainCls != null || mainPrcCls!=null) {
-      String mainPath = reporter.getSuT();
-      if (mainPath != null) {
-        out.println("application: " + mainPath);
-
-        RepositoryEntry rep = RepositoryEntry.getRepositoryEntry(mainPath);
-        if (rep != null) {
-          out.println("repository: " + rep.getRepository());
-          out.println("revision: " + rep.getRevision());
-        }
-      } else {
-        out.println("application: " + mainCls + ".class");
-      }
-    } else {
-      out.println("application: ?");
-    }
-
-    String[] args = conf.getTargetArgs();
-    if (args.length > 0) {
-      out.print("arguments:   ");
-      for (String s : args) {
-        out.print(s);
-        out.print(' ');
-      }
-      out.println();
-    }
+    out.println( reporter.getSuT());
   }
 
   protected void publishError() {

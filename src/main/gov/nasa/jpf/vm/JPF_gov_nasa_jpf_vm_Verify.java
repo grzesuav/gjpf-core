@@ -506,7 +506,7 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
     SystemState ss = env.getSystemState();
 
     if (!ti.isFirstStepInsn()) { // first time around
-      ChoiceGenerator<Float> cg = new FloatChoiceFromList("verifyFloatSet([F)", values);
+      ChoiceGenerator<Float> cg = new FloatChoiceFromList("verifyFloatList([F)", values);
       return registerChoiceGenerator(env,ss,ti,cg, 0.0f);
 
     } else {

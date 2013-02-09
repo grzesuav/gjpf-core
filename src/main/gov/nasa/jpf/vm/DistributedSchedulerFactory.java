@@ -39,7 +39,7 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
    * get list of all runnable threads in the same process as ti
    */
   protected ThreadInfo[] getRunnables(ThreadInfo ti) {
-    return filter(((MultiProcessesVM)vm).getRunnableAppThreads(ti));
+    return filter(((MultiProcessVM)vm).getRunnableAppThreads(ti));
   }
 
   /**
@@ -47,21 +47,21 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
    *  in the same process as ti
    */
   protected ThreadInfo[] getRunnablesIfChoices(ThreadInfo ti) {
-    int n = ((MultiProcessesVM)vm).getRunnableAppThreadCount(ti);
+    int n = ((MultiProcessVM)vm).getRunnableAppThreadCount(ti);
 
     if ((n > 1) || (n == 1 && breakSingleChoice)){
-      return filter(((MultiProcessesVM)vm).getRunnableAppThreads(ti));
+      return filter(((MultiProcessVM)vm).getRunnableAppThreads(ti));
     } else {
       return null;
     }
   }
 
   protected ThreadInfo[] getRunnablesWith (ThreadInfo ti) {
-    return filter(((MultiProcessesVM)vm).getRunnableAppThreadsWith(ti));
+    return filter(((MultiProcessVM)vm).getRunnableAppThreadsWith(ti));
   }
 
   protected ThreadInfo[] getRunnablesWithout (ThreadInfo ti) {
-    return filter(((MultiProcessesVM)vm).getRunnableAppThreadsWithout(ti));
+    return filter(((MultiProcessVM)vm).getRunnableAppThreadsWithout(ti));
   }
 
   /************************************ the public interface towards the insns ***/

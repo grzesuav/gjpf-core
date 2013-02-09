@@ -1485,7 +1485,7 @@ public class MJIEnv {
   // <2do> that's not correct - it should return the current SystemClassLoader, NOT the startup SystemClassLoader
   // (we can instantiate them explicitly)
   public ClassLoaderInfo getSystemClassLoaderInfo() {
-    return vm.getSystemClassLoader();
+    return ti.getSystemClassLoaderInfo();
   }
   
   public SystemState getSystemState () {
