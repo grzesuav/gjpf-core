@@ -21,6 +21,7 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.Predicate;
 
 import java.util.BitSet;
 import java.util.Iterator;
@@ -335,14 +336,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
   }
 
   public boolean hasMoreThreadsToRun() {
-    return hasMoreThreadsToRun(threads);
-  }
-
-  /**
-   * return if there are still runnables, and there is at least one
-   * non-daemon thread left in the given threads list
-   */
-  public boolean hasMoreThreadsToRun(ThreadInfo[] threads) {
     int nonDaemons = 0;
     int runnables = 0;
 
@@ -371,11 +364,9 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return nd;
   }
 
+  
+  
   public int getRunnableThreadCount () {
-    return getRunnableThreadCount(threads);
-  }
-
-  protected int getRunnableThreadCount(ThreadInfo[] threads) {
     int n = 0;
 
     for (int i = 0; i < threads.length; i++) {
@@ -387,17 +378,30 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return n;
   }
 
-  public ThreadInfo[] getRunnableThreads() {
-    return getRunnableThreads(threads);
+  public int getRunnableThreadCount (Predicate<ThreadInfo> pred) {
+    int n = 0;
+
+    for (int i = 0; i < threads.length; i++) {
+      ThreadInfo ti = threads[i];
+      if (ti.isTimeoutRunnable() && (pred == null || pred.isTrue(ti))) {
+        n++;
+      }
+    }
+
+    return n;
   }
 
-  protected ThreadInfo[] getRunnableThreads(ThreadInfo[] threads) {
-    int nRunnable = getRunnableThreadCount(threads);
+  public ThreadInfo[] getRunnableThreads() {
+    return getRunnableThreads(null);
+  }
+
+  public ThreadInfo[] getRunnableThreads (Predicate<ThreadInfo> pred) {
+    int nRunnable = getRunnableThreadCount(pred);
     ThreadInfo[] list = new ThreadInfo[nRunnable];
 
     for (int i = 0, j=0; i < threads.length; i++) {
       ThreadInfo t = threads[i];
-      if (t.isTimeoutRunnable()) {
+      if (t.isTimeoutRunnable() && (pred == null || pred.isTrue(t))) {
         list[j++] = t;
         if (j == nRunnable) {
           break;
@@ -409,16 +413,16 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
   }
 
   public ThreadInfo[] getRunnableThreadsWith (ThreadInfo ti) {
-    return getRunnableThreadsWith(ti, threads);
+    return getRunnableThreadsWith( ti, null);
   }
 
-  protected ThreadInfo[] getRunnableThreadsWith (ThreadInfo ti, ThreadInfo[] threads) {
-    int nRunnable = getRunnableThreadCount(threads);
+  public ThreadInfo[] getRunnableThreadsWith (ThreadInfo ti, Predicate<ThreadInfo> pred) {
+    int nRunnable = getRunnableThreadCount(pred);
     ThreadInfo[] list =  new ThreadInfo[ti.isRunnable() ? nRunnable : nRunnable+1];
 
     for (int i = 0, j=0; i < threads.length; i++) {
       ThreadInfo t = threads[i];
-      if (t.isTimeoutRunnable() || (t == ti)) {
+      if ((t.isTimeoutRunnable() || (t == ti)) && (pred == null || pred.isTrue(t))) {
         list[j++] = t;
         if (j == list.length) {
           break;
@@ -430,12 +434,11 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
   }
 
   public ThreadInfo[] getRunnableThreadsWithout( ThreadInfo ti) {
-    return getRunnableThreadsWithout(ti, threads);
+    return getRunnableThreadsWithout( ti, null);
   }
 
-  protected ThreadInfo[] getRunnableThreadsWithout( ThreadInfo ti, ThreadInfo[] threads) {
-    int nRunnable = getRunnableThreadCount(threads);
-
+  public ThreadInfo[] getRunnableThreadsWithout( ThreadInfo ti, Predicate<ThreadInfo> pred) {
+    int nRunnable = getRunnableThreadCount(pred);
 
     if (ti.isRunnable()) {
       nRunnable--;
@@ -444,7 +447,7 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
 
     for (int i = 0, j=0; i < threads.length; i++) {
       ThreadInfo t = threads[i];
-      if (t.isTimeoutRunnable() && (ti != t)) {
+      if (t.isTimeoutRunnable() && (ti != t) && (pred == null || pred.isTrue(t))) {
         list[j++] = t;
         if (j == nRunnable) {
           break;

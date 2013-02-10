@@ -25,6 +25,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.Predicate;
 import java.util.ArrayList;
 
 /**
@@ -250,23 +251,28 @@ public class MultiProcessVM extends VM {
     return appThreads;
   }
 
-  public ThreadInfo[] getRunnableAppThreads(ThreadInfo ti) {
-    ThreadInfo[] appThreads = getAppThreads(ti);
-    return getThreadList().getRunnableThreads(appThreads);
+  Predicate<ThreadInfo> getAppPredicate (final ThreadInfo ti){
+     // we could probably use a cached object here if the caller is synchronized
+    return new Predicate<ThreadInfo>(){
+      public boolean isTrue (ThreadInfo t){
+        return t.appCtx == ti.appCtx;
+      }
+    }; 
+  }
+  
+  public ThreadInfo[] getRunnableAppThreads (ThreadInfo ti) {    
+    return getThreadList().getRunnableThreads( getAppPredicate(ti));
   }
 
   public int getRunnableAppThreadCount (ThreadInfo ti) {
-    ThreadInfo[] appThreads = getAppThreads(ti);
-    return getThreadList().getRunnableThreadCount(appThreads);
+    return getThreadList().getRunnableThreadCount( getAppPredicate(ti));
   }
 
   public ThreadInfo[] getRunnableAppThreadsWith (ThreadInfo ti) {
-    ThreadInfo[] appThreads = getAppThreads(ti);
-    return getThreadList().getRunnableThreadsWith(ti, appThreads);
+    return getThreadList().getRunnableThreadsWith(ti,  getAppPredicate(ti));
   }
 
   public ThreadInfo[] getRunnableAppThreadsWithout( ThreadInfo ti) {
-    ThreadInfo[] appThreads = getAppThreads(ti);
-    return getThreadList().getRunnableThreadsWithout(ti, appThreads);
+    return getThreadList().getRunnableThreadsWithout(ti,  getAppPredicate(ti));
   }
 }
