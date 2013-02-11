@@ -32,7 +32,7 @@ public class TestJPFMainTest extends TestJPF {
   }
 
   @Test
-  public void ensureCompatibilityWithRunTestsOfThisClass() {
+  public void testMethod() {
     if (!Verify.isRunningInJPF()) {
       Verify.resetCounter(0);
       Verify.resetCounter(1);
@@ -40,6 +40,7 @@ public class TestJPFMainTest extends TestJPF {
     }
 
     if (verifyNoPropertyViolation()) {
+      System.out.println("incrementing test counter");
       Verify.incrementCounter(2);
       
     } else { // Runs after JPF finishes

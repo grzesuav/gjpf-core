@@ -451,8 +451,7 @@ public class ClassLoaderInfo
         int clsObjRef = frame.pop();
 
         if (clsObjRef == MJIEnv.NULL){
-          throw new ClassInfoException(cname + ", is not found in the classloader search path", 
-                                       this, "java.lang.NoClassDefFoundError", cname);
+          throw new ClassInfoException( "class not found: " + cname , this, "java.lang.NoClassDefFoundError", cname);
           } else {
             return ti.getEnv().getReferredClassInfo(clsObjRef);
           }

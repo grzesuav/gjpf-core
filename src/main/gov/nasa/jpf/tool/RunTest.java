@@ -25,6 +25,8 @@ import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFSiteUtils;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
  * tool to run JPF test with configured classpath
@@ -132,13 +134,20 @@ public class RunTest extends Run {
         if (testJpfCls.isAssignableFrom(testCls)) {
           String[] testArgs = getTestArgs(args);
 
-          // TestJPFHelper will check if the testCls has a main(), or otherwise run through TestJPF
-          Class<?> testRunnerCls = cl.loadClass("gov.nasa.jpf.util.test.TestJPFHelper");
-          String[] testRunnerArgs = new String[testArgs.length + 1];
-          System.arraycopy(testArgs, 0, testRunnerArgs, 1, testArgs.length);
-          testRunnerArgs[0] = testClsName;
-
-          call(testRunnerCls, "main", new Object[] {testRunnerArgs});
+          try {
+            try { // check if there is a main(String[]) method
+              Method mainEntry = testCls.getDeclaredMethod("main", String[].class);
+              mainEntry.invoke(null, (Object)testArgs);
+            
+            } catch (NoSuchMethodException x){ // no main(String[]), call TestJPF.runTests(testCls,args) directly
+              Method mainEntry = testJpfCls.getDeclaredMethod("runTests", Class.class, String[].class);
+              mainEntry.invoke( null, new Object[]{testCls, testArgs});
+            }
+          } catch (NoSuchMethodException x){
+            error("no suitable main() or runTests() in " + testCls.getName());
+          } catch (IllegalAccessException iax){
+            error( iax.getMessage());
+          }
 
         } else {
           error("not a gov.nasa.jpf.util.test.TestJPF derived class: " + testClsName);
@@ -165,6 +174,11 @@ public class RunTest extends Run {
     }
   }
 
+  static boolean isPublicStatic (Method m){
+    int mod = m.getModifiers();
+    return ((mod & (Modifier.PUBLIC | Modifier.STATIC)) == (Modifier.PUBLIC | Modifier.STATIC));
+  }
+  
   static void addTestClassPath (JPFClassLoader cl, Config conf){
     // since test classes are executed by both the host VM and JPF, we have
     // to tell the JPFClassLoader where to find them

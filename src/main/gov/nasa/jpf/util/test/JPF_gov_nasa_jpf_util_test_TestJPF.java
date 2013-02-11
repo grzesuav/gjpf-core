@@ -124,11 +124,23 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF extends NativePeer {
   }
 
   @MJI
-  public int createAndRunJPF___3Ljava_lang_String_2__Lgov_nasa_jpf_JPF_2 (MJIEnv env, int clsObjRef, int argsRef){
+  public int createAndRunJPF__Ljava_lang_StackTraceElement_2_3Ljava_lang_String_2__Lgov_nasa_jpf_JPF_2 (MJIEnv env, int clsObjRef, int a1, int a2){
     // don't get recursive
     return MJIEnv.NULL;
   }
 
+  @MJI
+  public int getProperty__Ljava_lang_String_2__Ljava_lang_String_2 (MJIEnv env, int clsObjRef, int keyRef){
+    String key = env.getStringObject(keyRef);
+    String val = env.getConfig().getString(key);
+    
+    if (val != null){
+      return env.newString(val);
+    } else {
+      return MJIEnv.NULL;
+    }
+  }
+  
   /**
    * if any of our methods are executed, we know that we already run under JPF
    */

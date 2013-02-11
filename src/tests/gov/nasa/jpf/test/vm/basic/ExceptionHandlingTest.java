@@ -19,7 +19,6 @@
 package gov.nasa.jpf.test.vm.basic;
 
 import gov.nasa.jpf.util.test.TestJPF;
-import gov.nasa.jpf.util.test.TestJPFHelper;
 
 import java.lang.reflect.Method;
 
@@ -144,7 +143,7 @@ public class ExceptionHandlingTest extends TestJPF {
         System.out.println(')');
       }
 
-      assert st.length == 5 : "wrong stack trace depth";
+      assert st.length == 4 : "wrong stack trace depth";
 
       assert st[0].getClassName().equals(ExceptionHandlingTest.class.getName());
       assert st[0].getMethodName().equals("testStackTrace");
@@ -156,10 +155,7 @@ public class ExceptionHandlingTest extends TestJPF {
       assert st[2].getMethodName().equals("invoke");
 
       assert st[3].getClassName().equals(TestJPF.class.getName());
-      assert st[3].getMethodName().equals("runTestOfClass");
-
-      assert st[4].getClassName().equals(TestJPFHelper.class.getName());
-      assert st[4].getMethodName().equals("main");
+      assert st[3].getMethodName().equals("runTestMethod");
     }
   }  
 }

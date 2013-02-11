@@ -65,8 +65,10 @@ public class SingleProcessVM extends VM {
     } else {
       // since there was a 'target', 'target.args' override command line
       args = config.getStringArray("target.args");
-      if (freeArgs != null){
-        log.warning("ignored command line args starting with ", freeArgs[0]);
+      if (args == null){
+        if (freeArgs != null){
+          args = freeArgs;
+        }
       }
     }
     

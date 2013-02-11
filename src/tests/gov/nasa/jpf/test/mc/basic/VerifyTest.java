@@ -22,7 +22,6 @@ package gov.nasa.jpf.test.mc.basic;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.test.TestJPF;
-import gov.nasa.jpf.util.test.TestJPFHelper;
 import gov.nasa.jpf.vm.Verify;
 
 import org.junit.Test;

@@ -80,7 +80,7 @@ public abstract class TestJPF implements JPFShell  {
   @FilterField protected static boolean showConfig; // for debugging purposes
   @FilterField protected static boolean showConfigSources; // for debugging purposes  
   @FilterField protected static boolean hideSummary;
-
+  
   @FilterField protected String sutClassName;
 
   static class GlobalArg {
@@ -463,7 +463,7 @@ public abstract class TestJPF implements JPFShell  {
    * this is the main test loop if this TestJPF instance is executed directly
    * or called from RunTest. It is *not* called if this is executed from JUnit
    */
-  protected static void runTests (Class<? extends TestJPF> testCls, String... args){
+  public static void runTests (Class<? extends TestJPF> testCls, String... args){
     int nTests = 0;
     int nFailures = 0;
     int nErrors = 0;
@@ -579,14 +579,24 @@ public abstract class TestJPF implements JPFShell  {
     }
   }
 
-  static void runTestOfClass(String args[]) throws Throwable {
-    Class<?> clazz;
-    Method method;
-    Object target;
+  static String getProperty(String key){
+    // intercepted by peer
+    return null;
+  }
+  
+  /**
+   * this is the JPF entry method in case there is no main() in the test class
+   * 
+   * <2do> we should support test method arguments here
+   */
+  static void runTestMethod(String args[]) throws Throwable {
+    String testClsName = getProperty("target");
+    String testMthName = getProperty("target.test_method");
     
-    clazz  = Class.forName(args[0]);
-    target = clazz.newInstance();
-    method = clazz.getMethod(args[1]);
+    Class<?> testCls = Class.forName(testClsName);
+    Object target = testCls.newInstance();
+    
+    Method method = testCls.getMethod(testMthName);
 
     try {
       method.invoke(target);
@@ -612,8 +622,8 @@ public abstract class TestJPF implements JPFShell  {
    *
    * this is never executed under JPF
    */
-  protected JPF createAndRunJPF (String[] args) {
-    JPF jpf = createJPF(args);
+  protected JPF createAndRunJPF (StackTraceElement testMethod, String[] args) {
+    JPF jpf = createJPF( testMethod, args);
     if (jpf != null){
       jpf.run();
     }
@@ -623,9 +633,9 @@ public abstract class TestJPF implements JPFShell  {
   /**
    * this is never executed under JPF
    */
-  protected JPF createJPF (String[] args) {
+  protected JPF createJPF (StackTraceElement testMethod, String[] args) {
     JPF jpf = null;
-
+    
     Config conf = new Config(args);
 
     // --- add global args (if we run under RunTest)
@@ -641,6 +651,17 @@ public abstract class TestJPF implements JPFShell  {
       }
     }
 
+    Class<?> testCls = getClass();
+    try {
+      testCls.getDeclaredMethod( "main", String[].class);
+      args = Misc.appendElement(args, testMethod.getMethodName());
+    } catch (NoSuchMethodException x){
+      conf.put("target.entry", "runTestMethod([Ljava/lang/String;)V");
+    }
+  
+    conf.put("target", testCls.getName());
+    conf.put("target.test_method", testMethod.getMethodName());
+    
     // --- initialize the classpath from <projectId>.test_classpath
     String projectId = JPFSiteUtils.getCurrentProjectId();
     if (projectId != null) {
@@ -679,6 +700,11 @@ public abstract class TestJPF implements JPFShell  {
     runTests(testClass, testMethods);
   }
 
+  protected StackTraceElement getCaller(){
+    StackTraceElement[] st = (new Throwable()).getStackTrace();
+    return st[2];
+  }
+  
   //--- the JPF run test methods
 
   /**
@@ -686,18 +712,16 @@ public abstract class TestJPF implements JPFShell  {
    * @param args JPF main() arguments
    */
   protected JPF assertionError (String... args) {
-    return unhandledException("java.lang.AssertionError", null, args );
+    return unhandledException( getCaller(), "java.lang.AssertionError", null, args );
   }
   protected JPF assertionErrorDetails (String details, String... args) {
-    return unhandledException("java.lang.AssertionError", details, args );
+    return unhandledException( getCaller(), "java.lang.AssertionError", details, args );
   }
   protected boolean verifyAssertionErrorDetails (String details, String... args){
     if (runDirectly) {
       return true;
     } else {
-      StackTraceElement caller = Reflection.getCallerElement();
-      args = appendTestClass(args, caller);
-      unhandledException("java.lang.AssertionError", details, args);
+      unhandledException( getCaller(), "java.lang.AssertionError", details, args);
       return false;
     }
   }
@@ -705,9 +729,7 @@ public abstract class TestJPF implements JPFShell  {
     if (runDirectly) {
       return true;
     } else {
-      StackTraceElement caller = Reflection.getCallerElement();
-      args = appendTestClass(args, caller);
-      unhandledException("java.lang.AssertionError", null, args);
+      unhandledException( getCaller(), "java.lang.AssertionError", null, args);
       return false;
     }
   }
@@ -716,13 +738,13 @@ public abstract class TestJPF implements JPFShell  {
    * run JPF expecting no SuT property violations or JPF exceptions
    * @param args JPF main() arguments
    */
-  protected JPF noPropertyViolation (String... args) {
+  protected JPF noPropertyViolation (StackTraceElement testMethod, String... args) {
     JPF jpf = null;
 
     report(args);
 
     try {
-      jpf = createAndRunJPF(args);
+      jpf = createAndRunJPF( testMethod, args);
     } catch (Throwable t) {
       // we get as much as one little hickup and we declare it failed
       t.printStackTrace();
@@ -746,13 +768,16 @@ public abstract class TestJPF implements JPFShell  {
 
     return jpf;
   }
+  
+  protected JPF noPropertyViolation (String... args) {
+    return noPropertyViolation( getCaller(), args);    
+  }
+  
   protected boolean verifyNoPropertyViolation (String...args){
     if (runDirectly) {
       return true;
     } else {
-      StackTraceElement caller = Reflection.getCallerElement();
-      args = appendTestClass(args, caller);
-      noPropertyViolation(args);
+      noPropertyViolation( getCaller(), args);
       return false;
     }
   }
@@ -765,13 +790,13 @@ public abstract class TestJPF implements JPFShell  {
    * @param details detail message of the expected exception
    * @param args JPF arguments
    */
-  protected JPF unhandledException ( String xClassName, String details, String... args) {
+  protected JPF unhandledException (StackTraceElement testMethod, String xClassName, String details, String... args) {
     JPF jpf = null;
 
     report(args);
 
     try {
-      jpf = createAndRunJPF(args);
+      jpf = createAndRunJPF(testMethod, args);
     } catch (Throwable t) {
       t.printStackTrace();
       fail("JPF internal exception executing: ", args, t.toString());
@@ -801,13 +826,17 @@ public abstract class TestJPF implements JPFShell  {
 
     return jpf;
   }
+  
+  protected JPF unhandledException (String xClassName, String details, String... args) {
+    return unhandledException( getCaller(), xClassName, details, args);
+  }
+
+    
   protected boolean verifyUnhandledExceptionDetails (String xClassName, String details, String... args){
     if (runDirectly) {
       return true;
     } else {
-      StackTraceElement caller = Reflection.getCallerElement();
-      args = appendTestClass(args, caller);
-      unhandledException(xClassName, details, args);
+      unhandledException( getCaller(), xClassName, details, args);
       return false;
     }
   }
@@ -815,9 +844,7 @@ public abstract class TestJPF implements JPFShell  {
     if (runDirectly) {
       return true;
     } else {
-      StackTraceElement caller = Reflection.getCallerElement();
-      args = appendTestClass(args, caller);
-      unhandledException(xClassName, null, args);
+      unhandledException( getCaller(), xClassName, null, args);
       return false;
     }
   }
@@ -828,14 +855,14 @@ public abstract class TestJPF implements JPFShell  {
    * NOTE - xClassName needs to be the concrete exception, not a super class
    * @param args JPF main() arguments
    */
-  protected JPF jpfException (Class<? extends Throwable> xCls, String... args) {
+  protected JPF jpfException (StackTraceElement testMethod, Class<? extends Throwable> xCls, String... args) {
     JPF jpf = null;
     Throwable exception = null;
 
     report(args);
 
     try {
-      jpf = createAndRunJPF( args);
+      jpf = createAndRunJPF( testMethod, args);
     } catch (JPF.ExitException xx) {
       exception = xx.getCause();
     } catch (Throwable x) {
@@ -852,6 +879,11 @@ public abstract class TestJPF implements JPFShell  {
 
     return jpf;
   }
+  
+  protected JPF jpfException (Class<? extends Throwable> xCls, String... args) {
+    return jpfException( getCaller(), xCls, args);
+  }  
+  
   protected boolean verifyJPFException (TypeRef xClsSpec, String... args){
     if (runDirectly) {
       return true;
@@ -860,9 +892,7 @@ public abstract class TestJPF implements JPFShell  {
       try {
         Class<? extends Throwable> xCls = xClsSpec.asSubclass(Throwable.class);
 
-        StackTraceElement caller = Reflection.getCallerElement();
-        args = appendTestClass(args, caller);
-        jpfException(xCls, args);
+        jpfException( getCaller(), xCls, args);
 
       } catch (ClassCastException ccx){
         fail("not a property type: " + xClsSpec);
@@ -879,13 +909,13 @@ public abstract class TestJPF implements JPFShell  {
    * run JPF expecting a property violation of the SuT
    * @param args JPF main() arguments
    */
-  protected JPF propertyViolation (Class<? extends Property> propertyCls, String... args ){
+  protected JPF propertyViolation (StackTraceElement testMethod, Class<? extends Property> propertyCls, String... args ){
     JPF jpf = null;
 
     report(args);
 
     try {
-      jpf = createAndRunJPF( args);
+      jpf = createAndRunJPF( testMethod, args);
     } catch (Throwable t) {
       t.printStackTrace();
       fail("JPF internal exception executing: ", args, t.toString());
@@ -903,6 +933,11 @@ public abstract class TestJPF implements JPFShell  {
     fail("JPF failed to detect error: " + propertyCls.getName());
     return jpf;
   }
+  
+  protected JPF propertyViolation (Class<? extends Property> propertyCls, String... args ){
+    return propertyViolation( getCaller(), propertyCls, args);
+  }
+  
   protected boolean verifyPropertyViolation (TypeRef propertyClsSpec, String... args){
     if (runDirectly) {
       return true;
@@ -910,9 +945,7 @@ public abstract class TestJPF implements JPFShell  {
     } else {
       try {
         Class<? extends Property> propertyCls = propertyClsSpec.asSubclass(Property.class);
-        StackTraceElement caller = Reflection.getCallerElement();
-        args = appendTestClass(args, caller);
-        propertyViolation(propertyCls, args);
+        propertyViolation( getCaller(), propertyCls, args);
 
       } catch (ClassCastException ccx){
         fail("not a property type: " + propertyClsSpec);
@@ -929,59 +962,18 @@ public abstract class TestJPF implements JPFShell  {
    * @param args JPF main() arguments
    */
   protected JPF deadlock (String... args) {
-    return propertyViolation(NotDeadlockedProperty.class, args );
+    return propertyViolation( getCaller(), NotDeadlockedProperty.class, args );
   }
+  
   protected boolean verifyDeadlock (String... args){
     if (runDirectly) {
       return true;
     } else {
-      StackTraceElement caller = Reflection.getCallerElement();
-      args = appendTestClass(args, caller);
-      propertyViolation(NotDeadlockedProperty.class, args);
+      propertyViolation( getCaller(), NotDeadlockedProperty.class, args);
       return false;
     }
   }
-  
-  protected String[] appendTestClass(String args[], StackTraceElement caller) {
-    Class clazz;
-    Method method;
-    String className, methodName;
-    int modifiers;
-    boolean hasMain;
-
-    methodName = caller.getMethodName();
-    className  = caller.getClassName();
-
-    try {
-      clazz = Class.forName(className);
-    } catch (ClassNotFoundException e) {
-      fail(e.getMessage());
-      return args;
-    }
-
-    hasMain = false;
-
-    try {
-      method    = clazz.getDeclaredMethod("main", String[].class);
-      modifiers = method.getModifiers();
-       
-      if ((Modifier.isPublic(modifiers)) && (Modifier.isStatic(modifiers)) && (!Modifier.isAbstract(modifiers))) {
-        hasMain = true;
-      }
-    } catch (NoSuchMethodException e) {
-      e = null;  // Get rid of IDE warning
-    }
     
-    if (hasMain) {
-      args = Misc.appendArray(args, className, methodName);
-    } else {
-      // don't cause TestJPFHelper to be loaded when executing under JPF
-      args = Misc.appendArray(args, "gov.nasa.jpf.util.test.TestJPFHelper", className, methodName);
-    }
-    
-    return args;
-  }
-  
   // these are the org.junit.Assert APIs, but we don't want org.junit to be
   // required to run tests
 

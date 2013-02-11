@@ -1231,8 +1231,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   private static ClassInfo defineClass(String typeName, ClassLoaderInfo cl, ClassPath.Match match, String url){
     try {
       if (match == null){
-        throw new ClassInfoException("the class, " + typeName + ", is not found in the classloader search path", cl, 
-                                     "java.lang.ClassNotFoundException", typeName);
+        throw new ClassInfoException("class not found: " + typeName, cl, "java.lang.ClassNotFoundException", typeName);
       }
 
       ClassFile cf = new ClassFile( typeName, match.getBytes());
@@ -1245,7 +1244,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       return ci;
       
     } catch (ClassFileException cfx){
-      throw new ClassInfoException("error reading class " + typeName, cl, 
+      throw new ClassInfoException("error reading class: " + typeName, cl, 
                                    "java.lang.NoClassDefFoundError", typeName);
     }
   }

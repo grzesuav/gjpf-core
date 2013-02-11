@@ -62,7 +62,7 @@ public class HarnessTest extends TestJPF {
   public void recursive() {
     JPF jpf;
 
-    jpf = noPropertyViolation("gov.nasa.jpf.util.test.TestJPFHelper", HarnessTest.class.getName(), "recursive");
+    jpf = noPropertyViolation( HarnessTest.class.getName(), "recursive");
 
     if (jpf == null) {
       System.out.println("** this is low level API recursive - it should succeed");
