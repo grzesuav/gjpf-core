@@ -88,7 +88,7 @@ public class SingleProcessVM extends VM {
 
     SystemClassLoaderInfo sysCl = new SystemClassLoaderInfo(this,0);
     
-    return new ApplicationContext( clsName, mainEntry, args, sysCl);
+    return new ApplicationContext( 0, clsName, mainEntry, args, sysCl);
   }
   
 

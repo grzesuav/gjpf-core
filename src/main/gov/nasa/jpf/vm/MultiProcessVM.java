@@ -78,7 +78,7 @@ public class MultiProcessVM extends VM {
         
         SystemClassLoaderInfo sysCl = new SystemClassLoaderInfo(this,list.size());
     
-        ApplicationContext appCtx = new ApplicationContext( clsName, mainEntry, args, sysCl);
+        ApplicationContext appCtx = new ApplicationContext( i, clsName, mainEntry, args, sysCl);
         list.add( appCtx);
       }
     }

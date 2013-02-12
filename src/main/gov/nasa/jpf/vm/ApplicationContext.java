@@ -27,6 +27,7 @@ import gov.nasa.jpf.SystemAttribute;
  */
 public class ApplicationContext implements SystemAttribute {
 
+  final int id;
   final String mainClassName;
   final String mainEntry;
   final String[] args;
@@ -34,7 +35,8 @@ public class ApplicationContext implements SystemAttribute {
   final SystemClassLoaderInfo sysCl;
   MethodInfo miEntry;
   
-  ApplicationContext (String mainClassName, String mainEntry, String[] args, SystemClassLoaderInfo sysCl){
+  ApplicationContext (int id, String mainClassName, String mainEntry, String[] args, SystemClassLoaderInfo sysCl){
+    this.id = id;
     this.mainClassName = mainClassName;
     this.mainEntry = mainEntry;
     this.args = args;
@@ -47,6 +49,10 @@ public class ApplicationContext implements SystemAttribute {
   
   MethodInfo getEntryMethod(){
     return miEntry;
+  }
+  
+  public int getId(){
+    return id;
   }
   
   public String toString(){
