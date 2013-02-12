@@ -30,7 +30,7 @@ import gov.nasa.jpf.vm.UncaughtException;
 /**
  * native peer class for unit testing MJI
  */
-public class JPF_gov_nasa_jpf_test_basic_MJIModel extends NativePeer {
+public class JPF_gov_nasa_jpf_test_basic_MJITest extends NativePeer {
 
   // intercept <clinit>
   @MJI

@@ -28,12 +28,15 @@ public class TestJPFNoMainTest extends TestJPF
    @Test
    public void ensureCompatibility()
    {
-      if (!Verify.isRunningInJPF())
-         Verify.resetCounter(0);
+      if (!Verify.isRunningInJPF()){
+        Verify.resetCounter(0);
+      }
       
-      if (verifyNoPropertyViolation())
-         Verify.incrementCounter(0);
-      else  // Runs after JPF finishes
-         assertEquals(1, Verify.getCounter(0));
+      if (verifyNoPropertyViolation()){
+        System.out.println("incrementing test counter");
+        Verify.incrementCounter(0);
+      } else  { // Runs after JPF finishes
+        assertEquals(1, Verify.getCounter(0));
+      }
    }
 }

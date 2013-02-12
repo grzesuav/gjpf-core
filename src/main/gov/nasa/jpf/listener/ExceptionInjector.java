@@ -38,9 +38,9 @@ import java.util.HashMap;
  * tool is meant to be used for exception handler verification, esp. if
  * exceptions thrown by 3rd party code would be hard to produce.
  *
- * Exceptions are specified as a list of type'@'location pairs.
+ * Exceptions are specified as a list of xSpec'@'location pairs.
  *
- * Type is specified as a class name, with optional details parameter. If no
+ * ExceptionSpec is specified as a class name, with optional details parameter. If no
  * package is specified, either java.lang or default package are assumed
  *
  * Location can be 
@@ -67,13 +67,13 @@ public class ExceptionInjector extends ListenerAdapter {
 
   static class ExceptionEntry {
     Instruction insn;
-    Type type;
+    ExceptionSpec xSpec;
     Location loc;
 
     ExceptionEntry next;  // there might be more than one for one class
 
-    ExceptionEntry (Type type, Location loc, ExceptionEntry next){
-      this.type = type;
+    ExceptionEntry (ExceptionSpec xSpec, Location loc, ExceptionEntry next){
+      this.xSpec = xSpec;
       this.loc = loc;
       this.next = next;
     }
@@ -90,33 +90,33 @@ public class ExceptionInjector extends ListenerAdapter {
       return loc.line;
     }
 
-    ClassInfo getExceptionClassInfo() {
-      return type.ci;
+    ClassInfo getExceptionClassInfo(ThreadInfo ti) {
+      return ClassInfo.getResolvedClassInfo(xSpec.xClsName);
     }
 
     String getExceptionDetails() {
-      return type.details;
+      return xSpec.details;
     }
 
     public String toString() {
-      return type.toString() + '@' + loc.toString();
+      return xSpec.toString() + '@' + loc.toString();
     }
   }
 
-  static class Type {
-    ClassInfo ci;
+  static class ExceptionSpec {
+    String xClsName;
     String details;
 
-    Type (ClassInfo ci, String details){
-      this.ci = ci;
+    ExceptionSpec (String xClsName, String details){
+      this.xClsName = xClsName;
       this.details = details;
     }
     
     public String toString() {
       if (details == null){
-        return ci.getName();
+        return xClsName;
       } else {
-        StringBuilder sb = new StringBuilder(ci.getName());
+        StringBuilder sb = new StringBuilder(xClsName);
         sb.append('(');
         if (!details.isEmpty()){
           sb.append('"');
@@ -164,7 +164,18 @@ public class ExceptionInjector extends ListenerAdapter {
 
 
   public ExceptionInjector (Config config, JPF jpf){
-    // since we need to resolve ClassInfos, init is deferred until VM is initialized
+    throwFirst = config.getBoolean("ei.throw_first", false);
+    String[] xSpecs = config.getStringArray("ei.exception", new char[] {';'});
+
+    if (xSpecs != null){
+      for (String xSpec : xSpecs){
+        if (!parseException(xSpec)){
+          throw new JPFConfigException("invalid exception spec: " + xSpec);
+        }
+      }
+    }
+
+    printEntries();
   }
 
   boolean parseException (String xSpec){
@@ -173,7 +184,7 @@ public class ExceptionInjector extends ListenerAdapter {
       String typeSpec = xSpec.substring(0, i).trim();
       String locSpec = xSpec.substring(i+1).trim();
 
-      Type type = parseType(typeSpec);
+      ExceptionSpec type = parseType(typeSpec);
       if (type != null){
         Location loc = parseLocation(locSpec);
         if (loc != null){
@@ -192,7 +203,7 @@ public class ExceptionInjector extends ListenerAdapter {
     return false;
   }
 
-  Type parseType (String spec){
+  ExceptionSpec parseType (String spec){
     String cls = null;
     String details = null;
 
@@ -217,16 +228,7 @@ public class ExceptionInjector extends ListenerAdapter {
     }
 
     if (cls != null){
-      ClassInfo ci = ClassInfo.tryGetResolvedClassInfo(cls);
-      if (ci == null){ // try java.lang if no package
-        if (cls.indexOf('.')< 0){
-          cls = "java.lang." + cls;
-          ci = ClassInfo.tryGetResolvedClassInfo(cls);
-        }
-      }
-      if (ci != null){
-        return new Type(ci,details);
-      }
+      return new ExceptionSpec( cls,details);
     }
 
     return null;
@@ -355,28 +357,10 @@ public class ExceptionInjector extends ListenerAdapter {
     }
 
     if (e != null){
-      Instruction nextInsn = ti.createAndThrowException(e.getExceptionClassInfo(), e.getExceptionDetails());
+      Instruction nextInsn = ti.createAndThrowException(e.getExceptionClassInfo(ti), e.getExceptionDetails());
       ti.skipInstruction(nextInsn);
       return;
     }
-  }
-
-  @Override
-  public void vmInitialized (VM vm) {
-    Config config = vm.getConfig();
-    
-    throwFirst = config.getBoolean("ei.throw_first", false);
-    String[] xSpecs = config.getStringArray("ei.exception", new char[] {';'});
-
-    if (xSpecs != null){
-      for (String xSpec : xSpecs){
-        if (!parseException(xSpec)){
-          throw new JPFConfigException("invalid exception spec: " + xSpec);
-        }
-      }
-    }
-
-    printEntries();
   }
   
   // for debugging purposes

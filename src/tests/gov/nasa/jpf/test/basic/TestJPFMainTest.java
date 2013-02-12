@@ -26,27 +26,21 @@ import org.junit.Test;
 public class TestJPFMainTest extends TestJPF {
   
   public static void main(String testMethods[]) throws Throwable {
-    Verify.incrementCounter(0);
     runTestsOfThisClass(testMethods);
-    Verify.incrementCounter(1);
   }
 
   @Test
-  public void testMethod() {
+  public void ensureCompatibility() {
     if (!Verify.isRunningInJPF()) {
       Verify.resetCounter(0);
-      Verify.resetCounter(1);
-      Verify.resetCounter(2);
     }
 
     if (verifyNoPropertyViolation()) {
       System.out.println("incrementing test counter");
-      Verify.incrementCounter(2);
+      Verify.incrementCounter(0);
       
     } else { // Runs after JPF finishes
       assertEquals(1, Verify.getCounter(0));
-      assertEquals(1, Verify.getCounter(1));
-      assertEquals(1, Verify.getCounter(2));
     }
   }
 }

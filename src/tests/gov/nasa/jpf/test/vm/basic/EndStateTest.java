@@ -25,36 +25,20 @@ import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 
 /**
- * test various aspects of SUT end states
+ * test SUT end states
  */
 public class EndStateTest extends TestJPF {
 
-  public static void main (String[] args) {  // <2do> Fix test so that it doesn't require a main
-    runTestsOfThisClass(args);
-  }
-
-
-  @Test public void testSingleThread () {
-    JPF jpf = null;
-
-    if ((jpf = noPropertyViolation( "+listener=.test.vm.basic.EndStateListener",
-                                    getClass().getName(), "testSingleThread")) == null){
-      synchronized(this){
-        System.out.println("** this is testSingleThread - it should succeed");
-      }
-    }
-
-    if (jpf != null){
-      assert jpf.getSearchErrors().isEmpty() : "unexpected JPF search errors";
-      // could have a lot more here..
+  @Test 
+  public void testSingleThread () {
+    if (verifyNoPropertyViolation("+listener=.test.vm.basic.EndStateListener")){
+      System.out.println("** this is testSingleThread - it should succeed");      
     }
   }
 
-  @Test public void testMultipleThreads () {
-    JPF jpf = null;
-
-    if ((jpf = noPropertyViolation( "+listener=.test.vm.basic.EndStateListener",
-                                    getClass().getName(), "testMultipleThreads")) == null){
+  @Test 
+  public void testMultipleThreads () {
+    if (verifyNoPropertyViolation("+listener=.test.vm.basic.EndStateListener")){
       System.out.println("** this is testMultipleThreads - it should succeed");
 
       Thread t = new Thread() {
@@ -68,11 +52,5 @@ public class EndStateTest extends TestJPF {
         System.out.println("** this is thread main terminating");
       }
     }
-
-    if (jpf != null){
-      assert jpf.getSearchErrors().isEmpty() : "unexpected JPF search errors";
-      // could have a lot more here..
-    }
   }
-
 }

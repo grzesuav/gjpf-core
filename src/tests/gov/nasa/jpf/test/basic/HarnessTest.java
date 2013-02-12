@@ -58,14 +58,14 @@ public class HarnessTest extends TestJPF {
     }
   }
 
+  // low level TestJPF API test
   @Test
-  public void recursive() {
-    JPF jpf;
-
-    jpf = noPropertyViolation( HarnessTest.class.getName(), "recursive");
+  public void testLowLevelAPI() {
+    
+    JPF jpf = noPropertyViolation();
 
     if (jpf == null) {
-      System.out.println("** this is low level API recursive - it should succeed");
+      System.out.println("** this is low level API test - it should succeed");
     } else {
       assert jpf.getSearchErrors().isEmpty() : "unexpected JPF search errors";
     }

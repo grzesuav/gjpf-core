@@ -558,7 +558,7 @@ public abstract class TestJPF implements JPFShell  {
       reportTestFinished("TEST ERROR: cannot instantiate test class: " + x.getMessage());
     } catch (IllegalAccessException x) { // can't happen if getTestMethods() worked
       nErrors++;
-      reportTestFinished("TEST ERROR: method not public: " + testMethodName);
+      reportTestFinished("TEST ERROR: default constructor or test method not public: " + testMethodName);
     } catch (IllegalArgumentException x) {  // can't happen if getTestMethods() worked
       nErrors++;
       reportTestFinished("TEST ERROR: illegal argument for test method: " + testMethodName);
@@ -620,7 +620,8 @@ public abstract class TestJPF implements JPFShell  {
    * needs to be broken up into two methods for cases that do additional
    * JPF initialization (jpf-inspector)
    *
-   * this is never executed under JPF
+   * this is called from the various verifyX() methods (i.e. host VM) to
+   * start JPF, it is never executed under JPF
    */
   protected JPF createAndRunJPF (StackTraceElement testMethod, String[] args) {
     JPF jpf = createJPF( testMethod, args);
@@ -651,15 +652,8 @@ public abstract class TestJPF implements JPFShell  {
       }
     }
 
-    Class<?> testCls = getClass();
-    try {
-      testCls.getDeclaredMethod( "main", String[].class);
-      args = Misc.appendElement(args, testMethod.getMethodName());
-    } catch (NoSuchMethodException x){
-      conf.put("target.entry", "runTestMethod([Ljava/lang/String;)V");
-    }
-  
-    conf.put("target", testCls.getName());
+    conf.put("target.entry", "runTestMethod([Ljava/lang/String;)V");
+    conf.put("target", testMethod.getClassName());
     conf.put("target.test_method", testMethod.getMethodName());
     
     // --- initialize the classpath from <projectId>.test_classpath
@@ -705,14 +699,30 @@ public abstract class TestJPF implements JPFShell  {
     return st[2];
   }
   
+  protected StackTraceElement setTestMethod (String clsName, String mthName){
+    return new StackTraceElement( clsName, mthName, null, -1);
+  }
+  
+  protected StackTraceElement setTestMethod (String mthName){
+    return new StackTraceElement( getClass().getName(), mthName, null, -1);
+  }
+  
+  
   //--- the JPF run test methods
 
   /**
    * run JPF expecting a AssertionError in the SuT
    * @param args JPF main() arguments
    */
+  protected JPF assertionError (StackTraceElement testMethod, String... args){
+    return unhandledException( testMethod, "java.lang.AssertionError", null, args );    
+  }
   protected JPF assertionError (String... args) {
     return unhandledException( getCaller(), "java.lang.AssertionError", null, args );
+  }
+  
+  protected JPF assertionErrorDetails (StackTraceElement testMethod, String details, String... args) {
+    return unhandledException( testMethod, "java.lang.AssertionError", details, args );
   }
   protected JPF assertionErrorDetails (String details, String... args) {
     return unhandledException( getCaller(), "java.lang.AssertionError", details, args );

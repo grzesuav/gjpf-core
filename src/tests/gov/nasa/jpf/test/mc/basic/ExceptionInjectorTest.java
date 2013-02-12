@@ -30,9 +30,11 @@ import org.junit.Test;
  * regression test for ExceptionInjector listener
  */
 public class ExceptionInjectorTest extends TestJPF {
-  @Test public void testAbsLine () {
+  
+  @Test
+  public void testAbsLine () {
     if (verifyNoPropertyViolation("+listener=.listener.ExceptionInjector",
-                                  "+ei.exception=ArithmeticException@gov.nasa.jpf.test.mc.basic.ExceptionInjectorTest:38")){
+                                  "+ei.exception=java.lang.ArithmeticException@gov.nasa.jpf.test.mc.basic.ExceptionInjectorTest:42")){
       boolean handled = false;
       try {
         int x = 10;
@@ -55,7 +57,8 @@ public class ExceptionInjectorTest extends TestJPF {
   }
 
   // NOTE - offsets count from the first statement line in the method body
-  @Test public void testMethodOffset () {
+  @Test
+  public void testMethodOffset () {
     if (verifyNoPropertyViolation("+listener=.listener.ExceptionInjector",
                                   "+ei.exception=gov.nasa.jpf.test.mc.basic.ExceptionInjectorTest$Zapp(\"gotcha\")@gov.nasa.jpf.test.mc.basic.ExceptionInjectorTest.testMethodOffset():6")){
       boolean handled = false;
@@ -72,7 +75,8 @@ public class ExceptionInjectorTest extends TestJPF {
     }
   }
 
-  @Test public void testCallee () {
+  @Test
+  public void testCallee () {
     if (verifyNoPropertyViolation("+listener=.listener.ExceptionInjector",
                                   "+ei.exception=java.io.IOException@java.io.File.createTempFile(java.lang.String,java.lang.String)")){
       boolean handled = false;
