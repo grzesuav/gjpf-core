@@ -33,6 +33,10 @@ public class StackTraceElement {
      // nothing to do
   }
 
+  public StackTraceElement (String clsName, String mthName, Object object, int i) {
+    // TODO Auto-generated constructor stub
+  }
+
   public String getClassName () {
     return clsName;
   }
