@@ -19,10 +19,6 @@
 
 package gov.nasa.jpf.util.test;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Property;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.TypeRef;
@@ -37,37 +33,13 @@ import gov.nasa.jpf.vm.NotDeadlockedProperty;
 public abstract class TestMultiProcessJPF extends TestJPF {
   int num_of_prc;
 
-  protected void setTestTargetKeys(Config conf, StackTraceElement testMethod) {
-    for(int i=0; i<num_of_prc; i++) {
-      conf.put("target.entry." + i, "runTestMethod([Ljava/lang/String;)V");
-      conf.put("target." + i, testMethod.getClassName());
-    }
-    conf.put("target.test_method", testMethod.getMethodName());
-  }
-
   protected String[] addMultiPrcEssentialArgs(String[] args) {
     String vm_class = "gov.nasa.jpf.vm.MultiProcessVM";
     String schedular_class = "gov.nasa.jpf.vm.DistributedSchedulerFactory";
+
     return Misc.appendArray(args, "+vm.class=" + vm_class, 
-                "+vm.scheduler_factory.class=" + schedular_class);
-  }
-
-  static void runTestMethod(String args[]) throws Throwable {
-    // note that in our testing framework, all target.# are set to 
-    // the same class
-    String testClsName = getProperty("target.0");
-    String testMthName = getProperty("target.test_method");
-    
-    Class<?> testCls = Class.forName(testClsName);
-    Object target = testCls.newInstance();
-    
-    Method method = testCls.getMethod(testMthName);
-
-    try {
-      method.invoke(target);
-    } catch (InvocationTargetException e) {
-      throw e.getCause(); 
-    }
+                "+vm.scheduler_factory.class=" + schedular_class,
+                "+target.replicate=" + num_of_prc);
   }
 
   protected native int getProcessId();
