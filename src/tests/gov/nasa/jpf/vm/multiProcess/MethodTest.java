@@ -40,7 +40,7 @@ public class MethodTest extends TestMultiProcessJPF {
       JPF_gov_nasa_jpf_vm_multiProcess_MethodTest.resetPrcIds();
     }
 
-    if (verifyNoPropertyViolation(2)) {
+    if (mpVerifyNoPropertyViolation(2)) {
       Method m = MethodTest.class.getMethod("methodCloneTest", new Class[]{});
       int prcId = getProcessId();
       keepMethod(m, prcId);
@@ -54,8 +54,8 @@ public class MethodTest extends TestMultiProcessJPF {
   }
 
   @Test
-  public void methodsTest() throws SecurityException, NoSuchMethodException {
-    if (verifyNoPropertyViolation(2)) {
+  public void methodDeclaringClassTest() throws SecurityException, NoSuchMethodException {
+    if (mpVerifyNoPropertyViolation(2)) {
       Class<?> cls = MethodTest.class;
 
       // The loader of this class should be the same as the loader that loads 

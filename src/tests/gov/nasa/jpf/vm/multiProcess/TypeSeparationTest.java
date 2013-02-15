@@ -47,7 +47,7 @@ public class TypeSeparationTest extends TestMultiProcessJPF {
   public void staticCounterTest() {
     // Note that this code is executed 4 times. Since every time this is executed its
     // state is restored, the value of counter should be always 1
-    if (verifyNoPropertyViolation(2)) {
+    if (mpVerifyNoPropertyViolation(2)) {
       int id = getProcessId();
       switch(id) {
       case 0:
@@ -77,7 +77,7 @@ public class TypeSeparationTest extends TestMultiProcessJPF {
       JPF_gov_nasa_jpf_vm_multiProcess_TypeSeparationTest.resetPrcIds();
     }
 
-    if (verifyNoPropertyViolation(2)) {
+    if (mpVerifyNoPropertyViolation(2)) {
       int prcId = getProcessId();
       keepAnnotationClass(A0.class, prcId);
     }
@@ -100,7 +100,7 @@ public class TypeSeparationTest extends TestMultiProcessJPF {
       JPF_gov_nasa_jpf_vm_multiProcess_TypeSeparationTest.resetPrcIds();
     }
 
-    if (verifyNoPropertyViolation(2)) {
+    if (mpVerifyNoPropertyViolation(2)) {
       ClassLoader cl = Object.class.getClassLoader();
 
       // in our implementation this goes through the class hierarchy of the 

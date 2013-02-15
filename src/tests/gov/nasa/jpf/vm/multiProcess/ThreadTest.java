@@ -43,7 +43,7 @@ public class ThreadTest extends TestMultiProcessJPF {
       JPF_gov_nasa_jpf_vm_multiProcess_ThreadTest.resetPrcIds();
     }
 
-    if (verifyNoPropertyViolation(2)) {
+    if (mpVerifyNoPropertyViolation(2)) {
       int prcId = getProcessId();
       keepThread(Thread.currentThread(), prcId);
     }
@@ -59,7 +59,6 @@ public class ThreadTest extends TestMultiProcessJPF {
 
   public class TestThread extends Thread {
     public void run() {
-     // System.out.println("my id: " + this.getId());
       addToThreads(this);
     }
   }
@@ -72,7 +71,7 @@ public class ThreadTest extends TestMultiProcessJPF {
       JPF_gov_nasa_jpf_vm_multiProcess_ThreadTest.resetThreads();
     }
  
-    if (verifyNoPropertyViolation(2)) {
+    if (mpVerifyNoPropertyViolation(2)) {
       TestThread thd = new TestThread();
       thd.start();
 
@@ -107,7 +106,7 @@ public class ThreadTest extends TestMultiProcessJPF {
   // exceed 3
   @Test
   public void threadInterleavingTest() {
-    if (verifyNoPropertyViolation(2, "+listener=gov.nasa.jpf.vm.multiProcess.ThreadTest$InterleaveCheckListener")) {
+    if (mpVerifyNoPropertyViolation(2, "+listener=gov.nasa.jpf.vm.multiProcess.ThreadTest$InterleaveCheckListener")) {
       // InterleaveCheck listener makes sure that transition is not broken at the 
       // static field access
       counter = 0;

@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.util.test;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Property;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.TypeRef;
@@ -31,81 +32,75 @@ import gov.nasa.jpf.vm.NotDeadlockedProperty;
  * JPF to use MultiProcessVM and DistributedSchedulerFactory
  */
 public abstract class TestMultiProcessJPF extends TestJPF {
-  int num_of_prc;
+  int numOfPrc;
 
-  protected String[] addMultiPrcEssentialArgs(String[] args) {
-    String vm_class = "gov.nasa.jpf.vm.MultiProcessVM";
-    String schedular_class = "gov.nasa.jpf.vm.DistributedSchedulerFactory";
-
-    return Misc.appendArray(args, "+vm.class=" + vm_class, 
-                "+vm.scheduler_factory.class=" + schedular_class,
-                "+target.replicate=" + num_of_prc);
+  protected void setTestTargetKeys(Config conf, StackTraceElement testMethod) {
+    conf.put("target.entry", "runTestMethod([Ljava/lang/String;)V");
+    conf.put("target.replicate", Integer.toString(numOfPrc));
+    conf.put("target", testMethod.getClassName());
+    conf.put("target.test_method", testMethod.getMethodName());
+    conf.put("vm.class", "gov.nasa.jpf.vm.MultiProcessVM");
+    conf.put("vm.scheduler_factory.class", "gov.nasa.jpf.vm.DistributedSchedulerFactory");
   }
 
   protected native int getProcessId();
 
-  protected boolean verifyAssertionErrorDetails (int prcNum, String details, String... args){
+  protected boolean mpVerifyAssertionErrorDetails (int prcNum, String details, String... args){
     if (runDirectly) {
       return true;
     } else {
-      num_of_prc = prcNum;
-      args = addMultiPrcEssentialArgs(args);
+      numOfPrc = prcNum;
       unhandledException( getCaller(), "java.lang.AssertionError", details, args);
       return false;
     }
   }
 
-  protected boolean verifyAssertionError (int prcNum, String... args){
+  protected boolean mpVerifyAssertionError (int prcNum, String... args){
     if (runDirectly) {
       return true;
     } else {
-      num_of_prc = prcNum;
-      args = addMultiPrcEssentialArgs(args);
+      numOfPrc = prcNum;
       unhandledException( getCaller(), "java.lang.AssertionError", null, args);
       return false;
     }
   }
 
-  protected boolean verifyNoPropertyViolation (int prcNum, String...args){
+  protected boolean mpVerifyNoPropertyViolation (int prcNum, String...args){
     if (runDirectly) {
       return true;
     } else {
-      num_of_prc = prcNum;
-      args = addMultiPrcEssentialArgs(args);
+      numOfPrc = prcNum;
       noPropertyViolation(getCaller(), args);
       return false;
     }
   }
 
-  protected boolean verifyUnhandledExceptionDetails (int prcNum, String xClassName, String details, String... args){
+  protected boolean mpVerifyUnhandledExceptionDetails (int prcNum, String xClassName, String details, String... args){
     if (runDirectly) {
       return true;
     } else {
-      num_of_prc = prcNum;
-      args = addMultiPrcEssentialArgs(args);
+      numOfPrc = prcNum;
       unhandledException( getCaller(), xClassName, details, args);
       return false;
     }
   }
 
-  protected boolean verifyUnhandledException (int prcNum, String xClassName, String... args){
+  protected boolean mpVerifyUnhandledException (int prcNum, String xClassName, String... args){
     if (runDirectly) {
       return true;
     } else {
-      num_of_prc = prcNum;
-      args = addMultiPrcEssentialArgs(args);
+      numOfPrc = prcNum;
       unhandledException( getCaller(), xClassName, null, args);
       return false;
     }
   }
 
-  protected boolean verifyJPFException (int prcNum, TypeRef xClsSpec, String... args){
+  protected boolean mpVerifyJPFException (int prcNum, TypeRef xClsSpec, String... args){
     if (runDirectly) {
       return true;
 
     } else {
-      num_of_prc = prcNum;
-      args = addMultiPrcEssentialArgs(args);
+      numOfPrc = prcNum;
       try {
         Class<? extends Throwable> xCls = xClsSpec.asSubclass(Throwable.class);
 
@@ -120,13 +115,12 @@ public abstract class TestMultiProcessJPF extends TestJPF {
     }
   }
 
-  protected boolean verifyPropertyViolation (int prcNum, TypeRef propertyClsSpec, String... args){
+  protected boolean mpVerifyPropertyViolation (int prcNum, TypeRef propertyClsSpec, String... args){
     if (runDirectly) {
       return true;
 
     } else {
-      num_of_prc = prcNum;
-      args = addMultiPrcEssentialArgs(args);
+      numOfPrc = prcNum;
       try {
         Class<? extends Property> propertyCls = propertyClsSpec.asSubclass(Property.class);
         propertyViolation( getCaller(), propertyCls, args);
@@ -140,12 +134,11 @@ public abstract class TestMultiProcessJPF extends TestJPF {
     }
   }
 
-  protected boolean verifyDeadlock (int prcNum, String... args){
+  protected boolean mpVerifyDeadlock (int prcNum, String... args){
     if (runDirectly) {
       return true;
     } else {
-      num_of_prc = prcNum;
-      args = addMultiPrcEssentialArgs(args);
+      numOfPrc = prcNum;
       propertyViolation( getCaller(), NotDeadlockedProperty.class, args);
       return false;
     }

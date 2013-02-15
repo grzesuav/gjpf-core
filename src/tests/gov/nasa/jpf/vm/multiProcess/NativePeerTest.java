@@ -40,7 +40,7 @@ public class NativePeerTest extends TestMultiProcessJPF {
     // Note that this code is executed 4 times (twice by each process main thread).
     // Since we do not restore NativePeer states the maximum value of counter in 
     // NativePeer should be 2
-    if (verifyNoPropertyViolation(2)) {
+    if (mpVerifyNoPropertyViolation(2)) {
       incNativeCounters();
 
       int i = getNativeCounter();
