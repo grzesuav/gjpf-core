@@ -652,9 +652,7 @@ public abstract class TestJPF implements JPFShell  {
       }
     }
 
-    conf.put("target.entry", "runTestMethod([Ljava/lang/String;)V");
-    conf.put("target", testMethod.getClassName());
-    conf.put("target.test_method", testMethod.getMethodName());
+    setTestTargetKeys(conf, testMethod);
     
     // --- initialize the classpath from <projectId>.test_classpath
     String projectId = JPFSiteUtils.getCurrentProjectId();
@@ -687,6 +685,11 @@ public abstract class TestJPF implements JPFShell  {
     return jpf;
   }
 
+  protected void setTestTargetKeys(Config conf, StackTraceElement testMethod) {
+    conf.put("target.entry", "runTestMethod([Ljava/lang/String;)V");
+    conf.put("target", testMethod.getClassName());
+    conf.put("target.test_method", testMethod.getMethodName());
+  }
 
   //--- the JPFShell interface
   public void start(String[] testMethods){

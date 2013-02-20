@@ -2852,7 +2852,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       }
 
       if(nativePeer != null) {
-        ci.nativePeer = nativePeer.getInstanceFor(ci);
+        ci.nativePeer = NativePeer.getNativePeer(ci);
       }
 
       ci.setAssertionStatus();

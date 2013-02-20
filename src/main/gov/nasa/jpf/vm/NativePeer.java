@@ -48,7 +48,7 @@ public class NativePeer implements Cloneable {
   static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.vm.NativePeer");
 
   static ClassLoader loader;
-  static HashMap<String, NativePeer> peers;
+  static HashMap<ClassInfo, NativePeer> peers;
   static Config config;
   static boolean noOrphanMethods;
 
@@ -61,7 +61,7 @@ public class NativePeer implements Cloneable {
 
   public static boolean init (Config conf) {
     loader = conf.getClassLoader();
-    peers = new HashMap<String, NativePeer>();
+    peers = new HashMap<ClassInfo, NativePeer>();
 
     peerPackages = getPeerPackages(conf);
 
@@ -129,7 +129,7 @@ public class NativePeer implements Cloneable {
    */
   static NativePeer getNativePeer (ClassInfo ci) {
     String     clsName = ci.getName();
-    NativePeer peer = peers.get(clsName);
+    NativePeer peer = peers.get(ci);
     Class<?>      peerCls = null;
 
     if (peer == null) {
@@ -146,7 +146,7 @@ public class NativePeer implements Cloneable {
         peer = getInstance(peerCls, NativePeer.class);
         peer.initialize(peerCls, ci, true);
 
-        peers.put(clsName, peer);
+        peers.put(ci, peer);
       }
     }
 
@@ -400,21 +400,6 @@ public class NativePeer implements Cloneable {
     } else {
       return null;
     }
-  }
-
-  public NativePeer getInstanceFor(ClassInfo ci) {
-    NativePeer clone = null;
-
-    try {
-      clone = (NativePeer)super.clone();
-      clone.ci = ci;
-      clone.methods = new HashMap<String, Method>(methods);
-      clone.peerClass = peerClass;
-    } catch (CloneNotSupportedException e) {
-      e.printStackTrace();
-    }
-
-    return clone;
   }
 }
 

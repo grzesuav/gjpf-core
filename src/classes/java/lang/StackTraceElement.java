@@ -33,6 +33,21 @@ public class StackTraceElement {
      // nothing to do
   }
 
+  public StackTraceElement (String clsName, String mthName, String fileName, int line) {
+    if (clsName == null) {
+      throw new NullPointerException("Declaring class is null");
+    } 
+
+    if (mthName == null) {
+      throw new NullPointerException("Method name is null");
+    }
+
+    this.clsName = clsName;
+    this.mthName = mthName;
+    this.fileName = fileName;
+    this.line = line;
+  }
+
   public String getClassName () {
     return clsName;
   }

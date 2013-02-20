@@ -56,7 +56,19 @@ public class MultiProcessVM extends VM {
    * <2do> this should also handle command line specs such as "jpf ... tgt1 tgt1_arg ... -- tgt2 tgt2_arg ... 
    */
   ApplicationContext[] createApplicationContexts(){
-    String[] targets = config.getStringEnumeration("target", MAX_APP);
+    String[] targets;
+
+    int replicate = config.getInt("target.replicate", 0);
+    if(replicate>0) {
+      String target = config.getProperty("target");
+      targets = new String[replicate];
+      for(int i=0; i<replicate; i++) {
+        targets[i] = target;
+      }
+    } else {
+      targets = config.getStringEnumeration("target", MAX_APP);
+    }
+
     if (targets == null){
       throw new JPFConfigException("no applications specified, check 'target.N' settings");
     }
@@ -69,12 +81,22 @@ public class MultiProcessVM extends VM {
           throw new JPFConfigException("main class not a valid class name: " + clsName);
         }
         
-        String[] args = config.getCompactStringArray("target.args." + i);
+        String argsKey;
+        String entryKey;
+        if(replicate>0) {
+          argsKey = "target.args";
+          entryKey = "target.entry";
+        } else {
+          argsKey = "target.args." + i;
+          entryKey = "target.entry." + i;
+        }
+        
+        String[] args = config.getCompactStringArray(argsKey);
         if (args == null){
           args = EMPTY_ARGS;
         }
         
-        String mainEntry = config.getString("target.entry." + i, "main([Ljava/lang/String;)V");
+        String mainEntry = config.getString(entryKey, "main([Ljava/lang/String;)V");
         
         SystemClassLoaderInfo sysCl = new SystemClassLoaderInfo(this,list.size());
     
