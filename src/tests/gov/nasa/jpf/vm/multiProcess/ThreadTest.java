@@ -106,7 +106,8 @@ public class ThreadTest extends TestMultiProcessJPF {
   // exceed 3
   @Test
   public void threadInterleavingTest() {
-    if (mpVerifyNoPropertyViolation(2, "+listener=gov.nasa.jpf.vm.multiProcess.ThreadTest$InterleaveCheckListener")) {
+    if (mpVerifyNoPropertyViolation(2, "+listener=gov.nasa.jpf.vm.multiProcess.ThreadTest$InterleaveCheckListener",
+            "+vm.max_transition_length=MAX")) {
       // InterleaveCheck listener makes sure that transition is not broken at the 
       // static field access
       counter = 0;
