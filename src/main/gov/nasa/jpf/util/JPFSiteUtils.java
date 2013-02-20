@@ -33,7 +33,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * utility class for JPF site configuration related functions
+ * utility class for JPF site configuration related functions. This is partially redundant to Config since
+ * it is used during bootstrapping, and gov.nasa.jpf.Config might not be in the classpath yet. It mostly
+ * differs in terms of key/value expansion, which is only partially supported here.
+ * 
+ * NOTE - this class is not allowed to use any JPF specific types
  */
 public class JPFSiteUtils {
 
@@ -194,15 +198,7 @@ public class JPFSiteUtils {
     return s;
   }
 
-
-  /**
-   * get location of jpf-core from site.properties
-   * @return null if it doesn't exist
-   */
-  public static File getSiteCoreDir() {
-    
-    File siteProps = getStandardSiteProperties();
-    
+  public static File getCoreDir (File siteProps){
     if (siteProps != null){
       String path = getMatchFromFile(siteProps.getAbsolutePath(), "jpf-core");
       if (path != null) {
@@ -212,8 +208,21 @@ public class JPFSiteUtils {
         }
       }
     }
-    
     return null;
+  }
+  
+  public static File getSiteCoreDir (String[] args){
+    File siteProps = getSiteProperties( args);    
+    return getCoreDir( siteProps);
+  }
+
+  /**
+   * get location of jpf-core from site.properties
+   * @return null if it doesn't exist
+   */
+  public static File getSiteCoreDir() {
+    File siteProps = getStandardSiteProperties();
+    return getCoreDir( siteProps);
   }
 
   /**
@@ -270,6 +279,47 @@ public class JPFSiteUtils {
     return projectId;
   }
   
+  public static boolean isFreeArg (String a){
+    return ((a != null) && (a.length() > 0) && a.charAt(0) != '+' && a.charAt(0) != '-');
+  }
+  
+  public static File getSiteProperties (String[] args){
+    //--- 1. check for a +site=<path> argument up to first free arg
+    for (int i=0; i<args.length; i++){
+      String a = args[i];
+      if (!isFreeArg(a)){
+        if (a.startsWith("+site=")) {
+          String path = a.substring(6).trim();
+          return new File(path);
+        }
+      } else {
+        break;
+      }
+    }
+    
+    //--- 2. check if the first free arg is an application property file (*.jpf), and it contains a 'site=..' setting
+    for (int i=0; i<args.length; i++){
+      String a = args[i];
+      if (isFreeArg(a)){
+        if (a.matches("[^+-].*\\.jpf")) {
+          String path = getMatchFromFile(a, "site");
+          if (path != null) {
+            return new File(path);
+          }
+        }
+        break;
+      }
+    }
+    
+    //--- 3. finally, check upwards from the current dir up to the home dir 
+    return JPFSiteUtils.getStandardSiteProperties();
+  } 
+  
+  /**
+   * locate the site.properties. Start with the current dir, go upwards until the
+   * user.home is reached. If site.properties isn't found there, look for '.jpf' and
+   * 'jpf' dirs within the home dir. If no site.properties is found there either, give up
+   */
   public static File getStandardSiteProperties(){    
     String userDir = System.getProperty("user.dir");
     File dir = new File(userDir);

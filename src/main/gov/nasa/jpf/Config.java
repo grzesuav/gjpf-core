@@ -170,6 +170,9 @@ public class Config extends Properties {
     }
   }
 
+  // it seems bad design to keep ClassLoader management in a glorified Properties object,
+  // but a lot of what Config does is to resolve configured types, for which we need
+  // control over the loader that is used for resolution
   ClassLoader loader = Config.class.getClassLoader();
     
   // where did we initialize from
@@ -198,10 +201,11 @@ public class Config extends Properties {
     args = cmdLineArgs;
     String[] a = cmdLineArgs.clone(); // we might nullify some of them
 
+    // we need the app properties (*.jpf) pathname upfront because it might define 'site'
     String appProperties = getAppPropertiesLocation(a);
-    String siteProperties = getSitePropertiesLocation(a, appProperties);
 
     //--- the site properties
+    String siteProperties = getSitePropertiesLocation( a, appProperties);
     if (siteProperties != null){
       loadProperties( siteProperties);
     }
@@ -322,7 +326,7 @@ public class Config extends Properties {
 
   /*
    * note that matching args are expanded and stored here, to avoid any
-   * discrepancy whith value expansions (which are order-dependent)
+   * discrepancy with value expansions (which are order-dependent)
    */
   protected String getPathArg (String[] args, String key){
     int keyLen = key.length();
@@ -979,7 +983,7 @@ public class Config extends Properties {
     return Config.class.getClassLoader() != loader;
   }
 
-  public JPFClassLoader initClassLoader( ClassLoader parent) {
+  public JPFClassLoader initClassLoader (ClassLoader parent) {
     ArrayList<String> list = new ArrayList<String>();
 
     // we prefer to call this here automatically instead of allowing
@@ -1004,9 +1008,19 @@ public class Config extends Properties {
 
     String[] nativeLibs = getCompactStringArray("native_libraries");
 
-    JPFClassLoader cl = new JPFClassLoader( urls, nativeLibs, parent);
+    JPFClassLoader cl;
+    if (parent instanceof JPFClassLoader){ // no need to create a new one, just initialize
+      cl = (JPFClassLoader)parent;
+      for (URL url : urls){
+        cl.addURL(url);
+      }
+      cl.setNativeLibs(nativeLibs);
+      
+    } else {    
+      cl = new JPFClassLoader( urls, nativeLibs, parent);
+    }
+    
     loader = cl;
-
     return cl;
   }
 

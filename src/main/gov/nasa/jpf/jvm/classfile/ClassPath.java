@@ -48,7 +48,7 @@ public class ClassPath implements Restorable<ClassPath>{
     }
   }
   
-  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.vm.classfile");
+  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.classfile");
   
   ArrayList<ClassFileContainer> pathElements;
 

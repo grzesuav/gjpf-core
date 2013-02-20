@@ -1260,7 +1260,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     } catch (ClassFileException cfx){
       throw new JPFException("error reading class " + typeName, cfx);
     }
-
   }
 
   public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length) throws ClassInfoException {
@@ -1270,7 +1269,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // the java.lang.reflect.Proxy native peer, in the loadedClasses map
     return cl.getResolvedClassInfo(className, buffer, offset, length, null);
   }
-
+  
   public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length, ClassLoaderInfo cl, ClassPath.Match match) throws ClassInfoException {
     if (className == null) {
       return null;   

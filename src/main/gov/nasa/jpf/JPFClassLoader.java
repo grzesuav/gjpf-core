@@ -28,8 +28,8 @@ import java.net.URLClassLoader;
  * paths. This is a standard parent-first loader to avoid multiple class
  * instances when using our Run*.jar tools
  *
- * The main reason for having our own classloader is configured resource and
- * library lookup
+ * The main reason for having our own classloader is dynamically configured resource
+ * and library lookup
  */
 public class JPFClassLoader extends URLClassLoader {
 
@@ -38,6 +38,10 @@ public class JPFClassLoader extends URLClassLoader {
 
   static {
     //ClassLoader.registerAsParallelCapable(); // for jdk7
+  }
+  
+  public JPFClassLoader (URL[] urls){
+    super(urls);
   }
 
   public JPFClassLoader (URL[] urls, String[] libs, ClassLoader parent){
@@ -61,7 +65,12 @@ public class JPFClassLoader extends URLClassLoader {
     return null; // means VM uses java.library.path to look it up
   }
 
-  // we make it public
+  /**
+   * we make it public since we add paths dynamically during JPF init
+   * 
+   * Note this is ignored according to the javadocs if the provided url is already in the classpath.
+   * We do rely on this feature since me might add jpf.jar several times during bootstrap
+   */
   public void addURL (URL url){
     if (url != null){
       super.addURL(url);
