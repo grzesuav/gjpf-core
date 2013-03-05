@@ -60,48 +60,41 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
 
   protected int modifiers;
   
-  public static FieldInfo create (ClassInfo ci, String name, String signature, int modifiers,
-                                  int idx, int off){
+  public static FieldInfo create (String name, String signature, int modifiers){
     switch(signature.charAt(0)){
       case 'Z':
-        return new BooleanFieldInfo(name, modifiers, ci, idx, off);
+        return new BooleanFieldInfo(name, modifiers);
       case 'B':
-        return new ByteFieldInfo(name, modifiers, ci, idx, off);
+        return new ByteFieldInfo(name, modifiers);
       case 'S':
-        return new ShortFieldInfo(name, modifiers, ci, idx, off);
+        return new ShortFieldInfo(name, modifiers);
       case 'C':
-        return new CharFieldInfo(name, modifiers, ci, idx, off);
+        return new CharFieldInfo(name, modifiers);
       case 'I':
-        return new IntegerFieldInfo(name, modifiers, ci, idx, off);
+        return new IntegerFieldInfo(name, modifiers);
       case 'J':
-        return new LongFieldInfo(name, modifiers, ci, idx, off);
+        return new LongFieldInfo(name, modifiers);
       case 'F':
-        return new FloatFieldInfo(name, modifiers, ci, idx, off);
+        return new FloatFieldInfo(name, modifiers);
       case 'D':
-        return new DoubleFieldInfo(name, modifiers, ci, idx, off);
+        return new DoubleFieldInfo(name, modifiers);
       default:
-        return new ReferenceFieldInfo(name, signature, modifiers, ci, idx, off);
+        return new ReferenceFieldInfo(name, signature, modifiers);
     }
   }
-
-  protected FieldInfo(String name, String signature, int modifiers,
-                      ClassInfo ci, int idx, int off) {
+  
+  protected FieldInfo(String name, String signature, int modifiers) {
     this.name = name;
     this.signature = signature;
+    this.modifiers = modifiers;
+  }
+
+  protected void linkToClass (ClassInfo ci, int idx, int off){
     this.ci = ci;
     this.fieldIndex = idx;
     this.storageOffset = off;
-    this.modifiers = modifiers;
   }
-
-  protected FieldInfo(String name, String signature, int modifiers,
-                      ClassInfo ci) {
-    this.name = name;
-    this.signature = signature;
-    this.ci = ci;
-    this.modifiers = modifiers;
-  }
-
+  
   // those are set subsequently from classfile attributes
   public void setConstantValue(Object constValue){
     cv = constValue;
@@ -176,10 +169,6 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
 
   public int getFieldIndex () {
     return fieldIndex;
-  }
-
-  public void setFieldIndex (int fieldIndex) {
-    this.fieldIndex = fieldIndex;
   }
 
   /**
@@ -315,10 +304,6 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
     return storageOffset;
   }
 
-  public void setStorageOffset (int storageOffset) {
-    this.storageOffset = storageOffset;
-  }
-
   public String getFullName() {
     return ci.getName() + '.' + name;
   }
@@ -331,7 +316,7 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
     FieldInfo clone;
 
     try {
-      clone = (FieldInfo)super.clone();
+      clone = (FieldInfo)clone();
       clone.ci = ci;
     } catch (CloneNotSupportedException cnsx){
       cnsx.printStackTrace();

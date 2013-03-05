@@ -28,14 +28,8 @@ import gov.nasa.jpf.JPFException;
 public class DoubleFieldInfo extends DoubleSlotFieldInfo {
   double init;
 
-
-  public DoubleFieldInfo (String name, int modifiers,
-                          ClassInfo ci, int idx, int off) {
-    super(name, "D", modifiers, ci, idx, off);
-  }
-
-  public DoubleFieldInfo (String name, int modifiers, ClassInfo ci) {
-    super(name, "D", modifiers, ci);
+  public DoubleFieldInfo (String name, int modifiers) {
+    super(name, "D", modifiers);
   }
 
   public void setConstantValue(Object constValue){

@@ -37,7 +37,7 @@ class NonResolvedClassInfo extends ClassInfo {
   @Override
   protected void resolveClass() {
     computeInheritedAnnotations(superClass);
-    resolveInstanceFields();
+    linkFields();
   }
 
   protected CodeBuilder createCodeBuilder(){

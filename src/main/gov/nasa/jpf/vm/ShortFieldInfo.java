@@ -29,13 +29,8 @@ public class ShortFieldInfo extends SingleSlotFieldInfo {
 
   short init;
 
-  public ShortFieldInfo (String name, int modifiers,
-                         ClassInfo ci, int idx, int off) {
-    super(name, "S", modifiers, ci, idx, off);
-  }
-
-  public ShortFieldInfo (String name, int modifiers, ClassInfo ci) {
-    super(name, "S", modifiers, ci);
+  public ShortFieldInfo (String name, int modifiers) {
+    super(name, "S", modifiers);
   }
 
   public void setConstantValue(Object constValue){

@@ -339,59 +339,12 @@ public class ClassLoaderInfo
     }
   }
 
-  protected void resolveClass(ClassInfo ci) {
-    if(ClassInfo.isBuiltinClass(ci.getName()) || ci.isObjectClassInfo) {
-      return;
-    }
-
-    loadInterfaces(ci);
-    // this is where we get recursive
-    ci.superClass = loadSuperClass(ci, ci.superClassName);
-  }
-
-  
   public ClassInfo getClassInfo (int id) {
     ElementInfo ei = statics.get(id);
     if (ei != null) {
       return ei.getClassInfo();
     } else {
       return null;
-    }
-  }
-  
-  /**
-   * This method is only used in the case of non-systemClassLoaders. SystemClassLoader 
-   * overrides this method.
-   */
-  protected ClassInfo loadSuperClass (ClassInfo ci, String superName) throws ClassInfoException {
-    if (ci.isObjectClassInfo()) {
-      return null;
-    }
-
-    ClassInfo.logger.finer("resolving superclass: ", superName, " of ", ci.getName());
-
-    // resolve the superclass
-    ClassInfo superClass = ci.resolveReferencedClass(superName);
-
-    return superClass;
-  }
-
-  protected void loadInterfaces (ClassInfo ci) throws ClassInfoException {
-    for (String ifcName : ci.interfaceNames) {
-      ClassInfo.logger.finer("resolving interface: ", ifcName, " of ", ci.getName());
-      
-      boolean loaded = false;
-      for (ClassInfo ifc: ci.interfaces) {
-        if(ifc.getName().equals(ifcName)) {
-          loaded = true;
-        }
-      }
-
-      if(!loaded) {
-        // resolve the interface
-        ClassInfo ifc = ci.resolveReferencedClass(ifcName);
-        ci.interfaces.add(ifc);
-      }
     }
   }
 

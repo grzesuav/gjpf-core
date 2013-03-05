@@ -28,14 +28,8 @@ import gov.nasa.jpf.JPFException;
 public class FloatFieldInfo extends SingleSlotFieldInfo {
   float init;
 
-
-  public FloatFieldInfo (String name, int modifiers,
-                         ClassInfo ci, int idx, int off) {
-    super(name, "F", modifiers, ci, idx, off);
-  }
-
-  public FloatFieldInfo (String name, int modifiers, ClassInfo ci) {
-    super(name, "F", modifiers, ci);
+  public FloatFieldInfo (String name, int modifiers) {
+    super(name, "F", modifiers);
   }
 
   public void setConstantValue(Object constValue){

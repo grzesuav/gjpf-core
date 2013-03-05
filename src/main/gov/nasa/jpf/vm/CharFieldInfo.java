@@ -28,13 +28,8 @@ public class CharFieldInfo extends SingleSlotFieldInfo {
 
   char init;
 
-  public CharFieldInfo (String name, int modifiers,
-                        ClassInfo ci, int idx, int off) {
-    super(name, "C", modifiers, ci, idx, off);
-  }
-
-  public CharFieldInfo (String name, int modifiers, ClassInfo ci) {
-    super(name, "C", modifiers, ci);
+  public CharFieldInfo (String name, int modifiers) {
+    super(name, "C", modifiers);
   }
 
   public void setConstantValue(Object constValue){

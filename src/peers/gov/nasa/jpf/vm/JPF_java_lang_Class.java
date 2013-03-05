@@ -375,7 +375,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }
 
     ClassLoaderInfo cl = ci.getClassLoaderInfo();
-    for (String ifcName : ci.getInterfaces()){
+    for (String ifcName : ci.getDirectInterfaceNames()){
       ClassInfo ici = cl.getResolvedClassInfo(ifcName); // has to be already defined, so no exception
       addDeclaredMethodsRec(methods,ici);
     }

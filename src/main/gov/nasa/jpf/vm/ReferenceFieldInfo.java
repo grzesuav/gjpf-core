@@ -29,15 +29,8 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
   String sInit; // <2do> pcm - just a temporary quirk to init from string literals
                 // check if there are other non-object reference inits
 
-  
-  public ReferenceFieldInfo (String name, String type, int modifiers,
-                             ClassInfo ci, int idx, int off) {
-    super(name, type, modifiers, ci, idx, off);
-  }
-
-  public ReferenceFieldInfo (String name, String type, int modifiers,
-                             ClassInfo ci) {
-    super(name, type, modifiers, ci);
+  public ReferenceFieldInfo (String name, String type, int modifiers) {
+    super(name, type, modifiers);
   }
 
   public String valueToString (Fields f) {

@@ -28,13 +28,8 @@ public class BooleanFieldInfo extends SingleSlotFieldInfo {
 
   boolean init=false;
 
-  public BooleanFieldInfo (String name, int modifiers,
-                           ClassInfo ci, int idx, int off) {
-     super(name, "Z", modifiers, ci, idx, off);
-  }
-
-  public BooleanFieldInfo (String name, int modifiers, ClassInfo ci) {
-     super(name, "Z", modifiers, ci);
+  public BooleanFieldInfo (String name, int modifiers) {
+     super(name, "Z", modifiers);
   }
 
   public void setConstantValue(Object constValue){

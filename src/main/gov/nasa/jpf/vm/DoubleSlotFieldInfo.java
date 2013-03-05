@@ -24,14 +24,8 @@ package gov.nasa.jpf.vm;
  */
 public abstract class DoubleSlotFieldInfo extends FieldInfo {
 
-    protected DoubleSlotFieldInfo (String name, String signature, int modifiers,
-                          ClassInfo ci, int idx, int off) {
-     super(name, signature, modifiers, ci, idx, off);
-    }
-
-    protected DoubleSlotFieldInfo (String name, String signature, int modifiers,
-                          ClassInfo ci) {
-      super(name, signature, modifiers, ci);
+    protected DoubleSlotFieldInfo (String name, String signature, int modifiers) {
+      super(name, signature, modifiers);
     }
     
     public boolean is2SlotField(){

@@ -28,9 +28,8 @@ import gov.nasa.jpf.JPFException;
 public class IntegerFieldInfo extends SingleSlotFieldInfo {
   int init;
 
-  public IntegerFieldInfo (String name, int modifiers,
-                           ClassInfo ci, int idx, int off) {
-     super(name, "I", modifiers, ci, idx, off);
+  public IntegerFieldInfo (String name, int modifiers) {
+     super(name, "I", modifiers);
   }
 
   public void initialize (ElementInfo ei, ThreadInfo ti) {
