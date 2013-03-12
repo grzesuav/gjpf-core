@@ -778,6 +778,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
+  protected ClassInfo(){}
+  
   protected ClassInfo(ClassFile cf) throws ClassFileException {
     Initializer reader = new Initializer();
     cf.parse(reader);
