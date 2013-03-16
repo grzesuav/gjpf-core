@@ -107,6 +107,8 @@ public class ClassLoaderInfo
     }
   }
 
+  public ClassLoaderInfo(){}
+  
   protected ClassLoaderInfo(VM vm, int objRef, ClassPath cp, ClassLoaderInfo parent) {
     resolvedClasses = new HashMap<String,ClassInfo>();
 

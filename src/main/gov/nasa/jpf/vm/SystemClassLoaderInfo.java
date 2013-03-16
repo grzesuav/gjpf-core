@@ -76,6 +76,9 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
      // be recycled.
      this.id = computeId(appIndex); // has to be set here so that ClassInfos have proper uniqueIds
   }
+  public SystemClassLoaderInfo(){
+	  super();
+  }
   
   /**
    * Builds the classpath for our system class loaders which resemblances the 
