@@ -102,7 +102,7 @@ public abstract class TestMultiProcessJPF extends TestJPF {
     } else {
       numOfPrc = prcNum;
       try {
-        Class<? extends Throwable> xCls = xClsSpec.asSubclass(Throwable.class);
+        Class<? extends Throwable> xCls = xClsSpec.asNativeSubclass(Throwable.class);
 
         jpfException( getCaller(), xCls, args);
 
@@ -122,7 +122,7 @@ public abstract class TestMultiProcessJPF extends TestJPF {
     } else {
       numOfPrc = prcNum;
       try {
-        Class<? extends Property> propertyCls = propertyClsSpec.asSubclass(Property.class);
+        Class<? extends Property> propertyCls = propertyClsSpec.asNativeSubclass(Property.class);
         propertyViolation( getCaller(), propertyCls, args);
 
       } catch (ClassCastException ccx){

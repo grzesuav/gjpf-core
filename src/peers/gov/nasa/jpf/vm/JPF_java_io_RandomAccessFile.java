@@ -19,11 +19,6 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.NativePeer;
-import gov.nasa.jpf.vm.ThreadInfo;
 
 import java.util.HashMap;
 
@@ -60,7 +55,7 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
     
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(DataRepresentation);
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo(DataRepresentation);
     if (insn.requiresClinitExecution(ti, ci)) {
       env.repeatInvocation();
       return null;

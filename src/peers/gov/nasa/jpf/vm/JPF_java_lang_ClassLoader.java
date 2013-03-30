@@ -21,9 +21,10 @@ package gov.nasa.jpf.vm;
 import java.util.Map;
 
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.jvm.classfile.ClassPath;
+import gov.nasa.jpf.vm.ClassPath;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
+import gov.nasa.jpf.vm.ClassInfoException;
 import gov.nasa.jpf.vm.ClinitRequired;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Heap;
@@ -130,44 +131,37 @@ public class JPF_java_lang_ClassLoader extends NativePeer {
 
   @MJI
   public int defineClass0__Ljava_lang_String_2_3BII__Ljava_lang_Class_2 
-           (MJIEnv env, int objRef, int nameRef, int bufferRef, int offset, int length) {
-    // retrieve ClassLoaderInfo instance
-    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
-
+                                      (MJIEnv env, int objRef, int nameRef, int bufferRef, int offset, int length) {
     String cname = env.getStringObject(nameRef);
-    byte[] buffer = env.getByteArrayObject(bufferRef);
-
-    return defineClass(env, cl, cname, buffer, offset, length, null);
-  }
-  
-  protected static int defineClass (MJIEnv env, ClassLoaderInfo cl, String cname, byte[] buffer, int offset, int length, ClassPath.Match match) {
-
-    if(!check(env, cname, buffer, offset, length)) {
-      return MJIEnv.NULL;
-    }
-
-    if(match == null) {
-      match = cl.getMatch(cname);
-    }
+    ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
 
     // determine whether that the corresponding class is already defined by this 
     // classloader, if so, this attempt is invalid, and loading throws a LinkageError
-    if(cl.getDefinedClassInfo(cname) != null) {
-      env.throwException("java.lang.LinkageError");
+    if (cl.getDefinedClassInfo(cname) != null) {  // attempt to define twice
+      env.throwException("java.lang.LinkageError"); 
       return MJIEnv.NULL;
     }
+        
+    byte[] buffer = env.getByteArrayObject(bufferRef);
+    
+    try {
+      ClassInfo ci = cl.getResolvedClassInfo( cname, buffer, offset, length);
 
-    ClassInfo ci = cl.getResolvedClassInfo(cname, buffer, offset, length, match);
+      // Note: if the representation is not of a supported major or minor version, loading 
+      // throws an UnsupportedClassVersionError. But for now, we do not check for this here 
+      // since we don't do much with minor and major versions
 
-    // Note: if the representation is not of a supported major or minor version, loading 
-    // throws an UnsupportedClassVersionError. But for now, we do not check for this here 
-    // since we don't do much with minor and major versions
+      ThreadInfo ti = env.getThreadInfo();
+      ci.registerClass(ti);
 
-    ThreadInfo ti = env.getThreadInfo();
-    ci.registerClass(ti);
-
-    return ci.getClassObjectRef();
+      return ci.getClassObjectRef();
+      
+    } catch (ClassInfoException cix){
+      env.throwException("java.lang.ClassFormatError");
+      return MJIEnv.NULL;
+    }
   }
+
 
   protected static boolean check(MJIEnv env, String cname, byte[] buffer, int offset, int length) {
     // throw SecurityExcpetion if the package prefix is java

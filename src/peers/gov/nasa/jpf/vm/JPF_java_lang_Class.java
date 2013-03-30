@@ -20,22 +20,6 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.vm.AnnotationInfo;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ClassLoaderInfo;
-import gov.nasa.jpf.vm.ClinitRequired;
-import gov.nasa.jpf.vm.DirectCallStackFrame;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.FieldInfo;
-import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.LoadOnJPFRequired;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.NativePeer;
-import gov.nasa.jpf.vm.StackFrame;
-import gov.nasa.jpf.vm.StaticElementInfo;
-import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.Types;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -133,7 +117,7 @@ public class JPF_java_lang_Class extends NativePeer {
     
     AnnotationInfo ai = ci.getAnnotation(aci.getName());
     if (ai != null){
-      ClassInfo aciProxy = ClassInfo.getAnnotationProxy(aci);
+      ClassInfo aciProxy = aci.getAnnotationProxy();
       
       try {
         return env.newAnnotationProxy(aciProxy, ai);
@@ -290,7 +274,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
 
-  static int getMethod (MJIEnv env, int clsRef, ClassInfo ciMethod, String mname, int argTypesRef,
+  int getMethod (MJIEnv env, int clsRef, ClassInfo ciMethod, String mname, int argTypesRef,
                         boolean isRecursiveLookup, boolean publicOnly) {
 
     ClassInfo ci = env.getReferredClassInfo( clsRef);
@@ -319,7 +303,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }
   }
 
-  static int createMethodObject (MJIEnv env, ClassInfo objectCi, MethodInfo mi) {
+  int createMethodObject (MJIEnv env, ClassInfo objectCi, MethodInfo mi) {
     // NOTE - we rely on Constructor and Method peers being initialized
     if (mi.isCtor()){
       return JPF_java_lang_reflect_Constructor.createConstructorObject(env, objectCi, mi);
@@ -368,7 +352,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return getMethod( env, clsRef, mci, mname, argTypesRef, true, true);
   }
 
-  private static void addDeclaredMethodsRec (HashMap<String,MethodInfo>methods, ClassInfo ci){
+  private void addDeclaredMethodsRec (HashMap<String,MethodInfo>methods, ClassInfo ci){
     ClassInfo sci = ci.getSuperClass();
     if (sci != null){
       addDeclaredMethodsRec(methods,sci);
@@ -455,7 +439,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return aref;
   }
   
-  static int getConstructors (MJIEnv env, int objref, boolean publicOnly){
+  int getConstructors (MJIEnv env, int objref, boolean publicOnly){
     ClassInfo mci = getInitializedClassInfo(env, CONSTRUCTOR_CLASSNAME);
     if (mci == null) {
       env.repeatInvocation();
@@ -507,10 +491,11 @@ public class JPF_java_lang_Class extends NativePeer {
     return getMethod(env,clsRef, mci, "<init>",argTypesRef,false,true);
   }
   
-  static ClassInfo getInitializedClassInfo (MJIEnv env, String clsName){
+  // this is only used for system classes such as java.lang.reflect.Method
+  ClassInfo getInitializedClassInfo (MJIEnv env, String clsName){
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
-    ClassInfo ci = ClassInfo.getResolvedClassInfo( clsName);
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo( clsName);
     
     if (insn.requiresClinitExecution(ti, ci)) {
       return null;
@@ -519,7 +504,7 @@ public class JPF_java_lang_Class extends NativePeer {
     }    
   }
 
-  static Set<ClassInfo> getInitializedInterfaces (MJIEnv env, ClassInfo ci){
+  Set<ClassInfo> getInitializedInterfaces (MJIEnv env, ClassInfo ci){
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
 
@@ -616,7 +601,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return aref;
   }
     
-  static int getField (MJIEnv env, int clsRef, int nameRef, boolean isRecursiveLookup) {    
+  int getField (MJIEnv env, int clsRef, int nameRef, boolean isRecursiveLookup) {    
     ClassInfo ci = env.getReferredClassInfo( clsRef);
     String fname = env.getStringObject(nameRef);
     FieldInfo fi = null;
@@ -804,7 +789,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return aref;
   }
 
-  private static String getCanonicalName (ClassInfo ci){
+  private String getCanonicalName (ClassInfo ci){
     if (ci.isArray()){
       String canonicalName = getCanonicalName(ci.getComponentClassInfo());
       if (canonicalName != null){
@@ -848,17 +833,9 @@ public class JPF_java_lang_Class extends NativePeer {
   @MJI
   public int getDeclaredAnnotations_____3Ljava_lang_annotation_Annotation_2 (MJIEnv env, int robj){
     ClassInfo ci = env.getReferredClassInfo(robj);
-    ArrayList<AnnotationInfo> declared = new ArrayList<AnnotationInfo>();
-    for (AnnotationInfo a : ci.getAnnotations()){
-      if (!a.inherited){
-        declared.add(a);
-      }
-    }
-
-    AnnotationInfo[] ai = declared.toArray(new AnnotationInfo[declared.size()]);
 
     try{
-      return env.newAnnotationProxies(ai);
+      return env.newAnnotationProxies(ci.getDeclaredAnnotations());
     } catch (ClinitRequired x){
       env.handleClinitRequest(x.getRequiredClassInfo());
       return MJIEnv.NULL;
@@ -931,7 +908,7 @@ public class JPF_java_lang_Class extends NativePeer {
     return isLocalOrAnonymousClass(ci) && !isAnonymousClass____Z(env, robj);
   }
 
-  private static boolean isLocalOrAnonymousClass (ClassInfo ci){
+  private boolean isLocalOrAnonymousClass (ClassInfo ci){
     return (ci.getEnclosingMethodInfo() != null);
   }
 

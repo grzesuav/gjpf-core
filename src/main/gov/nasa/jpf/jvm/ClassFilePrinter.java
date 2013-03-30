@@ -17,8 +17,10 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm.classfile;
+package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.jvm.JVMByteCodePrinter;
+import gov.nasa.jpf.vm.ClassParseException;
 import java.io.PrintWriter;
 
 /**
@@ -41,7 +43,7 @@ public class ClassFilePrinter implements ClassFileReader {
       ClassFile cf = new ClassFile(args[0]);
       cf.parse(printer);
 
-    } catch (ClassFileException cfx){
+    } catch (ClassParseException cfx){
       cfx.printStackTrace();
     }
   }
@@ -232,7 +234,7 @@ public class ClassFilePrinter implements ClassFileReader {
   public void setCode(ClassFile cf, Object tag, int maxStack, int maxLocals, int codeLength) {
     pw.printf(", maxStack=%d,maxLocals=%d,length=%d\n", maxStack, maxLocals,codeLength);
     incIndent();
-    ByteCodePrinter bcPrinter = new ByteCodePrinter(pw, cf, indent);
+    JVMByteCodePrinter bcPrinter = new JVMByteCodePrinter(pw, cf, indent);
     cf.parseBytecode(bcPrinter, tag, codeLength);
     decIndent();
   }

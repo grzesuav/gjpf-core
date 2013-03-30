@@ -19,23 +19,7 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.jvm.classfile.ClassPath;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ClassLoaderInfo;
-import gov.nasa.jpf.vm.DirectCallStackFrame;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.Heap;
-import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.VM;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.NativePeer;
-import gov.nasa.jpf.vm.StackFrame;
-import gov.nasa.jpf.vm.SystemState;
-import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.UncaughtException;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 
 import java.io.FileInputStream;
@@ -84,11 +68,11 @@ public class JPF_java_lang_System extends NativePeer {
   }
 
   
-  static int createPrintStream (MJIEnv env, int clsObjRef){
+  int createPrintStream (MJIEnv env, int clsObjRef){
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
     StackFrame frame = ti.getTopFrame();
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("gov.nasa.jpf.ConsoleOutputStream");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("gov.nasa.jpf.ConsoleOutputStream");
 
     // it's not really used, but it would be hack'ish to use a class whose
     // super class hasn't been initialized yet
@@ -116,7 +100,7 @@ public class JPF_java_lang_System extends NativePeer {
     return createPrintStream(env,clsObjRef);
   }
   
-  static int getProperties (MJIEnv env, Properties p){
+  int getProperties (MJIEnv env, Properties p){
     int n = p.size() * 2;
     int aref = env.newObjectArray("Ljava/lang/String;", n);
     int i=0;
@@ -131,11 +115,11 @@ public class JPF_java_lang_System extends NativePeer {
     return aref;
   }
 
-  static int getSysPropsFromHost (MJIEnv env){
+  int getSysPropsFromHost (MJIEnv env){
     return getProperties(env, System.getProperties());
   }
   
-  static int getSysPropsFromFile (MJIEnv env){
+  int getSysPropsFromFile (MJIEnv env){
     Config conf = env.getConfig();
     
     String cf = conf.getString("vm.sysprop.file", "system.properties");
@@ -158,8 +142,8 @@ public class JPF_java_lang_System extends NativePeer {
   static String JAVA_CLASS_PATH = "java.class.path";
   
   @MJI
-  public static String getSUTJavaClassPath(VM vm) {
-    ClassInfo system = ClassInfo.getResolvedClassInfo("java.lang.System");
+  public String getSUTJavaClassPath(VM vm) {
+    ClassInfo system = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.System");
     
     if (system == null) {
       return null; 
@@ -192,7 +176,7 @@ public class JPF_java_lang_System extends NativePeer {
     return result;
   }
   
-  static int getSelectedSysPropsFromHost (MJIEnv env){
+  int getSelectedSysPropsFromHost (MJIEnv env){
     Config conf = env.getConfig();
     String keys[] = conf.getStringArray("vm.sysprop.keys");
 

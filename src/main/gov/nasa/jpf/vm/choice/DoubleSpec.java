@@ -22,6 +22,7 @@ package gov.nasa.jpf.vm.choice;
 
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.VM;
@@ -81,7 +82,7 @@ public class DoubleSpec {
       break;
     }
     case 2: { // static variable name TODO other cases here...
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(varId[0]);
+      ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo( varId[0]);
       ElementInfo ei = ci.getStaticElementInfo();
       ret = ei.getDoubleField(varId[1]);
       break;

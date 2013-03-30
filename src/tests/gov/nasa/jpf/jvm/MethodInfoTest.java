@@ -17,12 +17,12 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.vm;
+package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.classfile.ClassFile;
-import gov.nasa.jpf.jvm.classfile.ClassFileException;
+import gov.nasa.jpf.jvm.bytecode.InstructionFactory;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassParseException;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MethodInfo;
 
@@ -47,11 +47,10 @@ public class MethodInfoTest extends TestJPF {
   
   @Test
   public void testMethodArgs() {
-    File file = new File("build/tests/gov/nasa/jpf/vm/MethodInfoTest$MyClass.class");
+    File file = new File("build/tests/gov/nasa/jpf/jvm/MethodInfoTest$MyClass.class");
 
     try {
-      ClassFile cf = new ClassFile(file);
-      ClassInfo ci = new NonResolvedClassInfo(cf);
+      ClassInfo ci = new NonResolvedClassInfo( file);
       MethodInfo mi;
       LocalVarInfo[] args;
 
@@ -110,10 +109,11 @@ public class MethodInfoTest extends TestJPF {
           && args[1].getName().equals("intArg") && args[2].getName().equals("stringArg"));
 
     } catch (NullPointerException npe){
+      npe.printStackTrace();
       fail("method not found");
-    } catch (ClassFileException cfx){
-      //cfx.printStackTrace();
-      fail("ClassFileException: " + cfx);
+    } catch (ClassParseException cfx){
+      cfx.printStackTrace();
+      fail(cfx.toString());
     }
   }
 }

@@ -179,7 +179,7 @@ public class JPF_java_lang_Character extends NativePeer {
     env.setStaticCharField("java.lang.Character", "MIN_VALUE", '\u0000');
     env.setStaticCharField("java.lang.Character", "MAX_VALUE", '\uffff');
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("char");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("char");
     env.setStaticReferenceField("java.lang.Character", "TYPE", 
                              ci.getClassObjectRef());
   }

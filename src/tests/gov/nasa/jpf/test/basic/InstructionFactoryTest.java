@@ -69,7 +69,7 @@ public class InstructionFactoryTest extends TestJPF {
   
   @Test
   public void testDadd() {
-    if (verifyNoPropertyViolation("+vm.insn_factory.class=.test.basic.InstructionFactoryTest$MyInsnFactory")) {
+    if (verifyNoPropertyViolation("+jvm.insn_factory.class=.test.basic.InstructionFactoryTest$MyInsnFactory")) {
       double a = 41.0;
       double b = a + 1.0;
       System.out.print("b=");

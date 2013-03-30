@@ -17,8 +17,10 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm.classfile;
+package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.jvm.JVMByteCodeReader;
+import gov.nasa.jpf.vm.ClassParseException;
 import gov.nasa.jpf.JPFException;
 
 import java.io.File;
@@ -68,6 +70,7 @@ public class ClassFile {
     // we need this since it can happen at various recursion levels
   }
 
+  // <2do> this is going away
   String requestedTypeName; // the type name that caused this classfile to be loaded
 
   byte[] data; // the classfile data
@@ -81,11 +84,21 @@ public class ClassFile {
 
   
   //--- ctors
+  public ClassFile (byte[] data, int offset){
+    this.data = data;
+    this.pos = offset;
+  }
+
+  public ClassFile (byte[] data){
+    this.data = data;
+  }
+
+  
+  // <2do> these are going away
   public ClassFile (String typeName, byte[] data){
     this.requestedTypeName = typeName;
     this.data = data;
   }
-
   public ClassFile (String typeName, byte[] data, int offset){
     this.requestedTypeName = typeName;
     this.data = data;
@@ -93,7 +106,7 @@ public class ClassFile {
   }
 
 
-  public ClassFile (File file) throws ClassFileException {
+  public ClassFile (File file) throws ClassParseException {
     FileInputStream is = null;
     try {
       is = new FileInputStream(file);
@@ -118,7 +131,7 @@ public class ClassFile {
     }
   }
 
-  public ClassFile (String pathName)  throws ClassFileException {
+  public ClassFile (String pathName)  throws ClassParseException {
     this( new File(pathName));
   }
 
@@ -153,6 +166,7 @@ public class ClassFile {
   
   /**
    * return the typename this classfile gets loaded for
+   * <2do> this is going away
    */
   public String getRequestedTypeName(){
     return requestedTypeName;
@@ -164,11 +178,11 @@ public class ClassFile {
     throw new BailOut();
   }
 
-  protected void error(String msg) throws ClassFileException {
-    throw new ClassFileException(msg);
+  protected void error(String msg) throws ClassParseException {
+    throw new ClassParseException(msg);
   }
 
-  protected void readData (InputStream is) throws ClassFileException {
+  protected void readData (InputStream is) throws ClassParseException {
     try {
       int nRead = 0;
 
@@ -449,7 +463,7 @@ public class ClassFile {
 
   
   //--- reader notifications
-  private void setClass(ClassFileReader reader, String clsName, String superClsName, int flags, int cpCount){
+  private void setClass(ClassFileReader reader, String clsName, String superClsName, int flags, int cpCount) throws ClassParseException {
     int p = pos;
     reader.setClass( this, clsName, superClsName, flags, cpCount);
     pos = p;
@@ -806,7 +820,7 @@ public class ClassFile {
    *   u2 attributes_count;
    *   attribute_info attributes[attributes_count];
    */
-  public void parse( ClassFileReader reader)  throws ClassFileException {
+  public void parse( ClassFileReader reader)  throws ClassParseException {
     int cpIdx;
 
     try {
@@ -862,7 +876,7 @@ public class ClassFile {
 
   //--- constpool parsing
 
-  public static String readModifiedUTF8String( byte[] data, int pos, int len) throws ClassFileException {
+  public static String readModifiedUTF8String( byte[] data, int pos, int len) throws ClassParseException {
     
     int n = 0; // the number of chars in buf
     char[] buf = new char[len]; // it can't be more, but it can be less chars
@@ -890,7 +904,7 @@ public class ClassFile {
           }
           
         } else {
-          throw new ClassFileException("malformed modified UTF-8 input: ");
+          throw new ClassParseException("malformed modified UTF-8 input: ");
         }
       }
     }
@@ -904,7 +918,7 @@ public class ClassFile {
   // Note that these calls have to provide the ClassFileReader as an argument because
   // we might actually switch to another reader (e.g. MethodInfos for parseCodeAttr)
 
-  protected void parseCp(int cpCount)  throws ClassFileException {
+  protected void parseCp(int cpCount)  throws ClassParseException {
     int j = pos;
 
     byte[] data = this.data;
@@ -1553,7 +1567,7 @@ public class ClassFile {
 
 
 
-  public void parseBytecode(ByteCodeReader reader, Object tag, int codeLength){
+  public void parseBytecode(JVMByteCodeReader reader, Object tag, int codeLength){
     int localVarIndex;
     int cpIdx;
     int constVal;
@@ -2268,8 +2282,8 @@ public class ClassFile {
 
   }
 
-  //--- those can only be called from within a ByteCodeReader.tableswitch() notification
-  public void parseTableSwitchEntries(ByteCodeReader reader, int low, int high){
+  //--- those can only be called from within a JVMByteCodeReader.tableswitch() notification
+  public void parseTableSwitchEntries(JVMByteCodeReader reader, int low, int high){
     for (int val=low; val<=high; val++){
       int offset = readI4();
       reader.tableswitchEntry(val, offset);
@@ -2287,8 +2301,8 @@ public class ClassFile {
     return pcOffset;
   }
 
-  //--- those can only be called from within a ByteCodeReader.lookupswitch() notification
-  public void parseLookupSwitchEntries(ByteCodeReader reader, int nEntries){
+  //--- those can only be called from within a JVMByteCodeReader.lookupswitch() notification
+  public void parseLookupSwitchEntries(JVMByteCodeReader reader, int nEntries){
     for (int i=0; i<nEntries; i++){
       int value = readI4();
       int offset = readI4();

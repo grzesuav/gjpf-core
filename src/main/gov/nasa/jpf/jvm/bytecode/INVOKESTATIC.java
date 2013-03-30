@@ -46,7 +46,7 @@ public class INVOKESTATIC extends InvokeInstruction {
 
   protected ClassInfo getClassInfo () {
     if (ci == null) {
-      ci = ClassInfo.getResolvedClassInfo(cname);
+      ci = ClassLoaderInfo.getCurrentResolvedClassInfo(cname);
     }
     return ci;
   }

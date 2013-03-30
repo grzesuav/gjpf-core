@@ -20,10 +20,6 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.FieldInfo;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.NativePeer;
 
 /**
  * native peer for Annotation Proxies
@@ -38,7 +34,7 @@ public class JPF_gov_nasa_jpf_AnnotationProxyBase extends NativePeer {
     // we could also pull it out from the interfaces, but we know the naming scheme
     String proxyName = ciProxy.getName();
     String annotation = proxyName.substring(0, proxyName.length() - 6); // "...$Proxy"
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(annotation);
+    ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(annotation);
     
     return ci.getClassObjectRef();
   }

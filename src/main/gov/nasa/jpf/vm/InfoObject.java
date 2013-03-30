@@ -34,7 +34,7 @@ public abstract class InfoObject implements Cloneable {
   
   // he number of annotations per class/method/field is usually
   // small enough so that simple arrays are more efficient than HashMaps
-  protected AnnotationInfo[] annotations;
+  protected AnnotationInfo[] annotations = NO_ANNOTATIONS;
 
   /** 
    * user defined attribute objects.
@@ -42,14 +42,11 @@ public abstract class InfoObject implements Cloneable {
    */
   protected Object attr;
   
-  protected void startAnnotations(int count){
-    annotations = new AnnotationInfo[count];
+  
+  public void setAnnotations (AnnotationInfo[] annotations){
+    this.annotations = annotations;
   }
-
-  protected void setAnnotation(int index, AnnotationInfo ai){
-    annotations[index] = ai;
-  }
-
+  
   public void addAnnotation (AnnotationInfo newAnnotation){
     AnnotationInfo[] ai = annotations;
     if (ai == null){
@@ -66,19 +63,18 @@ public abstract class InfoObject implements Cloneable {
     annotations = ai;
   }
 
+  // to be overridden by ClassInfo because of superclass inhertited annotations
   public boolean hasAnnotations(){
-    return (annotations != null);
+    return (annotations != NO_ANNOTATIONS);
   }
   
+  // to be overridden by ClassInfo because of superclass inhertited annotations
   public AnnotationInfo[] getAnnotations() {
-    if (annotations == null){
-      return NO_ANNOTATIONS; // make life a bit easier for clients and keep it similar to the model class API
-    } else {
-      return annotations;
-    }
+    return annotations;
   }
-  
-  public AnnotationInfo getAnnotation (String name){
+    
+  // to be overridden by ClassInfo because of superclass inhertited annotations
+  public AnnotationInfo getAnnotation (String name){    
     AnnotationInfo[] ai = annotations;
     if (ai != null){
       for (int i=0; i<ai.length; i++){
@@ -89,25 +85,11 @@ public abstract class InfoObject implements Cloneable {
     }
     return null;
   }
-
-
-  public void computeInheritedAnnotations (InfoObject superClass){
-    if (superClass != null){
-      AnnotationInfo[] superClassAnn = superClass.getAnnotations();
-      for (AnnotationInfo ai : superClassAnn){
-        if (AnnotationInfo.annotationAttributes.get(ai.getName()).isInherited){
-          AnnotationInfo existingAnn = getAnnotation(ai.getName());
-          if(existingAnn !=  null) {
-            existingAnn.setInherited(false);
-          } else if (ai.isInherited()){
-            addAnnotation(ai);
-          } else{
-            addAnnotation(ai.cloneInherited());
-          }
-        }
-      }
-    }
+  
+  public AnnotationInfo[] getDeclaredAnnotations(){
+    return annotations;
   }
+
   
   //--- the generic attribute API
 

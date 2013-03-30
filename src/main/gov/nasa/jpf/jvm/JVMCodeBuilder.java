@@ -17,24 +17,28 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.vm;
+package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.classfile.ByteCodeReader;
-import gov.nasa.jpf.jvm.classfile.ClassFile;
 import gov.nasa.jpf.util.Invocation;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.LookupSwitchInstruction;
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.NativeMethodInfo;
+import gov.nasa.jpf.vm.TableSwitchInstruction;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * a special ByteCodeReader implementation that builds code arrays for
+ * a special JVMByteCodeReader implementation that builds code arrays for
  * MethodInfos, setting index and pc on the fly
  */
-public class CodeBuilder implements ByteCodeReader {
+public class JVMCodeBuilder implements JVMByteCodeReader {
 
-  InstructionFactory insnFactory;
-
+  static protected JVMInstructionFactory insnFactory;
+  
   protected ClassFile cf;
   protected MethodInfo mi;
 
@@ -50,15 +54,35 @@ public class CodeBuilder implements ByteCodeReader {
 
   // flag to remember wide immediate operand modification
   boolean isWide;
-
-  public CodeBuilder (InstructionFactory insnFactory, ClassFile classFile, MethodInfo targetMethod){
-    this.insnFactory = insnFactory;
+  
+  static boolean init (JVMClassFactory cf){
+    insnFactory = cf.getJVMInstructionFactory();
+    return true;
+  }
+  
+  public JVMCodeBuilder (){
+    code = new ArrayList<Instruction>(64);
+  }
+  
+  public JVMCodeBuilder (JVMInstructionFactory insnFactory, ClassFile classFile, MethodInfo targetMethod){
     this.cf = classFile;
     this.mi = targetMethod;
 
     code = new ArrayList<Instruction>(64);
   }
+  
+  public JVMCodeBuilder (MethodInfo targetMethod){
+    this.mi = targetMethod;
+    code = new ArrayList<Instruction>(64);    
+  }
 
+  //--- for testing purposes
+  protected JVMCodeBuilder (JVMInstructionFactory ifact){
+    this();
+    
+    insnFactory = ifact;
+  }
+  
   // this is kind of dangerous - it enables reuse of CodeBuilders, but
   // you better make sure this does not get recursive
   public void initialize(ClassFile classFile, MethodInfo targetMethod){

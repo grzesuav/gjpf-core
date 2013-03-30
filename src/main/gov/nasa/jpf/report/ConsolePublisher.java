@@ -23,6 +23,7 @@ import gov.nasa.jpf.Error;
 import gov.nasa.jpf.util.Left;
 import gov.nasa.jpf.util.RepositoryEntry;
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
@@ -356,7 +357,7 @@ public class ConsolePublisher extends Publisher {
     pw.println("instructions:       " + stat.insns);
     pw.println("max memory:         " + (stat.maxUsed >> 20) + "MB");
 
-    pw.println("loaded code:        classes=" + ClassInfo.getNumberOfLoadedClasses() + ", methods="
+    pw.println("loaded code:        classes=" + ClassLoaderInfo.getNumberOfLoadedClasses() + ", methods="
             + MethodInfo.getNumberOfLoadedMethods());
   }
   

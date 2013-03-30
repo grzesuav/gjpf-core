@@ -17,14 +17,18 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.vm;
+package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.classfile.ClassFile;
-import gov.nasa.jpf.jvm.classfile.ClassFileException;
+import gov.nasa.jpf.jvm.ClassFile;
+import gov.nasa.jpf.jvm.ClassFileParser;
+import gov.nasa.jpf.jvm.bytecode.InstructionFactory;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.ClassFactory;
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassParseException;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.MethodInfo;
+
 
 import java.io.File;
 
@@ -114,13 +118,12 @@ public class ClassInfoTest extends TestJPF {
 
   @Test
   public void testClassFileInitialization() {
-    File file = new File("build/tests/gov/nasa/jpf/vm/ClassInfoTest$MyClass.class");
+    File file = new File("build/tests/gov/nasa/jpf/jvm/ClassInfoTest$MyClass.class");
 
     try {
-      ClassFile cf = new ClassFile(file);
-      ClassInfo ci = new NonResolvedClassInfo(cf);
+      ClassInfo ci = new NonResolvedClassInfo( file);
 
-      assert ci.getName().equals("gov.nasa.jpf.vm.ClassInfoTest$MyClass");
+      assert ci.getName().equals("gov.nasa.jpf.jvm.ClassInfoTest$MyClass");
 
       System.out.println("-- declared instance fields");
       for (FieldInfo fi : ci.getDeclaredInstanceFields()){
@@ -139,9 +142,9 @@ public class ClassInfoTest extends TestJPF {
       }
 
 
-    } catch (ClassFileException cfx){
+    } catch (ClassParseException cfx){
       //cfx.printStackTrace();
-      fail("ClassFileException: " + cfx);
+      fail("ClassParseException: " + cfx);
     }
   }
 

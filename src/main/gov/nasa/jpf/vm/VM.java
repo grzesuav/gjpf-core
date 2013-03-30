@@ -24,7 +24,7 @@ import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.classfile.ClassFile;
+import gov.nasa.jpf.jvm.ClassFile;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
@@ -1097,7 +1097,7 @@ public abstract class VM {
   }
 
   // VMListener acquisition
-  Instruction getInstruction () {
+  public Instruction getInstruction () {
     ThreadInfo ti = ThreadInfo.getCurrentThread();
     return ti.getPC();
   }

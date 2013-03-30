@@ -45,7 +45,7 @@ public class BoxObjectCacheManager {
   private static int defHigh = 127;
 
   public static int valueOfBoolean (ThreadInfo ti, boolean b) {
-    ClassInfo cls = ClassInfo.getResolvedClassInfo("java.lang.Boolean");
+    ClassInfo cls = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Boolean");
 
     int boolObj;
     if (b) {
@@ -70,7 +70,7 @@ public class BoxObjectCacheManager {
     ElementInfo eiArray = heap.newSystemArray("Ljava/lang/Byte", n, ti, ANCHOR);
     int arrayRef = eiArray.getObjectRef();
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Byte");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Byte");
     byte val = byteLow;
     for (int i = 0; i < n; i++) {
       ElementInfo eiByte = heap.newSystemObject(ci, ti, ANCHOR);
@@ -78,13 +78,13 @@ public class BoxObjectCacheManager {
       eiArray.setReferenceElement(i, eiByte.getObjectRef());
     }
 
-    ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(MODEL_CLASS);
+    ClassInfo cacheClass = ClassLoaderInfo.getSystemResolvedClassInfo(MODEL_CLASS);
     cacheClass.getModifiableStaticElementInfo().setReferenceField("byteCache", arrayRef);
     return arrayRef;
   }
 
   public static int valueOfByte (ThreadInfo ti, byte b) {
-    ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(MODEL_CLASS);
+    ClassInfo cacheClass = ClassLoaderInfo.getSystemResolvedClassInfo(MODEL_CLASS);
     int byteCache = cacheClass.getStaticElementInfo().getReferenceField("byteCache");
 
     if (byteCache == MJIEnv.NULL) { // initializing the cache on demand
@@ -93,7 +93,7 @@ public class BoxObjectCacheManager {
 
     if (b >= byteLow && b <= byteHigh) { return ti.getElementInfo(byteCache).getReferenceElement(b - byteLow); }
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Byte");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Byte");
     ElementInfo eiByte = ti.getHeap().newObject(ci, ti);
     eiByte.setByteField("value", b);
     return eiByte.getObjectRef();
@@ -110,20 +110,20 @@ public class BoxObjectCacheManager {
     ElementInfo eiArray = heap.newSystemArray("Ljava/lang/Character", n, ti, ANCHOR);
     int arrayRef = eiArray.getObjectRef();
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Character");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Character");
     for (int i = 0; i < n; i++) {
       ElementInfo eiChar = heap.newSystemObject(ci, ti, ANCHOR);
       eiChar.setCharField("value", (char) i);
       eiArray.setReferenceElement(i, eiChar.getObjectRef());
     }
 
-    ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(MODEL_CLASS);
+    ClassInfo cacheClass = ClassLoaderInfo.getSystemResolvedClassInfo(MODEL_CLASS);
     cacheClass.getModifiableStaticElementInfo().setReferenceField("charCache", arrayRef);
     return arrayRef;
   }
 
   public static int valueOfCharacter (ThreadInfo ti, char c) {
-    ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(MODEL_CLASS);
+    ClassInfo cacheClass = ClassLoaderInfo.getSystemResolvedClassInfo(MODEL_CLASS);
     int charCache = cacheClass.getStaticElementInfo().getReferenceField("charCache");
 
     if (charCache == MJIEnv.NULL) { // initializing the cache on demand
@@ -132,7 +132,7 @@ public class BoxObjectCacheManager {
 
     if (c >= 0 && c <= charHigh) { return ti.getElementInfo(charCache).getReferenceElement(c); }
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Character");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Character");
     ElementInfo eiChar = ti.getHeap().newObject(ci, ti);
     eiChar.setCharField("value", c);
     return eiChar.getObjectRef();
@@ -152,7 +152,7 @@ public class BoxObjectCacheManager {
     ElementInfo eiArray = heap.newSystemArray("Ljava/lang/Short", n, ti, ANCHOR);
     int arrayRef = eiArray.getObjectRef();
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Short");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Short");
     short val = shortLow;
     for (int i = 0; i < n; i++) {
       ElementInfo eiShort = heap.newSystemObject(ci, ti, ANCHOR);
@@ -160,13 +160,13 @@ public class BoxObjectCacheManager {
       eiArray.setReferenceElement(i, eiShort.getObjectRef());
     }
 
-    ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(MODEL_CLASS);
+    ClassInfo cacheClass = ClassLoaderInfo.getSystemResolvedClassInfo(MODEL_CLASS);
     cacheClass.getModifiableStaticElementInfo().setReferenceField("shortCache", arrayRef);
     return arrayRef;
   }
 
   public static int valueOfShort (ThreadInfo ti, short s) {
-    ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(MODEL_CLASS);
+    ClassInfo cacheClass = ClassLoaderInfo.getSystemResolvedClassInfo(MODEL_CLASS);
     int shortCache = cacheClass.getStaticElementInfo().getReferenceField("shortCache");
 
     if (shortCache == MJIEnv.NULL) { // initializing the cache on demand
@@ -175,7 +175,7 @@ public class BoxObjectCacheManager {
 
     if (s >= shortLow && s <= shortHigh) { return ti.getElementInfo(shortCache).getReferenceElement(s - shortLow); }
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Short");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Short");
     ElementInfo eiShort = ti.getHeap().newObject(ci, ti);
     eiShort.setShortField("value", s);
     return eiShort.getObjectRef();
@@ -194,20 +194,20 @@ public class BoxObjectCacheManager {
     ElementInfo eiArray = heap.newSystemArray("Ljava/lang/Integer", n, ti, ANCHOR);
     int arrayRef = eiArray.getObjectRef();
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Integer");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Integer");
     for (int i = 0; i < n; i++) {
       ElementInfo eiInteger = heap.newSystemObject(ci, ti, ANCHOR);
       eiInteger.setIntField("value", i + intLow);
       eiArray.setReferenceElement(i, eiInteger.getObjectRef());
     }
 
-    ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(MODEL_CLASS);
+    ClassInfo cacheClass = ClassLoaderInfo.getSystemResolvedClassInfo(MODEL_CLASS);
     cacheClass.getModifiableStaticElementInfo().setReferenceField("intCache", arrayRef);
     return arrayRef;
   }
 
   public static int valueOfInteger (ThreadInfo ti, int i) {
-    ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(MODEL_CLASS);
+    ClassInfo cacheClass = ClassLoaderInfo.getSystemResolvedClassInfo(MODEL_CLASS);
     int intCache = cacheClass.getStaticElementInfo().getReferenceField("intCache");
 
     if (intCache == MJIEnv.NULL) { // initializing the cache on demand
@@ -216,7 +216,7 @@ public class BoxObjectCacheManager {
 
     if (i >= intLow && i <= intHigh) { return ti.getElementInfo(intCache).getReferenceElement(i - intLow); }
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Integer");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Integer");
     ElementInfo eiInteger = ti.getHeap().newObject(ci, ti);
     eiInteger.setIntField("value", i);
     return eiInteger.getObjectRef();
@@ -235,20 +235,20 @@ public class BoxObjectCacheManager {
     ElementInfo eiArray = heap.newSystemArray("Ljava/lang/Long", n, ti, ANCHOR);
     int arrayRef = eiArray.getObjectRef();
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Long");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Long");
     for (int i = 0; i < n; i++) {
       ElementInfo eiLong = heap.newSystemObject(ci, ti, ANCHOR);
       eiLong.setLongField("value", i + longLow);
       eiArray.setReferenceElement(i, eiLong.getObjectRef());
     }
 
-    ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(MODEL_CLASS);
+    ClassInfo cacheClass = ClassLoaderInfo.getSystemResolvedClassInfo(MODEL_CLASS);
     cacheClass.getModifiableStaticElementInfo().setReferenceField("longCache", arrayRef);
     return arrayRef;
   }
 
   public static int valueOfLong (ThreadInfo ti, long l) {
-    ClassInfo cacheClass = ClassInfo.getResolvedClassInfo(MODEL_CLASS);
+    ClassInfo cacheClass = ClassLoaderInfo.getSystemResolvedClassInfo(MODEL_CLASS);
     int longCache = cacheClass.getStaticElementInfo().getReferenceField("longCache");
 
     if (longCache == MJIEnv.NULL) { // initializing the cache on demand
@@ -257,7 +257,7 @@ public class BoxObjectCacheManager {
 
     if (l >= longLow && l <= longHigh) { return ti.getElementInfo(longCache).getReferenceElement((int) l - longLow); }
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo("java.lang.Long");
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Long");
     ElementInfo eiLong = ti.getHeap().newObject(ci, ti);
     eiLong.setLongField("value", l);
     return eiLong.getObjectRef();

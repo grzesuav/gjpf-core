@@ -54,7 +54,7 @@ package gov.nasa.jpf.vm;
 public class ClassInfoException extends RuntimeException{
 
   ClassLoaderInfo classLoader;
-  String exceptionClass;
+  String exceptionClass; // how we map this into the SUT (i.e. the JPF side)
   String failedClass;
 
   public ClassInfoException(String details, ClassLoaderInfo cl, String exceptionClass, String faildClass) {
@@ -64,6 +64,14 @@ public class ClassInfoException extends RuntimeException{
     this.failedClass = faildClass;
   }
 
+  public ClassInfoException (String details, ClassLoaderInfo cl, String exceptionClass, String faildClass, Throwable cause) {
+    super(details, cause);
+    this.classLoader = cl;
+    this.exceptionClass = exceptionClass;
+    this.failedClass = faildClass;
+  }
+
+  
   public boolean checkSystemClassFailure() {
     return (failedClass.startsWith("java."));
   }

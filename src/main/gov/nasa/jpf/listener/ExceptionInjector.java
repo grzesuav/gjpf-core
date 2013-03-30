@@ -25,6 +25,7 @@ import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
@@ -91,7 +92,7 @@ public class ExceptionInjector extends ListenerAdapter {
     }
 
     ClassInfo getExceptionClassInfo(ThreadInfo ti) {
-      return ClassInfo.getResolvedClassInfo(xSpec.xClsName);
+      return ClassLoaderInfo.getCurrentResolvedClassInfo(xSpec.xClsName);
     }
 
     String getExceptionDetails() {

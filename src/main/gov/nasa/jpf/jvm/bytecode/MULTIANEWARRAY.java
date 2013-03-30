@@ -18,7 +18,9 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.jvm.JVMInstruction;
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Heap;
 import gov.nasa.jpf.vm.Instruction;
@@ -78,7 +80,7 @@ public class MULTIANEWARRAY extends JVMInstruction {
 
     // there is no clinit for array classes, but we still have  to create a class object
     // since its a builtin class, we also don't have to bother with NoClassDefFoundErrors
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(type);
+    ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(type);
     if (!ci.isRegistered()) {
       ci.registerClass(ti);
       ci.setInitialized();

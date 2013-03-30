@@ -17,7 +17,9 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm.classfile;
+package gov.nasa.jpf.jvm;
+
+import gov.nasa.jpf.vm.ClassParseException;
 
 /**
  * interface for classfile processors
@@ -34,7 +36,7 @@ package gov.nasa.jpf.jvm.classfile;
  */
 public interface ClassFileReader {
 
-  void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount);
+  void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) throws ClassParseException;
 
 
   //--- interfaces

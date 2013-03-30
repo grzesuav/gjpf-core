@@ -25,14 +25,6 @@ import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.MethodInfoRegistry;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.DirectCallStackFrame;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.NativePeer;
-import gov.nasa.jpf.vm.StackFrame;
-import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
  * native peer for rudimentary constructor reflection.
@@ -210,7 +202,7 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
   @MJI
   public boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int mthRef){
     ElementInfo ei = env.getElementInfo(mthRef);
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(JPF_java_lang_Class.CONSTRUCTOR_CLASSNAME);
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo(JPF_java_lang_Class.CONSTRUCTOR_CLASSNAME);
 
     if (ei.getClassInfo() == ci){
       MethodInfo mi1 = getMethodInfo(env, objRef);

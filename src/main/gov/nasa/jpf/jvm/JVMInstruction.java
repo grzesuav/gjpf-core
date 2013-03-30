@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2010 United States Government as represented by the
+// Copyright (C) 2012 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -17,14 +17,15 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm.classfile;
+package gov.nasa.jpf.jvm;
+
+import gov.nasa.jpf.jvm.bytecode.InstructionVisitorAcceptor;
+import gov.nasa.jpf.vm.Instruction;
 
 /**
- * an exception while parsing a ClassFile
+ * an Instruction class that implements an InstructionVisitorAcceptor
+ * This is the common root class for all Java bytecodes
  */
-public class ClassFileException extends Exception {
-
-  public ClassFileException (String details){
-    super(details);
-  }
+public abstract class JVMInstruction extends Instruction implements InstructionVisitorAcceptor {
+  // nothing in here
 }

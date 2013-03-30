@@ -20,7 +20,6 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.classfile.ClassPath;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -145,6 +144,10 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     return getResolvedClassInfo(cname);
   }
 
+  @Override
+  protected ClassInfo loadSystemClass (String typeName){
+    return new ClassInfo( typeName, this);
+  }
 
   protected void setClassLoaderObject (ElementInfo ei){
     objRef = ei.getObjectRef();

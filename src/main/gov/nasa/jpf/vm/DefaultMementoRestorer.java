@@ -19,8 +19,6 @@
 
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.jvm.classfile.ClassPath;
-
 /**
  * a MementoRestorer that uses the default mementos
  */

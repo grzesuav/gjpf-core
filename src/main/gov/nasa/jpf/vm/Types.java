@@ -980,8 +980,8 @@ public class Types {
       return instanceOf(type.substring(1), ofType.substring(1));
 
     case T_REFERENCE:
-      return ClassInfo.getResolvedClassInfo(getTypeName(type))
-                      .isInstanceOf(getTypeName(ofType));
+      ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(getTypeName(type));
+      return ci.isInstanceOf(getTypeName(ofType));
 
     default:
       return true;

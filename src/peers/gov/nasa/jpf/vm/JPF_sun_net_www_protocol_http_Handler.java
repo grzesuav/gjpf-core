@@ -25,9 +25,6 @@ import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.StringMatcher;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.NativePeer;
 
 /**
  * native peer to configure concrete URLConnection classes for specific URLs
@@ -97,7 +94,7 @@ public class JPF_sun_net_www_protocol_http_Handler extends NativePeer {
         if (map[i].matcher.matches(url)) {
           String clsName = map[i].clsName;
 
-          ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+          ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(clsName);
 
           // this might re-execute if there is a clinit
           int clsObjRef = JPF_java_lang_Class.getClassObject(env, ci);

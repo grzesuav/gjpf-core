@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Heap;
 import gov.nasa.jpf.vm.Instruction;
@@ -50,7 +51,7 @@ public class NEWARRAY extends NewArrayInstruction {
     // there is no clinit for array classes, but we still have  to create a class object
     // since its a builtin class, we also don't have to bother with NoClassDefFoundErrors
     String clsName = "[" + type;
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(clsName);
+    ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(clsName);
 
     if (!ci.isRegistered()) {
       ci.registerClass(ti);

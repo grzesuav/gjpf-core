@@ -19,7 +19,7 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.JPFListener;
-import gov.nasa.jpf.jvm.classfile.ClassFile;
+import gov.nasa.jpf.jvm.ClassFile;
 
 /**
  * interface to register for callbacks by the VM

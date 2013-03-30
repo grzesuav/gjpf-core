@@ -20,6 +20,7 @@ package gov.nasa.jpf.test.vm.basic;
 
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
 
 import org.junit.Test;
 
@@ -41,7 +42,7 @@ public class InitializeInterfaceClassObjectRefTest extends TestJPF implements In
       }
       else
       {
-         ClassInfo ci = ClassInfo.getResolvedClassInfo(InitializeInterfaceClassObjectRefTestInterface.class.getName());
+         ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo( InitializeInterfaceClassObjectRefTestInterface.class.getName());
          
          if (ci.getClassObjectRef() < 0)
             throw new AssertionError("ci.getClassObjectRef() < 0 : " + ci.getClassObjectRef());

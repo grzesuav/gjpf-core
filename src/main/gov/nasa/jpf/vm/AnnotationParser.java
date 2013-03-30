@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2012 United States Government as represented by the
+// Copyright (C) 2013 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -17,14 +17,12 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm.bytecode;
-
-import gov.nasa.jpf.vm.Instruction;
+package gov.nasa.jpf.vm;
 
 /**
- * an Instruction class that implements an InstructionVisitorAcceptor
- * This is the common root class for all Java bytecodes
+ * a parser for annotation class files
  */
-public abstract class JVMInstruction extends Instruction implements InstructionVisitorAcceptor {
-  // nothing in here
+public interface AnnotationParser {
+
+  void parse (AnnotationInfo ai) throws ClassParseException;
 }

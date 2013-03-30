@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.listener;
 
+import gov.nasa.jpf.jvm.JVMInstruction;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.PropertyListenerAdapter;

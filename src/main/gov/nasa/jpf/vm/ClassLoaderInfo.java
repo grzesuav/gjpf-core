@@ -30,8 +30,6 @@ import java.util.jar.JarFile;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.classfile.ClassFileException;
-import gov.nasa.jpf.jvm.classfile.ClassPath;
 import gov.nasa.jpf.util.SparseIntVector;
 import gov.nasa.jpf.util.StringSetMatcher;
 
@@ -46,12 +44,33 @@ public class ClassLoaderInfo
 
   // the model class field name where we store our id 
   static final String ID_FIELD = "nativeId";
+
+  static Config config;
+
+  // this is where we keep the global list of classloader ids
+  static SparseIntVector globalCLids;
   
+  static ClassFactory classFactory;
+  
+  /**
+   * Map from class file URLs to first ClassInfo that was read from it. This search
+   * global map is used to make sure we only read class files once
+   */
+  static Map<String,ClassInfo> loadedClasses;
+  
+  /**
+   * map from annotation class file URLs to AnnotationInfos, which have a separate JPF internal
+   * representation. Again, using a global map ensures we only read the related class files once
+   */
+  static Map<String,AnnotationInfo> loadedAnnotations;
   
   // Map that keeps the classes defined (directly loaded) by this loader and the
   // ones that are resolved from these defined classes
   protected Map<String,ClassInfo> resolvedClasses;
 
+  // annotations directly loaded by this classloader
+  protected Map<String,AnnotationInfo> resolvedAnnotations;
+  
   // Represents the locations where this classloader can load classes form
   protected ClassPath cp;
 
@@ -71,11 +90,8 @@ public class ClassLoaderInfo
 
   protected ClassLoaderInfo parent;
 
-  static Config config;
 
-  //static GlobalIdManager gidManager = new GlobalIdManager();
-  static SparseIntVector globalCLids;
-
+  
   static class ClMemento implements Memento<ClassLoaderInfo> {
     // note that we don't have to store the invariants (gid, parent, isSystemClassLoader)
     ClassLoaderInfo cl;
@@ -107,8 +123,51 @@ public class ClassLoaderInfo
     }
   }
 
+  /**
+   * This is invoked by VM.initSubsystems()
+   */
+  static void init (Config config) {
+    ClassLoaderInfo.config = config;
+
+    globalCLids = new SparseIntVector();
+    loadedClasses = new HashMap<String,ClassInfo>(); // not sure we actually want this for multiple runs (unless we check file stamps)
+    loadedAnnotations = new HashMap<String,AnnotationInfo>();
+    
+    enabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.enable_assertions"));
+    disabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.disable_assertions"));
+    
+    classFactory = config.getEssentialInstance("vm.class_factory.class", ClassFactory.class);
+  }
+
+  public static ClassFactory getClassFactory(){
+    return classFactory;
+  }
+  
+  /**
+   * only for testing purposes
+   */
+  static void setClassFactory( ClassFactory factory){
+    classFactory = factory;
+  }
+  
+  public static int getNumberOfLoadedClasses (){
+    return loadedClasses.size();
+  }
+  
+  public static ClassInfo getCurrentResolvedClassInfo (String clsName){
+    ClassLoaderInfo cl = getCurrentClassLoader();
+    return cl.getResolvedClassInfo(clsName);
+  }
+
+  public static ClassInfo getSystemResolvedClassInfo (String clsName){
+    ClassLoaderInfo cl = getCurrentSystemClassLoader();
+    return cl.getResolvedClassInfo(clsName);
+  }
+
+  
   protected ClassLoaderInfo(VM vm, int objRef, ClassPath cp, ClassLoaderInfo parent) {
     resolvedClasses = new HashMap<String,ClassInfo>();
+    resolvedAnnotations = new HashMap<String,AnnotationInfo>();
 
     this.cp = cp;
     this.parent = parent;
@@ -240,54 +299,133 @@ public class ClassLoaderInfo
     return ThreadInfo.getCurrentThread().getSystemClassLoaderInfo(); 
   }
 
-  public ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {
-    if (className == null) {
-      return null;
-    }
-
-    String typeName = Types.getClassNameFromTypeName(className);
-
-    ClassInfo ci = getAlreadyResolvedClassInfo(typeName);
-
-    if (ci == null) {
-      ClassPath.Match match = getMatch(typeName);
-      ci = ClassInfo.getResolvedClassInfo(className, this, match);
-      if(ci.classLoader != this) {
-        if(!ClassInfo.isBuiltinClass(typeName) || 
-            (isSystemClassLoader() && ClassInfo.isBuiltinClass(typeName))) {
-          // create a new instance from ci using this classloader
-          ci = ci.getInstanceFor(this);
-        }
-      }
-
-      // cache the defined class
-      addResolvedClass(ci);
-    }
-
-    return ci;
+  protected ClassInfo loadSystemClass (String clsName){
+    return getCurrentSystemClassLoader().loadSystemClass(clsName);
   }
 
-  public ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length, ClassPath.Match match) throws ClassInfoException {
-    if (className == null) {
-      return null;   
-    }
-
-    String typeName = Types.getClassNameFromTypeName(className);
-
-    ClassInfo ci = getAlreadyResolvedClassInfo(typeName);
+  
+  /**
+   * obtain ClassInfo object for given class name
+   *
+   * if the requested class or any of its superclasses and interfaces
+   * is not found this method will throw a ClassInfoException. Loading
+   * of respective superclasses and interfaces happens recursively from here.
+   *
+   * Returned ClassInfo objects are not registered yet, i.e. still have to
+   * be added to the ClassLoaderInfo's statics, and don't have associated java.lang.Class
+   * objects until registerClass(ti) is called.
+   *
+   * Before any field or method access, the class also has to be initialized,
+   * which can include overlayed execution of &lt;clinit&gt; declaredMethods, which is done
+   * by calling initializeClass(ti,insn)
+   *
+   * this is for loading classes from the file system 
+   */
+  public ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {
+    String typeName = Types.getClassNameFromTypeName( className);
     
+    ClassInfo ci = resolvedClasses.get( typeName);
     if (ci == null) {
-      ci = ClassInfo.getResolvedClassInfo(typeName, buffer, offset, length, this, match);
-      if(ci.classLoader != this) {
-        if(!ClassInfo.isBuiltinClass(typeName) || 
-            (isSystemClassLoader() && ClassInfo.isBuiltinClass(typeName))) {
-          // create a new instance from ci using this classloader
-          ci = ci.getInstanceFor(this);
+      if (ClassInfo.isBuiltinClass( typeName)){
+        ci = loadSystemClass( typeName);
+
+      } else {
+        ClassFileMatch match = getMatch( typeName);
+        if (match != null){
+          String url = match.getClassURL();
+          ci = loadedClasses.get( url); // have we loaded the class from this source before
+          if (ci != null){
+            if (ci.getClassLoaderInfo() != this){ // might have been loaded by another classloader
+              ci = ci.cloneFor(this);
+            }
+          } else {
+            try {
+              ci = match.createClassInfo( this);
+            } catch (ClassParseException cpx){
+              throw new ClassInfoException( "error parsing class", this, "java.lang.NoClassDefFoundError", typeName, cpx);
+            }
+            
+            loadedClasses.put( url, ci);
+          }
+          
+        } else { // no match found
+          throw new ClassInfoException("class not found: " + typeName, this, "java.lang.ClassNotFoundException", typeName);
         }
       }
+      
+      resolvedClasses.put(typeName, ci);
+    }
+    
+    return ci;
+  }
+  
+  /**
+   * this is for user defined ClassLoaders that explicitly provide the class file data
+   */
+  public ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length) throws ClassInfoException {
+    String typeName = Types.getClassNameFromTypeName( className);
+    ClassInfo ci = resolvedClasses.get( typeName);    
+    
+    if (ci == null) {
+      // it can't be a builtin class since we have classfile contents
+      ClassParser parser = classFactory.createClassParser(buffer, offset);
+      String url = typeName;
+            
+      try {
+        ci = new ClassInfo(typeName, this, parser, url);
+        
+        // no use to store it in loadedClasses since the data might be dynamically generated
 
-      // cache the defined class
-      addResolvedClass(ci);
+      } catch (ClassParseException cpx) {
+        throw new ClassInfoException("error parsing class", this, "java.lang.NoClassDefFoundError", typeName, cpx);
+      }
+
+      resolvedClasses.put( typeName, ci);
+    }
+    
+    return ci;
+  }
+  
+  public AnnotationInfo getResolvedAnnotationInfo (String typeName) throws ClassInfoException {
+    AnnotationInfo ai = resolvedAnnotations.get(typeName);
+    
+    if (ai == null){
+      ClassFileMatch match = getMatch( typeName);
+      if (match != null){
+        String url = match.getClassURL();
+        ai = loadedAnnotations.get(url); // have we loaded the class from this source before
+        if (ai != null) {
+          if (ai.getClassLoaderInfo() != this) { // might have been loaded by another classloader
+            ai = ai.cloneFor(this);
+          }
+          
+        } else {
+          try {
+            ai = match.createAnnotationInfo(this);
+          } catch (ClassParseException cpx) {
+            throw new ClassInfoException("error parsing class", this, "java.lang.NoClassDefFoundError", typeName, cpx);
+          }
+            
+          loadedAnnotations.put( url, ai);
+        } 
+        
+      } else { // no match found
+        throw new ClassInfoException("class not found: " + typeName, this, "java.lang.ClassNotFoundException", typeName);
+      }
+      
+      resolvedAnnotations.put( typeName, ai);
+    }
+    
+    return ai;
+  }
+  
+  public ClassInfo getResolvedAnnotationProxy (ClassInfo ciAnnotation){
+    String typeName = ciAnnotation.getName() + "$Proxy";
+    
+    ClassInfo ci = resolvedClasses.get( typeName);
+    if (ci == null) {
+      ci = ciAnnotation.createAnnotationProxy(typeName);      
+      resolvedClasses.put( typeName, ci);
     }
 
     return ci;
@@ -472,15 +610,15 @@ public class ClassLoaderInfo
     }
   }
 
-  protected ClassPath.Match getMatch(String typeName) {
+  protected ClassFileMatch getMatch(String typeName) {
     if(ClassInfo.isBuiltinClass(typeName)) {
       return null;
     }
 
-    ClassPath.Match match;
+    ClassFileMatch match;
     try {
       match = cp.findMatch(typeName); 
-    } catch (ClassFileException cfx){
+    } catch (ClassParseException cfx){
       throw new JPFException("error reading class " + typeName, cfx);
     }
 
@@ -556,18 +694,6 @@ public class ClassLoaderInfo
     return cp.getPathNames();
   }
 
-  /**
-   * This is invoked by VM.initSubsystems()
-   */
-  static void init (Config config) {
-    ClassLoaderInfo.config = config;
-
-    //gidManager = new GlobalIdManager();
-    globalCLids = new SparseIntVector();
-
-    enabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.enable_assertions"));
-    disabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.disable_assertions"));
-  }
 
   /**
    * Comparison for sorting based on index.

@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf;
 
-import gov.nasa.jpf.jvm.classfile.ClassFile;
+import gov.nasa.jpf.jvm.ClassFile;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
 import gov.nasa.jpf.search.Search;

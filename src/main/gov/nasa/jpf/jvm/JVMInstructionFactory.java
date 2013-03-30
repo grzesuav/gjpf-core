@@ -17,9 +17,13 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.vm;
+package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.Invocation;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.NativeMethodInfo;
 
 import java.util.List;
 
@@ -37,9 +41,7 @@ import java.util.List;
  * <2do> there are still direct references of LOOKUPSWITCH, TABLESWITCH. Once these
  * are removed, .jvm does not assume a particular Instruction hierarchy
  */
-public interface InstructionFactory extends Cloneable {
-
-void setClassInfoContext( ClassInfo ci);
+public interface JVMInstructionFactory extends Cloneable {
 
 Object clone();
 

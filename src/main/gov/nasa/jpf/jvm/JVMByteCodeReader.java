@@ -17,12 +17,12 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm.classfile;
+package gov.nasa.jpf.jvm;
 
 /**
  * interface to process bytecode
  */
-public interface ByteCodeReader {
+public interface JVMByteCodeReader {
 
   void aconst_null();
   void aload(int localVarIndex);

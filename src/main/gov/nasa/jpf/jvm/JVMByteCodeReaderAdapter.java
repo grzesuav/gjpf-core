@@ -17,13 +17,15 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm.classfile;
+package gov.nasa.jpf.jvm;
+
+import gov.nasa.jpf.jvm.JVMByteCodeReader;
 
 /**
- * empty implementation of a ByteCodeReader, to efficiently allow overriding
+ * empty implementation of a JVMByteCodeReader, to efficiently allow overriding
  * single methods
  */
-public class ByteCodeReaderAdapter implements ByteCodeReader {
+public class JVMByteCodeReaderAdapter implements JVMByteCodeReader {
 
   public void aconst_null() {}
   public void aload(int localVarIndex) {}

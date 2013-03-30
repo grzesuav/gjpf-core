@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.jvm.JVMCodeBuilder;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFNativePeerException;
 import gov.nasa.jpf.util.JPFLogger;
@@ -69,7 +70,7 @@ public class NativeMethodInfo extends MethodInfo {
     this.peer = peer;
     this.mth = mth;
 
-    CodeBuilder cb = createCodeBuilder();
+    JVMCodeBuilder cb = createCodeBuilder();
  
     cb.executenative(this);
     cb.nativereturn();

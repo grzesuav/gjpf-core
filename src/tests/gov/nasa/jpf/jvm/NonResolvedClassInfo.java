@@ -16,36 +16,42 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.vm;
+package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.jvm.bytecode.InstructionFactory;
-import gov.nasa.jpf.jvm.classfile.ClassFile;
-import gov.nasa.jpf.jvm.classfile.ClassFileException;
-import gov.nasa.jpf.vm.AnnotationInfo;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.CodeBuilder;
+import gov.nasa.jpf.vm.ClassParseException;
+import gov.nasa.jpf.vm.NativePeer;
+import java.io.File;
 
 /**
  * just a helper construct to create ClassInfos that can be used in unit tests
  * (without superclasses, clinit calls and the other bells and whistles)
  */
-class NonResolvedClassInfo extends ClassInfo {
-  NonResolvedClassInfo (ClassFile cf) throws ClassFileException {
-    super(cf);
+class NonResolvedClassInfo extends JVMClassInfo {
+  
+  NonResolvedClassInfo (File file) throws ClassParseException {
+    super(new ClassFileParser( new ClassFile(file), new JVMCodeBuilder(new InstructionFactory())));
   }
 
+  //--- these are overridden so that we can create instances without the whole JPF ClassInfo environment
+  
   @Override
   protected void resolveClass() {
-    computeInheritedAnnotations(superClass);
     linkFields();
   }
 
-  protected CodeBuilder createCodeBuilder(){
-    InstructionFactory insnFactory = new InstructionFactory();
-    return new CodeBuilder(insnFactory, null, null);
+  @Override
+  protected NativePeer loadNativePeer(){
+    return null;
   }
-
-  protected void checkAnnotationDefaultValues(AnnotationInfo ai){
-    // nothing - we don't want annotation types to be resolved
+  
+  @Override
+  protected void setAssertionStatus(){
+    // nothing
+  }
+  
+  @Override
+  protected void notifyClassLoaded(){
+    // nothing
   }
 }

@@ -19,8 +19,6 @@
 
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.jvm.classfile.ClassPath;
-
 /**
  * interface to create Memento objects for state storage/restore
  *

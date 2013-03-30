@@ -5,6 +5,7 @@
         <pathelement location="build/main"/>
         <pathelement location="build/peers"/>
         <pathelement location="build/annotations"/>
+        <pathelement location="build/tests"/>
         <fileset dir=".">
             <include name="lib/*.jar"/>
         </fileset>
@@ -15,7 +16,11 @@
       <pathelement location="src/peers"/>
     </sourcepath>
 
-    <property name="testrunner" value="gov.nasa.jpf.util.test.TestJPFHelper"/>
+<!--
+    <property name="testrunner" value="gov.nasa.jpf.util.test.TestJPF"/>
+-->
+    <property name="testrunner" value="gov.nasa.jpf.tool.RunTest"/>
+    
 
     <!-- TODO: do we really have to duplicate this for each container dir? -->
     <!-- TODO: !!! automatic recompile doesn't work, this is a NetBeans/Ant problem !!! -->

@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
@@ -31,7 +32,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public abstract class StaticFieldInstruction extends FieldInstruction {
 
-  ClassInfo ci;
+  protected ClassInfo ci;
 
   protected StaticFieldInstruction(){}
 
@@ -46,7 +47,7 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
    * we get the right one that declares the field here
    */
   protected void initialize() {
-    ci = ClassInfo.getResolvedClassInfo(className);
+    ci = ClassLoaderInfo.getCurrentResolvedClassInfo(className);
     fi = ci.getStaticField(fname);
     ClassInfo fci = fi.getClassInfo();
     if (fci != ci) {
@@ -96,63 +97,57 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
 
   @Override
   protected boolean isSkippedFinalField (ElementInfo ei) {
-    // NOTE - we only encounter this for references, other static finals
-    // will be inlined by the compiler
-    if (skipFinals && fi.isFinal()) {
-      return true;
-    }
-
-    if (skipStaticFinals && fi.isFinal()) {
-      return true;
+    if (fi.isFinal()){
+      // NOTE - we only encounter this for references, other static finals
+      // will be inlined by the compiler    
+      if (skipFinals || skipStaticFinals) {
+        return true;
+      }
     }
     
     return false;
   }
   
   protected boolean isSchedulingRelevant (ThreadInfo ti) {
-
-    // this should filter out the bulk in most real apps (library code)
+    
+    //--- configured override
+    FieldInfo fi = getFieldInfo();
     if (fi.neverBreak()) {
+      // this should filter out the bulk in most real apps (library code)
+      return false;
+    } else if (fi.breakShared()){
+      return true;
+    }
+
+    //--- field owner properties
+    ElementInfo ei = fi.getClassInfo().getStaticElementInfo();
+    if (ei.isImmutable() || isSkippedFinalField(ei)) {
+      return false;
+    }
+    
+    ei = ei.getInstanceWithUpdatedSharedness(ti); // now we need to know if object becomes shared
+    if (!ei.isShared()) {
       return false;
     }
 
-    if (!ti.hasOtherRunnables()) {
+    if (!ti.hasOtherRunnables()) { // single threaded
       return false;
     }
-    // from here on, we can regard this field as shared
+    
+    //--- special code patterns
+    if (isMonitorEnterPrologue()) {
+      // if this is a GET followed by a MONITOR_ENTER then we just break on the monitor
+      return false;
+    }
+    if (mi.isClinit() && (fi.getClassInfo() == mi.getClassInfo())) {
+      // clinits are all synchronized, so they don't count
+      return false;
+    }
 
     if (ti.usePorSyncDetection()) {
-      FieldInfo fi = getFieldInfo();
-
-      if (fi.breakShared()) {
-        // this one is supposed to be always treated as transition boundary
-        return true;
-      }
-
-      if (isMonitorEnterPrologue()) {
-        // if this is a GET followed by a MONITOR_ENTER then we just break on the monitor
-        return false;
-      }
-
-      ElementInfo ei = fi.getClassInfo().getStaticElementInfo();
-      ei = ei.getInstanceWithUpdatedSharedness(ti);
-      
-      if (!ei.isShared() || ei.isImmutable()){
-        return false;
-      }
-
-      if (isSkippedFinalField(ei)) {
-        return false;
-      }
-      
       if (isLockProtected(ti, ei)) {
         return false;
-      }
-      
-      if (mi.isClinit() && (fi.getClassInfo() == mi.getClassInfo())) {
-        // clinits are all synchronized, so they don't count
-        return false;
-      }
+      }      
     }
 
     return true;

@@ -18,10 +18,12 @@
 //
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.jvm.JVMInstructionFactory;
+import gov.nasa.jpf.jvm.JVMCodeBuilder;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.classfile.ClassFile;
+import gov.nasa.jpf.jvm.ClassFile;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
 import gov.nasa.jpf.util.ObjectList;
@@ -141,17 +143,37 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   /** used for native method parameter conversion (lazy evaluated) */
   protected byte[] argTypes = null;
   
-  static InstructionFactory insnFactory;
+  static JVMInstructionFactory insnFactory;
   
   static boolean init (Config config) {
-    insnFactory = config.getEssentialInstance("vm.insn_factory.class", InstructionFactory.class);
+    insnFactory = config.getEssentialInstance("vm.insn_factory.class", JVMInstructionFactory.class);
     
     mthTable.clear();
     
     return true;
   }
 
-
+  public static MethodInfo getMethodInfo (int globalId){
+    if (globalId >=0 && globalId <mthTable.size()){
+      return mthTable.get(globalId);
+    } else {
+      return null;
+    }
+  }
+  
+  public static JVMInstructionFactory getInstructionFactory() {
+    // we clone so that instruction factories could have state
+    return (JVMInstructionFactory) insnFactory.clone();
+  }
+  
+  public static MethodInfo create (String name, String signature, int modifiers){
+    return new MethodInfo( name, signature, modifiers);
+  }
+  
+  
+  static MethodInfo create (ClassInfo ci, String name, String signature, int modifiers, int maxLocals, int maxStack){
+    return new MethodInfo( ci, name, signature, modifiers, maxLocals, maxStack);
+  }
 
   // for explicit construction only (direct calls)
   protected MethodInfo (int id) {
@@ -159,7 +181,8 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     // we don't want direct call methods in the mthTable (would be a memory leak)
   }
   
-  public MethodInfo (ClassInfo ci, String name, String signature, int maxLocals, int maxStack, int modifiers){
+  // <2do> this is going away
+  public MethodInfo (ClassInfo ci, String name, String signature, int modifiers, int maxLocals, int maxStack){
     this.ci = ci;
     this.name = name;
     this.signature = signature;
@@ -191,24 +214,54 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   }
 
   
-  public static MethodInfo getMethodInfo (int globalId){
-    if (globalId >=0 && globalId <mthTable.size()){
-      return mthTable.get(globalId);
-    } else {
-      return null;
+  public MethodInfo (String name, String signature, int modifiers){
+    this.name = name;
+    this.signature = signature;
+    this.modifiers = modifiers;
+    this.uniqueName = getUniqueName(name, signature);
+    this.genericSignature = "";
+
+    if (name.equals("<init>")) {
+      attributes |= IS_INIT;
+    } else if (name.equals("<clinit>")) {
+      this.modifiers |= Modifier.SYNCHRONIZED;
+      attributes |= IS_CLINIT | FIREWALL;
+    }
+    
+    this.globalId = mthTable.size();
+    mthTable.add(this);    
+  }
+  
+  //--- setters used during construction
+  
+  public void linkToClass (ClassInfo ci){
+    this.ci = ci;
+    
+    if (ci.isInterface()) { // all interface methods are public
+      this.modifiers |= Modifier.PUBLIC;
     }
   }
   
-  public static InstructionFactory getInstructionFactory() {
-    // we clone so that instruction factories could have state
-    return (InstructionFactory) insnFactory.clone();
+  public void setMaxLocals(int maxLocals){
+    this.maxLocals = maxLocals;
   }
+
+  public void setMaxStack(int maxStack){
+    this.maxStack = maxStack;
+  }
+  
+  public void setCode (Instruction[] code){
+    for (int i=0; i<code.length; i++){
+      code[i].setMethodInfo(this);
+    }
+    this.code = code;
+  }
+  
   
   public boolean hasParameterAnnotations() {
     return (parameterAnnotations != null);
   }
 
-  
   // since some listeners might call this on every method invocation, we should do a little optimization
   static AnnotationInfo[][] NO_PARAMETER_ANNOTATIONS_0 = new AnnotationInfo[0][];
   static AnnotationInfo[][] NO_PARAMETER_ANNOTATIONS_1 = { new AnnotationInfo[0] };
@@ -251,24 +304,7 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     }
   }
 
-  public void setMaxLocals(int maxLocals){
-    this.maxLocals = maxLocals;
-  }
 
-  public void setMaxStack(int maxStack){
-    this.maxStack = maxStack;
-  }
-
-  public void setClassInfo (ClassInfo ci){
-    this.ci = ci;
-  }
-  
-  public void setCode (Instruction[] code){
-    for (int i=0; i<code.length; i++){
-      code[i].setMethodInfo(this);
-    }
-    this.code = code;
-  }
   
   public static int getNumberOfLoadedMethods () {
     return mthTable.size();
@@ -344,7 +380,7 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     mi.uniqueName = mi.name;
     mi.ci = ci;
 
-    CodeBuilder cb = mi.createCodeBuilder();
+    JVMCodeBuilder cb = mi.createCodeBuilder();
 
     if (isStatic()){
       mi.modifiers |= Modifier.STATIC;
@@ -366,9 +402,9 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     return mi;
   }
 
-  public CodeBuilder createCodeBuilder(){
-    InstructionFactory ifact = getInstructionFactory();
-    return new CodeBuilder(ifact, null, this);
+  public JVMCodeBuilder createCodeBuilder(){
+    JVMInstructionFactory ifact = getInstructionFactory();
+    return new JVMCodeBuilder(ifact, null, this);
   }
 
   /**
@@ -392,6 +428,10 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
 
   public boolean isSyncRelevant () {
     return (name.charAt(0) != '<');
+  }
+  
+  public boolean isInitOrClinit (){
+    return ((attributes & (IS_CLINIT | IS_INIT)) != 0);
   }
   
   public boolean isClinit () {
@@ -1054,67 +1094,79 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
 
 
   //--- parameter annotations
+  //<2do> these are going away
   protected void startParameterAnnotations(int annotationCount){
     parameterAnnotations = new AnnotationInfo[annotationCount][];
   }
-
   protected void setParameterAnnotations(int index, AnnotationInfo[] ai){
     parameterAnnotations[index] = ai;
   }
-
   protected void finishParameterAnnotations(){
     // nothing
   }
 
+  public void setParameterAnnotations (AnnotationInfo[][] parameterAnnotations){
+    this.parameterAnnotations = parameterAnnotations;
+  }
+  
   //--- thrown exceptions
+  //<2do> these are going away
   protected void startTrownExceptions (int exceptionCount){
     thrownExceptionClassNames = new String[exceptionCount];
   }
-
   protected void setException (int index, String exceptionType){
     thrownExceptionClassNames[index] = Types.getClassNameFromTypeName(exceptionType);
   }
-
   protected void finishThrownExceptions(){
     // nothing
   }
 
+  public void setThrownExceptions (String[] exceptions){
+    thrownExceptionClassNames = exceptions;
+  }
+  
 
   //--- exception handler table initialization
+  //<2do> these are going away
   protected void startExceptionHandlerTable (int handlerCount){
     exceptionHandlers = new ExceptionHandler[handlerCount];
   }
-
   protected void setExceptionHandler (int index, int startPc, int endPc, int handlerPc, String catchType){
     exceptionHandlers[index] = new ExceptionHandler(catchType, startPc, endPc, handlerPc);
   }
-
   protected void finishExceptionHandlerTable(){
     // nothing
   }
 
+  public void setExceptionHandlers (ExceptionHandler[] handlers){
+    exceptionHandlers = handlers;
+  }
+  
   //--- local var table initialization
+  // <2do> these are going away
   protected void startLocalVarTable (int localVarCount){
     localVars = new LocalVarInfo[localVarCount];
   }
-
   protected void setLocalVar(int index, String varName, String descriptor, int scopeStartPc, int scopeEndPc, int slotIndex){
     localVars[index] = new LocalVarInfo(varName, descriptor, "", scopeStartPc, scopeEndPc, slotIndex);
   }
-
   protected void finishLocalVarTable(){
     // nothing to do
   }
 
+  public void setLocalVarTable (LocalVarInfo[] locals){
+    localVars = locals;
+  }
+  
+  
   //--- line number table initialization
-
+  // <2do> these are going away
   protected void startLineNumberTable(int lineNumberCount){
     int len = code.length;
     int[] ln = new int[len];
 
     lineNumbers = ln;
   }
-
   protected void setLineNumber(int index, int lineNumber, int startPc){
     int len = code.length;
     int[] ln = lineNumbers;
@@ -1129,7 +1181,6 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
       }
     }
   }
-
   protected void finishLineNumberTable (){
     int len = code.length;
     int[] ln = lineNumbers;
@@ -1144,6 +1195,33 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     }
   }
 
+  /**
+   * note - this depends on that we already have a code array
+   * (we might want to store lines and startPcs directly)
+   */
+  public void setLineNumbers (int[] lines, int[] startPcs){
+    int j=0;
+    int lastLine = -1;
+    
+    int len = code.length;
+    int[] ln = new int[len];
+
+    for (int i=0; i<len; i++){
+      Instruction insn = code[i];
+      int pc = insn.getPosition();
+      
+      if ((j < startPcs.length) && pc == startPcs[j]){
+        lastLine = lines[j];
+        j++;
+      }
+      
+      ln[i] = lastLine;
+    }
+    
+    lineNumbers = ln;
+  }
+  
+  
   public String toString() {
     return "MethodInfo[" + getFullName() + ']';
   }

@@ -29,17 +29,12 @@ import gov.nasa.jpf.vm.NativeMethodInfo;
 import java.util.List;
 
 /**
- * this is the new InstructionFactory
+ * this is the new JVMInstructionFactory
  */
-public class InstructionFactory implements gov.nasa.jpf.vm.InstructionFactory {
+public class InstructionFactory implements gov.nasa.jpf.jvm.JVMInstructionFactory {
 
   public InstructionFactory(){
     // nothing here
-  }
-
-  @Override
-  public void setClassInfoContext( ClassInfo ci){
-    // nothing, we keep this stateless
   }
 
   @Override

@@ -19,25 +19,30 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.classfile.ClassFile;
-import gov.nasa.jpf.jvm.classfile.ClassFileException;
-import gov.nasa.jpf.jvm.classfile.ClassFileReaderAdapter;
-import gov.nasa.jpf.jvm.classfile.ClassPath;
-
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * the JPF counterpart for Java Annotations
+ * the JPF internal representation for Java Annotations
  * 
- * we could just store the bcel constructs, but for consistencies sake, we
- * introduce our own enumClassName here (like we do for classes, methods, fields etc)
+ * AnnotationInfos represent a separate type system. While we could have used normal ClassInfos
+ * (Java annotations are just restricted interfaces with some syntactic sugar), we keep this separate because
+ * ClassInfos would be overkill. Besides, our runtime behavior differs in that we synchronously load
+ * annotation class files when we encounter them during normal ClassInfo construction (i.e. we parse recursively),
+ * whereas a normal JVM only loads them once they are referenced. The reason why we deviate is that
+ * annotations are used more often in tools than via reflection within the SUT, i.e. they most likely will
+ * be read either by JPF or by listeners, so we want them as soon as possible to avoid additional class state.
+ * This also means we do not faithfully model ClassNotFoundExceptions on annotations due to reflection
+ * calls within the SUT, but that seems less important than having them available during ClassInfo construction.
+ * This mostly matters because of default values and inherited class annotations.
+ * 
+ * Note - AnnotationInfos loaded by the same ClassLoader that do not have explicitly set values are shared
+ * between annotated objects
  */
-public class AnnotationInfo {
+public class AnnotationInfo implements Cloneable {
 
   // NOTE - never modify an Entry object since it might be shared between
   // different instances of the same annotation type
-  public static class Entry {
+  public static class Entry implements Cloneable {
     String key;
     Object value;
     
@@ -53,117 +58,16 @@ public class AnnotationInfo {
       this.key = key;
       this.value = value;
     }
-  }
-  
-  static class AnnotationReader extends ClassFileReaderAdapter {
-    String annotationName;
-
-    String key;
-    Object[] valElements;
-    ArrayList<Entry> entries;
-    AnnotationAttribute curAttr;
-
-    Entry[] getDefaultValueEntries() {
-      if (entries == null){
-        return NONE;
-      } else {
-        return entries.toArray(new Entry[entries.size()]);
-      }
-    }
-
-    protected ArrayList<Entry> getEntries(){
-      if (entries == null){
-        entries = new ArrayList<Entry>();
-      }
-      return entries;
-    }
     
-    public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
-      entries = null;
-      annotationName = Types.getClassNameFromTypeName(clsName);
-      curAttr = new AnnotationAttribute(null, false);
-      if (!"java/lang/Object".equals(superClsName)){
-        throw new JPFException("illegal annotation superclass of: " + annotationName + " is " + superClsName);
-      }
-    }
-
-    public void setInterface(ClassFile cf, int ifcIndex, String ifcName) {
-      if (!"java/lang/annotation/Annotation".equals(ifcName)){
-        throw new JPFException("illegal annotation interface of: " + annotationName + " is " + ifcName);
-      }
-    }
-
-    public void setMethod(ClassFile cf, int methodIndex, int accessFlags, String name, String descriptor) {
-      key = name;
-    }
-
-    public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
-      if (name == ClassFile.ANNOTATIONDEFAULT_ATTR){
-        cf.parseAnnotationDefaultAttr(this, key);
-      }
-    }
-
-    public void setMethodsDone(ClassFile cf) {
-    }
-
-    @Override
-    public void setClassAttribute(ClassFile cf, int attrIndex, String name, int attrLength) {
-      if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR) {
-        key = null;
-        cf.parseAnnotationsAttr(this, null);
-      }
-    }
-    
-    public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
-      if (annotationType.equals("Ljava/lang/annotation/Inherited;")) {
-        curAttr.isInherited = true;
-      }
-    }
-    
-    public void setAnnotationsDone(ClassFile cf, Object tag) {
-      curAttr.defaultEntries = getDefaultValueEntries();
-      annotationAttributes.put(annotationName, curAttr);
-    }
-    
-    public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int arrayIndex, Object val) {  
-      if (arrayIndex >= 0){
-        valElements[arrayIndex] = val;
-      } else {
-        getEntries().add(new Entry(key, val));
-      }
-    }
-
-    public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int arrayIndex, String val) {
-      if (arrayIndex >= 0){
-        valElements[arrayIndex] = val;
-      } else {
-        getEntries().add(new Entry(key, val));
-      }
-    }
-
-    public void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int arrayIndex, String typeName) {
-    }
-
-    public void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int arrayIndex, String enumType, String enumValue) {
-    }
-
-    public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int elementCount) {
-      valElements = new Object[elementCount];
-    }
-
-    public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName) {
-      if (key != null){
-        getEntries().add( new Entry(key, valElements));
+    public Entry clone(){
+      try {
+        return (Entry) super.clone();
+      } catch (CloneNotSupportedException cnsx){
+        throw new JPFException("AnnotationInfo.Entry clone() failed");
       }
     }
   }
-
+  
   public static class EnumValue {
     String eClassName;
     String eConst;
@@ -198,8 +102,6 @@ public class AnnotationInfo {
     }
   }
 
-  
-  
   static final Entry[] NONE = new Entry[0];
   
   // we have to jump through a lot of hoops to handle default annotation parameter values
@@ -210,7 +112,7 @@ public class AnnotationInfo {
 
   static HashMap<String, AnnotationAttribute> annotationAttributes = new HashMap<String, AnnotationAttribute>();
 
-  static class AnnotationAttribute {
+  public static class AnnotationAttribute {
     Entry[] defaultEntries;
     boolean isInherited;
 
@@ -219,45 +121,6 @@ public class AnnotationInfo {
       this.isInherited = isInherited;
     }
   }
-
-  static AnnotationReader valueCollector = new AnnotationReader();
-
-  
-  String name;
-  Entry[] entries;
-  boolean inherited = false;
-
-
-  
-  public static Entry[] getDefaultEntries (ClassPath locator, String annotationType){
-
-    Entry[] def = null;
-        
-    if (annotationAttributes.get(annotationType) != null) {
-      def = annotationAttributes.get(annotationType).defaultEntries;
-    }
-
-    if (def == null){ // Annotation not seen yet - we have to dig it out from the classfile
-      try {
-        byte[] data = locator.getClassData(annotationType);
-        if (data == null){
-          throw new JPFException("annotation class not found: " + annotationType);
-        }
-
-        ClassFile cf = new ClassFile( annotationType, data);
-        cf.parse(valueCollector);
-
-        def = valueCollector.getDefaultValueEntries();
-        annotationAttributes.put(annotationType, new AnnotationAttribute(def, false));
-
-      } catch (ClassFileException cfx){
-        throw new JPFException("malformed annotation classfile");
-      }
-
-    }
-
-    return def;
-  }
   
   public static Object getEnumValue(String eType, String eConst){
     return new EnumValue( Types.getClassNameFromTypeName(eType), eConst);
@@ -265,102 +128,120 @@ public class AnnotationInfo {
 
   public static Object getClassValue(String type){
     return new ClassValue( Types.getClassNameFromTypeName(type));
-  }
-
-
-
-  protected AnnotationInfo(String name){
+  }  
+  
+  protected String name;
+  protected Entry[] entries;
+  protected boolean isInherited = false;
+  
+  /**
+   * this records if the associated class file has been loaded. If it isn't resolved yet,
+   * we don't know about default values, hence we need to check before retrieving field values
+   * that have not been explicitly set. Note this is search global and hence does not need to
+   * be state managed since we only check for default values, i.e. there are no side effects.
+   * Loading has to happen with the right ClassLoader though
+   */
+  protected ClassLoaderInfo classLoader; // set once it is resolved (i.e. the corresponding classfile is read)
+  
+  
+  public AnnotationInfo (String name, ClassLoaderInfo classLoader, AnnotationParser parser) throws ClassParseException {
     this.name = name;
-    // entries will follow later, so this object is only partially initialized
+    this.classLoader = classLoader;
+    
+    parser.parse(this);
   }
   
-  protected AnnotationInfo (String name, ClassPath cp) {
-    this.name = name;
-    
-    try {
-      byte[] data = cp.getClassData(this.name);
-      if (data == null){ throw new JPFException("annotation class not found: " + this.name); }
-
-      ClassFile cf = new ClassFile( name, data);
-      cf.parse(valueCollector);
-
-    } catch (ClassFileException cfx) {
-      throw new JPFException("malformed annotation classfile");
+  //--- the init API used by AnnotationParsers
+  public void setName (String name) throws ClassParseException {
+    if (!this.name.equals(name)){
+      throw new ClassParseException("wrong annotation name in classfile, expected " + this.name + ", found " + name);
     }
   }
 
-  protected void startEntries (int count){
-    entries = new Entry[count];
-  }
-
-  protected void setValue(int index, String key, Object value){
-    entries[index] = new Entry(key,value);
-  }
-
-
-
-  public AnnotationInfo (String name, Entry[] entries){
-    this.name = name;
+  public void setEntries (Entry[] entries){
     this.entries = entries;
   }
-
-  private AnnotationInfo (String name, Entry[] entries, boolean inherited) {
+  
+  public void setInherited (boolean isInherited){
+    this.isInherited = isInherited;
+  }
+  
+  
+  public AnnotationInfo (String name, Entry[] entries, boolean isInherited){
     this.name = name;
     this.entries = entries;
-    this.inherited = inherited;
+    this.isInherited = isInherited;
   }
+
 
   public boolean isInherited (){
-    return this.inherited;
+    return this.isInherited;
   }
   
-  public void setInherited (boolean inherited){
-    this.inherited = inherited;
-  }
-
-  /**
-   * check if this AnnotationInfo instance has not-yet-specified default
-   * values, which we have to load from the annotation classfile itself
-   *
-   * NOTE - this is set AFTER we got the explicitly specified values from
-   * the annotation expression
-   */
-  public void checkDefaultValues(ClassPath contextCp){
-    Entry[] defEntries = getDefaultEntries(contextCp, name);
-    int elen = entries.length;
-    
-    outer:
-    for (int i=0; i<defEntries.length; i++){
-      Entry de = defEntries[i];
-
-      // check if we already have an explicitly specified value for this entry
-      for (int j=0; j<elen; j++){
-        if (entries[j].key.equals(de.key)){
-          continue outer;
-        }
-      }
-
-      // add the default value
-      if (elen == 0){
-        entries = defEntries.clone(); // just set them all at once
-        return;
-
-      } else {
-        Entry[] newEntries = new Entry[elen + 1];
-        System.arraycopy(entries,0, newEntries,0, elen);
-        newEntries[elen] = de;
-        entries = newEntries;
-      }
-    }
+  public ClassLoaderInfo getClassLoaderInfo(){
+    return classLoader;
   }
 
   public String getName() {
     return name;
   }
-
+  
+  protected AnnotationInfo cloneFor (ClassLoaderInfo cl){
+    try {
+      AnnotationInfo ai = (AnnotationInfo) clone();
+      
+      // <2do> once we support class/enum values we have to clone these too
+      
+      ai.classLoader = cl;
+      
+      return ai;
+      
+    } catch (CloneNotSupportedException cnsx){
+      throw new JPFException("AnnotationInfo cloneFor() failed");
+    }
+  }
+  
+  /**
+   * this returns a clone that can be used to explicitly set values.
+   * NOTE - Entry instances are still shared, i.e. to change values we have to create and set
+   * new Entry instances
+   */
+  public AnnotationInfo cloneForOverriddenValues(){
+    try {
+      AnnotationInfo ai = (AnnotationInfo) clone();
+      ai.entries = entries.clone();
+      return ai;
+      
+    } catch (CloneNotSupportedException cnsx){
+      throw new JPFException("AnnotationInfo cloneFor() failed");
+    }    
+  }
+  
+  public void setClonedEntryValue (String key, Object newValue){
+    for (int i=0; i<entries.length; i++){
+      if (entries[i].getKey().equals(key)){
+        entries[i] = new Entry( key, newValue);
+        return;
+      }
+    }    
+  }
+  
   public Entry[] getEntries() {
     return entries;
   }
+  
+  /**
+   * this is the common getter that should trigger parsing the corresponding class file 
+   */
+  public Object getValue (String key){    
+    for (int i=0; i<entries.length; i++){
+      if (entries[i].getKey().equals(key)){
+        return entries[i].getValue();
+      }
+    }
+    return null;
+  }
+
   
   // convenience method for single-attribute annotations
   public Object value() {
@@ -409,7 +290,6 @@ public class AnnotationInfo {
     
     return a;
   }
-  
   
   public <T> T getValue (String key, Class<T> type){
     Object v = getValue(key);
@@ -464,16 +344,6 @@ public class AnnotationInfo {
       throw new JPFException("annotation element @" + name + '.' + key + "() not a double: " + v);
     }
   }
-
-  
-  public Object getValue (String key){
-    for (int i=0; i<entries.length; i++){
-      if (entries[i].getKey().equals(key)){
-        return entries[i].getValue();
-      }
-    }
-    return null;
-  }
   
   public String asString() {
     StringBuilder sb = new StringBuilder();
@@ -492,8 +362,5 @@ public class AnnotationInfo {
     
     return sb.toString();
   }
-  
-  public AnnotationInfo cloneInherited() {
-    return new AnnotationInfo(name, entries, true);
-  }
+
 }

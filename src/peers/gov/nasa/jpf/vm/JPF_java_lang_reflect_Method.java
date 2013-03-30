@@ -23,17 +23,6 @@ import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.MethodInfoRegistry;
 import gov.nasa.jpf.util.RunListener;
 import gov.nasa.jpf.util.RunRegistry;
-import gov.nasa.jpf.vm.AnnotationInfo;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ClinitRequired;
-import gov.nasa.jpf.vm.DirectCallStackFrame;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.NativePeer;
-import gov.nasa.jpf.vm.StackFrame;
-import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.Types;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -104,7 +93,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     int[] ar = new int[argTypeNames.length];
 
     for (int i = 0; i < argTypeNames.length; i++) {
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(argTypeNames[i]);
+      ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(argTypeNames[i]);
       if (!ci.isRegistered()) {
         ci.registerClass(ti);
       }
@@ -125,7 +114,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     return getParameterTypes(env, getMethodInfo(env, objRef));
   }
   
-  static int getExceptionTypes(MJIEnv env, MethodInfo mi) {
+  int getExceptionTypes(MJIEnv env, MethodInfo mi) {
     ThreadInfo ti = env.getThreadInfo();
     String[] exceptionNames = mi.getThrownExceptionClassNames();
      
@@ -136,7 +125,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     int[] ar = new int[exceptionNames.length];
      
     for (int i = 0; i < exceptionNames.length; i++) {
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(exceptionNames[i]);
+      ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(exceptionNames[i]);
       if (!ci.isRegistered()) {
         ci.registerClass(ti);
       }
@@ -162,7 +151,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     MethodInfo mi = getMethodInfo(env, objRef);
     ThreadInfo ti = env.getThreadInfo();
 
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(mi.getReturnTypeName());
+    ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(mi.getReturnTypeName());
     if (!ci.isRegistered()) {
       ci.registerClass(ti);
     }
@@ -187,13 +176,13 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     if (rt == Types.T_DOUBLE) {
       attr = frame.getLongOperandAttr();
       double v = frame.popDouble();
-      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Double"));
+      ret = env.newObject(ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Double"));
       rei = env.getModifiableElementInfo(ret);
       rei.setDoubleField("value", v);
     } else if (rt == Types.T_FLOAT) {
       attr = frame.getOperandAttr();
       float v = frame.popFloat();
-      ret = env.newObject(ClassInfo.getResolvedClassInfo("java.lang.Float"));
+      ret = env.newObject(ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Float"));
       rei = env.getModifiableElementInfo(ret);
       rei.setFloatField("value", v);
     } else if (rt == Types.T_LONG) {
@@ -592,7 +581,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     
     AnnotationInfo ai = mi.getAnnotation(aci.getName());
     if (ai != null){
-      ClassInfo aciProxy = ClassInfo.getAnnotationProxy(aci);
+      ClassInfo aciProxy = aci.getAnnotationProxy();
       try {
         return env.newAnnotationProxy(aciProxy, ai);
       } catch (ClinitRequired x){
@@ -684,7 +673,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
   @MJI
   public boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int mthRef){
     ElementInfo ei = env.getElementInfo(mthRef);
-    ClassInfo ci = ClassInfo.getResolvedClassInfo(JPF_java_lang_Class.METHOD_CLASSNAME);
+    ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo(JPF_java_lang_Class.METHOD_CLASSNAME);
 
     if (ei.getClassInfo() == ci){
       MethodInfo mi1 = getMethodInfo(env, objRef);

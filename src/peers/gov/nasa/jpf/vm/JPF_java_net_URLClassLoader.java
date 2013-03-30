@@ -22,7 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.jvm.classfile.ClassPath;
+import gov.nasa.jpf.vm.ClassPath;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
@@ -60,31 +60,28 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
   @MJI
   public int findClass__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env, int objRef, int nameRef) {
     String typeName = env.getStringObject(nameRef);
-    
-    // retrieve the classloader
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
+    ThreadInfo ti = env.getThreadInfo();
 
-    // check if the given type is in the classloader search path
-    String className = Types.getClassNameFromTypeName(typeName);
-
-    // check if this class  has been already defined
-    ClassInfo ci = cl.getDefinedClassInfo(className);
-    if(ci != null) {
-      return ci.getClassObjectRef();
-    }
-
-    ClassPath.Match match = cl.getMatch(typeName);
-    if(match != null) {
-      byte[] buffer = match.getBytes();
-      try{
-        return defineClass(env, cl, typeName, buffer, 0, buffer.length, match);
-      } catch(LoadOnJPFRequired rre) {
-        env.repeatInvocation();
-        return MJIEnv.NULL;
+    try {
+      ClassInfo ci = cl.getResolvedClassInfo( typeName);
+      if(!ci.isRegistered()) {
+        ci.registerClass(env.getThreadInfo());
       }
-    } else{
-      env.throwException("java.lang.ClassNotFoundException", className);
+      // note that we don't initialize yet
+      return ci.getClassObjectRef();
+          
+    } catch (LoadOnJPFRequired rre) { // this classloader has a overridden loadClass 
+      env.repeatInvocation();
       return MJIEnv.NULL;
+      
+    } catch (ClassInfoException cix){
+      if (cix.getCause() instanceof ClassParseException){
+        env.throwException("java.lang.ClassFormatError", typeName);
+      } else {
+        env.throwException("java.lang.ClassNotFoundException", typeName);
+      }
+      return MJIEnv.NULL;      
     }
   }
 

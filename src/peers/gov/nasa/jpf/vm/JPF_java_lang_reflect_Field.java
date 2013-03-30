@@ -20,23 +20,6 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.vm.AnnotationInfo;
-import gov.nasa.jpf.vm.BooleanFieldInfo;
-import gov.nasa.jpf.vm.ByteFieldInfo;
-import gov.nasa.jpf.vm.CharFieldInfo;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ClinitRequired;
-import gov.nasa.jpf.vm.DoubleFieldInfo;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.FieldInfo;
-import gov.nasa.jpf.vm.FloatFieldInfo;
-import gov.nasa.jpf.vm.IntegerFieldInfo;
-import gov.nasa.jpf.vm.LongFieldInfo;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.NativePeer;
-import gov.nasa.jpf.vm.ReferenceFieldInfo;
-import gov.nasa.jpf.vm.ShortFieldInfo;
-import gov.nasa.jpf.vm.ThreadInfo;
 
 import java.lang.reflect.Modifier;
 
@@ -214,7 +197,7 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     
     AnnotationInfo ai = fi.getAnnotation(aci.getName());
     if (ai != null){
-      ClassInfo aciProxy = ClassInfo.getAnnotationProxy(aci);
+      ClassInfo aciProxy = aci.getAnnotationProxy();
       try {
         return env.newAnnotationProxy(aciProxy, ai);
       } catch (ClinitRequired x){
@@ -549,10 +532,8 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
 
     } else { // it's a reference
       if (value != MJIEnv.NULL) {
-        String type = env.getTypeName(value);
-        // this is an instance so the ClassInfo has to be registered
-        ClassInfo valueCI = ClassInfo.getResolvedClassInfo(type);
-        if (!valueCI.isInstanceOf(tci)) {
+        ClassInfo ciValue = env.getClassInfo(value);
+        if (!ciValue.isInstanceOf(tci)) {
           return false;
         }
       }

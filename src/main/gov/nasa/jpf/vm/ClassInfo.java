@@ -18,16 +18,11 @@
 //
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.jvm.JVMCodeBuilder;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
-import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListener;
-import gov.nasa.jpf.jvm.classfile.ClassFile;
-import gov.nasa.jpf.jvm.classfile.ClassFileContainer;
-import gov.nasa.jpf.jvm.classfile.ClassFileException;
-import gov.nasa.jpf.jvm.classfile.ClassFileReaderAdapter;
-import gov.nasa.jpf.jvm.classfile.ClassPath;
 import gov.nasa.jpf.util.ImmutableList;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
@@ -35,6 +30,7 @@ import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.OATHash;
 import gov.nasa.jpf.util.Source;
+import static gov.nasa.jpf.vm.InfoObject.NO_ANNOTATIONS;
 
 import java.io.File;
 import java.lang.reflect.Modifier;
@@ -53,7 +49,7 @@ import java.util.logging.Level;
 
 /**
  * Describes the VM's view of a java class.  Contains descriptions of the
- * static and dynamic fields, methods, and information relevant to the
+ * static and dynamic fields, declaredMethods, and information relevant to the
  * class.
  */
 public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, GenericSignatureHolder {
@@ -85,13 +81,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected static final ClassLoader thisClassLoader = ClassInfo.class.getClassLoader();
 
   /**
-   * Map from the classFileUrl of classes to their original ClassInfo instances. This search
-   * global map is used to make sure we only read classfiles once
-   */
-   protected static Map<String,ClassInfo> loadedClasses = new HashMap<String, ClassInfo>();
-
-  /**
-   * optionally used to determine atomic methods of a class (during class loading)
+   * optionally used to determine atomic declaredMethods of a class (during class loading)
    */
   protected static Attributor attributor;
 
@@ -104,6 +94,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   static final FieldInfo[] EMPTY_FIELDINFO_ARRAY = new FieldInfo[0];
   static final String[] EMPTY_STRING_ARRAY = new String[0];
   static final String UNINITIALIZED_STRING = "UNINITIALIZED"; 
+  static final Map<String,MethodInfo> NO_METHODS = Collections.emptyMap();
   
   /**
    * support to auto-load listeners from annotations
@@ -152,14 +143,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected int elementInfoAttrs = 0;
 
   /**
-   * all our declared methods (we don't flatten, this is not
+   * all our declared declaredMethods (we don't flatten, this is not
    * a high-performance VM)
    */
   protected Map<String, MethodInfo> methods;
 
   /**
    * our instance fields.
-   * Note these are NOT flattened, i.e. only contain the declared ones
+   * Note these are NOT flattened, idx.e. only contain the declared ones
    */
   protected FieldInfo[] iFields;
 
@@ -214,7 +205,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected String classFileUrl;
 
   /** from where the corresponding classfile was loaded (if this is not a builtin) */
-  protected ClassFileContainer container;
+  protected gov.nasa.jpf.vm.ClassFileContainer container;
 
   
   /**
@@ -229,7 +220,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected long uniqueId = -1;
 
   /**
-   * this is the object we use to execute methods in the underlying VM
+   * this is the object we use to execute declaredMethods in the underlying VM
    * (it replaces Reflection)
    */
   private NativePeer nativePeer;
@@ -246,8 +237,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   static boolean init (Config config) {
 
     ClassInfo.config = config;
-    
-    reset();
     
     setSourceRoots(config);
     //buildBCELModelClassPath(config);
@@ -280,596 +269,245 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return ci.isStringClassInfo();
   }
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  public class Init {
+  
+   //--- initialization interface towards parsers (which might reside in other packages)
     
-    ArrayList<FieldInfo> instanceFields, staticFields;
-    
-    public void setClass ( String clsName, String superClsName, int flags, int cpCount) {
-      name = Types.getClassNameFromTypeName(clsName);
-      // check here if this is the requested name
+  public void setClass(String clsName, String superClsName, int flags, int cpCount) throws ClassParseException {
+    String parsedName = Types.getClassNameFromTypeName(clsName);
 
-      // the enclosingClassName is set on demand since it requires loading enclosing class candidates
-      // to verify their innerClass attributes
-      
-      int i = name.lastIndexOf('.');
-      packageName = (i>0) ? name.substring(0, i) : "";
-
-      modifiers = flags;
-      isClass = ((flags & Modifier.INTERFACE) == 0);
-
-      if (attributor != null){
-        attributor.setElementInfoAttributes(ClassInfo.this);
-      }
-
-      superClassName = superClsName;
+    if (name != null && !name.equals(parsedName)){
+      throw new ClassParseException("wrong class name (expected: " + name + ", found: " + parsedName + ')');
     }
+    name = parsedName;
     
-    public void setInnerClassNames (String[] clsNames){
-      innerClassNames = clsNames;
-    }
-    
-    public void setEnclosingContext (String clsName, String mthName){
-      enclosingClassName = clsName;
-      enclosingMethodName = mthName;
-    }
-    
-    public void setInterfaceNames (String[] ifcNames){
-      interfaceNames = ifcNames;
-    }
-    
-    public FieldInfo setField (String name, String descriptor, int modifiers){
-      FieldInfo fi = FieldInfo.create(name, descriptor, modifiers);
+    // the enclosingClassName is set on demand since it requires loading enclosing class candidates
+    // to verify their innerClass attributes
 
-      if (Modifier.isStatic(modifiers)){ // instance field
-        if (instanceFields == null){
-          instanceFields = new ArrayList<FieldInfo>();
-        }
-        instanceFields.add(fi);
+    int i = name.lastIndexOf('.');
+    packageName = (i > 0) ? name.substring(0, i) : "";
 
-      } else {  // static field
-        if (staticFields == null){
-          staticFields = new ArrayList<FieldInfo>();
-        }
-        staticFields.add(fi);
-      }
+    modifiers = flags;
+    isClass = ((flags & Modifier.INTERFACE) == 0);
 
-      if (attributor != null){
-        attributor.setFieldInfoAttributes(fi);
-      }
-      
-      return fi;
+    if (attributor != null) {
+      attributor.setElementInfoAttributes(ClassInfo.this);
     }
-    
-    public void setFieldsDone(){
-      iFields = instanceFields.toArray(new FieldInfo[instanceFields.size()]);
-      sFields = staticFields.toArray(new FieldInfo[staticFields.size()]);
-    }
-    
+
+    superClassName = superClsName;
+  }
+
+  public void setInnerClassNames(String[] clsNames) {
+    innerClassNames = clsNames;
+  }
+
+  public void setEnclosingClass (String clsName) {
+    enclosingClassName = clsName;
   }
   
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  class Initializer extends ClassFileReaderAdapter {
-
-    @Override
-    public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
-      name = Types.getClassNameFromTypeName(clsName);
-
-      String requestedName = cf.getRequestedTypeName();
-      // check if the ClassFile does not represent a class with the requested name
-      if(requestedName!=null && !requestedName.equals(name)) {
-        throw new ClassInfoException("wrong class name, should be " + name + 
-            ", not " + requestedName, classLoader, "java.lang.NoClassDefFoundError", name);
-      }
-
-      // the enclosingClassName is set on demand since it requires loading enclosing class candidates
-      // to verify their innerClass attributes
-      
-      int i = name.lastIndexOf('.');
-      packageName = (i>0) ? name.substring(0, i) : "";
-
-      modifiers = flags;
-      isClass = ((flags & Modifier.INTERFACE) == 0);
-
-      if (attributor != null){
-        attributor.setElementInfoAttributes(ClassInfo.this);
-      }
-
-      superClassName = superClsName;
-    }
-
-    @Override
-    public void setClassAttribute(ClassFile cf, int attrIndex, String name, int attrLength) {
-      if (name == ClassFile.SOURCE_FILE_ATTR) {
-        cf.parseSourceFileAttr(this, null);
-        
-      } else if (name == ClassFile.SIGNATURE_ATTR){
-        cf.parseSignatureAttr(this, ClassInfo.this);
-
-      } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR) {
-        cf.parseAnnotationsAttr(this, ClassInfo.this);
-
-      } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR) {
-        //cf.parseAnnotationsAttr(this, ClassInfo.this);
-        
-      } else if (name == ClassFile.INNER_CLASSES_ATTR){
-        cf.parseInnerClassesAttr( this, ClassInfo.this);
-        
-      } else if(name == ClassFile.ENCLOSING_METHOD_ATTR) {
-    	  cf.parseEnclosingMethodAttr(this, ClassInfo.this);
-      }
-    }
-
-    //--- inner classes
-    @Override
-    public void setInnerClassCount (ClassFile cf, Object tag, int classCount){
-      innerClassNames = new String[classCount];
-    }
-    
-    @Override
-    public void setInnerClass (ClassFile cf, Object tag, int innerClsIndex, 
-                               String outerName, String innerName, String innerSimpleName, int accessFlags){
-      // Ok, this is a total mess - some names are in dot notation, others use '/'
-      // and to make it even more confusing, some InnerClass attributes refer NOT
-      // to the currently parsed class, so we have to check if we are the outerName,
-      // but then 'outerName' can also be null instead of our own name.
-      // Oh, and there are also InnerClass attributes that have their own name as inner names
-      // (see java/lang/String$CaseInsensitiveComparator or ...System and java/lang/System$1 for instance)
-      if (outerName != null){
-        outerName = Types.getClassNameFromTypeName(outerName);
-      }
-        
-      innerName = Types.getClassNameFromTypeName(innerName);
-      if (!innerName.equals(name)){
-        innerClassNames[innerClsIndex] = innerName;
-        
-      } else {
-        // this refers to ourself, and can be a force fight with setEnclosingMethod
-        if (outerName != null){ // only set if this is a direct member, otherwise taken from setEnclosingMethod
-          enclosingClassName = outerName;
-        }
-      }
-    }
-    
-    @Override
-    public void setEnclosingMethod(ClassFile cf, Object tag, String enclosingClassName, String enclosingMethodName, String descriptor) {
-      ClassInfo.this.enclosingClassName = enclosingClassName;
-      
-      if (enclosingMethodName != null){
-        ClassInfo.this.enclosingMethodName = enclosingMethodName + descriptor;
-      }
-    }
-    
-    @Override
-    public void setInnerClassesDone (ClassFile cf, Object tag) {
-      // we have to check if we allocated too many - see the mess above
-      int count = 0;
-      for (int i=0; i<innerClassNames.length; i++){
-        innerClassNames = Misc.stripNullElements(innerClassNames);
-      }
-    }
-    
-    //--- source file
-    
-    @Override
-    public void setSourceFile(ClassFile cf, Object tag, String fileName) {
-      // we already know the package, so we just prepend it
-      if (packageName.length() > 0){
-        // Source will take care of proper separator chars later
-        sourceFileName = packageName.replace('.', '/') + '/' + fileName;
-      } else {
-        sourceFileName = fileName;
-      }
-    }
-
-    //--- interfaces
-    @Override
-    public void setInterfaceCount (ClassFile cf, int ifcCount){
-      interfaceNames = new String[ifcCount];
-    }
-    
-    @Override
-    public void setInterface (ClassFile cf, int ifcIndex, String ifcName) {
-      interfaceNames[ifcIndex] = Types.getClassNameFromTypeName(ifcName);
-    }
-
-    //--- fields
-    ArrayList<FieldInfo> instanceFields = new ArrayList<FieldInfo>();
-    ArrayList<FieldInfo> staticFields = new ArrayList<FieldInfo>();
-    FieldInfo curFi; // need to cache for attributes
-
-    @Override
-    public void setField(ClassFile cf, int fieldIndex, int accessFlags, String name, String descriptor) {
-      FieldInfo fi = FieldInfo.create( name, descriptor, accessFlags);
-
-      if ((accessFlags & Modifier.STATIC) == 0){ // instance field
-        instanceFields.add(fi);
-
-      } else {  // static field
-        staticFields.add(fi);        
-      }
-
-      curFi = fi; // for attributes
-    }
-
-    @Override
-    public void setFieldAttribute(ClassFile cf, int fieldIndex, int attrIndex, String name, int attrLength) {
-      if (name == ClassFile.SIGNATURE_ATTR){
-        cf.parseSignatureAttr(this, curFi);
-
-      } else if (name == ClassFile.CONST_VALUE_ATTR){
-        cf.parseConstValueAttr(this, curFi);
-
-      } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR) {
-        cf.parseAnnotationsAttr(this, curFi);
-
-      } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR) {
-        //cf.parseAnnotationsAttr(this, curFi);
-      }
-    }
-
-    @Override
-    public void setConstantValue(ClassFile cf, Object tag, Object constVal){
-      curFi.setConstantValue(constVal);
-    }
-
-    @Override
-    public void setFieldsDone(ClassFile cf) {
-      iFields = instanceFields.toArray(new FieldInfo[instanceFields.size()]);
-      sFields = staticFields.toArray(new FieldInfo[staticFields.size()]);
-    }
-
-    //--- methods
-    CodeBuilder cb;
-    MethodInfo curMi;
-
-    @Override
-    public void setMethodCount(ClassFile cf, int methodCount){
-      methods = new LinkedHashMap<String,MethodInfo>(methodCount);
-    }
-
-    @Override
-    public void setMethod(ClassFile cf, int methodIndex, int accessFlags, String name, String signature) {
-      // maxLocals and maxStack will be set from the Code attribute
-      curMi = new MethodInfo( ClassInfo.this, name, signature, -1, -1, accessFlags);
-
-      if (attributor != null){
-        attributor.setMethodInfoAttributes(curMi);
-      }
-    }
-
-    @Override
-    public void setMethodDone(ClassFile cf, int methodIndex){
-      methods.put(curMi.getUniqueName(), curMi);
-    }
-
-    @Override
-    public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
-      if (name == ClassFile.CODE_ATTR){
-        cf.parseCodeAttr(this, curMi);
-
-      } else if (name == ClassFile.SIGNATURE_ATTR){
-        cf.parseSignatureAttr(this, curMi);
-
-      } else if (name == ClassFile.EXCEPTIONS_ATTR) {
-        cf.parseExceptionAttr(this, curMi);
-
-      } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR) {
-        cf.parseAnnotationsAttr(this, curMi);
-
-      } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR) {
-        //cf.parseAnnotationsAttr(this, curMi);
-
-      } else if (name == ClassFile.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS_ATTR) {
-        cf.parseParameterAnnotationsAttr(this, curMi);
-
-      } else if (name == ClassFile.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR) {
-        //cf.parseParameterAnnotationsAttr(this, curMi);
-      }
-    }
-
-    @Override
-    public void setExceptionCount(ClassFile cf, Object tag, int exceptionCount) {
-      curMi.startTrownExceptions(exceptionCount);
-    }
-
-    @Override
-    public void setException(ClassFile cf, Object tag, int exceptionIndex, String exceptionType) {
-      curMi.setException(exceptionIndex, exceptionType);
-    }
-
-    @Override
-    public void setExceptionsDone(ClassFile cf, Object tag) {
-      curMi.finishThrownExceptions();
-    }
-
-
-    @Override
-    public void setCode(ClassFile cf, Object tag, int maxStack, int maxLocals, int codeLength){
-      curMi.setMaxLocals(maxLocals);
-      curMi.setMaxStack(maxStack);
-
-      if (cb == null){
-        cb = createCodeBuilder();
-      }
-      cb.initialize(cf, curMi);
-
-      cf.parseBytecode(cb, tag, codeLength);
-      cb.installCode();
-    }
-
-    @Override
-    public void setExceptionHandlerTableCount(ClassFile cf, Object tag, int exceptionTableCount) {
-      curMi.startExceptionHandlerTable(exceptionTableCount);
-    }
-
-    @Override
-    public void setExceptionHandler(ClassFile cf, Object tag, int handlerIndex,
-            int startPc, int endPc, int handlerPc, String catchType) {
-      curMi.setExceptionHandler(handlerIndex, startPc, endPc, handlerPc, catchType);
-    }
-
-    @Override
-    public void setExceptionHandlerTableDone(ClassFile cf, Object tag) {
-      curMi.finishExceptionHandlerTable();
-    }
-
-    @Override
-    public void setCodeAttributeCount(ClassFile cf, Object tag, int attrCount) {
-    }
-
-    @Override
-    public void setCodeAttribute(ClassFile cf, Object tag, int attrIndex, String name, int attrLength) {
-      if (name == ClassFile.LINE_NUMBER_TABLE_ATTR) {
-        cf.parseLineNumberTableAttr(this, tag);
-
-      } else if (name == ClassFile.LOCAL_VAR_TABLE_ATTR) {
-        cf.parseLocalVarTableAttr(this, tag);
-      }
-    }
-
-    @Override
-    public void setCodeAttributesDone(ClassFile cf, Object tag) {
-    }
-
-    @Override
-    public void setLineNumberTableCount(ClassFile cf, Object tag, int lineNumberCount) {
-      curMi.startLineNumberTable(lineNumberCount);
-    }
-
-    @Override
-    public void setLineNumber(ClassFile cf, Object tag, int lineIndex, int lineNumber, int startPc) {
-      curMi.setLineNumber(lineIndex, lineNumber, startPc);
-    }
-
-    @Override
-    public void setLineNumberTableDone(ClassFile cf, Object tag) {
-      curMi.finishLineNumberTable();
-    }
-
-    @Override
-    public void setLocalVarTableCount(ClassFile cf, Object tag, int localVarCount) {
-      curMi.startLocalVarTable(localVarCount);
-    }
-
-    @Override
-    public void setLocalVar(ClassFile cf, Object tag, int localVarIndex,
-            String varName, String descriptor, int scopeStartPc, int scopeEndPc, int slotIndex) {
-      curMi.setLocalVar(localVarIndex, varName, descriptor, scopeStartPc, scopeEndPc, slotIndex);
-    }
-
-    @Override
-    public void setLocalVarTableDone(ClassFile cf, Object tag) {
-      curMi.finishLocalVarTable();
-    }
-
-
-    //--- annotations
-
-    AnnotationInfo curAi;
-    AnnotationInfo[] curPai;
-    Object[] values;
-
-    @Override
-    public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){
-      if (tag instanceof InfoObject){
-        if (tag instanceof ClassInfo){
-          if (annotations == null){
-            ((InfoObject) tag).startAnnotations(annotationCount);
-          }
-        } 
-        else {
-          ((InfoObject) tag).startAnnotations(annotationCount);
-        }
-      }
-    }
-
-    @Override
-    public void setAnnotationsDone(ClassFile cf, Object tag){
-    }
-
-    @Override
-    public void setParameterCount(ClassFile cf, Object tag, int parameterCount){
-      if (tag == curMi){
-        curMi.startParameterAnnotations(parameterCount);
-      }
-    }
-
-    @Override
-    public void setParameterAnnotationCount(ClassFile cf, Object tag, int paramIndex, int annotationCount){
-      if (tag == curMi){
-        curPai = new AnnotationInfo[annotationCount];
-        curMi.setParameterAnnotations(paramIndex, curPai);
-      }
-    }
-
-    @Override
-    public void setParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
-      if (tag == curMi){
-        curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
-        curPai[annotationIndex] = curAi;
-      }
-    }
-    
-    @Override
-    public void setParameterAnnotationsDone(ClassFile cf, Object tag, int paramIndex){
-      curMi.finishParameterAnnotations();
-    }
-
-    @Override
-    public void setParametersDone(ClassFile cf, Object tag){
-    }
-
-
-    @Override
-    public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType) {
-      if (tag instanceof InfoObject){
-        if (AnnotationInfo.annotationAttributes.get(annotationType) == null) {
-          curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType), classLoader.getClassPath());
-        } else {
-          curAi = new AnnotationInfo(Types.getClassNameFromTypeName(annotationType));
-        }
-
-        ((InfoObject)tag).setAnnotation(annotationIndex, curAi);
-      }
-    }
-
-    @Override
-    public void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int nValuePairs){
-      curAi.startEntries(nValuePairs);
-    }
-
-    @Override
-    public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int arrayIndex, Object val){
-      if (arrayIndex >= 0){
-        values[arrayIndex] = val;
-      } else {
-        curAi.setValue(valueIndex, elementName, val);
-      }
-    }
-
-    @Override
-    public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int arrayIndex, String val){
-      if (arrayIndex >= 0){
-        values[arrayIndex] = val;
-      } else {
-        curAi.setValue(valueIndex, elementName, val);
-      }
-    }
-
-    @Override
-    public void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName,
-            int arrayIndex, String typeName){
-      Object val = AnnotationInfo.getClassValue(typeName);
-      if (arrayIndex >= 0){
-        values[arrayIndex] = val;
-      } else {
-        curAi.setValue(valueIndex, elementName, val);
-      }
-    }
-
-    @Override
-    public void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int arrayIndex, String enumType, String enumValue){
-      Object val = AnnotationInfo.getEnumValue(enumType, enumValue);
-      if (arrayIndex >= 0){
-        values[arrayIndex] = val;
-      } else {
-        curAi.setValue(valueIndex, elementName, val);
-      }
-    }
-
-    @Override
-    public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName, int elementCount){
-      values = new Object[elementCount];
-    }
-
-    @Override
-    public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
-            String elementName){
-      curAi.setValue(valueIndex, elementName, values);
-    }
-
-    @Override
-    public void setAnnotationValuesDone(ClassFile cf, Object tag, int annotationIndex){
-      checkAnnotationDefaultValues(curAi);
-    }
-
-
-    //--- common attrs
-    @Override
-    public void setSignature(ClassFile cf, Object tag, String signature){
-      if (tag instanceof GenericSignatureHolder){
-        ((GenericSignatureHolder)tag).setGenericSignature(signature);
-      }
+  public void setEnclosingMethod (String mthName){
+    enclosingMethodName = mthName;    
+  }
+
+  public void setInterfaceNames(String[] ifcNames) {
+    interfaceNames = ifcNames;
+  }
+  
+  public void setSourceFile (String fileName){
+    // prepend if we already know the package
+    if (packageName.length() > 0) {
+      // Source will take care of proper separator chars later
+      sourceFileName = packageName.replace('.', '/') + '/' + fileName;
+    } else {
+      sourceFileName = fileName;
     }
   }
 
-  // this is only for unit testing purposes
-  protected ClassInfo (ClassFile cf) throws ClassFileException {
-    Initializer reader = new Initializer();
-    cf.parse(reader);
+  public void setFields(FieldInfo[] fields) {
+    int nInstance = 0, nStatic = 0;
+
+    for (int i = 0; i < fields.length; i++) {
+      if (fields[i].isStatic()) {
+        nStatic++;
+      } else {
+        nInstance++;
+      }
+    }
+
+    FieldInfo[] instanceFields = (nInstance > 0) ? new FieldInfo[nInstance] : EMPTY_FIELDINFO_ARRAY;
+    FieldInfo[] staticFields = (nStatic > 0) ? new FieldInfo[nStatic] : EMPTY_FIELDINFO_ARRAY;
+
+    int iInstance = 0;
+    int iStatic = 0;
+    for (int i = 0; i < fields.length; i++) {
+      FieldInfo fi = fields[i];
+
+      if (fi.isStatic()) {
+        staticFields[iStatic++] = fi;
+      } else {
+        instanceFields[iInstance++] = fi;        
+      }
+    }
+
+    this.iFields = instanceFields;
+    this.sFields = staticFields;
+
+    // we can't link the fields yet because we need the superclasses to be resolved
+  }
+
+  public void setMethods (MethodInfo[] methods) {
+    if (methods != null && methods.length > 0) {
+      HashMap<String, MethodInfo> map = new LinkedHashMap<String, MethodInfo>();
+
+      for (int i = 0; i < methods.length; i++) {
+        MethodInfo mi = methods[i];
+        mi.linkToClass(this);
+        map.put(mi.getUniqueName(), mi);
+
+        if (attributor != null) {
+          attributor.setMethodInfoAttributes(mi);
+        }
+      }
+      
+      this.methods = map;
+    }
+  }
+
+  public AnnotationInfo getResolvedAnnotationInfo (String typeName){
+    return classLoader.getResolvedAnnotationInfo( typeName);
+  }
+  
+  public void setAnnotations(AnnotationInfo[] annotations) {
+    this.annotations = annotations;
+  }
+  
+  //--- end initialization interface
+ 
+  //--- the overridden annotation accessors (we need these because of inherited superclass annotations)
+  // note that we don't flatten annotations anymore, assuming the prevalent query will be getAnnotation(name)
+  
+  @Override
+  public boolean hasAnnotations(){
+    if (annotations.length > 0){
+      return true;
+    }
+    
+    for (ClassInfo ci = superClass; ci != null; ci = ci.superClass){
+      AnnotationInfo[] a = ci.annotations;
+      for (int j=0; j<a.length; j++){
+        if (a[j].isInherited()){
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  /**
+   * return all annotations, which includes the ones inherited from our superclasses
+   * NOTE - this is not very efficient
+   */
+  @Override
+  public AnnotationInfo[] getAnnotations() {
+    int nAnnotations = annotations.length;
+    for (ClassInfo ci = superClass; ci != null; ci = ci.superClass){
+      AnnotationInfo[] a = ci.annotations;
+      for (int i=0; i<a.length; i++){
+        if (a[i].isInherited()){
+          nAnnotations++;
+        }
+      }
+    }
+    
+    AnnotationInfo[] allAnnotations = new AnnotationInfo[nAnnotations];
+    System.arraycopy(annotations, 0, allAnnotations, 0, annotations.length);
+    int idx=annotations.length;
+    for (ClassInfo ci = superClass; ci != null; ci = ci.superClass){
+      AnnotationInfo[] a = ci.annotations;
+      for (int i=0; i<a.length; i++){
+        if (a[i].isInherited()){
+          allAnnotations[idx++] = a[i];
+        }
+      }
+    }
+    
+    return allAnnotations;
+  }
+    
+  @Override
+  public AnnotationInfo getAnnotation (String annotationName){
+    AnnotationInfo[] a = annotations;
+    for (int i=0; i<a.length; i++){
+      if (a[i].getName().equals(annotationName)){
+        return a[i];
+      }
+    }
+    
+    for (ClassInfo ci = superClass; ci != null; ci = ci.superClass){
+      a = ci.annotations;
+      for (int i=0; i<a.length; i++){
+        AnnotationInfo ai = a[i];
+        if (ai.getName().equals(annotationName) && ai.isInherited()){
+          return ai;
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  
+  //--- this is only for unit testing purposes
+  protected ClassInfo (ClassParser parser) throws ClassParseException {
+    parser.parse(this);
+    
     resolveClass();
     linkFields();
-    
-    //VM.getVM().notifyClassLoaded(this); // there might not be a VM instance
   }
 
-  public ClassInfo(ClassFile cf, ClassLoaderInfo classLoader, String url) throws ClassFileException {
+  public ClassInfo (String name, ClassLoaderInfo classLoader, ClassParser parser, String classFileUrl) throws ClassParseException {
+    this.name = name;
     this.classLoader = classLoader;
+    this.classFileUrl = classFileUrl;
     
-    Initializer reader = new Initializer();
-    cf.parse(reader); // this does the heavy lifting for ClassInfo init
-
-    source = null;
-    if (sourceFileName == null){ // apparently some classfiles don't have a SourceFile attribute?
-      sourceFileName = computeSourceFileName();
-    }
-
+    this.methods = NO_METHODS;
+    
+    parser.parse(this); // this is the main part and might throw ClassParseExceptions
+    
+    //--- these might get streamlined
     isStringClassInfo = isStringClassInfo0();
     isThreadClassInfo = isThreadClassInfo0();
     isObjectClassInfo = isObjectClassInfo0();
     isRefClassInfo = isRefClassInfo0();
    // isWeakReference = isWeakReference0();
-    finalizer = getFinalizer0();
     isAbstract = (modifiers & Modifier.ABSTRACT) != 0;
    // isEnum = isEnum0();
+    
+    finalizer = getFinalizer0();
 
-    classFileUrl = url;
-
-    // the 'sei' field gets initialized during registerClass(ti), since
-    // it needs to be linked to a corresponding java.lang.Class object which
-    // we can't createAndInitialize until we have a ThreadInfo context
-
-    // be advised - we don't have fields initialized before initializeClass(ti,insn)
-    // gets called
-
-    // Used to execute native methods (in VM land).
-    // This needs to be initialized AFTER we get our
-    // MethodInfos, since it does a reverse lookup to determine which
+    // Used to execute native methods (in the host VM).
+    // This needs to be initialized AFTER we get our  MethodInfos, since it does a reverse lookup to determine which
     // ones are handled by the peer (by means of setting MethodInfo attributes)
-    nativePeer = NativePeer.getNativePeer(this);
+    nativePeer = loadNativePeer();
     checkUnresolvedNativeMethods();
 
-    resolveClass();
-    linkFields();
+    resolveClass(); // takes care of super classes and interfaces
+    linkFields(); // computes field offsets
     
     setAssertionStatus();
     processJPFConfigAnnotation();
     loadAnnotationListeners();
     
-    addOriginalClass(this);
-    
-    VM.getVM().notifyClassLoaded(this);
+    notifyClassLoaded();
   }
-
-
+  
+  protected ClassInfo(){
+    // for explicit subclass initialization
+  }
+  
   /**
    * ClassInfo ctor used for builtin types (arrays and primitive types)
-   * i.e. classes we don't have class files for
+   * idx.e. classes we don't have class files for
    */
   protected ClassInfo (String builtinClassName, ClassLoaderInfo classLoader) {
     this.classLoader = classLoader;
@@ -908,24 +546,27 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     enableAssertions = true; // doesn't really matter - no code associated
 
     classFileUrl = name;
-    addOriginalClass(this);
     
-    // no fields or methods, so we don't have to link/resolve anything
+    // no fields or declaredMethods, so we don't have to link/resolve anything
     
-    VM.getVM().notifyClassLoaded(this);
+    notifyClassLoaded();
   }
-
+  
+  protected void createAnnotationValueGetterCode (MethodInfo pmi, FieldInfo fi){
+    // to be overridden by VM specific class
+  }
+  
   /**
    * createAndInitialize a fully synthetic implementation of an Annotation proxy
    */
-  ClassInfo(ClassInfo annotationCls, String name, ClassLoaderInfo classLoader, String url) {
+  protected ClassInfo (ClassInfo annotationCls, String name, ClassLoaderInfo classLoader, String url) {
     this.classLoader = classLoader;
 
     this.name = name;
     isClass = true;
 
     //superClass = objectClassInfo;
-    superClass = ClassInfo.getResolvedClassInfo("gov.nasa.jpf.AnnotationProxyBase");
+    superClass = ClassLoaderInfo.getSystemResolvedClassInfo("gov.nasa.jpf.AnnotationProxyBase");
 
     interfaceNames = new String[]{ annotationCls.name };    
     packageName = annotationCls.packageName;
@@ -939,7 +580,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     iFields = new FieldInfo[annotationCls.methods.size()];
     nInstanceFields = iFields.length;
 
-    // all accessor methods of ours make it into iField/method combinations
+    // all accessor declaredMethods of ours make it into iField/method combinations
     int idx = 0;
     int off = 0;  // no super class
     for (MethodInfo mi : annotationCls.getDeclaredMethodInfos()) {
@@ -947,35 +588,17 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       String mtype = mi.getReturnType();
       String genericSignature = mi.getGenericSignature();
 
-      // createAndInitialize an instance field for it
+      // create and initialize an instance field for it
       FieldInfo fi = FieldInfo.create(mname, mtype, 0);
       fi.linkToClass(this, idx, off);
+      fi.setGenericSignature(genericSignature);
       iFields[idx++] = fi;
-      
       off += fi.getStorageSize();
 
-      fi.setGenericSignature(genericSignature);
-
-      // now createAndInitialize a public accessor for this field
-      MethodInfo pmi = new MethodInfo(this, mname, mi.getSignature(), 1, 2, Modifier.PUBLIC);
+      MethodInfo pmi = new MethodInfo(this, mname, mi.getSignature(), Modifier.PUBLIC, 1, 2);
       pmi.setGenericSignature(genericSignature);
-
-      CodeBuilder cb = pmi.createCodeBuilder();
-
-      cb.aload(0);
-      cb.getfield(mname, name, mtype);
-      if (fi.isReference()) {
-        cb.areturn();
-      } else {
-        if (fi.getStorageSize() == 1) {
-          cb.ireturn();
-        } else {
-          cb.lreturn();
-        }
-      }
-
-      cb.installCode();
-
+      
+      createAnnotationValueGetterCode( pmi, fi);
       methods.put(pmi.getUniqueName(), pmi);
     }
 
@@ -985,11 +608,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     classFileUrl = url;
     linkFields();
     
-    addOriginalClass(this);
-    
-    VM.getVM().notifyClassLoaded(this);
+    notifyClassLoaded();
   }
 
+  protected void notifyClassLoaded(){
+    VM.getVM().notifyClassLoaded(this);
+  }
   
   @Override
   public int hashCode() {
@@ -1010,43 +634,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     return false;
   }
-  
-  private static void addOriginalClass(ClassInfo ci) {
-    if(ci.classFileUrl != null) {
-      loadedClasses.put(ci.classFileUrl, ci);
-    }
-  }
-
-  private static ClassInfo getOriginalClassInfo(String url) {
-    return loadedClasses.get(url);
-  }
-
 
   protected String computeSourceFileName(){
     return name.replace('.', '/') + ".java";
-  }
-
-
-  /**
-   * this is called from the annotated ClassInfo - the annotation type would
-   * have to be resolved through the same classpath
-   *
-   * override this in case resolving annotation types is not wanted (e.g. for unit tests)
-   */
-  protected void checkAnnotationDefaultValues(AnnotationInfo ai){
-    ai.checkDefaultValues(classLoader.getClassPath());
-  }
-
-  /**
-   * this returns a CodeBuilder that still needs to be initialized. It is here
-   * to allow overriding it in derived classes, e.g. to facilitate unit tests
-   * or specialized instruction factories
-   */
-  protected CodeBuilder createCodeBuilder(){
-    InstructionFactory insnFactory = MethodInfo.getInstructionFactory();
-    insnFactory.setClassInfoContext(this);
-
-    return new CodeBuilder(insnFactory, null, null);
   }
 
   void checkUnresolvedNativeMethods(){
@@ -1057,8 +647,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       }
     }
   }
-
-
 
   void processJPFConfigAnnotation() {
     AnnotationInfo ai = getAnnotation("gov.nasa.jpf.annotation.JPFConfig");
@@ -1120,6 +708,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
+  protected NativePeer loadNativePeer(){
+    return NativePeer.getNativePeer(this);
+  }
+  
   /**
    * Returns the class loader that 
    */
@@ -1201,158 +793,31 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return isThreadClassInfo;
   }
 
-  public static ClassInfo getResolvedSystemClassInfo(String className) {
-    ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
-    return systemLoader.getResolvedClassInfo(className);
-  }
-
-  public static ClassInfo getResolvedClassInfo (String className) throws ClassInfoException {
-    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
-
-    return cl.getResolvedClassInfo(className);
-  }
-
-  /**
-   * obtain ClassInfo object for given class name
-   *
-   * this method does not return a value unless the required class, all
-   * its super classes, and all implemented interfaceNames of this class hierarchy
-   * can be resolved, i.e. this method is called recursively through the
-   * ClassInfo constructor.
-   *
-   * Returned ClassInfo objects are not registered yet, i.e. still have to
-   * be added to the ClassLoaderInfo's statics, and don't have associated java.lang.Class
-   * objects until registerClass(ti) is called.
-   *
-   * Before any field or method access, the class also has to be initialized,
-   * which can include overlayed execution of &lt;clinit&gt; methods, which is done
-   * by calling initializeClass(ti,insn)
-   *
-   * @param className fully qualified classname to get a ClassInfo for
-   * @return the ClassInfo for the classname passed in
-   * @throws NoClassInfoException with missing className as message
-   *
-   * @see ClassInfo#registerClass(ThreadInfo)
-   * @see ClassInfo#initializeClass(ThreadInfo)
-   *
-   * <2do> we could also separate resolveClass(), but this would require an
-   * additional state {resolved,registered,initialized}, and it is questionable
-   * what a non-resolvable ClassInfo would be good for anyways
-   */
-  public static ClassInfo getResolvedClassInfo (String className, ClassLoaderInfo cl, ClassPath.Match match) throws ClassInfoException {
-
-    if (className == null) {
-      return null;
+  protected void checkNoClinitInitialization(){
+    if (!isInitialized()){
+      ThreadInfo ti = ThreadInfo.getCurrentThread();
+      registerClass(ti);
+      setInitialized(); // we might want to check if there is a clinit
     }
-
-    String typeName = Types.getClassNameFromTypeName(className);
-
-    if (isBuiltinClass(typeName)) {
-      if(cl.isSystemClassLoader()) {
-        return new ClassInfo(typeName, cl);
-      } else {
-        return getResolvedSystemClassInfo(className);
-      }
-    }
-
-    String url = computeClassFileUrl(match, typeName, cl);
-    ClassInfo ci = getOriginalClassInfo(url);
-
-    // To avoid parsing the classfile more than once, if the same class defined by some
-    // other loader, return the ClassInfo and clone it.
-    if (ci != null) {
-      return ci;
-    }
-
-    logger.finer("resolve classinfo: ", className);
-
-    return defineClass(typeName, cl, match, url);
-  }
-
-  private static ClassInfo defineClass(String typeName, ClassLoaderInfo cl, ClassPath.Match match, String url){
-    try {
-      if (match == null){
-        throw new ClassInfoException("class not found: " + typeName, cl, "java.lang.ClassNotFoundException", typeName);
-      }
-
-      ClassFile cf = new ClassFile( typeName, match.getBytes());
-      
-      VM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
-
-      ClassInfo ci = new ClassInfo(cf, cl, url);
-      ci.setContainer(match.container);
-
-      return ci;
-      
-    } catch (ClassFileException cfx){
-      throw new ClassInfoException("error reading class: " + typeName, cl, 
-                                   "java.lang.NoClassDefFoundError", typeName);
-    }
-  }
-
-  private static ClassInfo defineClass(String typeName, byte[] data, int offset, int length, ClassLoaderInfo cl, String url) {
-    try {
-      ClassFile cf = new ClassFile( typeName, data, offset);
-      
-      VM.getVM().notifyLoadClass(cf); // allow on-the-fly classfile modification
-
-      return new ClassInfo(cf, cl, url);
-
-    } catch (ClassFileException cfx){
-      throw new JPFException("error reading class " + typeName, cfx);
-    }
-  }
-
-  public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length) throws ClassInfoException {
-    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
-
-    // for now, we do not keep dynamic proxy classes, which are defined through 
-    // the java.lang.reflect.Proxy native peer, in the loadedClasses map
-    return cl.getResolvedClassInfo(className, buffer, offset, length, null);
   }
   
-  public static ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length, ClassLoaderInfo cl, ClassPath.Match match) throws ClassInfoException {
-    if (className == null) {
-      return null;   
-    }
+  protected ClassInfo createAnnotationProxy (String proxyName){
+    // to be overridden by VM specific ClassInfos
+    return null;
+  }
+  
+  public ClassInfo getAnnotationProxy (){
+    // <2do> test if this is a annotation ClassInfo
     
-    String typeName = Types.getClassNameFromTypeName(className);
-
-    if (isBuiltinClass(typeName)) {
-      if(cl.isSystemClassLoader()) {
-        return new ClassInfo(typeName, cl);
-      } else {
-        return getResolvedSystemClassInfo(className);
-      }
-    }
-
-    String url = (match != null)? computeClassFileUrl(match, typeName, cl): typeName;
-    ClassInfo ci = getOriginalClassInfo(url);
-
-    if (ci != null) {
-      if(!ci.isResolved()) {
-        ci.resolveClass();
-        ci.linkFields();
-      }
-      return ci;
-    }
-
-    return defineClass(typeName, buffer, offset, length, cl, (match != null)? url: null);
+    checkNoClinitInitialization(); // annotation classes don't have clinits
+    
+    ClassInfo ciProxy = classLoader.getResolvedAnnotationProxy(this);
+    ciProxy.checkNoClinitInitialization();
+    
+    return ciProxy;
   }
-
-  /**
-   * obtain ClassInfo from context that does not care about resolution, i.e.
-   * does not check for NoClassInfoExceptions
-   *
-   * @param className fully qualified classname to get a ClassInfo for
-   * @return null if class was not found
-   */
-  public static ClassInfo tryGetResolvedClassInfo (String className){
-    ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
-
-    return cl.tryGetResolvedClassInfo(className);
-  }
-
+  
+/**
   public static ClassInfo getAnnotationProxy (ClassInfo ciAnnotation){
     ThreadInfo ti = ThreadInfo.getCurrentThread();
 
@@ -1363,11 +828,12 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
 
     String url = computeProxyUrl(ciAnnotation);
-    ClassInfo ci = getOriginalClassInfo(url);
+    ClassInfo ci = null; // getOriginalClassInfo(url);
 
     if (ci == null){
       String cname = ciAnnotation.getName() + "$Proxy";
       ci = new ClassInfo(ciAnnotation, cname, ciAnnotation.classLoader, url);
+      ciAnnotation.classLoader.addResolvedClass(ci);
       if (!ci.isInitialized()){
         ci.registerClass(ti);
         ci.setInitialized();
@@ -1376,7 +842,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     return ci;
   }
-
+**/
 
   public boolean areAssertionsEnabled() {
     return enableAssertions;
@@ -1414,15 +880,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return (sei != null) ? sei.getClassObjectRef() : -1;
   }
 
-  public ClassFileContainer getContainer(){
+  public gov.nasa.jpf.vm.ClassFileContainer getContainer(){
     return container;
   }
   
-  public void setContainer (ClassFileContainer c){
+  public void setContainer (gov.nasa.jpf.vm.ClassFileContainer c){
     container = c;
   }
 
-  protected static String computeClassFileUrl(ClassPath.Match match, String typeName, ClassLoaderInfo cl) {
+  protected static String computeClassFileUrl(ClassFileMatch match, String typeName, ClassLoaderInfo cl) {
     // it has to be a built-in class or annotation proxy!
     if(match == null) {
       if(ClassInfo.isBuiltinClass(typeName)){
@@ -1486,11 +952,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /**
    * Note that 'uniqueName' is the name plus the argument type part of the
-   * signature, i.e. everything that's relevant for overloading
+   * signature, idx.e. everything that's relevant for overloading
    * (besides saving some const space, we also ease reverse lookup
    * of natives that way).
    * Note also that we don't have to make any difference between
-   * class and instance methods, because that just matters in the
+   * class and instance declaredMethods, because that just matters in the
    * INVOKExx instruction, when looking up the relevant ClassInfo to start
    * searching in (either by means of the object type, or by means of the
    * constpool classname entry).
@@ -1550,7 +1016,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
   
   /**
-   * iterate over all methods of this class (and it's superclasses), until
+   * iterate over all declaredMethods of this class (and it's superclasses), until
    * the provided MethodLocator tells us it's done
    */
   public void matchMethods (MethodLocator loc) {
@@ -1565,7 +1031,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   /**
-   * iterate over all methods declared in this class, until the provided
+   * iterate over all declaredMethods declared in this class, until the provided
    * MethodLocator tells us it's done
    */
   public void matchDeclaredMethods (MethodLocator loc) {
@@ -1630,8 +1096,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
 
     //interfaceNames can have static fields too
-    for (String interface_name : getAllInterfaces()) {
-        fi = ClassInfo.getResolvedClassInfo(interface_name).getDeclaredStaticField(fName);
+    // <2do> why would that not be already resolved here ?
+    for (String interfaceName : getAllInterfaces()) {
+      ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(interfaceName);
+        fi = ci.getDeclaredStaticField(fName);
         if (fi != null) return fi;
     }
 
@@ -1842,7 +1310,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   public ClassInfo getEnclosingClassInfo() {
     String enclName = getEnclosingClassName();
-    return (enclName == null ? null : getResolvedClassInfo(enclName));
+    return (enclName == null ? null : classLoader.getResolvedClassInfo(enclName)); // ? is this supposed to use the same classloader
   }
 
   public String getEnclosingMethodName(){
@@ -1983,7 +1451,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   public boolean isInnerClassOf (String enclosingName){
     // don't register or initialize yet
-    ClassInfo ciEncl = tryGetResolvedClassInfo( enclosingName);
+    ClassInfo ciEncl = classLoader.tryGetResolvedClassInfo( enclosingName);
     if (ciEncl != null){
       return ciEncl.hasInnerClass(name);
     } else {
@@ -2000,21 +1468,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     return false;
   }
-  
-  /**
-   * clean up statics for another 'main' run
-   */
-  public static void reset () {
-    loadedClasses.clear();
-  }
 
-  public static int getNumberOfLoadedClasses() {
-    return loadedClasses.size();
-  }
-
-  public static ClassInfo[] getLoadedClasses() {
-    return loadedClasses.values().toArray(new ClassInfo[loadedClasses.size()]);
-  }
 
   public static String makeModelClassPath (Config config) {
     StringBuilder buf = new StringBuilder(256);
@@ -2058,7 +1512,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     if (interfaces != null) {
       for (String iname : interfaces) {
 
-        ClassInfo ci = getResolvedClassInfo(iname);
+        ClassInfo ci = classLoader.getResolvedClassInfo(iname);
 
         if (set != null){
           set.add(iname);
@@ -2190,7 +1644,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   /**
-   * get names of all interfaceNames (transitive, i.e. incl. bases and super-interfaceNames)
+   * get names of all interfaceNames (transitive, idx.e. incl. bases and super-interfaceNames)
    * @return a Set of String interface names
    */
   public Set<String> getAllInterfaces () {
@@ -2225,7 +1679,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public Set<ClassInfo> getAllInterfaceClassInfos() {
     Set<ClassInfo> set = new HashSet<ClassInfo>();
     for (String ifcName : getAllInterfaces()) {
-      set.add(getResolvedClassInfo(ifcName));
+      set.add( classLoader.getResolvedClassInfo(ifcName));
     }
     return set;
   }
@@ -2242,7 +1696,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     ClassInfo[] innerClassInfos = new ClassInfo[innerClassNames.length];
     
     for (int i=0; i< innerClassNames.length; i++){
-      innerClassInfos[i] = getResolvedClassInfo(innerClassNames[i]);
+      innerClassInfos[i] = classLoader.getResolvedClassInfo(innerClassNames[i]); // ? is this supposed to use the same classloader
     }
     
     return innerClassInfos;
@@ -2257,7 +1711,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         cn = Types.getTypeName(cn);
       }
 
-      ClassInfo cci = getResolvedClassInfo(cn);
+      ClassInfo cci = classLoader.getResolvedClassInfo(cn);
 
       return cci;
     }
@@ -2554,7 +2008,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * this recursively initializes all super classes, but NOT the interfaces
    *
    * @param ti executing thread
-   * @return  true if clinit stackframes were pushed, i.e. context instruction
+   * @return  true if clinit stackframes were pushed, idx.e. context instruction
    * needs to be re-executed
    */
   public boolean initializeClass (ThreadInfo ti) {
@@ -2726,7 +2180,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
     interfaces = loadInterfaces(interfaceNames);
 
-    computeInheritedAnnotations(superClass);
+    //computeInheritedAnnotations(superClass);
 
     isWeakReference = isWeakReference0();
     isEnum = isEnum0();
@@ -2792,6 +2246,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     staticDataSize = linkFields( sFields, 0, 0);
   }
 
+  // this resolves all annotations in this class hierarchy, which sets inherited attributes
+  protected void checkInheritedAnnotations (){
+    
+  }
+  
   public String toString() {
     return "ClassInfo[name=" + name + "]";
   }
@@ -2872,7 +2331,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * It is used for the cases where cl tries to load a class that the original version 
    * of which has been loaded by some other classloader.
    */
-  public ClassInfo getInstanceFor (ClassLoaderInfo cl) {
+  public ClassInfo cloneFor (ClassLoaderInfo cl) {
     ClassInfo ci;
 
     try {
@@ -2885,7 +2344,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ci.id = -1;
       ci.uniqueId = -1;
 
-      ci.methods = (Map<String, MethodInfo>)((HashMap<String, MethodInfo>) methods).clone();
+      if (methods != Collections.EMPTY_MAP){
+        ci.methods = (Map<String, MethodInfo>)((HashMap<String, MethodInfo>) methods).clone();
+      }
 
       for(Map.Entry<String, MethodInfo> e: ci.methods.entrySet()) {
         MethodInfo mi = e.getValue();

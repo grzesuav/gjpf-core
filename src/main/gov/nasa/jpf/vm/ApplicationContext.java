@@ -55,6 +55,10 @@ public class ApplicationContext implements SystemAttribute {
     return id;
   }
   
+  public String getMainClassName(){
+    return mainClassName;
+  }
+  
   public String toString(){
     StringBuffer sb = new StringBuffer();
     sb.append("ApplicationContext {mainClassName=");

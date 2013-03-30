@@ -471,7 +471,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
         return true;
 
       try {
-        ci = ClassInfo.getResolvedClassInfo(className);
+        ci = ClassLoaderInfo.getCurrentResolvedClassInfo(className);
       } catch (ClassInfoException cie) {
         log.warning("CoverageAnalyzer problem: " + cie);   // Just log the problem but don't fail.  We still want the report to be written.
       }
@@ -690,7 +690,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
     // middle ground, we could use BCEL
 
     for (ClassCoverage cc : classes.values()) {
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(cc.className);
+      ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(cc.className);
       for (MethodInfo mi : ci.getDeclaredMethodInfos()) {
         AnnotationInfo ai = getRequirementsAnnotation(mi);
         if (ai != null) {

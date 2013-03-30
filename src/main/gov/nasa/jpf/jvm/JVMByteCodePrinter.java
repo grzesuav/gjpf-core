@@ -17,21 +17,21 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm.classfile;
+package gov.nasa.jpf.jvm;
 
 import java.io.PrintWriter;
 
 /**
  * utility class that prints out bytecode in readable form
  */
-public class ByteCodePrinter implements ByteCodeReader {
+public class JVMByteCodePrinter implements JVMByteCodeReader {
 
   PrintWriter pw;
   ClassFile cf; // need this to get the constpool entries
 
   String prefix;
 
-  public ByteCodePrinter (PrintWriter pw, ClassFile cf, String prefix){
+  public JVMByteCodePrinter (PrintWriter pw, ClassFile cf, String prefix){
     this.pw = pw;
     this.cf = cf;
     this.prefix = prefix;

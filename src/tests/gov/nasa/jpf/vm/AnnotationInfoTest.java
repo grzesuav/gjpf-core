@@ -19,9 +19,8 @@
 
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.jvm.classfile.ClassPath;
+import gov.nasa.jpf.jvm.DefaultJVMClassFactory;
 import gov.nasa.jpf.util.test.TestJPF;
-import gov.nasa.jpf.vm.AnnotationInfo;
 
 import org.junit.Test;
 
@@ -39,30 +38,50 @@ public class AnnotationInfoTest extends TestJPF {
     int[] someArray() default { 1, 2, 3 };
   }
 
-
   @Test
   public void testStringDefaultValue() {
+    ClassLoaderInfo.setClassFactory( new DefaultJVMClassFactory());
     ClassPath cp = new ClassPath(new String[] {"build/tests"});
-
-    AnnotationInfo.Entry[] entries = AnnotationInfo.getDefaultEntries(cp, "gov.nasa.jpf.vm.AnnotationInfoTest$X");
-
-    assertTrue(entries.length == 1);
-    assertTrue(entries[0].getKey().equals("value"));
-    assertTrue(entries[0].getValue().equals("nothing"));
+    
+    try {
+      String annotationName = "gov.nasa.jpf.vm.AnnotationInfoTest$X";
+      ClassFileMatch match = cp.findMatch( annotationName);
+      
+      AnnotationInfo ai = match.createAnnotationInfo(null);
+      AnnotationInfo.Entry[] entries = ai.getEntries();
+      
+      assertTrue(entries.length == 1);
+      assertTrue(entries[0].getKey().equals("value"));
+      assertTrue(entries[0].getValue().equals("nothing"));
+    
+    } catch (Throwable t){
+      t.printStackTrace();
+      fail("unexpected exception: " + t);
+    }
   }
 
   @Test
   public void testIntArrayDefaultValue() {
+    ClassLoaderInfo.setClassFactory( new DefaultJVMClassFactory());
     ClassPath cp = new ClassPath(new String[] {"build/tests"});
 
-    AnnotationInfo.Entry[] entries = AnnotationInfo.getDefaultEntries(cp, "gov.nasa.jpf.vm.AnnotationInfoTest$Y");
+    try {
+      String annotationName = "gov.nasa.jpf.vm.AnnotationInfoTest$Y";
+      ClassFileMatch match = cp.findMatch( annotationName);
+      
+      AnnotationInfo ai = match.createAnnotationInfo(null);
+      AnnotationInfo.Entry[] entries = ai.getEntries();
 
-    assertTrue(entries.length == 1);
-    assertTrue(entries[0].getKey().equals("someArray"));
+      assertTrue(entries.length == 2);
+      assertTrue(entries[1].getKey().equals("someArray"));
 
-    Object[] a = (Object[]) entries[0].getValue();
-    assertTrue(a.length == 3);
-    assertTrue((Integer)a[0] == 1 && (Integer)a[1] == 2 && (Integer)a[2] == 3);
+      Object[] a = (Object[]) entries[1].getValue();
+      assertTrue(a.length == 3);
+      assertTrue((Integer)a[0] == 1 && (Integer)a[1] == 2 && (Integer)a[2] == 3);
+      
+    } catch (Throwable t){
+      t.printStackTrace();
+      fail("unexpected exception: " + t);
+    }
   }
-
 }

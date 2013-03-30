@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.VM;
@@ -45,7 +46,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
 
   public FieldInfo getFieldInfo () {
     if (fi == null) {
-      ClassInfo ci = ClassInfo.getResolvedClassInfo(className);
+      ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(className);
       if (ci != null) {
         fi = ci.getInstanceField(fname);
       }
@@ -69,64 +70,55 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
     
     return false;
   }
+ 
   
   protected boolean isSchedulingRelevant (ThreadInfo ti, int objRef) {
 
-    // this should filter out the bulk in most real apps (library code)
+    //--- configured override
+    FieldInfo fi = getFieldInfo();
     if (fi.neverBreak()) {
+      // this should filter out the bulk in most real apps (library code)
       return false;
+    } else if (fi.breakShared()){
+      return true;
     }
 
     ElementInfo ei = ti.getElementInfo(objRef);
-
-    // no use to break if there is no other thread, or the object is not shared
-    // (but note this might change in a following execution path)
+    if (ei.isImmutable() || isSkippedFinalField(ei)) {
+      return false;
+    }
+    
     ei = ei.getInstanceWithUpdatedSharedness(ti);
     if (!ei.isShared()){
       return false;
     }
-    if (ei.isImmutable()){
+
+    if (!ti.hasOtherRunnables()) { // single threaded
       return false;
     }
-
-    if (!ti.hasOtherRunnables()) {
+    
+    //--- special code patterns
+    if (isMonitorEnterPrologue()) {
+      // if this is a GET followed by a MONITOR_ENTER then we just break on the monitor
       return false;
     }
-
+    if (fname.startsWith("this$")) {
+      // that one is an automatically created outer object reference in an inner class,
+      // it can't be set. Unfortunately, we don't have an 'immutable' attribute for
+      // fields, just objects, so we can't push it into class load time attributing.
+      // Must be filtered out before we call 'isLockProtected'
+      return false;
+    }
+    
+    if (mi.isInit() && ti.useUnsharedInit()) {
+      // <2do> this should perhaps use the more expensive ti.isCtorOnStack(objref) to cover
+      // init methods called from the ctor
+      return false;
+    }
+    
+  
     //--- from here on, we know this is a shared object that can be accessed concurrently
     if (ti.usePorSyncDetection()) {
-
-      if (fi.breakShared()) {
-        // this one is supposed to be always treated as transition boundary
-        return true;
-      }
-
-      if (isSkippedFinalField(ei)) {
-        return false;
-      }
-
-      if (fname.startsWith("this$")) {
-        // that one is an automatically created outer object reference in an inner class,
-        // it can't be set. Unfortunately, we don't have an 'immutable' attribute for
-        // fields, just objects, so we can't push it into class load time attributing.
-        // Must be filtered out before we call 'isLockProtected'
-        return false;
-      }
-
-      if (isMonitorEnterPrologue()) {
-        // a little optimization for GETs that are only used to
-        // push lock objects on the stack for a subsequent MONITORENTER - there is no point
-        // breaking on both the GET /and/ the MONITORENTER if nothing happens in between 
-        return false;
-      }
-
-      if (!mi.isSyncRelevant()) {
-        // filter out ctors (which in all likeliness will execute before
-        // an object becomes shared) and <clinit>, which is synchronized
-        // by the VM
-        return false;
-      }
-
       // this is a potentially more expensive test to identify fields
       // that are protected by locks, for which get/putXX should not break.
       // NOTE - here we get heuristic, and it is possible that we use

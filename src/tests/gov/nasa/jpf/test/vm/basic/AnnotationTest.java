@@ -201,7 +201,7 @@ public class AnnotationTest extends TestJPF {
   @interface A6 {
     String value() default "whatever";
   }
-
+  
   @A6
   @Test
   public void testAnnotationClass() throws ClassNotFoundException, NoSuchMethodException {

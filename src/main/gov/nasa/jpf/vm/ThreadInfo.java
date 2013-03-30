@@ -330,6 +330,14 @@ public class ThreadInfo extends InfoObject
   static boolean porSyncDetection;
   
   /**
+   * do we treat ctor calls as unshared. If set to true, field access in init methods
+   * is not checked for shared access. While this is generally true since the object
+   * is still in construction, it is possible to leak the object reference to another
+   * thread before the ctor returns
+   */
+  static boolean porUnsharedInit;
+  
+  /**
    * break the current transition after this number of instructions.
    * This is a safeguard against paths that won't break because potentially
    * shared fields are not yet accessed by a second thread (existence of such
@@ -361,6 +369,8 @@ public class ThreadInfo extends InfoObject
     porBreakOnExposure = porFieldBoundaries && config.getBoolean("vm.por.break_on_exposure");
     
     porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
+    
+    porUnsharedInit = porInEffect && config.getBoolean("vm.por.unshared_init", true);
     
     maxTransitionLength = config.getInt("vm.max_transition_length", 5000);
 
@@ -579,6 +589,9 @@ public class ThreadInfo extends InfoObject
     return porSyncDetection;
   }
 
+  public boolean useUnsharedInit (){
+    return porUnsharedInit;
+  }
 
   //--- various thread state related methods
 
@@ -1655,7 +1668,7 @@ public class ThreadInfo extends InfoObject
         
       } else {
         Heap heap = vm.getHeap();
-        ClassInfo ci = ClassInfo.getResolvedSystemClassInfo("java.lang.StackTraceElement");
+        ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.StackTraceElement");
         ElementInfo ei = heap.newObject(ci, ThreadInfo.this);
 
         ei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this).getObjectRef());
@@ -1743,20 +1756,21 @@ public class ThreadInfo extends InfoObject
     try {
       ClassInfo ci = null;
       try {
-        ci = ClassInfo.getResolvedClassInfo(cname);
+        ci = ClassLoaderInfo.getCurrentResolvedClassInfo(cname);
       } catch(ClassInfoException cie) {
         // the non-system class loader couldn't find the class, 
         if(cie.getExceptionClass().equals("java.lang.ClassNotFoundException") &&
-        !ClassLoaderInfo.getCurrentClassLoader().isSystemClassLoader()) {
-          ci = ClassInfo.getResolvedSystemClassInfo(cname);
+                        !ClassLoaderInfo.getCurrentClassLoader().isSystemClassLoader()) {
+          ci = ClassLoaderInfo.getSystemResolvedClassInfo(cname);
         } else {
           throw cie;
         }
       }
       return createAndThrowException(ci, details);
+      
     } catch (ClassInfoException cie){
       if(!cname.equals(cie.getExceptionClass())) {
-        ClassInfo ci = ClassInfo.getResolvedClassInfo(cie.getExceptionClass());
+        ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(cie.getExceptionClass());
         return createAndThrowException(ci, cie.getMessage());
       } else {
         throw cie;

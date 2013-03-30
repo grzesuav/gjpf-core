@@ -17,13 +17,10 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm.classfile;
+package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.util.JPFLogger;
-import gov.nasa.jpf.vm.Memento;
-import gov.nasa.jpf.vm.MementoFactory;
-import gov.nasa.jpf.vm.Restorable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -33,24 +30,6 @@ import java.util.ArrayList;
  * list of directory or jar entries
  */
 public class ClassPath implements Restorable<ClassPath>{
-
-  public static class Match {
-    public final byte[] data;
-    public final ClassFileContainer container;
-    
-    Match (ClassFileContainer c, byte[] d){
-      container = c;
-      data = d;
-    }
-    
-    public byte[] getBytes() {
-      return data;
-    }
-  }
-  
-  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.classfile");
-  
-  ArrayList<ClassFileContainer> pathElements;
 
   static class CPMemento implements Memento<ClassPath> {
     ClassPath cp;
@@ -67,6 +46,13 @@ public class ClassPath implements Restorable<ClassPath>{
       return cp;
     }
   }
+
+  
+  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.classfile");
+  
+  
+  protected ArrayList<ClassFileContainer> pathElements;
+
 
   public ClassPath(){
     pathElements = new ArrayList<ClassFileContainer>();
@@ -88,8 +74,8 @@ public class ClassPath implements Restorable<ClassPath>{
     return new CPMemento(this);
   }
 
-  public void addPathName(String pathName){
-    ClassFileContainer pe = ClassFileContainer.getClassFileContainer(pathName);
+  public void addPathName (String pathName){
+    ClassFileContainer pe = ClassLoaderInfo.getClassFactory().createClassFileContainer( pathName);
 
     if (pe != null) {
       pathElements.add(pe);
@@ -124,23 +110,23 @@ public class ClassPath implements Restorable<ClassPath>{
     return sb.toString();
   }
 
-  protected static void error(String msg) throws ClassFileException {
-    throw new ClassFileException(msg);
+  protected static void error(String msg) throws ClassParseException {
+    throw new ClassParseException(msg);
   }
 
-  public Match findMatch (String clsName) throws ClassFileException {
+  public ClassFileMatch findMatch (String clsName) throws ClassParseException {
     for (ClassFileContainer e : pathElements){
       byte[] data = e.getClassData(clsName);
       if (data != null){
         logger.fine("loading ", clsName, " from ", e.getName());
-        return new Match( e, data);
+        return new ClassFileMatch( clsName, e, data);
       }
     }
 
     return null;    
   }
 
-  public byte[] getClassData(String clsName) throws ClassFileException {
+  public byte[] getClassData(String clsName) throws ClassParseException {
     for (ClassFileContainer e : pathElements){
       byte[] data = e.getClassData(clsName);
       if (data != null){
@@ -152,6 +138,7 @@ public class ClassPath implements Restorable<ClassPath>{
     return null;
   }
 
+  // for test purposes
   public static void main(String[] args){
     String[] pe = args[0].split(":");
 
@@ -165,7 +152,7 @@ public class ClassPath implements Restorable<ClassPath>{
           //System.out.println("found classfile: " + b.length);
         }
 
-      } catch (ClassFileException cfx) {
+      } catch (ClassParseException cfx) {
         cfx.printStackTrace();
       }
     }
