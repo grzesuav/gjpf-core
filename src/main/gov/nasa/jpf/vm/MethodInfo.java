@@ -143,13 +143,8 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   /** used for native method parameter conversion (lazy evaluated) */
   protected byte[] argTypes = null;
   
-  static JVMInstructionFactory insnFactory;
-  
   static boolean init (Config config) {
-    insnFactory = config.getEssentialInstance("vm.insn_factory.class", JVMInstructionFactory.class);
-    
-    mthTable.clear();
-    
+    mthTable.clear();    
     return true;
   }
 
