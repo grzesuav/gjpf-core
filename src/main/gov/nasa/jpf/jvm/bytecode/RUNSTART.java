@@ -39,15 +39,12 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public class RUNSTART extends JVMInstruction {
 
-  public RUNSTART (MethodInfo runMth) {
-    this.mi = runMth;
-    this.insnIndex = -1;
-    this.position = -1;
+  public RUNSTART () {
   }
 
   public Instruction execute (ThreadInfo ti) {
-    // this insn is never stored in any MethodInfo
-    return mi.getInstruction(0);
+    // nothing here, we could have used a NOP
+    return getNext(ti);
   }
 
 

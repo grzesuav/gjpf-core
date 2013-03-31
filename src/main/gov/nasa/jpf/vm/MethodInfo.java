@@ -161,11 +161,6 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     }
   }
   
-  public static JVMInstructionFactory getInstructionFactory() {
-    // we clone so that instruction factories could have state
-    return (JVMInstructionFactory) insnFactory.clone();
-  }
-  
   public static MethodInfo create (String name, String signature, int modifiers){
     return new MethodInfo( name, signature, modifiers);
   }
@@ -379,34 +374,37 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     mi.thrownExceptionClassNames = null;
     mi.uniqueName = mi.name;
     mi.ci = ci;
-
-    JVMCodeBuilder cb = mi.createCodeBuilder();
-
+    
     if (isStatic()){
-      mi.modifiers |= Modifier.STATIC;
-
-      if (isClinit()) {
-        cb.invokeclinit(ci);
-      } else {
-        cb.invokestatic(cname, name, signature);
-      }
-    } else if (name.equals("<init>") || isPrivate()){
-      cb.invokespecial(cname, name, signature);
-    } else {
-      cb.invokevirtual(cname, name, signature);
+      mi.modifiers |= Modifier.STATIC;      
     }
-
-    cb.directcallreturn();
-    cb.installCode();
+    
+    ci.setDirectCallCode(this, mi);
 
     return mi;
   }
 
-  public JVMCodeBuilder createCodeBuilder(){
-    JVMInstructionFactory ifact = getInstructionFactory();
-    return new JVMCodeBuilder(ifact, null, this);
-  }
+  protected MethodInfo createRunStub (){
+    MethodInfo mi = new MethodInfo(DIRECT_CALL);
+    String cname = ci.getName();
 
+    mi.name = "[run]"; // + name; // + cname; // could maybe also include the called method, but keep it fast
+    mi.signature = "()V";
+    mi.genericSignature = "";
+    mi.maxLocals = 1;  // only this
+    mi.maxStack = 1;  // this
+    mi.localVars = EMPTY;
+    mi.lineNumbers = null;
+    mi.exceptionHandlers = null;
+    mi.thrownExceptionClassNames = null;
+    mi.uniqueName = mi.name;
+    mi.ci = ci;
+    
+    ci.setRunStartCode(this, mi);
+    
+    return mi;
+  }
+  
   /**
    * NOTE - this only works in conjunction with a special StackFrame,
    * the caller has to make sure the right operands are pushed for the call arguments!

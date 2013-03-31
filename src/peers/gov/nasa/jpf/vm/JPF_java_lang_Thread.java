@@ -211,12 +211,10 @@ public class JPF_java_lang_Thread extends NativePeer {
       // we do direct call run() invocation so that we have a well defined
       // exit point (DIRECTCALLRETURN) in case the thread is stopped or there is
       // a fail-safe UncaughtExceptionHandler set
-      MethodInfo runStub = miRun.createDirectCallStub("[run]");
+      MethodInfo runStub = miRun.createRunStub();
       DirectCallStackFrame runFrame = new DirectCallStackFrame(runStub);
       runFrame.pushRef(runnableRef);
-      // we need this in case of a synchronized run(), for which the invokes would
-      // always be the firstStepInsn
-      runFrame.setPC( MethodInfo.getInstructionFactory().runstart(runStub));
+      
       
       tiStartee.pushFrame(runFrame);
       tiStartee.setState(ThreadInfo.State.RUNNING);

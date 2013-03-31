@@ -1313,4 +1313,9 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
     pc++;
   }
 
+  public void runStart (MethodInfo mi){
+    add( insnFactory.runstart(mi));
+    pc++;
+  }
+  
 }

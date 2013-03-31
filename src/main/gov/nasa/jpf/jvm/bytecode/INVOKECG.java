@@ -20,6 +20,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.jvm.JVMInstructionFactory;
 import gov.nasa.jpf.util.Invocation;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MethodInfo;
@@ -65,7 +66,7 @@ public class INVOKECG extends JVMInstruction {
 
       Invocation call = cg.getNextChoice();
       MethodInfo callee = call.getMethodInfo();
-      gov.nasa.jpf.jvm.JVMInstructionFactory insnFactory = MethodInfo.getInstructionFactory();
+      JVMInstructionFactory insnFactory = JVMInstructionFactory.getFactory();
 
       String clsName = callee.getClassInfo().getName();
       String mthName = callee.getName();

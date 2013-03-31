@@ -25,6 +25,7 @@ import gov.nasa.jpf.vm.ClassParseException;
 import gov.nasa.jpf.vm.ClassParser;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.NativeMethodInfo;
 import java.lang.reflect.Modifier;
 
 /**
@@ -54,7 +55,7 @@ public class JVMClassInfo extends ClassInfo {
    * this needs to be in the VM specific ClassInfo because we need to create code
    */
   @Override
-  protected void createAnnotationValueGetterCode (MethodInfo pmi, FieldInfo fi){
+  protected void setAnnotationValueGetterCode (MethodInfo pmi, FieldInfo fi){
     JVMCodeBuilder cb = new JVMCodeBuilder( pmi);
 
     cb.aload(0);
@@ -72,6 +73,44 @@ public class JVMClassInfo extends ClassInfo {
     cb.installCode();
   }
   
+  @Override
+  protected void setDirectCallCode (MethodInfo miCallee, MethodInfo miStub){
+    JVMCodeBuilder cb = new JVMCodeBuilder( miStub);
+
+    if (miCallee.isStatic()){
+      if (miCallee.isClinit()) {
+        cb.invokeclinit(this);
+      } else {
+        cb.invokestatic( name, miCallee.getName(), miCallee.getSignature());
+      }
+    } else if (name.equals("<init>") || miCallee.isPrivate()){
+      cb.invokespecial( name, miCallee.getName(), miCallee.getSignature());
+    } else {
+      cb.invokevirtual( name, miCallee.getName(), miCallee.getSignature());
+    }
+
+    cb.directcallreturn();
+    cb.installCode();
+  }
+  
+  @Override
+  protected void setNativeCallCode (NativeMethodInfo miNative){
+    JVMCodeBuilder cb = new JVMCodeBuilder( miNative);
+    
+    cb.executenative(miNative);
+    cb.nativereturn();
+    cb.installCode();
+  }
+  
+  @Override
+  protected void setRunStartCode (MethodInfo miRun, MethodInfo miStub){
+    JVMCodeBuilder cb = new JVMCodeBuilder( miStub);
+    
+    cb.runStart( miStub);
+    cb.invokevirtual( name, miRun.getName(), miRun.getSignature());
+    cb.directcallreturn();
+    cb.installCode();    
+  }
   
   //--- for testing
   protected JVMClassInfo (ClassParser parser) throws ClassParseException {

@@ -70,12 +70,7 @@ public class NativeMethodInfo extends MethodInfo {
     this.peer = peer;
     this.mth = mth;
 
-    JVMCodeBuilder cb = createCodeBuilder();
- 
-    cb.executenative(this);
-    cb.nativereturn();
-
-    cb.installCode();
+    ci.setNativeCallCode(this);
   }
 
   public void replace( MethodInfo mi){

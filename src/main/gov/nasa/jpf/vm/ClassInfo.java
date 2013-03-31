@@ -552,7 +552,19 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     notifyClassLoaded();
   }
   
-  protected void createAnnotationValueGetterCode (MethodInfo pmi, FieldInfo fi){
+  protected void setAnnotationValueGetterCode (MethodInfo pmi, FieldInfo fi){
+    // to be overridden by VM specific class
+  }
+  
+  protected void setDirectCallCode (MethodInfo miCallee, MethodInfo miStub){
+    // to be overridden by VM specific class
+  }
+  
+  protected void setNativeCallCode (NativeMethodInfo miNative){
+    // to be overridden by VM specific class
+  }
+  
+  protected void setRunStartCode (MethodInfo miRun, MethodInfo miStub){
     // to be overridden by VM specific class
   }
   
@@ -598,7 +610,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       MethodInfo pmi = new MethodInfo(this, mname, mi.getSignature(), Modifier.PUBLIC, 1, 2);
       pmi.setGenericSignature(genericSignature);
       
-      createAnnotationValueGetterCode( pmi, fi);
+      setAnnotationValueGetterCode( pmi, fi);
       methods.put(pmi.getUniqueName(), pmi);
     }
 
