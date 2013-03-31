@@ -19,12 +19,8 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
-import gov.nasa.jpf.JPFException;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -63,7 +59,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
   protected ClassInfo charArrayClassInfo;
 
   protected int unCachedClasses = 10;
-
+  
   protected SystemClassLoaderInfo (VM vm, int appIndex){
      super(vm, MJIEnv.NULL, computeSystemClassPath(vm.getConfig()), null);
      
@@ -75,7 +71,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
      // be recycled.
      this.id = computeId(appIndex); // has to be set here so that ClassInfos have proper uniqueIds
   }
-  
+    
   /**
    * Builds the classpath for our system class loaders which resemblances the 
    * location for classes within,

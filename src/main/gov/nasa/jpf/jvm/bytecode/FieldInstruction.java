@@ -84,6 +84,9 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
      return className;
   }
 
+  public String getFieldName(){
+	  return fname;
+  }
   /**
    * only defined in instructionExecuted() notification context
    */

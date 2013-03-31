@@ -163,7 +163,6 @@ public class ClassLoaderInfo
     ClassLoaderInfo cl = getCurrentSystemClassLoader();
     return cl.getResolvedClassInfo(clsName);
   }
-
   
   protected ClassLoaderInfo(VM vm, int objRef, ClassPath cp, ClassLoaderInfo parent) {
     resolvedClasses = new HashMap<String,ClassInfo>();
