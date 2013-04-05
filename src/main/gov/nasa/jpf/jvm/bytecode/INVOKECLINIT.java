@@ -32,7 +32,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * the VM. The most obvious difference is that <clinit> execution does not trigger
  * class initialization.
  * A more subtle difference is that we save a wait() - if a class
- * is concurrently initialized, both execute INVOKECLINIT (i.e. compete and sync for/on
+ * is concurrently initialized, both enter INVOKECLINIT (i.e. compete and sync for/on
  * the class object lock), but once the second thread gets resumed and detects that the
  * class is now initialized (by the first thread), it skips the method execution and
  * returns right away (after deregistering as a lock contender). That's kind of hackish,
@@ -65,17 +65,16 @@ public class INVOKECLINIT extends INVOKESTATIC {
       }
       
     } else { // re-execution after being blocked
-      // if we got here, we can execute, and have the lock but there still might have been
+      // if we got here, we can enter, and have the lock but there still might have been
       // another thread that passed us with the clinit
       if (!ci.needsInitialization()) {
         return getNext();
       }
     }
     
-    // enter the method body, return its first insn
-    // (this would take the lock, reset the lockRef etc., so make sure all these
-    // side effects are dealt with if we bail out)
-    return ti.execute(callee);
+    setupCallee( ti, callee); // this creates, initializes and pushes the callee StackFrame
+
+    return ti.getPC(); // we can't just return the first callee insn if a listener throws an exception
   }
 
   public boolean isExtendedInstruction() {

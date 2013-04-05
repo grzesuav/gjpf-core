@@ -18,15 +18,11 @@
 //
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.jvm.JVMInstructionFactory;
-import gov.nasa.jpf.jvm.JVMCodeBuilder;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.jvm.ClassFile;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
-import gov.nasa.jpf.util.ObjectList;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -352,6 +348,10 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   
   public int getGlobalId() {
     return globalId;
+  }
+  
+  public StackFrame createStackFrame(){
+    return new StackFrame(this);
   }
   
   protected MethodInfo createCallStub (String originator, int id){
@@ -926,12 +926,18 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     return Types.getNumberOfStackSlots(signature, isStatic()); // includes return type
   }
 
-  public Instruction getLastInsn() {
-    if (code == null){
-      return null;
+  public Instruction getFirstInsn(){
+    if (code != null){
+      return code[0];
     }
-    
-    return code[code.length-1];
+    return null;    
+  }
+  
+  public Instruction getLastInsn() {
+    if (code != null){
+      return code[code.length-1];
+    }
+    return null;
   }
 
   /**

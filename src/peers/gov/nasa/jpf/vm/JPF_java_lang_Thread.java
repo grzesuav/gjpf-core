@@ -199,7 +199,7 @@ public class JPF_java_lang_Thread extends NativePeer {
       //vm.registerThread(tiStartee);
       
       // we don't do this during thread creation because the thread isn't in
-      // the GC root set before it actually starts to execute. Until then,
+      // the GC root set before it actually starts to enter. Until then,
       // it's just an ordinary object
 
       vm.notifyThreadStarted(tiStartee);

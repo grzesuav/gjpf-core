@@ -333,7 +333,7 @@ public class Perturbator extends ListenerAdapter {
   }
   
   protected boolean isRelevantCallLocation (Instruction invokeInsn, Perturbation p) {
-  	// For parameter perturbation, we are about to execute a method
+  	// For parameter perturbation, we are about to enter a method
   	// and hence can directly use the invoke instruction to get the file
   	// location of the call
   	if (p.sref == null)
@@ -353,7 +353,7 @@ public class Perturbator extends ListenerAdapter {
         if (isMatchingInstructionLocation(e,insnToExecute)) {
           if (!ti.isFirstStepInsn()){
             // save the current stackframe so that we can restore it before
-            // we re-execute
+            // we re-enter
             savedFrame = ti.getTopFrame().clone();
           }
         }
@@ -367,16 +367,16 @@ public class Perturbator extends ListenerAdapter {
         SystemState ss = vm.getSystemState();
 
         if (!ti.isFirstStepInsn()){
-          // first time, create & set CG but DO NOT execute the insn since it would
+          // first time, create & set CG but DO NOT enter the insn since it would
           // pop the callee stackframe and modify the caller stackframe
-          // note that we don't need to execute in order to get the perturbation base
+          // note that we don't need to enter in order to get the perturbation base
           // value because its already on the operand stack
           ChoiceGenerator<?> cg = e.perturbator.createChoiceGenerator("perturbReturn", ti.getTopFrame(), new Integer(0));
           if (ss.setNextChoiceGenerator(cg)){
             ti.skipInstruction(insnToExecute);
           }
         } else {
-          // re-executing, modify the operand stack top and execute
+          // re-executing, modify the operand stack top and enter
           ChoiceGenerator<?> cg = ss.getCurrentChoiceGenerator("perturbReturn", e.cgType);
           if (cg != null) {
             e.perturbator.perturb(cg, ti.getTopFrame());
@@ -398,7 +398,7 @@ public class Perturbator extends ListenerAdapter {
         	// to be executed with the parameter choices we like instead of the ones that
         	// were passed in
           ChoiceGenerator<?> cg = e.perturbator.createChoiceGenerator(mi.getFullName(), ti.getTopFrame(), mi);
-          // check if the cg returned is null. If it is then we don't want to execute this
+          // check if the cg returned is null. If it is then we don't want to enter this
           // method as we are done exploring it
           if (cg != null) {
             log.info("--- Creating choice generator: " + mi.getFullName() + " for thread: " + ti);
@@ -407,7 +407,7 @@ public class Perturbator extends ListenerAdapter {
             }
           }
         } else {
-          // re-executing, modify the operands on stack and execute
+          // re-executing, modify the operands on stack and enter
           ChoiceGenerator<?> cg = ss.getChoiceGenerator(mi.getFullName());
           if (cg != null) {
             log.info("--- Using choice generator: " + mi.getFullName() + " in thread: " + ti);

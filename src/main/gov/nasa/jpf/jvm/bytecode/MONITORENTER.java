@@ -37,7 +37,7 @@ public class MONITORENTER extends LockInstruction {
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getTopFrame();
 
-    int objref = frame.peek();      // Don't pop yet before we know we really execute
+    int objref = frame.peek();      // Don't pop yet before we know we really enter
     if (objref == -1){
       return ti.createAndThrowException("java.lang.NullPointerException", "Attempt to acquire lock for null object");
     }

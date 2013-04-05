@@ -61,21 +61,23 @@ public class INVOKESPECIAL extends InstanceInvocation {
       return ti.getPC();
     }
 
-    MethodInfo mi = getInvokedMethod(ti);
+    MethodInfo callee = getInvokedMethod(ti);
 
-    if (mi == null){
+    if (callee == null){
       return ti.createAndThrowException("java.lang.NoSuchMethodException", "Calling " + cname + '.' + mname);
     }
 
     ElementInfo ei = ti.getElementInfo(objRef);
 
-    if (mi.isSynchronized()){
+    if (callee.isSynchronized()){
       if (checkSyncCG(ei, ti)){
         return this;
       }
     }
 
-    return ti.execute(mi);
+    setupCallee( ti, callee); // this creates, initializes and pushes the callee StackFrame
+
+    return ti.getPC(); // we can't just return the first callee insn if a listener throws an exception
   }
 
   /**

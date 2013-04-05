@@ -1612,7 +1612,7 @@ public abstract class VM {
 
       backtracker.pushKernelState();
 
-      // cache this before we execute (and increment) the next insn(s)
+      // cache this before we enter (and increment) the next insn(s)
       lastTrailInfo = path.getLast();
 
       try {

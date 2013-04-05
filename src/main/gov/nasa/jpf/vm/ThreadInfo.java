@@ -49,7 +49,7 @@ import java.util.logging.Logger;
  * in this data structure.
  *
  * Note that we preserve identities according to their associated java.lang.Thread object
- * (objRef). This esp. means along the same path, a ThreadInfo reference
+ * (oref). This esp. means along the same path, a ThreadInfo reference
  * is kept invariant
  *
  * <2do> remove EXECUTENATIVE,INVOKESTATIC .bytecode dependencies
@@ -214,7 +214,7 @@ public class ThreadInfo extends InfoObject
   /** the last returned direct call frame */
   protected StackFrame returnedDirectCall;
 
-  /** the next insn to execute (null prior to execution) */
+  /** the next insn to enter (null prior to execution) */
   protected Instruction nextPc;
 
   /**
@@ -252,7 +252,7 @@ public class ThreadInfo extends InfoObject
 
 
   static class TiMemento implements Memento<ThreadInfo> {
-    // note that we don't have to store the invariants (id, objRef, runnableRef, ci)
+    // note that we don't have to store the invariants (id, oref, runnableRef, ci)
     ThreadInfo ti;
 
     ThreadData threadData;
@@ -383,7 +383,7 @@ public class ThreadInfo extends InfoObject
   // <2do> this is going to be a configurable factory method  
   
   /*
-   * search global cache for dense ThreadInfo ids. We could just use objRef since those are
+   * search global cache for dense ThreadInfo ids. We could just use oref since those are
    * guaranteed to be global, but not dense. The ids are search global, i.e. there is no
    * need to store/restore, but it needs to be (re)set during init()  
    */
@@ -464,7 +464,7 @@ public class ThreadInfo extends InfoObject
 
     threadData.name = vm.getElementInfo(nameRef).asString();
 
-    // note that we have to register here so that subsequent native peer calls can use the objRef
+    // note that we have to register here so that subsequent native peer calls can use the oref
     // to lookup the ThreadInfo. This is a bit premature since the thread is not runnable yet,
     // but chances are it will be started soon, so we don't waste another data structure to do the mapping
     vm.registerThread(this);
@@ -522,8 +522,8 @@ public class ThreadInfo extends InfoObject
   /**
    * answers if is this the first instruction within the current transition.
    * This is mostly used to tell the top- from the bottom-half of a native method
-   * or Instruction.execute(), so that only one (the top half) registers the CG
-   * (top = register CG and reschedule insn, bottom = re-execute insn and process choice
+   * or Instruction.enter(), so that only one (the top half) registers the CG
+   * (top = register CG and reschedule insn, bottom = re-enter insn and process choice
    * at beginning of new transition)
    * 
    * This can be used in both pre- and post-exec notification listeners, 
@@ -534,7 +534,7 @@ public class ThreadInfo extends InfoObject
    * which is:
    *   nextPc = null
    *   notify executeInstruction
-   *   nextPc = insn.execute
+   *   nextPc = insn.enter
    *   increment executedInstructions
    *   notify instructionExecuted
    */
@@ -542,13 +542,13 @@ public class ThreadInfo extends InfoObject
     int nInsn = executedInstructions;
     
     if (nInsn == 0) {
-      // that would be a break in execute() or instructionExecuted()
+      // that would be a break in enter() or instructionExecuted()
       return true;
       
     } else if (nInsn == 1 && nextPc != null) {
-      // that is for setting the CG in executeInsn or execute, and then testing in
+      // that is for setting the CG in executeInsn or enter, and then testing in
       // instructionExecuted. Note that nextPc is reset before pre-exec notification
-      // and hence should only be non-null from insn.execute() up to the next
+      // and hence should only be non-null from insn.enter() up to the next
       // ThreadInfo.executeInstruction()
       return true;
     }
@@ -558,7 +558,7 @@ public class ThreadInfo extends InfoObject
 
   /**
    * get the number of instructions executed in the current transition. This
-   * gets incremented after calling Instruction.execute(), i.e. before
+   * gets incremented after calling Instruction.enter(), i.e. before
    * notifying instructionExecuted() listeners
    */
   public int getExecutedInstructions(){
@@ -1494,7 +1494,7 @@ public class ThreadInfo extends InfoObject
 
   /**
    * get a stack snapshot that consists of an array of {mthId,pc} pairs.
-   * strip stackframes that execute instance methods of the exception object
+   * strip stackframes that enter instance methods of the exception object
    */
   public int[] getSnapshot (int xObjRef) {
     StackFrame frame = top;
@@ -1779,7 +1779,7 @@ public class ThreadInfo extends InfoObject
   }
 
   /**
-   * execute instructions until there is none left or somebody breaks
+   * enter instructions until there is none left or somebody breaks
    * the transition (e.g. by registering a CG)
    */
   protected void executeTransition (SystemState ss) throws JPFException {
@@ -1846,7 +1846,7 @@ public class ThreadInfo extends InfoObject
     vm.notifyExecuteInstruction(this, pc);
 
     if (!skipInstruction) {
-        // execute the next bytecode
+        // enter the next bytecode
         try {
           nextPc = pc.execute(this);
         } catch (ClassInfoException cie) {
@@ -1864,10 +1864,10 @@ public class ThreadInfo extends InfoObject
     // here we have our post exec bytecode exec observation point
     vm.notifyInstructionExecuted(this, pc, nextPc);
     
-    // clean up whatever might have been stored by execute
+    // clean up whatever might have been stored by enter
     pc.cleanupTransients();
 
-    // set+return the next insn to execute if we did not return from the last stack frame.
+    // set+return the next insn to enter if we did not return from the last stack frame.
     // Note that 'nextPc' might have been set by a listener, and/or 'top' might have
     // been changed by executing an invoke, return or throw (handler), or by
     // pushing overlay calls on the stack
@@ -1881,7 +1881,7 @@ public class ThreadInfo extends InfoObject
   }
 
   /**
-   * execute instruction hidden from any listeners, and do not
+   * enter instruction hidden from any listeners, and do not
    * record it in the path
    */
   public Instruction executeInstructionHidden () {
@@ -1889,7 +1889,7 @@ public class ThreadInfo extends InfoObject
     SystemState ss = vm.getSystemState();
     KernelState ks = vm.getKernelState();
 
-    nextPc = null; // reset in case pc.execute blows (this could be behind an exception firewall)
+    nextPc = null; // reset in case pc.enter blows (this could be behind an exception firewall)
 
     if (log.isLoggable(Level.FINE)) {
       log.fine( pc.getMethodInfo().getFullName() + " " + pc.getPosition() + " : " + pc);
@@ -1910,7 +1910,7 @@ public class ThreadInfo extends InfoObject
   }
 
   /**
-   * is this after calling Instruction.execute()
+   * is this after calling Instruction.enter()
    * used by instructions and listeners
    */
   public boolean isPostExec() {
@@ -1955,7 +1955,7 @@ public class ThreadInfo extends InfoObject
   }
 
   /**
-   * explicitly set the next insn to execute. To be used by listeners that
+   * explicitly set the next insn to enter. To be used by listeners that
    * replace bytecode exec (during 'executeInstruction' notification
    *
    * Note this is dangerous because you have to make sure the operand stack is
@@ -2006,14 +2006,14 @@ public class ThreadInfo extends InfoObject
   }
 
   /**
-   * execute method atomically, but also hide it from listeners and do NOT add
+   * enter method atomically, but also hide it from listeners and do NOT add
    * executed instructions to the path.
    *
    * this can be even more confusing than executeMethodAtomic(), since
    * nothing prevents such a method from changing the program state, and we
    * wouldn't know for what reason by looking at the trace
    *
-   * this method should only be used if we have to execute test application code
+   * this method should only be used if we have to enter test application code
    * like hashCode() or equals() from native code, e.g. to silently check property
    * violations
    *
@@ -2090,40 +2090,33 @@ public class ThreadInfo extends InfoObject
     return ei;
   }
   
-  public boolean canEnter (MethodInfo mi) {
-    if (mi.isSynchronized()) {
-      ElementInfo ei = getBlockedObject(mi, true, false);
-
-      // <?> pcm - the other way round would be intuitive
-      return ei.canLock(this);
-    }
-
-    return true;
-  }
-
+  //--- call processing
+  
   /**
-   * locking, stackframe push and enter notification
+   * note - this assumes the stackframe of the method to enter is already initialized and on top (pushed)
    */
-  public void enter (MethodInfo mi) {
-    if (mi.isSynchronized()) {
-      ElementInfo ei = getBlockedObject(mi, true, true);
+  public void enter (){
+    MethodInfo mi = top.getMethodInfo();
+    
+    if (mi.isSynchronized()){
+      int oref = mi.isStatic() ?  mi.getClassInfo().getClassObjectRef() : top.getThis();
+      ElementInfo ei = getModifiableElementInfo( oref);
+      
       ei.lock(this);
-
+      
       if (mi.isClinit()) {
         mi.getClassInfo().setInitializing(this);
       }
     }
 
-    // we need to do this after locking
-    pushFrame( createStackFrame(mi));
-
     vm.notifyMethodEntered(this, mi);
   }
-  
+
   /**
-   * unlocking and exit notification
+   * note - this assumes the stackframe is still on top (not yet popped)
    */
-  public void leave (MethodInfo mi) {
+  public void leave(){
+    MethodInfo mi = top.getMethodInfo();
     
     // <2do> - that's not really enough, we might have suspicious bytecode that fails
     // to release locks acquired by monitor_enter (e.g. by not having a handler that
@@ -2133,8 +2126,10 @@ public class ThreadInfo extends InfoObject
     // VMs are allowed to silently fix this, so it might run on some and fail on others)
     
     if (mi.isSynchronized()) {
-      ElementInfo ei = getBlockedObject(mi, false, true);
+      int oref = mi.isStatic() ?  mi.getClassInfo().getClassObjectRef() : top.getThis();
+      ElementInfo ei = getElementInfo( oref);
       if (ei.isLocked()){
+        ei = ei.getModifiableInstance();
         ei.unlock(this);
       }
       
@@ -2150,31 +2145,6 @@ public class ThreadInfo extends InfoObject
     vm.notifyMethodExited(this, mi);
   }
 
-  /**
-   * this needs to be here because ThreadInfo should be the factory for StackFrames
-   * (e.g. because of Dalvik)
-   */
-  protected StackFrame createStackFrame (MethodInfo mi){
-    // this is only the lesser of two evils - we could do multi-method dispatch
-    // through an additional MethodInfo indirection, but we want to keep StackFrame
-    // creation within one overridable method
-    if (mi instanceof NativeMethodInfo){
-      NativeMethodInfo nmi = (NativeMethodInfo)mi;
-      Object[] args = nmi.getArguments(this);
-      return new NativeStackFrame( nmi, top, args);
-      
-    } else {
-      return new StackFrame(mi, top);
-    }
-  }
-  
-  /**
-   * execute  method invocation
-   */
-  public Instruction execute (MethodInfo mi) {
-    enter(mi);
-    return getPC();
-  }
   
   /**
    * this should only be called from the top half of the last DIRECTCALLRETURN of
@@ -2534,7 +2504,7 @@ public class ThreadInfo extends InfoObject
       // we only get here if there was a CG in a native method and we might
       // have to reacquire a lock to go on
 
-      // <2do> it would be better if we could avoid to execute the native method
+      // <2do> it would be better if we could avoid to enter the native method
       // since it might have side effects like overwriting the exception or
       // doing roundtrips in its bottom half, but we don't know which lock that
       // is (lockRef might be already reset)
@@ -2622,7 +2592,7 @@ public class ThreadInfo extends InfoObject
 
     if (handlerFrame == null) {
       // we still have to check if there is a Thread.UncaughtExceptionHandler in effect,
-      // and if we already execute within one, in which case we don't reenter it
+      // and if we already enter within one, in which case we don't reenter it
       if (!ignoreUncaughtHandlers && !isUncaughtHandlerOnStack()) {
         // we use a direct call instead of exception handlers within the run()/main()
         // direct call methods because we want to preserve the whole stack in case
@@ -2813,8 +2783,7 @@ public class ThreadInfo extends InfoObject
   
   protected void unwindTo (StackFrame newTopFrame){
     for (StackFrame frame = top; (frame != null) && (frame != newTopFrame); frame = frame.getPrevious()) {
-      MethodInfo mi = frame.getMethodInfo();
-      leave(mi); // that takes care of releasing locks
+      leave(); // that takes care of releasing locks
       vm.notifyExceptionBailout(this); // notify before we pop the frame
       popFrame();
     }
@@ -2824,8 +2793,7 @@ public class ThreadInfo extends InfoObject
     StackFrame frame;
 
     for (frame = top; frame.getPrevious() != null; frame = frame.getPrevious()) {
-      MethodInfo mi = frame.getMethodInfo();
-      leave(mi); // that takes care of releasing locks
+      leave(); // that takes care of releasing locks
       vm.notifyExceptionBailout(this); // notify before we pop the frame
       popFrame();
     }
@@ -3050,7 +3018,7 @@ public class ThreadInfo extends InfoObject
     return threadData.isDaemon;
   }
 
-  MJIEnv getMJIEnv () {
+  public MJIEnv getMJIEnv () {
     return env;
   }
   

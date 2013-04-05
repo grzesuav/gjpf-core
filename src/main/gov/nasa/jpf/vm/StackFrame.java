@@ -36,7 +36,7 @@ import java.util.Iterator;
 
 
 /**
- * Describes a stack frame.
+ * Describes callerSlots stack frame.
  *
  * Java methods always have bounded local and operand stack sizes, computed
  * at compile time, stored in the classfile, and checked at runtime by the
@@ -58,7 +58,7 @@ public class StackFrame implements Cloneable {
   /**
    * this StackFrame is not allowed to be modified anymore because it has been state stored.
    * Set during state storage and checked upon each modification, causing exceptions on attempts
-   * to modify a frozen instance. The flag is reset in clones
+   * to modify callerSlots frozen instance. The flag is reset in clones
    */
   public static final int   ATTR_IS_FROZEN     = 0x100;
   
@@ -99,7 +99,7 @@ public class StackFrame implements Cloneable {
    *
    * these are set on demand
    */
-  protected Object[] attrs = null;  // the combined user-defined a (set on demand)
+  protected Object[] attrs = null;  // the combined user-defined callerSlots (set on demand)
 
   protected Instruction pc;         // the next insn to execute (program counter)
   protected MethodInfo mi;          // which method is executed in this frame
@@ -107,46 +107,18 @@ public class StackFrame implements Cloneable {
   static final int[] EMPTY_ARRAY = new int[0];
   static final FixedBitSet EMPTY_BITSET = new BitSet64();
 
-  /**
-   * Creates a new stack frame for a given method
-   */
-  public StackFrame (MethodInfo m, StackFrame caller) {
-    mi = m;
+  
+  public StackFrame (MethodInfo callee){
+    this.mi = callee;
     pc = mi.getInstruction(0);
 
-    stackBase = m.getMaxLocals();
+    stackBase = callee.getMaxLocals();
     top = stackBase-1;
 
-    slots = new int[stackBase + m.getMaxStack()];
+    slots = new int[stackBase + callee.getMaxStack()];
     isRef = createReferenceMap(slots.length);
-    // a are initialized on demand
-
-    int nargs = mi.getArgumentsSize();
-
-    // copy the args, if any
-    if ((nargs > 0) && (caller != null)) {
-      int[] a = caller.slots;
-      FixedBitSet r = caller.isRef;
-
-      for (int i=0, j=caller.top-nargs+1; i<nargs; i++, j++) {
-        slots[i] = a[j];
-        isRef.set(i, r.get(j));
-      }
-
-      if (!mi.isStatic()) { // according to the spec, this is guaranteed upon entry
-        thisRef = slots[0];
-        isRef.set(0);
-      }
-
-      if (caller.attrs != null){
-        attrs = new Object[slots.length];
-
-        Object[] oa = caller.attrs;
-        for (int i=0, j=caller.top-nargs+1; i<nargs; i++, j++) {
-          attrs[i] = oa[j];
-        }
-      }
-    }
+    
+    // slot and attrs init is responsibility of caller
   }
 
   protected StackFrame (MethodInfo m, int nLocals, int nOperands){
@@ -168,17 +140,6 @@ public class StackFrame implements Cloneable {
     }
   }
 
-  public StackFrame (MethodInfo m, int objRef) {
-    this(m, null);
-
-    // maybe we should check here if this is an instance method
-
-    thisRef = objRef;
-
-    slots[0] = thisRef;
-    isRef.set(0);
-  }
-
   /**
    * Creates an empty stack frame. Used by clone.
    */
@@ -193,8 +154,8 @@ public class StackFrame implements Cloneable {
   }  
   
   /**
-   * creates a dummy Stackframe for testing of operand/local operations
-   * NOTE - TESTING ONLY! this does not have a MethodInfo
+   * creates callerSlots dummy Stackframe for testing of operand/local operations
+   * NOTE - TESTING ONLY! this does not have callerSlots MethodInfo
    */
   public StackFrame (int nLocals, int nOperands){
     stackBase = nLocals;
@@ -326,7 +287,7 @@ public class StackFrame implements Cloneable {
   }
 
   /**
-   * does any of the 'nTopSlots' hold a reference value of 'objRef'
+   * does any of the 'nTopSlots' hold callerSlots reference value of 'objRef'
    * 'nTopSlots' is usually obtained from MethodInfo.getNumberOfCallerStackSlots()
    */
   public boolean includesReferenceOperand (int nTopSlots, int objRef){
@@ -341,7 +302,7 @@ public class StackFrame implements Cloneable {
   }
 
   /**
-   * does any of the operand slots hold a reference value of 'objRef'
+   * does any of the operand slots hold callerSlots reference value of 'objRef'
    */
   public boolean includesReferenceOperand (int objRef){
 
@@ -356,7 +317,7 @@ public class StackFrame implements Cloneable {
 
   /**
    * is this StackFrame modifying the KernelState
-   * this is true unless this is a NativeStackFrame
+   * this is true unless this is callerSlots NativeStackFrame
    */
   public boolean modifiesState() {
     return true;
@@ -422,7 +383,7 @@ public class StackFrame implements Cloneable {
   
  /**
    * this returns all of them - use either if you know there will be only
-   * one attribute at a time, or check/process result with ObjectList
+   * one attribute at callerSlots time, or check/process result with ObjectList
    */
   public Object getObjectAttr(){
     return frameAttr;
@@ -487,7 +448,7 @@ public class StackFrame implements Cloneable {
   
   /**
    * this returns all of them - use either if you know there will be only
-   * one attribute at a time, or check/process result with ObjectList
+   * one attribute at callerSlots time, or check/process result with ObjectList
    */
   public Object getOperandAttr () {
     if ((top >= stackBase) && (attrs != null)){
@@ -498,9 +459,9 @@ public class StackFrame implements Cloneable {
 
   /**
    * this replaces all of them - use only if you know 
-   *  - there will be only one attribute at a time
-   *  - you obtained the value you set by a previous getXAttr()
-   *  - you constructed a multi value list with ObjectList.createList()
+   *  - there will be only one attribute at callerSlots time
+   *  - you obtained the value you set by callerSlots previous getXAttr()
+   *  - you constructed callerSlots multi value list with ObjectList.createList()
    */
   public void setOperandAttr (Object a){
     assert (top >= stackBase);
@@ -590,7 +551,7 @@ public class StackFrame implements Cloneable {
   
   /**
    * this returns all of them - use either if you know there will be only
-   * one attribute at a time, or check/process result with ObjectList
+   * one attribute at callerSlots time, or check/process result with ObjectList
    */
   public Object getOperandAttr (int offset) {
     int i = top-offset;
@@ -604,9 +565,9 @@ public class StackFrame implements Cloneable {
 
   /**
    * this replaces all of them - use only if you know 
-   *  - there will be only one attribute at a time
-   *  - you obtained the value you set by a previous getXAttr()
-   *  - you constructed a multi value list with ObjectList.createList()
+   *  - there will be only one attribute at callerSlots time
+   *  - you obtained the value you set by callerSlots previous getXAttr()
+   *  - you constructed callerSlots multi value list with ObjectList.createList()
    */  
   public void setOperandAttr (int offset, Object a){
     int i = top-offset;
@@ -695,7 +656,7 @@ public class StackFrame implements Cloneable {
   
   /**
    * this returns all of them - use either if you know there will be only
-   * one attribute at a time, or check/process result with ObjectList
+   * one attribute at callerSlots time, or check/process result with ObjectList
    */
   public Object getLongOperandAttr () {
     return getOperandAttr(1);
@@ -703,9 +664,9 @@ public class StackFrame implements Cloneable {
 
   /**
    * this replaces all of them - use only if you know 
-   *  - there will be only one attribute at a time
-   *  - you obtained the value you set by a previous getXAttr()
-   *  - you constructed a multi value list with ObjectList.createList()
+   *  - there will be only one attribute at callerSlots time
+   *  - you obtained the value you set by callerSlots previous getXAttr()
+   *  - you constructed callerSlots multi value list with ObjectList.createList()
    */  
   public void setLongOperandAttr (Object a){
     setOperandAttr(1, a);
@@ -761,7 +722,7 @@ public class StackFrame implements Cloneable {
 
   /**
    * this returns all of them - use either if you know there will be only
-   * one attribute at a time, or check/process result with ObjectList
+   * one attribute at callerSlots time, or check/process result with ObjectList
    */
   public Object getLocalAttr (int index){
     assert index < stackBase;
@@ -773,9 +734,9 @@ public class StackFrame implements Cloneable {
       
   /**
    * this replaces all of them - use only if you know 
-   *  - there will be only one attribute at a time
-   *  - you obtained the value you set by a previous getXAttr()
-   *  - you constructed a multi value list with ObjectList.createList()
+   *  - there will be only one attribute at callerSlots time
+   *  - you obtained the value you set by callerSlots previous getXAttr()
+   *  - you constructed callerSlots multi value list with ObjectList.createList()
    */  
   public void setLocalAttr (int index, Object a) {
     assert index < stackBase;
@@ -867,8 +828,8 @@ public class StackFrame implements Cloneable {
    * you have to retrieve values, use the ObjectList APIs
    * 
    * this is here (and not in ThreadInfo) because we might call it
-   * on a cached/cloned StackFrame (caller stack might be already
-   * modified, e.g. for a native method).
+   * on callerSlots cached/cloned StackFrame (caller stack might be already
+   * modified, e.g. for callerSlots native method).
    * to be used from listeners.
    */
   public Object[] getArgumentAttrs (MethodInfo miCallee) {
@@ -998,12 +959,36 @@ public class StackFrame implements Cloneable {
   }
 
 
-  /**
-   * use with extreme care - don't modify
+  //--- use with extreme care - don't modify outside of StackFrame construction. THIS IS ONLY FOR INTERNAL USE
+  /*
+   * ths main reason for breaking encapsulation with these methods is that we need an API that allows efficient
+   * initialization of slots from VM mode dependent invoke instructions. Argument passing differs between VMs
    */
   public int[] getSlots () {
     return slots; // we should probably clone
   }
+  public FixedBitSet getReferenceMap(){
+    return isRef;
+  }
+  public Object[] getSlotAttrs(){
+    return attrs;
+  }
+  public Object getSlotAttr (int i){
+    if (attrs != null){
+      return attrs[i];
+    }
+    return null;
+  }
+  public void setSlotAttr (int i, Object a){
+    if (attrs == null){
+      attrs = new Object[slots.length];
+    }
+    attrs[i] = a;
+  }
+  public void setThis (int objRef){
+    thisRef = objRef;
+  }
+  
 
   public void visitReferenceSlots (ReferenceProcessor visitor){
     for (int i=isRef.nextSetBit(0); i>=0 && i<=top; i=isRef.nextSetBit(i+1)){
@@ -1137,7 +1122,7 @@ public class StackFrame implements Cloneable {
     top = stackBase-1;
   }
   
-  // this is a deep copy
+  // this is callerSlots deep copy
   public StackFrame clone () {
     try {
       StackFrame sf = (StackFrame) super.clone();
@@ -1967,7 +1952,7 @@ public class StackFrame implements Cloneable {
     }
   }
 
-  // return the value of a variable given the name
+  // return the value of callerSlots variable given the name
   public int getLocalVariableSlotIndex (String name) {
     LocalVarInfo lv = mi.getLocalVar(name, pc.getPosition());
 

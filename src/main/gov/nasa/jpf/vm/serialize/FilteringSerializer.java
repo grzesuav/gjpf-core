@@ -175,7 +175,7 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
 
   protected void initReferenceQueue() {
     // note - this assumes all heap objects are in an unmarked state, but this
-    // is true if we execute outside the gc
+    // is true if we enter outside the gc
 
     if (refQueue == null){
       refQueue = new ArrayObjectQueue<ElementInfo>();

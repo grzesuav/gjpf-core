@@ -204,7 +204,7 @@ public class JPF_gov_nasa_jpf_test_basic_MJITest extends NativePeer {
   }
 
   /**
-   * this shows how to synchronously JPF-execute a method from native peer or
+   * this shows how to synchronously JPF-enter a method from native peer or
    * listener code
    */
   @MJI

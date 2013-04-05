@@ -19,7 +19,10 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
@@ -39,7 +42,7 @@ public abstract class InstanceInvocation extends InvokeInstruction {
       // we have to dig out the 'this' reference from the callers stack
       return ti.getCalleeThis( getArgSize());
     } else {
-      // execute() cached it
+      // enter() cached it
       return lastObj;
     }
   }

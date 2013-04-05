@@ -32,7 +32,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
 {
   /**
    * this is required for package external derived GET/PUTFIELDS that
-   * replace execute().
+   * replace enter().
    *
    * USE WITH CARE, AND ONLY FROM DERIVED CLASSES
    */
@@ -156,7 +156,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
 
   /**
    * this one can be used from a choiceGeneratorSet() or executeInstruction() context, since
-   * it peeks 'this' from the operand stack (execute didn't pop the value yet)
+   * it peeks 'this' from the operand stack (enter didn't pop the value yet)
    * it' less efficient than getLastElementInfo() from a instructionExecuted context
    */
   public abstract ElementInfo peekElementInfo(ThreadInfo ti);

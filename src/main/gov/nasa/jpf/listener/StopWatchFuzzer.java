@@ -99,7 +99,7 @@ public class StopWatchFuzzer extends ListenerAdapter {
       // check if any of the operands have TimeVal attributes
       // attributes are stored on the first slot of a long val
       if (frame.hasOperandAttr(1, TimeVal.class) || frame.hasOperandAttr(3, TimeVal.class)){      
-        // execute insn (this pops the 4 top operand slots and pushes the long result
+        // enter insn (this pops the 4 top operand slots and pushes the long result
         ti.skipInstruction(insnToExecute.execute(ti));
       
         // propagate TimeVal attr, now we need a modifiable frame

@@ -74,7 +74,7 @@ public class SkipInstructionTest extends TestJPF {
   }
   
   //--- replacing method execution
-  // this is not using skipInstruction but is setting the next one to execute, which
+  // this is not using skipInstruction but is setting the next one to enter, which
   // means it can skip over a whole bunch of things. The use that comes to mind is to
   // skip over method bodies, but still preserve the invoke processing so that we
   // preserve the locking/sync (which we otherwise would have to do explicitly from

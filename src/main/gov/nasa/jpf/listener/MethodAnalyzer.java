@@ -53,8 +53,8 @@ public class MethodAnalyzer extends ListenerAdapter {
                 EXECUTE (" - "),              // method entered method after transition break
                 CALL_EXECUTE (">- "),         // call & enter within same transition
                 RETURN ("  <"),               // method returned
-                EXEC_RETURN (" -<"),          // execute & return in consecutive ops
-                CALL_EXEC_RETURN (">-<");     // call & execute & return in consecutive ops
+                EXEC_RETURN (" -<"),          // enter & return in consecutive ops
+                CALL_EXEC_RETURN (">-<");     // call & enter & return in consecutive ops
     String code;
     OpType (String code){ this.code = code; }
   };

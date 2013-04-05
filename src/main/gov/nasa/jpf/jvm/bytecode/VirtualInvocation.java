@@ -23,6 +23,7 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 
@@ -51,22 +52,24 @@ public abstract class VirtualInvocation extends InstanceInvocation {
       return ti.createAndThrowException("java.lang.NullPointerException", "Calling '" + mname + "' on null object");
     }
 
-    MethodInfo mi = getInvokedMethod(ti, objRef);
+    MethodInfo callee = getInvokedMethod(ti, objRef);
 
-    if (mi == null) {
+    if (callee == null) {
       String clsName = ti.getClassInfo(objRef).getName();
       return ti.createAndThrowException("java.lang.NoSuchMethodError", clsName + '.' + mname);
     }
     
     ElementInfo ei = ti.getElementInfo(objRef);
 
-    if (mi.isSynchronized()) {
+    if (callee.isSynchronized()) {
       if (checkSyncCG(ei, ti)){
         return this;
       }
     }
 
-    return ti.execute(mi);
+    setupCallee( ti, callee); // this creates, initializes and pushes the callee StackFrame
+
+    return ti.getPC(); // we can't just return the first callee insn if a listener throws an exception
   }
   
   /**

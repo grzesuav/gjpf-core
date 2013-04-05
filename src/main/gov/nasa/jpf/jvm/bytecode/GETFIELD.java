@@ -49,7 +49,7 @@ public class GETFIELD extends InstanceFieldInstruction {
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
     
-    int objRef = frame.peek(); // don't pop yet, we might re-execute
+    int objRef = frame.peek(); // don't pop yet, we might re-enter
     lastThis = objRef;
     if (objRef == -1) {
       return ti.createAndThrowException("java.lang.NullPointerException",

@@ -28,6 +28,9 @@ import java.io.StringWriter;
 
 /**
  * a stack frame for MJI methods
+ * 
+ * This is a special Stackframe to execute NativeMethodInfos, which are just a wrapper around Java reflection
+ * calls. As required by the Java reflection API, they can store argument and return values as object references
  *
  * NOTE: operands and locals can be, but are not automatically used during
  * native method execution.
@@ -49,14 +52,12 @@ public class NativeStackFrame extends StackFrame {
   // our argument registers
   Object[] args;
 
-  public NativeStackFrame (NativeMethodInfo mi, StackFrame caller, Object[] argValues){
-    super(mi,0,0);
-
-    if (!mi.isStatic()){
-      thisRef = caller.getCalleeThis(mi);
-    }
-
-    args = argValues;
+  public NativeStackFrame (NativeMethodInfo mi){
+    super( mi, 0, 0);
+  }
+  
+  public void setArgs (Object[] args){
+    this.args = args; 
   }
 
   public StackFrame clone () {

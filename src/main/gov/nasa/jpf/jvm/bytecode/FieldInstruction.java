@@ -125,7 +125,7 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
     lastValue = val;
 
     // we only have to modify the field owner if the values have changed, and only
-    // if this is a modified reference do we might have to potential exposure re-execute
+    // if this is a modified reference do we might have to potential exposure re-enter
     if ((eiFieldOwner.get1SlotField(fi) != val) || (eiFieldOwner.getFieldAttr(fi) != attr)) {
       eiFieldOwner = eiFieldOwner.getModifiableInstance();
       
@@ -141,7 +141,7 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
           if (ti.isFirstStepInsn()) { // no use to break for exposure if we didn't break on shared field access
             ElementInfo eiFieldValue = ti.getElementInfo(val);
             if ((eiFieldValue != null)  && !eiFieldValue.isReferencedBySameThreads(eiFieldOwner)) {
-              // this is a potential exposure point, re-execute AFTER having done the assignment,
+              // this is a potential exposure point, re-enter AFTER having done the assignment,
               // but BEFORE popping the operand stack
               if (createAndSetSharedObjectExposureCG(eiFieldValue, ti)) {
                 return this;

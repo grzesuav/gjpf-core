@@ -29,7 +29,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  *
  * Note that it is NOT a ReturnInstruction, in case listeners monitor these
  * and expect corresponding InvokeInstructions. Although this would seem intuitive, it
- * would be pointless to derive because the ReturnInstruction.execute() does
+ * would be pointless to derive because the ReturnInstruction.enter() does
  * a lot of things we would have to cut off, i.e. it would require more effort
  * to undo this (no sync, no return value, no pc advance on the returned-to
  * stackframe etc.)

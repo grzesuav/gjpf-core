@@ -45,7 +45,7 @@ public class NativeMethodInfo extends MethodInfo {
     }
   }
 
-  protected Method mth; // the native method to execute in lieu
+  protected Method mth; // the native method to enter in lieu
   protected NativePeer peer;
 
   public NativeMethodInfo (MethodInfo mi, Method mth, NativePeer peer){
@@ -78,6 +78,11 @@ public class NativeMethodInfo extends MethodInfo {
     mi.ci.putDeclaredMethod(this);
   }
 
+  @Override 
+  public StackFrame createStackFrame(){
+    return new NativeStackFrame(this);
+  }
+  
   @Override
   public boolean isUnresolvedNativeMethod() {
     // we are already a NativeMethodInfo
@@ -120,6 +125,7 @@ public class NativeMethodInfo extends MethodInfo {
     Object   ret = null;
     Object[] args = null;
     MJIEnv   env = ti.getMJIEnv();
+        
     NativeStackFrame nativeFrame = (NativeStackFrame)ti.getTopFrame();
 
     env.setCallEnvironment(this);

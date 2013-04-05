@@ -54,7 +54,7 @@ public abstract class ElementInfo implements Cloneable {
   public static final int   ATTR_IMMUTABLE     = 0x1000;
 
   // The constructor for the object has returned.  Final fields can no longer break POR
-  // This attribute is set in gov.nasa.jpf.vm.bytecode.RETURN.execute().
+  // This attribute is set in gov.nasa.jpf.vm.bytecode.RETURN.enter().
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
   public static final int   ATTR_CONSTRUCTED   = 0x2000;
   
@@ -1697,7 +1697,7 @@ public abstract class ElementInfo implements Cloneable {
     monitor.setLockingThread(ti);
     monitor.incLockCount();
 
-    // before we execute anything else, mark this thread as not being blocked anymore
+    // before we enter anything else, mark this thread as not being blocked anymore
     ti.resetLockRef();
 
     ThreadInfo.State state = ti.getState();
@@ -1924,7 +1924,7 @@ public abstract class ElementInfo implements Cloneable {
 
     // this is important, if we later-on backtrack (reset the
     // ThreadInfo.lockedObjects set, and then restore from the saved heap), the
-    // lock set would not include the lock when we continue to execute this thread
+    // lock set would not include the lock when we continue to enter this thread
     ti.addLockedObject(this); //wv: add locked object back here
   }
 

@@ -123,7 +123,7 @@ public class JPF_gov_nasa_jpf_util_test_TestJPF extends NativePeer {
             env.repeatInvocation();
           }
 
-        } else { // execute the next test
+        } else { // enter the next test
           if (testMethods != null && (index < testMethods.length)) {
             MethodInfo miTest = testMethods[index++];
             pushDirectCallFrame(env, miTest, testObjRef);

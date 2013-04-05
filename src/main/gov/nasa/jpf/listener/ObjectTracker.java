@@ -239,7 +239,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
 
     if (executedInsn instanceof VirtualInvocation){
       
-      if (nextInsn != executedInsn){ // otherwise we didn't execute
+      if (nextInsn != executedInsn){ // otherwise we didn't enter
         VirtualInvocation call = (VirtualInvocation)executedInsn;
         int ref = call.getCalleeThis(ti);
         Record rec = getRecord(ref);

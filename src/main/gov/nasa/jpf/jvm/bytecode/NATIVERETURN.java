@@ -41,7 +41,7 @@ public class NATIVERETURN extends ReturnInstruction {
   @Override
   public Instruction execute (ThreadInfo ti) {
     if (!ti.isFirstStepInsn()) {
-      ti.leave(mi);  // takes care of unlocking before potentially creating a CG
+      ti.leave();  // takes care of unlocking before potentially creating a CG
       // NativeMethodInfo is never synchronized, so no thread CG here
     }
 

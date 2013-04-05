@@ -530,7 +530,7 @@ public class ClassLoaderInfo
     // Check if the given class is already resolved by this loader
     ClassInfo ci = getAlreadyResolvedClassInfo(className);
 
-    // If the class has not been resolved, do a round trip to execute the 
+    // If the class has not been resolved, do a round trip to enter the 
     // user code of loadClass(cname) 
     if(ci == null) {
       ThreadInfo ti = VM.getVM().getCurrentThread();
@@ -548,7 +548,7 @@ public class ClassLoaderInfo
       } else {
         // the round trip starts here
         pushloadClassFrame(cname);
-        // bail out right away & re-execute the current instruction in JPF
+        // bail out right away & re-enter the current instruction in JPF
         throw new LoadOnJPFRequired(cname);
       }
     }

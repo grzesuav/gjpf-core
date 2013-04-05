@@ -40,7 +40,7 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
   abstract public int getReturnTypeSize();
   abstract protected Object getReturnedOperandAttr(StackFrame frame);
   
-  // note these are only callable from within the same execute - thread interleavings
+  // note these are only callable from within the same enter - thread interleavings
   // would cause races
   abstract protected void getAndSaveReturnValue (StackFrame frame);
   abstract protected void pushReturnValue (StackFrame frame);
@@ -85,7 +85,7 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
    * one attribute at a time, or check/process result with ObjectList
    * 
    * obviously, this only makes sense from an instructionExecuted(), since
-   * the value is pushed during the execute(). Use ObjectList to access values
+   * the value is pushed during the enter(). Use ObjectList to access values
    */
   public Object getReturnAttr (ThreadInfo ti){
     StackFrame frame = ti.getTopFrame();
@@ -136,7 +136,7 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
   public Instruction execute (ThreadInfo ti) {
 
     if (!ti.isFirstStepInsn()) {
-      ti.leave(mi);  // takes care of unlocking before potentially creating a CG
+      ti.leave();  // takes care of unlocking before potentially creating a CG
 
       if (mi.isSynchronized()) {
         int objref = mi.isStatic() ? mi.getClassInfo().getClassObjectRef() : ti.getThis();
@@ -150,7 +150,7 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
             if (cg != null) {
               if (vm.setNextChoiceGenerator(cg)) {
                 ti.skipInstructionLogging();
-                return this; // re-execute
+                return this; // re-enter
               }
             }
           }

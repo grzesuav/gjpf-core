@@ -220,7 +220,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected long uniqueId = -1;
 
   /**
-   * this is the object we use to execute declaredMethods in the underlying VM
+   * this is the object we use to enter declaredMethods in the underlying VM
    * (it replaces Reflection)
    */
   private NativePeer nativePeer;
@@ -485,7 +485,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     finalizer = getFinalizer0();
 
-    // Used to execute native methods (in the host VM).
+    // Used to enter native methods (in the host VM).
     // This needs to be initialized AFTER we get our  MethodInfos, since it does a reverse lookup to determine which
     // ones are handled by the peer (by means of setting MethodInfo attributes)
     nativePeer = loadNativePeer();
@@ -551,6 +551,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     notifyClassLoaded();
   }
+  
+  //--- the VM type specific methods
+  // <2do> those should be abstract
   
   protected void setAnnotationValueGetterCode (MethodInfo pmi, FieldInfo fi){
     // to be overridden by VM specific class

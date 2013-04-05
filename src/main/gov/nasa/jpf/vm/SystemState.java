@@ -48,7 +48,7 @@ public class SystemState {
    * NOTE: this gets stored at the end of a transition, i.e. if we need a value
    * to be restored to it's transition entry state (like atomicLevel), we have
    * to do that explicitly. Alternatively we could create the Memento before
-   * we start to execute the step, but then we have to update the nextCg in the
+   * we start to enter the step, but then we have to update the nextCg in the
    * snapshot, since it's only set at the transition end (required for
    * restore(), i.e.  HeuristicSearches)
    * 
@@ -96,7 +96,7 @@ public class SystemState {
     }
 
     /**
-     * this one is used to restore to a state which will re-execute with the next choice
+     * this one is used to restore to a state which will re-enter with the next choice
      * of the same CG, i.e. nextCG is reset
      */
     void backtrack (SystemState ss) {
@@ -692,7 +692,7 @@ public class SystemState {
    *
    * @see VM.forward()
    * 
-   * @return 'true' if there is a next choice, i.e. a next transition to execute.
+   * @return 'true' if there is a next choice, i.e. a next transition to enter.
    * 'false' if there is no next choice and the system has to backtrack
    */
   public boolean initializeNextTransition(VM vm) {
@@ -729,7 +729,7 @@ public class SystemState {
   }
 
   /**
-   * execute all instructions that constitute the next transition.
+   * enter all instructions that constitute the next transition.
    *
    * Note this gets called *after* storing the KernelState, i.e. is allowed to
    * modify thread states and fields
@@ -743,7 +743,7 @@ public class SystemState {
     assert execThread.isRunnable() : "next transition thread not runnable: " + execThread.getStateDescription();
 
     trail = new Transition(curCg, execThread);
-    entryAtomicLevel = atomicLevel; // store before we start to execute
+    entryAtomicLevel = atomicLevel; // store before we start to enter
 
     execThread.executeTransition(this);    
   }

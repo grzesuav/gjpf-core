@@ -54,7 +54,7 @@ public class StackDepthChecker extends ListenerAdapter {
     if (depth > maxDepth){
       log.info("configured vm.max_stack_depth exceeded: ", depth);
       
-      // NOTE - we get this notification from inside of the InvokeInstruction.execute(),
+      // NOTE - we get this notification from inside of the InvokeInstruction.enter(),
       // i.e. before we get the instructionExecuted(). Throwing exceptions is
       // therefore a bit harder since we have to set the next pc explicitly
 

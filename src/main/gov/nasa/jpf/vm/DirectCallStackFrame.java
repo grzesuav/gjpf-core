@@ -36,7 +36,7 @@ import gov.nasa.jpf.SystemAttribute;
 public class DirectCallStackFrame extends StackFrame implements SystemAttribute {
   
   public DirectCallStackFrame (MethodInfo stub) {
-    super(stub, null);
+    super(stub);
   }
 
   public DirectCallStackFrame (MethodInfo stub, int nOperandSlots, int nLocalSlots) {

@@ -62,7 +62,7 @@ public abstract class LongReturn extends ReturnInstruction {
    * one attribute at a time, or check/process result with ObjectList
    * 
    * obviously, this only makes sense from an instructionExecuted(), since
-   * the value is pushed during the execute(). Use ObjectList to access values
+   * the value is pushed during the enter(). Use ObjectList to access values
    */
   public Object getReturnAttr (ThreadInfo ti){
     StackFrame frame = ti.getTopFrame();

@@ -82,7 +82,7 @@ public abstract class Instruction implements Cloneable {
 
   /**
    * this returns the instruction at the following code insnIndex within the same
-   * method, which might or might not be the next one to execute (branches, overlay calls etc.).
+   * method, which might or might not be the next one to enter (branches, overlay calls etc.).
    */
   public Instruction getNext() {
     return mi.getInstruction(insnIndex + 1);
@@ -159,15 +159,15 @@ public abstract class Instruction implements Cloneable {
 
   /**
    * this is the real workhorse
-   * returns next instruction to execute in this thread
+   * returns next instruction to enter in this thread
    * 
    * <2do> it's unfortunate we roll every side effect into this method, because
    * it diminishes the value of the 'executeInstruction' notification: all
    * insns that require some sort of late binding (InvokeVirtual, GetField, ..)
    * are not yet fully analyzable (e.g. the callee of InvokeVirtuals is not
    * known yet), putting the burden of duplicating the related code of
-   * execute() in the listener. It would be better if we factor this
-   * 'prepareExecution' out of execute()
+   * enter() in the listener. It would be better if we factor this
+   * 'prepareExecution' out of enter()
    */
   public abstract Instruction execute(ThreadInfo ti);
 
@@ -302,8 +302,8 @@ public abstract class Instruction implements Cloneable {
   }
 
   /**
-   * this is returning the next Instruction to execute, to be called to obtain
-   * the return value of execute() if this is not a branch insn
+   * this is returning the next Instruction to enter, to be called to obtain
+   * the return value of enter() if this is not a branch insn
    *
    * Be aware of that we might have had exceptions caused by our execution
    * (-> lower frame), or we might have had overlaid calls (-> higher frame),

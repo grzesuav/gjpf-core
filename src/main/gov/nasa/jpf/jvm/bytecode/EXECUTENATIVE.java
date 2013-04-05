@@ -63,11 +63,10 @@ public class EXECUTENATIVE extends JVMInstruction {
 	  insVisitor.visit(this);
   }
 
-  public Instruction execute(ThreadInfo ti) {
+  public Instruction execute (ThreadInfo ti) {
 
     // we don't have to enter/leave or push/pop a frame, that's all done
     // in NativeMethodInfo.execute()
-
     // !! don't re-enter if this is reexecuted !!
     return executedMethod.executeNative(ti);
   }

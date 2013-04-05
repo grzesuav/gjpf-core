@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ClassParseException;
@@ -26,6 +27,7 @@ import gov.nasa.jpf.vm.ClassParser;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.NativeMethodInfo;
+import gov.nasa.jpf.vm.StackFrame;
 import java.lang.reflect.Modifier;
 
 /**
@@ -116,4 +118,5 @@ public class JVMClassInfo extends ClassInfo {
   protected JVMClassInfo (ClassParser parser) throws ClassParseException {
     super( parser);
   }
+  
 }
