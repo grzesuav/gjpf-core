@@ -2270,7 +2270,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return "ClassInfo[name=" + name + "]";
   }
 
-  private MethodInfo getFinalizer0 () {
+  protected MethodInfo getFinalizer0 () {
     MethodInfo mi = getMethod("finalize()V", true);
 
     // we are only interested in non-empty method bodies, Object.finalize()
@@ -2282,28 +2282,28 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return null;
   }
 
-  private boolean isObjectClassInfo0 () {
+  protected boolean isObjectClassInfo0 () {
 	if (name.equals("java.lang.Object")) {
 	  return true;
 	}
 	return false;
   }
 
-  private boolean isStringClassInfo0 () {
+  protected boolean isStringClassInfo0 () {
     if(name.equals("java.lang.String")) {
       return true;
     }
     return false;
   }
 
-  private boolean isRefClassInfo0 () {
+  protected boolean isRefClassInfo0 () {
     if(name.equals("java.lang.ref.Reference")) {
       return true;
     }
     return false;
   }
 
-  private boolean isWeakReference0 () {
+  protected boolean isWeakReference0 () {
 	if(name.equals("java.lang.ref.WeakReference")) {
       return true;
 	}
@@ -2317,7 +2317,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return false;
   }
 
-  private boolean isEnum0 () {
+  protected boolean isEnum0 () {
 	if(name.equals("java.lang.Enum")) {
       return true;
 	}
@@ -2331,7 +2331,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return false;
   }
 
-  private boolean isThreadClassInfo0 () {
+  protected boolean isThreadClassInfo0 () {
     if(name.equals("java.lang.Thread")) {
       return true;
     }
