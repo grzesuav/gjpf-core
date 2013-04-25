@@ -66,7 +66,7 @@ public class GlobalTrackingPolicy extends SharedObjectPolicy {
   }
 
   @Override
-  public boolean isShared(ThreadInfoSet set) {
+  public boolean isShared (ElementInfo ei, ThreadInfoSet set) {
     return set.hasMultipleLiveThreads();
   }
 

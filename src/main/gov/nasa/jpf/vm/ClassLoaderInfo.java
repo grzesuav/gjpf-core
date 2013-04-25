@@ -29,7 +29,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.SparseIntVector;
 import gov.nasa.jpf.util.StringSetMatcher;
 
@@ -42,6 +44,9 @@ import gov.nasa.jpf.util.StringSetMatcher;
 public class ClassLoaderInfo 
      implements Iterable<ClassInfo>, Comparable<ClassLoaderInfo>, Cloneable, Restorable<ClassLoaderInfo> {
 
+  static JPFLogger log = JPF.getLogger("class");
+
+  
   // the model class field name where we store our id 
   static final String ID_FIELD = "nativeId";
 
@@ -339,6 +344,7 @@ public class ClassLoaderInfo
             }
           } else {
             try {
+              log.info("loading class ", className, " from ",  url);
               ci = match.createClassInfo( this);
             } catch (ClassParseException cpx){
               throw new ClassInfoException( "error parsing class", this, "java.lang.NoClassDefFoundError", typeName, cpx);

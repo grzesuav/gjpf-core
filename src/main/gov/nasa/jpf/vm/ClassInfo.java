@@ -71,7 +71,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   static final String ID_FIELD = "nativeId"; 
 
-  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.vm.ClassInfo");
+  static JPFLogger logger = JPF.getLogger("class");
 
   static Config config;
 

@@ -32,8 +32,9 @@ import gov.nasa.jpf.JPFException;
  * a JenkinsStateSet that stores program state information in a readable
  * and diffable format.
  * 
- * Note: this requires a vm.serializer.class to be configured, and needs
- * a corresponding Debug<serializer-class>
+ * Storing states as readable text is enabled by setting vm.storage.class to this class
+ * 
+ * Note: this automatically sets/overrides the serializer to Debug<serializer-class>
  */
 public class DebugJenkinsStateSet extends JenkinsStateSet {
 

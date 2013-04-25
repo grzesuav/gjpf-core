@@ -395,7 +395,7 @@ public abstract class ElementInfo implements Cloneable {
    * modifiable (e.g. from the ctor)
    */
   void setSharednessFromReferencingThreads () {
-    if (SharedObjectPolicy.getPolicy().isShared(referencingThreads)) {
+    if (SharedObjectPolicy.getPolicy().isShared( this, referencingThreads)) {
       if ((attributes & ATTR_SHARED) == 0) {
         checkIsModifiable();
         attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
@@ -436,7 +436,7 @@ public abstract class ElementInfo implements Cloneable {
     if ((attributes & ATTR_FREEZE_SHARED) == 0) {
       // note that we can only go from non-shared to shared, but not vice versa
       // (this is in response to a reference from a live thread)
-      if (SharedObjectPolicy.getPolicy().isShared(referencingThreads)) {
+        if (SharedObjectPolicy.getPolicy().isShared( this, referencingThreads)) {
         if ((attributes & ATTR_SHARED) == 0) {
           // make sure we clone first (in case of need)
           ElementInfo ei = getModifiableInstance();

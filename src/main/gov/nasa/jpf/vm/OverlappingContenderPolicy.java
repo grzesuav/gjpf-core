@@ -49,7 +49,7 @@ public class OverlappingContenderPolicy extends SharedObjectPolicy {
   }
 
   @Override
-  public boolean isShared(ThreadInfoSet set) {
+  public boolean isShared (ElementInfo ei, ThreadInfoSet set) {
     return set.hasMultipleLiveThreads();
   }
 

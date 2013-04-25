@@ -55,7 +55,7 @@ public abstract class SharedObjectPolicy {
   public abstract ThreadInfoSet getThreadInfoSet (ThreadInfo allocThread, StaticElementInfo ei);
   
   //--- sharedness check
-  public abstract boolean isShared (ThreadInfoSet set);
+  public abstract boolean isShared (ElementInfo ei, ThreadInfoSet set);
   
   //--- state management
   public abstract Memento<ThreadInfoSet> getMemento (ThreadInfoSet set);

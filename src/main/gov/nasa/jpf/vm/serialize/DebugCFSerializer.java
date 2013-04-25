@@ -33,7 +33,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * a CFSerializer that stores the serialized program state in a 
  * readable/diffable format.
  * 
- * Automatically used by Debug..StateSet if the configured vm.serializer.class is CFSerializer
+ * Automatically used by Debug..StateSet if the configured vm.storage.class is .vm.DebugJenkinsStateSet 
  */
 public class DebugCFSerializer extends CFSerializer implements DebugStateSerializer {
 
