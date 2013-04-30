@@ -77,11 +77,6 @@ public class NativeMethodInfo extends MethodInfo {
     mthTable.set(mi.globalId, this);
     mi.ci.putDeclaredMethod(this);
   }
-
-  @Override 
-  public StackFrame createStackFrame(){
-    return new NativeStackFrame(this);
-  }
   
   @Override
   public boolean isUnresolvedNativeMethod() {

@@ -27,8 +27,10 @@ import gov.nasa.jpf.vm.ClassParser;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.NativeMethodInfo;
+import gov.nasa.jpf.vm.NativeStackFrame;
 import gov.nasa.jpf.vm.StackFrame;
-import java.lang.reflect.Modifier;
+import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.Types;
 
 /**
  * a ClassInfo that was created from a Java classfile
@@ -113,6 +115,26 @@ public class JVMClassInfo extends ClassInfo {
     cb.directcallreturn();
     cb.installCode();    
   }
+  
+  //--- call processing
+  
+  // create a stack frame that has properly initialized arguments
+  @Override
+  public StackFrame createStackFrame (ThreadInfo ti, MethodInfo callee){
+    
+    if (callee.isMJI()){
+      NativeMethodInfo nativeCallee = (NativeMethodInfo) callee;
+      JVMNativeStackFrame calleeFrame = new JVMNativeStackFrame( nativeCallee);
+      calleeFrame.setArguments( ti);
+      return calleeFrame; 
+      
+    } else {
+      JVMStackFrame calleeFrame = new JVMStackFrame( callee);
+      calleeFrame.setCallArguments( ti);
+      return calleeFrame;      
+    }
+  }
+  
   
   //--- for testing
   protected JVMClassInfo (ClassParser parser) throws ClassParseException {

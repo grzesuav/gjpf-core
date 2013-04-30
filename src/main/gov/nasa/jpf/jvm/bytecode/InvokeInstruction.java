@@ -19,8 +19,11 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.jvm.JVMNativeStackFrame;
+import gov.nasa.jpf.jvm.JVMStackFrame;
 import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
@@ -145,142 +148,12 @@ public abstract class InvokeInstruction extends JVMInstruction {
   //--- invocation processing
 
   protected void setupCallee (ThreadInfo ti, MethodInfo callee){
-    StackFrame frame = callee.createStackFrame();
-    
-    // unfortunately we can't do this in StackFrame since the source arguments might only be known by this instruction (Dalvik)
-    if (frame instanceof NativeStackFrame){
-      setNativeCallArguments( ti, (NativeStackFrame)frame);
-    } else {
-      setCallArguments( ti, frame);      
-    }
+    ClassInfo ciCaller = mi.getClassInfo();
+    StackFrame frame = ciCaller.createStackFrame( ti, callee);
     
     ti.pushFrame(frame);
     ti.enter();
   }
-  
-  /**
-   * this sets up arguments in a bytecode callee 
-   */
-  protected void setCallArguments (ThreadInfo ti, StackFrame callee){
-    StackFrame caller = ti.getTopFrame();
-    MethodInfo miCallee = callee.getMethodInfo();
-    int nArgSlots = miCallee.getArgumentsSize();
-    
-    if (nArgSlots > 0){
-      int[] calleeSlots = callee.getSlots();
-      FixedBitSet calleeRefs = callee.getReferenceMap();
-      int[] callerSlots = caller.getSlots();
-      FixedBitSet callerRefs = caller.getReferenceMap();
-
-      for (int i = 0, j = caller.getTopPos() - nArgSlots + 1; i < nArgSlots; i++, j++) {
-        calleeSlots[i] = callerSlots[j];
-        if (callerRefs.get(j)) {
-          calleeRefs.set(i);
-        }
-        Object a = caller.getSlotAttr(j);
-        if (a != null) {
-          callee.setSlotAttr(i, a);
-        }
-      }
-
-      if (!miCallee.isStatic()) { // we could do this in InstanceInvocation, but keep things together here
-        callee.setThis( calleeSlots[0]);
-      }
-    }
-  }
-  
-  protected void setNativeCallArguments (ThreadInfo ti, NativeStackFrame callee) {
-    StackFrame caller = ti.getTopFrame();
-    NativeMethodInfo nmi = (NativeMethodInfo)callee.getMethodInfo();
-    int      nArgs = nmi.getNumberOfArguments();
-    byte[]   argTypes = nmi.getArgumentTypes();
-
-    Object[] a = new Object[nArgs+2];
-
-    int      stackOffset;
-    int      i, j, k;
-    int      ival;
-    long     lval;
-
-    for (i = 0, stackOffset = 0, j = nArgs + 1, k = nArgs - 1;
-         i < nArgs;
-         i++, j--, k--) {
-      switch (argTypes[k]) {
-      case Types.T_BOOLEAN:
-        ival = caller.peek(stackOffset);
-        a[j] = Boolean.valueOf(Types.intToBoolean(ival));
-
-        break;
-
-      case Types.T_BYTE:
-        ival = caller.peek(stackOffset);
-        a[j] = Byte.valueOf((byte) ival);
-
-        break;
-
-      case Types.T_CHAR:
-        ival = caller.peek(stackOffset);
-        a[j] = Character.valueOf((char) ival);
-
-        break;
-
-      case Types.T_SHORT:
-        ival = caller.peek(stackOffset);
-        a[j] = new Short((short) ival);
-
-        break;
-
-      case Types.T_INT:
-        ival = caller.peek(stackOffset);
-        a[j] = new Integer(ival);
-
-        break;
-
-      case Types.T_LONG:
-        lval = caller.peekLong(stackOffset);
-        stackOffset++; // 2 stack words
-        a[j] = new Long(lval);
-
-        break;
-
-      case Types.T_FLOAT:
-        ival = caller.peek(stackOffset);
-        a[j] = new Float(Types.intToFloat(ival));
-
-        break;
-
-      case Types.T_DOUBLE:
-        lval = caller.peekLong(stackOffset);
-        stackOffset++; // 2 stack words
-        a[j] = new Double(Types.longToDouble(lval));
-
-        break;
-
-      default:
-        // NOTE - we have to store T_REFERENCE as an Integer, because
-        // it shows up in our native method as an 'int'
-        ival = caller.peek(stackOffset);
-        a[j] = new Integer(ival);
-      }
-
-      stackOffset++;
-    }
-
-    //--- set  our standard MJI header arguments
-    a[0] = ti.getMJIEnv();
-    
-    if (nmi.isStatic()) {
-      a[1] = new Integer( nmi.getClassInfo().getClassObjectRef());
-    } else {
-      int thisRef = caller.getCalleeThis(nmi);
-      a[1] = new Integer( thisRef);
-      
-      callee.setThis(thisRef);
-    }
-
-    callee.setArgs(a);
-  }
-
   
   /**
    * this is a little helper to find out about call argument values from listeners that

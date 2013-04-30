@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.jvm.JVMCodeBuilder;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
@@ -30,7 +29,6 @@ import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.OATHash;
 import gov.nasa.jpf.util.Source;
-import static gov.nasa.jpf.vm.InfoObject.NO_ANNOTATIONS;
 
 import java.io.File;
 import java.lang.reflect.Modifier;
@@ -2391,6 +2389,11 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     VM.getVM().notifyClassLoaded(ci);
     return ci;
+  }
+  
+  // <2do> should be abstract
+  public StackFrame createStackFrame (ThreadInfo ti, MethodInfo callee){
+    return null;
   }
 }
 

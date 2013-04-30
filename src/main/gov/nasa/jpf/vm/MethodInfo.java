@@ -349,10 +349,7 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   public int getGlobalId() {
     return globalId;
   }
-  
-  public StackFrame createStackFrame(){
-    return new StackFrame(this);
-  }
+
   
   protected MethodInfo createCallStub (String originator, int id){
     MethodInfo mi = new MethodInfo(id);
