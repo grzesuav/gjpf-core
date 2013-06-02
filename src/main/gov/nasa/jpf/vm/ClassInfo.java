@@ -58,7 +58,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   // ideally, we would have a separate RESOLVED state, but (a) this is somewhat
   // orthogonal to REGISTERED, and - more importantly - (b) we need the
   // superClass instance when initializing our Fields (instance field offsets).
-  // Doing the field initialization during resolveClass() seems awkward and
+  // Doing the field initialization during resolveReferencedClass() seems awkward and
   // error prone (there is not much you can do with an unresolved class then)
   
   // not registered or clinit'ed (but cached in loadedClasses)
@@ -171,7 +171,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /**
    * we only set the superClassName upon creation, it is instantiated into
-   * a ClassInfo by resolveClass(), which is required to be called before
+   * a ClassInfo by resolveReferencedClass(), which is required to be called before
    * we can createAndInitialize objects of this type
    */
   protected ClassInfo  superClass;
@@ -2068,9 +2068,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         // we have to sync, which we do by calling clinit
         MethodInfo mi = getMethod("<clinit>()V", false);
         if (mi != null) {
-          MethodInfo stub = mi.createDirectCallStub("[clinit]");
-          StackFrame sf = new DirectCallStackFrame(stub);
-          ti.pushFrame( sf);
+          DirectCallStackFrame frame = createDirectCallStackFrame(ti, mi, 0);
+          ti.pushFrame( frame);
           return true;
 
         } else {
@@ -2393,6 +2392,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   
   // <2do> should be abstract
   public StackFrame createStackFrame (ThreadInfo ti, MethodInfo callee){
+    return null;
+  }
+  
+  public DirectCallStackFrame createDirectCallStackFrame (ThreadInfo ti, MethodInfo callee, int nLocalSlots){
+    return null;
+  }
+  
+  public DirectCallStackFrame createRunStartStackFrame (ThreadInfo ti, MethodInfo miRun){
     return null;
   }
 }

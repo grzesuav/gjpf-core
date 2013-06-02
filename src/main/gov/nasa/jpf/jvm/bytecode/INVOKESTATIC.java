@@ -23,11 +23,9 @@ import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.KernelState;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StaticElementInfo;
-import gov.nasa.jpf.vm.SystemState;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
 
@@ -42,7 +40,6 @@ public class INVOKESTATIC extends InvokeInstruction {
   protected INVOKESTATIC (String clsDescriptor, String methodName, String signature){
     super(clsDescriptor, methodName, signature);
   }
-
 
   protected ClassInfo getClassInfo () {
     if (ci == null) {
@@ -64,31 +61,29 @@ public class INVOKESTATIC extends InvokeInstruction {
   }
 
   public Instruction execute (ThreadInfo ti) {
-    ClassInfo clsInfo = ti.getTopFrameMethodInfo().getClassInfo();
-
-    // resolve the class of the invoked method first
+    MethodInfo callee;
+    
     try {
-      ci = clsInfo.resolveReferencedClass(cname);
-    } catch(LoadOnJPFRequired lre) {
+      callee = getInvokedMethod(ti);
+    } catch (LoadOnJPFRequired lre) {
       return ti.getPC();
     }
-
-    MethodInfo callee = getInvokedMethod(ti);
+        
     if (callee == null) {
       return ti.createAndThrowException("java.lang.NoSuchMethodException", cname + '.' + mname);
     }
 
     // this can be actually different than (can be a base)
-    clsInfo = callee.getClassInfo();
+    ClassInfo ciCallee = callee.getClassInfo();
     
-    if (requiresClinitExecution(ti, clsInfo)) {
+    if (requiresClinitExecution(ti, ciCallee)) {
       // do class initialization before continuing
       // note - this returns the next insn in the topmost clinit that just got pushed
       return ti.getPC();
     }
 
     if (callee.isSynchronized()) {
-      ElementInfo ei = clsInfo.getClassObject();
+      ElementInfo ei = ciCallee.getClassObject();
       if (checkSyncCG(ei, ti)){
         return this;
       }

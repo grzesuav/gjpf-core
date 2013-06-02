@@ -143,7 +143,8 @@ public class ExceptionHandlingTest extends TestJPF {
         System.out.println(')');
       }
 
-      assert st.length == 4 : "wrong stack trace depth";
+      // note - direct call stackframes should not show up here, they are JPF internal
+      assert st.length == 3 : "wrong stack trace depth";
 
       assert st[0].getClassName().equals(ExceptionHandlingTest.class.getName());
       assert st[0].getMethodName().equals("testStackTrace");
@@ -151,11 +152,8 @@ public class ExceptionHandlingTest extends TestJPF {
       assert st[1].getClassName().equals(Method.class.getName());
       assert st[1].getMethodName().equals("invoke");
 
-      assert st[2].getClassName().equals(Method.class.getName());
-      assert st[2].getMethodName().equals("invoke");
-
-      assert st[3].getClassName().equals(TestJPF.class.getName());
-      assert st[3].getMethodName().equals("runTestMethod");
+      assert st[2].getClassName().equals(TestJPF.class.getName());
+      assert st[2].getMethodName().equals("runTestMethod");
     }
   }  
 }

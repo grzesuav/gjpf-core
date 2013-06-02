@@ -32,8 +32,6 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public abstract class StaticFieldInstruction extends FieldInstruction {
 
-  protected ClassInfo ci;
-
   protected StaticFieldInstruction(){}
 
   protected StaticFieldInstruction(String fieldName, String clsDescriptor, String fieldDescriptor){
@@ -47,19 +45,15 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
    * we get the right one that declares the field here
    */
   protected void initialize() {
-    ci = ClassLoaderInfo.getCurrentResolvedClassInfo(className);
-    fi = ci.getStaticField(fname);
-    ClassInfo fci = fi.getClassInfo();
-    if (fci != ci) {
-      ci = fci;
-    }
+    ClassInfo ciField = mi.getClassInfo().resolveReferencedClass(className);
+    fi = ciField.getStaticField(fname);
   }
 
   public ClassInfo getClassInfo() {
-    if (ci == null) {
+    if (fi == null) {
       initialize();
     }
-    return ci;
+    return fi.getClassInfo();
   }
 
   public FieldInfo getFieldInfo() {
@@ -81,7 +75,7 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     return getFieldInfo().getClassInfo().getStaticElementInfo();
   }
 
-  // this can be different than ci - the field might be in one of its
+  // this can be different than ciField - the field might be in one of its
   // superclasses
   public ClassInfo getLastClassInfo(){
     return getFieldInfo().getClassInfo();
@@ -166,8 +160,8 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
 
       // reset the method that this insn belongs to
       clone.mi = mi;
-
-      clone.ci = null;
+      clone.fi = null; // ClassInfo is going to be different
+      
     } catch (CloneNotSupportedException e) {
       e.printStackTrace();
     }

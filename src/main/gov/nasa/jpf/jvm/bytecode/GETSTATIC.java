@@ -50,34 +50,32 @@ public class GETSTATIC extends StaticFieldInstruction {
 
   @Override
   public Instruction execute (ThreadInfo ti) {
-    ClassInfo clsInfo;
-
-    // resolve the class of the referenced field first
-    ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
+    ClassInfo ciField;
+    FieldInfo fieldInfo;
+    
     try {
-      ci = cls.resolveReferencedClass(className);
+      fieldInfo = getFieldInfo();
     } catch(LoadOnJPFRequired lre) {
       return ti.getPC();
     }
-
-    FieldInfo fieldInfo = getFieldInfo();
+    
     if (fieldInfo == null) {
       return ti.createAndThrowException("java.lang.NoSuchFieldError",
           (className + '.' + fname));
     }
 
     // this can be actually different (can be a base)
-    clsInfo = fieldInfo.getClassInfo();
+    ciField = fieldInfo.getClassInfo();
     
-    if (!mi.isClinit(clsInfo) && requiresClinitExecution(ti, clsInfo)) {
+    if (!mi.isClinit(ciField) && requiresClinitExecution(ti, ciField)) {
       // note - this returns the next insn in the topmost clinit that just got pushed
       return ti.getPC();
     }
 
-    ElementInfo ei = clsInfo.getStaticElementInfo();
+    ElementInfo ei = ciField.getStaticElementInfo();
 
     if (ei == null){
-      throw new JPFException("attempt to access field: " + fname + " of uninitialized class: " + clsInfo.getName());
+      throw new JPFException("attempt to access field: " + fname + " of uninitialized class: " + ciField.getName());
     }
 
     if (isNewPorFieldBoundary(ti)) {

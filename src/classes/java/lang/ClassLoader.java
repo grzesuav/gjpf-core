@@ -18,6 +18,7 @@
 //
 package java.lang;
 
+import gov.nasa.jpf.vm.Verify;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;

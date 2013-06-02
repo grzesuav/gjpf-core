@@ -64,6 +64,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
     ThreadInfo ti = env.getThreadInfo();
 
     try {
+System.out.println("@@ URLClassLoader.findClass " + typeName);
       ClassInfo ci = cl.getResolvedClassInfo( typeName);
       if(!ci.isRegistered()) {
         ci.registerClass(env.getThreadInfo());
@@ -72,6 +73,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
       return ci.getClassObjectRef();
           
     } catch (LoadOnJPFRequired rre) { // this classloader has a overridden loadClass 
+System.out.println("@@ roundtrip for: " + typeName);
       env.repeatInvocation();
       return MJIEnv.NULL;
       
@@ -79,6 +81,7 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
       if (cix.getCause() instanceof ClassParseException){
         env.throwException("java.lang.ClassFormatError", typeName);
       } else {
+System.out.println("@@ NOT FOUND: " + typeName);
         env.throwException("java.lang.ClassNotFoundException", typeName);
       }
       return MJIEnv.NULL;      

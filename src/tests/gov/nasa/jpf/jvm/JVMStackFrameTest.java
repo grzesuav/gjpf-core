@@ -17,7 +17,7 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.vm;
+package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.LocalVarInfo;
@@ -29,13 +29,13 @@ import org.junit.Test;
 /**
  * unit test for StackFrame operations
  */
-public class StackFrameTest extends TestJPF {
+public class JVMStackFrameTest extends TestJPF {
 
   @Test
   public void testDup2_x1() {
     // 1 2 3  => 2 3.1 2 3
 
-    StackFrame frame = new StackFrame(0, 10);
+    JVMStackFrame frame = new JVMStackFrame(0, 10);
 
     frame.push(1);
     frame.push(2);
@@ -57,7 +57,7 @@ public class StackFrameTest extends TestJPF {
   public void testDup2_x1_Attrs() {
     // 1 2 3  => 2 3.1 2 3
 
-    StackFrame frame = new StackFrame(0, 10);
+    JVMStackFrame frame = new JVMStackFrame(0, 10);
 
     frame.push(1); frame.setOperandAttr("1");
     frame.push(2); frame.setOperandAttr("2");
@@ -80,7 +80,7 @@ public class StackFrameTest extends TestJPF {
   public void testDup2_x2() {
     // 1 2 3 4  => 3 4.1 2 3 4
 
-    StackFrame frame = new StackFrame(0, 10);
+    JVMStackFrame frame = new JVMStackFrame(0, 10);
 
     frame.push(1);
     frame.push(2);
@@ -104,7 +104,7 @@ public class StackFrameTest extends TestJPF {
   public void testDup2_x2_Attrs() {
     // 1 2 3 4  => 3 4.1 2 3 4
 
-    StackFrame frame = new StackFrame(0, 10);
+    JVMStackFrame frame = new JVMStackFrame(0, 10);
 
     frame.push(1); frame.setOperandAttr("1");
     frame.push(2); frame.setOperandAttr("2");
@@ -126,9 +126,9 @@ public class StackFrameTest extends TestJPF {
 
   @Test
   public void testPushLong() {
-    // Push/Pop long value and also  StackFrame.getLocalValueObject
+    // Push/Pop long value and also  JVMStackFrame.getLocalValueObject
 
-    StackFrame frame = new StackFrame(0, 2);
+    JVMStackFrame frame = new JVMStackFrame(0, 2);
 
     long value = 0x123456780ABCDEFL;
     frame.pushLong(value);
@@ -146,9 +146,9 @@ public class StackFrameTest extends TestJPF {
 
   @Test
   public void testPushDouble() {
-    // Push/Pop double value and also  StackFrame.getLocalValueObject
+    // Push/Pop double value and also  JVMStackFrame.getLocalValueObject
 
-    StackFrame frame = new StackFrame(2, 10);
+    JVMStackFrame frame = new JVMStackFrame(2, 10);
     // Initialize local values and the stack frame
     frame.push(1);
     frame.push(2);

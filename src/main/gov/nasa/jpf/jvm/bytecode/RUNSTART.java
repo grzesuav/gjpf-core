@@ -21,7 +21,6 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.JVMInstruction;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
@@ -47,7 +46,6 @@ public class RUNSTART extends JVMInstruction {
     return getNext(ti);
   }
 
-
   public static final int OPCODE = 257;
 
   public int getByteCode () {
@@ -61,5 +59,4 @@ public class RUNSTART extends JVMInstruction {
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
-
 }

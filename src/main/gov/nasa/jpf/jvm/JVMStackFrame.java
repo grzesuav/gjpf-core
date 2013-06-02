@@ -23,6 +23,7 @@ import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.Types;
 
 /**
  * a stackframe that is used for executing Java bytecode, supporting both
@@ -36,7 +37,15 @@ public class JVMStackFrame extends StackFrame {
   }
   
   /**
-   * this sets up arguments in a bytecode callee 
+   * creates callerSlots dummy Stackframe for testing of operand/local operations
+   * NOTE - TESTING ONLY! this does not have callerSlots MethodInfo
+   */
+  protected JVMStackFrame (int nLocals, int nOperands){
+    super( nLocals, nOperands);
+  }
+  
+  /**
+   * this sets up arguments from a bytecode caller 
    */
   protected void setCallArguments (ThreadInfo ti){
     StackFrame caller = ti.getTopFrame();
@@ -66,4 +75,60 @@ public class JVMStackFrame extends StackFrame {
     }
   }
 
+  //--- return value handling
+  
+  @Override
+  public int getResult(){
+    return pop();
+  }
+  
+  @Override
+  public int getReferenceResult(){
+    return pop();
+  }
+  
+  @Override
+  public long getLongResult(){
+    return popLong();
+  }
+
+  @Override
+  public Object getResultAttr(){
+    return getOperandAttr();
+  }
+  
+  @Override
+  public Object getLongResultAttr(){
+    return getLongOperandAttr();
+  }
+  
+  
+  //--- these are for setting up arguments from a VM / listener caller
+
+  
+  
+  /*
+   * to be used to initialize locals of a stackframe (only required for explicit construction without a caller,
+   * otherwise the Stackframe ctor/invoke insn will take care of copying the values from its caller)
+   */
+  @Override
+  public void setArgumentLocal (int idx, int v, Object attr){
+    setLocalVariable( idx, v);
+    if (attr != null){
+      setLocalAttr( idx, attr);
+    }
+  }
+  @Override
+  public void setReferenceArgumentLocal (int idx, int ref, Object attr){
+    setLocalReferenceVariable( idx, ref);
+    if (attr != null){
+      setLocalAttr( idx, attr);
+    }
+  }
+  public void setLongArgumentLocal (int idx, long v, Object attr){
+    setLongLocalVariable( idx, v);
+    if (attr != null){
+      setLocalAttr( idx, attr);
+    }
+  }  
 }

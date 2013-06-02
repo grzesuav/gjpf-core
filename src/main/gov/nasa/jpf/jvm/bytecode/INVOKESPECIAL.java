@@ -53,15 +53,13 @@ public class INVOKESPECIAL extends InstanceInvocation {
     // we don't have to check for NULL objects since this is either a ctor, a 
     // private method, or a super method
 
-    // resolving the class referenced by InvokeSpecial
-    ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
+    MethodInfo callee;
+    
     try {
-      cls.resolveReferencedClass(cname);
+      callee = getInvokedMethod(ti);
     } catch(LoadOnJPFRequired rre) {
       return ti.getPC();
-    }
-
-    MethodInfo callee = getInvokedMethod(ti);
+    }      
 
     if (callee == null){
       return ti.createAndThrowException("java.lang.NoSuchMethodException", "Calling " + cname + '.' + mname);

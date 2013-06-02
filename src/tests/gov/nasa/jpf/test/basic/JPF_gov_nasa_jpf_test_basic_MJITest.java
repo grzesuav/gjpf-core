@@ -161,17 +161,14 @@ public class JPF_gov_nasa_jpf_test_basic_MJITest extends NativePeer {
     System.out.println("# entering nativeRoundtripLoop(): " + a);
 
     MethodInfo mi = env.getClassInfo(robj).getMethod("roundtrip(I)I",false);
-    String mid = "[roundtrip]" + mi.getName();
     ThreadInfo ti = env.getThreadInfo();
-    StackFrame frame = ti.getReturnedDirectCall();
+    DirectCallStackFrame frame = ti.getReturnedDirectCall();
 
     if (frame == null){ // first time
-      MethodInfo stub = mi.createDirectCallStub(mid);
-      frame = new DirectCallStackFrame(stub, 2, 1);
-
-      frame.setLocalVariable(0, 0, false);
-      frame.pushRef(robj);
-      frame.push(a+1);
+      frame = mi.createDirectCallStackFrame(ti, 1);
+      frame.setLocalVariable( 0, 0);
+      frame.setReferenceArgument(0, robj, null);
+      frame.setArgument(1, a+1, null);
       ti.pushFrame(frame);
 
       return 42; // whatever, we come back
@@ -181,19 +178,19 @@ public class JPF_gov_nasa_jpf_test_basic_MJITest extends NativePeer {
       // this method can't be executed unless the class is already initialized,
       // i.e. we don't have to check for overlayed clinit calls and the frame
       // has to be the one we pushed
-      assert frame.getMethodName().equals(mid);
+      assert frame.getCallee() == mi;
       
       // this shows how to get information back from the JPF roundtrip into
       // the native method
-      int r = frame.pop(); // the return value of the direct call above
+      int r = frame.getResult(); // the return value of the direct call above
       int i = frame.getLocalVariable(0);
 
       if (i < 3) { // repeat the round trip
         // we have to reset so that the PC is re-initialized
         frame.reset();
-        frame.setLocalVariable(0, i + 1, false);
-        frame.pushRef(robj);
-        frame.push(r + 1);
+        frame.setLocalVariable(0, i + 1);
+        frame.setReferenceArgument( 0, robj, null);
+        frame.setArgument( 1, r+1, null);
         ti.pushFrame(frame);
         return 42;
 
@@ -209,17 +206,16 @@ public class JPF_gov_nasa_jpf_test_basic_MJITest extends NativePeer {
    */
   @MJI
   public int nativeHiddenRoundtrip__I__I (MJIEnv env, int robj, int a){
+    ThreadInfo ti = env.getThreadInfo();
+    
     System.out.println("# entering nativeHiddenRoundtrip: " + a);
     MethodInfo mi = env.getClassInfo(robj).getMethod("atomicStuff(I)I",false);
 
-    MethodInfo stub = mi.createDirectCallStub("[roundtrip]" + mi.getName());
-    stub.setFirewall(true); // we don't want to let exceptions pass through this
+    DirectCallStackFrame frame = mi.createDirectCallStackFrame(ti, 0);
+    frame.setReferenceArgument( 0, robj, null);
+    frame.setArgument( 1, a, null);
+    frame.setFireWall();
 
-    DirectCallStackFrame frame = new DirectCallStackFrame(stub);
-    frame.push(robj); // push 'this'
-    frame.push(a);    // push 'a'
-
-    ThreadInfo ti = env.getThreadInfo();
     try {
       ti.executeMethodHidden(frame);
       //ti.advancePC();
@@ -232,7 +228,7 @@ public class JPF_gov_nasa_jpf_test_basic_MJITest extends NativePeer {
     }
 
     // get the return value from the (already popped) frame
-    int res = frame.peek();
+    int res = frame.getResult();
 
     System.out.println("# exit nativeHiddenRoundtrip: " + res);
     return res;

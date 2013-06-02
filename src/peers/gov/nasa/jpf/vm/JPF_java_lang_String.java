@@ -34,6 +34,7 @@ import java.util.Locale;
  */
 public class JPF_java_lang_String extends NativePeer {
 
+  
   @MJI
   public int init___3CII__Ljava_lang_String_2 (MJIEnv env, int objRef, int valueRef, int offset, int count) {
     char[] value = env.getCharArrayObject(valueRef);
@@ -132,6 +133,13 @@ public class JPF_java_lang_String extends NativePeer {
     return env.newByteArray(bytes);
   }
 
+  @MJI
+  public char charAt__I__C (MJIEnv env, int objRef, int index){
+    char[] data = env.getStringChars(objRef);
+    return data[index];
+  }
+
+  
   @MJI
   public boolean equals0___3C_3CI__Z (MJIEnv env, int clsObjRef, int charsRef1, int charsRef2, int len) {
 

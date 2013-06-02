@@ -40,13 +40,11 @@ public class ANEWARRAY extends NewArrayInstruction {
   }
 
   public Instruction execute (ThreadInfo ti) {
-    ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
-
     // resolve the component class first
     String compType = Types.getTypeName(type);
     if(Types.isReferenceSignature(type)) {
       try {
-        cls.resolveReferencedClass(compType);
+        ti.resolveReferencedClass(compType);
       } catch(LoadOnJPFRequired lre) {
         return ti.getPC();
       }

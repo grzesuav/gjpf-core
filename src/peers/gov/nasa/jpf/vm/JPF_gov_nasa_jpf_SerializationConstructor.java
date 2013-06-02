@@ -20,8 +20,10 @@ public class JPF_gov_nasa_jpf_SerializationConstructor extends NativePeer {
   public int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
                                                                              int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
-    StackFrame frame = ti.getReturnedDirectCall();
-    String mid = "[serialization]";
+    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+    
+    int superCtorRef = env.getReferenceField(mthRef, "firstNonSerializableCtor"); 
+    MethodInfo miCtor = JPF_java_lang_reflect_Constructor.getMethodInfo(env,superCtorRef);
 
     if (frame == null){ // first time
       int clsRef = env.getReferenceField(mthRef, "mdc");
@@ -38,26 +40,22 @@ public class JPF_gov_nasa_jpf_SerializationConstructor extends NativePeer {
         return MJIEnv.NULL;
       }
       
-      int superCtorRef = env.getReferenceField(mthRef, "firstNonSerializableCtor");
-      MethodInfo mi = JPF_java_lang_reflect_Constructor.getMethodInfo(env,superCtorRef);
-
       int objRef = env.newObject(ci);
-      MethodInfo stub = mi.createDirectCallStub(mid);
-      frame = new DirectCallStackFrame(stub, 2,0);
-      frame.push(objRef, true);
-      frame.dup(); // (1) we store the return object on the frame
+      frame = miCtor.createDirectCallStackFrame(ti, 1); 
+      frame.setReferenceArgument( 0, objRef, null);
+      frame.setLocalReferenceVariable(0, objRef); // (1) we store the reference as a local var for retrieval during reexec
+      
       ti.pushFrame(frame);
 
       //env.repeatInvocation(); // we don't need this, direct calls don't advance their return frame
       return MJIEnv.NULL; // doesn't matter
       
     } else { // direct call returned
-      while (!frame.getMethodInfo().getName().equals(mid)){
-        // frame was the [clinit] direct call
-        frame = frame.getPrevious();
+      while (frame.getCallee() != miCtor){
+        frame = frame.getPreviousDirectCallStackFrame();
       }
       
-      int objRef = frame.pop(); // that's the object ref we pushed in (1)
+      int objRef = frame.getLocalVariable(0); // that's the object ref we stored in (1)
       return objRef;
     }
   }

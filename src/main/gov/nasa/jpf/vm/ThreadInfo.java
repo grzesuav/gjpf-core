@@ -21,6 +21,7 @@ package gov.nasa.jpf.vm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.SystemAttribute;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
@@ -124,27 +125,10 @@ public class ThreadInfo extends InfoObject
       }
     }
   }
-
-  protected static class UncaughtHandlerFrame extends DirectCallStackFrame {
-
-    ExceptionInfo exceptionInfo;
-    
-    
-    UncaughtHandlerFrame (ExceptionInfo xi, MethodInfo miHandler){
-      // we need three operands: handlerObject, thread and exception object
-      super(miHandler, 3, 0);
-      
-      exceptionInfo = xi;
-    }
-    
-    ExceptionInfo getExceptionInfo(){
-      return exceptionInfo;
-    }
-  }
+  
   
   //--- instance fields
-  
-    
+      
   // transient, not state stored
   protected ExceptionInfo pendingException;
 
@@ -212,7 +196,7 @@ public class ThreadInfo extends InfoObject
 
 
   /** the last returned direct call frame */
-  protected StackFrame returnedDirectCall;
+  protected DirectCallStackFrame returnedDirectCall;
 
   /** the next insn to enter (null prior to execution) */
   protected Instruction nextPc;
@@ -1236,6 +1220,30 @@ public class ThreadInfo extends InfoObject
     }
   }
 
+  /**
+   * return the ClassInfo of the topmost stackframe that is not a direct call 
+   */
+  public ClassInfo getExecutingClassInfo(){
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
+      MethodInfo miExecuting = frame.getMethodInfo();
+      ClassInfo ciExecuting = miExecuting.getClassInfo();
+      if (ciExecuting != null){
+        return ciExecuting;
+      }
+    }
+    
+    return null;
+  }
+  
+  
+  
+  public ClassInfo resolveReferencedClass (String clsName){
+    ClassInfo ciTop = top.getClassInfo();
+    return ciTop.resolveReferencedClass(clsName);
+            
+    //return ClassLoaderInfo.getCurrentClassLoader(this).getResolvedClassInfo(clsName);
+  }
+  
   public boolean isInCtor () {
     // <2do> - hmm, if we don't do this the whole stack, we miss factored
     // init funcs
@@ -1623,13 +1631,7 @@ public class ThreadInfo extends InfoObject
 
 
     StackTraceElement (int methodId, int pcOffset) {
-      if (methodId == MethodInfo.REFLECTION_CALL) {
-        clsName = "java.lang.reflect.Method";
-        mthName = "invoke";
-        fileName = "Native Method";
-        line = -1;
-
-      } else if (methodId == MethodInfo.DIRECT_CALL) {
+      if (methodId == MethodInfo.DIRECT_CALL) {
         ignore = true;
 
       } else {
@@ -2419,11 +2421,11 @@ public class ThreadInfo extends InfoObject
    * DIRECTCALLRETURN insns)
    */
   public StackFrame popDirectCallFrame() {
-    assert top instanceof DirectCallStackFrame;
+    //assert top instanceof DirectCallStackFrame;
 
-    returnedDirectCall = top;
+    returnedDirectCall = (DirectCallStackFrame) top;
 
-    if (top instanceof UncaughtHandlerFrame){
+    if (top.hasFrameAttr( UncaughtHandlerContext.class)){
       return popUncaughtHandlerFrame();
     }
     
@@ -2444,7 +2446,7 @@ public class ThreadInfo extends InfoObject
             returnedDirectCall.getMethodName().equals(directCallId));
   }
 
-  public StackFrame getReturnedDirectCall () {
+  public DirectCallStackFrame getReturnedDirectCall () {
     return returnedDirectCall;
   }
 
@@ -2551,7 +2553,7 @@ public class ThreadInfo extends InfoObject
       MethodInfo mi = frame.getMethodInfo();
 
       // that means we have to turn the exception into an InvocationTargetException
-      if (mi.isReflectionCallStub()) {
+      if (frame.isReflection()) {
         ci               = ClassInfo.getInitializedSystemClassInfo("java.lang.reflect.InvocationTargetException", this);
         exceptionObjRef  = createException(ci, cname, exceptionObjRef);
         cname            = ci.getName();
@@ -2681,15 +2683,10 @@ public class ThreadInfo extends InfoObject
     
     return insn;
   }
-
-  public boolean isUncaughtHandler() {
-    return (top instanceof UncaughtHandlerFrame);
-  }
-
   
   protected boolean isUncaughtHandlerOnStack(){
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()) {
-      if (frame instanceof UncaughtHandlerFrame){
+      if (frame.hasFrameAttr(UncaughtHandlerContext.class)){
         return true;
       }
     }
@@ -2738,20 +2735,40 @@ public class ThreadInfo extends InfoObject
     return fci.getStaticElementInfo().getReferenceField(fi);
   }
   
-  protected Instruction callUncaughtHandler(ExceptionInfo xi, int handlerRef, String id){
+  /**
+   * using an attribute to mark DirectCallStackFrames executing uncaughtHandlers is not
+   * ideal, but the case is so exotic that we don't want another concrete StackFrame subclass that
+   * would have to be created through the ClassInfo factory. Apart from retrieving the 
+   * ExceptionInfo this is just a normal DirectCallStackFrame.
+   * We could directly use ExceptionInfo, but it seems more advisable to have a dedicated,
+   * private type. This could also store execution state
+   */
+  class UncaughtHandlerContext implements SystemAttribute {
+    ExceptionInfo xInfo;
+    
+    UncaughtHandlerContext (ExceptionInfo xInfo){
+      this.xInfo = xInfo;
+    }
+    
+    ExceptionInfo getExceptionInfo(){
+      return xInfo;
+    }
+  }
+  
+  protected Instruction callUncaughtHandler (ExceptionInfo xi, int handlerRef, String id){
     ElementInfo eiHandler = getElementInfo(handlerRef);
     ClassInfo ciHandler = eiHandler.getClassInfo();
     MethodInfo miHandler = ciHandler.getMethod("uncaughtException(Ljava/lang/Thread;Ljava/lang/Throwable;)V", true);
-
-    MethodInfo stub = miHandler.createDirectCallStub(id);
-    StackFrame frame = new UncaughtHandlerFrame(xi, stub);
-
-    frame.pushRef(handlerRef);
-    frame.pushRef(objRef);
-    frame.pushRef(xi.getExceptionReference());
-
-    pushFrame(frame);
     
+    DirectCallStackFrame frame = miHandler.createDirectCallStackFrame(this, 0);
+    frame.setReferenceArgument( 0, handlerRef, null);
+    frame.setReferenceArgument( 1, objRef, null);
+    frame.setReferenceArgument( 2, xi.getExceptionReference(), null);
+    
+    UncaughtHandlerContext uchContext = new UncaughtHandlerContext( xi);
+    frame.setFrameAttr( uchContext);
+    
+    pushFrame(frame);
     return frame.getPC();
   }
   
@@ -2774,7 +2791,8 @@ public class ThreadInfo extends InfoObject
 
     } else {
       // treat this still as an NoUncaughtExceptionProperty violation
-      pendingException = ((UncaughtHandlerFrame) returnedDirectCall).getExceptionInfo();
+      UncaughtHandlerContext ctx = returnedDirectCall.getFrameAttr(UncaughtHandlerContext.class);
+      pendingException = ctx.getExceptionInfo();
       NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
       throw new UncaughtException(this, pendingException.getExceptionReference());
     }

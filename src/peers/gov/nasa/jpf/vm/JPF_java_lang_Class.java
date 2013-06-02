@@ -211,12 +211,13 @@ public class JPF_java_lang_Class extends NativePeer {
    */
   @MJI
   public int newInstance____Ljava_lang_Object_2 (MJIEnv env, int robj) {
-    String directCallId = "JPF_java_lang_Class.newInstance";
     ThreadInfo ti = env.getThreadInfo();
-    StackFrame frame = ti.getReturnedDirectCall();
+    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+    
+    ClassInfo ci = env.getReferredClassInfo(robj);   // what are we
+    MethodInfo miCtor = ci.getMethod("<init>()V", true);
 
-    if (frame == null || frame.getMethodInfo().getName() != directCallId){
-      ClassInfo ci = env.getReferredClassInfo(robj);   // what are we
+    if (frame == null || frame.getCallee() != miCtor){
 
       if(ci.isAbstract()){ // not allowed to instantiate
         env.throwException("java.lang.InstantiationException");
@@ -231,19 +232,18 @@ public class JPF_java_lang_Class extends NativePeer {
       
       int objRef = env.newObject(ci);  // create the thing
 
-      MethodInfo mi = ci.getMethod("<init>()V", true);
-      if (mi != null) { // direct call required for initialization
-
+      if (miCtor != null) { // direct call required for initialization
         // <2do> - still need to handle protected
-        if (mi.isPrivate()){
+        if (miCtor.isPrivate()){
           env.throwException("java.lang.IllegalAccessException", "cannot access non-public member of class " + ci.getName());
           return MJIEnv.NULL;
         }
 
-        MethodInfo stub = mi.createDirectCallStub( directCallId);
-        frame = new DirectCallStackFrame(stub, 2,0);
-        frame.push( objRef, true);
-        frame.dup(); // (1) cache the object ref so that the bottom half can retrieve it
+        frame = miCtor.createDirectCallStackFrame(ti, 1);
+        // note that we don't set this as a reflection call since it is supposed to propagate exceptions
+        
+        frame.setReferenceArgument( 0, objRef, null);
+        frame.setLocalReferenceVariable( 0, objRef);        // (1) store ref for retrieval during re-exec
         ti.pushFrame(frame);
 
         return MJIEnv.NULL;
@@ -253,12 +253,12 @@ public class JPF_java_lang_Class extends NativePeer {
       }
       
     } else {
-      while (frame.getMethodInfo().getName() != directCallId){
+      while (frame.getCallee() != miCtor){  // ??? redundant 
         // frame was the [clinit] direct call
-        frame = frame.getPrevious();
+        frame = frame.getPreviousDirectCallStackFrame();
       }
       
-      int objRef = frame.pop(); // that's the object ref we pushed in (1)
+      int objRef = frame.getLocalVariable(0); // that's the object ref we set in (1)
       return objRef;
     }
   }

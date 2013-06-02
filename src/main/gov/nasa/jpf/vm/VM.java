@@ -470,7 +470,7 @@ public abstract class VM {
     tiMain.setState(ThreadInfo.State.RUNNING);
   }
   
-  protected void pushMainEntryArgs (MethodInfo miMain, String[] args, ThreadInfo tiMain, StackFrame frame){
+  protected void pushMainEntryArgs (MethodInfo miMain, String[] args, ThreadInfo tiMain, DirectCallStackFrame frame){
     String sig = miMain.getSignature();
     Heap heap = getHeap();
     
@@ -480,14 +480,14 @@ public abstract class VM {
         ElementInfo eiArg = heap.newString(args[i], tiMain);
         eiArgs.setReferenceElement(i, eiArg.getObjectRef());
       }
-      frame.pushRef(eiArgs.getObjectRef());
+      frame.setReferenceArgument( 0, eiArgs.getObjectRef(), null);
 
     } else if (sig.contains("(Ljava/lang/String;)")){
       if (args.length > 1){
         ElementInfo eiArg = heap.newString(args[0], tiMain);
-        frame.pushRef(eiArg.getObjectRef());
+        frame.setReferenceArgument( 0, eiArg.getObjectRef(), null);
       } else {
-        frame.pushRef(MJIEnv.NULL);
+        frame.setReferenceArgument( 0, MJIEnv.NULL, null);
       }
       
     } else if (!sig.contains("()")){
@@ -496,8 +496,7 @@ public abstract class VM {
   }
   
   protected void pushMainEntry (MethodInfo miMain, String[] args, ThreadInfo tiMain) {
-    MethodInfo mainStub = miMain.createDirectCallStub("[main]");
-    DirectCallStackFrame frame = new DirectCallStackFrame(mainStub);
+    DirectCallStackFrame frame = miMain.createDirectCallStackFrame(tiMain, 0);
     pushMainEntryArgs( miMain, args, tiMain, frame);    
     tiMain.pushFrame(frame);
   }
@@ -517,8 +516,7 @@ public abstract class VM {
     for (ClassInfo ci : startupClasses){
       MethodInfo mi = ci.getMethod("<clinit>()V", false);
       if (mi != null) {
-        MethodInfo stub = mi.createDirectCallStub("[clinit]");
-        StackFrame frame = new DirectCallStackFrame(stub);
+        DirectCallStackFrame frame = mi.createDirectCallStackFrame(tiMain, 0);
         tiMain.pushFrame(frame);
       } else {
         ci.setInitialized();

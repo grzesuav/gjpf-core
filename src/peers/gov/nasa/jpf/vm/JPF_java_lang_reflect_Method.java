@@ -167,62 +167,62 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     return ci.getClassObjectRef();
   }
     
-  static int createBoxedReturnValueObject (MJIEnv env, MethodInfo mi, StackFrame frame) {
+  static int createBoxedReturnValueObject (MJIEnv env, MethodInfo mi, DirectCallStackFrame frame) {
     byte rt = mi.getReturnTypeCode();
     int ret = MJIEnv.NULL;
     ElementInfo rei;
     Object attr = null;
 
     if (rt == Types.T_DOUBLE) {
-      attr = frame.getLongOperandAttr();
-      double v = frame.popDouble();
+      attr = frame.getLongResultAttr();
+      double v = frame.getDoubleResult();
       ret = env.newObject(ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Double"));
       rei = env.getModifiableElementInfo(ret);
       rei.setDoubleField("value", v);
     } else if (rt == Types.T_FLOAT) {
-      attr = frame.getOperandAttr();
-      float v = frame.popFloat();
+      attr = frame.getResultAttr();
+      float v = frame.getFloatResult();
       ret = env.newObject(ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.Float"));
       rei = env.getModifiableElementInfo(ret);
       rei.setFloatField("value", v);
     } else if (rt == Types.T_LONG) {
-      attr = frame.getLongOperandAttr();
-      long v = frame.popLong();
+      attr = frame.getLongResultAttr();
+      long v = frame.getLongResult();
       ret = env.valueOfLong(v);
     } else if (rt == Types.T_BYTE) {
-      attr = frame.getOperandAttr();
-      int v = frame.pop(); 
+      attr = frame.getResultAttr();
+      int v = frame.getResult(); 
       ret = env.valueOfByte((byte)v);
     } else if (rt == Types.T_CHAR) {
-      attr = frame.getOperandAttr();
-      int v = frame.pop(); 
+      attr = frame.getResultAttr();
+      int v = frame.getResult(); 
       ret = env.valueOfCharacter((char)v);
     } else if (rt == Types.T_SHORT) {
-      attr = frame.getOperandAttr();
-      int v = frame.pop(); 
+      attr = frame.getResultAttr();
+      int v = frame.getResult(); 
       ret = env.valueOfShort((short)v);
     } else if (rt == Types.T_INT) {
-      attr = frame.getOperandAttr();
-      int v = frame.pop(); 
+      attr = frame.getResultAttr();
+      int v = frame.getResult(); 
       ret = env.valueOfInteger(v);
     } else if (rt == Types.T_BOOLEAN) {
-      attr = frame.getOperandAttr();
-      int v = frame.pop();
+      attr = frame.getResultAttr();
+      int v = frame.getResult();
       ret = env.valueOfBoolean((v == 1)? true: false);
     } else if (mi.isReferenceReturnType()){ 
-      attr = frame.getOperandAttr();
-      ret = frame.pop();
+      attr = frame.getResultAttr();
+      ret = frame.getReferenceResult();
     }
 
     env.setReturnAttribute(attr);
     return ret;
   }
 
-  static boolean pushUnboxedArguments (MJIEnv env, MethodInfo mi, StackFrame frame, int argsRef) {
+  static boolean pushUnboxedArguments (MJIEnv env, MethodInfo mi, DirectCallStackFrame frame, int argIdx, int argsRef) {
     ElementInfo source;
     ClassInfo sourceClass;
     String destTypeNames[];
-    int i, nArgs, passedCount, sourceRef;
+    int nArgs, passedCount, sourceRef;
     byte sourceType, destTypes[];
 
     destTypes     = mi.getArgumentTypes();
@@ -237,8 +237,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       return false;
     }
     
-    for (i = 0; i < nArgs; i++) {
-      
+    for (int i = 0; i < nArgs; i++, argIdx++) {
       sourceRef = env.getReferenceArrayElement(argsRef, i);
 
       // we have to handle null references explicitly
@@ -257,7 +256,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       sourceType = getSourceType( sourceClass, destTypes[i], destTypeNames[i]);
 
       Object attr = env.getElementInfo(argsRef).getFields().getFieldAttr(i);
-      if ((sourceType == Types.T_NONE) || !pushArg(frame, source, sourceType, destTypes[i], attr)){
+      if ((sourceType == Types.T_NONE) || !pushArg( i, frame, source, sourceType, destTypes[i], attr)){
         env.throwException(IllegalArgumentException.class.getName(), "Wrong argument type at index " + i + ".  Source Class = " + sourceClass.getName() + ".  Dest Class = " + destTypeNames[i]);
         return false;        
       }
@@ -292,14 +291,13 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
   
   // do the proper type conversion - Java is pretty forgiving here and does
   // not throw exceptions upon value truncation
-  private static boolean pushArg( StackFrame frame, ElementInfo eiArg, byte srcType, byte destType, Object attr){    
+  private static boolean pushArg( int argIdx, DirectCallStackFrame frame, ElementInfo eiArg, byte srcType, byte destType, Object attr){    
     switch (srcType) {
     case Types.T_DOUBLE:
     {
       double v = eiArg.getDoubleField("value");
-      if (destType == Types.T_DOUBLE){      
-        frame.pushLong(Double.doubleToLongBits(v));
-        frame.setOperandAttr(attr);
+      if (destType == Types.T_DOUBLE){
+        frame.setDoubleArgument( argIdx, v, attr);
         return true;
       }
       return false;
@@ -309,12 +307,10 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       float v = eiArg.getFloatField("value");
       switch (destType){
       case Types.T_FLOAT:
-        frame.push(Float.floatToIntBits(v));
-        frame.setOperandAttr(attr);
+        frame.setFloatArgument( argIdx, v, attr);
         return true;
       case Types.T_DOUBLE:
-        frame.pushLong(Double.doubleToLongBits(v));
-        frame.setLongOperandAttr(attr);
+        frame.setDoubleArgument( argIdx, v, attr);
         return true;
       }
       return false;
@@ -324,16 +320,13 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       long v = eiArg.getLongField("value");
       switch (destType){
       case Types.T_LONG:
-        frame.pushLong(v);
-        frame.setLongOperandAttr(attr);
+        frame.setLongArgument(argIdx, v, attr);
         return true;
       case Types.T_FLOAT:
-        frame.push(Float.floatToIntBits((float)v));
-        frame.setOperandAttr(attr);
+        frame.setFloatArgument(argIdx, (float)v, attr);
         return true;
       case Types.T_DOUBLE:
-        frame.pushLong( Double.doubleToLongBits((double)v));
-        frame.setLongOperandAttr(attr);
+        frame.setDoubleArgument( argIdx, (double)v, attr);
         return true;
       }
       return false;
@@ -343,20 +336,16 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       int v = eiArg.getIntField("value");
       switch (destType){
       case Types.T_INT:
-        frame.push(v);
-        frame.setOperandAttr(attr);
+        frame.setArgument( argIdx, v, attr);
         return true;
       case Types.T_LONG:
-        frame.pushLong(v);
-        frame.setLongOperandAttr(attr);
+        frame.setLongArgument( argIdx, v, attr);
         return true;        
       case Types.T_FLOAT:
-        frame.push( Float.floatToIntBits((float)v));
-        frame.setOperandAttr(attr);
+        frame.setFloatArgument(argIdx, (float)v, attr);
         return true;
       case Types.T_DOUBLE:
-        frame.pushLong( Double.doubleToLongBits((double)v));
-        frame.setLongOperandAttr(attr);
+        frame.setDoubleArgument( argIdx, (double)v, attr);
         return true;
       }
       return false;
@@ -367,20 +356,16 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       switch (destType){
       case Types.T_SHORT:
       case Types.T_INT:
-        frame.push(v);
-        frame.setOperandAttr(attr);
+        frame.setArgument( argIdx, v, attr);
         return true;
       case Types.T_LONG:
-        frame.pushLong(v);
-        frame.setLongOperandAttr(attr);
+        frame.setLongArgument( argIdx, v, attr);
         return true;        
       case Types.T_FLOAT:
-        frame.push( Float.floatToIntBits((float)v));
-        frame.setOperandAttr(attr);
+        frame.setFloatArgument(argIdx, (float)v, attr);
         return true;
       case Types.T_DOUBLE:
-        frame.pushLong( Double.doubleToLongBits((double)v));
-        frame.setLongOperandAttr(attr);
+        frame.setDoubleArgument( argIdx, (double)v, attr);
         return true;
       }
       return false;
@@ -392,20 +377,16 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       case Types.T_BYTE:
       case Types.T_SHORT:
       case Types.T_INT:
-        frame.push(v);
-        frame.setOperandAttr(attr);
+        frame.setArgument( argIdx, v, attr);
         return true;
       case Types.T_LONG:
-        frame.pushLong(v);
-        frame.setLongOperandAttr(attr);
+        frame.setLongArgument( argIdx, v, attr);
         return true;
       case Types.T_FLOAT:
-        frame.push( Float.floatToIntBits((float)v));
-        frame.setOperandAttr(attr);
+        frame.setFloatArgument(argIdx, (float)v, attr);
         return true;
       case Types.T_DOUBLE:
-        frame.pushLong( Double.doubleToLongBits((double)v));
-        frame.setLongOperandAttr(attr);
+        frame.setDoubleArgument( argIdx, (double)v, attr);
         return true;
       }
       return false;
@@ -416,20 +397,16 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       switch (destType){
       case Types.T_CHAR:
       case Types.T_INT:
-        frame.push(v);
-        frame.setOperandAttr(attr);
+        frame.setArgument( argIdx, v, attr);
         return true;
       case Types.T_LONG:
-        frame.pushLong(v);
-        frame.setLongOperandAttr(attr);
+        frame.setLongArgument( argIdx, v, attr);
         return true;        
       case Types.T_FLOAT:
-        frame.push( Float.floatToIntBits((float)v));
-        frame.setOperandAttr(attr);
+        frame.setFloatArgument(argIdx, (float)v, attr);
         return true;
       case Types.T_DOUBLE:
-        frame.pushLong( Double.doubleToLongBits((double)v));
-        frame.setLongOperandAttr(attr);
+        frame.setDoubleArgument( argIdx, (double)v, attr);
         return true;
       }
       return false;
@@ -438,8 +415,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     {
       boolean v = eiArg.getBooleanField("value");
       if (destType == Types.T_BOOLEAN){
-        frame.push(v ? 1 : 0);
-        frame.setOperandAttr(attr);
+        frame.setArgument( argIdx, v ? 1 : 0, attr);
         return true;
       }
       return false;
@@ -448,8 +424,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     {
       int ref =  eiArg.getObjectRef();
       if (destType == Types.T_ARRAY){
-        frame.pushRef(ref);
-        frame.setOperandAttr(attr);
+        frame.setReferenceArgument( argIdx, ref, attr);
         return true;
       }
       return false;
@@ -458,8 +433,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     {
       int ref =  eiArg.getObjectRef();
       if (destType == Types.T_REFERENCE){
-        frame.pushRef(ref);
-        frame.setOperandAttr(attr);
+        frame.setReferenceArgument( argIdx, ref, attr);
         return true;
       }
       return false;
@@ -471,19 +445,17 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
   }
 
   @MJI
-  public int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
-                                                                                           int objRef, int argsRef) {
-    String directCallId = "JPF_java_lang_reflect_Method.invoke"; 
+  public int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef, int objRef, int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
-    MethodInfo mi = getMethodInfo(env, mthRef);
-    StackFrame frame = ti.getReturnedDirectCall();
+    MethodInfo miCallee = getMethodInfo(env, mthRef);
+    DirectCallStackFrame frame = ti.getReturnedDirectCall();
     
-    if (frame == null || frame.getMethodInfo().getName() != directCallId){ // first time
-      ClassInfo calleeClass = mi.getClassInfo();
+    if (frame == null || frame.getCallee() != miCallee){ // first time
+      ClassInfo calleeClass = miCallee.getClassInfo();
       ElementInfo eiMth = ti.getElementInfo(mthRef);
       boolean accessible = (Boolean) eiMth.getFieldValueObject("isAccessible");
 
-      if (mi.isStatic()) { // this might require class init and reexecution
+      if (miCallee.isStatic()) { // this might require class init and reexecution
         if (calleeClass.requiresClinitExecution(ti)) { // might cause another direct call
           env.repeatInvocation();
           return 0;
@@ -500,15 +472,18 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         ClassInfo callerClass = caller.getClassInfo();
 
         if (callerClass != calleeClass) {
-          env.throwException(IllegalAccessException.class.getName(), "Class " + callerClass.getName() + " can not access a member of class " + calleeClass.getName() + " with modifiers \"" + Modifier.toString(mi.getModifiers()));
+          env.throwException(IllegalAccessException.class.getName(), "Class " + callerClass.getName() +
+                  " can not access a member of class " + calleeClass.getName()
+                  + " with modifiers \"" + Modifier.toString(miCallee.getModifiers()));
           return MJIEnv.NULL;
         }
       }
       
-      MethodInfo stub = mi.createReflectionCallStub( directCallId);
-      frame = new DirectCallStackFrame(stub);
-
-      if (!mi.isStatic()) {
+      frame = miCallee.createDirectCallStackFrame(ti, 0);
+      frame.setReflection();
+      int argIdx = 0;
+      
+      if (!miCallee.isStatic()) {
         ElementInfo eiObj = ti.getElementInfo(objRef);
         ClassInfo objClass = eiObj.getClassInfo();
         
@@ -517,10 +492,10 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
           return MJIEnv.NULL;
         }
         
-        frame.push(objRef, true);
+        frame.setReferenceArgument( argIdx++, objRef, null);
       }
 
-      if (!pushUnboxedArguments(env, mi, frame, argsRef)) {
+      if (!pushUnboxedArguments( env, miCallee, frame, argIdx, argsRef)) {
         return MJIEnv.NULL;  
       }
        
@@ -529,12 +504,12 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       return MJIEnv.NULL;
       
     } else { // we have returned from the direct call
-      while (frame.getMethodInfo().getName() != directCallId){
+      while (frame.getCallee() != miCallee){
         // frame was the [clinit] direct call
-        frame = frame.getPrevious();
+        frame = frame.getPreviousDirectCallStackFrame();
       }
       
-      return createBoxedReturnValueObject( env, mi, frame);
+      return createBoxedReturnValueObject( env, miCallee, frame);
     }
   }
   

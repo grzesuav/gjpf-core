@@ -45,7 +45,7 @@ public class NATIVERETURN extends ReturnInstruction {
       // NativeMethodInfo is never synchronized, so no thread CG here
     }
 
-    StackFrame frame = ti.getModifiableTopFrame();
+    StackFrame frame = ti.getModifiableTopFrame();    
     getAndSaveReturnValue(frame);
 
     // NativeStackFrame can never can be the first stack frame, so no thread CG
@@ -88,7 +88,8 @@ public class NATIVERETURN extends ReturnInstruction {
   }
 
   @Override
-  protected void getAndSaveReturnValue(StackFrame frame) {
+  protected void getAndSaveReturnValue (StackFrame frame) {
+    // it's got to be a NativeStackFrame since this insn is created by JPF
     NativeStackFrame nativeFrame = (NativeStackFrame)frame;
 
     returnFrame = nativeFrame;
@@ -122,6 +123,7 @@ public class NATIVERETURN extends ReturnInstruction {
     return retAttr;
   }
 
+  // <2do> this should use the getResult..() methods of NativeStackFrame
   
   @Override
   protected void pushReturnValue (StackFrame fr) {

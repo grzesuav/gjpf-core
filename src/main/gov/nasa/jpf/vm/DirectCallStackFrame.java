@@ -26,40 +26,64 @@ import gov.nasa.jpf.SystemAttribute;
  * synthetic, their only code is (usually) a INVOKEx and a DIRECTCALLRETURN.
  * NOTE: such MethodInfos do not belong to any class
  * 
- * Arguments have to be explicitly pushed by the caller
+ * Arguments for the invoke insn have to be pushed explicitly by the caller
  * 
- * They do not return any values themselves, but they do get the return values of the
- * called methods pushed onto their own operand stack. If the DirectCallStackFrame user
+ * direct calls do not return any values themselves, but they do get the return values of the
+ * called method pushed onto their own operand stack. If the DirectCallStackFrame user
  * needs such return values, it has to do so via ThreadInfo.getReturnedDirectCall()
  *
  */
-public class DirectCallStackFrame extends StackFrame implements SystemAttribute {
+public abstract class DirectCallStackFrame extends StackFrame implements SystemAttribute {
   
-  public DirectCallStackFrame (MethodInfo stub) {
-    super(stub);
-  }
-
-  public DirectCallStackFrame (MethodInfo stub, int nOperandSlots, int nLocalSlots) {
-    super(stub, nLocalSlots, nOperandSlots);
+  MethodInfo callee;
+ 
+  protected DirectCallStackFrame (MethodInfo miDirectCall, MethodInfo callee){
+    super(miDirectCall);
+    
+    this.callee = callee;
   }
   
-  public boolean isDirectCallFrame() {
-    return true;
+  public MethodInfo getCallee (){
+    return callee;
+  }
+  
+  @Override
+  public String getStackTraceInfo () {
+    StringBuilder sb = new StringBuilder(128);
+    sb.append('[');
+    sb.append( callee.getUniqueName());
+    sb.append(']');
+    return sb.toString();
+  }
+  
+  public DirectCallStackFrame getPreviousDirectCallStackFrame(){
+    StackFrame f = prev;
+    while (f != null && !(f instanceof DirectCallStackFrame)){
+      f = f.prev;
+    }
+    
+    return (DirectCallStackFrame) f;
+  }
+  
+  public void setFireWall(){
+    mi.setFirewall(true);
   }
 
   @Override
-  public boolean isSynthetic() {
+  public boolean isDirectCallFrame () {
     return true;
   }
+  
+  // those set the callee arguments for the invoke insn
+  public abstract void setArgument (int idx, int value, Object attr);
+  public abstract void setLongArgument (int idx, long value, Object attr);
+  public abstract void setReferenceArgument (int idx, int ref, Object attr);
 
-  public String getClassName() {
-    return "<direct call>";
+  public void setFloatArgument (int idx, float value, Object attr){
+    setArgument( idx, Float.floatToIntBits(value), attr);
+  }
+  public void setDoubleArgument (int idx, double value, Object attr){
+    setLongArgument( idx, Double.doubleToLongBits(value), attr);
   }
   
-  public String getSourceFile () {
-    return "<direct call>"; // we don't have any
-  }
-  
-  
-  // <2do> and a couple more we still have to do
 }

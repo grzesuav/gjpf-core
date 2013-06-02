@@ -726,14 +726,26 @@ public class MJIEnv {
     return ci.getStaticElementInfo().getShortField(fname);
   }
 
+  public char[] getStringChars (int objRef){
+    if (objRef != -1) {
+      ElementInfo ei = getElementInfo(objRef);
+      return ei.getStringChars();
+      
+    } else {
+      return null;
+    }
+    
+  }
+  
   /**
    * turn JPF String object into a VM String object
    * (this is a method available for non gov..jvm NativePeer classes)
    */
-  public String getStringObject (int objref) {
-    if (objref != -1) {
-      ElementInfo ei = getElementInfo(objref);
+  public String getStringObject (int objRef) {
+    if (objRef != -1) {
+      ElementInfo ei = getElementInfo(objRef);
       return ei.asString();
+      
     } else {
       return null;
     }

@@ -85,15 +85,13 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
   // <2do> .. and some more delegations to JPF_java_lang_Method
 
   @MJI
-  public int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
-                                                                             int argsRef) {
-    String directCallId = "JPF_java_lang_reflect_Constructor.newInstance";
+  public int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef, int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
-    StackFrame frame = ti.getReturnedDirectCall();
+    DirectCallStackFrame frame = ti.getReturnedDirectCall();
+    MethodInfo miCallee = getMethodInfo(env,mthRef);
 
-    if (frame == null || frame.getMethodInfo().getName() != directCallId){ // first time
-      MethodInfo mi = getMethodInfo(env,mthRef);
-      ClassInfo ci = mi.getClassInfo();
+    if (frame == null || frame.getCallee() != miCallee) { // first time
+      ClassInfo ci = miCallee.getClassInfo();
 
        if (ci.isAbstract()){
         env.throwException("java.lang.InstantiationException");
@@ -107,13 +105,13 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
       }
       
       int objRef = env.newObject(ci);
-      MethodInfo stub = mi.createDirectCallStub( directCallId);
+      frame = miCallee.createDirectCallStackFrame(ti, 1);
+      frame.setReflection();
+      
+      frame.setReferenceArgument(0, objRef, null);
+      frame.setLocalReferenceVariable(0, objRef);  // (1) store the objRef for retrieval during re-exec
 
-      frame = new DirectCallStackFrame(stub, stub.getMaxStack()+1, stub.getMaxLocals());
-      frame.push(objRef, true);  // (1) we store the return object on the frame
-      frame.dup();
-
-      if (!JPF_java_lang_reflect_Method.pushUnboxedArguments(env, mi, frame, argsRef)) {
+      if (!JPF_java_lang_reflect_Method.pushUnboxedArguments( env, miCallee, frame, 1, argsRef)) {
         return MJIEnv.NULL;
       }
 
@@ -123,12 +121,12 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
       return MJIEnv.NULL; // doesn't matter, we come back
       
     } else { // reflection call returned
-      while (frame.getMethodInfo().getName() != directCallId){
+      while (frame.getCallee() != miCallee){
         // frame was the [clinit] direct call
-        frame = frame.getPrevious();
+        frame = frame.getPreviousDirectCallStackFrame();
       }
       
-      int objRef = frame.pop(); // that's the object ref we pushed in (1)
+      int objRef = frame.getLocalVariable(0); // that's the object ref we stored in (1)
       return objRef;
     }
   }

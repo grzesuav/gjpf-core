@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.jvm.bytecode.NATIVERETURN;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Misc;
@@ -35,7 +36,7 @@ import java.io.StringWriter;
  * NOTE: operands and locals can be, but are not automatically used during
  * native method execution.
  */
-public class NativeStackFrame extends StackFrame {
+public abstract class NativeStackFrame extends StackFrame {
 
 
   // we don't use the operand stack or locals for arguments and return value
@@ -193,5 +194,63 @@ public class NativeStackFrame extends StackFrame {
     pw.print('}');
 
     return sw.toString();
+  }
+  
+  //--- NativeStackFrames aren't called directly and have special return value processing (in NATIVERETURN.execute())
+  @Override
+  public void setArgumentLocal (int idx, int value, Object attr){
+    throw new JPFException("NativeStackFrames don't support setting argument locals");
+  }
+  @Override
+  public void setLongArgumentLocal (int idx, long value, Object attr){
+    throw new JPFException("NativeStackFrames don't support setting argument locals");    
+  }
+  @Override
+  public void setReferenceArgumentLocal (int idx, int ref, Object attr){
+    throw new JPFException("NativeStackFrames don't support setting argument locals");
+  }
+  
+  public int getResult(){
+    Object r = ret;
+    
+    if (r instanceof Number){
+      if (r instanceof Double){
+        throw new JPFException("result " + ret + " can't be converted into int");    
+      } else if (r instanceof Float){
+        return Float.floatToIntBits((Float)r);
+      } else {
+        return ((Number)r).intValue();
+      }
+    } else if (r instanceof Boolean){
+      return (r == Boolean.TRUE) ? 1 : 0;
+    } else {
+      throw new JPFException("result " + ret + " can't be converted into raw int value");
+    }
+  }
+  
+  public int getReferenceResult(){
+    if (ret instanceof Integer){
+      return (Integer)ret; // MJI requires references to be returned as 'int'
+    } else {
+      throw new JPFException("result " + ret + " can't be converted into JPF refrence value");      
+    }
+  }
+  
+  public long getLongResult(){
+    Object r = ret;
+    if (r instanceof Long){
+      return (Long)r;
+    } else if (r instanceof Double){
+      return Double.doubleToLongBits((Double)r);
+    } else {
+      throw new JPFException("result " + ret + " can't be converted into raw long value");      
+    }
+  }
+  
+  public Object getResultAttr(){
+    return retAttr;
+  }
+  public Object getLongResultAttr(){
+    return retAttr;    
   }
 }

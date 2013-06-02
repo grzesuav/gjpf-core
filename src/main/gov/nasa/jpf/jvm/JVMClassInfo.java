@@ -19,18 +19,16 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ClassParseException;
 import gov.nasa.jpf.vm.ClassParser;
+import gov.nasa.jpf.vm.DirectCallStackFrame;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.NativeMethodInfo;
-import gov.nasa.jpf.vm.NativeStackFrame;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.Types;
 
 /**
  * a ClassInfo that was created from a Java classfile
@@ -53,7 +51,9 @@ public class JVMClassInfo extends ClassInfo {
   protected JVMClassInfo (ClassInfo ciAnnotation, String proxyName, ClassLoaderInfo cli, String url) {
     super( ciAnnotation, proxyName, cli, url);
   }
-    
+
+  //--- call processing
+  
   /**
    * to be called from super proxy ctor
    * this needs to be in the VM specific ClassInfo because we need to create code
@@ -78,8 +78,8 @@ public class JVMClassInfo extends ClassInfo {
   }
   
   @Override
-  protected void setDirectCallCode (MethodInfo miCallee, MethodInfo miStub){
-    JVMCodeBuilder cb = new JVMCodeBuilder( miStub);
+  protected void setDirectCallCode (MethodInfo miDirectCall, MethodInfo miCallee){
+    JVMCodeBuilder cb = new JVMCodeBuilder( miDirectCall);
 
     if (miCallee.isStatic()){
       if (miCallee.isClinit()) {
@@ -116,8 +116,7 @@ public class JVMClassInfo extends ClassInfo {
     cb.installCode();    
   }
   
-  //--- call processing
-  
+
   // create a stack frame that has properly initialized arguments
   @Override
   public StackFrame createStackFrame (ThreadInfo ti, MethodInfo callee){
@@ -133,6 +132,27 @@ public class JVMClassInfo extends ClassInfo {
       calleeFrame.setCallArguments( ti);
       return calleeFrame;      
     }
+  }
+  
+  @Override
+  public DirectCallStackFrame createDirectCallStackFrame (ThreadInfo ti, MethodInfo miCallee, int nLocals){
+    int nOperands = miCallee.getNumberOfCallerStackSlots();
+    
+    MethodInfo miDirect = new MethodInfo(miCallee, nLocals, nOperands);
+    setDirectCallCode( miDirect, miCallee);
+    
+    return new JVMDirectCallStackFrame( miDirect, miCallee);
+  }
+  
+  /**
+   * while this is a normal DirectCallStackFrame, it has different code which has to be created here 
+   */
+  @Override
+  public DirectCallStackFrame createRunStartStackFrame (ThreadInfo ti, MethodInfo miRun){
+    MethodInfo miDirect = new MethodInfo( miRun, 0, 1);
+    setRunStartCode( miRun, miDirect);
+    
+    return new JVMDirectCallStackFrame( miDirect, miRun);
   }
   
   

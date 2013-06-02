@@ -49,23 +49,7 @@ public class NativeMethodInfo extends MethodInfo {
   protected NativePeer peer;
 
   public NativeMethodInfo (MethodInfo mi, Method mth, NativePeer peer){
-    super(mi.globalId);
-
-    uniqueName = mi.uniqueName;
-    name = mi.name;
-    signature = mi.signature;
-    genericSignature = mi.genericSignature;
-    ci = mi.ci;
-    modifiers = mi.modifiers;
-    attributes = mi.attributes;
-    thrownExceptionClassNames = mi.thrownExceptionClassNames;
-    parameterAnnotations = mi.parameterAnnotations;
-
-    annotations = mi.annotations;
-    
-    localVars = null; // there are no StackFrame localVarInfos, this is native
-    
-    // what about maxLocals and maxStack?
+    super(mi);  // <2do> do we want any operands or locals?
 
     this.peer = peer;
     this.mth = mth;

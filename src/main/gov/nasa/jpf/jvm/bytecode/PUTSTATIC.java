@@ -54,40 +54,39 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
   public Instruction execute (ThreadInfo ti) {
     
     if (!ti.isFirstStepInsn()) { // top half
-      StackFrame frame = ti.getTopFrame();
-      
-      // resolve the class of the referenced field first
-      ClassInfo ciMth = frame.getMethodInfo().getClassInfo();
+      FieldInfo fieldInfo;
+    
       try {
-        ci = ciMth.resolveReferencedClass(className);
+        fieldInfo = getFieldInfo();
       } catch(LoadOnJPFRequired lre) {
         return ti.getPC();
       }
-
-      if (getFieldInfo() == null) {
+      
+      if (fieldInfo == null) {
         return ti.createAndThrowException("java.lang.NoSuchFieldError", (className + '.' + fname));
       }
       
-      if (!mi.isClinit(ci) && requiresClinitExecution(ti, ci)) {
+      ClassInfo ciField = fi.getClassInfo();
+      if (!mi.isClinit(ciField) && requiresClinitExecution(ti, ciField)) {
         // note - this returns the next insn in the topmost clinit that just got pushed
         return ti.getPC();
       }
       
-      ElementInfo ei = ci.getStaticElementInfo();
+      ElementInfo ei = ciField.getStaticElementInfo();
       if (isNewPorFieldBoundary(ti)) {
         if (createAndSetSharedFieldAccessCG( ei, ti)) {
           return this;
         }
       }
       
-      return put( ti, frame, ei);
+      return put( ti, ti.getTopFrame(), ei);
       
     } else { // re-execution
       // no need to redo the exception checks, we already had them in the top half
-      ElementInfo ei = ci.getStaticElementInfo();
-      StackFrame frame = ti.getTopFrame();
-
-      return put( ti, frame, ei);      
+      ClassInfo ciField = fi.getClassInfo();
+      ElementInfo ei = ciField.getStaticElementInfo();
+      
+      return put( ti, ti.getTopFrame(), ei);      
     }
   }
   

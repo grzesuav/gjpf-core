@@ -65,10 +65,9 @@ public class CHECKCAST extends JVMInstruction {
           t = type;
         }
 
-        ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
         // resolve the referenced class
         try {
-          cls.resolveReferencedClass(t);
+          ti.resolveReferencedClass(t);
         } catch(LoadOnJPFRequired lre) {
           return ti.getPC();
         }

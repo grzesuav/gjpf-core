@@ -53,17 +53,15 @@ import java.util.Iterator;
  *   slot[top]              : highest used operand slot
  *
  */
-public class StackFrame implements Cloneable {
+public abstract class StackFrame implements Cloneable {
   
   /**
    * this StackFrame is not allowed to be modified anymore because it has been state stored.
    * Set during state storage and checked upon each modification, causing exceptions on attempts
    * to modify callerSlots frozen instance. The flag is reset in clones
    */
-  public static final int   ATTR_IS_FROZEN     = 0x100;
-  
-  static final int   ATTR_STORE_MASK = 0x0000ffff;
-  
+  public static final int   ATTR_IS_FROZEN  = 0x100;  
+  static final int ATTR_IS_REFLECTION = 0x1000;  
    /**
     * the previous StackFrame (usually the caller, null if first). To be set when
     * the frame is pushed on the ThreadInfo callstack
@@ -147,22 +145,24 @@ public class StackFrame implements Cloneable {
   }
 
   /**
+   * creates callerSlots dummy Stackframe for testing of operand/local operations
+   * NOTE - TESTING ONLY! this does not have a MethodInfo
+   */
+  protected StackFrame (int nLocals, int nOperands){
+    stackBase = nLocals;
+    slots = new int[nLocals + nOperands];
+    isRef = createReferenceMap(slots.length);
+    top = nLocals-1;  // index, not size!
+  }
+  
+  /**
    * re-execute method from the beginning - use with care
    */
   public void reset() {
     pc = mi.getInstruction(0);
   }  
   
-  /**
-   * creates callerSlots dummy Stackframe for testing of operand/local operations
-   * NOTE - TESTING ONLY! this does not have callerSlots MethodInfo
-   */
-  public StackFrame (int nLocals, int nOperands){
-    stackBase = nLocals;
-    slots = new int[nLocals + nOperands];
-    isRef = createReferenceMap(slots.length);
-    top = nLocals-1;  // index, not size!
-  }
+
 
   protected FixedBitSet createReferenceMap (int nSlots){
     if (nSlots <= 64){
@@ -207,7 +207,7 @@ public class StackFrame implements Cloneable {
   public StackFrame getPrevious() {
     return prev;
   }
-
+  
   /**
    * to be set (by ThreadInfo) when the frame is pushed. Can also be used
    * for non-local gotos, but be warned - that's tricky
@@ -886,7 +886,26 @@ public class StackFrame implements Cloneable {
   
   // -- end attrs --
   
+  public void setLocalReferenceVariable (int index, int ref){
+    if (slots[index] != MJIEnv.NULL){
+      VM.getVM().getSystemState().activateGC();
+    }
+    
+    slots[index] = ref;
+    isRef.set(index);
+  }
 
+  public void setLocalVariable (int index, int v){
+    // Hmm, should we treat this an error?
+    if (isRef.get(index) && slots[index] != MJIEnv.NULL){
+      VM.getVM().getSystemState().activateGC();      
+    }
+    
+    slots[index] = v;
+    isRef.clear(index);
+  }
+  
+  // <2do> replace with non-ref version
   public void setLocalVariable (int index, int v, boolean ref) {
     // <2do> activateGc should be replaced by local refChanged
     boolean activateGc = (isRef.get(index) && (slots[index] != -1));
@@ -1165,6 +1184,13 @@ public class StackFrame implements Cloneable {
   }
   
   
+  public void setReflection(){
+    attributes |= ATTR_IS_REFLECTION;
+  }
+  
+  public boolean isReflection(){
+    return ((attributes & ATTR_IS_REFLECTION) != 0);
+  }
 
   // all the dupses don't have any GC side effect (everything is already
   // on the stack), so skip the GC requests associated with push()/pop()
@@ -1963,4 +1989,36 @@ public class StackFrame implements Cloneable {
     return -1;
   }
 
+  //--- abstract argument & return passing that is shared between VM types
+  
+  public abstract int getResult();
+  public abstract int getReferenceResult();
+  public abstract long getLongResult();
+  public abstract Object getResultAttr();
+  public abstract Object getLongResultAttr();
+  
+  public float getFloatResult(){
+    return Float.intBitsToFloat(getResult());    
+  }
+  public double getDoubleResult(){
+    return Double.longBitsToDouble(getLongResult());
+  }
+  public Object getFloatResultAttr(){
+    return getResultAttr();
+  }
+  public Object getDoubleResultAttr(){
+    return getLongResultAttr();
+  }
+  
+  // those set the local vars that are normally initialized from call arguments
+  public abstract void setArgumentLocal (int idx, int value, Object attr);
+  public abstract void setLongArgumentLocal (int idx, long value, Object attr);
+  public abstract void setReferenceArgumentLocal (int idx, int ref, Object attr);
+
+  public void setFloatArgumentLocal (int idx, float value, Object attr){
+    setArgumentLocal( idx, Float.floatToIntBits(value), attr);
+  }
+  public void setDoubleArgumentLocal (int idx, double value, Object attr){
+    setLongArgumentLocal( idx, Double.doubleToLongBits(value), attr);
+  }
 }

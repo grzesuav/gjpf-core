@@ -518,7 +518,7 @@ public class Verify {
   public static void terminateSearch () {
     // native
   }
-
+  
   public static void setProperties (String... p) {
     // native
   }

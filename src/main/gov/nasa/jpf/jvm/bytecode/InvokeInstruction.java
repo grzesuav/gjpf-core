@@ -19,19 +19,13 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.JVMInstruction;
-import gov.nasa.jpf.jvm.JVMNativeStackFrame;
-import gov.nasa.jpf.jvm.JVMStackFrame;
-import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.LocalVarInfo;
-import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.NativeMethodInfo;
-import gov.nasa.jpf.vm.NativeStackFrame;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
@@ -148,7 +142,7 @@ public abstract class InvokeInstruction extends JVMInstruction {
   //--- invocation processing
 
   protected void setupCallee (ThreadInfo ti, MethodInfo callee){
-    ClassInfo ciCaller = mi.getClassInfo();
+    ClassInfo ciCaller = callee.getClassInfo();
     StackFrame frame = ciCaller.createStackFrame( ti, callee);
     
     ti.pushFrame(frame);

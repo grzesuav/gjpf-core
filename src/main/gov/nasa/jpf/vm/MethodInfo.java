@@ -41,7 +41,6 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   
   // special globalIds
   static final int DIRECT_CALL = -1;
-  static final int REFLECTION_CALL = -2;
 
   static final LocalVarInfo[] EMPTY = new LocalVarInfo[0];
   
@@ -60,7 +59,8 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   static final int  IS_CLINIT   = 0x80000;
   static final int  IS_INIT     = 0x100000;
   
-
+  static final int  IS_REFLECTION = 0x200000; // this is a reflection direct call
+  
   /** a unique int assigned to this method */
   protected int globalId = -1;
 
@@ -161,10 +161,53 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     return new MethodInfo( ci, name, signature, modifiers, maxLocals, maxStack);
   }
 
-  // for explicit construction only (direct calls)
-  protected MethodInfo (int id) {
-    globalId = id;
-    // we don't want direct call methods in the mthTable (would be a memory leak)
+  /**
+   * for direct call construction
+   * Note: this is only a partial initialization, the code still has to be created/installed by the caller
+   */
+  public MethodInfo (MethodInfo callee, int nLocals, int nOperands) {
+    globalId = DIRECT_CALL;
+    // we don't want direct call methods in the mthTable (would be a memory leak) so don't register
+    
+    ci = callee.ci;
+    name = "[" + callee.name + ']'; // it doesn't allocate anything, so we don't have to be unique
+    signature = "()V";
+    genericSignature = "";
+    maxLocals = nLocals;
+    maxStack = nOperands;  // <2do> cache for optimization
+    localVars = EMPTY;
+    lineNumbers = null;
+    exceptionHandlers = null;
+    thrownExceptionClassNames = null;
+    uniqueName = name;
+    
+    // we need to preserve the ClassInfo so that class resolution for static method calls works
+    ci = callee.ci;
+    
+    modifiers = Modifier.STATIC;   // always treated as static
+    
+    // code still has to be installed by caller
+  }
+  
+  /**
+   * for NativeMethodInfo creation 
+   */
+  public MethodInfo (MethodInfo mi) {
+    globalId = mi.globalId;
+    uniqueName = mi.uniqueName;
+    name = mi.name;
+    signature = mi.signature;
+    genericSignature = mi.genericSignature;
+    ci = mi.ci;
+    modifiers = mi.modifiers;
+    attributes = mi.attributes;
+    thrownExceptionClassNames = mi.thrownExceptionClassNames;
+    parameterAnnotations = mi.parameterAnnotations;
+
+    annotations = mi.annotations;
+    
+    localVars = null; // there are no StackFrame localVarInfos, this is native
+    // code still has to be installed by caller
   }
   
   // <2do> this is going away
@@ -350,70 +393,12 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     return globalId;
   }
 
-  
-  protected MethodInfo createCallStub (String originator, int id){
-    MethodInfo mi = new MethodInfo(id);
-    String cname = ci.getName();
-
-    mi.name = originator; // + name; // + cname; // could maybe also include the called method, but keep it fast
-    mi.signature = "()V";
-    mi.genericSignature = "";
-    mi.maxLocals = isStatic() ? 0 : 1;
-    mi.maxStack = getNumberOfCallerStackSlots();  // <2do> cache for optimization
-    mi.localVars = EMPTY;
-    mi.lineNumbers = null;
-    mi.exceptionHandlers = null;
-    mi.thrownExceptionClassNames = null;
-    mi.uniqueName = mi.name;
-    mi.ci = ci;
-    
-    if (isStatic()){
-      mi.modifiers |= Modifier.STATIC;      
-    }
-    
-    ci.setDirectCallCode(this, mi);
-
-    return mi;
+  public DirectCallStackFrame createRunStartStackFrame (ThreadInfo ti){
+    return ci.createRunStartStackFrame( ti, this);
   }
 
-  protected MethodInfo createRunStub (){
-    MethodInfo mi = new MethodInfo(DIRECT_CALL);
-    String cname = ci.getName();
-
-    mi.name = "[run]"; // + name; // + cname; // could maybe also include the called method, but keep it fast
-    mi.signature = "()V";
-    mi.genericSignature = "";
-    mi.maxLocals = 1;  // only this
-    mi.maxStack = 1;  // this
-    mi.localVars = EMPTY;
-    mi.lineNumbers = null;
-    mi.exceptionHandlers = null;
-    mi.thrownExceptionClassNames = null;
-    mi.uniqueName = mi.name;
-    mi.ci = ci;
-    
-    ci.setRunStartCode(this, mi);
-    
-    return mi;
-  }
-  
-  /**
-   * NOTE - this only works in conjunction with a special StackFrame,
-   * the caller has to make sure the right operands are pushed for the call arguments!
-   */
-  public MethodInfo createDirectCallStub (String id) {
-    return createCallStub(id, DIRECT_CALL);
-  }
-  public boolean isDirectCallStub() {
-    return (globalId == DIRECT_CALL);
-  }
-
-  public MethodInfo createReflectionCallStub (String id) {
-    return createCallStub(id, REFLECTION_CALL);
-  }
-  
-  public boolean isReflectionCallStub() {
-    return (globalId == REFLECTION_CALL);
+  public DirectCallStackFrame createDirectCallStackFrame (ThreadInfo ti, int nLocals){
+    return ci.createDirectCallStackFrame(ti, this, nLocals);
   }
 
   public boolean isSyncRelevant () {

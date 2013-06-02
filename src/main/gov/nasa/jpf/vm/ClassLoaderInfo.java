@@ -31,6 +31,7 @@ import java.util.jar.JarFile;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.SystemAttribute;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.SparseIntVector;
 import gov.nasa.jpf.util.StringSetMatcher;
@@ -277,22 +278,12 @@ public class ClassLoaderInfo
     return getCurrentClassLoader( ThreadInfo.getCurrentThread());
   }
 
-  public static ClassLoaderInfo getCurrentClassLoader(ThreadInfo ti) {
-    MethodInfo mi = ti.getTopFrameMethodInfo();
-    if (mi != null) {
-      ClassInfo ci = mi.getClassInfo();
-      if(ci != null) {
-        return ci.getClassLoaderInfo();
-      } else {
-        Iterator<StackFrame> it = ti.iterator();
-
-        while(it.hasNext()) {
-          StackFrame sf = it.next();
-          ci = sf.getMethodInfo().getClassInfo();
-          if(ci != null) {
-            return ci.getClassLoaderInfo();
-          }
-        }
+  public static ClassLoaderInfo getCurrentClassLoader (ThreadInfo ti) {
+    for (StackFrame frame = ti.getTopFrame(); frame != null; frame = frame.getPrevious()){
+      MethodInfo miFrame = frame.getMethodInfo();
+      ClassInfo ciFrame =  miFrame.getClassInfo();
+      if (ciFrame != null){
+        return ciFrame.getClassLoaderInfo();
       }
     }
 
@@ -531,54 +522,69 @@ public class ClassLoaderInfo
     return ci;
   }
 
-  protected ClassInfo loadClassOnJPF(String cname) {
-    String className = Types.getClassNameFromTypeName(cname);
+  // we need a system attribute to 
+  class LoadClassRequest implements SystemAttribute {
+    String typeName;
+    
+    LoadClassRequest (String typeName){
+      this.typeName = typeName;
+    }
+    
+    boolean isRequestFor( String typeName){
+      return this.typeName.equals( typeName);
+    }
+  }
+  
+  protected ClassInfo loadClassOnJPF (String typeName) {
+    String className = Types.getClassNameFromTypeName(typeName);
     // Check if the given class is already resolved by this loader
     ClassInfo ci = getAlreadyResolvedClassInfo(className);
 
-    // If the class has not been resolved, do a round trip to enter the 
-    // user code of loadClass(cname) 
-    if(ci == null) {
-      ThreadInfo ti = VM.getVM().getCurrentThread();
+    if(ci != null) { // class already resolved
+      return ci;
+      
+    } else {   // class is not yet resolved, do a roundtrip for the respective loadClass() method
+      ThreadInfo ti = VM.getVM().getCurrentThread();  
       StackFrame frame = ti.getReturnedDirectCall();
+      
+      if (frame != null){
+        LoadClassRequest a = frame.getFrameAttr(LoadClassRequest.class);
+        if (a != null && a.isRequestFor(typeName)){ // the roundtrip is completed
+          int clsObjRef = frame.pop();
 
-      if(frame != null && frame.getMethodName().equals("[loadClass(" + cname + ")]")) {
-        // the round trip ends here. loadClass(cname) is already executed on JPF
-        int clsObjRef = frame.pop();
-
-        if (clsObjRef == MJIEnv.NULL){
-          throw new ClassInfoException( "class not found: " + cname , this, "java.lang.NoClassDefFoundError", cname);
+          if (clsObjRef == MJIEnv.NULL) {
+            throw new ClassInfoException("class not found: " + typeName, this, "java.lang.NoClassDefFoundError", typeName);
           } else {
             return ti.getEnv().getReferredClassInfo(clsObjRef);
-          }
-      } else {
-        // the round trip starts here
-        pushloadClassFrame(cname);
-        // bail out right away & re-enter the current instruction in JPF
-        throw new LoadOnJPFRequired(cname);
+          }          
+        }
       }
+      
+      // initiate the roundtrip & bail out
+      pushloadClassFrame(typeName);
+      throw new LoadOnJPFRequired(typeName);
     }
-    return ci;
   }
 
-  protected void pushloadClassFrame(String superName) {
+  protected void pushloadClassFrame (String typeName) {
     ThreadInfo ti = VM.getVM().getCurrentThread();
 
     // obtain the class of this ClassLoader
     ClassInfo clClass = VM.getVM().getClassInfo(objRef);
 
     // retrieve the loadClass() method of this ClassLoader class
-    MethodInfo mi = clClass.getMethod("loadClass(Ljava/lang/String;)Ljava/lang/Class;", true);
+    MethodInfo miLoadClass = clClass.getMethod("loadClass(Ljava/lang/String;)Ljava/lang/Class;", true);
 
-    // create a frame representing loadClass() & push it to the stack of the 
-    // current thread 
-    MethodInfo stub = mi.createDirectCallStub("[loadClass(" + superName + ")]");
-    StackFrame frame = new DirectCallStackFrame(stub);
+    // create a frame representing loadClass() & push it to the stack of the  current thread 
+    DirectCallStackFrame frame = miLoadClass.createDirectCallStackFrame( ti, 0);
 
-    int sRef = ti.getEnv().newString(superName.replace('/', '.'));
-    frame.push(objRef, true);
-    frame.pushRef(sRef);
+    String clsName = typeName.replace('/', '.');
+    int sRef = ti.getEnv().newString( clsName);
+    frame.setReferenceArgument( 0, objRef, null);
+    frame.setReferenceArgument( 1, sRef, null);
 
+    frame.setFrameAttr( new LoadClassRequest(typeName));
+    
     ti.pushFrame(frame);
   }
 

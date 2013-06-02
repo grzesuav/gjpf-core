@@ -145,23 +145,19 @@ public class JPF_java_lang_System extends NativePeer {
   public String getSUTJavaClassPath(VM vm) {
     ClassInfo system = ClassLoaderInfo.getSystemResolvedClassInfo("java.lang.System");
     
-    if (system == null) {
-      return null; 
-    }
-    
-    MethodInfo getProperty = system.getMethod("getProperty(Ljava/lang/String;)Ljava/lang/String;", true);
-    MethodInfo stub = getProperty.createDirectCallStub("getSUTJavaClassPath");
-    stub.setFirewall(true);
-
     ThreadInfo ti = vm.getCurrentThread();
     Heap heap = vm.getHeap();
     ElementInfo eiClassPath = heap.newString(JAVA_CLASS_PATH, ti);
     
-    DirectCallStackFrame frame = new DirectCallStackFrame(stub);
-    frame.push(eiClassPath.getObjectRef());
+    MethodInfo miGetProperty = system.getMethod("getProperty(Ljava/lang/String;)Ljava/lang/String;", true);
+    DirectCallStackFrame frame = miGetProperty.createDirectCallStackFrame(ti, 0);
+    frame.setReferenceArgument( 0, eiClassPath.getObjectRef(), null);
+    frame.setFireWall(); // we don't want exceptions to escape into the SUT
+    
     
     try {
       ti.executeMethodHidden(frame);
+      
     } catch (UncaughtException e) {
        ti.clearPendingException();
        StackFrame caller = ti.popAndGetModifiableTopFrame();

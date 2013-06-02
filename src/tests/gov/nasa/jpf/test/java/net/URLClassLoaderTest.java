@@ -32,6 +32,7 @@ import java.util.List;
 import org.junit.Test;
 
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -345,12 +346,12 @@ public class URLClassLoaderTest extends LoadUtility {
     }
   }
 
-  public class Costum extends URLClassLoader {
-    public Costum (URL[] urls) {
+  public class Custom extends URLClassLoader {
+    public Custom (URL[] urls) {
       super(urls);
     }
     
-    public Costum(URL[] urls, ClassLoader parent) {
+    public Custom(URL[] urls, ClassLoader parent) {
       super(urls, parent);
     }
     
@@ -382,18 +383,20 @@ public class URLClassLoaderTest extends LoadUtility {
       c = cl3.loadClass(objClass);
       assertEquals(c.getClassLoader(), ClassLoader.getSystemClassLoader());
 
-      Costum cl4 = new Costum(urls, null);
+      Custom cl4 = new Custom(urls, null);
       Standard cl5 = new Standard(urls, cl4);
 
-      c = cl5.loadClass(cname);
+      c = cl5.loadClass(cname);  // delegates to cl4 (Custom)
       assertEquals(c.getClassLoader(), cl4);
-      assertSame(c, cl4.loadClass(cname));
+      
+      Class<?> c4 = cl4.loadClass(cname);
+      assertSame(c, c4);
 
       c = cl5.loadClass(objClass);
       assertEquals(c.getClassLoader(), ClassLoader.getSystemClassLoader());
       assertSame(c, cl4.loadClass(objClass));
 
-      cl4 = new Costum(urls, cl3);
+      cl4 = new Custom(urls, cl3);
       cl5 = new Standard(urls, cl4);
 
       c = cl5.loadClass(cname);
@@ -502,14 +505,15 @@ public class URLClassLoaderTest extends LoadUtility {
       String cname = pkg + ".Class1";
 
       Class<?> c = loader.loadClass(cname);
-      Method m = c.getMethod("throwDividByZeroException", new Class<?>[0]);
+      Method m = c.getMethod("causeArithmeticException", new Class<?>[0]);
 
       try {
         m.invoke(null, new Object[0]);
-        fail("Should have thrown throwDividByZeroException exception!");
-      } catch(InvocationTargetException ite) {
-        // success!
-        assertTrue(ite.getMessage().equals("java.lang.ArithmeticException"));
+        fail("Should have thrown java.lang.ArithmeticException: division by zero");
+        
+      } catch (InvocationTargetException ite) {
+        Throwable cause = ite.getCause();
+        assertTrue( cause instanceof ArithmeticException && cause.getMessage().equals("division by zero"));
       }
     }
     movePkgBack();

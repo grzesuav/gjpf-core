@@ -97,6 +97,16 @@ public class DynamicElementInfo extends ElementInfo {
   }
 
   public String asString() {
+    char[] data = getStringChars();
+    if (data != null){
+      return new String(data);
+      
+    } else {
+      return "";
+    }
+  }
+
+  public char[] getStringChars(){
     if (!ClassInfo.isStringClassInfo(ci)) {
       throw new JPFException("object is not of type java.lang.String");
     }
@@ -105,14 +115,13 @@ public class DynamicElementInfo extends ElementInfo {
     if (vref != -1){
       ElementInfo eVal = VM.getVM().getHeap().get(vref);
       char[] value = eVal.asCharArray();
-      return new String(value);
+      return value;
+      
     } else {
-      // can happen if 'asString' is called during the String construction itself
-      // (e.g. from a careless listener)
-      return "";
-    }
+      return null;
+    }    
   }
-
+  
   /**
    * just a helper to avoid creating objects just for the sake of comparing
    */

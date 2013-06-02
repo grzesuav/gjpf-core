@@ -85,8 +85,7 @@ public class LDC extends JVMInstruction {
         ClassInfo ci;
         // resolve the referenced class
         try {
-          ClassInfo cls = ti.getTopFrameMethodInfo().getClassInfo();
-          ci = cls.resolveReferencedClass(string);
+          ci = ti.resolveReferencedClass(string);
         } catch(LoadOnJPFRequired lre) {
           return frame.getPC();
         }
