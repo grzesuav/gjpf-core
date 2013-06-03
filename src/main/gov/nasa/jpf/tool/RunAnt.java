@@ -39,8 +39,13 @@ public class RunAnt {
 
   public static void main (String[] args){
 
+    File siteProps = JPFSiteUtils.getStandardSiteProperties();
+    if (siteProps != null) {
+      // this is how we communicate the site.properties location to the build.xml
+      System.setProperty("jpf.site", siteProps.getPath());
+    }
+    
     ArrayList<URL> urlList = new ArrayList<URL>();
-
     addJavac(urlList);
     addJPFToolJars(args, urlList);  // <2do> - Hmm, what if we boot with jpf.jar?
 
@@ -80,13 +85,21 @@ public class RunAnt {
   static String getToolsJarPath(){
     char sc = File.separatorChar;
     String javaHome = System.getProperty("java.home");
-    String toolsJarPath = null;
+    String os = System.getProperty("os.name");
     
-    if (javaHome.endsWith(sc + "jre")){
-      toolsJarPath = javaHome.substring(0, javaHome.length()-4) + sc + "lib" + sc + "tools.jar";
+    if (os.startsWith("Windows")) {
+      // windows doesn't set java.home from the environment but its registry, and includes
+      // a separate jre<version> dir as a peer to the topmost jdk dir, so we have to revert
+      // to using the JAVA_HOME environment var
+      javaHome = System.getenv("JAVA_HOME");
     } else {
-      toolsJarPath = javaHome + sc + "lib" + sc + "tools.jar";
+      // <2do> maybe we should also base Unix on JAVA_HOME
+      if (javaHome.endsWith(sc + "jre")) {
+        javaHome = javaHome.substring(0, javaHome.length()-4);
+      }
     }
+    
+    String toolsJarPath = javaHome + sc + "lib" + sc + "tools.jar";
     
     return toolsJarPath;
   }

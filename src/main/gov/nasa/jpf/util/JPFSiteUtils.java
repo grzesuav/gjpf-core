@@ -346,6 +346,12 @@ public class JPFSiteUtils {
     return null;
   }
 
+  public static String getGlobalSitePropertiesPath() {
+    String userHome = System.getProperty("user.home");
+    String globalPath = userHome + File.separator + ".jpf"
+         + File.separator + "site.properties";
+    return globalPath;
+  }
   
   public static List<Pair<String,String>> getRawEntries (File siteProps){
     FileReader fr = null;

@@ -215,7 +215,10 @@ public class RunJPF extends Run {
       }
     }
     
-    File siteProps = sitePathName == null ? JPFSiteUtils.getStandardSiteProperties() : new File(sitePathName);
+    File siteProps = (sitePathName == null) ? JPFSiteUtils.getStandardSiteProperties() : new File(sitePathName);
+    if (siteProps == null) {
+      siteProps = new File(JPFSiteUtils.getGlobalSitePropertiesPath());
+    }
     
     File curDir = new File( System.getProperty("user.dir"));
     String pid = JPFSiteUtils.getCurrentProjectId();
