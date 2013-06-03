@@ -1985,13 +1985,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
   
   /**
-   * checks if the class is registered and makes sure the requesting thread is recorded as
-   * a referencingThread for both the static fields and the class object.
+   * check if this class requires clinit execution. If so,
+   * push the corresponding DirectCallStackFrames.
    * 
-   * @return true if this method pushed any clinit frames on the stack that will be
-   * executed next within this thread
+   * clients have to be aware of that frames might get pushed
+   * and properly handle re-execution
    */
-  public boolean requiresClinitExecution (ThreadInfo ti){
+  public boolean pushRequiredClinits (ThreadInfo ti){
     StaticElementInfo sei = getStaticElementInfo();    
     if (sei == null) {
       sei = registerClass(ti);      
@@ -2199,6 +2199,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   /**
+   * get a ClassInfo for a referenced type that is resolved with the same classLoader, but make
+   * sure we only do this once per path
+   * 
    * This method is called by the following bytecode instructions:
    * anewarray, checkcast, getstatic, instanceof, invokespecial, 
    * invokestatic, ldc, ldc_w, multianewarray, new, and putstatic

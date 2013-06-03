@@ -416,7 +416,7 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
   static boolean isAvailable (MJIEnv env, FieldInfo fi, int fobjRef){
     if (fi.isStatic()){
       ClassInfo fci = fi.getClassInfo();
-      if (fci.requiresClinitExecution(env.getThreadInfo())){
+      if (fci.pushRequiredClinits(env.getThreadInfo())){
         env.repeatInvocation();
         return false;
       }

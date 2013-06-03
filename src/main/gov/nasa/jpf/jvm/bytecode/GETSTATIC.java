@@ -67,7 +67,7 @@ public class GETSTATIC extends StaticFieldInstruction {
     // this can be actually different (can be a base)
     ciField = fieldInfo.getClassInfo();
     
-    if (!mi.isClinit(ciField) && requiresClinitExecution(ti, ciField)) {
+    if (!mi.isClinit(ciField) && ciField.pushRequiredClinits(ti)) {
       // note - this returns the next insn in the topmost clinit that just got pushed
       return ti.getPC();
     }

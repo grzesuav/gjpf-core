@@ -1743,9 +1743,18 @@ public abstract class StackFrame implements Cloneable {
   public float peekFloat() {
     return Float.intBitsToFloat(slots[top]);
   }
+
+  public float peekFloat (int offset){
+    return Float.intBitsToFloat(slots[top-offset]);    
+  }
   
   public double peekDouble() {
     int i = top;
+    return Types.intsToDouble( slots[i], slots[i-1]);
+  }
+  
+  public double peekDouble (int offset){
+    int i = top-offset;
     return Types.intsToDouble( slots[i], slots[i-1]);
   }
   
@@ -1754,8 +1763,8 @@ public abstract class StackFrame implements Cloneable {
     return Types.intsToLong( slots[i], slots[i-1]);
   }
 
-  public long peekLong (int n) {
-    int i = top - n;
+  public long peekLong (int offset) {
+    int i = top - offset;
     return Types.intsToLong( slots[i], slots[i-1]);
   }
 

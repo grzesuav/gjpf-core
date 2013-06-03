@@ -17,8 +17,7 @@ public class JPF_gov_nasa_jpf_SerializationConstructor extends NativePeer {
    * non-serializable superclass
    */
   @MJI
-  public int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef,
-                                                                             int argsRef) {
+  public int newInstance___3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef, int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
     DirectCallStackFrame frame = ti.getReturnedDirectCall();
     
@@ -33,28 +32,19 @@ public class JPF_gov_nasa_jpf_SerializationConstructor extends NativePeer {
         env.throwException("java.lang.InstantiationException");
         return MJIEnv.NULL;
       }
-      
-      if (ci.requiresClinitExecution(ti)) {
-        // NOTE - this might cause cause another direct call for a <clinit.
-        env.repeatInvocation();
-        return MJIEnv.NULL;
-      }
-      
-      int objRef = env.newObject(ci);
+
+      int objRef = env.newObjectOfUncheckedClass(ci);
       frame = miCtor.createDirectCallStackFrame(ti, 1); 
       frame.setReferenceArgument( 0, objRef, null);
-      frame.setLocalReferenceVariable(0, objRef); // (1) we store the reference as a local var for retrieval during reexec
-      
+      frame.setLocalReferenceVariable(0, objRef); // (1) we store the reference as a local var for retrieval during reexec      
       ti.pushFrame(frame);
-
-      //env.repeatInvocation(); // we don't need this, direct calls don't advance their return frame
-      return MJIEnv.NULL; // doesn't matter
       
-    } else { // direct call returned
-      while (frame.getCallee() != miCtor){
-        frame = frame.getPreviousDirectCallStackFrame();
-      }
+      // check for & push required clinits
+      ci.pushRequiredClinits(ti);
+      env.repeatInvocation();
+      return MJIEnv.NULL;
       
+    } else { // re-execution, 
       int objRef = frame.getLocalVariable(0); // that's the object ref we stored in (1)
       return objRef;
     }

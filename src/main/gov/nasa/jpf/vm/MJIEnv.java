@@ -1030,11 +1030,12 @@ public class MJIEnv {
   }
   
   /**
-   * WATCH OUT - we don't check if the class is initialized, since the
-   * caller would have to take appropriate action anyways
+   * check if the ClassInfo is properly initialized
+   * if yes, create a new instance of it but don't call any ctor
+   * if no, throw a ClinitRequired exception
    */
   public int newObject (ClassInfo ci) {
-    if (ci.requiresClinitExecution(ti)){
+    if (ci.pushRequiredClinits(ti)){
       throw new ClinitRequired(ci);
     }
     
@@ -1042,6 +1043,16 @@ public class MJIEnv {
     return ei.getObjectRef();
   }
 
+  /**
+   * this creates a new object without checking if the ClassInfo needs
+   * initialization. This is useful in a context that already
+   * is aware and handles re-execution
+   */
+  public int newObjectOfUncheckedClass (ClassInfo ci){
+    ElementInfo ei = heap.newObject(ci, ti);
+    return ei.getObjectRef();    
+  }
+  
   public int newObject (String clsName) {
     ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(clsName);
     if (ci != null){
@@ -1251,7 +1262,7 @@ public class MJIEnv {
    *  Do a repeatInvocation() in this case 
    */
   public boolean requiresClinitExecution(ClassInfo ci) {
-    return ci.requiresClinitExecution(ti);
+    return ci.pushRequiredClinits(ti);
   }
   
   /**
@@ -1700,12 +1711,11 @@ public class MJIEnv {
 
   public void handleClinitRequest (ClassInfo ci) {
     ThreadInfo ti = getThreadInfo();
-    Instruction insn = ti.getPC();
 
     // NOTE: we have to repeat no matter what, since this is called from
     // a handler context (if we only had to create a class object w/o
     // calling clinit, we can't just go on)
-    insn.requiresClinitExecution(ti,ci);
+    ci.pushRequiredClinits(ti);
     repeatInvocation();
   }
 

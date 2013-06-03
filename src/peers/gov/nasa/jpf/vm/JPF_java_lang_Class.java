@@ -58,7 +58,7 @@ public class JPF_java_lang_Class extends NativePeer {
       Instruction insn = ti.getPC();
       ClassInfo ci = env.getReferredClassInfo( robj).getComponentClassInfo();
 
-      if (insn.requiresClinitExecution(ti, ci)) {
+    if (ci.pushRequiredClinits(ti)){
         env.repeatInvocation();
         return MJIEnv.NULL;
       }
@@ -157,7 +157,7 @@ public class JPF_java_lang_Class extends NativePeer {
     ThreadInfo ti = env.getThreadInfo();
     Instruction insn = ti.getPC();
 
-    if (insn.requiresClinitExecution(ti, ci)) {
+    if (ci.pushRequiredClinits(ti)){
       env.repeatInvocation();
       return MJIEnv.NULL;
     }
@@ -215,52 +215,38 @@ public class JPF_java_lang_Class extends NativePeer {
     DirectCallStackFrame frame = ti.getReturnedDirectCall();
     
     ClassInfo ci = env.getReferredClassInfo(robj);   // what are we
-    MethodInfo miCtor = ci.getMethod("<init>()V", true);
+    MethodInfo miCtor = ci.getMethod("<init>()V", true); // note there always is one since something needs to call Object()
 
-    if (frame == null || frame.getCallee() != miCtor){
-
+    if (frame == null){ // first time around
       if(ci.isAbstract()){ // not allowed to instantiate
         env.throwException("java.lang.InstantiationException");
         return MJIEnv.NULL;
       }
-      
-      if (ci.requiresClinitExecution(ti)) {
-        // NOTE - this might cause cause another direct call for a <clinit.
-        env.repeatInvocation();
+
+      // <2do> - still need to handle protected
+      if (miCtor.isPrivate()) {
+        env.throwException("java.lang.IllegalAccessException", "cannot access non-public member of class " + ci.getName());
         return MJIEnv.NULL;
       }
+
+      int objRef = env.newObjectOfUncheckedClass(ci);  // create the thing
+
+      frame = miCtor.createDirectCallStackFrame(ti, 1);
+      // note that we don't set this as a reflection call since it is supposed to propagate exceptions
+      frame.setReferenceArgument(0, objRef, null);
+      frame.setLocalReferenceVariable(0, objRef);        // (1) store ref for retrieval during re-exec
+      ti.pushFrame(frame);
       
-      int objRef = env.newObject(ci);  // create the thing
-
-      if (miCtor != null) { // direct call required for initialization
-        // <2do> - still need to handle protected
-        if (miCtor.isPrivate()){
-          env.throwException("java.lang.IllegalAccessException", "cannot access non-public member of class " + ci.getName());
-          return MJIEnv.NULL;
-        }
-
-        frame = miCtor.createDirectCallStackFrame(ti, 1);
-        // note that we don't set this as a reflection call since it is supposed to propagate exceptions
-        
-        frame.setReferenceArgument( 0, objRef, null);
-        frame.setLocalReferenceVariable( 0, objRef);        // (1) store ref for retrieval during re-exec
-        ti.pushFrame(frame);
-
-        return MJIEnv.NULL;
-
-      } else {
-        return objRef; // no initialization required
-      }
+      // check if we have to push clinits
+      ci.pushRequiredClinits(ti);
       
-    } else {
-      while (frame.getCallee() != miCtor){  // ??? redundant 
-        // frame was the [clinit] direct call
-        frame = frame.getPreviousDirectCallStackFrame();
-      }
+      env.repeatInvocation();
+      return MJIEnv.NULL;
       
+    } else { // re-execution
       int objRef = frame.getLocalVariable(0); // that's the object ref we set in (1)
       return objRef;
-    }
+    }      
   }
   
   @MJI
@@ -497,7 +483,7 @@ public class JPF_java_lang_Class extends NativePeer {
     Instruction insn = ti.getPC();
     ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo( clsName);
     
-    if (insn.requiresClinitExecution(ti, ci)) {
+    if (ci.pushRequiredClinits(ti)){
       return null;
     } else {
       return ci;
@@ -510,7 +496,7 @@ public class JPF_java_lang_Class extends NativePeer {
 
     Set<ClassInfo> ifcs = ci.getAllInterfaceClassInfos();
     for (ClassInfo ciIfc : ifcs){
-      if (insn.requiresClinitExecution(ti, ciIfc)) {
+    if (ciIfc.pushRequiredClinits(ti)){
         return null;
       } 
     }
@@ -744,7 +730,7 @@ public class JPF_java_lang_Class extends NativePeer {
       ciEncl.registerClass(ti);
       
       if (!ciEncl.isInitialized()){
-        if (ciEncl.requiresClinitExecution(ti)){
+        if (ciEncl.pushRequiredClinits(ti)){
           env.repeatInvocation();
           return 0;
         }

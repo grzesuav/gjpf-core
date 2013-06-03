@@ -448,26 +448,31 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
   public int invoke__Ljava_lang_Object_2_3Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int mthRef, int objRef, int argsRef) {
     ThreadInfo ti = env.getThreadInfo();
     MethodInfo miCallee = getMethodInfo(env, mthRef);
+    ClassInfo calleeClass = miCallee.getClassInfo();
     DirectCallStackFrame frame = ti.getReturnedDirectCall();
     
-    if (frame == null || frame.getCallee() != miCallee){ // first time
-      ClassInfo calleeClass = miCallee.getClassInfo();
-      ElementInfo eiMth = ti.getElementInfo(mthRef);
-      boolean accessible = (Boolean) eiMth.getFieldValueObject("isAccessible");
+    if (frame == null){ // first time
 
-      if (miCallee.isStatic()) { // this might require class init and reexecution
-        if (calleeClass.requiresClinitExecution(ti)) { // might cause another direct call
-          env.repeatInvocation();
-          return 0;
-        }
-      } else { // check if we have an object
-        if (objRef == MJIEnv.NULL) {
+      //--- check the instance we are calling on
+      if (!miCallee.isStatic()) {
+        if (objRef == MJIEnv.NULL){
           env.throwException("java.lang.NullPointerException");
           return MJIEnv.NULL;
+          
+        } else {
+          ElementInfo eiObj = ti.getElementInfo(objRef);
+          ClassInfo objClass = eiObj.getClassInfo();
+        
+          if (!objClass.isInstanceOf(calleeClass)) {
+            env.throwException(IllegalArgumentException.class.getName(), "Object is not an instance of declaring class.  Actual = " + objClass + ".  Expected = " + calleeClass);
+            return MJIEnv.NULL;
+          }
         }
       }
 
-      if (!accessible) {
+      //--- check accessibility
+      ElementInfo eiMth = ti.getElementInfo(mthRef);
+      if (! (Boolean) eiMth.getFieldValueObject("isAccessible")) {
         StackFrame caller = ti.getTopFrame().getPrevious();
         ClassInfo callerClass = caller.getClassInfo();
 
@@ -479,36 +484,29 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
         }
       }
       
+      //--- push the direct call
       frame = miCallee.createDirectCallStackFrame(ti, 0);
       frame.setReflection();
-      int argIdx = 0;
       
+      int argIdx = 0;
       if (!miCallee.isStatic()) {
-        ElementInfo eiObj = ti.getElementInfo(objRef);
-        ClassInfo objClass = eiObj.getClassInfo();
-        
-        if (!objClass.isInstanceOf(calleeClass)) {
-          env.throwException(IllegalArgumentException.class.getName(), "Object is not an instance of declaring class.  Actual = " + objClass + ".  Expected = " + calleeClass);
-          return MJIEnv.NULL;
-        }
-        
         frame.setReferenceArgument( argIdx++, objRef, null);
       }
-
       if (!pushUnboxedArguments( env, miCallee, frame, argIdx, argsRef)) {
+        // we've got a IllegalArgumentException
         return MJIEnv.NULL;  
       }
-       
       ti.pushFrame(frame);
       
-      return MJIEnv.NULL;
       
-    } else { // we have returned from the direct call
-      while (frame.getCallee() != miCallee){
-        // frame was the [clinit] direct call
-        frame = frame.getPreviousDirectCallStackFrame();
+      //--- check for and push required clinits
+      if (miCallee.isStatic()){
+        calleeClass.pushRequiredClinits(ti);
       }
       
+      return MJIEnv.NULL; // reexecute
+      
+    } else { // we have returned from the direct call
       return createBoxedReturnValueObject( env, miCallee, frame);
     }
   }

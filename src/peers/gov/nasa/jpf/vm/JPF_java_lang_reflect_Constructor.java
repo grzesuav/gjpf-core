@@ -90,42 +90,32 @@ public class JPF_java_lang_reflect_Constructor extends NativePeer {
     DirectCallStackFrame frame = ti.getReturnedDirectCall();
     MethodInfo miCallee = getMethodInfo(env,mthRef);
 
-    if (frame == null || frame.getCallee() != miCallee) { // first time
+    if (frame == null) { // first time
       ClassInfo ci = miCallee.getClassInfo();
 
        if (ci.isAbstract()){
         env.throwException("java.lang.InstantiationException");
         return MJIEnv.NULL;
       }
-      
-      if (ci.requiresClinitExecution(ti)) {
-        // NOTE - this might cause cause another direct call for a <clinit>
-        env.repeatInvocation();
-        return MJIEnv.NULL;
-      }
-      
-      int objRef = env.newObject(ci);
-      frame = miCallee.createDirectCallStackFrame(ti, 1);
+
+      int objRef = env.newObjectOfUncheckedClass( ci);
+      frame = miCallee.createDirectCallStackFrame( ti, 1);
       frame.setReflection();
       
       frame.setReferenceArgument(0, objRef, null);
       frame.setLocalReferenceVariable(0, objRef);  // (1) store the objRef for retrieval during re-exec
-
       if (!JPF_java_lang_reflect_Method.pushUnboxedArguments( env, miCallee, frame, 1, argsRef)) {
+        // we've got a IllegalArgumentException
         return MJIEnv.NULL;
       }
-
       ti.pushFrame(frame);
-
-      //env.repeatInvocation(); // we don't need this, direct calls don't advance their return frame
-      return MJIEnv.NULL; // doesn't matter, we come back
+       
+      ci.pushRequiredClinits(ti);
+      
+      env.repeatInvocation();
+      return MJIEnv.NULL;
       
     } else { // reflection call returned
-      while (frame.getCallee() != miCallee){
-        // frame was the [clinit] direct call
-        frame = frame.getPreviousDirectCallStackFrame();
-      }
-      
       int objRef = frame.getLocalVariable(0); // that's the object ref we stored in (1)
       return objRef;
     }

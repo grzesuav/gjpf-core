@@ -100,7 +100,7 @@ public class JSONObject{
    */
   public boolean requiresClinitExecution (ClassInfo ci, ThreadInfo ti){
     while (ci != null){
-      if (ci.requiresClinitExecution(ti)){
+      if (ci.pushRequiredClinits(ti)){
         return true;
       }
 
@@ -184,7 +184,7 @@ public class JSONObject{
         } else {
           // Not a special case. Fill it recursively
           ClassInfo ciField = fi.getTypeClassInfo();
-          if (ciField.requiresClinitExecution(env.getThreadInfo())){
+          if (ciField.pushRequiredClinits(env.getThreadInfo())){
             throw new ClinitRequired(ciField);
           }
           

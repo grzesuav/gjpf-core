@@ -298,10 +298,7 @@ public abstract class Instruction implements Cloneable {
    * used in a number of external projects
    */
   public boolean requiresClinitExecution(ThreadInfo ti, ClassInfo ci) {
-if (ci == null){
-  System.out.println("@@ ARGHH " + this + " in " + mi);
-}
-    return ci.requiresClinitExecution(ti);
+    return ci.pushRequiredClinits(ti);
   }
 
   /**
