@@ -1110,6 +1110,47 @@ public class Config extends Properties {
     return freeArgs;
   } 
 
+  //--- special keys
+  
+  /*
+   * target and its associated keys (target.args, target.entry) are now
+   * just ordinary key/value pairs and only here as convenience methods
+   * for JPF drivers/shells so that you don't have to remember the key names
+   * 
+   * NOTE - this does only work for a SingleProcessVM, and only has the
+   * desired effect before the JPF object is created
+   */
+  
+  public void setTarget (String clsName) {
+    put("target", clsName);
+  }
+  public String getTarget(){
+    return getString("target");
+  }
+  
+  public void setTargetArgs (String[] args) {
+    StringBuilder sb = new StringBuilder();
+    int i=0;
+    for (String a : args){
+      if (i++ > 0){
+        sb.append(',');
+      }
+      sb.append(a);
+    }
+    put("target.args", sb.toString());
+  }
+  public String[] getTargetArgs(){
+    return getStringArray("target.args");
+  }
+  
+  public void setTargetEntry (String mthName) {
+    put("target.entry", mthName);
+  }
+  public String getTargetEntry(){
+    return getString("target.entry");
+  }
+  
+  
   //----------------------- type specific accessors
 
   public boolean getBoolean(String key) {

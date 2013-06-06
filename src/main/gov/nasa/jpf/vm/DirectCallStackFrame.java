@@ -74,6 +74,11 @@ public abstract class DirectCallStackFrame extends StackFrame implements SystemA
     return true;
   }
   
+  @Override
+  public boolean isSynthetic() {
+    return true;
+  }
+  
   // those set the callee arguments for the invoke insn
   public abstract void setArgument (int idx, int value, Object attr);
   public abstract void setLongArgument (int idx, long value, Object attr);
