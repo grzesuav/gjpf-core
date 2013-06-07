@@ -20,7 +20,6 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.JPFLogger;
@@ -136,8 +135,7 @@ public class NativePeer implements Cloneable {
       peerCls = locatePeerCls(clsName);
 
       if (peerCls != null) {
-
-        // Method.invoke() got fast enough so that we don't need a peer dispatcher anymore
+        initializePeerClass( peerCls);
                 
         if (logger.isLoggable(Level.INFO)) {
           logger.info("load peer: ", peerCls.getName());
@@ -237,23 +235,21 @@ public class NativePeer implements Cloneable {
     this.peerClass = peerClass;
 
     loadMethods(cacheMethods);
-
-    initializePeerClass();
   }
 
-  protected void initializePeerClass() {
+  protected static void initializePeerClass( Class<?> cls) {
     try {
-      Method m = peerClass.getDeclaredMethod("init", Config.class );
+      Method m = cls.getDeclaredMethod("init", Config.class );
       try {
         m.invoke(null, config);
       } catch (IllegalArgumentException iax){
         // can't happen - static method
       } catch (IllegalAccessException iacx) {
         throw new RuntimeException("peer initialization method not accessible: "
-                                   + peerClass.getName());
+                                   + cls.getName());
       } catch (InvocationTargetException itx){
         throw new RuntimeException("initialization of peer " +
-                                   peerClass.getName() + " failed: " + itx.getCause());
+                                   cls.getName() + " failed: " + itx.getCause());
 
       }
     } catch (NoSuchMethodException nsmx){

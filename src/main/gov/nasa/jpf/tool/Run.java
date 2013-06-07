@@ -28,14 +28,14 @@ import java.lang.reflect.Modifier;
  */
 public class Run {
 
-  static void error (String msg){
+  protected static void error (String msg){
     System.err.print("error: ");
     System.err.println(msg);
     System.exit(1);
   }
 
   // filter out leading '+' arguments (Config initialization)
-  static String[] removeConfigArgs(String[]args){
+  protected static String[] removeConfigArgs(String[]args){
     int i;
     for (i=0; i<args.length; i++){
       String a = args[i];
@@ -50,7 +50,7 @@ public class Run {
     return newArgs;
   }
 
-  static String checkClassName (String cls){
+  protected static String checkClassName (String cls){
     if (cls == null || cls.isEmpty()){
       return null;
     }
@@ -62,7 +62,7 @@ public class Run {
     return cls;
   }
 
-  static boolean call( Class<?> cls, String mthName, Object[] args) throws InvocationTargetException {
+  protected static boolean call( Class<?> cls, String mthName, Object[] args) throws InvocationTargetException {
     try {
       Class<?>[] argTypes = new Class<?>[args.length];
       for (int i=0; i<args.length; i++){

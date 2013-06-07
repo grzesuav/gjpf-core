@@ -18,12 +18,10 @@
 //
 package gov.nasa.jpf.vm;
 
-import java.util.List;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
-import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Predicate;
 import java.util.ArrayList;
@@ -139,6 +137,11 @@ public class MultiProcessVM extends VM {
     // all other exceptions are JPF errors that should cause stack traces
   }
 
+  @Override
+  public int getNumberOfApplications(){
+    return appCtxs.length;
+  }
+  
   @Override
   public String getSUTName() {
     StringBuilder sb = new StringBuilder();

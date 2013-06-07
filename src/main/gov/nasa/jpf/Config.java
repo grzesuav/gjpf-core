@@ -1140,7 +1140,12 @@ public class Config extends Properties {
     put("target.args", sb.toString());
   }
   public String[] getTargetArgs(){
-    return getStringArray("target.args");
+    String[] a = getStringArray("target.args");
+    if (a == null){
+      return new String[0];
+    } else {
+      return a;
+    }
   }
   
   public void setTargetEntry (String mthName) {

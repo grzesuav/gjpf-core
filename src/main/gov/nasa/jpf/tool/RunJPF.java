@@ -102,7 +102,8 @@ public class RunJPF extends Run {
       }
 
       // using JPFShell is Ok since it is just a simple non-derived interface
-      // note this uses a <init>(Config) ctor in the shell class if there is one
+      // note this uses a <init>(Config) ctor in the shell class if there is one, i.e. there is no need for a separate
+      // start(Config,..) or re-loading the config itself
       JPFShell shell = conf.getInstance("shell", JPFShell.class);
       if (shell != null) {
         shell.start( removeConfigArgs(args)); // responsible for exception handling itself

@@ -117,6 +117,11 @@ public class SingleProcessVM extends VM {
   }
 
   @Override
+  public int getNumberOfApplications(){
+    return 1;
+  }
+  
+  @Override
   public String getSUTName() {
     return appCtx.mainClassName;
   }

@@ -1811,6 +1811,8 @@ public abstract class VM {
   public abstract String getSUTName();
   public abstract String getSUTDescription();
 
+  public abstract int getNumberOfApplications();
+  
   public Heap getHeap() {
     return ss.getHeap();
   }
