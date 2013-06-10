@@ -60,6 +60,7 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   static final int  IS_INIT     = 0x100000;
   
   static final int  IS_REFLECTION = 0x200000; // this is a reflection direct call
+  static final int  IS_DIRECT_CALL = 0x400000;
   
   /** a unique int assigned to this method */
   protected int globalId = -1;
@@ -184,6 +185,7 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     // we need to preserve the ClassInfo so that class resolution for static method calls works
     ci = callee.ci;
     
+    attributes |= IS_DIRECT_CALL;
     modifiers = Modifier.STATIC;   // always treated as static
     
     // code still has to be installed by caller
@@ -419,6 +421,10 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
 
   public boolean isInit() {
     return ((attributes & IS_INIT) != 0);
+  }
+  
+  public boolean isDirectCallStub(){
+    return ((attributes & IS_DIRECT_CALL) != 0);    
   }
   
   /**
