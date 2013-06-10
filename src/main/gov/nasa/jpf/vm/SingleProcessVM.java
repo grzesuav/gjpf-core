@@ -34,7 +34,7 @@ import gov.nasa.jpf.util.Misc;
  */
 public class SingleProcessVM extends VM {
 
-  ApplicationContext appCtx; // we only have one
+  protected ApplicationContext appCtx; // we only have one
   
   protected SingleProcessVM (){}
 
@@ -145,6 +145,11 @@ public class SingleProcessVM extends VM {
     }
     sb.append(')');
     return sb.toString();
+  }
+  
+  @Override
+  public ApplicationContext[] getApplicationContexts(){
+    return new ApplicationContext[] { appCtx };
   }
   
   /**

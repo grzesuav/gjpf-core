@@ -1098,6 +1098,14 @@ public abstract class StackFrame implements Cloneable {
     return top;
   }
 
+  ExceptionHandler getHandlerFor (ClassInfo ciException){
+    return mi.getHandlerFor (ciException, pc);
+  }
+  
+  public boolean isFirewall (){
+    return mi.isFirewall();
+  }
+  
   public String getStackTraceInfo () {
     StringBuilder sb = new StringBuilder(128);
 

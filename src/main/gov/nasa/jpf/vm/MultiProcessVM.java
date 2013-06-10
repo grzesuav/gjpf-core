@@ -143,6 +143,12 @@ public class MultiProcessVM extends VM {
   }
   
   @Override
+  public ApplicationContext[] getApplicationContexts(){
+    return appCtxs;
+  }
+
+  
+  @Override
   public String getSUTName() {
     StringBuilder sb = new StringBuilder();
     

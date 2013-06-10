@@ -71,6 +71,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   static JPFLogger logger = JPF.getLogger("class");
 
+  static int nClassInfos; // for statistics
+  
   static Config config;
 
   /**
@@ -457,6 +459,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   
   //--- this is only for unit testing purposes
   protected ClassInfo (ClassParser parser) throws ClassParseException {
+    nClassInfos++;
+    
     parser.parse(this);
     
     resolveClass();
@@ -464,6 +468,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public ClassInfo (String name, ClassLoaderInfo classLoader, ClassParser parser, String classFileUrl) throws ClassParseException {
+    nClassInfos++;
+    
     this.name = name;
     this.classLoader = classLoader;
     this.classFileUrl = classFileUrl;
@@ -500,6 +506,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
   
   protected ClassInfo(){
+    nClassInfos++;
+    
     // for explicit subclass initialization
   }
   
@@ -508,6 +516,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * idx.e. classes we don't have class files for
    */
   protected ClassInfo (String builtinClassName, ClassLoaderInfo classLoader) {
+    nClassInfos++;
+
     this.classLoader = classLoader;
 
     isArray = (builtinClassName.charAt(0) == '[');
@@ -548,6 +558,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // no fields or declaredMethods, so we don't have to link/resolve anything
     
     notifyClassLoaded();
+  }
+  
+  public static int getNumberOfLoadedClasses(){
+    return nClassInfos;
   }
   
   //--- the VM type specific methods

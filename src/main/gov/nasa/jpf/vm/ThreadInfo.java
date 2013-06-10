@@ -236,7 +236,7 @@ public class ThreadInfo extends InfoObject
 
 
   static class TiMemento implements Memento<ThreadInfo> {
-    // note that we don't have to store the invariants (id, oref, runnableRef, ci)
+    // note that we don't have to store the invariants (id, oref, runnableRef, ciException)
     ThreadInfo ti;
 
     ThreadData threadData;
@@ -2425,7 +2425,7 @@ public class ThreadInfo extends InfoObject
 
     returnedDirectCall = (DirectCallStackFrame) top;
 
-    if (top.hasFrameAttr( UncaughtHandlerContext.class)){
+    if (top.hasFrameAttr( UncaughtHandlerAttr.class)){
       return popUncaughtHandlerFrame();
     }
     
@@ -2517,15 +2517,53 @@ public class ThreadInfo extends InfoObject
 
     return throwException(xRef);
   }
+  
+  /**
+   * this is basically a side-effect free version of throwException to determine if a given
+   * exception will be handled.
+   */
+  public HandlerContext getHandlerContextFor (ClassInfo ciException){
+    ExceptionHandler matchingHandler = null; // the matching handler we found (if any)
+    
+    for (StackFrame frame = top; frame != null; frame = frame.getPrevious()) {
+      // that means we have to turn the exception into an InvocationTargetException
+      if (frame.isReflection()) {
+        ciException = ClassInfo.getInitializedSystemClassInfo("java.lang.reflect.InvocationTargetException", this);
+      }
 
+      matchingHandler = frame.getHandlerFor( ciException);
+      if (matchingHandler != null){
+        return new HandlerContext( this, ciException, frame, matchingHandler);
+      }
+    }
+    
+    if (!ignoreUncaughtHandlers && !isUncaughtHandlerOnStack()) {
+      int uchRef;
+      if ((uchRef = getInstanceUncaughtHandler()) != MJIEnv.NULL) {
+        return new HandlerContext( this, ciException, HandlerContext.UncaughtHandlerType.INSTANCE, uchRef);
+      }
+
+      int grpRef = getThreadGroupRef();
+      if ((uchRef = getThreadGroupUncaughtHandler(grpRef)) != MJIEnv.NULL) {
+        return new HandlerContext( this, ciException, HandlerContext.UncaughtHandlerType.GROUP, uchRef);
+      }
+
+      if ((uchRef = getGlobalUncaughtHandler()) != MJIEnv.NULL) {
+        return new HandlerContext( this, ciException, HandlerContext.UncaughtHandlerType.GLOBAL, uchRef);
+      }
+    }
+    
+    return null;
+  }
+  
   /**
    * unwind stack frames until we find a matching handler for the exception object
    */
   public Instruction throwException (int exceptionObjRef) {
     Heap heap = vm.getHeap();
-    ElementInfo ei = heap.get(exceptionObjRef);
-    ClassInfo ci = ei.getClassInfo();
-    String cname = ci.getName();
+    ElementInfo eiException = heap.get(exceptionObjRef);
+    ClassInfo ciException = eiException.getClassInfo();
+    String exceptionName = ciException.getName();
     StackFrame handlerFrame = null; // the stackframe that has a matching handler (if any)
     ExceptionHandler matchingHandler = null; // the matching handler we found (if any)
 
@@ -2537,11 +2575,11 @@ public class ThreadInfo extends InfoObject
 
     // we don't have to store the stacktrace explicitly anymore, since that is now
     // done in the Throwable ctor (more specifically the native fillInStackTrace)
-    pendingException = new ExceptionInfo(this, ei);
+    pendingException = new ExceptionInfo(this, eiException);
 
-    vm.notifyExceptionThrown(this, ei);
+    vm.notifyExceptionThrown(this, eiException);
 
-    if (haltOnThrow(cname)) {
+    if (haltOnThrow(exceptionName)) {
       // shortcut - we don't try to find a handler for this one but bail immediately
       NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
       throw new UncaughtException(this, exceptionObjRef);
@@ -2550,38 +2588,22 @@ public class ThreadInfo extends InfoObject
     // check if we find a matching handler, and if we do store it. Leave the
     // stack untouched so that listeners can still inspect it
     for (StackFrame frame = top; (frame != null) && (handlerFrame == null); frame = frame.getPrevious()) {
-      MethodInfo mi = frame.getMethodInfo();
-
       // that means we have to turn the exception into an InvocationTargetException
       if (frame.isReflection()) {
-        ci               = ClassInfo.getInitializedSystemClassInfo("java.lang.reflect.InvocationTargetException", this);
-        exceptionObjRef  = createException(ci, cname, exceptionObjRef);
-        cname            = ci.getName();
-        ei               = heap.get(exceptionObjRef);
-        pendingException = new ExceptionInfo(this, ei);
+        ciException = ClassInfo.getInitializedSystemClassInfo("java.lang.reflect.InvocationTargetException", this);
+        exceptionObjRef  = createException(ciException, exceptionName, exceptionObjRef);
+        exceptionName = ciException.getName();
+        eiException = heap.get(exceptionObjRef);
+        pendingException = new ExceptionInfo(this, eiException);
       }
 
-      insn = frame.getPC();
-      int position = insn.getPosition();
-
-      ExceptionHandler[] exceptions = mi.getExceptions();
-      if (exceptions != null) {
-        // checks the exceptionHandlers caught (in order of handler definitions)
-        for (ExceptionHandler handler : exceptions){
-          // checks if it falls in the right range
-          if ((position >= handler.getBegin()) && (position < handler.getEnd())) {
-            // checks if this type of exception is caught here (null means 'any')
-            String en = handler.getName();
-            if ((en == null) || ci.isInstanceOf(en)) {
-              handlerFrame = frame;
-              matchingHandler = handler;
-              break;
-            }
-          }
-        }
+      matchingHandler = frame.getHandlerFor( ciException);
+      if (matchingHandler != null){
+        handlerFrame = frame;
+        break;
       }
 
-      if ((handlerFrame == null) && mi.isFirewall()) {
+      if ((handlerFrame == null) && frame.isFirewall()) {
         // this method should not let exceptionHandlers pass into lower level stack frames
         // (e.g. for <clinit>, or hidden direct calls)
         // <2do> if this is a <clinit>, we should probably turn into an
@@ -2610,7 +2632,7 @@ public class ThreadInfo extends InfoObject
       }
 
       // there was no overridden uncaughtHandler, or we already executed it
-      if ("java.lang.ThreadDeath".equals(cname)) { // gracefully shut down
+      if ("java.lang.ThreadDeath".equals(exceptionName)) { // gracefully shut down
         unwindToFirstFrame();
         pendingException = null;
         return top.getPC().getNext(); // the final DIRECTCALLRETURN
@@ -2646,6 +2668,27 @@ public class ThreadInfo extends InfoObject
     }
   }
 
+  /**
+   * is there any UncaughHandler in effect for this thread?
+   * NOTE - this doesn't check if we are already executing one (i.e. it would still handle an exception)
+   * or if uncaughtHandlers are enabled within JPF
+   */
+  public boolean hasUncaughtHandler (){
+    if (getInstanceUncaughtHandler() != MJIEnv.NULL){
+      return true;
+    }
+    
+    int grpRef = getThreadGroupRef();
+    if (getThreadGroupUncaughtHandler(grpRef) != MJIEnv.NULL){
+      return true;
+    }
+    
+    if (getGlobalUncaughtHandler() != MJIEnv.NULL){
+      return true;
+    }
+    
+    return false;
+  }
   
   /**
    * this explicitly models the standard ThreadGroup.uncaughtException(), but we want
@@ -2686,7 +2729,7 @@ public class ThreadInfo extends InfoObject
   
   protected boolean isUncaughtHandlerOnStack(){
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()) {
-      if (frame.hasFrameAttr(UncaughtHandlerContext.class)){
+      if (frame.hasFrameAttr(UncaughtHandlerAttr.class)){
         return true;
       }
     }
@@ -2743,10 +2786,10 @@ public class ThreadInfo extends InfoObject
    * We could directly use ExceptionInfo, but it seems more advisable to have a dedicated,
    * private type. This could also store execution state
    */
-  class UncaughtHandlerContext implements SystemAttribute {
+  class UncaughtHandlerAttr implements SystemAttribute {
     ExceptionInfo xInfo;
     
-    UncaughtHandlerContext (ExceptionInfo xInfo){
+    UncaughtHandlerAttr (ExceptionInfo xInfo){
       this.xInfo = xInfo;
     }
     
@@ -2765,7 +2808,7 @@ public class ThreadInfo extends InfoObject
     frame.setReferenceArgument( 1, objRef, null);
     frame.setReferenceArgument( 2, xi.getExceptionReference(), null);
     
-    UncaughtHandlerContext uchContext = new UncaughtHandlerContext( xi);
+    UncaughtHandlerAttr uchContext = new UncaughtHandlerAttr( xi);
     frame.setFrameAttr( uchContext);
     
     pushFrame(frame);
@@ -2791,7 +2834,7 @@ public class ThreadInfo extends InfoObject
 
     } else {
       // treat this still as an NoUncaughtExceptionProperty violation
-      UncaughtHandlerContext ctx = returnedDirectCall.getFrameAttr(UncaughtHandlerContext.class);
+      UncaughtHandlerAttr ctx = returnedDirectCall.getFrameAttr(UncaughtHandlerAttr.class);
       pendingException = ctx.getExceptionInfo();
       NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
       throw new UncaughtException(this, pendingException.getExceptionReference());

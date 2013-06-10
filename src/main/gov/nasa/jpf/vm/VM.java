@@ -1283,7 +1283,7 @@ public abstract class VM {
    * return the latest registered ChoiceGenerator used in this transition
    * that matches the provided 'id' and is of 'cgType'.
    * 
-   * This should be the tiMain getter for clients that are cascade aware
+   * This should be the main getter for clients that are cascade aware
    */
   public <T extends ChoiceGenerator<?>> T getCurrentChoiceGenerator (String id, Class<T> cgType) {
     return ss.getCurrentChoiceGenerator(id,cgType);
@@ -1808,6 +1808,7 @@ public abstract class VM {
     error_id = 0;
   }
 
+  public abstract ApplicationContext[] getApplicationContexts();
   public abstract String getSUTName();
   public abstract String getSUTDescription();
 

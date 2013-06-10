@@ -771,6 +771,25 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     return false;
   }
   
+  public ExceptionHandler getHandlerFor (ClassInfo ciException, Instruction insn){
+    if (exceptionHandlers != null){
+      int position = insn.getPosition();
+      for (int i=0; i<exceptionHandlers.length; i++){
+        ExceptionHandler handler = exceptionHandlers[i];
+        if ((position >= handler.getBegin()) && (position < handler.getEnd())) {
+          // checks if this type of exception is caught here (null means 'any')
+          String handledType = handler.getName();
+          if ((handledType == null)   // a catch-all handler
+                  || ciException.isInstanceOf(handledType)) {
+            return handler;
+          }
+        }          
+      }
+    }
+    
+    return null;
+  }
+  
   public boolean isMJI () {
     return false;
   }
