@@ -49,6 +49,24 @@ import java.util.logging.Level;
  * Describes the VM's view of a java class.  Contains descriptions of the
  * static and dynamic fields, declaredMethods, and information relevant to the
  * class.
+ * 
+ * Note that ClassInfos / classes have three different construction/initialization steps:
+ * (1) construction : recursively via ClassLoaderInfo.getResolvedClassInfo -> ClassFileContainer.createClassInfo
+ *     -> ClassInfo ctor -> resolveClass
+ *     this only creates the ClassInfo object, but it is not visible/usable from SUT code yet and hence not
+ *     observable from classLoaded() listeners
+ * (2) registration : create StaticElementInfo and add it to the respective ClassLoaderInfo statics, then create
+ *     the java.lang.Class companion object in the SUT
+ *     this makes the ClassInfo usable from SUT code
+ * (3) initialization : execute clinit (if the class has one)
+ * 
+ * Note that id/uniqueId are NOT set before registration takes place, and registration is not automatically performed since
+ * listeners/peers might create ClassInfos internally (e.g. for inspection), which should not be visible from the SUT or observable
+ * by other listeners.
+ * 
+ * Automatic registration from the ClassInfo ctors would require to pass a ThreadInfo context throughout the whole ClassLoaderInfo/
+ * ClassFileContainer/ClassInfo chain and could lead to false positives for sharedness based POR, which would record this
+ * thread as referencing even if this is a listener/peer internal request
  */
 public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, GenericSignatureHolder {
 
