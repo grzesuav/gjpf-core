@@ -3047,6 +3047,47 @@ public class ThreadInfo extends InfoObject
   }
 
   /**
+   * this replaces all frames up from 'frame' to 'top' with modifiable ones.
+   * 
+   * NOTE - you can't use this AFTER getModifiableTopFrame() since it changes top. Because
+   * it is inherently unsafe, it should be used with care and you have to make sure nothing
+   * else has stored top references, or respective references are updated after this call.
+   * 
+   * NOTE also that we assume there is no frozen frame on top of an unfrozen one
+   * <2do> that should probably be reported as an error since it is a stack consistency violation
+   */
+  public StackFrame getModifiableFrame (StackFrame frame){
+    StackFrame newTop = null;
+    StackFrame last = null;
+    boolean done = false;
+    
+    for (StackFrame f = top; f != null; f = f.getPrevious()){
+      done = (f == frame);
+      
+      if (f.isFrozen()){
+        f = f.clone();
+        if (newTop == null){
+          newTop = f;
+        } else {
+          last.setPrevious(f);
+        }
+        last = f;
+        
+      }
+      
+      if (done){ // done
+        if (newTop != null){
+          top = newTop;
+          markTfChanged(top);
+        }
+        return f;
+      }
+    }
+    
+    return null; // it wasn't on the callstack
+  }
+  
+  /**
    * note that we don't provide a modifiable version of this. All modifications
    * should only happen in the executing (top) frame
    */
