@@ -216,6 +216,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /** A search global unique id associate with this class, which is comprised of the classLoader id
    * and the (loader-specific) ClassInfo id. This is just a quick way to do search global checks for equality
+   * 
+   * NOTE - since this is based on the classloader-specific id, it can't be used before the ClassInfo is registered
    */
   protected long uniqueId = -1;
 
@@ -501,8 +503,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     setAssertionStatus();
     processJPFConfigAnnotation();
     loadAnnotationListeners();
-    
-    notifyClassLoaded();
   }
   
   protected ClassInfo(){
@@ -556,8 +556,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     classFileUrl = name;
     
     // no fields or declaredMethods, so we don't have to link/resolve anything
-    
-    notifyClassLoaded();
   }
   
   public static int getNumberOfLoadedClasses(){
@@ -634,26 +632,22 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     classFileUrl = url;
     linkFields();
-    
-    notifyClassLoaded();
   }
-
-  protected void notifyClassLoaded(){
-    VM.getVM().notifyClassLoaded(this);
-  }
+  
+  // since id and hence uniqueId are not set before this class is registered, we can't use them
   
   @Override
   public int hashCode() {
-    return OATHash.hash(uniqueId);
+    return OATHash.hash(name.hashCode(), classLoader.hashCode());
   }
   
   @Override
   public boolean equals (Object o) {
     if (o instanceof ClassInfo) {
       ClassInfo other = (ClassInfo)o;
-      if (classLoader.getId() == other.classLoader.getId()) {
+      if (classLoader == other.classLoader) {
         // beware of ClassInfos that are not registered yet - in this case we have to compare names
-        if (((id != -1) && (id == other.id)) || name.equals(other.name)) {
+        if (name.equals(other.name)) {
           return true;
         }
       }
@@ -1883,6 +1877,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       
       ElementInfo ei = createClassObject( ti);
       sei = createAndLinkStaticElementInfo( ti, ei);
+      
+      // SUT class is fully resolved and registered (but not necessarily initialized), notify listeners
+      ti.getVM().notifyClassLoaded(this);
     }
     
     return sei;
@@ -1948,6 +1945,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       ClassInfo.logger.finer("registering startup class: ", name);
       createStartupStaticElementInfo(ti);
     }
+    
+      // SUT class is fully resolved and registered (but not necessarily initialized), notify listeners
+      ti.getVM().notifyClassLoaded(this);
   }
   
   StaticElementInfo createStartupStaticElementInfo (ThreadInfo ti) {

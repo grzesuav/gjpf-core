@@ -50,8 +50,4 @@ class NonResolvedClassInfo extends JVMClassInfo {
     // nothing
   }
   
-  @Override
-  protected void notifyClassLoaded(){
-    // nothing
-  }
 }
