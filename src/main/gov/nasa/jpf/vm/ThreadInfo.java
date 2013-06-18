@@ -1934,7 +1934,7 @@ public class ThreadInfo extends InfoObject
   public void skipInstruction (Instruction nextInsn) {
     skipInstruction = true;
     
-    assert nextInsn != null;
+    //assert nextInsn != null;
     nextPc = nextInsn;
   }
 
@@ -1964,8 +1964,22 @@ public class ThreadInfo extends InfoObject
    * in a consistent state. This also will fail if someone already ordered
    * reexecution of the current instruction
    */
-  public void setNextPC (Instruction insn) {
-    nextPc = insn;
+  public boolean setNextPC (Instruction insn) {
+    if (nextPc == null){
+      // this is pre-execution, if we don't skip the next insn.execute() is going
+      // to override what we set here
+      skipInstruction = true;
+      nextPc = insn;
+      return true;
+      
+    } else {
+      if (top != null && nextPc != top.getPC()){ // this needs to be re-executed
+        nextPc = insn;   
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   /**
