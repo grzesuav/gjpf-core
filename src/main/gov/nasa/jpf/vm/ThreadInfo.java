@@ -1870,7 +1870,6 @@ public class ThreadInfo extends InfoObject
   public Instruction executeInstruction () {
     Instruction pc = getPC();
     SystemState ss = vm.getSystemState();
-    KernelState ks = vm.getKernelState();
 
     // the default, might be changed by the insn depending on if it's the first
     // time we exec the insn, and whether it does its magic in the top (before break)

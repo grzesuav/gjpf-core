@@ -158,10 +158,8 @@ public class ExceptionInjector extends ListenerAdapter {
   // these two are used to process classes at loadtime
   HashMap<String,ExceptionEntry> targetClasses = new HashMap<String,ExceptionEntry>();
   HashMap<String,ExceptionEntry> targetBases = new HashMap<String,ExceptionEntry>();
-
-  // these are the ones we watch during execution
-  HashMap<Instruction,ExceptionEntry> targetInstructions = new HashMap<Instruction,ExceptionEntry>();
-  HashMap<MethodInfo,ExceptionEntry> targetMethods = new HashMap<MethodInfo,ExceptionEntry>();
+  
+  // methods and instructions to watch for at runtime will have ExceptionEntry attrs
 
 
   public ExceptionInjector (Config config, JPF jpf){
@@ -287,7 +285,7 @@ public class ExceptionInjector extends ListenerAdapter {
             i--;
           }
 
-          targetInstructions.put( mi.getInstruction(i), e);
+          mi.getInstruction(i).addAttr(e);
           return true;
         }
       }
@@ -339,7 +337,7 @@ public class ExceptionInjector extends ListenerAdapter {
           String method = e.getMethod();
           for (MethodInfo mi : loadedClass.getDeclaredMethodInfos()){
             if (mi.getUniqueName().startsWith(method)){
-              targetMethods.put(mi, e);
+              mi.addAttr(e);
               continue nextBaseEntry;
             }
           }
@@ -351,10 +349,10 @@ public class ExceptionInjector extends ListenerAdapter {
   @Override
   public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
 
-    ExceptionEntry e = targetInstructions.get(insnToExecute);
+    ExceptionEntry e = insnToExecute.getAttr(ExceptionEntry.class);
     if ((e == null) && insnToExecute instanceof InvokeInstruction){
       MethodInfo mi = ((InvokeInstruction) insnToExecute).getInvokedMethod();
-      e = targetMethods.get(mi);
+      e = mi.getAttr(ExceptionEntry.class);
     }
 
     if (e != null){

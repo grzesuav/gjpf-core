@@ -2027,9 +2027,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     StaticElementInfo sei = getStaticElementInfo();    
     if (sei == null) {
       sei = registerClass(ti);
-      if (ti.getNextPC() != null){  // check for exceptions thrown from listeners in response to classLoaded notifications
-        return true;
-      }
     }
     
     if (sei.getStatus() == UNINITIALIZED){
