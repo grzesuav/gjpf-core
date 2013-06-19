@@ -664,6 +664,15 @@ public abstract class VM {
     }
   }
   
+  //--- VM listener notifications
+  
+  /*
+   * while some of these can be called from various places, the calls that happen from within Instruction.execute() should
+   * happen right before return since listeners might do things such as ThreadInfo.createAndThrowException(..), i.e. cause
+   * side effects that would violate consistency requirements of successive operations (e.g. by assuming we are still executing
+   * in the same StackFrame - after throwing an exception)
+   */
+  
   protected void notifyVMInitialized () {
     try {
       for (int i = 0; i < listeners.length; i++) {

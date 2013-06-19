@@ -101,6 +101,10 @@ public abstract class InfoObject implements Cloneable {
     return ObjectList.containsType(attr, attrType);
   }
 
+  public boolean hasAttrValue (Object a){
+    return ObjectList.contains(attr, a);
+  }
+  
   /**
    * this returns all of them - use either if you know there will be only
    * one attribute at a time, or check/process result with ObjectList

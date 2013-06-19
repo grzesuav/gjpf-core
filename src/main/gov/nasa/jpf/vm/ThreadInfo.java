@@ -191,9 +191,11 @@ public class ThreadInfo extends InfoObject
   /** shall we skip the next insn */
   protected boolean skipInstruction;
 
+  /** a listener or peer request for throwing an exception into the SUT, to be processed in executeInstruction */
+  protected SUTExceptionRequest pendingSUTExceptionRequest;
+  
   /** store the last executed insn in the path */
   protected boolean logInstruction;
-
 
   /** the last returned direct call frame */
   protected DirectCallStackFrame returnedDirectCall;
@@ -1719,6 +1721,45 @@ public class ThreadInfo extends InfoObject
   }
 
   /**
+   * this is a helper class to store listener generated exception requests that are checked before and after
+   * calling Instruction.execute(). This is a safe way to raise SUT exceptions from listener code without compromising
+   * consistency of executes() that are not prepared to cut short by means of re-execution or host VM exceptions
+   */
+  static class SUTExceptionRequest {
+    String xClsName;
+    String details;
+    
+    SUTExceptionRequest (String xClsName, String details){
+      this.xClsName = xClsName;
+      this.details = details;
+    }
+    
+    public String getExceptionClassName(){
+      return xClsName;
+    }
+    
+    public String getDetails(){
+      return details;
+    }
+  }
+  
+  public void requestSUTException (String exceptionClsName, String details){
+    pendingSUTExceptionRequest = new SUTExceptionRequest( exceptionClsName, details);
+    if (nextPc == null){ // this is pre-exec, skip the execute()
+      skipInstruction = true;
+    }
+  }
+  
+  protected void processPendingSUTExceptionRequest (){
+    if (pendingSUTExceptionRequest != null){
+      // <2do> we could do more specific checks for ClassNotFoundExceptions here
+      nextPc = createAndThrowException( pendingSUTExceptionRequest.getExceptionClassName(), pendingSUTExceptionRequest.getDetails());
+      pendingSUTExceptionRequest = null;
+    }
+  }
+  
+  
+  /**
    * <2do> pcm - this is only valid for java.* and our own Throwables that don't
    * need ctor execution since we only initialize the Throwable fields. This method
    * is here to avoid round trips in case of exceptions
@@ -1823,7 +1864,6 @@ public class ThreadInfo extends InfoObject
     }
   }
 
-
   /**
    * Execute next instruction.
    */
@@ -1836,9 +1876,11 @@ public class ThreadInfo extends InfoObject
     // time we exec the insn, and whether it does its magic in the top (before break)
     // or bottom half (re-exec after break) of the exec
     logInstruction = true;
-    skipInstruction = false;
+    skipInstruction = (pendingSUTExceptionRequest != null);
     nextPc = null;
 
+    // note that we don't reset pendingSUTExceptionRequest since it could be set outside executeInstruction()
+    
     if (log.isLoggable(Level.FINER)) {
       log.fine( pc.getMethodInfo().getFullName() + " " + pc.getPosition() + " : " + pc);
     }
@@ -1869,6 +1911,10 @@ public class ThreadInfo extends InfoObject
     // clean up whatever might have been stored by enter
     pc.cleanupTransients();
 
+    if (pendingSUTExceptionRequest != null){
+      processPendingSUTExceptionRequest();
+    }
+    
     // set+return the next insn to enter if we did not return from the last stack frame.
     // Note that 'nextPc' might have been set by a listener, and/or 'top' might have
     // been changed by executing an invoke, return or throw (handler), or by

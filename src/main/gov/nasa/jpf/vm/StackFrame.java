@@ -379,13 +379,17 @@ public abstract class StackFrame implements Cloneable {
     return ObjectList.containsType(frameAttr, attrType);
   }
   
+  public boolean hasFrameAttrValue (Object a){
+    return ObjectList.contains(frameAttr, a);
+  }
+  
   //--- the frame attr accessors 
   
  /**
    * this returns all of them - use either if you know there will be only
    * one attribute at callerSlots time, or check/process result with ObjectList
    */
-  public Object getObjectAttr(){
+  public Object getFrameAttr(){
     return frameAttr;
   }
 
