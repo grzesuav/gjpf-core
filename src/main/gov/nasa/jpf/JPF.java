@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  */
 public class JPF implements Runnable {
   
-  public static String VERSION = "6.0"; // the major version number
+  public static String VERSION = "7.0"; // the major version number
 
   static Logger logger     = null; // initially
 
