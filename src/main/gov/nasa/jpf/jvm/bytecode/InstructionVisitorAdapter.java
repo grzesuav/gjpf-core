@@ -39,6 +39,8 @@ public abstract class InstructionVisitorAdapter
 
 	public void visit(ArrayInstruction ins) {}
 
+	public void visit(ArrayElementInstruction ins) {}
+  
 	public void visit(ARRAYLENGTH ins) {}
 
 	public void visit(ArrayLoadInstruction ins) {}

@@ -30,8 +30,9 @@ import gov.nasa.jpf.vm.ThreadInfo;
  *
  *  ... array, index, <value> => ...
  */
-public abstract class ArrayStoreInstruction extends ArrayInstruction implements StoreInstruction {
+public abstract class ArrayStoreInstruction extends ArrayElementInstruction implements StoreInstruction {
 
+  @Override
   public Instruction execute (ThreadInfo ti) {
     int aref = peekArrayRef(ti); // need to be poly, could be LongArrayStore
     if (aref == -1) {
@@ -74,10 +75,12 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction implements 
   /**
    * this is for pre-exec use
    */
+  @Override
   protected int peekArrayRef(ThreadInfo ti) {
     return ti.getTopFrame().peek(2);
   }
 
+  @Override
   protected int peekIndex(ThreadInfo ti){
     return ti.getTopFrame().peek(1);
   }
@@ -92,10 +95,12 @@ public abstract class ArrayStoreInstruction extends ArrayInstruction implements 
                     throws ArrayIndexOutOfBoundsExecutiveException;
 
 
+  @Override
   public boolean isRead() {
     return false;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

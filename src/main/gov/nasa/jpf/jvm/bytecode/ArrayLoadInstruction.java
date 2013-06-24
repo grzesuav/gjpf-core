@@ -30,8 +30,9 @@ import gov.nasa.jpf.vm.ThreadInfo;
  *
  * ..., array, index => ..., value
  */
-public abstract class ArrayLoadInstruction extends ArrayInstruction {
+public abstract class ArrayLoadInstruction extends ArrayElementInstruction {
   
+  @Override
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
@@ -79,12 +80,14 @@ public abstract class ArrayLoadInstruction extends ArrayInstruction {
   /**
    * only makes sense pre-exec
    */
+  @Override
   protected int peekArrayRef (ThreadInfo ti){
     return ti.getTopFrame().peek(1);
   }
 
   // wouldn't really be required for loads, but this is a general
   // ArrayInstruction API
+  @Override
   protected int peekIndex (ThreadInfo ti){
     return ti.getTopFrame().peek();
   }
@@ -92,10 +95,13 @@ public abstract class ArrayLoadInstruction extends ArrayInstruction {
   protected abstract void push (StackFrame frame, ElementInfo e, int index)
                 throws ArrayIndexOutOfBoundsExecutiveException;
 
+  
+  @Override
   public boolean isRead() {
     return true;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

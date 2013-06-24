@@ -30,6 +30,7 @@ public interface InstructionVisitor {
 	public void visit(ANEWARRAY ins);
 	public void visit(ARETURN ins);
 	public void visit(ArrayInstruction ins);
+	public void visit(ArrayElementInstruction ins);
 	public void visit(ARRAYLENGTH ins);
 	public void visit(ArrayLoadInstruction ins);
 	public void visit(ArrayStoreInstruction ins);

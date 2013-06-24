@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
@@ -29,29 +28,36 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Get length of array 
  * ..., arrayref => ..., length
  */
-public class ARRAYLENGTH extends JVMInstruction {
-  
+public class ARRAYLENGTH extends ArrayInstruction {
+    
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
-    int objref = frame.pop();
+    arrayRef = frame.pop();
 
-    if (objref == -1){
+    if (arrayRef == -1){
       return ti.createAndThrowException("java.lang.NullPointerException",
                                         "array length of null object");
     }
 
-    ElementInfo ei = ti.getElementInfo(objref);
+    ElementInfo ei = ti.getElementInfo(arrayRef);
     frame.push(ei.arrayLength(), false);
 
     return getNext(ti);
   }
-
+  
+  @Override
   public int getByteCode () {
     return 0xBE;
   }
   
+  @Override
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+
+  @Override
+  protected int peekArrayRef (ThreadInfo ti) {
+    return ti.getTopFrame().peek();
   }
 }
