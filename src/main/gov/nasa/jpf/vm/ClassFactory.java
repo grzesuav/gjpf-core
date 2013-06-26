@@ -34,4 +34,9 @@ public interface ClassFactory {
    * this is the default parser if we don't have a container but only binary data
    */
   ClassParser createClassParser (byte[] data, int offet);
+  
+  /**
+   * create a ClassInfo from raw data
+   */
+  ClassInfo createClassInfo (String typeName, ClassLoaderInfo classLoader, String url, byte[] buffer, int offset, int length) throws ClassParseException ;
 }

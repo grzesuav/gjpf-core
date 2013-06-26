@@ -22,6 +22,9 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.vm.ClassFileContainer;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
+import gov.nasa.jpf.vm.ClassParseException;
 import gov.nasa.jpf.vm.ClassParser;
 import java.io.File;
 import java.io.IOException;
@@ -105,6 +108,13 @@ public class DefaultJVMClassFactory implements JVMClassFactory {
   public ClassParser createClassParser (byte[] data, int offset){
     ClassFile cf = new ClassFile( data, offset);
     return new ClassFileParser(cf);
+  }
+
+  @Override
+  public ClassInfo createClassInfo (String typeName, ClassLoaderInfo classLoader, String url, byte[] data, int offset, int length) throws ClassParseException {
+    ClassParser parser = createClassParser( data, offset);
+    JVMClassInfo ci = new JVMClassInfo(typeName, classLoader, parser, url);
+    return ci;
   }
 
 }

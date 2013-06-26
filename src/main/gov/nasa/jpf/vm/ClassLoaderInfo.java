@@ -358,18 +358,16 @@ public class ClassLoaderInfo
   /**
    * this is for user defined ClassLoaders that explicitly provide the class file data
    */
-  public ClassInfo getResolvedClassInfo (String className, byte[] buffer, int offset, int length) throws ClassInfoException {
+  public ClassInfo getResolvedClassInfo (String className, byte[] data, int offset, int length) throws ClassInfoException {
     String typeName = Types.getClassNameFromTypeName( className);
     ClassInfo ci = resolvedClasses.get( typeName);    
     
-    if (ci == null) {
-      // it can't be a builtin class since we have classfile contents
-      ClassParser parser = classFactory.createClassParser(buffer, offset);
-      String url = typeName;
-            
+    if (ci == null) {        
       try {
-        ci = new ClassInfo(typeName, this, parser, url);
-        
+        // it can't be a builtin class since we have classfile contents
+        String url = typeName;
+        ci = classFactory.createClassInfo( typeName, this, url, data, offset, length);
+
         // no use to store it in loadedClasses since the data might be dynamically generated
 
       } catch (ClassParseException cpx) {
