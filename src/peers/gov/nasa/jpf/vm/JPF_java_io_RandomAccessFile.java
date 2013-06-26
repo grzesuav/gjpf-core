@@ -45,7 +45,8 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
 	}
 	
 	// set the mapping during the constructor call
-	public static void setDataMap(MJIEnv env, int this_ptr) {
+  @MJI
+	public void setDataMap____V (MJIEnv env, int this_ptr) {
 		int fn_ptr = env.getReferenceField(this_ptr,"filename");
 		if (!File2DataMap.containsKey(new Integer(fn_ptr))) 
 			File2DataMap.put(new Integer(fn_ptr),new Integer(this_ptr));

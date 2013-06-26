@@ -69,7 +69,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
     ElementInfo ei;
 
     boolean isRace() {
-      return insn2 != null;
+      return insn2 != null && ti1 != null && ti2 != null && ( ! ti1.equals(ti2) );
     }
 
     void printOn(PrintWriter pw){

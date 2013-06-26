@@ -61,16 +61,19 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
 
   protected long lastValue;
   
-  public static void init (Config config) {
-    if (config.getBoolean("vm.por") && config.getBoolean("vm.por.sync_detection")) {
-      fliFactory = config.getEssentialInstance("vm.por.fli_factory.class", FieldLockInfoFactory.class);
+  
+   public static void init (Config config) {
+    if (config.getBoolean("vm.por")) {
+       skipFinals = config.getBoolean("vm.por.skip_finals", true);
+       skipStaticFinals = config.getBoolean("vm.por.skip_static_finals", false);
+       skipConstructedFinals = config.getBoolean("vm.por.skip_constructed_finals", false);
 
-      skipFinals = config.getBoolean("vm.por.skip_finals", true);
-      skipStaticFinals = config.getBoolean("vm.por.skip_static_finals", false);
-      skipConstructedFinals = config.getBoolean("vm.por.skip_constructed_finals", false);
-    }
-  }
-
+      if (config.getBoolean("vm.por.sync_detection")) {
+        fliFactory = config.getEssentialInstance("vm.por.fli_factory.class", FieldLockInfoFactory.class);
+      }
+     }
+   }
+  
   protected FieldInstruction() {}
 
   protected FieldInstruction(String name, String clsName, String fieldDescriptor){
