@@ -96,9 +96,9 @@ public class MultiProcessVM extends VM {
         
         String mainEntry = config.getString(entryKey, "main([Ljava/lang/String;)V");
         
-        SystemClassLoaderInfo sysCl = new SystemClassLoaderInfo(this,list.size());
+        SystemClassLoaderInfo sysCli = createSystemClassLoaderInfo(list.size());
     
-        ApplicationContext appCtx = new ApplicationContext( i, clsName, mainEntry, args, sysCl);
+        ApplicationContext appCtx = new ApplicationContext( i, clsName, mainEntry, args, sysCli);
         list.add( appCtx);
       }
     }

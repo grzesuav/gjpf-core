@@ -86,9 +86,9 @@ public class SingleProcessVM extends VM {
     // can be any static method that has a (String[]), (String) or () signature
     String mainEntry = config.getProperty("target.entry", "main([Ljava/lang/String;)V");
 
-    SystemClassLoaderInfo sysCl = new SystemClassLoaderInfo(this,0);
+    SystemClassLoaderInfo sysCli = createSystemClassLoaderInfo(0);
     
-    return new ApplicationContext( 0, clsName, mainEntry, args, sysCl);
+    return new ApplicationContext( 0, clsName, mainEntry, args, sysCli);
   }
   
 

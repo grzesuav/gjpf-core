@@ -77,7 +77,7 @@ public class ClassLoaderInfo
   // annotations directly loaded by this classloader
   protected Map<String,AnnotationInfo> resolvedAnnotations;
   
-  // Represents the locations where this classloader can load classes form
+  // Represents the locations where this classloader can load classes form - has to be set by subclasses (enforced by final)
   protected ClassPath cp;
 
   // The type of the corresponding class loader object
@@ -169,37 +169,46 @@ public class ClassLoaderInfo
     ClassLoaderInfo cl = getCurrentSystemClassLoader();
     return cl.getResolvedClassInfo(clsName);
   }
+   
+  /**
+   * for use from SystemClassLoaderInfo ctor, which doesn't have a ClassLoader object
+   * yet and has to set cp and id itself
+   */
+  protected ClassLoaderInfo (VM vm){
+    resolvedClasses = new HashMap<String,ClassInfo>();
+    resolvedAnnotations = new HashMap<String,AnnotationInfo>();
+    
+    this.statics = createStatics(vm);
+
+    // registration has to happen from SystemClassLoaderInfo ctor since we are
+    // only partially initialized at this point
+  }
   
-  protected ClassLoaderInfo(VM vm, int objRef, ClassPath cp, ClassLoaderInfo parent) {
+  /**
+   * for all other classloaders, which require an already instantiated ClassLoader object 
+   */
+  protected ClassLoaderInfo (VM vm, int objRef, ClassPath cp, ClassLoaderInfo parent) {
     resolvedClasses = new HashMap<String,ClassInfo>();
     resolvedAnnotations = new HashMap<String,AnnotationInfo>();
 
-    this.cp = cp;
     this.parent = parent;
     this.objRef = objRef;
+    this.cp = cp;
+    this.statics = createStatics(vm);
 
-    Class<?>[] argTypes = { Config.class, KernelState.class };
-    Object[] args = { config, vm.getKernelState() };
-
-    this.statics = config.getEssentialInstance("vm.statics.class", Statics.class, argTypes, args);
-
-    vm.registerClassLoader(this);
-
+    this.id = computeId(objRef);
     ElementInfo ei = vm.getModifiableElementInfo(objRef);
 
-    // For systemClassLoaders, this object is still null, since the class java.lang.ClassLoader 
-    // class cannot be loaded before creating the systemClassLoader
-    if(ei!=null) {
-      this.id = this.computeId(objRef);
-      ei.setIntField( ID_FIELD, id);
-      if(parent != null) {
-        ei.setReferenceField("parent", parent.objRef);
-      }
-      classInfo = ei.getClassInfo();
-      setRoundTripRequired();
+    ei.setIntField(ID_FIELD, id);
+    if (parent != null) {
+      ei.setReferenceField("parent", parent.objRef);
     }
+    classInfo = ei.getClassInfo();
+    roundTripRequired = isRoundTripRequired();
+    
+    vm.registerClassLoader(this);
   }
-
+  
   public Memento<ClassLoaderInfo> getMemento (MementoFactory factory) {
     return factory.getMemento(this);
   }
@@ -208,6 +217,13 @@ public class ClassLoaderInfo
     return new ClMemento(this);
   }
 
+  protected Statics createStatics (VM vm){
+    Class<?>[] argTypes = { Config.class, KernelState.class };
+    Object[] args = { config, vm.getKernelState() };
+    
+    return config.getEssentialInstance("vm.statics.class", Statics.class, argTypes, args);
+  }
+  
   /**
    * this is our internal, search global id that is used for the
    * canonical root set
@@ -230,17 +246,6 @@ public class ClassLoaderInfo
     return objRef;
   }
 
-//  protected int computeGlobalId (VM vm){
-//    ThreadInfo tiExec = vm.getCurrentThread();
-//    Instruction insn = null;
-//    
-//    if (tiExec != null){
-//      insn = tiExec.getTopFrame().getPC();  
-//    }
-//
-//    return gidManager.getNewId(vm.getSystemState(), tiExec, insn);
-//  }
-
   protected int computeId (int objRef) {
     int id = globalCLids.get(objRef);
     if (id == 0) {
@@ -256,9 +261,8 @@ public class ClassLoaderInfo
    * do not override the ClassLoader.loadClass() & URLClassLoader.findClass, resolving 
    * the class is done natively within JPF
    */
-  protected void setRoundTripRequired() {
-    roundTripRequired = (parent!=null? parent.roundTripRequired: true) 
-        || !this.hasOriginalLoadingImp();
+  protected boolean isRoundTripRequired() {
+    return (parent!=null? parent.roundTripRequired: true)  || !hasOriginalLoadingImp();
   }
 
   private boolean hasOriginalLoadingImp() {

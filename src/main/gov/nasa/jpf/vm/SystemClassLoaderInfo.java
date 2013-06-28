@@ -60,33 +60,32 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
 
   protected int unCachedClasses = 10;
   
-  protected SystemClassLoaderInfo (VM vm, int appIndex){
-     super(vm, MJIEnv.NULL, computeSystemClassPath(vm.getConfig()), null);
-     
-     // this is a hack - for user ClassLoaderInfos, we compute the id from the corresponding
-     // objRef of the JPF ClassLoader object. For SystemClassLoaderInfos we can't do that because
-     // they are created before we can create JPF objects. However, this is safe if we know
-     // the provided id is never going to be the objRef of a future ClassLoader object, which is
-     // a safe bet since the first objects created are all system Class objects that are never going to
-     // be recycled.
-     this.id = computeId(appIndex); // has to be set here so that ClassInfos have proper uniqueIds
-  }
+  public SystemClassLoaderInfo (VM vm, int appId){
+     super(vm);
+
+    // this is a hack - for user ClassLoaderInfos, we compute the id from the corresponding
+    // objRef of the JPF ClassLoader object. For SystemClassLoaderInfos we can't do that because
+    // they are created before we can create JPF objects. However, this is safe if we know
+    // the provided id is never going to be the objRef of a future ClassLoader object, which is
+    // a safe bet since the first objects created are all system Class objects that are never going to
+    // be recycled.
+    this.id = computeId(appId);
     
-  /**
-   * Builds the classpath for our system class loaders which resemblances the 
-   * location for classes within,
-   *        - Java API ($JREHOME/Classes/classes.jar,...) 
-   *        - standard extensions packages ($JREHOME/lib/ext/*.jar)
-   *        - the local file system ($CLASSPATH)
-   */
-  protected static ClassPath computeSystemClassPath (Config config){
+    this.cp = createSystemClassPath( vm, appId);
+    
+    // now we can notify
+    vm.registerClassLoader(this);
+  }
+  
+  protected ClassPath createSystemClassPath (VM vm, int appId){
+    Config conf = vm.getConfig();
     ClassPath classPath = new ClassPath();
 
-    for (File f : config.getPathArray("boot_classpath")){
+    for (File f : conf.getPathArray("boot_classpath")){
       classPath.addPathName(f.getAbsolutePath());
     }
 
-    for (File f : config.getPathArray("classpath")){
+    for (File f : conf.getPathArray("classpath")){
       classPath.addPathName(f.getAbsolutePath());
     }
 
@@ -100,8 +99,7 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     
     return classPath;
   }
- 
-
+  
   @Override
   public ClassInfo getResolvedClassInfo (String clsName){
     ClassInfo ci = super.getResolvedClassInfo(clsName);

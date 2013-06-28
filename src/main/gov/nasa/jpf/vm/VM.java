@@ -28,6 +28,7 @@ import gov.nasa.jpf.jvm.ClassFile;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
+import java.io.File;
 
 import java.io.PrintWriter;
 import java.nio.ByteOrder;
@@ -396,6 +397,17 @@ public abstract class VM {
     } catch (ClassInfoException e){
       throw new JPFConfigException("cannot load application class " + e.getFailedClass());
     }
+  }
+  
+  /*
+   * these are called when creating ApplicationContexts and can be overridden by concrete VM types 
+   */
+  protected SystemClassLoaderInfo createSystemClassLoaderInfo (int appId) {
+    Class<?>[] argTypes = { VM.class, int.class };
+   
+    Object[] args = { this, Integer.valueOf(appId)};
+    SystemClassLoaderInfo sysCli = config.getEssentialInstance("vm.classloader.class", SystemClassLoaderInfo.class, argTypes, args);
+    return sysCli;
   }
   
   protected void createSystemClassLoaderObject (SystemClassLoaderInfo sysCl, ThreadInfo tiMain) {
