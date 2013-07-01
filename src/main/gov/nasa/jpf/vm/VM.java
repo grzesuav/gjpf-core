@@ -1829,6 +1829,11 @@ public abstract class VM {
     error_id = 0;
   }
 
+  /**
+   *  given an object reference, it returns the ApplicationContext of the process to which
+   *  this object belongs
+   */
+  public abstract ApplicationContext getApplicationContext(int objRef);
   public abstract ApplicationContext[] getApplicationContexts();
   public abstract String getSUTName();
   public abstract String getSUTDescription();

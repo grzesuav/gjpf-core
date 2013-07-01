@@ -148,6 +148,26 @@ public class MultiProcessVM extends VM {
   }
   
   @Override
+  public ApplicationContext getApplicationContext(int objRef) {
+    VM vm = VM.getVM();
+
+    ClassInfo ci = vm.getElementInfo(objRef).getClassInfo();
+    while(!ci.isObjectClassInfo()) {
+      ci = ci.getSuperClass();
+    }
+
+    ClassLoaderInfo sysLoader = ci.getClassLoaderInfo();
+    ApplicationContext[] appContext = vm.getApplicationContexts();
+    
+    for(int i=0; i<appContext.length; i++) {
+      if(appContext[i].getSystemClassLoader() == sysLoader) {
+        return appContext[i];
+      }
+    }
+    return null;
+  }
+  
+  @Override
   public ApplicationContext[] getApplicationContexts(){
     return appCtxs;
   }

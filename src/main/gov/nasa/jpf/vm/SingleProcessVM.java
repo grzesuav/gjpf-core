@@ -150,6 +150,11 @@ public class SingleProcessVM extends VM {
   }
   
   @Override
+  public ApplicationContext getApplicationContext(int obj) {
+    return appCtx;
+  }
+
+  @Override
   public ApplicationContext[] getApplicationContexts(){
     return new ApplicationContext[] { appCtx };
   }
