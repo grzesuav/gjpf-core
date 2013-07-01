@@ -34,8 +34,11 @@ import java.util.ArrayList;
 public class GenPeer {
   static final String SYS_PKG = "gov.nasa.jpf.vm";
   static final String MJI_ENV = "gov.nasa.jpf.vm.MJIEnv";
+  static final String NATIVEPEER = "gov.nasa.jpf.vm.NativePeer";
   static final String INDENT = "  ";
-  static final String METHOD_PREFIX = "public static";
+  static final String SUPERCLASS = "NativePeer";
+  static final String MJI_ANN = "@MJI";
+  static final String METHOD_PREFIX = "public";
   static final String ENV_ARG = "MJIEnv env";
   static final String OBJ_ARG = "int objRef";
   static final String CLS_ARG = "int clsObjRef";
@@ -138,18 +141,23 @@ public class GenPeer {
       pw.print(SYS_PKG);
       pw.println(';');
       pw.println();
-
-      pw.print("import ");
-      pw.print(MJI_ENV);
-      pw.println(";");
-      pw.println();
     }
+
+    pw.print("import ");
+    pw.print(MJI_ENV);
+    pw.println(";");
+    pw.print("import ");
+    pw.print(NATIVEPEER);
+    pw.println(";");
+    pw.println();
 
     String cname = cls.getName().replace('.', '_');
 
     pw.print("class ");
     pw.print("JPF_");
     pw.print(cname);
+    pw.print(" extends ");
+    pw.print(SUPERCLASS);
     pw.println(" {");
   }
 
@@ -195,9 +203,16 @@ public class GenPeer {
     pw.print(name);
   }
 
+  static void printMJIAnnotation(PrintWriter pw) {
+    pw.print(INDENT);
+    pw.println(MJI_ANN);
+  }
+
   static void printMethodStub (String condPrefix, Method m, PrintWriter pw) {
     String t = null;
     String rt;
+
+    printMJIAnnotation(pw);
 
     pw.print(INDENT);
     pw.print(METHOD_PREFIX);
