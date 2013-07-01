@@ -473,11 +473,16 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
 
   private static boolean setValue(MJIEnv env, FieldInfo fi, int obj, int value, Object attr) {
     ClassInfo fieldClassInfo = fi.getClassInfo();
-    
     String className = fieldClassInfo.getName();
     String fieldType = fi.getType();
-
     ClassInfo tci = fi.getTypeClassInfo();
+    
+    ElementInfo ei = null;
+    if (fi.isStatic()) {
+      ei = fi.getClassInfo().getModifiableStaticElementInfo();
+    } else {
+      ei = env.getModifiableElementInfo(obj);
+    }
 
     if (tci.isPrimitive()) {
       if (value == MJIEnv.NULL) {
@@ -490,8 +495,7 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
       if (finfo == null) {
         return false;
       }
-
-      ElementInfo ei = fi.isStatic() ? fi.getClassInfo().getStaticElementInfo() : env.getModifiableElementInfo(obj);
+      
       ei.setFieldAttr(fi, attr);
 
       if ("boolean".equals(fieldType)){
@@ -538,7 +542,6 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
         }
       }
 
-      ElementInfo ei = fi.isStatic() ? fi.getClassInfo().getStaticElementInfo() : env.getElementInfo(obj);
       ei.setFieldAttr(fi, attr);
 
       if (fi.isStatic()) {
