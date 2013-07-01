@@ -141,9 +141,8 @@ public class SimpleDot extends ListenerAdapter {
     Config config = vm.getConfig();
     
     app = vm.getSUTName();
-    if(app.contains(".")) {
-      app = app.substring(app.lastIndexOf('.') + 1);
-    }
+    app = app.replace("+", "__");
+    app = app.replace('.', '_');
 
     String fname = config.getString("dot.file");
     if (fname == null){
