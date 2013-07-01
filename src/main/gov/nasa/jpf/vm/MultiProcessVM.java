@@ -81,12 +81,15 @@ public class MultiProcessVM extends VM {
         
         String argsKey;
         String entryKey;
+        String hostKey;
         if(replicate>0) {
           argsKey = "target.args";
           entryKey = "target.entry";
+          hostKey = "target.host";
         } else {
           argsKey = "target.args." + i;
           entryKey = "target.entry." + i;
+          hostKey = "target.host." + i;
         }
         
         String[] args = config.getCompactStringArray(argsKey);
@@ -96,9 +99,11 @@ public class MultiProcessVM extends VM {
         
         String mainEntry = config.getString(entryKey, "main([Ljava/lang/String;)V");
         
+        String host = config.getString(hostKey, "localhost");
+        
         SystemClassLoaderInfo sysCli = createSystemClassLoaderInfo(list.size());
     
-        ApplicationContext appCtx = new ApplicationContext( i, clsName, mainEntry, args, sysCli);
+        ApplicationContext appCtx = new ApplicationContext( i, clsName, mainEntry, args, host, sysCli);
         list.add( appCtx);
       }
     }

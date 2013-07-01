@@ -31,15 +31,17 @@ public class ApplicationContext implements SystemAttribute {
   final String mainClassName;
   final String mainEntry;
   final String[] args;
+  final String host;
   
   final SystemClassLoaderInfo sysCl;
   MethodInfo miEntry;
   
-  ApplicationContext (int id, String mainClassName, String mainEntry, String[] args, SystemClassLoaderInfo sysCl){
+  ApplicationContext (int id, String mainClassName, String mainEntry, String[] args, String host, SystemClassLoaderInfo sysCl){
     this.id = id;
     this.mainClassName = mainClassName;
     this.mainEntry = mainEntry;
     this.args = args;
+    this.host = host;
     this.sysCl = sysCl;
   }
   
@@ -59,6 +61,10 @@ public class ApplicationContext implements SystemAttribute {
     return mainClassName;
   }
   
+  public String getHost() {
+    return host;
+  }
+  
   public SystemClassLoaderInfo getSystemClassLoader(){
     return sysCl;
   }
@@ -69,6 +75,8 @@ public class ApplicationContext implements SystemAttribute {
     sb.append(mainClassName);
     sb.append(",mainEntry=");
     sb.append(mainEntry);
+    sb.append(",host=");
+    sb.append(host);
     
     sb.append(",args=[");
     for (int i=0; i<args.length; i++){
