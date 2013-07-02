@@ -47,11 +47,11 @@ public abstract class NativeStackFrame extends StackFrame {
   // atomic (leave alone roundtrips of course)
 
   // return value registers
-  Object ret;
-  Object retAttr;
+  protected Object ret;
+  protected Object retAttr;
 
   // our argument registers
-  Object[] args;
+  protected Object[] args;
 
   public NativeStackFrame (NativeMethodInfo mi){
     super( mi, 0, 0);

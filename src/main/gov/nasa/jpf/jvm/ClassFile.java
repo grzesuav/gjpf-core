@@ -1390,14 +1390,32 @@ public class ClassFile {
         val = Boolean.valueOf((Integer)val == 1);
         setPrimitiveAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, val);
         break;        
-      
+
       case 'B':
+        cpIdx = readU2();
+        val = cpValue[cpIdx];
+        val = Byte.valueOf(((Integer)val).byteValue());
+        setPrimitiveAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, val);
+        break;
+        
       case 'C':
-      case 'D':
-      case 'F':
-      case 'I':
-      case 'J':
+        cpIdx = readU2();
+        val = cpValue[cpIdx];
+        val = Character.valueOf((char)((Integer)val).shortValue());
+        setPrimitiveAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, val);
+        break;
+        
       case 'S':
+        cpIdx = readU2();
+        val = cpValue[cpIdx];
+        val = Short.valueOf(((Integer)val).shortValue());
+        setPrimitiveAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, val);
+        break;
+
+      case 'I':
+      case 'F':
+      case 'D':
+      case 'J':
         cpIdx = readU2();
         val = cpValue[cpIdx];
         setPrimitiveAnnotationValue(reader, tag, annotationIndex, valueIndex, elementName, arrayIndex, val);

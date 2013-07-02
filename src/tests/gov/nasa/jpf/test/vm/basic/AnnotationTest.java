@@ -439,4 +439,119 @@ public class AnnotationTest extends TestJPF {
     }
   }
   
+  
+  //---------------------------------------------------------------
+  // test of char annotations
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface A14 {
+    char value();
+  }
+  
+  @Test
+  @A14('x')
+  public void testCharAnnotation(){
+    if (verifyNoPropertyViolation()){
+      try {
+        Class<?> clazz = Class.forName(AnnotationTest.class.getName());
+        Method method = clazz.getDeclaredMethod("testCharAnnotation");
+        Annotation[] annotations = method.getAnnotations();
+        assertEquals(2, annotations.length);
+        assertNotNull(annotations[1]);
+
+        assertTrue(annotations[1] instanceof A14);
+        A14 ann = (A14) annotations[1];
+        assertTrue(ann.value() == 'x');
+        
+      } catch (Throwable t){
+        t.printStackTrace();
+        fail("unexpected exception: " + t);
+      }
+    }
+  }
+  
+  //---------------------------------------------------------------
+  // test of char annotations
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface A15 {
+    float value();
+  }
+  
+  @Test
+  @A15(12.34f)
+  public void testFloatAnnotation(){
+    if (verifyNoPropertyViolation()){
+      try {
+        Class<?> clazz = Class.forName(AnnotationTest.class.getName());
+        Method method = clazz.getDeclaredMethod("testFloatAnnotation");
+        Annotation[] annotations = method.getAnnotations();
+        assertEquals(2, annotations.length);
+        assertNotNull(annotations[1]);
+
+        assertTrue(annotations[1] instanceof A15);
+        A15 ann = (A15) annotations[1];
+        assertTrue(Math.abs(ann.value() - 12.34f) < 0.00001);
+        
+      } catch (Throwable t){
+        t.printStackTrace();
+        fail("unexpected exception: " + t);
+      }
+    }
+  }
+
+  // test of char annotations
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface A16 {
+    double value();
+  }
+  
+  @Test
+  @A16(Double.MAX_VALUE)
+  public void testDoubleAnnotation(){
+    if (verifyNoPropertyViolation()){
+      try {
+        Class<?> clazz = Class.forName(AnnotationTest.class.getName());
+        Method method = clazz.getDeclaredMethod("testDoubleAnnotation");
+        Annotation[] annotations = method.getAnnotations();
+        assertEquals(2, annotations.length);
+        assertNotNull(annotations[1]);
+
+        assertTrue(annotations[1] instanceof A16);
+        A16 ann = (A16) annotations[1];
+        assertTrue(ann.value() == Double.MAX_VALUE);
+        
+      } catch (Throwable t){
+        t.printStackTrace();
+        fail("unexpected exception: " + t);
+      }
+    }
+  }
+
+  // test of char annotations
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface A17 {
+    long value();
+  }
+  
+  @Test
+  @A17(Long.MAX_VALUE)
+  public void testLongAnnotation(){
+    if (verifyNoPropertyViolation()){
+      try {
+        Class<?> clazz = Class.forName(AnnotationTest.class.getName());
+        Method method = clazz.getDeclaredMethod("testLongAnnotation");
+        Annotation[] annotations = method.getAnnotations();
+        assertEquals(2, annotations.length);
+        assertNotNull(annotations[1]);
+
+        assertTrue(annotations[1] instanceof A17);
+        A17 ann = (A17) annotations[1];
+        assertTrue(ann.value() == Long.MAX_VALUE);
+        
+      } catch (Throwable t){
+        t.printStackTrace();
+        fail("unexpected exception: " + t);
+      }
+    }
+  }
+
 }
