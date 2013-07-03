@@ -229,6 +229,8 @@ public class MultiProcessVM extends VM {
   }
 
   @Override
+  // Note - for now we just check for global deadlocks not the local ones which occur within a
+  // scope of a single progress
   public boolean isDeadlocked () { 
     boolean hasNonDaemons = false;
     boolean hasBlockedThreads = false;
@@ -239,22 +241,19 @@ public class MultiProcessVM extends VM {
 
     ThreadInfo[] threads = getThreadList().getThreads();
     int len = threads.length;
-    ApplicationContext appCtx = ThreadInfo.getCurrentThread().getApplicationContext();
 
     for (int i=0; i<len; i++){
       ThreadInfo ti = threads[i];
-      if (ti.getApplicationContext() == appCtx){
-        if (ti.isAlive()) {
-          hasNonDaemons |= !ti.isDaemon();
+      if (ti.isAlive()) {
+        hasNonDaemons |= !ti.isDaemon();
 
-          // shortcut - if there is at least one runnable, we are not deadlocked
-          if (ti.isTimeoutRunnable()) { // willBeRunnable() ?
-            return false;
-          }
-
-          // means it is not NEW or TERMINATED, i.e. live & blocked
-          hasBlockedThreads = true;
+        // shortcut - if there is at least one runnable, we are not deadlocked
+        if (ti.isTimeoutRunnable()) { // willBeRunnable() ?
+          return false;
         }
+
+        // means it is not NEW or TERMINATED, i.e. live & blocked
+        hasBlockedThreads = true;
       }
     }
 
