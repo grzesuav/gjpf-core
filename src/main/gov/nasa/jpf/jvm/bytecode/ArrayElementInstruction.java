@@ -84,7 +84,7 @@ public abstract class ArrayElementInstruction extends ArrayInstruction {
    * element ops really can cause races, otherwise there is a high chance this
    * is a major state exploder
    */
-  boolean isNewPorBoundary (ElementInfo ei, ThreadInfo ti) {
+  protected boolean isNewPorBoundary (ElementInfo ei, ThreadInfo ti) {
     //return false;
 
     // ei is the array object
