@@ -43,7 +43,7 @@ public abstract class LocalVariableInstruction extends JVMInstruction
   
   public LocalVarInfo getLocalVarInfo(){
     if (lv == null){
-     lv = mi.getLocalVar(index, position+1);
+     lv = mi.getLocalVar(index, position+getLength());
     }
     return lv;
   }
