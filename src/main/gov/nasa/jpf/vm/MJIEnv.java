@@ -412,7 +412,7 @@ public class MJIEnv {
   }
 
   public void setFloatArrayElement (int objref, int index, float value) {
-    heap.getModifiable(objref).setFloatElement(index, Types.floatToInt(value));
+    heap.getModifiable(objref).setFloatElement(index, value);
   }
 
   public float getFloatArrayElement (int objref, int index) {
