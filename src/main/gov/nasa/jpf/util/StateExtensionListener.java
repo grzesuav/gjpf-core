@@ -37,42 +37,37 @@ public class StateExtensionListener <T> extends ListenerAdapter {
   public StateExtensionListener (StateExtensionClient<T> cli) {
     client = cli;
     states = new DynamicObjectArray<T>();
+
+    // set initial state
+    T se = client.getStateExtension();
+    states.set(0, se);
   }
 
   @Override
   public void stateAdvanced (Search search) {
-    int idx = search.getStateId();
-
-    if (idx >= 0) { // <??> why would it be notified for the init state?
-      T se = client.getStateExtension();
-      states.set(idx, se);
-    }
+    int idx = search.getStateId()+1;
+ 
+    T se = client.getStateExtension();
+    states.set(idx, se);
   }
 
   @Override
   public void stateBacktracked (Search search) {
-    int idx = search.getStateId();
+    int idx = search.getStateId()+1;
 
-    if (idx >= 0) {
-      T se = states.get(idx);
-      client.restore(se);
-      // nextCg will be re-computed (->getNext), so there is no need to reset
-    }
+    T se = states.get(idx);
+    client.restore(se);
   }
 
   @Override
   public void stateRestored (Search search) {
-    int idx = search.getStateId();
+    int idx = search.getStateId()+1;
+ 
+    T se = states.get(idx);
+    client.restore(se);
 
-    if (idx >= 0) {
-      T se = states.get(idx);
-      client.restore(se);
-
-      // nextCg is restored (not re-computed), so we need to reset
-      SystemState ss = search.getVM().getSystemState();
-      ChoiceGenerator<?> cgNext = ss.getNextChoiceGenerator();
-      cgNext.reset();
-    }
-
+    SystemState ss = search.getVM().getSystemState();
+    ChoiceGenerator<?> cgNext = ss.getNextChoiceGenerator();
+    cgNext.reset();
   }
 }
