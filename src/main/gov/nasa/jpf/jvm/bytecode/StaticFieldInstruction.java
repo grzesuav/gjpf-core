@@ -45,8 +45,17 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
    * we get the right one that declares the field here
    */
   protected void initialize() {
-    ClassInfo ciField = mi.getClassInfo().resolveReferencedClass(className);
-    fi = ciField.getStaticField(fname);
+    ClassInfo ciRef = mi.getClassInfo().resolveReferencedClass(className);
+    
+    FieldInfo f = ciRef.getStaticField(fname);
+    ClassInfo ciField = f.getClassInfo();
+    if (!ciField.isRegistered()){
+      // classLoaded listeners might change/remove this field
+      ciField.registerClass(ThreadInfo.getCurrentThread());
+      f = ciField.getStaticField(fname);
+    }
+    
+    fi = f;
   }
 
   public ClassInfo getClassInfo() {

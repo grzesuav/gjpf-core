@@ -489,6 +489,12 @@ public class JPF_java_lang_Class extends NativePeer {
       return ci;
     }    
   }
+  
+  @MJI
+  public void initialize0____V (MJIEnv env, int clsObjRef){
+    ClassInfo ci = env.getReferredClassInfo( clsObjRef);
+    ci.pushRequiredClinits(ThreadInfo.currentThread);
+  }
 
   Set<ClassInfo> getInitializedInterfaces (MJIEnv env, ClassInfo ci){
     ThreadInfo ti = env.getThreadInfo();

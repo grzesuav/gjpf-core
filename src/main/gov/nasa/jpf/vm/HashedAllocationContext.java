@@ -18,6 +18,10 @@
 //
 package gov.nasa.jpf.vm;
 
+// see mixinJPFStack() comments
+import sun.misc.SharedSecrets;
+import sun.misc.JavaLangAccess;
+
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.OATHash;
 import gov.nasa.jpf.util.SparseObjVector;
@@ -67,15 +71,32 @@ public class HashedAllocationContext implements AllocationContext {
     return h;
   }
   
+  /*
+   * this is an optimization to cut down on host VM StackTrace acquisition, since we just need one
+   * element.
+   * 
+   * NOTE: this is more fragile than Throwable.getStackTrace() and String.equals() since it assumes
+   * availability of the sun.misc.JavaLangAccess SharedSecret and invariance of classname strings.
+   * 
+   * The robust version would be
+   *   ..
+   *   throwable.fillInStackTrace();
+   *   StackTraceElement[] ste = throwable.getStackTrace();
+   *   StackTraceElement e = ste[4];
+   *   if (e.getClassName().equals("gov.nasa.jpf.vm.MJIEnv") && e.getMethodName().startsWith("new")){ ..
+   */ 
+  
+   static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+   static final String ENV_CLSNAME = MJIEnv.class.getName();
+  
   // <2do> this method is problematic - we should not assume a fixed stack position
   // but we can't just mixin the whole stack since this would cause different class object
   // allocation contexts (registerClass can happen from lots of locations).
   // At the other end of the spectrum, MJIEnv.newXX() is not differentiating enough since
   // those are convenience methods used from a gazillion of places that might share
-  // the same SUT state
+   // the same SUT state
   static int mixinJPFStack (int h) {
     throwable.fillInStackTrace();
-    StackTraceElement[] ste = throwable.getStackTrace();
     
     // we know the callstack is at least 4 levels deep:
     //   0: mixinJPFStack
@@ -89,11 +110,11 @@ public class HashedAllocationContext implements AllocationContext {
     // this would create state leaks for allocations that are triggered by SUT threads and
     // have different native paths (e.g. Class object creation caused by different SUT thread context)
     
-    StackTraceElement e = ste[4]; // see note below regarding fixed call depth fragility
+    StackTraceElement e = JLA.getStackTraceElement(throwable, 4); // see note below regarding fixed call depth fragility
     // <2do> this sucks - MJIEnv.newObject/newArray/newString are used from a gazillion of places that might not differ in SUT state
-    if (e.getClassName().equals("gov.nasa.jpf.vm.MJIEnv") && e.getMethodName().startsWith("new")){
+    if (e.getClassName() == ENV_CLSNAME && e.getMethodName().startsWith("new")){
       // there is not much use to loop, since we don't have a good end condition
-      e = ste[5];
+      e = JLA.getStackTraceElement(throwable, 5);
     }
           
     // NOTE - this is fragile since it is implementation dependent and differs

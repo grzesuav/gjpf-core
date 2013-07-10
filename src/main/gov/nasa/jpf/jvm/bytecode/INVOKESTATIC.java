@@ -93,17 +93,32 @@ public class INVOKESTATIC extends InvokeInstruction {
 
     return ti.getPC(); // we can't just return the first callee insn if a listener throws an exception
   }
-  
-  public MethodInfo getInvokedMethod (ThreadInfo ti){
-    return getInvokedMethod(); 
+
+  public MethodInfo getInvokedMethod(){
+    if (invokedMethod != null){
+      return invokedMethod;
+    } else {
+      // Hmm, this would be pre-exec, but if the current thread is not the one executing the insn 
+      // this might result in false sharedness of the class object
+      return getInvokedMethod( ThreadInfo.getCurrentThread());
+    }
   }
   
-  public MethodInfo getInvokedMethod () {
+  public MethodInfo getInvokedMethod (ThreadInfo ti){
     if (invokedMethod == null) {
       ClassInfo clsInfo = getClassInfo();
       if (clsInfo != null){
-        invokedMethod = clsInfo.getMethod(mname, true);
-      }
+        MethodInfo callee = clsInfo.getMethod(mname, true);
+        ClassInfo ciCallee = callee.getClassInfo(); // might be a superclass of ci, i.e. not what is referenced in the insn
+        
+        if (!ciCallee.isRegistered()){
+          // if it wasn't registered yet, classLoaded listeners didn't have a chance yet to modify it..
+          ciCallee.registerClass(ti);
+          // .. and might replace/remove MethodInfos
+          callee = clsInfo.getMethod(mname, true);
+        }
+        invokedMethod = callee;
+      }    
     }
     return invokedMethod;
   }

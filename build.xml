@@ -58,7 +58,7 @@
     <available file="src/tests"       type="dir" property="have_tests"/>
     <available file="src/examples"    type="dir" property="have_examples"/>
 
-  	<available file=".hg"             type="dir" property="have_hg"/>
+    <available file=".hg"             type="dir" property="have_hg"/>
 
     <!-- for the core, it's a fail if any of these is missing -->
     <fail unless="have_main">no src/main</fail>
@@ -67,12 +67,6 @@
     <fail unless="have_classes">no src/classes</fail>
     <fail unless="have_tests">no src/tests</fail>
     <fail unless="have_examples">no src/examples</fail>
-
-    <dependset>
-      <srcfilelist dir="." files="build/jpf.jar"/>
-      <targetfilelist dir="." files="jpf-fb-report.xml"/>
-    </dependset>
-    <available file="jpf-fb-report.xml" type="file" property="have_fb_report"/>
 
   </target>
 
@@ -150,7 +144,7 @@
   <!-- ======================= MISC SECTION ================================ -->
   
   <target name="-version" if="have_hg">
-    <exec executable="hg" outputproperty="version" searchpath="true" failifexecutionfails="false">
+    <exec executable="hg" outputproperty="version" searchpath="true" failonerror="false" failifexecutionfails="false">
       <arg value="identify"/>
       <arg value="-n"/> 
     </exec>
@@ -286,7 +280,6 @@
     <delete dir="build" failonerror="false"/>
     <delete dir="tmp" failonerror="false"/>
     <delete>
-      <fileset dir="." includes="jpf-fb-report.*"/>
       <fileset dir="." includes="**/*~" defaultexcludes="no" />
       <fileset dir="." includes="**/*.bak" defaultexcludes="no" />
       <fileset dir="." includes="**/error.xml" />
