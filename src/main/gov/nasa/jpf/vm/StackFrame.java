@@ -956,7 +956,7 @@ public abstract class StackFrame implements Cloneable {
   }
 
   public String getLocalVariableType (String name) {
-    LocalVarInfo lv = mi.getLocalVar(name, pc.getPosition());
+    LocalVarInfo lv = mi.getLocalVar(name, pc.getPosition()+pc.getLength());
     if (lv != null){
       return lv.getType();
     }
@@ -965,7 +965,7 @@ public abstract class StackFrame implements Cloneable {
   }
 
   public String getLocalVariableType (int idx){
-    LocalVarInfo lv = mi.getLocalVar(idx, pc.getPosition());
+    LocalVarInfo lv = mi.getLocalVar(idx, pc.getPosition()+pc.getLength());
     if (lv != null){
       return lv.getType();
     }
@@ -974,11 +974,11 @@ public abstract class StackFrame implements Cloneable {
   }
 
   public LocalVarInfo getLocalVarInfo (String name){
-    return mi.getLocalVar(name, pc.getPosition());
+    return mi.getLocalVar(name, pc.getPosition()+pc.getLength());
   }
 
   public LocalVarInfo getLocalVarInfo (int idx){
-    return mi.getLocalVar(idx, pc.getPosition());
+    return mi.getLocalVar(idx, pc.getPosition()+pc.getLength());
   }
 
 
