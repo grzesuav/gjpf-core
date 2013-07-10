@@ -33,6 +33,11 @@ public class RandomAccessFile {
     setDataMap();
   }
 
+  public RandomAccessFile(String name, String permissions
+                         ) throws FileNotFoundException {
+    this(new File(name), permissions);
+  }
+
   public void seek(long posn) throws IOException {
     currentPosition = posn;
   }
