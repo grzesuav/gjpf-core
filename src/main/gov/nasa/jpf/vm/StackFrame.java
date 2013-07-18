@@ -735,7 +735,11 @@ public abstract class StackFrame implements Cloneable {
     }
     return null;
   }
-      
+   
+  public Object getLongLocalAttr (int index){
+    return getLocalAttr( index);
+  }
+  
   /**
    * this replaces all of them - use only if you know 
    *  - there will be only one attribute at callerSlots time
@@ -751,6 +755,14 @@ public abstract class StackFrame implements Cloneable {
     attrs[index] = a;
   }
 
+  public void setLongLocalAttr (int index, Object a){
+    setLocalAttr( index, a);
+  }
+  
+  public void addLongLocalAttr (int index, Object a){
+    addLocalAttr( index, a);
+  }
+  
   /**
    * this only returns the first attr of this type, there can be more
    * if you don't use client private types or the provided type is too general
