@@ -172,8 +172,18 @@ public class JPF_java_lang_Class extends NativePeer {
   public int forName__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
                                                                        int rcls,
                                                                        int clsNameRef) {
+    if (clsNameRef == MJIEnv.NULL){
+      env.throwException("java.lang.NullPointerException", "no class name provided");
+      return MJIEnv.NULL;
+    }
+    
     String clsName = env.getStringObject(clsNameRef);
-
+    
+    if (clsName.isEmpty()){
+      env.throwException("java.lang.ClassNotFoundException", "empty class name");
+      return MJIEnv.NULL;  
+    }
+    
     ThreadInfo ti = env.getThreadInfo();
     MethodInfo mi = ti.getTopFrame().getPrevious().getMethodInfo();
     // class of the method that includes the invocation of Class.forName() 
