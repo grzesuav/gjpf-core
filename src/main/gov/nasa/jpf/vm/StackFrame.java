@@ -105,22 +105,8 @@ public abstract class StackFrame implements Cloneable {
   static final int[] EMPTY_ARRAY = new int[0];
   static final FixedBitSet EMPTY_BITSET = new BitSet64();
 
-  
-  public StackFrame (MethodInfo callee){
-    this.mi = callee;
-    pc = mi.getInstruction(0);
-
-    stackBase = callee.getMaxLocals();
-    top = stackBase-1;
-
-    slots = new int[stackBase + callee.getMaxStack()];
-    isRef = createReferenceMap(slots.length);
-    
-    // slot and attrs init is responsibility of caller
-  }
-
-  protected StackFrame (MethodInfo m, int nLocals, int nOperands){
-    mi = m;
+  protected StackFrame (MethodInfo callee, int nLocals, int nOperands){
+    mi = callee;
     pc = mi.getInstruction(0);
 
     stackBase = nLocals;
@@ -137,6 +123,12 @@ public abstract class StackFrame implements Cloneable {
       isRef = EMPTY_BITSET;
     }
   }
+  
+  public StackFrame (MethodInfo callee){
+    this( callee, callee.getMaxLocals(), callee.getMaxStack());
+  }
+
+
 
   /**
    * Creates an empty stack frame. Used by clone.

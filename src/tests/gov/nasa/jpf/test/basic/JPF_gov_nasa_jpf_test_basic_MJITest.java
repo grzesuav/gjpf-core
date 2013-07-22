@@ -167,8 +167,10 @@ public class JPF_gov_nasa_jpf_test_basic_MJITest extends NativePeer {
     if (frame == null){ // first time
       frame = mi.createDirectCallStackFrame(ti, 1);
       frame.setLocalVariable( 0, 0);
-      frame.setReferenceArgument(0, robj, null);
-      frame.setArgument(1, a+1, null);
+      
+      int argOffset = frame.setReferenceArgument(0, robj, null);
+      frame.setArgument( argOffset, a+1, null);
+      
       ti.pushFrame(frame);
 
       return 42; // whatever, we come back
@@ -189,8 +191,10 @@ public class JPF_gov_nasa_jpf_test_basic_MJITest extends NativePeer {
         // we have to reset so that the PC is re-initialized
         frame.reset();
         frame.setLocalVariable(0, i + 1);
-        frame.setReferenceArgument( 0, robj, null);
-        frame.setArgument( 1, r+1, null);
+        
+        int argOffset = frame.setReferenceArgument( 0, robj, null);
+        frame.setArgument( argOffset, r+1, null);
+        
         ti.pushFrame(frame);
         return 42;
 
@@ -212,8 +216,9 @@ public class JPF_gov_nasa_jpf_test_basic_MJITest extends NativePeer {
     MethodInfo mi = env.getClassInfo(robj).getMethod("atomicStuff(I)I",false);
 
     DirectCallStackFrame frame = mi.createDirectCallStackFrame(ti, 0);
-    frame.setReferenceArgument( 0, robj, null);
-    frame.setArgument( 1, a, null);
+    
+    int argOffset = frame.setReferenceArgument( 0, robj, null);
+    frame.setArgument( argOffset, a, null);
     frame.setFireWall();
 
     try {

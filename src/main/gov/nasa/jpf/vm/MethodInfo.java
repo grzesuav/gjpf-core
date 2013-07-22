@@ -481,9 +481,6 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   }
   
   public int getArgumentsSize () {
-    // it's actually faster to do this on demand just for the invoked methods
-    // than to pull this out of each BCEL Method during init
-
     if (argSize < 0) {
       argSize = Types.getArgumentsSize(signature);
 

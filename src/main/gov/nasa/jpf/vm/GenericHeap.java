@@ -89,7 +89,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
 
   // the usual drill - the lower 2 bytes are sticky, the upper two ones 
   // hold change status and transient (transition local) flags
-  int attributes;
+  protected int attributes;
 
   static final int ATTR_GC            = 0x0001;
   static final int ATTR_OUT_OF_MEMORY = 0x0002;
@@ -116,6 +116,10 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   protected boolean liveBitValue;
   
   protected ElementInfoMarker elementInfoMarker = new ElementInfoMarker();
+  
+  // the number of live objects
+  // <2do> currently only defined after gc
+  protected int nLiveObjects;
   
   //--- constructors
 
@@ -574,6 +578,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
     ThreadInfo ti = vm.getCurrentThread();
     int tid = ti.getId();
     boolean isThreadTermination = ti.isTerminated();
+    int n = 0;
     
     // now go over all objects, purge the ones that are not live and reset attrs for rest
     for (ElementInfo ei : this){
@@ -583,6 +588,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
         ei.setAlive(liveBitValue);
         
         ei.cleanUp(this, isThreadTermination, tid);
+        n++;
         
       } else { // object is no longer reachable  
         /** no finalizer support yet
@@ -599,7 +605,9 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
         vm.notifyObjectReleased(ti, ei);
         remove(ei.getObjectRef());
       }
-    }    
+    }
+    
+    nLiveObjects = n;
   }
   
   protected void mark () {

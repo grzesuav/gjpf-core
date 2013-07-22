@@ -2863,9 +2863,9 @@ public class ThreadInfo extends InfoObject
     MethodInfo miHandler = ciHandler.getMethod("uncaughtException(Ljava/lang/Thread;Ljava/lang/Throwable;)V", true);
     
     DirectCallStackFrame frame = miHandler.createDirectCallStackFrame(this, 0);
-    frame.setReferenceArgument( 0, handlerRef, null);
-    frame.setReferenceArgument( 1, objRef, null);
-    frame.setReferenceArgument( 2, xi.getExceptionReference(), null);
+    int argOffset = frame.setReferenceArgument( 0, handlerRef, null);
+    argOffset = frame.setReferenceArgument( argOffset, objRef, null);
+    frame.setReferenceArgument( argOffset, xi.getExceptionReference(), null);
     
     UncaughtHandlerAttr uchContext = new UncaughtHandlerAttr( xi);
     frame.setFrameAttr( uchContext);
