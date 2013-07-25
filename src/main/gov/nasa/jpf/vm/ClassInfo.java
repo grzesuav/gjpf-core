@@ -85,13 +85,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   // 'INITIALIZING' is any number >=0, which is the thread objRef that executes the clinit
   public static final int INITIALIZED = -2;
 
-  static final String ID_FIELD = "nativeId"; 
+  protected static final String ID_FIELD = "nativeId"; 
 
-  static JPFLogger logger = JPF.getLogger("class");
+  protected static JPFLogger logger = JPF.getLogger("class");
 
-  static int nClassInfos; // for statistics
+  protected static int nClassInfos; // for statistics
   
-  static Config config;
+  protected static Config config;
 
   /**
    * ClassLoader that loaded this class.
@@ -109,16 +109,16 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected static FieldsFactory fieldsFactory;
 
   
-  static final FieldInfo[] EMPTY_FIELDINFO_ARRAY = new FieldInfo[0];
-  static final String[] EMPTY_STRING_ARRAY = new String[0];
-  static final String UNINITIALIZED_STRING = "UNINITIALIZED"; 
-  static final Map<String,MethodInfo> NO_METHODS = Collections.emptyMap();
+  protected static final FieldInfo[] EMPTY_FIELDINFO_ARRAY = new FieldInfo[0];
+  protected static final String[] EMPTY_STRING_ARRAY = new String[0];
+  protected static final String UNINITIALIZED_STRING = "UNINITIALIZED"; 
+  protected static final Map<String,MethodInfo> NO_METHODS = Collections.emptyMap();
   
   /**
    * support to auto-load listeners from annotations
    */
-  static HashSet<String> autoloadAnnotations;
-  static HashSet<String> autoloaded;
+  protected static HashSet<String> autoloadAnnotations;
+  protected static HashSet<String> autoloaded;
 
   /**
    * Name of the class. e.g. "java.lang.String"
@@ -151,7 +151,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   // that's ultimately where we keep the attributes
   // <2do> this is currently quite redundant, but these are used in reflection
-  int modifiers;
+  protected int modifiers;
 
   protected MethodInfo   finalizer = null;
 
@@ -243,7 +243,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * this is the object we use to enter declaredMethods in the underlying VM
    * (it replaces Reflection)
    */
-  private NativePeer nativePeer;
+  protected NativePeer nativePeer;
 
   /** Source file associated with the class.*/
   protected Source source;
@@ -678,7 +678,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return name.replace('.', '/') + ".java";
   }
 
-  void checkUnresolvedNativeMethods(){
+  protected void checkUnresolvedNativeMethods(){
     for (MethodInfo mi : methods.values()){
       if (mi.isUnresolvedNativeMethod()){
         NativeMethodInfo nmi = new NativeMethodInfo(mi, null, nativePeer);
@@ -687,7 +687,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
-  void processJPFConfigAnnotation() {
+  protected void processJPFConfigAnnotation() {
     AnnotationInfo ai = getAnnotation("gov.nasa.jpf.annotation.JPFConfig");
     if (ai != null) {
       for (String s : ai.getValueAsStringArray()) {
@@ -696,7 +696,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
-  void loadAnnotationListeners () {
+  protected void loadAnnotationListeners () {
     if (autoloadAnnotations != null) {
       autoloadListeners(annotations); // class annotations
 
