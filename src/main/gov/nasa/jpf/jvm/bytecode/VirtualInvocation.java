@@ -53,17 +53,16 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     }
 
     MethodInfo callee = getInvokedMethod(ti, objRef);
-
+    ElementInfo ei = ti.getElementInfo(objRef);
+    
     if (callee == null) {
       String clsName = ti.getClassInfo(objRef).getName();
       return ti.createAndThrowException("java.lang.NoSuchMethodError", clsName + '.' + mname);
     } else {
       if (callee.isAbstract()){
-        return ti.createAndThrowException("java.lang.AbstractMethodError", callee.getFullName());
+        return ti.createAndThrowException("java.lang.AbstractMethodError", callee.getFullName() + ", object: " + ei);
       }
     }
-    
-    ElementInfo ei = ti.getElementInfo(objRef);
 
     if (callee.isSynchronized()) {
       if (checkSyncCG(ei, ti)){
