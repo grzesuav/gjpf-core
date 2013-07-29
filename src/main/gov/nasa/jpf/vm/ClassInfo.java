@@ -1654,7 +1654,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return Source.getSource(sourceFileName);
   }
 
-  static boolean isBuiltinClass (String cname) {
+  public static boolean isBuiltinClass (String cname) {
     char c = cname.charAt(0);
 
     // array class
