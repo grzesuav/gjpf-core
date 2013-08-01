@@ -56,6 +56,35 @@ public class JPF_java_lang_StringBuilder extends NativePeer {
     return objref;
   }
 
+  // we skip the AbstractStringBuilder ctor here, which is a bit dangerous
+  // This is only justified because StringBuilders are used everywhere (implicitly)
+  @MJI
+  public void $init____V (MJIEnv env, int objref){
+    int aref = env.newCharArray(16);
+    env.setReferenceField(objref, "value", aref);
+  }
+  @MJI
+  public void $init__I__V (MJIEnv env, int objref, int len){
+    int aref = env.newCharArray(len);
+    env.setReferenceField(objref, "value", aref);
+  }
+  @MJI
+  public void $init__Ljava_lang_String_2__V (MJIEnv env, int objref, int sRef){
+    if (sRef == MJIEnv.NULL){
+      env.throwException("java.lang.NullPointerException");
+      return;
+    }
+    
+    char[] src = env.getStringChars(sRef);
+    int aref = env.newCharArray(src.length + 16);
+    char[] dst = env.getCharArrayObject(aref);
+    System.arraycopy(src,0,dst,0,src.length);
+    
+    env.setReferenceField(objref, "value", aref);
+    env.setIntField(objref, "count", src.length);
+  }  
+  
+  
   @MJI
   public int append__Ljava_lang_String_2__Ljava_lang_StringBuilder_2 (MJIEnv env, int objref, int sref) {
     String s = env.getStringObject(sref);

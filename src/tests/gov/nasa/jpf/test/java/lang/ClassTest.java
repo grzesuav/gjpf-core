@@ -37,6 +37,7 @@
 package gov.nasa.jpf.test.java.lang;
 
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 import java.io.Serializable;
 import java.lang.annotation.Inherited;
@@ -75,7 +76,7 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
       }
     }
   }
-
+  
   @Test
   public void testClassForNameException () throws ClassNotFoundException {
     if (verifyUnhandledException("java.lang.ClassNotFoundException")) {
@@ -83,6 +84,31 @@ public class ClassTest extends TestJPF implements Cloneable, Serializable {
     }
   }
 
+  
+  static class X {
+    static {
+      System.out.println("ClassTest$X initialized");
+      Verify.incrementCounter(0);
+    }
+  }
+  
+  @Test 
+  public void testClassForNameInit () throws ClassNotFoundException {
+    if (!isJPFRun()){
+      Verify.resetCounter(0);
+    }
+    
+    if (verifyNoPropertyViolation()) {
+      Class<?> cls = Class.forName( "gov.nasa.jpf.test.java.lang.ClassTest$X", true,  this.getClass().getClassLoader());
+      System.out.println("Class.forName() returned");
+    }
+    
+    if (!isJPFRun()){
+      assertTrue( Verify.getCounter(0) == 1);
+    }
+  }
+  
+  
   @Test 
   public void testGetClass () {
     if (verifyNoPropertyViolation()) {

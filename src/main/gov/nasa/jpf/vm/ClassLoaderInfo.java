@@ -582,8 +582,8 @@ public class ClassLoaderInfo
 
     String clsName = typeName.replace('/', '.');
     int sRef = ti.getEnv().newString( clsName);
-    frame.setReferenceArgument( 0, objRef, null);
-    frame.setReferenceArgument( 1, sRef, null);
+    int argOffset = frame.setReferenceArgument( 0, objRef, null);
+    frame.setReferenceArgument( argOffset, sRef, null);
 
     frame.setFrameAttr( new LoadClassRequest(typeName));
     

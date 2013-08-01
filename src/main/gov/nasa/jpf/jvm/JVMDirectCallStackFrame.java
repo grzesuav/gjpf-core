@@ -60,28 +60,37 @@ public class JVMDirectCallStackFrame extends DirectCallStackFrame {
 
   
   //--- direct call argument initialization
-  // NOTE - we don't support out-of-order arguments yet, i.e. the argIdx is ignored
+  // NOTE - we don't support out-of-order arguments yet, i.e. the slotIdx is ignored
+  
   
   @Override
-  public void setArgument (int argIdx, int v, Object attr){
+  public int setArgument (int slotIdx, int v, Object attr){
     push(v);
     if (attr != null){
       setOperandAttr(attr);
     }
+    
+    return slotIdx+1;
   }
+  
   @Override
-  public void setReferenceArgument (int argIdx, int ref, Object attr){
+  public int setReferenceArgument (int slotIdx, int ref, Object attr){
     pushRef(ref);
     if (attr != null){
       setOperandAttr(attr);
     }
+    
+    return slotIdx+1;
   }
+  
   @Override
-  public void setLongArgument (int argIdx, long v, Object attr){
+  public int setLongArgument (int slotIdx, long v, Object attr){
     pushLong(v);
     if (attr != null){
       setLongOperandAttr(attr);
-    }    
+    } 
+    
+    return slotIdx+2;
   }
   
   //--- DirectCallStackFrame methods don't have arguments

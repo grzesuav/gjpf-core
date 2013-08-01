@@ -214,18 +214,27 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
    /**
     * this one is in JPF reflection land, it's 'native' for us
     */
-  public static native Class<?> forName (String clsName)
-                               throws ClassNotFoundException;
+  public static native Class<?> forName (String clsName) throws ClassNotFoundException;
 
-  public static Class<?> forName (String clsName, boolean initialize, ClassLoader loader)
-      throws ClassNotFoundException {
-    // deferred init and loaders are not supported yet
-    initialize = false;  // Get rid of IDE warnings
-    loader     = null;     
+  public static Class<?> forName (String clsName, boolean initialize, ClassLoader loader) throws ClassNotFoundException {
+    Class<?> cls;
+    if (loader == null){
+      cls = forName(clsName);
+    } else {
+      cls = loader.loadClass(clsName);
+    }
     
-    return forName(clsName);
+    if (initialize) {
+      cls.initialize0();
+    }
+    return cls;
   }
 
+  /**
+   * forces clinit without explicit field or method access
+   */
+  private native void initialize0 ();
+  
   public boolean isPrimitive () {
     return isPrimitive;
   }

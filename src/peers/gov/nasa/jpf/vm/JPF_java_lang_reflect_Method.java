@@ -237,7 +237,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       return false;
     }
     
-    for (int i = 0; i < nArgs; i++, argIdx++) {
+    for (int i = 0; i < nArgs; i++) {
       sourceRef = env.getReferenceArrayElement(argsRef, i);
 
       // we have to handle null references explicitly
@@ -256,7 +256,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       sourceType = getSourceType( sourceClass, destTypes[i], destTypeNames[i]);
 
       Object attr = env.getElementInfo(argsRef).getFields().getFieldAttr(i);
-      if ((sourceType == Types.T_NONE) || !pushArg( i, frame, source, sourceType, destTypes[i], attr)){
+      if ((argIdx = pushArg( argIdx, frame, source, sourceType, destTypes[i], attr)) < 0 ){
         env.throwException(IllegalArgumentException.class.getName(), "Wrong argument type at index " + i + ".  Source Class = " + sourceClass.getName() + ".  Dest Class = " + destTypeNames[i]);
         return false;        
       }
@@ -291,64 +291,54 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
   
   // do the proper type conversion - Java is pretty forgiving here and does
   // not throw exceptions upon value truncation
-  private static boolean pushArg( int argIdx, DirectCallStackFrame frame, ElementInfo eiArg, byte srcType, byte destType, Object attr){    
+  private static int pushArg( int argIdx, DirectCallStackFrame frame, ElementInfo eiArg, byte srcType, byte destType, Object attr){    
     switch (srcType) {
     case Types.T_DOUBLE:
     {
       double v = eiArg.getDoubleField("value");
       if (destType == Types.T_DOUBLE){
-        frame.setDoubleArgument( argIdx, v, attr);
-        return true;
+        return frame.setDoubleArgument( argIdx, v, attr);
       }
-      return false;
+      return -1;
     }
     case Types.T_FLOAT: // covers float, double
     {
       float v = eiArg.getFloatField("value");
       switch (destType){
       case Types.T_FLOAT:
-        frame.setFloatArgument( argIdx, v, attr);
-        return true;
+        return frame.setFloatArgument( argIdx, v, attr);
       case Types.T_DOUBLE:
-        frame.setDoubleArgument( argIdx, v, attr);
-        return true;
+        return frame.setDoubleArgument( argIdx, v, attr);
       }
-      return false;
+      return -1;
     }
     case Types.T_LONG:
     {
       long v = eiArg.getLongField("value");
       switch (destType){
       case Types.T_LONG:
-        frame.setLongArgument(argIdx, v, attr);
-        return true;
+        return frame.setLongArgument(argIdx, v, attr);
       case Types.T_FLOAT:
-        frame.setFloatArgument(argIdx, (float)v, attr);
-        return true;
+        return frame.setFloatArgument(argIdx, (float)v, attr);
       case Types.T_DOUBLE:
-        frame.setDoubleArgument( argIdx, (double)v, attr);
-        return true;
+        return frame.setDoubleArgument( argIdx, (double)v, attr);
       }
-      return false;
+      return -1;
     }
     case Types.T_INT:
     { 
       int v = eiArg.getIntField("value");
       switch (destType){
       case Types.T_INT:
-        frame.setArgument( argIdx, v, attr);
-        return true;
+        return frame.setArgument( argIdx, v, attr);
       case Types.T_LONG:
-        frame.setLongArgument( argIdx, v, attr);
-        return true;        
+        return frame.setLongArgument( argIdx, v, attr);
       case Types.T_FLOAT:
-        frame.setFloatArgument(argIdx, (float)v, attr);
-        return true;
+        return frame.setFloatArgument(argIdx, (float)v, attr);
       case Types.T_DOUBLE:
-        frame.setDoubleArgument( argIdx, (double)v, attr);
-        return true;
+        return frame.setDoubleArgument( argIdx, (double)v, attr);
       }
-      return false;
+      return -1;
     }
     case Types.T_SHORT:
     { 
@@ -356,19 +346,15 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       switch (destType){
       case Types.T_SHORT:
       case Types.T_INT:
-        frame.setArgument( argIdx, v, attr);
-        return true;
+        return frame.setArgument( argIdx, v, attr);
       case Types.T_LONG:
-        frame.setLongArgument( argIdx, v, attr);
-        return true;        
+        return frame.setLongArgument( argIdx, v, attr);
       case Types.T_FLOAT:
-        frame.setFloatArgument(argIdx, (float)v, attr);
-        return true;
+        return frame.setFloatArgument(argIdx, (float)v, attr);
       case Types.T_DOUBLE:
-        frame.setDoubleArgument( argIdx, (double)v, attr);
-        return true;
+        return frame.setDoubleArgument( argIdx, (double)v, attr);
       }
-      return false;
+      return -1;
     }
     case Types.T_BYTE:
     { 
@@ -377,19 +363,15 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       case Types.T_BYTE:
       case Types.T_SHORT:
       case Types.T_INT:
-        frame.setArgument( argIdx, v, attr);
-        return true;
+        return frame.setArgument( argIdx, v, attr);
       case Types.T_LONG:
-        frame.setLongArgument( argIdx, v, attr);
-        return true;
+        return frame.setLongArgument( argIdx, v, attr);
       case Types.T_FLOAT:
-        frame.setFloatArgument(argIdx, (float)v, attr);
-        return true;
+        return frame.setFloatArgument(argIdx, (float)v, attr);
       case Types.T_DOUBLE:
-        frame.setDoubleArgument( argIdx, (double)v, attr);
-        return true;
+        return frame.setDoubleArgument( argIdx, (double)v, attr);
       }
-      return false;
+      return -1;
     }
     case Types.T_CHAR:
     {
@@ -397,50 +379,43 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       switch (destType){
       case Types.T_CHAR:
       case Types.T_INT:
-        frame.setArgument( argIdx, v, attr);
-        return true;
+        return frame.setArgument( argIdx, v, attr);
       case Types.T_LONG:
-        frame.setLongArgument( argIdx, v, attr);
-        return true;        
+        return frame.setLongArgument( argIdx, v, attr);
       case Types.T_FLOAT:
-        frame.setFloatArgument(argIdx, (float)v, attr);
-        return true;
+        return frame.setFloatArgument(argIdx, (float)v, attr);
       case Types.T_DOUBLE:
-        frame.setDoubleArgument( argIdx, (double)v, attr);
-        return true;
+        return frame.setDoubleArgument( argIdx, (double)v, attr);
       }
-      return false;
+      return -1;
     }
     case Types.T_BOOLEAN:
     {
       boolean v = eiArg.getBooleanField("value");
       if (destType == Types.T_BOOLEAN){
-        frame.setArgument( argIdx, v ? 1 : 0, attr);
-        return true;
+        return frame.setArgument( argIdx, v ? 1 : 0, attr);
       }
-      return false;
+      return -1;
     }
     case Types.T_ARRAY:
     {
       int ref =  eiArg.getObjectRef();
       if (destType == Types.T_ARRAY){
-        frame.setReferenceArgument( argIdx, ref, attr);
-        return true;
+        return frame.setReferenceArgument( argIdx, ref, attr);
       }
-      return false;
+      return -1;
     }
     case Types.T_REFERENCE:
     {
       int ref =  eiArg.getObjectRef();
       if (destType == Types.T_REFERENCE){
-        frame.setReferenceArgument( argIdx, ref, attr);
-        return true;
+        return frame.setReferenceArgument( argIdx, ref, attr);
       }
-      return false;
+      return -1;
     }
-    case Types.T_VOID:
     default:
-      return false;
+      // T_VOID, T_NONE
+      return -1;
     }
   }
 
@@ -488,11 +463,11 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
       frame = miCallee.createDirectCallStackFrame(ti, 0);
       frame.setReflection();
       
-      int argIdx = 0;
+      int argOffset = 0;
       if (!miCallee.isStatic()) {
-        frame.setReferenceArgument( argIdx++, objRef, null);
+        frame.setReferenceArgument( argOffset++, objRef, null);
       }
-      if (!pushUnboxedArguments( env, miCallee, frame, argIdx, argsRef)) {
+      if (!pushUnboxedArguments( env, miCallee, frame, argOffset, argsRef)) {
         // we've got a IllegalArgumentException
         return MJIEnv.NULL;  
       }

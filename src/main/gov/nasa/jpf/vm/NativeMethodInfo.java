@@ -19,7 +19,6 @@
 
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.jvm.JVMCodeBuilder;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFNativePeerException;
 import gov.nasa.jpf.util.JPFLogger;

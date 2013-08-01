@@ -105,22 +105,8 @@ public abstract class StackFrame implements Cloneable {
   static final int[] EMPTY_ARRAY = new int[0];
   static final FixedBitSet EMPTY_BITSET = new BitSet64();
 
-  
-  public StackFrame (MethodInfo callee){
-    this.mi = callee;
-    pc = mi.getInstruction(0);
-
-    stackBase = callee.getMaxLocals();
-    top = stackBase-1;
-
-    slots = new int[stackBase + callee.getMaxStack()];
-    isRef = createReferenceMap(slots.length);
-    
-    // slot and attrs init is responsibility of caller
-  }
-
-  protected StackFrame (MethodInfo m, int nLocals, int nOperands){
-    mi = m;
+  protected StackFrame (MethodInfo callee, int nLocals, int nOperands){
+    mi = callee;
     pc = mi.getInstruction(0);
 
     stackBase = nLocals;
@@ -137,6 +123,12 @@ public abstract class StackFrame implements Cloneable {
       isRef = EMPTY_BITSET;
     }
   }
+  
+  public StackFrame (MethodInfo callee){
+    this( callee, callee.getMaxLocals(), callee.getMaxStack());
+  }
+
+
 
   /**
    * Creates an empty stack frame. Used by clone.
@@ -735,7 +727,11 @@ public abstract class StackFrame implements Cloneable {
     }
     return null;
   }
-      
+   
+  public Object getLongLocalAttr (int index){
+    return getLocalAttr( index);
+  }
+  
   /**
    * this replaces all of them - use only if you know 
    *  - there will be only one attribute at callerSlots time
@@ -751,6 +747,14 @@ public abstract class StackFrame implements Cloneable {
     attrs[index] = a;
   }
 
+  public void setLongLocalAttr (int index, Object a){
+    setLocalAttr( index, a);
+  }
+  
+  public void addLongLocalAttr (int index, Object a){
+    addLocalAttr( index, a);
+  }
+  
   /**
    * this only returns the first attr of this type, there can be more
    * if you don't use client private types or the provided type is too general
@@ -956,7 +960,7 @@ public abstract class StackFrame implements Cloneable {
   }
 
   public String getLocalVariableType (String name) {
-    LocalVarInfo lv = mi.getLocalVar(name, pc.getPosition());
+    LocalVarInfo lv = mi.getLocalVar(name, pc.getPosition()+pc.getLength());
     if (lv != null){
       return lv.getType();
     }
@@ -965,7 +969,7 @@ public abstract class StackFrame implements Cloneable {
   }
 
   public String getLocalVariableType (int idx){
-    LocalVarInfo lv = mi.getLocalVar(idx, pc.getPosition());
+    LocalVarInfo lv = mi.getLocalVar(idx, pc.getPosition()+pc.getLength());
     if (lv != null){
       return lv.getType();
     }
@@ -974,11 +978,11 @@ public abstract class StackFrame implements Cloneable {
   }
 
   public LocalVarInfo getLocalVarInfo (String name){
-    return mi.getLocalVar(name, pc.getPosition());
+    return mi.getLocalVar(name, pc.getPosition()+pc.getLength());
   }
 
   public LocalVarInfo getLocalVarInfo (int idx){
-    return mi.getLocalVar(idx, pc.getPosition());
+    return mi.getLocalVar(idx, pc.getPosition()+pc.getLength());
   }
 
 

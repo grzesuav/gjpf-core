@@ -44,7 +44,7 @@ public class NativePeer implements Cloneable {
   static final String MODEL_PACKAGE = "<model>";
   static final String DEFAULT_PACKAGE = "<default>";
 
-  static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.vm.NativePeer");
+  static JPFLogger logger = JPF.getLogger("class");
 
   static ClassLoader loader;
   static HashMap<ClassInfo, NativePeer> peers;
@@ -106,9 +106,11 @@ public class NativePeer implements Cloneable {
         Class<?> peerCls = loader.loadClass(pcn);
         
         if ((peerCls.getModifiers() & Modifier.PUBLIC) == 0) {
-          logger.warning("non-public peer class: " + peerCls.getName());
+          logger.warning("non-public peer class: ", pcn);
           continue; // pointless to use this one, it would just create IllegalAccessExceptions
         }
+        
+        logger.info("loaded peer class: ", pcn);
         
         return peerCls;
       } catch (ClassNotFoundException cnfx) {

@@ -27,7 +27,8 @@ import gov.nasa.jpf.util.StringSetMatcher;
  * with respect to threading
  */
 public class DefaultAttributor implements Attributor {
-  
+
+  static StringSetMatcher atomicMethods;
   static StringSetMatcher neverBreak;
   static StringSetMatcher breakShared;
   
@@ -45,6 +46,11 @@ public class DefaultAttributor implements Attributor {
         breakShared = new StringSetMatcher(val);
       }
     }
+
+    val = conf.getStringArray("vm.por.atomic_methods");
+    if (val != null) {
+      atomicMethods = new StringSetMatcher(val);
+    }    
   }
   
   // <2do> we should turn atomicity and scheduling relevance into general
@@ -55,11 +61,9 @@ public class DefaultAttributor implements Attributor {
     String clsName = ci.getName();
     String uniqueName = mi.getUniqueName();
 
-    // per default, we set all standard library methods atomic
-    // (aren't we nicely optimistic, are we?)
-    if (clsName.startsWith( "java.")) {
-      
-      // except of the signal methods, of course
+    if (atomicMethods != null && atomicMethods.matchesAny(uniqueName)){
+      // but exclude the known blocking methods (Object.wait()/notify(), Thread.join())
+      // <2do> this should be configurable too
       if (clsName.equals("java.lang.Object")) {
         if (uniqueName.startsWith("wait(") ||
             uniqueName.equals("notify()V")) {
@@ -71,6 +75,7 @@ public class DefaultAttributor implements Attributor {
         }
       }
       
+      // <2do> this is not used - either we have to or this is removed
       mi.setAtomic(true);
     }
   }
@@ -101,8 +106,8 @@ public class DefaultAttributor implements Attributor {
 
     
     if (fi.isFinal()) {
-      // <2do> Hmm, finals are not really immutable, they only
-      // can be set once
+      // <2do> Hmm, finals are not really immutable, they only can be set once
+      // <2do> same here - FieldInfo does not even have a isImmutable()
       attr |= ElementInfo.ATTR_IMMUTABLE;
     }
     // <2do> what about other immutable fields? don't say there are none - try to set one

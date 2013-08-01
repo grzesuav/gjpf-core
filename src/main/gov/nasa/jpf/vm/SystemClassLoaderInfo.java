@@ -19,6 +19,8 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.util.JPFLogger;
 
 import java.io.File;
 
@@ -46,6 +48,8 @@ import java.io.File;
  */
 public class SystemClassLoaderInfo extends ClassLoaderInfo {
 
+  static JPFLogger log = JPF.getLogger("class");
+  
   // note that initialization requires these to be startup classes
   protected ClassInfo classLoaderClassInfo;
   protected ClassInfo objectClassInfo;
@@ -96,6 +100,8 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
         classPath.addPathName(pn);
       }
     }
+    
+    log.info( "collected system classpath: ", classPath);
     
     return classPath;
   }

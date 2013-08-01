@@ -36,10 +36,14 @@ import gov.nasa.jpf.SystemAttribute;
 public abstract class DirectCallStackFrame extends StackFrame implements SystemAttribute {
   
   MethodInfo callee;
- 
+
+  protected DirectCallStackFrame (MethodInfo miDirectCall, MethodInfo callee, int maxLocals, int maxStack){
+    super( miDirectCall, maxLocals, maxStack);    
+    this.callee = callee;
+  }
+  
   protected DirectCallStackFrame (MethodInfo miDirectCall, MethodInfo callee){
-    super(miDirectCall);
-    
+    super( miDirectCall, miDirectCall.getMaxLocals(), miDirectCall.getMaxStack());
     this.callee = callee;
   }
   
@@ -79,16 +83,23 @@ public abstract class DirectCallStackFrame extends StackFrame implements SystemA
     return true;
   }
   
-  // those set the callee arguments for the invoke insn
-  public abstract void setArgument (int idx, int value, Object attr);
-  public abstract void setLongArgument (int idx, long value, Object attr);
-  public abstract void setReferenceArgument (int idx, int ref, Object attr);
+  /*
+   * those set the callee arguments for the invoke insn - the returned value is the slot index OFFSET (not the slot index
+   * itself) for the next argument. This has to be used in a pattern like 
+   *   int argOffset = frame.setArgument( 0, firstArg, a0);
+   *   argOffset = frame.setLongArgument( argOffset, secondArg, a1);
+   *   ...
+   */
+  
+  public abstract int setArgument (int argOffset, int value, Object attr);
+  public abstract int setLongArgument (int argOffset, long value, Object attr);
+  public abstract int setReferenceArgument (int argOffset, int ref, Object attr);
 
-  public void setFloatArgument (int idx, float value, Object attr){
-    setArgument( idx, Float.floatToIntBits(value), attr);
+  public int setFloatArgument (int argOffset, float value, Object attr){
+    return setArgument( argOffset, Float.floatToIntBits(value), attr);
   }
-  public void setDoubleArgument (int idx, double value, Object attr){
-    setLongArgument( idx, Double.doubleToLongBits(value), attr);
+  public int setDoubleArgument (int argOffset, double value, Object attr){
+    return setLongArgument( argOffset, Double.doubleToLongBits(value), attr);
   }
   
 }

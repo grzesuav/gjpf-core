@@ -172,8 +172,18 @@ public class JPF_java_lang_Class extends NativePeer {
   public int forName__Ljava_lang_String_2__Ljava_lang_Class_2 (MJIEnv env,
                                                                        int rcls,
                                                                        int clsNameRef) {
+    if (clsNameRef == MJIEnv.NULL){
+      env.throwException("java.lang.NullPointerException", "no class name provided");
+      return MJIEnv.NULL;
+    }
+    
     String clsName = env.getStringObject(clsNameRef);
-
+    
+    if (clsName.isEmpty()){
+      env.throwException("java.lang.ClassNotFoundException", "empty class name");
+      return MJIEnv.NULL;  
+    }
+    
     ThreadInfo ti = env.getThreadInfo();
     MethodInfo mi = ti.getTopFrame().getPrevious().getMethodInfo();
     // class of the method that includes the invocation of Class.forName() 
@@ -489,6 +499,12 @@ public class JPF_java_lang_Class extends NativePeer {
       return ci;
     }    
   }
+  
+  @MJI
+  public void initialize0____V (MJIEnv env, int clsObjRef){
+    ClassInfo ci = env.getReferredClassInfo( clsObjRef);
+    ci.pushRequiredClinits(ThreadInfo.currentThread);
+  }
 
   Set<ClassInfo> getInitializedInterfaces (MJIEnv env, ClassInfo ci){
     ThreadInfo ti = env.getThreadInfo();
@@ -637,7 +653,7 @@ public class JPF_java_lang_Class extends NativePeer {
   }
 
   @MJI
-  public int getEnumConstants (MJIEnv env, int clsRef){
+  public int getEnumConstants_____3Ljava_lang_Object_2 (MJIEnv env, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
     
     if (env.requiresClinitExecution(ci)){
@@ -695,7 +711,7 @@ public class JPF_java_lang_Class extends NativePeer {
    * @author Tihomir Gvero (tihomir.gvero@gmail.com)
    */
   @MJI
-  public int getByteArrayFromResourceStream(MJIEnv env, int clsRef, int nameRef) {
+  public int getByteArrayFromResourceStream__Ljava_lang_String_2___3B(MJIEnv env, int clsRef, int nameRef) {
     String name = env.getStringObject(nameRef);
 
     // <2do> this is not loading from the classfile location! fix it
@@ -741,7 +757,7 @@ public class JPF_java_lang_Class extends NativePeer {
   }
 
   @MJI
-  public int getDeclaredClasses (MJIEnv env, int clsRef){
+  public int getDeclaredClasses_____3Ljava_lang_Class_2 (MJIEnv env, int clsRef){
     ClassInfo ci = env.getReferredClassInfo(clsRef);
     String[] innerClassNames =  ci.getInnerClasses();
     int aref = MJIEnv.NULL;

@@ -62,7 +62,6 @@ public class OVHeap extends GenericSGOIDHeap {
   //--- instance data
   
   ObjVector<ElementInfo> elementInfos;
-  int size;  // non-null elements - we need to maintain this ourselves since ObjVector size is different
   
   
   //--- constructors
@@ -80,7 +79,7 @@ public class OVHeap extends GenericSGOIDHeap {
    */
   @Override
   public int size() {
-    return size;
+    return nLiveObjects;
   }
   
   @Override
@@ -118,9 +117,7 @@ public class OVHeap extends GenericSGOIDHeap {
     
   @Override
   protected void remove(int ref) {
-    if (elementInfos.remove(ref) != null) {
-      size--;
-    }
+    elementInfos.remove(ref);
   }
 
   @Override

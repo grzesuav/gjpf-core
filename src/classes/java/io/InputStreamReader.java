@@ -80,9 +80,10 @@ public class InputStreamReader extends Reader {
   
   public int read (char[] cbuf, int off, int len) throws IOException {
     int r = 0;
+    boolean available = true;
     
     synchronized (lock){
-      while (r < len){
+      while (available && r < len){
         // <2do> - so what if that backtracks? the peer might have 
         // iteration-specific state that gets lost. see native peer comments        
         int b = in.read(bbuf, 0, Math.min(len-r,bbuf.length));
@@ -90,7 +91,11 @@ public class InputStreamReader extends Reader {
           return (r == 0) ? -1 : r;
         }
 
-        r += decode(bbuf,b, cbuf,off+r, (in.available() == 0));
+        // true if we have not reach the end of the input stream "in"
+        // and there are still more bytes available to be read
+        available = (in.available() > 0);
+        
+        r += decode(bbuf,b, cbuf,off+r, !available);
       }
     }
       
