@@ -29,7 +29,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * ... => ..., <l>
  */
 public class LCONST extends JVMInstruction {
-  private long value;
+  protected long value;
 
 
   public LCONST(long value){
