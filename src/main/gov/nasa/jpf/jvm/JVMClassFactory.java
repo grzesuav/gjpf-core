@@ -20,11 +20,21 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.vm.ClassFactory;
+import gov.nasa.jpf.vm.MethodInfo;
 
 /**
  * a JVM specific ClassFactory
  */
 public interface JVMClassFactory extends ClassFactory {
 
+  /**
+   * the default InstructionFactory 
+   */
   JVMInstructionFactory getJVMInstructionFactory ();
+  
+  /**
+   * override this if there can be different InstructionFactories based on target ClassInfo and MethodInfo
+   * (e.g. using a MethodSpec)
+   */
+  JVMInstructionFactory getJVMInstructionFactory (MethodInfo mi);
 }

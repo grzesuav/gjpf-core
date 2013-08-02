@@ -157,6 +157,9 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     return new MethodInfo( name, signature, modifiers);
   }
   
+  public static MethodInfo create (ClassInfo ci, String name, String signature, int modifiers){
+    return new MethodInfo( ci, name, signature, modifiers);
+  }
   
   static MethodInfo create (ClassInfo ci, String name, String signature, int modifiers, int maxLocals, int maxStack){
     return new MethodInfo( ci, name, signature, modifiers, maxLocals, maxStack);
@@ -261,6 +264,12 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     
     this.globalId = mthTable.size();
     mthTable.add(this);    
+  }
+
+  public MethodInfo (ClassInfo ci, String name, String signature, int modifiers){
+    this(name, signature, modifiers);
+    
+    this.ci = ci;
   }
   
   //--- setters used during construction

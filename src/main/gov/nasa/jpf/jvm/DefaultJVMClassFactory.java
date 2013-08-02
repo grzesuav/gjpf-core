@@ -26,6 +26,7 @@ import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ClassParseException;
 import gov.nasa.jpf.vm.ClassParser;
+import gov.nasa.jpf.vm.MethodInfo;
 import java.io.File;
 import java.io.IOException;
 
@@ -61,6 +62,15 @@ public class DefaultJVMClassFactory implements JVMClassFactory {
   public JVMInstructionFactory getJVMInstructionFactory (){
     return jvmInsnFactory;
   }
+
+  /**
+   * override this if there are per-ClassInfo/MethodInfo InstructionFactories 
+   */
+  @Override
+  public JVMInstructionFactory getJVMInstructionFactory (MethodInfo mi){
+    return jvmInsnFactory;
+  }
+
   
   @Override
   public ClassFileContainer createClassFileContainer (String spec) {

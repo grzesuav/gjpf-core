@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.ClassInfo;
  * Filtering is based on include/exclude name patterns (e.g. for packages) and/or
  * on inheritance (both down- and upwards)
  */
-public class InstructionFactoryFilter {
+public class ClassInfoFilter {
 
     // filter using an explicit set of class names (can be used for one-pass load)
   protected StringSetMatcher includes;  // included classes that should use them
@@ -38,7 +38,7 @@ public class InstructionFactoryFilter {
   ClassInfo ciLeaf;
   ClassInfo ciRoot;
 
-  public InstructionFactoryFilter (String[] includeCls, String[] excludeCls,
+  public ClassInfoFilter (String[] includeCls, String[] excludeCls,
                                    ClassInfo rootCls, ClassInfo leafCls) {
     includes = StringSetMatcher.getNonEmpty(includeCls);
     excludes = StringSetMatcher.getNonEmpty(excludeCls);
@@ -48,7 +48,7 @@ public class InstructionFactoryFilter {
   }
 
 
-  public boolean isInstrumentedClass (ClassInfo ci){
+  public boolean isPassing (ClassInfo ci){
     if (ci == null){
 
       // <??> not clear what to do in this case, since we have nothing to

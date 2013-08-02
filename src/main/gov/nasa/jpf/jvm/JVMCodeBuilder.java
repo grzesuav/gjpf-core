@@ -37,7 +37,9 @@ import java.util.List;
  */
 public class JVMCodeBuilder implements JVMByteCodeReader {
 
-  static protected JVMInstructionFactory insnFactory;
+  protected static JVMClassFactory classFactory;
+  
+  protected JVMInstructionFactory insnFactory;
   
   protected ClassFile cf;
   protected MethodInfo mi;
@@ -56,31 +58,33 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
   boolean isWide;
   
   static boolean init (JVMClassFactory cf){
-    insnFactory = cf.getJVMInstructionFactory();
+    classFactory = cf;
     return true;
   }
   
   public JVMCodeBuilder (){
     code = new ArrayList<Instruction>(64);
+    insnFactory = classFactory.getJVMInstructionFactory();
   }
   
   public JVMCodeBuilder (JVMInstructionFactory insnFactory, ClassFile classFile, MethodInfo targetMethod){
     this.cf = classFile;
     this.mi = targetMethod;
+    this.insnFactory = insnFactory;
 
-    code = new ArrayList<Instruction>(64);
+    this.code = new ArrayList<Instruction>(64);
   }
   
   public JVMCodeBuilder (MethodInfo targetMethod){
     this.mi = targetMethod;
-    code = new ArrayList<Instruction>(64);    
+    this.code = new ArrayList<Instruction>(64);    
+    this.insnFactory = classFactory.getJVMInstructionFactory(targetMethod);
   }
 
   //--- for testing purposes
   protected JVMCodeBuilder (JVMInstructionFactory ifact){
-    this();
-    
-    insnFactory = ifact;
+    this.code = new ArrayList<Instruction>(64);
+    this.insnFactory = ifact;
   }
   
   // this is kind of dangerous - it enables reuse of CodeBuilders, but
@@ -89,6 +93,8 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
     this.cf = classFile;
     this.mi = targetMethod;
 
+    insnFactory = classFactory.getJVMInstructionFactory(targetMethod);
+    
     pc = 0;
     idx = 0;
     isWide = false;
