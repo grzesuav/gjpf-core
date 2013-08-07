@@ -131,4 +131,25 @@ public class JVMStackFrame extends StackFrame {
       setLocalAttr( idx, attr);
     }
   }  
+  
+  @Override
+  public void setExceptionReference (int exRef){
+    clearOperandStack();
+    pushRef( exRef);
+  }
+  
+  @Override
+  public int getExceptionReference(){
+    return pop();
+  }
+  
+  @Override
+  public void setExceptionReferenceAttribute (Object attr){
+    setOperandAttr(attr);
+  }
+  
+  @Override
+  public Object getExceptionReferenceAttribute (){
+    return getOperandAttr();
+  }
 }

@@ -2709,9 +2709,7 @@ public class ThreadInfo extends InfoObject
       // to reset the operand stack to contain only the exception reference
       // (4.9.2 - "4. merge the state of the operand stack..")
       handlerFrame = getModifiableTopFrame();
-      
-      handlerFrame.clearOperandStack();
-      handlerFrame.pushRef(exceptionObjRef);
+      handlerFrame.setExceptionReference(exceptionObjRef);
 
       // jump to the exception handler and set pc so that listeners can see it
       int handlerOffset = matchingHandler.getHandler();

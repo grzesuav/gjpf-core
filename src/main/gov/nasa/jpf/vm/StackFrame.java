@@ -2035,6 +2035,13 @@ public abstract class StackFrame implements Cloneable {
     return getLongResultAttr();
   }
   
+  //--- VM independent exception handler setup
+  
+  public abstract void setExceptionReference (int exRef);
+  public abstract void setExceptionReferenceAttribute(Object attr); 
+  public abstract int getExceptionReference();
+  public abstract Object getExceptionReferenceAttribute();
+  
   // those set the local vars that are normally initialized from call arguments
   public abstract void setArgumentLocal (int idx, int value, Object attr);
   public abstract void setLongArgumentLocal (int idx, long value, Object attr);

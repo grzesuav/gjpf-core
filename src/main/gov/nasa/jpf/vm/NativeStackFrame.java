@@ -210,6 +210,27 @@ public abstract class NativeStackFrame extends StackFrame {
     throw new JPFException("NativeStackFrames don't support setting argument locals");
   }
   
+  //--- exception refs
+  @Override
+  public void setExceptionReference (int exRef){
+    throw new JPFException("NativeStackFrames don't support exception handlers");    
+  }
+
+  @Override
+  public int getExceptionReference (){
+    throw new JPFException("NativeStackFrames don't support exception handlers");    
+  }
+
+  @Override
+  public void setExceptionReferenceAttribute (Object attr){
+    throw new JPFException("NativeStackFrames don't support exception handlers");    
+  }
+  
+  @Override
+  public Object getExceptionReferenceAttribute (){
+    throw new JPFException("NativeStackFrames don't support exception handlers");    
+  }
+  
   public int getResult(){
     Object r = ret;
     

@@ -58,6 +58,26 @@ public class JVMDirectCallStackFrame extends DirectCallStackFrame {
     return getLongOperandAttr();
   }
 
+  @Override
+  public void setExceptionReference (int exRef){
+    clearOperandStack();
+    pushRef( exRef);
+  }
+  
+  @Override
+  public int getExceptionReference(){
+    return pop();
+  }
+
+  @Override
+  public void setExceptionReferenceAttribute (Object attr){
+    setOperandAttr(attr);
+  }
+  
+  @Override
+  public Object getExceptionReferenceAttribute (){
+    return getOperandAttr();
+  }
   
   //--- direct call argument initialization
   // NOTE - we don't support out-of-order arguments yet, i.e. the slotIdx is ignored
