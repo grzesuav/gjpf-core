@@ -1357,6 +1357,15 @@ public abstract class ElementInfo implements Cloneable {
     return (fields instanceof CharArrayFields);
   }
   
+  public boolean isFloatArray(){
+    return (fields instanceof FloatArrayFields);
+  }
+
+  public boolean isDoubleArray(){
+    return (fields instanceof DoubleArrayFields);
+  }
+
+  
   public String getArrayType() {
     if (!ci.isArray()) {
       throw new JPFException("object is not an array");
