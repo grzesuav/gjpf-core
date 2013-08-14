@@ -913,6 +913,15 @@ public abstract class StackFrame implements Cloneable {
     isRef.clear(index);
   }
   
+  public void setFloatLocalVariable (int index, float f){
+    setLocalVariable( index, Float.floatToIntBits(f));
+  }
+
+  public void setDoubleLocalVariable (int index, double f){
+    setLongLocalVariable( index, Double.doubleToLongBits(f));
+  }
+
+  
   // <2do> replace with non-ref version
   public void setLocalVariable (int index, int v, boolean ref) {
     // <2do> activateGc should be replaced by local refChanged
