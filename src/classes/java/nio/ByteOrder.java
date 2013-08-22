@@ -31,4 +31,6 @@ public final class ByteOrder {
 	public String toString() {
 		return name;
 	}
+
+	public static ByteOrder nativeOrder() { return null; } // stub for Eclipse
 }
