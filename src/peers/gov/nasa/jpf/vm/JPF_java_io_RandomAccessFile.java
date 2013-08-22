@@ -22,6 +22,8 @@ import gov.nasa.jpf.annotation.MJI;
 
 import java.util.HashMap;
 
+import gov.nasa.jpf.Config;
+
 /**
  * MJI NativePeer class for java.io.RandomAccessFile library abstraction
  *
@@ -33,8 +35,13 @@ public class JPF_java_io_RandomAccessFile extends NativePeer {
 	// if so, then we'll update the file data and length in the original file
 	// we do update the length in the local object, but not the data
 		
-	static HashMap<Integer, Integer> File2DataMap = new HashMap<Integer, Integer>();
+	static HashMap<Integer, Integer> File2DataMap;
 	
+  public static boolean init (Config conf) {
+    File2DataMap = new HashMap<Integer, Integer>();
+    return (File2DataMap != null);
+  } 
+
 	// get the mapped object if one exists
 	private static int getMapping(MJIEnv env, int this_ptr) {
 		int fn_ptr = env.getReferenceField(this_ptr,"filename");
