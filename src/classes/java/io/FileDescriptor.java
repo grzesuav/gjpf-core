@@ -78,11 +78,11 @@ public class FileDescriptor {
   native int open (String fname, int mode) throws IOException;
   public native void sync();  
   native int read () throws IOException;
-  native int read (byte[] buf, int off, int len);
+  public native int read (byte[] buf, int off, int len);
   native long skip(long n) throws IOException;
   native int available () throws IOException;
   native void close0 () throws IOException;
   
   native void write (int b) throws IOException;
-  native void write (byte[] buf, int off, int len);
+  public native void write (byte[] buf, int off, int len);
 }

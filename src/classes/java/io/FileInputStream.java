@@ -28,7 +28,8 @@ import java.nio.channels.FileChannel;
 public class FileInputStream extends InputStream {
 
   FileDescriptor fd;
-  
+  private FileChannel fc = null;
+
   public FileInputStream (String fname) throws FileNotFoundException {
     try {
       fd = new FileDescriptor(fname, FileDescriptor.FD_READ);
@@ -50,7 +51,10 @@ public class FileInputStream extends InputStream {
   }
 
   public FileChannel getChannel() {
-    return null; // <2do> not yet supported
+    if(this.fc ==null){
+      this.fc = new FileChannel(fd);
+    }
+    return this.fc;
   }
   
   //--- our native peer methods

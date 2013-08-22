@@ -23,6 +23,7 @@ import java.nio.channels.FileChannel;
 public class FileOutputStream extends OutputStream {
 
   FileDescriptor fd;
+  private FileChannel fc = null;
   
   public FileOutputStream (String fname) throws FileNotFoundException {
     try {
@@ -41,7 +42,10 @@ public class FileOutputStream extends OutputStream {
   }
   
   public FileChannel getChannel() {
-    return null; // <2do> not yet supported
+    if(this.fc ==null){
+      this.fc = new FileChannel(fd);
+    }
+    return this.fc;
   }
   
   public FileDescriptor getFD() {

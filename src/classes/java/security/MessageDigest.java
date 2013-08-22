@@ -45,6 +45,10 @@ public class MessageDigest extends MessageDigestSpi {
   
   public native byte[] digest (byte[] input);
   
+  public native byte[] digest ();
+
+  public native void update(byte[] input);
+
   protected native void finalize(); // to clean up
   
   // those are required by the compiler, but never used since we forward
