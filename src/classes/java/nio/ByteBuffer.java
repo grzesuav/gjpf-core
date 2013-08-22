@@ -169,8 +169,8 @@ public class ByteBuffer extends Buffer {
 		if (limit - pos < 2) {
 			throw new BufferUnderflowException();
 		}
-		int x1 = (int)((array[pos]   & 0xff) << 8);
-		int x0 = (int)((array[pos+1] & 0xff)     );
+		int x1 = (array[pos]   & 0xff) << 8;
+		int x0 = (array[pos+1] & 0xff);
 
 		return (char) (x1 | x0);
 	}
@@ -196,10 +196,10 @@ public class ByteBuffer extends Buffer {
 			throw new BufferUnderflowException();
 		}
 
-		int x3 = (int)((array[position  ]       ) << 24);
-		int x2 = (int)((array[position+1] & 0xff) << 16);
-		int x1 = (int)((array[position+2] & 0xff) <<  8);
-		int x0 = (int)((array[position+3] & 0xff)      );
+		int x3 = (array[position  ]       ) << 24;
+		int x2 = (array[position+1] & 0xff) << 16;
+		int x1 = (array[position+2] & 0xff) <<  8;
+		int x0 = (array[position+3] & 0xff);
 		position += 4;
 
 		return (x3 | x2 | x1 | x0);
