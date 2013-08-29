@@ -139,7 +139,7 @@ public class DeadlockAnalyzer extends ListenerAdapter {
           if (opType == OpType.started || opType == OpType.terminated) {
             pw.print(String.format("   %1$s    ", opTypeMnemonic[opType.ordinal()]));
           } else {
-            pw.print(String.format("%1$s:%2$-5d ", opTypeMnemonic[opType.ordinal()], ei.getObjectRef()));
+            pw.print(String.format("%1$s:%2$-5x ", opTypeMnemonic[opType.ordinal()], ei.getObjectRef()));
           }
           //break;
         } else {

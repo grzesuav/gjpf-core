@@ -145,7 +145,10 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
             ElementInfo eiFieldValue = ti.getElementInfo(val);
             if ((eiFieldValue != null)  && !eiFieldValue.isReferencedBySameThreads(eiFieldOwner)) {
               // this is a potential exposure point, re-enter AFTER having done the assignment,
-              // but BEFORE popping the operand stack
+              // but BEFORE popping the operand stack.
+              // Note this doesn't make the referenced object shared yet, it just introduces
+              // a CG that should lead to at least one path to a potential race along which the
+              // referenced object becomes shared
               if (createAndSetSharedObjectExposureCG(eiFieldValue, ti)) {
                 return this;
               }

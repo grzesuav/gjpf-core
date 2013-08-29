@@ -19,22 +19,30 @@
 package gov.nasa.jpf.vm;
 
 /**
- * a thread tracking policy that uses ThreadInfoSets which are
- * search global from the point of object creation. Each object
- * allocation gets a new ThreadInfo set which contains only the
- * allocating thread. 
+ * a thread tracking policy that uses ThreadInfoSets which are search global from
+ * the point of object creation. Each object allocation gets a new ThreadInfo set
+ * which initially contains only the allocating thread. 
  * 
- * Note this can miss sharedness due to non-overlapping thread execution.
- * Most real world systems have enough interaction points (sync,
- * field access within loops etc.) to avoid this, but short living threads
- * that only have single field access interaction points can run into
- * this effect: T1 creates O, creates & starts T2, accesses O and terminates
- * before T2 runs. When T2 runs, it only sees access to O from an already
+ * Note that without additional transition breaks this can miss races due 
+ * to non-overlapping thread execution along all paths. Most real world systems
+ * have enough scheduling points (sync, field access within loops etc.) to avoid this,
+ * but short living threads that only have single field access interaction points can
+ * run into this effect: T1 creates O, starts T2, accesses O and
+ * terminates before T2 runs. When T2 runs, it only sees access to O from an already
  * terminated thread and therefore treats this as a clean handover. Even if
- * T2 would break at the access, there is no CG that would bring T1 back
- * into the state between creation and access of O, hence T1 never breaks
- * on that access.
- * Unfortunately, this case has a tendency to happen in simple race examples  
+ * T2 would break at its O access, there is no CG that would bring T1 back
+ * into a state between creation and access of O, hence races caused by the O access
+ * of T1 are missed (see .test.mc.threads.MissedPathTest).
+ * Two additional scheduling points help to prevent this case: thread start CGs and
+ * object exposure CGs (/after/ assignment in reference field PUTs where the owning
+ * object is shared, but the referenced object isn't yet). Both are conservative by
+ * nature, i.e. might introduce superfluous states for the sake of not missing paths to 
+ * race points. Both can be controlled by configuration options ('cg.threads.break_start'
+ * and 'vm.por.break_on_exposure').
+ * 
+ * Note also that shared-ness is not the same along all paths, because our goal
+ * is just to find potential data races. As long as JPF explores /one/ path that
+ * leads into a race we are fine - we don't care how many paths don't detect a race.
  */
 public class OverlappingContenderPolicy extends SharedObjectPolicy {
 
