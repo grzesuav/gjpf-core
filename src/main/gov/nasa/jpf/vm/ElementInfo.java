@@ -416,7 +416,7 @@ public abstract class ElementInfo implements Cloneable {
    * 
    * NOTE - this might return a new (cloned) ElementInfo in case the state stored/restored
    * flag has been changed. Use only from system code that is aware of the potential ElementInfo
-   * identity change (doesn't use a reference to the old one) 
+   * identity change (i.e. does not keep a reference to the old one) 
    * 
    * <2do> changing the referencingThreads set without requiring a modifiable ElementInfo is
    * debatable since it restricts the SharedObjectPolicy (e.g. if we ever want to implement a 
@@ -431,12 +431,12 @@ public abstract class ElementInfo implements Cloneable {
     referencingThreads.add(ti);
 
     // the thread might already have been in referencingThreads, but we might get here after
-    // backtracking. In this case the ATTR_SHARED attribute might have been reset and we have to check
-    // if it needs updating (in case sharedness is not frozen)
+    // backtracking. In this case the ATTR_SHARED attribute might have been reset and we have 
+    // to check if it needs updating (in case sharedness is not frozen)
     if ((attributes & ATTR_FREEZE_SHARED) == 0) {
       // note that we can only go from non-shared to shared, but not vice versa
-      // (this is in response to a reference from a live thread)
-        if (SharedObjectPolicy.getPolicy().isShared( this, referencingThreads)) {
+      // (this is called in response to a reference from a live thread)
+      if (SharedObjectPolicy.getPolicy().isShared( this, referencingThreads)) {
         if ((attributes & ATTR_SHARED) == 0) {
           // make sure we clone first (in case of need)
           ElementInfo ei = getModifiableInstance();

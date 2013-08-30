@@ -137,27 +137,4 @@ public class ClassPath implements Restorable<ClassPath>{
 
     return null;
   }
-
-  // for test purposes
-  public static void main(String[] args){
-    String[] pe = args[0].split(":");
-
-    long t1 = System.currentTimeMillis();
-    ClassPath cp = new ClassPath(pe);
-
-    for (int i=0; i<2000; i++){
-      try {
-        byte[] b = cp.getClassData(args[1]);
-        if (b != null){
-          //System.out.println("found classfile: " + b.length);
-        }
-
-      } catch (ClassParseException cfx) {
-        cfx.printStackTrace();
-      }
-    }
-
-    long t2 = System.currentTimeMillis();
-    System.out.println("elapsed time: " + (t2 - t1));
-  }
 }
