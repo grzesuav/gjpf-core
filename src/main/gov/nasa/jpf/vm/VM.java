@@ -982,6 +982,34 @@ public abstract class VM {
     }
   }
 
+   protected void notifyObjectExposed(ThreadInfo ti, ElementInfo eiShared, ElementInfo eiExposed) {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].objectExposed(this, ti, eiShared, eiExposed);
+      }
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during objectExposed() notification", t);
+    }
+  }
+
+   protected void notifyObjectShared(ThreadInfo ti, ElementInfo ei) {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].objectShared(this, ti, ei);
+      }
+    } catch (UncaughtException x) {
+      throw x;
+    } catch (JPF.ExitException x) {
+      throw x;
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during objectShared() notification", t);
+    }
+  }
+  
   protected void notifyObjectNotifies(ThreadInfo ti, ElementInfo ei) {
     try {
       for (int i = 0; i < listeners.length; i++) {

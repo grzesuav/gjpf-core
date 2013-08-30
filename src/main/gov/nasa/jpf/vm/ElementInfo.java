@@ -380,6 +380,9 @@ public abstract class ElementInfo implements Cloneable {
       if ((attributes & ATTR_SHARED) == 0) {
         checkIsModifiable();
         attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
+        
+        // note we don't report the thread here since this is explicitly set via Verify.setShared
+        VM.getVM().notifyObjectShared(null, this);
       }
     } else {
       if ((attributes & ATTR_SHARED) != 0) {
@@ -441,6 +444,9 @@ public abstract class ElementInfo implements Cloneable {
           // make sure we clone first (in case of need)
           ElementInfo ei = getModifiableInstance();
           ei.attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
+          
+          ti.getVM().notifyObjectShared(ti, ei);
+          
           return ei;
         }
       }
@@ -449,6 +455,10 @@ public abstract class ElementInfo implements Cloneable {
     return this;
   }
   
+  public void setExposed (ThreadInfo ti, ElementInfo eiFieldOwner){
+    // we don't keep this in attributes (yet), but we notify listeners
+    ti.getVM().notifyObjectExposed(ti, eiFieldOwner, this);
+  }
   
   /**
    * this is called before the system attempts to reclaim the object. If

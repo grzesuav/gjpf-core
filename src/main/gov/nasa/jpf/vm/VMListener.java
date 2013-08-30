@@ -142,6 +142,19 @@ public interface VMListener extends JPFListener {
    */
   void objectNotifyAll (VM vm, ThreadInfo currentThread, ElementInfo notifyingObject);
   
+  
+  /**
+   * object becomes reachable through a shared reference 
+   * 'sharedObject' is the (already shared) owner of the field to which the (yet unshared) 'exposedObject' reference got assigned
+   */
+  void objectExposed (VM vm, ThreadInfo currentThread, ElementInfo sharedObject, ElementInfo exposedObject);
+  
+  /**
+   * object fields accessed by more than one live thread 
+   */
+  void objectShared (VM vm, ThreadInfo currentThread, ElementInfo sharedObject);
+
+  
   void gcBegin (VM vm);
   
   void gcEnd (VM vm);
