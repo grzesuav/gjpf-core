@@ -75,6 +75,11 @@ public final class StaticElementInfo extends ElementInfo {
   public boolean isObject(){
     return false;
   }
+
+  @Override
+  public boolean isArray(){
+    return false;
+  }
   
   @Override
   protected int getNumberOfFieldsOrElements(){
