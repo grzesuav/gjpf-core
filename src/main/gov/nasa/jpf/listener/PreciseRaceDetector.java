@@ -228,8 +228,11 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
         } else if (insn instanceof ArrayElementInstruction) {
           ArrayElementInstruction ainsn = (ArrayElementInstruction) insn;
           int aref = ainsn.getArrayRef(ti);
-          int idx = ainsn.getIndex(ti);
           ElementInfo ei = ti.getElementInfo(aref);
+
+          // these insns have been through their top half since they created CGs, but they haven't
+          // removed the operands from the stack
+          int idx = ainsn.peekIndex(ti);
 
           candidate = ArrayElementRace.check(candidate, ti, ainsn, ei, idx);
         }

@@ -32,10 +32,12 @@ public abstract class ArrayElementInstruction extends ArrayInstruction {
   protected int index; // the accessed element
 
   // we need this to be abstract because of the LongArrayStore insns
-  abstract protected int peekIndex (ThreadInfo ti);
+  abstract public int peekIndex (ThreadInfo ti);
+  
+  
   
   public int getIndex (ThreadInfo ti){
-    if (ti.isPreExec()){
+    if (!isCompleted(ti)){
       return peekIndex(ti);
     } else {
       return index;

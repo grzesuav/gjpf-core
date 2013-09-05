@@ -252,6 +252,49 @@ public class RaceTest extends TestJPF {
     }
   }
 
+  /*
+   * mostly the same as above except of that the race candidates are the same insn instance, i.e. use the same
+   * cached insn fields values
+   */
+  static class AT extends Thread {
+    int[] a;
+    int idx;
+    
+    AT (int[] a, int idx) {
+      this.a = a;
+      this.idx = idx;
+    }
+    
+    public void run (){
+      //assertTrue( a[idx] == 0);
+      a[idx] = 1;
+    }
+  }
+  
+  @Test
+  public void testNoArrayRaceSameInsn (){
+    if (verifyNoPropertyViolation(LISTENER, "+cg.threads.break_arrays")){
+      int[] a = new int[2];
+      AT t1 = new AT(a, 0);
+      t1.start();
+      AT t2 = new AT(a, 1);
+      t2.start();
+    }
+  }
+
+  // the dual
+  @Test
+  public void testArrayRaceSameInsn (){
+    if (verifyPropertyViolation(PROPERTY, LISTENER, "+cg.threads.break_arrays")){
+      int[] a = new int[2];
+      AT t1 = new AT(a, 1);
+      t1.start();
+      AT t2 = new AT(a, 1);
+      t2.start();
+    }
+  }
+  
+  
   @Test
   public void testNoArrayRaceElements () {
     if (verifyNoPropertyViolation(LISTENER, "+cg.threads.break_arrays")){

@@ -45,11 +45,12 @@ public abstract class LongArrayStoreInstruction extends ArrayStoreInstruction {
     return frame.popLong();
   }
   
-  protected int peekArrayRef(ThreadInfo ti) {
+  public int peekArrayRef(ThreadInfo ti) {
     return ti.getTopFrame().peek(3);  // ..,ref,idx,long(value)
   }
 
-  protected int peekIndex(ThreadInfo ti){
+  @Override
+  public int peekIndex(ThreadInfo ti){
     return ti.getTopFrame().peek(2);
   }
   

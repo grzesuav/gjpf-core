@@ -81,14 +81,14 @@ public abstract class ArrayLoadInstruction extends ArrayElementInstruction {
    * only makes sense pre-exec
    */
   @Override
-  protected int peekArrayRef (ThreadInfo ti){
+  public int peekArrayRef (ThreadInfo ti){
     return ti.getTopFrame().peek(1);
   }
 
   // wouldn't really be required for loads, but this is a general
   // ArrayInstruction API
   @Override
-  protected int peekIndex (ThreadInfo ti){
+  public int peekIndex (ThreadInfo ti){
     return ti.getTopFrame().peek();
   }
 
