@@ -128,7 +128,6 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
       return false;
     }
     
-    ei = ei.getInstanceWithUpdatedSharedness(ti); // now we need to know if object becomes shared
     if (!ei.isShared()) {
       return false;
     }

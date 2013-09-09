@@ -917,6 +917,10 @@ public class MJIEnv {
     return a;    
   }
   
+  /**
+   * NOTE - this call might change the corresponding ElementInfo instance,
+   * don't use after obtaining the ElementInfo in the caller !
+   */
   public boolean isSchedulingRelevantObject(int objref){
     if (objref != NULL){
       ElementInfo ei = heap.get(objref);

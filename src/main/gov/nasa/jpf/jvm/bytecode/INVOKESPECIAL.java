@@ -65,7 +65,7 @@ public class INVOKESPECIAL extends InstanceInvocation {
       return ti.createAndThrowException("java.lang.NoSuchMethodException", "Calling " + cname + '.' + mname);
     }
 
-    ElementInfo ei = ti.getElementInfo(objRef);
+    ElementInfo ei = ti.getElementInfoWithUpdatedSharedness(objRef);
 
     if (callee.isSynchronized()){
       if (checkSyncCG(ei, ti)){

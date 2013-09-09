@@ -57,7 +57,7 @@ public class GlobalTrackingPolicy extends SharedObjectPolicy {
     if (clsObjRef == -1) { // startup class, we don't have a class object yet
       // note that we don't have to store this in our globalCache since we can never
       // backtrack to a point where the startup classes were not initialized yet.
-      // note also that we still can't use a single TidSet instance for this since
+      // note also that we still can't use a single PersistentTidSet instance for this since
       // startup class references can change individually
       return new TidSet(allocThread); 
     } else {
@@ -66,7 +66,7 @@ public class GlobalTrackingPolicy extends SharedObjectPolicy {
   }
 
   @Override
-  public boolean isShared (ElementInfo ei, ThreadInfoSet set) {
+  public boolean isShared (ThreadInfo ti, ElementInfo ei, ThreadInfoSet set) {
     return set.hasMultipleLiveThreads();
   }
 

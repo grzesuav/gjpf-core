@@ -195,6 +195,7 @@ public class JPF_java_lang_Thread extends NativePeer {
         // note that we don't set the 'target' field, since java.lang.Thread doesn't
         runnableRef = objref;
       }
+            
 
       //vm.registerThread(tiStartee);
       
@@ -216,7 +217,7 @@ public class JPF_java_lang_Thread extends NativePeer {
             
       tiStartee.pushFrame(runFrame);
       tiStartee.setState(ThreadInfo.State.RUNNING);
-
+      
       // now we have a new thread, create a CG for scheduling it
       ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG(tiStartee);
       if (ss.setNextChoiceGenerator(cg)) {

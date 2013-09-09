@@ -19,9 +19,16 @@
 package gov.nasa.jpf.vm;
 
 /**
- * a thread tracking policy that uses ThreadInfoSets which are search global from
- * the point of object creation. Each object allocation gets a new ThreadInfo set
- * which initially contains only the allocating thread. 
+ * a thread tracking policy that uses path local ThreadInfoSets. Each object allocation
+ * gets a new ThreadInfo set which initially contains the allocating thread. 
+ * 
+ * This policy uses PersistentTids, i.e. it does not modify existing ThreadInfoSet
+ * instances but replaces upon add/remove with new ones. This ensures that ThreadInfoSets
+ * are path local, but it also means that operations that add/remove ThreadInfos
+ * have to be aware of the associated ElementInfo cloning and don't keep/use references
+ * to old ElementInfos. The upside is that sharedness should be the same along any
+ * given path, regardless of which paths were executed before. The downside is that all
+ * callers of ThreadInfoSet updates have to be aware of that the ElementInfo might change.
  * 
  * Note that without additional transition breaks this can miss races due 
  * to non-overlapping thread execution along all paths. Most real world systems
@@ -48,16 +55,16 @@ public class OverlappingContenderPolicy extends SharedObjectPolicy {
 
   @Override
   public ThreadInfoSet getThreadInfoSet(ThreadInfo allocThread, DynamicElementInfo ei) {
-    return new TidSet(allocThread);
+    return new PersistentTidSet(allocThread);
   }
 
   @Override
   public ThreadInfoSet getThreadInfoSet(ThreadInfo allocThread, StaticElementInfo ei) {
-    return new TidSet(allocThread);
+    return new PersistentTidSet(allocThread);
   }
 
   @Override
-  public boolean isShared (ElementInfo ei, ThreadInfoSet set) {
+  public boolean isShared (ThreadInfo ti, ElementInfo ei, ThreadInfoSet set) {
     return set.hasMultipleLiveThreads();
   }
 

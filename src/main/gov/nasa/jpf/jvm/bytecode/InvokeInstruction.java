@@ -336,8 +336,6 @@ public abstract class InvokeInstruction extends JVMInstruction {
 
   protected boolean checkSyncCG (ElementInfo ei, ThreadInfo ti){
     if (!ti.isFirstStepInsn()) {
-      ei = ei.getInstanceWithUpdatedSharedness(ti);
-      
       if (ei.getLockingThread() != ti) {  // maybe its a recursive lock
         VM vm = ti.getVM();
 

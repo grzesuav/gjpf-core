@@ -60,7 +60,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
                                    "referencing field '" + fname + "' on null object");
       }
       
-      ElementInfo ei = ti.getElementInfo(objRef);
+      ElementInfo ei = ti.getModifiableElementInfoWithUpdatedSharedness(objRef);
       FieldInfo fi = getFieldInfo();
       if (fi == null) {
         return ti.createAndThrowException("java.lang.NoSuchFieldError", 
