@@ -53,7 +53,7 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     }
 
     MethodInfo callee = getInvokedMethod(ti, objRef);
-    ElementInfo ei = ti.getElementInfo(objRef);
+    ElementInfo ei = ti.getElementInfoWithUpdatedSharedness(objRef);
     
     if (callee == null) {
       String clsName = ti.getClassInfo(objRef).getName();

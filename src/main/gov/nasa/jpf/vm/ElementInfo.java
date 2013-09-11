@@ -99,8 +99,6 @@ public abstract class ElementInfo implements Cloneable {
   
   // the set of threads using this object. Note this is not used for state matching
   // so that order or thread id do not have a direct impact on heap symmetry
-  // The "vm.por.global_tracking" property controls if the set of referencing threads is
-  // search global or per-path. In the latter case, there can be missed paths
   protected ThreadInfoSet referencingThreads;
 
   // this is the reference value for the object represented by this ElementInfo
@@ -398,7 +396,7 @@ public abstract class ElementInfo implements Cloneable {
    * modifiable (e.g. from the ctor)
    */
   void setSharednessFromReferencingThreads () {
-    if (SharedObjectPolicy.getPolicy().isShared( this, referencingThreads)) {
+    if (referencingThreads.isShared( null, this)) {
       if ((attributes & ATTR_SHARED) == 0) {
         checkIsModifiable();
         attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
@@ -418,41 +416,41 @@ public abstract class ElementInfo implements Cloneable {
    * update referencingThreads and set shared flag accordingly (if not frozen)
    * 
    * NOTE - this might return a new (cloned) ElementInfo in case the state stored/restored
-   * flag has been changed. Use only from system code that is aware of the potential ElementInfo
+   * flag has been changed and/or the SharedObjectPolicy in effect uses persistent
+   * ThreadInfoSet objects (i.e. replaces them upon add).
+   * Use only from system code that is aware of the potential ElementInfo
    * identity change (i.e. does not keep a reference to the old one) 
-   * 
-   * <2do> changing the referencingThreads set without requiring a modifiable ElementInfo is
-   * debatable since it restricts the SharedObjectPolicy (e.g. if we ever want to implement a 
-   * path local policy)
    */
   public ElementInfo getInstanceWithUpdatedSharedness (ThreadInfo ti) {
-    // we don't check for modifiability here since 'referencingThreads' is either search global
-    // or subtree global (for all paths from creation of this object), i.e. the ThreadInfoSet
-    // instance will not change when we backtrack
- 
-    // we update the referencingThreads no matter what (this is NOT state stored/restored)
-    referencingThreads.add(ti);
+    ElementInfo updatedEi = this;
+    
+    // we update the referencingThreads no matter what
+    // NOTE - it is up to the policy to decide if this creates a new set or destructively updates
+    // the existing one (which translates into carry-over between paths, i.e. search global state)
+    ThreadInfoSet newReferencingThreads = referencingThreads.add(ti);
+    if (newReferencingThreads != referencingThreads){ // policy uses persistent (invariant) ThreadInfoSets
+      updatedEi = getModifiableInstance();
+      updatedEi.referencingThreads = newReferencingThreads;
+    }
 
     // the thread might already have been in referencingThreads, but we might get here after
     // backtracking. In this case the ATTR_SHARED attribute might have been reset and we have 
     // to check if it needs updating (in case sharedness is not frozen)
-    if ((attributes & ATTR_FREEZE_SHARED) == 0) {
+    if ((updatedEi.attributes & ATTR_FREEZE_SHARED) == 0) {
       // note that we can only go from non-shared to shared, but not vice versa
       // (this is called in response to a reference from a live thread)
-      if (SharedObjectPolicy.getPolicy().isShared( this, referencingThreads)) {
-        if ((attributes & ATTR_SHARED) == 0) {
-          // make sure we clone first (in case of need)
-          ElementInfo ei = getModifiableInstance();
-          ei.attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
+      if (newReferencingThreads.isShared( ti, updatedEi)) {
+        if ((updatedEi.attributes & ATTR_SHARED) == 0) {
+          // make sure we clone if this is the first modification
+          updatedEi = updatedEi.getModifiableInstance();
+          updatedEi.attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
           
-          ti.getVM().notifyObjectShared(ti, ei);
-          
-          return ei;
+          ti.getVM().notifyObjectShared(ti, updatedEi);
         }
       }
     }
     
-    return this;
+    return updatedEi;
   }
   
   public void setExposed (ThreadInfo ti, ElementInfo eiFieldOwner){

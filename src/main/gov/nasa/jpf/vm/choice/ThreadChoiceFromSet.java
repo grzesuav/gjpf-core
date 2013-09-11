@@ -32,6 +32,13 @@ public class ThreadChoiceFromSet extends ChoiceGeneratorBase<ThreadInfo> impleme
   protected ThreadInfo[] values;
   protected int count;
     
+  protected ThreadChoiceFromSet (String id){
+    super(id);
+    
+    // all other fields have to be computed by subclass ctor
+    count = -1;
+  }
+  
   public ThreadChoiceFromSet (String id, ThreadInfo[] set, boolean isSchedulingPoint) {
     super(id);
         

@@ -73,12 +73,14 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
       }
       
       ElementInfo ei = ciField.getStaticElementInfo();
+      ei = ei.getInstanceWithUpdatedSharedness(ti);
       if (isNewPorFieldBoundary(ti)) {
         if (createAndSetSharedFieldAccessCG( ei, ti)) {
           return this;
         }
       }
       
+      ei = ei.getModifiableInstance();
       return put( ti, ti.getTopFrame(), ei);
       
     } else { // re-execution
@@ -86,6 +88,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
       ClassInfo ciField = fi.getClassInfo();
       ElementInfo ei = ciField.getStaticElementInfo();
       
+      ei = ei.getModifiableInstance();
       return put( ti, ti.getTopFrame(), ei);      
     }
   }

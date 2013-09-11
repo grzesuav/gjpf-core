@@ -1504,7 +1504,7 @@ public abstract class VM {
   public ThreadInfo[] getLiveThreads () {
     return getThreadList().getThreads();
   }
-
+  
   /**
    * print call stacks of all live threads
    * this is also used for debugging purposes, so we can't move it to the Reporter system
@@ -1887,7 +1887,7 @@ public abstract class VM {
     return ThreadInfo.currentThread;
   }
 
-  ThreadInfo[] getRunnableThreads(){
+  public ThreadInfo[] getRunnableThreads(){
     return getThreadList().getRunnableThreads();
   }
   

@@ -2119,16 +2119,32 @@ public class ThreadInfo extends InfoObject
     return vm.getHeap();
   }
 
-  public ElementInfo getElementInfo (int ref) {
+  public ElementInfo getElementInfo (int objRef) {
     Heap heap = vm.getHeap();
-    return heap.get(ref);
+    return heap.get(objRef);
   }
 
+  public ElementInfo getElementInfoWithUpdatedSharedness (int objRef){
+    Heap heap = vm.getHeap();
+    ElementInfo ei = heap.get(objRef);
+    
+    return ei.getInstanceWithUpdatedSharedness(this);
+  }
+  
   public ElementInfo getModifiableElementInfo (int ref) {
     Heap heap = vm.getHeap();
     return heap.getModifiable(ref);
   }
 
+  // terrible name
+  public ElementInfo getModifiableElementInfoWithUpdatedSharedness (int objRef){
+    Heap heap = vm.getHeap();
+    ElementInfo ei = heap.getModifiable(objRef);
+    
+    return ei.getInstanceWithUpdatedSharedness(this);
+  }
+
+  
   public ElementInfo getBlockedObject (MethodInfo mi, boolean isBeforeCall, boolean isModifiable) {
     int         objref;
     ElementInfo ei = null;

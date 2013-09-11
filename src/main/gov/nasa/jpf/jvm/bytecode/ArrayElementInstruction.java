@@ -87,10 +87,6 @@ public abstract class ArrayElementInstruction extends ArrayInstruction {
    * is a major state exploder
    */
   protected boolean isNewPorBoundary (ElementInfo ei, ThreadInfo ti) {
-    //return false;
-
-    // ei is the array object
-    ei = ei.getInstanceWithUpdatedSharedness(ti);
     return (!ti.checkPorFieldBoundary() && ei.isShared());
   }
 }

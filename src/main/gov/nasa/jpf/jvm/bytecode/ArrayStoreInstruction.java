@@ -39,8 +39,7 @@ public abstract class ArrayStoreInstruction extends ArrayElementInstruction impl
       return ti.createAndThrowException("java.lang.NullPointerException");
     }
 
-    ElementInfo e = ti.getModifiableElementInfo(aref);
-
+    ElementInfo e = ti.getModifiableElementInfoWithUpdatedSharedness(aref);
     if (isNewPorBoundary(e, ti)) {
       if (createAndSetArrayCG(e,ti, aref, peekIndex(ti), false)) {
         return this;

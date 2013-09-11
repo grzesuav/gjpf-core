@@ -60,7 +60,7 @@ public class SingleProcessVM extends VM {
         if (freeArgs.length > 1){ // if there is no 'target' command line overrides 'target.args'
           args = Misc.arrayWithoutFirst(freeArgs, 1);
         } else {
-          args = config.asStringArray("target.args");
+          args = config.getStringArray("target.args");
         }
       }
     } else {

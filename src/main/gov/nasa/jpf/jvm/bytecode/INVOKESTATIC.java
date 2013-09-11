@@ -84,6 +84,7 @@ public class INVOKESTATIC extends InvokeInstruction {
 
     if (callee.isSynchronized()) {
       ElementInfo ei = ciCallee.getClassObject();
+      ei = ei.getInstanceWithUpdatedSharedness(ti);
       if (checkSyncCG(ei, ti)){
         return this;
       }

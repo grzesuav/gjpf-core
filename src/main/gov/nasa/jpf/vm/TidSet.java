@@ -24,6 +24,9 @@ import gov.nasa.jpf.util.UnsortedArrayIntSet;
 /**
  * set that stores threads via (search global) thread ids. Used to detect shared objects/classes,
  * created by configured SharedObjectPolicy factory
+ * 
+ * Note - this class modified contents of instances, i.e. it does destructive updates
+ * and hence has state carry-over between paths
  */
 public class TidSet extends UnsortedArrayIntSet implements ThreadInfoSet, Memento<ThreadInfoSet> {
   
@@ -32,19 +35,21 @@ public class TidSet extends UnsortedArrayIntSet implements ThreadInfoSet, Mement
   public TidSet (ThreadInfo ti){
     vm = ti.getVM();
     
-    add( ti);
+    add( ti.getId());
   }  
   
   //--- set update
   
   @Override
-  public boolean add (ThreadInfo ti) {
-    return add( ti.getId());
+  public ThreadInfoSet add (ThreadInfo ti) {
+    add( ti.getId());
+    return this;
   }
   
   @Override
-  public boolean remove (ThreadInfo ti) {
-    return remove( ti.getId());
+  public ThreadInfoSet remove (ThreadInfo ti) {
+    remove( ti.getId());
+    return this;
   }
   
   
@@ -53,6 +58,11 @@ public class TidSet extends UnsortedArrayIntSet implements ThreadInfoSet, Mement
   @Override
   public boolean contains (ThreadInfo ti) {
     return contains( ti.getId());
+  }
+  
+  @Override
+  public boolean isShared (ThreadInfo ti, ElementInfo ei){
+    return hasMultipleLiveThreads();
   }
   
   @Override

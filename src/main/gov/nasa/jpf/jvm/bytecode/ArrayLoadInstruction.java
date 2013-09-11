@@ -41,8 +41,8 @@ public abstract class ArrayLoadInstruction extends ArrayElementInstruction {
     if (aref == -1) {
       return ti.createAndThrowException("java.lang.NullPointerException");
     }
-    ElementInfo e = ti.getElementInfo(aref);
-
+    
+    ElementInfo e = ti.getElementInfoWithUpdatedSharedness(aref);
     if (isNewPorBoundary(e, ti)) {
       if (createAndSetArrayCG(e,ti, aref,peekIndex(ti),true)) {
         return this;

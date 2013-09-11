@@ -88,7 +88,6 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
       return false;
     }
     
-    ei = ei.getInstanceWithUpdatedSharedness(ti);
     if (!ei.isShared()){
       return false;
     }

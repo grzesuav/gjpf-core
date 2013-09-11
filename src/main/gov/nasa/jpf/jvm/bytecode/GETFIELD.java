@@ -56,7 +56,7 @@ public class GETFIELD extends InstanceFieldInstruction {
                                         "referencing field '" + fname + "' on null object");
     }
 
-    ElementInfo ei = ti.getElementInfo(objRef);
+    ElementInfo ei = ti.getElementInfoWithUpdatedSharedness(objRef);
 
     FieldInfo fi = getFieldInfo();
     if (fi == null) {

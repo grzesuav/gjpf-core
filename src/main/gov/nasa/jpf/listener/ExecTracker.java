@@ -58,6 +58,8 @@ public class ExecTracker extends ListenerAdapter {
   @JPFOption(type = "Boolean", key = "et.skip_init", defaultValue = "true", comment = "do not log execution before entering main()")
   boolean skipInit = false;
   
+  boolean showShared = false;
+  
   PrintWriter out;
   String lastLine;
   MethodInfo lastMi;
@@ -78,6 +80,8 @@ public class ExecTracker extends ListenerAdapter {
 
     /** @jpfoption et.skip_init : boolean - do not log execution before entering main() (default=true). */
     skipInit = config.getBoolean("et.skip_init", true);
+    
+    showShared = config.getBoolean("et.show_shared", true);
     
     if (skipInit) {
       skip = true;
@@ -274,6 +278,21 @@ public class ExecTracker extends ListenerAdapter {
     
     //vm.dumpThreadStates();
   }
+  
+  @Override
+  public void objectExposed (VM vm, ThreadInfo currentThread, ElementInfo sharedObject, ElementInfo exposedObject) {
+    if (showShared){
+      out.println("\t\t # exposed " + exposedObject + " through shared " + sharedObject);
+    }
+  }
+  
+  @Override
+  public void objectShared (VM vm, ThreadInfo currentThread, ElementInfo sharedObject) {
+    if (showShared){
+      out.println("\t\t # shared " + sharedObject);
+    }
+  }
+  
   
   /****************************************** private stuff ******/
 

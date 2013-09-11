@@ -31,10 +31,6 @@ public class TraceTest extends TestJPF {
   static final String TEST_CLASS = TraceTest.class.getName();
   static final String TRACE = "trace";
 
-  public static void main(String[] args) {    // <2do> Fix this test so that it doesn't require main
-    runTestsOfThisClass(args);
-  }
-
   // the method run by JPF
   public void foo () {
     int a = Verify.getInt(0, 42);
@@ -52,7 +48,8 @@ public class TraceTest extends TestJPF {
   }
 
   // the method that runs JPF
-  @Test public void testPartialTrace () {
+  @Test
+  public void testPartialTrace () {
     File tf = new File(TRACE);
 
     try {
@@ -90,6 +87,9 @@ public class TraceTest extends TestJPF {
     boolean b1 = Verify.getBoolean();
     int i4 = Verify.getInt(0,3);
 
+    System.out.printf("%d,%d,%d,%b,%d\n", i1, i2, i3, b1, i4);
+    
+    
     assert !(i1 == 0 && i2 == 1 && i3 == 2 && b1 && i4 == 3);
   }
 
@@ -103,9 +103,11 @@ public class TraceTest extends TestJPF {
       }
 
       // first JPF run
+      System.out.println("--- creating trace");
       assertionError(setTestMethod("bar"), "+listener=.listener.TraceStorer", "+trace.file=" + TRACE);
 
       // second JPF run
+      System.out.println("--- replaying trace");
       assertionError(setTestMethod("bar"), "+listener=.listener.ChoiceSelector","+choice.use_trace=" + TRACE);
     } finally {
       tf.delete();
