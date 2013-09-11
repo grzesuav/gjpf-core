@@ -24,6 +24,9 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Predicate;
+import gov.nasa.jpf.vm.choice.MultiProcessThreadChoice;
+import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
+
 import java.util.ArrayList;
 
 /**
@@ -145,6 +148,11 @@ public class MultiProcessVM extends VM {
   @Override
   public int getNumberOfApplications(){
     return appCtxs.length;
+  }
+  
+  @Override
+  protected ChoiceGenerator<?> getInitialCG () {
+    return new MultiProcessThreadChoice("<root>", getThreadList().getRunnableThreads(), true);
   }
   
   @Override
@@ -329,5 +337,9 @@ public class MultiProcessVM extends VM {
 
   public ThreadInfo[] getRunnableAppThreadsWithout( ThreadInfo ti) {
     return getThreadList().getRunnableThreadsWithout(ti,  getAppPredicate(ti));
+  }
+  
+  public int getLiveAppThreadCount (ThreadInfo ti) {
+    return getThreadList().getLiveThreadCount( getAppPredicate(ti));
   }
 }

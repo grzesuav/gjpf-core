@@ -22,6 +22,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
 
 /**
@@ -118,6 +119,11 @@ public class SingleProcessVM extends VM {
     // all other exceptions are JPF errors that should cause stack traces
   }
 
+  @Override
+  protected ChoiceGenerator<?> getInitialCG () {
+    return new ThreadChoiceFromSet("<root>", getThreadList().getRunnableThreads(), true);
+  }
+  
   @Override
   public int getNumberOfApplications(){
     return 1;
@@ -219,5 +225,4 @@ public class SingleProcessVM extends VM {
 
     return false;
   }
-
 }

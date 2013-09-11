@@ -81,8 +81,8 @@ public class SimpleDot extends ListenerAdapter {
   static final String GENERIC_EDGE_ATTRS = "fontsize=10,fontname=Helvetica,fontcolor=blue,color=cadetblue,style=\"setlinewidth(0.5)\",arrowhead=empty,arrowsize=0.5";
   static final String START_NODE_ATTRS = "fillcolor=green";
   static final String END_NODE_ATTRS = "shape=doublecircle,fillcolor=cyan";
-  static final String ERROR_NODE_ATTRS = "color=red,fillcolor=yellow";
-  static final String BACKTRACK_EDGE_ATTRS = "arrowhead=onormal,color=gray,style=\"dotted\"";
+  static final String ERROR_NODE_ATTRS = "color=red,fillcolor=lightcoral";
+  static final String BACKTRACK_EDGE_ATTRS = "arrowhead=onormal,color=gray52,style=\"dotted\"";
   static final String RESTORED_EDGE_ATTRS = "arrowhead=onormal,color=red,style=\"dotted\"";
   static final String NEW_EDGE_ATTRS = "arrowhead=normal";
   static final String VISITED_EDGE_ATTRS = "arrowhead=vee";

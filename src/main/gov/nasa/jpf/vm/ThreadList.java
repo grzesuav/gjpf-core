@@ -458,12 +458,16 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return list;
   }
 
-
   public int getLiveThreadCount () {
+    return getLiveThreadCount (null);
+  }
+  
+  public int getLiveThreadCount (Predicate<ThreadInfo> pred) {
     int n = 0;
 
     for (int i = 0; i < threads.length; i++) {
-      if (threads[i].isAlive()) {
+      ThreadInfo t = threads[i];
+      if (t.isAlive()  && (pred == null || pred.isTrue(t))) {
         n++;
       }
     }
