@@ -39,6 +39,7 @@ import gov.nasa.jpf.vm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.vm.choice.LongChoiceFromList;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.BitSet;
 import java.util.List;
@@ -1123,8 +1124,15 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
       int readObjRef = ObjectConverter.JPFObjectFromJavaObject(env, javaObject);
 
       return readObjRef;
-    } catch (Exception ex) {
-      throw new JPFException(ex);
+      
+    } catch (ClinitRequired clix){
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+      
+    } catch (IOException iox){
+      throw new JPFException("failure reading object from file: " + fileName, iox);
+    } catch (ClassNotFoundException cnfx){
+      throw new JPFException("failure reading object from file: " + fileName, cnfx);      
     }
   }
   

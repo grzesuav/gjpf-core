@@ -1831,6 +1831,7 @@ public class ThreadInfo extends InfoObject
 
     currentThread = this;
     executedInstructions = 0;
+    pendingException = null;
 
     if (isStopped()){
       pc = throwStopException();
@@ -2424,7 +2425,12 @@ public class ThreadInfo extends InfoObject
       heap.markThreadRoot(targetRef,id);
     }
 
-    // 3. now all references on the stack
+    // 3. if we have a pending exception that wasn't handled, make sure the exception object is not collected before we match states
+    if (pendingException != null){
+      heap.markThreadRoot(pendingException.getExceptionReference(), id);
+    }
+    
+    // 4. now all references on the stack
     for (StackFrame frame = top; frame != null; frame = frame.getPrevious()){
       frame.markThreadRoots(heap, id);
     }

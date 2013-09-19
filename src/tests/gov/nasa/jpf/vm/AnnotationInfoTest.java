@@ -19,8 +19,11 @@
 
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.jvm.DefaultJVMClassFactory;
+import gov.nasa.jpf.jvm.ClassFile;
+import gov.nasa.jpf.jvm.DirClassFileContainer;
+import gov.nasa.jpf.jvm.JVMAnnotationParser;
 import gov.nasa.jpf.util.test.TestJPF;
+import java.io.File;
 
 import org.junit.Test;
 
@@ -38,16 +41,26 @@ public class AnnotationInfoTest extends TestJPF {
     int[] someArray() default { 1, 2, 3 };
   }
 
+  protected AnnotationInfo createAnnotationInfo (String annotationName) throws ClassParseException {
+    DirClassFileContainer dfc = new DirClassFileContainer( new File("build/tests"));
+    ClassPath cp = new ClassPath();
+    cp.addClassFileContainer(dfc);
+    
+    ClassFileMatch match = cp.findMatch( annotationName);
+    byte[] data = match.getBytes();
+    
+    ClassFile cf = new ClassFile( data);
+    JVMAnnotationParser parser = new JVMAnnotationParser(cf);
+    
+    return new AnnotationInfo( annotationName, null, parser);
+  }
+  
   @Test
   public void testStringDefaultValue() {
-    ClassLoaderInfo.setClassFactory( new DefaultJVMClassFactory());
-    ClassPath cp = new ClassPath(new String[] {"build/tests"});
-    
     try {
       String annotationName = "gov.nasa.jpf.vm.AnnotationInfoTest$X";
-      ClassFileMatch match = cp.findMatch( annotationName);
       
-      AnnotationInfo ai = match.createAnnotationInfo(null);
+      AnnotationInfo ai = createAnnotationInfo(annotationName);
       AnnotationInfo.Entry[] entries = ai.getEntries();
       
       assertTrue(entries.length == 1);
@@ -62,14 +75,10 @@ public class AnnotationInfoTest extends TestJPF {
 
   @Test
   public void testIntArrayDefaultValue() {
-    ClassLoaderInfo.setClassFactory( new DefaultJVMClassFactory());
-    ClassPath cp = new ClassPath(new String[] {"build/tests"});
-
     try {
       String annotationName = "gov.nasa.jpf.vm.AnnotationInfoTest$Y";
-      ClassFileMatch match = cp.findMatch( annotationName);
       
-      AnnotationInfo ai = match.createAnnotationInfo(null);
+      AnnotationInfo ai = createAnnotationInfo(annotationName);
       AnnotationInfo.Entry[] entries = ai.getEntries();
 
       assertTrue(entries.length == 2);

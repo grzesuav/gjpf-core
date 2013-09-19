@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.Invocation;
 import gov.nasa.jpf.vm.ClassInfo;
@@ -37,8 +38,6 @@ import java.util.List;
  */
 public class JVMCodeBuilder implements JVMByteCodeReader {
 
-  protected static JVMClassFactory classFactory;
-  
   protected JVMInstructionFactory insnFactory;
   
   protected ClassFile cf;
@@ -57,44 +56,20 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
   // flag to remember wide immediate operand modification
   boolean isWide;
   
-  static boolean init (JVMClassFactory cf){
-    classFactory = cf;
-    return true;
-  }
-  
-  public JVMCodeBuilder (){
-    code = new ArrayList<Instruction>(64);
-    insnFactory = classFactory.getJVMInstructionFactory();
-  }
-  
-  public JVMCodeBuilder (JVMInstructionFactory insnFactory, ClassFile classFile, MethodInfo targetMethod){
-    this.cf = classFile;
-    this.mi = targetMethod;
-    this.insnFactory = insnFactory;
-
-    this.code = new ArrayList<Instruction>(64);
-  }
-  
-  public JVMCodeBuilder (MethodInfo targetMethod){
-    this.mi = targetMethod;
-    this.code = new ArrayList<Instruction>(64);    
-    this.insnFactory = classFactory.getJVMInstructionFactory(targetMethod);
-  }
-
   //--- for testing purposes
   protected JVMCodeBuilder (JVMInstructionFactory ifact){
     this.code = new ArrayList<Instruction>(64);
     this.insnFactory = ifact;
   }
+
   
-  // this is kind of dangerous - it enables reuse of CodeBuilders, but
-  // you better make sure this does not get recursive
-  public void initialize(ClassFile classFile, MethodInfo targetMethod){
+  
+  // this is dangerous - it enables reuse of CodeBuilders, but
+  // you better make sure this does not get recursive or is used concurrently
+  public void reset (ClassFile classFile, MethodInfo targetMethod){
     this.cf = classFile;
     this.mi = targetMethod;
 
-    insnFactory = classFactory.getJVMInstructionFactory(targetMethod);
-    
     pc = 0;
     idx = 0;
     isWide = false;
@@ -104,7 +79,7 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
 
     code.clear();
   }
-
+  
   protected void add(Instruction insn){
     insn.setMethodInfo(mi);
     insn.setLocation(idx++, pc);

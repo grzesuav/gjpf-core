@@ -33,7 +33,7 @@ public class DirClassFileContainer extends JVMClassFileContainer {
 
   protected File dir;
 
-  DirClassFileContainer(File dir) {
+  public DirClassFileContainer(File dir) {
     super(dir.getPath());
 
     try {

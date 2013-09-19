@@ -19,13 +19,7 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.vm.AnnotationInfo;
-import gov.nasa.jpf.vm.AnnotationParser;
 import gov.nasa.jpf.vm.ClassFileContainer;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ClassLoaderInfo;
-import gov.nasa.jpf.vm.ClassParseException;
-import gov.nasa.jpf.vm.ClassParser;
 
 /**
  * ClassFileContainer that holds Java classfiles
@@ -40,20 +34,5 @@ public abstract class JVMClassFileContainer extends ClassFileContainer {
   public String getClassURL (String typeName){
     return getURL() + typeName.replace('.', '/') + ".class";
   }
-  
-  @Override
-  public ClassInfo createClassInfo (String typeName, ClassLoaderInfo classLoader, String url, byte[] data) throws ClassParseException {
-    ClassFile cf = new ClassFile( data);
-    ClassParser parser = new ClassFileParser(cf);
     
-    return new JVMClassInfo( typeName, classLoader, parser, url);
-  }
-  
-  @Override
-  public AnnotationInfo createAnnotationInfo (String typeName, ClassLoaderInfo classLoader, byte[] data) throws ClassParseException {
-    ClassFile cf = new ClassFile( data);
-    JVMAnnotationParser parser = new JVMAnnotationParser(cf);
-    
-    return new AnnotationInfo( typeName, classLoader, parser);
-  }
 }

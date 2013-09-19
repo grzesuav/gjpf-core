@@ -172,6 +172,17 @@ public class MultiProcessVM extends VM {
     return appCtxs;
   }
 
+  @Override
+  public ApplicationContext getCurrentApplicationContext(){
+    ThreadInfo ti = ThreadInfo.getCurrentThread();
+    if (ti != null){
+      return ti.getApplicationContext();
+    } else {
+      // return the last defined one
+      return appCtxs[appCtxs.length-1];
+    }
+  }
+
   
   @Override
   public String getSUTName() {

@@ -18,16 +18,12 @@
 //
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.JPF;
 import java.net.MalformedURLException;
 import java.net.URL;
 
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.vm.ClassPath;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ClassLoaderInfo;
-import gov.nasa.jpf.vm.LoadOnJPFRequired;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.Types;
+import gov.nasa.jpf.util.JPFLogger;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -36,10 +32,11 @@ import gov.nasa.jpf.vm.Types;
  */
 public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
 
+  static JPFLogger log = JPF.getLogger("class");
+  
   @MJI
   public void addURL0__Ljava_lang_String_2__V (MJIEnv env, int objRef, int urlRef) throws MalformedURLException {
     ClassLoaderInfo cl = env.getClassLoaderInfo(objRef);
-    ClassPath cp = cl.getClassPath();
     String url = env.getStringObject(urlRef);
 
     String path = null;
@@ -51,10 +48,11 @@ public class JPF_java_net_URLClassLoader extends JPF_java_lang_ClassLoader{
       path = url.substring(url.lastIndexOf(':')+1, url.indexOf('!'));
     } else {
       // we don't support other protocols for now!
+      log.warning("unknown path element specification: ", url);
       return;
     }
 
-    cp.addPathName(path);
+    cl.addClassPathElement(path);
   }
 
   @MJI

@@ -50,22 +50,13 @@ public class ClassPath implements Restorable<ClassPath>{
   
   static JPFLogger logger = JPF.getLogger("gov.nasa.jpf.jvm.classfile");
   
-  
   protected ArrayList<ClassFileContainer> pathElements;
 
 
   public ClassPath(){
     pathElements = new ArrayList<ClassFileContainer>();
   }
-
-  public ClassPath (String[] pathNames) {
-    pathElements = new ArrayList<ClassFileContainer>();
-
-    for (String e : pathNames){
-      addPathName(e);
-    }
-  }
-
+  
   public Memento<ClassPath> getMemento (MementoFactory factory) {
     return factory.getMemento(this);
   }
@@ -74,17 +65,11 @@ public class ClassPath implements Restorable<ClassPath>{
     return new CPMemento(this);
   }
 
-  public void addPathName (String pathName){
-    ClassFileContainer pe = ClassLoaderInfo.getClassFactory().createClassFileContainer( pathName);
-
-    if (pe != null) {
-      pathElements.add(pe);
-    } else {
-      // would like to turn this into a warning, but the java.class.path at least
-      // on OS X 10.6 contains non-existing elements
-      logger.info("illegal classpath element ", pathName);
-    }
+  public void addClassFileContainer (ClassFileContainer pathElement){
+    assert pathElement != null;
+    pathElements.add(pathElement);
   }
+
 
   public String[] getPathNames(){
     String[] pn = new String[pathElements.size()];
@@ -118,7 +103,7 @@ public class ClassPath implements Restorable<ClassPath>{
     for (ClassFileContainer e : pathElements){
       byte[] data = e.getClassData(clsName);
       if (data != null){
-        logger.fine("loading ", clsName, " from ", e.getName());
+        logger.fine("found ", clsName, " in ", e.getName());
         return new ClassFileMatch( clsName, e, data);
       }
     }
@@ -126,15 +111,4 @@ public class ClassPath implements Restorable<ClassPath>{
     return null;    
   }
 
-  public byte[] getClassData(String clsName) throws ClassParseException {
-    for (ClassFileContainer e : pathElements){
-      byte[] data = e.getClassData(clsName);
-      if (data != null){
-        logger.fine("loading ", clsName, " from ", e.getName());
-        return data;
-      }
-    }
-
-    return null;
-  }
 }

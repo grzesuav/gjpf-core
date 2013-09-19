@@ -48,7 +48,7 @@ public class JVMAnnotationParser extends ClassFileReaderAdapter implements Annot
   String annotationName;
   AnnotationInfo.Entry[] entries;
   
-  JVMAnnotationParser (ClassFile cf) {
+  public JVMAnnotationParser (ClassFile cf) {
     this.cf = cf;
   }
 

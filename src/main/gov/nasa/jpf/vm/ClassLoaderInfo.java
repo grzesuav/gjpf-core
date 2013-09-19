@@ -49,26 +49,24 @@ public class ClassLoaderInfo
 
   
   // the model class field name where we store our id 
-  static final String ID_FIELD = "nativeId";
+  protected static final String ID_FIELD = "nativeId";
 
-  static Config config;
+  protected static Config config;
 
   // this is where we keep the global list of classloader ids
-  static SparseIntVector globalCLids;
-  
-  static ClassFactory classFactory;
+  protected static SparseIntVector globalCLids;
   
   /**
    * Map from class file URLs to first ClassInfo that was read from it. This search
    * global map is used to make sure we only read class files once
    */
-  static Map<String,ClassInfo> loadedClasses;
+  protected static Map<String,ClassInfo> loadedClasses;
   
   /**
    * map from annotation class file URLs to AnnotationInfos, which have a separate JPF internal
    * representation. Again, using a global map ensures we only read the related class files once
    */
-  static Map<String,AnnotationInfo> loadedAnnotations;
+  protected static Map<String,AnnotationInfo> loadedAnnotations;
   
   // Map that keeps the classes defined (directly loaded) by this loader and the
   // ones that are resolved from these defined classes
@@ -77,7 +75,7 @@ public class ClassLoaderInfo
   // annotations directly loaded by this classloader
   protected Map<String,AnnotationInfo> resolvedAnnotations;
   
-  // Represents the locations where this classloader can load classes form - has to be set by subclasses (enforced by final)
+  // Represents the locations where this classloader can load classes form - has to be populated subclasses 
   protected ClassPath cp;
 
   // The type of the corresponding class loader object
@@ -141,21 +139,8 @@ public class ClassLoaderInfo
     
     enabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.enable_assertions"));
     disabledAssertionPatterns = StringSetMatcher.getNonEmpty(config.getStringArray("vm.disable_assertions"));
+  }
     
-    classFactory = config.getEssentialInstance("vm.class_factory.class", ClassFactory.class);
-  }
-
-  public static ClassFactory getClassFactory(){
-    return classFactory;
-  }
-  
-  /**
-   * only for testing purposes
-   */
-  static void setClassFactory( ClassFactory factory){
-    classFactory = factory;
-  }
-  
   public static int getNumberOfLoadedClasses (){
     return loadedClasses.size();
   }
@@ -180,6 +165,8 @@ public class ClassLoaderInfo
     
     this.statics = createStatics(vm);
 
+    cp = new ClassPath();
+    
     // registration has to happen from SystemClassLoaderInfo ctor since we are
     // only partially initialized at this point
   }
@@ -205,7 +192,7 @@ public class ClassLoaderInfo
     }
     classInfo = ei.getClassInfo();
     roundTripRequired = isRoundTripRequired();
-    
+
     vm.registerClassLoader(this);
   }
   
@@ -293,13 +280,24 @@ public class ClassLoaderInfo
 
     return ti.getSystemClassLoaderInfo();
   }
-
+  
   public static SystemClassLoaderInfo getCurrentSystemClassLoader() {
-    return ThreadInfo.getCurrentThread().getSystemClassLoaderInfo(); 
+    ThreadInfo ti = ThreadInfo.getCurrentThread();
+    if (ti != null){
+      return ti.getSystemClassLoaderInfo();
+    } else {
+      // this is kind of a hack - we just use the latest SystemClassLoaderInfo instance
+      // this might happen if the SystemClassLoader preloads classes before we have a main thread
+      return SystemClassLoaderInfo.lastInstance;
+    }
   }
 
   protected ClassInfo loadSystemClass (String clsName){
     return getCurrentSystemClassLoader().loadSystemClass(clsName);
+  }
+  
+  protected ClassInfo createClassInfo (String typeName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException {
+    return getCurrentSystemClassLoader().createClassInfo( typeName, url, data, definingLoader);
   }
 
   
@@ -339,8 +337,10 @@ public class ClassLoaderInfo
             }
           } else {
             try {
-              log.info("loading class ", className, " from ",  url);
-              ci = match.createClassInfo( this);
+              log.info("loading class ", typeName, " from ",  url);
+              byte[] data = match.getBytes();
+              ci = createClassInfo( typeName, url, data, this);
+              
             } catch (ClassParseException cpx){
               throw new ClassInfoException( "error parsing class", this, "java.lang.NoClassDefFoundError", typeName, cpx);
             }
@@ -369,8 +369,9 @@ public class ClassLoaderInfo
     if (ci == null) {        
       try {
         // it can't be a builtin class since we have classfile contents
-        String url = typeName;
-        ci = classFactory.createClassInfo( typeName, this, url, data, offset, length);
+        String url = typeName; // three isn't really a URL for it, just choose somehting
+        SystemClassLoaderInfo sysCl = getCurrentSystemClassLoader();
+        ci = sysCl.createClassInfo(typeName, url, data, this);
 
         // no use to store it in loadedClasses since the data might be dynamically generated
 
@@ -382,6 +383,10 @@ public class ClassLoaderInfo
     }
     
     return ci;
+  }
+  
+  protected AnnotationInfo createAnnotationInfo (String typeName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException {
+    return getCurrentSystemClassLoader().createAnnotationInfo( typeName, url, data, definingLoader);
   }
   
   public AnnotationInfo getResolvedAnnotationInfo (String typeName) throws ClassInfoException {
@@ -399,7 +404,9 @@ public class ClassLoaderInfo
           
         } else {
           try {
-            ai = match.createAnnotationInfo(this);
+            byte[] data = match.getBytes();
+            ai = createAnnotationInfo( typeName, match.getClassURL(), data, this);
+            
           } catch (ClassParseException cpx) {
             throw new ClassInfoException("error parsing class", this, "java.lang.NoClassDefFoundError", typeName, cpx);
           }
@@ -707,6 +714,19 @@ public class ClassLoaderInfo
     return cp.getPathNames();
   }
 
+  protected ClassFileContainer createClassFileContainer (String path){
+    return getCurrentSystemClassLoader().createClassFileContainer(path);
+  }
+  
+  public void addClassPathElement (String path){
+    ClassFileContainer cfc = createClassFileContainer(path);
+    
+    if (cfc != null){
+      cp.addClassFileContainer(cfc);
+    } else {
+      log.warning("unknown classpath element: ", path);
+    }
+  }
 
   /**
    * Comparison for sorting based on index.

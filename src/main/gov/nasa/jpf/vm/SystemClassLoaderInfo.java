@@ -46,9 +46,12 @@ import java.io.File;
  * SystemClassLoader which is responsible to load classes from Java API, 
  * standard extensions packages, and the local file system.     
  */
-public class SystemClassLoaderInfo extends ClassLoaderInfo {
+public abstract class SystemClassLoaderInfo extends ClassLoaderInfo {
 
   static JPFLogger log = JPF.getLogger("class");
+  
+  // we need to keep track of this in case something needs the current SystemClassLoaderInfo before we have a main thread
+  static SystemClassLoaderInfo lastInstance;  
   
   // note that initialization requires these to be startup classes
   protected ClassInfo classLoaderClassInfo;
@@ -66,6 +69,8 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
   
   public SystemClassLoaderInfo (VM vm, int appId){
      super(vm);
+     
+     lastInstance = this;
 
     // this is a hack - for user ClassLoaderInfos, we compute the id from the corresponding
     // objRef of the JPF ClassLoader object. For SystemClassLoaderInfos we can't do that because
@@ -75,36 +80,10 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
     // be recycled.
     this.id = computeId(appId);
     
-    this.cp = createSystemClassPath( vm, appId);
-    
-    // now we can notify
-    vm.registerClassLoader(this);
+    initializeSystemClassPath( vm, appId);
   }
   
-  protected ClassPath createSystemClassPath (VM vm, int appId){
-    Config conf = vm.getConfig();
-    ClassPath classPath = new ClassPath();
-
-    for (File f : conf.getPathArray("boot_classpath")){
-      classPath.addPathName(f.getAbsolutePath());
-    }
-
-    for (File f : conf.getPathArray("classpath")){
-      classPath.addPathName(f.getAbsolutePath());
-    }
-
-    // finally, we load from the standard Java libraries
-    String v = System.getProperty("sun.boot.class.path");
-    if (v != null) {
-      for (String pn : v.split(File.pathSeparator)){
-        classPath.addPathName(pn);
-      }
-    }
-    
-    log.info( "collected system classpath: ", classPath);
-    
-    return classPath;
-  }
+  protected abstract void initializeSystemClassPath (VM vm, int appId);
   
   @Override
   public ClassInfo getResolvedClassInfo (String clsName){
@@ -138,6 +117,13 @@ public class SystemClassLoaderInfo extends ClassLoaderInfo {
 
     return true;
   }
+
+  @Override
+  protected abstract ClassInfo createClassInfo (String clsName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException; 
+  
+  @Override
+  protected abstract AnnotationInfo createAnnotationInfo (String clsName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException; 
+  
 
   @Override
   public ClassInfo loadClass(String cname) {

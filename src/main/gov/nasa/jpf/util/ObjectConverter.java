@@ -21,6 +21,7 @@ package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClinitRequired;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Fields;
@@ -40,8 +41,7 @@ public class ObjectConverter {
    * @param javaObject - java object that is used to created JPF object from
    * @return reference to new JPF object
    */
-  public static int JPFObjectFromJavaObject(MJIEnv env, Object javaObject) {
-    try {
+  public static int JPFObjectFromJavaObject(MJIEnv env, Object javaObject) throws ClinitRequired {
       Class<?> javaClass = javaObject.getClass();
       String typeName = javaClass.getName();
       int newObjRef = env.newObject(typeName);
@@ -55,19 +55,25 @@ public class ObjectConverter {
             setJPFPrimitive(newObjEI, fi, javaObject);
           }
           else {
-            Field arrField = getField(fi.getName(), javaClass);
-            arrField.setAccessible(true);
-            Object fieldJavaObj = arrField.get(javaObject);
+            try {
+              Field arrField = getField(fi.getName(), javaClass);
+              arrField.setAccessible(true);
+              Object fieldJavaObj = arrField.get(javaObject);
 
-            int fieldJPFObjRef;
-            if (isArrayField(fi)) {
-              fieldJPFObjRef = getJPFArrayRef(env, fieldJavaObj);
-            }
-            else {
-              fieldJPFObjRef = JPFObjectFromJavaObject(env, fieldJavaObj);
-            }
+              int fieldJPFObjRef;
+              if (isArrayField(fi)) {
+                fieldJPFObjRef = getJPFArrayRef(env, fieldJavaObj);
+              } else {
+                fieldJPFObjRef = JPFObjectFromJavaObject(env, fieldJavaObj);
+              }
 
-            newObjEI.setReferenceField(fi, fieldJPFObjRef);
+              newObjEI.setReferenceField(fi, fieldJPFObjRef);
+
+            } catch (NoSuchFieldException nsfx){
+              throw new JPFException("JPF object creation failed, no such field: " + fi.getFullName(), nsfx);
+            } catch (IllegalAccessException iax){
+              throw new JPFException("JPF object creation failed, illegal access: " + fi.getFullName(), iax);
+            }
           }
         }
 
@@ -75,10 +81,6 @@ public class ObjectConverter {
       }
 
       return newObjRef;
-    }
-    catch (Exception ex) {
-      throw new JPFException(ex);
-    }
   }
 
   private Object createObject(String className) {

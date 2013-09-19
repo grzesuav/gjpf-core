@@ -28,11 +28,7 @@ import java.io.File;
  * (without superclasses, clinit calls and the other bells and whistles)
  */
 class NonResolvedClassInfo extends JVMClassInfo {
-  
-  static {
-    JVMCodeBuilder.init( new DefaultJVMClassFactory( new gov.nasa.jpf.jvm.bytecode.InstructionFactory()));
-  }
-  
+    
   NonResolvedClassInfo (File file) throws ClassParseException {
     super(new ClassFileParser( new ClassFile(file), new JVMCodeBuilder(new InstructionFactory())));
   }

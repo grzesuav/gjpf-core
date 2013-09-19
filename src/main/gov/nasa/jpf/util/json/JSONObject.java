@@ -122,7 +122,7 @@ public class JSONObject{
   // NOTE - (pcm) before calling this method you have to make sure all required
   // types are initialized
   
-  public int fillObject(MJIEnv env, ClassInfo ci, ChoiceGenerator<?>[] cgs, String prefix) {
+  public int fillObject (MJIEnv env, ClassInfo ci, ChoiceGenerator<?>[] cgs, String prefix) throws ClinitRequired {
     int newObjRef = env.newObject(ci);
     ElementInfo ei = env.getHeap().getModifiable(newObjRef);
 

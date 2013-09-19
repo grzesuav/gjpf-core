@@ -41,22 +41,13 @@ import gov.nasa.jpf.vm.Types;
  */
 public class ClassFileParser extends ClassFileReaderAdapter implements ClassParser {
 
-  ClassFile cf;
-  JVMCodeBuilder cb;
-  ClassInfo ci;
-  
-  public ClassFileParser (ClassFile cf){
-    this.cf = cf;
-  }
+  protected ClassFile cf;
+  protected JVMCodeBuilder cb;
+  protected ClassInfo ci;
 
-  protected ClassFileParser (ClassFile cf, JVMCodeBuilder cb){
+  public ClassFileParser (ClassFile cf, JVMCodeBuilder cb){
     this.cf = cf;
     this.cb = cb;
-  }
-  
-  //--- for testing purposes
-  protected JVMCodeBuilder createCodeBuilder(){
-    return new JVMCodeBuilder();
   }
   
   //--- the ClassParser interface
@@ -312,10 +303,7 @@ public class ClassFileParser extends ClassFileReaderAdapter implements ClassPars
     curMi.setMaxLocals(maxLocals);
     curMi.setMaxStack(maxStack);
 
-    if (cb == null) {
-      cb = createCodeBuilder();
-    }
-    cb.initialize(cf, curMi);
+    cb.reset( cf, curMi);
 
     cf.parseBytecode(cb, tag, codeLength);
     cb.installCode();

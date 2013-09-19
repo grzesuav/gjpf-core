@@ -436,7 +436,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
     ClassInfo ciChars = sysCl.getCharArrayClassInfo();
     
     //--- the Throwable object itself
-    AllocationContext ctx = getSystemAllocationContext( ciString, ti, anchor);
+    AllocationContext ctx = getSystemAllocationContext( ciThrowable, ti, anchor);
     int xRef = getNewElementInfoIndex( ctx);
     ElementInfo eiThrowable = createObject( ciThrowable, ti, xRef);
     

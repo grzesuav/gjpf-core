@@ -970,6 +970,18 @@ public class Config extends Properties {
     return append(key, value, LIST_SEPARATOR); // append with our standard list separator
   }
 
+  /**
+   * check if we have a key.index entry. If not, fall back to key
+   * This simplifies clients that can have process id indexed properties
+   */
+  public String getIndexableKey (String key, int index){
+    String k = key + '.' + index;
+    if (containsKey(k)){
+      return k;
+    } else {
+      return key;
+    }
+  }
 
   public void setClassLoader (ClassLoader newLoader){
     loader = newLoader;

@@ -33,14 +33,14 @@ public class JarClassFileContainer extends JVMClassFileContainer {
   protected JarFile jar;
   protected String pathPrefix; // optional
 
-  JarClassFileContainer (File file) throws IOException {
+  public JarClassFileContainer (File file) throws IOException {
     super(file.getPath());
 
     url = "jar:" + file.toURI().toURL().toString() + "!/";
     jar = new JarFile(file);
   }
 
-  JarClassFileContainer (File file, String pathPrefix) throws IOException {
+  public JarClassFileContainer (File file, String pathPrefix) throws IOException {
     super(getPath(file, pathPrefix));
 
     url = "jar:" + file.toURI().toURL().toString() + "!/";

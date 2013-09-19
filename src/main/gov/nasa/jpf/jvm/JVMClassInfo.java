@@ -54,13 +54,20 @@ public class JVMClassInfo extends ClassInfo {
 
   //--- call processing
   
+  protected JVMCodeBuilder getSystemCodeBuilder (ClassFile cf, MethodInfo mi){
+    JVMSystemClassLoaderInfo sysCl = (JVMSystemClassLoaderInfo) ClassLoaderInfo.getCurrentSystemClassLoader();
+    JVMCodeBuilder cb = sysCl.getSystemCodeBuilder(cf, mi);
+    
+    return cb;
+  }
+  
   /**
    * to be called from super proxy ctor
    * this needs to be in the VM specific ClassInfo because we need to create code
    */
   @Override
   protected void setAnnotationValueGetterCode (MethodInfo pmi, FieldInfo fi){
-    JVMCodeBuilder cb = new JVMCodeBuilder( pmi);
+    JVMCodeBuilder cb = getSystemCodeBuilder(null, pmi);
 
     cb.aload(0);
     cb.getfield( pmi.getName(), name, pmi.getReturnType());
@@ -79,40 +86,46 @@ public class JVMClassInfo extends ClassInfo {
   
   @Override
   protected void setDirectCallCode (MethodInfo miDirectCall, MethodInfo miCallee){
-    JVMCodeBuilder cb = new JVMCodeBuilder( miDirectCall);
+    JVMCodeBuilder cb = getSystemCodeBuilder(null, miDirectCall);
+    
+    String calleeName = miCallee.getName();
+    String calleeSig = miCallee.getSignature();
 
     if (miCallee.isStatic()){
       if (miCallee.isClinit()) {
         cb.invokeclinit(this);
       } else {
-        cb.invokestatic( name, miCallee.getName(), miCallee.getSignature());
+        cb.invokestatic( name, calleeName, calleeSig);
       }
     } else if (name.equals("<init>") || miCallee.isPrivate()){
-      cb.invokespecial( name, miCallee.getName(), miCallee.getSignature());
+      cb.invokespecial( name, calleeName, calleeSig);
     } else {
-      cb.invokevirtual( name, miCallee.getName(), miCallee.getSignature());
+      cb.invokevirtual( name, calleeName, calleeSig);
     }
 
     cb.directcallreturn();
+    
     cb.installCode();
   }
   
   @Override
   protected void setNativeCallCode (NativeMethodInfo miNative){
-    JVMCodeBuilder cb = new JVMCodeBuilder( miNative);
+    JVMCodeBuilder cb = getSystemCodeBuilder(null, miNative);
     
     cb.executenative(miNative);
     cb.nativereturn();
+    
     cb.installCode();
   }
   
   @Override
-  protected void setRunStartCode (MethodInfo miRun, MethodInfo miStub){
-    JVMCodeBuilder cb = new JVMCodeBuilder( miStub);
+  protected void setRunStartCode (MethodInfo miStub, MethodInfo miRun){
+    JVMCodeBuilder cb = getSystemCodeBuilder(null, miStub);
     
     cb.runStart( miStub);
     cb.invokevirtual( name, miRun.getName(), miRun.getSignature());
     cb.directcallreturn();
+    
     cb.installCode();    
   }
   
@@ -150,7 +163,7 @@ public class JVMClassInfo extends ClassInfo {
   @Override
   public DirectCallStackFrame createRunStartStackFrame (ThreadInfo ti, MethodInfo miRun){
     MethodInfo miDirect = new MethodInfo( miRun, 0, 1);
-    setRunStartCode( miRun, miDirect);
+    setRunStartCode( miDirect, miRun);
     
     return new JVMDirectCallStackFrame( miDirect, miRun);
   }

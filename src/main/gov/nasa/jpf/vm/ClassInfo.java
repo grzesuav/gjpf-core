@@ -595,7 +595,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // to be overridden by VM specific class
   }
   
-  protected void setRunStartCode (MethodInfo miRun, MethodInfo miStub){
+  protected void setRunStartCode (MethodInfo miStub, MethodInfo miRun){
     // to be overridden by VM specific class
   }
   

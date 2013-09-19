@@ -44,10 +44,7 @@ public abstract class ClassFileContainer {
 
   public abstract byte[] getClassData (String clsName) throws ClassParseException;
   public abstract String getClassURL (String clsName);  
-  
-  public abstract ClassInfo createClassInfo (String typeName, ClassLoaderInfo classLoader, String url, byte[] data) throws ClassParseException;
-  public abstract AnnotationInfo createAnnotationInfo (String typeName, ClassLoaderInfo classLoader, byte[] data) throws ClassParseException;
-  
+    
   protected void readFully (InputStream is, byte[] buf) throws ClassParseException {
     try {
       int nRead = 0;

@@ -159,6 +159,16 @@ public class SingleProcessVM extends VM {
     return new ApplicationContext[] { appCtx };
   }
   
+  @Override
+  public ApplicationContext getCurrentApplicationContext(){
+    ThreadInfo ti = ThreadInfo.getCurrentThread();
+    if (ti != null){
+      return ti.getApplicationContext();
+    } else {
+      return appCtx;
+    }
+  }
+  
   /**
    * The program is terminated if there are no alive threads, and there is no nonDaemon left.
    * 

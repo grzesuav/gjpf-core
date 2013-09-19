@@ -42,13 +42,5 @@ public class ClassFileMatch {
 
   public String getClassURL () {
     return url;
-  }
-
-  public ClassInfo createClassInfo (ClassLoaderInfo classLoader) throws ClassParseException {
-    return container.createClassInfo( typeName, classLoader, url, data);
-  }
-  
-  public AnnotationInfo createAnnotationInfo (ClassLoaderInfo classLoader) throws ClassParseException {
-    return container.createAnnotationInfo( typeName, classLoader, data);
-  }
+  }  
 }
