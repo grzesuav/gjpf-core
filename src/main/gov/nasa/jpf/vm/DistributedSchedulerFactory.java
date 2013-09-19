@@ -19,6 +19,7 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.vm.choice.MultiProcessThreadChoice;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
 
@@ -70,9 +71,14 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
   public ChoiceGenerator<ThreadInfo> createThreadTerminateCG (ThreadInfo terminateThread) {
     // terminateThread is already TERMINATED at this point
     ThreadList tl = vm.getThreadList();
-
+    
     if (tl.hasAnyAliveThread()) {
-      return new ThreadChoiceFromSet( THREAD_TERMINATE, super.getRunnablesWithout(terminateThread), true);
+      int liveCount = ((MultiProcessVM)vm).getLiveAppThreadCount(terminateThread);
+      if(liveCount==0) {
+        return new MultiProcessThreadChoice( THREAD_TERMINATE, super.getRunnablesWithout(terminateThread), true);
+      } else {
+        return new ThreadChoiceFromSet( THREAD_TERMINATE, getRunnablesWithout(terminateThread), true);
+      }
     } else {
       return null;
     }

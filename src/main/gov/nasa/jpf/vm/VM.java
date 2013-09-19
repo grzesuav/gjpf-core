@@ -592,12 +592,14 @@ public abstract class VM {
     });
   }
   
+  protected abstract ChoiceGenerator<?> getInitialCG();
+  
   protected void initSystemState (ThreadInfo mainThread){
     ss.setStartThread(mainThread);
 
     // the first transition probably doesn't have much choice (unless there were
     // threads started in the static init), but we want to keep it uniformly anyways
-    ChoiceGenerator<?> cg = new ThreadChoiceFromSet("<root>", getThreadList().getRunnableThreads(), true);
+    ChoiceGenerator<?> cg = getInitialCG();
     ss.setMandatoryNextChoiceGenerator(cg, "no root CG");
 
     ss.recordSteps(hasToRecordSteps());
