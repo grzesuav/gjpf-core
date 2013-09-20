@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.bytecode.InstructionFactory;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassParseException;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MethodInfo;
 
@@ -43,6 +44,14 @@ public class MethodInfoTest extends TestJPF {
     double instanceNoArgs() {int a=42; double b=42.0; b+=a; return b;}
     double instanceInt( int intArg) {int a=42; double b=42.0; b+=a; return b;}
     double instanceIntString  (int intArg, String stringArg) {int a=42; double b=42.0; b+=a; return b;}
+    
+    int instanceCycleMethod (int intArg, int int2Arg) {
+      for (int i = 0; i < int2Arg; ++i) {
+        // it's important to have a for cycle because it breaks the instruction per line monotony
+        intArg += intArg;
+      }
+      return intArg;
+    }
   }
   
   @Test
@@ -112,6 +121,34 @@ public class MethodInfoTest extends TestJPF {
       npe.printStackTrace();
       fail("method not found");
     } catch (ClassParseException cfx){
+      cfx.printStackTrace();
+      fail(cfx.toString());
+    }
+  }
+  
+  @Test
+  public void testGetInstructionsForLine () {
+    File file = new File(
+            "build/tests/gov/nasa/jpf/jvm/MethodInfoTest$MyClass.class");
+    try {
+      ClassInfo ci = new NonResolvedClassInfo(file);
+      MethodInfo mi = ci.getMethod("instanceCycleMethod", "(II)I", false);
+
+      nextInstruction:
+      for (Instruction instruction : mi.getInstructions()) {
+        int l = instruction.getLineNumber();
+        Instruction[] foundInstructions = mi.getInstructionsForLine(l);
+        System.out.printf("%d : %s\n", l, instruction);
+
+        for (int j=0; j<foundInstructions.length; j++){
+          if (foundInstructions[j] == instruction){
+            continue nextInstruction;
+          }
+        }
+        
+        fail("instruction not in list: " + instruction);
+      }
+    } catch (ClassParseException cfx) {
       cfx.printStackTrace();
       fail(cfx.toString());
     }

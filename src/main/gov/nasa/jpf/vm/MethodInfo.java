@@ -698,37 +698,33 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
   }
 
   public Instruction[] getInstructionsForLineInterval (int l1, int l2){
-    int len = code.length;
-
-    if ((code[0].getLineNumber() > l2) || (code[len-1].getLineNumber() < l1)){
-      // no overlap
-      return null;
-    }
-
-    int i1 = -1;
-    int i2 = -1;
-    for (int i = 0; i < len; i++) {
-      int l = code[i].getLineNumber();
-      if ((l >= l1) && (l <= l2)) {
-        if (i1 < 0) {
-          i1 = i;
+    Instruction[] c = code;
+       
+    // instruction line numbers don't have to be monotonic (they can decrease for loops)
+    // hence we cannot easily check for overlapping ranges
+    
+    if (c != null){
+       ArrayList<Instruction> matchingInsns = null;
+       
+       for (int i = 0; i < c.length; i++) {
+        Instruction insn = c[i];
+        int line = insn.getLineNumber();
+        if (line == l1 || line == l2 || (line > l1 && line < l2)) {
+          if (matchingInsns == null) {
+            matchingInsns = new ArrayList<Instruction>();
+          }
+          matchingInsns.add(insn);
         }
-        i2 = i;
-      } else if (l > l2) {
-        break;
       }
-    }
-
-    if (i1 >= 0){
-      Instruction[] a = new Instruction[i2 - i1 + 1];
-      int j = 0;
-      for (int i = i1; i <= i2; i++) {
-        a[j++] = code[i];
+      
+      if (matchingInsns == null) {
+        return null;
+      } else {
+        return matchingInsns.toArray(new Instruction[matchingInsns.size()]);
       }
-      return a;
-
+            
     } else {
-      return null; // no insn found for this line interval
+      return null;
     }
   }
 
