@@ -97,6 +97,41 @@ public class Types {
     return typeNames;
   }
   
+  public static String dequalify (String typeName){
+    int idx = typeName.lastIndexOf('.');
+    if (idx > 0) {
+      return typeName.substring(idx + 1);
+    } else {
+      return typeName;
+    }    
+  }
+  
+  public static String getDequalifiedTypeName (String sig){
+    String tn = getTypeName(sig);
+    return dequalify(tn);
+  }
+  
+  public static String getArgumentSignature (String[] typeNames, boolean qualified){
+    StringBuilder sb = new StringBuilder();
+    sb.append('(');
+    for (int i=0; i<typeNames.length; i++){
+      if (i>0){
+        sb.append(',');
+      }
+      
+      String tn = getTypeName(typeNames[i]);
+      if (!qualified){
+        int idx = tn.lastIndexOf('.');
+        if (idx >0){
+          tn = tn.substring(idx+1);
+        }
+      }
+      
+      sb.append( tn);
+    }
+    sb.append(')');
+    return sb.toString();
+  }
   
   /**
    * get size in stack slots (ints), excluding this

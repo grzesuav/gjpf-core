@@ -581,9 +581,9 @@ public class ClassFilePrinter implements ClassFileReader {
     int max = Math.min(dataLength, maxBytes);
     int max1 = max-1;
     for (int i=0; i<max1; i++){
-      pw.printf("%02x ", cf.readU1());
+      pw.printf("%02x ", cf.readUByte());
     }
-    pw.printf("%02x", cf.readU1());
+    pw.printf("%02x", cf.readUByte());
 
     if (dataLength>maxBytes){
       pw.print("..");

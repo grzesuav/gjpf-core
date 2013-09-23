@@ -22,6 +22,8 @@ package gov.nasa.jpf.jvm;
 import gov.nasa.jpf.jvm.JVMByteCodeReader;
 import gov.nasa.jpf.vm.ClassParseException;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.BailOut;
+import gov.nasa.jpf.util.BinaryClassSource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,7 +35,7 @@ import java.io.InputStream;
  * class to read and dissect Java classfile contents (as specified by the Java VM
  * spec  http://java.sun.com/docs/books/jvms/second_edition/html/ClassFile.doc.html#16628
  */
-public class ClassFile {
+public class ClassFile extends BinaryClassSource {
 
   public static final int CONSTANT_UTF8 = 1;
   public static final int CONSTANT_INTEGER = 3;
@@ -65,87 +67,44 @@ public class ClassFile {
     NameAndType;              // 12
   }
 
-  static class BailOut extends RuntimeException {
-    // this is an evil control exception to terminate parsing a class file
-    // we need this since it can happen at various recursion levels
-  }
-
   // <2do> this is going away
   String requestedTypeName; // the type name that caused this classfile to be loaded
-
-  byte[] data; // the classfile data
 
   // the const pool
   int[] cpPos;     // cpPos[i] holds data start index for cp_entry i (0 is unused)
   Object[] cpValue; // cpValue[i] hold the String/Integer/Float/Double associated with corresponding cp_entries
-
-  int pos; // temp index value during parsing
-  int pc; // bytecode pos relative to method code start
-
   
   //--- ctors
   public ClassFile (byte[] data, int offset){
-    this.data = data;
-    this.pos = offset;
+    super(data,offset);
   }
 
   public ClassFile (byte[] data){
-    this.data = data;
+    super(data,0);
   }
 
-  
-  // <2do> these are going away
   public ClassFile (String typeName, byte[] data){
+    super(data,0);
+    
     this.requestedTypeName = typeName;
-    this.data = data;
   }
+  
   public ClassFile (String typeName, byte[] data, int offset){
+    super(data, offset);
+    
     this.requestedTypeName = typeName;
-    this.data = data;
-    this.pos = offset;
   }
-
 
   public ClassFile (File file) throws ClassParseException {
-    FileInputStream is = null;
-    try {
-      is = new FileInputStream(file);
-      long len = file.length();
-      if (len > Integer.MAX_VALUE || len <= 0){   // classfile of size > 2GB not supported
-        error("cannot read file of size: " + len);
-      }
-      data = new byte[(int)len];
-      readData(is);
-
-    } catch (FileNotFoundException fnfx) {
-      error("classfile not found: " + file.getPath());
-
-    } finally {
-      if (is != null) {
-        try {
-          is.close();
-        } catch (IOException iox) {
-          error("failed to close file: " + file.getPath());
-        }
-      }
-    }
+    super(file);
   }
 
   public ClassFile (String pathName)  throws ClassParseException {
-    this( new File(pathName));
+    super( new File(pathName));
   }
 
 
-  /**
-   * obtain current classfile data. This is mainly provided to allow
-   * on-the-fly classfile instrumentation with 3rd party libraries
-   * 
-   * BEWARE - this is not a copy, i.e. any modification of the returned data
-   * might cause the parsing to fail.
-   */
-  public byte[] getData(){
-    return data;
-  }
+
   
   /**
    * set classfile data.  This is mainly provided to allow
@@ -172,32 +131,6 @@ public class ClassFile {
     return requestedTypeName;
   }
 
-  //--- internal methods
-
-  public void stopParsing(){
-    throw new BailOut();
-  }
-
-  protected void error(String msg) throws ClassParseException {
-    throw new ClassParseException(msg);
-  }
-
-  protected void readData (InputStream is) throws ClassParseException {
-    try {
-      int nRead = 0;
-
-      while (nRead < data.length){
-        int n = is.read(data, nRead, (data.length - nRead));
-        if (n < 0){
-          error("premature end of classfile: " + data.length + '/' + nRead);
-        }
-        nRead += n;
-      }
-
-    } catch (IOException iox){
-      error("failed to read classfile");
-    }
-  }
 
   //--- general attributes
   public static final String SYNTHETIC_ATTR = "Synthetic";
@@ -427,18 +360,6 @@ public class ClassFile {
   public final int i2(int dataIdx) {
     int idx = dataIdx;
     return (data[idx++] << 8) | (data[idx]&0xff);
-  }
-  
-  public final int readU1(){
-    return data[pos++]&0xff;
-  }
-
-  public final byte readByte(){
-    return data[pos++];
-  }
-
-  public final int readI1() {
-    return data[pos++];
   }
 
   public final int readU2(){
@@ -1380,7 +1301,7 @@ public class ClassFile {
     int cpIdx;
     Object val;
 
-    int t = readU1();
+    int t = readUByte();
     switch (t){
       case 'Z':
         // booleans have to be treated differently since there is no CONSTANT_Boolean, i.e. values are
@@ -1523,7 +1444,7 @@ public class ClassFile {
    *   }
    */
    public void parseParameterAnnotationsAttr(ClassFileReader reader, Object tag){
-     int numParameters = readU1();
+     int numParameters = readUByte();
      setParameterCount(reader, tag, numParameters);
      for (int i=0; i<numParameters; i++){
        int numAnnotations = readU2();
@@ -1602,7 +1523,7 @@ public class ClassFile {
     while (pos < endPos){
       pc = pos - startPos;
 
-      int opcode = readU1();
+      int opcode = readUByte();
       switch (opcode){
         case 0: // nop
           reader.nop();
@@ -1653,7 +1574,7 @@ public class ClassFile {
           reader.dconst_1();
           break;
         case 16: // bipush
-          constVal = readI1();
+          constVal = readByte();
           reader.bipush(constVal);
           break;
         case 17: // sipush
@@ -1661,7 +1582,7 @@ public class ClassFile {
           reader.sipush(constVal);
           break;
         case 18: // ldc
-          cpIdx = readU1();
+          cpIdx = readUByte();
           reader.ldc_(cpIdx);
           break;
         case 19: // ldc_w
@@ -1673,23 +1594,23 @@ public class ClassFile {
           reader.ldc2_w(cpIdx);
           break;
         case 21: // iload
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.iload(localVarIndex);
           break;
         case 22: // lload
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.lload(localVarIndex);
           break;
         case 23: // fload
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.fload(localVarIndex);
           break;
         case 24: // dload
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.dload(localVarIndex);
           break;
         case 25: // aload
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.aload(localVarIndex);
           break;
         case 26: // iload_0
@@ -1777,23 +1698,23 @@ public class ClassFile {
           reader.saload();
           break;
         case 54: // istore
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.istore(localVarIndex);
           break;
         case 55: // lstore
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.lstore(localVarIndex);
           break;
         case 56: // fstore
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.fstore(localVarIndex);
           break;
         case 57: // dstore
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.dstore(localVarIndex);
           break;
         case 58: // astore
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.astore(localVarIndex);
           break;
         case 59: // istore_0
@@ -2020,7 +1941,7 @@ public class ClassFile {
             localVarIndex = readU2();
             constVal = readI2();
           } else {
-            localVarIndex = readU1();
+            localVarIndex = readUByte();
             constVal = readByte();
           }
           reader.iinc(localVarIndex, constVal);
@@ -2150,7 +2071,7 @@ public class ClassFile {
           reader.jsr(offset);
           break;
         case 169: // ret
-          localVarIndex = isWide ? readU2() : readU1();
+          localVarIndex = isWide ? readU2() : readUByte();
           reader.ret(localVarIndex);
           break;
         case 170: // tableswitch
@@ -2223,8 +2144,8 @@ public class ClassFile {
           break;
         case 185: // invokeinterface
           cpIdx = readU2(); // CP index of methodRef
-          int count = readU1();
-          int zero = readU1(); // must be 0
+          int count = readUByte();
+          int zero = readUByte(); // must be 0
           reader.invokeinterface(cpIdx, count, zero);
           break;
         case 186: // reserved for historical reasons
@@ -2235,7 +2156,7 @@ public class ClassFile {
           reader.new_(cpIdx);
           break;
         case 188: // newarray
-          int aType = readU1();
+          int aType = readUByte();
           reader.newarray(aType);
           break;
         case 189: // anewarray
@@ -2272,7 +2193,7 @@ public class ClassFile {
           continue;
         case 197: // multianewarray
           cpIdx = readU2();
-          int dimensions = readU1();
+          int dimensions = readUByte();
           reader.multianewarray(cpIdx, dimensions);
           break;
         case 198: // ifnull
@@ -2342,12 +2263,4 @@ public class ClassFile {
     return defaultOffset;
   }
 
-  //--- debugging
-  void dumpData (int startPos, int nBytes){
-    System.out.printf("%d +%d: [", startPos, nBytes);
-    for (int i=0; i<nBytes; i++){
-      System.out.printf("%02X ", data[startPos+i]);
-    }
-    System.out.println(']');
-  }
 }
