@@ -129,7 +129,10 @@ public class ThreadInfo extends InfoObject
   
   //--- instance fields
       
-  // transient, not state stored
+  // transient, not state stored.
+  // <2do> since this is exclusive, maybe we should move it to SystemState or VM since it has to be reset for
+  // all threads at the beginning of each transition, not just the next executing thread. Failure to do so might
+  // lead to dangling references during GC
   protected ExceptionInfo pendingException;
 
   // state managed data that is copy-on-first-write
@@ -1436,8 +1439,12 @@ public class ThreadInfo extends InfoObject
 
     // the ref of the object we are blocked on or waiting for
     lockRef = -1;
+    
+    // we can't just reset the pendingException here because we use it to
+    // record exceptions for testing after JPF has terminated, which in the
+    // case of search.multiple_errors means to backtrack to the initial state
   }
-
+  
   /**
    * this is used when restoring states
    */
@@ -2416,7 +2423,7 @@ public class ThreadInfo extends InfoObject
    * @aspects: gc
    */
   void markRoots (Heap heap) {
-
+    
     // 1. mark the Thread object itself
     heap.markThreadRoot(objRef, id);
 

@@ -144,7 +144,7 @@ public abstract class VM {
   // we want a (internal) mechanism that is on-demand only, i.e. processed
   // actions are removed from the list
   protected ArrayList<Runnable> postGcActions = new ArrayList<Runnable>();
-
+  
   /**
    * be prepared this might throw JPFConfigExceptions
    */
