@@ -81,7 +81,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
       // no need to redo the exception checks, we already had them in the top half
       ElementInfo ei = ti.getElementInfo(objRef);
 
-      return put( ti, frame, ei);      
+      return put( ti, frame, ei);      // this might create an exposure CG and cause another re-execution
     }
   }
 

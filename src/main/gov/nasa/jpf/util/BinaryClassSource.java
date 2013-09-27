@@ -36,6 +36,9 @@ public class BinaryClassSource {
   protected int pos; // temp index value during parsing
   protected int pc; // bytecode pos relative to method code start
   
+  protected int[] posStack;
+  protected int top;
+  
   protected BinaryClassSource (byte[] data, int pos){
    this.data = data;
    this.pos = pos;
@@ -103,9 +106,36 @@ public class BinaryClassSource {
     return data;
   }
   
+  public int getPos(){
+    return pos;
+  }
+  
   // for selective parsing
   public void setPos (int newPos){
     pos = newPos;
+  }
+  
+  public void pushPos(){
+    if (posStack == null){
+      posStack = new int[4];
+      posStack[0] = pos;
+      top = 0;
+    } else {
+      top++;
+      if (top == posStack.length){
+        int[] newStack = new int[posStack.length * 2];
+        System.arraycopy(posStack, 0, newStack, 0, posStack.length);
+        posStack = newStack;
+      }
+      posStack[top] = pos;
+    }
+  }
+  
+  public void popPos(){
+    if (top >= 0){
+      pos = posStack[top];
+      top--;
+    }
   }
   
   //--- the low level type specific read methods

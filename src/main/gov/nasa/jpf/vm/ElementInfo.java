@@ -51,12 +51,15 @@ public abstract class ElementInfo implements Cloneable {
   public static final int   ATTR_IS_FROZEN     = 0x100;
 
   // object has an immutable type (no field value change)
-  public static final int   ATTR_IMMUTABLE     = 0x1000;
+  public static final int   ATTR_IMMUTABLE     = 0x200;
 
   // The constructor for the object has returned.  Final fields can no longer break POR
   // This attribute is set in gov.nasa.jpf.vm.bytecode.RETURN.enter().
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
-  public static final int   ATTR_CONSTRUCTED   = 0x2000;
+  public static final int   ATTR_CONSTRUCTED   = 0x400;
+  
+  
+  public static final int   ATTR_EXPOSED       = 0x1000;
   
   // object is shared between threads
   public static final int   ATTR_SHARED        = 0x4000;
@@ -73,6 +76,7 @@ public abstract class ElementInfo implements Cloneable {
   public static final int   ATTR_TREF_CHANGED       = 0x40000; // referencingThreads have changed
   public static final int   ATTR_ATTRIBUTE_CHANGED  = 0x80000; // refers only to sticky bits
 
+  
   //--- useful flag sets & masks
 
   static final int   ATTR_STORE_MASK = 0x0000ffff;
@@ -412,6 +416,10 @@ public abstract class ElementInfo implements Cloneable {
     return referencingThreads.contains(ti);
   }
   
+  public boolean isExposed(){
+    return (attributes & ATTR_EXPOSED) != 0;
+  }
+  
   /**
    * update referencingThreads and set shared flag accordingly (if not frozen)
    * 
@@ -454,7 +462,10 @@ public abstract class ElementInfo implements Cloneable {
   }
   
   public void setExposed (ThreadInfo ti, ElementInfo eiFieldOwner){
-    // we don't keep this in attributes (yet), but we notify listeners
+    // we actually have to add this to the attributes to avoid endless loops by
+    // re-exposing the same object along a given path
+    attributes |= ATTR_EXPOSED;
+    
     ti.getVM().notifyObjectExposed(ti, eiFieldOwner, this);
   }
   

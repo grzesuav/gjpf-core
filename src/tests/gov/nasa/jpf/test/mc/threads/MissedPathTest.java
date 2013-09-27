@@ -94,4 +94,36 @@ public class MissedPathTest extends TestJPF {
       x.pass = true;     // (1) need to break BEFORE assignment or no error
     }    
   }
+  
+  //-------------------------------------------------------------------------------
+  
+  static class PutContender extends Thread {
+    X myX;
+
+    public void run () {
+      myX = new X();  // competing put with exposure
+
+      if (myX != null) {  // doesn't matter, we just want to GET myX
+        System.out.println("T: accessed global myX");
+      }
+    }
+  }
+  
+  // this does not really belong here since it doesn't test not missing paths, but
+  // if the exposure CGs we use to avoid missing paths are not causing infinite loops.
+  // NOTE: turning off state matching is crucial here
+  @Test
+  public void testCompetingExposures(){
+    if (verifyNoPropertyViolation("+vm.storage.class=nil")){
+      PutContender mp = new PutContender();
+      mp.start();
+
+      X x = new X();
+      System.out.println("M: new " + x);
+      mp.myX = x;    // this is one of the competing PUTs
+
+      System.out.println("M: x.pass=true");
+      x.pass = true; // irrelevant in this case
+    }
+  }
 }
