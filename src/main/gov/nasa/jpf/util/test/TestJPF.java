@@ -30,6 +30,7 @@ import gov.nasa.jpf.util.JPFSiteUtils;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Reflection;
 import gov.nasa.jpf.vm.ExceptionInfo;
+import gov.nasa.jpf.vm.NoUncaughtExceptionsProperty;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.NotDeadlockedProperty;
 
@@ -748,8 +749,7 @@ public abstract class TestJPF implements JPFShell  {
   }
 
   /**
-   * run JPF expecting no SuT property violations or JPF exceptions
-   * @param args JPF main() arguments
+   * run JPF expecting no SuT property violations 
    */
   protected JPF noPropertyViolation (StackTraceElement testMethod, String... args) {
     JPF jpf = null;
@@ -768,15 +768,6 @@ public abstract class TestJPF implements JPFShell  {
     List<Error> errors = jpf.getSearchErrors();
     if ((errors != null) && (errors.size() > 0)) {
       fail("JPF found unexpected errors: " + (errors.get(0)).getDescription());
-    }
-
-    VM vm = jpf.getVM();
-    if (vm != null) {
-      ExceptionInfo xi = vm.getPendingException();
-      if (xi != null) {
-        xi.printOn(new PrintWriter(System.out));
-        fail("JPF caught exception executing: ", args, xi.getExceptionClassname());
-      }
     }
 
     return jpf;
@@ -816,27 +807,33 @@ public abstract class TestJPF implements JPFShell  {
       return jpf;
     }
 
-    ExceptionInfo xi = VM.getVM().getPendingException();
-    if (xi == null) {
-      fail("JPF failed to catch exception executing: ", args, ("expected " + xClassName));
-    } else {
-      String xn = xi.getExceptionClassname();
-      if (!xn.equals(xClassName)) {
-        fail("JPF caught wrong exception: " + xn + ", expected: " + xClassName);
+    Error error = jpf.getLastError();
+    if (error != null){
+      Property errorProperty = error.getProperty();
+      if (errorProperty instanceof NoUncaughtExceptionsProperty){ 
+        ExceptionInfo xi = ((NoUncaughtExceptionsProperty)errorProperty).getUncaughtExceptionInfo();
+        String xn = xi.getExceptionClassname();
+        if (!xn.equals(xClassName)) {
+          fail("JPF caught wrong exception: " + xn + ", expected: " + xClassName);
+        }
+
+        if (details != null) {
+          String gotDetails = xi.getDetails();
+          if (gotDetails == null) {
+            fail("JPF caught the right exception but no details, expected: " + details);
+          } else {
+            if (!gotDetails.endsWith(details)) {
+              fail("JPF caught the right exception but the details were wrong: " + gotDetails + ", expected: " + details);
+            }
+          }
+        }
+      } else { // error not a NoUncaughtExceptionsProperty
+        fail("JPF failed to catch exception executing: ", args, ("expected " + xClassName));        
       }
+    } else { // no error
+      fail("JPF failed to catch exception executing: ", args, ("expected " + xClassName));
     }
-
-		if (details != null) {
-			String gotDetails = xi.getDetails();
-			if (gotDetails == null) {
-				fail("JPF caught the right exception but no details, expected: "+ details);
-			} else {
-				if (!gotDetails.endsWith(details)) {
-					fail("JPF caught the right exception but the details were wrong: "+ gotDetails + ", expected: " + details);
-				}
-			}
-		}
-
+    
     return jpf;
   }
   

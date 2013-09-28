@@ -55,6 +55,10 @@ public abstract class PropertyListenerAdapter extends GenericProperty implements
     // override if the property has any local state
   }
 
+  public Property clone() throws CloneNotSupportedException {
+    return (Property) super.clone();
+  }
+  
 //--- the VMListener interface
   @Override
   public void vmInitialized(VM vm) {}

@@ -129,10 +129,7 @@ public class ThreadInfo extends InfoObject
   
   //--- instance fields
       
-  // transient, not state stored.
-  // <2do> since this is exclusive, maybe we should move it to SystemState or VM since it has to be reset for
-  // all threads at the beginning of each transition, not just the next executing thread. Failure to do so might
-  // lead to dangling references during GC
+  // transient, not state stored. This is reset when backtracking or starting a new transition
   protected ExceptionInfo pendingException;
 
   // state managed data that is copy-on-first-write
@@ -1439,10 +1436,8 @@ public class ThreadInfo extends InfoObject
 
     // the ref of the object we are blocked on or waiting for
     lockRef = -1;
-    
-    // we can't just reset the pendingException here because we use it to
-    // record exceptions for testing after JPF has terminated, which in the
-    // case of search.multiple_errors means to backtrack to the initial state
+
+    pendingException = null;
   }
   
   /**
@@ -2669,7 +2664,7 @@ public class ThreadInfo extends InfoObject
 
     if (haltOnThrow(exceptionName)) {
       // shortcut - we don't try to find a handler for this one but bail immediately
-      NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
+      //NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
       throw new UncaughtException(this, exceptionObjRef);
     }
 
@@ -2697,7 +2692,7 @@ public class ThreadInfo extends InfoObject
         // <2do> if this is a <clinit>, we should probably turn into an
         // ExceptionInInitializerError first
         unwindTo(frame);
-        NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
+        //NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
         throw new UncaughtException(this, exceptionObjRef);
       }
     }
@@ -2726,7 +2721,7 @@ public class ThreadInfo extends InfoObject
         return top.getPC().getNext(); // the final DIRECTCALLRETURN
 
       } else { // we have a NoUncaughtPropertyViolation
-        NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
+        //NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
         throw new UncaughtException(this, exceptionObjRef);
       }
 
@@ -2888,6 +2883,9 @@ public class ThreadInfo extends InfoObject
     ElementInfo eiHandler = getElementInfo(handlerRef);
     ClassInfo ciHandler = eiHandler.getClassInfo();
     MethodInfo miHandler = ciHandler.getMethod("uncaughtException(Ljava/lang/Thread;Ljava/lang/Throwable;)V", true);
+
+    // we have to clear this here in case there is a CG while executing the uncaughtHandler
+    pendingException = null;
     
     DirectCallStackFrame frame = miHandler.createDirectCallStackFrame(this, 0);
     int argOffset = frame.setReferenceArgument( 0, handlerRef, null);
@@ -2902,7 +2900,7 @@ public class ThreadInfo extends InfoObject
   }
   
   protected StackFrame popUncaughtHandlerFrame(){    
-    // we return from a overridden uncaughtException() direct call, but
+    // we return from an overridden uncaughtException() direct call, but
     // its debatable if this counts as 'handled'. For handlers that just do
     // reporting this is probably false and we want JPF to report the defect.
     // If this is a fail-safe handler that tries to clean up so that other threads can
@@ -2912,7 +2910,6 @@ public class ThreadInfo extends InfoObject
     if (passUncaughtHandler) {
       // gracefully shutdown this thread
       unwindToFirstFrame(); // this will take care of notifying
-      pendingException = null;
       
       getModifiableTopFrame().advancePC();
       assert top.getPC() instanceof ReturnInstruction : "topframe PC not a ReturnInstruction: " + top.getPC();
@@ -2922,7 +2919,7 @@ public class ThreadInfo extends InfoObject
       // treat this still as an NoUncaughtExceptionProperty violation
       UncaughtHandlerAttr ctx = returnedDirectCall.getFrameAttr(UncaughtHandlerAttr.class);
       pendingException = ctx.getExceptionInfo();
-      NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
+      //NoUncaughtExceptionsProperty.setExceptionInfo(pendingException);
       throw new UncaughtException(this, pendingException.getExceptionReference());
     }
   }
@@ -2957,7 +2954,7 @@ public class ThreadInfo extends InfoObject
    * if we don't drop frames and/or advance the pc
    */
   public void clearPendingException () {
-    NoUncaughtExceptionsProperty.setExceptionInfo(null);
+    //NoUncaughtExceptionsProperty.setExceptionInfo(null);
     pendingException = null;
   }
 

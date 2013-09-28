@@ -753,9 +753,6 @@ public class SystemState {
     if (tcg != null){
       ThreadInfo tiNext = tcg.getNextChoice();
       if (tiNext != execThread) {
-        // see ThreadInfo.pendingException as to why we have to reset this here
-        execThread.clearPendingException();
-        
         vm.notifyThreadScheduled(tiNext);
         execThread = tiNext;
       }

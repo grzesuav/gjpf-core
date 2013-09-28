@@ -30,11 +30,15 @@ import java.io.PrintWriter;
  * 
  * <2do> why is this still not an interface ??
  */
-public abstract class GenericProperty implements Property {
+public abstract class GenericProperty implements Property, Cloneable {
   public abstract boolean check (Search search, VM vm);
 
   protected GenericProperty () {
     // nothing yet
+  }
+  
+  public Property clone() throws CloneNotSupportedException {
+    return (Property) super.clone();
   }
   
   public String getErrorMessage () {

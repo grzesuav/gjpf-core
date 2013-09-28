@@ -39,4 +39,6 @@ public interface Property extends Printable {
   String getExplanation();
   
   void reset (); // required for search.multiple_errors
+  
+  Property clone() throws CloneNotSupportedException; // so that we can store multiple errors
 }

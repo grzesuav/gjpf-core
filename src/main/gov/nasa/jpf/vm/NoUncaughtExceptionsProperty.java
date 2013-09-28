@@ -30,20 +30,19 @@ import java.io.StringWriter;
  * property class to check for uncaught exceptions
  */
 public class NoUncaughtExceptionsProperty extends GenericProperty {
-
-  // <2do> that's a hack for now (makes us de-facto a singleton)
-  static ExceptionInfo uncaughtXi;
+  
+  ExceptionInfo uncaughtXi;
   
   public NoUncaughtExceptionsProperty (Config config) {
     uncaughtXi = null;
   }
   
-  static void setExceptionInfo (ExceptionInfo xi){
+  void setExceptionInfo (ExceptionInfo xi){
     uncaughtXi = xi;
   }
   
   public ExceptionInfo getUncaughtExceptionInfo() {
-	return uncaughtXi;
+	  return uncaughtXi;
   }
   
   public String getExplanation () {
@@ -67,6 +66,7 @@ public class NoUncaughtExceptionsProperty extends GenericProperty {
   }
   
   public boolean check (Search search, VM vm) {
+    uncaughtXi = vm.getPendingException();
     return (uncaughtXi == null);
   }
 

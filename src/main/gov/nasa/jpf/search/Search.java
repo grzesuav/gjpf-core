@@ -368,9 +368,16 @@ public abstract class Search {
   protected void error (Property property, Path path, ThreadList threadList) {
 
     if (getAllErrors) {
-      path = path.clone(); // otherwise we are going to overwrite it
-      threadList = (ThreadList)threadList.clone(); // this makes it a snapshot (deep) clone
+       // otherwise we are going to overwrite it if we go on
+      try {
+        property = property.clone();
+        path = path.clone();
+        threadList = (ThreadList) threadList.clone(); // this makes it a snapshot (deep) clone
+      } catch (CloneNotSupportedException cnsx){
+        throw new JPFException("failed to clone error information: " + cnsx);
+      }
       done = false;
+      
     } else {
       done = true;
     }

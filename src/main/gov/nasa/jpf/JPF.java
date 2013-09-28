@@ -673,6 +673,15 @@ public class JPF implements Runnable {
     return null;
   }
 
+  public Error getLastError () {
+    if (search != null) {
+      return search.getLastError();
+    }
+
+    return null;
+  }
+  
+  
   // some minimal sanity checks
   static boolean checkArgs (String[] args){
     String lastArg = args[args.length-1];

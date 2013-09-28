@@ -34,7 +34,12 @@ public class ThreadExceptionHandlerTest extends TestJPF {
   class NPEHandler implements Thread.UncaughtExceptionHandler {
 
     public void uncaughtException(Thread t, Throwable e) {
+      /**
+      System.out.println("--- in NPEHandler.uncaughtException");
+      System.out.print("   "); System.out.println(t);
+      System.out.print("   "); System.out.println(e);
       assertTrue(e instanceof NullPointerException);
+      **/
       n = 1;
     }
   }

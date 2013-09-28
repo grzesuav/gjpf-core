@@ -1155,6 +1155,9 @@ public abstract class VM {
     return getThreadList().getLiveThreadCount();
   }
 
+  /**
+   * note this is gone after backtracking or starting the next exception
+   */
   public ExceptionInfo getPendingException () {
     ThreadInfo ti = ThreadInfo.getCurrentThread();
 
@@ -1164,7 +1167,6 @@ public abstract class VM {
       return null;
     }
   }
-
 
   public Step getLastStep () {
     Transition trail = ss.getTrail();
