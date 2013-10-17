@@ -20,6 +20,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.jvm.JVMByteCodePrinter;
+import gov.nasa.jpf.util.StructuredPrinter;
 import gov.nasa.jpf.vm.ClassParseException;
 import java.io.PrintWriter;
 
@@ -28,12 +29,7 @@ import java.io.PrintWriter;
  *
  * <2do> use indentation level variable and formated output
  */
-public class ClassFilePrinter implements ClassFileReader {
-
-  PrintWriter pw;
-
-  int indentLevel = 0;
-  String indent = "";
+public class ClassFilePrinter extends StructuredPrinter implements ClassFileReader {
 
 
   public static void main(String[] args){
@@ -45,43 +41,6 @@ public class ClassFilePrinter implements ClassFileReader {
 
     } catch (ClassParseException cfx){
       cfx.printStackTrace();
-    }
-  }
-
-  public ClassFilePrinter (){
-    pw = new PrintWriter(System.out, true);
-  }
-
-  void incIndent(){
-    indentLevel++;
-    indent = indent();
-  }
-
-  void decIndent(){
-    if (indentLevel > 0){
-      indentLevel--;
-      indent = indent();
-    }
-  }
-
-  void printSectionHeader(String id){
-    pw.print("--------------------------------------------------- ");
-    pw.println(id);
-  }
-
-  String indent(){
-    switch (indentLevel){
-      case 0: return "";
-      case 1: return "    ";
-      case 2: return "        ";
-      case 3: return "            ";
-      case 4: return "                ";
-      default:
-        StringBuilder sb = new StringBuilder();
-        for (int i=0; i<indentLevel; i++){
-          sb.append("    ");
-        }
-        return sb.toString();
     }
   }
 
