@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.vm.ClassFileMatch;
 import gov.nasa.jpf.vm.ClassParseException;
 import java.io.File;
 import java.io.IOException;
@@ -106,7 +107,8 @@ public class JarClassFileContainer extends JVMClassFileContainer {
     return pn;
   }
     
-  public byte[] getClassData(String clsName) throws ClassParseException {
+  @Override
+  public ClassFileMatch getMatch(String clsName) throws ClassParseException {
     String pn = clsName.replace('.', '/') + ".class";
     
     if (pathPrefix != null){
@@ -128,7 +130,7 @@ public class JarClassFileContainer extends JVMClassFileContainer {
         byte[] data = new byte[(int) len];
         readFully(is, data);
 
-        return data;
+        return new JVMClassFileMatch(clsName, getClassURL(clsName), data);
 
       } catch (IOException iox) {
         error("error reading jar entry " + e.getName());

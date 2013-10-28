@@ -42,7 +42,6 @@ public abstract class ClassFileContainer {
     return url;
   }
 
-  public abstract byte[] getClassData (String clsName) throws ClassParseException;
   public abstract String getClassURL (String clsName);  
     
   protected void readFully (InputStream is, byte[] buf) throws ClassParseException {
@@ -64,4 +63,5 @@ public abstract class ClassFileContainer {
     throw new ClassParseException(msg);
   }
 
+  public abstract ClassFileMatch getMatch (String clsName) throws ClassParseException;
 }

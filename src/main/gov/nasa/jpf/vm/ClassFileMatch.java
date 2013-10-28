@@ -22,25 +22,24 @@ package gov.nasa.jpf.vm;
 /**
  * a lookup match for a given typename in a ClassFileContainer
  */
-public class ClassFileMatch {
-  public final byte[] data;
+public abstract class ClassFileMatch {
   public final String typeName;
   public final String url;
-  public final ClassFileContainer container;
 
-  ClassFileMatch (String typeName, ClassFileContainer container, byte[] data) {
+  protected ClassFileMatch (String typeName, String url) {
     this.typeName = typeName;
-    this.container = container;
-    this.data = data;
-    
-    this.url = container.getClassURL(typeName);
+    this.url = url;
   }
-
-  public byte[] getBytes () {
-    return data;
-  }
-
+  
   public String getClassURL () {
     return url;
   }  
+  
+  public abstract ClassFileContainer getContainer();
+
+  // those are here because VM specific subclasses know about the binary format, how to get the data from the
+  // respective container, and what parser to use to transform it
+  public abstract ClassInfo createClassInfo (ClassLoaderInfo loader) throws ClassParseException;
+  public abstract AnnotationInfo createAnnotationInfo (ClassLoaderInfo loader) throws ClassParseException;
+  
 }

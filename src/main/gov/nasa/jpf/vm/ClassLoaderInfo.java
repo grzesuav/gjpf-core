@@ -292,10 +292,17 @@ public class ClassLoaderInfo
     }
   }
 
+  public SystemClassLoaderInfo getSystemClassLoader() {
+    return getCurrentSystemClassLoader();
+  }
+  
   protected ClassInfo loadSystemClass (String clsName){
     return getCurrentSystemClassLoader().loadSystemClass(clsName);
   }
   
+  protected ClassInfo createClassInfo (String typeName, ClassFileMatch match, ClassLoaderInfo definingLoader) throws ClassParseException {
+    return getCurrentSystemClassLoader().createClassInfo( typeName, match, definingLoader);
+  }
   protected ClassInfo createClassInfo (String typeName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException {
     return getCurrentSystemClassLoader().createClassInfo( typeName, url, data, definingLoader);
   }
@@ -338,8 +345,7 @@ public class ClassLoaderInfo
           } else {
             try {
               log.info("loading class ", typeName, " from ",  url);
-              byte[] data = match.getBytes();
-              ci = createClassInfo( typeName, url, data, this);
+              ci = match.createClassInfo(this);
               
             } catch (ClassParseException cpx){
               throw new ClassInfoException( "error parsing class", this, "java.lang.NoClassDefFoundError", typeName, cpx);
@@ -384,11 +390,7 @@ public class ClassLoaderInfo
     
     return ci;
   }
-  
-  protected AnnotationInfo createAnnotationInfo (String typeName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException {
-    return getCurrentSystemClassLoader().createAnnotationInfo( typeName, url, data, definingLoader);
-  }
-  
+    
   public AnnotationInfo getResolvedAnnotationInfo (String typeName) throws ClassInfoException {
     AnnotationInfo ai = resolvedAnnotations.get(typeName);
     
@@ -404,8 +406,7 @@ public class ClassLoaderInfo
           
         } else {
           try {
-            byte[] data = match.getBytes();
-            ai = createAnnotationInfo( typeName, match.getClassURL(), data, this);
+            ai = match.createAnnotationInfo(this);
             
           } catch (ClassParseException cpx) {
             throw new ClassInfoException("error parsing class", this, "java.lang.NoClassDefFoundError", typeName, cpx);

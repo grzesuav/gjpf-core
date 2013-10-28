@@ -20,6 +20,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.jvm.JVMClassFileContainer;
+import gov.nasa.jpf.vm.ClassFileMatch;
 import gov.nasa.jpf.vm.ClassParseException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,7 +46,8 @@ public class DirClassFileContainer extends JVMClassFileContainer {
     this.dir = dir;
   }
 
-  public byte[] getClassData(String clsName) throws ClassParseException {
+  @Override
+  public ClassFileMatch getMatch(String clsName) throws ClassParseException {
     String pn = clsName.replace('.', File.separatorChar) + ".class";
     File f = new File(dir, pn);
 
@@ -61,7 +63,7 @@ public class DirClassFileContainer extends JVMClassFileContainer {
         byte[] data = new byte[(int) len];
         readFully(fis, data);
 
-        return data;
+        return new JVMClassFileMatch( clsName, getClassURL(clsName), data);
 
       } catch (IOException iox) {
         error("cannot read " + f.getPath());

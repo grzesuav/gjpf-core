@@ -85,6 +85,11 @@ public abstract class SystemClassLoaderInfo extends ClassLoaderInfo {
   
   protected abstract void initializeSystemClassPath (VM vm, int appId);
   
+  public SystemClassLoaderInfo getSystemClassLoader() {
+    return this;
+  }
+
+  
   @Override
   public ClassInfo getResolvedClassInfo (String clsName){
     ClassInfo ci = super.getResolvedClassInfo(clsName);
@@ -117,12 +122,6 @@ public abstract class SystemClassLoaderInfo extends ClassLoaderInfo {
 
     return true;
   }
-
-  @Override
-  protected abstract ClassInfo createClassInfo (String clsName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException; 
-  
-  @Override
-  protected abstract AnnotationInfo createAnnotationInfo (String clsName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException; 
   
 
   @Override

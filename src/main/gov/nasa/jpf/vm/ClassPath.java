@@ -100,11 +100,11 @@ public class ClassPath implements Restorable<ClassPath>{
   }
 
   public ClassFileMatch findMatch (String clsName) throws ClassParseException {
-    for (ClassFileContainer e : pathElements){
-      byte[] data = e.getClassData(clsName);
-      if (data != null){
-        logger.fine("found ", clsName, " in ", e.getName());
-        return new ClassFileMatch( clsName, e, data);
+    for (ClassFileContainer container : pathElements){
+      ClassFileMatch match = container.getMatch(clsName);
+      if (match != null){
+        logger.fine("found ", clsName, " in ", container.getName());
+        return match;
       }
     }
 

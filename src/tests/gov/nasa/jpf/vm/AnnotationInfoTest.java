@@ -22,6 +22,7 @@ package gov.nasa.jpf.vm;
 import gov.nasa.jpf.jvm.ClassFile;
 import gov.nasa.jpf.jvm.DirClassFileContainer;
 import gov.nasa.jpf.jvm.JVMAnnotationParser;
+import gov.nasa.jpf.jvm.JVMClassFileContainer;
 import gov.nasa.jpf.util.test.TestJPF;
 import java.io.File;
 
@@ -46,8 +47,8 @@ public class AnnotationInfoTest extends TestJPF {
     ClassPath cp = new ClassPath();
     cp.addClassFileContainer(dfc);
     
-    ClassFileMatch match = cp.findMatch( annotationName);
-    byte[] data = match.getBytes();
+    JVMClassFileContainer.JVMClassFileMatch match = (JVMClassFileContainer.JVMClassFileMatch)cp.findMatch( annotationName);
+    byte[] data = match.getData();
     
     ClassFile cf = new ClassFile( data);
     JVMAnnotationParser parser = new JVMAnnotationParser(cf);

@@ -23,6 +23,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.vm.AnnotationInfo;
 import gov.nasa.jpf.vm.ClassFileContainer;
+import gov.nasa.jpf.vm.ClassFileMatch;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ClassParseException;
@@ -191,7 +192,7 @@ public class JVMSystemClassLoaderInfo extends SystemClassLoaderInfo {
     defaultCodeBuilder.reset(cf, mi);
     return defaultCodeBuilder;
   }
-
+  
   @Override
   protected ClassInfo createClassInfo (String clsName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException {
     ClassFile cf = new ClassFile(data);
@@ -199,13 +200,5 @@ public class JVMSystemClassLoaderInfo extends SystemClassLoaderInfo {
     ClassFileParser parser = new ClassFileParser(cf, cb);
 
     return new JVMClassInfo(clsName, definingLoader, parser, url);
-  }
-
-  @Override
-  protected AnnotationInfo createAnnotationInfo (String clsName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException {
-    ClassFile cf = new ClassFile(data);
-    JVMAnnotationParser parser = new JVMAnnotationParser(cf);
-
-    return new AnnotationInfo(clsName, definingLoader, parser);
   }
 }

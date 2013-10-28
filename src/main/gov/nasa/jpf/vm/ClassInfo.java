@@ -923,33 +923,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return container;
   }
   
-  public void setContainer (gov.nasa.jpf.vm.ClassFileContainer c){
-    container = c;
-  }
-
-  protected static String computeClassFileUrl(ClassFileMatch match, String typeName, ClassLoaderInfo cl) {
-    // it has to be a built-in class or annotation proxy!
-    if(match == null) {
-      if(ClassInfo.isBuiltinClass(typeName)){
-        return typeName;
-      } else if(typeName.endsWith("$Proxy")) {
-        String annotationName = typeName.substring(0, typeName.lastIndexOf('$'));
-        ClassInfo annotationCls = cl.getDefinedClassInfo(annotationName);
-        return computeProxyUrl(annotationCls);
-      } else {
-        return null;
-      }
-    }
-    
-    return match.container.getURL() + typeName.replace('.', '/') + ".class";
-  }
-
-  // Builds urls for annotation class proxies
-  private static String computeProxyUrl(ClassInfo annotationCls) {
-    String annotationUrl = annotationCls.getClassFileUrl();
-    return annotationUrl.substring(0, annotationUrl.lastIndexOf(".class")) + "$Proxy";
-  }
-  
   public String getClassFileUrl (){
     return classFileUrl;
   }
