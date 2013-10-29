@@ -30,8 +30,9 @@ public abstract class ClassFileContainer {
   protected String name;
   protected String url;
 
-  protected ClassFileContainer(String name) {
+  protected ClassFileContainer(String name, String url) {
     this.name = name;
+    this.url = url;
   }
 
   public String getName() {
@@ -42,22 +43,7 @@ public abstract class ClassFileContainer {
     return url;
   }
 
-  public abstract String getClassURL (String clsName);  
-    
-  protected void readFully (InputStream is, byte[] buf) throws ClassParseException {
-    try {
-      int nRead = 0;
-      while (nRead < buf.length) {
-        int n = is.read(buf, nRead, buf.length - nRead);
-        if (n < 0) {
-          error("premature end of classfile: " + buf.length + '/' + nRead);
-        }
-        nRead += n;
-      }
-    } catch (IOException iox) {
-      error("failed to read classfile");
-    }
-  }
+  public abstract String getClassURL (String clsName);
 
   protected static void error(String msg) throws ClassParseException {
     throw new ClassParseException(msg);

@@ -19,11 +19,13 @@
 
 package gov.nasa.jpf.jvm;
 
+import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.vm.ClassFileMatch;
 import gov.nasa.jpf.vm.ClassParseException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -34,19 +36,23 @@ public class JarClassFileContainer extends JVMClassFileContainer {
   protected JarFile jar;
   protected String pathPrefix; // optional
 
-  public JarClassFileContainer (File file) throws IOException {
-    super(file.getPath());
+  static String getContainerUrl (File file){
+    try {
+      return "jar:" + file.toURI().toURL().toString() + "!/";
+    } catch (MalformedURLException x) {
+      return "jar:" + file.getAbsolutePath() + "!/";
+    }
+  }
 
-    url = "jar:" + file.toURI().toURL().toString() + "!/";
+  public JarClassFileContainer (File file) throws IOException {
+    super(file.getPath(), getContainerUrl(file));
     jar = new JarFile(file);
   }
 
   public JarClassFileContainer (File file, String pathPrefix) throws IOException {
-    super(getPath(file, pathPrefix));
+    super(getPath(file, pathPrefix), getContainerUrl(file));
 
-    url = "jar:" + file.toURI().toURL().toString() + "!/";
     jar = new JarFile(file);
-    
     this.pathPrefix = getNormalizedPathPrefix(pathPrefix);
   }
   
@@ -128,7 +134,7 @@ public class JarClassFileContainer extends JVMClassFileContainer {
         is = jar.getInputStream(e);
 
         byte[] data = new byte[(int) len];
-        readFully(is, data);
+        FileUtils.getContents(is, data);
 
         return new JVMClassFileMatch(clsName, getClassURL(clsName), data);
 

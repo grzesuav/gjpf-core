@@ -20,6 +20,7 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.jvm.JVMClassFileContainer;
+import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.vm.ClassFileMatch;
 import gov.nasa.jpf.vm.ClassParseException;
 import java.io.File;
@@ -34,14 +35,16 @@ public class DirClassFileContainer extends JVMClassFileContainer {
 
   protected File dir;
 
-  public DirClassFileContainer(File dir) {
-    super(dir.getPath());
-
+  static String getContainerURL(File dir){
     try {
-      url = dir.toURI().toURL().toString();
+      return dir.toURI().toURL().toString();
     } catch (MalformedURLException e) {
-      url = null;
+      return dir.getPath();
     }
+  }
+
+  public DirClassFileContainer(File dir) {
+    super(dir.getPath(), getContainerURL(dir));
 
     this.dir = dir;
   }
@@ -61,7 +64,7 @@ public class DirClassFileContainer extends JVMClassFileContainer {
           error("classfile too big: " + f.getPath());
         }
         byte[] data = new byte[(int) len];
-        readFully(fis, data);
+        FileUtils.getContents(fis, data);
 
         return new JVMClassFileMatch( clsName, getClassURL(clsName), data);
 

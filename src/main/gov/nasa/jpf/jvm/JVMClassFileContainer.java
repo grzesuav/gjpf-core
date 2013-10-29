@@ -71,8 +71,8 @@ public abstract class JVMClassFileContainer extends ClassFileContainer {
     }
   }
   
-  protected JVMClassFileContainer (String name) {
-    super(name);
+  protected JVMClassFileContainer (String name, String url) {
+    super(name, url);
   }
   
   @Override
