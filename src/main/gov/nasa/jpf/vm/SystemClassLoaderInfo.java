@@ -85,6 +85,22 @@ public abstract class SystemClassLoaderInfo extends ClassLoaderInfo {
   
   protected abstract void initializeSystemClassPath (VM vm, int appId);
   
+  //--- these can be used to build the app specific system CP
+  protected File[] getPathElements (Config conf, String keyBase, int appId) {
+    File[] pathElements = null;
+
+    // try appId indexed key first
+    String key = keyBase + '.' + appId;
+    if (conf.containsKey(key)) {
+      pathElements = conf.getPathArray(key);
+
+    } else { // fall back to keyBase
+      pathElements = conf.getPathArray(keyBase);
+    }
+
+    return pathElements;
+  }
+  
   public SystemClassLoaderInfo getSystemClassLoader() {
     return this;
   }

@@ -104,38 +104,14 @@ public class JVMSystemClassLoaderInfo extends SystemClassLoaderInfo {
     }
   }
 
-  protected File[] getPathElements (Config conf, String keyBase, int appId) {
-    File[] pathElements = null;
-
-    // try appId indexed key first
-    String key = keyBase + '.' + appId;
-    if (conf.containsKey(key)) {
-      pathElements = conf.getPathArray(key);
-
-    } else { // fall back to keyBase
-      pathElements = conf.getPathArray(keyBase);
-    }
-
-    return pathElements;
-  }
-
-  protected void addPathElement (ClassPath classPath, File pathElement) {
-    if (pathElement != null) {
-      ClassFileContainer cfc = createClassFileContainer(pathElement.getAbsolutePath());
-      if (cfc != null) {
-        classPath.addClassFileContainer(cfc);
-      }
-    }
-  }
-
-  protected void addSystemBootClassPath (ClassPath classPath) {
+  protected void addSystemBootClassPath () {
     String v = System.getProperty("sun.boot.class.path");
     if (v != null) {
       for (String pn : v.split(File.pathSeparator)) {
         if (pn != null && !pn.isEmpty()) {
           ClassFileContainer cfc = createClassFileContainer(pn);
           if (cfc != null) {
-            classPath.addClassFileContainer(cfc);
+            cp.addClassFileContainer(cfc);
           }
         }
       }
@@ -150,14 +126,13 @@ public class JVMSystemClassLoaderInfo extends SystemClassLoaderInfo {
   @Override
   protected void initializeSystemClassPath (VM vm, int appId) {
     Config conf = vm.getConfig();
-    ClassFileContainer cfc;
     File[] pathElements;
 
     // explicit "classpath[.id]" settings have precedence
     pathElements = getPathElements(conf, "classpath", appId);
     if (pathElements != null) {
       for (File f : pathElements) {
-        addPathElement(cp, f);
+        addClassPathElement(f.getAbsolutePath());
       }
     }
 
@@ -166,9 +141,9 @@ public class JVMSystemClassLoaderInfo extends SystemClassLoaderInfo {
     if (pathElements != null) {
       for (File f : pathElements) {
         if (f.getName().equals("<system>")) {
-          addSystemBootClassPath(cp);
+          addSystemBootClassPath();
         } else {
-          addPathElement(cp, f);
+          addClassPathElement( f.getAbsolutePath());
         }
       }
     }

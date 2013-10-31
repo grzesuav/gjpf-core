@@ -728,7 +728,7 @@ public class ClassLoaderInfo
       log.warning("unknown classpath element: ", path);
     }
   }
-
+  
   /**
    * Comparison for sorting based on index.
    */
@@ -737,8 +737,7 @@ public class ClassLoaderInfo
   }
 
   /**
-   * Returns an iterator over the classes that are defined (directly loaded) by this
-   * classloader. 
+   * Returns an iterator over the classes that are defined (directly loaded) by this classloader. 
    */
   public Iterator<ClassInfo> iterator () {
     return resolvedClasses.values().iterator();
