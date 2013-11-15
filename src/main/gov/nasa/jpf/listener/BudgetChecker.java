@@ -190,7 +190,7 @@ public class BudgetChecker extends ListenerAdapter {
       if (timeExceeded() || heapExceeded() || insnExceeded()) {
         search.notifySearchConstraintHit(message);
 
-        vm.getCurrentThread().breakTransition();
+        vm.getCurrentThread().breakTransition("budgetConstraint");
         search.terminate();
       }    
     }

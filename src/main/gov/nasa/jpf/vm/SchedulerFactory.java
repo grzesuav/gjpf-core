@@ -111,4 +111,13 @@ public interface SchedulerFactory {
   /** used by Verify.andAtomic() */
   public static final String END_ATOMIC = "END_ATOMIC";
   ChoiceGenerator<ThreadInfo> createEndAtomicCG (ThreadInfo ti);
+  
+  /**
+   * used to break the transition for other reasons (e.g. max transition length exceeded) 
+   * Although most of this happens from a mandatory CG context, we still route this through
+   * the scheduler policy object to give it a chance to select the scheduling candidates
+   * Since this is a generic method, we require an explicit id/reason argument
+   */
+  ChoiceGenerator<ThreadInfo> createBreakTransitionCG (String reason, ThreadInfo ti);
+  
 }

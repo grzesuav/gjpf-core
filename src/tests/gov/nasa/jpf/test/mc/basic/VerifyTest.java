@@ -44,7 +44,7 @@ public class VerifyTest extends TestJPF {
           x = 0;
         }
 
-        Verify.breakTransition(); // this should eventually state match
+        Verify.breakTransition("testBreakTransition"); // this should eventually state match
       }
 
       assert false : "we should never get here";

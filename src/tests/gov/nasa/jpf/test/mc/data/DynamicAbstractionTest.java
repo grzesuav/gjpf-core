@@ -65,7 +65,7 @@ public class DynamicAbstractionTest extends TestJPF {
       MyClass matchedObject = new MyClass();
       matchedObject.data = Verify.getInt(0, 20);
       
-      Verify.breakTransition();
+      Verify.breakTransition("testDataAbstraction");
       System.out.println("new state for myClass.data = " + matchedObject.data);
       Verify.incrementCounter(0);
     }
@@ -97,7 +97,7 @@ public class DynamicAbstractionTest extends TestJPF {
         matchedObject.notAbstracted = 1;
       }
       
-      Verify.breakTransition(); // matching point
+      Verify.breakTransition("testDataAbstraction"); // matching point
       System.out.println("new state for myClass.data = " + matchedObject.data + ", " + matchedObject.notAbstracted);
       Verify.incrementCounter(0);
     }
@@ -136,7 +136,7 @@ public class DynamicAbstractionTest extends TestJPF {
         System.out.print("    ignoredObject.data=");
         System.out.println( ignoredObject.data);
 
-        Verify.breakTransition(); // (2) matching point for someObject
+        Verify.breakTransition("testDataAbstraction"); // (2) matching point for someObject
         
         // if we get here we had a new state (i.e. wasn't matched)
         // NOTE we don't get here for matchedObject.data=0 because that would match with the state before (1)
@@ -157,7 +157,7 @@ public class DynamicAbstractionTest extends TestJPF {
     for (int i=0; i<2; i++){
       System.out.printf("  matchThis() i=%d\n", i);
     
-      Verify.breakTransition(); // 'i' has changed
+      Verify.breakTransition("testDataAbstraction"); // 'i' has changed
       System.out.println("    new state");
       Verify.incrementCounter(0);
     }

@@ -59,6 +59,11 @@ public class ClassFileParser extends ClassFileReaderAdapter implements ClassPars
     cf.parse(this);
   }
 
+  @Override
+  public void parse() throws ClassParseException {
+    // <2do> - turn into inner JVMClassInfo object
+  }
+  
   //--- the overridden ClassFileReader methods  
   
   @Override

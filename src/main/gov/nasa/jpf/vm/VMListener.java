@@ -38,7 +38,7 @@ public interface VMListener extends JPFListener {
    * do type initialization in listeners, since the ClassLoader mechanism is now functional
    */
   void vmInitialized (VM vm);
-  
+    
   /**
    * VM is about to execute the next instruction
    */

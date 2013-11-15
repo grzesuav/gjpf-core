@@ -166,7 +166,7 @@ public class IdleFilter extends PropertyListenerAdapter {
         if (!ts.isCleared) {
           if (ts.backJumps > maxBackJumps) {
 
-            ti.reschedule(false); // this breaks the executePorStep loop
+            ti.reschedule("idleFilter"); // this breaks the executePorStep loop
             MethodInfo mi = executedInsn.getMethodInfo();
             ClassInfo ci = mi.getClassInfo();
             int line = mi.getLineNumber(executedInsn);
@@ -193,7 +193,7 @@ public class IdleFilter extends PropertyListenerAdapter {
               case BREAK:
                 // just break the transition and let the state matching take over
                 brokeTransition = true;
-                ti.breakTransition();
+                ti.breakTransition("breakIdleLoop");
 
                 log.warning("breaks transition on suspicious loop in thread: " + ti.getName() +
                         "\n\tat " + ci.getName() + "." + mi.getName() + "(" + file + ":" + line + ")");

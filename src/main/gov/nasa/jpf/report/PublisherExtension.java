@@ -28,4 +28,5 @@ public interface PublisherExtension {
   void publishPropertyViolation (Publisher publisher);
   void publishConstraintHit (Publisher publisher);
   void publishFinished (Publisher publisher);
+  void publishProbe (Publisher publisher);
 }

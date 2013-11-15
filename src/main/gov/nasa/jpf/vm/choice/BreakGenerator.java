@@ -32,9 +32,9 @@ import java.io.PrintWriter;
  */
 public class BreakGenerator extends ChoiceGeneratorBase<ThreadInfo> implements ThreadChoiceGenerator {
 
-  ThreadInfo ti;
-  int state = -1;
-  boolean isTerminator;
+  protected ThreadInfo ti;
+  protected int state = -1;
+  protected boolean isTerminator;
 
   public BreakGenerator (String id, ThreadInfo ti, boolean isTerminator) {
     super(id);
@@ -97,4 +97,5 @@ public class BreakGenerator extends ChoiceGeneratorBase<ThreadInfo> implements T
   public boolean isSchedulingPoint(){
     return true; // that's the whole point of having a BreakGenerator
   }
+
 }

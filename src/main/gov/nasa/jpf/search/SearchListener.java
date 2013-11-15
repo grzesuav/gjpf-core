@@ -60,6 +60,13 @@ public interface SearchListener extends JPFListener {
   void stateRestored (Search search);
   
   /**
+   * there was a probe request, e.g. from a periodical timer
+   * note this is called synchronously from within the JPF execution loop
+   * (after instruction execution)
+   */
+  void searchProbed (Search search);
+  
+  /**
    * JPF encountered a property violation.
    * Note - this is always preceeded by a stateAdvanced
    */

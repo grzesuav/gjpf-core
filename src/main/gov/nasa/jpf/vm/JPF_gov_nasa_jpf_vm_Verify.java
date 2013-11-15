@@ -276,9 +276,10 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
   }
 
   @MJI
-  public static void breakTransition____V (MJIEnv env, int clsObjRef){
+  public static void breakTransition__Ljava_lang_String_2__V (MJIEnv env, int clsObjRef, int reasonRef){
     ThreadInfo ti = env.getThreadInfo();
-    ti.breakTransition();
+    String reason = env.getStringObject(reasonRef);
+    ti.breakTransition(reason);
   }
 
   @MJI
@@ -312,9 +313,9 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
   static <T> T registerChoiceGenerator (MJIEnv env, SystemState ss, ThreadInfo ti, ChoiceGenerator<T> cg, T dummyVal){
 
     int n = cg.getTotalNumberOfChoices();
-    if (n == 0) {
+    if (n == 0) { // we need a CG
       ss.setIgnored(true);
-      ti.breakTransition();
+      ti.breakTransition( cg.getId());
 
     } else if (n == 1 && !breakSingleChoice) {
       // no choice -> no CG optimization

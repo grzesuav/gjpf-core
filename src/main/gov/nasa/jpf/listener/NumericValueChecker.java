@@ -121,7 +121,7 @@ public class NumericValueChecker extends PropertyListenerAdapter {
               if (errorCond != null) {
                 error = String.format("field %s out of range: %s\n\t at %s",
                         fi.getFullName(), errorCond, insn.getSourceLocation());
-                vm.breakTransition(); // terminate this transition
+                vm.breakTransition("fieldValueOutOfRange"); // terminate this transition
                 break;
               }
             }
@@ -150,7 +150,7 @@ public class NumericValueChecker extends PropertyListenerAdapter {
             if (errorCond != null) {
               error = String.format("local variable %s out of range: %s\n\t at %s",
                       lvar.getName(), errorCond, insn.getSourceLocation());
-              vm.breakTransition(); // terminate this transition
+              vm.breakTransition("localVarValueOutOfRange"); // terminate this transition
               break;
             }
           }

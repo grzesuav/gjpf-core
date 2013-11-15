@@ -104,7 +104,7 @@ public class BreakTest extends TestJPF {
         FieldInfo fi = ((PUTFIELD) executedInsn).getFieldInfo();
         if (fi.getClassInfo().getName().endsWith(".BreakTest")) {
           System.out.println("# breaking after: " + executedInsn);
-          ti.breakTransition();
+          ti.breakTransition("breakTest");
         }
       }
     }
@@ -138,7 +138,7 @@ public class BreakTest extends TestJPF {
         if ("foo()V".equals(call.getInvokedMethodName())) {
           System.out.println("# breaking & pruning after: " + executedInsn);
           System.out.println("# registered (ignored) CG: " + ss.getNextChoiceGenerator());
-          ti.breakTransition(); // not required since we ignore
+          ti.breakTransition("breakTest"); // not required since we ignore
           ss.setIgnored(true);
         }
       }
@@ -194,7 +194,7 @@ public class BreakTest extends TestJPF {
         System.out.println("# registered (ignored) CG: " + cg);
 
         ss.setIgnored(true); // should reset the IntIntervalCG registered by the native getInt()
-        ti.breakTransition(); // should have no effect
+        ti.breakTransition("breakTest"); // should have no effect
       }
     }
   }

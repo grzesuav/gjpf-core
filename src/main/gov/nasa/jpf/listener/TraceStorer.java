@@ -146,7 +146,7 @@ public class TraceStorer extends ListenerAdapter {
 
   boolean checkVMTermination(ThreadInfo ti) {
     if (terminateOnStore){
-      ti.breakTransition();
+      ti.breakTransition("storeTraceTermination");
       search.terminate();
       return true;
     }

@@ -25,10 +25,9 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.ClassFile;
+import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Misc;
-import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
-import java.io.File;
 
 import java.io.PrintWriter;
 import java.nio.ByteOrder;
@@ -36,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -53,12 +53,12 @@ public abstract class VM {
   
   protected static final String[] EMPTY_ARGS = new String[0];
   
-  protected static JPFLogger log = JPF.getLogger("gov.nasa.jpf.vm.VM");
+  protected static JPFLogger log = JPF.getLogger("vm");
 
   /**
    * our execution context
    */
-  JPF jpf;
+  protected JPF jpf;
 
   /**
    * The number of errors saved so far.
@@ -700,7 +700,7 @@ public abstract class VM {
       throw new JPFListenerException("exception during vmInitialized() notification", t);
     }    
   }
-
+  
   protected void notifyChoiceGeneratorRegistered (ChoiceGenerator<?>cg, ThreadInfo ti) {
     try {
       for (int i = 0; i < listeners.length; i++) {
@@ -1755,9 +1755,9 @@ public abstract class VM {
   /**
    * imperatively break the transition to enable state matching
    */
-  public void breakTransition () {
+  public void breakTransition (String reason) {
     ThreadInfo ti = ThreadInfo.getCurrentThread();
-    ti.breakTransition();
+    ti.breakTransition(reason);
   }
 
   public boolean transitionOccurred(){
@@ -1854,6 +1854,15 @@ public abstract class VM {
     return vm;
   }
 
+  /**
+   * not ideal to have this here since it is kind of a backlink, but it's not
+   * any better if listeners have to dig this out from JPF
+   * Note - this isn't set during initialization, since the VM object is created first
+   */
+  public Search getSearch() {
+    return jpf.getSearch();
+  }
+  
   /**
    * pushClinit all our static fields. Called from <clinit> and reset
    */

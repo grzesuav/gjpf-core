@@ -259,7 +259,7 @@ public class Verify {
 
   public static void interesting (boolean cond) {}
 
-  public static void breakTransition () {}
+  public static void breakTransition (String reason) {}
 
   /**
    * simple debugging aids to imperatively print the current path output of the SUT

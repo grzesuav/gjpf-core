@@ -37,6 +37,7 @@ import gov.nasa.jpf.vm.Transition;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * the mother of all search classes. Mostly takes care of listeners, keeping
@@ -68,6 +69,8 @@ public abstract class Search {
   protected boolean done = false;
   protected boolean doBacktrack = false;
 
+  // do we have a probe request
+  protected AtomicBoolean notifyProbeListeners = new AtomicBoolean(false);
 
   /** search listeners. We keep them in a simple array to avoid
    creating objects on each notification */
@@ -227,6 +230,29 @@ public abstract class Search {
     return lastSearchConstraint;
   }
 
+  /**
+   * request a probe
+   * 
+   * This does not do the actual listener notification, it only stores
+   * the request, which is then processed from within JPFs inner execution loop.
+   * As a consequence, probeSearch() can be called async, and searchProbed() listeners
+   * don't have to bother with synchronization or inconsistent JPF states (notification 
+   * happens from within JPFs main thread after a completed Instruction execution)
+   */
+  public void probeSearch(){
+    notifyProbeListeners.set(true);
+  }
+  
+  /**
+   * this does the actual notification and resets the request, hence this call
+   * should only happen from within JPFs main thread
+   */
+  public void checkAndResetProbeRequest(){
+    if (notifyProbeListeners.compareAndSet(true, false)){
+      notifySearchProbed();
+    }
+  }
+  
   /**
    * @return error encountered during *last* transition (null otherwise)
    */
@@ -476,6 +502,20 @@ public abstract class Search {
     }
   }
 
+  public void notifySearchProbed() {
+    try {
+      for (int i = 0; i < listeners.length; i++) {
+        listeners[i].searchProbed(this);
+      }
+      if (reporter != null){
+        reporter.searchProbed(this);
+      }
+    } catch (Throwable t) {
+      throw new JPFListenerException("exception during searchProbed() notification", t);
+    }
+  }
+
+  
   protected void notifyPropertyViolated() {
     try {
       for (int i = 0; i < listeners.length; i++) {

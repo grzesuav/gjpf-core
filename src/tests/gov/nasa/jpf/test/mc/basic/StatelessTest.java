@@ -40,7 +40,7 @@ public class StatelessTest extends TestJPF {
     if (verifyNoPropertyViolation("+vm.storage.class=null")){
       int d = Verify.getInt(0, 5);
       d = 0;
-      Verify.breakTransition(); // just to give the serializer something to chew on (if there is any)
+      Verify.breakTransition("testNumberOfPaths"); // just to give the serializer something to chew on (if there is any)
       System.out.println("got here");
       Verify.incrementCounter(0);
     }

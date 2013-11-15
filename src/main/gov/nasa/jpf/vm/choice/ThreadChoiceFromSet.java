@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.vm.choice;
 
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.vm.ChoiceGeneratorBase;
 import gov.nasa.jpf.vm.ThreadChoiceGenerator;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -44,8 +45,19 @@ public class ThreadChoiceFromSet extends ChoiceGeneratorBase<ThreadInfo> impleme
         
     values = set;
     count = -1;
-    
+
     this.isSchedulingPoint = isSchedulingPoint;
+
+    /**
+    if (isSchedulingPoint){
+      // do a sanity check to see if the candidates are acutally runnable
+      for (int i = 0; i < set.length; i++) {
+        if (!set[i].isTimeoutRunnable()) {
+          throw new JPFException("trying to schedule non-runnable: " + set[i]);
+        }
+      }
+    }
+    **/
   }
   
   public void reset () {
@@ -159,6 +171,7 @@ public class ThreadChoiceFromSet extends ChoiceGeneratorBase<ThreadInfo> impleme
     return ThreadInfo.class;
   }
   
+  @Override
   public boolean isSchedulingPoint() {
     return isSchedulingPoint;
   }

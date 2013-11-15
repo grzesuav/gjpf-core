@@ -25,7 +25,10 @@ import gov.nasa.jpf.SystemAttribute;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
-import gov.nasa.jpf.util.*;
+import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.IntVector;
+import gov.nasa.jpf.util.JPFLogger;
+import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
@@ -40,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 /**
@@ -1826,6 +1828,8 @@ public class ThreadInfo extends InfoObject
   /**
    * enter instructions until there is none left or somebody breaks
    * the transition (e.g. by registering a CG)
+   * 
+   * this is the inner interpreter loop of JPF
    */
   protected void executeTransition (SystemState ss) throws JPFException {
     Instruction pc = getPC();
@@ -1852,14 +1856,11 @@ public class ThreadInfo extends InfoObject
         
       } else {
         if (executedInstructions >= maxTransitionLength){ // try to preempt the current thread
-          //if (vm.getStateId() > 0){
-            if (pc.isBackJump() && (pc != nextPc) && (top != null && !top.isNative())) {
-              if (yield()) {
-                log.info("max transition length exceeded, breaking transition on ", nextPc);
-                break;
-              }
-            }
-          //}
+          if (pc.isBackJump() && (pc != nextPc) && (top != null && !top.isNative())) {
+            log.info("max transition length exceeded, breaking transition on ", nextPc);
+            reschedule("maxTransitionLenth");
+            break;
+          }
         }
         
         pc = nextPc;
@@ -1910,6 +1911,9 @@ public class ThreadInfo extends InfoObject
     // here we have our post exec bytecode exec observation point
     vm.notifyInstructionExecuted(this, pc, nextPc);
     
+    // since this is part of the inner execution loop, it is a convenient place to check for probes
+    vm.getSearch().checkAndResetProbeRequest();
+    
     // clean up whatever might have been stored by enter
     pc.cleanupTransients();
 
@@ -1939,7 +1943,7 @@ public class ThreadInfo extends InfoObject
     SystemState ss = vm.getSystemState();
     KernelState ks = vm.getKernelState();
 
-    nextPc = null; // reset in case pc.enter blows (this could be behind an exception firewall)
+    nextPc = null; // reset in case pc.execute() blows (this could be behind an exception firewall)
 
     if (log.isLoggable(Level.FINE)) {
       log.fine( pc.getMethodInfo().getFullName() + " " + pc.getPosition() + " : " + pc);
@@ -1951,6 +1955,9 @@ public class ThreadInfo extends InfoObject
         nextPc = this.createAndThrowException(cie.getExceptionClass(), cie.getMessage());
       }
 
+    // since this is part of the inner execution loop, it is a convenient place  to check probe notifications
+    vm.getSearch().checkAndResetProbeRequest();
+    
     // we did not return from the last frame stack
     if (top != null) { // <2do> should probably bomb otherwise
       setPC(nextPc);
@@ -2980,57 +2987,46 @@ public class ThreadInfo extends InfoObject
     threadData = td;
   }
 
+
   /**
-   * request a reschedule no matter what the next insn is
-   * Note this unconditionally creates and registers a ThreadCG, even if there is
-   * only one runnable thread (ourself). This is intended to be used from
-   * within Listeners that need to break transitions / store states in locations
-   * only they know about.
-   * Note also this differs from Thread.yield() in that yield() is handled by
-   * the SchedulerFactory, and it is at its discretion to just ignore it, either
-   * because yield in itself is not POR relevant (doesn't change anything), or
-   * because there might be only one runnable thread. In both cases, the transition
-   * would not be broken.
-   * If there is more than one runnable thread, this also differs from
-   * breakTransition(), which will continue with the same thread
+   * this is a generic request to reschedule that is not based on instruction type
+   * Note that we check for a mandatory CG, i.e. the policy has to return a CG to make sure
+   * there is a transition break. We still go through the policy object for selection
+   * of scheduling choices though
+   * 
    */
-  public void reschedule (boolean forceBreak) {
-    ThreadInfo[] runnables = vm.getRunnableThreads();
-
-    if (forceBreak || (runnables.length > 1)) {
-      ThreadChoiceGenerator cg = new ThreadChoiceFromSet("reschedule",runnables,true);
-      SystemState ss = vm.getSystemState();
-      ss.setNextChoiceGenerator(cg); // this breaks the transition
-    }
+  public void reschedule (String reason){
+    SystemState ss = vm.getSystemState();
+    ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createBreakTransitionCG( reason, this);
+    ss.setMandatoryNextChoiceGenerator(cg, "rescheduling request without CG: ");
   }
-
+  
   /**
    * this is a version that unconditionally breaks the current transition
    * without really adding choices. It only goes on with the same thread
-   * (to avoid state explosion).
+   * (to avoid state explosion). Since we require a break, and there is no
+   * choice (current thread is supposed to continue), there is no point 
+   * going through the SchedulerFactory
    *
    * if the current transition is already marked as ignored, this method does nothing
-   *
-   * NOTE: this neither means that we ignore the current transition, nor that
-   * it is an end state
    */
-  public void breakTransition() {
+  public void breakTransition(String reason) {
     SystemState ss = vm.getSystemState();
 
-    if (!ss.isIgnored()){
-      // no need to set a CG if this transition is already marked as ignored
-      // (which will also break executeTransition)
-      BreakGenerator cg = new BreakGenerator( "breakTransition", this, false);
-      ss.setNextChoiceGenerator(cg); // this breaks the transition
-    }
+    // no need to set a CG if this transition is already marked as ignored
+    // (which will also break executeTransition)
+    BreakGenerator cg = new BreakGenerator(reason, this, false);
+    ss.setNextChoiceGenerator(cg); // this breaks the transition
   }
 
+  /**
+   * this is like a reschedule request, but gives the scheduler an option to skip the CG 
+   */
   public boolean yield() {
     SystemState ss = vm.getSystemState();
 
     if (!ss.isIgnored()){
-      ThreadList tl = vm.getThreadList();
-      ThreadInfo[] choices = tl.getRunnableThreads();
+      ThreadInfo[] choices = vm.getRunnableThreads();
       ThreadChoiceFromSet cg = new ThreadChoiceFromSet( "yield", choices, true);
         
       return ss.setNextChoiceGenerator(cg); // this breaks the transition

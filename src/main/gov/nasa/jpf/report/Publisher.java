@@ -36,17 +36,20 @@ public abstract class Publisher {
   // output phases
   public static final int START = 1;
   public static final int TRANSITION = 2;
-  public static final int PROPERTY_VIOLATION = 3;
-  public static final int FINISHED = 4;
+  public static final int PROBE = 3;
+  public static final int CONSTRAINT = 4;
+  public static final int PROPERTY_VIOLATION = 5;
+  public static final int FINISHED = 6;
 
   protected Config conf;
   protected Reporter reporter; // our master
 
-  protected String[] startTopics = {};
-  protected String[] transitionTopics = {};
-  protected String[] propertyViolationTopics = {};
-  protected String[] constraintTopics = {};
-  protected String[] finishedTopics = {};
+  protected String[] startItems = {};
+  protected String[] transitionItems = {};
+  protected String[] propertyViolationItems = {};
+  protected String[] constraintItems = {};
+  protected String[] finishedItems = {};
+  protected String[] probeItems = {};
 
   DateFormat dtgFormatter = DateFormat.getDateTimeInstance(DateFormat.SHORT,
       DateFormat.SHORT);
@@ -67,37 +70,42 @@ public abstract class Publisher {
     this.conf = conf;
     this.reporter = reporter;
 
-    setTopics();
+    setTopicItems();
   }
 
-  public void setTopics (int category, String[] newTopics){
+  public void setItems (int category, String[] newTopics){
     switch (category){
     case START:
-      startTopics = newTopics; break;
+      startItems = newTopics; break;
+    case PROBE:
+      probeItems = newTopics; break;
     case TRANSITION:
-      transitionTopics = newTopics; break;
+      transitionItems = newTopics; break;
+    case CONSTRAINT:
+      constraintItems = newTopics; break;
     case PROPERTY_VIOLATION:
-      propertyViolationTopics = newTopics; break;
+      propertyViolationItems = newTopics; break;
     case FINISHED:
-      finishedTopics = newTopics; break;
+      finishedItems = newTopics; break;
     default:
-      Reporter.log.warning("unknown publisher topic category: " + category);
+      Reporter.log.warning("unknown publisher topic: " + category);
     }
   }
 
   public abstract String getName();
 
-  protected void setTopics () {
-    setTopics(getName());
+  protected void setTopicItems () {
+    setTopicItems(getName());
   }
   
-  protected void setTopics (String name) {
+  protected void setTopicItems (String name) {
     String prefix = "report." + name;
-    startTopics = conf.getStringArray(prefix + ".start", startTopics);
-    transitionTopics = conf.getStringArray(prefix + ".transition", transitionTopics);
-    propertyViolationTopics = conf.getStringArray(prefix + ".property_violation", propertyViolationTopics);
-    constraintTopics = conf.getStringArray(prefix + ".constraint", constraintTopics);
-    finishedTopics = conf.getStringArray(prefix + ".finished", finishedTopics);    
+    startItems = conf.getStringArray(prefix + ".start", startItems);
+    transitionItems = conf.getStringArray(prefix + ".transition", transitionItems);
+    probeItems = conf.getStringArray(prefix + ".probe", transitionItems);
+    propertyViolationItems = conf.getStringArray(prefix + ".property_violation", propertyViolationItems);
+    constraintItems = conf.getStringArray(prefix + ".constraint", constraintItems);
+    finishedItems = conf.getStringArray(prefix + ".finished", finishedItems);    
   }
   
   public void addExtension (PublisherExtension ext) {
@@ -123,27 +131,27 @@ public abstract class Publisher {
   }
 
   public boolean hasTopic (String topic) {
-    for (String s : startTopics) {
+    for (String s : startItems) {
       if (s.equalsIgnoreCase(topic)){
         return true;
       }
     }
-    for (String s : transitionTopics) {
+    for (String s : transitionItems) {
       if (s.equalsIgnoreCase(topic)){
         return true;
       }
     }
-    for (String s : constraintTopics) {
+    for (String s : constraintItems) {
       if (s.equalsIgnoreCase(topic)){
         return true;
       }
     }
-    for (String s : propertyViolationTopics) {
+    for (String s : propertyViolationItems) {
       if (s.equalsIgnoreCase(topic)){
         return true;
       }
     }
-    for (String s : finishedTopics) {
+    for (String s : finishedItems) {
       if (s.equalsIgnoreCase(topic)){
         return true;
       }
@@ -221,7 +229,7 @@ public abstract class Publisher {
   }
 
   public boolean hasToReportStatistics() {
-    for (String s : finishedTopics) {
+    for (String s : finishedItems) {
       if ("statistics".equalsIgnoreCase(s)){
         return true;
       }
@@ -235,17 +243,17 @@ public abstract class Publisher {
 
   //--- if you have different preferences about when to report things, override those
   public void publishStart() {
-    for (String topic : startTopics) {
-      if ("jpf".equalsIgnoreCase(topic)){
+    for (String item : startItems) {
+      if ("jpf".equalsIgnoreCase(item)){
         publishJPF();
-      } else if ("platform".equalsIgnoreCase(topic)){
+      } else if ("platform".equalsIgnoreCase(item)){
         publishPlatform();
-      } else if ("user".equalsIgnoreCase(topic)) {
-      } else if ("dtg".equalsIgnoreCase(topic)) {
+      } else if ("user".equalsIgnoreCase(item)) {
+      } else if ("dtg".equalsIgnoreCase(item)) {
         publishDTG();
-      } else if ("config".equalsIgnoreCase(topic)){
+      } else if ("config".equalsIgnoreCase(item)){
         publishJPFConfig();
-      } else if ("sut".equalsIgnoreCase(topic)){
+      } else if ("sut".equalsIgnoreCase(item)){
         publishSuT();
       }
     }
@@ -258,7 +266,12 @@ public abstract class Publisher {
   }
 
   public void publishTransition() {
-    // nothing here, probably just for non-stream publishers (updating statistics etc.)
+    for (String topic : transitionItems) {
+      if ("statistics".equalsIgnoreCase(topic)){
+        publishStatistics();
+      }
+    }
+    
     if (extensions != null) {
       for (PublisherExtension e : extensions) {
         e.publishTransition(this);
@@ -267,16 +280,16 @@ public abstract class Publisher {
   }
 
   public void publishConstraintHit() {
-    for (String topic : constraintTopics) {
-      if ("constraint".equalsIgnoreCase(topic)) {
+    for (String item : constraintItems) {
+      if ("constraint".equalsIgnoreCase(item)) {
         publishConstraint();
-      } else if ("trace".equalsIgnoreCase(topic)){
+      } else if ("trace".equalsIgnoreCase(item)){
         publishTrace();
-      } else if ("snapshot".equalsIgnoreCase(topic)){
+      } else if ("snapshot".equalsIgnoreCase(item)){
         publishSnapshot();
-      } else if ("output".equalsIgnoreCase(topic)){
+      } else if ("output".equalsIgnoreCase(item)){
         publishOutput();
-      } else if ("statistics".equalsIgnoreCase(topic)){
+      } else if ("statistics".equalsIgnoreCase(item)){
         publishStatistics(); // not sure if that is good for anything
       }
     }
@@ -287,10 +300,24 @@ public abstract class Publisher {
       }
     }
   }
+  
+  public void publishProbe(){
+    for (String topic : probeItems) {
+      if ("statistics".equalsIgnoreCase(topic)){
+        publishStatistics();
+      }
+    }    
+    
+    if (extensions != null) {
+      for (PublisherExtension e : extensions) {
+        e.publishProbe(this);
+      }
+    }
+  }
 
   public void publishPropertyViolation() {
 
-    for (String topic : propertyViolationTopics) {
+    for (String topic : propertyViolationItems) {
       if ("error".equalsIgnoreCase(topic)) {
         publishError();
       } else if ("trace".equalsIgnoreCase(topic)){
@@ -319,7 +346,7 @@ public abstract class Publisher {
       }
     }
 
-    for (String topic : finishedTopics) {
+    for (String topic : finishedItems) {
       if ("result".equalsIgnoreCase(topic)){
         publishResult();
       } else if ("statistics".equalsIgnoreCase(topic)){

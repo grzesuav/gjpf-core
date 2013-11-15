@@ -46,7 +46,7 @@ import java.util.logging.Logger;
 
 public class Reporter extends SearchListenerAdapter {
 
-  public static Logger log = JPF.getLogger("gov.nasa.jpf.report");
+  public static Logger log = JPF.getLogger("report");
 
   protected Config conf;
   protected JPF jpf;
@@ -56,7 +56,9 @@ public class Reporter extends SearchListenerAdapter {
   protected Date started, finished;
   protected Statistics stat; // the object that collects statistics
   protected List<Publisher> publishers = new ArrayList<Publisher>();
-
+  
+  protected Thread probeTimer;
+  
   public Reporter (Config conf, JPF jpf) {
     this.conf = conf;
     this.jpf = jpf;
@@ -81,8 +83,35 @@ public class Reporter extends SearchListenerAdapter {
     if (reportStats){
       getRegisteredStatistics();
     }
+    
+    int probeInterval = conf.getInt("report.probe_interval");
+    if (probeInterval > 0){
+      probeTimer = createProbeIntervalTimer(probeInterval);
+    }
   }
 
+  protected Thread createProbeIntervalTimer (final int probeInterval){
+    Thread timer = new Thread( new Runnable(){
+        public void run(){
+          log.info("probe timer running");
+          while (!search.isDone()){
+            try {
+              Thread.sleep( probeInterval * 1000);
+              search.probeSearch(); // this is only a request
+            } catch (InterruptedException ix) {
+              // nothing
+            }
+          }
+          log.info("probe timer terminating");
+        }
+     }, "probe-timer");
+    timer.setDaemon(true);
+    
+    // we don't start before the Search is started
+    
+    return timer;
+  }
+  
   /**
    * called after the JPF run is finished. Shouldn't be public, but is called by JPF
    */
@@ -167,11 +196,11 @@ public class Reporter extends SearchListenerAdapter {
     return added;
   }
 
-  public <T extends Publisher> void setPublisherTopics (Class<T> publisherCls,
+  public <T extends Publisher> void setPublisherItems (Class<T> publisherCls,
                                                         int category, String[] topics){
     for (Publisher p : publishers) {
       if (publisherCls.isInstance(p)) {
-        p.setTopics(category,topics);
+        p.setItems(category,topics);
         return;
       }
     }
@@ -223,10 +252,20 @@ public class Reporter extends SearchListenerAdapter {
     }
   }
 
+  protected void publishProbe(){
+    for (Publisher publisher : publishers) {
+      publisher.publishProbe();
+    }    
+  }
+  
   //--- the listener interface that drives report generation
 
   public void searchStarted (Search search){
     publishStart();
+    
+    if (probeTimer != null){
+      probeTimer.start();
+    }
   }
 
   public void stateAdvanced (Search search) {
@@ -237,6 +276,9 @@ public class Reporter extends SearchListenerAdapter {
     publishConstraintHit();
   }
 
+  public void searchProbed (Search search){
+    publishProbe();
+  }
 
   public void propertyViolated (Search search) {
     publishPropertyViolation();
@@ -246,6 +288,11 @@ public class Reporter extends SearchListenerAdapter {
     finished = new Date();
 
     publishFinished();
+    
+    if (probeTimer != null){
+      // we could interrupt, but it's a daemon anyways
+      probeTimer = null;
+    }
   }
 
 

@@ -25,34 +25,37 @@ package gov.nasa.jpf.search;
  */
 public class SearchListenerAdapter implements SearchListener {
 
-  public void stateAdvanced(Search search) {
-  }
+  @Override
+  public void stateAdvanced(Search search) {}
 
-  public void stateProcessed(Search search) {
-  }
+  @Override
+  public void stateProcessed(Search search) {}
 
-  public void stateBacktracked(Search search) {
-  }
+  @Override
+  public void stateBacktracked(Search search) {}
 
-  public void statePurged(Search search) {
-  }
+  @Override
+  public void statePurged(Search search) {}
 
-  public void stateStored(Search search) {
-  }
+  @Override
+  public void stateStored(Search search) {}
 
-  public void stateRestored(Search search) {
-  }
+  @Override
+  public void stateRestored(Search search) {}
 
-  public void propertyViolated(Search search) {
-  }
+  @Override
+  public void searchProbed(Search search) {}
+  
+  @Override
+  public void propertyViolated(Search search) {}
 
-  public void searchStarted(Search search) {
-  }
+  @Override
+  public void searchStarted(Search search) {}
 
-  public void searchConstraintHit(Search search) {
-  }
+  @Override
+  public void searchConstraintHit(Search search) {}
 
-  public void searchFinished(Search search) {
-  }
+  @Override
+  public void searchFinished(Search search) {}
 
 }

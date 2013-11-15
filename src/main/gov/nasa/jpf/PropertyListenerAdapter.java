@@ -140,6 +140,8 @@ public abstract class PropertyListenerAdapter extends GenericProperty implements
   @Override
   public void stateRestored(Search search) {}
   @Override
+  public void searchProbed (Search search){}
+  @Override
   public void propertyViolated(Search search) {}
   @Override
   public void searchStarted(Search search) {
@@ -162,4 +164,6 @@ public abstract class PropertyListenerAdapter extends GenericProperty implements
   public void publishConstraintHit (Publisher publisher) {}
   @Override
   public void publishFinished (Publisher publisher) {}
+  @Override
+  public void publishProbe (Publisher publisher) {}
 }

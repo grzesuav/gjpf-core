@@ -24,19 +24,22 @@ package gov.nasa.jpf.report;
  */
 public class PublisherExtensionAdapter implements PublisherExtension {
 
-  public void publishConstraintHit(Publisher publisher) {
-  }
+  @Override
+  public void publishConstraintHit(Publisher publisher) {}
 
-  public void publishFinished(Publisher publisher) {
-  }
+  @Override
+  public void publishFinished(Publisher publisher) {}
 
-  public void publishPropertyViolation(Publisher publisher) {
-  }
+  @Override
+  public void publishPropertyViolation(Publisher publisher) {}
 
-  public void publishStart(Publisher publisher) {
-  }
+  @Override
+  public void publishStart(Publisher publisher) {}
 
-  public void publishTransition(Publisher publisher) {
-  }
+  @Override
+  public void publishTransition(Publisher publisher) {}
+
+  @Override
+  public void publishProbe(Publisher publisher) {}
 
 }

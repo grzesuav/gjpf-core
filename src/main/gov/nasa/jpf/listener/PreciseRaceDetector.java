@@ -271,7 +271,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
     if (race != null) {
       // we're done, report as quickly as possible
       //ti.skipInstruction();
-      ti.breakTransition();
+      ti.breakTransition("dataRace");
     }
   }
 

@@ -161,7 +161,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
         violation = new Violation(rec, ti, use, insn);
         violation.setSharedErrorMessage();
         
-        ti.breakTransition();
+        ti.breakTransition("checkShared");
         return false;
       }
     }
@@ -176,7 +176,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
         violation = new Violation(rec, ti, fi, insn);
         violation.setConstErrorMessage();
         
-        ti.breakTransition();
+        ti.breakTransition("checkConst");
         return false;        
       }
     }

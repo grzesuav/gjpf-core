@@ -19,6 +19,7 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.vm.choice.BreakGenerator;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
 
@@ -368,5 +369,19 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
   public ChoiceGenerator<ThreadInfo> createThreadStopCG (ThreadInfo stoppedThread) {
     return null; // left mover, there will be still a terminateCG
     //return getRunnableCG( THREAD_STOP);
+  }
+  
+  /**
+   * used to break the transition for reasons not related to the executing instruction type
+   * (e.g. max transition length exceeded).
+   */
+  public ChoiceGenerator<ThreadInfo> createBreakTransitionCG (String reason, ThreadInfo currentThread) {
+    ChoiceGenerator<ThreadInfo> cg = getRunnableCG( reason, currentThread);
+    if (cg != null) {
+      return cg;
+    } else {
+      return new BreakGenerator(reason, currentThread, false);
+    }
+
   }
 }

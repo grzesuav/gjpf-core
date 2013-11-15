@@ -465,10 +465,10 @@ public class JPF implements Runnable {
     return false;
   }
 
-  public <T extends Publisher> void setPublisherTopics (Class<T> pCls,
+  public <T extends Publisher> void setPublisherItems (Class<T> pCls,
                                                         int category, String[] topics) {
     if (reporter != null) {
-      reporter.setPublisherTopics(pCls, category, topics);
+      reporter.setPublisherItems(pCls, category, topics);
     }
   }
 

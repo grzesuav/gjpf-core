@@ -68,6 +68,8 @@ public class Statistics extends ListenerAdapter implements Cloneable {
   public int sharedAccessCGs = 0;
   public int monitorCGs = 0;
   public int signalCGs = 0;
+  public int threadApiCGs = 0;
+  public int breakTransitionCGs = 0;
   public int dataCGs = 0;
   public long nNewObjects = 0;
   public long nReleasedObjects = 0;
@@ -103,21 +105,29 @@ public class Statistics extends ListenerAdapter implements Cloneable {
       threadCGs++;
 
       Instruction insn = cg.getInsn();
-      if (insn instanceof FieldInstruction){
+      if (insn instanceof FieldInstruction) {
         sharedAccessCGs++;
-      } else if (insn instanceof LockInstruction || insn instanceof InvokeInstruction){
+      } else if (insn instanceof LockInstruction || insn instanceof InvokeInstruction) {
         monitorCGs++;
-      } else if (insn instanceof EXECUTENATIVE){
+      } else if (insn instanceof EXECUTENATIVE) {
         MethodInfo mi = insn.getMethodInfo();
-        if (mi != null){
+        if (mi != null) {
           ClassInfo ci = mi.getClassInfo();
-          if (ci != null){
-            if (ci.isObjectClassInfo()){
-              // its got to be either a wait or a notify
+          if (ci != null) {
+            if (ci.isObjectClassInfo()) {
+              // its got to be either a wait or a notify since we know the java.lang.Object methods
               signalCGs++;
+            } else if (ci.isThreadClassInfo()) {
+              threadApiCGs++;
             }
+          } else {
+            // Hmm - a CG from a synthetic method?
           }
+        } else {
+          // even more Hmmm - a GC from a synthesized instruction 
         }
+      } else {
+        breakTransitionCGs++; // e.g. max_transition_length or idleLoop breakers
       }
     } else {
       dataCGs++;

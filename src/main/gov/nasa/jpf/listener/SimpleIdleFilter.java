@@ -95,7 +95,7 @@ public class SimpleIdleFilter extends ListenerAdapter {
          ts.backJumps = 0;
        } else {
          if (ts.backJumps > maxBackJumps) {
-           ti.reschedule(true); // this breaks the executePorStep loop
+           ti.reschedule("idleFilter"); // this breaks the executePorStep loop
          }
        }
 	  }

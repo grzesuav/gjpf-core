@@ -105,7 +105,7 @@ public class AssertionProperty extends PropertyListenerAdapter {
 
         } else {
           ti.skipInstruction(insn);
-          ti.breakTransition();
+          ti.breakTransition("assertion");
         }
       }
     }

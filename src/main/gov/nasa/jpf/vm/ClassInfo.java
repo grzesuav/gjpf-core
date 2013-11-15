@@ -494,9 +494,28 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     this.classLoader = classLoader;
     this.classFileUrl = classFileUrl;
     
-    this.methods = NO_METHODS;
+    this.methods = NO_METHODS;  // yet
     
-    parser.parse(this); // this is the main part and might throw ClassParseExceptions
+    finishInitialization( parser);
+  }
+  
+  protected ClassInfo (String name, ClassLoaderInfo loader, String classFileUrl){
+    nClassInfos++;
+    
+    this.name = name;
+    this.classLoader = classLoader;
+    this.classFileUrl = classFileUrl;
+    
+    this.methods = NO_METHODS;  // yet
+
+    // rest has to be initialized by concrete ctor, which should call finishInitialization(parser)
+  }
+  
+  /**
+   * the initialization part that has to happen once we have super, fields, methods and annotations
+   */
+  protected void finishInitialization (ClassParser parser) throws ClassParseException {
+    parser.parse(this);
     
     //--- these might get streamlined
     isStringClassInfo = isStringClassInfo0();
@@ -520,7 +539,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     setAssertionStatus();
     processJPFConfigAnnotation();
-    loadAnnotationListeners();
+    loadAnnotationListeners();    
   }
   
   protected ClassInfo(){

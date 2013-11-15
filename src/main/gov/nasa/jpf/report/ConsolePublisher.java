@@ -112,7 +112,7 @@ public class ConsolePublisher extends Publisher {
   public void publishStart() {
     super.publishStart();
 
-    if (startTopics.length > 0){ // only report if we have output for this phase
+    if (startItems.length > 0){ // only report if we have output for this phase
       publishTopicStart("search started: " + formatDTG(reporter.getStartDate()));
     }
   }
@@ -120,7 +120,7 @@ public class ConsolePublisher extends Publisher {
   public void publishFinished() {
     super.publishFinished();
 
-    if (finishedTopics.length > 0){ // only report if we have output for this phase
+    if (finishedItems.length > 0){ // only report if we have output for this phase
       publishTopicStart("search finished: " + formatDTG(reporter.getFinishedDate()));
     }
   }
@@ -340,24 +340,30 @@ public class ConsolePublisher extends Publisher {
   
   // this is useful if somebody wants to monitor progress from a specialized ConsolePublisher
   public synchronized void printStatistics (PrintWriter pw){
-    Statistics stat = reporter.getStatistics();
     publishTopicStart( STATISTICS_TOPIC);
+    printStatistics( pw, reporter);
+  }
+  
+  // this can be used outside a publisher, to show the same info
+  public static void printStatistics (PrintWriter pw, Reporter reporter){
+    Statistics stat = reporter.getStatistics();
     
     pw.println("elapsed time:       " + formatHMS(reporter.getElapsedTime()));
-    pw.println("states:             new=" + stat.newStates + ", visited=" + stat.visitedStates
-            + ", backtracked=" + stat.backtracked + ", end=" + stat.endStates);
-    pw.println("search:             maxDepth=" + stat.maxDepth + ", constraints hit=" + stat.constraints);
+    pw.println("states:             new=" + stat.newStates + ",visited=" + stat.visitedStates
+            + ",backtracked=" + stat.backtracked + ",end=" + stat.endStates);
+    pw.println("search:             maxDepth=" + stat.maxDepth + ",constraints=" + stat.constraints);
     pw.println("choice generators:  thread=" + stat.threadCGs
-            + " (signal=" + stat.signalCGs + ", lock=" + stat.monitorCGs + ", shared ref=" + stat.sharedAccessCGs
+            + " (signal=" + stat.signalCGs + ",lock=" + stat.monitorCGs + ",sharedRef=" + stat.sharedAccessCGs
+            + ",threadApi=" + stat.threadApiCGs + ",reschedule=" + stat.breakTransitionCGs
             + "), data=" + stat.dataCGs);
     pw.println("heap:               " + "new=" + stat.nNewObjects
-            + ", released=" + stat.nReleasedObjects
-            + ", max live=" + stat.maxLiveObjects
-            + ", gc-cycles=" + stat.gcCycles);
+            + ",released=" + stat.nReleasedObjects
+            + ",maxLive=" + stat.maxLiveObjects
+            + ",gcCycles=" + stat.gcCycles);
     pw.println("instructions:       " + stat.insns);
     pw.println("max memory:         " + (stat.maxUsed >> 20) + "MB");
 
-    pw.println("loaded code:        classes=" + ClassLoaderInfo.getNumberOfLoadedClasses() + ", methods="
+    pw.println("loaded code:        classes=" + ClassLoaderInfo.getNumberOfLoadedClasses() + ",methods="
             + MethodInfo.getNumberOfLoadedMethods());
   }
   

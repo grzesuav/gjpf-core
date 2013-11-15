@@ -25,4 +25,7 @@ package gov.nasa.jpf.vm;
 public interface ClassParser {
  
   void parse (ClassInfo ci) throws ClassParseException;
+  
+  // for used by inner class object
+  void parse() throws ClassParseException;
 }
