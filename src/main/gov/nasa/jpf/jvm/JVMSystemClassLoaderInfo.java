@@ -169,8 +169,7 @@ public class JVMSystemClassLoaderInfo extends SystemClassLoaderInfo {
   protected ClassInfo createClassInfo (String clsName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException {
     ClassFile cf = new ClassFile(data);
     JVMCodeBuilder cb = getCodeBuilder(clsName);
-    ClassFileParser parser = new ClassFileParser(cf, cb);
-
-    return new JVMClassInfo(clsName, definingLoader, parser, url);
+    
+    return new JVMClassInfo(clsName, definingLoader, cf, url, cb);
   }
 }

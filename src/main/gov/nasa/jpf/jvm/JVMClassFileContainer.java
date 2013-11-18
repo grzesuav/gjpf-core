@@ -57,9 +57,7 @@ public abstract class JVMClassFileContainer extends ClassFileContainer {
       JVMCodeBuilder cb = sysCli.getCodeBuilder(typeName);
       ClassFile cf = new ClassFile(data);
       
-      ClassFileParser parser = new ClassFileParser(cf, cb);
-
-      return new JVMClassInfo(typeName, loader, parser, url);
+      return new JVMClassInfo( typeName, loader, cf, url, cb);
     }
     
     @Override

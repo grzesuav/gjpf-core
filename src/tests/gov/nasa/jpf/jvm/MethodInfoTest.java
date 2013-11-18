@@ -59,7 +59,7 @@ public class MethodInfoTest extends TestJPF {
     File file = new File("build/tests/gov/nasa/jpf/jvm/MethodInfoTest$MyClass.class");
 
     try {
-      ClassInfo ci = new NonResolvedClassInfo( file);
+      ClassInfo ci = new NonResolvedClassInfo( "gov.nasa.jpf.jvm.MethodInfoTest$MyClass",  file);
       MethodInfo mi;
       LocalVarInfo[] args;
 
@@ -131,7 +131,7 @@ public class MethodInfoTest extends TestJPF {
     File file = new File(
             "build/tests/gov/nasa/jpf/jvm/MethodInfoTest$MyClass.class");
     try {
-      ClassInfo ci = new NonResolvedClassInfo(file);
+      ClassInfo ci = new NonResolvedClassInfo("gov.nasa.jpf.jvm.MethodInfoTest$MyClass", file);
       MethodInfo mi = ci.getMethod("instanceCycleMethod", "(II)I", false);
 
       nextInstruction:

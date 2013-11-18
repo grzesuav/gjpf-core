@@ -19,11 +19,7 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.jvm.ClassFile;
-import gov.nasa.jpf.jvm.ClassFileParser;
-import gov.nasa.jpf.jvm.bytecode.InstructionFactory;
 import gov.nasa.jpf.util.test.TestJPF;
-import gov.nasa.jpf.vm.ClassFactory;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassParseException;
 import gov.nasa.jpf.vm.FieldInfo;
@@ -121,7 +117,7 @@ public class ClassInfoTest extends TestJPF {
     File file = new File("build/tests/gov/nasa/jpf/jvm/ClassInfoTest$MyClass.class");
 
     try {
-      ClassInfo ci = new NonResolvedClassInfo( file);
+      ClassInfo ci = new NonResolvedClassInfo( "gov.nasa.jpf.jvm.ClassInfoTest$MyClass", file);
 
       assert ci.getName().equals("gov.nasa.jpf.jvm.ClassInfoTest$MyClass");
 

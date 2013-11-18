@@ -29,8 +29,8 @@ import java.io.File;
  */
 class NonResolvedClassInfo extends JVMClassInfo {
     
-  NonResolvedClassInfo (File file) throws ClassParseException {
-    super(new ClassFileParser( new ClassFile(file), new JVMCodeBuilder(new InstructionFactory())));
+  NonResolvedClassInfo (String clsName, File file) throws ClassParseException {
+    super( clsName, null, new ClassFile(file), file.getAbsolutePath(), new JVMCodeBuilder(new InstructionFactory()));
   }
 
   //--- these are overridden so that we can create instances without the whole JPF ClassInfo environment

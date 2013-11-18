@@ -292,7 +292,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   
    //--- initialization interface towards parsers (which might reside in other packages)
     
-  public void setClass(String clsName, String superClsName, int flags, int cpCount) throws ClassParseException {
+  protected void setClass(String clsName, String superClsName, int flags, int cpCount) throws ClassParseException {
     String parsedName = Types.getClassNameFromTypeName(clsName);
 
     if (name != null && !name.equals(parsedName)){
@@ -477,45 +477,23 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
   
   
-  //--- this is only for unit testing purposes
-  protected ClassInfo (ClassParser parser) throws ClassParseException {
-    nClassInfos++;
-    
-    parser.parse(this);
-    
-    resolveClass();
-    linkFields();
-  }
-
-  public ClassInfo (String name, ClassLoaderInfo classLoader, ClassParser parser, String classFileUrl) throws ClassParseException {
+  protected ClassInfo (String name, ClassLoaderInfo cli, String classFileUrl){
     nClassInfos++;
     
     this.name = name;
-    this.classLoader = classLoader;
-    this.classFileUrl = classFileUrl;
-    
-    this.methods = NO_METHODS;  // yet
-    
-    finishInitialization( parser);
-  }
-  
-  protected ClassInfo (String name, ClassLoaderInfo loader, String classFileUrl){
-    nClassInfos++;
-    
-    this.name = name;
-    this.classLoader = classLoader;
+    this.classLoader = cli;
     this.classFileUrl = classFileUrl;
     
     this.methods = NO_METHODS;  // yet
 
-    // rest has to be initialized by concrete ctor, which should call finishInitialization(parser)
+    // rest has to be initialized by concrete ctor, which should call resolveAndLink(parser)
   }
   
   /**
    * the initialization part that has to happen once we have super, fields, methods and annotations
+   * NOTE - this has to be called by concrete ctors after parsing class files
    */
-  protected void finishInitialization (ClassParser parser) throws ClassParseException {
-    parser.parse(this);
+  protected void resolveAndLink () throws ClassParseException {
     
     //--- these might get streamlined
     isStringClassInfo = isStringClassInfo0();
