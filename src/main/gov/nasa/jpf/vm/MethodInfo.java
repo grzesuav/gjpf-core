@@ -1205,7 +1205,7 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
 
   /**
    * note - this depends on that we already have a code array
-   * (we might want to store lines and startPcs directly)
+   * and that the lines/startPcs are sorted (monotonic increasing)
    */
   public void setLineNumbers (int[] lines, int[] startPcs){
     int j=0;
@@ -1228,7 +1228,17 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     
     lineNumbers = ln;
   }
-  
+
+  /**
+   * this version takes an already expanded line number array which has to be of
+   * the same size as the code array
+   */
+  public void setLineNumbers (int[] lines){
+    if (lines.length != code.length){
+      throw new JPFException("inconsitent code/line number size");
+    }
+    lineNumbers = lines;
+  }
   
   public String toString() {
     return "MethodInfo[" + getFullName() + ']';
