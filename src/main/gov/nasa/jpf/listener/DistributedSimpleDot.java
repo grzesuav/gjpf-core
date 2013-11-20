@@ -33,8 +33,8 @@ import gov.nasa.jpf.vm.MultiProcessChoiceGenerator;
  */
 public class DistributedSimpleDot extends SimpleDot {
 
-  static final String MP_START_NODE_ATTRS = "fillcolor=green,height=0.75";
-  static final String MP_NODE_ATTRS = "shape=circle,fillcolor=moccasin,height=0.75";
+  static final String MP_START_NODE_ATTRS = "shape=octagon,fillcolor=green";
+  static final String MP_NODE_ATTRS = "shape=octagon,fillcolor=azure2";
   
   protected String mpNodeAttrs;
   protected String mpStartNodeAttrs;
@@ -73,7 +73,11 @@ public class DistributedSimpleDot extends SimpleDot {
       }
 
     } else { // already visited state
-      printTransition(getStateId(lastId), getStateId(id), getLastChoice(), null);
+      String nextCG = null;
+      if(!search.isEndState()) {
+        nextCG = getNextCG();
+      }
+      printTransition(getStateId(lastId), getStateId(id), getLastChoice(), nextCG);
     }
 
     seenEdges.add(edgeId);
