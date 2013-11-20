@@ -60,7 +60,7 @@ public class JVMClassInfo extends ClassInfo {
 
     @Override
     public void setClass (ClassFile cf, String clsName, String superClsName, int flags, int cpCount) throws ClassParseException {
-      setClass(clsName, superClsName, flags, cpCount);
+      JVMClassInfo.this.setClass(clsName, superClsName, flags, cpCount);
     }
 
     @Override
@@ -120,7 +120,7 @@ public class JVMClassInfo extends ClassInfo {
       setEnclosingClass(enclosingClassName);
 
       if (enclosingMethodName != null) {
-        setEnclosingMethod(enclosingMethodName + descriptor);
+        JVMClassInfo.this.setEnclosingMethod(enclosingMethodName + descriptor);
       }
     }
 
@@ -135,7 +135,7 @@ public class JVMClassInfo extends ClassInfo {
     //--- source file
     @Override
     public void setSourceFile (ClassFile cf, Object tag, String fileName) {
-      setSourceFile(fileName);
+      JVMClassInfo.this.setSourceFile(fileName);
     }
     
     //--- interfaces
