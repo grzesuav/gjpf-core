@@ -5,7 +5,6 @@
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
             <name>jpf-core</name>
         </general-data>
-
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/2">
             <!-- Do not use Project Properties customizer when editing this file manually. -->
             <name>jpf-core</name>
@@ -16,7 +15,7 @@
                     <type>java</type>
                     <location>src/main</location>
                     <encoding>UTF-8</encoding>
-                </source-folder>                  
+                </source-folder>
                 <source-folder>
                     <label>src/peers</label>
                     <type>java</type>
@@ -45,6 +44,11 @@
                     <label>src/examples</label>
                     <type>java</type>
                     <location>src/examples</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>jpf-core</label>
+                    <location>.</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
             </folders>
@@ -198,10 +202,14 @@
                     </context>
                 </action>
             </ide-actions>
-            
             <export>
                 <type>folder</type>
-                <location>build/annotations</location>
+                <location>build/main</location>
+                <build-target>build</build-target>
+            </export>
+            <export>
+                <type>folder</type>
+                <location>build/peers</location>
                 <build-target>build</build-target>
             </export>
             <export>
@@ -216,20 +224,14 @@
             </export>
             <export>
                 <type>folder</type>
-                <location>build/main</location>
-                <build-target>build</build-target>
-            </export>
-            <export>
-                <type>folder</type>
-                <location>build/peers</location>
+                <location>build/annotations</location>
                 <build-target>build</build-target>
             </export>
             <export>
                 <type>folder</type>
                 <location>build/tests</location>
                 <build-target>build</build-target>
-            </export>            
-            
+            </export>
             <view>
                 <items>
                     <source-folder style="packages">
@@ -269,7 +271,6 @@
             </view>
             <subprojects/>
         </general-data>
-
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>src/main</package-root>
@@ -309,7 +310,6 @@
                 <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>
-
         <preferences xmlns="http://www.netbeans.org/ns/auxiliary-configuration-preferences/1">
             <module name="org-netbeans-modules-editor-indent">
                 <node name="CodeStyle">

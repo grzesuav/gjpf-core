@@ -158,7 +158,11 @@ public class JVMClassInfo extends ClassInfo {
 
     @Override
     public void setFieldCount (ClassFile cf, int fieldCount) {
-      fields = new FieldInfo[fieldCount];
+      if (fieldCount > 0){
+        fields = new FieldInfo[fieldCount];
+      } else {
+        fields = null;
+      }
     }
 
     @Override

@@ -113,6 +113,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected static final String[] EMPTY_STRING_ARRAY = new String[0];
   protected static final String UNINITIALIZED_STRING = "UNINITIALIZED"; 
   protected static final Map<String,MethodInfo> NO_METHODS = Collections.emptyMap();
+  protected static final Set<ClassInfo> NO_INTERFACES = new HashSet<ClassInfo>();
   
   /**
    * support to auto-load listeners from annotations
@@ -343,35 +344,40 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   public void setFields(FieldInfo[] fields) {
-    int nInstance = 0, nStatic = 0;
-
-    for (int i = 0; i < fields.length; i++) {
-      if (fields[i].isStatic()) {
-        nStatic++;
-      } else {
-        nInstance++;
+    if (fields == null){
+      iFields = EMPTY_FIELDINFO_ARRAY;
+      sFields = EMPTY_FIELDINFO_ARRAY;
+      
+    } else { // there are fields, we have to tell them apart
+      int nInstance = 0, nStatic = 0;
+      for (int i = 0; i < fields.length; i++) {
+        if (fields[i].isStatic()) {
+          nStatic++;
+        } else {
+          nInstance++;
+        }
       }
-    }
 
-    FieldInfo[] instanceFields = (nInstance > 0) ? new FieldInfo[nInstance] : EMPTY_FIELDINFO_ARRAY;
-    FieldInfo[] staticFields = (nStatic > 0) ? new FieldInfo[nStatic] : EMPTY_FIELDINFO_ARRAY;
+      FieldInfo[] instanceFields = (nInstance > 0) ? new FieldInfo[nInstance] : EMPTY_FIELDINFO_ARRAY;
+      FieldInfo[] staticFields = (nStatic > 0) ? new FieldInfo[nStatic] : EMPTY_FIELDINFO_ARRAY;
 
-    int iInstance = 0;
-    int iStatic = 0;
-    for (int i = 0; i < fields.length; i++) {
-      FieldInfo fi = fields[i];
+      int iInstance = 0;
+      int iStatic = 0;
+      for (int i = 0; i < fields.length; i++) {
+        FieldInfo fi = fields[i];
 
-      if (fi.isStatic()) {
-        staticFields[iStatic++] = fi;
-      } else {
-        instanceFields[iInstance++] = fi;        
+        if (fi.isStatic()) {
+          staticFields[iStatic++] = fi;
+        } else {
+          instanceFields[iInstance++] = fi;
+        }
       }
+
+      iFields = instanceFields;
+      sFields = staticFields;
+
+      // we can't link the fields yet because we need the superclasses to be resolved
     }
-
-    this.iFields = instanceFields;
-    this.sFields = staticFields;
-
-    // we can't link the fields yet because we need the superclasses to be resolved
   }
 
   public void setMethods (MethodInfo[] methods) {
@@ -2172,15 +2178,20 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   protected Set<ClassInfo> loadInterfaces (String[] ifcNames) throws ClassInfoException {
-    Set<ClassInfo> set = new HashSet<ClassInfo>();
-    
-    for (String ifcName : ifcNames) {
-      ClassInfo.logger.finer("resolving interface: ", ifcName, " of ", name);
-      ClassInfo ifc = resolveReferencedClass(ifcName);
-      set.add(ifc);
+    if (ifcNames == null || ifcNames.length == 0){
+      return NO_INTERFACES;
+      
+    } else {
+      Set<ClassInfo> set = new HashSet<ClassInfo>();
+
+      for (String ifcName : ifcNames) {
+        ClassInfo.logger.finer("resolving interface: ", ifcName, " of ", name);
+        ClassInfo ifc = resolveReferencedClass(ifcName);
+        set.add(ifc);
+      }
+
+      return set;
     }
-    
-    return set;
   }
   
   /**
