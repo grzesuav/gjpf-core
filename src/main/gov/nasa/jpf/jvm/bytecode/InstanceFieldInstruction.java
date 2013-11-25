@@ -22,6 +22,7 @@ import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -36,7 +37,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
    *
    * USE WITH CARE, AND ONLY FROM DERIVED CLASSES
    */
-  protected int lastThis = -1;
+  protected int lastThis = MJIEnv.NULL;
 
   protected InstanceFieldInstruction() {}
 
@@ -146,7 +147,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
    * since this is based on getLastThis(), the same context restrictions apply
    */
   public ElementInfo getLastElementInfo () {
-    if (lastThis != -1) {
+    if (lastThis != MJIEnv.NULL) {
       return VM.getVM().getHeap().get(lastThis); // <2do> remove - should be in clients
     }
 

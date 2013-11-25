@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -55,7 +56,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     if (!ti.isFirstStepInsn()) { // top half
 
       // if this produces an NPE, force the error w/o further ado
-      if (objRef == -1) {
+      if (objRef == MJIEnv.NULL) {
         return ti.createAndThrowException("java.lang.NullPointerException",
                                    "referencing field '" + fname + "' on null object");
       }

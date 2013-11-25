@@ -78,7 +78,7 @@ public abstract class StackFrame implements Cloneable {
   protected int top;                // top index of the operand stack (NOT size)
                                     // this points to the last pushed value
 
-  protected int thisRef = -1;       // slots[0] can change, but we have to keep 'this'
+  protected int thisRef = MJIEnv.NULL;       // slots[0] can change, but we have to keep 'this'
   protected int stackBase;          // index where the operand stack begins
 
   protected int[] slots;            // the combined local and operand slots
@@ -254,7 +254,7 @@ public abstract class StackFrame implements Cloneable {
 
   public Object getFieldValue (String id) {
     // try instance fields first
-    if (thisRef != -1) {  // it's an instance method
+    if (thisRef != MJIEnv.NULL) {  // it's an instance method
       ElementInfo ei = VM.getVM().getHeap().get(thisRef);
       Object v = ei.getFieldValueObject(id);
       if (v != null) {
@@ -925,14 +925,10 @@ public abstract class StackFrame implements Cloneable {
   // <2do> replace with non-ref version
   public void setLocalVariable (int index, int v, boolean ref) {
     // <2do> activateGc should be replaced by local refChanged
-    boolean activateGc = (isRef.get(index) && (slots[index] != -1));
+    boolean activateGc = ref || (isRef.get(index) && (slots[index] != MJIEnv.NULL));
 
     slots[index] = v;
     isRef.set(index,ref);
-
-    if (ref) {
-      if (v != -1) activateGc = true;
-    }
 
     if (activateGc) {
         VM.getVM().getSystemState().activateGC();
@@ -1863,7 +1859,7 @@ public abstract class StackFrame implements Cloneable {
 
     // <2do> get rid of this !
     for (int i=top; i>t; i--) {
-      if (isRef.get(i) && (slots[i] != -1)) {
+      if (isRef.get(i) && (slots[i] != MJIEnv.NULL)) {
         VM.getVM().getSystemState().activateGC();
         break;
       }
@@ -1897,7 +1893,7 @@ public abstract class StackFrame implements Cloneable {
 
     // <2do> get rid of this
     if (isRef.get(top)) {
-      if (v != -1) {
+      if (v != MJIEnv.NULL) {
         VM.getVM().getSystemState().activateGC();
       }
     }
@@ -1993,7 +1989,7 @@ public abstract class StackFrame implements Cloneable {
     //  attrs[top] = null;
     //}
 
-    if (ref != -1) {
+    if (ref != MJIEnv.NULL) {
       VM.getVM().getSystemState().activateGC();
     }
   }
@@ -2007,7 +2003,7 @@ public abstract class StackFrame implements Cloneable {
     //  attrs[top] = null;
     //}
 
-    if (ref && (v != -1)) {
+    if (ref && (v != MJIEnv.NULL)) {
       VM.getVM().getSystemState().activateGC();
     }
   }
@@ -2025,11 +2021,46 @@ public abstract class StackFrame implements Cloneable {
 
   //--- abstract argument & return passing that is shared between VM types
   
-  public abstract int getResult();
-  public abstract int getReferenceResult();
-  public abstract long getLongResult();
-  public abstract Object getResultAttr();
-  public abstract Object getLongResultAttr();
+  public void setReferenceResult (int ref, Object attr){
+    pushRef(ref);
+    if (attr != null){
+      setOperandAttr(attr);
+    }
+  }
+  
+  public void setResult (int r, Object attr){
+    push(r);
+    if (attr != null){
+      setOperandAttr(attr);
+    }    
+  }
+  
+  public void setResult (long r, Object attr){
+    pushLong(r);
+    if (attr != null){
+      setLongOperandAttr(attr);
+    }    
+  }
+  
+  public int getResult(){
+    return pop();
+  }
+  
+  public long getLongResult(){
+    return popLong();
+  }
+
+  public int getReferenceResult () {
+    return pop();
+  }
+  
+  public Object getResultAttr () {
+    return getOperandAttr();
+  }
+
+  public Object getLongResultAttr () {
+    return getOperandAttr();
+  }
   
   public float getFloatResult(){
     return Float.intBitsToFloat(getResult());    
@@ -2043,13 +2074,26 @@ public abstract class StackFrame implements Cloneable {
   public Object getDoubleResultAttr(){
     return getLongResultAttr();
   }
+
   
   //--- VM independent exception handler setup
   
-  public abstract void setExceptionReference (int exRef);
-  public abstract void setExceptionReferenceAttribute(Object attr); 
-  public abstract int getExceptionReference();
-  public abstract Object getExceptionReferenceAttribute();
+  public void setExceptionReference (int exRef){
+    pushRef(exRef);
+  }
+  
+  public int getExceptionReference (){
+    return pop();
+  }
+  
+  public void setExceptionReferenceAttribute (Object attr){
+    setOperandAttr(attr);
+  }
+  
+  public Object getExceptionReferenceAttribute (){
+    return getOperandAttr();
+  }
+  
   
   // those set the local vars that are normally initialized from call arguments
   public abstract void setArgumentLocal (int idx, int value, Object attr);

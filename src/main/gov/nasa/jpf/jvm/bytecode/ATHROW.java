@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.JVMInstruction;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -35,7 +36,7 @@ public class ATHROW extends JVMInstruction {
 
     int objref = frame.pop();
 
-    if (objref == -1) {
+    if (objref == MJIEnv.NULL) {
       return ti.createAndThrowException("java.lang.NullPointerException");
     }
 

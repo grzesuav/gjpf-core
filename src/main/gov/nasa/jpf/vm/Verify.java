@@ -124,6 +124,8 @@ public class Verify {
     }
   }
 
+  public static final int NO_VALUE = -1;
+  
   public static void putValue (String key, int value) {
     throw new UnsupportedOperationException("putValue requires JPF execution");
   }

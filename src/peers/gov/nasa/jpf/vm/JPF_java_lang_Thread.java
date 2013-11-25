@@ -22,17 +22,6 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.JPFLogger;
-import gov.nasa.jpf.vm.ChoiceGenerator;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.DirectCallStackFrame;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.VM;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.NativePeer;
-import gov.nasa.jpf.vm.SystemState;
-import gov.nasa.jpf.vm.ThreadInfo;
 
 
 /**
@@ -81,7 +70,7 @@ public class JPF_java_lang_Thread extends NativePeer {
   @MJI
   public void setName0__Ljava_lang_String_2__V (MJIEnv env, int objref, int nameRef) {
     // it bails if you try to set a null name
-    if (nameRef == -1) {
+    if (nameRef == MJIEnv.NULL) {
       env.throwException("java.lang.IllegalArgumentException");
 
       return;
@@ -447,7 +436,7 @@ public class JPF_java_lang_Thread extends NativePeer {
   
   @MJI
   public void stop____V (MJIEnv env, int threadRef) {
-    stop__Ljava_lang_Throwable_2__V(env, threadRef, -1);
+    stop__Ljava_lang_Throwable_2__V(env, threadRef, MJIEnv.NULL);
   }
 
   @MJI

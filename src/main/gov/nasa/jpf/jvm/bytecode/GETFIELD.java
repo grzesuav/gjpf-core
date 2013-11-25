@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -51,7 +52,7 @@ public class GETFIELD extends InstanceFieldInstruction {
     
     int objRef = frame.peek(); // don't pop yet, we might re-enter
     lastThis = objRef;
-    if (objRef == -1) {
+    if (objRef == MJIEnv.NULL) {
       return ti.createAndThrowException("java.lang.NullPointerException",
                                         "referencing field '" + fname + "' on null object");
     }

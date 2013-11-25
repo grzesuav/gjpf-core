@@ -481,7 +481,7 @@ public abstract class ElementInfo implements Cloneable {
       return false;
     }
 
-    setObjectRef(-1);
+    setObjectRef(MJIEnv.NULL);
 
     return true;
   }
@@ -1472,7 +1472,7 @@ public abstract class ElementInfo implements Cloneable {
   }
     
   public boolean isNull() {
-    return (objRef == -1);
+    return (objRef == MJIEnv.NULL);
   }
 
   public ElementInfo getDeclaredObjectField(String fname, String referenceType) {
@@ -1496,7 +1496,7 @@ public abstract class ElementInfo implements Cloneable {
   public String getStringField(String fname) {
     int ref = getReferenceField(fname);
 
-    if (ref != -1) {
+    if (ref != MJIEnv.NULL) {
       ElementInfo ei = VM.getVM().getHeap().get(ref);
       return ei.asString();
     } else {
@@ -1664,7 +1664,7 @@ public abstract class ElementInfo implements Cloneable {
    */
   public void registerLockContender (ThreadInfo ti) {
 
-    assert ti.lockRef == -1 || ti.lockRef == objRef :
+    assert ti.lockRef == MJIEnv.NULL || ti.lockRef == objRef :
       "thread " + ti + " trying to register for : " + this +
       " ,but already blocked on: " + ti.getElementInfo(ti.lockRef);
 

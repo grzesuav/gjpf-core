@@ -79,7 +79,9 @@ public class ThreadInfo extends InfoObject
   };
 
   static final int[] emptyRefArray = new int[0];
-
+  static final String MAIN_NAME = "main";
+  
+  
   static ThreadInfo currentThread;
 
   protected class StackIterator implements Iterator<StackFrame> {
@@ -234,7 +236,7 @@ public class ThreadInfo extends InfoObject
    * !! this is also volatile -> has to be reset after backtrack
    * the reference of the object if this thread is blocked or waiting for
    */
-  int lockRef = -1;
+  int lockRef = MJIEnv.NULL;
 
   Memento<ThreadInfo> cachedMemento; // cache for unchanged ThreadInfos
 
@@ -398,9 +400,16 @@ public class ThreadInfo extends InfoObject
    * since we can't allocate objects without a ThreadInfo)
    */
   protected ThreadInfo (VM vm, int id, ApplicationContext appCtx) {
-    initFields(vm);
     this.id = id;
     this.appCtx = appCtx;
+    
+    init(vm);
+    // we don't have the group yet, no Runnable or parent, and the name is fixed
+    // the thread is also not yet in the ThreadList
+    
+    ci = appCtx.getSystemClassLoader().getThreadClassInfo();
+    targetRef = MJIEnv.NULL;
+    threadData.name = MAIN_NAME;
   }
 
   /**
@@ -410,11 +419,20 @@ public class ThreadInfo extends InfoObject
   protected ThreadInfo (VM vm, int objRef, int groupRef, int runnableRef, int nameRef, ThreadInfo parent) {    
     id = computeId(objRef);
     this.appCtx = parent.getApplicationContext();
-    initFields(vm);
-    initReferenceFields(objRef, groupRef, runnableRef, nameRef);
+    
+    init(vm); // this is only partial, we still have to link/set the references
+    
+    ElementInfo ei = vm.getElementInfo(objRef);  
+    this.ci = ei.getClassInfo();    
+    this.objRef = objRef;
+    this.targetRef = runnableRef;
+   
+    threadData.name = vm.getElementInfo(nameRef).asString();
+    
+    // note the thread is not yet in the ThreadList, we have to register from the caller
   }
   
-  protected void initFields(VM vm){
+  protected void init(VM vm){
     // 'gid' is set by the factory method
     // we can't set the 'id' field of the corresponding java.lang.Thread object until we have one
     
@@ -440,24 +458,6 @@ public class ThreadInfo extends InfoObject
     attributes |= ATTR_DATA_CHANGED; 
     env = new MJIEnv(this);    
   }
-  
-  // initialize related JPF object references
-  protected void initReferenceFields (int objRef, int groupRef, int runnableRef, int nameRef){
-    ElementInfo ei = vm.getModifiableElementInfo(objRef);
-    
-    this.objRef = objRef;
-    this.targetRef = runnableRef;
-    
-    this.ci = ei.getClassInfo();
-
-    threadData.name = vm.getElementInfo(nameRef).asString();
-
-    // note that we have to register here so that subsequent native peer calls can use the oref
-    // to lookup the ThreadInfo. This is a bit premature since the thread is not runnable yet,
-    // but chances are it will be started soon, so we don't waste another data structure to do the mapping
-    vm.registerThread(this);
-  }
-  
   
   public Memento<ThreadInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
@@ -602,27 +602,27 @@ public class ThreadInfo extends InfoObject
         // nothing. the notifyThreadStarted has to happen from
         // Thread.start(), since the thread could have been blocked
         // at the time with a sync run() method
-       // assert lockRef == -1;
+       // assert lockRef == MJIEnv.NULL;
         break;
       case TERMINATED:
         vm.notifyThreadTerminated(this);
         break;
       case BLOCKED:
-        assert lockRef != -1;
+        assert lockRef != MJIEnv.NULL;
         vm.notifyThreadBlocked(this);
         break;
       case UNBLOCKED:
-        assert lockRef == -1;
+        assert lockRef == MJIEnv.NULL;
         break; // nothing to notify
       case WAITING:
-        assert lockRef != -1;
+        assert lockRef != MJIEnv.NULL;
         vm.notifyThreadWaiting(this);
         break;
       case INTERRUPTED:
         vm.notifyThreadInterrupted(this);
         break;
       case NOTIFIED:
-        assert lockRef != -1;
+        assert lockRef != MJIEnv.NULL;
         vm.notifyThreadNotified(this);
         break;
       }
@@ -729,8 +729,8 @@ public class ThreadInfo extends InfoObject
 
     case TIMEOUT_WAITING:
       // depends on if we can re-acquire the lock
-      //assert lockRef != -1 : "timeout waiting but no blocked object";
-      if (lockRef != -1){
+      //assert lockRef != MJIEnv.NULL : "timeout waiting but no blocked object";
+      if (lockRef != MJIEnv.NULL){
         ElementInfo ei = vm.getElementInfo(lockRef);
         return ei.canLock(this);
       } else {
@@ -1107,7 +1107,7 @@ public class ThreadInfo extends InfoObject
    */
   void setLockRef (int objref) {
 /**
-    assert ((lockRef == -1) || (lockRef == objref)) :
+    assert ((lockRef == MJIEnv.NULL) || (lockRef == objref)) :
       "attempt to overwrite lockRef: " + vm.getHeap().get(lockRef) +
       " with: " + vm.getHeap().get(objref);
 **/
@@ -1119,7 +1119,7 @@ public class ThreadInfo extends InfoObject
    * needs to be public since we have to use it from INVOKECLINIT (during call skipping)
    */
   public void resetLockRef () {
-    lockRef = -1;
+    lockRef = MJIEnv.NULL;
   }
 
   public int getLockRef() {
@@ -1127,7 +1127,7 @@ public class ThreadInfo extends InfoObject
   }
 
   public ElementInfo getLockObject () {
-    if (lockRef == -1) {
+    if (lockRef == MJIEnv.NULL) {
       return null;
     } else {
       return vm.getElementInfo(lockRef);
@@ -1437,7 +1437,7 @@ public class ThreadInfo extends InfoObject
     lockedObjectReferences = emptyLockRefs;
 
     // the ref of the object we are blocked on or waiting for
-    lockRef = -1;
+    lockRef = MJIEnv.NULL;
 
     pendingException = null;
   }
@@ -2137,7 +2137,6 @@ public class ThreadInfo extends InfoObject
   public ElementInfo getElementInfoWithUpdatedSharedness (int objRef){
     Heap heap = vm.getHeap();
     ElementInfo ei = heap.get(objRef);
-    
     return ei.getInstanceWithUpdatedSharedness(this);
   }
   
@@ -2311,8 +2310,7 @@ public class ThreadInfo extends InfoObject
   }
 
   /**
-   * this is called upon ThreadInfo.exit(), i.e. the Thread object can be still
-   * around for a while
+   * this is called upon ThreadInfo.exit() and corresponds to the private Thread.exit()
    */
   void cleanupThreadObject (ElementInfo ei) {
     // ideally, this should be done by calling Thread.exit(), but this
@@ -2328,7 +2326,14 @@ public class ThreadInfo extends InfoObject
     ei.setReferenceField("uncaughtExceptionHandler", MJIEnv.NULL);
   }
 
-  
+  /**
+   * this is called upon ThreadInfo.exit() and corresponds to ThreadGroup.remove(t), which is called from Thread.exit()
+   * 
+   * ideally this should be in the ThreadGroup peer, but we don't want to reference concrete peers from core (which is the
+   * lowest layer).
+   * Since we already depend on ThreadGroup fields during VM initialization we just keep all Thread/ThreadGroup
+   * related methods here
+   */
   void cleanupThreadGroup (int grpRef, int threadRef) {
     if (grpRef != MJIEnv.NULL) {
       ElementInfo eiGrp = getModifiableElementInfo(grpRef);
@@ -2364,6 +2369,108 @@ public class ThreadInfo extends InfoObject
     }
   }
 
+  /**
+   * this is called by the VM upon initialization of the main thread. At this point, we have a tiMain and a java.lang.Thread
+   * object, but there is no ThreadGroup yet
+   * 
+   * This method is here to keep all Thread/ThreadGroup field dependencies in one place. The downside of not keeping this in
+   * VM is that we can't override in order to have specialized ThreadInfos, but there is no factory for them anyways
+   */
+  protected void createMainThreadObject (SystemClassLoaderInfo sysCl){
+    //--- now create & initialize all the related JPF objects
+    Heap heap = getHeap();
+
+    ClassInfo ciThread = sysCl.threadClassInfo;
+    ElementInfo eiThread = heap.newObject( ciThread, this);
+    objRef = eiThread.getObjectRef();
+     
+    ElementInfo eiName = heap.newString(MAIN_NAME, this);
+    int nameRef = eiName.getObjectRef();
+    eiThread.setReferenceField("name", nameRef);
+    
+    ElementInfo eiGroup = createMainThreadGroup(sysCl);
+    eiThread.setReferenceField("group", eiGroup.getObjectRef());
+    
+    eiThread.setIntField("priority", Thread.NORM_PRIORITY);
+
+    ClassInfo ciPermit = sysCl.getResolvedClassInfo("java.lang.Thread$Permit");
+    ElementInfo eiPermit = heap.newObject( ciPermit, this);
+    eiPermit.setBooleanField("blockPark", true);
+    eiThread.setReferenceField("permit", eiPermit.getObjectRef());
+
+    addToThreadGroup(eiGroup);
+    
+    addId( objRef, id);
+
+    //--- set the thread running
+    setState(ThreadInfo.State.RUNNING);
+  }
+  
+
+  /**
+   * this creates and inits the main ThreadGroup object, which we have to do explicitly since
+   * we can't execute bytecode yet
+   */
+  protected ElementInfo createMainThreadGroup (SystemClassLoaderInfo sysCl) {
+    Heap heap = getHeap();
+    
+    ClassInfo ciGroup = sysCl.getResolvedClassInfo("java.lang.ThreadGroup");
+    ElementInfo eiThreadGrp = heap.newObject( ciGroup, this);
+
+    ElementInfo eiGrpName = heap.newString("main", this);
+    eiThreadGrp.setReferenceField("name", eiGrpName.getObjectRef());
+
+    eiThreadGrp.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
+
+    // 'threads' and 'nthreads' will be set later from createMainThreadObject
+
+    return eiThreadGrp;
+  }
+
+  /**
+   * this is used for all thread objects, not just main 
+   */
+  protected void addToThreadGroup (ElementInfo eiGroup){
+    FieldInfo finThreads = eiGroup.getFieldInfo("nthreads");
+    int nThreads = eiGroup.getIntField(finThreads);
+    
+    if (eiGroup.getBooleanField("destroyed")){
+      env.throwException("java.lang.IllegalThreadStateException");
+      
+    } else {
+      FieldInfo fiThreads = eiGroup.getFieldInfo("threads");
+      int threadsRef = eiGroup.getReferenceField(fiThreads);
+      
+      if (threadsRef == MJIEnv.NULL){
+        threadsRef = env.newObjectArray("Ljava/lang/Thread;", 1);
+        env.setReferenceArrayElement(threadsRef, 0, objRef);
+        eiGroup.setReferenceField(fiThreads, threadsRef);
+        
+      } else {
+        int newThreadsRef = env.newObjectArray("Ljava/lang/Thread;", nThreads+1);
+        ElementInfo eiNewThreads = env.getElementInfo(newThreadsRef);        
+        ElementInfo eiThreads = env.getElementInfo(threadsRef);
+        
+        for (int i=0; i<nThreads; i++){
+          int tr = eiThreads.getReferenceElement(i);
+          eiNewThreads.setReferenceElement(i, tr);
+        }
+        
+        eiNewThreads.setReferenceElement(nThreads, objRef);
+        eiGroup.setReferenceField(fiThreads, newThreadsRef);
+      }
+      
+      eiGroup.setIntField(finThreads, nThreads+1);
+      
+      /** <2do> we don't model this yet
+      FieldInfo finUnstartedThreads = eiGroup.getFieldInfo("nUnstartedThreads");
+      int nUnstarted = eiGroup.getIntField(finUnstartedThreads);
+      eiGroup.setIntField(finUnstartedThreads, nUnstarted-1);
+      **/
+    }    
+  }
+  
+  
   public void hash (HashData hd) {
     threadData.hash(hd);
 
@@ -2505,6 +2612,10 @@ public class ThreadInfo extends InfoObject
     return top;
   }
   
+  public StackFrame popAndGetTopFrame(){
+    popFrame();
+    return top;
+  }
   
   /**
    * removing DirectCallStackFrames is a bit different (only happens from
@@ -3242,7 +3353,7 @@ public class ThreadInfo extends InfoObject
     
     // if the thread is runnable, it can't be blocked
     if (isRunnable()){
-      checkAssertion(lockRef == -1, "runnable thread with non-null lockRef: " + lockRef) ;
+      checkAssertion(lockRef == MJIEnv.NULL, "runnable thread with non-null lockRef: " + lockRef) ;
     }
     
     // every thread that has been started and is not terminated has to have a stackframe with a next pc
@@ -3265,7 +3376,7 @@ public class ThreadInfo extends InfoObject
   
     List<ElementInfo> lockedObjects = getLockedObjects();
     
-    if (lockRef != -1){
+    if (lockRef != MJIEnv.NULL){
       // object we are blocked on has to exist
       ElementInfo ei = this.getElementInfo(lockRef);
       checkAssertion( ei != null, "thread locked on non-existing object: " + lockRef);

@@ -22,6 +22,7 @@ package gov.nasa.jpf.test.mc.basic;
 import org.junit.Test;
 
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.Verify;
 
 /**
@@ -38,7 +39,7 @@ public class OVHeapTest extends TestJPF {
     System.out.printf("%s ,object: %s, ref: %d", msg, key, ref);
     
     int v = Verify.getValue(key);
-    if (v == -1) {
+    if (v == Verify.NO_VALUE) {
       Verify.putValue(key, ref);
       System.out.println(" new");
     } else {

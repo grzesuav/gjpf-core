@@ -54,7 +54,7 @@ public class GlobalTrackingPolicy extends SharedObjectPolicy {
   @Override
   public ThreadInfoSet getThreadInfoSet(ThreadInfo allocThread, StaticElementInfo ei) {
     int clsObjRef = ei.getClassObjectRef();
-    if (clsObjRef == -1) { // startup class, we don't have a class object yet
+    if (clsObjRef == MJIEnv.NULL) { // startup class, we don't have a class object yet
       // note that we don't have to store this in our globalCache since we can never
       // backtrack to a point where the startup classes were not initialized yet.
       // note also that we still can't use a single PersistentTidSet instance for this since

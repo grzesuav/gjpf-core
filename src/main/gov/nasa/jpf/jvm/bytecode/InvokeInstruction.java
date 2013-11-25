@@ -25,6 +25,7 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.LocalVarInfo;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -226,7 +227,7 @@ public abstract class InvokeInstruction extends JVMInstruction {
       //case Types.T_OBJECT:
       case Types.T_REFERENCE:
         int ref = frame.peek(off);
-        if (ref >=0) {
+        if (ref != MJIEnv.NULL) {
           args[i] = ti.getElementInfo(ref);
         } else {
           args[i] = null;

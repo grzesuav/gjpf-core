@@ -47,8 +47,8 @@ public abstract class VirtualInvocation extends InstanceInvocation {
   public Instruction execute (ThreadInfo ti) {
     int objRef = ti.getCalleeThis(getArgSize());
 
-    if (objRef == -1) {
-      lastObj = -1;
+    if (objRef == MJIEnv.NULL) {
+      lastObj = MJIEnv.NULL;
       return ti.createAndThrowException("java.lang.NullPointerException", "Calling '" + mname + "' on null object");
     }
 

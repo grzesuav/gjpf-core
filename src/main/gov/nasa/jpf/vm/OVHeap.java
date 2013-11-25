@@ -33,6 +33,9 @@ import java.util.Iterator;
  * SGOID computation uses HashedAllocationContext, which means there
  * is a chance of collisions, in which case a different heap type
  * has to be used (we don't try to resolve collisions here)
+ * 
+ * NOTE - a reference value of 0 represents NULL, but we rather waste one
+ * unused element than doing a -1 on all gets/sets
  */
 public class OVHeap extends GenericSGOIDHeap {
   
@@ -88,11 +91,11 @@ public class OVHeap extends GenericSGOIDHeap {
   }
 
   /**
-   * we treat ref < 0 as NULL reference instead of throwing an exception
+   * we treat ref <= 0 as NULL reference instead of throwing an exception
    */
   @Override
   public ElementInfo get (int ref) {
-    if (ref < 0) {
+    if (ref <= 0) {
       return null;
     } else {
       return elementInfos.get(ref);
@@ -100,7 +103,7 @@ public class OVHeap extends GenericSGOIDHeap {
   }
 
   public ElementInfo getModifiable (int ref) {
-    if (ref < 0) {
+    if (ref <= 0) {
       return null;
     } else {
       ElementInfo ei = elementInfos.get(ref);

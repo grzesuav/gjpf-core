@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -35,7 +36,7 @@ public abstract class ArrayStoreInstruction extends ArrayElementInstruction impl
   @Override
   public Instruction execute (ThreadInfo ti) {
     int aref = peekArrayRef(ti); // need to be poly, could be LongArrayStore
-    if (aref == -1) {
+    if (aref == MJIEnv.NULL) {
       return ti.createAndThrowException("java.lang.NullPointerException");
     }
 

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -55,7 +56,7 @@ public class ARETURN extends ReturnInstruction {
       ret = frame.peek();
     }
     
-    if (ret == -1) {
+    if (ret == MJIEnv.NULL) {
       return null;
     } else {
       return ti.getElementInfo(ret);

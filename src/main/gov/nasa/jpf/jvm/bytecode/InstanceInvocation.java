@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.util.FixedBitSet;
 import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -49,7 +50,7 @@ public abstract class InstanceInvocation extends InvokeInstruction {
 
   public ElementInfo getThisElementInfo (ThreadInfo ti) {
     int thisRef = getCalleeThis(ti);
-    if (thisRef != -1) {
+    if (thisRef != MJIEnv.NULL) {
       return ti.getElementInfo(thisRef);
     } else {
       return null;

@@ -18,6 +18,8 @@
 //
 package gov.nasa.jpf.vm.serialize;
 
+import gov.nasa.jpf.vm.MJIEnv;
+
 /**
  * (mostly) pass-through Abstraction
  */
@@ -45,7 +47,7 @@ public class AbstractionAdapter implements Abstraction {
   }
 
   public boolean traverseObject(int ref) {
-    return (ref != -1);
+    return (ref != MJIEnv.NULL);
   }
   
 }

@@ -919,7 +919,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   public int getClassObjectRef () {
     StaticElementInfo sei = getStaticElementInfo();    
-    return (sei != null) ? sei.getClassObjectRef() : -1;
+    return (sei != null) ? sei.getClassObjectRef() : MJIEnv.NULL;
   }
 
   public gov.nasa.jpf.vm.ClassFileContainer getContainer(){
@@ -1438,7 +1438,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public NativePeer getNativePeer () {
     return nativePeer;
   }
-
+  
   /**
    * Returns true if the given class is an instance of the class
    * or interface specified.

@@ -351,17 +351,21 @@ public class Thread implements Runnable {
   /**
    * automatically called by system upon thread termination to clean up
    * references.
+   * 
    * NOTE - we clean up atomically during ThreadInfo.finish(), to avoid any
-   * additional states
+   * additional states. This is important since group per se is a shared object
+   * We only include this method here as a specification for ThreadInfo
    */
   private void exit () {
-    // apparently some older javac on Solaris chokes on this, but it's perfectly fine
-    //group.remove(this);
-    //group = null;
-
-    //threadLocals = null;
-    //inheritableThreadLocals = null;
-    //parkBlocker = null;
+    if (group != null){
+      group.threadTerminated(this);
+      group = null;
+    }
+    
+    threadLocals = null;
+    inheritableThreadLocals = null;
+    parkBlocker = null;
+    uncaughtExceptionHandler = null;
   }
 
   // some Java 6 mojo

@@ -21,6 +21,7 @@ package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ObjRef;
@@ -72,7 +73,7 @@ public class Invocation {
     if (cls == ObjRef.class) {
       int ref = ((ObjRef)a).getReference();
       
-      if (ref != -1){
+      if (ref != MJIEnv.NULL){
         ElementInfo ei = VM.getVM().getElementInfo(ref);
         ClassInfo ci = ei.getClassInfo();
         String cname = ci.getName();

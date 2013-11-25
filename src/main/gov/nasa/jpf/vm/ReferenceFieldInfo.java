@@ -25,7 +25,8 @@ import gov.nasa.jpf.JPFException;
  * field info for object fields
  */
 public class ReferenceFieldInfo extends SingleSlotFieldInfo {
-  int init=-1;
+  int init;  //  = MJIEnv.NULL; // not required for MJIEnv.NULL = 0
+  
   String sInit; // <2do> pcm - just a temporary quirk to init from string literals
                 // check if there are other non-object reference inits
 
@@ -35,7 +36,7 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
 
   public String valueToString (Fields f) {
     int i = f.getIntValue(storageOffset);
-    if (i == -1) {
+    if (i == MJIEnv.NULL) {
       return "null";
     } else {
       return (VM.getVM().getHeap().get(i)).toString();
@@ -86,7 +87,7 @@ public class ReferenceFieldInfo extends SingleSlotFieldInfo {
 
   public Object getValueObject (Fields f){
     int i = f.getIntValue(storageOffset);
-    if (i == -1) {
+    if (i == MJIEnv.NULL) {
       return null;
     } else {
       Heap heap = VM.getVM().getHeap();

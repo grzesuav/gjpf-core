@@ -19,7 +19,7 @@
 package gov.nasa.jpf.vm;
 
 public abstract class PredicateMap {
-	public int ref = -1;
+	public int ref = MJIEnv.NULL;
 	public void setRef(int objref) {
 		ref = objref;
 	}

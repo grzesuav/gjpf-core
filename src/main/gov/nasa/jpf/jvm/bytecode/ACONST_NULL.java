@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.JVMInstruction;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -34,7 +35,7 @@ public class ACONST_NULL extends JVMInstruction {
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
     
-    frame.pushRef(-1);
+    frame.pushRef(MJIEnv.NULL);
     
     return getNext(ti);
   }

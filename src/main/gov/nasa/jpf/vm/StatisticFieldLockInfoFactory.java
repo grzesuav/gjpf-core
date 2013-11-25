@@ -91,7 +91,7 @@ public class StatisticFieldLockInfoFactory implements FieldLockInfoFactory {
       
       if (AGRESSIVE) {
         int lockCandidateRef = strongProtectionCandidate(ei,fi,currentLockRefs);
-        if (lockCandidateRef != -1) {
+        if (lockCandidateRef != MJIEnv.NULL) {
           // NOTE we raise the checklevel
           return new SingleLockFli( ti, lockCandidateRef, CHECK_THRESHOLD);
         }

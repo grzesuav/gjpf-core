@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.*;
  */
 public class NEW extends JVMInstruction implements AllocInstruction {
   protected String cname;
-  protected int newObjRef = -1;
+  protected int newObjRef = MJIEnv.NULL;
 
   public NEW (String clsDescriptor){
     cname = Types.getClassNameFromTypeName(clsDescriptor);
@@ -94,7 +94,7 @@ public class NEW extends JVMInstruction implements AllocInstruction {
   }
 
   public String toString() {
-    if (newObjRef != -1){
+    if (newObjRef != MJIEnv.NULL){
       return "new " + cname + '@' + Integer.toHexString(newObjRef);
 
     } else {

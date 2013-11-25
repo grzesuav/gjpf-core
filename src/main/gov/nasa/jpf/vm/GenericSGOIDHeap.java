@@ -25,6 +25,8 @@ import gov.nasa.jpf.vm.GenericHeap.GenericHeapMemento;
 /**
  * abstract Heap trait that implements SGOIDs by means of a search global
  * Allocation map and a state managed allocCount map
+ * 
+ * NOTE - a reference value of 0 represents null and therefore is not a valid SGOID
  */
 public abstract class GenericSGOIDHeap extends GenericHeap {
 

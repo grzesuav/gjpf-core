@@ -216,12 +216,12 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
       for (ElementInfo ei : weakRefs) {
         Fields f = ei.getFields();
         int    ref = f.getIntValue(0); // watch out, the 0 only works with our own WeakReference impl
-        if (ref != -1) {
+        if (ref != MJIEnv.NULL) {
           ElementInfo refEi = get(ref);
           if ((refEi == null) || (refEi.isNull())) {
             ei = ei.getModifiableInstance();
             // we need to make sure the Fields are properly state managed
-            ei.setReferenceField(ei.getFieldInfo(0), -1);
+            ei.setReferenceField(ei.getFieldInfo(0), MJIEnv.NULL);
           }
         }
       }
@@ -537,7 +537,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
    * markQueue since a copying collector might not have it
    */
   public void queueMark (int objref){
-    if (objref == -1) {
+    if (objref == MJIEnv.NULL) {
       return;
     }
 
@@ -554,7 +554,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
    * @aspects: gc
    */
   public void markStaticRoot (int objref) {
-    if (objref != -1) {
+    if (objref != MJIEnv.NULL) {
       queueMark(objref);
     }
   }
@@ -565,7 +565,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
    * @aspects: gc
    */
   public void markThreadRoot (int objref, int tid) {
-    if (objref != -1) {
+    if (objref != MJIEnv.NULL) {
       queueMark(objref);
     }
   }

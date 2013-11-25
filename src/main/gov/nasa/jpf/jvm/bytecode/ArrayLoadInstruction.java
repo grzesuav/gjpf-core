@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -38,7 +39,7 @@ public abstract class ArrayLoadInstruction extends ArrayElementInstruction {
 
     // we need to get the object first, to check if it is shared
     int aref = frame.peek(1); // ..,arrayRef,idx
-    if (aref == -1) {
+    if (aref == MJIEnv.NULL) {
       return ti.createAndThrowException("java.lang.NullPointerException");
     }
     

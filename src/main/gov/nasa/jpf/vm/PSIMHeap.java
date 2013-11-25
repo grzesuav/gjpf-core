@@ -37,6 +37,8 @@ import java.util.Iterator;
  * a number of non-persistent data structures (allocCounts, intern strings, pinDowns) that
  * are not persistent, i.e. still requires a memento that creates/restores snapshots of these
  * and hence looses a lot of the benefit we use a persistent map for
+ * 
+ * NOTE - a reference value of 0 represents null and therefore is not a valid SGOID
  */
 public class PSIMHeap extends GenericSGOIDHeap {
   
@@ -118,7 +120,7 @@ public class PSIMHeap extends GenericSGOIDHeap {
 
   @Override
   public ElementInfo get(int ref) {
-    if (ref < 0) {
+    if (ref <= 0) {
       return null;
     } else {      
       return elementInfos.get(ref);
@@ -129,7 +131,7 @@ public class PSIMHeap extends GenericSGOIDHeap {
   public ElementInfo getModifiable(int ref) {
     // <2do> this could probably use a specialized replaceValue() method
     
-    if (ref < 0) {
+    if (ref <= 0) {
       return null;
     } else {
       ElementInfo ei = elementInfos.get(ref);

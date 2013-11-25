@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 
 
@@ -33,7 +34,7 @@ public class IFNONNULL extends IfInstruction {
 
 
   public boolean popConditionValue (StackFrame frame) {
-    return (frame.pop() != -1);
+    return (frame.pop() != MJIEnv.NULL);
   }
 
   public int getByteCode () {

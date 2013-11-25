@@ -51,7 +51,7 @@ import java.util.Locale;
  * JPF, calling native,..) into iteration. Otherwise we couldn't backtrack
  */
 public class MJIEnv {
-  public static final int NULL = -1;
+  public static final int NULL = 0;
 
   VM                     vm;
   ClassInfo               ciMth;  // the ClassInfo of the method this is called from
@@ -727,7 +727,7 @@ public class MJIEnv {
   }
 
   public char[] getStringChars (int objRef){
-    if (objRef != -1) {
+    if (objRef != MJIEnv.NULL) {
       ElementInfo ei = getElementInfo(objRef);
       return ei.getStringChars();
       
@@ -742,7 +742,7 @@ public class MJIEnv {
    * (this is a method available for non gov..jvm NativePeer classes)
    */
   public String getStringObject (int objRef) {
-    if (objRef != -1) {
+    if (objRef != MJIEnv.NULL) {
       ElementInfo ei = getElementInfo(objRef);
       return ei.asString();
       
@@ -779,7 +779,7 @@ public class MJIEnv {
   }
   
   public Date getDateObject (int objref) {
-    if (objref != -1) {
+    if (objref != MJIEnv.NULL) {
       ElementInfo ei = getElementInfo(objref);
       if (ei.getClassInfo().getName().equals("java.util.Date")) {
         // <2do> this is not complete yet

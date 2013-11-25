@@ -35,6 +35,7 @@ import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Fields;
 import gov.nasa.jpf.vm.Heap;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ReferenceProcessor;
@@ -189,7 +190,7 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
 
   // needs to be public because of ReferenceProcessor interface
   public void processReference(int objref) {
-    if (objref >= 0) {
+    if (objref != MJIEnv.NULL) {
       ElementInfo ei = heap.get(objref);
       if (!ei.isMarked()) { // only add objects once
         ei.setMarked();

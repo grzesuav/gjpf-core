@@ -23,6 +23,7 @@ import java.util.Iterator;
 
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.ThreadList;
@@ -75,8 +76,8 @@ public class CFSerializer extends FilteringSerializer {
 
   @Override
   public void processReference(int objref) {
-    if (objref < 0) {
-      buf.add(-1);
+    if (objref == MJIEnv.NULL) {
+      buf.add(MJIEnv.NULL);
 
     } else {
       ElementInfo ei = heap.get(objref);

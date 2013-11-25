@@ -31,6 +31,7 @@ import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Fields;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ReferenceArrayFields;
@@ -158,7 +159,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
   
   // note that we don't add the reference value here
   public void processReference(int objref) {
-    if (objref >= 0) {
+    if (objref != MJIEnv.NULL) {
       ElementInfo ei = heap.get(objref);
       if (!ei.isMarked()) { // only add objects once
         ei.setMarked();

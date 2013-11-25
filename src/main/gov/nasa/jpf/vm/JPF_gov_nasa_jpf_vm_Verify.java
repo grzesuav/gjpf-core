@@ -99,17 +99,20 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
     return true;
   }
 
+  
+  public static final int NO_VALUE = -1;
+  
   @MJI
   public static int getValue__Ljava_lang_String_2__I (MJIEnv env, int clsObjRef, int keyRef) {
     if (map == null) {
-      return -1;
+      return NO_VALUE;
     } else {
       String key = env.getStringObject(keyRef);
       IntTable.Entry<String> e = map.get(key);
       if (e != null) {
         return e.val;
       } else {
-        return -1;
+        return NO_VALUE;
       }
     }
   }

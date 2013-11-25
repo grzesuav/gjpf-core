@@ -392,7 +392,7 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     FieldInfo fi = getFieldInfo(env, objRef);
     
     int nameRef = env.getReferenceField( objRef, "name");
-    if (nameRef == -1) {
+    if (nameRef == MJIEnv.NULL) {
       nameRef = env.newString(fi.getName());
       env.setReferenceField(objRef, "name", nameRef);
     }

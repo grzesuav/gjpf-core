@@ -23,7 +23,7 @@ package gov.nasa.jpf.vm;
  * helper class to store object references in a context where Integer is used for boxed 'int' values
  */
 public class ObjRef {
-  public static final ObjRef NULL = new ObjRef(-1);
+  public static final ObjRef NULL = new ObjRef(MJIEnv.NULL);
   
   int reference;
 

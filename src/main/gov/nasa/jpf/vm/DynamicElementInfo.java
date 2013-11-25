@@ -112,7 +112,7 @@ public class DynamicElementInfo extends ElementInfo {
     }
 
     int vref = getDeclaredReferenceField("value", "java.lang.String");    
-    if (vref != -1){
+    if (vref != MJIEnv.NULL){
       ElementInfo eVal = VM.getVM().getHeap().get(vref);
       char[] value = eVal.asCharArray();
       return value;

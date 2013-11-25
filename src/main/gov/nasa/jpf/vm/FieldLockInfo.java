@@ -103,7 +103,7 @@ public abstract class FieldLockInfo implements Cloneable  {
       sb.append('{');
       for (int i=0; i<lockSet.length;) {
         int ref = lockSet[i];
-        if (ref != -1) {
+        if (ref != MJIEnv.NULL) {
           ElementInfo ei = heap.get(ref);
           if (ei != null) {
             sb.append(ei);

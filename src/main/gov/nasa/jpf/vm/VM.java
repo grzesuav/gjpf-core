@@ -282,12 +282,21 @@ public abstract class VM {
   protected ThreadInfo createMainThreadInfo (int id, ApplicationContext appCtx){
     ThreadInfo tiMain = new ThreadInfo( this, id, appCtx);
     ThreadInfo.currentThread = tiMain; // we still need this for listeners that process startup class loading events
+    registerThread(tiMain);
+    
     return tiMain;
   }
   
   protected ThreadInfo createThreadInfo (int objRef, int groupRef, int runnableRef, int nameRef){
     ThreadInfo tiCurrent = ThreadInfo.getCurrentThread();
-    return new ThreadInfo( this, objRef, groupRef, runnableRef, nameRef, tiCurrent);
+    ThreadInfo tiNew = new ThreadInfo( this, objRef, groupRef, runnableRef, nameRef, tiCurrent);
+
+    // note that we have to register here so that subsequent native peer calls can use the objRef
+    // to lookup the ThreadInfo. This is a bit premature since the thread is not runnable yet,
+    // but chances are it will be started soon, so we don't waste another data structure to do the mapping
+    registerThread( tiNew);
+    
+    return tiNew;
   }
 
   /**
@@ -421,66 +430,7 @@ public abstract class VM {
     heap.registerPinDown(ei.getObjectRef());
 
     sysCl.setClassLoaderObject(ei);
-  }
-
-  
-  /**
-   * we need to initialize the ThreadGroup object explicitly because the main thread is not yet runnable
-   */
-  protected int createMainThreadGroup (SystemClassLoaderInfo sysCl, ThreadInfo tiMain, int mainThreadRef) {
-    Heap heap = getHeap();
-    
-    ClassInfo ciGroup = sysCl.getResolvedClassInfo("java.lang.ThreadGroup");
-    ElementInfo eiThreadGrp = heap.newObject( ciGroup, tiMain);
-
-    // since we can't call methods yet, we have to init fields explicitly
-
-    ElementInfo eiGrpName = heap.newString("main", tiMain);
-    eiThreadGrp.setReferenceField("name", eiGrpName.getObjectRef());
-
-    eiThreadGrp.setIntField("maxPriority", java.lang.Thread.MAX_PRIORITY);
-
-    ElementInfo eiThreads = heap.newArray("Ljava/lang/Thread;", 4, tiMain);
-    eiThreads.setReferenceElement(0, mainThreadRef);
-
-    eiThreadGrp.setReferenceField("threads", eiThreads.getObjectRef());
-    eiThreadGrp.setIntField("nthreads", 1);
-
-    return eiThreadGrp.getObjectRef();
-  }
-  
-  /**
-   * we need to initialize the Thread object explicitly because the main thread is not yet runnable  
-   */
-  protected void createMainThreadObject (SystemClassLoaderInfo sysCl, ThreadInfo tiMain){
-    //--- now create & initialize all the related JPF objects
-    Heap heap = getHeap();
-
-    ClassInfo ciThread = sysCl.threadClassInfo;
-    ElementInfo eiThread = heap.newObject( ciThread, tiMain);
-    int threadRef = eiThread.getObjectRef();
-    int groupRef = createMainThreadGroup(sysCl, tiMain, threadRef);
-    ElementInfo eiName = heap.newString("main", tiMain);
-    int nameRef = eiName.getObjectRef();
-    
-    //--- initialize the main Thread object
-    eiThread.setReferenceField("group", groupRef);
-    eiThread.setReferenceField("name", nameRef);
-    eiThread.setIntField("priority", Thread.NORM_PRIORITY);
-
-    ClassInfo ciPermit = sysCl.getResolvedClassInfo("java.lang.Thread$Permit");
-    ElementInfo eiPermit = heap.newObject( ciPermit, tiMain);
-    eiPermit.setBooleanField("blockPark", true);
-    eiThread.setReferenceField("permit", eiPermit.getObjectRef());
-
-    ThreadInfo.addId(threadRef, tiMain.id);
-
-    //--- initialize the ThreadInfo reference fields
-    tiMain.initReferenceFields(threadRef, groupRef, MJIEnv.NULL, nameRef);
-  
-    //--- set the thread running
-    tiMain.setState(ThreadInfo.State.RUNNING);
-  }
+  }  
   
   protected void pushMainEntryArgs (MethodInfo miMain, String[] args, ThreadInfo tiMain, DirectCallStackFrame frame){
     String sig = miMain.getSignature();
@@ -563,7 +513,8 @@ public abstract class VM {
     for (ClassInfo ci : startupClasses) {
       ci.createAndLinkStartupClassObject(tiMain);
     }
-    createMainThreadObject(sysCl, tiMain);
+    tiMain.createMainThreadObject(sysCl);
+    registerThread(tiMain);
     
     // note that StackFrames have to be pushed in reverse order
     MethodInfo miMain = getMainEntryMethodInfo(appCtx.mainEntry, ciMain);

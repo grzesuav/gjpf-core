@@ -22,6 +22,7 @@ import gov.nasa.jpf.vm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -46,7 +47,7 @@ public class AASTORE extends ArrayStoreInstruction {
   protected Instruction checkArrayStoreException(ThreadInfo ti, ElementInfo ei){
     ClassInfo c = ei.getClassInfo();
 
-    if (value != -1) { // no checks for storing 'null'
+    if (value != MJIEnv.NULL) { // no checks for storing 'null'
       ClassInfo elementCi = ti.getClassInfo(value);
       ClassInfo arrayElementCi = c.getComponentClassInfo();
       if (!elementCi.isInstanceOf(arrayElementCi)) {

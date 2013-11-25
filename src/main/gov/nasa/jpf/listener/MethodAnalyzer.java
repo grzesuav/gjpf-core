@@ -30,6 +30,7 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
@@ -346,7 +347,7 @@ public class MethodAnalyzer extends ListenerAdapter {
       if (isAnalyzedMethod(mi)) {
         if (!mi.isStatic()) {
           int ref = frame.getThis();
-          if (ref != -1) {
+          if (ref != MJIEnv.NULL) {
             ei = ti.getElementInfo(ref);
           }
         }

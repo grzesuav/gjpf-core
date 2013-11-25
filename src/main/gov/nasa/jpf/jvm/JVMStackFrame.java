@@ -75,38 +75,14 @@ public class JVMStackFrame extends StackFrame {
     }
   }
 
-  //--- return value handling
-  
   @Override
-  public int getResult(){
-    return pop();
+  public void setExceptionReference (int exRef){
+    clearOperandStack();
+    pushRef( exRef);
   }
-  
-  @Override
-  public int getReferenceResult(){
-    return pop();
-  }
-  
-  @Override
-  public long getLongResult(){
-    return popLong();
-  }
-
-  @Override
-  public Object getResultAttr(){
-    return getOperandAttr();
-  }
-  
-  @Override
-  public Object getLongResultAttr(){
-    return getLongOperandAttr();
-  }
-  
   
   //--- these are for setting up arguments from a VM / listener caller
 
-  
-  
   /*
    * to be used to initialize locals of a stackframe (only required for explicit construction without a caller,
    * otherwise the Stackframe ctor/invoke insn will take care of copying the values from its caller)
@@ -130,26 +106,5 @@ public class JVMStackFrame extends StackFrame {
     if (attr != null){
       setLocalAttr( idx, attr);
     }
-  }  
-  
-  @Override
-  public void setExceptionReference (int exRef){
-    clearOperandStack();
-    pushRef( exRef);
-  }
-  
-  @Override
-  public int getExceptionReference(){
-    return pop();
-  }
-  
-  @Override
-  public void setExceptionReferenceAttribute (Object attr){
-    setOperandAttr(attr);
-  }
-  
-  @Override
-  public Object getExceptionReferenceAttribute (){
-    return getOperandAttr();
   }
 }

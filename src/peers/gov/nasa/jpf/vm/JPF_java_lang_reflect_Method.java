@@ -73,7 +73,7 @@ public class JPF_java_lang_reflect_Method extends NativePeer {
     MethodInfo mi = getMethodInfo(env, objRef);
     
     int nameRef = env.getReferenceField( objRef, "name");
-    if (nameRef == -1) {
+    if (nameRef == MJIEnv.NULL) {
       nameRef = env.newString(mi.getName());
       env.setReferenceField(objRef, "name", nameRef);
     }

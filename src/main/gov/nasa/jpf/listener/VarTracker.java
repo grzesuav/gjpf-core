@@ -35,6 +35,7 @@ import gov.nasa.jpf.util.MethodSpec;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
@@ -175,7 +176,7 @@ public class VarTracker extends ListenerAdapter {
       // a pattern like:  ..GETFIELD.. some-stack-operations .. xASTORE
       StackFrame frame = ti.getTopFrame();
       int objRef = frame.peek();
-      if (objRef != -1) {
+      if (objRef != MJIEnv.NULL) {
         ElementInfo ei = ti.getElementInfo(objRef);
         if (ei.isArray()) {
           varId = ((VariableAccessor)executedInsn).getVariableId();

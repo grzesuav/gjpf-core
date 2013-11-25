@@ -36,9 +36,11 @@ public class ReferenceArrayFields extends ArrayFields {
   public ReferenceArrayFields (int length) {
     values = new int[length];
 
+    /** not required for MJIEnv.NULL = 0
     for (int i=0; i<length; i++) {
-      values[i] = -1;
+      values[i] = MJIEnv.NULL;
     }
+    **/
   }
 
   @Override

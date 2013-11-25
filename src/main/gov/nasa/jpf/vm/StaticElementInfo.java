@@ -33,7 +33,7 @@ public final class StaticElementInfo extends ElementInfo {
 
   static final int ATTR_ANY_CHANGED = ElementInfo.ATTR_ANY_CHANGED | ATTR_COR_CHANGED | ATTR_STATUS_CHANGED;
   
-  int classObjectRef = -1;
+  int classObjectRef = MJIEnv.NULL;
   int status = ClassInfo.UNINITIALIZED;
 
   

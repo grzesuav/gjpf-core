@@ -20,6 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -35,7 +36,7 @@ public class ARRAYLENGTH extends ArrayInstruction {
 
     arrayRef = frame.pop();
 
-    if (arrayRef == -1){
+    if (arrayRef == MJIEnv.NULL){
       return ti.createAndThrowException("java.lang.NullPointerException",
                                         "array length of null object");
     }

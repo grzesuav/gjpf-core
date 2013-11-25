@@ -53,7 +53,7 @@ public class JPF_java_lang_Object extends NativePeer {
     if (!ci.isInstanceOf("java.lang.Cloneable")) {
       env.throwException("java.lang.CloneNotSupportedException",
           ci.getName() + " does not implement java.lang.Cloneable.");
-      return -1;  // meaningless
+      return MJIEnv.NULL;  // meaningless
       
     } else {
       int newref;

@@ -22,6 +22,7 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -38,7 +39,7 @@ public class MONITORENTER extends LockInstruction {
     StackFrame frame = ti.getTopFrame();
 
     int objref = frame.peek();      // Don't pop yet before we know we really enter
-    if (objref == -1){
+    if (objref == MJIEnv.NULL){
       return ti.createAndThrowException("java.lang.NullPointerException", "Attempt to acquire lock for null object");
     }
 
