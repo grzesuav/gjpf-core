@@ -1965,4 +1965,6 @@ public abstract class VM {
     getThreadList().checkConsistency( isStateStore);
     getHeap().checkConsistency( isStateStore);
   }
+  
+  public abstract void terminateProcess (ThreadInfo ti);
 }

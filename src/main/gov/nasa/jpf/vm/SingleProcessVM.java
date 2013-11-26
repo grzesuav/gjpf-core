@@ -22,6 +22,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.vm.choice.BreakGenerator;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
 
@@ -234,5 +235,19 @@ public class SingleProcessVM extends VM {
     }
 
     return false;
+  }
+
+  @Override
+  public void terminateProcess (ThreadInfo ti) {
+    SystemState ss = getSystemState();
+    ThreadInfo[] liveThreads = getLiveThreads();
+
+    for (int i = 0; i < liveThreads.length; i++) {
+      // keep the stack frames around, so that we can inspect the snapshot
+      liveThreads[i].setTerminated();
+    }
+    
+    ss.setMandatoryNextChoiceGenerator( new BreakGenerator("exit", ti, true), "exit without break CG");
+
   }
 }
