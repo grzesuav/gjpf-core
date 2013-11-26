@@ -273,15 +273,8 @@ public class JPF_java_lang_System extends NativePeer {
   // then the search determines that it is an end state (all terminated)
   @MJI
   public void exit__I__V (MJIEnv env, int clsObjRef, int ret) {
-    SystemState ss = env.getSystemState();
-    ThreadInfo[] liveThreads = env.getLiveThreads();
-
-    for (int i = 0; i < liveThreads.length; i++) {
-      // keep the stack frames around, so that we can inspect the snapshot
-      liveThreads[i].setTerminated();
-    }
-    
-    ss.setMandatoryNextChoiceGenerator( new BreakGenerator("exit", env.getThreadInfo(), true), "exit without break CG");
+    ThreadInfo ti = env.getThreadInfo();
+    env.getVM().terminateProcess(ti);
   }
 
   @MJI

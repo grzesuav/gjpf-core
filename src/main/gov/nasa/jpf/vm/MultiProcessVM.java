@@ -24,6 +24,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Predicate;
+import gov.nasa.jpf.vm.choice.BreakGenerator;
 import gov.nasa.jpf.vm.choice.MultiProcessThreadChoice;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
@@ -352,5 +353,27 @@ public class MultiProcessVM extends VM {
   
   public int getLiveAppThreadCount (ThreadInfo ti) {
     return getThreadList().getLiveThreadCount( getAppPredicate(ti));
+  }
+
+  @Override
+  public void terminateProcess (ThreadInfo ti) {
+    SystemState ss = getSystemState();
+    ThreadInfo[] appThreads = getAppThreads(ti);
+
+    for (int i = 0; i < appThreads.length; i++) {
+      // keep the stack frames around, so that we can inspect the snapshot
+      appThreads[i].setTerminated();
+    }
+    
+    ThreadList tl = getThreadList();
+    
+    ThreadChoiceGenerator cg;
+    if (tl.hasAnyAliveThread()) {
+      cg = new MultiProcessThreadChoice( "PROCESS_TERMINATE", getRunnableThreads(), true);
+    } else {
+      cg = new BreakGenerator("exit", ti, true);
+    }
+    
+    ss.setMandatoryNextChoiceGenerator(cg, "exit without break CG");
   }
 }
