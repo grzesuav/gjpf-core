@@ -253,9 +253,11 @@ public abstract class Instruction implements Cloneable {
     if (ci != null){
       line = mi.getLineNumber(this);
       file = ci.getSourceFileName();
-      int i = file.lastIndexOf('/'); // ClassInfo.sourceFileName is using '/'
-      if (i >= 0) {
-        file = file.substring(i + 1);
+      if (file != null){
+        int i = file.lastIndexOf('/'); // ClassInfo.sourceFileName is using '/'
+        if (i >= 0) {
+          file = file.substring(i + 1);
+        }
       }
     }
 
