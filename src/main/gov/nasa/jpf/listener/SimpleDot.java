@@ -248,6 +248,7 @@ public class SimpleDot extends ListenerAdapter {
   @Override
   public void objectWait (VM vm, ThreadInfo ti, ElementInfo ei){
     lastEi = ei;
+    lastTi = ti;
   }
 
   @Override
@@ -283,7 +284,7 @@ public class SimpleDot extends ListenerAdapter {
   }
 
   // this is the only method that's more tricky - we have to find a balance
-  // between beeing conscious enough to not clutter the graph, and expressive
+  // between being conscious enough to not clutter the graph, and expressive
   // enough to understand it.
   // <2do> this doesn't deal well with custom or data CGs yet
   protected String getNextCG(){
