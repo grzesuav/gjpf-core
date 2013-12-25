@@ -22,6 +22,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
@@ -38,12 +39,28 @@ public class SingleProcessVM extends VM {
 
   protected ApplicationContext appCtx; // we only have one
   
+  protected Predicate<ThreadInfo> runnablePredicate;
+  protected Predicate<ThreadInfo> daemonRunnable;
+  
   protected SingleProcessVM (){}
 
   public SingleProcessVM (JPF jpf, Config conf) {
     super(jpf, conf);
     
     appCtx = createApplicationContext();
+    
+    // set predicates used to query from threadlist
+    runnablePredicate = new Predicate<ThreadInfo>(){
+      public boolean isTrue (ThreadInfo ti){
+        return (ti.isRunnable());
+      }
+    };
+    
+    daemonRunnable = new Predicate<ThreadInfo>(){
+      public boolean isTrue (ThreadInfo ti){
+        return (ti.isDaemon() && ti.isRunnable());
+      }
+    };
   }
   
   protected ApplicationContext createApplicationContext (){
@@ -122,7 +139,8 @@ public class SingleProcessVM extends VM {
 
   @Override
   protected ChoiceGenerator<?> getInitialCG () {
-    return new ThreadChoiceFromSet("<root>", getThreadList().getRunnableThreads(), true);
+    ThreadInfo[] runnables = getThreadList().getAllMatching(vm.getTimedoutRunnablePredicate());
+    return new ThreadChoiceFromSet("<root>", runnables, true);
   }
   
   @Override
@@ -187,7 +205,11 @@ public class SingleProcessVM extends VM {
   public boolean isEndState () {
     // note this uses 'alive', not 'runnable', hence isEndStateProperty won't
     // catch deadlocks - but that would be NoDeadlockProperty anyway
-    return !getThreadList().hasMoreThreadsToRun();
+    
+    boolean hasNonTerminatedDaemon = getThreadList().hasAnyMatching(getNonDaemonNotTerminatedPredicate());
+    boolean hasRunnable = getThreadList().hasAnyMatching(getTimedoutRunnablePredicate());
+    
+    return !(hasNonTerminatedDaemon && hasRunnable);
   }
 
   @Override
@@ -219,24 +241,7 @@ public class SingleProcessVM extends VM {
 
     return (hasNonDaemons && hasBlockedThreads);
   }
-
-  @Override
-  public boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti){
-    ThreadInfo[] threads = getThreadList().getThreads();
-    int n = threads.length;
-
-    for (int i=0; i<n; i++) {
-      ThreadInfo t = threads[i];
-      if (t != ti) {
-        if (t.isRunnable() && t.isDaemon()) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
+  
   @Override
   public void terminateProcess (ThreadInfo ti) {
     SystemState ss = getSystemState();
@@ -249,5 +254,23 @@ public class SingleProcessVM extends VM {
     
     ss.setMandatoryNextChoiceGenerator( new BreakGenerator("exit", ti, true), "exit without break CG");
 
+  }
+  
+  
+  //---------- Predicates used to query threads from ThreadList ---------- //
+  
+  @Override
+  public Predicate<ThreadInfo> getRunnablePredicate() {
+    return runnablePredicate;
+  }
+  
+  @Override
+  public Predicate<ThreadInfo> getAppTimedoutRunnablePredicate() {
+    return getRunnablePredicate();
+  }
+  
+  @Override
+  public Predicate<ThreadInfo> getDaemonRunnablePredicate() {
+    return daemonRunnable;
   }
 }

@@ -593,21 +593,8 @@ public class SystemState {
     return (id == StateSet.UNKNOWN_ID);
   }
 
-
-  public int getNonDaemonThreadCount () {
-    return ks.threads.getNonDaemonThreadCount();
-  }
-
   public int getThreadCount () {
     return ks.threads.length();
-  }
-
-  public int getRunnableThreadCount () {
-    return ks.threads.getRunnableThreadCount();
-  }
-
-  public int getLiveThreadCount () {
-    return ks.threads.getLiveThreadCount();
   }
 
   public UncaughtException getUncaughtException () {

@@ -23,8 +23,10 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.Predicate;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -217,16 +219,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     
     return false;
   }
-  
-  public boolean hasAnyAliveThread () {
-    for (int i = 0, l = threads.length; i < l; i++) {
-      if (threads[i].isAlive()) {
-        return true;
-      }
-    }
-
-    return false;
-  }
 
   /**
    * Returns the array of threads.
@@ -305,6 +297,110 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     }
   }
 
+  public boolean hasAnyMatching(Predicate<ThreadInfo> predicate) {
+    for (int i = 0, l = threads.length; i < l; i++) {
+      if (predicate.isTrue(threads[i])) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  public boolean hasAnyMatchingOtherThan(ThreadInfo ti, Predicate<ThreadInfo> predicate) {
+    for (int i = 0, l = threads.length; i < l; i++) {
+      if(ti != threads[i]) {
+        if (predicate.isTrue(threads[i])) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  public boolean hasOnlyMatching(Predicate<ThreadInfo> predicate) {
+    for (int i = 0, l = threads.length; i < l; i++) {
+      if (!predicate.isTrue(threads[i])) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
+  public boolean hasOnlyMatchingOtherThan(ThreadInfo ti, Predicate<ThreadInfo> predicate) {
+    int n=0;
+    for (int i = 0, l = threads.length; i < l; i++) {
+      if(ti != threads[i]) {
+        if (!predicate.isTrue(threads[i])) {
+          return false;
+        } else {
+          n++;
+        }
+      }
+    }
+    
+    return (n>0);
+  }
+  
+  public ThreadInfo[] getAllMatching(Predicate<ThreadInfo> predicate) {
+    List<ThreadInfo> list = new ArrayList<ThreadInfo>();
+    
+    int n = 0;
+    for (int i = 0, l = threads.length; i < l; i++) {
+      ThreadInfo ti = threads[i];
+      if (predicate.isTrue(ti)) {
+        list.add(ti);
+        n++;
+      }
+    }
+    
+    return list.toArray(new ThreadInfo[n]);
+  }
+
+  public ThreadInfo[] getAllMatchingWith(final ThreadInfo ti, Predicate<ThreadInfo> predicate) {
+    List<ThreadInfo> list = new ArrayList<ThreadInfo>();
+    
+    int n = 0;
+    for (int i = 0, l = threads.length; i < l; i++) {
+      ThreadInfo t = threads[i];
+      if (predicate.isTrue(t) || (ti==t)) {
+        list.add(t);
+        n++;
+      }
+    }
+    
+    return list.toArray(new ThreadInfo[n]);
+  }
+  
+  public ThreadInfo[] getAllMatchingWithout(final ThreadInfo ti, Predicate<ThreadInfo> predicate) {
+    List<ThreadInfo> list = new ArrayList<ThreadInfo>();
+    
+    int n = 0;
+    for (int i = 0, l = threads.length; i < l; i++) {
+      ThreadInfo t = threads[i];
+      if (predicate.isTrue(t) && (ti != t)) {
+        list.add(t);
+        n++;
+      }
+    }
+    
+    return list.toArray(new ThreadInfo[n]);
+  }
+  
+  public int getMatchingCount(Predicate<ThreadInfo> predicate) {
+    int n = 0;
+    for (int i = 0, l = threads.length; i < l; i++) {
+      ThreadInfo ti = threads[i];
+      if (predicate.isTrue(ti)) {
+        n++;
+      }
+    }
+    
+    return n;
+  }
+  
   public Count getCountWithout (ThreadInfo tiExclude){
     int alive=0, runnableNonDaemons=0, runnableDaemons=0, blocked=0;
     
@@ -333,176 +429,6 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
 
   public Count getCount(){
     return getCountWithout(null);
-  }
-
-  public boolean hasMoreThreadsToRun() {
-    int nonDaemons = 0;
-    int runnables = 0;
-
-    for (int i = 0; i < threads.length; i++) {
-      ThreadInfo ti = threads[i];
-      if (!ti.isDaemon() && !ti.isTerminated()) {
-        nonDaemons++;
-      }
-      if (ti.isTimeoutRunnable()) {
-        runnables++;
-      }
-    }
-    
-    return (nonDaemons > 0) && (runnables > 0);
-  }
-
-  public int getNonDaemonThreadCount () {
-    int nd = 0;
-
-    for (int i = 0; i < threads.length; i++) {
-      if (!threads[i].isDaemon()) {
-        nd++;
-      }
-    }
-
-    return nd;
-  }
-
-  
-  
-  public int getRunnableThreadCount () {
-    int n = 0;
-
-    for (int i = 0; i < threads.length; i++) {
-      if (threads[i].isTimeoutRunnable()) {
-        n++;
-      }
-    }
-
-    return n;
-  }
-
-  public int getRunnableThreadCount (Predicate<ThreadInfo> pred) {
-    int n = 0;
-
-    for (int i = 0; i < threads.length; i++) {
-      ThreadInfo ti = threads[i];
-      if (ti.isTimeoutRunnable() && (pred == null || pred.isTrue(ti))) {
-        n++;
-      }
-    }
-
-    return n;
-  }
-
-  public ThreadInfo[] getRunnableThreads() {
-    return getRunnableThreads(null);
-  }
-
-  public ThreadInfo[] getRunnableThreads (Predicate<ThreadInfo> pred) {
-    int nRunnable = getRunnableThreadCount(pred);
-    ThreadInfo[] list = new ThreadInfo[nRunnable];
-
-    for (int i = 0, j=0; i < threads.length; i++) {
-      ThreadInfo t = threads[i];
-      if (t.isTimeoutRunnable() && (pred == null || pred.isTrue(t))) {
-        list[j++] = t;
-        if (j == nRunnable) {
-          break;
-        }
-      }
-    }
-
-    return list;
-  }
-
-  public ThreadInfo[] getRunnableThreadsWith (ThreadInfo ti) {
-    return getRunnableThreadsWith( ti, null);
-  }
-
-  public ThreadInfo[] getRunnableThreadsWith (ThreadInfo ti, Predicate<ThreadInfo> pred) {
-    int nRunnable = getRunnableThreadCount(pred);
-    ThreadInfo[] list =  new ThreadInfo[ti.isRunnable() ? nRunnable : nRunnable+1];
-
-    for (int i = 0, j=0; i < threads.length; i++) {
-      ThreadInfo t = threads[i];
-      if ((t.isTimeoutRunnable() || (t == ti)) && (pred == null || pred.isTrue(t))) {
-        list[j++] = t;
-        if (j == list.length) {
-          break;
-        }
-      }
-    }
-
-    return list;
-  }
-
-  public ThreadInfo[] getRunnableThreadsWithout( ThreadInfo ti) {
-    return getRunnableThreadsWithout( ti, null);
-  }
-
-  public ThreadInfo[] getRunnableThreadsWithout( ThreadInfo ti, Predicate<ThreadInfo> pred) {
-    int nRunnable = getRunnableThreadCount(pred);
-
-    if (ti.isRunnable()) {
-      nRunnable--;
-    }
-    ThreadInfo[] list = new ThreadInfo[nRunnable];
-
-    for (int i = 0, j=0; i < threads.length; i++) {
-      ThreadInfo t = threads[i];
-      if (t.isTimeoutRunnable() && (ti != t) && (pred == null || pred.isTrue(t))) {
-        list[j++] = t;
-        if (j == nRunnable) {
-          break;
-        }
-      }
-    }
-
-    return list;
-  }
-
-  public int getLiveThreadCount () {
-    return getLiveThreadCount (null);
-  }
-  
-  public int getLiveThreadCount (Predicate<ThreadInfo> pred) {
-    int n = 0;
-
-    for (int i = 0; i < threads.length; i++) {
-      ThreadInfo t = threads[i];
-      if (t.isAlive()  && (pred == null || pred.isTrue(t))) {
-        n++;
-      }
-    }
-
-    return n;
-  }
-
-  boolean hasOtherRunnablesThan (ThreadInfo ti) {
-    int n = threads.length;
-
-    for (int i=0; i<n; i++) {
-      ThreadInfo t = threads[i];
-      if (t != ti) {
-        if (t.isRunnable()) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  boolean hasOtherNonDaemonRunnablesThan (ThreadInfo ti) {
-    int n = threads.length;
-
-    for (int i=0; i<n; i++) {
-      ThreadInfo t = threads[i];
-      if (t != ti) {
-        if (t.isRunnable() && !t.isDaemon()) {
-          return true;
-        }
-      }
-    }
-
-    return false;
   }
 
   public void dump () {

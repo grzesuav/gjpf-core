@@ -24,6 +24,7 @@ import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.NativePeer;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.choice.ExceptionThreadChoiceFromSet;
 
 /**
@@ -39,7 +40,8 @@ public class JPF_gov_nasa_jpf_test_mc_threads_ExceptionalThreadChoiceTest extend
       String[] exceptions = { "java.net.SocketTimeoutException", "java.io.IOException" };
       
       System.out.println("    in top half of native foo()");
-      ThreadInfo[] runnables = ti.getVM().getRunnableThreads();
+      VM vm = ti.getVM();
+      ThreadInfo[] runnables = vm.getThreadList().getAllMatching(vm.getTimedoutRunnablePredicate());
       ExceptionThreadChoiceFromSet cg = new ExceptionThreadChoiceFromSet("FOO_CG", runnables, ti, exceptions);
       
       ti.getVM().getSystemState().setNextChoiceGenerator(cg);

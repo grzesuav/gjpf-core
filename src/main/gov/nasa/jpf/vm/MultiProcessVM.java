@@ -48,10 +48,39 @@ public class MultiProcessVM extends VM {
 
   ApplicationContext[] appCtxs;
   
+  MultiProcessPredicate runnableThreadPredicate;
+  MultiProcessPredicate appTimedoutRunnable;
+  MultiProcessPredicate appDaemonRunnable;
+  MultiProcessPredicate appPredicate;
+  
   public MultiProcessVM (JPF jpf, Config conf) {
     super(jpf, conf);
     
     appCtxs = createApplicationContexts();
+    
+    runnableThreadPredicate = new MultiProcessPredicate() {
+      public boolean isTrue (ThreadInfo t){
+        return (t.isRunnable() && this.appCtx == t.appCtx);
+      }
+    };
+    
+    appTimedoutRunnable = new MultiProcessPredicate() {
+      public boolean isTrue (ThreadInfo t){
+        return (this.appCtx == t.appCtx && t.isTimeoutRunnable());
+      }
+    }; 
+    
+    appDaemonRunnable = new MultiProcessPredicate() {
+      public boolean isTrue (ThreadInfo t){
+        return (this.appCtx == t.appCtx && t.isRunnable() && t.isDaemon());
+      }
+    };
+    
+    appPredicate = new MultiProcessPredicate() {
+      public boolean isTrue (ThreadInfo t){
+        return (this.appCtx == t.appCtx);
+      }
+    };
   }
 
   /**
@@ -153,7 +182,8 @@ public class MultiProcessVM extends VM {
   
   @Override
   protected ChoiceGenerator<?> getInitialCG () {
-    return new MultiProcessThreadChoice("<root>", getThreadList().getRunnableThreads(), true);
+    ThreadInfo[] runnables = getThreadList().getAllMatching(vm.getTimedoutRunnablePredicate());
+    return new MultiProcessThreadChoice("<root>", runnables, true);
   }
   
   @Override
@@ -245,7 +275,10 @@ public class MultiProcessVM extends VM {
 
   @Override
   public boolean isEndState () {
-    return !getThreadList().hasMoreThreadsToRun();
+    boolean hasNonTerminatedDaemon = getThreadList().hasAnyMatching(getNonDaemonNotTerminatedPredicate());
+    boolean hasRunnable = getThreadList().hasAnyMatching(getTimedoutRunnablePredicate());
+    
+    return !(hasNonTerminatedDaemon && hasRunnable);
   }
 
   @Override
@@ -279,86 +312,11 @@ public class MultiProcessVM extends VM {
 
     return (hasNonDaemons && hasBlockedThreads);
   }
-
-  @Override
-  public boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti){
-    ThreadInfo[] threads = getThreadList().getThreads();
-    ApplicationContext appCtx = ti.getApplicationContext();
-
-    int len = threads.length;
-    for (int i=0; i<len; i++){
-      ThreadInfo t = threads[i];
-      if (t != ti){
-        if (t.getApplicationContext() == appCtx){
-          if (t.isRunnable() && t.isDaemon()) {
-            return true;
-          }
-        }
-      }
-    }
-      
-    return false;
-  }
-
-  //----------- Methods for acquiring ThreadInfos within an application ----------//
-
-  /**
-   * Returns all the threads that belong to the same application as ti
-   */
-  public ThreadInfo[] getAppThreads (ThreadInfo ti) {
-    ThreadInfo[] threads = getThreadList().getThreads();
-    ApplicationContext appCtx = ti.getApplicationContext();
-    
-    int len = threads.length;
-    int n = 0;
-    for (int i=0; i<len; i++){
-      if (threads[i].getApplicationContext() == appCtx) n++;
-    }
-    
-    ThreadInfo[] appThreads = new ThreadInfo[n];
-    for (int i=0, j=0; j<n; i++){
-      ThreadInfo t = threads[i];
-      if (t.getApplicationContext() == appCtx){
-        appThreads[j++] = t;
-      }
-    }
-
-    return appThreads;
-  }
-
-  Predicate<ThreadInfo> getAppPredicate (final ThreadInfo ti){
-     // we could probably use a cached object here if the caller is synchronized
-    return new Predicate<ThreadInfo>(){
-      public boolean isTrue (ThreadInfo t){
-        return t.appCtx == ti.appCtx;
-      }
-    }; 
-  }
   
-  public ThreadInfo[] getRunnableAppThreads (ThreadInfo ti) {    
-    return getThreadList().getRunnableThreads( getAppPredicate(ti));
-  }
-
-  public int getRunnableAppThreadCount (ThreadInfo ti) {
-    return getThreadList().getRunnableThreadCount( getAppPredicate(ti));
-  }
-
-  public ThreadInfo[] getRunnableAppThreadsWith (ThreadInfo ti) {
-    return getThreadList().getRunnableThreadsWith(ti,  getAppPredicate(ti));
-  }
-
-  public ThreadInfo[] getRunnableAppThreadsWithout( ThreadInfo ti) {
-    return getThreadList().getRunnableThreadsWithout(ti,  getAppPredicate(ti));
-  }
-  
-  public int getLiveAppThreadCount (ThreadInfo ti) {
-    return getThreadList().getLiveThreadCount( getAppPredicate(ti));
-  }
-
   @Override
   public void terminateProcess (ThreadInfo ti) {
     SystemState ss = getSystemState();
-    ThreadInfo[] appThreads = getAppThreads(ti);
+    ThreadInfo[] appThreads = getThreadList().getAllMatching(getAppPredicate(ti));
 
     for (int i = 0; i < appThreads.length; i++) {
       // keep the stack frames around, so that we can inspect the snapshot
@@ -368,12 +326,50 @@ public class MultiProcessVM extends VM {
     ThreadList tl = getThreadList();
     
     ThreadChoiceGenerator cg;
-    if (tl.hasAnyAliveThread()) {
-      cg = new MultiProcessThreadChoice( "PROCESS_TERMINATE", getRunnableThreads(), true);
+    if (tl.hasAnyMatching(getAliveUserPredicate())) {
+      ThreadInfo[] runnables = getThreadList().getAllMatching(getTimedoutRunnablePredicate());
+      cg = new MultiProcessThreadChoice( "PROCESS_TERMINATE", runnables, true);
     } else {
       cg = new BreakGenerator("exit", ti, true);
     }
     
     ss.setMandatoryNextChoiceGenerator(cg, "exit without break CG");
+  }
+  
+  
+  //---------- Predicates used to query threads from ThreadList ----------//
+  
+  public abstract class MultiProcessPredicate implements Predicate<ThreadInfo> {
+    ApplicationContext appCtx;
+
+    public void setAppCtx (ApplicationContext appCtx) { 
+      this.appCtx = appCtx; 
+    }
+  }
+  
+  @Override
+  public Predicate<ThreadInfo> getRunnablePredicate() {
+    runnableThreadPredicate.setAppCtx(getCurrentApplicationContext());
+    return runnableThreadPredicate;
+  }
+  
+  @Override
+  public Predicate<ThreadInfo> getAppTimedoutRunnablePredicate() {
+    appTimedoutRunnable.setAppCtx(getCurrentApplicationContext());
+    return appTimedoutRunnable;
+  }
+  
+  @Override
+  public Predicate<ThreadInfo> getDaemonRunnablePredicate() {
+    appDaemonRunnable.setAppCtx(getCurrentApplicationContext());
+    return appDaemonRunnable;
+  }
+  
+  /**
+   * Returns a predicate used to obtain all the threads that belong to the same application as ti
+   */
+  Predicate<ThreadInfo> getAppPredicate (final ThreadInfo ti){
+    appPredicate.setAppCtx(ti.getApplicationContext());
+    return appPredicate;
   }
 }

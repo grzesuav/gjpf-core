@@ -19,6 +19,7 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.vm.choice.MultiProcessThreadChoice;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
@@ -34,13 +35,29 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
     super(config, vm, ss);
   }
 
+  Predicate<ThreadInfo> getRunnableAppPredicate (final ThreadInfo ti){
+    return new Predicate<ThreadInfo>(){
+      public boolean isTrue (ThreadInfo t){
+        return (t.appCtx == ti.appCtx && ti.isTimeoutRunnable());
+      }
+    };
+  }
+  
+  Predicate<ThreadInfo> getUserLiveAppThreads (final ThreadInfo ti){
+    return new Predicate<ThreadInfo>(){
+      public boolean isTrue (ThreadInfo t){
+        return (t.appCtx == ti.appCtx && t.isAlive() && !t.isSystemThread());
+      }
+    }; 
+  }
+  
   /**************************************** our choice acquisition methods ***/
 
   /**
    * get list of all runnable threads in the same process as ti
    */
   protected ThreadInfo[] getRunnables(ThreadInfo ti) {
-    return filter(((MultiProcessVM)vm).getRunnableAppThreads(ti));
+    return filter(vm.getThreadList().getAllMatching(getRunnableAppPredicate(ti)));
   }
 
   /**
@@ -48,21 +65,22 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
    *  in the same process as ti
    */
   protected ThreadInfo[] getRunnablesIfChoices(ThreadInfo ti) {
-    int n = ((MultiProcessVM)vm).getRunnableAppThreadCount(ti);
+    ThreadInfo[] choices = vm.getThreadList().getAllMatching(getRunnableAppPredicate(ti));
+    int n = choices.length;
 
     if ((n > 1) || (n == 1 && breakSingleChoice)){
-      return filter(((MultiProcessVM)vm).getRunnableAppThreads(ti));
+      return filter(choices);
     } else {
       return null;
     }
   }
 
   protected ThreadInfo[] getRunnablesWith (ThreadInfo ti) {
-    return filter(((MultiProcessVM)vm).getRunnableAppThreadsWith(ti));
+    return filter(vm.getThreadList().getAllMatchingWith(ti, getRunnableAppPredicate(ti)));
   }
 
   protected ThreadInfo[] getRunnablesWithout (ThreadInfo ti) {
-    return filter(((MultiProcessVM)vm).getRunnableAppThreadsWithout(ti));
+    return filter(vm.getThreadList().getAllMatchingWithout(ti, getRunnableAppPredicate(ti)));
   }
 
   /************************************ the public interface towards the insns ***/
@@ -72,8 +90,8 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
     // terminateThread is already TERMINATED at this point
     ThreadList tl = vm.getThreadList();
     
-    if (tl.hasAnyAliveThread()) {
-      int liveCount = ((MultiProcessVM)vm).getLiveAppThreadCount(terminateThread);
+    if (tl.hasAnyMatching(vm.getAliveUserPredicate())) {
+      int liveCount = tl.getMatchingCount(getUserLiveAppThreads(terminateThread));
       if(liveCount==0) {
         return new MultiProcessThreadChoice( THREAD_TERMINATE, super.getRunnablesWithout(terminateThread), true);
       } else {

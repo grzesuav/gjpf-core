@@ -41,7 +41,7 @@ public class GlobalSwitchThread extends SimplePriorityHeuristic {
   }
 
   protected int computeHeuristicValue () {
-    int aliveThreads = vm.getAliveThreadCount();
+    int aliveThreads = vm.getThreadList().getMatchingCount(aliveThread);
 
     int lastRun = vm.getLastTransition().getThreadIndex();
     int h_value = 0;

@@ -28,6 +28,7 @@ import gov.nasa.jpf.jvm.ClassFile;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.Predicate;
 
 import java.io.PrintWriter;
 import java.nio.ByteOrder;
@@ -139,6 +140,11 @@ public abstract class VM {
 
   protected boolean initialized;
 
+  //thread filters
+  protected Predicate<ThreadInfo> nonDaemonNotTerminatedPredicate;
+  protected Predicate<ThreadInfo> timedoutRunnablePredicate;
+  protected Predicate<ThreadInfo> aliveUserPredicate;
+
   // a list of actions to be run post GC. This is a bit redundant to VMListener,
   // but in addition to avoid the per-instruction execution overhead of a VMListener
   // we want a (internal) mechanism that is on-demand only, i.e. processed
@@ -170,6 +176,25 @@ public abstract class VM {
 
     initSubsystems(config);
     initFields(config);
+    
+    // set predicates used to query from threadlist
+    nonDaemonNotTerminatedPredicate = new Predicate<ThreadInfo>() {
+      public boolean isTrue (ThreadInfo ti) {
+        return (!ti.isDaemon() && !ti.isTerminated());
+      }
+    };
+
+    timedoutRunnablePredicate = new Predicate<ThreadInfo>() {
+      public boolean isTrue (ThreadInfo ti) {
+        return (ti.isTimeoutRunnable());
+      }
+    };
+    
+    aliveUserPredicate = new Predicate<ThreadInfo>() {
+      public boolean isTrue (ThreadInfo ti) {
+        return (ti.isAlive() && !ti.isSystemThread());
+      }
+    };
   }
 
   /**
@@ -1102,10 +1127,6 @@ public abstract class VM {
     return ti.getPC();
   }
 
-  public int getAliveThreadCount () {
-    return getThreadList().getLiveThreadCount();
-  }
-
   /**
    * note this is gone after backtracking or starting the next exception
    */
@@ -1174,11 +1195,6 @@ public abstract class VM {
 
   public int getPathLength () {
     return path.size();
-  }
-
-
-  public int getRunnableThreadCount () {
-    return ss.getRunnableThreadCount();
   }
 
   public ThreadList getThreadList () {
@@ -1849,21 +1865,7 @@ public abstract class VM {
   public ThreadInfo getCurrentThread () {
     return ThreadInfo.currentThread;
   }
-
-  public ThreadInfo[] getRunnableThreads(){
-    return getThreadList().getRunnableThreads();
-  }
   
-  public boolean hasOtherRunnablesThan (ThreadInfo ti){
-    return getThreadList().hasOtherRunnablesThan(ti);
-  }
-
-  public boolean hasOtherNonDaemonRunnablesThan (ThreadInfo ti){
-    return getThreadList().hasOtherNonDaemonRunnablesThan(ti);
-  }
-
-  public abstract boolean hasOnlyDaemonRunnablesOtherThan (ThreadInfo ti);
-
   public void registerClassLoader(ClassLoaderInfo cl) {
     this.getKernelState().addClassLoader(cl);
   }
@@ -1918,4 +1920,25 @@ public abstract class VM {
   }
   
   public abstract void terminateProcess (ThreadInfo ti);
+  
+  
+  // ---------- Predicates used to query threads from ThreadList ---------- //
+  
+  public abstract Predicate<ThreadInfo> getRunnablePredicate();
+  
+  public abstract Predicate<ThreadInfo> getDaemonRunnablePredicate();
+  
+  public abstract Predicate<ThreadInfo> getAppTimedoutRunnablePredicate();
+  
+  public Predicate<ThreadInfo> getNonDaemonNotTerminatedPredicate() {
+    return nonDaemonNotTerminatedPredicate;
+  }
+  
+  public Predicate<ThreadInfo> getTimedoutRunnablePredicate () {
+    return timedoutRunnablePredicate;
+  }
+  
+  public Predicate<ThreadInfo> getAliveUserPredicate () {
+    return aliveUserPredicate;
+  }
 }

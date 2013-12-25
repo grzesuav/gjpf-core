@@ -154,7 +154,7 @@ public class ContextBoundingSchedulerFactory extends DefaultSchedulerFactory {
       ThreadInfo terminateThread) {
     // terminateThread is already TERMINATED at this point
     ThreadList tl = vm.getThreadList();
-    if (tl.getRunnableThreadCount() > 0) {
+    if (tl.getMatchingCount(vm.getTimedoutRunnablePredicate()) > 0) {
       return createContextBoundingThreadChoiceFromSet( "terminate", getRunnablesWithout(terminateThread), true);
     } else {
       return null;

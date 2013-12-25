@@ -44,7 +44,7 @@ public class Interleaving extends SimplePriorityHeuristic {
    * live threads a certain thread did run
    */
   protected int computeHeuristicValue () {
-    int aliveThreads = vm.getAliveThreadCount();
+    int aliveThreads = vm.getThreadList().getMatchingCount(aliveThread);
 
     Path path = vm.getPath();
     int  pathSize = path.size();

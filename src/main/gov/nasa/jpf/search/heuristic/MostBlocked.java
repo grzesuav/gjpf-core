@@ -34,8 +34,8 @@ public class MostBlocked extends SimplePriorityHeuristic {
   }
 
   protected int computeHeuristicValue () {
-    int alive = vm.getAliveThreadCount();
-    int runnable = vm.getRunnableThreadCount();
+    int alive = vm.getThreadList().getMatchingCount(aliveThread);
+    int runnable = vm.getThreadList().getMatchingCount(vm.getTimedoutRunnablePredicate());
 
     // pcm - the (iSystemState based) condition was "!runnable && alive"
     // the '10000' is just a potential max thread count

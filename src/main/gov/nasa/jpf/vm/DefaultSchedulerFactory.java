@@ -88,32 +88,28 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
    * get list of all runnable threads
    */
   protected ThreadInfo[] getRunnables(ThreadInfo ti) {
-    ThreadList tl = vm.getThreadList();
-    return filter(tl.getRunnableThreads());
+    return filter(vm.getThreadList().getAllMatching(vm.getTimedoutRunnablePredicate()));
   }
 
   /**
    * return a list of runnable choices, or null if there is only one
    */
   protected ThreadInfo[] getRunnablesIfChoices(ThreadInfo ti) {
-    ThreadList tl = vm.getThreadList();
-    int n = tl.getRunnableThreadCount();
+    int n = vm.getThreadList().getMatchingCount(vm.getTimedoutRunnablePredicate());
 
     if ((n > 1) || (n == 1 && breakSingleChoice)){
-      return filter(tl.getRunnableThreads());
+      return filter(vm.getThreadList().getAllMatching(vm.getTimedoutRunnablePredicate()));
     } else {
       return null;
     }
   }
 
   protected ThreadInfo[] getRunnablesWith (ThreadInfo ti) {
-    ThreadList tl = vm.getThreadList();
-    return filter( tl.getRunnableThreadsWith(ti));
+    return filter(vm.getThreadList().getAllMatchingWith(ti, vm.getTimedoutRunnablePredicate()));
   }
 
   protected ThreadInfo[] getRunnablesWithout (ThreadInfo ti) {
-    ThreadList tl = vm.getThreadList();
-    return filter( tl.getRunnableThreadsWithout(ti));
+    return filter(vm.getThreadList().getAllMatchingWithout(ti, vm.getTimedoutRunnablePredicate()));
   }
 
 
@@ -351,7 +347,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     // NOTE returning null does not directly define an end state - that's up to
     // a subsequent call to vm.isEndState()
     // <2do> FIXME this is redundant and error prone
-    if (tl.hasAnyAliveThread()) {
+    if (tl.hasAnyMatching(vm.getAliveUserPredicate())) {
       return new ThreadChoiceFromSet( THREAD_TERMINATE, getRunnablesWithout(terminateThread), true);
     } else {
       return null;

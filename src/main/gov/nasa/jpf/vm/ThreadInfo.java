@@ -28,6 +28,7 @@ import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.JPFLogger;
+import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
@@ -237,6 +238,8 @@ public class ThreadInfo extends InfoObject
    * the reference of the object if this thread is blocked or waiting for
    */
   int lockRef = MJIEnv.NULL;
+  
+  Predicate<ThreadInfo> runnableUserNonDaemon;
 
   Memento<ThreadInfo> cachedMemento; // cache for unchanged ThreadInfos
 
@@ -456,7 +459,13 @@ public class ThreadInfo extends InfoObject
 
     markUnchanged();
     attributes |= ATTR_DATA_CHANGED; 
-    env = new MJIEnv(this);    
+    env = new MJIEnv(this);
+    
+    runnableUserNonDaemon = new Predicate<ThreadInfo>() {
+      public boolean isTrue (ThreadInfo ti) {
+        return (ti.isRunnable() && !ti.isSystemThread() && !ti.isDaemon());
+      }
+    };
   }
   
   public Memento<ThreadInfo> getMemento(MementoFactory factory) {
@@ -2266,7 +2275,7 @@ public class ThreadInfo extends InfoObject
       // scheduled anymore but hard terminated. This is even true if the trigger
       // is the last operation in the daemon since a host VM might preempt
       // on every instruction, not just CG insns (see .test.mc.DaemonTest)
-      if (vm.hasOnlyDaemonRunnablesOtherThan(this)){
+      if (vm.getThreadList().hasOnlyMatchingOtherThan(this, vm.getDaemonRunnablePredicate())) {
         if (yield()){
           return false;
         }
@@ -2298,7 +2307,7 @@ public class ThreadInfo extends InfoObject
       // object/class thread sets
       SharedObjectPolicy.getPolicy().cleanupThreadTermination(this);
 
-      if (tl.hasOtherNonDaemonRunnablesThan(this)){
+      if (vm.getThreadList().hasAnyMatchingOtherThan(this, runnableUserNonDaemon)) {
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(this);
         ss.setMandatoryNextChoiceGenerator(cg, "thread terminated without CG: ");
       }
@@ -3137,7 +3146,7 @@ public class ThreadInfo extends InfoObject
     SystemState ss = vm.getSystemState();
 
     if (!ss.isIgnored()){
-      ThreadInfo[] choices = vm.getRunnableThreads();
+      ThreadInfo[] choices = vm.getThreadList().getAllMatching(vm.getAppTimedoutRunnablePredicate());
       ThreadChoiceFromSet cg = new ThreadChoiceFromSet( "yield", choices, true);
         
       return ss.setNextChoiceGenerator(cg); // this breaks the transition
@@ -3163,15 +3172,11 @@ public class ThreadInfo extends InfoObject
 
 
   public boolean checkPorFieldBoundary () {
-    return (executedInstructions == 0) && porFieldBoundaries && vm.hasOtherRunnablesThan(this);
+    return (executedInstructions == 0) && porFieldBoundaries && hasOtherRunnables();
   }
 
   public boolean hasOtherRunnables () {
-    return vm.hasOtherRunnablesThan(this);
-  }
-
-  public boolean hasOtherNonDaemonRunnables() {
-    return vm.hasOtherNonDaemonRunnablesThan(this);
+    return vm.getThreadList().hasAnyMatchingOtherThan(this, vm.getRunnablePredicate());
   }
   
   protected void markUnchanged() {
@@ -3418,5 +3423,9 @@ public class ThreadInfo extends InfoObject
       vm.dumpThreadStates();
       assert false;
     }
+  }
+  
+  public boolean isSystemThread() {
+    return false;
   }
 }
