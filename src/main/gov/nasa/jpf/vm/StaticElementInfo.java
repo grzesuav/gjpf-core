@@ -82,6 +82,11 @@ public final class StaticElementInfo extends ElementInfo {
   }
   
   @Override
+  public boolean hasFinalizer() {
+    return false;
+  }
+  
+  @Override
   protected int getNumberOfFieldsOrElements(){
     // static fields can't be arrays, those are always heap objects
     return ci.getNumberOfStaticFields();

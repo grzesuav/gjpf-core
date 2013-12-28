@@ -120,4 +120,11 @@ public interface SchedulerFactory {
    */
   ChoiceGenerator<ThreadInfo> createBreakTransitionCG (String reason, ThreadInfo ti);
   
+  /** used by FinalizerThreadInfo.schedulerFinalizer */
+  public static final String PRE_FINALIZE = "PRE_FINALIZE";
+  ChoiceGenerator<ThreadInfo> createPreFinalizeCG (ThreadInfo ti);
+  
+  /** used by the Finalizer.manageState() native peer */
+  public static final String POST_FINALIZE = "POST_FINALIZE";
+  ChoiceGenerator<ThreadInfo> createPostFinalizeCG (ThreadInfo finalizerThread);
 }

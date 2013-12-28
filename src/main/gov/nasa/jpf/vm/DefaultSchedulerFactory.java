@@ -347,7 +347,7 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     // NOTE returning null does not directly define an end state - that's up to
     // a subsequent call to vm.isEndState()
     // <2do> FIXME this is redundant and error prone
-    if (tl.hasAnyMatching(vm.getAliveUserPredicate())) {
+    if (tl.hasAnyMatching(vm.getAlivePredicate())) {
       return new ThreadChoiceFromSet( THREAD_TERMINATE, getRunnablesWithout(terminateThread), true);
     } else {
       return null;
@@ -379,5 +379,14 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
       return new BreakGenerator(reason, currentThread, false);
     }
 
+  }
+  
+  public ChoiceGenerator<ThreadInfo> createPreFinalizeCG (ThreadInfo finalizerThread) {
+    ThreadInfo[] choices = {finalizerThread};
+    return new ThreadChoiceFromSet( PRE_FINALIZE, choices, true);
+  }
+
+  public ChoiceGenerator<ThreadInfo> createPostFinalizeCG (ThreadInfo finalizerThread) {
+    return new ThreadChoiceFromSet( POST_FINALIZE, getRunnablesWithout(finalizerThread), true);
   }
 }

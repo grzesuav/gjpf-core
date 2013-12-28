@@ -43,10 +43,10 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
     };
   }
   
-  Predicate<ThreadInfo> getUserLiveAppThreads (final ThreadInfo ti){
+  Predicate<ThreadInfo> getLiveAppThreads (final ThreadInfo ti){
     return new Predicate<ThreadInfo>(){
       public boolean isTrue (ThreadInfo t){
-        return (t.appCtx == ti.appCtx && t.isAlive() && !t.isSystemThread());
+        return (t.appCtx == ti.appCtx && t.isAlive());
       }
     }; 
   }
@@ -90,8 +90,8 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
     // terminateThread is already TERMINATED at this point
     ThreadList tl = vm.getThreadList();
     
-    if (tl.hasAnyMatching(vm.getAliveUserPredicate())) {
-      int liveCount = tl.getMatchingCount(getUserLiveAppThreads(terminateThread));
+    if (tl.hasAnyMatching(vm.getAlivePredicate())) {
+      int liveCount = tl.getMatchingCount(getLiveAppThreads(terminateThread));
       if(liveCount==0) {
         return new MultiProcessThreadChoice( THREAD_TERMINATE, super.getRunnablesWithout(terminateThread), true);
       } else {
@@ -100,5 +100,13 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
     } else {
       return null;
     }
+  }
+  
+  /**
+   * after the FinalizerThread processes the finalizeQueue, a global scheduling point is created
+   */
+  @Override
+  public ChoiceGenerator<ThreadInfo> createPostFinalizeCG (ThreadInfo finalizerThread) {
+    return new MultiProcessThreadChoice( POST_FINALIZE, super.getRunnables(finalizerThread), true);
   }
 }

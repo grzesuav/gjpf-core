@@ -94,6 +94,7 @@ public abstract class ElementInfo implements Cloneable {
   
   public static final int   ATTR_MARKED_OR_LIVE_BIT = (ATTR_IS_MARKED | ATTR_LIVE_BIT);
 
+  public static final int ATTR_FINALIZED = 0x800;
 
   //--- instance fields
 
@@ -184,6 +185,8 @@ public abstract class ElementInfo implements Cloneable {
   // not ideal, a sub-type checker.
   public abstract boolean isObject();
 
+  public abstract boolean hasFinalizer();
+  
   protected ElementInfo() {
   }
 
@@ -2105,6 +2108,14 @@ public abstract class ElementInfo implements Cloneable {
     return (attributes & ATTR_IS_MARKED) != 0;
   }
 
+  public boolean isFinalized() {
+    return (attributes & ATTR_FINALIZED) != 0;
+  }
+  
+  public void setFinalized() {
+    attributes |= ATTR_FINALIZED;
+  }
+  
   public void setMarked() {
     attributes |= ATTR_IS_MARKED;
   }

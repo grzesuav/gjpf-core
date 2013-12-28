@@ -580,6 +580,10 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
     boolean isThreadTermination = ti.isTerminated();
     int n = 0;
     
+    if(vm.finalizersEnabled()) {
+      markFinalizableObjects();
+    }
+    
     // now go over all objects, purge the ones that are not live and reset attrs for rest
     for (ElementInfo ei : this){
       
@@ -590,24 +594,30 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
         ei.cleanUp(this, isThreadTermination, tid);
         n++;
         
-      } else { // object is no longer reachable  
-        /** no finalizer support yet
-        MethodInfo mi = ei.getClassInfo().getFinalizer();
-        if (mi != null){
-          // add to finalizer queue, but keep alive until processed
-        } else {
-        }
-        **/
-
+      } else {
         ei.processReleaseActions();
         
-        // <2do> still have to process finalizers here, which might make the object live again
         vm.notifyObjectReleased(ti, ei);
         remove(ei.getObjectRef());
       }
     }
     
     nLiveObjects = n;
+  }
+  
+  protected void markFinalizableObjects () {
+    // Phase 1: find unmarked objects with finalizers that haven't been processed yet
+    // and mark them recursively to avoid them from being GCed. Their finalizers must
+    // execute before these objects are removed from the heap.
+    for (ElementInfo ei : this){
+      if(!ei.isMarked() && ei.hasFinalizer() && !ei.isFinalized()) {
+        vm.addToFinalizeQueue(ei);
+        queueMark(ei.getObjectRef());
+        ei.markRecursive(this);
+      }
+    }
+    
+    // Phase 2: collect all unmarked objects
   }
   
   protected void mark () {

@@ -26,7 +26,6 @@ import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import gov.nasa.jpf.vm.choice.MultiProcessThreadChoice;
-import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
 import java.util.ArrayList;
 
@@ -48,29 +47,30 @@ public class MultiProcessVM extends VM {
 
   ApplicationContext[] appCtxs;
   
-  MultiProcessPredicate runnableThreadPredicate;
-  MultiProcessPredicate appTimedoutRunnable;
-  MultiProcessPredicate appDaemonRunnable;
+  MultiProcessPredicate runnablePredicate;
+  MultiProcessPredicate appTimedoutRunnablePredicate;
+  MultiProcessPredicate appDaemonRunnablePredicate;
   MultiProcessPredicate appPredicate;
+  Predicate<ThreadInfo> systemRunnablePredicate;
   
   public MultiProcessVM (JPF jpf, Config conf) {
     super(jpf, conf);
     
     appCtxs = createApplicationContexts();
     
-    runnableThreadPredicate = new MultiProcessPredicate() {
+    runnablePredicate = new MultiProcessPredicate() {
       public boolean isTrue (ThreadInfo t){
         return (t.isRunnable() && this.appCtx == t.appCtx);
       }
     };
     
-    appTimedoutRunnable = new MultiProcessPredicate() {
+    appTimedoutRunnablePredicate = new MultiProcessPredicate() {
       public boolean isTrue (ThreadInfo t){
         return (this.appCtx == t.appCtx && t.isTimeoutRunnable());
       }
     }; 
     
-    appDaemonRunnable = new MultiProcessPredicate() {
+    appDaemonRunnablePredicate = new MultiProcessPredicate() {
       public boolean isTrue (ThreadInfo t){
         return (this.appCtx == t.appCtx && t.isRunnable() && t.isDaemon());
       }
@@ -79,6 +79,12 @@ public class MultiProcessVM extends VM {
     appPredicate = new MultiProcessPredicate() {
       public boolean isTrue (ThreadInfo t){
         return (this.appCtx == t.appCtx);
+      }
+    };
+    
+    systemRunnablePredicate = new Predicate<ThreadInfo> () {
+      public boolean isTrue (ThreadInfo t){
+        return (t.isSystemThread() && t.isRunnable());
       }
     };
   }
@@ -151,6 +157,8 @@ public class MultiProcessVM extends VM {
       
       for (int i=0; i<appCtxs.length; i++){
         ThreadInfo tiMain = initializeMainThread(appCtxs[i], i);
+        initializeFinalizerThread(appCtxs[i]);
+        
         if (tiMain == null) {
           return false; // bail out
         }
@@ -275,10 +283,20 @@ public class MultiProcessVM extends VM {
 
   @Override
   public boolean isEndState () {
-    boolean hasNonTerminatedDaemon = getThreadList().hasAnyMatching(getNonDaemonNotTerminatedPredicate());
-    boolean hasRunnable = getThreadList().hasAnyMatching(getTimedoutRunnablePredicate());
+    boolean hasNonTerminatedDaemon = getThreadList().hasAnyMatching(getUserLiveNonDaemonPredicate());
+    boolean hasRunnable = getThreadList().hasAnyMatching(getUserTimedoutRunnablePredicate());
+    boolean isEndState = !(hasNonTerminatedDaemon && hasRunnable);
     
-    return !(hasNonTerminatedDaemon && hasRunnable);
+    if(processFinalizers) {
+      if(isEndState) {
+        int n = getThreadList().getMatchingCount(systemRunnablePredicate);
+        if(n>0) {
+          return false;
+        }
+      }
+    }
+    
+    return isEndState;
   }
 
   @Override
@@ -297,7 +315,9 @@ public class MultiProcessVM extends VM {
 
     for (int i=0; i<len; i++){
       ThreadInfo ti = threads[i];
-      if (ti.isAlive()) {
+      
+      // when checking for deadlocks don't take system threads into accounts, e.g. FinalizerThread
+      if (ti.isAlive() && !ti.isSystemThread()) {
         hasNonDaemons |= !ti.isDaemon();
 
         // shortcut - if there is at least one runnable, we are not deadlocked
@@ -317,16 +337,26 @@ public class MultiProcessVM extends VM {
   public void terminateProcess (ThreadInfo ti) {
     SystemState ss = getSystemState();
     ThreadInfo[] appThreads = getThreadList().getAllMatching(getAppPredicate(ti));
+    ThreadInfo finalizerTi = null;
 
     for (int i = 0; i < appThreads.length; i++) {
-      // keep the stack frames around, so that we can inspect the snapshot
-      appThreads[i].setTerminated();
+      ThreadInfo t = appThreads[i];
+      
+      // if finalizers have to be processed, FinalizerThread is not killed at this 
+      // point. We need to keep it around in case fianlizable objects are GCed after 
+      // System.exit() returns.
+      if(processFinalizers && t.isSystemThread()) {
+        finalizerTi = t;
+      } else {
+        // keep the stack frames around, so that we can inspect the snapshot
+        t.setTerminated();
+      }
     }
     
     ThreadList tl = getThreadList();
     
-    ThreadChoiceGenerator cg;
-    if (tl.hasAnyMatching(getAliveUserPredicate())) {
+    ChoiceGenerator<ThreadInfo> cg;
+    if (tl.hasAnyMatching(getAlivePredicate())) {
       ThreadInfo[] runnables = getThreadList().getAllMatching(getTimedoutRunnablePredicate());
       cg = new MultiProcessThreadChoice( "PROCESS_TERMINATE", runnables, true);
     } else {
@@ -334,12 +364,18 @@ public class MultiProcessVM extends VM {
     }
     
     ss.setMandatoryNextChoiceGenerator(cg, "exit without break CG");
+    
+    // if there is a finalizer thread, we have to run the last GC, to queue finalizable objects, if any
+    if(finalizerTi != null) {
+      assert finalizerTi.isAlive();
+      activateGC();
+    }
   }
   
   
   //---------- Predicates used to query threads from ThreadList ----------//
   
-  public abstract class MultiProcessPredicate implements Predicate<ThreadInfo> {
+  abstract class MultiProcessPredicate implements Predicate<ThreadInfo> {
     ApplicationContext appCtx;
 
     public void setAppCtx (ApplicationContext appCtx) { 
@@ -349,20 +385,20 @@ public class MultiProcessVM extends VM {
   
   @Override
   public Predicate<ThreadInfo> getRunnablePredicate() {
-    runnableThreadPredicate.setAppCtx(getCurrentApplicationContext());
-    return runnableThreadPredicate;
+    runnablePredicate.setAppCtx(getCurrentApplicationContext());
+    return runnablePredicate;
   }
   
   @Override
   public Predicate<ThreadInfo> getAppTimedoutRunnablePredicate() {
-    appTimedoutRunnable.setAppCtx(getCurrentApplicationContext());
-    return appTimedoutRunnable;
+    appTimedoutRunnablePredicate.setAppCtx(getCurrentApplicationContext());
+    return appTimedoutRunnablePredicate;
   }
   
   @Override
   public Predicate<ThreadInfo> getDaemonRunnablePredicate() {
-    appDaemonRunnable.setAppCtx(getCurrentApplicationContext());
-    return appDaemonRunnable;
+    appDaemonRunnablePredicate.setAppCtx(getCurrentApplicationContext());
+    return appDaemonRunnablePredicate;
   }
   
   /**

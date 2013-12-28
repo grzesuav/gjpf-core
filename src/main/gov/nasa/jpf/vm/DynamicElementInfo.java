@@ -63,6 +63,11 @@ public class DynamicElementInfo extends ElementInfo {
   }
   
   @Override
+  public boolean hasFinalizer() {
+    return (ci.getFinalizer()!=null);
+  }
+  
+  @Override
   protected int getNumberOfFieldsOrElements(){
     if (fields instanceof ArrayFields){
       return ((ArrayFields)fields).arrayLength();

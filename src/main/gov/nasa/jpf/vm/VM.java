@@ -25,6 +25,7 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.ClassFile;
+import gov.nasa.jpf.vm.FinalizerThreadInfo;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Misc;
@@ -36,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -134,6 +134,7 @@ public abstract class VM {
   protected boolean treeOutput;
   protected boolean pathOutput;
   protected boolean indentOutput;
+  protected boolean processFinalizers;
   
   // <2do> there are probably many places where this should be used
   protected boolean isBigEndian;
@@ -141,9 +142,10 @@ public abstract class VM {
   protected boolean initialized;
 
   //thread filters
-  protected Predicate<ThreadInfo> nonDaemonNotTerminatedPredicate;
+  protected Predicate<ThreadInfo> userliveNonDaemonPredicate;
   protected Predicate<ThreadInfo> timedoutRunnablePredicate;
-  protected Predicate<ThreadInfo> aliveUserPredicate;
+  protected Predicate<ThreadInfo> alivePredicate;
+  protected Predicate<ThreadInfo> userTimedoutRunnablePredicate;
 
   // a list of actions to be run post GC. This is a bit redundant to VMListener,
   // but in addition to avoid the per-instruction execution overhead of a VMListener
@@ -169,6 +171,8 @@ public abstract class VM {
     // we have to defer setting pathOutput until we have a reporter registered
     indentOutput = config.getBoolean("vm.indent_output",false);
 
+    processFinalizers = config.getBoolean("vm.process_finalizers", false);
+    
     isBigEndian = getPlatformEndianness(config);
     initialized = false;
     
@@ -178,9 +182,9 @@ public abstract class VM {
     initFields(config);
     
     // set predicates used to query from threadlist
-    nonDaemonNotTerminatedPredicate = new Predicate<ThreadInfo>() {
+    userliveNonDaemonPredicate = new Predicate<ThreadInfo>() {
       public boolean isTrue (ThreadInfo ti) {
-        return (!ti.isDaemon() && !ti.isTerminated());
+        return (!ti.isDaemon() && !ti.isTerminated() && !ti.isSystemThread());
       }
     };
 
@@ -190,9 +194,15 @@ public abstract class VM {
       }
     };
     
-    aliveUserPredicate = new Predicate<ThreadInfo>() {
+    userTimedoutRunnablePredicate = new Predicate<ThreadInfo>() {
       public boolean isTrue (ThreadInfo ti) {
-        return (ti.isAlive() && !ti.isSystemThread());
+        return (ti.isTimeoutRunnable() && !ti.isSystemThread());
+      }
+    };
+    
+    alivePredicate = new Predicate<ThreadInfo>() {
+      public boolean isTrue (ThreadInfo ti) {
+        return (ti.isAlive());
       }
     };
   }
@@ -265,6 +275,10 @@ public abstract class VM {
     return isBigEndian;
   }
 
+  public boolean finalizersEnabled() {
+    return processFinalizers;
+  }
+  
   public boolean isInitialized() {
     return initialized;
   }
@@ -324,6 +338,14 @@ public abstract class VM {
     return tiNew;
   }
 
+  // created if the option "vm.process_finalizers" is set to true
+  protected ThreadInfo createFinalizerThreadInfo (ApplicationContext appCtx){
+    FinalizerThreadInfo finalizerTi = new FinalizerThreadInfo( this, appCtx);
+    registerThread(finalizerTi);
+    
+    return finalizerTi;
+  }
+  
   /**
    * the minimal set of system classes we need for initialization
    */
@@ -379,6 +401,7 @@ public abstract class VM {
     startupClasses.add("java.lang.ref.Reference");
     startupClasses.add("java.lang.ref.WeakReference");
     startupClasses.add("java.lang.Enum");
+    startupClasses.add("gov.nasa.jpf.FinalizerThread");
 
     // we could be more fancy and use wildcard patterns and the current classpath
     // to specify extra classes, but this could be VERY expensive. Projected use
@@ -551,6 +574,18 @@ public abstract class VM {
     registerThreadListCleanup(sysCl.getThreadClassInfo());
 
     return tiMain;
+  }
+  
+  protected void initializeFinalizerThread (ApplicationContext appCtx) {
+    if(processFinalizers) {
+      ApplicationContext app = getCurrentApplicationContext();
+      FinalizerThreadInfo finalizerTi = (FinalizerThreadInfo) app.getFinalizerThread();
+    
+      finalizerTi = (FinalizerThreadInfo) createFinalizerThreadInfo(app);
+      finalizerTi.createFinalizerThreadObject(app.getSystemClassLoader());
+    
+      appCtx.setFinalizerThread(finalizerTi);
+    }
   }
   
   protected void registerThreadListCleanup (ClassInfo ciThread){
@@ -1650,7 +1685,9 @@ public abstract class VM {
         // because this transition is usually incomplete
 
         if (runGc && !hasPendingException()) {
-          ss.gcIfNeeded();
+          if(ss.gcIfNeeded()) {
+            processFinalizers();
+          }
         }
 
         if (stateSet != null) {
@@ -1930,15 +1967,44 @@ public abstract class VM {
   
   public abstract Predicate<ThreadInfo> getAppTimedoutRunnablePredicate();
   
-  public Predicate<ThreadInfo> getNonDaemonNotTerminatedPredicate() {
-    return nonDaemonNotTerminatedPredicate;
+  public Predicate<ThreadInfo> getUserTimedoutRunnablePredicate () {
+    return userTimedoutRunnablePredicate;
+  }
+  
+  public Predicate<ThreadInfo> getUserLiveNonDaemonPredicate() {
+    return userliveNonDaemonPredicate;
   }
   
   public Predicate<ThreadInfo> getTimedoutRunnablePredicate () {
     return timedoutRunnablePredicate;
   }
   
-  public Predicate<ThreadInfo> getAliveUserPredicate () {
-    return aliveUserPredicate;
+  public Predicate<ThreadInfo> getAlivePredicate () {
+    return alivePredicate;
+  }
+  
+  
+  // ---------- Methods for handling finalizers ---------- //
+  
+  /** 
+   * Add a given finalizable object to the finalizeQueue array of java.lang.ref.Finalizer 
+   * model class. This is invoked from the sweep() phase of the garbage collection.
+   */
+  public void addToFinalizeQueue(ElementInfo ei) {
+    ApplicationContext app = getApplicationContext(ei.getObjectRef());
+    ((FinalizerThreadInfo)app.getFinalizerThread()).addToFinalizeQueue(ei);
+  }
+  
+  public FinalizerThreadInfo getFinalizerThread() {
+    return getCurrentApplicationContext().getFinalizerThread();
+  }
+  
+  public void processFinalizers() {
+    if(processFinalizers) {
+      ChoiceGenerator<?> cg = getNextChoiceGenerator();
+      if(cg==null || (cg.isSchedulingPoint() && !cg.isCascaded())) {
+        getFinalizerThread().scheduleFinalizer();
+      }
+    }
   }
 }

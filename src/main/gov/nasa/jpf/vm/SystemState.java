@@ -641,13 +641,16 @@ public class SystemState {
     restorers.put(key,restorer);
   }
   
-  public void gcIfNeeded () {
+  public boolean gcIfNeeded () {
+    boolean needed = false;
     if (GCNeeded) {
       ks.gc();
       GCNeeded = false;
+      needed = true;
     }
 
     nAlloc = 0;
+    return needed;
   }
 
   /**

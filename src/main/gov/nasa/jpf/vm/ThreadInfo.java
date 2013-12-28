@@ -238,8 +238,6 @@ public class ThreadInfo extends InfoObject
    * the reference of the object if this thread is blocked or waiting for
    */
   int lockRef = MJIEnv.NULL;
-  
-  Predicate<ThreadInfo> runnableUserNonDaemon;
 
   Memento<ThreadInfo> cachedMemento; // cache for unchanged ThreadInfos
 
@@ -460,12 +458,6 @@ public class ThreadInfo extends InfoObject
     markUnchanged();
     attributes |= ATTR_DATA_CHANGED; 
     env = new MJIEnv(this);
-    
-    runnableUserNonDaemon = new Predicate<ThreadInfo>() {
-      public boolean isTrue (ThreadInfo ti) {
-        return (ti.isRunnable() && !ti.isSystemThread() && !ti.isDaemon());
-      }
-    };
   }
   
   public Memento<ThreadInfo> getMemento(MementoFactory factory) {
@@ -2306,8 +2298,8 @@ public class ThreadInfo extends InfoObject
       // give the thread tracking policy a chance to remove this thread from
       // object/class thread sets
       SharedObjectPolicy.getPolicy().cleanupThreadTermination(this);
-
-      if (vm.getThreadList().hasAnyMatchingOtherThan(this, runnableUserNonDaemon)) {
+      
+      if (vm.getThreadList().hasAnyMatchingOtherThan(this, getRunnableNonDaemonPredicate())) {
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(this);
         ss.setMandatoryNextChoiceGenerator(cg, "thread terminated without CG: ");
       }
@@ -2318,6 +2310,14 @@ public class ThreadInfo extends InfoObject
     }
   }
 
+  Predicate<ThreadInfo> getRunnableNonDaemonPredicate() {
+    return new Predicate<ThreadInfo>() {
+      public boolean isTrue (ThreadInfo ti) {
+        return (ti.isRunnable() && !ti.isDaemon());
+      }
+    };
+  }
+  
   /**
    * this is called upon ThreadInfo.exit() and corresponds to the private Thread.exit()
    */

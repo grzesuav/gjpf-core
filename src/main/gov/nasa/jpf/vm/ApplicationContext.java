@@ -36,6 +36,8 @@ public class ApplicationContext implements SystemAttribute {
   final SystemClassLoaderInfo sysCl;
   MethodInfo miEntry;
   
+  FinalizerThreadInfo finalizerThread;
+  
   ApplicationContext (int id, String mainClassName, String mainEntry, String[] args, String host, SystemClassLoaderInfo sysCl){
     this.id = id;
     this.mainClassName = mainClassName;
@@ -67,6 +69,14 @@ public class ApplicationContext implements SystemAttribute {
   
   public SystemClassLoaderInfo getSystemClassLoader(){
     return sysCl;
+  }
+  
+  public FinalizerThreadInfo getFinalizerThread() {
+    return finalizerThread;
+  }
+  
+  public void setFinalizerThread(ThreadInfo ti) {
+    finalizerThread = (FinalizerThreadInfo)ti;
   }
   
   public String toString(){

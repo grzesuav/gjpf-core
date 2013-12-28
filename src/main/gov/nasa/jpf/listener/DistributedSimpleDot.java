@@ -27,7 +27,9 @@ import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.LockInstruction;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.MultiProcessChoiceGenerator;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
@@ -126,6 +128,30 @@ public class DistributedSimpleDot extends SimpleDot {
       pw.print(']');
 
       pw.println("  // multiprc state");
+    }
+  }
+  
+  protected String getNativeExecCG (EXECUTENATIVE insn){
+    MethodInfo mi = insn.getExecutedMethod();
+    String s = mi.getName();
+
+    if (s.equals("start")) {
+      s = lastTi.getName() + ".start";
+    } else if (s.equals("wait")) {
+      s = lastTi.getName() + ".wait";
+    }
+
+    return s;
+  }
+  
+  protected String getLastChoice() {
+    ChoiceGenerator<?> cg = vm.getChoiceGenerator();
+    Object choice = cg.getNextChoice();
+
+    if (choice instanceof ThreadInfo){
+       return ((ThreadInfo) choice).getName();
+    } else {
+      return choice.toString();
     }
   }
 }

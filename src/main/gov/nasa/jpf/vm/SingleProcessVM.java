@@ -117,6 +117,7 @@ public class SingleProcessVM extends VM {
   public boolean initialize(){
     try {
       ThreadInfo tiMain = initializeMainThread(appCtx, 0);
+      initializeFinalizerThread(appCtx);
 
       if (tiMain == null) {
         return false; // bail out
@@ -206,10 +207,19 @@ public class SingleProcessVM extends VM {
     // note this uses 'alive', not 'runnable', hence isEndStateProperty won't
     // catch deadlocks - but that would be NoDeadlockProperty anyway
     
-    boolean hasNonTerminatedDaemon = getThreadList().hasAnyMatching(getNonDaemonNotTerminatedPredicate());
-    boolean hasRunnable = getThreadList().hasAnyMatching(getTimedoutRunnablePredicate());
+    boolean hasNonTerminatedDaemon = getThreadList().hasAnyMatching(getUserLiveNonDaemonPredicate());
+    boolean hasRunnable = getThreadList().hasAnyMatching(getUserTimedoutRunnablePredicate());
+    boolean isEndState = !(hasNonTerminatedDaemon && hasRunnable);
     
-    return !(hasNonTerminatedDaemon && hasRunnable);
+    if(processFinalizers) {
+      if(isEndState) {
+        if(getFinalizerThread().isRunnable()) {
+          return false;
+        }
+      }
+    }
+    
+    return isEndState;
   }
 
   @Override
@@ -226,7 +236,8 @@ public class SingleProcessVM extends VM {
     for (int i = 0; i < threads.length; i++) {
       ThreadInfo ti = threads[i];
       
-      if (ti.isAlive()){
+      // when checking for deadlocks don't take system threads into accounts, e.g. FinalizerThread
+      if (ti.isAlive() && !ti.isSystemThread()){
         hasNonDaemons |= !ti.isDaemon();
 
         // shortcut - if there is at least one runnable, we are not deadlocked
@@ -246,14 +257,26 @@ public class SingleProcessVM extends VM {
   public void terminateProcess (ThreadInfo ti) {
     SystemState ss = getSystemState();
     ThreadInfo[] liveThreads = getLiveThreads();
+    ThreadInfo finalizerTi = null;
 
     for (int i = 0; i < liveThreads.length; i++) {
-      // keep the stack frames around, so that we can inspect the snapshot
-      liveThreads[i].setTerminated();
+      if(!liveThreads[i].isSystemThread()) {
+        // keep the stack frames around, so that we can inspect the snapshot
+        liveThreads[i].setTerminated();
+      } else {
+        // FinalizerThread is not killed at this point. We need to keep it around in 
+        // case fianlizable objects are GCed after System.exit() returns.
+        finalizerTi = liveThreads[i];
+      }
     }
     
     ss.setMandatoryNextChoiceGenerator( new BreakGenerator("exit", ti, true), "exit without break CG");
-
+    
+    // if there is a finalizer thread, we have to run the last GC, to queue finalizable objects, if any
+    if(finalizerTi != null) {
+      assert finalizerTi.isAlive();
+      activateGC();
+    }
   }
   
   

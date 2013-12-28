@@ -401,6 +401,17 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     return n;
   }
   
+  public ThreadInfo getFirstMatching(Predicate<ThreadInfo> predicate) {
+    for (int i = 0, l = threads.length; i < l; i++) {
+      ThreadInfo t = threads[i];
+      if (predicate.isTrue(t)) {
+        return t;
+      }
+    }
+    
+    return null;
+  }
+  
   public Count getCountWithout (ThreadInfo tiExclude){
     int alive=0, runnableNonDaemons=0, runnableDaemons=0, blocked=0;
     
