@@ -43,10 +43,18 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
     };
   }
   
-  Predicate<ThreadInfo> getLiveAppThreads (final ThreadInfo ti){
+  Predicate<ThreadInfo> getLiveUserAppThreads (final ThreadInfo ti){
     return new Predicate<ThreadInfo>(){
       public boolean isTrue (ThreadInfo t){
-        return (t.appCtx == ti.appCtx && t.isAlive());
+        return (t.appCtx == ti.appCtx && t.isAlive() && !t.isSystemThread());
+      }
+    }; 
+  }
+  
+  Predicate<ThreadInfo> getRunnableSystemAppThreads (final ThreadInfo ti){
+    return new Predicate<ThreadInfo>(){
+      public boolean isTrue (ThreadInfo t){
+        return (t.appCtx == ti.appCtx && t.isSystemThread() && t.isTimeoutRunnable());
       }
     }; 
   }
@@ -91,8 +99,10 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
     ThreadList tl = vm.getThreadList();
     
     if (tl.hasAnyMatching(vm.getAlivePredicate())) {
-      int liveCount = tl.getMatchingCount(getLiveAppThreads(terminateThread));
-      if(liveCount==0) {
+      int liveUserCount = tl.getMatchingCount(getLiveUserAppThreads(terminateThread));
+      int runnableSystemCount = tl.getMatchingCount(getRunnableSystemAppThreads(terminateThread));
+      
+      if(liveUserCount==0 && runnableSystemCount==0) {
         return new MultiProcessThreadChoice( THREAD_TERMINATE, super.getRunnablesWithout(terminateThread), true);
       } else {
         return new ThreadChoiceFromSet( THREAD_TERMINATE, getRunnablesWithout(terminateThread), true);
