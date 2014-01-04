@@ -408,4 +408,13 @@ public class MultiProcessVM extends VM {
     appPredicate.setAppCtx(ti.getApplicationContext());
     return appPredicate;
   }
+  
+  // ---------- Methods for handling finalizers ---------- //
+
+  @Override
+  void updateFinalizerQueues () {
+    for(ApplicationContext appCtx: appCtxs) {
+      appCtx.getFinalizerThread().processNewFinalizables();
+    }
+  }
 }

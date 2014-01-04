@@ -1999,8 +1999,11 @@ public abstract class VM {
     return getCurrentApplicationContext().getFinalizerThread();
   }
   
+  abstract void updateFinalizerQueues();
+  
   public void processFinalizers() {
     if(processFinalizers) {
+      updateFinalizerQueues();
       ChoiceGenerator<?> cg = getNextChoiceGenerator();
       if(cg==null || (cg.isSchedulingPoint() && !cg.isCascaded())) {
         getFinalizerThread().scheduleFinalizer();

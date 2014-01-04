@@ -89,7 +89,7 @@ public class JPF_gov_nasa_jpf_FinalizerThread extends NativePeer {
     }
     // make the thread wait until more objects are added to finalizerQueue
     else {
-      finalizerTi.waitOnInternalLock();
+      finalizerTi.waitOnSemaphore();
       
       assert finalizerTi.isWaiting();
       

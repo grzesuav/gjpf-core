@@ -18,6 +18,9 @@
 //
 package gov.nasa.jpf.vm;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
  *  
@@ -63,6 +66,8 @@ public class FinalizerThreadInfo extends ThreadInfo {
     
     ci = appCtx.getSystemClassLoader().getResolvedClassInfo("gov.nasa.jpf.FinalizerThread");
     threadData.name = FINALIZER_NAME;
+    
+    tempFinalizeQueue = new ArrayList<ElementInfo>();
   }
   
   protected void createFinalizerThreadObject (SystemClassLoaderInfo sysCl){
@@ -108,7 +113,7 @@ public class FinalizerThreadInfo extends ThreadInfo {
     
     // make it wait on the internal private lock until its finalizeQueue is populated. This way,
     // we avoid scheduling points from including FinalizerThreads
-    waitOnInternalLock();
+    waitOnSemaphore();
 
     assert this.isWaiting();
   }
@@ -135,44 +140,58 @@ public class FinalizerThreadInfo extends ThreadInfo {
     
     if(ei!=null) {
       int queueRef = ei.getReferenceField("finalizeQueue");
-      queue = vm.getElementInfo(queueRef);
+      queue = vm.getModifiableElementInfo(queueRef);
       return queue;
     }
     
     return queue;
   }
   
+  // all finalizable objects collected during garbage collection are temporarily added to this list
+  // when VM schedule the finalizer thread, it add all elements to FinalizerThread.finalizeQueue at
+  // the SUT level.
+  List<ElementInfo> tempFinalizeQueue;
+  
   /** 
    * This method is invoked by the sweep() phase of the garbage collection process (GenericHeap.sweep()).
    * It adds a given finalizable object to the finalizeQueue array of gov.nasa.jpf.FinalizerThread.
    */
   public void addToFinalizeQueue(ElementInfo ei) {
-    ElementInfo oldQueue = getFinalizeQueue();
-    int[] oldValues;
-    
-    if(oldQueue == null) {
-      oldValues = new int[0];
-    } else {
-      oldValues = oldQueue.asReferenceArray();
-    }
-    
-    int len = oldValues.length;
-    ElementInfo newQueue = getHeap().newArray("Ljava/lang/Object;", len+1, this);
-    int[] newValues = newQueue.asReferenceArray();
-    
-    System.arraycopy(oldValues, 0, newValues, 0, len);
-    newValues[len] = ei.getObjectRef();
-    vm.getModifiableElementInfo(objRef).setReferenceField("finalizeQueue", newQueue.getObjectRef());
-    
-    // Note that we are in sweep()/phase 1, and we need to mark the new queue to
-    // avoid it from being GCed in sweep()/phase 2
-    vm.getHeap().queueMark(newQueue.getObjectRef());
-    newQueue.markRecursive(vm.getHeap());
-    
-    assert hasQueuedFinalizers();
+    ei = ei.getModifiableInstance();
     
     // make sure we process this object finalizer only once
     ei.setFinalized();
+    
+    tempFinalizeQueue.add(ei);
+  }
+  
+  /**
+   * This method adds all finalizable objects observed during the last garbage collection
+   * to finalizeQueue of FinalizerThread corresponding to this thread
+   */
+  void processNewFinalizables() {
+    if(!tempFinalizeQueue.isEmpty()) {
+      
+      ElementInfo oldQueue = getFinalizeQueue();
+      int[] oldValues = oldQueue.asReferenceArray();    
+      int len = oldValues.length;
+      
+      int n = tempFinalizeQueue.size();
+      
+      ElementInfo newQueue = getHeap().newArray("Ljava/lang/Object;", len+n, this);
+      int[] newValues = newQueue.asReferenceArray();
+      
+      System.arraycopy(oldValues, 0, newValues, 0, len);
+      
+      for(ElementInfo ei: tempFinalizeQueue) {
+        newValues[len++] = ei.getObjectRef();
+      }
+      
+      vm.getModifiableElementInfo(objRef).setReferenceField("finalizeQueue", newQueue.getObjectRef());
+      tempFinalizeQueue.clear();
+      
+      assert hasQueuedFinalizers();
+    }
   }
   
   public boolean scheduleFinalizer() {
@@ -188,7 +207,7 @@ public class FinalizerThreadInfo extends ThreadInfo {
       vm.getSystemState().setMandatoryNextChoiceGenerator(cg, "Need to start FinalizerThread to process objects finalizers");
       
       // stop waiting and process finalizers
-      notifyOnInternalLock();
+      notifyOnSemaphore();
       assert this.isRunnable();
       
       return true;
@@ -197,14 +216,14 @@ public class FinalizerThreadInfo extends ThreadInfo {
     return false;
   }
   
-  protected void waitOnInternalLock() {
+  protected void waitOnSemaphore() {
     int lockRef = vm.getElementInfo(objRef).getReferenceField("semaphore");
     ElementInfo lock = vm.getModifiableElementInfo(lockRef);
     
     lock.wait(this, 0, false);
   }
   
-  protected void notifyOnInternalLock() {
+  protected void notifyOnSemaphore() {
     int lockRef = vm.getElementInfo(objRef).getReferenceField("semaphore");
     ElementInfo lock = vm.getModifiableElementInfo(lockRef);
     

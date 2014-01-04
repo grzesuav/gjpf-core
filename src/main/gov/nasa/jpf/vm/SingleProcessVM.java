@@ -296,4 +296,11 @@ public class SingleProcessVM extends VM {
   public Predicate<ThreadInfo> getDaemonRunnablePredicate() {
     return daemonRunnable;
   }
+  
+  // ---------- Methods for handling finalizers ---------- //
+
+  @Override
+  void updateFinalizerQueues () {
+    getFinalizerThread().processNewFinalizables();
+  }
 }
