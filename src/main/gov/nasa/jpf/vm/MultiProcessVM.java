@@ -157,7 +157,7 @@ public class MultiProcessVM extends VM {
       
       for (int i=0; i<appCtxs.length; i++){
         ThreadInfo tiMain = initializeMainThread(appCtxs[i], i);
-        initializeFinalizerThread(appCtxs[i]);
+        initializeFinalizerThread(appCtxs[i], appCtxs.length+i);
         
         if (tiMain == null) {
           return false; // bail out

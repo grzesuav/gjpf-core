@@ -339,8 +339,8 @@ public abstract class VM {
   }
 
   // created if the option "vm.process_finalizers" is set to true
-  protected ThreadInfo createFinalizerThreadInfo (ApplicationContext appCtx){
-    FinalizerThreadInfo finalizerTi = new FinalizerThreadInfo( this, appCtx);
+  protected ThreadInfo createFinalizerThreadInfo (int id, ApplicationContext appCtx){
+    FinalizerThreadInfo finalizerTi = new FinalizerThreadInfo( this, appCtx, id);
     registerThread(finalizerTi);
     
     return finalizerTi;
@@ -576,12 +576,12 @@ public abstract class VM {
     return tiMain;
   }
   
-  protected void initializeFinalizerThread (ApplicationContext appCtx) {
+  protected void initializeFinalizerThread (ApplicationContext appCtx, int tid) {
     if(processFinalizers) {
       ApplicationContext app = getCurrentApplicationContext();
       FinalizerThreadInfo finalizerTi = (FinalizerThreadInfo) app.getFinalizerThread();
     
-      finalizerTi = (FinalizerThreadInfo) createFinalizerThreadInfo(app);
+      finalizerTi = (FinalizerThreadInfo) createFinalizerThreadInfo(tid, app);
       finalizerTi.createFinalizerThreadObject(app.getSystemClassLoader());
     
       appCtx.setFinalizerThread(finalizerTi);

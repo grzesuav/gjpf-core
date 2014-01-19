@@ -117,7 +117,7 @@ public class SingleProcessVM extends VM {
   public boolean initialize(){
     try {
       ThreadInfo tiMain = initializeMainThread(appCtx, 0);
-      initializeFinalizerThread(appCtx);
+      initializeFinalizerThread(appCtx, 1);
 
       if (tiMain == null) {
         return false; // bail out

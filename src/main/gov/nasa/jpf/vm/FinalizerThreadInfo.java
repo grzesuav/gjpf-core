@@ -61,8 +61,8 @@ public class FinalizerThreadInfo extends ThreadInfo {
   
   ChoiceGenerator<?> replacedCG;
   
-  protected FinalizerThreadInfo (VM vm, ApplicationContext appCtx) {
-    super(vm, -1, appCtx);
+  protected FinalizerThreadInfo (VM vm, ApplicationContext appCtx, int id) {
+    super(vm, id, appCtx);
     
     ci = appCtx.getSystemClassLoader().getResolvedClassInfo("gov.nasa.jpf.FinalizerThread");
     threadData.name = FINALIZER_NAME;
@@ -94,8 +94,6 @@ public class FinalizerThreadInfo extends ThreadInfo {
 
     addToThreadGroup(getElementInfo(grpRef));
     
-    // we still haven't set the id. 
-    id = computeId(objRef);
     addId( objRef, id);
     
     threadData.name = FINALIZER_NAME;
