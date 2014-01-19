@@ -42,6 +42,7 @@ public class InputStreamReader extends Reader {
   }  
   
   public void close () throws IOException {
+    in.close();
   }
 
   private native int decode (int b, boolean endOfInput);

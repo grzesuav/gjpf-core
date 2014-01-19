@@ -64,8 +64,8 @@ public class OutputStreamWriter extends Writer {
     throw new UnsupportedOperationException("OutputStreamWriter model does not fully implement this constructor");
   }
   
-  public void close(){
-    // nothing
+  public void close() throws IOException {
+    out.close();
   }
   
   public void flush() {
