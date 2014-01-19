@@ -236,8 +236,7 @@ public class SingleProcessVM extends VM {
     for (int i = 0; i < threads.length; i++) {
       ThreadInfo ti = threads[i];
       
-      // when checking for deadlocks don't take system threads into accounts, e.g. FinalizerThread
-      if (ti.isAlive() && !ti.isSystemThread()){
+      if (ti.isAlive()){
         hasNonDaemons |= !ti.isDaemon();
 
         // shortcut - if there is at least one runnable, we are not deadlocked

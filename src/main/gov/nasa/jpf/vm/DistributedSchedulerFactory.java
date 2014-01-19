@@ -38,7 +38,7 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
   Predicate<ThreadInfo> getRunnableAppPredicate (final ThreadInfo ti){
     return new Predicate<ThreadInfo>(){
       public boolean isTrue (ThreadInfo t){
-        return (t.appCtx == ti.appCtx && ti.isTimeoutRunnable());
+        return (t.appCtx == ti.appCtx && t.isTimeoutRunnable());
       }
     };
   }
