@@ -612,7 +612,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
     for (ElementInfo ei : this){
       if(!ei.isMarked() && ei.hasFinalizer() && !ei.isFinalized()) {
         vm.addToFinalizeQueue(ei);
-        queueMark(ei.getObjectRef());
+        ei.setMarked(); // make sure it's not collected before the finalizerQueue has been processed
         ei.markRecursive(this);
       }
     }

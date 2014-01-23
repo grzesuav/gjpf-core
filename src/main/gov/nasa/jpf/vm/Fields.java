@@ -290,7 +290,7 @@ public abstract class Fields implements Cloneable {
   // <2do> not multi-attr aware yet
   protected boolean compareAttrs(Fields f) {
     if (fieldAttrs != null || f.fieldAttrs != null) {
-      if (!Misc.compare(fieldAttrs, f.fieldAttrs)) {
+      if (!Misc.equals(fieldAttrs, f.fieldAttrs)) {
         return false;
       }
     }

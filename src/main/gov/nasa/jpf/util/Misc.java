@@ -34,7 +34,7 @@ public class Misc {
     return o == null ? 0 : o.hashCode();
   }
 
-  public static boolean equal(Object a, Object b) {
+  public static boolean equals(Object a, Object b) {
     if (a == b) {
       return true;
     } else if (a == null || b == null) {
@@ -316,6 +316,36 @@ public class Misc {
     return null;
   }
 
+  public static String toString (Object[] collection) {
+    StringBuilder sb = new StringBuilder();
+    
+    for (Object e : collection) {
+      sb.append(e);
+    }
+
+    return sb.toString();
+  }
+  
+  public static String toString (String[] collection) {
+    StringBuilder sb = new StringBuilder();
+    
+    for (Object e : collection) {
+      sb.append(e);
+    }
+
+    return sb.toString();
+  }
+  
+  public static String toString (Iterable<?> collection) {
+    StringBuilder sb = new StringBuilder();
+    
+    for (Object e : collection) {
+      sb.append(e);
+    }
+
+    return sb.toString();
+  }
+  
   public static String toString( Iterable<?> collection,
                                  String prefix, String separator, String postfix) {
     StringBuilder sb = new StringBuilder();
@@ -506,8 +536,8 @@ public class Misc {
     return a;
   }
 
-  public static boolean compare (Object[] a1, Object[] a2){
-    if (a1 == null && a2 == null){
+  public static boolean equals (Object[] a1, Object[] a2){
+    if (a1 == a2){
       return true;
     }
 
@@ -549,7 +579,7 @@ public class Misc {
   }
 
   /**
-   * compare first len objects of two reference arrays, which can contain null
+   * equals first len objects of two reference arrays, which can contain null
    * elements. If any of the reference arrays is null, this is treated as
    * if all elements would be null
    */

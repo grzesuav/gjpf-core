@@ -1,10 +1,10 @@
 //
-// Copyright  (C) 2006 United States Government as represented by the
+// Copyright (C) 2014 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
-//  (NASA).  All Rights Reserved.
+// (NASA).  All Rights Reserved.
 //
 // This software is distributed under the NASA Open Source Agreement
-//  (NOSA), version 1.3.  The NOSA has been approved by the Open Source
+// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
 // Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
 // directory tree for the complete NOSA document.
 //
@@ -19,210 +19,274 @@
 
 package gov.nasa.jpf.util.script;
 
-
+import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.OATHash;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Event extends ScriptElement {
+/**
+ * class that represents an external stimulus to the SUT, which is produced by EnvironmentModel instances
+ * 
+ * Note that albeit concrete EnvironmentModels can provide their own, specialized Event types, this class
+ * is generic enough that we don't declare it as abstract
+ */
+public class Event implements Cloneable {
 
-  public static final String NONE = "NONE";
+  static final Object[] NO_ARGUMENTS = new Object[0];
+  
 
-  protected String id;
-  protected String[] arguments;
+  //--- linkage
+  protected Event next;
+  protected Event prev;
+  protected Event alt;
 
+  protected String name;
+  protected Object[] arguments;
 
-  public Event(ScriptElement parent, String id, String[] args, int line) {
-    super(parent, line);
-    this.id = id;
+  public Event (String name){
+    this.name = name;
+    this.arguments = NO_ARGUMENTS;
+  }
 
-    if ((args != null) && (args.length > 0)){
-      arguments = args.clone();
+  public Event(String name, Object[] arguments) {
+    this.name = name;
+    this.arguments = arguments != null ? arguments : NO_ARGUMENTS;
+  }
+
+  @Override
+  public boolean equals (Object o){
+    if (o instanceof Event){
+      Event other = (Event)o;
+      
+      if (name.equals(other.name)){
+        return Misc.equals(arguments, other.arguments);
+      }
+    }
+    
+    return false;
+  }
+  
+  @Override
+  public int hashCode(){
+    int h = name.hashCode();
+    
+    for (int i=0; i<arguments.length; i++){
+      h = OATHash.hashMixin(h, arguments[i].hashCode());
+    }
+    
+    return OATHash.hashFinalize(h);
+  }
+  
+  protected void setNext (Event e){
+    next = e;
+  }
+
+  protected void setPrev (Event e){
+    prev = e;
+
+    if (alt != null){
+      alt.setPrev(e);
     }
   }
 
-  public boolean isNone() {
-    return (NONE.equals(id));
-  }
+  protected void setAlt (Event e){
+    alt = e;
 
-  public static boolean isNone (String id) {
-    return (NONE.equals(id));
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public int getLine() {
-    return line;
-  }
-
-  public String toString() {
-    if (arguments == null) {
-      return id;
-    } else {
-      StringBuilder sb = new StringBuilder(id);
-
-      sb.append('(');
-      for (int i=0; i<arguments.length; i++) {
-        if (i > 0) {
-          sb.append(',');
-        }
-        sb.append(arguments[i]);
-      }
-      sb.append(')');
-
-      return sb.toString();
+    if (prev != null) {
+      e.setPrev(prev);
     }
   }
 
-  public String[] getArguments() {
-    return arguments;
+  public int getNumberOfAlternatives(){
+    int n = 0;
+    for (Event e = alt; e != null; e = e.alt) {
+      n++;
+    }
+
+    return n;
   }
 
-  public void setArguments (String[] args) {
-    arguments = args;
-  }
 
-  public void process (ElementProcessor p) {
-    p.process(this);
-  }
+  public Event deepClone(){
+    try {
+      Event e = (Event)super.clone();
 
-  String[] expandArgument (String a) {
-    ArrayList<String> list = new ArrayList<String>();
+      if (next != null) {
+        e.next = next.deepClone();
+        e.next.prev = e;
 
-    StringExpander ex = new StringExpander(a);
-    List<String> l = ex.expand();
-    list.addAll(l);
-
-    return list.toArray(new String[list.size()]);
-  }
-
-  /**
-   * this is an interesting little exercise since we have to cover all
-   * combinations of parameter values, which would normally be a simple set
-   * of nested loops, only that the number of parameters is a variable itself
-   * (I'm notoriously bad at this)
-   */
-  public List<Event> expand () {
-    StringExpander ex = new StringExpander(id);
-    List<String> ids = ex.expand();
-    ArrayList<Event> list = new ArrayList<Event>();
-
-    if (arguments != null) {
-      String[] a = new String[arguments.length];
-      String[][] args = new String[arguments.length][];
-      int[] argIdx = new int[args.length];
-
-      for (int i=0; i<args.length; i++) {
-        args[i] = expandArgument(arguments[i]);
-      }
-
-      int n = args.length-1;
-
-      for (String id : ids) {
-        int i;
-        for (i=0; i<=n; i++) { // reset arg indices
-          argIdx[i] = 0;
-        }
-
-        for (i=n; ;) {
-          if (argIdx[i] >= args[i].length){ // all choices at this level exhausted
-            // increment next lower level(s), reset level(s) above
-            int l;
-            for (l=i-1; l >= 0; l--) {
-              argIdx[l]++;
-              argIdx[l+1] = 0;
-              if (argIdx[l] < args[l].length) {
-                break;
-              }
-            }
-            if (l < 0) {
-              break; // done, do next id
-            } else {
-              i = n; // restart from top level
-            }
-
-          } else { // got a new combination
-            for (int k=0; k<args.length; k++) {
-              a[k] = args[k][argIdx[k]];
-            }
-            Event ee = new Event(parent, id, a, line);
-            list.add(ee);
-            argIdx[i]++;
-          }
+        if (next.alt != null){
+          e.next.alt.prev = e;
         }
       }
 
-    } else { // no parameter variation, but we still might have expanded ids
-      if (ids.size() == 1) {
-        list.add(this);
+      if (alt != null) {
+        e.alt = alt.deepClone();
+      }
+
+      return e;
+
+    } catch (CloneNotSupportedException x) {
+      throw new RuntimeException("event clone failed", x);
+    }
+  }
+
+  public String getName(){
+    return name;
+  }
+
+  public Event getNext(){
+    return next;
+  }
+  
+  public Event getAlt(){
+    return alt;
+  }
+  
+  public Event getPrev(){
+    return prev;
+  }
+  
+  public Event addNext (Event e){
+    boolean first = true;
+    for (Event ee : endEvents()){
+      if (!first){
+        e = e.deepClone();
       } else {
-        for (String id : ids) {
-          list.add( new Event(parent, id, arguments, line));
-        }
+        first = false;      // first one doesn't need a clone
+      }
+      ee.setNext(e);
+      e.setPrev(ee);
+
+      for (Event ea = e.alt; ea != null; ea = ea.alt){
+        ea.setPrev(ee);
       }
     }
 
+    for (Event ea = alt; ea != null; ea = ea.alt){
+      e = e.deepClone();
+      ea.setNext(e);
+      e.setPrev(ea);
+    }
+
+    return this;
+  }
+
+  public Event addAlternative (Event e){
+    Event ea ;
+    for (ea = this; ea.alt != null; ea = ea.alt);
+    ea.setAlt(e);
+
+    if (next != null){
+      e.setNext( next.deepClone());
+    }
+
+    return this;
+  }
+
+
+  protected void collectEndStates (List<Event> list) {
+    if (next != null) {
+      next.collectEndStates(list);
+    } else {
+      list.add(this);
+    }
+
+    if (alt != null) {
+      alt.collectEndStates(list);
+    }
+  }
+
+  public Event endEvent() {
+    if (next != null) {
+      return next.endEvent();
+    } else {
+      return this;
+    }
+  }
+
+  public List<Event> endEvents(){
+    List<Event> list = new ArrayList<Event>();
+    collectEndStates(list);
     return list;
   }
 
-  public Object[] getConcreteArguments () {
-    if (arguments == null) {
-      return null;
+  public void printTrace (PrintStream ps){
+    if (prev != null){
+      prev.printTrace(ps);
+      ps.print(',');
     }
-    if (arguments.length == 0) {
-      return new Object[0];
-    }
-
-    Object[] a = new Object[arguments.length];
-    for (int i=0; i<arguments.length; i++) {
-      a[i] = getConcreteArgument(arguments[i]);
-    }
-
-    return a;
+    ps.print(name);
   }
 
-  Object getConcreteArgument (String s) {
-    char c = s.charAt(0);
+  public String toString(){
+    StringBuilder sb = new StringBuilder();
+    sb.append(name);
+    if (arguments != NO_ARGUMENTS) {
+      sb.append('(');
+      boolean first = true;
+      for (Object a : arguments) {
+        if (first){
+          first = false;
+        } else {
+          sb.append(',');
+        }
+        sb.append(a.toString());
+      }
+      sb.append(')');
+    }
+    return sb.toString();
+  }
 
-    if (c == '"' || c == '\'') { // String literal
-      return s.substring(1,s.length()-1);
+  
+  public int getTraceLength(){
+    int n=0;
+    
+    for (Event e=this; e != null; e = e.prev){
+      n++;
+    }
+    
+    return n;
+  }
+  
+  public Event[] getTrace(){
+    int n = getTraceLength();
+    Event[] trace = new Event[n];
+    
+    for (Event e=this; e != null; e = e.prev){
+      trace[--n] = e;
+    }
+    
+    return trace;
+  }
+  
+  public void printTree (PrintStream ps, int level) {
+    for (int i = 0; i < level; i++) {
+      ps.print("⋅ ");
+    }
+    ps.println(this);
 
-    } else if (Character.isDigit(c)) { // ints and doubbles
-      if (s.indexOf('.') >=0) {
-        return Double.parseDouble(s);
+    if (next != null) {
+      next.printTree(ps, level + 1);
+    }
+
+    if (alt != null) {
+      alt.printTree(ps, level);
+    }
+  }
+  
+  public boolean isEndOfTrace (String[] eventNames){
+    int n = eventNames.length-1;
+    
+    for (Event e=this; e!= null; e = e.prev){
+      if (e.getName().equals(eventNames[n])){
+        n--;
       } else {
-        return Integer.parseInt(s);
-      }
-      
-    } else if (s.equals("true")) { // boolean
-      return Boolean.TRUE;
-    } else if (s.equals("false")) {
-      return Boolean.FALSE;
-      
-    } else if (c == '@'){ // variable
-      return s;
-      
-    } else { // not supported
-      throw new IllegalArgumentException("unsupported event argument type of value=" + s);
-    }
-  }
-
-  /**
-   * variations over boolean lists are quite easy to produce :)
-   */
-  public static Object[][] getBooleanArgVariations (int nArgs) {
-    int n = 1<<nArgs;
-    Object[][] args = new Object[n][];
-
-    for (int i=0; i<n; i++) {
-      args[i] = new Boolean[nArgs];
-      for (int j=0; j<nArgs; j++) {
-        args[i][j] = ((i & (1<<j)) != 0) ? Boolean.TRUE : Boolean.FALSE;
+        return false;
       }
     }
-
-    return args;
+    
+    return (n == 0);
   }
-
 }

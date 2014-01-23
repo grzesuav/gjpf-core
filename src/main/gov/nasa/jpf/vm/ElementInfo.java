@@ -57,7 +57,9 @@ public abstract class ElementInfo implements Cloneable {
   // This attribute is set in gov.nasa.jpf.vm.bytecode.RETURN.enter().
   // If ThreadInfo.usePorSyncDetection() is false, then this attribute is never set.
   public static final int   ATTR_CONSTRUCTED   = 0x400;
-  
+
+  // object has been added to finalizer queue
+  public static final int ATTR_FINALIZED = 0x800;
   
   public static final int   ATTR_EXPOSED       = 0x1000;
   
@@ -94,7 +96,6 @@ public abstract class ElementInfo implements Cloneable {
   
   public static final int   ATTR_MARKED_OR_LIVE_BIT = (ATTR_IS_MARKED | ATTR_LIVE_BIT);
 
-  public static final int ATTR_FINALIZED = 0x800;
 
   //--- instance fields
 

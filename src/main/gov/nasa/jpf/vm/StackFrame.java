@@ -1469,7 +1469,7 @@ public abstract class StackFrame implements Cloneable {
 
 
   // <2do> pcm - I assume this compares snapshots, not types. Otherwise it
-  // would be pointless to compare stack/local values
+  // would be pointless to equals stack/local values
   public boolean equals (Object o) {
     if (o instanceof StackFrame){
       StackFrame other = (StackFrame)o;

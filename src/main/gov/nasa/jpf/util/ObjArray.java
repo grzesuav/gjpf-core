@@ -81,7 +81,7 @@ public final class ObjArray<E> implements ReadOnlyObjList<E>, Iterable<E>, Clone
     if (thisData == thatData) return true;
     if (thisData.length != thatData.length) return false;
     for (int i = 0; i < thisData.length; i++) {
-      if (!Misc.equal(thisData[i], thatData[i])) {
+      if (!Misc.equals(thisData[i], thatData[i])) {
         return false;
       }
     }

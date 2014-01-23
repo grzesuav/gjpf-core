@@ -667,7 +667,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     if (o instanceof ClassInfo) {
       ClassInfo other = (ClassInfo)o;
       if (classLoader == other.classLoader) {
-        // beware of ClassInfos that are not registered yet - in this case we have to compare names
+        // beware of ClassInfos that are not registered yet - in this case we have to equals names
         if (name.equals(other.name)) {
           return true;
         }
@@ -1300,7 +1300,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   /**
-   * return the ClassInfo for the provided superclass name. If this is equal
+   * return the ClassInfo for the provided superclass name. If this is equals
    * to ourself, return this (a little bit strange if we hit it in the first place)
    */
   public ClassInfo getSuperClass (String clsName) {
