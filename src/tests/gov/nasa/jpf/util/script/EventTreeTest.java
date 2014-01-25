@@ -19,47 +19,53 @@
 
 package gov.nasa.jpf.util.script;
 
-import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.test.TestJPF;
 import org.junit.Test;
 
 /**
- * regression test for EnvironmentModel
+ * regression test for EventTree
  */
-public class EnvironmentModelTest extends TestJPF {
+public class EventTreeTest extends TestJPF {
   
-  protected boolean checkExpectedTraces (EnvironmentModel m, String[] expected){
-    for (Event e : m.endEvents()){
-      String trace = Misc.toString( e.getTrace());
-      for (int i=0; trace != null && i<expected.length; i++){
-        String expectedTrace = expected[i];
-        if (expectedTrace != null){
-          if (trace.equals(expectedTrace)){
-            System.out.println("found expected trace: " + trace);
-            expected[i] = null; // discharged
-            trace = null;
-          }
-        }
-      }
-      if (trace != null){
-        System.out.println("unexpected trace: " + trace);
+  protected boolean checkGeneratedTraces (TestEventTree m){
+    System.out.println("event tree: ");
+    m.printTree();
+    
+    for (Event ee : m.endEvents()){
+      String trace = ee.getTrace(null);
+      System.out.println("checking trace: " + trace);
+      
+      if (!m.checkTrace(ee)){
+        System.out.print("unexpected trace");
         return false;
       }
     }
     
-    for (int i=0; i<expected.length; i++){
-      if (expected[i] != null){
-        System.out.println("missed trace: " + expected[i]);
-        return false;
+    if (!m.isCompletelyCovered()){
+      System.out.println("uncovered traces: ");
+      String[] expected = m.expected;
+      for (int i=0; i<expected.length; i++){
+        if (expected[i] != null){
+          System.out.println(expected[i]);
+        }
       }
+      return false;
     }
-
+    
     return true;
   }
   
   
   //--------------------------------------------------------------------
-  static class Model1 extends EnvironmentModel {
+    
+  static class SimpleTree extends TestEventTree {
+    SimpleTree (){
+      expected = new String[] {
+        "a1b",
+        "axxb"
+      };
+    }
+    
     @Override
     public Event createEventTree() {
       return 
@@ -77,14 +83,10 @@ public class EnvironmentModelTest extends TestJPF {
   }
 
   @Test
-  public void testBasicNesting(){
-    Model1 m = new Model1();
-    String[] expected = {
-      "a1b",
-      "axxb"
-    };
+  public void testSimpleTree(){
+    SimpleTree m = new SimpleTree();
     
-    if (!checkExpectedTraces(m, expected)){
+    if (!checkGeneratedTraces(m)){
       fail("failed to match traces");
     }
   }

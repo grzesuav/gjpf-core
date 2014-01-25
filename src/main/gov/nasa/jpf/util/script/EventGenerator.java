@@ -20,6 +20,8 @@
 package gov.nasa.jpf.util.script;
 
 import gov.nasa.jpf.vm.ChoiceGeneratorBase;
+import static gov.nasa.jpf.vm.ChoiceGeneratorBase.MARKER;
+import java.io.PrintWriter;
 
 /**
  * ChoiceGenerator for Events.
@@ -91,4 +93,27 @@ public class EventGenerator extends ChoiceGeneratorBase<Event> {
     return nProcessed;
   }
 
+  public String toString() {
+    StringBuilder sb = new StringBuilder(getClass().getName());
+    sb.append("[id=\"");
+    sb.append(id);
+    sb.append('"');
+
+    sb.append(",isCascaded:");
+    sb.append(Boolean.toString(isCascaded));
+
+    sb.append(",{");
+    for (Event e=base; e!= null; e = e.getAlt()){
+      if (e != base){
+        sb.append(',');
+      }
+      if (e == cur){
+        sb.append(MARKER);        
+      }
+      sb.append(e.toString());
+    }
+    sb.append("}]");
+    
+    return sb.toString();
+  }
 }

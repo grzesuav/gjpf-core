@@ -178,6 +178,18 @@ public class JPFLogger extends Logger {
     return logger.isLoggable(level);
   }
   
+  public boolean isInfoLogged(){
+    return isLoggable(Level.INFO);
+  }
+  
+  public boolean isFineLogged(){
+    return isLoggable(Level.FINE);
+  }  
+
+  public boolean isFinerLogged(){
+    return isLoggable(Level.FINER);
+  }
+  
   public String getName() {
     return logger.getName();
   }

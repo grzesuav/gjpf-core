@@ -289,4 +289,22 @@ public class Event implements Cloneable {
     
     return (n == 0);
   }
+  
+  protected void collectTrace (StringBuilder sb, String separator){
+    if (prev != null){
+      prev.collectTrace(sb, separator);
+      
+      if (separator != null){
+        sb.append(separator);
+      }
+    }
+    
+    sb.append(toString());
+  }
+  
+  public String getTrace (String separator){
+    StringBuilder sb = new StringBuilder();
+    collectTrace( sb, separator);
+    return sb.toString();
+  }
 }

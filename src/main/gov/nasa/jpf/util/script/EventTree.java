@@ -43,7 +43,7 @@ import java.util.List;
  *     );
  *   }
  */
-public abstract class EnvironmentModel {
+public abstract class EventTree {
   protected Event root;
 
   /**
@@ -51,7 +51,7 @@ public abstract class EnvironmentModel {
    */
   public abstract Event createEventTree();
 
-  protected EnvironmentModel (){
+  protected EventTree (){
     root = createEventTree();
   }
 
@@ -121,4 +121,36 @@ public abstract class EnvironmentModel {
     root.printTree(System.out, 0);
   }
 
+  /**
+   * this should be overridden in case we want to check if this is an expected trace
+   * The generic form can only check if this is a valid end event.
+   * 
+   * To check for a whole trace, implementors should keep some sort of expected event specs
+   */
+  public boolean checkTrace (Event lastEvent){
+    for (Event ee : root.endEvents()){
+      if (ee.equals(lastEvent)){
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  /**
+   * override this if the concrete model keeps track of coverage
+   * 
+   * @return [0.0..1.0]
+   */
+  public float getCoverage (){
+    return 0;
+  }
+  
+  /**
+   * override this if the concrete model can keep track of coverage
+   * call at the end of execution
+   */
+  public boolean isCompletelyCovered (){
+    return true;
+  }
 }
