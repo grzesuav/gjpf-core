@@ -296,12 +296,15 @@ public class NativePeer implements Cloneable {
   }
 
   /**
-   * look at all public static methods in the peer and set their
+   * look at all @MJI annotated  methods in the peer and set their
    * corresponding model class MethodInfo attributes
    * <2do> pcm - this is too long, break it down
    */
   private void loadMethods (boolean cacheMethods) {
-    Method[] m = peerClass.getDeclaredMethods();
+    // since we allow native peer class hierarchies, we have to look at all methods
+    //Method[] m = peerClass.getDeclaredMethods();
+    Method[] m = peerClass.getMethods();
+    
     methods = new HashMap<String, Method>(m.length);
 
     Map<String,MethodInfo> methodInfos = ci.getDeclaredMethods();
@@ -359,23 +362,30 @@ public class NativePeer implements Cloneable {
           miNative.replace(mi);
 
         } else {
-          // we have an orphan method, i.e. a peer method that does not map into any model method
-          // (this is usually a signature typo or an out-of-sync peer)
-          String message = "orphan NativePeer method: " + ci.getName() + '.' + mname;
-           
-          if (noOrphanMethods){
-            throw new JPFException(message);
-          }
+          if (!ignoreOrphan(mth)){          
+            // we have an orphan method, i.e. a peer method that does not map into any model method
+            // (this is usually a signature typo or an out-of-sync peer)
+            String message = "orphan NativePeer method: " + ci.getName() + '.' + mname;
 
-          // issue a warning if we have a NativePeer native method w/o a corresponding
-          // method in the model class (this might happen due to compiler optimizations
-          // silently skipping empty methods)
-          logger.warning(message);
+            if (noOrphanMethods) {
+              throw new JPFException(message);
+            }
+
+            // issue a warning if we have a NativePeer native method w/o a corresponding
+            // method in the model class (this might happen due to compiler optimizations
+            // silently skipping empty methods)
+            logger.warning(message);
+          }
         }
       }
     }
   }
 
+  protected boolean ignoreOrphan (Method m){
+    MJI annotation = m.getAnnotation(MJI.class);
+    return annotation.noOrphanWarning();
+  }
+  
   private static MethodInfo searchMethod (String mname, MethodInfo[] methods) {
     int idx = -1;
 

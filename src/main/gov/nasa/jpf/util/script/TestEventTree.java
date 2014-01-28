@@ -57,7 +57,7 @@ public abstract class TestEventTree extends EventTree {
   }
 
   @Override
-  public float getCoverage () {
+  public float getPathCoverage () {
     int n = 0;
 
     for (int i = 0; i < expected.length; i++) {

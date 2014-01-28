@@ -28,7 +28,7 @@ public class EventProducer {
    * the main interface to be used from clients (test drivers)
    * @return false if there was no next event (i.e. this is the end of a trace)
    */
-  public native boolean generateNextEvent();
+  public native boolean processNextEvent();
   
   public native String getEventName();
   

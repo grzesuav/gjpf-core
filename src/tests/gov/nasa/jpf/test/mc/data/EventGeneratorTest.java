@@ -67,7 +67,7 @@ public class EventGeneratorTest extends TestJPF {
       EventProducer producer = new EventProducer();
       StringBuilder sb = new StringBuilder();
       
-      while (producer.generateNextEvent()){
+      while (producer.processNextEvent()){
         sb.append(producer.getEventName());
       }
       

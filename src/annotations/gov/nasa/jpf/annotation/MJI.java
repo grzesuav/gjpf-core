@@ -28,5 +28,5 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MJI {
-
+  boolean noOrphanWarning() default false;
 }

@@ -136,6 +136,10 @@ public class Event implements Cloneable {
     return name;
   }
 
+  public Object[] getArguments(){
+    return arguments;
+  }
+  
   public Event getNext(){
     return next;
   }

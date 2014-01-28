@@ -44,6 +44,9 @@ import java.util.List;
  *   }
  */
 public abstract class EventTree {
+  
+  public static final String CONFIG_KEY = "event.class";
+  
   protected Event root;
 
   /**
@@ -142,7 +145,7 @@ public abstract class EventTree {
    * 
    * @return [0.0..1.0]
    */
-  public float getCoverage (){
+  public float getPathCoverage (){
     return 0;
   }
   
