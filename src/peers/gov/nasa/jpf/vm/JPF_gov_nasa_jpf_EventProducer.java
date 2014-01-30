@@ -26,6 +26,7 @@ import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.script.Event;
 import gov.nasa.jpf.util.script.EventGenerator;
 import gov.nasa.jpf.util.script.EventTree;
+import gov.nasa.jpf.util.script.NoEvent;
 
 /**
  * native peer for EventProducer
@@ -110,10 +111,13 @@ public class JPF_gov_nasa_jpf_EventProducer extends NativePeer {
     } else { // re-execution
       cg = ss.getCurrentChoiceGenerator(CG_NAME, EventGenerator.class);
       event = cg.getNextChoice();
-      if (log.isInfoLogged()){
-        log.info("processing event: ", event.toString());
+      
+      if (! (event instanceof NoEvent)){
+        if (log.isInfoLogged()) {
+          log.info("processing event: ", event.toString());
+        }
+        processEvent(env, objRef);
       }
-      processEvent(env, objRef);
       return true;
     }
   }

@@ -20,6 +20,7 @@
 package gov.nasa.jpf.util.script;
 
 import gov.nasa.jpf.util.test.TestJPF;
+import static gov.nasa.jpf.util.test.TestJPF.fail;
 import org.junit.Test;
 
 /**
@@ -87,6 +88,83 @@ public class EventTreeTest extends TestJPF {
     SimpleTree m = new SimpleTree();
     
     if (!checkGeneratedTraces(m)){
+      fail("failed to match traces");
+    }
+  }
+  
+  //--------------------------------------------------------------------
+  static class CombinationTree extends TestEventTree {
+    CombinationTree (){
+      expected = new String[] {
+        "NONE",
+        "a",
+        "b",
+        "ab",
+        "c",
+        "ac",
+        "bc",
+        "abc",
+        "d",
+        "ad",
+        "bd",
+        "abd",
+        "cd",
+        "acd",
+        "bcd",
+        "abcd"
+      };
+    }
+    
+    @Override
+    public Event createEventTree() {
+      return anyCombination(
+               event("a"),
+               event("b"),
+               event("c"),
+               event("d")
+             );
+    }    
+  }
+  
+  @Test
+  public void testCombinationTree(){
+    CombinationTree t = new CombinationTree();
+    //t.printTraces();
+    
+    if (!checkGeneratedTraces(t)){
+      fail("failed to match traces");
+    }
+  }  
+
+  //--------------------------------------------------------------------
+  static class PermutationTree extends TestEventTree {
+    public PermutationTree(){
+      expected = new String[] {
+        "abc",
+        "acb",
+        "bac",
+        "bca",
+        "cab",
+        "cba"
+      };
+    }
+    
+    @Override
+    public Event createEventTree(){
+      return anyPermutation(
+               event("a"),
+               event("b"),
+               event("c")
+              );
+    }
+  }
+
+  @Test
+  public void testPermutationTree(){
+    PermutationTree t = new PermutationTree();
+    //t.printTraces();
+    
+    if (!checkGeneratedTraces(t)){
       fail("failed to match traces");
     }
   }

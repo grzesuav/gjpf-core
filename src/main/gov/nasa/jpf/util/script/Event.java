@@ -80,6 +80,7 @@ public class Event implements Cloneable {
   
   protected void setNext (Event e){
     next = e;
+    e.prev = this;
   }
 
   protected void setPrev (Event e){
@@ -267,7 +268,7 @@ public class Event implements Cloneable {
   
   public void printTree (PrintStream ps, int level) {
     for (int i = 0; i < level; i++) {
-      ps.print("⋅ ");
+      ps.print(". ");
     }
     ps.println(this);
 
