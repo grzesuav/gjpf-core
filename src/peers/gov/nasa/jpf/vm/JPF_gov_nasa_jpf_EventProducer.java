@@ -23,6 +23,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.JPFLogger;
+import gov.nasa.jpf.util.script.CheckEvent;
 import gov.nasa.jpf.util.script.Event;
 import gov.nasa.jpf.util.script.EventGenerator;
 import gov.nasa.jpf.util.script.EventTree;
@@ -60,6 +61,13 @@ public class JPF_gov_nasa_jpf_EventProducer extends NativePeer {
    * this is only called from within generateNextEvent()
    */
   protected void processEvent (MJIEnv env, int objRef){
+  }
+  
+  /**
+   * evaluate a pseudo event that checks properties 
+   */
+  protected boolean checkEvent (MJIEnv env, int objRef){
+    return ((CheckEvent)event).check(env);
   }
   
   /**
@@ -112,12 +120,24 @@ public class JPF_gov_nasa_jpf_EventProducer extends NativePeer {
       cg = ss.getCurrentChoiceGenerator(CG_NAME, EventGenerator.class);
       event = cg.getNextChoice();
       
-      if (! (event instanceof NoEvent)){
-        if (log.isInfoLogged()) {
-          log.info("processing event: ", event.toString());
+      if (!(event instanceof NoEvent)){
+        if (event instanceof CheckEvent) {
+          CheckEvent ce = (CheckEvent)event;
+          if (log.isInfoLogged()) {
+            log.info("checking: ", ce.getExpression());
+          }
+          if (!checkEvent(env, objRef)) {
+            env.throwAssertion("checking " + ce.getExpression() + " failed");
+          }
+
+        } else {
+          if (log.isInfoLogged()) {
+            log.info("processing event: ", event.toString());
+          }
+          processEvent(env, objRef);
         }
-        processEvent(env, objRef);
       }
+      
       return true;
     }
   }

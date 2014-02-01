@@ -35,14 +35,23 @@ public class EventGenerator extends ChoiceGeneratorBase<Event> {
   
   public EventGenerator (String id, Event base){
     super(id);
+    
     this.base = base;
   }
   
   public EventGenerator getSuccessor (String id){
     if (cur == null){
       return new EventGenerator(id, base.getNext());
+      
     } else {
       Event next = cur.getNext();
+      
+      if (cur instanceof CheckEvent){ // CheckEvents use next for conjunction
+        while (next instanceof CheckEvent){
+          next = next.getNext();
+        }
+      }
+      
       if (next != null){
         return new EventGenerator( id, next);
       } else {

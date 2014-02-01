@@ -1520,6 +1520,10 @@ public class MJIEnv {
   public SystemState getSystemState () {
     return ti.getVM().getSystemState();
   }
+  
+  public ApplicationContext getApplicationContext (){
+    return ti.getApplicationContext();
+  }
 
   public ThreadInfo getThreadInfo () {
     return ti;

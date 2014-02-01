@@ -181,6 +181,7 @@ public abstract class EventTree {
     return a.getAlt();
   }
   
+  
   //--- inspection and debugging
 
   public List<Event> endEvents(){

@@ -1956,6 +1956,9 @@ public class ThreadInfo extends InfoObject
         nextPc = this.createAndThrowException(cie.getExceptionClass(), cie.getMessage());
       }
 
+    // we also count the hidden ones since isFirstStepInsn depends on it
+    executedInstructions++;
+    
     // since this is part of the inner execution loop, it is a convenient place  to check probe notifications
     vm.getSearch().checkAndResetProbeRequest();
     
