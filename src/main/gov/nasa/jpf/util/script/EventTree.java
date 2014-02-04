@@ -43,7 +43,7 @@ import java.util.List;
  *     );
  *   }
  */
-public abstract class EventTree {
+public abstract class EventTree extends EventConstructor {
   
   public static final String CONFIG_KEY = "event.class";
   
@@ -58,130 +58,14 @@ public abstract class EventTree {
     root = createEventTree();
   }
 
+  protected EventTree (Event root){
+    this.root = root;
+  }
+  
   public Event getRoot(){
     return root;
   }
-  
-  //--- event tree creation
-  
-  /**
-   * factory method to facilitate creation of specialized event classes
-   */
-  protected Event event (String name){
-    return new Event(name);
-  }
-  
-  protected Event event (String name, Object... arguments){
-    return new Event(name, arguments);
-  }
-
-  protected Event alternatives (Event... events){
-    Event last = events[0];
-    for (int i = 1; i < events.length; i++) {
-      Event e = events[i];
-      last.setAlt(e);
-      last = e;
-    }
-    return events[0];
-  }
-
-  protected Event sequence (Event... events) {
-    Event base = events[0];
-
-    for (int i = 1; i < events.length; i++) {
-      base.addNext(events[i]);
-    }
-    return base;
-  }
-
-  protected Event iteration (int count, Event... events) {
-    Event seq = sequence(events);
-    Event[] it = new Event[count];
-
-    it[0] = seq;
-    for (int i=1; i<count; i++){
-      it[i] = seq.deepClone();
-    }
-
-    return sequence(it);
-  }
-
-  /**
-   * an alterative of all combinations of the specified events (regardless of order) 
-   */
-  protected Event anyCombination (Event... events){
-    int n = events.length;
-    int max = 0;
-    for (int i=0; i<n; i++){
-      max = (max << 1) | 1;
-    }
     
-    // we use the no-event as the anchor
-    Event eFirst = new NoEvent();
-    Event eLast = eFirst;
-    
-    // now fill in all the remaining combinations
-    for (int i=1; i<=max; i++){
-      Event eAlt=null;
-      
-      // build and add the next sequence as alternative
-      int m = i;
-      for (int j=0; m != 0; j++){
-        if ((m & 1) != 0){
-          Event e = events[j].deepClone();
-          if (eAlt == null){
-            eAlt = e;
-            eLast.setAlt(e);
-            eLast = e;
-          } else {
-            eAlt.setNext(e);
-            eAlt = e;
-          }
-        }
-        m >>>= 1;
-      }
-    }
-    
-    return eFirst;
-  }
-  
-  
-  protected void generatePermutation (int length, Event[] events, Event anchor, Event perm){
-    if (length == 0){
-      anchor.addAlternative(perm);
-      
-    } else {
-      outer:
-      for (Event e : events){
-        if (perm != null){
-          // check if e is already in there
-          for (Event ee = perm; ee != null; ee = ee.getNext()){
-            if (ee.equals(e)){
-              continue outer;
-            }
-          }          
-          e = perm.deepClone().addNext(e.deepClone());
-          
-        } else {
-          e = e.deepClone();
-        }
-        
-        generatePermutation( length-1, events, anchor, e);
-      }
-    }
-  }
-  
-  /**
-   * generate tree with all event permutations without repetitions.
-   * <2do> this is not particularly optimized
-   */
-  protected Event anyPermutation (Event... events){
-    Event a = new NoEvent();
-    generatePermutation( events.length, events, a, null);
-    return a.getAlt();
-  }
-  
-  
   //--- inspection and debugging
 
   public List<Event> endEvents(){
