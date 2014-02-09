@@ -305,7 +305,7 @@
             <compilation-unit>
                 <package-root>src/tests</package-root>
                 <unit-tests/>
-                <classpath mode="compile">build/main:build/annotations:build/peers:lib/junit-4.10.jar</classpath>
+                <classpath mode="compile">build/main:build/annotations:build/peers:build/classes</classpath>
                 <built-to>build/tests</built-to>
                 <source-level>1.5</source-level>
             </compilation-unit>
