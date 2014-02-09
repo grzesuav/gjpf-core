@@ -10,7 +10,6 @@ import java.io.FileInputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import static junit.framework.Assert.*;
 import java.util.Arrays;
 
 public class FileIOStreamTest extends TestJPF {

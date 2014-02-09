@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.util;
 
+import gov.nasa.jpf.util.test.TestJPF;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -25,11 +26,10 @@ import java.io.PipedOutputStream;
 import java.util.Arrays;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SplitOutputStreamTest
+public class SplitOutputStreamTest extends TestJPF
 {
    private PipedInputStream  m_sinks[];
    private SplitOutputStream m_fixture;
@@ -75,21 +75,21 @@ public class SplitOutputStreamTest
          
          for (i = m_sinks.length; --i > 0; )
          {
-            Assert.assertTrue(m_sinks[i].available() >= length);
+            assertTrue(m_sinks[i].available() >= length);
             
             for (offset = 0; offset < length; offset += delta)
             {
                delta = m_sinks[i].read(actual, offset, length - offset);
                
-               Assert.assertTrue(delta >= 0);
+               assertTrue(delta >= 0);
             }
             
-            Assert.assertArrayEquals(actual, expect);
+            assertArrayEquals(actual, expect);
          }
       }
       
       for (i = m_sinks.length; --i > 0; )
-         Assert.assertEquals(-1, m_sinks[i].read());
+         assertEquals(-1, m_sinks[i].read());
    }
 
    @Test(expected = NullPointerException.class)

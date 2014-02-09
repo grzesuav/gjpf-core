@@ -18,16 +18,16 @@
 //
 package gov.nasa.jpf.util;
 
+import gov.nasa.jpf.util.test.TestJPF;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.SecureRandom;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class LimitedInputStreamTest
+public class LimitedInputStreamTest extends TestJPF
 {
    private static final SecureRandom s_random = new SecureRandom();
    
@@ -87,7 +87,7 @@ public class LimitedInputStreamTest
    {
       m_fixture.setLimit(0);
       
-      Assert.assertEquals(0, m_fixture.getLimit());
+      assertEquals(0, m_fixture.getLimit());
    }
    
    @Test
@@ -95,7 +95,7 @@ public class LimitedInputStreamTest
    {
       m_fixture.setLimit(Integer.MAX_VALUE);
 
-      Assert.assertEquals(Integer.MAX_VALUE, m_fixture.getLimit());
+      assertEquals(Integer.MAX_VALUE, m_fixture.getLimit());
    }
    
    @Test
@@ -132,24 +132,24 @@ public class LimitedInputStreamTest
 
       for (i = 0; i < limit; i++)
       {
-         Assert.assertEquals(limit - i, m_fixture.available());
-         Assert.assertEquals(m_expected[i] & 0x00FF, m_fixture.read());
+         assertEquals(limit - i, m_fixture.available());
+         assertEquals(m_expected[i] & 0x00FF, m_fixture.read());
       }
 
-      Assert.assertEquals(-1, m_fixture.read());
-      Assert.assertEquals(0, m_fixture.available());
+      assertEquals(-1, m_fixture.read());
+      assertEquals(0, m_fixture.available());
    }
    
    @Test
    public void readBufferZeroLength() throws IOException
    {
-      Assert.assertEquals(0, m_fixture.read(m_expected, 0, 0));
+      assertEquals(0, m_fixture.read(m_expected, 0, 0));
    }
    
    @Test
    public void readBufferZeroLimit() throws IOException
    {
-      Assert.assertEquals(-1, m_fixture.read(m_expected, 0, 1));
+      assertEquals(-1, m_fixture.read(m_expected, 0, 1));
    }
    
    @Test
@@ -163,15 +163,15 @@ public class LimitedInputStreamTest
       
       m_fixture.setLimit(length);
       
-      Assert.assertEquals(length, m_fixture.read(actual, 0, actual.length));
-      Assert.assertEquals(-1, m_fixture.read());
-      Assert.assertEquals(0, m_fixture.available());
+      assertEquals(length, m_fixture.read(actual, 0, actual.length));
+      assertEquals(-1, m_fixture.read());
+      assertEquals(0, m_fixture.available());
 
       for (i = 0; i < length; i++)
-         Assert.assertEquals(m_expected[i], actual[i]);
+         assertEquals(m_expected[i], actual[i]);
       
       for (i = length; i < actual.length; i++)
-         Assert.assertEquals(0, actual[i]);
+         assertEquals(0, actual[i]);
    }
    
    @Test
@@ -184,18 +184,18 @@ public class LimitedInputStreamTest
       
       m_fixture.setLimit(Integer.MAX_VALUE);
       
-      Assert.assertEquals(actual.length, m_fixture.read(actual));
+      assertEquals(actual.length, m_fixture.read(actual));
       
       for (i = actual.length; --i >= 0; )
-         Assert.assertEquals(m_expected[i], actual[i]);
+         assertEquals(m_expected[i], actual[i]);
       
-      Assert.assertEquals(-1, m_fixture.read(actual));
+      assertEquals(-1, m_fixture.read(actual));
    }
    
    @Test
    public void skipZeroLimit() throws IOException
    {
-      Assert.assertEquals(0, m_fixture.skip(1));
+      assertEquals(0, m_fixture.skip(1));
    }
    
    @Test
@@ -207,7 +207,7 @@ public class LimitedInputStreamTest
       
       m_fixture.setLimit(m_expected.length);
       
-      Assert.assertEquals(length, m_fixture.skip(length));
+      assertEquals(length, m_fixture.skip(length));
    }
    
    @Test
@@ -215,8 +215,8 @@ public class LimitedInputStreamTest
    {
       m_fixture.setLimit(Integer.MAX_VALUE);
       
-      Assert.assertEquals(m_expected.length, m_fixture.skip(Integer.MAX_VALUE));
-      Assert.assertEquals(0, m_fixture.skip(1));
+      assertEquals(m_expected.length, m_fixture.skip(Integer.MAX_VALUE));
+      assertEquals(0, m_fixture.skip(1));
    }
    
    @Test
@@ -230,8 +230,8 @@ public class LimitedInputStreamTest
       m_fixture.setLimit(5);
       m_fixture.close();
       
-      Assert.assertEquals(1, m_counter.getCloseCount());
-      Assert.assertEquals(0, m_fixture.getLimit());
+      assertEquals(1, m_counter.getCloseCount());
+      assertEquals(0, m_fixture.getLimit());
    }
    
    private static class CountClose extends InputStream

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.util;
 
+import gov.nasa.jpf.util.test.TestJPF;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
@@ -25,11 +26,10 @@ import java.io.PipedOutputStream;
 import java.security.SecureRandom;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class CommitOutputStreamTest
+public class CommitOutputStreamTest extends TestJPF
 {
    private static final SecureRandom s_random = new SecureRandom();
    
@@ -50,7 +50,7 @@ public class CommitOutputStreamTest
    public void after() throws IOException
    {
       m_fixture.flush();
-      Assert.assertEquals(0, m_result.available());
+      assertEquals(0, m_result.available());
    }
    
    @Test(expected = NullPointerException.class)
@@ -71,9 +71,9 @@ public class CommitOutputStreamTest
       fixture.write(10);
       fixture.flush();
       
-      Assert.assertEquals(0, counted.getWriteCount());
-      Assert.assertEquals(1, counted.getFlushCount());
-      Assert.assertEquals(1, fixture.getSize());
+      assertEquals(0, counted.getWriteCount());
+      assertEquals(1, counted.getFlushCount());
+      assertEquals(1, fixture.getSize());
    }
 
    @Test
@@ -88,21 +88,21 @@ public class CommitOutputStreamTest
       fixture.write(10);
       fixture.close();
 
-      Assert.assertEquals(0, counted.getWriteCount());
-      Assert.assertEquals(1, counted.getCloseCount());
-      Assert.assertEquals(1, fixture.getSize());
+      assertEquals(0, counted.getWriteCount());
+      assertEquals(1, counted.getCloseCount());
+      assertEquals(1, fixture.getSize());
    }
    
    @Test
    public void rollback() throws IOException
    {
       m_fixture.write(10);
-      Assert.assertEquals(1, m_fixture.getSize());
+      assertEquals(1, m_fixture.getSize());
       m_fixture.rollback();
-      Assert.assertEquals(0, m_fixture.getSize());
+      assertEquals(0, m_fixture.getSize());
       m_fixture.commit();
       m_fixture.flush();
-      Assert.assertEquals(0, m_result.available());
+      assertEquals(0, m_result.available());
    }
    
    @Test
@@ -113,15 +113,15 @@ public class CommitOutputStreamTest
       for (i = 0; i < 2 * 1024; i++)
          m_fixture.write(i);
       
-      Assert.assertEquals(2 * 1024, m_fixture.getSize());
+      assertEquals(2 * 1024, m_fixture.getSize());
       
       m_fixture.commit();
 
-      Assert.assertEquals(0, m_fixture.getSize());
-      Assert.assertEquals(2 * 1024, m_result.available());
+      assertEquals(0, m_fixture.getSize());
+      assertEquals(2 * 1024, m_result.available());
 
       for (i = 0; i < 2 * 1024; i++)
-         Assert.assertEquals(i & 0x00FF, m_result.read());
+         assertEquals(i & 0x00FF, m_result.read());
    }
 
    @Test(expected = NullPointerException.class)
@@ -153,7 +153,7 @@ public class CommitOutputStreamTest
    {
       m_fixture.write(new byte[1], 0, 0);
       
-      Assert.assertEquals(0, m_fixture.getSize());
+      assertEquals(0, m_fixture.getSize());
    }
 
    @Test
@@ -166,18 +166,18 @@ public class CommitOutputStreamTest
       s_random.nextBytes(expected);
       
       m_fixture.write(expected);
-      Assert.assertEquals(expected.length, m_fixture.getSize());
+      assertEquals(expected.length, m_fixture.getSize());
 
       m_fixture.commit();
-      Assert.assertEquals(0, m_fixture.getSize());
+      assertEquals(0, m_fixture.getSize());
       
       m_fixture.flush();
-      Assert.assertEquals(expected.length, m_result.available());
+      assertEquals(expected.length, m_result.available());
       
       actual = new byte[expected.length];
       
-      Assert.assertEquals(actual.length, m_result.read(actual));
-      Assert.assertArrayEquals(expected, actual);
+      assertEquals(actual.length, m_result.read(actual));
+      assertArrayEquals(expected, actual);
    }
 
    @Test
@@ -190,18 +190,18 @@ public class CommitOutputStreamTest
       s_random.nextBytes(expected);
 
       m_fixture.write(expected);
-      Assert.assertEquals(expected.length, m_fixture.getSize());
+      assertEquals(expected.length, m_fixture.getSize());
 
       m_fixture.commit();
-      Assert.assertEquals(0, m_fixture.getSize());
+      assertEquals(0, m_fixture.getSize());
 
       m_fixture.flush();
-      Assert.assertEquals(expected.length, m_result.available());
+      assertEquals(expected.length, m_result.available());
 
       actual = new byte[expected.length];
 
-      Assert.assertEquals(actual.length, m_result.read(actual));
-      Assert.assertArrayEquals(expected, actual);
+      assertEquals(actual.length, m_result.read(actual));
+      assertArrayEquals(expected, actual);
    }
 
    @Test
@@ -214,18 +214,18 @@ public class CommitOutputStreamTest
       s_random.nextBytes(expected);
 
       m_fixture.write(expected);
-      Assert.assertEquals(expected.length, m_fixture.getSize());
+      assertEquals(expected.length, m_fixture.getSize());
 
       m_fixture.commit();
-      Assert.assertEquals(0, m_fixture.getSize());
+      assertEquals(0, m_fixture.getSize());
 
       m_fixture.flush();
-      Assert.assertEquals(expected.length, m_result.available());
+      assertEquals(expected.length, m_result.available());
 
       actual = new byte[expected.length];
 
-      Assert.assertEquals(actual.length, m_result.read(actual));
-      Assert.assertArrayEquals(expected, actual);
+      assertEquals(actual.length, m_result.read(actual));
+      assertArrayEquals(expected, actual);
    }
 
    private static class CountedOutputStream extends OutputStream
