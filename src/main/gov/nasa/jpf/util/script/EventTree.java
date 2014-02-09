@@ -24,9 +24,8 @@ import java.util.List;
 /**
  * an abstract class that creates Event trees
  * 
- * While there is no need to provide specialized Event types or compound constructors
- * other than sequence(), alternative() and iteration(), concrete subclasses
- * have to provide a createEventTree() implementation.
+ * While there is no need to provide specialized Event types or additional event 
+ * constructors, concrete subclasses have to provide a createEventTree() implementation.
  * 
  * A typical implementation looks like this
  * 
@@ -43,7 +42,7 @@ import java.util.List;
  *     );
  *   }
  */
-public abstract class EventTree extends EventConstructor {
+public class EventTree extends EventConstructor {
   
   public static final String CONFIG_KEY = "event.class";
   
@@ -52,7 +51,10 @@ public abstract class EventTree extends EventConstructor {
   /**
    * this is our purpose in life, which has to be provided by concrete subclasses 
    */
-  public abstract Event createEventTree();
+  public Event createEventTree() {
+    // nothing here, needs to be overridden by subclass to populate tree
+    return null;
+  }
 
   protected EventTree (){
     root = createEventTree();
@@ -72,9 +74,9 @@ public abstract class EventTree extends EventConstructor {
     return root.endEvents();
   }
   
-  public void printTraces(){
+  public void printPaths(){
     for (Event es : endEvents()){
-      es.printTrace(System.out);
+      es.printPath(System.out);
       System.out.println('.');
     }
   }
@@ -89,7 +91,7 @@ public abstract class EventTree extends EventConstructor {
    * 
    * To check for a whole trace, implementors should keep some sort of expected event specs
    */
-  public boolean checkTrace (Event lastEvent){
+  public boolean checkPath (Event lastEvent){
     for (Event ee : root.endEvents()){
       if (ee.equals(lastEvent)){
         return true;
@@ -97,6 +99,19 @@ public abstract class EventTree extends EventConstructor {
     }
     
     return false;
+  }
+  
+  public boolean checkPath (Event lastEvent, String[] pathSpecs) {
+    String trace = lastEvent.getPathString(null);
+
+    for (int i = 0; i < pathSpecs.length; i++) {
+      if (trace.equals(pathSpecs[i])) {
+        pathSpecs[i] = null;
+        return true;
+      }
+    }
+
+    return false; // unexpected trace
   }
   
   /**
@@ -115,4 +130,26 @@ public abstract class EventTree extends EventConstructor {
   public boolean isCompletelyCovered (){
     return true;
   }
+  
+  /**
+   * extend this tree with a new path 
+   */
+  public void addPath (Event... path){
+    root.addPath(path.length, path);
+  }
+  
+  public Event interleave (Event... otherTrees){
+    return root.interleave( otherTrees);
+  }
+  
+  public EventTree interleave (EventTree... otherTrees){
+    Event[] otherRoots = new Event[otherTrees.length];
+    for (int i=0; i<otherRoots.length; i++){
+      otherRoots[i] = otherTrees[i].root;
+    }
+    
+    Event resultRoot = root.interleave( otherRoots);
+    
+    return new EventTree(resultRoot);
+  }  
 }

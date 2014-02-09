@@ -23,16 +23,47 @@ import java.util.HashMap;
 
 /**
  * a forest of named event trees
+ * This class mostly exists for the purpose of tree construction, which happens from respective ctors like
  * 
- * Used by SectionedEventGenerators
+ *  MyEventForest (){
+ *     addDefault(
+ *       sequence(
+ *         event(..),
+ *      ..
+ *     );
+ * 
+ *     addTree( "someState",
+ *       sequence(
+ *         event(..),
+ *         ...
+ *     );
+ * 
+ *     addTree( "someOtherState",
+ *       ...
+ *   }
+ * 
+ * Used by CompoundEventChoiceGenerator
  */
 public abstract class EventForest extends EventConstructor {
 
+  protected Event defaultTree;
   protected HashMap<String,Event> map = new HashMap<String,Event>();
   
   // map to be populated by subclass ctors
   
-  protected void addTree (String sectionName, Event root){
-    map.put(sectionName, root);
+  protected void add (String name, Event root){
+    map.put(name, root);
+  }
+  
+  protected void addDefault( Event root){
+    defaultTree = root;
+  }
+  
+  public Event getDefault(){
+    return defaultTree;
+  }
+  
+  public Event get (String name){
+    return map.get(name);
   }
 }

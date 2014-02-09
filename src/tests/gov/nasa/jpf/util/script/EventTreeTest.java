@@ -28,23 +28,22 @@ import org.junit.Test;
  */
 public class EventTreeTest extends TestJPF {
   
-  protected boolean checkGeneratedTraces (TestEventTree m){
+  protected boolean checkGeneratedPaths (EventTree m, String[] expected){
     System.out.println("event tree: ");
     m.printTree();
     
     for (Event ee : m.endEvents()){
-      String trace = ee.getTrace(null);
-      System.out.println("checking trace: " + trace);
+      String trace = ee.getPathString(null);
+      System.out.println("checking path: " + trace);
       
-      if (!m.checkTrace(ee)){
-        System.out.print("unexpected trace");
+      if (!m.checkPath(ee, expected)){
+        System.out.print("unexpected path");
         return false;
       }
     }
     
     if (!m.isCompletelyCovered()){
-      System.out.println("uncovered traces: ");
-      String[] expected = m.expected;
+      System.out.println("uncovered path: ");
       for (int i=0; i<expected.length; i++){
         if (expected[i] != null){
           System.out.println(expected[i]);
@@ -59,14 +58,7 @@ public class EventTreeTest extends TestJPF {
   
   //--------------------------------------------------------------------
     
-  static class SimpleTree extends TestEventTree {
-    SimpleTree (){
-      expected = new String[] {
-        "a1b",
-        "axxb"
-      };
-    }
-    
+  static class SimpleTree extends EventTree {    
     @Override
     public Event createEventTree() {
       return 
@@ -87,15 +79,35 @@ public class EventTreeTest extends TestJPF {
   public void testSimpleTree(){
     SimpleTree m = new SimpleTree();
     
-    if (!checkGeneratedTraces(m)){
+    String[] expected = {
+        "a1b",
+        "axxb"     
+    };
+    
+    if (!checkGeneratedPaths(m, expected)){
       fail("failed to match traces");
     }
   }
   
   //--------------------------------------------------------------------
-  static class CombinationTree extends TestEventTree {
-    CombinationTree (){
-      expected = new String[] {
+  static class CombinationTree extends EventTree {    
+    @Override
+    public Event createEventTree() {
+      return anyCombination(
+               event("a"),
+               event("b"),
+               event("c"),
+               event("d")
+             );
+    }    
+  }
+  
+  @Test
+  public void testCombinationTree(){
+    CombinationTree t = new CombinationTree();
+    //t.printPaths();
+
+    String[] expected = {
         "NONE",
         "a",
         "b",
@@ -112,43 +124,15 @@ public class EventTreeTest extends TestJPF {
         "acd",
         "bcd",
         "abcd"
-      };
-    }
+    };
     
-    @Override
-    public Event createEventTree() {
-      return anyCombination(
-               event("a"),
-               event("b"),
-               event("c"),
-               event("d")
-             );
-    }    
-  }
-  
-  @Test
-  public void testCombinationTree(){
-    CombinationTree t = new CombinationTree();
-    //t.printTraces();
-    
-    if (!checkGeneratedTraces(t)){
+    if (!checkGeneratedPaths(t, expected)){
       fail("failed to match traces");
     }
   }  
 
   //--------------------------------------------------------------------
-  static class PermutationTree extends TestEventTree {
-    public PermutationTree(){
-      expected = new String[] {
-        "abc",
-        "acb",
-        "bac",
-        "bca",
-        "cab",
-        "cba"
-      };
-    }
-    
+  static class PermutationTree extends EventTree {
     @Override
     public Event createEventTree(){
       return anyPermutation(
@@ -162,9 +146,116 @@ public class EventTreeTest extends TestJPF {
   @Test
   public void testPermutationTree(){
     PermutationTree t = new PermutationTree();
-    //t.printTraces();
+    //t.printPaths();
     
-    if (!checkGeneratedTraces(t)){
+    String[] expected = {
+        "abc",
+        "acb",
+        "bac",
+        "bca",
+        "cab",
+        "cba"
+      };
+    
+    if (!checkGeneratedPaths(t, expected)){
+      fail("failed to match traces");
+    }
+  }
+  
+  //--------------------------------------------------------------------
+  static class AddPathTree extends EventTree {        
+    @Override
+    public Event createEventTree(){
+      return sequence(
+               event("a"),
+               event("b"),
+               event("c")
+              );
+    } 
+  }
+  
+  @Test
+  public void testAddPath () {
+    AddPathTree t = new AddPathTree();
+    t.addPath(
+            new Event("a"), 
+            new Event("b"), 
+            new Event("3"));
+
+    String[] expected = { "abc", "ab3" };
+    
+    if (!checkGeneratedPaths(t, expected)){
+      fail("failed to match traces");
+    }
+  }
+    
+  //-------------------------------------------------------------------
+  static class MT1 extends EventTree {
+    @Override
+    public Event createEventTree(){
+      return sequence(
+               event("a"),
+               event("b"),
+               event("c")
+              );
+    }
+  }
+  
+  static class MT2 extends EventTree {
+    @Override
+    public Event createEventTree(){
+      return sequence(
+               event("1"),
+               event("2"),
+               event("3")
+              );
+    }
+  }
+
+  static class MT3 extends EventTree {
+    @Override
+    public Event createEventTree(){
+      return sequence(
+               event("X"),
+               event("Y")
+              );
+    }
+  }
+
+  
+  @Test
+  public void testMerge (){
+    MT1 t1 = new MT1();
+    MT2 t2 = new MT2();
+    //MT3 t3 = new MT3();
+    
+    EventTree t = t1.interleave( t2);
+    // t.printPaths();
+    
+    String[] expected = {
+      "a123bc",
+      "a12b3c",
+      "a12bc3",
+      "a1b23c",
+      "a1b2c3",
+      "a1bc23",
+      "ab123c",
+      "ab12c3",
+      "ab1c23",
+      "abc123",
+      "123abc",
+      "12a3bc",
+      "12ab3c",
+      "12abc3",
+      "1a23bc",
+      "1a2b3c",
+      "1a2bc3",
+      "1ab23c",
+      "1ab2c3",
+      "1abc23"
+    };
+    
+    if (!checkGeneratedPaths(t, expected)){
       fail("failed to match traces");
     }
   }

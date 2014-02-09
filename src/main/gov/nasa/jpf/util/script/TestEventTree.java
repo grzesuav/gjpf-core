@@ -21,34 +21,37 @@ package gov.nasa.jpf.util.script;
 
 /**
  * EventTree that can check traces and coverage against expected traces
- * Mostly useful for testing purposes
+ * for testing purposes.
+ * 
+ * This has little purpose except of keeping tree spec and expected traces
+ * together in the same native class, so that we can check paths ad hoc
+ * from regression tests without having to create expected path strings
+ * in the JPF part of the test, only to translate them into native strings
  */
-public abstract class TestEventTree extends EventTree {
-
-  /**
-   * to be initialized by subclass ctors
-   */
-  protected String[] expected;
+public class TestEventTree extends EventTree {
   
-  @Override
-  public boolean checkTrace (Event lastEvent) {
-    String trace = lastEvent.getTrace(null);
-
-    for (int i = 0; i < expected.length; i++) {
-      if (trace.equals(expected[i])) {
-        expected[i] = null;
-        return true;
-      }
+  protected String[] expected; // to be optionally initialized by subclasses
+  
+  public TestEventTree (){
+    // nothing here
+  }
+  
+  public TestEventTree (Event root){
+    super(root);
+  } 
+  
+  public boolean checkPath (Event lastEvent) {
+    if (expected != null){
+      return checkPath( lastEvent, expected);
+    } else {
+      return true; // nothing to check
     }
-
-    return false; // unexpected trace
   }
 
-  @Override
-  public boolean isCompletelyCovered () {
+  public boolean isCompletelyCovered (String[] expected) {
     for (int i = 0; i < expected.length; i++) {
       if (expected[i] != null) {
-        // no checkTrace() call for this one
+        // no checkPath() call for this one
         return false;
       }
     }
@@ -56,8 +59,7 @@ public abstract class TestEventTree extends EventTree {
     return true; // no un-visited expected trace left
   }
 
-  @Override
-  public float getPathCoverage () {
+  public float getPathCoverage (String[] expected) {
     int n = 0;
 
     for (int i = 0; i < expected.length; i++) {

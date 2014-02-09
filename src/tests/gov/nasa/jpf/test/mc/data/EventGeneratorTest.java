@@ -75,7 +75,7 @@ public class EventGeneratorTest extends TestJPF {
       System.out.print("got trace: ");
       System.out.println(trace);
       
-      if (!producer.checkTrace()){
+      if (!producer.checkPath()){
         fail("unexpected trace failure");        
       }
       
@@ -90,4 +90,5 @@ public class EventGeneratorTest extends TestJPF {
       }
     }
   }
+    
 }

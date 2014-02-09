@@ -27,9 +27,8 @@ package gov.nasa.jpf.util.script;
  */
 public abstract class EventConstructor {
 
-  /**
-   * factory method to facilitate creation of specialized event classes
-   */
+  //--- overridable event factory method to facilitate creation of specialized event classes
+
   protected Event event (String name){
     return new Event(name);
   }
@@ -38,6 +37,8 @@ public abstract class EventConstructor {
     return new Event(name, arguments);
   }
 
+  //--- compound constructors that create sets of events
+  
   protected Event alternatives (Event... events){
     Event last = events[0];
     for (int i = 1; i < events.length; i++) {

@@ -21,27 +21,26 @@ package gov.nasa.jpf.util.script;
 
 import gov.nasa.jpf.vm.ChoiceGeneratorBase;
 import static gov.nasa.jpf.vm.ChoiceGeneratorBase.MARKER;
-import java.io.PrintWriter;
 
 /**
  * ChoiceGenerator for Events.
  * This is basically just a pointer into the event tree
  */
-public class EventGenerator extends ChoiceGeneratorBase<Event> {
+public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
 
   protected Event base;
   protected Event cur;
   protected int nProcessed;
   
-  public EventGenerator (String id, Event base){
+  public EventChoiceGenerator (String id, Event base){
     super(id);
     
     this.base = base;
   }
   
-  public EventGenerator getSuccessor (String id){
+  public EventChoiceGenerator getSuccessor (String id){
     if (cur == null){
-      return new EventGenerator(id, base.getNext());
+      return new EventChoiceGenerator(id, base.getNext());
       
     } else {
       Event next = cur.getNext();
@@ -53,7 +52,7 @@ public class EventGenerator extends ChoiceGeneratorBase<Event> {
       }
       
       if (next != null){
-        return new EventGenerator( id, next);
+        return new EventChoiceGenerator( id, next);
       } else {
         return null; // done
       }

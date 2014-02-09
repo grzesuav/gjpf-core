@@ -33,6 +33,6 @@ public class EventProducer {
   public native String getEventName();
   
   //--- for testing and debugging purposes
-  public native boolean checkTrace();
+  public native boolean checkPath();
   public native boolean isCompletelyCovered();
 }

@@ -25,7 +25,7 @@ import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.script.CheckEvent;
 import gov.nasa.jpf.util.script.Event;
-import gov.nasa.jpf.util.script.EventGenerator;
+import gov.nasa.jpf.util.script.EventChoiceGenerator;
 import gov.nasa.jpf.util.script.EventTree;
 import gov.nasa.jpf.util.script.NoEvent;
 
@@ -73,7 +73,7 @@ public class JPF_gov_nasa_jpf_EventProducer extends NativePeer {
   /**
    * nothing here, to be overridden by subclasses that have to force states, modify the CG on the fly etc.
    */
-  protected EventGenerator processNextCG (MJIEnv env, int objRef, EventGenerator cg){
+  protected EventChoiceGenerator processNextCG (MJIEnv env, int objRef, EventChoiceGenerator cg){
     return cg;
   }
   
@@ -91,16 +91,16 @@ public class JPF_gov_nasa_jpf_EventProducer extends NativePeer {
     }
     
     SystemState ss = env.getSystemState();
-    EventGenerator cg;
+    EventChoiceGenerator cg;
 
     event = null;
     
     if (!ti.isFirstStepInsn()){      
-      EventGenerator cgPrev = ss.getLastChoiceGeneratorOfType(EventGenerator.class);
+      EventChoiceGenerator cgPrev = ss.getLastChoiceGeneratorOfType(EventChoiceGenerator.class);
       if (cgPrev != null){
         cg = cgPrev.getSuccessor(CG_NAME);        
       } else {
-        cg = new EventGenerator( CG_NAME, eventTree.getRoot());
+        cg = new EventChoiceGenerator( CG_NAME, eventTree.getRoot());
       }
       
       if ((cg = processNextCG(env, objRef, cg)) != null){
@@ -117,7 +117,7 @@ public class JPF_gov_nasa_jpf_EventProducer extends NativePeer {
       }
       
     } else { // re-execution
-      cg = ss.getCurrentChoiceGenerator(CG_NAME, EventGenerator.class);
+      cg = ss.getCurrentChoiceGenerator(CG_NAME, EventChoiceGenerator.class);
       event = cg.getNextChoice();
       
       if (!(event instanceof NoEvent)){
@@ -155,13 +155,13 @@ public class JPF_gov_nasa_jpf_EventProducer extends NativePeer {
   // <2do> should be moved to subclass
   
   @MJI(noOrphanWarning=true)
-  public boolean checkTrace____Z (MJIEnv env, int objRef){
+  public boolean checkPath____Z (MJIEnv env, int objRef){
     SystemState ss = env.getSystemState();
-    EventGenerator cg = ss.getLastChoiceGeneratorOfType(EventGenerator.class);
+    EventChoiceGenerator cg = ss.getLastChoiceGeneratorOfType(EventChoiceGenerator.class);
 
     if (cg != null){
       Event lastEvent = cg.getNextChoice();      
-      if (eventTree.checkTrace(lastEvent)){
+      if (eventTree.checkPath(lastEvent)){
         return true;
       } else {
         log.warning("trace check for event ", lastEvent.toString(), " failed");

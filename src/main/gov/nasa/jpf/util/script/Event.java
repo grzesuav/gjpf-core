@@ -108,7 +108,18 @@ public class Event implements Cloneable {
     return n;
   }
 
+  public Event unlinkedClone(){
+    try {
+      Event e = (Event)super.clone();
+      e.next = e.prev = e.alt = null;
+      return e;
 
+    } catch (CloneNotSupportedException x) {
+      throw new RuntimeException("event clone failed", x);
+    }
+    
+  }
+  
   public Event deepClone(){
     try {
       Event e = (Event)super.clone();
@@ -189,17 +200,59 @@ public class Event implements Cloneable {
 
     return this;
   }
+  
+  protected Event createClonedSequence (int firstIdx, int len, Event[] events){
+    Event base = events[firstIdx].unlinkedClone();
+    Event e = base;
 
+    for (int i = firstIdx+1; i < len; i++) {
+      Event ne = events[i].unlinkedClone();
+      e.setNext( ne);
+      e = ne;
+    }
+    
+    return base;
+  }
+  
+  /**
+   * extend this tree with a new path 
+   */
+  public void addPath (int pathLength, Event... path){
+    Event t = this;
+    Event pe;
+    
+    outer:
+    for (int i=0; i<pathLength; i++){
+      pe = path[i];
+      for (Event te = t; te != null; te = te.alt){
+        if (pe.equals(te)){      // prefix is in tree
+          if (te.next == null){  // reached leaf
+            te.setNext( createClonedSequence( i+1, pathLength, path)); // append postfix, done
+            return;
+          } else {
+            t = te.next;
+            continue outer;
+          }
+        }
+      }
+      
+      //--- path prefix was not in tree, append as alternative
+      Event te;
+      for (te = t; te.alt != null; te = te.alt);
+      te.setAlt( createClonedSequence(i, pathLength, path));
+      return;
+    }
+  }
 
-  protected void collectEndStates (List<Event> list) {
+  protected void collectEndEvents (List<Event> list) {
     if (next != null) {
-      next.collectEndStates(list);
+      next.collectEndEvents(list);
     } else {
       list.add(this);
     }
 
     if (alt != null) {
-      alt.collectEndStates(list);
+      alt.collectEndEvents(list);
     }
   }
 
@@ -213,13 +266,60 @@ public class Event implements Cloneable {
 
   public List<Event> endEvents(){
     List<Event> list = new ArrayList<Event>();
-    collectEndStates(list);
+    collectEndEvents(list);
     return list;
   }
 
-  public void printTrace (PrintStream ps){
+  private void interleave (Event a, Event b, Event[] path, int pathLength, int i, Event result){
+    if (a == null && b == null){ // base case
+      result.addPath(pathLength, path);
+      
+    } else {
+      if (a != null) {
+        path[i] = a;
+        interleave(a.prev, b, path, pathLength, i - 1, result);
+      }
+
+      if (b != null) {
+        path[i] = b;
+        interleave(a, b.prev, path, pathLength, i - 1, result);
+      }
+    }
+  }
+  
+  /**
+   * this creates a new tree that contains all paths resulting from
+   * all interleavings of all paths of this tree with the specified other events
+   * 
+   * BEWARE: this is a combinatorial bomb that should only be used if we know all
+   * paths are short
+   */
+  public Event interleave (Event... otherEvents){
+    Event t = unlinkedClone(); // we need a root for the new tree
+    Event[] pathBuffer = new Event[32];
+    int mergedTrees = 0;
+    
+    for (Event o : otherEvents){
+      List<Event> endEvents = (mergedTrees++ > 0) ? t.endEvents() : endEvents();
+
+      for (Event ee1 : endEvents) {
+        for (Event ee2 : o.endEvents()) {
+          int n = ee1.getPathLength() + ee2.getPathLength();
+          if (n > pathBuffer.length){
+            pathBuffer = new Event[n];
+          }
+
+          interleave(ee1, ee2, pathBuffer, n, n - 1, t);
+        }
+      }
+    }
+        
+    return t;
+  }
+  
+  public void printPath (PrintStream ps){
     if (prev != null){
-      prev.printTrace(ps);
+      prev.printPath(ps);
       ps.print(',');
     }
     ps.print(name);
@@ -245,7 +345,7 @@ public class Event implements Cloneable {
   }
 
   
-  public int getTraceLength(){
+  public int getPathLength(){
     int n=0;
     
     for (Event e=this; e != null; e = e.prev){
@@ -255,8 +355,8 @@ public class Event implements Cloneable {
     return n;
   }
   
-  public Event[] getTrace(){
-    int n = getTraceLength();
+  public Event[] getPath(){
+    int n = getPathLength();
     Event[] trace = new Event[n];
     
     for (Event e=this; e != null; e = e.prev){
@@ -307,7 +407,7 @@ public class Event implements Cloneable {
     sb.append(toString());
   }
   
-  public String getTrace (String separator){
+  public String getPathString (String separator){
     StringBuilder sb = new StringBuilder();
     collectTrace( sb, separator);
     return sb.toString();
