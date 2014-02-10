@@ -43,17 +43,29 @@ public class Event implements Cloneable {
 
   protected String name;
   protected Object[] arguments;
+  
+  protected Object source;  // optional, set on demand to keep track of where an event came from
 
   public Event (String name){
-    this.name = name;
-    this.arguments = NO_ARGUMENTS;
+    this( name, NO_ARGUMENTS, null);
   }
 
+  public Event (String name, Object source){
+    this( name, NO_ARGUMENTS, source);
+  }  
+  
   public Event(String name, Object[] arguments) {
+    this(name, arguments, null);
+  }
+  
+  public Event(String name, Object[] arguments, Object source) {
     this.name = name;
     this.arguments = arguments != null ? arguments : NO_ARGUMENTS;
+    this.source = source;
   }
 
+  
+  
   @Override
   public boolean equals (Object o){
     if (o instanceof Event){
@@ -99,6 +111,10 @@ public class Event implements Cloneable {
     }
   }
 
+  protected void setSource (Object source){
+    this.source = source;
+  }
+  
   public int getNumberOfAlternatives(){
     int n = 0;
     for (Event e = alt; e != null; e = e.alt) {
@@ -164,6 +180,10 @@ public class Event implements Cloneable {
     return prev;
   }
   
+  public Object getSource(){
+    return source;
+  }
+  
   public Event addNext (Event e){
     boolean first = true;
     for (Event ee : endEvents()){
@@ -201,7 +221,7 @@ public class Event implements Cloneable {
     return this;
   }
   
-  protected Event createClonedSequence (int firstIdx, int len, Event[] events){
+  protected static Event createClonedSequence (int firstIdx, int len, Event[] events){
     Event base = events[firstIdx].unlinkedClone();
     Event e = base;
 
@@ -227,7 +247,9 @@ public class Event implements Cloneable {
       for (Event te = t; te != null; te = te.alt){
         if (pe.equals(te)){      // prefix is in tree
           if (te.next == null){  // reached leaf
-            te.setNext( createClonedSequence( i+1, pathLength, path)); // append postfix, done
+            if (++i < pathLength){ // else there is nothing to add anymore
+              te.setNext( createClonedSequence( i, pathLength, path)); // append postfix, done
+            }
             return;
           } else {
             t = te.next;
@@ -317,6 +339,39 @@ public class Event implements Cloneable {
     return t;
   }
   
+  
+  
+  private void removeSource (Object src, Event[] path, int i, Event result){
+    
+    if (alt != null){
+      alt.removeSource(src, path, i, result);
+    }
+    
+    if (source != src){
+      path[i++] = this;
+    }
+    
+    if (next != null){
+      next.removeSource(src, path, i, result);
+      
+    } else { // done, add path to result
+      result.addPath( i, path);
+    }
+  }
+  
+  /**
+   * remove all events from this tree that are from the specified source 
+   */
+  public Event removeSource (Object src){
+    Event base = new NoEvent(); // we need a root to add to
+    int maxDepth = getMaxDepth();
+    Event[] pathBuffer = new Event[maxDepth];
+    
+    removeSource( src, pathBuffer, 0, base);
+    
+    return base.alt;
+  }
+  
   public void printPath (PrintStream ps){
     if (prev != null){
       prev.printPath(ps);
@@ -345,6 +400,9 @@ public class Event implements Cloneable {
   }
 
   
+  /**
+   * upwards path length 
+   */
   public int getPathLength(){
     int n=0;
     
@@ -353,6 +411,33 @@ public class Event implements Cloneable {
     }
     
     return n;
+  }
+  
+  
+  private int getMaxDepth (int depth){
+    int maxAlt = depth;
+    int maxNext = depth;
+    
+    if (alt != null){
+      maxAlt = alt.getMaxDepth(depth);
+    }
+    
+    if (next != null){
+      maxNext = next.getMaxDepth(depth + 1);
+    }
+    
+    if (maxAlt > maxNext){
+      return maxAlt;
+    } else {
+      return maxNext;
+    }
+  }
+  
+  /**
+   * maximum downwards tree depth 
+   */
+  public int getMaxDepth(){
+    return getMaxDepth(1);
   }
   
   public Event[] getPath(){

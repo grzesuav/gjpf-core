@@ -19,6 +19,7 @@
 
 package gov.nasa.jpf.util.script;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -70,8 +71,14 @@ public class EventTree extends EventConstructor {
     
   //--- inspection and debugging
 
+  static final List<Event> NO_EVENTS = new ArrayList<Event>(0);
+  
   public List<Event> endEvents(){
-    return root.endEvents();
+    if (root != null){
+      return root.endEvents();
+    } else {
+      return NO_EVENTS;
+    }
   }
   
   public void printPaths(){
@@ -82,7 +89,9 @@ public class EventTree extends EventConstructor {
   }
 
   public void printTree (){
-    root.printTree(System.out, 0);
+    if (root != null){
+      root.printTree(System.out, 0);
+    }
   }
 
   /**
@@ -120,7 +129,7 @@ public class EventTree extends EventConstructor {
    * @return [0.0..1.0]
    */
   public float getPathCoverage (){
-    return 0;
+    throw new UnsupportedOperationException("path coverage not supported by generic EventTree");
   }
   
   /**
@@ -128,28 +137,80 @@ public class EventTree extends EventConstructor {
    * call at the end of execution
    */
   public boolean isCompletelyCovered (){
-    return true;
+    throw new UnsupportedOperationException("path coverage not supported by generic EventTree");
   }
   
   /**
    * extend this tree with a new path 
    */
   public void addPath (Event... path){
-    root.addPath(path.length, path);
+    if (root != null){
+      root.addPath(path.length, path);
+    } else {
+      root = sequence(path);
+    }
   }
   
   public Event interleave (Event... otherTrees){
-    return root.interleave( otherTrees);
+    if (root != null){
+      return root.interleave( otherTrees);
+      
+    } else {
+      if (otherTrees == null || otherTrees.length == 0){
+        return root;
+        
+      } else {
+        Event first = null;
+        List<Event> rest = new ArrayList<Event>();
+        for (int i=0; i< otherTrees.length; i++){
+          if (otherTrees[i] != null){
+            if (first == null){
+              first = otherTrees[i];
+            } else {
+              rest.add( otherTrees[i]);
+            }
+          }
+        }
+        
+        if (first != null){
+          if (rest.isEmpty()){
+            return first;
+          } else {
+            Event[] ot = new Event[rest.size()];
+            rest.toArray(ot);
+            return first.interleave(ot);
+          }
+          
+        } else {      // nothing to interleave at all
+          return null;
+        }
+      }
+    }
   }
-  
+
   public EventTree interleave (EventTree... otherTrees){
     Event[] otherRoots = new Event[otherTrees.length];
     for (int i=0; i<otherRoots.length; i++){
       otherRoots[i] = otherTrees[i].root;
     }
-    
-    Event resultRoot = root.interleave( otherRoots);
-    
-    return new EventTree(resultRoot);
+    return new EventTree( interleave( otherRoots));
   }  
+  
+  public Event removeSource (Object source){
+    if (root != null){
+      return root.removeSource(source);
+      
+    } else { // nothing to remove from
+      return null;
+    }
+  }
+  
+  public int getMaxDepth(){
+    if (root != null){
+      return root.getMaxDepth();
+    } else {
+      return 0;
+    }
+  }
+  
 }

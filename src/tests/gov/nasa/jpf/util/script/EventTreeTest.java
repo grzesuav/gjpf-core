@@ -32,6 +32,7 @@ public class EventTreeTest extends TestJPF {
     System.out.println("event tree: ");
     m.printTree();
     
+    int nMatches = 0;
     for (Event ee : m.endEvents()){
       String trace = ee.getPathString(null);
       System.out.println("checking path: " + trace);
@@ -40,9 +41,11 @@ public class EventTreeTest extends TestJPF {
         System.out.print("unexpected path");
         return false;
       }
+      
+      nMatches++;
     }
     
-    if (!m.isCompletelyCovered()){
+    if (nMatches != expected.length){
       System.out.println("uncovered path: ");
       for (int i=0; i<expected.length; i++){
         if (expected[i] != null){
@@ -130,6 +133,39 @@ public class EventTreeTest extends TestJPF {
       fail("failed to match traces");
     }
   }  
+
+  //--------------------------------------------------------------------
+  static class DT extends EventTree {    
+    @Override
+    public Event createEventTree() {
+      return sequence(
+              event("a"),
+              alternatives(
+                  event("1"),
+                  sequence(
+                      event("X"),
+                      event("Y")
+                  ),
+                  iteration(3,
+                      event("r")
+                  )
+              ),
+              event("b"));
+    }    
+  }
+
+  
+  @Test
+  public void testMaxDepth(){
+    DT t = new DT();
+    t.printTree();
+    t.printPaths();
+    
+    int maxDepth = t.getMaxDepth();
+    System.out.println("max depth: " + maxDepth);
+    
+    assertTrue( maxDepth == 5);
+  }
 
   //--------------------------------------------------------------------
   static class PermutationTree extends EventTree {
@@ -258,5 +294,48 @@ public class EventTreeTest extends TestJPF {
     if (!checkGeneratedPaths(t, expected)){
       fail("failed to match traces");
     }
+  }
+
+  //-------------------------------------------------------------------
+  static class RT1 extends EventTree {
+    @Override
+    public Event createEventTree(){
+      return sequence(
+               event("a"),
+               event("b")
+              );
+    }
+  }
+  
+  static class RT2 extends EventTree {
+    @Override
+    public Event createEventTree(){
+      return sequence(
+               event("1"),
+               event("2")
+              );
+    }
+  }
+
+  
+  @Test
+  public void testRemove (){
+    RT1 t1 = new RT1();
+    RT2 t2 = new RT2();
+    
+    EventTree t = t1.interleave( t2);
+    System.out.println("merged tree: ");
+    //t.printTree();
+    t.printPaths();
+    
+    t = new EventTree( t.removeSource(t2));
+    System.out.println("reduced tree: ");
+    //t.printTree();
+    //t.printPaths();
+    
+    String[] expected = { "ab" };
+    if (!checkGeneratedPaths(t, expected)){
+      fail("failed to match traces");
+    }    
   }
 }

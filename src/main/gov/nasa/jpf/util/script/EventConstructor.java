@@ -30,11 +30,11 @@ public abstract class EventConstructor {
   //--- overridable event factory method to facilitate creation of specialized event classes
 
   protected Event event (String name){
-    return new Event(name);
+    return new Event(name, this);
   }
   
   protected Event event (String name, Object... arguments){
-    return new Event(name, arguments);
+    return new Event(name, arguments, this);
   }
 
   //--- compound constructors that create sets of events
