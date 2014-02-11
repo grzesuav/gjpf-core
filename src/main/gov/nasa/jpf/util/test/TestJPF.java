@@ -25,6 +25,7 @@ import gov.nasa.jpf.JPFShell;
 import gov.nasa.jpf.Property;
 import gov.nasa.jpf.annotation.FilterField;
 import gov.nasa.jpf.tool.RunTest;
+import gov.nasa.jpf.util.DevNullPrintStream;
 import gov.nasa.jpf.util.TypeRef;
 import gov.nasa.jpf.util.JPFSiteUtils;
 import gov.nasa.jpf.util.Misc;
@@ -81,6 +82,8 @@ public abstract class TestJPF implements JPFShell  {
   @FilterField protected static boolean showConfig; // for debugging purposes
   @FilterField protected static boolean showConfigSources; // for debugging purposes  
   @FilterField protected static boolean hideSummary;
+  
+  @FilterField protected static boolean quiet; // don't show test output
   
   @FilterField protected String sutClassName;
 
@@ -165,14 +168,16 @@ public abstract class TestJPF implements JPFShell  {
   }
 
   public void report (String[] args) {
-    out.print("  running jpf with args:");
+    if (!quiet){
+      out.print("  running jpf with args:");
 
-    for (int i = 0; i < args.length; i++) {
-      out.print(' ');
-      out.print(args[i]);
+      for (int i = 0; i < args.length; i++) {
+        out.print(' ');
+        out.print(args[i]);
+      }
+
+      out.println();
     }
-
-    out.println();
   }
 
   /**
@@ -289,15 +294,17 @@ public abstract class TestJPF implements JPFShell  {
                 showConfig = true;
               } else if (a.equals("l") || a.equals("log")){
                 showConfigSources = true;
+              } else if (a.equals("q") || a.equals("quiet")){
+                quiet = true;                
               } else if (a.equals("x")){
                 stopOnFailure = true;
               } else if (a.equals("h")){
                 hideSummary = true;
               }
-              args[i] = null;
+              args[i] = null;  // set it consumed
 
             } else {
-              break; // done, this is a test method arg
+              break; // done, this is a test method
             }
           }
         }
@@ -380,10 +387,22 @@ public abstract class TestJPF implements JPFShell  {
     return getContextMethods(testCls, Modifier.PUBLIC | Modifier.STATIC, 0, "org.junit.AfterClass");
   }
   
+  protected static boolean haveTestMethodSpecs( String[] args){
+    if (args != null && args.length > 0){
+      for (int i=0; i<args.length; i++){
+        if (args[i] != null){
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
   protected static List<Method> getTestMethods(Class<? extends TestJPF> testCls, String[] args){
     String[] testAnnotations = {"org.junit.Test", "org.testng.annotations.Test"};
 
-    if (args != null && args.length > 0){ // test methods specified as arguments
+    if (haveTestMethodSpecs( args)){ // test methods specified as arguments
       List<Method> list = new ArrayList<Method>();
 
       for (String test : args){
@@ -414,27 +433,35 @@ public abstract class TestJPF implements JPFShell  {
 
 
   protected static void reportTestStart(String mthName){
-    System.out.println();
-    System.out.print("......................................... testing ");
-    System.out.print(mthName);
-    System.out.println("()");
+    if (!quiet){
+      System.out.println();
+      System.out.print("......................................... testing ");
+      System.out.print(mthName);
+      System.out.println("()");
+    }
   }
 
   protected static void reportTestInitialization(String mthName){
-    System.out.print(".... running test initialization: ");
-    System.out.print( mthName);
-    System.out.println("()");
+    if (!quiet){
+      System.out.print(".... running test initialization: ");
+      System.out.print(mthName);
+      System.out.println("()");
+    }
   }
 
   protected static void reportTestCleanup(String mthName){
-    System.out.print(".... running test cleanup: ");
-    System.out.print( mthName);
-    System.out.println("()");
+    if (!quiet){
+      System.out.print(".... running test cleanup: ");
+      System.out.print(mthName);
+      System.out.println("()");
+    }
   }
 
   protected static void reportTestFinished(String msg){
-    System.out.print("......................................... ");
-    System.out.println(msg);
+    if (!quiet){
+      System.out.print("......................................... ");
+      System.out.println(msg);
+    }
   }
 
   protected static void reportResults(String clsName, int nTests, int nFailures, int nErrors, List<String> results){
@@ -448,11 +475,13 @@ public abstract class TestJPF implements JPFShell  {
       System.out.println(" OBSOLETE");
     }
 
-    if (results != null){
-      int i=0;
-      for (String result : results){
-        System.out.print(".... [" + ++i + "] ");
-        System.out.println(result);
+    if (!quiet){
+      if (results != null) {
+        int i = 0;
+        for (String result : results) {
+          System.out.print(".... [" + ++i + "] ");
+          System.out.println(result);
+        }
       }
     }
 
@@ -460,6 +489,25 @@ public abstract class TestJPF implements JPFShell  {
     System.out.println(" tests: " + nTests + ", failures: " + nFailures + ", errors: " + nErrors);
   }
 
+  
+  static void invoke (Method m, Object testObject) throws IllegalAccessException, InvocationTargetException  {
+    PrintStream sysOut = null;
+    
+    try {
+      if (quiet){
+        sysOut = System.out;
+        System.setOut( new DevNullPrintStream());
+      }
+      
+      m.invoke( testObject);
+      
+    } finally {
+      if (quiet){
+        System.setOut( sysOut);
+      }
+    }
+  }
+  
   /**
    * this is the main test loop if this TestJPF instance is executed directly
    * or called from RunTest. It is *not* called if this is executed from JUnit
@@ -482,7 +530,7 @@ public abstract class TestJPF implements JPFShell  {
 
       // check if we have JUnit style housekeeping methods (initialization and
       // cleanup should use the same mechanisms as JUnit)
-      
+            
       List<Method> beforeClassMethods = getBeforeClassMethods(testCls);
       List<Method> afterClassMethods = getAfterClassMethods(testCls);
             
@@ -506,17 +554,17 @@ public abstract class TestJPF implements JPFShell  {
           // run per test initialization methods
           for (Method initMethod : beforeMethods){
             reportTestInitialization( initMethod.getName());
-            initMethod.invoke(testObject);
+            invoke( initMethod, testObject);
           }
 
           // now run the test method itself
-          testMethod.invoke(testObject);
+          invoke( testMethod, testObject);
           result += ": Ok";
 
           // run per test initialization methods
           for (Method cleanupMethod : afterMethods){
             reportTestCleanup( cleanupMethod.getName());
-            cleanupMethod.invoke(testObject);
+            invoke( cleanupMethod, testObject);
           }
 
         } catch (InvocationTargetException x) {

@@ -249,6 +249,7 @@
         <include name="gov/nasa/jpf/util/JPFSiteUtils.class"/>
         <include name="gov/nasa/jpf/util/FileUtils.class"/>
         <include name="gov/nasa/jpf/util/StringMatcher.class"/>
+        <include name="gov/nasa/jpf/util/DevNullPrintStream.class"/>
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>

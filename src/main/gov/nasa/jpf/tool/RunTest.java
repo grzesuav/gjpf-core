@@ -23,10 +23,17 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFClassLoader;
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFSiteUtils;
+import gov.nasa.jpf.util.StringMatcher;
+import java.io.File;
+import java.lang.reflect.Field;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * tool to run JPF test with configured classpath
@@ -46,6 +53,9 @@ public class RunTest extends Run {
   public static final int HELP  = 0x1;
   public static final int SHOW  = 0x2;
   public static final int LOG   = 0x4;
+  public static final int QUIET = 0x8;
+
+  static final String TESTJPF_CLS = "gov.nasa.jpf.util.test.TestJPF";
   
   static Config config;
 
@@ -77,6 +87,9 @@ public class RunTest extends Run {
           args[i] = null;
           mask |= LOG;
 
+        } else if ("-quiet".equals(a)){
+          args[i] = null;
+          mask |= QUIET;
         }
       }
     }
@@ -89,17 +102,18 @@ public class RunTest extends Run {
   }
 
   public static void showUsage() {
-    System.out.println("Usage: \"java [<vm-option>..] -jar ...RunTest.jar [<jpf-option>..] [<app> [<app-arg>..]]");
+    System.out.println("Usage: \"java [<vm-option>..] -jar ...RunTest.jar [<jpf-option>..] [<class> [<app-arg>..]]");
     System.out.println("  <jpf-option> : -help : print usage information and exit");
     System.out.println("               | -log : print configuration initialization steps");
-    System.out.println("               | -show : print configuration dictionary contents");    
+    System.out.println("               | -show : print configuration dictionary contents"); 
+    System.out.println("               | -quiet : don't show System.out test output");
     System.out.println("               | +<key>=<value>  : add or override <key>/<value> pair to global config");
     System.out.println("               | +test.<key>=<value>  : add or override <key>/<value> pair in test config");
-    System.out.println("  <app>        : *.jpf application properties file pathname | fully qualified application class name");
-    System.out.println("  <app-arg>    : arguments passed into main() method of application class");
+    System.out.println("  <class>      : application class name");
+    System.out.println("  <methods>    : test methods of application class");
   }
   
-  public static void main(String[] args){
+  public static void main(String[] args) {
     int options = getOptions( args);
     
     if (isOptionEnabled(HELP, options)) {
@@ -119,46 +133,67 @@ public class RunTest extends Run {
     
     args = removeConfigArgs( args);
     String testClsName = getTestClassName(args);
+    String[] testArgs = getTestArgs(args);
+    
+    String[] testPathElements = getTestPathElements(config);
+    JPFClassLoader cl = config.initClassLoader(RunTest.class.getClassLoader());
+    addTestClassPath( cl, testPathElements);
 
-    if (testClsName != null) {
-      testClsName = checkClassName(testClsName);
-
+    Class<?> testJpfCls = null;
+    try {
+      testJpfCls = cl.loadClass( TESTJPF_CLS);
+      
+      if (isOptionEnabled(QUIET, options)){
+        Field f = testJpfCls.getDeclaredField("quiet");
+        f.setAccessible(true);
+        f.setBoolean( null, true);
+      }
+      
+    } catch (NoClassDefFoundError ncfx) {
+      error("class did not resolve: " + ncfx.getMessage());
+      return;
+    } catch (ClassNotFoundException cnfx) {
+      error("class not found " + cnfx.getMessage() + ", check native_classpath in jpf.properties");
+      return;
+      
+    // we let pass this for now since it only means the quiet option is not going to work
+    } catch (NoSuchFieldException ex) {
+    } catch (IllegalAccessException ex) {
+    }
+    
+    List<Class<?>> testClasses = getTestClasses(cl, testJpfCls, testPathElements, testClsName);
+    if (testClasses.isEmpty()){
+      System.out.println("no test classes found");
+      return;
+    }
+    
+    int nTested = 0;
+    int nPass = 0;
+    
+    for (Class<?> testCls : testClasses){
+      nTested++;
+      
       try {
-        JPFClassLoader cl = config.initClassLoader(RunTest.class.getClassLoader());
+        try {
+          try { // check if there is a main(String[]) method
+            Method mainEntry = testCls.getDeclaredMethod("main", String[].class);
+            mainEntry.invoke(null, (Object) testArgs);
 
-        addTestClassPath(cl, config);
-
-        Class<?> testJpfCls = cl.loadClass("gov.nasa.jpf.util.test.TestJPF");
-        Class<?> testCls = cl.loadClass(testClsName);
-
-        if (testJpfCls.isAssignableFrom(testCls)) {
-          String[] testArgs = getTestArgs(args);
-
-          try {
-            try { // check if there is a main(String[]) method
-              Method mainEntry = testCls.getDeclaredMethod("main", String[].class);
-              mainEntry.invoke(null, (Object)testArgs);
-            
-            } catch (NoSuchMethodException x){ // no main(String[]), call TestJPF.runTests(testCls,args) directly
-              Method mainEntry = testJpfCls.getDeclaredMethod("runTests", Class.class, String[].class);
-              mainEntry.invoke( null, new Object[]{testCls, testArgs});
-            }
-          } catch (NoSuchMethodException x){
-            error("no suitable main() or runTests() in " + testCls.getName());
-          } catch (IllegalAccessException iax){
-            error( iax.getMessage());
+          } catch (NoSuchMethodException x) { // no main(String[]), call TestJPF.runTests(testCls,args) directly
+            Method mainEntry = testJpfCls.getDeclaredMethod("runTests", Class.class, String[].class);
+            mainEntry.invoke(null, new Object[]{testCls, testArgs});
           }
-
-        } else {
-          error("not a gov.nasa.jpf.util.test.TestJPF derived class: " + testClsName);
+          
+          nPass++;
+          
+        } catch (NoSuchMethodException x) {
+          error("no suitable main() or runTests() in " + testCls.getName());
+        } catch (IllegalAccessException iax) {
+          error(iax.getMessage());
         }
-
+        
       } catch (NoClassDefFoundError ncfx) {
         error("class did not resolve: " + ncfx.getMessage());
-
-      } catch (ClassNotFoundException cnfx) {
-        error("class not found " + cnfx.getMessage() + ", check <project>.test_classpath in jpf.properties");
-
       } catch (InvocationTargetException ix) {
         Throwable cause = ix.getCause();
         if (cause instanceof Failed){
@@ -168,31 +203,115 @@ public class RunTest extends Run {
           error(ix.getCause().getMessage());
         }
       }
-
-    } else {
-      error("no test class specified");
-    }
+    }    
+        
+    System.out.println();
+    System.out.printf("tested classes: %d, passed: %d\n", nTested, nPass);
   }
 
+  static Class<?> loadTestClass (JPFClassLoader cl, Class<?> testJpfCls, String testClsName){
+    try {
+      Class<?> testCls = cl.loadClass(testClsName);
+      if (testJpfCls.isAssignableFrom(testCls)){
+        if (!Modifier.isAbstract(testCls.getModifiers())){
+          return testCls;
+        }
+      }
+      
+      return null;
+      
+    } catch (NoClassDefFoundError ncfx) {
+      error("class did not resolve: " + ncfx.getMessage());
+      return null;
+      
+    } catch (ClassNotFoundException cnfx) {
+      error("class not found " + cnfx.getMessage() + ", check test_classpath in jpf.properties");
+      return null;
+    }
+  }
+  
+  static boolean hasWildcard (String pattern){
+    return (pattern.indexOf('*') >= 0);
+  }
+  
+  static List<Class<?>> getTestClasses (JPFClassLoader cl, Class<?> testJpfCls, String[] testPathElements, String testClsName ){
+    List<Class<?>> testClasses = new ArrayList<Class<?>>();
+    
+    if (!hasWildcard(testClsName)){ // that's simple, no need to look into dirs
+      Class<?> testCls = loadTestClass( cl, testJpfCls, testClsName);
+      if (testCls == null){ // error if this was an explicit classname
+        error ("specified class name not found or no TestJPF derived class: " + testClsName);  
+      }
+      testClasses.add(testCls);
+      
+    } else { // we have to recursively look into the testPathElements for potential test classes
+      List<String> classFileList = getClassFileList( testPathElements, testClsName);
+      
+      for (String candidate : classFileList){        
+        Class<?> testCls = loadTestClass( cl, testJpfCls, candidate);
+        if (testCls != null){
+          testClasses.add(testCls);
+        }
+      }
+    }
+    
+    return testClasses;
+  }
+  
+  static void collectMatchingFiles (int nPrefix, File dir, List<String> list, String pattern){
+    for (File e : dir.listFiles()){
+      if (e.isDirectory()){
+        collectMatchingFiles(nPrefix, e, list, pattern);
+        
+      } else if (e.isFile()){
+        String pn = e.getPath().substring(nPrefix);
+        if (pn.matches(pattern)){
+          String clsName = pn.substring(0, pn.length() - 6); // strip cp entry and ".class"
+          clsName = clsName.replace( File.separatorChar, '.');
+          list.add(clsName);
+        }
+      }
+    }
+  }
+  
+  static List<String> getClassFileList (String[] testPathElements, String testClsPattern){
+    List<String> list = new ArrayList<String>();
+    String tcp = testClsPattern.replace('.', File.separatorChar);
+    tcp = tcp.replace("*", ".*") + "\\.class";
+    
+    for (String tpe : testPathElements){
+      File tp = new File(tpe);
+      int nPrefix = tp.getPath().length()+1;
+      collectMatchingFiles( nPrefix, tp, list, tcp);
+    }
+    
+    return list;
+  }
+  
   static boolean isPublicStatic (Method m){
     int mod = m.getModifiers();
     return ((mod & (Modifier.PUBLIC | Modifier.STATIC)) == (Modifier.PUBLIC | Modifier.STATIC));
   }
   
-  static void addTestClassPath (JPFClassLoader cl, Config conf){
-    // since test classes are executed by both the host VM and JPF, we have
-    // to tell the JPFClassLoader where to find them
+  static String[] getTestPathElements (Config conf){
     String projectId = JPFSiteUtils.getCurrentProjectId();
+    
     if (projectId != null) {
       String testCpKey = projectId + ".test_classpath";
-      String[] tcp = config.getCompactTrimmedStringArray(testCpKey);
-      if (tcp != null) {
-        for (String pe : tcp) {
-          try {
-            cl.addURL(FileUtils.getURL(pe));
-          } catch (Throwable x) {
-            error("malformed test_classpath URL: " + pe);
-          }
+      return  config.getCompactTrimmedStringArray(testCpKey);
+      
+    } else {
+      return new String[0];
+    }    
+  }
+  
+  static void addTestClassPath (JPFClassLoader cl, String[] testPathElements){
+    if (testPathElements != null) {
+      for (String pe : testPathElements) {
+        try {
+          cl.addURL(FileUtils.getURL(pe));
+        } catch (Throwable x) {
+          error("malformed test_classpath URL: " + pe);
         }
       }
     }

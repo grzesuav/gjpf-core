@@ -33,6 +33,9 @@ public class StringMatcher {
   Pattern pattern;
   Matcher matcher;
 
+  public static boolean hasWildcard (String patternSpec){
+    return (patternSpec.indexOf('*') >= 0);
+  }
 
   public StringMatcher (String patternSpec){
     if (patternSpec.equals("*")) {
