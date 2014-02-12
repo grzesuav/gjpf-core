@@ -119,7 +119,7 @@
     </javac>
   </target>
   
-  <target name="-compile-tests" if="have_tests" depends="-compile-annotations,-compile-main">
+  <target name="-compile-tests" if="have_tests" depends="-compile-annotations,-compile-main,-compile-classes">
     <mkdir dir="build/tests"/>
     <javac srcdir="src/tests" destdir="build/tests" includeantruntime="false"
            debug="${debug}" deprecation="${deprecation}"
@@ -183,8 +183,10 @@
       <!-- this is redundant, but if JPF is executed from java.class.path it wouldn't find annotations -->
       <fileset dir="build/annotations"/>
       
-      <!-- for single jar distribution -->
-      <zipfileset src="build/jpf-classes.jar" prefix="classes"/>      
+      <!-- this is for annotations used by JPF regression tests, which can also be executed outside of junit -->
+      <fileset dir="build/classes">
+          <include name="org/junit/*.class"/>
+      </fileset>
       
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
@@ -247,6 +249,7 @@
         <include name="gov/nasa/jpf/util/JPFSiteUtils.class"/>
         <include name="gov/nasa/jpf/util/FileUtils.class"/>
         <include name="gov/nasa/jpf/util/StringMatcher.class"/>
+        <include name="gov/nasa/jpf/util/DevNullPrintStream.class"/>
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
@@ -254,21 +257,6 @@
         <attribute name="Implementation-Title" value="Java Pathfinder test launch system"/>
         <attribute name="Implementation-Version" value="${jpf.version}"/>
         <attribute name="Main-Class" value="gov.nasa.jpf.tool.RunTest"/>
-      </manifest>
-    </jar>
-
-
-    <jar jarfile="build/RunAnt.jar">
-      <fileset dir="build/main">
-        <include name="gov/nasa/jpf/tool/RunAnt.class"/>
-        <include name="gov/nasa/jpf/util/JPFSiteUtils.class"/>
-      </fileset>
-      <manifest>
-        <attribute name="Built-By" value="${user.name}"/>
-        <attribute name="Implementation-Vendor" value="NASA Ames Research Center"/>
-        <attribute name="Implementation-Title" value="Java Pathfinder Ant launcher"/>
-        <attribute name="Implementation-Version" value="${jpf.version}"/>
-        <attribute name="Main-Class" value="gov.nasa.jpf.tool.RunAnt"/>
       </manifest>
     </jar>
 

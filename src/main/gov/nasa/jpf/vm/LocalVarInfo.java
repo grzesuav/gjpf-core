@@ -99,6 +99,11 @@ public class LocalVarInfo {
     return (c == 'B' || c == 'S' || c == 'I' || c == 'J' || c == 'F' || c == 'D');
   }
 
+  public boolean isBoolean(){
+    char c = signature.charAt(0);
+    return (c == 'Z');
+  }  
+
   public int getSlotSize(){
     char c = signature.charAt(0);
     if (c == 'J' || c == 'D'){

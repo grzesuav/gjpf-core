@@ -18,16 +18,16 @@
 //
 package gov.nasa.jpf.util;
 
+import gov.nasa.jpf.util.test.TestJPF;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class AvailableBufferedInputStreamTest
+public class AvailableBufferedInputStreamTest extends TestJPF
 {
    private static final int PIPE_SIZE = 1024 * 1024;
 
@@ -48,9 +48,9 @@ public class AvailableBufferedInputStreamTest
       m_output.close();
       m_output = null;
 
-      Assert.assertEquals( 0, m_input.available());
-      Assert.assertEquals(-1, m_input.peek());
-      Assert.assertEquals(-1, m_input.read());
+      assertEquals( 0, m_input.available());
+      assertEquals(-1, m_input.peek());
+      assertEquals(-1, m_input.read());
 
       m_input.close();
       m_input = null;
@@ -71,13 +71,13 @@ public class AvailableBufferedInputStreamTest
       {
          m_output.write(i);
          m_output.flush();
-         Assert.assertEquals(1, m_input.available());
+         assertEquals(1, m_input.available());
       }
 
       for (i = 10; --i >= 0; )
       {
-         Assert.assertEquals(i, m_input.peek());
-         Assert.assertEquals(i, m_input.read());
+         assertEquals(i, m_input.peek());
+         assertEquals(i, m_input.read());
       }
    }
    
@@ -90,29 +90,29 @@ public class AvailableBufferedInputStreamTest
       m_output.write(21);
       m_output.flush();
 
-      Assert.assertEquals(20, m_input.peek());
-      Assert.assertEquals(20, m_input.read());  // Load the buffer
+      assertEquals(20, m_input.peek());
+      assertEquals(20, m_input.read());  // Load the buffer
       
       for (i = 0; i < 10; i++)
          m_input.unread(i);
       
       for (i = 10; --i >= 0; )
       {
-         Assert.assertEquals(i, m_input.peek());
-         Assert.assertEquals(i, m_input.read());
-         Assert.assertEquals(i + 1, m_input.available());
+         assertEquals(i, m_input.peek());
+         assertEquals(i, m_input.read());
+         assertEquals(i + 1, m_input.available());
       }
 
-      Assert.assertEquals(21, m_input.peek());
-      Assert.assertEquals(21, m_input.read());
+      assertEquals(21, m_input.peek());
+      assertEquals(21, m_input.read());
    }
    
    @Test
    public void unreadMinus1() throws IOException
    {
       m_input.unread(-1);
-      Assert.assertEquals(0x00FF, m_input.peek());
-      Assert.assertEquals(0x00FF, m_input.read());
+      assertEquals(0x00FF, m_input.peek());
+      assertEquals(0x00FF, m_input.read());
    }
    
    @Test
@@ -130,13 +130,13 @@ public class AvailableBufferedInputStreamTest
       m_output.write(40);
       m_output.flush();
 
-      Assert.assertEquals(30, m_input.peek());
-      Assert.assertEquals(1,  m_input.read(buffer));
-      Assert.assertEquals(30, buffer[0]);
+      assertEquals(30, m_input.peek());
+      assertEquals(1,  m_input.read(buffer));
+      assertEquals(30, buffer[0]);
 
-      Assert.assertEquals(40, m_input.peek());
-      Assert.assertEquals(1,  m_input.read(buffer));
-      Assert.assertEquals(40, buffer[0]);
+      assertEquals(40, m_input.peek());
+      assertEquals(1,  m_input.read(buffer));
+      assertEquals(40, buffer[0]);
    }
 
    @Test
@@ -149,9 +149,9 @@ public class AvailableBufferedInputStreamTest
       m_output.write(30);
       m_output.flush();
 
-      Assert.assertEquals(30, m_input.peek());
-      Assert.assertEquals(1,  m_input.read(buffer));
-      Assert.assertEquals(30, buffer[0]);
+      assertEquals(30, m_input.peek());
+      assertEquals(1,  m_input.read(buffer));
+      assertEquals(30, buffer[0]);
    }
 
    @Test
@@ -166,15 +166,15 @@ public class AvailableBufferedInputStreamTest
       m_output.write(50);
       m_output.flush();
 
-      Assert.assertEquals(30, m_input.peek());
-      Assert.assertEquals(2, m_input.read(buffer));
-      Assert.assertEquals(30, buffer[0]);
-      Assert.assertEquals(40, buffer[1]);
+      assertEquals(30, m_input.peek());
+      assertEquals(2, m_input.read(buffer));
+      assertEquals(30, buffer[0]);
+      assertEquals(40, buffer[1]);
 
-      Assert.assertEquals(50, m_input.peek());
-      Assert.assertEquals(1, m_input.read(buffer));
-      Assert.assertEquals(50, buffer[0]);
-      Assert.assertEquals(40, buffer[1]);
+      assertEquals(50, m_input.peek());
+      assertEquals(1, m_input.read(buffer));
+      assertEquals(50, buffer[0]);
+      assertEquals(40, buffer[1]);
    }
    
    @Test
@@ -187,18 +187,18 @@ public class AvailableBufferedInputStreamTest
          for (i = 0; i < m_input.getBufferSize(); i++)
          {
             m_input.unread(i);
-            Assert.assertEquals(i & 0x00FF, m_input.peek());
+            assertEquals(i & 0x00FF, m_input.peek());
          }
       }
       catch (IOException e)
       {
-         Assert.fail();
+         fail();
       }
       
       try
       {
          m_input.unread(0);
-         Assert.fail();
+         fail();
       }
       catch (IOException e)
       {
@@ -207,16 +207,16 @@ public class AvailableBufferedInputStreamTest
 
       for (i = m_input.getBufferSize(); --i >= 0; )
       {
-         Assert.assertEquals(i & 0x00FF, m_input.peek());
-         Assert.assertEquals(i & 0x00FF, m_input.read());
+         assertEquals(i & 0x00FF, m_input.peek());
+         assertEquals(i & 0x00FF, m_input.read());
       }
    }
    
    @Test
    public void fillWithNoMoreData() throws IOException
    {
-      Assert.assertEquals(0, m_input.available());
-      Assert.assertEquals(0, m_input.available());
+      assertEquals(0, m_input.available());
+      assertEquals(0, m_input.available());
    }
    
    @Test
@@ -229,12 +229,12 @@ public class AvailableBufferedInputStreamTest
       
       m_output.flush();
       
-      Assert.assertEquals(m_input.getBufferSize(), m_input.available());
+      assertEquals(m_input.getBufferSize(), m_input.available());
 
       for (i = 0; i < m_input.getBufferSize() + 1; i++)
       {
-         Assert.assertEquals(i & 0x00FF, m_input.peek());
-         Assert.assertEquals(i & 0x00FF, m_input.read());
+         assertEquals(i & 0x00FF, m_input.peek());
+         assertEquals(i & 0x00FF, m_input.read());
       }
    }
    
@@ -248,10 +248,10 @@ public class AvailableBufferedInputStreamTest
       
       m_output.close();
 
-      Assert.assertEquals(10, m_input.peek());
-      Assert.assertEquals(10, m_input.read());
-      Assert.assertEquals(-1, m_input.peek());
-      Assert.assertEquals(-1, m_input.read());
+      assertEquals(10, m_input.peek());
+      assertEquals(10, m_input.read());
+      assertEquals(-1, m_input.peek());
+      assertEquals(-1, m_input.read());
    }
 
    @Test
@@ -268,8 +268,8 @@ public class AvailableBufferedInputStreamTest
 
       buffer = new byte[10];
 
-      Assert.assertEquals(1, m_input.read(buffer));
-      Assert.assertEquals(-1, m_input.read(buffer));
+      assertEquals(1, m_input.read(buffer));
+      assertEquals(-1, m_input.read(buffer));
    }
    
    @Test
@@ -277,14 +277,14 @@ public class AvailableBufferedInputStreamTest
    {
       int i;
       
-      Assert.assertEquals("", m_input.toString());
+      assertEquals("", m_input.toString());
 
       m_output.write(new byte[]{'h', 'e', 'l', 'l', 'o'});
       m_output.flush();
       
       m_input.available();
       
-      Assert.assertEquals("hello", m_input.toString());
+      assertEquals("hello", m_input.toString());
       
       for (i = 5; --i >= 0; )
          m_input.read();
@@ -300,7 +300,7 @@ public class AvailableBufferedInputStreamTest
       
       buffer = new byte[1];
       
-      Assert.assertEquals(1,  m_input.read(buffer));
-      Assert.assertEquals(10, buffer[0]);
+      assertEquals(1,  m_input.read(buffer));
+      assertEquals(10, buffer[0]);
    }
 }
