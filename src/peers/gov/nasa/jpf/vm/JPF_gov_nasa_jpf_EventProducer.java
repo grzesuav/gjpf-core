@@ -120,25 +120,30 @@ public class JPF_gov_nasa_jpf_EventProducer extends NativePeer {
       cg = ss.getCurrentChoiceGenerator(CG_NAME, EventChoiceGenerator.class);
       event = cg.getNextChoice();
       
-      if (!(event instanceof NoEvent)){
-        if (event instanceof CheckEvent) {
-          CheckEvent ce = (CheckEvent)event;
-          if (log.isInfoLogged()) {
-            log.info("checking: ", ce.getExpression());
-          }
-          if (!checkEvent(env, objRef)) {
-            env.throwAssertion("checking " + ce.getExpression() + " failed");
-          }
+      if (event != null) {
+        if (!(event instanceof NoEvent)) {
+          if (event instanceof CheckEvent) {
+            CheckEvent ce = (CheckEvent) event;
+            if (log.isInfoLogged()) {
+              log.info("checking: ", ce.getExpression());
+            }
+            if (!checkEvent(env, objRef)) {
+              env.throwAssertion("checking " + ce.getExpression() + " failed");
+            }
 
-        } else {
-          if (log.isInfoLogged()) {
-            log.info("processing event: ", event.toString());
+          } else {
+            if (log.isInfoLogged()) {
+              log.info("processing event: ", event.toString());
+            }
+            processEvent(env, objRef);
           }
-          processEvent(env, objRef);
         }
+
+        return true;
+        
+      } else {
+        return false;
       }
-      
-      return true;
     }
   }
   
