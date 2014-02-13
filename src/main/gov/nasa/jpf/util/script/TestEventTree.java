@@ -44,10 +44,21 @@ public class TestEventTree extends EventTree {
     if (expected != null){
       return checkPath( lastEvent, expected);
     } else {
+      System.err.println("warning: trying to check path of " + this + " without 'expected' specification");
       return true; // nothing to check
     }
   }
 
+  @Override
+  public boolean isCompletelyCovered (){
+    if (expected != null){
+      return isCompletelyCovered(expected);
+    } else {
+      System.err.println("warning: trying to check coverage of " + this + " without 'expected' specification");
+      return true;
+    }
+  }
+  
   public boolean isCompletelyCovered (String[] expected) {
     for (int i = 0; i < expected.length; i++) {
       if (expected[i] != null) {

@@ -34,6 +34,11 @@ public class Run {
     System.exit(1);
   }
 
+  protected static void warning (String msg){
+    System.err.print("warning: ");
+    System.err.println(msg);
+  }
+  
   // filter out leading '+' arguments (Config initialization)
   protected static String[] removeConfigArgs(String[]args){
     int i;

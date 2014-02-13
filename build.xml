@@ -21,7 +21,8 @@
     NOTE: this file is local - it is never in the repository!
   -->
   <property file="local.properties"/>
-
+  <property environment="env"/>
+  
   <!-- compiler settings -->
   <property name="debug"         value="on"/>
   <property name="deprecation"   value="on"/>
@@ -395,6 +396,10 @@
 
   <target name="test" depends="build"
           description="run core regression tests" if="have_tests">
+          
+    <!-- note this can be directly set in local.properties, which overrides this setting -->
+    <property name="junit.home" value="${env.JUNIT_HOME}"/>
+    
     <condition property="junit.usefile">
       <!-- don't set if this is running from within an IDE that collects output -->
       <not>
@@ -416,6 +421,10 @@
         <pathelement location="build/tests"/>
         <pathelement location="build/classes"/>
         <pathelement location="build/annotations"/>
+        
+        <fileset dir="${junit.home}">
+          <include name="**/*.jar"/>
+        </fileset>  
       </classpath>
 
       <batchtest todir="build/tests">

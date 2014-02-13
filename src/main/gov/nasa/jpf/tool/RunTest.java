@@ -23,7 +23,6 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFClassLoader;
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFSiteUtils;
-import gov.nasa.jpf.util.StringMatcher;
 import java.io.File;
 import java.lang.reflect.Field;
 
@@ -32,8 +31,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * tool to run JPF test with configured classpath
@@ -156,10 +153,15 @@ public class RunTest extends Run {
       error("class not found " + cnfx.getMessage() + ", check native_classpath in jpf.properties");
       return;
       
-    // we let pass this for now since it only means the quiet option is not going to work
+    // we let these pass for now since it only means the quiet option is not going to work
     } catch (NoSuchFieldException ex) {
+      warning("incompatible " + TESTJPF_CLS + " version, quiet mode will not work");
     } catch (IllegalAccessException ex) {
+      warning("incompatible " + TESTJPF_CLS + " version, quiet mode will not work");
     }
+    
+    // <2do> refactor - each test class should be (optionally) loaded through a new ClassLoader instance
+    // to make sure tests don't have static field carry-over
     
     List<Class<?>> testClasses = getTestClasses(cl, testJpfCls, testPathElements, testClsName);
     if (testClasses.isEmpty()){
@@ -234,18 +236,22 @@ public class RunTest extends Run {
     return (pattern.indexOf('*') >= 0);
   }
   
-  static List<Class<?>> getTestClasses (JPFClassLoader cl, Class<?> testJpfCls, String[] testPathElements, String testClsName ){
+  static List<Class<?>> getTestClasses (JPFClassLoader cl, Class<?> testJpfCls, String[] testPathElements, String testClsPattern ){
     List<Class<?>> testClasses = new ArrayList<Class<?>>();
     
-    if (!hasWildcard(testClsName)){ // that's simple, no need to look into dirs
-      Class<?> testCls = loadTestClass( cl, testJpfCls, testClsName);
+    if (testClsPattern.startsWith(".")){
+      testClsPattern = "gov.nasa.jpf" + testClsPattern;
+    }
+    
+    if (!hasWildcard(testClsPattern)){ // that's simple, no need to look into dirs
+      Class<?> testCls = loadTestClass( cl, testJpfCls, testClsPattern);
       if (testCls == null){ // error if this was an explicit classname
-        error ("specified class name not found or no TestJPF derived class: " + testClsName);  
+        error ("specified class name not found or no TestJPF derived class: " + testClsPattern);  
       }
       testClasses.add(testCls);
       
     } else { // we have to recursively look into the testPathElements for potential test classes
-      List<String> classFileList = getClassFileList( testPathElements, testClsName);
+      List<String> classFileList = getClassFileList( testPathElements, testClsPattern);
       
       for (String candidate : classFileList){        
         Class<?> testCls = loadTestClass( cl, testJpfCls, candidate);
