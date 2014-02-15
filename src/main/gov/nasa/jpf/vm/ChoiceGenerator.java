@@ -63,6 +63,8 @@ public interface ChoiceGenerator<T> extends Cloneable {
 
   ChoiceGenerator<?> getPreviousChoiceGenerator();
 
+  int getNumberOfParents();
+  
   /**
    * turn the order of choices random (if it isn't already). Only
    * drawback of this generic method (which might be a decorator

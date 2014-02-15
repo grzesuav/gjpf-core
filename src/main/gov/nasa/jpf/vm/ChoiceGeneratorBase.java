@@ -277,6 +277,14 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
     return a;
   }
 
+  public int getNumberOfParents(){
+    int n=0;
+    for (ChoiceGenerator cg = prev; cg != null; cg = cg.getPreviousChoiceGenerator()){
+      n++;
+    }
+    return n;
+  }
+  
   // we can't put the advanceForCurrentInsn() here because it has to do
   // notifications, which are the SystemState responsibility
   /**
@@ -290,8 +298,10 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
     }
   }
 
-  public void select(int nChoice) {
-    advance(nChoice);
+  @Override
+  public void select (int choiceIndex) {
+    reset();
+    advance(choiceIndex+1);
     setDone();
   }
 

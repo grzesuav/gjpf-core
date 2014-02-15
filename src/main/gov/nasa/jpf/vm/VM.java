@@ -1505,6 +1505,25 @@ public abstract class VM {
     pathOutput = true;
   }
 
+  private void printCG (ChoiceGenerator<?> cg, int n){
+    ChoiceGenerator cgPrev = cg.getPreviousChoiceGenerator();
+    if (cgPrev != null){
+      printCG( cgPrev, --n);
+    }
+    
+    System.out.printf("[%d] ", n);
+    System.out.println(cg);
+  } 
+  
+  // for debugging purposes
+  public void printChoiceGeneratorStack(){
+    ChoiceGenerator<?> cg = getChoiceGenerator();
+    if (cg != null){
+      int n = cg.getNumberOfParents();
+      printCG(cg, n);
+    }
+  }
+  
   public ThreadInfo[] getLiveThreads () {
     return getThreadList().getThreads();
   }

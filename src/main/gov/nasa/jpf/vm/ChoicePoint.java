@@ -31,16 +31,16 @@ import java.util.HashMap;
 /**
  * a little helper class that is used to replay previously stored traces
  * (which are little more than just a list of ChoiceGenerator classnames and
- * choice indexes stored in a previous run)
+ * choiceIndex indexes stored in a previous run)
  */
 public class ChoicePoint {
   String cgClassName;
-  int choice;
+  int choiceIndex;
   ChoicePoint next, prev;
 
   ChoicePoint (String cgClassName, int choice, ChoicePoint prev) {
     this.cgClassName = cgClassName;
-    this.choice = choice;
+    this.choiceIndex = choice;
 
     if (prev != null) {
       this.prev = prev;
@@ -52,8 +52,8 @@ public class ChoicePoint {
     return cgClassName;
   }
 
-  public int getChoice() {
-    return choice;
+  public int getChoiceIndex() {
+    return choiceIndex;
   }
 
   public ChoicePoint getNext() {
@@ -104,7 +104,7 @@ public class ChoicePoint {
           }
 
           pw.print(" ");
-          pw.print( trace[i].getProcessedNumberOfChoices());
+          pw.print( trace[i].getProcessedNumberOfChoices()-1);
           
           if (verbose){
             pw.print("  // ");
@@ -242,7 +242,7 @@ public class ChoicePoint {
         map.put(id, cpClass);
       }
 
-      int choiceIndex = matchNumber(scanner) -1;
+      int choiceIndex = matchNumber(scanner);
 
       cp = new ChoicePoint(cpClass, choiceIndex, cp);
       if (firstCp == null) {

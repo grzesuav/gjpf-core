@@ -123,7 +123,8 @@ public class ChoiceSelector extends ListenerAdapter {
         "wrong choice generator class, expecting: " + trace.getCgClassName()
         + ", read: " + currentCG.getClass().getName();
 
-      currentCG.select(trace.getChoice());
+      int choiceIndex = trace.getChoiceIndex();
+      currentCG.select(choiceIndex);
 
     } else {
       if (singleChoice) {

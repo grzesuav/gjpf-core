@@ -73,6 +73,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
   boolean checkShared;
   boolean checkConst;
 
+  int[] trackRefs; // reference values we want to track
   HashMap<Integer,Record> trackedObjects;
     
   //--- property data
@@ -124,6 +125,8 @@ public class ObjectTracker extends PropertyListenerAdapter {
     
     includes = StringSetMatcher.getNonEmpty(conf.getStringArray("ot.include"));
     excludes = StringSetMatcher.getNonEmpty(conf.getStringArray("ot.exclude"));
+
+    trackRefs = conf.getIntArray("ot.refs");
     
     logLife = conf.getBoolean("ot.log_life", true);
     logCall = conf.getBoolean("ot.log_call", true);
@@ -133,6 +136,7 @@ public class ObjectTracker extends PropertyListenerAdapter {
     checkConst = conf.getBoolean("ot.check_const",false);
     
     trackedObjects = new HashMap<Integer,Record>();
+    
   }
   
   boolean isTrackedClass (String clsName){
@@ -207,13 +211,26 @@ public class ObjectTracker extends PropertyListenerAdapter {
     }
   }
   
+  boolean isTrackedRef (int ref){
+    if (trackRefs != null) {
+      for (int i = 0; i < trackRefs.length; i++) {
+        if (trackRefs[i] == ref) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
   //--- VMListener interface
   @Override
   public void objectCreated (VM vm, ThreadInfo ti, ElementInfo ei) {
     ClassInfo ci = ei.getClassInfo();
+    int ref = ei.getObjectRef();
     
-    if (isTrackedClass(ci.getName())){
-      trackedObjects.put(ei.getObjectRef(), new Record(ei, ti));
+    if (isTrackedClass(ci.getName()) || isTrackedRef(ref)){
+      trackedObjects.put(ref, new Record(ei, ti));
     
       if (logLife){
         log(ti, "created %1$s", ei);

@@ -186,7 +186,7 @@ public class Event implements Cloneable {
   
   public Event addNext (Event e){
     boolean first = true;
-    for (Event ee : endEvents()){
+    for (Event ee : endEvents()){  // this includes alternatives
       if (!first){
         e = e.deepClone();
       } else {
@@ -194,16 +194,6 @@ public class Event implements Cloneable {
       }
       ee.setNext(e);
       e.setPrev(ee);
-
-      for (Event ea = e.alt; ea != null; ea = ea.alt){
-        ea.setPrev(ee);
-      }
-    }
-
-    for (Event ea = alt; ea != null; ea = ea.alt){
-      e = e.deepClone();
-      ea.setNext(e);
-      e.setPrev(ea);
     }
 
     return this;
@@ -246,35 +236,67 @@ public class Event implements Cloneable {
       pe = path[i];
       for (Event te = t; te != null; te = te.alt){
         if (pe.equals(te)){      // prefix is in tree
-          if (te.next == null){  // reached leaf
-            if (++i < pathLength){ // else there is nothing to add anymore
-              te.setNext( createClonedSequence( i, pathLength, path)); // append postfix, done
+          
+          if (te.next == null){  // reached tree leaf
+            if (++i < pathLength){ // but the path still has events
+              Event tail = createClonedSequence( i, pathLength, path);
+              te.setNext(tail);
+              tail.setAlt( new NoEvent()); // preserve the tree path
             }
             return;
-          } else {
+            
+          } else { // there is a next in the tree
             t = te.next;
-            continue outer;
+            
+            if (i == pathLength-1){ // but the path is done, add a NoEvent as a next alternative to mark the end
+              Event e = t.getLastAlt();
+              e.setAlt(new NoEvent());
+              return;
+              
+            } else {
+              continue outer;
+            }
           }
         }
       }
       
-      //--- path prefix was not in tree, append as alternative
-      Event te;
-      for (te = t; te.alt != null; te = te.alt);
-      te.setAlt( createClonedSequence(i, pathLength, path));
+      //--- path prefix was not in tree, append as (last) alternative
+      Event tail = createClonedSequence( i, pathLength, path);
+      Event e = t.getLastAlt();
+      e.setAlt( tail);
+      
       return;
     }
   }
 
-  protected void collectEndEvents (List<Event> list) {
+  public Event getLastAlt (){
+    Event e;
+    for (e=this; e.alt != null; e = e.alt);
+    return e;
+  }
+  
+  protected void collectEndEvents (List<Event> list, boolean includeNoEvents) {
     if (next != null) {
-      next.collectEndEvents(list);
-    } else {
-      list.add(this);
+      next.collectEndEvents(list, includeNoEvents);
+      
+    } else { // base case: no next
+      // strip trailing NoEvents 
+      if (prev == null){
+        list.add(this); // root NoEvents have to stay
+        
+      } else { // else we skip trailing NoEvents up to root
+        Event ee = this;
+        if (!includeNoEvents){
+          for (Event e=this; e.prev != null && (e instanceof NoEvent); e = e.prev){
+            ee = e.prev;
+          }
+        }
+        list.add(ee);
+      }
     }
 
     if (alt != null) {
-      alt.collectEndEvents(list);
+      alt.collectEndEvents(list, includeNoEvents);
     }
   }
 
@@ -286,12 +308,20 @@ public class Event implements Cloneable {
     }
   }
 
-  public List<Event> endEvents(){
+  public List<Event> visibleEndEvents(){
     List<Event> list = new ArrayList<Event>();
-    collectEndEvents(list);
+    collectEndEvents(list, false);
     return list;
   }
-
+ 
+  
+  public List<Event> endEvents(){
+    List<Event> list = new ArrayList<Event>();
+    collectEndEvents(list, true);
+    return list;
+  }
+  
+ 
   private void interleave (Event a, Event b, Event[] path, int pathLength, int i, Event result){
     if (a == null && b == null){ // base case
       result.addPath(pathLength, path);
@@ -317,15 +347,16 @@ public class Event implements Cloneable {
    * paths are short
    */
   public Event interleave (Event... otherEvents){
-    Event t = unlinkedClone(); // we need a root for the new tree
+    Event t = new NoEvent(); // we need a root for the new tree
+    
     Event[] pathBuffer = new Event[32];
     int mergedTrees = 0;
     
     for (Event o : otherEvents){
-      List<Event> endEvents = (mergedTrees++ > 0) ? t.endEvents() : endEvents();
+      List<Event> endEvents = (mergedTrees++ > 0) ? t.visibleEndEvents() : visibleEndEvents();
 
       for (Event ee1 : endEvents) {
-        for (Event ee2 : o.endEvents()) {
+        for (Event ee2 : o.visibleEndEvents()) {
           int n = ee1.getPathLength() + ee2.getPathLength();
           if (n > pathBuffer.length){
             pathBuffer = new Event[n];
@@ -336,7 +367,7 @@ public class Event implements Cloneable {
       }
     }
         
-    return t;
+    return t.alt;
   }
   
   
@@ -372,12 +403,21 @@ public class Event implements Cloneable {
     return base.alt;
   }
   
-  public void printPath (PrintStream ps){
+  private void printPath (PrintStream ps, boolean isLast){
     if (prev != null){
-      prev.printPath(ps);
-      ps.print(',');
+      prev.printPath(ps, false);
     }
-    ps.print(name);
+    
+    if (!isNoEvent()){
+      ps.print(name);
+      if (!isLast){
+        ps.print(',');
+      }
+    }
+  }
+  
+  public void printPath (PrintStream ps){
+    printPath(ps, true);
   }
 
   public String toString(){
@@ -455,7 +495,10 @@ public class Event implements Cloneable {
     for (int i = 0; i < level; i++) {
       ps.print(". ");
     }
-    ps.println(this);
+    
+    ps.print(this);
+    //ps.print(" [" + prev + ']');
+    ps.println();
 
     if (next != null) {
       next.printTree(ps, level + 1);
@@ -480,21 +523,27 @@ public class Event implements Cloneable {
     return (n == 0);
   }
   
-  protected void collectTrace (StringBuilder sb, String separator){
+  protected void collectTrace (StringBuilder sb, String separator, boolean isLast){
     if (prev != null){
-      prev.collectTrace(sb, separator);
+      prev.collectTrace(sb, separator, false);    
+    }
+
+    if (!isNoEvent()){
+      sb.append(toString());
       
-      if (separator != null){
-        sb.append(separator);
+      if (!isLast && separator != null){
+        sb.append(separator);        
       }
     }
-    
-    sb.append(toString());
   }
   
   public String getPathString (String separator){
     StringBuilder sb = new StringBuilder();
-    collectTrace( sb, separator);
+    collectTrace( sb, separator, true);
     return sb.toString();
+  }
+  
+  public boolean isNoEvent(){
+    return false;
   }
 }

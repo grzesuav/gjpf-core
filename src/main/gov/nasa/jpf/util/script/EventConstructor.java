@@ -80,32 +80,25 @@ public abstract class EventConstructor {
       max = (max << 1) | 1;
     }
     
+    Event[] pathBuffer = new Event[n];
+    
     // we use the no-event as the anchor
     Event eFirst = new NoEvent();
-    Event eLast = eFirst;
     
     // now fill in all the remaining combinations
     for (int i=1; i<=max; i++){
-      Event eAlt=null;
-      
-      // build and add the next sequence as alternative
-      int m = i;
-      for (int j=0; m != 0; j++){
+      // init the path buffer
+      int pathLength=0;
+      for (int j=0, m=i; m != 0; j++){
         if ((m & 1) != 0){
-          Event e = events[j].deepClone();
-          if (eAlt == null){
-            eAlt = e;
-            eLast.setAlt(e);
-            eLast = e;
-          } else {
-            eAlt.setNext(e);
-            eAlt = e;
-          }
+          pathBuffer[pathLength++] = events[j];
         }
-        m >>>= 1;
+        m>>>=1;
       }
+      
+      eFirst.addPath( pathLength, pathBuffer);
     }
-    
+      
     return eFirst;
   }
   

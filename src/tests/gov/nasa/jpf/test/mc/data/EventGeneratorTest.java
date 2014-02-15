@@ -91,4 +91,31 @@ public class EventGeneratorTest extends TestJPF {
     }
   }
     
+  //-------------------------------------------------------------------------------------
+  public static class CombinationTree extends TestEventTree {
+    public CombinationTree (){
+      printTree();
+      printPaths();
+    }
+    
+     @Override
+    public Event createEventTree() {
+       Event[] options = { event("A"), event("B"), event("C") };
+
+       return anyCombination(options);
+     }
+  }
+  
+  //@Test
+  public void testAnyCombination (){
+    if (verifyNoPropertyViolation("+event.class=.test.mc.data.EventGeneratorTest$CombinationTree", "+log.info=event")){
+      EventProducer producer = new EventProducer();
+      StringBuilder sb = new StringBuilder();
+      
+      while (producer.processNextEvent()){
+        sb.append(producer.getEventName());
+      }
+    }
+  }
+  
 }

@@ -27,4 +27,9 @@ public class NoEvent extends Event {
   public NoEvent (){
     super("NONE");
   } 
+  
+  @Override
+  public boolean isNoEvent(){
+    return true;
+  }
 }

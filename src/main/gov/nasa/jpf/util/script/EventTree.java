@@ -73,16 +73,16 @@ public class EventTree extends EventConstructor {
 
   static final List<Event> NO_EVENTS = new ArrayList<Event>(0);
   
-  public List<Event> endEvents(){
+  public List<Event> visibleEndEvents(){
     if (root != null){
-      return root.endEvents();
+      return root.visibleEndEvents();
     } else {
       return NO_EVENTS;
     }
   }
   
   public void printPaths(){
-    for (Event es : endEvents()){
+    for (Event es : visibleEndEvents()){
       es.printPath(System.out);
       System.out.println('.');
     }
@@ -101,7 +101,7 @@ public class EventTree extends EventConstructor {
    * To check for a whole trace, implementors should keep some sort of expected event specs
    */
   public boolean checkPath (Event lastEvent){
-    for (Event ee : root.endEvents()){
+    for (Event ee : root.visibleEndEvents()){
       if (ee.equals(lastEvent)){
         return true;
       }

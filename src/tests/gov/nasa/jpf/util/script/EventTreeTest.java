@@ -33,23 +33,25 @@ public class EventTreeTest extends TestJPF {
     m.printTree();
     
     int nMatches = 0;
-    for (Event ee : m.endEvents()){
+    for (Event ee : m.visibleEndEvents()){
       String trace = ee.getPathString(null);
-      System.out.println("checking path: " + trace);
+      System.out.print("checking path: \"" + trace + '"');
       
       if (!m.checkPath(ee, expected)){
-        System.out.print("unexpected path");
+        System.out.println("   UNEXPECTED");
         return false;
+      } else {
+        System.out.println("   OK");
       }
       
       nMatches++;
     }
     
     if (nMatches != expected.length){
-      System.out.println("uncovered path: ");
+      System.out.println("UNCOVERED PATH: ");
       for (int i=0; i<expected.length; i++){
         if (expected[i] != null){
-          System.out.println(expected[i]);
+          System.err.println(expected[i]);
         }
       }
       return false;
@@ -111,7 +113,7 @@ public class EventTreeTest extends TestJPF {
     //t.printPaths();
 
     String[] expected = {
-        "NONE",
+        "",
         "a",
         "b",
         "ab",
@@ -134,6 +136,49 @@ public class EventTreeTest extends TestJPF {
     }
   }  
 
+  static class SimpleCombinationTree extends EventTree {
+    @Override
+    public Event createEventTree() {
+      return anyCombination(
+               event("a"),
+               event("b")
+             );
+    }
+  }
+
+  //@Test
+  public void testSimpleCombinationTree(){
+    SimpleCombinationTree t = new SimpleCombinationTree();
+    System.out.println("--- tree:");
+    t.printTree();
+    System.out.println("--- paths:");
+    t.printPaths();
+  }
+
+  //--------------------------------------------------------------------
+ 
+  static class EmbeddedCombinationTree extends EventTree {
+    @Override
+    public Event createEventTree() {
+      return sequence(
+                event("1"),
+                anyCombination(
+                   event("a"),
+                   event("b")),
+                event("2"));
+    }
+  }
+
+  //@Test
+  public void testEmbeddedCombinationTree(){
+    EventTree t = new EmbeddedCombinationTree();
+    System.out.println("--- tree:");
+    t.printTree();
+    System.out.println("--- paths:");
+    t.printPaths();
+  }
+    
+  
   //--------------------------------------------------------------------
   static class DT extends EventTree {    
     @Override
@@ -295,6 +340,41 @@ public class EventTreeTest extends TestJPF {
       fail("failed to match traces");
     }
   }
+  
+  //-------------------------------------------------------------------
+  static class SMT1 extends EventTree {
+    @Override
+    public Event createEventTree(){
+      return sequence(
+               event("a"),
+               event("b")
+              );
+    }
+  }
+  
+  static class SMT2 extends EventTree {
+    @Override
+    public Event createEventTree(){
+      return sequence(
+               event("1"),
+               event("2")
+              );
+    }
+  }
+
+  //@Test
+  public void testSimpleMerge (){
+    SMT1 t1 = new SMT1();
+    SMT2 t2 = new SMT2();
+    //MT3 t3 = new MT3();
+    
+    EventTree t = t1.interleave( t2);
+    System.out.println("--- merged tree:");
+    t.printTree();
+    System.out.println("--- merged paths:");
+    t.printPaths();
+  }
+    
 
   //-------------------------------------------------------------------
   static class RT1 extends EventTree {
