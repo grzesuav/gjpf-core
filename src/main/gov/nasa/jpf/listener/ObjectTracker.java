@@ -21,279 +21,209 @@ package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
-import gov.nasa.jpf.PropertyListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
+import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.VirtualInvocation;
-import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.report.ConsolePublisher;
+import gov.nasa.jpf.report.Publisher;
+import gov.nasa.jpf.util.IntSet;
+import gov.nasa.jpf.util.SortedArrayIntSet;
+import gov.nasa.jpf.util.StateExtensionClient;
+import gov.nasa.jpf.util.StateExtensionListener;
 import gov.nasa.jpf.util.StringSetMatcher;
-import gov.nasa.jpf.vm.AnnotationInfo;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.FieldInfo;
-import gov.nasa.jpf.vm.InfoObject;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
-import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
-
 import java.io.PrintWriter;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 
 /**
- * listener that keeps track of all allocations, method calls, field updates
- * and deallocations of instances of a set of types
- * 
- * we don't need a StateExtensionClient/Listener here because we only
- * keep live, typed object data. If we ever backtrack to a point
- * where a registered object didn't exist yet, this id can't be used
- * again (for a relevant object) w/o previous registration. Note this
- * might cause some discarded objects to stay around, but requires probably
- * less memory than storing a collection for every state id.  
+ * listener that keeps track of all operations on objects that are specified by
+ * reference value or types
  */
-public class ObjectTracker extends PropertyListenerAdapter {
-
-  static class Record {
+public class ObjectTracker extends ListenerAdapter implements StateExtensionClient {
+  
+  static class Attr {
+    // nothing here, just a tag
+  }
+  
+  static final Attr ATTR = new Attr(); // we need only one
+  
+  enum OpType { NEW, CALL, FIELD, RECYCLE };
+  
+  static class LogRecord {
     ElementInfo ei;
-    ThreadInfo tiCreate;
-    
-    Record (ElementInfo ei, ThreadInfo ti){
-      this.ei = ei;
-      this.tiCreate = ti;
-    }
-  }
-  
-  PrintWriter out;
-  StringSetMatcher includes, excludes;
-  
-  //--- our various report & check options
-  boolean logLife;
-  boolean logCall;
-  boolean logPut;
-  boolean logShared;
-  boolean checkShared;
-  boolean checkConst;
-
-  int[] trackRefs; // reference values we want to track
-  HashMap<Integer,Record> trackedObjects;
-    
-  //--- property data
-  class Violation {
-    Record rec;
-    String msg;
-    ThreadInfo tiUse;
-    InfoObject use;
+    ThreadInfo ti;
     Instruction insn;
+    OpType opType;
     
-    Violation (Record rec, ThreadInfo tiUse, InfoObject use, Instruction insn) {
-      this.rec = rec;
-      this.tiUse = tiUse;
-      this.use = use;
+    LogRecord prev;
+    
+    LogRecord (OpType opType, ElementInfo ei, ThreadInfo ti, Instruction insn, LogRecord prev){
+      this.opType = opType;
+      this.ei = ei;
+      this.ti = ti;
       this.insn = insn;
+      this.prev = prev;
     }
     
-    public void setSharedErrorMessage () {
-      StringBuilder sb = new StringBuilder("@NonShared object violation: ");
-      sb.append(rec.ei);
-      sb.append("\n\tcreated in thread: ");
-      sb.append(rec.tiCreate.getName());
-      sb.append("\n\tused in thread:    ");
-      sb.append(tiUse.getName());
-      sb.append("\n\tmethod:            ");
-      sb.append(insn.getSourceLocation());
-      
-      msg = sb.toString();
-    }
-
-    public void setConstErrorMessage () {
-      MethodInfo mi = insn.getMethodInfo();
-      StringBuilder sb = new StringBuilder("@Const method violation: ");
-      sb.append(mi.getFullName());
-      sb.append("\n\tfield:    ");
-      sb.append(((FieldInfo)use).getFullName());
-      sb.append("\n\tmethod:   ");
-      sb.append(insn.getSourceLocation());
-      
-      msg = sb.toString();
-    }
-  }
-  
-  Violation violation;
-  
-  //--- internal stuff
-  public ObjectTracker (Config conf, JPF jpf) {
-    out = new PrintWriter(System.out, true);
-    
-    includes = StringSetMatcher.getNonEmpty(conf.getStringArray("ot.include"));
-    excludes = StringSetMatcher.getNonEmpty(conf.getStringArray("ot.exclude"));
-
-    trackRefs = conf.getIntArray("ot.refs");
-    
-    logLife = conf.getBoolean("ot.log_life", true);
-    logCall = conf.getBoolean("ot.log_call", true);
-    logPut = conf.getBoolean("ot.log_put", true);
-    logShared = conf.getBoolean("ot.log_shared", true);
-    checkShared = conf.getBoolean("ot.check_shared",false);
-    checkConst = conf.getBoolean("ot.check_const",false);
-    
-    trackedObjects = new HashMap<Integer,Record>();
-    
-  }
-  
-  boolean isTrackedClass (String clsName){
-    return StringSetMatcher.isMatch(clsName, includes, excludes);
-  }
-
-  boolean isTrackedObject (int ref){
-    return (trackedObjects.containsKey(ref));
-  }
-
-  Record getRecord (int ref){
-    return trackedObjects.get(ref);
-  }
-  
-  void log (ThreadInfo ti, String fmt, Object... args){
-    out.print(ti.getId());
-    out.print(": ");
-    out.printf(fmt, args);
-    out.println();
-  }
-
-  boolean checkShared (Record rec, ThreadInfo ti, InfoObject use, Instruction insn){
-    if (checkShared){
-      AnnotationInfo ai = rec.ei.getClassInfo().getAnnotation("gov.nasa.jpf.NonShared");
-      if (ai != null && ti != rec.tiCreate){
-        violation = new Violation(rec, ti, use, insn);
-        violation.setSharedErrorMessage();
-        
-        ti.breakTransition("checkShared");
-        return false;
+    void printOn (PrintWriter pw){
+      if (prev == null || ti != prev.ti){
+        pw.printf("-------------------------------------- %s  id=%d\n", ti.getName(), ti.getId());
       }
-    }
-    
-    return true;
-  }
-
-  boolean checkConst (Record rec, ThreadInfo ti, FieldInfo fi, Instruction insn){
-    if (checkConst){
-      AnnotationInfo ai = insn.getMethodInfo().getAnnotation("gov.nasa.jpf.Const");
-      if (ai != null){
-        violation = new Violation(rec, ti, fi, insn);
-        violation.setConstErrorMessage();
+      
+      pw.printf( "%-8s %s ", opType.toString(), ei.toString());
+      
+      if (insn != null){
+        pw.print(insn);
         
-        ti.breakTransition("checkConst");
-        return false;        
-      }
-    }
-    
-    return true;
-  }
-  
-  //--- Property interface
-  @Override
-  public boolean check (Search search, VM vm) {
-    if (violation != null){
-      return false;
-    }
-    
-    return true;
-  }
-
-  @Override
-  public void reset () {
-    violation = null;
-  }
-
-  public String getErrorMessage() {
-    if (violation != null){
-      return violation.msg;
-    } else {
-      return null;
-    }
-  }
-  
-  boolean isTrackedRef (int ref){
-    if (trackRefs != null) {
-      for (int i = 0; i < trackRefs.length; i++) {
-        if (trackRefs[i] == ref) {
-          return true;
+        if (insn instanceof FieldInstruction){
+          FieldInstruction finsn = (FieldInstruction)insn;
+          String fname = finsn.getFieldName();
+          pw.print(' ');
+          pw.print(fname);
         }
       }
+      
+      pw.println();
     }
-    
-    return false;
   }
   
-  //--- VMListener interface
+  protected LogRecord log; // needs to be state restored
+  
+  //--- log options  
+  protected StringSetMatcher includeClasses, excludeClasses; // type name patterns
+  protected IntSet trackedRefs;
+  
+  protected boolean logFieldAccess;
+  protected boolean logCalls;
+
+    
+  
+  //--- internal stuff
+  
+  public ObjectTracker (Config conf, JPF jpf) {
+    includeClasses = StringSetMatcher.getNonEmpty(conf.getStringArray("ot.include"));
+    excludeClasses = StringSetMatcher.getNonEmpty(conf.getStringArray("ot.exclude", new String[] { "*" }));
+
+    trackedRefs = new SortedArrayIntSet();
+    
+    int[] refs = conf.getIntArray("ot.refs");
+    if (refs != null){
+      for (int i=0; i<refs.length; i++){
+        trackedRefs.add(refs[i]);
+      }
+    }
+    
+    logCalls = conf.getBoolean("ot.log_calls", true);
+    logFieldAccess = conf.getBoolean("ot.log_fields", true);
+    
+    jpf.addPublisherExtension(ConsolePublisher.class, this);
+  }
+    
+  protected void log (OpType opType, ElementInfo ei, ThreadInfo ti, Instruction insn){
+    log = new LogRecord( opType, ei, ti, insn,  log);
+  }
+  
+  
+  //--- Listener interface
+  
+  @Override
+  public void classLoaded (VM vm, ClassInfo ci){
+    if (StringSetMatcher.isMatch(ci.getName(), includeClasses, excludeClasses)){
+      ci.addAttr(ATTR);
+    }
+  }
+  
   @Override
   public void objectCreated (VM vm, ThreadInfo ti, ElementInfo ei) {
     ClassInfo ci = ei.getClassInfo();
     int ref = ei.getObjectRef();
     
-    if (isTrackedClass(ci.getName()) || isTrackedRef(ref)){
-      trackedObjects.put(ref, new Record(ei, ti));
-    
-      if (logLife){
-        log(ti, "created %1$s", ei);
-      }
+    if (ci.hasAttr(Attr.class) || trackedRefs.contains(ref)){
+      // it's new, we don't need to call getModifiable
+      ei.addObjectAttr(ATTR);
+      log( OpType.NEW, ei, ti, ti.getPC());
     }
   }
   
   @Override
   public void objectReleased (VM vm, ThreadInfo ti, ElementInfo ei) {
-    int ref = ei.getObjectRef();
-    
-    if (isTrackedObject(ref)){
-      trackedObjects.remove(ref);
-      
-      if (logLife){
-        log(ti, "released %1$s", ei);
-      }
+    if (ei.hasObjectAttr(Attr.class)){
+      log( OpType.RECYCLE, ei, ti, ti.getPC());      
     }
   }
 
   @Override
   public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
-
-    if (executedInsn instanceof VirtualInvocation){
-      
+    
+    if (logCalls && executedInsn instanceof VirtualInvocation){      
       if (nextInsn != executedInsn){ // otherwise we didn't enter
         VirtualInvocation call = (VirtualInvocation)executedInsn;
         int ref = call.getCalleeThis(ti);
-        Record rec = getRecord(ref);
+        ElementInfo ei = ti.getElementInfo(ref);
         
-        if (rec != null){
-          MethodInfo mi = call.getInvokedMethod(ti, ref);
-          
-          if (logCall){
-            log(ti, "invoke %1$s.%2$s", rec.ei, mi.getUniqueName());
-          }
-          
-          if (!checkShared(rec, ti, mi, executedInsn)){
-            return;
-          }
+        if (ei.hasObjectAttr(Attr.class)) {
+          log( OpType.CALL, ei, ti, executedInsn);
         }
       }
       
-    } else if (executedInsn instanceof PUTFIELD){
-      PUTFIELD storeInsn = (PUTFIELD) executedInsn;
-      int ref = storeInsn.getLastThis();
-      Record rec = getRecord(ref);
-      
-      if (rec != null){
-        FieldInfo fi = storeInsn.getFieldInfo();
+    } else if (logFieldAccess && executedInsn instanceof InstanceFieldInstruction){
+      if (nextInsn != executedInsn){ // otherwise we didn't enter
+        InstanceFieldInstruction finsn = (InstanceFieldInstruction) executedInsn;
+        ElementInfo ei = finsn.getLastElementInfo();
         
-        if (logPut){
-          log(ti, "put %1$s.%2$s = <%3$d>", rec.ei, fi.getName(), storeInsn.getLastValue());
-        }
-        
-        if (!checkShared(rec, ti, fi, executedInsn)){
-          return;
-        }
-        
-        if (!checkConst(rec,ti,fi,executedInsn)){
-          return;
+        if (ei.hasObjectAttr(Attr.class)) {
+          log( OpType.FIELD, ei, ti, executedInsn);
         }
       }
+    }
+  }
+
+  //--- state store/restore
+  
+  public Object getStateExtension () {
+    return log;
+  }
+
+  public void restore (Object stateExtension) {
+    log = (LogRecord)stateExtension;
+  }
+
+  public void registerListener (JPF jpf) {
+    StateExtensionListener<Number> sel = new StateExtensionListener(this);
+    jpf.addSearchListener(sel);
+  }
+
+  
+  //--- reporting
+  
+  @Override
+  public void publishPropertyViolation (Publisher publisher) {    
+    if (log != null){ // otherwise we don't have anything to report
+      PrintWriter pw = publisher.getOut();
+      publisher.publishTopicStart("ObjectTracker " + publisher.getLastErrorId());
+      printLogOn(pw);
+    }
+  }
+
+  protected void printLogOn (PrintWriter pw){
+    // the log can be quite long so we can't use recursion (Java does not optimize tail recursion)
+    List<LogRecord> logRecs = new ArrayList<LogRecord>();
+    for (LogRecord lr = log; lr != null; lr = lr.prev){
+      logRecs.add(lr);
+    }
+    
+    Collections.reverse(logRecs);
+    
+    for (LogRecord lr : logRecs){
+      lr.printOn(pw);
     }
   }
 }

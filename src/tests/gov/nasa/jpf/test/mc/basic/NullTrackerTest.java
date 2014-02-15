@@ -24,12 +24,27 @@ import java.util.HashMap;
 import org.junit.Test;
 
 /**
- * regression test for NullTracker
+ * regression test for NullTracker.
+ * 
+ * Well, not really a regression test since NullTracker only prints out reports, but at least
+ * we can see if it has errors while running
  */
 public class NullTrackerTest extends TestJPF {
   
   static class TestObject {
-    int d;
+    String d;
+  
+    TestObject(){
+      // nothing, we forget to init d;
+    }
+    
+    TestObject (String d){
+      this.d = d;
+    }
+    
+    int getDLength(){
+      return d.length();
+    }
     
     void foo(){
       // nothing
@@ -45,18 +60,19 @@ public class NullTrackerTest extends TestJPF {
   void accessReturnedObject (){
     TestObject o = getTestObject();
     System.out.println("now accessing testObject");
-    int d = o.d; // that will NPE
+    String d = o.d; // that will NPE
   }
   
   void accessObject (TestObject o){
     System.out.println("now accessing testObject");
-    int d = o.d; // that will NPE    
+    String d = o.d; // that will NPE    
   }
   
   void createAndAccessObject(){
     TestObject o = getTestObject();
     accessObject(o);
   }
+  
   
   @Test
   public void testGetAfterIntraMethodReturn (){
@@ -77,7 +93,7 @@ public class NullTrackerTest extends TestJPF {
     if (verifyUnhandledException("java.lang.NullPointerException", "+listener=.listener.NullTracker")){
       o = null; // the null source
       
-      int d = o.d; // causes the NPE
+      String d = o.d; // causes the NPE
     }    
   }
   
@@ -112,5 +128,27 @@ public class NullTrackerTest extends TestJPF {
       TestObject o = lookupTestObject("FooBar");
       o.foo();
     }
+  }
+  
+  //------------------------------------------------------------------
+    
+  TestObject createTestObject (){
+    return new TestObject();
+  }
+  
+  
+  TestObject createTestObject (String d){
+    return new TestObject(d);
+  }
+  
+  @Test
+  public void testMissingCtorInit (){
+    if (verifyUnhandledException("java.lang.NullPointerException", "+listener=.listener.NullTracker")){
+      TestObject o = createTestObject("blah");
+      int len = o.getDLength(); // that should be fine
+      
+      o = createTestObject();
+      len = o.getDLength(); // that should NPE and report the default ctor as culprit
+    }    
   }
 }
