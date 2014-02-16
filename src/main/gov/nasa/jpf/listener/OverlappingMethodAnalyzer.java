@@ -35,6 +35,8 @@ import java.util.Map;
 /**
  * this is a specialized MethodAnalyzer that looks for overlapping method
  * calls on the same object from different threads.
+ * 
+ * <2do> transition reporting does not work yet
  */
 public class OverlappingMethodAnalyzer extends MethodAnalyzer {
 
@@ -114,25 +116,10 @@ public class OverlappingMethodAnalyzer extends MethodAnalyzer {
 
     HashMap<ThreadInfo,Deque<MethodOp>> openExecs = new HashMap<ThreadInfo,Deque<MethodOp>>();
 
-    int lastStateId  = Integer.MIN_VALUE;
-    int transition = skipInit ? 1 : 0;
+    int lastStateId  = -1;
     int lastTid = start.ti.getId();
 
     for (MethodOp op = start; op != null; op = op.p) {
-
-      if (showTransition) {
-        if (op.stateId != lastStateId) {
-          lastStateId = op.stateId;
-          pw.print("------------------------------------------ #");
-          pw.println(transition++);
-        }
-      } else {
-        int tid = op.ti.getId();
-        if (tid != lastTid) {
-          lastTid = tid;
-          pw.println("------------------------------------------");
-        }
-      }
 
       cleanUpOpenExec(openExecs, op);
 
@@ -141,6 +128,7 @@ public class OverlappingMethodAnalyzer extends MethodAnalyzer {
         if (retOp != null) { // completed, skip
           if (!isOpenExec(openExecs, op)) {
             op = retOp;
+            lastStateId = op.stateId;
             continue;
           }
         } else { // this is an open method exec, record it
@@ -149,7 +137,24 @@ public class OverlappingMethodAnalyzer extends MethodAnalyzer {
       }
 
       op = consolidateOp(op);
-
+      
+      if (showTransition) {
+        if (op.stateId != lastStateId) {
+          if (lastStateId >= 0){
+            pw.print("------------------------------------------ #");
+            pw.println(lastStateId);
+          }
+        }
+        lastStateId = op.stateId;
+        
+      } else {
+        int tid = op.ti.getId();
+        if (tid != lastTid) {
+          lastTid = tid;
+          pw.println("------------------------------------------");
+        }
+      }
+      
       op.printOn(pw, this);
       pw.println();
     }

@@ -24,6 +24,8 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
 import gov.nasa.jpf.jvm.bytecode.VirtualInvocation;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
@@ -37,6 +39,7 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.Types;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,13 +58,14 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
   
   static final Attr ATTR = new Attr(); // we need only one
   
-  enum OpType { NEW, CALL, FIELD, RECYCLE };
+  enum OpType { NEW, CALL, PUT, GET, FREE };
   
   static class LogRecord {
     ElementInfo ei;
     ThreadInfo ti;
     Instruction insn;
     OpType opType;
+    int stateId;
     
     LogRecord prev;
     
@@ -71,23 +75,34 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
       this.ti = ti;
       this.insn = insn;
       this.prev = prev;
+      this.stateId = ti.getVM().getStateId();
     }
     
     void printOn (PrintWriter pw){
-      if (prev == null || ti != prev.ti){
-        pw.printf("-------------------------------------- %s  id=%d\n", ti.getName(), ti.getId());
+      if (prev != null && stateId != prev.stateId){
+        pw.printf("----------------------------------- [%d]\n", prev.stateId + 1);
       }
       
-      pw.printf( "%-8s %s ", opType.toString(), ei.toString());
+      pw.print(ti.getId());
+      pw.print(": ");
       
-      if (insn != null){
-        pw.print(insn);
-        
+      pw.printf("%-4s ", opType.toString().toLowerCase());
+      pw.print(ei);
+      pw.print('.');
+      
+      if (insn != null){        
         if (insn instanceof FieldInstruction){
           FieldInstruction finsn = (FieldInstruction)insn;
+          
           String fname = finsn.getFieldName();
-          pw.print(' ');
           pw.print(fname);
+          
+        } else if (insn instanceof InvokeInstruction){
+          InvokeInstruction call = (InvokeInstruction)insn;
+          
+          String mthName = call.getInvokedMethodName();
+          
+          pw.print( Types.getDequalifiedMethodSignature(mthName));
         }
       }
       
@@ -124,6 +139,7 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
     logCalls = conf.getBoolean("ot.log_calls", true);
     logFieldAccess = conf.getBoolean("ot.log_fields", true);
     
+    registerListener(jpf);
     jpf.addPublisherExtension(ConsolePublisher.class, this);
   }
     
@@ -156,7 +172,7 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
   @Override
   public void objectReleased (VM vm, ThreadInfo ti, ElementInfo ei) {
     if (ei.hasObjectAttr(Attr.class)){
-      log( OpType.RECYCLE, ei, ti, ti.getPC());      
+      log( OpType.FREE, ei, ti, ti.getPC());      
     }
   }
 
@@ -180,7 +196,8 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
         ElementInfo ei = finsn.getLastElementInfo();
         
         if (ei.hasObjectAttr(Attr.class)) {
-          log( OpType.FIELD, ei, ti, executedInsn);
+          OpType op = (executedInsn instanceof PUTFIELD) ? OpType.PUT : OpType.GET;
+          log( op, ei, ti, executedInsn);
         }
       }
     }

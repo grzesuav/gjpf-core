@@ -35,6 +35,7 @@ import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.Types;
 
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -70,7 +71,7 @@ public class MethodAnalyzer extends ListenerAdapter {
     int stackDepth;
     
     // this is used to keep our own trace
-    int stateId = Integer.MIN_VALUE;
+    int stateId = 0;
     MethodOp prevTransition;
     MethodOp p;   // prev during execution
     
@@ -124,7 +125,8 @@ public class MethodAnalyzer extends ListenerAdapter {
       }
 
       pw.print('.');
-      pw.print(mi.getUniqueName());
+      
+      pw.print(Types.getDequalifiedMethodSignature(mi.getUniqueName()));
     }
     
     public String toString() {
@@ -173,7 +175,7 @@ public class MethodAnalyzer extends ListenerAdapter {
     format = config.getString("method.format", "raw");
     skipInit = config.getBoolean("method.skip_init", true);
     showDepth = config.getBoolean("method.show_depth", false);
-    showTransition = config.getBoolean("method.show_transition", true);
+    showTransition = config.getBoolean("method.show_transition", false);
     
     includes = StringSetMatcher.getNonEmpty(config.getStringArray("method.include"));
     excludes = StringSetMatcher.getNonEmpty(config.getStringArray("method.exclude"));

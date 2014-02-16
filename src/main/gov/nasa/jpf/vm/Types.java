@@ -106,6 +106,27 @@ public class Types {
     }    
   }
   
+  public static String getDequalifiedMethodSignature (String mName){
+    int idx = mName.indexOf('(');
+    String sig = mName.substring(idx);
+    
+    return mName.substring(0, idx) + getDequalifiedArgumentSignature(sig);
+  }
+  
+  public static String getDequalifiedArgumentSignature (String sig){
+    String[] argTypes = getArgumentTypeNames(sig);
+    StringBuilder sb = new StringBuilder();
+    sb.append('(');
+    for (int i=0; i<argTypes.length; i++){
+      if (i>0){
+        sb.append(',');
+      }
+      sb.append(dequalify(argTypes[i]));
+    }
+    sb.append(')');
+    return sb.toString();
+  }
+  
   public static String getDequalifiedTypeName (String sig){
     String tn = getTypeName(sig);
     return dequalify(tn);

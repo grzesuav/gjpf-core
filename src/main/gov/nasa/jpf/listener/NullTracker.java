@@ -45,9 +45,11 @@ import gov.nasa.jpf.vm.VM;
 import java.io.PrintWriter;
 
 /**
- * trace where nulls come from - which is either a GETFIELD/STATIC or an
- * InvokeInstruction. Record which one in an attribute and use that for
- * providing more info when reporting NPEs
+ * trace where nulls come from - which is either a GETFIELD/STATIC, an
+ * InvokeInstruction, an ASTORE or a missing init.
+ * 
+ * Record/accumulate the causes in an attribute and use the attribute 
+ * to explain NPEs
  */
 public class NullTracker extends ListenerAdapter {
 
