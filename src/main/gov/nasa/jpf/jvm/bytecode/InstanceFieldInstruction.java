@@ -23,6 +23,7 @@ import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.POR;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -61,11 +62,11 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
     // reference escapes from a ctor that has a context switch before
     // the field init. 'final' only means "can only be assigned once",
     // it doesn't mean no read can happen before this assignment
-    if (skipFinals && fi.isFinal()) {
+    if (POR.skipFinals() && fi.isFinal()) {
       return true;
     }
 
-    if (skipConstructedFinals && fi.isFinal() && ei.isConstructed()) {
+    if (POR.skipConstructedFinals() && fi.isFinal() && ei.isConstructed()) {
       return true;
     }
     

@@ -238,7 +238,7 @@ public abstract class VM {
     ElementInfo.init(config);
     MethodInfo.init(config);
     NativePeer.init(config);
-    FieldInstruction.init(config);
+    POR.init(config);
     ChoiceGeneratorBase.init(config);
     
     // peer classes get initialized upon NativePeer creation

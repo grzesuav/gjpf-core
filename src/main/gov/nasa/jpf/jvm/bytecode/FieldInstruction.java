@@ -26,6 +26,7 @@ import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.FieldLockInfo;
 import gov.nasa.jpf.vm.FieldLockInfoFactory;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.POR;
 import gov.nasa.jpf.vm.SchedulerFactory;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadChoiceGenerator;
@@ -43,13 +44,6 @@ import gov.nasa.jpf.vm.Types;
  */
 public abstract class FieldInstruction extends JVMInstruction implements VariableAccessor
 {
-  //--- vm.por.sync_detection related settings
-  static FieldLockInfoFactory fliFactory;
-  static boolean skipFinals; // do we ignore final fields for POR
-  static boolean skipStaticFinals;  // do we ignore static final fields for POR
-  static boolean skipConstructedFinals;  // do we ignore final fields for POR after the object's constructor has finished?
-
-  
   protected String fname;
   protected String className;
   protected String varId;
@@ -60,19 +54,6 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
   protected boolean isReferenceField;
 
   protected long lastValue;
-  
-  
-   public static void init (Config config) {
-    if (config.getBoolean("vm.por")) {
-       skipFinals = config.getBoolean("vm.por.skip_finals", true);
-       skipStaticFinals = config.getBoolean("vm.por.skip_static_finals", false);
-       skipConstructedFinals = config.getBoolean("vm.por.skip_constructed_finals", false);
-
-      if (config.getBoolean("vm.por.sync_detection")) {
-        fliFactory = config.getEssentialInstance("vm.por.fli_factory.class", FieldLockInfoFactory.class);
-      }
-     }
-   }
   
   protected FieldInstruction() {}
 
@@ -235,7 +216,7 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
     FieldLockInfo flInfoNext;
         
     if (flInfo == null) {
-      flInfoNext = fliFactory.createFieldLockInfo(ti, ei, fi);
+      flInfoNext = POR.createFieldLockInfo(ti, ei, fi);
       ei.setFieldLockInfo(fi, flInfoNext);
       
     }  else {

@@ -24,6 +24,7 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.POR;
 import gov.nasa.jpf.vm.StaticElementInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -103,7 +104,7 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     if (fi.isFinal()){
       // NOTE - we only encounter this for references, other static finals
       // will be inlined by the compiler    
-      if (skipFinals || skipStaticFinals) {
+      if (POR.skipFinals() || POR.skipStaticFinals()) {
         return true;
       }
     }
