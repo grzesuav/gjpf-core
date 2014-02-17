@@ -20,9 +20,8 @@ package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.PropertyListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.ArrayElementInstruction;
-import gov.nasa.jpf.jvm.bytecode.ArrayInstruction;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
+import gov.nasa.jpf.vm.ArrayElementInstruction;
+import gov.nasa.jpf.vm.FieldInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ChoiceGenerator;
@@ -31,6 +30,7 @@ import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.ReadWriteInstruction;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
@@ -54,6 +54,7 @@ import java.io.StringWriter;
  * This algorithm came out of a discussion with Franck van Breugel and Sergey Kulikov from the University of York.
  * All credits for it goes to Franck and Sergey, all the bugs are mine.
  *
+ * NOTE - the PreciseRaceDetector is machine type agnostic
  *
  * Author: Willem Visser
  *
@@ -65,8 +66,9 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
     Race prev;   // linked list
 
     ThreadInfo ti1, ti2;
-    Instruction insn1, insn2;
+    ReadWriteInstruction insn1, insn2;
     ElementInfo ei;
+    boolean isRead1, isRead2;
 
     boolean isRace() {
       return insn2 != null && ti1 != null && ti2 != null && ( ! ti1.equals(ti2) );
@@ -81,7 +83,8 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
       if (line != null){
         pw.print("\t\t\"" + line.trim());
       }
-      pw.print("\"  : ");
+      pw.print("\"  ");
+      pw.print( insn1.isRead() ? "READ:  " : "WRITE: ");
       pw.println(insn1);
 
       if (insn2 != null){
@@ -93,7 +96,8 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
         if (line != null){
           pw.print("\t\t\"" + line.trim());
         }
-        pw.print("\"  : ");
+        pw.print("\"  ");
+        pw.print( insn2.isRead() ? "READ:  " : "WRITE: ");
         pw.println(insn2);
       }
     }
@@ -102,11 +106,12 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
   static class FieldRace extends Race {
     FieldInfo   fi;
 
-    static Race check (Race prev, ThreadInfo ti,  Instruction insn, ElementInfo ei, FieldInfo fi){
+    static Race check (Race prev, ThreadInfo ti,  ReadWriteInstruction insn, ElementInfo ei, FieldInfo fi){
       for (Race r = prev; r != null; r = r.prev){
         if (r instanceof FieldRace){
           FieldRace fr = (FieldRace)r;
           if (fr.ei == ei && fr.fi == fi){
+            
             if (!((FieldInstruction)fr.insn1).isRead() || !((FieldInstruction)insn).isRead()){
               fr.ti2 = ti;
               fr.insn2 = insn;
@@ -138,7 +143,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
   static class ArrayElementRace extends Race {
     int idx;
 
-    static Race check (Race prev, ThreadInfo ti, Instruction insn, ElementInfo ei, int idx){
+    static Race check (Race prev, ThreadInfo ti, ReadWriteInstruction insn, ElementInfo ei, int idx){
       for (Race r = prev; r != null; r = r.prev){
         if (r instanceof ArrayElementRace){
           ArrayElementRace ar = (ArrayElementRace)r;
@@ -173,12 +178,12 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
   }
 
   // this is where we store if we detect one
-  Race race;
+  protected Race race;
 
 
   // our matchers to determine which code we have to check
-  StringSetMatcher includes = null; //  means all
-  StringSetMatcher excludes = null; //  means none
+  protected StringSetMatcher includes = null; //  means all
+  protected StringSetMatcher excludes = null; //  means none
 
 
   public PreciseRaceDetector (Config conf) {
@@ -204,12 +209,13 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
       race.printOn(pw);
       pw.flush();
       return sw.toString();
+      
     } else {
       return null;
     }
   }
 
-  boolean checkRace (ThreadInfo[] threads){
+  protected boolean checkRace (ThreadInfo[] threads){
     Race candidate = null;
 
     for (int i = 0; i < threads.length; i++) {
@@ -227,8 +233,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
 
         } else if (insn instanceof ArrayElementInstruction) {
           ArrayElementInstruction ainsn = (ArrayElementInstruction) insn;
-          int aref = ainsn.getArrayRef(ti);
-          ElementInfo ei = ti.getElementInfo(aref);
+          ElementInfo ei = ainsn.peekArrayElementInfo(ti);
 
           // these insns have been through their top half since they created CGs, but they haven't
           // removed the operands from the stack

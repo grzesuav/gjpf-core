@@ -27,7 +27,7 @@ import gov.nasa.jpf.vm.VM;
 /**
  * abstract class for operations that access elements of arrays
  */
-public abstract class ArrayElementInstruction extends ArrayInstruction {
+public abstract class ArrayElementInstruction extends ArrayInstruction implements gov.nasa.jpf.vm.ArrayElementInstruction {
   
   protected int index; // the accessed element
 

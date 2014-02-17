@@ -19,19 +19,14 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.JVMInstruction;
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.FieldLockInfo;
-import gov.nasa.jpf.vm.FieldLockInfoFactory;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.POR;
-import gov.nasa.jpf.vm.SchedulerFactory;
 import gov.nasa.jpf.vm.StackFrame;
-import gov.nasa.jpf.vm.ThreadChoiceGenerator;
 import gov.nasa.jpf.vm.VM;
-import gov.nasa.jpf.vm.SystemState;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
 
@@ -42,8 +37,7 @@ import gov.nasa.jpf.vm.Types;
  * fields - w/o the instance/static helper methods we would have to duplicate
  * code in the getters/setters
  */
-public abstract class FieldInstruction extends JVMInstruction implements VariableAccessor
-{
+public abstract class FieldInstruction extends JVMInstruction implements VariableAccessor, gov.nasa.jpf.vm.FieldInstruction {
   protected String fname;
   protected String className;
   protected String varId;
@@ -324,6 +318,10 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
   
   public void accept(InstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+  
+  public String toString() {
+    return getMnemonic() + " " + className + '.' + fname;
   }
 
 }

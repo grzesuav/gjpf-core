@@ -44,6 +44,24 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     super(clsDescriptor, methodName, signature);
   }
 
+  @Override
+  public String toPostExecString(){
+    StringBuilder sb = new StringBuilder();
+    sb.append(getMnemonic());
+    sb.append(' ');
+    sb.append( lastCalleeCi.getName());
+    sb.append('@');
+    sb.append(Integer.toHexString(lastObj));
+    sb.append('.');
+    sb.append(invokedMethod.getUniqueName());
+
+    if (invokedMethod.isMJI()){
+      sb.append(" [native]");
+    }
+    
+    return sb.toString();
+  }
+  
   public Instruction execute (ThreadInfo ti) {
     int objRef = ti.getCalleeThis(getArgSize());
 

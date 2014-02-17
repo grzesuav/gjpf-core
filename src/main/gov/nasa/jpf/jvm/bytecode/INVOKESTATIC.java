@@ -52,6 +52,21 @@ public class INVOKESTATIC extends InvokeInstruction {
     return 0xB8;
   }
 
+  @Override
+  public String toPostExecString(){
+    StringBuilder sb = new StringBuilder();
+    sb.append(getMnemonic());
+    sb.append(' ');
+    sb.append( invokedMethod.getFullName());
+
+    if (invokedMethod.isMJI()){
+      sb.append(" [native]");
+    }
+    
+    return sb.toString();
+
+  }
+  
   public StaticElementInfo getStaticElementInfo (){
     return getClassInfo().getStaticElementInfo();
   }

@@ -32,16 +32,16 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 import java.io.PrintWriter;
 
 /**
- * Listener tool to monitor JPF execution. This class can be used as a drop-in
- * replacement for JPF, which is called by ExecTracker.
- * ExecTracker is mostly a VMListener of 'instructionExecuted' and
- * a SearchListener of 'stateAdvanced' and 'statehBacktracked'
+ * Listener tool to monitor JPF execution. This class can be used as a drop-in replacement for JPF, which is called by
+ * ExecTracker. ExecTracker is mostly a VMListener of 'instructionExecuted' and a SearchListener of 'stateAdvanced' and
+ * 'statehBacktracked'
+ * 
+ * NOTE - the ExecTracker is machine type agnostic
  */
 
 public class ExecTracker extends ListenerAdapter {
@@ -229,30 +229,7 @@ public class ExecTracker extends ListenerAdapter {
       out.print(executedInsn.getPosition());
       out.print("] ");
       
-      out.print(executedInsn);
-        
-      // annotate (some of) the bytecode insns with their arguments
-      if (executedInsn instanceof InvokeInstruction) {
-        MethodInfo callee = ((InvokeInstruction)executedInsn).getInvokedMethod(); 
-        if ((callee != null) && callee.isMJI()) { // Huhh? why do we have to check this?
-          out.print(" [native]");
-        }
-      } else if (executedInsn instanceof FieldInstruction) {
-        out.print(" ");
-        if (executedInsn instanceof InstanceFieldInstruction){
-          InstanceFieldInstruction iinsn = (InstanceFieldInstruction)executedInsn;
-          out.print(iinsn.getId(iinsn.getLastElementInfo()));
-        } else {
-          out.print(((FieldInstruction)executedInsn).getVariableId());
-        }
-      } else if (executedInsn instanceof LockInstruction) {
-        LockInstruction lockInsn = (LockInstruction)executedInsn;
-        int lockRef = lockInsn.getLastLockRef();
-
-        out.print(" ");
-        out.print( ti.getElementInfo(lockRef));
-      }
-      out.println();
+      out.println( executedInsn.toPostExecString());
     }
   }
 

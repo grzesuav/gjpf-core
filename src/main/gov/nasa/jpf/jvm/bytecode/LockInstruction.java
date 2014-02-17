@@ -20,7 +20,6 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.jvm.JVMInstruction;
 import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -36,6 +35,16 @@ public abstract class LockInstruction extends JVMInstruction {
     */
   public int getLastLockRef () {
     return lastLockRef;
+  }
+
+  @Override
+  public String toPostExecString(){
+    StringBuilder sb = new StringBuilder();
+    sb.append(getMnemonic());
+    sb.append(" @");
+    sb.append( Integer.toHexString(lastLockRef));
+    
+    return sb.toString();
   }
   
   /**

@@ -45,6 +45,18 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
   protected InstanceFieldInstruction (String fieldName, String classType, String fieldDescriptor){
     super(fieldName, classType, fieldDescriptor);
   }
+  
+  @Override
+  public String toPostExecString(){
+    StringBuilder sb = new StringBuilder();
+    sb.append(getMnemonic());
+    sb.append(' ');
+    sb.append( getLastElementInfo());
+    sb.append('.');
+    sb.append(fname);
+    
+    return sb.toString();
+  }
 
   public FieldInfo getFieldInfo () {
     if (fi == null) {

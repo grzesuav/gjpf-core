@@ -66,7 +66,6 @@ public abstract class InvokeInstruction extends JVMInstruction {
 
   protected InvokeInstruction () {}
 
-
   public int getLength() {
     return 3; // opcode, index1, index2
   }

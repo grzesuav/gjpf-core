@@ -58,6 +58,16 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     
     fi = f;
   }
+  
+  @Override
+  public String toPostExecString(){
+    StringBuilder sb = new StringBuilder();
+    sb.append(getMnemonic());
+    sb.append(' ');
+    sb.append( fi.getFullName());
+    
+    return sb.toString();
+  }
 
   public ClassInfo getClassInfo() {
     if (fi == null) {

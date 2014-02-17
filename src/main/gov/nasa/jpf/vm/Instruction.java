@@ -175,6 +175,13 @@ public abstract class Instruction implements Cloneable {
     return getMnemonic();
   }
 
+  /**
+   * this can contain additional info that was gathered/cached during execution 
+   */
+  public String toPostExecString(){
+    return toString();
+  }
+  
   public String getMnemonic() {
     String s = getClass().getSimpleName();
     return s.toLowerCase();
