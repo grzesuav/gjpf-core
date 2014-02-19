@@ -17,15 +17,17 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.vm;
+package gov.nasa.jpf.vm.bytecode;
+
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.StackFrame;
 
 /**
- * base interface for FieldInstructions and ArrayElementInstructions
+ * common type for all method invocations on objects
  */
-public interface ReadWriteInstruction {
+public interface InstanceInvokeInstruction extends InstructionInterface {
 
-  boolean isRead();
+  MethodInfo getInvokedMethod();
+  int getObjectSlot (StackFrame frame);
   
-  String getSourceLocation();
-  String getSourceLine();
 }

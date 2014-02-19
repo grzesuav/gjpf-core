@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Negate int
  * ..., value => ..., result
  */
-public class INEG extends JVMInstruction {
+public class INEG extends Instruction implements JVMInstruction {
 
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
@@ -44,7 +44,7 @@ public class INEG extends JVMInstruction {
     return 0x74;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

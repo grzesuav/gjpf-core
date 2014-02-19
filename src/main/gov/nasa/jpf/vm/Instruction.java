@@ -20,6 +20,7 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.Source;
+import gov.nasa.jpf.vm.bytecode.InstructionInterface;
 
 
 
@@ -27,7 +28,7 @@ import gov.nasa.jpf.util.Source;
  * common root of all JPF bytecode instruction classes 
  * 
  */
-public abstract class Instruction implements Cloneable {
+public abstract class Instruction implements Cloneable, InstructionInterface {
 
   protected int insnIndex;        // code[] index of instruction
   protected int position;     // accumulated bytecode position (prev pos + prev bc-length)
@@ -35,10 +36,14 @@ public abstract class Instruction implements Cloneable {
 
   // property/mode specific attributes
   protected Object attr;
-
   
   abstract public int getByteCode();
 
+  // this is for changing from InstructionInterface types to Instruction types
+  public Instruction asInstruction(){
+    return this;
+  }
+  
   // to allow a classname and methodname context for each instruction
   public void setContext(String className, String methodName, int lineNumber,
           int offset) {

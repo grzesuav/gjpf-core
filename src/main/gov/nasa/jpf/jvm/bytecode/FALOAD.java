@@ -39,7 +39,7 @@ public class FALOAD extends ArrayLoadInstruction {
     return 0x30;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

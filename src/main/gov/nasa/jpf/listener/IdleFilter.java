@@ -23,7 +23,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.PropertyListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.ArrayStoreInstruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.DynamicObjectArray;
 import gov.nasa.jpf.vm.ClassInfo;
@@ -225,7 +225,7 @@ public class IdleFilter extends PropertyListenerAdapter {
       // we assume this is not an idle loop and terminate the checks
       // <2do> this is too restrictive - we should leave this to state matching
       
-      if ((executedInsn instanceof InvokeInstruction)
+      if ((executedInsn instanceof JVMInvokeInstruction)
           || (executedInsn instanceof ArrayStoreInstruction)) {
         int stackDepth = ti.getStackDepth();
         int pc = executedInsn.getPosition();

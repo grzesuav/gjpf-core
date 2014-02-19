@@ -44,7 +44,7 @@ public class AALOAD extends ArrayLoadInstruction {
     return 0x32;
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

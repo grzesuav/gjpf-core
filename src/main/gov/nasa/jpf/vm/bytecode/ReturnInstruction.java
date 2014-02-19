@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2014 United States Government as represented by the
+// Copyright (C) 2011 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,15 +16,17 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
+package gov.nasa.jpf.vm.bytecode;
 
-package gov.nasa.jpf.vm;
+import gov.nasa.jpf.vm.Instruction;
 
 /**
- * abstract, machine independent interface for xASTORE/xALOAD insns
+ * abstract base for return instructions
+ *
+ * since .jvm so far does not use any specific feature of ReturnInstructions,
+ * we just need an empty type to make .jvm independent of a specific
+ * Instruction set
  */
-public interface ArrayElementInstruction extends ReadWriteInstruction {
-  
-  ElementInfo peekArrayElementInfo (ThreadInfo ti);
-  
-  int peekIndex(ThreadInfo ti);
+public abstract class ReturnInstruction extends Instruction {
+  // nothing in here yet
 }

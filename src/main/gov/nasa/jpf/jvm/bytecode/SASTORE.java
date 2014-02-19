@@ -45,7 +45,7 @@ public class SASTORE extends ArrayStoreInstruction {
     return 0x56;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

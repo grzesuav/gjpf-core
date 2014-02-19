@@ -40,7 +40,7 @@ public class IFGT extends IfInstruction {
     return 0x9D;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

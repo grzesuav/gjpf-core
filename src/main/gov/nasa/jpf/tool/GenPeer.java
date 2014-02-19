@@ -153,7 +153,7 @@ public class GenPeer {
 
     String cname = cls.getName().replace('.', '_');
 
-    pw.print("class ");
+    pw.print("public class ");
     pw.print("JPF_");
     pw.print(cname);
     pw.print(" extends ");

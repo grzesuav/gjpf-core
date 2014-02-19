@@ -43,7 +43,7 @@ public class IF_ICMPGE extends IfInstruction {
     return 0xA2;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

@@ -24,19 +24,46 @@ import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.bytecode.WriteInstruction;
 
 /**
  * Set field in object
  * ..., objectref, value => ...
  */
-public class PUTFIELD extends InstanceFieldInstruction implements StoreInstruction {
+public class PUTFIELD extends JVMInstanceFieldInstruction implements WriteInstruction {
 
   public PUTFIELD() {}
 
   public PUTFIELD(String fieldName, String clsDescriptor, String fieldDescriptor){
     super(fieldName, clsDescriptor, fieldDescriptor);
+  }  
+
+  @Override
+  public int getObjectSlot (StackFrame frame){
+    return frame.getTopPos() - size;
   }
+
+  /**
+   * where do we get the value from?
+   * NOTE: only makes sense in a executeInstruction() context 
+   */
+  public int getValueSlot (StackFrame frame){
+    return frame.getTopPos();
+  }
+
   
+  /**
+   * where do we write to?
+   * NOTE: this should only be used from a executeInstruction()/instructionExecuted() context
+   */
+  public ElementInfo getElementInfo(ThreadInfo ti){
+    if (isCompleted(ti)){
+      return ti.getElementInfo(lastThis);
+    } else {
+      return peekElementInfo(ti); // get it from the stack
+    }
+  }
+
   @Override
   protected void popOperands1 (StackFrame frame) {
     frame.pop(2); // .. objref, val => ..
@@ -108,7 +135,7 @@ public class PUTFIELD extends InstanceFieldInstruction implements StoreInstructi
     return false;
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.NativeMethodInfo;
@@ -33,7 +33,7 @@ import java.lang.reflect.Method;
  * Note that StackFrame and lock handling has to occur from within
  * the corresponding NativeMethodInfo
  */
-public class EXECUTENATIVE extends JVMInstruction {
+public class EXECUTENATIVE extends Instruction implements JVMInstruction {
 
   // unfortunately we can't null this in cleanupTransients(), but it is
   // a potential leak for stored traces
@@ -59,7 +59,7 @@ public class EXECUTENATIVE extends JVMInstruction {
     executedMethod = mi;
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

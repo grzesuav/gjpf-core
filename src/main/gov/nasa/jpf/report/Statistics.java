@@ -21,8 +21,8 @@ package gov.nasa.jpf.report;
 
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.LockInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
@@ -105,9 +105,9 @@ public class Statistics extends ListenerAdapter implements Cloneable {
       threadCGs++;
 
       Instruction insn = cg.getInsn();
-      if (insn instanceof FieldInstruction) {
+      if (insn instanceof JVMFieldInstruction) {
         sharedAccessCGs++;
-      } else if (insn instanceof LockInstruction || insn instanceof InvokeInstruction) {
+      } else if (insn instanceof LockInstruction || insn instanceof JVMInvokeInstruction) {
         monitorCGs++;
       } else if (insn instanceof EXECUTENATIVE) {
         MethodInfo mi = insn.getMethodInfo();

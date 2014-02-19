@@ -46,7 +46,7 @@ public class FASTORE extends ArrayStoreInstruction {
     return 0x51;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

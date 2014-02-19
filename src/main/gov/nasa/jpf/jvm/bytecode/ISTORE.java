@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.vm.bytecode.StoreInstruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -27,7 +28,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Store int into local variable
  * ..., value => ...
  */
-public class ISTORE extends LocalVariableInstruction implements StoreInstruction {
+public class ISTORE extends JVMLocalVariableInstruction implements StoreInstruction {
 
   public ISTORE(int localVarIndex){
     super(localVarIndex);
@@ -67,7 +68,7 @@ public class ISTORE extends LocalVariableInstruction implements StoreInstruction
   }
   
   @Override
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

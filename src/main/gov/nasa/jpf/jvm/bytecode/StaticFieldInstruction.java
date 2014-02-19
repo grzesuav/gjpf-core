@@ -31,7 +31,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
 /**
  * class to abstract instructions accessing static fields
  */
-public abstract class StaticFieldInstruction extends FieldInstruction {
+public abstract class StaticFieldInstruction extends JVMFieldInstruction {
 
   protected StaticFieldInstruction(){}
 
@@ -57,6 +57,15 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     }
     
     fi = f;
+  }
+
+  /**
+   * who owns the field?
+   * NOTE: this should only be used from a executeInstruction()/instructionExecuted() context
+   */
+  @Override
+  public ElementInfo getElementInfo(ThreadInfo ti){
+    return getFieldInfo().getClassInfo().getStaticElementInfo();
   }
   
   @Override
@@ -166,7 +175,7 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     return true;
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

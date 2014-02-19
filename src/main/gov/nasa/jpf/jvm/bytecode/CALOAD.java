@@ -39,7 +39,7 @@ public class CALOAD extends ArrayLoadInstruction {
     return 0x34;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

@@ -43,7 +43,7 @@ public class IF_ICMPLE extends IfInstruction {
     return 0xA4;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

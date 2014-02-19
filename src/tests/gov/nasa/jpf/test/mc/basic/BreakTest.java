@@ -19,7 +19,7 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ChoiceGenerator;
@@ -132,8 +132,8 @@ public class BreakTest extends TestJPF {
     public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
       SystemState ss = vm.getSystemState();
 
-      if (executedInsn instanceof InvokeInstruction) { // break on method call
-        InvokeInstruction call = (InvokeInstruction) executedInsn;
+      if (executedInsn instanceof JVMInvokeInstruction) { // break on method call
+        JVMInvokeInstruction call = (JVMInvokeInstruction) executedInsn;
 
         if ("foo()V".equals(call.getInvokedMethodName())) {
           System.out.println("# breaking & pruning after: " + executedInsn);

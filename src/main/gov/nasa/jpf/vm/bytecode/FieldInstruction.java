@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2011 United States Government as represented by the
+// Copyright (C) 2014 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,15 +16,23 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.vm;
+
+package gov.nasa.jpf.vm.bytecode;
+
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.FieldInfo;
+import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.Instruction;
 
 /**
- * an empty (tag) interface to identify return instructions
- *
- * since .jvm so far does not use any specific feature of ReturnInstructions,
- * we just need an empty type to make .jvm independent of a specific
- * Instruction set
+ * abstract base for all field access instructions
+ * 
+ * <2do> pull up common features from machine specific implementations
  */
-public interface ReturnInstruction {
-  // nothing in here yet
+public abstract class FieldInstruction extends Instruction implements ReadOrWriteInstruction {
+
+  public abstract FieldInfo getFieldInfo();
+  
+  public abstract ElementInfo peekElementInfo (ThreadInfo ti);
+  
 }

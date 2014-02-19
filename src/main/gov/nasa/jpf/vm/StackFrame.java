@@ -990,17 +990,18 @@ public abstract class StackFrame implements Cloneable {
     return mi.getLocalVar(idx, pc.getPosition()+pc.getLength());
   }
 
-
-  //--- use with extreme care - don't modify outside of StackFrame construction. THIS IS ONLY FOR INTERNAL USE
-  /*
-   * ths main reason for breaking encapsulation with these methods is that we need an API that allows efficient
-   * initialization of slots from VM mode dependent invoke instructions. Argument passing differs between VMs
-   */
-  public int[] getSlots () {
-    return slots; // we should probably clone
+  public void setThis (int objRef){
+    thisRef = objRef;
   }
+  
   public FixedBitSet getReferenceMap(){
     return isRef;
+  }
+
+  //--- direct slot access - provided for machine-independent clients
+  
+  public int[] getSlots () {
+    return slots; // we should probably clone
   }
   public Object[] getSlotAttrs(){
     return attrs;
@@ -1011,17 +1012,35 @@ public abstract class StackFrame implements Cloneable {
     }
     return null;
   }
+  public <T> T getSlotAttr (int i, Class<T> attrType){
+    if (attrs != null){
+      return ObjectList.getFirst( attrs[i], attrType);
+    }
+    return null;
+  }  
   public void setSlotAttr (int i, Object a){
     if (attrs == null){
       attrs = new Object[slots.length];
     }
     attrs[i] = a;
   }
-  public void setThis (int objRef){
-    thisRef = objRef;
+  public void addSlotAttr (int i, Object a){
+    if (a != null){
+      if (attrs == null) {
+        attrs = new Object[slots.length];
+      }
+
+      attrs[i] = ObjectList.add(attrs[i], a);
+    }        
+  }  
+  public void replaceSlotAttr (int i, Object oldAttr, Object newAttr){
+    if (attrs != null){
+      attrs[i] = ObjectList.replace(attrs[i], oldAttr, newAttr);
+    }        
   }
   
-
+  
+  
   public void visitReferenceSlots (ReferenceProcessor visitor){
     for (int i=isRef.nextSetBit(0); i>=0 && i<=top; i=isRef.nextSetBit(i+1)){
       visitor.processReference(slots[i]);

@@ -22,7 +22,7 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
 import gov.nasa.jpf.util.MethodSpec;
@@ -251,8 +251,8 @@ public class CGRemover extends ListenerAdapter {
       }
     }
 
-    if (insn instanceof InvokeInstruction){
-      MethodInfo invokedMi = ((InvokeInstruction)insn).getInvokedMethod();
+    if (insn instanceof JVMInvokeInstruction){
+      MethodInfo invokedMi = ((JVMInvokeInstruction)insn).getInvokedMethod();
       if (methodCalls != null) {
         if (removeCG(vm, methodCalls.get(invokedMi), cg)) {
           return;

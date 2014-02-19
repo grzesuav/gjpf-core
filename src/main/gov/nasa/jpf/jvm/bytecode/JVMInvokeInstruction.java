@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
@@ -30,12 +29,13 @@ import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
+import gov.nasa.jpf.vm.bytecode.InvokeInstruction;
 
 
 /**
  * abstraction for all invoke instructions
  */
-public abstract class InvokeInstruction extends JVMInstruction {
+public abstract class JVMInvokeInstruction extends InvokeInstruction implements JVMInstruction {
   /* Those are all from the BCEL class, i.e. straight from the class file.
    * Note that we can't directly resolve to MethodInfo objects because
    * the corresponding class might not be loaded yet (has to be done
@@ -58,18 +58,18 @@ public abstract class InvokeInstruction extends JVMInstruction {
 
   protected Object[] arguments; // temporary cache for arg values (for listeners)
 
-  protected InvokeInstruction (String clsName, String methodName, String signature){
+  protected JVMInvokeInstruction (String clsName, String methodName, String signature){
     this.cname = Types.getClassNameFromTypeName(clsName);
     this.signature = signature;
     this.mname = MethodInfo.getUniqueName(methodName, signature);
   }
 
-  protected InvokeInstruction () {}
+  protected JVMInvokeInstruction () {}
 
   public int getLength() {
     return 3; // opcode, index1, index2
   }
-
+  
   // only useful from post-exec notifications
   public int getLastObjRef() {
     return lastObj;
@@ -155,7 +155,7 @@ public abstract class InvokeInstruction extends JVMInstruction {
    * either ElementInfos or 'null', all others are boxed (i.e. a 'double' is returned as
    * a 'Double' object).
    * It goes without saying that this method can only be called during an executeInstruction()
-   * or instructionExecuted() notification for the corresponding InvokeInstruction
+   * or instructionExecuted() notification for the corresponding JVMInvokeInstruction
    * We use the caller frame to retrieve the arguments (instead of the locals of
    * the callee) since that works for both pre- and post-exec notification
    */
@@ -275,14 +275,11 @@ public abstract class InvokeInstruction extends JVMInstruction {
     return args;
   }
 
-  public int getArgSize () {
-    if (argSize < 0) {
-      argSize = Types.getArgumentsSize(signature) + 1; // 'this'
-    }
-
-    return argSize;
-  }
-
+  /**
+   * this is slot size, i.e. includes 'this' for InstanceInvocations 
+   */
+  abstract public int getArgSize();
+  
   public int getReturnType() {
     return Types.getReturnBuiltinType(signature);
   }
@@ -368,16 +365,16 @@ public abstract class InvokeInstruction extends JVMInstruction {
 
 
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 
   @Override
   public Instruction typeSafeClone(MethodInfo mi) {
-    InvokeInstruction clone = null;
+    JVMInvokeInstruction clone = null;
 
     try {
-      clone = (InvokeInstruction) super.clone();
+      clone = (JVMInvokeInstruction) super.clone();
 
       // reset the method that this insn belongs to
       clone.mi = mi;

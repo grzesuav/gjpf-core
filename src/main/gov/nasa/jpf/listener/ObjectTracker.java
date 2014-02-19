@@ -22,9 +22,9 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInstanceFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
 import gov.nasa.jpf.jvm.bytecode.VirtualInvocation;
 import gov.nasa.jpf.report.ConsolePublisher;
@@ -91,14 +91,14 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
       pw.print('.');
       
       if (insn != null){        
-        if (insn instanceof FieldInstruction){
-          FieldInstruction finsn = (FieldInstruction)insn;
+        if (insn instanceof JVMFieldInstruction){
+          JVMFieldInstruction finsn = (JVMFieldInstruction)insn;
           
           String fname = finsn.getFieldName();
           pw.print(fname);
           
-        } else if (insn instanceof InvokeInstruction){
-          InvokeInstruction call = (InvokeInstruction)insn;
+        } else if (insn instanceof JVMInvokeInstruction){
+          JVMInvokeInstruction call = (JVMInvokeInstruction)insn;
           
           String mthName = call.getInvokedMethodName();
           
@@ -190,9 +190,9 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
         }
       }
       
-    } else if (logFieldAccess && executedInsn instanceof InstanceFieldInstruction){
+    } else if (logFieldAccess && executedInsn instanceof JVMInstanceFieldInstruction){
       if (nextInsn != executedInsn){ // otherwise we didn't enter
-        InstanceFieldInstruction finsn = (InstanceFieldInstruction) executedInsn;
+        JVMInstanceFieldInstruction finsn = (JVMInstanceFieldInstruction) executedInsn;
         ElementInfo ei = finsn.getLastElementInfo();
         
         if (ei.hasObjectAttr(Attr.class)) {

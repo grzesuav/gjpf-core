@@ -44,7 +44,7 @@ public class INVOKEINTERFACE extends VirtualInvocation {
     return "invokeinterface " + cname + '.' + mname;
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

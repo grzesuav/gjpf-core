@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2012 United States Government as represented by the
+// Copyright (C) 2014 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -17,15 +17,22 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.jvm;
+package gov.nasa.jpf.vm.bytecode;
 
-import gov.nasa.jpf.jvm.bytecode.InstructionVisitorAcceptor;
-import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
- * an Instruction class that implements an InstructionVisitorAcceptor
- * This is the common root class for all Java bytecodes
+ * common type for FieldInstructions and ArrayElementInstructions
  */
-public abstract class JVMInstruction extends Instruction implements InstructionVisitorAcceptor {
-  // nothing in here
+public interface ReadOrWriteInstruction extends InstructionInterface {
+
+  boolean isRead();
+  
+  /**
+   * where do we read from/write to 
+   * 
+   * NOTE - this is a StaticElementInfo in case this is a PUT/GETSTATIC
+   */
+  ElementInfo getElementInfo(ThreadInfo ti);
 }

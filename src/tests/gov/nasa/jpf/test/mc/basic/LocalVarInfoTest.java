@@ -19,7 +19,7 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.LocalVariableInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMLocalVariableInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -74,8 +74,8 @@ public class LocalVarInfoTest extends TestJPF {
     public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
       if (executedInsn.getMethodInfo() == logMethod){
         System.out.printf(" %2d: %s", executedInsn.getPosition(), executedInsn);
-        if (executedInsn instanceof LocalVariableInstruction){
-          LocalVariableInstruction lvinsn = (LocalVariableInstruction)executedInsn;
+        if (executedInsn instanceof JVMLocalVariableInstruction){
+          JVMLocalVariableInstruction lvinsn = (JVMLocalVariableInstruction)executedInsn;
           LocalVarInfo lv = lvinsn.getLocalVarInfo(); 
           System.out.print(" : " + lv);
 

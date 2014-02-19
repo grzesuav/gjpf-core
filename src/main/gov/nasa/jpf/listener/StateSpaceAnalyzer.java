@@ -21,11 +21,11 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.MONITORENTER;
 import gov.nasa.jpf.jvm.bytecode.MONITOREXIT;
-import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMReturnInstruction;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
@@ -362,16 +362,16 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
         return (null);
       }
 
-      if (instruction instanceof FieldInstruction) {
+      if (instruction instanceof JVMFieldInstruction) {
         return (CGType.FieldAccess);
       }
 
-      if (instruction instanceof InvokeInstruction) {
-        return (getType((InvokeInstruction) instruction));
+      if (instruction instanceof JVMInvokeInstruction) {
+        return (getType((JVMInvokeInstruction) instruction));
       }
 
-      if (instruction instanceof ReturnInstruction) {
-        return (getType(generator, (ReturnInstruction) instruction));
+      if (instruction instanceof JVMReturnInstruction) {
+        return (getType(generator, (JVMReturnInstruction) instruction));
       }
 
       if (instruction instanceof MONITORENTER) {
@@ -385,7 +385,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       return (null);
     }
 
-    private static CGType getType(InvokeInstruction instruction) {
+    private static CGType getType(JVMInvokeInstruction instruction) {
       MethodInfo mi;
 
       if (is(instruction, OBJECT_CLASS_NAME, "wait")) {
@@ -424,7 +424,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       return (null);
     }
 
-    private static boolean is(InvokeInstruction instruction, String className, String methodName) {
+    private static boolean is(JVMInvokeInstruction instruction, String className, String methodName) {
       MethodInfo mi;
       ClassInfo ci;
 
@@ -442,7 +442,7 @@ public class StateSpaceAnalyzer extends ListenerAdapter implements PublisherExte
       return (true);
     }
 
-    private static CGType getType(ThreadChoiceGenerator generator, ReturnInstruction instruction) {
+    private static CGType getType(ThreadChoiceGenerator generator, JVMReturnInstruction instruction) {
       MethodInfo mi;
 
       if (generator.getThreadInfo().getStackDepth() <= 1) // The main thread has 0 frames.  Other threads have 1 frame.

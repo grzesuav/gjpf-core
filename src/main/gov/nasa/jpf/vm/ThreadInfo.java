@@ -18,13 +18,14 @@
 //
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.vm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.SystemAttribute;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntVector;
 import gov.nasa.jpf.util.JPFLogger;
@@ -1044,12 +1045,12 @@ public class ThreadInfo extends InfoObject
     Instruction pc = getPC();
 
     if (pc == null ||
-        !(pc instanceof InvokeInstruction) ||
+        !(pc instanceof JVMInvokeInstruction) ||
         pc instanceof INVOKESTATIC) {
       return false;
     }
 
-    InvokeInstruction call = (InvokeInstruction) pc;
+    JVMInvokeInstruction call = (JVMInvokeInstruction) pc;
 
     return getCalleeThis(Types.getArgumentsSize(call.getInvokedMethodSignature()) + 1) == r.getObjectRef();
   }

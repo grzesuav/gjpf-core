@@ -24,7 +24,7 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.annotation.JPFOption;
 import gov.nasa.jpf.annotation.JPFOptions;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ChoiceGenerator;
@@ -150,8 +150,8 @@ public class ChoiceSelector extends ListenerAdapter {
   @Override
   public void executeInstruction(VM vm, ThreadInfo ti, Instruction insnToExecute) {
     if (singleChoice && !callSeen && (calls != null)) {
-      if (insnToExecute instanceof InvokeInstruction) {
-        String mthName = ((InvokeInstruction)insnToExecute).getInvokedMethod(ti).getBaseName();
+      if (insnToExecute instanceof JVMInvokeInstruction) {
+        String mthName = ((JVMInvokeInstruction)insnToExecute).getInvokedMethod(ti).getBaseName();
 
         if (calls.matchesAny(mthName)){
           callSeen = true;

@@ -39,7 +39,7 @@ public class DALOAD extends LongArrayLoadInstruction {
     return 0x31;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

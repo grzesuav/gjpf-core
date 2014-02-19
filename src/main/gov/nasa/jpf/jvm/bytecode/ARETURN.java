@@ -21,17 +21,23 @@ package gov.nasa.jpf.jvm.bytecode;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.bytecode.ReturnValueInstruction;
 
 
 /**
  * Return reference from method
  * ..., objectref  => [empty]
  */
-public class ARETURN extends ReturnInstruction {
+public class ARETURN extends JVMReturnInstruction implements ReturnValueInstruction {
   int ret;
   
   public int getReturnTypeSize() {
     return 1;
+  }
+  
+  @Override
+  public int getValueSlot (StackFrame frame){
+    return frame.getTopPos();
   }
   
   protected Object getReturnedOperandAttr (StackFrame frame) {
@@ -66,12 +72,8 @@ public class ARETURN extends ReturnInstruction {
   public int getByteCode () {
     return 0xB0;
   }
-  
-  public String toString() {
-    return "areturn " + mi.getFullName();
-  }
-  
-  public void accept(InstructionVisitor insVisitor) {
+    
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

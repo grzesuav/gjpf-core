@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -29,7 +29,7 @@ import gov.nasa.jpf.vm.Types;
  * divide float
  * ..., value1, value2 => ..., result
  */
-public class FDIV extends JVMInstruction {
+public class FDIV extends Instruction implements JVMInstruction {
 
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
@@ -47,7 +47,7 @@ public class FDIV extends JVMInstruction {
     return 0x6E;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Increment local variable by constant
  * No change
  */
-public class IINC extends JVMInstruction {
+public class IINC extends Instruction implements JVMInstruction {
 
 	protected int index;
 	protected int increment;
@@ -60,7 +60,7 @@ public class IINC extends JVMInstruction {
 	}
 
 	@Override
-	public void accept(InstructionVisitor insVisitor) {
+	public void accept(JVMInstructionVisitor insVisitor) {
 		insVisitor.visit(this);
 	}
 

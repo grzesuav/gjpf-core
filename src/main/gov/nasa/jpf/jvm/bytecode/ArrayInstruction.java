@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -26,7 +26,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
 /**
  * abstraction for all array instructions
  */
-public abstract class ArrayInstruction extends JVMInstruction {
+public abstract class ArrayInstruction extends Instruction implements JVMInstruction {
 
   protected int arrayRef;
 
@@ -51,7 +51,7 @@ public abstract class ArrayInstruction extends JVMInstruction {
   
 
   @Override
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

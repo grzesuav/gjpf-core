@@ -26,13 +26,14 @@ import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.bytecode.ReadInstruction;
 
 
 /**
  * Get static fieldInfo from class
  * ..., => ..., value 
  */
-public class GETSTATIC extends StaticFieldInstruction {
+public class GETSTATIC extends StaticFieldInstruction  implements ReadInstruction {
 
   public GETSTATIC(String fieldName, String clsDescriptor, String fieldDescriptor){
     super(fieldName, clsDescriptor, fieldDescriptor);
@@ -128,7 +129,7 @@ public class GETSTATIC extends StaticFieldInstruction {
     return true;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

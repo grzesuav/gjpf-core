@@ -20,7 +20,7 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
@@ -52,8 +52,8 @@ public class CGRemoverTest extends TestJPF {
     public void choiceGeneratorSet (VM vm, ChoiceGenerator<?> newCG){
       Instruction insn = newCG.getInsn();
 
-      if (insn instanceof InvokeInstruction){
-        MethodInfo mi = ((InvokeInstruction)insn).getInvokedMethod();
+      if (insn instanceof JVMInvokeInstruction){
+        MethodInfo mi = ((JVMInvokeInstruction)insn).getInvokedMethod();
         if (mi.getName().equals("getData")){
           fail("CG should have been removed by CGRemover");
         }

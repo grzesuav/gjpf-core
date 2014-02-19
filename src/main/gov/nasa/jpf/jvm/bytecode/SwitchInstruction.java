@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.KernelState;
 import gov.nasa.jpf.vm.StackFrame;
@@ -33,7 +33,7 @@ import gov.nasa.jpf.vm.choice.IntIntervalGenerator;
  * <2do> this is inefficient. First, we should store targets as instruction indexes
  * to avoid execution() looping. Second, there are no matches for a TABLESWITCH
  */
-public abstract class SwitchInstruction extends JVMInstruction {
+public abstract class SwitchInstruction extends Instruction implements JVMInstruction {
 
   public static final int DEFAULT = -1; 
   
@@ -120,7 +120,7 @@ public abstract class SwitchInstruction extends JVMInstruction {
     return matches[idx];
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

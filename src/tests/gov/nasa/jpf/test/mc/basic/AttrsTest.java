@@ -22,7 +22,7 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.DSTORE;
 import gov.nasa.jpf.jvm.bytecode.INVOKEVIRTUAL;
 import gov.nasa.jpf.jvm.bytecode.ISTORE;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.LRETURN;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.test.TestJPF;
@@ -180,8 +180,8 @@ public class AttrsTest extends TestJPF {
 
     @Override
     public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
-      if (executedInsn instanceof InvokeInstruction) {
-        InvokeInstruction call = (InvokeInstruction)executedInsn;
+      if (executedInsn instanceof JVMInvokeInstruction) {
+        JVMInvokeInstruction call = (JVMInvokeInstruction)executedInsn;
         MethodInfo mi = call.getInvokedMethod();
         String mName = mi.getName();
         if (mName.equals("goModel") || mName.equals("goNative")) {

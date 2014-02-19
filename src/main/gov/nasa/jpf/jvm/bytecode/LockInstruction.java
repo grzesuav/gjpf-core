@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -27,7 +27,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
 /**
  * common root for MONITORENTER/EXIT
  */
-public abstract class LockInstruction extends JVMInstruction {
+public abstract class LockInstruction extends Instruction implements JVMInstruction {
   int lastLockRef = MJIEnv.NULL;
 
   /**
@@ -55,7 +55,7 @@ public abstract class LockInstruction extends JVMInstruction {
     return ei.getLockingThread() == ti;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

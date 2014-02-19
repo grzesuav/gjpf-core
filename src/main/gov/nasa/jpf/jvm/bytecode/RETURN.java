@@ -29,7 +29,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Return void from method
  *   ...  [empty]
  */
-public class RETURN extends ReturnInstruction {
+public class RETURN extends JVMReturnInstruction {
 
   public Instruction execute (ThreadInfo ti) {
 
@@ -91,7 +91,7 @@ public class RETURN extends ReturnInstruction {
     return 0xB1;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

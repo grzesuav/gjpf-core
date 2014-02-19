@@ -19,7 +19,7 @@
 package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
@@ -35,9 +35,9 @@ public class CallMonitor extends ListenerAdapter {
   @Override
   public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
     
-    if (executedInsn instanceof InvokeInstruction) {
+    if (executedInsn instanceof JVMInvokeInstruction) {
       if (executedInsn.isCompleted(ti) && !ti.isInstructionSkipped()) {
-        InvokeInstruction call = (InvokeInstruction)executedInsn;
+        JVMInvokeInstruction call = (JVMInvokeInstruction)executedInsn;
         MethodInfo mi = call.getInvokedMethod();
         Object[] args = call.getArgumentValues(ti);
         ClassInfo ci = mi.getClassInfo();

@@ -20,7 +20,7 @@ package gov.nasa.jpf.test.vm.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.AnnotationInfo;
 import gov.nasa.jpf.vm.FieldInfo;
@@ -341,8 +341,8 @@ public class AnnotationTest extends TestJPF {
 
     @Override
     public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
-      if (insnToExecute instanceof InvokeInstruction){
-        MethodInfo mi = ((InvokeInstruction)insnToExecute).getInvokedMethod();
+      if (insnToExecute instanceof JVMInvokeInstruction){
+        MethodInfo mi = ((JVMInvokeInstruction)insnToExecute).getInvokedMethod();
         if (mi.getName().equals("foo")){
           System.out.println("-- called method: " + mi.getUniqueName());
           

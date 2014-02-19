@@ -21,7 +21,7 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.Instruction;
@@ -119,8 +119,8 @@ public class TraceStorer extends ListenerAdapter {
   @Override
   public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
     if (storeCalls != null){
-      if (executedInsn instanceof InvokeInstruction) {
-        InvokeInstruction iinsn = (InvokeInstruction)executedInsn;
+      if (executedInsn instanceof JVMInvokeInstruction) {
+        JVMInvokeInstruction iinsn = (JVMInvokeInstruction)executedInsn;
         String clsName = iinsn.getInvokedMethodClassName();
         String mthName = iinsn.getInvokedMethodName();
         String mn = clsName + '.' + mthName;

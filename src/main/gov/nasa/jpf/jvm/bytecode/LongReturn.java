@@ -26,7 +26,7 @@ import java.util.Iterator;
 /**
  * common base for DRETURN and LRETURN
  */
-public abstract class LongReturn extends ReturnInstruction {
+public abstract class LongReturn extends JVMReturnInstruction {
 
   protected long ret;
   

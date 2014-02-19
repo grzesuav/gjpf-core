@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Jump subroutine (wide insnIndex)
  * ... => ..., address
  */
-public class JSR_W extends JVMInstruction {
+public class JSR_W extends Instruction implements JVMInstruction {
   protected int target;
 
   public JSR_W(int targetPc){
@@ -56,7 +56,7 @@ public class JSR_W extends JVMInstruction {
   }
   
   @Override
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
  

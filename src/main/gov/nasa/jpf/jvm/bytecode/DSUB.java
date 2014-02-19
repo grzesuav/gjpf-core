@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -29,7 +29,7 @@ import gov.nasa.jpf.vm.Types;
  * Subtract double
  * ..., value1, value2 => ..., result
  */
-public class DSUB extends JVMInstruction {
+public class DSUB extends Instruction implements JVMInstruction {
 
   @Override
   public Instruction execute (ThreadInfo ti) {
@@ -51,7 +51,7 @@ public class DSUB extends JVMInstruction {
   }
   
   @Override
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

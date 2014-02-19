@@ -24,9 +24,9 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
-import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInstanceFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMReturnInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
 import gov.nasa.jpf.perturb.OperandPerturbator;
 import gov.nasa.jpf.util.FieldSpec;
@@ -49,7 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * listener that perturbs GETFIELD/GETSTATIC and InvokeInstruction results
+ * listener that perturbs GETFIELD/GETSTATIC and JVMInvokeInstruction results
  *
  * NOTE - this listener initializes in two steps: (1) during listener construction
  * it builds a list of classes it has to monitor, and (2) during class load
@@ -346,7 +346,7 @@ public class Perturbator extends ListenerAdapter {
   public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
     
     if (insnToExecute instanceof GETFIELD){
-      FieldInfo fi = ((InstanceFieldInstruction)insnToExecute).getFieldInfo();
+      FieldInfo fi = ((JVMInstanceFieldInstruction)insnToExecute).getFieldInfo();
       FieldPerturbation e = perturbedFields.get(fi);
 
       if (e != null) {  // managed field
@@ -359,7 +359,7 @@ public class Perturbator extends ListenerAdapter {
         }
       }
 
-    } else if (insnToExecute instanceof ReturnInstruction){
+    } else if (insnToExecute instanceof JVMReturnInstruction){
       MethodInfo mi = insnToExecute.getMethodInfo();
       ReturnPerturbation e = perturbedReturns.get(mi);
 
@@ -383,11 +383,11 @@ public class Perturbator extends ListenerAdapter {
           }
         }
       }
-    } else if (insnToExecute instanceof InvokeInstruction) {
+    } else if (insnToExecute instanceof JVMInvokeInstruction) {
     	// first get the method info object corresponding to the invoked method
     	// We can't use getMethodInfo as the method returned may not be the actual
     	// method invoked, but rather its caller
-    	MethodInfo mi = ((InvokeInstruction) insnToExecute).getInvokedMethod();
+    	MethodInfo mi = ((JVMInvokeInstruction) insnToExecute).getInvokedMethod();
     	ParamsPerturbation e = perturbedParams.get(mi);
     	
       if (e != null && isRelevantCallLocation(insnToExecute, e)){
@@ -422,7 +422,7 @@ public class Perturbator extends ListenerAdapter {
   public void instructionExecuted(VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
     
     if (executedInsn instanceof GETFIELD){
-      FieldInfo fi = ((InstanceFieldInstruction)executedInsn).getFieldInfo();
+      FieldInfo fi = ((JVMInstanceFieldInstruction)executedInsn).getFieldInfo();
       FieldPerturbation p = perturbedFields.get(fi);
       if (p != null){
         if (isMatchingInstructionLocation(p, executedInsn)) {  // none or managed filePos

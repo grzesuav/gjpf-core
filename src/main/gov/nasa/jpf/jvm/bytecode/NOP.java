@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -27,7 +27,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Do nothing
  *    No change
  */
-public class NOP extends JVMInstruction {
+public class NOP extends Instruction implements JVMInstruction {
   
   public NOP () {
     // nothing to do
@@ -41,7 +41,7 @@ public class NOP extends JVMInstruction {
     return 0x00;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

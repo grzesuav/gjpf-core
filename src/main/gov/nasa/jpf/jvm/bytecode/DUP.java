@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * duplicate topmost stack entry
  * .., value -> .., value, value
  */
-public class DUP extends JVMInstruction {
+public class DUP extends Instruction implements JVMInstruction {
 
   public Instruction execute (ThreadInfo th) {
     StackFrame frame = th.getModifiableTopFrame();
@@ -42,7 +42,7 @@ public class DUP extends JVMInstruction {
     return 0x59;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

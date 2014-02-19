@@ -49,7 +49,7 @@ public class DCMPG extends DoubleCompareInstruction {
   }
   
   @Override
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

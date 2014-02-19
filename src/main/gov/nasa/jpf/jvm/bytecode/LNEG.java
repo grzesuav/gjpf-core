@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -28,7 +28,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Negate long
  * ..., value => ..., result
  */
-public class LNEG extends JVMInstruction {
+public class LNEG extends Instruction implements JVMInstruction {
 
   @Override
   public Instruction execute (ThreadInfo ti) {
@@ -46,7 +46,7 @@ public class LNEG extends JVMInstruction {
   }
   
   @Override
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

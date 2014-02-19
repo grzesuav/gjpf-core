@@ -27,7 +27,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Load reference from local variable
  * ... => ..., objectref
  */
-public class ALOAD extends LocalVariableInstruction {
+public class ALOAD extends JVMLocalVariableInstruction {
 
   public ALOAD(int index){
     super(index);
@@ -72,7 +72,7 @@ public class ALOAD extends LocalVariableInstruction {
     return "aload";
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

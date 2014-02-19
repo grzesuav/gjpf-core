@@ -41,7 +41,7 @@ public class IFNONNULL extends IfInstruction {
     return 0xC7;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

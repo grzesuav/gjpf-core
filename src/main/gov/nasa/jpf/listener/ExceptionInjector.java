@@ -23,7 +23,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.Instruction;
@@ -350,8 +350,8 @@ public class ExceptionInjector extends ListenerAdapter {
   public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
 
     ExceptionEntry e = insnToExecute.getAttr(ExceptionEntry.class);
-    if ((e == null) && insnToExecute instanceof InvokeInstruction){
-      MethodInfo mi = ((InvokeInstruction) insnToExecute).getInvokedMethod();
+    if ((e == null) && insnToExecute instanceof JVMInvokeInstruction){
+      MethodInfo mi = ((JVMInvokeInstruction) insnToExecute).getInvokedMethod();
       e = mi.getAttr(ExceptionEntry.class);
     }
 

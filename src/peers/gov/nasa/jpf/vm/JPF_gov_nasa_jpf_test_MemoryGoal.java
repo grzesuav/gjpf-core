@@ -21,7 +21,7 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMReturnInstruction;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
@@ -76,7 +76,7 @@ public class JPF_gov_nasa_jpf_test_MemoryGoal extends NativePeer {
           active = true;
         }
       } else {
-        if ((executedInsn instanceof ReturnInstruction) && (executedInsn.getMethodInfo() == mi)){
+        if ((executedInsn instanceof JVMReturnInstruction) && (executedInsn.getMethodInfo() == mi)){
           active = false;
         }
       }

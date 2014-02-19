@@ -18,17 +18,17 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.FieldLockInfo;
-import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.POR;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
+import gov.nasa.jpf.vm.bytecode.FieldInstruction;
 
 /**
  * parent class for PUT/GET FIELD/STATIC insns
@@ -37,7 +37,7 @@ import gov.nasa.jpf.vm.Types;
  * fields - w/o the instance/static helper methods we would have to duplicate
  * code in the getters/setters
  */
-public abstract class FieldInstruction extends JVMInstruction implements VariableAccessor, gov.nasa.jpf.vm.FieldInstruction {
+public abstract class JVMFieldInstruction extends FieldInstruction implements JVMInstruction {
   protected String fname;
   protected String className;
   protected String varId;
@@ -49,9 +49,9 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
 
   protected long lastValue;
   
-  protected FieldInstruction() {}
+  protected JVMFieldInstruction() {}
 
-  protected FieldInstruction(String name, String clsName, String fieldDescriptor){
+  protected JVMFieldInstruction(String name, String clsName, String fieldDescriptor){
     fname = name;
     className = Types.getClassNameFromTypeName(clsName);
     isReferenceField = Types.isReferenceSignature(fieldDescriptor);
@@ -316,7 +316,7 @@ public abstract class FieldInstruction extends JVMInstruction implements Variabl
     }
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
   

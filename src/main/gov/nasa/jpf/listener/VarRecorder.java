@@ -22,10 +22,10 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.ArrayInstruction;
 import gov.nasa.jpf.jvm.bytecode.ArrayLoadInstruction;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.LocalVariableInstruction;
-import gov.nasa.jpf.jvm.bytecode.StoreInstruction;
-import gov.nasa.jpf.jvm.bytecode.VariableAccessor;
+import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMLocalVariableInstruction;
+import gov.nasa.jpf.vm.bytecode.StoreInstruction;
+import gov.nasa.jpf.vm.bytecode.LocalVariableInstruction;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
@@ -148,7 +148,7 @@ public class VarRecorder extends ListenerAdapter {
     if (vm.getLastStep() == null)
       return(false);
 
-    if (!(inst instanceof VariableAccessor))
+    if (!(inst instanceof LocalVariableInstruction))
       if (!(inst instanceof ArrayInstruction))
         return(false);
 
@@ -224,12 +224,12 @@ public class VarRecorder extends ListenerAdapter {
 
     type = null;
 
-    if (((recordLocals) && (inst instanceof LocalVariableInstruction))
-            || ((recordFields) && (inst instanceof FieldInstruction))) {
-      if (inst instanceof LocalVariableInstruction) {
-        type = ((LocalVariableInstruction) inst).getLocalVariableType();
+    if (((recordLocals) && (inst instanceof JVMLocalVariableInstruction))
+            || ((recordFields) && (inst instanceof JVMFieldInstruction))) {
+      if (inst instanceof JVMLocalVariableInstruction) {
+        type = ((JVMLocalVariableInstruction) inst).getLocalVariableType();
       } else {
-        fi = ((FieldInstruction) inst).getFieldInfo();
+        fi = ((JVMFieldInstruction) inst).getFieldInfo();
         type = fi.getType();
       }
     }
@@ -303,9 +303,9 @@ public class VarRecorder extends ListenerAdapter {
     int index;
     boolean store;
 
-    if (((recordLocals) && (inst instanceof LocalVariableInstruction)) ||
-        ((recordFields) && (inst instanceof FieldInstruction))) {
-      name = ((VariableAccessor) inst).getVariableId();
+    if (((recordLocals) && (inst instanceof JVMLocalVariableInstruction)) ||
+        ((recordFields) && (inst instanceof JVMFieldInstruction))) {
+      name = ((LocalVariableInstruction) inst).getVariableId();
       name = name.substring(name.lastIndexOf('.') + 1);
 
       return(name);
@@ -327,8 +327,8 @@ public class VarRecorder extends ListenerAdapter {
 
     frame = ti.getTopFrame();
 
-    if (((recordLocals) && (inst instanceof LocalVariableInstruction)) ||
-        ((recordFields) && (inst instanceof FieldInstruction)))
+    if (((recordLocals) && (inst instanceof JVMLocalVariableInstruction)) ||
+        ((recordFields) && (inst instanceof JVMFieldInstruction)))
     {
        if (frame.getTopPos() < 0)
          return(null);

@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -30,7 +30,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  *
  * <2do> store this as code insnIndex, not as bytecode position
  */
-public class GOTO extends JVMInstruction {
+public class GOTO extends Instruction implements JVMInstruction {
   protected int targetPosition;
   Instruction target;
 
@@ -65,7 +65,7 @@ public class GOTO extends JVMInstruction {
     return getMnemonic() + " " + targetPosition;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.listener;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFConfigException;
 import gov.nasa.jpf.PropertyListenerAdapter;
@@ -28,7 +28,6 @@ import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.FieldSpec;
 import gov.nasa.jpf.util.VarSpec;
 import gov.nasa.jpf.vm.FieldInfo;
-import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MethodInfo;
@@ -104,9 +103,9 @@ public class NumericValueChecker extends PropertyListenerAdapter {
     }
   }
   
-  class Visitor extends InstructionVisitorAdapter {
+  class Visitor extends JVMInstructionVisitorAdapter {
     
-    void checkFieldInsn (FieldInstruction insn){
+    void checkFieldInsn (JVMFieldInstruction insn){
       if (fieldChecks != null){
         FieldInfo fi = insn.getFieldInfo();
 
@@ -130,7 +129,7 @@ public class NumericValueChecker extends PropertyListenerAdapter {
       }
     }
 
-    void checkVarInsn (LocalVariableInstruction insn){
+    void checkVarInsn (JVMLocalVariableInstruction insn){
       if (varChecks != null){
         ThreadInfo ti = ThreadInfo.getCurrentThread();
         StackFrame frame = ti.getTopFrame();

@@ -22,8 +22,8 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
-import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMReturnInstruction;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
@@ -313,8 +313,8 @@ public class MethodAnalyzer extends ListenerAdapter {
     MethodInfo mi;
     ElementInfo ei = null;
     
-    if (executedInsn instanceof InvokeInstruction) {
-      InvokeInstruction call = (InvokeInstruction)executedInsn;
+    if (executedInsn instanceof JVMInvokeInstruction) {
+      JVMInvokeInstruction call = (JVMInvokeInstruction)executedInsn;
       ti = thread;
       mi = call.getInvokedMethod(ti);
             
@@ -340,8 +340,8 @@ public class MethodAnalyzer extends ListenerAdapter {
         addOp(vm,type,mi,ti,ei, ti.getStackDepth());
       }
       
-    } else if (executedInsn instanceof ReturnInstruction) {
-      ReturnInstruction ret = (ReturnInstruction)executedInsn;
+    } else if (executedInsn instanceof JVMReturnInstruction) {
+      JVMReturnInstruction ret = (JVMReturnInstruction)executedInsn;
       ti = thread;
       StackFrame frame = ret.getReturnFrame();
       mi = frame.getMethodInfo();

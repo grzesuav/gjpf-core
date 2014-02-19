@@ -26,12 +26,12 @@ import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.POR;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.bytecode.InstanceFieldInstruction;
 
 /**
  * class abstracting instructions that access instance fields
  */
-public abstract class InstanceFieldInstruction extends FieldInstruction
-{
+public abstract class JVMInstanceFieldInstruction extends JVMFieldInstruction implements InstanceFieldInstruction {
   /**
    * this is required for package external derived GET/PUTFIELDS that
    * replace enter().
@@ -40,10 +40,19 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
    */
   protected int lastThis = MJIEnv.NULL;
 
-  protected InstanceFieldInstruction() {}
+  protected JVMInstanceFieldInstruction() {}
 
-  protected InstanceFieldInstruction (String fieldName, String classType, String fieldDescriptor){
+  protected JVMInstanceFieldInstruction (String fieldName, String classType, String fieldDescriptor){
     super(fieldName, classType, fieldDescriptor);
+  }
+  
+  @Override
+  public ElementInfo getElementInfo (ThreadInfo ti){
+    if (isCompleted(ti)){
+      return ti.getElementInfo(lastThis);
+    } else {
+      return peekElementInfo(ti);
+    }
   }
   
   @Override
@@ -181,7 +190,7 @@ public abstract class InstanceFieldInstruction extends FieldInstruction
     return ei.toString() + '.' + fi.getName();
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

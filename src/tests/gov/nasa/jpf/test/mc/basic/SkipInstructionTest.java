@@ -21,7 +21,7 @@ package gov.nasa.jpf.test.mc.basic;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.IRETURN;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
@@ -111,7 +111,7 @@ public class SkipInstructionTest extends TestJPF {
 
         if (!ti.isFirstStepInsn()) {
           System.out.println("in top half: " + executedInsn);
-          if (executedInsn instanceof InvokeInstruction) { // we just entered the interceptedMethod
+          if (executedInsn instanceof JVMInvokeInstruction) { // we just entered the interceptedMethod
             IntChoiceFromList cg = new IntChoiceFromList("Test", 42, 43);
             if (vm.setNextChoiceGenerator(cg)) {
               return; // we are done here, next insn in this method will skip to return

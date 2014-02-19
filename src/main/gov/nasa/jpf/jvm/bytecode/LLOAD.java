@@ -27,7 +27,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Load long from local variable
  * ... => ..., value
  */
-public class LLOAD extends LocalVariableInstruction {
+public class LLOAD extends JVMLocalVariableInstruction {
 
   public LLOAD(int localVarIndex){
     super(localVarIndex);
@@ -65,7 +65,7 @@ public class LLOAD extends LocalVariableInstruction {
     return "lload";
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

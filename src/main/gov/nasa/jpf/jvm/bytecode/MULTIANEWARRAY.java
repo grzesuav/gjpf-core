@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
@@ -34,7 +34,7 @@ import gov.nasa.jpf.vm.Types;
  * Create new multidimensional array
  * ..., count1, [count2, ...] => ..., arrayref
  */
-public class MULTIANEWARRAY extends JVMInstruction {
+public class MULTIANEWARRAY extends Instruction implements JVMInstruction {
   protected String type;
   
   protected int dimensions;
@@ -101,7 +101,7 @@ public class MULTIANEWARRAY extends JVMInstruction {
     return 0xC5;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

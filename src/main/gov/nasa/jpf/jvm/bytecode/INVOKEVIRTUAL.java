@@ -41,7 +41,7 @@ public class INVOKEVIRTUAL extends VirtualInvocation {
     return "invokevirtual " + cname + '.' + mname;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

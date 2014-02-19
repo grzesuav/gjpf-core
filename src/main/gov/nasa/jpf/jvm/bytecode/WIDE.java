@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -31,7 +31,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * (2): <iinc> indexbyte1 indexbyte2 constbyte1 constbyte2
  *
  */
-public class WIDE extends JVMInstruction {
+public class WIDE extends Instruction implements JVMInstruction {
 
   // would have to be checked and reset by following insn
   public static boolean isWide = false;
@@ -47,7 +47,7 @@ public class WIDE extends JVMInstruction {
     return getNext(ti);
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

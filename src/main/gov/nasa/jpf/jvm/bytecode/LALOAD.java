@@ -40,7 +40,7 @@ public class LALOAD extends LongArrayLoadInstruction {
     return 0x2F;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

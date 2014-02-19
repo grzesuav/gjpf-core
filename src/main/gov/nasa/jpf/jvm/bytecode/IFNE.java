@@ -40,7 +40,7 @@ public class IFNE extends IfInstruction {
     return 0x9A;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

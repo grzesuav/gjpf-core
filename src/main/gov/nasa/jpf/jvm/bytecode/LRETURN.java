@@ -49,7 +49,7 @@ public class LRETURN extends LongReturn {
     return "lreturn " + mi.getFullName();
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

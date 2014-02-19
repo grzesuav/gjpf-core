@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
@@ -33,7 +33,7 @@ import gov.nasa.jpf.vm.Types;
  * Check whether object is of given type
  * ..., objectref => ..., objectref
  */
-public class CHECKCAST extends JVMInstruction {
+public class CHECKCAST extends Instruction implements JVMInstruction {
   String type;
 
   public CHECKCAST() {} // this is going away
@@ -105,7 +105,7 @@ public class CHECKCAST extends JVMInstruction {
     return 0xC0;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

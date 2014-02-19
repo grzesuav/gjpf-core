@@ -46,7 +46,7 @@ public class DASTORE extends LongArrayStoreInstruction {
     return 0x52;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

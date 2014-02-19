@@ -93,7 +93,7 @@ public class MONITORENTER extends LockInstruction {
     return 0xC2;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

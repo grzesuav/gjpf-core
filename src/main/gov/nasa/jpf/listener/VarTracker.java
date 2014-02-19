@@ -23,11 +23,11 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.ALOAD;
 import gov.nasa.jpf.jvm.bytecode.ArrayStoreInstruction;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.GETFIELD;
 import gov.nasa.jpf.jvm.bytecode.GETSTATIC;
-import gov.nasa.jpf.jvm.bytecode.StoreInstruction;
-import gov.nasa.jpf.jvm.bytecode.VariableAccessor;
+import gov.nasa.jpf.vm.bytecode.StoreInstruction;
+import gov.nasa.jpf.vm.bytecode.LocalVariableInstruction;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
@@ -169,7 +169,7 @@ public class VarTracker extends ListenerAdapter {
     String varId;
     
     if ( ((((executedInsn instanceof GETFIELD) || (executedInsn instanceof GETSTATIC)))
-            && ((FieldInstruction)executedInsn).isReferenceField()) ||
+            && ((JVMFieldInstruction)executedInsn).isReferenceField()) ||
          (executedInsn instanceof ALOAD)) {
       // a little extra work - we need to keep track of variable names, because
       // we cannot easily retrieve them in a subsequent xASTORE, which follows
@@ -179,7 +179,7 @@ public class VarTracker extends ListenerAdapter {
       if (objRef != MJIEnv.NULL) {
         ElementInfo ei = ti.getElementInfo(objRef);
         if (ei.isArray()) {
-          varId = ((VariableAccessor)executedInsn).getVariableId();
+          varId = ((LocalVariableInstruction)executedInsn).getVariableId();
           
           // <2do> unfortunately, we can't filter here because we don't know yet
           // how the array ref will be used (we would only need the attr for
@@ -206,7 +206,7 @@ public class VarTracker extends ListenerAdapter {
           varId = "?[]";
         }
       } else {
-        varId = ((VariableAccessor)executedInsn).getVariableId();
+        varId = ((LocalVariableInstruction)executedInsn).getVariableId();
       }
       
       if (isMethodRelevant(executedInsn.getMethodInfo()) && isVarRelevant(varId)) {

@@ -18,13 +18,14 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.bytecode.ReturnInstruction;
 
 import java.util.Iterator;
 
@@ -32,7 +33,7 @@ import java.util.Iterator;
 /**
  * abstraction for the various return instructions
  */
-public abstract class ReturnInstruction extends JVMInstruction implements gov.nasa.jpf.vm.ReturnInstruction {
+public abstract class JVMReturnInstruction extends ReturnInstruction implements JVMInstruction {
 
   // to store where we came from
   protected StackFrame returnFrame;
@@ -179,7 +180,11 @@ public abstract class ReturnInstruction extends JVMInstruction implements gov.na
     return frame.getPC().getNext();
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
+  }
+  
+  public String toPostExecString() {
+    return getMnemonic() + " [" + mi.getFullName() + ']';
   }
 }

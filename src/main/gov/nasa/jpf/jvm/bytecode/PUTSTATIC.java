@@ -19,20 +19,20 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.bytecode.WriteInstruction;
 
 
 /**
  * Set static field in class
  * ..., value => ...
  */
-public class PUTSTATIC extends StaticFieldInstruction implements StoreInstruction {
+public class PUTSTATIC extends StaticFieldInstruction implements WriteInstruction {
 
   public PUTSTATIC() {}
 
@@ -40,6 +40,14 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
     super(fieldName, clsDescriptor, fieldDescriptor);
   }
 
+  /**
+   * where do we get the value from?
+   * NOTE: only makes sense in a executeInstruction() context 
+   */
+  public int getValueSlot (StackFrame frame){
+    return frame.getTopPos();
+  }
+  
   @Override
   protected void popOperands1 (StackFrame frame) {
     frame.pop(); // .. val => ..
@@ -105,7 +113,7 @@ public class PUTSTATIC extends StaticFieldInstruction implements StoreInstructio
     return false;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

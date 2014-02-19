@@ -34,7 +34,7 @@ import gov.nasa.jpf.vm.Types;
  * Invoke a class (static) method
  * ..., [arg1, [arg2 ...]]  => ...
  */
-public class INVOKESTATIC extends InvokeInstruction {
+public class INVOKESTATIC extends JVMInvokeInstruction {
   ClassInfo ci;
   
   protected INVOKESTATIC (String clsDescriptor, String methodName, String signature){
@@ -166,7 +166,7 @@ public class INVOKESTATIC extends InvokeInstruction {
     return getClassInfo().getStaticFieldValueObject(id);
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

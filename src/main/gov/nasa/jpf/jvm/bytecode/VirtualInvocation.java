@@ -162,7 +162,7 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     return v;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

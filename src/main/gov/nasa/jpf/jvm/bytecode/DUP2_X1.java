@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -27,7 +27,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
 /**
  * DOCUMENT ME!
  */
-public class DUP2_X1 extends JVMInstruction {
+public class DUP2_X1 extends Instruction implements JVMInstruction {
 
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
@@ -41,7 +41,7 @@ public class DUP2_X1 extends JVMInstruction {
     return 0x5D;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

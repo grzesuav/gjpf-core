@@ -43,7 +43,7 @@ public class IF_ICMPNE extends IfInstruction {
     return 0xA0;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

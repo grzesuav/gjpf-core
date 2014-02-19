@@ -23,7 +23,7 @@ package gov.nasa.jpf.jvm.bytecode;
  * Access jump table by key match and jump
  * ..., key => ...
  */
-public class LOOKUPSWITCH extends SwitchInstruction implements gov.nasa.jpf.vm.LookupSwitchInstruction {
+public class LOOKUPSWITCH extends SwitchInstruction implements gov.nasa.jpf.vm.bytecode.LookupSwitchInstruction {
 
   public LOOKUPSWITCH (int defaultTarget, int numberOfTargets) {
     super(defaultTarget, numberOfTargets);
@@ -43,7 +43,7 @@ public class LOOKUPSWITCH extends SwitchInstruction implements gov.nasa.jpf.vm.L
     return 0xAB;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

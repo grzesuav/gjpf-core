@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2011 United States Government as represented by the
+// Copyright (C) 2014 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,12 +16,18 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.vm;
+
+package gov.nasa.jpf.vm.bytecode;
+
+import gov.nasa.jpf.vm.FieldInfo;
+import gov.nasa.jpf.vm.StackFrame;
 
 /**
- * interface to insulate us from any specific Instruction hierarchy
+ * common type for all instance field access intstructions
  */
-public interface LookupSwitchInstruction {
+public interface InstanceFieldInstruction extends InstructionInterface {
 
-  void setTarget(int index, int match, int targetPc);
+  FieldInfo getFieldInfo();
+  
+  int getObjectSlot (StackFrame frame);
 }

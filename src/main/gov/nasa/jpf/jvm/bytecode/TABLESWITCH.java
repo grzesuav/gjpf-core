@@ -30,7 +30,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Access jump table by index and jump
  *   ..., index  => ...
  */
-public class TABLESWITCH extends SwitchInstruction implements gov.nasa.jpf.vm.TableSwitchInstruction {
+public class TABLESWITCH extends SwitchInstruction implements gov.nasa.jpf.vm.bytecode.TableSwitchInstruction {
 
   int min, max;
 
@@ -86,7 +86,7 @@ public class TABLESWITCH extends SwitchInstruction implements gov.nasa.jpf.vm.Ta
     return 0xAA;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

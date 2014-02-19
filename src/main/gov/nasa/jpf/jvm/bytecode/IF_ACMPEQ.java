@@ -43,7 +43,7 @@ public class IF_ACMPEQ extends IfInstruction {
     return 0xA5;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

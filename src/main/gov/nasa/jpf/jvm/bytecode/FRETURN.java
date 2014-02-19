@@ -27,7 +27,7 @@ import gov.nasa.jpf.vm.Types;
  * Return float from method
  * ..., value => [empty]
  */
-public class FRETURN extends ReturnInstruction {
+public class FRETURN extends JVMReturnInstruction {
 
   float ret;
   
@@ -68,7 +68,7 @@ public class FRETURN extends ReturnInstruction {
     return "freturn " + mi.getFullName();
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

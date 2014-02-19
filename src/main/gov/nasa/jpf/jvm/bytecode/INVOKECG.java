@@ -19,10 +19,9 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.jvm.JVMInstructionFactory;
 import gov.nasa.jpf.util.Invocation;
-import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ObjRef;
 import gov.nasa.jpf.vm.StackFrame;
@@ -38,10 +37,10 @@ import java.util.List;
  * executes in has enough operand space (e.g. a DirectCallStackFrame).
  * 
  */
-public class INVOKECG extends JVMInstruction {
+public class INVOKECG extends Instruction implements JVMInstruction {
 
   List<Invocation>  invokes;
-  InvokeInstruction realInvoke;
+  JVMInvokeInstruction realInvoke;
 
   public INVOKECG(List<Invocation> invokes){
     this.invokes = invokes;
@@ -138,7 +137,7 @@ public class INVOKECG extends JVMInstruction {
     return OPCODE;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
   

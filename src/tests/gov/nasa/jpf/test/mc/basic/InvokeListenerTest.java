@@ -21,7 +21,7 @@ package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.VirtualInvocation;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ElementInfo;
@@ -42,8 +42,8 @@ public class InvokeListenerTest extends TestJPF {
   public static class Listener extends ListenerAdapter {
 
     void checkArgs (ThreadInfo ti, Instruction insn, boolean isPostExec){
-      if (insn instanceof InvokeInstruction){
-        InvokeInstruction call = (InvokeInstruction)insn;
+      if (insn instanceof JVMInvokeInstruction){
+        JVMInvokeInstruction call = (JVMInvokeInstruction)insn;
         MethodInfo mi = call.getInvokedMethod(ti);
         String miSignature = mi.getUniqueName();
         String mname = mi.getName();
@@ -72,7 +72,7 @@ public class InvokeListenerTest extends TestJPF {
       }
     }
 
-    ElementInfo getTarget (ThreadInfo ti, InvokeInstruction call){
+    ElementInfo getTarget (ThreadInfo ti, JVMInvokeInstruction call){
       if (call instanceof VirtualInvocation){
         int objRef = ((VirtualInvocation)call).getCalleeThis(ti);
         return ti.getElementInfo(objRef);

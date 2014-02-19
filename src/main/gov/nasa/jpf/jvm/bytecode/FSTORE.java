@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.vm.bytecode.StoreInstruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -27,7 +28,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Store float into local variable
  * ..., value => ...
  */
-public class FSTORE extends LocalVariableInstruction implements StoreInstruction {
+public class FSTORE extends JVMLocalVariableInstruction implements StoreInstruction {
 
   public FSTORE(int localVarIndex) {
     super(localVarIndex);
@@ -65,7 +66,7 @@ public class FSTORE extends LocalVariableInstruction implements StoreInstruction
     return "fstore";
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

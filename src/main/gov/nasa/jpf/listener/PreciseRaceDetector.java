@@ -20,8 +20,8 @@ package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.PropertyListenerAdapter;
-import gov.nasa.jpf.vm.ArrayElementInstruction;
-import gov.nasa.jpf.vm.FieldInstruction;
+import gov.nasa.jpf.vm.bytecode.ArrayElementInstruction;
+import gov.nasa.jpf.vm.bytecode.FieldInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ChoiceGenerator;
@@ -30,7 +30,7 @@ import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.ReadWriteInstruction;
+import gov.nasa.jpf.vm.bytecode.ReadOrWriteInstruction;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
@@ -66,7 +66,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
     Race prev;   // linked list
 
     ThreadInfo ti1, ti2;
-    ReadWriteInstruction insn1, insn2;
+    ReadOrWriteInstruction insn1, insn2;
     ElementInfo ei;
     boolean isRead1, isRead2;
 
@@ -106,7 +106,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
   static class FieldRace extends Race {
     FieldInfo   fi;
 
-    static Race check (Race prev, ThreadInfo ti,  ReadWriteInstruction insn, ElementInfo ei, FieldInfo fi){
+    static Race check (Race prev, ThreadInfo ti,  ReadOrWriteInstruction insn, ElementInfo ei, FieldInfo fi){
       for (Race r = prev; r != null; r = r.prev){
         if (r instanceof FieldRace){
           FieldRace fr = (FieldRace)r;
@@ -143,7 +143,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
   static class ArrayElementRace extends Race {
     int idx;
 
-    static Race check (Race prev, ThreadInfo ti, ReadWriteInstruction insn, ElementInfo ei, int idx){
+    static Race check (Race prev, ThreadInfo ti, ReadOrWriteInstruction insn, ElementInfo ei, int idx){
       for (Race r = prev; r != null; r = r.prev){
         if (r instanceof ArrayElementRace){
           ArrayElementRace ar = (ArrayElementRace)r;

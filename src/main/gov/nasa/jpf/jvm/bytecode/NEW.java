@@ -18,15 +18,23 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
-import gov.nasa.jpf.vm.*;
+import gov.nasa.jpf.vm.bytecode.NewInstruction;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.Heap;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.LoadOnJPFRequired;
+import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.StackFrame;
+import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.Types;
 
 
 /**
  * Create new object
  * ... => ..., objectref
  */
-public class NEW extends JVMInstruction implements AllocInstruction {
+public class NEW extends NewInstruction implements JVMInstruction  {
   protected String cname;
   protected int newObjRef = MJIEnv.NULL;
 
@@ -85,7 +93,7 @@ public class NEW extends JVMInstruction implements AllocInstruction {
     return 0xBB;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

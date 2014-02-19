@@ -24,10 +24,10 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.Invocation;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.LookupSwitchInstruction;
+import gov.nasa.jpf.vm.bytecode.LookupSwitchInstruction;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.NativeMethodInfo;
-import gov.nasa.jpf.vm.TableSwitchInstruction;
+import gov.nasa.jpf.vm.bytecode.TableSwitchInstruction;
 
 import java.util.ArrayList;
 import java.util.List;

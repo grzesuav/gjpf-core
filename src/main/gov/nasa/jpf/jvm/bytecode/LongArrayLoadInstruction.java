@@ -39,7 +39,7 @@ public abstract class LongArrayLoadInstruction extends ArrayLoadInstruction {
     return 2;
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

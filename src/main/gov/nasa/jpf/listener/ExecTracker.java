@@ -21,9 +21,9 @@ package gov.nasa.jpf.listener;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.annotation.JPFOption;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInstanceFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.LockInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
@@ -225,9 +225,7 @@ public class ExecTracker extends ListenerAdapter {
       
       out.print( linePrefix);
       
-      out.print('[');
-      out.print(executedInsn.getPosition());
-      out.print("] ");
+      out.printf("[%04x]   ", executedInsn.getPosition());
       
       out.println( executedInsn.toPostExecString());
     }

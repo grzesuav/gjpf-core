@@ -20,8 +20,8 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
 
-public abstract class InstructionVisitorAdapter 
-							implements InstructionVisitor {
+public abstract class JVMInstructionVisitorAdapter 
+							implements JVMInstructionVisitor {
 
 	public void visit(Instruction ins) {}
 
@@ -39,7 +39,7 @@ public abstract class InstructionVisitorAdapter
 
 	public void visit(ArrayInstruction ins) {}
 
-	public void visit(ArrayElementInstruction ins) {}
+	public void visit(JVMArrayElementInstruction ins) {}
   
 	public void visit(ARRAYLENGTH ins) {}
 
@@ -127,7 +127,7 @@ public abstract class InstructionVisitorAdapter
 
 	public void visit(FDIV ins) {}
 
-	public void visit(FieldInstruction ins) {}
+	public void visit(JVMFieldInstruction ins) {}
 
 	public void visit(FLOAD ins) {}
 
@@ -217,7 +217,7 @@ public abstract class InstructionVisitorAdapter
 
 	public void visit(INEG ins) {}
 
-	public void visit(InstanceFieldInstruction ins) {}
+	public void visit(JVMInstanceFieldInstruction ins) {}
 
 	public void visit(InstanceInvocation ins){}
 	
@@ -227,7 +227,7 @@ public abstract class InstructionVisitorAdapter
 	
 	public void visit(INVOKECLINIT ins){}
 	
-	public void visit(InvokeInstruction ins){}
+	public void visit(JVMInvokeInstruction ins){}
 	
 	public void visit(INVOKEINTERFACE ins){}
 	
@@ -293,7 +293,7 @@ public abstract class InstructionVisitorAdapter
 	
 	public void visit(LNEG ins){}
 	
-	public void visit(LocalVariableInstruction ins){}
+	public void visit(JVMLocalVariableInstruction ins){}
 	
 	public void visit(LockInstruction ins){}
 	
@@ -347,7 +347,7 @@ public abstract class InstructionVisitorAdapter
 	
 	public void visit(RETURN ins){}
 	
-	public void visit(ReturnInstruction ins){}
+	public void visit(JVMReturnInstruction ins){}
 	
 	public void visit(SALOAD ins){}
 	

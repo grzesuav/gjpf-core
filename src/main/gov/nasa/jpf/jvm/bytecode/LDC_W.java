@@ -48,7 +48,7 @@ public class LDC_W extends LDC {
     return 0x13;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

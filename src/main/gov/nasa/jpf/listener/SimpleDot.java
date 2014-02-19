@@ -27,11 +27,11 @@ import gov.nasa.jpf.JPFListenerException;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.Property;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.INVOKESTATIC;
-import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInstanceFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.LockInstruction;
 import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
 import gov.nasa.jpf.jvm.bytecode.PUTSTATIC;
@@ -294,14 +294,14 @@ public class SimpleDot extends ListenerAdapter {
     if (insn instanceof EXECUTENATIVE) {
       return getNativeExecCG((EXECUTENATIVE)insn);
 
-    } else if (insn instanceof FieldInstruction) { // shared object field access
-      return getFieldAccessCG((FieldInstruction)insn);
+    } else if (insn instanceof JVMFieldInstruction) { // shared object field access
+      return getFieldAccessCG((JVMFieldInstruction)insn);
 
     } else if (insn instanceof LockInstruction){ // monitor_enter
       return getLockCG((LockInstruction)insn);
 
-    } else if (insn instanceof InvokeInstruction){ // sync method invoke
-      return getInvokeCG((InvokeInstruction)insn);
+    } else if (insn instanceof JVMInvokeInstruction){ // sync method invoke
+      return getInvokeCG((JVMInvokeInstruction)insn);
     }
 
     return insn.getMnemonic(); // our generic fallback
@@ -320,10 +320,10 @@ public class SimpleDot extends ListenerAdapter {
     return s;
   }
 
-  protected String getFieldAccessCG (FieldInstruction insn){
+  protected String getFieldAccessCG (JVMFieldInstruction insn){
     String s;
 
-    if (insn instanceof InstanceFieldInstruction) {
+    if (insn instanceof JVMInstanceFieldInstruction) {
 
       if (insn instanceof PUTFIELD) {
         s = "put";
@@ -332,7 +332,7 @@ public class SimpleDot extends ListenerAdapter {
       }
 
       if (showTarget){
-        int ref = ((InstanceFieldInstruction) insn).getLastThis();
+        int ref = ((JVMInstanceFieldInstruction) insn).getLastThis();
         s = getInstanceRef(ref) + '.' + s;
       }
 
@@ -349,7 +349,7 @@ public class SimpleDot extends ListenerAdapter {
       }
     }
 
-    String varId = Misc.stripToLastDot(((FieldInstruction) insn).getVariableId());
+    String varId = Misc.stripToLastDot(((JVMFieldInstruction) insn).getVariableId());
     s = s + ' ' + varId;
 
     return s;
@@ -366,7 +366,7 @@ public class SimpleDot extends ListenerAdapter {
     return s;
   }
 
-  protected String getInvokeCG (InvokeInstruction insn){
+  protected String getInvokeCG (JVMInvokeInstruction insn){
     MethodInfo mi = insn.getInvokedMethod();
     String s = mi.getName() + "()";
 

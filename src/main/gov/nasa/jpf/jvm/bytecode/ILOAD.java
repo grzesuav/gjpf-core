@@ -27,7 +27,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Load int from local variable
  * ... => ..., value
  */
-public class ILOAD extends LocalVariableInstruction {
+public class ILOAD extends JVMLocalVariableInstruction {
 
   public ILOAD(int localVarIndex){
     super(localVarIndex);
@@ -65,7 +65,7 @@ public class ILOAD extends LocalVariableInstruction {
     return "iload";
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

@@ -19,7 +19,7 @@
 
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -36,7 +36,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * just happens to be the first transition we execute within this thread
  * 
  */
-public class RUNSTART extends JVMInstruction {
+public class RUNSTART extends Instruction implements JVMInstruction {
 
   public RUNSTART () {
   }
@@ -56,7 +56,7 @@ public class RUNSTART extends JVMInstruction {
     return true;
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

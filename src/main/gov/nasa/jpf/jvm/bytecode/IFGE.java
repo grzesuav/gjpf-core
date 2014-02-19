@@ -40,7 +40,7 @@ public class IFGE extends IfInstruction {
     return 0x9C;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

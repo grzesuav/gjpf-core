@@ -23,8 +23,8 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.GOTO;
 import gov.nasa.jpf.jvm.bytecode.IfInstruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
-import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMReturnInstruction;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.report.PublisherExtension;
@@ -320,7 +320,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
                   b.set(i);
                 }
               }
-            } else if (insn instanceof ReturnInstruction) { // everything else is handler
+            } else if (insn instanceof JVMReturnInstruction) { // everything else is handler
               for (i++; i < code.length; i++) {
                 b.set(i);
               }
@@ -376,7 +376,7 @@ public class CoverageAnalyzer extends ListenerAdapter implements PublisherExtens
           } else if (insn instanceof GOTO) {
             Instruction tgt = ((GOTO) insn).getTarget();
             bb.set(tgt.getInstructionIndex());
-          } else if (insn instanceof InvokeInstruction) {
+          } else if (insn instanceof JVMInvokeInstruction) {
             // hmm, this might be a bit too conservative, but who says we
             // don't jump out of a caller into a handler, or even that we
             // ever return from the call?

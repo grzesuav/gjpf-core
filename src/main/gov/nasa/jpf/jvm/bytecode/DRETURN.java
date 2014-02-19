@@ -51,7 +51,7 @@ public class DRETURN extends LongReturn {
     return "dreturn " + mi.getFullName();
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

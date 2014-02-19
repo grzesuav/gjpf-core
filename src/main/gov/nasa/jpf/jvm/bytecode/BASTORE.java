@@ -56,7 +56,7 @@ public class BASTORE extends ArrayStoreInstruction {
     return 0x54;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
   

@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
@@ -32,7 +32,7 @@ import gov.nasa.jpf.vm.Types;
  * Push item from runtime constant pool
  * ... => ..., value
  */
-public class LDC extends JVMInstruction {
+public class LDC extends Instruction implements JVMInstruction {
 
   public enum Type {STRING, CLASS, INT, FLOAT};
 
@@ -150,7 +150,7 @@ public class LDC extends JVMInstruction {
 	  }
 
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

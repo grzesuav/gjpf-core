@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.vm.bytecode.StoreInstruction;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -27,7 +28,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Store reference into local variable
  * ..., objref => ...
  */
-public class ASTORE extends LocalVariableInstruction implements StoreInstruction {
+public class ASTORE extends JVMLocalVariableInstruction implements StoreInstruction {
 
   public ASTORE(int index){
     super(index);
@@ -67,7 +68,7 @@ public class ASTORE extends LocalVariableInstruction implements StoreInstruction
   
   
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

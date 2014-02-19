@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.jvm.JVMInstruction;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
@@ -32,7 +32,7 @@ import gov.nasa.jpf.vm.Types;
  * Determine if object is of given type
  * ..., objectref => ..., result
  */
-public class INSTANCEOF extends JVMInstruction {
+public class INSTANCEOF extends Instruction implements JVMInstruction {
   private String type;
 
 
@@ -87,7 +87,7 @@ public class INSTANCEOF extends JVMInstruction {
     return 0xC1;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

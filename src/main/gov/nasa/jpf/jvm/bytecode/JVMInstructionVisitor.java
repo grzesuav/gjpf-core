@@ -20,7 +20,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
 
-public interface InstructionVisitor {
+public interface JVMInstructionVisitor {
 
 	public void visit(Instruction ins);
 	public void visit(AALOAD ins);
@@ -29,8 +29,7 @@ public interface InstructionVisitor {
 	public void visit(ALOAD ins);
 	public void visit(ANEWARRAY ins);
 	public void visit(ARETURN ins);
-	public void visit(ArrayInstruction ins);
-	public void visit(ArrayElementInstruction ins);
+	public void visit(JVMArrayElementInstruction ins);
 	public void visit(ARRAYLENGTH ins);
 	public void visit(ArrayLoadInstruction ins);
 	public void visit(ArrayStoreInstruction ins);
@@ -75,7 +74,7 @@ public interface InstructionVisitor {
 	public void visit(FCMPL ins);
 	public void visit(FCONST ins);
 	public void visit(FDIV ins);
-	public void visit(FieldInstruction ins);
+	public void visit(JVMFieldInstruction ins);
 	public void visit(FLOAD ins);
 	public void visit(FMUL ins);
 	public void visit(FNEG ins);
@@ -120,12 +119,12 @@ public interface InstructionVisitor {
 	public void visit(ILOAD ins);
 	public void visit(IMUL ins);
 	public void visit(INEG ins);
-	public void visit(InstanceFieldInstruction ins);
+	public void visit(JVMInstanceFieldInstruction ins);
 	public void visit(InstanceInvocation ins);
 	public void visit(INSTANCEOF ins);
 	public void visit(INVOKECG ins);
 	public void visit(INVOKECLINIT ins);
-	public void visit(InvokeInstruction ins);
+	public void visit(JVMInvokeInstruction ins);
 	public void visit(INVOKEINTERFACE ins);
 	public void visit(INVOKESPECIAL ins);
 	public void visit(INVOKESTATIC ins);
@@ -157,7 +156,7 @@ public interface InstructionVisitor {
 	public void visit(LLOAD ins);
 	public void visit(LMUL ins);
 	public void visit(LNEG ins);
-	public void visit(LocalVariableInstruction ins);
+	public void visit(JVMLocalVariableInstruction ins);
 	public void visit(LockInstruction ins);
 	public void visit(LongArrayLoadInstruction ins);
 	public void visit(LongArrayStoreInstruction ins);
@@ -184,7 +183,7 @@ public interface InstructionVisitor {
 	public void visit(PUTSTATIC ins);
 	public void visit(RET ins);
 	public void visit(RETURN ins);
-	public void visit(ReturnInstruction ins);
+	public void visit(JVMReturnInstruction ins);
 	public void visit(SALOAD ins);
 	public void visit(SASTORE ins);
 	public void visit(SIPUSH ins);

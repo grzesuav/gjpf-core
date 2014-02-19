@@ -29,8 +29,27 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Get length of array 
  * ..., arrayref => ..., length
  */
-public class ARRAYLENGTH extends ArrayInstruction {
+public class ARRAYLENGTH extends Instruction implements JVMInstruction {
     
+  protected int arrayRef;
+
+  /**
+   * only makes sense from an executeInstruction() or instructionExecuted() listener,
+   * it is undefined outside of insn exec notifications
+   */
+  public int getArrayRef (ThreadInfo ti){
+    if (ti.isPreExec()){
+      return peekArrayRef(ti);
+    } else {
+      return arrayRef;
+    }
+  }
+
+  public ElementInfo peekArrayElementInfo (ThreadInfo ti){
+    int aref = getArrayRef(ti);
+    return ti.getElementInfo(aref);
+  }
+  
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
@@ -53,11 +72,10 @@ public class ARRAYLENGTH extends ArrayInstruction {
   }
   
   @Override
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 
-  @Override
   protected int peekArrayRef (ThreadInfo ti) {
     return ti.getTopFrame().peek();
   }

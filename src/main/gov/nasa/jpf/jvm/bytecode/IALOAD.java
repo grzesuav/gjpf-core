@@ -39,7 +39,7 @@ public class IALOAD extends ArrayLoadInstruction {
     return 0x2E;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

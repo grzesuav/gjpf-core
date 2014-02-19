@@ -24,16 +24,23 @@ import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.bytecode.ReadInstruction;
 
 
 /**
  * Fetch field from object
  * ..., objectref => ..., value
  */
-public class GETFIELD extends InstanceFieldInstruction {
+public class GETFIELD extends JVMInstanceFieldInstruction implements ReadInstruction {
 
   public GETFIELD (String fieldName, String classType, String fieldDescriptor){
     super(fieldName, classType, fieldDescriptor);
+  }
+  
+  
+  @Override
+  public int getObjectSlot (StackFrame frame){
+    return frame.getTopPos();
   }
 
   @Override
@@ -123,7 +130,7 @@ public class GETFIELD extends InstanceFieldInstruction {
     return true;
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

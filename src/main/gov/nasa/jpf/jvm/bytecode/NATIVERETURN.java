@@ -30,13 +30,13 @@ import gov.nasa.jpf.vm.Types;
  * we don't have to do special provisions to copy the caller args in case
  * a post exec listener wants them.
  */
-public class NATIVERETURN extends ReturnInstruction {
+public class NATIVERETURN extends JVMReturnInstruction {
 
   Object ret;
   Object retAttr;
   Byte retType;
 
-  // this is more simple than a normal ReturnInstruction because NativeMethodInfos
+  // this is more simple than a normal JVMReturnInstruction because NativeMethodInfos
   // are not synchronized, and NativeStackFrames are never the first frame in a thread
   @Override
   public Instruction execute (ThreadInfo ti) {
@@ -83,7 +83,7 @@ public class NATIVERETURN extends ReturnInstruction {
   }
 
   @Override
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

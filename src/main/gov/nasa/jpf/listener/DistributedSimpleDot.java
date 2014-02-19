@@ -23,8 +23,8 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.jvm.bytecode.DIRECTCALLRETURN;
 import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.LockInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
@@ -104,14 +104,14 @@ public class DistributedSimpleDot extends SimpleDot {
     if (insn instanceof EXECUTENATIVE) {
       return getNativeExecCG((EXECUTENATIVE)insn);
 
-    } else if (insn instanceof FieldInstruction) { // shared object field access
-      return getFieldAccessCG((FieldInstruction)insn);
+    } else if (insn instanceof JVMFieldInstruction) { // shared object field access
+      return getFieldAccessCG((JVMFieldInstruction)insn);
 
     } else if (insn instanceof LockInstruction){ // monitor_enter
       return getLockCG((LockInstruction)insn);
 
-    } else if (insn instanceof InvokeInstruction){ // sync method invoke
-      return getInvokeCG((InvokeInstruction)insn);
+    } else if (insn instanceof JVMInvokeInstruction){ // sync method invoke
+      return getInvokeCG((JVMInvokeInstruction)insn);
     } else if(insn instanceof DIRECTCALLRETURN && vm.getCurrentThread().getNextPC()==null) {
       return "return";
     }

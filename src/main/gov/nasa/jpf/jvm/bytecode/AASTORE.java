@@ -65,7 +65,7 @@ public class AASTORE extends ArrayStoreInstruction {
     return 0x53;
   }
 
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

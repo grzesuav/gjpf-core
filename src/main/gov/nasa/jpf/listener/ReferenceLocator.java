@@ -20,7 +20,7 @@ package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.InstanceFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInstanceFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
@@ -96,8 +96,8 @@ public class ReferenceLocator extends ListenerAdapter {
         if (Arrays.binarySearch(useRefs, ref) >= 0){
           printLocation("[ReferenceLocator] call on object " + ti.getElementInfo(ref) + " at:", ti);
         }
-      } else if (executedInsn instanceof InstanceFieldInstruction){
-        int ref = ((InstanceFieldInstruction)executedInsn).getLastThis();
+      } else if (executedInsn instanceof JVMInstanceFieldInstruction){
+        int ref = ((JVMInstanceFieldInstruction)executedInsn).getLastThis();
         if (Arrays.binarySearch(useRefs, ref) >= 0){
           printLocation("[ReferenceLocator] field access of " + ti.getElementInfo(ref) + " at:", ti);          
         }

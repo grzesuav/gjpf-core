@@ -26,7 +26,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  * Return int from method
  * ..., value => [empty]
  */
-public class IRETURN extends ReturnInstruction {
+public class IRETURN extends JVMReturnInstruction {
 
   int ret;
   
@@ -67,7 +67,7 @@ public class IRETURN extends ReturnInstruction {
     return "ireturn " + mi.getFullName();
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

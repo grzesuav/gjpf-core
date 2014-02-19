@@ -43,7 +43,7 @@ public class IF_ICMPLT extends IfInstruction {
     return 0xA1;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

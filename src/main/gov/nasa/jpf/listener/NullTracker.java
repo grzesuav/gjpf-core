@@ -24,12 +24,9 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.ARETURN;
 import gov.nasa.jpf.jvm.bytecode.ASTORE;
-import gov.nasa.jpf.jvm.bytecode.FieldInstruction;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
 import gov.nasa.jpf.jvm.bytecode.PUTSTATIC;
 import gov.nasa.jpf.jvm.bytecode.RETURN;
-import gov.nasa.jpf.jvm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.vm.ClassInfo;
@@ -42,45 +39,54 @@ import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
+import gov.nasa.jpf.vm.bytecode.FieldInstruction;
+import gov.nasa.jpf.vm.bytecode.InstanceFieldInstruction;
+import gov.nasa.jpf.vm.bytecode.InstanceInvokeInstruction;
+import gov.nasa.jpf.vm.bytecode.InstructionInterface;
+import gov.nasa.jpf.vm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.vm.bytecode.LocalVariableInstruction;
+import gov.nasa.jpf.vm.bytecode.ReturnInstruction;
+import gov.nasa.jpf.vm.bytecode.ReturnValueInstruction;
+import gov.nasa.jpf.vm.bytecode.WriteInstruction;
 import java.io.PrintWriter;
 
 /**
  * trace where nulls come from - which is either a GETFIELD/STATIC, an
- * InvokeInstruction, an ASTORE or a missing init.
+ * JVMInvokeInstruction, an LocalVariableInstruction or a missing init.
  * 
  * Record/accumulate the causes in an attribute and use the attribute 
  * to explain NPEs
  */
 public class NullTracker extends ListenerAdapter {
 
-  static abstract class NullSource {
-    protected Instruction insn;
+  public static abstract class NullSource {
+    protected InstructionInterface insn;
     protected ThreadInfo ti;
     protected ElementInfo ei;
     
     protected NullSource cause;
     
-    NullSource (ThreadInfo ti, Instruction insn, ElementInfo ei){
+    NullSource (ThreadInfo ti, InstructionInterface insn, ElementInfo ei){
       this.ti = ti;
       this.insn = insn;
       this.ei = ei;
     }
     
-    void setCause (NullSource cause){
+    public void setCause (NullSource cause){
       this.cause = cause;
     }
     
     abstract void printOn (PrintWriter pw);
     
     void printInsnOn (PrintWriter pw){
-      pw.printf("    instruction: %s [%d]\n", insn.getMnemonic(), insn.getPosition());
+      pw.printf("    instruction: [%04x] %s\n", insn.getPosition(), insn.toString());
     }
         
     void printThreadInfoOn (PrintWriter pw){
       pw.println("    executed by: " + ti.getName() + " (id=" + ti.getId() + ")");
     }
     
-    void printMethodInfoOn (PrintWriter pw, String msg, Instruction instruction){
+    void printMethodInfoOn (PrintWriter pw, String msg, InstructionInterface instruction){
       MethodInfo mi = instruction.getMethodInfo();
       ClassInfo ci = mi.getClassInfo();
       pw.println( msg + ci.getName() + '.' + mi.getLongName() + " (" + instruction.getFilePos() + ')');
@@ -94,16 +100,11 @@ public class NullTracker extends ListenerAdapter {
     }
   }
   
-  protected NullSource nullSource;
   
-  public NullTracker (Config config, JPF jpf){
-    jpf.addPublisherExtension(ConsolePublisher.class, this);
-  }
-  
-  static class LocalSource extends NullSource {
+  public static class LocalSource extends NullSource {
     protected LocalVarInfo local;
     
-    public LocalSource (ThreadInfo ti, ASTORE insn, LocalVarInfo local){
+    public LocalSource (ThreadInfo ti, LocalVariableInstruction insn, LocalVarInfo local){
       super(ti, insn, null);
       this.local = local;
     }
@@ -112,9 +113,9 @@ public class NullTracker extends ListenerAdapter {
     void printOn (PrintWriter pw){
       printInsnOn(pw);
       if (local != null){
-        pw.println("     for local: " + local.getName());
+        pw.println("      for local: " + local.getName());
       } else {
-        pw.println("     for local: #" + ((ASTORE)insn).getLocalVariableIndex());
+        pw.println("     for local: #" + ((LocalVariableInstruction)insn).getLocalVariableSlot());
       }
       printMethodInfoOn(pw, "      in method: ", insn);
       printThreadInfoOn(pw);
@@ -123,7 +124,7 @@ public class NullTracker extends ListenerAdapter {
     }
   }
   
-  static class FieldSource extends NullSource {
+  public static class FieldSource extends NullSource {
     public FieldSource (ThreadInfo ti, FieldInstruction insn, ElementInfo ei){
       super(ti,insn,ei);
     }
@@ -132,7 +133,6 @@ public class NullTracker extends ListenerAdapter {
     void printOn (PrintWriter pw){
       FieldInfo fi = ((FieldInstruction)insn).getFieldInfo();
       MethodInfo mi = insn.getMethodInfo();
-      ClassInfo ci = mi.getClassInfo();
             
       printInsnOn(pw);
       pw.println("      for field: " + fi.getFullName());
@@ -143,11 +143,11 @@ public class NullTracker extends ListenerAdapter {
     }
   }
 
-  static class MethodSource extends NullSource {
+  public static class MethodSource extends NullSource {
     InvokeInstruction call;
     
-    public MethodSource (ThreadInfo ti, ReturnInstruction insn, InvokeInstruction call, ElementInfo ei){
-      super(ti,insn,ei);
+    public MethodSource (ThreadInfo ti, InstructionInterface returnInsn, InvokeInstruction call, ElementInfo ei){
+      super(ti,returnInsn,ei);
       this.call = call;
     }
     
@@ -166,9 +166,9 @@ public class NullTracker extends ListenerAdapter {
     }    
   }
   
-  static class CtorSource extends MethodSource {
-    public CtorSource (ThreadInfo ti, RETURN insn, InvokeInstruction call, ElementInfo ei){
-      super(ti,insn,call, ei);
+  public static class CtorSource extends MethodSource {
+    public CtorSource (ThreadInfo ti, Instruction returnInsn, InvokeInstruction call, ElementInfo ei){
+      super(ti,returnInsn,call, ei);
     }
     
     @Override
@@ -184,9 +184,16 @@ public class NullTracker extends ListenerAdapter {
       printCauseOn(pw);
     }    
   }
-    
+
+  //---------------------------------------------------------------------------------
   
-  protected void checkAndSetPreCtorSources (ThreadInfo ti, RETURN insn){
+  protected NullSource nullSource;
+  
+  public NullTracker (Config config, JPF jpf){
+    jpf.addPublisherExtension(ConsolePublisher.class, this);
+  }
+  
+  protected void checkCtorSourcePre (ThreadInfo ti, ReturnInstruction insn){
     MethodInfo mi = insn.getMethodInfo();
     if (mi.isCtor()) {
       StackFrame callerFrame = null;
@@ -194,7 +201,7 @@ public class NullTracker extends ListenerAdapter {
       ElementInfo ei = ti.getThisElementInfo();
       ClassInfo ci = ei.getClassInfo();
       int nInstance = ci.getNumberOfDeclaredInstanceFields();
-
+      
       for (int i = 0; i < nInstance; i++) {
         FieldInfo fi = ci.getDeclaredInstanceField(i);
         if (fi.isReference()) {
@@ -213,47 +220,44 @@ public class NullTracker extends ListenerAdapter {
     }
   }
   
-  protected void checkAndSetPrePutSources (ThreadInfo ti, FieldInstruction put){
+  protected void checkFieldSourcePre (ThreadInfo ti, WriteInstruction put){
     FieldInfo fi = put.getFieldInfo();
     if (fi.isReference()) {
       StackFrame frame = ti.getTopFrame();
-      int ref = frame.peek();
+      int valSlot = put.getValueSlot(frame);
+      int ref = frame.getSlot(valSlot);
 
-      if (ref == MJIEnv.NULL) { // field set to null
-        ElementInfo ei = put.peekElementInfo(ti);
-        NullSource attr = new FieldSource(ti, put, ei);
+      if (ref == MJIEnv.NULL) { // field will be set to null
+        ElementInfo ei = put.getElementInfo(ti);
+        NullSource attr = new FieldSource(ti, (FieldInstruction)put, ei);
 
-        NullSource cause = frame.getOperandAttr(NullSource.class);
+        NullSource cause = frame.getSlotAttr(valSlot, NullSource.class);
         if (cause != null) {
           attr.setCause(cause);
-          frame.replaceOperandAttr(cause, attr);
+          frame.replaceSlotAttr(valSlot, cause, attr);
         } else {
-          frame.addOperandAttr(attr);
-        }
-
-      } else { // not null anynmore
-        NullSource attr = frame.getOperandAttr(NullSource.class);
-        if (attr != null) {
-          frame.removeOperandAttr(attr);
+          frame.addSlotAttr(valSlot, attr);
         }
       }
     }    
   }
   
-  protected void checkAndSetPreAreturnSources (ThreadInfo ti, ARETURN aret){
+  protected void checkMethodSourcePre (ThreadInfo ti, ReturnValueInstruction aret){
     StackFrame frame = ti.getTopFrame();
-    int ref = frame.peek();
+    int valSlot = aret.getValueSlot(frame);
+    int ref = frame.getSlot(valSlot);
+    
     if (ref == MJIEnv.NULL) {
       StackFrame callerFrame = ti.getCallerStackFrame();
       InvokeInstruction call = (InvokeInstruction) callerFrame.getPC();
       NullSource attr = new MethodSource(ti, aret, call, ti.getThisElementInfo());
 
-      NullSource cause = frame.getOperandAttr(NullSource.class);
+      NullSource cause = frame.getSlotAttr(valSlot, NullSource.class);
       if (cause != null) {
         attr.setCause(cause);
-        frame.replaceOperandAttr(cause, attr);
+        frame.replaceSlotAttr(valSlot,cause, attr);
       } else {
-        frame.addOperandAttr(attr);
+        frame.addSlotAttr(valSlot,attr);
       }
     }
   }
@@ -262,30 +266,31 @@ public class NullTracker extends ListenerAdapter {
   public void executeInstruction (VM vm, ThreadInfo ti, Instruction insn) {
     
     if (insn instanceof ARETURN){
-      checkAndSetPreAreturnSources( ti, (ARETURN)insn);
+      checkMethodSourcePre( ti, (ARETURN)insn);
       
     } else if (insn instanceof PUTFIELD || insn instanceof PUTSTATIC){
-      checkAndSetPrePutSources( ti, (FieldInstruction) insn);
+      checkFieldSourcePre( ti, (WriteInstruction) insn);
       
     } else if (insn instanceof RETURN){
-      checkAndSetPreCtorSources(ti, (RETURN) insn);
+      checkCtorSourcePre(ti, (RETURN) insn);
     }
   }
 
-  protected void checkAndSetPostAstoreSources (ThreadInfo ti, ASTORE astore){
-    int slotIdx = astore.getLocalVariableIndex();
+  
+  protected void checkLocalSourcePost (ThreadInfo ti, LocalVariableInstruction insn){
+    int slotIdx = insn.getLocalVariableSlot();
     StackFrame frame = ti.getTopFrame();
-    int ref = frame.getLocalVariable(slotIdx);
+    int ref = frame.getSlot(slotIdx);
     if (ref == MJIEnv.NULL) {
-      LocalVarInfo lv = astore.getLocalVarInfo();
-      NullSource attr = new LocalSource(ti, astore, lv);
+      LocalVarInfo lv = insn.getLocalVarInfo();
+      NullSource attr = new LocalSource(ti, insn, lv);
 
-      NullSource cause = frame.getLocalAttr(slotIdx, NullSource.class);
+      NullSource cause = frame.getSlotAttr(slotIdx, NullSource.class);
       if (cause != null) {
         attr.setCause(cause);
-        frame.replaceLocalAttr(slotIdx, cause, attr);
+        frame.replaceSlotAttr(slotIdx, cause, attr);
       } else {
-        frame.addLocalAttr(slotIdx, attr);
+        frame.addSlotAttr(slotIdx, attr);
       }
     }
   }
@@ -293,9 +298,9 @@ public class NullTracker extends ListenerAdapter {
   @Override
   public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction insn){
     
-    // we need to do ASTORE post exec since it did overwrite the attr if it had an immediate operand
+    // we need to do LocalVariableInstruction post exec since it did overwrite the attr if it had an immediate operand
     if (insn instanceof ASTORE) {
-      checkAndSetPostAstoreSources( ti, (ASTORE)insn);
+      checkLocalSourcePost( ti, (LocalVariableInstruction)insn);
     }
   }
     
@@ -305,16 +310,16 @@ public class NullTracker extends ListenerAdapter {
       StackFrame frame = ti.getTopFrame();
       Instruction insn = ti.getPC();
       
-      if (insn instanceof FieldInstruction){  // field access on null object
-        NullSource attr = frame.getOperandAttr(NullSource.class);
+      if (insn instanceof InstanceFieldInstruction){  // field access on null object
+        int objSlot = ((InstanceFieldInstruction)insn).getObjectSlot(frame);
+        NullSource attr = frame.getSlotAttr( objSlot,NullSource.class);
         if (attr != null) {
           nullSource = attr;
         }
         
-      } else if (insn instanceof InvokeInstruction) { // call on a null object
-        InvokeInstruction call = (InvokeInstruction)insn;
-        int argSize = call.getArgSize();
-        NullSource attr = frame.getOperandAttr( argSize-1, NullSource.class);
+      } else if (insn instanceof InstanceInvokeInstruction) { // call on a null object
+        int objSlot = ((InstanceInvokeInstruction)insn).getObjectSlot(frame);
+        NullSource attr = frame.getSlotAttr( objSlot, NullSource.class);
         if (attr != null) {
           nullSource = attr;
         }

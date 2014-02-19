@@ -31,7 +31,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
  *
  * ..., array, index => ..., value
  */
-public abstract class ArrayLoadInstruction extends ArrayElementInstruction {
+public abstract class ArrayLoadInstruction extends JVMArrayElementInstruction implements JVMInstruction {
   
   @Override
   public Instruction execute (ThreadInfo ti) {
@@ -103,7 +103,7 @@ public abstract class ArrayLoadInstruction extends ArrayElementInstruction {
   }
   
   @Override
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
  }

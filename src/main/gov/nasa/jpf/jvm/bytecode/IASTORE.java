@@ -45,7 +45,7 @@ public class IASTORE extends ArrayStoreInstruction {
     return 0x4F;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 }

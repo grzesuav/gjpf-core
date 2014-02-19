@@ -22,7 +22,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.INVOKESPECIAL;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.VirtualInvocation;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.Instruction;
@@ -78,7 +78,7 @@ public class MethodTracker extends ListenerAdapter {
       logMethodCall(ti, mi, ti.getStackDepth());
       lastMi = mi;
 
-    } else if (insnToExecute instanceof InvokeInstruction) {
+    } else if (insnToExecute instanceof JVMInvokeInstruction) {
       MethodInfo callee;
 
       // that's the only little gist of it - if this is a VirtualInvocation,
@@ -95,7 +95,7 @@ public class MethodTracker extends ListenerAdapter {
         callee = callInsn.getInvokedMethod(ti);
 
       } else {
-        InvokeInstruction callInsn = (InvokeInstruction)insnToExecute;
+        JVMInvokeInstruction callInsn = (JVMInvokeInstruction)insnToExecute;
         callee = callInsn.getInvokedMethod(ti);
       }
 

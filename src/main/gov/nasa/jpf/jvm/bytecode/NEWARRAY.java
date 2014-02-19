@@ -81,7 +81,7 @@ public class NEWARRAY extends NewArrayInstruction {
     return 0xBC;
   }
   
-  public void accept(InstructionVisitor insVisitor) {
+  public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }
 

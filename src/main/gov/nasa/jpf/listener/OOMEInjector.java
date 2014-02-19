@@ -25,11 +25,11 @@ import java.util.List;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.InvokeInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.NEW;
 import gov.nasa.jpf.util.LocationSpec;
 import gov.nasa.jpf.util.TypeSpec;
-import gov.nasa.jpf.vm.AllocInstruction;
+import gov.nasa.jpf.vm.bytecode.NewInstruction;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
@@ -123,7 +123,7 @@ public class OOMEInjector extends ListenerAdapter {
   
   @Override
   public void executeInstruction (VM vm, ThreadInfo ti, Instruction insnToExecute){
-    if (insnToExecute instanceof AllocInstruction){
+    if (insnToExecute instanceof NewInstruction){
       if (checkCallerForOOM(ti.getTopFrame(), insnToExecute)){
         // we could use Heap.setOutOfMemory(true), but then we would have to reset
         // if the app handles it so that it doesn't throw outside the specified locations.
@@ -137,7 +137,7 @@ public class OOMEInjector extends ListenerAdapter {
   @Override
   public void instructionExecuted (VM vm, ThreadInfo ti, Instruction insn, Instruction executedInsn){
     
-    if (executedInsn instanceof InvokeInstruction){
+    if (executedInsn instanceof JVMInvokeInstruction){
       StackFrame frame = ti.getTopFrame();
       
       if (frame.getPC() != executedInsn){ // means the call did succeed

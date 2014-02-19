@@ -23,18 +23,47 @@ import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
+import gov.nasa.jpf.vm.bytecode.ArrayElementInstruction;
 
 /**
  * abstract class for operations that access elements of arrays
  */
-public abstract class ArrayElementInstruction extends ArrayInstruction implements gov.nasa.jpf.vm.ArrayElementInstruction {
+public abstract class JVMArrayElementInstruction extends  ArrayElementInstruction {
   
+  protected int arrayRef;
   protected int index; // the accessed element
-
+  
   // we need this to be abstract because of the LongArrayStore insns
   abstract public int peekIndex (ThreadInfo ti);
   
+  abstract protected int peekArrayRef (ThreadInfo ti);
   
+  @Override
+  public ElementInfo getElementInfo (ThreadInfo ti){
+    if (isCompleted(ti)){
+      return ti.getElementInfo(arrayRef);
+    } else {
+      int ref = peekArrayRef(ti);
+      return ti.getElementInfo(arrayRef);
+    }
+  }
+  
+  /**
+   * only makes sense from an executeInstruction() or instructionExecuted() listener,
+   * it is undefined outside of insn exec notifications
+   */
+  public int getArrayRef (ThreadInfo ti){
+    if (ti.isPreExec()){
+      return peekArrayRef(ti);
+    } else {
+      return arrayRef;
+    }
+  }
+
+  public ElementInfo peekArrayElementInfo (ThreadInfo ti){
+    int aref = getArrayRef(ti);
+    return ti.getElementInfo(aref);
+  }
   
   public int getIndex (ThreadInfo ti){
     if (!isCompleted(ti)){
