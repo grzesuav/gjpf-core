@@ -95,7 +95,7 @@ public class EventTreeTest extends TestJPF {
   }
   
   //--------------------------------------------------------------------
-  static class CombinationTree extends EventTree {    
+  public static class CombinationTree extends EventTree {    
     @Override
     public Event createEventTree() {
       return anyCombination(
