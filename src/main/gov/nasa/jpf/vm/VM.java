@@ -2004,16 +2004,7 @@ public abstract class VM {
   
   
   // ---------- Methods for handling finalizers ---------- //
-  
-  /** 
-   * Add a given finalizable object to the finalizeQueue array of java.lang.ref.Finalizer 
-   * model class. This is invoked from the sweep() phase of the garbage collection.
-   */
-  public void addToFinalizeQueue(ElementInfo ei) {
-    ApplicationContext app = getApplicationContext(ei.getObjectRef());
-    ((FinalizerThreadInfo)app.getFinalizerThread()).addToFinalizeQueue(ei);
-  }
-  
+    
   public FinalizerThreadInfo getFinalizerThread() {
     return getCurrentApplicationContext().getFinalizerThread();
   }

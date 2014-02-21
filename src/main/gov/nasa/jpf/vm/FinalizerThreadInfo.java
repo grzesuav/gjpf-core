@@ -153,14 +153,18 @@ public class FinalizerThreadInfo extends ThreadInfo {
   /** 
    * This method is invoked by the sweep() phase of the garbage collection process (GenericHeap.sweep()).
    * It adds a given finalizable object to the finalizeQueue array of gov.nasa.jpf.FinalizerThread.
+   * 
+   * NOTE: this might return a new ElementInfo since we have to modify it (setting the finalized flag)
    */
-  public void addToFinalizeQueue(ElementInfo ei) {
+  public ElementInfo getFinalizerQueuedInstance(ElementInfo ei) {
     ei = ei.getModifiableInstance();
     
     // make sure we process this object finalizer only once
     ei.setFinalized();
     
     tempFinalizeQueue.add(ei);
+    
+    return ei;
   }
   
   /**

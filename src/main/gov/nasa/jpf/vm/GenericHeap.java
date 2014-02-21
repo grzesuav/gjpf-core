@@ -606,18 +606,17 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   }
   
   protected void markFinalizableObjects () {
-    // Phase 1: find unmarked objects with finalizers that haven't been processed yet
-    // and mark them recursively to avoid them from being GCed. Their finalizers must
-    // execute before these objects are removed from the heap.
-    for (ElementInfo ei : this){
-      if(!ei.isMarked() && ei.hasFinalizer() && !ei.isFinalized()) {
-        vm.addToFinalizeQueue(ei);
-        ei.setMarked(); // make sure it's not collected before the finalizerQueue has been processed
-        ei.markRecursive(this);
+    FinalizerThreadInfo tiFinalizer = vm.getFinalizerThread();
+    
+    if (tiFinalizer != null){
+      for (ElementInfo ei : this) {
+        if (!ei.isMarked() && ei.hasFinalizer() && !ei.isFinalized()) {
+          ei = tiFinalizer.getFinalizerQueuedInstance(ei);
+          ei.setMarked(); // make sure it's not collected before the finalizerQueue has been processed
+          ei.markRecursive(this);
+        }
       }
     }
-    
-    // Phase 2: collect all unmarked objects
   }
   
   protected void mark () {
