@@ -37,6 +37,11 @@ public class ArrayIndexOutOfBoundsExecutiveException extends JPFException {
     this.i = i;
   }
 
+  public ArrayIndexOutOfBoundsExecutiveException (Instruction i, String msg) {
+    super(msg);
+    this.i = i;
+  }
+
   public Instruction getInstruction () {
     return i;
   }
