@@ -32,7 +32,10 @@ import gov.nasa.jpf.vm.Instruction;
 public abstract class FieldInstruction extends Instruction implements ReadOrWriteInstruction {
 
   public abstract FieldInfo getFieldInfo();
-  
+  public abstract String getFieldName();
+  public abstract String getClassName();
+  public abstract int getFieldSize();
+
   public abstract ElementInfo peekElementInfo (ThreadInfo ti);
   
 }

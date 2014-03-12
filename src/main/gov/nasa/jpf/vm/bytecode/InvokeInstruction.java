@@ -28,4 +28,9 @@ import gov.nasa.jpf.vm.MethodInfo;
 public abstract class InvokeInstruction extends Instruction {
 
   public abstract MethodInfo getInvokedMethod();
+  
+  public abstract String getInvokedMethodName();
+  public abstract String getInvokedMethodSignature();
+  public abstract String getInvokedMethodClassName();
+
 }

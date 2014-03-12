@@ -23,6 +23,9 @@ import gov.nasa.jpf.vm.MJIEnv;
 
 /**
  * a pseudo event that encapsulates a (possibly composed) check
+ * 
+ * This event type uses 'alt' for disjunction and 'next' for conjunction if
+ * they point to CheckEvents
  */
 public abstract class CheckEvent extends Event {
   

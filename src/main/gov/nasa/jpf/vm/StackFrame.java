@@ -190,7 +190,7 @@ public abstract class StackFrame implements Cloneable {
     // top is the topmost index
     int i = size-1;
     if (top < i) {
-      return -1;
+      return MJIEnv.NULL;
     }
 
     return slots[top-i];

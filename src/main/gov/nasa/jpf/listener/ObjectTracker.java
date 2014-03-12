@@ -37,9 +37,13 @@ import gov.nasa.jpf.util.StringSetMatcher;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
+import gov.nasa.jpf.vm.bytecode.InstanceFieldInstruction;
+import gov.nasa.jpf.vm.bytecode.InstanceInvokeInstruction;
+import gov.nasa.jpf.vm.bytecode.InvokeInstruction;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -97,8 +101,8 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
           String fname = finsn.getFieldName();
           pw.print(fname);
           
-        } else if (insn instanceof JVMInvokeInstruction){
-          JVMInvokeInstruction call = (JVMInvokeInstruction)insn;
+        } else if (insn instanceof InvokeInstruction){
+          InvokeInstruction call = (InvokeInstruction)insn;
           
           String mthName = call.getInvokedMethodName();
           
@@ -179,9 +183,10 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
   @Override
   public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn){
     
-    if (logCalls && executedInsn instanceof VirtualInvocation){      
+    if (logCalls && executedInsn instanceof InstanceInvokeInstruction){      
       if (nextInsn != executedInsn){ // otherwise we didn't enter
-        VirtualInvocation call = (VirtualInvocation)executedInsn;
+        InstanceInvokeInstruction call = (InstanceInvokeInstruction)executedInsn;
+
         int ref = call.getCalleeThis(ti);
         ElementInfo ei = ti.getElementInfo(ref);
         
@@ -190,10 +195,14 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
         }
       }
       
-    } else if (logFieldAccess && executedInsn instanceof JVMInstanceFieldInstruction){
+    } else if (logFieldAccess && executedInsn instanceof InstanceFieldInstruction){
       if (nextInsn != executedInsn){ // otherwise we didn't enter
-        JVMInstanceFieldInstruction finsn = (JVMInstanceFieldInstruction) executedInsn;
-        ElementInfo ei = finsn.getLastElementInfo();
+        InstanceFieldInstruction finsn = (InstanceFieldInstruction) executedInsn;
+
+        StackFrame frame = ti.getTopFrame();
+        int idx = finsn.getObjectSlot(frame);
+        int ref = frame.getSlot(idx);
+        ElementInfo ei = ti.getElementInfo(ref);
         
         if (ei.hasObjectAttr(Attr.class)) {
           OpType op = (executedInsn instanceof PUTFIELD) ? OpType.PUT : OpType.GET;

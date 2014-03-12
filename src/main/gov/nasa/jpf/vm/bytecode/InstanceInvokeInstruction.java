@@ -21,6 +21,7 @@ package gov.nasa.jpf.vm.bytecode;
 
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
+import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
  * common type for all method invocations on objects
@@ -29,5 +30,5 @@ public interface InstanceInvokeInstruction extends InstructionInterface {
 
   MethodInfo getInvokedMethod();
   int getObjectSlot (StackFrame frame);
-  
+  int getCalleeThis(ThreadInfo ti);
 }
