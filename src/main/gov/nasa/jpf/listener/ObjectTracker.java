@@ -41,6 +41,7 @@ import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
+import gov.nasa.jpf.vm.bytecode.FieldInstruction;
 import gov.nasa.jpf.vm.bytecode.InstanceFieldInstruction;
 import gov.nasa.jpf.vm.bytecode.InstanceInvokeInstruction;
 import gov.nasa.jpf.vm.bytecode.InvokeInstruction;
@@ -95,8 +96,8 @@ public class ObjectTracker extends ListenerAdapter implements StateExtensionClie
       pw.print('.');
       
       if (insn != null){        
-        if (insn instanceof JVMFieldInstruction){
-          JVMFieldInstruction finsn = (JVMFieldInstruction)insn;
+        if (insn instanceof FieldInstruction){
+          FieldInstruction finsn = (FieldInstruction)insn;
           
           String fname = finsn.getFieldName();
           pw.print(fname);
