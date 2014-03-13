@@ -2857,7 +2857,7 @@ public class ThreadInfo extends InfoObject
       }
 
     } else { // we found a matching handler
-
+      
       unwindTo(handlerFrame);
 
       // according to the VM spec, before transferring control to the handler we have

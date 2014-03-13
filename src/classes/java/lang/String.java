@@ -344,4 +344,17 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	native public static String valueOf(double d);
 	public native String intern();
 
+  
+  /*
+   * methods to be compatible with Harmony/Android, which now has modified
+   * versions of the old (offset based) String
+   * 
+   * NOTE - if the changes get too large we have to create Android specific
+   * models and peers
+   */
+  
+  // used internally by Android's java.lang.AbstractStringBuffer
+  void _getChars(int start, int end, char[] buffer, int index) {
+    System.arraycopy(value, start, buffer, index, end - start);
+  }
 }
