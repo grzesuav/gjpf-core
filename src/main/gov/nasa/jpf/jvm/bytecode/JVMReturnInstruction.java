@@ -144,7 +144,7 @@ public abstract class JVMReturnInstruction extends ReturnInstruction implements 
         ElementInfo ei = ti.getElementInfo(objref);
 
         if (ei.getLockCount() == 0){
-          ei = ei.getInstanceWithUpdatedSharedness(ti); 
+          ei = ti.updateSharedness(ei); 
           if (ei.isShared()) {
             VM vm = ti.getVM();
             ChoiceGenerator<ThreadInfo> cg = vm.getSchedulerFactory().createSyncMethodExitCG(ei, ti);

@@ -35,7 +35,7 @@ import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.LockInstruction;
 import gov.nasa.jpf.jvm.bytecode.PUTFIELD;
 import gov.nasa.jpf.jvm.bytecode.PUTSTATIC;
-import gov.nasa.jpf.jvm.bytecode.StaticFieldInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMStaticFieldInstruction;
 import gov.nasa.jpf.report.ConsolePublisher;
 import gov.nasa.jpf.report.Publisher;
 import gov.nasa.jpf.search.Search;
@@ -344,12 +344,12 @@ public class SimpleDot extends ListenerAdapter {
       }
 
       if (showTarget){
-        String clsName = ((StaticFieldInstruction) insn).getLastClassName();
+        String clsName = ((JVMStaticFieldInstruction) insn).getLastClassName();
         s = Misc.stripToLastDot(clsName) + '.' + s;
       }
     }
 
-    String varId = Misc.stripToLastDot(((JVMFieldInstruction) insn).getVariableId());
+    String varId = ((JVMFieldInstruction) insn).getFieldName();
     s = s + ' ' + varId;
 
     return s;

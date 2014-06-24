@@ -64,6 +64,12 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
     return false;
   }
 
+  /**
+   * is this instruction part of a monitorenter code pattern 
+   */
+  public boolean isMonitorEnterPrologue(){
+    return false;
+  }
 
   /**
    * is this one of our own, artificial insns?

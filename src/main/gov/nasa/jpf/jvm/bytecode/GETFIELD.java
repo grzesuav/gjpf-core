@@ -42,16 +42,6 @@ public class GETFIELD extends JVMInstanceFieldInstruction implements ReadInstruc
   public int getObjectSlot (StackFrame frame){
     return frame.getTopPos();
   }
-
-  @Override
-  protected void popOperands1 (StackFrame frame) {
-    frame.pop(); // .. val => ..
-  }
-  
-  @Override
-  protected void popOperands2 (StackFrame frame) {
-    frame.pop(2);  // .. highVal, lowVal => ..
-  }
   
   @Override
   public Instruction execute (ThreadInfo ti) {
@@ -64,17 +54,16 @@ public class GETFIELD extends JVMInstanceFieldInstruction implements ReadInstruc
                                         "referencing field '" + fname + "' on null object");
     }
 
-    ElementInfo ei = ti.getElementInfoWithUpdatedSharedness(objRef);
-
+    ElementInfo ei = ti.getElementInfo(objRef);
     FieldInfo fi = getFieldInfo();
     if (fi == null) {
       return ti.createAndThrowException("java.lang.NoSuchFieldError",
                                         "referencing field '" + fname + "' in " + ei);
     }
-    
-    // check if this breaks the current transition
-    if (isNewPorFieldBoundary(ti, fi, objRef)) {
-      if (createAndSetSharedFieldAccessCG( ei, ti)) {
+
+    if (!ti.isFirstStepInsn()){
+      ei = checkSharedInstanceFieldAccess(ti, ei);
+      if (ti.getVM().hasNextChoiceGenerator()) {
         return this;
       }
     }
@@ -118,6 +107,11 @@ public class GETFIELD extends JVMInstanceFieldInstruction implements ReadInstruc
     return ei;
   }
 
+  @Override
+  public boolean isMonitorEnterPrologue(){
+    return GetHelper.isMonitorEnterPrologue(mi, insnIndex);
+  }
+  
   public int getLength() {
     return 3; // opcode, index1, index2
   }

@@ -968,7 +968,7 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
         
         if (ei.isShared() != isShared) {
           ei = ei.getModifiableInstance();
-          ei.setShared( isShared);
+          ei.setShared( env.getThreadInfo(), isShared);
         }
       }
     }    

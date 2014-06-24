@@ -355,7 +355,7 @@ public abstract class JVMInstructionVisitorAdapter
 	
 	public void visit(SIPUSH ins){}
 	
-	public void visit(StaticFieldInstruction ins){}
+	public void visit(JVMStaticFieldInstruction ins){}
 
 	public void visit(SWAP ins){}
 	

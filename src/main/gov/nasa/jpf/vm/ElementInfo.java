@@ -75,7 +75,8 @@ public abstract class ElementInfo implements Cloneable {
   // BEWARE if you add or change values, make sure these are not used in derived classes !
   // <2do> this is efficient but fragile
 
-  public static final int   ATTR_TREF_CHANGED       = 0x40000; // referencingThreads have changed
+  public static final int   ATTR_TREF_CHANGED       = 0x10000; // referencingThreads have changed
+  public static final int   ATTR_FLI_CHANGED        = 0x20000; // fieldLockInfos changed
   public static final int   ATTR_ATTRIBUTE_CHANGED  = 0x80000; // refers only to sticky bits
 
   
@@ -83,7 +84,7 @@ public abstract class ElementInfo implements Cloneable {
 
   static final int   ATTR_STORE_MASK = 0x0000ffff;
 
-  static final int   ATTR_ANY_CHANGED = (ATTR_TREF_CHANGED | ATTR_ATTRIBUTE_CHANGED);
+  static final int   ATTR_ANY_CHANGED = (ATTR_TREF_CHANGED | ATTR_FLI_CHANGED | ATTR_ATTRIBUTE_CHANGED);
 
   // transient flag set if object is reachable from root object, i.e. can't be recycled
   public static final int   ATTR_IS_MARKED   = 0x80000000;
@@ -107,6 +108,12 @@ public abstract class ElementInfo implements Cloneable {
   // so that order or thread id do not have a direct impact on heap symmetry
   protected ThreadInfoSet referencingThreads;
 
+  // this is where we keep track of lock sets that potentially protect field access
+  // of shared objects. Since usually only a subset of objects are shared, we
+  // initialize this on demand
+  protected FieldLockInfo[] fLockInfo;
+
+  
   // this is the reference value for the object represented by this ElementInfo
   // (note this is a slight misnomer for StaticElementInfos, which don't really
   // represent objects but collections of static fields belonging to the same class)
@@ -122,14 +129,8 @@ public abstract class ElementInfo implements Cloneable {
   // one stored in the lower 2 bytes
   protected int attributes;
 
-
   //--- the following fields are transient or search global, i.e. their values
   // are not state-stored, but might be set during state restoration
-
-  // FieldLockInfos are never state-stored/backtracked! They are set in the order of
-  // field access during the search, so that we can detect potential
-  // inconsistencies and re-run accordingly
-  protected FieldLockInfo[] fLockInfo;
 
   // cache for unchanged ElementInfos, so that we don't have to re-create cachedMemento
   // objects all the time
@@ -168,21 +169,16 @@ public abstract class ElementInfo implements Cloneable {
   }
 
   protected ElementInfo (int id, ClassInfo c, Fields f, Monitor m, ThreadInfo ti) {
-    
     objRef = id;
-    
     ci = c;
     fields = f;
     monitor = m;
-    
+
     assert ti != null; // we need that for our POR
   }
 
   public abstract ElementInfo getModifiableInstance();
-  
-  // we need to delegate this in case it is global
-  protected abstract ThreadInfoSet createThreadInfoSet(ThreadInfo ti);
-  
+    
   // not ideal, a sub-type checker.
   public abstract boolean isObject();
 
@@ -201,14 +197,33 @@ public abstract class ElementInfo implements Cloneable {
   }
 
   public FieldLockInfo getFieldLockInfo (FieldInfo fi) {
-    if (fLockInfo == null) {
-      fLockInfo = new FieldLockInfo[getNumberOfFields()];
+    if (fLockInfo != null){
+      return fLockInfo[fi.getFieldIndex()];
+    } else {
+      return null;
     }
-    return fLockInfo[fi.getFieldIndex()];
   }
 
   public void setFieldLockInfo (FieldInfo fi, FieldLockInfo flInfo) {
+    checkIsModifiable();
+
+    if (fLockInfo == null){
+      fLockInfo = new FieldLockInfo[getNumberOfFields()];
+    }
+    
     fLockInfo[fi.getFieldIndex()] = flInfo;
+    attributes |= ATTR_FLI_CHANGED;
+  }
+  
+  public boolean isLockProtected (FieldInfo fi){
+    if (fLockInfo != null){
+      FieldLockInfo fli = fLockInfo[fi.getFieldIndex()];
+      if (fli != null){
+        return fli.isProtected();
+      }
+    }
+    
+    return false;
   }
 
   /**
@@ -230,8 +245,6 @@ public abstract class ElementInfo implements Cloneable {
    * post transition live object cleanup
    * update all non-fields references used by this object. This is only called
    * at the end of the gc, and recycled objects should be either null or not marked
-   * 
-   * if the current thread terminated, update the refTids accordingly
    */
   void cleanUp (Heap heap, boolean isThreadTermination, int tid) {
     if (fLockInfo != null) {
@@ -356,7 +369,20 @@ public abstract class ElementInfo implements Cloneable {
   }
   
   //--- shared handling
-    
+
+  /**
+   * set the referencing threads. Unless you know this is from a non-shared
+   * context, make sure to update sharedness by calling setShared()
+   */
+  public void setReferencingThreads (ThreadInfoSet refThreads){
+    checkIsModifiable();    
+    referencingThreads = refThreads;
+  }
+  
+  public ThreadInfoSet getReferencingThreads (){
+    return referencingThreads;
+  }
+  
   public void freezeSharedness (boolean freeze) {
     if (freeze) {
       if ((attributes & ATTR_FREEZE_SHARED) == 0) {
@@ -381,14 +407,14 @@ public abstract class ElementInfo implements Cloneable {
     return ((attributes & ATTR_SHARED) != 0);
   }
   
-  public void setShared (boolean isShared) {
+  public void setShared (ThreadInfo ti, boolean isShared) {
     if (isShared) {
       if ((attributes & ATTR_SHARED) == 0) {
         checkIsModifiable();
         attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
         
         // note we don't report the thread here since this is explicitly set via Verify.setShared
-        VM.getVM().notifyObjectShared(null, this);
+        VM.getVM().notifyObjectShared(ti, this);
       }
     } else {
       if ((attributes & ATTR_SHARED) != 0) {
@@ -398,7 +424,7 @@ public abstract class ElementInfo implements Cloneable {
       }
     }
   }
-
+  
   /**
    * NOTE - this should only be called internally if we know the object is
    * modifiable (e.g. from the ctor)
@@ -423,52 +449,42 @@ public abstract class ElementInfo implements Cloneable {
   public boolean isExposed(){
     return (attributes & ATTR_EXPOSED) != 0;
   }
-  
-  /**
-   * update referencingThreads and set shared flag accordingly (if not frozen)
-   * 
-   * NOTE - this might return a new (cloned) ElementInfo in case the state stored/restored
-   * flag has been changed and/or the SharedObjectPolicy in effect uses persistent
-   * ThreadInfoSet objects (i.e. replaces them upon add).
-   * Use only from system code that is aware of the potential ElementInfo
-   * identity change (i.e. does not keep a reference to the old one) 
-   */
-  public ElementInfo getInstanceWithUpdatedSharedness (ThreadInfo ti) {
-    ElementInfo updatedEi = this;
-    
-    // we update the referencingThreads no matter what
-    // NOTE - it is up to the policy to decide if this creates a new set or destructively updates
-    // the existing one (which translates into carry-over between paths, i.e. search global state)
-    ThreadInfoSet newReferencingThreads = referencingThreads.add(ti);
-    if (newReferencingThreads != referencingThreads){ // policy uses persistent (invariant) ThreadInfoSets
-      updatedEi = getModifiableInstance();
-      updatedEi.referencingThreads = newReferencingThreads;
-    }
-
-    // the thread might already have been in referencingThreads, but we might get here after
-    // backtracking. In this case the ATTR_SHARED attribute might have been reset and we have 
-    // to check if it needs updating (in case sharedness is not frozen)
-    if ((updatedEi.attributes & ATTR_FREEZE_SHARED) == 0) {
-      // note that we can only go from non-shared to shared, but not vice versa
-      // (this is called in response to a reference from a live thread)
-      if (newReferencingThreads.isShared( ti, updatedEi)) {
-        if ((updatedEi.attributes & ATTR_SHARED) == 0) {
-          // make sure we clone if this is the first modification
-          updatedEi = updatedEi.getModifiableInstance();
-          updatedEi.attributes |= (ATTR_SHARED | ATTR_ATTRIBUTE_CHANGED);
-          
-          ti.getVM().notifyObjectShared(ti, updatedEi);
+      
+  public boolean isFirstExposure (ThreadInfo ti, ElementInfo eiFieldOwner){
+    if (!isImmutable()){
+      if (!isExposedOrShared()) {
+        if (ti.useBreakOnExposure()) {
+          return (eiFieldOwner.isExposedOrShared());
+          //return ! isReferencedBySameThreads(eiFieldOwner);
         }
       }
     }
     
-    return updatedEi;
+    return false;
+  }
+  
+  public boolean isExposedOrShared(){
+    return (attributes & (ATTR_SHARED | ATTR_EXPOSED)) != 0;
+  }
+  
+  public ElementInfo getExposedInstance (ThreadInfo ti, ElementInfo eiFieldOwner){
+    ElementInfo ei = getModifiableInstance();
+    ei.setExposed( ti, eiFieldOwner);
+    
+    // <2do> do we have to traverse every object reachable from here?
+    // (does every reference of an indirectly exposed object have to go through this one?)
+    
+    return ei;
+  }
+  
+  protected void setExposed (){
+    attributes |= (ATTR_EXPOSED | ATTR_ATTRIBUTE_CHANGED);
   }
   
   public void setExposed (ThreadInfo ti, ElementInfo eiFieldOwner){
     // we actually have to add this to the attributes to avoid endless loops by
     // re-exposing the same object along a given path
-    attributes |= ATTR_EXPOSED;
+    attributes |= (ATTR_EXPOSED | ATTR_ATTRIBUTE_CHANGED);
     
     ti.getVM().notifyObjectExposed(ti, eiFieldOwner, this);
   }

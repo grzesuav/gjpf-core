@@ -46,7 +46,8 @@ public class MissedPathTest extends TestJPF {
 
   @Test
   public void testInstanceFieldPropagation () {
-    if (verifyAssertionErrorDetails("gotcha", "+vm.por.break_on_exposure=true")) {
+    if (verifyAssertionErrorDetails("gotcha", 
+            "+vm.por.break_on_exposure=true")) {
       InstanceFieldPropagation mp = new InstanceFieldPropagation();
       mp.start();
       

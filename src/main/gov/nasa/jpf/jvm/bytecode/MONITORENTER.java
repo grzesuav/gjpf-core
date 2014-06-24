@@ -51,7 +51,7 @@ public class MONITORENTER extends LockInstruction {
         VM vm = ti.getVM();
 
         if (ei.canLock(ti)) { // we can lock the object, the CG is optional
-          ei = ei.getInstanceWithUpdatedSharedness(ti); 
+          ei = ti.updateSharedness(ei);
           if (ei.isShared()) {
             ChoiceGenerator<?> cg = vm.getSchedulerFactory().createMonitorEnterCG(ei, ti);
             if (cg != null) {

@@ -366,8 +366,6 @@ public class ThreadInfo extends InfoObject
     
     maxTransitionLength = config.getInt("vm.max_transition_length", 5000);
 
-    SharedObjectPolicy.init(config);
-    
     return true;
   }
     
@@ -418,20 +416,22 @@ public class ThreadInfo extends InfoObject
    * the ctor for all explicitly (bytecode) created threads. At this point, there is at least
    * a mainThread and we have a corresponding java.lang.Thread object
    */
-  protected ThreadInfo (VM vm, int objRef, int groupRef, int runnableRef, int nameRef, ThreadInfo parent) {    
+  protected ThreadInfo (VM vm, int objRef, int groupRef, int runnableRef, int nameRef, ThreadInfo parent) {
     id = computeId(objRef);
     this.appCtx = parent.getApplicationContext();
     
     init(vm); // this is only partial, we still have to link/set the references
     
-    ElementInfo ei = vm.getElementInfo(objRef);  
+    ElementInfo ei = vm.getModifiableElementInfo(objRef);  
+    ei.setExposed(parent, null);        // all explicitly creatd threads are per se exposed
+    
     this.ci = ei.getClassInfo();    
     this.objRef = objRef;
     this.targetRef = runnableRef;
    
     threadData.name = vm.getElementInfo(nameRef).asString();
     
-    // note the thread is not yet in the ThreadList, we have to register from the caller
+    // note the thread is not yet in the ThreadList, we have to register from the caller    
   }
   
   protected void init(VM vm){
@@ -938,6 +938,10 @@ public class ThreadInfo extends InfoObject
     return list;
   }
 
+  public SharednessPolicy getSharednessPolicy(){
+    return vm.getSharednessPolicy();
+  }
+  
   public int getStackDepth() {
     return stackDepth;
   }
@@ -1860,7 +1864,7 @@ public class ThreadInfo extends InfoObject
         if (executedInstructions >= maxTransitionLength){ // try to preempt the current thread
           if (pc.isBackJump() && (pc != nextPc) && (top != null && !top.isNative())) {
             log.info("max transition length exceeded, breaking transition on ", nextPc);
-            reschedule("maxTransitionLenth");
+            reschedule("maxTransitionLength");
             break;
           }
         }
@@ -2139,25 +2143,28 @@ public class ThreadInfo extends InfoObject
     return heap.get(objRef);
   }
 
+  protected void initializeSharedness (DynamicElementInfo ei){
+    vm.getSharednessPolicy().initializeSharedness(this, ei);
+  }
+
+  protected void initializeSharedness (StaticElementInfo ei){
+    vm.getSharednessPolicy().initializeSharedness(this, ei);
+  }
+
+  public ElementInfo updateSharedness (ElementInfo ei){
+    return vm.getSharednessPolicy().updateSharedness(this, ei);
+  }
+  
   public ElementInfo getElementInfoWithUpdatedSharedness (int objRef){
     Heap heap = vm.getHeap();
     ElementInfo ei = heap.get(objRef);
-    return ei.getInstanceWithUpdatedSharedness(this);
+    return vm.getSharednessPolicy().updateSharedness(this, ei);
   }
   
   public ElementInfo getModifiableElementInfo (int ref) {
     Heap heap = vm.getHeap();
     return heap.getModifiable(ref);
   }
-
-  // terrible name
-  public ElementInfo getModifiableElementInfoWithUpdatedSharedness (int objRef){
-    Heap heap = vm.getHeap();
-    ElementInfo ei = heap.getModifiable(objRef);
-    
-    return ei.getInstanceWithUpdatedSharedness(this);
-  }
-
   
   public ElementInfo getBlockedObject (MethodInfo mi, boolean isBeforeCall, boolean isModifiable) {
     int         objref;
@@ -2301,7 +2308,7 @@ public class ThreadInfo extends InfoObject
       
       // give the thread tracking policy a chance to remove this thread from
       // object/class thread sets
-      SharedObjectPolicy.getPolicy().cleanupThreadTermination(this);
+      vm.getSharednessPolicy().cleanupThreadTermination(this);
       
       if (vm.getThreadList().hasAnyMatchingOtherThan(this, getRunnableNonDaemonPredicate())) {
         ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(this);

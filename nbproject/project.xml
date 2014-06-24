@@ -11,6 +11,11 @@
             <properties/>
             <folders>
                 <source-folder>
+                    <label>jpf-core</label>
+                    <location>.</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
                     <label>src/main</label>
                     <type>java</type>
                     <location>src/main</location>
@@ -44,11 +49,6 @@
                     <label>src/examples</label>
                     <type>java</type>
                     <location>src/examples</location>
-                    <encoding>UTF-8</encoding>
-                </source-folder>
-                <source-folder>
-                    <label>jpf-core</label>
-                    <location>.</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
             </folders>

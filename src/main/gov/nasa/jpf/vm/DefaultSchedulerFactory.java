@@ -20,6 +20,7 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
+import gov.nasa.jpf.vm.choice.ExposureCG;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
 
@@ -196,12 +197,17 @@ public class DefaultSchedulerFactory implements SchedulerFactory {
     return getSyncCG( SHARED_FIELD_ACCESS, ei, ti);
   }
 
-  public ChoiceGenerator<ThreadInfo> createSharedObjectExposureCG (ElementInfo ei, ThreadInfo ti) {
+  public ChoiceGenerator<ThreadInfo> createObjectExposureCG (ElementInfo ei, ThreadInfo ti) {
     if (ss.isAtomic()) {
       return null;
     }
 
-    return getSyncCG( SHARED_OBJECT_EXPOSURE, ei, ti);
+    ThreadInfo[] choices = getRunnablesIfChoices(ti);
+    if (choices != null) {
+      return new ExposureCG( OBJECT_EXPOSURE, choices, ei);
+    }
+    
+    return null;
   }
 
   

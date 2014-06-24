@@ -99,7 +99,7 @@ public class INVOKESTATIC extends JVMInvokeInstruction {
 
     if (callee.isSynchronized()) {
       ElementInfo ei = ciCallee.getClassObject();
-      ei = ei.getInstanceWithUpdatedSharedness(ti);
+      ei = ti.updateSharedness(ei);
       if (checkSyncCG(ei, ti)){
         return this;
       }

@@ -18,9 +18,7 @@
 //
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.util.SparseClusterArray;
 
 /**
  * A specialized version of ElementInfo that represents heap objects
@@ -36,9 +34,7 @@ public class DynamicElementInfo extends ElementInfo {
 
     attributes = ci.getElementInfoAttrs();
 
-    // <2do> not ideal, should be in superclass (but doesn't work for SEIs)
-    referencingThreads = createThreadInfoSet(ti); // initialization depends on subclass and policy
-    setSharednessFromReferencingThreads();
+    ti.initializeSharedness(this);
   }
 
   @Override
@@ -49,14 +45,7 @@ public class DynamicElementInfo extends ElementInfo {
       return VM.getVM().getHeap().getModifiable( objRef);
     }
   }
-  
-  // called during ElementInfo construction
-  @Override
-  protected ThreadInfoSet createThreadInfoSet(ThreadInfo ti){
-    return SharedObjectPolicy.getPolicy().getThreadInfoSet(ti, this);
-  }
-
-  
+    
   @Override
   public boolean isObject(){
     return true;

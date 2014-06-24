@@ -2038,7 +2038,7 @@ public abstract class StackFrame implements Cloneable {
     return -1;
   }
 
-  //--- abstract argument & return passing that is shared between VM types
+  //--- abstract argument & return passing that can have VM dependend implementation
   
   public void setReferenceResult (int ref, Object attr){
     pushRef(ref);
@@ -2078,7 +2078,7 @@ public abstract class StackFrame implements Cloneable {
   }
 
   public Object getLongResultAttr () {
-    return getOperandAttr();
+    return getLongOperandAttr();
   }
   
   public float getFloatResult(){

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2012 United States Government as represented by the
+// Copyright (C) 2014 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,11 +16,16 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
+
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.Config;
+
 /**
- * a thread tracking policy that uses path local ThreadInfoSets. Each object allocation
- * gets a new ThreadInfo set which initially contains the allocating thread. 
+ * a SharednessPolicy implementation that only computes and keeps sharedness
+ * along the same path, i.e. not search global.
+ * 
+ * This is the policy that should be used to create traces that can be replayed.
  * 
  * This policy uses PersistentTids, i.e. it does not modify existing ThreadInfoSet
  * instances but replaces upon add/remove with new ones. This ensures that ThreadInfoSets
@@ -51,32 +56,33 @@ package gov.nasa.jpf.vm;
  * is just to find potential data races. As long as JPF explores /one/ path that
  * leads into a race we are fine - we don't care how many paths don't detect a race.
  */
-public class OverlappingContenderPolicy extends SharedObjectPolicy {
-
+public class PathSharednessPolicy extends SharednessPolicy {
+  
+  public PathSharednessPolicy (Config config){
+    super(config);
+  }
+  
   @Override
-  public ThreadInfoSet getThreadInfoSet(ThreadInfo allocThread, DynamicElementInfo ei) {
-    return new PersistentTidSet(allocThread);
+  public void initializeSharedness (ThreadInfo allocThread, DynamicElementInfo ei) {
+    ei.setReferencingThreads( new PersistentTidSet(allocThread));
   }
 
   @Override
-  public ThreadInfoSet getThreadInfoSet(ThreadInfo allocThread, StaticElementInfo ei) {
-    return new PersistentTidSet(allocThread);
+  public void initializeSharedness (ThreadInfo allocThread, StaticElementInfo ei) {
+    ei.setReferencingThreads( new PersistentTidSet(allocThread));
+    ei.setExposed(); // static fields are per se exposed
   }
-
+  
   @Override
-  public boolean isShared (ThreadInfo ti, ElementInfo ei, ThreadInfoSet set) {
-    return set.hasMultipleLiveThreads();
+  protected FieldLockInfo createFieldLockInfo (ThreadInfo ti, ElementInfo ei, FieldInfo fi){
+    int[] lockRefs = ti.getLockedObjectReferences();
+    switch (lockRefs.length){
+      case 0:
+        return FieldLockInfo.getEmptyFieldLockInfo();
+      case 1:
+        return new PersistentSingleLockThresholdFli(ti, lockRefs[0], lockThreshold);
+      default: 
+        return new PersistentLockSetThresholdFli(ti, lockRefs, lockThreshold);
+    }
   }
-
-  @Override
-  public Memento<ThreadInfoSet> getMemento(ThreadInfoSet set) {
-    return set.getMemento();
-  }
-
-  @Override
-  public void cleanupThreadTermination(ThreadInfo ti) {
-    // nothing, we keep the thread id in the set. Note this requires
-    // ids to NOT being reused
-  }
-
 }

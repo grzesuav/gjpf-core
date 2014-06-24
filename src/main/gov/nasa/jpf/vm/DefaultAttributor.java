@@ -25,6 +25,8 @@ import gov.nasa.jpf.util.StringSetMatcher;
  * default Attributor implementation to set method and fiel attributes
  * at class load time. Note this is critical functionality, esp.
  * with respect to threading
+ * 
+ * <2do> this overlaps with SharednessPolicy
  */
 public class DefaultAttributor implements Attributor {
 
@@ -35,19 +37,19 @@ public class DefaultAttributor implements Attributor {
   public DefaultAttributor (Config conf) {
     String[] val;
           
-    val = conf.getStringArray("vm.por.field_boundaries.never");
+    val = conf.getStringArray("vm.shared.field_boundaries.never");
     if (val != null) {
       neverBreak = new StringSetMatcher(val);
     }
       
-    if (conf.getBoolean("vm.por.field_boundaries")) {
-      val = conf.getStringArray("vm.por.field_boundaries.break");
+    if (conf.getBoolean("vm.shared.field_boundaries")) {
+      val = conf.getStringArray("vm.shared.field_boundaries.break");
       if (val != null) {
         breakShared = new StringSetMatcher(val);
       }
     }
 
-    val = conf.getStringArray("vm.por.atomic_methods");
+    val = conf.getStringArray("vm.shared.atomic_methods");
     if (val != null) {
       atomicMethods = new StringSetMatcher(val);
     }    

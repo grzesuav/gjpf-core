@@ -114,6 +114,8 @@ public class ThreadData {
     sb.append(state.name());
     sb.append(",priority:");
     sb.append(priority);
+    sb.append(",isDaemon:");
+    sb.append(isDaemon);
     sb.append(",lockCount:");
     sb.append(lockCount);
     sb.append(",suspendCount:");

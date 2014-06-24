@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
@@ -25,14 +26,13 @@ import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.bytecode.WriteInstruction;
+import gov.nasa.jpf.vm.choice.ExposureCG;
 
 /**
  * Set field in object
  * ..., objectref, value => ...
  */
 public class PUTFIELD extends JVMInstanceFieldInstruction implements WriteInstruction {
-
-  public PUTFIELD() {}
 
   public PUTFIELD(String fieldName, String clsDescriptor, String fieldDescriptor){
     super(fieldName, clsDescriptor, fieldDescriptor);
@@ -64,55 +64,78 @@ public class PUTFIELD extends JVMInstanceFieldInstruction implements WriteInstru
     }
   }
 
-  @Override
-  protected void popOperands1 (StackFrame frame) {
-    frame.pop(2); // .. objref, val => ..
-  }
-  
-  @Override
-  protected void popOperands2 (StackFrame frame) {
-    frame.pop(3); // .. objref, highVal,lowVal => ..
-  }
     
   @Override
   public Instruction execute (ThreadInfo ti) {
-    StackFrame frame = ti.getTopFrame();
+    StackFrame frame = ti.getModifiableTopFrame();
     int objRef = frame.peek( size);
     lastThis = objRef;
     
     if (!ti.isFirstStepInsn()) { // top half
-
-      // if this produces an NPE, force the error w/o further ado
+      // check for obvious exceptions
       if (objRef == MJIEnv.NULL) {
         return ti.createAndThrowException("java.lang.NullPointerException",
                                    "referencing field '" + fname + "' on null object");
       }
       
-      ElementInfo ei = ti.getModifiableElementInfoWithUpdatedSharedness(objRef);
+      ElementInfo eiFieldOwner = ti.getModifiableElementInfo(objRef);
       FieldInfo fi = getFieldInfo();
       if (fi == null) {
         return ti.createAndThrowException("java.lang.NoSuchFieldError", 
-            "no field " + fname + " in " + ei);
+            "no field " + fname + " in " + eiFieldOwner);
       }
 
-      // check if this breaks the current transition
-      // note this will also set the shared attribute of the field owner
-      if (isNewPorFieldBoundary(ti, fi, objRef)) {
-        if (createAndSetSharedFieldAccessCG(ei, ti)) {
-          return this;
+      // check for non-lock protected shared object access, breaking
+      // before the field is written
+      eiFieldOwner = checkSharedInstanceFieldAccess(ti, eiFieldOwner);
+      if (ti.getVM().hasNextChoiceGenerator()) {
+        return this;
+      }
+      
+      // if this is an object exposure (non-shared object gets stored in field of
+      // shared object and hence /could/ become shared itself), we have to change the
+      // field value /before/ we do an exposure break. However, we should only change it
+      // once, if we re-write during re-execution we change program behavior in
+      // case there is a race for this field, leading to false positives etc.
+      if (isReferenceField()){
+        int refValue = frame.peek();
+        if (refValue != MJIEnv.NULL && (refValue != eiFieldOwner.getReferenceField(fi))){
+          ElementInfo eiRefValue = ti.getElementInfo(refValue);
+          if (eiRefValue.isFirstExposure(ti, eiFieldOwner)){
+            eiRefValue = eiRefValue.getExposedInstance(ti, eiFieldOwner);
+            if (createAndSetObjectExposureCG(eiRefValue, ti)) {
+              // set the value /before/ we break
+              lastValue = PutHelper.setReferenceField(ti, frame, eiFieldOwner, fi);
+              markExposure(frame); // make sure we don't overwrite external changes in bottom half
+              return this;
+            } 
+          }
         }
       }
+      // regular case - non shared or lock protected field, no re-execution
+      lastValue = PutHelper.setField( ti, frame, eiFieldOwner, fi);
       
-      return put( ti, frame, ei);
-      
-    } else { // re-execution
-      // no need to redo the exception checks, we already had them in the top half
-      ElementInfo ei = ti.getElementInfo(objRef);
-
-      return put( ti, frame, ei);      // this might create an exposure CG and cause another re-execution
+    } else { // bottom-half - re-execution
+      // check if the value was already set in the top half
+      // NOTE - we can also get here because of a non-exposure CG (thread termination, interrupt etc.)
+      if (!checkAndResetExposureMark(frame)){
+        ElementInfo eiFieldOwner = ti.getModifiableElementInfo(objRef);
+        lastValue = PutHelper.setField(ti, frame, eiFieldOwner, fi);
+      }
     }
+    
+    popOperands(frame);      
+    return getNext();
   }
 
+  protected void popOperands (StackFrame frame){
+    if (size == 1){
+      frame.pop(2); // .. objref, val => ..
+    } else {
+      frame.pop(3); // .. objref, highVal,lowVal => ..    
+    }
+  }
+    
   public ElementInfo peekElementInfo (ThreadInfo ti) {
     FieldInfo fi = getFieldInfo();
     int storageSize = fi.getStorageSize();

@@ -127,6 +127,8 @@ public abstract class VM {
   /** how we model execution time */
   protected TimeModel timeModel;
   
+  protected SharednessPolicy sharednessPolicy;
+  
   protected Config config; // that's for the options we use only once
 
   // VM options we use frequently
@@ -228,6 +230,8 @@ public abstract class VM {
     backtracker = config.getEssentialInstance("vm.backtracker.class", Backtracker.class);
     backtracker.attach(this);
 
+    sharednessPolicy = config.getEssentialInstance("vm.sharedness_policy.class", SharednessPolicy.class);
+    
     newStateId = -1;
   }
 
@@ -238,7 +242,6 @@ public abstract class VM {
     ElementInfo.init(config);
     MethodInfo.init(config);
     NativePeer.init(config);
-    POR.init(config);
     ChoiceGeneratorBase.init(config);
     
     // peer classes get initialized upon NativePeer creation
@@ -1313,6 +1316,10 @@ public abstract class VM {
     return stateSet;
   }
 
+  public SharednessPolicy getSharednessPolicy(){
+    return sharednessPolicy;
+  }
+  
   /**
    * return the last registered SystemState's ChoiceGenerator object
    * NOTE: there might be more than one ChoiceGenerator associated with the
@@ -1324,6 +1331,10 @@ public abstract class VM {
 
   public ChoiceGenerator<?> getNextChoiceGenerator() {
     return ss.getNextChoiceGenerator();
+  }
+  
+  public boolean hasNextChoiceGenerator(){
+    return (ss.getNextChoiceGenerator() != null);
   }
 
   public boolean setNextChoiceGenerator (ChoiceGenerator<?> cg){

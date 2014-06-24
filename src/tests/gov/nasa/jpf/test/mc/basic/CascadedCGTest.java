@@ -147,7 +147,7 @@ public class CascadedCGTest extends TestJPF {
             ss.setNextChoiceGenerator(cg);
             ti.reExecuteInstruction();
 
-            System.out.println("# listener registered: " + cg);
+            System.out.println("# listener registered CG: " + cg);
 
           } else {
             StackFrame frame = ti.getModifiableTopFrame();

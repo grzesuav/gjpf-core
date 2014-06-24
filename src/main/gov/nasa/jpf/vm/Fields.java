@@ -37,7 +37,7 @@ public abstract class Fields implements Cloneable {
 
   /**
    * we use this to store arbitrary field attributes (like symbolic values),
-   * but only pushClinit this on demand
+   * but only create this on demand
    */
   protected Object[] fieldAttrs;
 

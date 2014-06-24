@@ -26,6 +26,9 @@
   <!-- compiler settings -->
   <property name="debug"         value="on"/>
   <property name="deprecation"   value="on"/>
+  <property name="target"        value="1.7"/>
+  <property name="source"        value="1.7"/>  
+  <property name="compiler"      value="javac1.7"/>
 
   <uptodate property="build_uptodate" targetfile="build/main/gov/nasa/jpf/build.properties" srcfile="build.properties"/>
 
@@ -83,13 +86,13 @@
   <target name="-compile-annotations" if="have_annotations">
     <mkdir dir="build/annotations"/>
     <javac srcdir="src/annotations" destdir="build/annotations" includeantruntime="false"
-           debug="${debug}" deprecation="${deprecation}" classpath=""/>
+           compiler="${compiler}" target="${target}" source="${source}" debug="${debug}" deprecation="${deprecation}" classpath=""/>
   </target>
 
   <target name="-compile-main" if="have_main">
     <mkdir dir="build/main"/>
     <javac srcdir="src/main" destdir="build/main" includeantruntime="false"
-           debug="${debug}" deprecation="${deprecation}" classpathref="lib.path">
+           compiler="${compiler}" target="${target}" source="${source}" debug="${debug}" deprecation="${deprecation}" classpathref="lib.path">
     	<!--
         <compilerarg value="-XDenableSunApiLintControl"/>
         <compilerarg value="-Xlint:all"/>
@@ -101,7 +104,7 @@
   <target name="-compile-peers" if="have_peers" depends="-compile-main" >
     <mkdir dir="build/peers"/>
     <javac srcdir="src/peers" destdir="build/peers" includeantruntime="false"
-           debug="${debug}" deprecation="${deprecation}" classpathref="lib.path">
+           compiler="${compiler}" target="${target}" source="${source}" debug="${debug}" deprecation="${deprecation}" classpathref="lib.path">
     	<compilerarg value="-XDenableSunApiLintControl"/>
     	<compilerarg value="-Xlint:all,-sunapi,-serial"/>    	
      </javac>
@@ -110,7 +113,7 @@
   <target name="-compile-classes" if="have_classes" depends="-compile-annotations,-compile-main" >
     <mkdir dir="build/classes"/>
     <javac srcdir="src/classes" destdir="build/classes" includeantruntime="false"
-           debug="${debug}" deprecation="${deprecation}">
+           compiler="${compiler}" target="${target}" source="${source}" debug="${debug}" deprecation="${deprecation}">
       <compilerarg value="-XDenableSunApiLintControl"/>
       <compilerarg value="-Xlint:all,-sunapi"/>   
       <classpath>
@@ -123,7 +126,7 @@
   <target name="-compile-tests" if="have_tests" depends="-compile-annotations,-compile-main,-compile-classes">
     <mkdir dir="build/tests"/>
     <javac srcdir="src/tests" destdir="build/tests" includeantruntime="false"
-           debug="${debug}" deprecation="${deprecation}"
+           compiler="${compiler}" target="${target}" source="${source}" debug="${debug}" deprecation="${deprecation}"
            includes="*,gov/nasa/jpf/**,classloader_specific_tests/**">
       <compilerarg value="-XDenableSunApiLintControl"/>
       <compilerarg value="-Xlint:all,-sunapi,-serial,-rawtypes,-unchecked"/>   
@@ -138,7 +141,7 @@
   <target name="-compile-examples" if="have_examples" depends="-compile-annotations,-compile-main">
     <mkdir dir="build/examples" />
     <javac srcdir="src/examples" destdir="build/examples" includeantruntime="false"
-           debug="${debug}" deprecation="${deprecation}"
+           compiler="${compiler}" target="${target}" source="${source}" debug="${debug}" deprecation="${deprecation}"
            classpathref="lib.path"/>
   </target>
 
@@ -370,16 +373,16 @@
       <arg value="-r{rev}"/>
     </exec>
   	
-    <zip destfile="build/${ant.project.name}${hg.tip.rev}-src.zip" update="false" excludes="*">
+    <zip destfile="build/${ant.project.name}${hg.tip.rev}-src.zip" update="false" excludes="*" whenempty="skip">
       <zipfileset file="jpf.properties"  prefix="${ant.project.name}"/>
       <zipfileset file="build.properties"  prefix="${ant.project.name}"/>
       <zipfileset file="build.xml"  prefix="${ant.project.name}"/>
     	<zipfileset file="NOSA-1.3-JPF"  prefix="${ant.project.name}"/>
       <zipfileset file="README"  prefix="${ant.project.name}"/>
       <zipfileset dir="src" prefix="${ant.project.name}/src"/>
-      <zipfileset dir="lib"  prefix="${ant.project.name}/lib"/>
+      <zipfileset dir="lib"  prefix="${ant.project.name}/lib" erroronmissingdir="false"/>
       <zipfileset dir="bin"  prefix="${ant.project.name}/bin" filemode="754"/>
-      <zipfileset dir="tools" prefix="${ant.project.name}/tools"/>
+      <zipfileset dir="tools" prefix="${ant.project.name}/tools" erroronmissingdir="false"/>
 
       <!-- IDE related configuration files -->
       <zipfileset file=".project"  prefix="${ant.project.name}"/>
@@ -432,6 +435,7 @@
           <exclude name="**/JPF_*.class"/>
           <include name="**/*Test.class"/>
         	
+          <exclude name="**/SplitInputStreamTest.class"/>
         </fileset>
       </batchtest>
 

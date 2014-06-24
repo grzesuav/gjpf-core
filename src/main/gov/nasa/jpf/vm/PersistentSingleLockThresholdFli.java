@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2006 United States Government as represented by the
+// Copyright (C) 2014 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,21 +16,20 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.vm.bytecode.InstanceFieldInstruction;
+package gov.nasa.jpf.vm;
 
 /**
- * common super type of GETFIELD, PUTFIELD
+ * persistent SingleLockThresholdFli version
  */
-public abstract class JVMInstanceFieldInstruction extends InstanceFieldInstruction implements JVMFieldInstruction {
+public class PersistentSingleLockThresholdFli extends SingleLockThresholdFli {
 
-  protected JVMInstanceFieldInstruction (String fieldName, String classType, String fieldDescriptor){
-    super(fieldName, classType, fieldDescriptor);
+  public PersistentSingleLockThresholdFli (ThreadInfo ti, int lockRef, int remainingChecks){
+    super(ti, lockRef, remainingChecks);
   }
-    
-  public void accept(JVMInstructionVisitor insVisitor) {
-	  insVisitor.visit(this);
+  
+  @Override
+  protected SingleLockThresholdFli singleLockThresholdFli (ThreadInfo ti, int lockRef, int remainingChecks) {
+    return new PersistentSingleLockThresholdFli(ti, lockRef, remainingChecks);
   }
 }
-

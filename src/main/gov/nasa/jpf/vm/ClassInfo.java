@@ -233,7 +233,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   protected int  id = -1;
 
-  /** A search global unique id associate with this class, which is comprised of the classLoader id
+  /**
+   * A search global unique id associate with this class, which is comprised of the classLoader id
    * and the (loader-specific) ClassInfo id. This is just a quick way to do search global checks for equality
    * 
    * NOTE - since this is based on the classloader-specific id, it can't be used before the ClassInfo is registered

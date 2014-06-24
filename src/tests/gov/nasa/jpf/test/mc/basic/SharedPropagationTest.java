@@ -63,7 +63,7 @@ public class SharedPropagationTest extends TestJPF {
   
   @Test
   public void testLocalRef(){
-    if (verifyUnhandledException( Gotcha.class.getName(), "+vm.por.shared.class=.vm.GlobalTrackingPolicy")){
+    if (verifyUnhandledException( Gotcha.class.getName(), "+vm.sharedness_policy.class=.vm.GlobalSharednessPolicy")){
       T1.main(new String[0]);
     }
   }
@@ -152,7 +152,7 @@ public class SharedPropagationTest extends TestJPF {
   
   @Test
   public void testStaticFieldPropagation(){
-    if (verifyUnhandledException(Gotcha.class.getName(), "+vm.por.shared.class=.vm.GlobalTrackingPolicy")){
+    if (verifyUnhandledException(Gotcha.class.getName(), "+vm.sharedness_policy.class=.vm.GlobalSharednessPolicy")){
       T3.main(new String[0]);
     }
   }
@@ -209,7 +209,7 @@ public class SharedPropagationTest extends TestJPF {
   
   @Test
   public void testHyber() {
-    if (verifyUnhandledException(Gotcha.class.getName(), "+vm.por.shared.class=.vm.GlobalTrackingPolicy")){
+    if (verifyUnhandledException(Gotcha.class.getName(), "+vm.sharedness_policy.class=.vm.GlobalSharednessPolicy")){
       Hyber.main(new String[0]);
     }    
   }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2006 United States Government as represented by the
+// Copyright (C) 2014 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -16,19 +16,17 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-package gov.nasa.jpf.jvm.bytecode;
+
+package gov.nasa.jpf.vm.bytecode;
 
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
-import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.StaticElementInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
-import gov.nasa.jpf.vm.bytecode.FieldInstruction;
 
 /**
- * class to abstract instructions accessing static fields
+ * common machine independent type for static field accessors
  */
 public abstract class StaticFieldInstruction extends FieldInstruction {
 
@@ -111,26 +109,4 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     return getLastClassInfo().getName();
   }
 
-  public void accept(JVMInstructionVisitor insVisitor) {
-	  insVisitor.visit(this);
-  }
-
-  @Override
-  public Instruction typeSafeClone(MethodInfo mi) {
-    StaticFieldInstruction clone = null;
-
-    try {
-      clone = (StaticFieldInstruction) super.clone();
-
-      // reset the method that this insn belongs to
-      clone.mi = mi;
-      clone.fi = null; // ClassInfo is going to be different
-      
-    } catch (CloneNotSupportedException e) {
-      e.printStackTrace();
-    }
-
-    return clone;
-  }
 }
-

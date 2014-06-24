@@ -41,8 +41,11 @@ public abstract class FieldLockInfo implements Cloneable  {
   
   static protected final FieldLockInfo empty = new EmptyFieldLockInfo();
     
-  ThreadInfo tiLastCheck; // the thread this FieldLockInfo was last checked for
+  protected ThreadInfo tiLastCheck; // the thread this FieldLockInfo was last checked for
 
+  public static FieldLockInfo getEmptyFieldLockInfo(){
+    return empty;
+  }
   
   public abstract FieldLockInfo checkProtection (ThreadInfo ti, ElementInfo ei, FieldInfo fi);
   public abstract boolean isProtected ();
@@ -89,7 +92,7 @@ public abstract class FieldLockInfo implements Cloneable  {
     }
     sb.append( "\n[SEVERE].. current locks: ");
     appendLockSet(sb, ti.getLockedObjectReferences());
-    sb.append("\n[SEVERE].. if this is not a race, re-run with 'vm.por.sync_detection=false' or exclude field from checks");
+    sb.append("\n[SEVERE].. if this is not a race, re-run with 'vm.shared.sync_detection=false' or exclude field from checks");
 
     log.severe(sb.toString());
   }

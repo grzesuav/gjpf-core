@@ -18,23 +18,24 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
+import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.bytecode.WriteInstruction;
+import gov.nasa.jpf.vm.choice.ExposureCG;
 
 
 /**
  * Set static field in class
  * ..., value => ...
  */
-public class PUTSTATIC extends StaticFieldInstruction implements WriteInstruction {
-
-  public PUTSTATIC() {}
+public class PUTSTATIC extends JVMStaticFieldInstruction implements WriteInstruction {
 
   public PUTSTATIC(String fieldName, String clsDescriptor, String fieldDescriptor){
     super(fieldName, clsDescriptor, fieldDescriptor);
@@ -47,23 +48,15 @@ public class PUTSTATIC extends StaticFieldInstruction implements WriteInstructio
   public int getValueSlot (StackFrame frame){
     return frame.getTopPos();
   }
-  
-  @Override
-  protected void popOperands1 (StackFrame frame) {
-    frame.pop(); // .. val => ..
-  }
-  
-  @Override
-  protected void popOperands2 (StackFrame frame) {
-    frame.pop(2);  // .. highVal, lowVal => ..
-  }
-  
+    
   @Override
   public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
     
     if (!ti.isFirstStepInsn()) { // top half
       FieldInfo fieldInfo;
     
+      // handle class loading
       try {
         fieldInfo = getFieldInfo();
       } catch(LoadOnJPFRequired lre) {
@@ -74,30 +67,61 @@ public class PUTSTATIC extends StaticFieldInstruction implements WriteInstructio
         return ti.createAndThrowException("java.lang.NoSuchFieldError", (className + '.' + fname));
       }
       
+      // handle static class initialization
       ClassInfo ciField = fi.getClassInfo();
       if (!mi.isClinit(ciField) && ciField.pushRequiredClinits(ti)) {
         // note - this returns the next insn in the topmost clinit that just got pushed
         return ti.getPC();
       }
+            
+      ElementInfo eiFieldOwner = ciField.getModifiableStaticElementInfo();
+
+      // check for non-lock protected shared object access, breaking
+      // before the field is written
+      eiFieldOwner = checkSharedStaticFieldAccess(ti, eiFieldOwner);
+      if (ti.getVM().hasNextChoiceGenerator()) {
+        return this;
+      }
       
-      ElementInfo ei = ciField.getStaticElementInfo();
-      ei = ei.getInstanceWithUpdatedSharedness(ti);
-      if (isNewPorFieldBoundary(ti)) {
-        if (createAndSetSharedFieldAccessCG( ei, ti)) {
-          return this;
+      // handle object exposure (see PUTFIELD)
+      if (isReferenceField()){
+        int refValue = frame.peek();
+        if (refValue != MJIEnv.NULL && (refValue != eiFieldOwner.getReferenceField(fi))){
+          ElementInfo eiRefValue = ti.getElementInfo(refValue);
+          if (eiRefValue.isFirstExposure(ti, eiFieldOwner)){
+            eiRefValue = eiRefValue.getExposedInstance(ti, eiFieldOwner);
+            if (createAndSetObjectExposureCG(eiRefValue, ti)) {
+              // set the value /before/ we break
+              lastValue = PutHelper.setReferenceField(ti, frame, eiFieldOwner, fi);
+              markExposure(frame); // make sure we don't overwrite external changes in bottom half
+              return this;
+            }            
+          }
         }
       }
       
-      ei = ei.getModifiableInstance();
-      return put( ti, ti.getTopFrame(), ei);
+      // regular case - non shared or lock protected field
+      lastValue = PutHelper.setField( ti, frame, eiFieldOwner, fi);
       
-    } else { // re-execution
-      // no need to redo the exception checks, we already had them in the top half
-      ClassInfo ciField = fi.getClassInfo();
-      ElementInfo ei = ciField.getStaticElementInfo();
-      
-      ei = ei.getModifiableInstance();
-      return put( ti, ti.getTopFrame(), ei);      
+    } else { // bottom-half - re-execution
+      // check if the value was already set in the top half
+      // NOTE - we can also get here because of a non-exposure CG (thread termination, interrupt etc.)
+      if (!checkAndResetExposureMark(frame)){
+        ClassInfo ciField = fi.getClassInfo();
+        ElementInfo eiFieldOwner = ciField.getModifiableStaticElementInfo();
+        lastValue = PutHelper.setField(ti, frame, eiFieldOwner, fi);
+      }  
+    }
+    
+    popOperands(frame);
+    return getNext();
+  }
+  
+  protected void popOperands (StackFrame frame){
+    if (size == 1){
+      frame.pop(); // .. val => ..
+    } else {
+      frame.pop(2);  // .. highVal, lowVal => ..
     }
   }
   

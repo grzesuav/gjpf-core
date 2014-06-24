@@ -67,6 +67,10 @@ public class ApplicationContext implements SystemAttribute {
     return host;
   }
   
+  public String[] getArgs(){
+    return args;
+  }
+  
   public SystemClassLoaderInfo getSystemClassLoader(){
     return sysCl;
   }

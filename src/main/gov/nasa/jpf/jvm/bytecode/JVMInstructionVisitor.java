@@ -19,6 +19,7 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.bytecode.FieldInstruction;
 
 public interface JVMInstructionVisitor {
 
@@ -187,7 +188,7 @@ public interface JVMInstructionVisitor {
 	public void visit(SALOAD ins);
 	public void visit(SASTORE ins);
 	public void visit(SIPUSH ins);
-	public void visit(StaticFieldInstruction ins);
+	public void visit(JVMStaticFieldInstruction ins);
 	/**public void visit(StoreInstruction ins);**/ // neha: this is just an interface, not implemented
 	public void visit(SWAP ins);
 	public void visit(SwitchInstruction ins);

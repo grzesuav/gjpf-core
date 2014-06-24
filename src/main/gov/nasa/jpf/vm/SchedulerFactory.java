@@ -69,8 +69,8 @@ public interface SchedulerFactory {
   ChoiceGenerator<ThreadInfo> createSharedArrayAccessCG (ElementInfo eiArray, ThreadInfo ti);
 
   /** used by PutField,PutStatic insns if previously unshared objects get stored in shared object fields */
-  public static final String SHARED_OBJECT_EXPOSURE = "SHARED_OBJECT_EXPOSURE";
-  ChoiceGenerator<ThreadInfo> createSharedObjectExposureCG(ElementInfo ei, ThreadInfo ti);
+  public static final String OBJECT_EXPOSURE = "OBJECT_EXPOSURE";
+  ChoiceGenerator<ThreadInfo> createObjectExposureCG(ElementInfo ei, ThreadInfo ti);
   
   /** used by Thread.start() */
   public static final String THREAD_START = "THREAD_START";

@@ -33,8 +33,8 @@ public final class StaticElementInfo extends ElementInfo {
 
   static final int ATTR_ANY_CHANGED = ElementInfo.ATTR_ANY_CHANGED | ATTR_COR_CHANGED | ATTR_STATUS_CHANGED;
   
-  int classObjectRef = MJIEnv.NULL;
-  int status = ClassInfo.UNINITIALIZED;
+  protected int classObjectRef = MJIEnv.NULL;
+  protected int status = ClassInfo.UNINITIALIZED;
 
   
   public StaticElementInfo () {
@@ -43,15 +43,12 @@ public final class StaticElementInfo extends ElementInfo {
   public StaticElementInfo (int id, ClassInfo ci, Fields f, Monitor m, ThreadInfo ti, ElementInfo eiClsObj) {
     super(id, ci, f, m, ti);
 
+    // startup classes don't have a class object yet
     if (eiClsObj != null) {
       classObjectRef = eiClsObj.getObjectRef();
     }
 
-    // <2do> not ideal, should be in superclass, but we need the classObjectRef for init
-    referencingThreads = createThreadInfoSet(ti); // initialization depends on subclass and policy
-    setSharednessFromReferencingThreads();
-    
-    // initial attributes?
+    ti.initializeSharedness(this);
   }
   
   @Override
@@ -63,13 +60,6 @@ public final class StaticElementInfo extends ElementInfo {
       return statics.getModifiable( objRef);
     }
   }
-  
-  // called during ElementInfo construction
-  @Override
-  protected ThreadInfoSet createThreadInfoSet(ThreadInfo ti){
-    return SharedObjectPolicy.getPolicy().getThreadInfoSet(ti, this);
-  }
-
   
   @Override
   public boolean isObject(){

@@ -41,9 +41,9 @@ public abstract class ArrayStoreInstruction extends JVMArrayElementInstruction i
       return ti.createAndThrowException("java.lang.NullPointerException");
     }
 
-    ElementInfo e = ti.getModifiableElementInfoWithUpdatedSharedness(aref);
-    if (isNewPorBoundary(e, ti)) {
-      if (createAndSetArrayCG(e,ti, aref, peekIndex(ti), false)) {
+    ElementInfo ei = ti.getElementInfoWithUpdatedSharedness(aref);
+    if (isNewPorBoundary(ei, ti)) {
+      if (createAndSetArrayCG(ei,ti, aref, peekIndex(ti), false)) {
         return this;
       }
     }
@@ -58,14 +58,15 @@ public abstract class ArrayStoreInstruction extends JVMArrayElementInstruction i
     // don't set 'arrayRef' before we do the CG check (would kill loop optimization)
     arrayRef = frame.pop();
 
-    Instruction xInsn = checkArrayStoreException(ti, e);
+    Instruction xInsn = checkArrayStoreException(ti, ei);
     if (xInsn != null){
       return xInsn;
     }
 
     try {
-      setField(e, index);
-      e.setElementAttrNoClone(index,attr); // <2do> what if the value is the same but not the attr?
+      ei = ei.getModifiableInstance();
+      setField(ei, index);
+      ei.setElementAttrNoClone(index,attr); // <2do> what if the value is the same but not the attr?
       return getNext(ti);
 
     } catch (ArrayIndexOutOfBoundsExecutiveException ex) { // at this point, the AIOBX is already processed

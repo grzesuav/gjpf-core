@@ -23,10 +23,12 @@ import gov.nasa.jpf.annotation.MJI;
 
 import java.lang.reflect.Modifier;
 
+/**
+ * native peer for java.lang.reflect.Field
+ */
 public class JPF_java_lang_reflect_Field extends NativePeer {
 
-  // the registry is rather braindead, let's hope we don't have many lookups - 
-  // using Fields is fine, but creating them is not efficient until we fix this
+  // <2do> using Fields is fine, but creating them is not efficient until we get rid of the registry
   
   static final int NREG = 64;
   static FieldInfo[] registered;
@@ -63,7 +65,7 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
   }
   
   /**
-   * >2do> that doesn't take care of class init yet
+   * <2do> that doesn't take care of class init yet
    */
   @MJI
   public int getType____Ljava_lang_Class_2 (MJIEnv env, int objRef) {
@@ -84,10 +86,62 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     return fi.getModifiers();
   }
 
-  static ElementInfo getCheckedElementInfo (MJIEnv env, FieldInfo fi, int fobjRef, Class<?> fiType, String type, boolean isWrite){
+  protected StackFrame getCallerFrame (MJIEnv env){
+    ThreadInfo ti = env.getThreadInfo();
+    StackFrame frame = ti.getTopFrame(); // this is the Field.get/setX(), so we still have to get down
+    return frame.getPrevious();
+  }
+  
+  protected boolean isAccessible (MJIEnv env, FieldInfo fi, int fieldRef, int ownerRef){
+    
+    // note that setAccessible() even overrides final
+    ElementInfo fei = env.getElementInfo(fieldRef);
+    if (fei.getBooleanField("isAccessible")){
+      return true;
+    }
+    
+    if (fi.isFinal()){
+      return false;
+    }
+    
+    if (fi.isPublic()){
+      return true;
+    }
+    
+    // otherwise we have to check object identities and access modifier of the executing method
+    ClassInfo ciDecl = fi.getClassInfo();
+    String declPackage = ciDecl.getPackageName();
+    
+    StackFrame frame = getCallerFrame(env);    
+    MethodInfo mi = frame.getMethodInfo();
+    ClassInfo ciMethod = mi.getClassInfo();
+    String mthPackage = ciMethod.getPackageName();
+
+    if (!fi.isPrivate() && declPackage.equals(mthPackage)) {
+      return true;
+    }
+    
+    if (fi.isStatic()){
+      if (ciDecl == ciMethod){
+        return true;
+      }
+      
+    } else {
+      int thisRef = frame.getCalleeThis(mi);
+      if (thisRef == ownerRef) { // same object
+        return true;
+      }
+    }
+    
+    // <2do> lots of more checks here
+    
+    return false;
+  }
+  
+  protected ElementInfo getCheckedElementInfo (MJIEnv env, FieldInfo fi, int objRef, int ownerRef, boolean isWrite){
     ElementInfo ei;
 
-    if (!isAvailable(env, fi, fobjRef)){
+    if (!isAvailable(env, fi, ownerRef)){
       return null;
     }
 
@@ -95,98 +149,224 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
       ClassInfo fci = fi.getClassInfo();
       ei = isWrite ? fci.getModifiableStaticElementInfo() : fci.getStaticElementInfo();
     } else { // instance field
-      ei = isWrite ? env.getModifiableElementInfo(fobjRef) : env.getElementInfo(fobjRef);
+      ei = isWrite ? env.getModifiableElementInfo(ownerRef) : env.getElementInfo(ownerRef);
     }
 
-    // our guards (still need IllegalAccessException)
     if (ei == null) {
       env.throwException("java.lang.NullPointerException");
       return null;
     }
-    if (fiType != null && !fiType.isInstance(fi)) {
-      env.throwException("java.lang.IllegalArgumentException", "field type incompatible with " + type);
+
+    if ( !isAccessible(env, fi, objRef, ownerRef)){
+      env.throwException("java.lang.IllegalAccessException", "field not accessible: " + fi);
       return null;
     }
+    
+    return ei;
+  }
+  
+  protected boolean checkFieldType (MJIEnv env, FieldInfo fi, Class<?> fiType){
+    if (!fiType.isInstance(fi)) {
+      env.throwException("java.lang.IllegalArgumentException", "incompatible field type: " + fi);
+      return false;
+    }
+    
+    return true;
+  }
+  
+  protected boolean createAndSetSharedFieldAccessCG ( ElementInfo eiFieldOwner, ThreadInfo ti) {
+    VM vm = ti.getVM();
+    ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSharedFieldAccessCG(eiFieldOwner, ti);
+    if (cg != null) {
+      if (vm.setNextChoiceGenerator(cg)){
+        ti.skipInstructionLogging(); // <2do> Hmm, might be more confusing not to see it
+        return true;
+      }
+    }
 
+    return false;
+  }
+  
+  protected ElementInfo checkSharedFieldAccess (ThreadInfo ti, ElementInfo ei, FieldInfo fi){
+    Instruction insn = ti.getPC();
+    SharednessPolicy sp = ti.getSharednessPolicy();
+    ei = sp.updateSharedness(ti, ei);
+    boolean isRelevantField;
+    
+    if (fi.isStatic()){
+      isRelevantField = sp.isRelevantStaticFieldAccess(ti, insn, ei, fi);
+    } else {
+      isRelevantField = sp.isRelevantInstanceFieldAccess(ti, insn, ei, fi);
+    }
+    
+    if (isRelevantField){
+      ei = sp.updateFieldLockInfo(ti,ei,fi);
+      if (!ei.isLockProtected(fi)){
+        if (createAndSetSharedFieldAccessCG(ei, ti)){
+          //env.repeatInvocation();
+        }
+      }
+    }
+    
     return ei;
   }
   
   @MJI
-  public boolean getBoolean__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int fobjRef) {
+  public boolean getBoolean__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int ownerRef) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);    
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, BooleanFieldInfo.class, "boolean", false);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
-      return ei.getBooleanField(fi);
+      if (checkFieldType(env, fi, BooleanFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return false;
+          }
+        }
+        return ei.getBooleanField(fi);
+      }
     }
     return false;
   }
 
   @MJI
-  public byte getByte__Ljava_lang_Object_2__B (MJIEnv env, int objRef, int fobjRef) {
+  public byte getByte__Ljava_lang_Object_2__B (MJIEnv env, int objRef, int ownerRef) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, ByteFieldInfo.class, "byte", false);
-    if (ei != null){
-      return ei.getByteField(fi);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
+    if (ei != null) {
+      if (checkFieldType(env, fi, BooleanFieldInfo.class)) {
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return 0;
+          }
+        }
+        return ei.getByteField(fi);
+      }
     }
     return 0;
   }
 
   @MJI
-  public char getChar__Ljava_lang_Object_2__C (MJIEnv env, int objRef, int fobjRef) {
+  public char getChar__Ljava_lang_Object_2__C (MJIEnv env, int objRef, int ownerRef) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, CharFieldInfo.class, "char", false);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
-      return ei.getCharField(fi);
+      if (checkFieldType(env, fi, CharFieldInfo.class)) {
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return 0;
+          }
+        }
+        return ei.getCharField(fi);
+      }
     }
     return 0;
   }
 
   @MJI
-  public short getShort__Ljava_lang_Object_2__S (MJIEnv env, int objRef, int fobjRef) {
+  public short getShort__Ljava_lang_Object_2__S (MJIEnv env, int objRef, int ownerRef) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, ShortFieldInfo.class, "short", false);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
-      return ei.getShortField(fi);
+      if (checkFieldType(env, fi, ShortFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return 0;
+          }
+        }
+        return ei.getShortField(fi);
+      }
     }
     return 0;
   }
 
   @MJI
-  public int getInt__Ljava_lang_Object_2__I (MJIEnv env, int objRef, int fobjRef) {
+  public int getInt__Ljava_lang_Object_2__I (MJIEnv env, int objRef, int ownerRef) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, IntegerFieldInfo.class, "int", false);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
-      return ei.getIntField(fi);
+      if (checkFieldType(env, fi, IntegerFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return 0;
+          }
+        }
+        return ei.getIntField(fi);
+      }
     }
     return 0;
   }
 
   @MJI
-  public long getLong__Ljava_lang_Object_2__J (MJIEnv env, int objRef, int fobjRef) {
+  public long getLong__Ljava_lang_Object_2__J (MJIEnv env, int objRef, int ownerRef) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, LongFieldInfo.class, "long", false);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
-      return ei.getLongField(fi);
+      if (checkFieldType(env, fi, LongFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return 0;
+          }
+        }
+        return ei.getLongField(fi);
+      }
     }
     return 0;
   }
 
   @MJI
-  public float getFloat__Ljava_lang_Object_2__F (MJIEnv env, int objRef, int fobjRef) {
+  public float getFloat__Ljava_lang_Object_2__F (MJIEnv env, int objRef, int ownerRef) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, FloatFieldInfo.class, "float", false);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
-      return ei.getFloatField(fi);
+      if (checkFieldType(env, fi, FloatFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return 0;
+          }
+        }
+        return ei.getFloatField(fi);
+      }
     }
     return 0;
   }
 
   @MJI
-  public double getDouble__Ljava_lang_Object_2__D (MJIEnv env, int objRef, int fobjRef) {
+  public double getDouble__Ljava_lang_Object_2__D (MJIEnv env, int objRef, int ownerRef) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, DoubleFieldInfo.class, "double", false);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
-      return ei.getDoubleField(fi);
+      if (checkFieldType(env, fi, DoubleFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return 0;
+          }
+        }
+        return ei.getDoubleField(fi);
+      }
     }
     return 0;
   }
@@ -224,118 +404,210 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
   }
 
   @MJI
-  public void setBoolean__Ljava_lang_Object_2Z__V (MJIEnv env, int objRef, int fobjRef,
+  public void setBoolean__Ljava_lang_Object_2Z__V (MJIEnv env, int objRef, int ownerRef,
                                                           boolean val) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    if (!isAvailable(env, fi, fobjRef)){
+    if (!isAvailable(env, fi, ownerRef)){
       return;
     }
     
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, BooleanFieldInfo.class, "boolean", true);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
-      ei.setBooleanField(fi,val);
+      if (checkFieldType(env, fi, BooleanFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return;
+          }
+        }
+        ei.setBooleanField(fi, val);
+      }
     }
   }
 
   @MJI
-  public void setByte__Ljava_lang_Object_2B__V (MJIEnv env, int objRef, int fobjRef, byte val) {
+  public void setByte__Ljava_lang_Object_2B__V (MJIEnv env, int objRef, int ownerRef, byte val) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    if (!isAvailable(env, fi, fobjRef)){
+    if (!isAvailable(env, fi, ownerRef)){
       return;
     }
     
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, ByteFieldInfo.class, "byte", true);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
-      ei.setByteField(fi,val);
+      if (checkFieldType(env, fi, ByteFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return;
+          }
+        }
+        ei.setByteField(fi, val);
+      }
     }
   }
 
   @MJI
-  public void setChar__Ljava_lang_Object_2C__V (MJIEnv env, int objRef, int fobjRef, char val) {
+  public void setChar__Ljava_lang_Object_2C__V (MJIEnv env, int objRef, int ownerRef, char val) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    if (!isAvailable(env, fi, fobjRef)){
+    if (!isAvailable(env, fi, ownerRef)){
       return;
     }
     
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, CharFieldInfo.class, "char", true);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
-      ei.setCharField(fi,val);
+      if (checkFieldType(env, fi, CharFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return;
+          }
+        }
+        ei.setCharField(fi, val);
+      }
     }
   }
 
   @MJI
-  public void setShort__Ljava_lang_Object_2S__V (MJIEnv env, int objRef, int fobjRef,  short val) {
+  public void setShort__Ljava_lang_Object_2S__V (MJIEnv env, int objRef, int ownerRef,  short val) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    if (!isAvailable(env, fi, fobjRef)){
+    if (!isAvailable(env, fi, ownerRef)){
       return;
     }
     
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, ShortFieldInfo.class, "short", true);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
-      ei.setShortField(fi,val);
+      if (checkFieldType(env, fi, ShortFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return;
+          }
+        }
+        ei.setShortField(fi, val);
+      }
     }
   }  
 
   @MJI
-  public void setInt__Ljava_lang_Object_2I__V (MJIEnv env, int objRef, int fobjRef, int val) {
+  public void setInt__Ljava_lang_Object_2I__V (MJIEnv env, int objRef, int ownerRef, int val) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    if (!isAvailable(env, fi, fobjRef)){
+    if (!isAvailable(env, fi, ownerRef)){
       return;
     }
     
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, IntegerFieldInfo.class, "int", true);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
-      ei.setIntField(fi,val);
+      if (checkFieldType(env, fi, IntegerFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return;
+          }
+        }
+
+        ei.setIntField(fi, val);
+      }
     }
   }
 
   @MJI
-  public void setLong__Ljava_lang_Object_2J__V (MJIEnv env, int objRef, int fobjRef, long val) {
+  public void setLong__Ljava_lang_Object_2J__V (MJIEnv env, int objRef, int ownerRef, long val) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    if (!isAvailable(env, fi, fobjRef)){
+    if (!isAvailable(env, fi, ownerRef)){
       return;
     }
     
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, LongFieldInfo.class, "long", true);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
-      ei.setLongField(fi,val);
+      if (checkFieldType(env, fi, LongFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return;
+          }
+        }
+        ei.setLongField(fi, val);
+      }
     }
   }
 
   @MJI
-  public void setFloat__Ljava_lang_Object_2F__V (MJIEnv env, int objRef, int fobjRef, float val) {
+  public void setFloat__Ljava_lang_Object_2F__V (MJIEnv env, int objRef, int ownerRef, float val) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    if (!isAvailable(env, fi, fobjRef)){
+    if (!isAvailable(env, fi, ownerRef)){
       return;
     }
     
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, FloatFieldInfo.class, "float", true);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
-      ei.setFloatField(fi,val);
+      if (checkFieldType(env, fi, FloatFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return;
+          }
+        }
+        ei.setFloatField(fi, val);
+      }
     }
   }
 
   @MJI
-  public void setDouble__Ljava_lang_Object_2D__V (MJIEnv env, int objRef, int fobjRef, double val) {
+  public void setDouble__Ljava_lang_Object_2D__V (MJIEnv env, int objRef, int ownerRef, double val) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    if (!isAvailable(env, fi, fobjRef)){
+    if (!isAvailable(env, fi, ownerRef)){
       return;
     }
     
-    ElementInfo ei = getCheckedElementInfo(env, fi, fobjRef, DoubleFieldInfo.class, "double", true);
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
-      ei.setDoubleField(fi,val);
+      if (checkFieldType(env, fi, DoubleFieldInfo.class)){
+        if (!ti.isFirstStepInsn()) {
+          ei = checkSharedFieldAccess(ti, ei, fi);
+          if (ti.getVM().hasNextChoiceGenerator()) {
+            env.repeatInvocation();
+            return;
+          }
+        }
+        ei.setDoubleField(fi, val);
+      }
     }
   }
 
   @MJI
-  public int get__Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int objRef, int fobjRef) {
+  public int get__Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int objRef, int ownerRef) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    ElementInfo ei = getCheckedElementInfo( env, fi, fobjRef, null, null, false); // no type check here
+    
+    ElementInfo ei = getCheckedElementInfo( env, fi, objRef, ownerRef, false); // no type check here
     if (ei == null){
+      // just return, NPE already thrown by getCheckedElementInfo()
       return 0;
     }
-        
+     
+    if (!ti.isFirstStepInsn()) {
+      ei = checkSharedFieldAccess(ti, ei, fi);
+      if (ti.getVM().hasNextChoiceGenerator()) {
+        env.repeatInvocation();
+        return 0;
+      }
+    }
+    
     if (!(fi instanceof ReferenceFieldInfo)) { // primitive type, we need to box it
       if (fi instanceof DoubleFieldInfo){
         double d = ei.getDoubleField(fi);
@@ -407,7 +679,7 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     return registered[fidx];
   }
   
-  static boolean isAvailable (MJIEnv env, FieldInfo fi, int fobjRef){
+  static boolean isAvailable (MJIEnv env, FieldInfo fi, int ownerRef){
     if (fi.isStatic()){
       ClassInfo fci = fi.getClassInfo();
       if (fci.pushRequiredClinits(env.getThreadInfo())){
@@ -416,7 +688,7 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
       }
       
     } else {
-      if (fobjRef == MJIEnv.NULL){
+      if (ownerRef == MJIEnv.NULL){
         env.throwException("java.lang.NullPointerException");
         return false;        
       }
@@ -426,29 +698,23 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     return true;
   }
   
+  
   /**
-  * Peer method for the <code>java.lang.reflect.Field.set</code> method.
-  * 
-  * @author Mirko Stojmenovic (mirko.stojmenovic@gmail.com)
-  * @author Igor Andjelkovic (igor.andjelkovic@gmail.com)
-  * @author Milos Gligoric (milos.gligoric@gmail.com)
-  *  
-  */
+   * Peer method for the <code>java.lang.reflect.Field.set</code> method.
+   * 
+   * <2do> refactor to make boxed type handling more efficient
+   */
   @MJI
-  public void set__Ljava_lang_Object_2Ljava_lang_Object_2__V (MJIEnv env, int objRef, int fobjRef, int val) {
+  public void set__Ljava_lang_Object_2Ljava_lang_Object_2__V (MJIEnv env, int objRef, int ownerRef, int val) {
+    ThreadInfo ti = env.getThreadInfo();
     FieldInfo fi = getFieldInfo(env, objRef);
-    int modifiers = fi.getModifiers();
 
-    if (!isAvailable(env, fi, fobjRef)){
+    if (!isAvailable(env, fi, ownerRef)){
       return;
     }
         
-    if (Modifier.isFinal(modifiers)) {
-      env.throwException("java.lang.IllegalAccessException", "field " + fi.getName() + " is final");
-      return;
-    }
     ClassInfo ci = fi.getClassInfo();
-    ClassInfo cio = env.getClassInfo(fobjRef);
+    ClassInfo cio = env.getClassInfo(ownerRef);
 
     if (!fi.isStatic() && !cio.isInstanceOf(ci)) {
       env.throwException("java.lang.IllegalArgumentException", 
@@ -459,13 +725,64 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     Object[] attrs = env.getArgAttributes();
     Object attr = (attrs==null)? null: attrs[2];
     
-    if (!setValue(env, fi, fobjRef, val, attr)) {
-      env.throwException("java.lang.IllegalArgumentException",  
-                         "Can not set " + fi.getType() + " field " + fi.getFullName() + " to " + ((MJIEnv.NULL != val) ? env.getClassInfo(val).getName() + " object " : "null"));
+    String type = getValueType(env, val);
+    
+    if (!isAssignmentCompatible(env, fi, val)){
+      env.throwException("java.lang.IllegalArgumentException", 
+                         "field of type " + fi.getType() + " not assignment compatible with " + type + " object");      
+    }
+    
+    ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
+    if (ei != null){
+      if (!ti.isFirstStepInsn()) {
+        // <2do> what about exposure?
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.getVM().hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return;
+        }
+      }
+
+      if (!setValue(env, fi, ownerRef, val, attr)) {
+        env.throwException("java.lang.IllegalArgumentException",
+                "Can not set " + fi.getType() + " field " + fi.getFullName() + " to " + ((MJIEnv.NULL != val) ? env.getClassInfo(val).getName() + " object " : "null"));
+      }
     }
   }
 
-  private static boolean setValue(MJIEnv env, FieldInfo fi, int obj, int value, Object attr) {
+  protected String getValueType (MJIEnv env, int ref){
+    if (ref != MJIEnv.NULL){
+      ElementInfo eiVal = env.getElementInfo(ref);
+      return eiVal.getType();
+    } else {
+      return null;
+    }
+  }
+  
+  protected boolean isAssignmentCompatible (MJIEnv env, FieldInfo fi, int refVal){
+    if (refVal == MJIEnv.NULL){
+      return true;
+      
+    } else {
+      ElementInfo eiVal = env.getElementInfo(refVal);
+      ClassInfo ciVal = eiVal.getClassInfo();
+      String valClsName = ciVal.getName();
+      
+      if (fi.isBooleanField() && valClsName.equals("java.lang.Boolean")) return true;
+      else if (fi.isByteField() && valClsName.equals("java.lang.Byte")) return true;
+      else if (fi.isCharField() && valClsName.equals("java.lang.Char")) return true;
+      else if (fi.isShortField() && valClsName.equals("java.lang.Short")) return true;
+      else if (fi.isIntField() && valClsName.equals("java.lang.Integer")) return true;
+      else if (fi.isLongField() && valClsName.equals("java.lang.Long")) return true;
+      else if (fi.isFloatField() && valClsName.equals("java.lang.Float")) return true;
+      else if (fi.isDoubleField() && valClsName.equals("java.lang.Double")) return true;
+      else {
+        return ciVal.isInstanceOf(fi.getTypeClassInfo());
+      }
+    }
+  }
+  
+  protected static boolean setValue(MJIEnv env, FieldInfo fi, int obj, int value, Object attr) {
     ClassInfo fieldClassInfo = fi.getClassInfo();
     String className = fieldClassInfo.getName();
     String fieldType = fi.getType();
@@ -548,11 +865,11 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
   }
 
   @MJI
-  public boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int fobjRef){
-    int fidx = env.getIntField(fobjRef, "regIdx");
+  public boolean equals__Ljava_lang_Object_2__Z (MJIEnv env, int objRef, int ownerRef){
+    int fidx = env.getIntField(ownerRef, "regIdx");
     if (fidx >= 0 && fidx < nRegistered){
       FieldInfo fi1 = getFieldInfo(env, objRef);
-      FieldInfo fi2 = getFieldInfo(env, fobjRef);
+      FieldInfo fi2 = getFieldInfo(env, ownerRef);
       return ((fi1.getClassInfo() == fi2.getClassInfo()) && fi1.getName().equals(fi2.getName()) && fi1.getType().equals(fi2.getType()));
     }
     return false;

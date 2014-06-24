@@ -18,7 +18,6 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
@@ -33,20 +32,10 @@ import gov.nasa.jpf.vm.bytecode.ReadInstruction;
  * Get static fieldInfo from class
  * ..., => ..., value 
  */
-public class GETSTATIC extends StaticFieldInstruction  implements ReadInstruction {
+public class GETSTATIC extends JVMStaticFieldInstruction  implements ReadInstruction {
 
   public GETSTATIC(String fieldName, String clsDescriptor, String fieldDescriptor){
     super(fieldName, clsDescriptor, fieldDescriptor);
-  }
-
-  @Override
-  protected void popOperands1 (StackFrame frame) {
-    // nothing to pop
-  }
-  
-  @Override
-  protected void popOperands2 (StackFrame frame) {
-    // nothing to pop
   }
 
   @Override
@@ -74,18 +63,14 @@ public class GETSTATIC extends StaticFieldInstruction  implements ReadInstructio
     }
 
     ElementInfo ei = ciField.getStaticElementInfo();
-    ei = ei.getInstanceWithUpdatedSharedness(ti);
-
-    if (ei == null){
-      throw new JPFException("attempt to access field: " + fname + " of uninitialized class: " + ciField.getName());
-    }
-
-    if (isNewPorFieldBoundary(ti)) {
-      if (createAndSetSharedFieldAccessCG( ei, ti)) {
+    
+    if (!ti.isFirstStepInsn()){
+      ei = checkSharedStaticFieldAccess(ti, ei);
+      if (ti.getVM().hasNextChoiceGenerator()) {
         return this;
       }
     }
-   
+    
     Object attr = ei.getFieldAttr(fieldInfo);
     StackFrame frame = ti.getModifiableTopFrame();
 
@@ -115,6 +100,11 @@ public class GETSTATIC extends StaticFieldInstruction  implements ReadInstructio
     }
         
     return getNext(ti);
+  }
+  
+  @Override
+  public boolean isMonitorEnterPrologue(){
+    return GetHelper.isMonitorEnterPrologue(mi, insnIndex);
   }
   
   public int getLength() {
