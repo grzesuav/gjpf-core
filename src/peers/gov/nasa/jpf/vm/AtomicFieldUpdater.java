@@ -19,13 +19,6 @@
 
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.vm.ChoiceGenerator;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.NativePeer;
-import gov.nasa.jpf.vm.SystemState;
-import gov.nasa.jpf.vm.ThreadInfo;
-
 /**
  * base class for atomic field updaters
  */
@@ -35,9 +28,11 @@ public class AtomicFieldUpdater extends NativePeer {
     ThreadInfo ti = env.getThreadInfo();
     
     // >2do> do we also have to check if the updater is shared?
+    if (!ti.isFirstStepInsn() && ti.hasOtherRunnables()){
+      return env.isSchedulingRelevantObject(tRef);
+    }
     
-    return !ti.isFirstStepInsn() && ti.usePorFieldBoundaries()
-        && ti.hasOtherRunnables() && env.isSchedulingRelevantObject(tRef);
+    return false;
   }
 
   protected boolean createAndSetFieldCG(MJIEnv env, int tRef) {

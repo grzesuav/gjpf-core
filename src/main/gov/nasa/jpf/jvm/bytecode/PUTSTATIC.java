@@ -25,6 +25,7 @@ import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
 import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.SharednessPolicy;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.bytecode.WriteInstruction;
@@ -75,38 +76,31 @@ public class PUTSTATIC extends JVMStaticFieldInstruction implements WriteInstruc
       }
             
       ElementInfo eiFieldOwner = ciField.getModifiableStaticElementInfo();
-
-      // check for non-lock protected shared object access, breaking
-      // before the field is written
-      eiFieldOwner = checkSharedStaticFieldAccess(ti, eiFieldOwner);
-      if (ti.getVM().hasNextChoiceGenerator()) {
+      
+      // check for non-lock protected shared object access, breaking before the field is written
+      eiFieldOwner = ti.checkSharedStaticFieldAccess(this, eiFieldOwner, fi);
+      if (ti.hasNextChoiceGenerator()) {
         return this;
       }
-      
+  
       // handle object exposure (see PUTFIELD)
       if (isReferenceField()){
         int refValue = frame.peek();
-        if (refValue != MJIEnv.NULL && (refValue != eiFieldOwner.getReferenceField(fi))){
-          ElementInfo eiRefValue = ti.getElementInfo(refValue);
-          if (eiRefValue.isFirstExposure(ti, eiFieldOwner)){
-            eiRefValue = eiRefValue.getExposedInstance(ti, eiFieldOwner);
-            if (createAndSetObjectExposureCG(eiRefValue, ti)) {
-              // set the value /before/ we break
-              lastValue = PutHelper.setReferenceField(ti, frame, eiFieldOwner, fi);
-              markExposure(frame); // make sure we don't overwrite external changes in bottom half
-              return this;
-            }            
-          }
+        ti.checkStaticFieldObjectExposure( this, eiFieldOwner, fi, refValue);
+        if (ti.hasNextChoiceGenerator()) {
+          lastValue = PutHelper.setReferenceField(ti, frame, eiFieldOwner, fi);
+          ti.markExposure(frame); // make sure we don't overwrite external changes in bottom half
+          return this;
         }
-      }
-      
+      }        
+        
       // regular case - non shared or lock protected field
       lastValue = PutHelper.setField( ti, frame, eiFieldOwner, fi);
       
     } else { // bottom-half - re-execution
       // check if the value was already set in the top half
       // NOTE - we can also get here because of a non-exposure CG (thread termination, interrupt etc.)
-      if (!checkAndResetExposureMark(frame)){
+      if (!ti.checkAndResetExposureMark(frame)){
         ClassInfo ciField = fi.getClassInfo();
         ElementInfo eiFieldOwner = ciField.getModifiableStaticElementInfo();
         lastValue = PutHelper.setField(ti, frame, eiFieldOwner, fi);

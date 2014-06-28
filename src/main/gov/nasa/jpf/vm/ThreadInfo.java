@@ -301,33 +301,7 @@ public class ThreadInfo extends InfoObject
    * regard this as a NoUncaughtExceptionProperty violation
    */
   static boolean passUncaughtHandler;
-  
-  /** is on-the-fly partial order in effect? */
-  static boolean porInEffect;
 
-  /** do we treat access of fields referring to objects that are referenced from
-   * different threads as transition breaks?
-   */
-  static boolean porFieldBoundaries;
-
-  /** do we also break on reference field puts after assignment, i.e. potential
-   * exposure of the referenced object
-   */
-  static boolean porBreakOnExposure;
-  
-  /** detect field synchronization (find locks which are used to synchronize
-   * field access - if we have viable candidates, and we find the locks taken,
-   * we don't treat access of the corresponding field as a boundary step
-   */
-  static boolean porSyncDetection;
-  
-  /**
-   * do we treat ctor calls as unshared. If set to true, field access in init methods
-   * is not checked for shared access. While this is generally true since the object
-   * is still in construction, it is possible to leak the object reference to another
-   * thread before the ctor returns
-   */
-  static boolean porUnsharedInit;
   
   /**
    * break the current transition after this number of instructions.
@@ -355,15 +329,6 @@ public class ThreadInfo extends InfoObject
     ignoreUncaughtHandlers = config.getBoolean( "vm.ignore_uncaught_handler", true);
     passUncaughtHandler = config.getBoolean( "vm.pass_uncaught_handler", true);
 
-    //--- POR related configuration options
-    porInEffect = config.getBoolean("vm.por");
-    porFieldBoundaries = porInEffect && config.getBoolean("vm.por.field_boundaries");
-    porBreakOnExposure = porFieldBoundaries && config.getBoolean("vm.por.break_on_exposure");
-    
-    porSyncDetection = porInEffect && config.getBoolean("vm.por.sync_detection");
-    
-    porUnsharedInit = porInEffect && config.getBoolean("vm.por.unshared_init", true);
-    
     maxTransitionLength = config.getInt("vm.max_transition_length", 5000);
 
     return true;
@@ -563,25 +528,6 @@ public class ThreadInfo extends InfoObject
     return (nextPc == null);
   }
 
-  public boolean usePor () {
-    return porInEffect;
-  }
-
-  public boolean usePorFieldBoundaries () {
-    return porFieldBoundaries;
-  }
-
-  public boolean useBreakOnExposure () {
-    return porBreakOnExposure;
-  }
-  
-  public boolean usePorSyncDetection () {
-    return porSyncDetection;
-  }
-
-  public boolean useUnsharedInit (){
-    return porUnsharedInit;
-  }
 
   //--- various thread state related methods
 
@@ -2155,6 +2101,59 @@ public class ThreadInfo extends InfoObject
     return vm.getSharednessPolicy().updateSharedness(this, ei);
   }
   
+  public ElementInfo checkSharedInstanceFieldAccess (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
+    return vm.getSharednessPolicy().checkSharedInstanceFieldAccess(this, insn, eiFieldOwner, fi);
+  }
+
+  public ElementInfo checkSharedStaticFieldAccess (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
+    return vm.getSharednessPolicy().checkSharedStaticFieldAccess(this, insn, eiFieldOwner, fi);
+  }
+
+  public ElementInfo checkSharedArrayAccess (Instruction insn, ElementInfo eiArray, int idx){
+    return vm.getSharednessPolicy().checkSharedArrayAccess(this, insn, eiArray, idx);
+  }
+  
+  public void checkInstanceFieldObjectExposure (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue){
+    vm.getSharednessPolicy().checkInstanceFieldObjectExposure(this, insn, eiFieldOwner, fi, refValue);
+  }
+
+  public void checkStaticFieldObjectExposure (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue){
+    vm.getSharednessPolicy().checkStaticFieldObjectExposure(this, insn, eiFieldOwner, fi, refValue);
+  }
+
+  public void checkArrayObjectExposure (Instruction insn, ElementInfo eiArray, int idx, int refValue){
+    vm.getSharednessPolicy().checkArrayObjectExposure(this, insn, eiArray, idx, refValue);
+  }
+  
+  private static class Exposure implements SystemAttribute {
+    static final Exposure singleton = new Exposure();
+  }
+  
+  /**
+   * NOTE - frame has to be modifiable 
+   */
+  public void markExposure (StackFrame frame){
+    frame.addFrameAttr(Exposure.singleton);
+  }
+  
+  /**
+   * NOTE - frame has to be modifiable 
+   */
+  public boolean checkAndResetExposureMark (StackFrame frame){
+    Object mark = frame.getFrameAttr(Exposure.class);
+    if (mark != null){
+      frame.removeFrameAttr(mark);
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  public boolean hasNextChoiceGenerator(){
+    return vm.hasNextChoiceGenerator();
+  }
+
+  
   public ElementInfo getElementInfoWithUpdatedSharedness (int objRef){
     Heap heap = vm.getHeap();
     ElementInfo ei = heap.get(objRef);
@@ -3181,11 +3180,6 @@ public class ThreadInfo extends InfoObject
     }
   }
 
-
-  public boolean checkPorFieldBoundary () {
-    return (executedInstructions == 0) && porFieldBoundaries && hasOtherRunnables();
-  }
-
   public boolean hasOtherRunnables () {
     return vm.getThreadList().hasAnyMatchingOtherThan(this, vm.getRunnablePredicate());
   }
@@ -3315,7 +3309,11 @@ public class ThreadInfo extends InfoObject
   }
 
   public String toString() {
-    return "ThreadInfo [name=" + getName() + ",id=" + id + ",state=" + getStateName() + ']';
+    return "ThreadInfo [name=" + getName() +
+            ",id=" + id +
+            ",state=" + getStateName() +
+            // ",obj=" + Integer.toHexString(getThreadObjectRef()) +
+            ']';
   }
 
   void setDaemon (boolean isDaemon) {

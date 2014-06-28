@@ -36,44 +36,47 @@ public abstract class ArrayStoreInstruction extends JVMArrayElementInstruction i
 
   @Override
   public Instruction execute (ThreadInfo ti) {
-    int aref = peekArrayRef(ti); // need to be poly, could be LongArrayStore
-    if (aref == MJIEnv.NULL) {
-      return ti.createAndThrowException("java.lang.NullPointerException");
-    }
-
-    ElementInfo ei = ti.getElementInfoWithUpdatedSharedness(aref);
-    if (isNewPorBoundary(ei, ti)) {
-      if (createAndSetArrayCG(ei,ti, aref, peekIndex(ti), false)) {
-        return this;
-      }
-    }
-
-    int esize = getElementSize();
     StackFrame frame = ti.getModifiableTopFrame();
+    int idx = peekIndex(ti);
+    int aref = peekArrayRef(ti); // need to be polymorphic, could be LongArrayStore
+    ElementInfo eiArray = ti.getElementInfo(aref);
+        
+    if (!ti.isFirstStepInsn()){ // first execution, top half
+      //--- runtime exceptions
+      if (aref == MJIEnv.NULL) {
+        return ti.createAndThrowException("java.lang.NullPointerException");
+      }
+    
+      //--- shared access CG
+      eiArray = ti.checkSharedArrayAccess( this, eiArray, idx);
+      if (ti.hasNextChoiceGenerator()) {
+        return this;
+      }      
+    }
+    
+    try {
+      setArrayElement(ti, frame, eiArray); // this pops operands
+    } catch (ArrayIndexOutOfBoundsExecutiveException ex) { // at this point, the AIOBX is already processed
+      return ex.getInstruction();
+    }
 
+    return getNext(ti);
+  }
+
+  protected void setArrayElement (ThreadInfo ti, StackFrame frame, ElementInfo eiArray) throws ArrayIndexOutOfBoundsExecutiveException {
+    int esize = getElementSize();
     Object attr = esize == 1 ? frame.getOperandAttr() : frame.getLongOperandAttr();
     
     popValue(frame);
     index = frame.pop();
-    // don't set 'arrayRef' before we do the CG check (would kill loop optimization)
+    // don't set 'arrayRef' before we do the CG checks (would kill loop optimization)
     arrayRef = frame.pop();
 
-    Instruction xInsn = checkArrayStoreException(ti, ei);
-    if (xInsn != null){
-      return xInsn;
-    }
-
-    try {
-      ei = ei.getModifiableInstance();
-      setField(ei, index);
-      ei.setElementAttrNoClone(index,attr); // <2do> what if the value is the same but not the attr?
-      return getNext(ti);
-
-    } catch (ArrayIndexOutOfBoundsExecutiveException ex) { // at this point, the AIOBX is already processed
-      return ex.getInstruction();
-    }
+    eiArray = eiArray.getModifiableInstance();
+    setField(eiArray, index);
+    eiArray.setElementAttrNoClone(index,attr); // <2do> what if the value is the same but not the attr?
   }
-
+  
   /**
    * this is for pre-exec use
    */
@@ -87,12 +90,8 @@ public abstract class ArrayStoreInstruction extends JVMArrayElementInstruction i
     return ti.getTopFrame().peek(1);
   }
 
-  protected Instruction checkArrayStoreException(ThreadInfo ti, ElementInfo ei){
-    return null;
-  }
-
   protected abstract void popValue(StackFrame frame);
-
+ 
   protected abstract void setField (ElementInfo e, int index)
                     throws ArrayIndexOutOfBoundsExecutiveException;
 

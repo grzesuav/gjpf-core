@@ -29,6 +29,11 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public class AALOAD extends ArrayLoadInstruction {
 
+  @Override
+  public boolean isReferenceArray() {
+    return true;
+  }
+  
   protected void push (StackFrame frame, ElementInfo ei, int index) throws ArrayIndexOutOfBoundsExecutiveException {
     ei.checkArrayBounds(index);
     int value = ei.getReferenceElement(index);

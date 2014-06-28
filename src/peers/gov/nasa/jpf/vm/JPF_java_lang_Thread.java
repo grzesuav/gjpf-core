@@ -52,7 +52,11 @@ public class JPF_java_lang_Thread extends NativePeer {
   @MJI
   public boolean isAlive____Z (MJIEnv env, int objref) {
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
-    return ti.isAlive();      
+    if (ti != null){
+      return ti.isAlive();
+    } else {
+      return false; // not in ThreadList anymore
+    }
   }
 
   @MJI

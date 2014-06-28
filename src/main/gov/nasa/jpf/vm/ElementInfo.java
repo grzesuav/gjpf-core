@@ -449,19 +449,6 @@ public abstract class ElementInfo implements Cloneable {
   public boolean isExposed(){
     return (attributes & ATTR_EXPOSED) != 0;
   }
-      
-  public boolean isFirstExposure (ThreadInfo ti, ElementInfo eiFieldOwner){
-    if (!isImmutable()){
-      if (!isExposedOrShared()) {
-        if (ti.useBreakOnExposure()) {
-          return (eiFieldOwner.isExposedOrShared());
-          //return ! isReferencedBySameThreads(eiFieldOwner);
-        }
-      }
-    }
-    
-    return false;
-  }
   
   public boolean isExposedOrShared(){
     return (attributes & (ATTR_SHARED | ATTR_EXPOSED)) != 0;

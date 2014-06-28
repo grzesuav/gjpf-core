@@ -20,15 +20,12 @@
 package gov.nasa.jpf.vm.bytecode;
 
 import gov.nasa.jpf.SystemAttribute;
-import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.SharednessPolicy;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.Types;
-import gov.nasa.jpf.vm.VM;
 
 /**
  * abstract base for all field access instructions
@@ -124,83 +121,10 @@ public abstract class FieldInstruction extends Instruction implements ReadOrWrit
     return getMnemonic() + " " + className + '.' + fname;
   }
   
-
-  protected ElementInfo checkSharedInstanceFieldAccess (ThreadInfo ti, ElementInfo ei){
-    SharednessPolicy sp = ti.getSharednessPolicy();
-    ei = sp.updateSharedness(ti, ei);
-    if (sp.isRelevantInstanceFieldAccess(ti, this, ei, fi)){
-      ei = sp.updateFieldLockInfo(ti,ei,fi);
-      if (!ei.isLockProtected(fi)){
-        if (createAndSetSharedFieldAccessCG(ei, ti)){
-          // <2do> how do we propagate this back to the caller?
-        }
-      }
-    }
-    
-    return ei;
-  }
-  
-  protected ElementInfo checkSharedStaticFieldAccess (ThreadInfo ti, ElementInfo ei){
-    SharednessPolicy sp = ti.getSharednessPolicy();
-    ei = sp.updateSharedness(ti, ei);
-    if (sp.isRelevantStaticFieldAccess(ti, this, ei, fi)) {
-      ei = sp.updateFieldLockInfo(ti, ei, fi);
-      if (!ei.isLockProtected(fi)) {
-        if (createAndSetSharedFieldAccessCG(ei, ti)){
-          // <2do> how do we propagate this back to the caller?          
-        }
-      }
-    }
-    
-    return ei;
-  }
-  
   
   public boolean isMonitorEnterPrologue(){
     // override if this insn can be part of a monitorenter code pattern
     return false;
   }
   
-  protected boolean createAndSetSharedFieldAccessCG ( ElementInfo eiFieldOwner, ThreadInfo ti) {
-    VM vm = ti.getVM();
-    ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSharedFieldAccessCG(eiFieldOwner, ti);
-    if (cg != null) {
-      if (vm.setNextChoiceGenerator(cg)){
-        ti.skipInstructionLogging(); // <2do> Hmm, might be more confusing not to see it
-        return true;
-      }
-    }
-
-    return false;
-  }
-  
-  protected boolean createAndSetObjectExposureCG ( ElementInfo eiFieldValue, ThreadInfo ti) {
-    VM vm = ti.getVM();
-    ChoiceGenerator<?> cg = vm.getSchedulerFactory().createObjectExposureCG(eiFieldValue, ti);
-    if (cg != null) {
-      if (vm.setNextChoiceGenerator(cg)){
-        ti.skipInstructionLogging(); // <2do> Hmm, might be more confusing not to see it
-        return true;
-      }
-    }
-
-    return false;
-  }
-  
-  
-  private static class Exposure implements SystemAttribute {
-    static final Exposure singleton = new Exposure();
-  }
-  protected void markExposure (StackFrame frame){
-    frame.addFrameAttr(Exposure.singleton);
-  }
-  protected boolean checkAndResetExposureMark (StackFrame frame){
-    Object mark = frame.getFrameAttr(Exposure.class);
-    if (mark != null){
-      frame.removeFrameAttr(mark);
-      return true;
-    } else {
-      return false;
-    }
-  }
 }

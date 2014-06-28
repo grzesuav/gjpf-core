@@ -187,28 +187,15 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     return false;
   }
   
-  protected ElementInfo checkSharedFieldAccess (ThreadInfo ti, ElementInfo ei, FieldInfo fi){
+  protected ElementInfo checkSharedFieldAccess (ThreadInfo ti, ElementInfo ei, FieldInfo fi){    
     Instruction insn = ti.getPC();
     SharednessPolicy sp = ti.getSharednessPolicy();
-    ei = sp.updateSharedness(ti, ei);
-    boolean isRelevantField;
     
     if (fi.isStatic()){
-      isRelevantField = sp.isRelevantStaticFieldAccess(ti, insn, ei, fi);
+      return sp.checkSharedStaticFieldAccess(ti, insn, ei, fi);
     } else {
-      isRelevantField = sp.isRelevantInstanceFieldAccess(ti, insn, ei, fi);
+      return sp.checkSharedInstanceFieldAccess(ti, insn, ei, fi);      
     }
-    
-    if (isRelevantField){
-      ei = sp.updateFieldLockInfo(ti,ei,fi);
-      if (!ei.isLockProtected(fi)){
-        if (createAndSetSharedFieldAccessCG(ei, ti)){
-          //env.repeatInvocation();
-        }
-      }
-    }
-    
-    return ei;
   }
   
   @MJI

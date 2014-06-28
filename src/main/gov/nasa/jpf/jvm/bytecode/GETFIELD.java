@@ -22,6 +22,7 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.SharednessPolicy;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.bytecode.ReadInstruction;
@@ -54,26 +55,27 @@ public class GETFIELD extends JVMInstanceFieldInstruction implements ReadInstruc
                                         "referencing field '" + fname + "' on null object");
     }
 
-    ElementInfo ei = ti.getElementInfo(objRef);
+    ElementInfo eiFieldOwner = ti.getElementInfo(objRef);
     FieldInfo fi = getFieldInfo();
     if (fi == null) {
       return ti.createAndThrowException("java.lang.NoSuchFieldError",
-                                        "referencing field '" + fname + "' in " + ei);
+                                        "referencing field '" + fname + "' in " + eiFieldOwner);
     }
 
     if (!ti.isFirstStepInsn()){
-      ei = checkSharedInstanceFieldAccess(ti, ei);
+      // check for non-lock protected shared object access, breaking before the field is written
+      eiFieldOwner = ti.checkSharedInstanceFieldAccess(this, eiFieldOwner, fi);
       if (ti.getVM().hasNextChoiceGenerator()) {
         return this;
       }
     }
 
     frame.pop(); // Ok, now we can remove the object ref from the stack
-    Object attr = ei.getFieldAttr(fi);
+    Object attr = eiFieldOwner.getFieldAttr(fi);
 
     // We could encapsulate the push in ElementInfo, but not the GET, so we keep it at a similiar level
     if (fi.getStorageSize() == 1) { // 1 slotter
-      int ival = ei.get1SlotField(fi);
+      int ival = eiFieldOwner.get1SlotField(fi);
       lastValue = ival;
       
       if (fi.isReference()){
@@ -88,7 +90,7 @@ public class GETFIELD extends JVMInstanceFieldInstruction implements ReadInstruc
       }
 
     } else {  // 2 slotter
-      long lval = ei.get2SlotField(fi);
+      long lval = eiFieldOwner.get2SlotField(fi);
       lastValue = lval;
 
       frame.pushLong( lval);

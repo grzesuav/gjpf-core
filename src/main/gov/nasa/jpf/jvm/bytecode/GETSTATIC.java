@@ -23,6 +23,7 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
+import gov.nasa.jpf.vm.SharednessPolicy;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.bytecode.ReadInstruction;
@@ -62,20 +63,21 @@ public class GETSTATIC extends JVMStaticFieldInstruction  implements ReadInstruc
       return ti.getPC();
     }
 
-    ElementInfo ei = ciField.getStaticElementInfo();
+    ElementInfo eiFieldOwner = ciField.getStaticElementInfo();
     
     if (!ti.isFirstStepInsn()){
-      ei = checkSharedStaticFieldAccess(ti, ei);
-      if (ti.getVM().hasNextChoiceGenerator()) {
+      // check for non-lock protected shared object access, breaking before the field is written
+      eiFieldOwner = ti.checkSharedStaticFieldAccess(this, eiFieldOwner, fi);
+      if (ti.hasNextChoiceGenerator()) {
         return this;
       }
     }
     
-    Object attr = ei.getFieldAttr(fieldInfo);
+    Object attr = eiFieldOwner.getFieldAttr(fieldInfo);
     StackFrame frame = ti.getModifiableTopFrame();
 
     if (size == 1) {
-      int ival = ei.get1SlotField(fieldInfo);
+      int ival = eiFieldOwner.get1SlotField(fieldInfo);
       lastValue = ival;
 
       if (fieldInfo.isReference()) {
@@ -89,7 +91,7 @@ public class GETSTATIC extends JVMStaticFieldInstruction  implements ReadInstruc
       }
 
     } else {
-      long lval = ei.get2SlotField(fieldInfo);
+      long lval = eiFieldOwner.get2SlotField(fieldInfo);
       lastValue = lval;
       
       frame.pushLong(lval);

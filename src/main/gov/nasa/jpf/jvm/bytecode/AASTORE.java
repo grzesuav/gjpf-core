@@ -35,6 +35,11 @@ public class AASTORE extends ArrayStoreInstruction {
 
   int value;
 
+  @Override
+  public boolean isReferenceArray() {
+    return true;
+  }
+  
   protected void popValue(StackFrame frame){
     value = frame.pop();
   }
@@ -43,12 +48,69 @@ public class AASTORE extends ArrayStoreInstruction {
     ei.checkArrayBounds(index);
     ei.setReferenceElement(index, value);
   }
+  
+  /**
+   * overridden because AASTORE can cause ArrayStoreExceptions and exposure CGs 
+   */
+  @Override
+  public Instruction execute (ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
+    int refValue = frame.peek();
+    int idx = frame.peek(1);
+    int aref = frame.peek(2);
+    ElementInfo eiArray = ti.getElementInfo(aref);
+        
+    if (!ti.isFirstStepInsn()){ // first execution, top half
+      //--- runtime exceptions
+      if (aref == MJIEnv.NULL) {
+        return ti.createAndThrowException("java.lang.NullPointerException");
+      }
+      Instruction xInsn = checkArrayStoreException(ti, frame, eiArray);
+      if (xInsn != null){
+        return xInsn;
+      }
+    
+      //--- shared access CG
+      eiArray = ti.checkSharedArrayAccess( this, eiArray, idx);
+      if (ti.hasNextChoiceGenerator()) {
+        return this;
+      }
+           
+      try {
+        setArrayElement( ti, frame, eiArray); // this pops operands
+      } catch (ArrayIndexOutOfBoundsExecutiveException ex) { // at this point, the AIOBX is already processed
+        return ex.getInstruction();
+      }
+      
+      //--- exposure
+      ti.checkArrayObjectExposure(this, eiArray, idx, refValue);
+      if (ti.hasNextChoiceGenerator()) {
+        ti.markExposure(frame);
+        return this;
+      }
 
-  protected Instruction checkArrayStoreException(ThreadInfo ti, ElementInfo ei){
+      return getNext(ti);
+      
+    } else { // re-execution, bottom half (was either shared array or object exposure)
+      if (!ti.checkAndResetExposureMark(frame)){
+        // if this wasn't an exposure we still have to set the array element
+        try {
+          setArrayElement( ti, frame, eiArray); // this pops operands
+        } catch (ArrayIndexOutOfBoundsExecutiveException ex) { // at this point, the AIOBX is already processed
+          return ex.getInstruction();
+        }        
+      }
+      // otherwise the element has already been set
+      return getNext(ti);      
+    }
+  }
+
+  protected Instruction checkArrayStoreException(ThreadInfo ti, StackFrame frame, ElementInfo ei){
     ClassInfo c = ei.getClassInfo();
-
-    if (value != MJIEnv.NULL) { // no checks for storing 'null'
-      ClassInfo elementCi = ti.getClassInfo(value);
+    int refVal = frame.peek();
+    
+    if (refVal != MJIEnv.NULL) { // no checks for storing 'null'
+      ClassInfo elementCi = ti.getClassInfo(refVal);
       ClassInfo arrayElementCi = c.getComponentClassInfo();
       if (!elementCi.isInstanceOf(arrayElementCi)) {
         String exception = "java.lang.ArrayStoreException";

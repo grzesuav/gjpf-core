@@ -22,6 +22,7 @@ import gov.nasa.jpf.vm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.SharednessPolicy;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -43,9 +44,11 @@ public abstract class ArrayLoadInstruction extends JVMArrayElementInstruction im
       return ti.createAndThrowException("java.lang.NullPointerException");
     }
     
-    ElementInfo e = ti.getElementInfoWithUpdatedSharedness(aref);
-    if (isNewPorBoundary(e, ti)) {
-      if (createAndSetArrayCG(e,ti, aref,peekIndex(ti),true)) {
+    ElementInfo eiArray = ti.getElementInfo(aref);
+    
+    if (!ti.isFirstStepInsn()){
+      eiArray = ti.checkSharedArrayAccess( this, eiArray, frame.peek());
+      if (ti.hasNextChoiceGenerator()) {
         return this;
       }
     }
@@ -57,9 +60,9 @@ public abstract class ArrayLoadInstruction extends JVMArrayElementInstruction im
     arrayRef = frame.pop();
     
     try {
-      push(frame, e, index);
+      push(frame, eiArray, index);
 
-      Object attr = e.getElementAttr(index);
+      Object attr = eiArray.getElementAttr(index);
       if (attr != null) {
         if (getElementSize() == 1) {
           frame.setOperandAttr(attr);
