@@ -48,12 +48,12 @@ public class ConsolePublisher extends Publisher {
   String port;
 
   // the various degrees of information for program traces
-  boolean showCG;
-  boolean showSteps;
-  boolean showLocation;
-  boolean showSource;
-  boolean showMethod;
-  boolean showCode;
+  protected boolean showCG;
+  protected boolean showSteps;
+  protected boolean showLocation;
+  protected boolean showSource;
+  protected boolean showMethod;
+  protected boolean showCode;
 
   public ConsolePublisher(Config conf, Reporter reporter) {
     super(conf, reporter);

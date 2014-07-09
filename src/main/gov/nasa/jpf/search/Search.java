@@ -391,7 +391,7 @@ public abstract class Search {
     error(property, null, null);
   }
 
-  protected void error (Property property, Path path, ThreadList threadList) {
+  public void error (Property property, Path path, ThreadList threadList) {
 
     if (getAllErrors) {
        // otherwise we are going to overwrite it if we go on
