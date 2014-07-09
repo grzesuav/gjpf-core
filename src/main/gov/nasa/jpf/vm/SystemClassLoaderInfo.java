@@ -23,6 +23,8 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.util.JPFLogger;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -67,6 +69,13 @@ public abstract class SystemClassLoaderInfo extends ClassLoaderInfo {
 
   protected int unCachedClasses = 10;
   
+  /**
+   * list of configurable Attributors for ClassInfos, MethodInfos and FieldInfos
+   * that are consulted after creating the ClassInfo but before notifying classLoaded() listeners
+   */
+  protected List<Attributor> attributors;
+  
+  
   public SystemClassLoaderInfo (VM vm, int appId){
      super(vm);
      
@@ -81,9 +90,36 @@ public abstract class SystemClassLoaderInfo extends ClassLoaderInfo {
     this.id = computeId(appId);
     
     initializeSystemClassPath( vm, appId);
+    initializeAttributors( vm, appId);
   }
   
   protected abstract void initializeSystemClassPath (VM vm, int appId);
+  
+  protected void initializeAttributors (VM vm, int appId){
+    attributors = new ArrayList<Attributor>();
+    
+    Config conf = vm.getConfig();
+    String key = conf.getIndexableKey("vm.attributors", appId);
+    if (key != null){
+      for (Attributor a : conf.getInstances(key, Attributor.class)){
+        attributors.add(a);
+      }
+      
+    }
+  }
+
+  public void addAttributor (Attributor a){
+    attributors.add(a);
+  }
+  
+  /**
+   * to be called on each ClassInfo created in the realm of this SystemClassLoader
+   */
+  protected void setAttributes (ClassInfo ci){
+    for (Attributor a: attributors){
+      a.setAttributes(ci);
+    }
+  }
   
   //--- these can be used to build the app specific system CP
   protected File[] getPathElements (Config conf, String keyBase, int appId) {

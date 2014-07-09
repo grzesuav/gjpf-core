@@ -156,8 +156,13 @@ public class MultiProcessVM extends VM {
       ThreadInfo tiFirst = null;
       
       for (int i=0; i<appCtxs.length; i++){
-        ThreadInfo tiMain = initializeMainThread(appCtxs[i], i);
-        initializeFinalizerThread(appCtxs[i], appCtxs.length+i);
+        ApplicationContext appCtx = appCtxs[i];
+    
+        // this has to happen before we load the startup classes during initializeMainThread
+        sharednessPolicy.initialize(this, appCtx);
+    
+        ThreadInfo tiMain = initializeMainThread(appCtx, i);
+        initializeFinalizerThread(appCtx, appCtxs.length+i);
         
         if (tiMain == null) {
           return false; // bail out

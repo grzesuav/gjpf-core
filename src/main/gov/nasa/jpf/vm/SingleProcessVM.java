@@ -112,10 +112,13 @@ public class SingleProcessVM extends VM {
     return new ApplicationContext( 0, clsName, mainEntry, args, host, sysCli);
   }
   
-
+  
   @Override
   public boolean initialize(){
     try {
+      // this has to happen before we load the startup classes during initializeMainThread
+      sharednessPolicy.initialize(this, appCtx);
+      
       ThreadInfo tiMain = initializeMainThread(appCtx, 0);
       initializeFinalizerThread(appCtx, 1);
 

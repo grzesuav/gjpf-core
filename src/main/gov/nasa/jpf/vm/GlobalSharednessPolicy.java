@@ -31,7 +31,7 @@ import gov.nasa.jpf.util.SparseObjVector;
  * with Heap implementations providing SGOIDs
  */
 
-public class GlobalSharednessPolicy extends SharednessPolicy {
+public class GlobalSharednessPolicy extends GenericSharednessPolicy {
   // our global caches
   protected SparseObjVector<ThreadInfoSet> globalTisCache = new SparseObjVector<ThreadInfoSet>(1024);
   protected SparseObjVector<FieldLockInfo> globalFliCache = new SparseObjVector<FieldLockInfo>(1024);

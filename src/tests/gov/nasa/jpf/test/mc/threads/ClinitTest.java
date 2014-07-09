@@ -21,6 +21,7 @@ package gov.nasa.jpf.test.mc.threads;
 import org.junit.Test;
 
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 /**
  * regression test for concurrent clinit execution
@@ -30,7 +31,7 @@ public class ClinitTest extends TestJPF {
   static class X {
     static int x;
     static {
-      System.out.println("initializing X from " + Thread.currentThread());
+      Verify.threadPrintln("initializing X");
       assertTrue( x == 0);
       x++;
     }
@@ -49,7 +50,7 @@ public class ClinitTest extends TestJPF {
       t.start();
       
       int x = X.x;
-      assertTrue( x == 1);
+      assertTrue( "x = " + x, x == 1);
     }
   }
   
@@ -59,7 +60,7 @@ public class ClinitTest extends TestJPF {
     
     static {
       Thread t = Thread.currentThread();
-      System.out.println("initializing Y from " + t);
+       Verify.threadPrintln("initializing Y");
       y = t.getId();
     }
   }
@@ -77,7 +78,7 @@ public class ClinitTest extends TestJPF {
       
       long y = Y.y;
       Thread tCur = Thread.currentThread();
-      System.out.println("testing Y.y from " + tCur);
+      Verify.threadPrintln("testing Y.y");
       assertTrue( "gotcha", y == tCur.getId());
     }
   }

@@ -19,6 +19,12 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
+import gov.nasa.jpf.SystemAttribute;
+import gov.nasa.jpf.util.FieldSpecMatcher;
+import gov.nasa.jpf.util.JPFLogger;
+import gov.nasa.jpf.util.MethodSpecMatcher;
+import gov.nasa.jpf.util.TypeSpecMatcher;
 
 /**
  * SharednessPolicy is a configured policy that is used to detect data races for objects that are accessible from concurrent
@@ -88,357 +94,64 @@ import gov.nasa.jpf.Config;
  * The motivation for this flexibility and the related implementation complexity/cost is that race detection based on field/array
  * access is a major contributor to state explosion. In many cases, suitable optimizations make the difference between running
  * into search constraints or finishing the search.
- * 
- * <2do> note that field filtering is still done through the DefaultAttributor
  */
-public abstract class SharednessPolicy {
-  
-  //--- options used for concurrent field access detection
-  protected boolean skipFinals;
-  protected boolean skipConstructedFinals;
-  protected boolean skipStaticFinals;
-  protected boolean skipInits;
-  
-  //--- exposure
-  protected boolean breakOnExposure;
-  
-  //--- options to filter out lock protected field access
-  protected boolean useSyncDetection;
-  protected int lockThreshold;
-
-    
-  public SharednessPolicy (Config config){
-    skipFinals = config.getBoolean("vm.shared.skip_finals", true);
-    skipConstructedFinals = config.getBoolean("vm.shared.skip_constructed_finals", false);
-    skipStaticFinals = config.getBoolean("vm.shared.skip_static_finals", false);
-    skipInits = config.getBoolean("vm.shared.skip_inits", true);
-    
-    breakOnExposure = config.getBoolean("vm.shared.break_on_exposure", true);
-    
-    useSyncDetection = config.getBoolean("vm.shared.sync_detection", true);
-    lockThreshold = config.getInt("vm.shared.lockthreshold", 5);  
-  }
-  
-
-  
-  //------------------------------------------------ object sharedness
+public interface SharednessPolicy {
   
   /**
-   * factory method called during object creation 
+   * per application / SystemClassLoaderInfo specific initialization of this policy 
    */
-  public abstract void initializeSharedness (ThreadInfo allocThread, DynamicElementInfo ei);
-  public abstract void initializeSharedness (ThreadInfo allocThread, StaticElementInfo ei);
-
-
+  void initialize (VM vm, ApplicationContext appCtx);
+  
   /**
-   * those are the public interfaces towards the FieldInstructions, which have to be aware of
-   * that the field owning ElementInfo (instance or static) will change if it becomes shared
+   * initialize object specific sharedness data 
    */
-  public ElementInfo checkSharedInstanceFieldAccess (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
-    eiFieldOwner = updateSharedness(ti, eiFieldOwner);
-    if (isRelevantInstanceFieldAccess(ti, insn, eiFieldOwner, fi)){
-      eiFieldOwner = updateFieldLockInfo(ti,eiFieldOwner,fi);
-      if (!eiFieldOwner.isLockProtected(fi)){
-//System.out.println("@@@ shared CG for ifield " + fi);
-        createAndSetSharedFieldAccessCG(ti, eiFieldOwner);
-      }
-    }
-    
-    return eiFieldOwner;
-  }
-  
-  public ElementInfo checkSharedStaticFieldAccess (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
-    eiFieldOwner = updateSharedness(ti, eiFieldOwner);
-    if (isRelevantStaticFieldAccess(ti, insn, eiFieldOwner, fi)) {
-      eiFieldOwner = updateFieldLockInfo(ti, eiFieldOwner, fi);
-      if (!eiFieldOwner.isLockProtected(fi)) {
-//System.out.println("@@@ shared CG for sfield " + fi);
-        createAndSetSharedFieldAccessCG(ti, eiFieldOwner);
-      }
-    }
-    
-    return eiFieldOwner;
-  }
-  
-  public ElementInfo checkSharedArrayAccess (ThreadInfo ti, Instruction insn, ElementInfo eiArray, int index){
-    eiArray = updateSharedness(ti, eiArray);
-    if (isRelevantArrayAccess(ti,insn,eiArray,index)){
-      // <2do> we should check lock protection for the whole array here
-//System.out.println("@@@ shared CG for array " + eiArray);
-      createAndSetSharedArrayAccessCG(ti, eiArray);
-    }
-    
-    return eiArray;
-  }
-  
-  
-  //--- internal policy methods that can be overridden by subclasses
-  
-  protected ElementInfo updateSharedness (ThreadInfo ti, ElementInfo ei){
-    ThreadInfoSet tis = ei.getReferencingThreads();
-    ThreadInfoSet newTis = tis.add(ti);
-    
-    if (tis != newTis){
-      ei = ei.getModifiableInstance();
-      ei.setReferencingThreads(newTis);
-    }
-      
-    // we only change from non-shared to shared
-    if (newTis.isShared(ti, ei) && !ei.isShared() && !ei.isSharednessFrozen()) {
-      ei = ei.getModifiableInstance();
-      ei.setShared(ti, true);
-    }
-
-    return ei;
-  }
-
-  protected boolean createAndSetSharedFieldAccessCG (ThreadInfo ti,  ElementInfo eiFieldOwner) {
-    VM vm = ti.getVM();
-    ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSharedFieldAccessCG(eiFieldOwner, ti);
-    if (cg != null) {
-      if (vm.setNextChoiceGenerator(cg)){
-        ti.skipInstructionLogging(); // <2do> Hmm, might be more confusing not to see it
-        return true;
-      }
-    }
-
-    return false;
-  }
-  
-  protected boolean createAndSetSharedArrayAccessCG ( ThreadInfo ti, ElementInfo eiArray) {
-    VM vm = ti.getVM();
-    ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSharedArrayAccessCG(eiArray, ti);
-    if (vm.setNextChoiceGenerator(cg)){
-      ti.skipInstructionLogging();
-      return true;
-    }
-        
-    return false;
-  }
+  void initializeSharedness (ThreadInfo allocThread, DynamicElementInfo ei);
   
   /**
-   * boolean relevance test based on static and dynamic attributes of executing
-   * thread, field owning object and field.
-   * This method does not have side effects, i.e. doesn't change the ElementInfo
-   */ 
-  protected boolean isRelevantInstanceFieldAccess (ThreadInfo ti, Instruction insn, ElementInfo ei, FieldInfo fi){
-    if (fi.neverBreak()) { // never break on this field, regardless of shared-ness
-      return false;
-    }
-    
-    if (!ei.isShared()){
-      return false;
-    }
-    
-    if (fi.breakShared()){ // always break on this field if object is shared
-      return true;
-    }
-    
-    if  (ei.isImmutable()){
-      return false;
-    }
-    
-    if (skipFinals && fi.isFinal()){
-      return false;
-    }
-    
-    if (!ti.hasOtherRunnables()){ // nothing to break for
-      return false;
-    }
-    
-    if (ti.isFirstStepInsn()){ // we already did break
-      return false;
-    }
-    
-    if (insn.isMonitorEnterPrologue()){
-      return false;
-    }
-    if (fi.getName().startsWith("this$")) {
-      // that one is an automatically created outer object reference in an inner class,
-      // it can't be set. Unfortunately, we don't have an 'immutable' attribute for
-      // fields, just objects, so we can't push it into class load time attributing.
-      return false;
-    }
-    
-    //--- mixed (dynamic) attributes
-    if (skipConstructedFinals && fi.isFinal() && ei.isConstructed()){
-      return false;
-    }
-    
-    if (skipInits && insn.getMethodInfo().isInit()){
-      return false;
-    }
-
-    // Ok, it's a candidate for a transition break
-    return true;
-  }
-  
-  
-  protected boolean isRelevantStaticFieldAccess (ThreadInfo ti, Instruction insn, ElementInfo ei, FieldInfo fi){
-    if (fi.neverBreak()) { // never break on this field, regardless of shared-ness
-      return false;
-    }
-    
-    if (!ei.isShared()){
-      return false;
-    }
-    
-    if (fi.breakShared()){ // always break on this field if object is shared
-      return true;
-    }
-    
-    if ("$assertionsDisabled".equals(fi.getName())){
-      return false;
-    }
-    
-    if  (ei.isImmutable()){
-      return false;
-    }
-    
-    if (skipStaticFinals && fi.isFinal()){
-      return false;
-    }    
-    
-    if (!ti.hasOtherRunnables()){ // nothing to break for
-      return false;
-    }
-    
-    if (ti.isFirstStepInsn()){ // we already did break
-      return false;
-    }
-
-    //--- instruction attributes
-    if (insn.isMonitorEnterPrologue()){
-      return false;
-    }
-
-    //--- mixed (dynamic) attributes
-    MethodInfo mi = insn.getMethodInfo();
-    if (mi.isClinit() && (fi.getClassInfo() == mi.getClassInfo())) {
-      // clinits are all synchronized, so they are lock protected per se
-      return false;
-    }
-    
-    return true;
-  }
-
-  
-  protected boolean isRelevantArrayAccess (ThreadInfo ti, Instruction insn, ElementInfo ei, int index){
-    // <2do> this is too simplistic, we should support filters for array objects
-    
-    if (!ti.hasOtherRunnables()){
-      return false;
-    }
-    
-    if (!ei.isShared()){
-      return false;
-    }
-
-    return true;
-  }
-  
-  //------------------------------------------------ object exposure 
-
-  /**
-   * <2do> explain why not transitive
-   * 
-   * these are the public interfaces towards FieldInstructions. Callers have to be aware this will 
-   * change the /referenced/ ElementInfo in case the respective object becomes exposed
-   */
-  public void checkInstanceFieldObjectExposure (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue){
-    checkObjectExposure(ti,insn,eiFieldOwner,fi,refValue);
-  }
-
-  public void checkStaticFieldObjectExposure (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue){
-    checkObjectExposure(ti,insn,eiFieldOwner,fi,refValue);
-  }
-
-  public void checkArrayObjectExposure (ThreadInfo ti, Instruction insn, ElementInfo eiArray, int idx, int refValue){
-    if (breakOnExposure){
-      if (refValue != MJIEnv.NULL && (refValue != eiArray.getReferenceElement(idx))) {
-        ElementInfo eiRefValue = ti.getElementInfo(refValue);
-        if (isFirstExposure(eiArray, eiRefValue)) {
-          eiRefValue = eiRefValue.getExposedInstance(ti, eiArray);
-//System.out.println("@@@ exposure CG for element " + eiArray);
-          createAndSetObjectExposureCG(ti, eiRefValue);
-        }
-      }
-    }    
-  }
-
-  
-  //--- internal policy methods that can be overridden by subclasses
-  
-  protected void checkObjectExposure (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue){
-    if (breakOnExposure){
-      if (refValue != MJIEnv.NULL && (refValue != eiFieldOwner.getReferenceField(fi))) {
-        ElementInfo eiRefValue = ti.getElementInfo(refValue);
-        if (isFirstExposure(eiFieldOwner, eiRefValue)) {
-          eiRefValue = eiRefValue.getExposedInstance(ti, eiFieldOwner);
-//System.out.println("@@@ exposure CG for field " + fi);
-          createAndSetObjectExposureCG(ti, eiRefValue);
-        }
-      }
-    }
-  }
-
-  protected boolean isFirstExposure (ElementInfo eiFieldOwner, ElementInfo eiExposed){
-    if (!eiExposed.isImmutable()){
-      if (!eiExposed.isExposedOrShared()) {
-         return (eiFieldOwner.isExposedOrShared());
-      }
-    }
-    
-    return false;  
-  }
-  
-  protected boolean createAndSetObjectExposureCG (ThreadInfo ti, ElementInfo eiFieldValue) {
-    VM vm = ti.getVM();
-    ChoiceGenerator<?> cg = vm.getSchedulerFactory().createObjectExposureCG(eiFieldValue, ti);
-    if (cg != null) {
-      if (vm.setNextChoiceGenerator(cg)){
-        ti.skipInstructionLogging(); // <2do> Hmm, might be more confusing not to see it
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  
-  /**
-   * factory method called during object creation 
-   */
-  protected abstract FieldLockInfo createFieldLockInfo (ThreadInfo ti, ElementInfo ei, FieldInfo fi);
-
-  
-  /**
-   * generic version of FieldLockInfo update, which relies on FieldLockInfo implementation to determine
-   * if ElementInfo needs to be cloned
+   * initialize class specific sharedness data 
    */  
-  protected ElementInfo updateFieldLockInfo (ThreadInfo ti, ElementInfo ei, FieldInfo fi){
-    FieldLockInfo fli = ei.getFieldLockInfo(fi);
-    if (fli == null){
-      fli = createFieldLockInfo(ti, ei, fi);
-      ei = ei.getModifiableInstance();
-      ei.setFieldLockInfo(fi, fli);
-      
-    } else {
-      FieldLockInfo newFli = fli.checkProtection(ti, ei, fi);
-      if (newFli != fli) {
-        ei = ei.getModifiableInstance();
-        ei.setFieldLockInfo(fi,newFli);
-      }
-    }
-    
-    return ei;
-  }  
+  void initializeSharedness (ThreadInfo allocThread, StaticElementInfo ei);
+  
+  /**
+   * static attribute filters that determine if the check..Access() and check..Exposure() methods should be called.
+   * This is only called once per instruction execution since it filters all cases that would set a CG.
+   * Filter conditions have to apply to both field access and object exposure.
+   */
+  boolean isInstanceSharednessRelevant (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
+  boolean isStaticSharednessRelevant (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
+  boolean isArraySharednessRelevant (ThreadInfo ti, Instruction insn, ElementInfo eiArray);
+  
+  
+  /**
+   * update sharedness status of the related object and break if shared access is detected. Note this
+   * has to use return values in case the ElementInfo had to be cloned
+   */
+  ElementInfo checkSharedInstanceFieldAccess (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
+  ElementInfo checkSharedStaticFieldAccess (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
+  ElementInfo checkSharedArrayAccess (ThreadInfo ti, Instruction insn, ElementInfo eiArray, int index);
+  
+  /**
+   * this can be used from locations which might update sharedness status but not break, i.e. it is called
+   * from outside of field or array access operations (e.g. invokestatic)
+   */
+  ElementInfo updateSharedness (ThreadInfo ti, ElementInfo ei);
+  
+  /**
+   * check if a un-shared object reference is stored in a shared object/class, i.e. the exposed object
+   * could become shared in the future. Break if exposure CGs are configured.
+   * 
+   * NOTE - exposure CGs are conservative and have to be minimized in order to avoid state explosion
+   * 
+   * <2do> explain why not transitive
+   */
+  void checkInstanceFieldObjectExposure (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue);
+  void checkStaticFieldObjectExposure (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue);
+  void checkArrayObjectExposure (ThreadInfo ti, Instruction insn, ElementInfo eiArray, int idx, int refValue);
+  
   
   /**
    * give policy a chance to clean up referencing ThreadInfoSets upon
    * thread termination
    */
-  public void cleanupThreadTermination(ThreadInfo ti) {
-    // default action is to do nothing
-  }
+  void cleanupThreadTermination(ThreadInfo ti);
 }

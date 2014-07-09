@@ -46,7 +46,7 @@ public abstract class ArrayLoadInstruction extends JVMArrayElementInstruction im
     
     ElementInfo eiArray = ti.getElementInfo(aref);
     
-    if (!ti.isFirstStepInsn()){
+    if (ti.isArraySharednessRelevant(this, eiArray)){
       eiArray = ti.checkSharedArrayAccess( this, eiArray, frame.peek());
       if (ti.hasNextChoiceGenerator()) {
         return this;

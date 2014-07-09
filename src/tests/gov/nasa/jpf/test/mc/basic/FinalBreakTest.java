@@ -41,23 +41,23 @@ public class FinalBreakTest extends TestJPF {
     final int b;
     
     InstanceFinal (){
-      System.out.println("T enter InstanceFinal ctor");
+      Verify.println("T enter InstanceFinal ctor");
       global = this; // leak this reference before construction
       
       a = 1;
       b = 1;
-      System.out.println("T exit InstanceFinal ctor");
+      Verify.println("T exit InstanceFinal ctor");
     }
   }
   
   void startInstanceFinal(){
     Thread t = new Thread(new Runnable() {
       public void run () {
-        System.out.println("T running");
+        Verify.println("T running");
         InstanceFinal o = new InstanceFinal();
         Thread.yield();
         assertTrue( "constructed object corrupted", o.a == 1 && o.b == 1);
-        System.out.println("T terminating");
+        Verify.println("T terminating");
       }
     });
     t.start();
@@ -96,9 +96,9 @@ public class FinalBreakTest extends TestJPF {
           f.setAccessible(true);
           
           // those should not break
-          System.out.println("main now corrupting object");
+          Verify.println("main now corrupting object");
           f.setInt(o, 42);
-          System.out.println("main now fixing object");
+          Verify.println("main now fixing object");
           f.setInt(o, 1);          
           
         } catch (Throwable x){
@@ -119,10 +119,10 @@ public class FinalBreakTest extends TestJPF {
           f.setAccessible(true);
           
           // those should not break
-          System.out.println("main now corrupting object");
+          Verify.println("main now corrupting object");
           f.setInt(o, 42);
           //Thread.yield();  // not required if Field.set() properly breaks
-          System.out.println("main now fixing object");
+          Verify.println("main now fixing object");
           f.setInt(o, 1);          
           
         } catch (Throwable x){
@@ -146,10 +146,10 @@ public class FinalBreakTest extends TestJPF {
   void startStaticFinal(){
     Thread t = new Thread(new Runnable() {
       public void run () {
-        System.out.println("T running");
+        Verify.println("T running");
         Thread.yield();
         assertTrue( "static finals corrupted", StaticFinal.a == StaticFinal.b);
-        System.out.println("T terminating");
+        Verify.println("T terminating");
       }
     });
     t.start();
@@ -164,9 +164,9 @@ public class FinalBreakTest extends TestJPF {
         f.setAccessible(true);
         
         // those should not break
-        System.out.println("main now corrupting static fields");
+        Verify.println("main now corrupting static fields");
         f.set(null, o2);
-        System.out.println("main now fixing static fields");
+        Verify.println("main now fixing static fields");
         f.set(null, o1);
         
       } catch (Throwable x){
@@ -185,9 +185,9 @@ public class FinalBreakTest extends TestJPF {
         f.setAccessible(true);
         
         // those should  break
-        System.out.println("main now corrupting static fields");
+        Verify.println("main now corrupting static fields");
         f.set(null, o2);
-        System.out.println("main now fixing static fields");
+        Verify.println("main now fixing static fields");
         f.set(null, o1);          
         
       } catch (Throwable x){

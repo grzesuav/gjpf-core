@@ -43,34 +43,41 @@ public class GETSTATIC extends JVMStaticFieldInstruction  implements ReadInstruc
   public Instruction execute (ThreadInfo ti) {
     ClassInfo ciField;
     FieldInfo fieldInfo;
-    
-    try {
-      fieldInfo = getFieldInfo();
-    } catch(LoadOnJPFRequired lre) {
-      return ti.getPC();
-    }
-    
-    if (fieldInfo == null) {
-      return ti.createAndThrowException("java.lang.NoSuchFieldError",
-          (className + '.' + fname));
-    }
-
-    // this can be actually different (can be a base)
-    ciField = fieldInfo.getClassInfo();
-    
-    if (!mi.isClinit(ciField) && ciField.pushRequiredClinits(ti)) {
-      // note - this returns the next insn in the topmost clinit that just got pushed
-      return ti.getPC();
-    }
-
-    ElementInfo eiFieldOwner = ciField.getStaticElementInfo();
-    
+    ElementInfo eiFieldOwner;
+        
     if (!ti.isFirstStepInsn()){
-      // check for non-lock protected shared object access, breaking before the field is written
-      eiFieldOwner = ti.checkSharedStaticFieldAccess(this, eiFieldOwner, fi);
-      if (ti.hasNextChoiceGenerator()) {
-        return this;
+      try {
+        fieldInfo = getFieldInfo();
+      } catch (LoadOnJPFRequired lre) {
+        return ti.getPC();
       }
+      
+      if (fieldInfo == null) {
+        return ti.createAndThrowException("java.lang.NoSuchFieldError",
+                (className + '.' + fname));
+      }
+
+      // this can be actually different (can be a base)
+      ciField = fieldInfo.getClassInfo();
+
+      if (!mi.isClinit(ciField) && ciField.pushRequiredClinits(ti)) {
+        // note - this returns the next insn in the topmost clinit that just got pushed
+        return ti.getPC();
+      }
+
+      eiFieldOwner = ciField.getStaticElementInfo();
+
+      if (ti.isStaticSharednessRelevant(this, eiFieldOwner, fi)) {
+        // check for non-lock protected shared object access, breaking before the field is written
+        eiFieldOwner = ti.checkSharedStaticFieldAccess(this, eiFieldOwner, fi);
+        if (ti.hasNextChoiceGenerator()) {
+          return this;
+        }
+      }
+      
+    } else {
+      fieldInfo = getFieldInfo();
+      eiFieldOwner = fieldInfo.getClassInfo().getStaticElementInfo();      
     }
     
     Object attr = eiFieldOwner.getFieldAttr(fieldInfo);

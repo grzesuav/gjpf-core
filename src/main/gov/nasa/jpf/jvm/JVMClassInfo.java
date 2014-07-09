@@ -213,10 +213,6 @@ public class JVMClassInfo extends ClassInfo {
 
       mi.linkToClass(JVMClassInfo.this);
       methods.put(mi.getUniqueName(), mi);
-
-      if (attributor != null) {
-        attributor.setMethodInfoAttributes(mi);
-      }
     }
 
     @Override

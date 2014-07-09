@@ -47,27 +47,33 @@ public class GETFIELD extends JVMInstanceFieldInstruction implements ReadInstruc
   @Override
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
-    
+    ElementInfo eiFieldOwner;
     int objRef = frame.peek(); // don't pop yet, we might re-enter
     lastThis = objRef;
-    if (objRef == MJIEnv.NULL) {
-      return ti.createAndThrowException("java.lang.NullPointerException",
-                                        "referencing field '" + fname + "' on null object");
-    }
-
-    ElementInfo eiFieldOwner = ti.getElementInfo(objRef);
-    FieldInfo fi = getFieldInfo();
-    if (fi == null) {
-      return ti.createAndThrowException("java.lang.NoSuchFieldError",
-                                        "referencing field '" + fname + "' in " + eiFieldOwner);
-    }
 
     if (!ti.isFirstStepInsn()){
-      // check for non-lock protected shared object access, breaking before the field is written
-      eiFieldOwner = ti.checkSharedInstanceFieldAccess(this, eiFieldOwner, fi);
-      if (ti.getVM().hasNextChoiceGenerator()) {
-        return this;
+      if (objRef == MJIEnv.NULL) {
+        return ti.createAndThrowException("java.lang.NullPointerException",
+                "referencing field '" + fname + "' on null object");
       }
+
+      eiFieldOwner = ti.getElementInfo(objRef);
+      FieldInfo fi = getFieldInfo();
+      if (fi == null) {
+        return ti.createAndThrowException("java.lang.NoSuchFieldError",
+                "referencing field '" + fname + "' in " + eiFieldOwner);
+      }
+
+      if (ti.isInstanceSharednessRelevant(this, eiFieldOwner, fi)) {
+        // check for non-lock protected shared object access, breaking before the field is written
+        eiFieldOwner = ti.checkSharedInstanceFieldAccess(this, eiFieldOwner, fi);
+        if (ti.getVM().hasNextChoiceGenerator()) {
+          return this;
+        }
+      }
+      
+    } else {
+      eiFieldOwner = ti.getElementInfo(objRef);      
     }
 
     frame.pop(); // Ok, now we can remove the object ref from the stack

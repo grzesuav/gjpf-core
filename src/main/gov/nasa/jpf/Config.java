@@ -971,7 +971,7 @@ public class Config extends Properties {
   }
 
   /**
-   * check if we have a key.index entry. If not, fall back to key
+   * check if we have a key.index entry. If not, fall back to key.
    * This simplifies clients that can have process id indexed properties
    */
   public String getIndexableKey (String key, int index){
@@ -979,8 +979,12 @@ public class Config extends Properties {
     if (containsKey(k)){
       return k;
     } else {
-      return key;
+      if (containsKey(key)){
+        return key;
+      }
     }
+    
+    return null; // neither indexed nor non-indexed key in dictionary
   }
 
   public void setClassLoader (ClassLoader newLoader){

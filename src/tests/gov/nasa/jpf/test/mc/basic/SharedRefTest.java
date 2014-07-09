@@ -121,9 +121,9 @@ public class SharedRefTest extends TestJPF implements Runnable {
      
       Thread t = new Thread() {
         public void run() {
-          System.out.println("T inc");
+          Verify.println("T inc");
           Global.x.d++;
-          System.out.println("T dec");
+          Verify.println("T dec");
           Global.x.d--;
           assertTrue( Global.x.d == 0);
         }
@@ -131,9 +131,9 @@ public class SharedRefTest extends TestJPF implements Runnable {
       
       t.start();
       
-      System.out.println("M inc");
+      Verify.println("M inc");
       Global.x.d++;
-      System.out.println("M dec");
+      Verify.println("M dec");
       Global.x.d--;
       assertTrue( Global.x.d == 0);
     }

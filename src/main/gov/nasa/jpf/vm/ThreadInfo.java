@@ -2089,6 +2089,9 @@ public class ThreadInfo extends InfoObject
     return heap.get(objRef);
   }
 
+  
+  //--- interface towards SharednessPolicy object
+  
   protected void initializeSharedness (DynamicElementInfo ei){
     vm.getSharednessPolicy().initializeSharedness(this, ei);
   }
@@ -2099,6 +2102,18 @@ public class ThreadInfo extends InfoObject
 
   public ElementInfo updateSharedness (ElementInfo ei){
     return vm.getSharednessPolicy().updateSharedness(this, ei);
+  }
+  
+  public boolean isInstanceSharednessRelevant (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
+    return vm.getSharednessPolicy().isInstanceSharednessRelevant(this, insn, eiFieldOwner, fi);
+  }
+
+  public boolean isStaticSharednessRelevant (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
+    return vm.getSharednessPolicy().isStaticSharednessRelevant(this, insn, eiFieldOwner, fi);
+  }
+
+  public boolean isArraySharednessRelevant (Instruction insn, ElementInfo eiArray){
+    return vm.getSharednessPolicy().isArraySharednessRelevant(this, insn, eiArray);
   }
   
   public ElementInfo checkSharedInstanceFieldAccess (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
@@ -2125,6 +2140,16 @@ public class ThreadInfo extends InfoObject
     vm.getSharednessPolicy().checkArrayObjectExposure(this, insn, eiArray, idx, refValue);
   }
   
+  public ElementInfo getElementInfoWithUpdatedSharedness (int objRef){
+    Heap heap = vm.getHeap();
+    ElementInfo ei = heap.get(objRef);
+    return vm.getSharednessPolicy().updateSharedness(this, ei);
+  }
+  
+  // keeping track of exposure - this is a execution state of the current thread
+  // that is used to determine if semantic actions of put instruction have already
+  // been executed
+
   private static class Exposure implements SystemAttribute {
     static final Exposure singleton = new Exposure();
   }
@@ -2148,17 +2173,7 @@ public class ThreadInfo extends InfoObject
       return false;
     }
   }
-  
-  public boolean hasNextChoiceGenerator(){
-    return vm.hasNextChoiceGenerator();
-  }
 
-  
-  public ElementInfo getElementInfoWithUpdatedSharedness (int objRef){
-    Heap heap = vm.getHeap();
-    ElementInfo ei = heap.get(objRef);
-    return vm.getSharednessPolicy().updateSharedness(this, ei);
-  }
   
   public ElementInfo getModifiableElementInfo (int ref) {
     Heap heap = vm.getHeap();
@@ -2186,6 +2201,12 @@ public class ThreadInfo extends InfoObject
 
     return ei;
   }
+
+  
+  public boolean hasNextChoiceGenerator(){
+    return vm.hasNextChoiceGenerator();
+  }
+
   
   //--- call processing
   
@@ -2253,6 +2274,20 @@ public class ThreadInfo extends InfoObject
     ElementInfo ei = getModifiableElementInfo(objref);
     SystemState ss = vm.getSystemState();
     ThreadList tl = vm.getThreadList();
+
+    // if this is the last non-daemon and there are only daemons left (which
+    // would be killed by our termination) we have to give them a chance to
+    // run BEFORE we terminate, to catch errors in those daemons we might have
+    // triggered in our last transition. Even if a daemon has a proper CG
+    // on the trigger that would expose the error subsequently, it would not be
+    // scheduled anymore but hard terminated. This is even true if the trigger
+    // is the last operation in the daemon since a host VM might preempt
+    // on every instruction, not just CG insns (see .test.mc.DaemonTest)
+    if (vm.getThreadList().hasOnlyMatchingOtherThan(this, vm.getDaemonRunnablePredicate())) {
+      if (yield()) {
+        return false;
+      }
+    }
     
     // beware - this notifies all waiters for this thread (e.g. in a join())
     // hence it has to be able to acquire the lock
@@ -2266,58 +2301,64 @@ public class ThreadInfo extends InfoObject
       ss.setMandatoryNextChoiceGenerator(cg, "blocking thread termination without CG: ");
 
       return false; // come back once we can obtain the lock to notify our waiters
-
-    } else { // Ok, we can get the lock, time to die
-      
-      // if this is the last non-daemon and there are only daemons left (which
-      // would be killed by our termination) we have to give them a chance to
-      // run BEFORE we terminate, to catch errors in those daemons we might have
-      // triggered in our last transition. Even if a daemon has a proper CG
-      // on the trigger that would expose the error subsequently, it would not be
-      // scheduled anymore but hard terminated. This is even true if the trigger
-      // is the last operation in the daemon since a host VM might preempt
-      // on every instruction, not just CG insns (see .test.mc.DaemonTest)
-      if (vm.getThreadList().hasOnlyMatchingOtherThan(this, vm.getDaemonRunnablePredicate())) {
-        if (yield()){
-          return false;
-        }
-      }
-      
-      //--- now we get into the termination spin
-      
-      // notify waiters on thread termination
-      if (!holdsLock(ei)) {
-        // we only need to increase the lockcount if we don't own the lock yet,
-        // as is the case for synchronized run() in anonymous threads (otherwise
-        // we have a lockcount > 1 and hence do not unlock upon return)
-        ei.lock(this);
-      }
-
-      ei.notifiesAll(); // watch out, this might change the runnable count
-      ei.unlock(this);
-
-      setState(State.TERMINATED);
-      
-      // we don't unregister this thread yet, this happens when the corresponding
-      // thread object is collected
-
-      ss.clearAtomic();
-      cleanupThreadObject(ei);
-      vm.activateGC();  // stack is gone, so reachability might change
-      
-      // give the thread tracking policy a chance to remove this thread from
-      // object/class thread sets
-      vm.getSharednessPolicy().cleanupThreadTermination(this);
-      
-      if (vm.getThreadList().hasAnyMatchingOtherThan(this, getRunnableNonDaemonPredicate())) {
-        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(this);
-        ss.setMandatoryNextChoiceGenerator(cg, "thread terminated without CG: ");
-      }
-
-      popFrame(); // we need to do this *after* setting the CG (so that we still have a CG insn)
-      
-      return true;
     }
+    
+    // we have to be able to acquire the group lock since we are going to remove
+    // the thread from the group
+    int grpRef = getThreadGroupRef();
+    ElementInfo eiGrp = getModifiableElementInfo(grpRef);
+    if (eiGrp != null){
+      if (!eiGrp.canLock(this)){
+        eiGrp.block(this);
+        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createMonitorEnterCG(eiGrp, this);
+        ss.setMandatoryNextChoiceGenerator(cg, "blocking thread termination without CG: ");
+        return false; // come back once we can obtain the lock to notify our waiters
+      }
+    }
+
+    // Ok, we can get the lock, time to die
+    
+    // this simulates the ThreadGroup.remove(), which would cause a lot
+    // of states if done in bytecode. Since we don't have a ThreadGroup peer
+    // we keep all this code in ThreadInfo.
+    // This might cause the ThreadGroup to notify waiters, which has to
+    // happen before the notification on the thread object
+    eiGrp.lock(this);
+    cleanupThreadGroup(grpRef, objref);
+    eiGrp.unlock(this);
+    
+    
+    // notify waiters on thread termination
+    if (!holdsLock(ei)) {
+      // we only need to increase the lockcount if we don't own the lock yet,
+      // as is the case for synchronized run() in anonymous threads (otherwise
+      // we have a lockcount > 1 and hence do not unlock upon return)
+      ei.lock(this);
+    }
+
+    ei.notifiesAll(); // watch out, this might change the runnable count
+    ei.unlock(this);
+
+    setState(State.TERMINATED);
+
+    // we don't unregister this thread yet, this happens when the corresponding
+    // thread object is collected
+    ss.clearAtomic();
+    cleanupThreadObject(ei);
+    vm.activateGC();  // stack is gone, so reachability might change
+
+    // give the thread tracking policy a chance to remove this thread from
+    // object/class thread sets
+    vm.getSharednessPolicy().cleanupThreadTermination(this);
+
+    if (vm.getThreadList().hasAnyMatchingOtherThan(this, getRunnableNonDaemonPredicate())) {
+      ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(this);
+      ss.setMandatoryNextChoiceGenerator(cg, "thread terminated without CG: ");
+    }
+
+    popFrame(); // we need to do this *after* setting the CG (so that we still have a CG insn)
+
+    return true;
   }
 
   Predicate<ThreadInfo> getRunnableNonDaemonPredicate() {

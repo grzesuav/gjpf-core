@@ -23,9 +23,6 @@ package gov.nasa.jpf.vm;
  * load time
  */
 public interface Attributor {
-
-  void setMethodInfoAttributes(MethodInfo mi);
-  void setFieldInfoAttributes(FieldInfo fi);
-  void setElementInfoAttributes(ClassInfo ci);
+  void setAttributes (ClassInfo ci);
 }
 

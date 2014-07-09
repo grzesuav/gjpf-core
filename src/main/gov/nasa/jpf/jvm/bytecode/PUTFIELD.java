@@ -86,26 +86,29 @@ public class PUTFIELD extends JVMInstanceFieldInstruction implements WriteInstru
             "no field " + fname + " in " + eiFieldOwner);
       }
 
-      // check for non-lock protected shared object access, breaking before the field is written
-      eiFieldOwner = ti.checkSharedInstanceFieldAccess(this, eiFieldOwner, fi);
-      if (ti.hasNextChoiceGenerator()) {
-        return this;
-      }
-      
-      // if this is an object exposure (non-shared object gets stored in field of
-      // shared object and hence /could/ become shared itself), we have to change the
-      // field value /before/ we do an exposure break. However, we should only change it
-      // once, if we re-write during re-execution we change program behavior in
-      // case there is a race for this field, leading to false positives etc.
-      if (isReferenceField()){
-        int refValue = frame.peek();
-        ti.checkInstanceFieldObjectExposure( this, eiFieldOwner, fi, refValue);
+      if (ti.isInstanceSharednessRelevant(this, eiFieldOwner, fi)) {
+
+        // check for non-lock protected shared object access, breaking before the field is written
+        eiFieldOwner = ti.checkSharedInstanceFieldAccess(this, eiFieldOwner, fi);
         if (ti.hasNextChoiceGenerator()) {
-          lastValue = PutHelper.setReferenceField(ti, frame, eiFieldOwner, fi);
-          ti.markExposure(frame); // make sure we don't overwrite external changes in bottom half
           return this;
         }
-      }        
+
+        // if this is an object exposure (non-shared object gets stored in field of
+        // shared object and hence /could/ become shared itself), we have to change the
+        // field value /before/ we do an exposure break. However, we should only change it
+        // once, if we re-write during re-execution we change program behavior in
+        // case there is a race for this field, leading to false positives etc.
+        if (isReferenceField()) {
+          int refValue = frame.peek();
+          ti.checkInstanceFieldObjectExposure(this, eiFieldOwner, fi, refValue);
+          if (ti.hasNextChoiceGenerator()) {
+            lastValue = PutHelper.setReferenceField(ti, frame, eiFieldOwner, fi);
+            ti.markExposure(frame); // make sure we don't overwrite external changes in bottom half
+            return this;
+          }
+        }
+      }
       
       // regular case - non shared or lock protected field, no re-execution
       lastValue = PutHelper.setField( ti, frame, eiFieldOwner, fi);

@@ -96,13 +96,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   /**
    * ClassLoader that loaded this class.
    */
-  protected static final ClassLoader thisClassLoader = ClassInfo.class.getClassLoader();
-
-  /**
-   * optionally used to determine atomic declaredMethods of a class (during class loading)
-   */
-  protected static Attributor attributor;
-
+  protected static final ClassLoader thisClassLoader = ClassInfo.class.getClassLoader();  
+  
   /**
    * our abstract factory to createAndInitialize object and class fields
    */
@@ -263,9 +258,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     setSourceRoots(config);
     //buildBCELModelClassPath(config);
 
-    attributor = config.getEssentialInstance("vm.attributor.class",
-                                                         Attributor.class);
-
     fieldsFactory = config.getEssentialInstance("vm.fields_factory.class",
                                                 FieldsFactory.class);
 
@@ -310,10 +302,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     modifiers = flags;
     isClass = ((flags & Modifier.INTERFACE) == 0);
-
-    if (attributor != null) {
-      attributor.setElementInfoAttributes(ClassInfo.this);
-    }
 
     superClassName = superClsName;
   }
@@ -389,10 +377,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         MethodInfo mi = methods[i];
         mi.linkToClass(this);
         map.put(mi.getUniqueName(), mi);
-
-        if (attributor != null) {
-          attributor.setMethodInfoAttributes(mi);
-        }
       }
       
       this.methods = map;
@@ -482,7 +466,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     return null;
   }
-  
   
   protected ClassInfo (String name, ClassLoaderInfo cli, String classFileUrl){
     nClassInfos++;
@@ -1738,7 +1721,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   /**
    * most definitely not a public method, but handy for the NativePeer
    */
-  Map<String, MethodInfo> getDeclaredMethods () {
+  protected Map<String, MethodInfo> getDeclaredMethods () {
     return methods;
   }
 
@@ -2248,10 +2231,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       int storageSize = fi.getStorageSize();      
       off += storageSize;
       idx++;
-      
-      if (attributor != null){
-        attributor.setFieldInfoAttributes(fi);
-      }
     }
     
     return off;

@@ -39,8 +39,10 @@ import gov.nasa.jpf.vm.choice.IntIntervalGenerator;
 import gov.nasa.jpf.vm.choice.LongChoiceFromList;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.PrintStream;
 import java.util.BitSet;
 import java.util.List;
 
@@ -75,6 +77,7 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
   static BitSet[] bitSets;
   static int nextBitSet;
 
+  static PrintStream out;
   
   public static boolean init (Config conf) {
 
@@ -88,6 +91,18 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
       
       config = conf;
 
+      String outFile = conf.getString("vm.verify.output_file");
+      if (outFile != null){
+        try {
+          out = new PrintStream(outFile);
+        } catch (FileNotFoundException fnx){
+          System.err.println("error: could not open verify output file " + outFile + ", using System.out");
+          out = System.out;
+        }
+      } else {
+        out = System.out;
+      }
+      
       Verify.setPeerClass( JPF_gov_nasa_jpf_vm_Verify.class);
 
       RunRegistry.getDefaultRegistry().addListener( new RunListener() {
@@ -526,15 +541,23 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
   }
 
   @MJI
+  public static void threadPrint__Ljava_lang_String_2__V (MJIEnv env, int clsRef, int sRef){
+    String s = env.getStringObject(sRef);
+    ThreadInfo ti = env.getThreadInfo();
+    System.out.print(ti.getName());
+    System.out.print(s);
+  }
+  
+  @MJI
   public static void print__Ljava_lang_String_2I__V (MJIEnv env, int clsRef, int sRef, int val){
     String s = env.getStringObject(sRef);
-    System.out.println(s + " : " + val);
+    System.out.print(s + " : " + val);
   }
 
   @MJI
   public static void print__Ljava_lang_String_2Z__V (MJIEnv env, int clsRef, int sRef, boolean val){
     String s = env.getStringObject(sRef);
-    System.out.println(s + " : " + val);
+    System.out.print(s + " : " + val);
   }
 
   @MJI
@@ -557,6 +580,12 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
   public static void println__Ljava_lang_String_2__V (MJIEnv env, int clsRef, int sRef){
     String s = env.getStringObject(sRef);
     System.out.println(s);
+  }
+
+  @MJI
+  public static void threadPrintln__Ljava_lang_String_2__V (MJIEnv env, int clsRef, int sRef){
+    threadPrint__Ljava_lang_String_2__V(env, clsRef, sRef);
+    System.out.println();
   }
 
   

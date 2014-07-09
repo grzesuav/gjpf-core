@@ -270,6 +270,17 @@ public class Verify {
   public static void printPathOutput(String msg) {}
   public static void printPathOutput(boolean cond, String msg) {}
 
+  public static void threadPrint (String s) {
+    System.out.print( Thread.currentThread().getName());
+    System.out.print(": ");
+    System.out.print(s);
+  }
+
+  public static void threadPrintln (String s) {
+    threadPrint(s);
+    System.out.println();
+  }
+  
   public static void print (String s) {
     System.out.print(s);
   }

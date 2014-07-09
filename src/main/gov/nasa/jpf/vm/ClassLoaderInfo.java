@@ -35,6 +35,7 @@ import gov.nasa.jpf.SystemAttribute;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.SparseIntVector;
 import gov.nasa.jpf.util.StringSetMatcher;
+import java.util.List;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -93,7 +94,6 @@ public class ClassLoaderInfo
   protected int objRef;
 
   protected ClassLoaderInfo parent;
-
 
   
   static class ClMemento implements Memento<ClassLoaderInfo> {
@@ -299,14 +299,19 @@ public class ClassLoaderInfo
   protected ClassInfo loadSystemClass (String clsName){
     return getCurrentSystemClassLoader().loadSystemClass(clsName);
   }
-  
+
   protected ClassInfo createClassInfo (String typeName, ClassFileMatch match, ClassLoaderInfo definingLoader) throws ClassParseException {
     return getCurrentSystemClassLoader().createClassInfo( typeName, match, definingLoader);
   }
+  
   protected ClassInfo createClassInfo (String typeName, String url, byte[] data, ClassLoaderInfo definingLoader) throws ClassParseException {
     return getCurrentSystemClassLoader().createClassInfo( typeName, url, data, definingLoader);
   }
 
+  protected void setAttributes (ClassInfo ci){
+    getCurrentSystemClassLoader().setAttributes(ci);
+  }
+  
   
   /**
    * obtain ClassInfo object for given class name
@@ -359,6 +364,7 @@ public class ClassLoaderInfo
         }
       }
       
+      setAttributes(ci);
       resolvedClasses.put(typeName, ci);
     }
     
@@ -385,6 +391,7 @@ public class ClassLoaderInfo
         throw new ClassInfoException("error parsing class", this, "java.lang.NoClassDefFoundError", typeName, cpx);
       }
 
+      setAttributes(ci);
       resolvedClasses.put( typeName, ci);
     }
     

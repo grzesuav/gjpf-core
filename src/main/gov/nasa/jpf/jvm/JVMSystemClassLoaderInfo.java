@@ -170,6 +170,9 @@ public class JVMSystemClassLoaderInfo extends SystemClassLoaderInfo {
     ClassFile cf = new ClassFile(data);
     JVMCodeBuilder cb = getCodeBuilder(clsName);
     
-    return new JVMClassInfo(clsName, definingLoader, cf, url, cb);
+    ClassInfo ci = new JVMClassInfo(clsName, definingLoader, cf, url, cb);
+    setAttributes(ci);
+    
+    return ci;
   }
 }

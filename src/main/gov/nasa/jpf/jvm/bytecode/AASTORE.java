@@ -71,9 +71,14 @@ public class AASTORE extends ArrayStoreInstruction {
       }
     
       //--- shared access CG
-      eiArray = ti.checkSharedArrayAccess( this, eiArray, idx);
-      if (ti.hasNextChoiceGenerator()) {
-        return this;
+      boolean skipExposure = false;
+      if (ti.isArraySharednessRelevant(this, eiArray)){
+        eiArray = ti.checkSharedArrayAccess(this, eiArray, idx);
+        if (ti.hasNextChoiceGenerator()) {
+          return this;
+        }
+      } else {
+        skipExposure = true;
       }
            
       try {
@@ -83,10 +88,12 @@ public class AASTORE extends ArrayStoreInstruction {
       }
       
       //--- exposure
-      ti.checkArrayObjectExposure(this, eiArray, idx, refValue);
-      if (ti.hasNextChoiceGenerator()) {
-        ti.markExposure(frame);
-        return this;
+      if (!skipExposure){
+        ti.checkArrayObjectExposure(this, eiArray, idx, refValue);
+        if (ti.hasNextChoiceGenerator()) {
+          ti.markExposure(frame);
+          return this;
+        }
       }
 
       return getNext(ti);

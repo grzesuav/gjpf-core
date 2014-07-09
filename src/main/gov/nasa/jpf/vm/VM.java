@@ -536,7 +536,7 @@ public abstract class VM {
       }      
     }
   }
-
+  
   /**
    * this is the main initialization point that sets up startup objects threads and callstacks.
    * If this returns false VM initialization cannot proceed and JPF will terminate

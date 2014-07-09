@@ -86,6 +86,10 @@ public abstract class InfoObject implements Cloneable {
     return null;
   }
   
+  public boolean hasAnnotation (String name){
+    return getAnnotation(name) != null;    
+  }
+  
   public AnnotationInfo[] getDeclaredAnnotations(){
     return annotations;
   }

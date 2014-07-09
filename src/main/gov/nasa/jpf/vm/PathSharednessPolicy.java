@@ -56,7 +56,7 @@ import gov.nasa.jpf.Config;
  * is just to find potential data races. As long as JPF explores /one/ path that
  * leads into a race we are fine - we don't care how many paths don't detect a race.
  */
-public class PathSharednessPolicy extends SharednessPolicy {
+public class PathSharednessPolicy extends GenericSharednessPolicy {
   
   public PathSharednessPolicy (Config config){
     super(config);

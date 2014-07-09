@@ -20,6 +20,7 @@
 package gov.nasa.jpf.test.vm.threads;
 
 
+import gov.nasa.jpf.annotation.NeverBreak;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.Verify;
 
@@ -40,18 +41,18 @@ public class ThreadStopTest extends TestJPF {
     if (verifyNoPropertyViolation()){
       Thread t = new Thread(){
         public void run(){
-          System.out.println("# t running, that's bad");
+           Verify.println("# t running, that's bad");
           fail("t should never run");
         }
       };
 
       t.stop();
 
-      System.out.println("# now starting the stopped thread");
+       Verify.println("# now starting the stopped thread");
       t.start();
       Thread.yield();
       assertFalse( "t not terminated yet", t.isAlive());
-      System.out.println("# main got past start of stopped thread");
+       Verify.println("# main got past start of stopped thread");
       Verify.incrementCounter(0);
 
     } else {
@@ -68,7 +69,7 @@ public class ThreadStopTest extends TestJPF {
     if (verifyNoPropertyViolation()){
       Thread t = new Thread(){
         public synchronized void run(){
-          System.out.println("# t running, that's bad");
+           Verify.println("# t running, that's bad");
           fail("t should never run");
         }
       };
@@ -76,11 +77,11 @@ public class ThreadStopTest extends TestJPF {
       t.stop();
 
       synchronized (t){
-        System.out.println("# now starting the stopped thread");
+         Verify.println("# now starting the stopped thread");
         t.start(); // this should terminate the thread
-        System.out.println("# main got past start of stopped sync thread");
+         Verify.println("# main got past start of stopped sync thread");
       }
-      System.out.println("# main released lock for stopped sync thread");
+       Verify.println("# main released lock for stopped sync thread");
       Thread.yield();
       assertFalse( "t not terminated yet", t.isAlive());
       Verify.incrementCounter(0);
@@ -103,7 +104,7 @@ public class ThreadStopTest extends TestJPF {
         public synchronized void run(){
           Verify.incrementCounter(1);
 
-          System.out.println("# t running");
+           Verify.println("# t running");
           foo();
           fail("t should not have gotten past self stop");
         }
@@ -113,13 +114,13 @@ public class ThreadStopTest extends TestJPF {
         }
       };
 
-      System.out.println("# main now starting the thread");
+       Verify.println("# main now starting the thread");
       t.start();
 
       try {
-        System.out.println("# main now joining the thread..");
+         Verify.println("# main now joining the thread..");
         t.join();
-        System.out.println("# main joined thread");
+         Verify.println("# main joined thread");
         assertFalse( "t not terminated yet", t.isAlive());
         Verify.incrementCounter(0);
 
@@ -135,115 +136,114 @@ public class ThreadStopTest extends TestJPF {
 
 
   // some sync helpers
+  @NeverBreak
   static boolean isRunning;
 
   @Test
-  public void testStopRunning(){
-    if (!isJPFRun()){
+  public void testStopRunning () {
+    if (!isJPFRun()) {
       Verify.resetCounter(0);
       Verify.resetCounter(1);
     }
 
-    if (verifyNoPropertyViolation()){
+    if (verifyNoPropertyViolation()) {
       isRunning = false;
 
-      Thread t = new Thread(){
-        public synchronized void run(){
+      Thread t = new Thread() {
+        public synchronized void run () {
           isRunning = true;
           Verify.incrementCounter(1);
 
-          System.out.println("# t running");
+          Verify.println("# t running");
 
-          while (true){ // while(true) will cause no return insn !
+          while (true) { // while(true) will cause no return insn !
             // keep it alive
             Thread.yield();
           }
         }
       };
 
-      System.out.println("# main now starting t");
+      Verify.println("# main now starting t");
       t.start();
 
-      while (!isRunning){
+      while (!isRunning) {
         Thread.yield();
       }
 
-      System.out.println("# main now stopping t");
+      Verify.println("# main now stopping t");
       t.stop();
 
       try {
-        System.out.println("# main now joining the stopped thread..");
+        Verify.println("# main now joining the stopped thread..");
         t.join();
-        System.out.println("# main joined thread");
-        assertFalse( "t not terminated yet", t.isAlive());
+        Verify.println("# main joined thread");
+        assertFalse("t not terminated yet", t.isAlive());
         Verify.incrementCounter(0);
 
-      } catch (InterruptedException ix){
+      } catch (InterruptedException ix) {
         assert false : "main should not get an InterruptedException while joining";
       }
 
     } else {
-      assertTrue( "t did not run", Verify.getCounter(1) > 0);
-      assertTrue( "main did not get past join", Verify.getCounter(0) > 0);
+      assertTrue("t did not run", Verify.getCounter(1) > 0);
+      assertTrue("main did not get past join", Verify.getCounter(0) > 0);
     }
   }
 
+  @NeverBreak
   static Object lock = new Object();
 
   @Test
-  public void testStopBlocked(){
-    if (!isJPFRun()){
+  public void testStopBlocked () {
+    if (!isJPFRun()) {
       Verify.resetCounter(0);
       Verify.resetCounter(1);
     }
 
-    if (verifyNoPropertyViolation()){
+    if (verifyNoPropertyViolation()) {
       isRunning = false;
-
-      Thread t = new Thread(){
-        public synchronized void run(){
+      Thread t = new Thread() {
+        public synchronized void run () {
           isRunning = true;
           Verify.incrementCounter(1);
-
-          System.out.println("# t running, now blocking on lock..");
-
-          synchronized(lock){
+          Verify.println("# t running, now blocking on lock..");
+          synchronized (lock) {
             fail("t should never get here");
           }
         }
       };
 
-      synchronized(lock){
-        System.out.println("# main now starting t");
+      synchronized (lock) {
+        Verify.println("# main now starting t");
         t.start();
 
-        while (!isRunning){
+        while (!isRunning) {
           Thread.yield();
         }
-        assertTrue( "t not blocked", t.getState() == Thread.State.BLOCKED);
+        assertTrue("t not blocked", t.getState() == Thread.State.BLOCKED);
 
-        System.out.println("# main now stopping t");
+        Verify.println("# main now stopping t");
         t.stop();
 
         assertTrue("t dead despite main not giving up lock", t.isAlive());
 
-        System.out.println("# main now releasing lock");
+        Verify.println("# main now releasing lock");
       }
 
       try {
-        System.out.println("# main now joining the stopped thread..");
+        Verify.println("# main now joining the stopped thread..");
         t.join();
-        System.out.println("# main joined thread");
-        assertFalse( "t not terminated yet", t.isAlive());
+        Verify.println("# main joined thread");
+        assertFalse("t not terminated yet", t.isAlive());
         Verify.incrementCounter(0);
 
-      } catch (InterruptedException ix){
+      } catch (InterruptedException ix) {
         assert false : "main should not get an InterruptedException while joining";
       }
 
     } else {
-      assertTrue( "t did not run", Verify.getCounter(1) > 0);
-      assertTrue( "main did not get past join", Verify.getCounter(0) > 0);
+      assertTrue("t did not run", Verify.getCounter(1) > 0);
+      assertTrue("main did not get past join", Verify.getCounter(0) > 0);
     }
   }
 
@@ -262,7 +262,7 @@ public class ThreadStopTest extends TestJPF {
           isRunning = true;
           Verify.incrementCounter(1);
 
-          System.out.println("# t running, now waiting on lock");
+           Verify.println("# t running, now waiting on lock");
 
           synchronized(lock){
             try {
@@ -274,28 +274,28 @@ public class ThreadStopTest extends TestJPF {
         }
       };
 
-      System.out.println("# main now starting t");
+       Verify.println("# main now starting t");
       t.start();
 
       while (t.getState() != Thread.State.WAITING) {
         Thread.yield();
       }
 
-      System.out.println("# main now stopping t");
+       Verify.println("# main now stopping t");
       t.stop();
 
       Thread.yield();
       assertTrue("t dead despite main not notifying", t.isAlive());
 
-      System.out.println("# main now notifying");
+       Verify.println("# main now notifying");
       synchronized (lock) {
         lock.notifyAll();
       }
 
       try {
-        System.out.println("# main now joining the stopped thread..");
+         Verify.println("# main now joining the stopped thread..");
         t.join();
-        System.out.println("# main joined thread");
+         Verify.println("# main joined thread");
         assertFalse( "t not terminated yet", t.isAlive());
         Verify.incrementCounter(0);
 
@@ -327,7 +327,7 @@ public class ThreadStopTest extends TestJPF {
           isRunning = true;
           Verify.incrementCounter(1);
 
-          System.out.println("# t running, now waiting on lock");
+           Verify.println("# t running, now waiting on lock");
 
           try {
             synchronized (lock) {
@@ -339,35 +339,35 @@ public class ThreadStopTest extends TestJPF {
             }
           } catch (ThreadDeath td){
             // usually not a good style, but can happen for exit processing
-            System.out.println("# t caught ThreadDeath");
+             Verify.println("# t caught ThreadDeath");
             wasHandled = true;
             throw td; // rethrow to continue with kill
           }
         }
       };
 
-      System.out.println("# main now starting t");
+       Verify.println("# main now starting t");
       t.start();
 
       while (t.getState() != Thread.State.WAITING) {
         Thread.yield();
       }
 
-      System.out.println("# main now stopping t");
+       Verify.println("# main now stopping t");
       t.stop();
 
       Thread.yield();
       assertTrue("t dead despite main not notifying", t.isAlive());
 
-      System.out.println("# main now notifying");
+       Verify.println("# main now notifying");
       synchronized (lock) {
         lock.notifyAll();
       }
 
       try {
-        System.out.println("# main now joining the stopped thread..");
+         Verify.println("# main now joining the stopped thread..");
         t.join();
-        System.out.println("# main joined thread");
+         Verify.println("# main joined thread");
 
         assertFalse( "t not terminated yet", t.isAlive());
         assertTrue("t did not handle ThreadDeath", wasHandled);
@@ -395,11 +395,11 @@ public class ThreadStopTest extends TestJPF {
       Thread t = new Thread(){
         public void run(){
           Verify.incrementCounter(1);
-          System.out.println("# t running");
+           Verify.println("# t running");
         }
       };
 
-      System.out.println("# main now starting t");
+       Verify.println("# main now starting t");
       t.start();
 
       while (t.isAlive()){
@@ -408,9 +408,9 @@ public class ThreadStopTest extends TestJPF {
 
       assertFalse("t is a zombie", t.isAlive());
 
-      System.out.println("# main now stopping dead t");
+       Verify.println("# main now stopping dead t");
       t.stop();
-      System.out.println("# main survived stopping t");
+       Verify.println("# main survived stopping t");
 
       assertFalse("t is a zombie", t.isAlive());
       Verify.incrementCounter(0);
@@ -437,12 +437,12 @@ public class ThreadStopTest extends TestJPF {
       waitee = new Thread(){
         public void run(){
           Verify.incrementCounter(2);
-          System.out.println("# waitee running");
+           Verify.println("# waitee running");
           synchronized(lock){
             try {
-              System.out.println("# waitee now waiting for main to signal..");
+               Verify.println("# waitee now waiting for main to signal..");
               lock.wait();
-              System.out.println("# waitee terminating");
+               Verify.println("# waitee terminating");
             } catch (InterruptedException ix) {
               fail("waitee should not get interrupted");
             }
@@ -458,7 +458,7 @@ public class ThreadStopTest extends TestJPF {
         public synchronized void run(){
           Verify.incrementCounter(1);
           try {
-            System.out.println("# t now joining waitee..");
+             Verify.println("# t now joining waitee..");
             waitee.join();
 
             fail("t should never get here");
@@ -469,7 +469,7 @@ public class ThreadStopTest extends TestJPF {
         }
       };
 
-      System.out.println("# main now starting t");
+       Verify.println("# main now starting t");
       t.start();
 
       while (t.getState() != Thread.State.WAITING){
@@ -479,18 +479,18 @@ public class ThreadStopTest extends TestJPF {
       assertTrue("waitee is a zombie", waitee.isAlive());
       assertTrue("t is a zombie", t.isAlive());
 
-      System.out.println("# main now stopping t");
+       Verify.println("# main now stopping t");
       t.stop();
       assertTrue("t should not have terminated since waitee not notified yet", t.isAlive());
 
 
-      System.out.println("# main now notifying waitee");
+       Verify.println("# main now notifying waitee");
       synchronized(lock){
         lock.notifyAll();
       }
 
       try {
-        System.out.println("# main now joining waitee");
+         Verify.println("# main now joining waitee");
         waitee.join();
       } catch (InterruptedException ix){
         fail("main should not get interupted joining waitee");
@@ -498,7 +498,7 @@ public class ThreadStopTest extends TestJPF {
       assertFalse("waitee is a zombie", waitee.isAlive());
 
       try {
-        System.out.println("# main now joining t");
+         Verify.println("# main now joining t");
         t.join();
       } catch (InterruptedException ix){
         fail("main should not get interupted joining t");
