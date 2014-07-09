@@ -17,7 +17,7 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.util.script;
+package gov.nasa.jpf.util.event;
 
 /**
  * abstract class that hold API to create event trees

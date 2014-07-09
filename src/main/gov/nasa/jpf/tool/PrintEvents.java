@@ -23,7 +23,7 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFClassLoader;
 import gov.nasa.jpf.util.FileUtils;
 import gov.nasa.jpf.util.JPFSiteUtils;
-import gov.nasa.jpf.util.script.EventTree;
+import gov.nasa.jpf.util.event.EventTree;
 
 
 /**

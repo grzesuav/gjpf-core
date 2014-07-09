@@ -17,7 +17,7 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.util.script;
+package gov.nasa.jpf.util.event;
 
 /**
  * EventTree that can check traces and coverage against expected traces

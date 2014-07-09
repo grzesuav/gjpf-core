@@ -17,8 +17,10 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.util.script;
+package gov.nasa.jpf.util.event;
 
+import gov.nasa.jpf.util.event.EventTree;
+import gov.nasa.jpf.util.event.Event;
 import gov.nasa.jpf.util.test.TestJPF;
 import static gov.nasa.jpf.util.test.TestJPF.fail;
 import org.junit.Test;

@@ -20,8 +20,8 @@
 package gov.nasa.jpf.test.mc.data;
 
 import gov.nasa.jpf.EventProducer;
-import gov.nasa.jpf.util.script.Event;
-import gov.nasa.jpf.util.script.TestEventTree;
+import gov.nasa.jpf.util.event.Event;
+import gov.nasa.jpf.util.event.TestEventTree;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.Verify;
 import org.junit.Test;

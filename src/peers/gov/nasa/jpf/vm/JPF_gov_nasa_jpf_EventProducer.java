@@ -23,11 +23,11 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.JPFLogger;
-import gov.nasa.jpf.util.script.CheckEvent;
-import gov.nasa.jpf.util.script.Event;
-import gov.nasa.jpf.util.script.EventChoiceGenerator;
-import gov.nasa.jpf.util.script.EventTree;
-import gov.nasa.jpf.util.script.NoEvent;
+import gov.nasa.jpf.util.event.CheckEvent;
+import gov.nasa.jpf.util.event.Event;
+import gov.nasa.jpf.util.event.EventChoiceGenerator;
+import gov.nasa.jpf.util.event.EventTree;
+import gov.nasa.jpf.util.event.NoEvent;
 
 /**
  * native peer for EventProducer

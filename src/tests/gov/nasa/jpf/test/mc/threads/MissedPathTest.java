@@ -21,6 +21,7 @@ package gov.nasa.jpf.test.mc.threads;
 import org.junit.Test;
 
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.vm.Verify;
 
 /**
  * test for missed paths in concurrent threads with very little interaction
@@ -36,7 +37,7 @@ public class MissedPathTest extends TestJPF {
 
     public void run() {
       if (myX != null){
-        System.out.println("T: accessed global myX");
+        Verify.println("T: accessed global myX");
         if (!myX.pass){  // (2) won't fail unless main is between (0) and (1)
           throw new AssertionError("gotcha");
         }
@@ -46,17 +47,16 @@ public class MissedPathTest extends TestJPF {
 
   @Test
   public void testInstanceFieldPropagation () {
-    if (verifyAssertionErrorDetails("gotcha", 
-            "+vm.por.break_on_exposure=true")) {
+    if (verifyAssertionErrorDetails("gotcha", "+vm.shared.break_on_exposure=true")) {
       InstanceFieldPropagation mp = new InstanceFieldPropagation();
       mp.start();
       
       X x = new X();
-      System.out.println("M: new " + x);
+      Verify.println("M: new " + x);
       mp.myX = x;        // (0) x not shared until this GOT executed
      
       //Thread.yield();  // this would expose the error
-      System.out.println("M: x.pass=true");
+      Verify.println("M: x.pass=true");
       x.pass = true;     // (1) need to break BEFORE assignment or no error
     }
   }
@@ -81,7 +81,7 @@ public class MissedPathTest extends TestJPF {
   
   @Test
   public void testStaticFieldPropagation () {
-    if (verifyAssertionErrorDetails("gotcha", "+vm.por.break_on_exposure=true")) {
+    if (verifyAssertionErrorDetails("gotcha", "+vm.shared.break_on_exposure=true")) {
       StaticFieldPropagation mp = new StaticFieldPropagation();
       mp.start();
 
@@ -105,7 +105,7 @@ public class MissedPathTest extends TestJPF {
       myX = new X();  // competing put with exposure
 
       if (myX != null) {  // doesn't matter, we just want to GET myX
-        System.out.println("T: accessed global myX");
+        Verify.println("T: accessed global myX");
       }
     }
   }
@@ -120,10 +120,10 @@ public class MissedPathTest extends TestJPF {
       mp.start();
 
       X x = new X();
-      System.out.println("M: new " + x);
+      Verify.println("M: new " + x);
       mp.myX = x;    // this is one of the competing PUTs
 
-      System.out.println("M: x.pass=true");
+      Verify.println("M: x.pass=true");
       x.pass = true; // irrelevant in this case
     }
   }

@@ -971,7 +971,8 @@ public class Config extends Properties {
   }
 
   /**
-   * check if we have a key.index entry. If not, fall back to key.
+   * check if we have a key.index entry. If not, check the non-indexed key. If no
+   * key found return null
    * This simplifies clients that can have process id indexed properties
    */
   public String getIndexableKey (String key, int index){

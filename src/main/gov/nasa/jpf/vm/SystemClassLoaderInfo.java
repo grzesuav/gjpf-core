@@ -101,10 +101,10 @@ public abstract class SystemClassLoaderInfo extends ClassLoaderInfo {
     Config conf = vm.getConfig();
     String key = conf.getIndexableKey("vm.attributors", appId);
     if (key != null){
+      System.out.println("@@@@ key=" + key);
       for (Attributor a : conf.getInstances(key, Attributor.class)){
         attributors.add(a);
       }
-      
     }
   }
 
