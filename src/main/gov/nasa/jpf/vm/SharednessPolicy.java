@@ -35,7 +35,7 @@ import gov.nasa.jpf.util.TypeSpecMatcher;
  * and controlled by a number of "vm.por.*" properties. Strictly speaking, the default implementation does not do classic partial
  * order reduction, it merely tries to reduce states associated with shared objects based on information that was collected by
  * previous execution. All configuration therefore is now done through "vm.shared.*" properties that are loaded in
- * SharednessPolicy and its subclasses.
+ * SharednessPolicy implementations.
  *
  * The interface of this class, which is used by field and array element accessors (GETx, PUTx, xASTORE, xALOAD, Field
  * reflection), revolves around two concepts:
@@ -73,7 +73,9 @@ import gov.nasa.jpf.util.TypeSpecMatcher;
  * half, i.e. cannot rely on the current CG in the bottom half execution. Conceptually, the execution state is a StackFrame
  * attribute.
  *
- *
+ * Note that exposure CGs are not mandatory. Concrete SharednessPolicy implementations can either ignore them in bug finding mode,
+ * or can replace them by means of re-execution.
+ * 
  * Concrete SharednessPolicy implementations fall within a spectrum that is marked by two extremes: SEARCH GLOBAL and PATH LOCAL
  * behavior. Search global policies are mostly for bug finding and keep sharedness, lock protection and exposure information from
  * previously executed paths. This has two implications: (a) the search policy / execution order matters (e.g. leading to

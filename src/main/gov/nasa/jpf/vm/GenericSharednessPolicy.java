@@ -31,6 +31,17 @@ import gov.nasa.jpf.util.TypeSpecMatcher;
  * an abstract SharednessPolicy implementation that makes use of both
  * shared field access CGs and exposure CGs.
  * 
+ * This class is highly configurable, both in terms of using exposure CGs and filters.
+ * The *never_break filters should be used with care to avoid missing defects, especially
+ * the (transitive) method filters.
+ * NOTE - the default settings from jpf-core/jpf.properties include several
+ * java.util.concurrent* and java.lang.* fields/methods that can in fact contribute to
+ * concurrency defects, esp. in SUTs that explicitly use Thread/ThreadGroup objects, in
+ * which case they should be removed.
+ * 
+ * The *always_break field filter should only be used for white box SUT analysis if JPF
+ * fails to detect sharedness (e.g. because no exposure is used). This should only
+ * go into application property files
  */
 public abstract class GenericSharednessPolicy implements SharednessPolicy, Attributor {
   
