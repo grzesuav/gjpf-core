@@ -28,6 +28,7 @@ import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.OATHash;
 import gov.nasa.jpf.util.ObjectList;
 import gov.nasa.jpf.util.PrintUtils;
+import gov.nasa.jpf.vm.bytecode.InvokeInstruction;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -171,6 +172,21 @@ public abstract class StackFrame implements Cloneable {
 
   public boolean isNative() {
     return false;
+  }
+  
+  public StackFrame getCallerFrame (){
+    MethodInfo callee = mi;
+    for (StackFrame frame = getPrevious(); frame != null; frame = frame.getPrevious()){
+      Instruction insn = frame.getPC();
+      if (insn instanceof InvokeInstruction){
+        InvokeInstruction call = (InvokeInstruction)insn;
+        if (call.getInvokedMethod() == callee){
+          return frame;
+        }
+      }
+    }
+    
+    return null;
   }
   
   /**
@@ -831,6 +847,99 @@ public abstract class StackFrame implements Cloneable {
     return -1;
   }
   
+  // <2do> this is machine dependent since it uses the operand stack. Only here because there
+  // is no suitable place to factor this out between xStackFrame, xNativeStackFrame and xDirectCallStackFrame
+  // (another example of missing multiple inheritance)
+  // Needs to be overridden for Dalvik
+  
+  /**
+   * this retrieves the argument values from the caller, i.e. the previous stackframe 
+   * 
+   * references are returned as ElementInfos or null
+   * primitive values are returned as box objects (e.g. int -> Integer)
+   */
+  public Object[] getArgumentValues (ThreadInfo ti){
+    StackFrame callerFrame = getCallerFrame();
+    if (callerFrame != null){
+      return callerFrame.getCallArguments(ti);
+    } else {
+      // <2do> what about main(String[] args) ?
+    }
+    
+    return null;
+  }
+  
+  /**
+   * get the arguments of the executed call
+   * Note - this throws an exception if the StackFrame pc is not an InvokeInstruction
+   */
+  public Object[] getCallArguments (ThreadInfo ti){
+    if (pc == null || !(pc instanceof InvokeInstruction)){
+      throw new JPFException("stackframe not executing invoke: " + pc);
+    }
+    
+    InvokeInstruction call = (InvokeInstruction) pc;    
+    MethodInfo callee = call.getInvokedMethod();
+    int n = callee.getNumberOfArguments();
+    Object[] args = new Object[n];
+    byte[] at = callee.getArgumentTypes();
+
+    for (int i=n-1, off=0; i>=0; i--) {
+      switch (at[i]) {
+      case Types.T_ARRAY:
+      //case Types.T_OBJECT:
+      case Types.T_REFERENCE:
+        int ref = peek(off);
+        if (ref != MJIEnv.NULL) {
+          args[i] = ti.getElementInfo(ref);
+        } else {
+          args[i] = null;
+        }
+        off++;
+        break;
+
+      case Types.T_LONG:
+        args[i] = new Long(peekLong(off));
+        off+=2;
+        break;
+      case Types.T_DOUBLE:
+        args[i] = new Double(Types.longToDouble(peekLong(off)));
+        off+=2;
+        break;
+
+      case Types.T_BOOLEAN:
+        args[i] = new Boolean(peek(off) != 0);
+        off++;
+        break;
+      case Types.T_BYTE:
+        args[i] = new Byte((byte)peek(off));
+        off++;
+        break;
+      case Types.T_CHAR:
+        args[i] = new Character((char)peek(off));
+        off++;
+        break;
+      case Types.T_SHORT:
+        args[i] = new Short((short)peek(off));
+        off++;
+        break;
+      case Types.T_INT:
+        args[i] = new Integer((int)peek(off));
+        off++;
+        break;
+      case Types.T_FLOAT:
+        args[i] = new Float(Types.intToFloat(peek(off)));
+        off++;
+        break;
+      default:
+        // error, unknown argument type
+      }
+    }
+    
+    return args;
+  }
+
+  
   /**
    * return an array of all argument attrs, which in turn can be lists. If
    * you have to retrieve values, use the ObjectList APIs
@@ -891,6 +1000,23 @@ public abstract class StackFrame implements Cloneable {
     return false;
   }
 
+  public boolean hasArgumentObjectAttr (ThreadInfo ti, MethodInfo miCallee, Class<?> type){
+    int nArgSlots = miCallee.getArgumentsSize();
+    for (int i=0; i<nArgSlots; i++){
+      if (isOperandRef(i)){
+        int objRef = peek(i);
+        if (objRef != MJIEnv.NULL){
+          ElementInfo ei = ti.getElementInfo(objRef);
+          if (ei.getObjectAttr(type) != null) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+  
   
   // -- end attrs --
   

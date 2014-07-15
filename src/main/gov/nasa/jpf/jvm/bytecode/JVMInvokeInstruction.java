@@ -159,12 +159,12 @@ public abstract class JVMInvokeInstruction extends InvokeInstruction implements 
    * We use the caller frame to retrieve the arguments (instead of the locals of
    * the callee) since that works for both pre- and post-exec notification
    */
-  public Object[] getArgumentValues (ThreadInfo ti) {
+  public Object[] getArgumentValues (ThreadInfo ti) {    
     MethodInfo callee = getInvokedMethod(ti);
     StackFrame frame = getCallerFrame(ti, callee);
-
+    
     assert frame != null : "can't find caller stackframe for: " + this;
-    return getArgsFromCaller(ti, frame, callee);
+    return frame.getCallArguments(ti);
   }
 
   public Object[] getArgumentAttrs (ThreadInfo ti) {
@@ -184,7 +184,7 @@ public abstract class JVMInvokeInstruction extends InvokeInstruction implements 
     MethodInfo callee = getInvokedMethod(ti);
     StackFrame frame = getCallerFrame(ti, callee);
 
-    assert frame != null : "can't find caller stackframe for: " + this;
+    assert frame != null : "no caller stackframe for: " + this;
     return frame.hasArgumentAttr(callee,type);
   }
 
@@ -192,87 +192,12 @@ public abstract class JVMInvokeInstruction extends InvokeInstruction implements 
    * do we have a reference argument that has an object attribute?
    * less efficient, but still without object creation
    */
-  public boolean hasAttrRefArgument (ThreadInfo ti, Class<?> type){
+  public boolean hasArgumentObjectAttr (ThreadInfo ti, Class<?> type){
     MethodInfo callee = getInvokedMethod(ti);
     StackFrame frame = getCallerFrame(ti, callee);
 
-    int nArgSlots = callee.getArgumentsSize();
-    for (int i=0; i<nArgSlots; i++){
-      if (frame.isOperandRef(i)){
-        ElementInfo ei = ti.getElementInfo(frame.peek(i));
-        if (ei != null){
-          if (ei.getObjectAttr(type) != null){
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  }
-
-
-  // we get this from the caller because this works both for pre- and post-exec
-  // notifications, whereas retrieval from the callee frame of course only works
-  // post-exec
-  Object[] getArgsFromCaller (ThreadInfo ti, StackFrame frame, MethodInfo callee){
-    int n = callee.getNumberOfArguments();
-    Object[] args = new Object[n];
-    byte[] at = callee.getArgumentTypes();
-
-    for (int i=n-1, off=0; i>=0; i--) {
-      switch (at[i]) {
-      case Types.T_ARRAY:
-      //case Types.T_OBJECT:
-      case Types.T_REFERENCE:
-        int ref = frame.peek(off);
-        if (ref != MJIEnv.NULL) {
-          args[i] = ti.getElementInfo(ref);
-        } else {
-          args[i] = null;
-        }
-        off++;
-        break;
-
-      case Types.T_LONG:
-        args[i] = new Long(frame.peekLong(off));
-        off+=2;
-        break;
-      case Types.T_DOUBLE:
-        args[i] = new Double(Types.longToDouble(frame.peekLong(off)));
-        off+=2;
-        break;
-
-      case Types.T_BOOLEAN:
-        args[i] = new Boolean(frame.peek(off) != 0);
-        off++;
-        break;
-      case Types.T_BYTE:
-        args[i] = new Byte((byte)frame.peek(off));
-        off++;
-        break;
-      case Types.T_CHAR:
-        args[i] = new Character((char)frame.peek(off));
-        off++;
-        break;
-      case Types.T_SHORT:
-        args[i] = new Short((short)frame.peek(off));
-        off++;
-        break;
-      case Types.T_INT:
-        args[i] = new Integer((int)frame.peek(off));
-        off++;
-        break;
-      case Types.T_FLOAT:
-        args[i] = new Float(Types.intToFloat(frame.peek(off)));
-        off++;
-        break;
-      default:
-        // error, unknown argument type
-      }
-    }
-
-    return args;
+    assert frame != null : "no caller stackframe for: " + this;
+    return frame.hasArgumentObjectAttr(ti,callee,type);
   }
 
   /**

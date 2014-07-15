@@ -48,10 +48,12 @@ public abstract class ArrayStoreInstruction extends JVMArrayElementInstruction i
       }
     
       //--- shared access CG
-      eiArray = ti.checkSharedArrayAccess( this, eiArray, idx);
-      if (ti.hasNextChoiceGenerator()) {
-        return this;
-      }      
+      if (ti.isArraySharednessRelevant(this, eiArray)){
+        eiArray = ti.checkSharedArrayAccess(this, eiArray, idx);
+        if (ti.hasNextChoiceGenerator()) {
+          return this;
+        }
+      }
     }
     
     try {
