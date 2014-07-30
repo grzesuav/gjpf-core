@@ -99,10 +99,9 @@ public class DistributedSchedulerFactory extends DefaultSchedulerFactory {
     ThreadList tl = vm.getThreadList();
     
     if (tl.hasAnyMatching(vm.getAlivePredicate())) {
-      int liveUserCount = tl.getMatchingCount(getLiveUserAppThreads(terminateThread));
-      int runnableSystemCount = tl.getMatchingCount(getRunnableSystemAppThreads(terminateThread));
+      int runnable = tl.getMatchingCount(((MultiProcessVM)vm).getAppTimedoutRunnablePredicate());
       
-      if(liveUserCount==0 && runnableSystemCount==0) {
+      if(runnable==0) {
         return new MultiProcessThreadChoice( THREAD_TERMINATE, super.getRunnablesWithout(terminateThread), true);
       } else {
         return new ThreadChoiceFromSet( THREAD_TERMINATE, getRunnablesWithout(terminateThread), true);
