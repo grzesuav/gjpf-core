@@ -232,6 +232,17 @@ public class FinalizerThreadInfo extends ThreadInfo {
     lock.notifies(vm.getSystemState(), this, false);
   }
   
+  // It returns true if the finalizer thread is waiting and do not have any object to
+  // process
+  protected boolean isIdle() {
+    if(this.isWaiting()) {
+      if(this.lockRef == vm.getElementInfo(objRef).getReferenceField("semaphore")) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
   @Override
   public boolean isSystemThread() {
     return true;
