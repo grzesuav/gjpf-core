@@ -23,6 +23,7 @@ import org.junit.Test;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.test.TestJPF;
+import gov.nasa.jpf.util.test.TestMultiProcessJPF;
 import gov.nasa.jpf.vm.ThreadInfo;
 
 /**
@@ -75,6 +76,13 @@ public class FinalizerThreadTest extends TestJPF {
   public void testFinalizerThreadRunning () {
     if (verifyNoPropertyViolation(JPF_ARGS)){
       Finalize.createFinalize();
+    }
+  }
+  
+  // This is to make sure that an idle finalizer does not cause a deadlock in single-process apps
+  @Test
+  public void testIdleFinalizerThread () {
+    if (verifyNoPropertyViolation("+vm.process_finalizers=true")){
     }
   }
 }

@@ -49,6 +49,10 @@ public class SingleProcessVM extends VM {
     
     appCtx = createApplicationContext();
     
+    initializePredicates();
+  }
+    
+  void initializePredicates() {
     // set predicates used to query from threadlist
     runnablePredicate = new Predicate<ThreadInfo>(){
       public boolean isTrue (ThreadInfo ti){
@@ -236,6 +240,7 @@ public class SingleProcessVM extends VM {
 
     ThreadInfo[] threads = getThreadList().getThreads();
 
+    boolean hasUserThreads = false;
     for (int i = 0; i < threads.length; i++) {
       ThreadInfo ti = threads[i];
       
@@ -246,13 +251,25 @@ public class SingleProcessVM extends VM {
         if (ti.isTimeoutRunnable()) { // willBeRunnable() ?
           return false;
         }
+        
+        if(!ti.isSystemThread()) {
+          hasUserThreads = true;
+        }
 
         // means it is not NEW or TERMINATED, i.e. live & blocked
         hasBlockedThreads = true;
       }
     }
 
-    return (hasNonDaemons && hasBlockedThreads);
+    boolean isDeadlock = hasNonDaemons && hasBlockedThreads;
+    
+    if(processFinalizers && isDeadlock && !hasUserThreads) {
+      // all threads are blocked, system threads. If the finalizer thread  
+      // is in-use, then this is a deadlocked state.
+      return (!getFinalizerThread().isIdle());
+    }
+    
+    return isDeadlock;
   }
   
   @Override
