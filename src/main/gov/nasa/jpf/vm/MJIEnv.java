@@ -1114,6 +1114,8 @@ public class MJIEnv {
         String clsName = getClassName(ref);
         if (clsName.equals("java.lang.String")) {
           arg[i] = getStringObject(ref);
+        } else if (clsName.equals("java.lang.Boolean")){
+          arg[i] = getBooleanObject(ref);
         } else if (clsName.equals("java.lang.Byte")) {
           arg[i] = getByteObject(ref);
         } else if (clsName.equals("java.lang.Char")) {

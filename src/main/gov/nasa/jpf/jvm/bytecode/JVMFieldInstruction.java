@@ -19,12 +19,14 @@
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.FieldInfo;
+import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.ElementInfo;
 
 /**
  * common type for all GET/PUT insns
  */
 public interface JVMFieldInstruction extends JVMInstruction {
-  
+
   FieldInfo getFieldInfo();
   
   long getLastValue();
@@ -32,4 +34,6 @@ public interface JVMFieldInstruction extends JVMInstruction {
   String getFieldName();
   
   boolean isReferenceField();
+
+  ElementInfo peekElementInfo (ThreadInfo ti);
 }
