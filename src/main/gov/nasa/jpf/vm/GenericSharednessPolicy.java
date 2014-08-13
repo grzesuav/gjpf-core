@@ -287,8 +287,6 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
       eiFieldOwner = updateFieldLockInfo(ti,eiFieldOwner,fi);
       if (!eiFieldOwner.isLockProtected(fi)){
         logger.info("shared CG accessing instance field ", fi);
-//ti.printStackTrace();
-//System.out.println("-------------------");
         createAndSetSharedFieldAccessCG(ti, eiFieldOwner);
       }
     }
@@ -316,8 +314,6 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
     if (isRelevantArrayAccess(ti,insn,eiArray,index)){
       // <2do> we should check lock protection for the whole array here
       logger.info("shared CG accessing array ", eiArray);
-//ti.printStackTrace();
-//System.out.println("-------------------");
       createAndSetSharedArrayAccessCG(ti, eiArray);
     }
     

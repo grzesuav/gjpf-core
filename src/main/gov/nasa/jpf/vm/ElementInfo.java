@@ -860,7 +860,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setBooleanValue( offset, newValue);
     } else {
-      throw new JPFException("not a boolean field: " + fi.getName());
+      throw new JPFException("not a boolean field: " + fi.getFullName());
     }
   }
 
@@ -871,7 +871,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setByteValue( offset, newValue);
     } else {
-      throw new JPFException("not a byte field: " + fi.getName());
+      throw new JPFException("not a byte field: " + fi.getFullName());
     }
   }
 
@@ -882,7 +882,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setCharValue( offset, newValue);
     } else {
-      throw new JPFException("not a char field: " + fi.getName());
+      throw new JPFException("not a char field: " + fi.getFullName());
     }
   }
 
@@ -893,7 +893,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setShortValue( offset, newValue);
     } else {
-      throw new JPFException("not a short field: " + fi.getName());
+      throw new JPFException("not a short field: " + fi.getFullName());
     }
   }
 
@@ -904,7 +904,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setIntValue( offset, newValue);
     } else {
-      throw new JPFException("not an int field: " + fi.getName());
+      throw new JPFException("not an int field: " + fi.getFullName());
     }
   }
 
@@ -915,7 +915,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setLongValue( offset, newValue);
     } else {
-      throw new JPFException("not a long field: " + fi.getName());
+      throw new JPFException("not a long field: " + fi.getFullName());
     }
   }
 
@@ -926,7 +926,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setFloatValue( offset, newValue);
     } else {
-      throw new JPFException("not a float field: " + fi.getName());
+      throw new JPFException("not a float field: " + fi.getFullName());
     }
   }
 
@@ -937,7 +937,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setDoubleValue( offset, newValue);
     } else {
-      throw new JPFException("not a double field: " + fi.getName());
+      throw new JPFException("not a double field: " + fi.getFullName());
     }
   }
 
@@ -948,7 +948,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setReferenceValue( offset, newValue);
     } else {
-      throw new JPFException("not a reference field: " + fi.getName());
+      throw new JPFException("not a reference field: " + fi.getFullName());
     }
   }
 
@@ -959,7 +959,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setIntValue( offset, newValue);
     } else {
-      throw new JPFException("not a 1 slot field: " + fi.getName());
+      throw new JPFException("not a 1 slot field: " + fi.getFullName());
     }
   }
 
@@ -970,7 +970,7 @@ public abstract class ElementInfo implements Cloneable {
       int offset = fi.getStorageOffset();
       fields.setLongValue( offset, newValue);
     } else {
-      throw new JPFException("not a 2 slot field: " + fi.getName());
+      throw new JPFException("not a 2 slot field: " + fi.getFullName());
     }
   }
 

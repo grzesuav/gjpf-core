@@ -1989,7 +1989,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       sei = registerClass(ti);
     }
     
-    if (sei.getStatus() == UNINITIALIZED){
+    //if (sei.getStatus() == UNINITIALIZED){
+    if (sei.getStatus() != INITIALIZED){
       if (initializeClass(ti)) {
         // there are new <clinit> frames on the stack
         return true;

@@ -50,8 +50,10 @@ public class INVOKECLINIT extends INVOKESTATIC {
     MethodInfo callee = getInvokedMethod(ti);
     ClassInfo ci = callee.getClassInfo();
     ElementInfo ei = ci.getModifiableClassObject();
-
+    
     if (!ti.isFirstStepInsn()) {
+      ti.updateSharedness(ci.getStaticElementInfo());
+      
       // if we can't acquire the lock, it means somebody else is initializing concurrently
       if (!ei.canLock(ti)) {
         //ei = ei.getInstanceWithUpdatedSharedness(ti);
