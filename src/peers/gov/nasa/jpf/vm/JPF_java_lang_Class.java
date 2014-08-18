@@ -75,7 +75,7 @@ public class JPF_java_lang_Class extends NativePeer {
     ElementInfo sei = env.getStaticElementInfo(robj);
     ClassInfo   ci = sei.getClassInfo();
     ClassInfo   ciOther = env.getClassInfo(r1);
-    return (ciOther.isInstanceOf(ci.getName()));
+    return (ciOther.isInstanceOf(ci));
   }
 
   @MJI
@@ -93,7 +93,7 @@ public class JPF_java_lang_Class extends NativePeer {
     ElementInfo sei2 = env.getStaticElementInfo(r1);
     ClassInfo   ci2 = sei2.getClassInfo();
 
-    return ci2.isInstanceOf( ci1.getName());
+    return ci2.isInstanceOf( ci1);
   }
   
   @MJI

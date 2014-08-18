@@ -204,7 +204,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected Set<ClassInfo> interfaces = new HashSet<ClassInfo>();
   
   /** cache of all interfaceNames (parent interfaceNames and interface parents) - lazy eval */
-  protected Set<String> allInterfaces;
+  protected Set<ClassInfo> allInterfaces;
   
   /** Name of the package. */
   protected String packageName;
@@ -1090,16 +1090,19 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     while (c != null) {
       fi = c.getDeclaredStaticField(fName);
-      if (fi != null) return fi;
+      if (fi != null) {
+        return fi;
+      }
       c = c.superClass;
     }
 
     //interfaceNames can have static fields too
     // <2do> why would that not be already resolved here ?
-    for (String interfaceName : getAllInterfaces()) {
-      ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(interfaceName);
-        fi = ci.getDeclaredStaticField(fName);
-        if (fi != null) return fi;
+    for (ClassInfo ci : getAllInterfaces()) {
+      fi = ci.getDeclaredStaticField(fName);
+      if (fi != null) {
+        return fi;
+      }
     }
 
     return null;
@@ -1428,24 +1431,27 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * or interface specified.
    */
   public boolean isInstanceOf (String cname) {
-    if (isPrimitive()) { // no inheritance for builtin types
+    if (isPrimitive()) {
       return Types.getJNITypeCode(name).equals(cname);
-
     } else {
       cname = Types.getClassNameFromTypeName(cname);
-
-      for (ClassInfo c = this; c != null; c = c.superClass) {
-        if (c.name.equals(cname)) {
-          return true;
-        }
-      }
-
-      return getAllInterfaces().contains(cname);
+      ClassInfo ci = this.classLoader.getResolvedClassInfo(cname);
+      return isInstanceOf(ci);
     }
   }
 
   public boolean isInstanceOf (ClassInfo ci) {
-    return isInstanceOf(ci.name);
+    if (isPrimitive()) { // no inheritance for builtin types
+      return (this==ci);
+    } else {
+      for (ClassInfo c = this; c != null; c = c.superClass) {
+        if (c==ci) {
+          return true;
+        }
+      }
+
+      return getAllInterfaces().contains(ci);
+    }
   }
 
   public boolean isInnerClassOf (String enclosingName){
@@ -1507,14 +1513,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * @param set a Set to which the interface names (String) are added
    * @param ifcs class to find interfaceNames for.
    */
-  void loadInterfaceRec (Set<String> set, String[] interfaces) throws ClassInfoException {
+  void loadInterfaceRec (Set<ClassInfo> set, String[] interfaces) throws ClassInfoException {
     if (interfaces != null) {
       for (String iname : interfaces) {
 
         ClassInfo ci = classLoader.getResolvedClassInfo(iname);
 
         if (set != null){
-          set.add(iname);
+          set.add(ci);
         }
 
         loadInterfaceRec(set, ci.interfaceNames);
@@ -1646,9 +1652,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    * get names of all interfaceNames (transitive, idx.e. incl. bases and super-interfaceNames)
    * @return a Set of String interface names
    */
-  public Set<String> getAllInterfaces () {
+  public Set<ClassInfo> getAllInterfaces () {
     if (allInterfaces == null) {
-      HashSet<String> set = new HashSet<String>();
+      HashSet<ClassInfo> set = new HashSet<ClassInfo>();
 
       for (ClassInfo ci=this; ci != null; ci=ci.superClass) {
         loadInterfaceRec(set, ci.interfaceNames);
@@ -1671,16 +1677,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return interfaces;
   }
 
-  /**
-   * not very efficient, but chances are we cache the allInterfaces, and then
-   * repetitive use would be faster
-   */
   public Set<ClassInfo> getAllInterfaceClassInfos() {
-    Set<ClassInfo> set = new HashSet<ClassInfo>();
-    for (String ifcName : getAllInterfaces()) {
-      set.add( classLoader.getResolvedClassInfo(ifcName));
-    }
-    return set;
+    return getAllInterfaces();
   }
 
   
