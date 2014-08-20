@@ -20,6 +20,7 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.SystemAttribute;
+import gov.nasa.jpf.util.IntTable;
 
 /**
  * auxiliary class that captures the main entry and classloader context
@@ -37,6 +38,7 @@ public class ApplicationContext implements SystemAttribute {
   MethodInfo miEntry;
   
   FinalizerThreadInfo finalizerThread;
+  IntTable<String> internStrings;
   
   ApplicationContext (int id, String mainClassName, String mainEntry, String[] args, String host, SystemClassLoaderInfo sysCl){
     this.id = id;
@@ -45,6 +47,7 @@ public class ApplicationContext implements SystemAttribute {
     this.args = args;
     this.host = host;
     this.sysCl = sysCl;
+    this.internStrings = new IntTable<String>(8);
   }
   
   void setEntryMethod (MethodInfo miEntry){
@@ -81,6 +84,10 @@ public class ApplicationContext implements SystemAttribute {
   
   public void setFinalizerThread(ThreadInfo ti) {
     finalizerThread = (FinalizerThreadInfo)ti;
+  }
+  
+  public IntTable<String> getInternStrings() {
+    return internStrings;
   }
   
   public String toString(){

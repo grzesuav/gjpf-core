@@ -1440,6 +1440,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
+  /**
+   * Returns true if the given class is an instance of the class
+   * or interface specified.
+   */
   public boolean isInstanceOf (ClassInfo ci) {
     if (isPrimitive()) { // no inheritance for builtin types
       return (this==ci);

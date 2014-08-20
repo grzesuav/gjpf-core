@@ -18,9 +18,13 @@
 //
 package gov.nasa.jpf.vm;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
+import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
@@ -298,6 +302,11 @@ public class SingleProcessVM extends VM {
     }
   }
   
+  public Map<Integer,IntTable<String>> getInitialInternStringsMap() {
+    Map<Integer,IntTable<String>> interns = new HashMap<Integer,IntTable<String>>();
+    interns.put(0, appCtx.getInternStrings());
+    return interns;
+  }
   
   //---------- Predicates used to query threads from ThreadList ---------- //
   

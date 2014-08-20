@@ -27,6 +27,7 @@ import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
 import gov.nasa.jpf.jvm.ClassFile;
 import gov.nasa.jpf.vm.FinalizerThreadInfo;
 import gov.nasa.jpf.search.Search;
+import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Predicate;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -1988,6 +1990,9 @@ public abstract class VM {
   
   public abstract void terminateProcess (ThreadInfo ti);
   
+  // this is invoked by the heap (see GenericHeap.newInternString()) upon creating
+  // the very first intern string
+  public abstract Map<Integer,IntTable<String>> getInitialInternStringsMap();
   
   // ---------- Predicates used to query threads from ThreadList ---------- //
   
