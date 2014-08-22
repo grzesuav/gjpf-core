@@ -18,11 +18,13 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.util.InstructionState;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.SharednessPolicy;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -65,60 +67,45 @@ public class PUTFIELD extends JVMInstanceFieldInstruction implements WriteInstru
     }
   }
 
-    
   @Override
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
     int objRef = frame.peek( size);
     lastThis = objRef;
     
-    if (!ti.isFirstStepInsn()) { // top half
-      // check for obvious exceptions
-      if (objRef == MJIEnv.NULL) {
-        return ti.createAndThrowException("java.lang.NullPointerException",
-                                   "referencing field '" + fname + "' on null object");
-      }
-      
-      ElementInfo eiFieldOwner = ti.getModifiableElementInfo(objRef);
-      FieldInfo fi = getFieldInfo();
-      if (fi == null) {
-        return ti.createAndThrowException("java.lang.NoSuchFieldError", 
-            "no field " + fname + " in " + eiFieldOwner);
-      }
+    if (objRef == MJIEnv.NULL) {
+      return ti.createAndThrowException("java.lang.NullPointerException", "referencing field '" + fname + "' on null object");
+    }
 
-      if (ti.isInstanceSharednessRelevant(this, eiFieldOwner, fi)) {
-
-        // check for non-lock protected shared object access, breaking before the field is written
-        eiFieldOwner = ti.checkSharedInstanceFieldAccess(this, eiFieldOwner, fi);
-        if (ti.hasNextChoiceGenerator()) {
-          return this;
+    ElementInfo eiFieldOwner = ti.getModifiableElementInfo(objRef);
+    FieldInfo fieldInfo = getFieldInfo();
+    if (fieldInfo == null) {
+      return ti.createAndThrowException("java.lang.NoSuchFieldError", "no field " + fname + " in " + eiFieldOwner);
+    }
+    
+    //--- check scheduling point due to shared object access
+    Scheduler scheduler = ti.getScheduler();
+    if (scheduler.canHaveSharedObjectCG(ti,this,eiFieldOwner,fieldInfo)){
+      eiFieldOwner = scheduler.updateObjectSharedness( ti, eiFieldOwner, fi);
+      if (scheduler.setsSharedObjectCG( ti, this, eiFieldOwner, fieldInfo)){
+        return this; // re-execute
+      }
+    }
+    
+    // this might be re-executed
+    if (frame.getAndResetFrameAttr(InstructionState.class) == null){
+      lastValue = PutHelper.setField(ti, frame, eiFieldOwner, fieldInfo);
+    }
+    
+    //--- check scheduling point due to exposure through shared object
+    if (isReferenceField()){
+      int refValue = frame.peek();
+      if (refValue != MJIEnv.NULL){
+        ElementInfo eiExposed = ti.getElementInfo(refValue);
+        if (scheduler.setsSharedObjectExposureCG(ti, this, eiFieldOwner, fi, eiExposed)){
+          frame.addFrameAttr( InstructionState.getProcessedState());
+          return this; // re-execute AFTER assignment
         }
-
-        // if this is an object exposure (non-shared object gets stored in field of
-        // shared object and hence /could/ become shared itself), we have to change the
-        // field value /before/ we do an exposure break. However, we should only change it
-        // once, if we re-write during re-execution we change program behavior in
-        // case there is a race for this field, leading to false positives etc.
-        if (isReferenceField()) {
-          int refValue = frame.peek();
-          ti.checkInstanceFieldObjectExposure(this, eiFieldOwner, fi, refValue);
-          if (ti.hasNextChoiceGenerator()) {
-            lastValue = PutHelper.setReferenceField(ti, frame, eiFieldOwner, fi);
-            ti.markExposure(frame); // make sure we don't overwrite external changes in bottom half
-            return this;
-          }
-        }
-      }
-      
-      // regular case - non shared or lock protected field, no re-execution
-      lastValue = PutHelper.setField( ti, frame, eiFieldOwner, fi);
-      
-    } else { // bottom-half - re-execution
-      // check if the value was already set in the top half
-      // NOTE - we can also get here because of a non-exposure CG (thread termination, interrupt etc.)
-      if (!ti.checkAndResetExposureMark(frame)){
-        ElementInfo eiFieldOwner = ti.getModifiableElementInfo(objRef);
-        lastValue = PutHelper.setField(ti, frame, eiFieldOwner, fi);
       }
     }
     

@@ -177,7 +177,18 @@ public class ThreadInfo extends InfoObject
   //--- the transient (un(re)stored) attributes
   static final int ATTR_DATA_CHANGED       = 0x10000;
   static final int ATTR_STACK_CHANGED      = 0x20000;
-  static final int ATTR_ATTRIBUTE_CHANGED  = 0x80000;
+  
+ // allow CG in next re-exec
+  static final int ATTR_ENABLE_EMPTY_TRANSITION = 0x4000;
+  
+  // don't call insn.execute()
+  static final int ATTR_SKIP_INSN_EXEC      = 0x100000;
+  
+  // don't store insn execution as transition step
+  static final int ATTR_SKIP_INSN_LOG       = 0x200000;
+  
+  
+  static final int ATTR_ATTRIBUTE_CHANGED  = 0x80000000;
 
   //--- state stored/restored attributes  
   // this is a typical "orthogonal" thread state we have to remember, but
@@ -194,15 +205,9 @@ public class ThreadInfo extends InfoObject
   /** counter for executed instructions along current transition */
   protected int executedInstructions;
 
-  /** shall we skip the next insn */
-  protected boolean skipInstruction;
-
   /** a listener or peer request for throwing an exception into the SUT, to be processed in executeInstruction */
   protected SUTExceptionRequest pendingSUTExceptionRequest;
   
-  /** store the last executed insn in the path */
-  protected boolean logInstruction;
-
   /** the last returned direct call frame */
   protected DirectCallStackFrame returnedDirectCall;
 
@@ -396,6 +401,8 @@ public class ThreadInfo extends InfoObject
    
     threadData.name = vm.getElementInfo(nameRef).asString();
     
+    vm.getScheduler().initializeThreadSync(parent, this);
+    
     // note the thread is not yet in the ThreadList, we have to register from the caller    
   }
   
@@ -475,6 +482,23 @@ public class ThreadInfo extends InfoObject
   }
 
   /**
+   * is *this* transition allowed to be empty (i.e. allowed to set a CG
+   * during re-execution of the current insn)
+   * reset before each instruction.execute()
+   */
+  public boolean isEmptyTransitionEnabled (){
+    return (attributes & ATTR_ENABLE_EMPTY_TRANSITION) != 0;
+  }
+  
+  public void enableEmptyTransition (){
+    attributes |= ATTR_ENABLE_EMPTY_TRANSITION;
+  }
+  
+  public void resetEmptyTransition(){
+    attributes &= ~ATTR_ENABLE_EMPTY_TRANSITION;
+  }
+  
+  /**
    * answers if is this the first instruction within the current transition.
    * This is mostly used to tell the top- from the bottom-half of a native method
    * or Instruction.enter(), so that only one (the top half) registers the CG
@@ -489,7 +513,7 @@ public class ThreadInfo extends InfoObject
    * which is:
    *   nextPc = null
    *   notify executeInstruction
-   *   nextPc = insn.enter
+   *   nextPc = insn.execute
    *   increment executedInstructions
    *   notify instructionExecuted
    */
@@ -497,20 +521,20 @@ public class ThreadInfo extends InfoObject
     int nInsn = executedInstructions;
     
     if (nInsn == 0) {
-      // that would be a break in enter() or instructionExecuted()
+      // that would be a break in execute() or instructionExecuted()
       return true;
       
     } else if (nInsn == 1 && nextPc != null) {
-      // that is for setting the CG in executeInsn or enter, and then testing in
+      // that is for setting the CG in executeInsn and then testing in
       // instructionExecuted. Note that nextPc is reset before pre-exec notification
-      // and hence should only be non-null from insn.enter() up to the next
+      // and hence should only be non-null from insn.execute() up to the next
       // ThreadInfo.executeInstruction()
       return true;
     }
     
     return false;
   }
-
+  
   /**
    * get the number of instructions executed in the current transition. This
    * gets incremented after calling Instruction.enter(), i.e. before
@@ -809,6 +833,14 @@ public class ThreadInfo extends InfoObject
     return (threadData.state == State.TERMINATED);
   }
 
+  public boolean isAtomic (){
+    return vm.getSystemState().isAtomic();
+  }
+  
+  public void setBlockedInAtomicSection (){
+    vm.getSystemState().setBlockedInAtomicSection();
+  }
+  
   MethodInfo getExitMethod() {
     MethodInfo mi = getClassInfo().getMethod("exit()V", true);
     return mi;
@@ -884,8 +916,8 @@ public class ThreadInfo extends InfoObject
     return list;
   }
 
-  public SharednessPolicy getSharednessPolicy(){
-    return vm.getSharednessPolicy();
+  public Scheduler getScheduler(){
+    return vm.getScheduler();
   }
   
   public int getStackDepth() {
@@ -1164,6 +1196,10 @@ public class ThreadInfo extends InfoObject
     return lockedObjectReferences;
   }
 
+  public boolean isLockOwner (ElementInfo ei){
+    return ei.getLockingThread() == this;
+  }
+  
   /**
    * returns the current method in the top stack frame, which is always a
    * bytecode method (executed by JPF)
@@ -1702,7 +1738,7 @@ public class ThreadInfo extends InfoObject
   public void requestSUTException (String exceptionClsName, String details){
     pendingSUTExceptionRequest = new SUTExceptionRequest( exceptionClsName, details);
     if (nextPc == null){ // this is pre-exec, skip the execute()
-      skipInstruction = true;
+      attributes |= ATTR_SKIP_INSN_EXEC;
     }
   }
   
@@ -1717,7 +1753,7 @@ public class ThreadInfo extends InfoObject
   
   /**
    * <2do> pcm - this is only valid for java.* and our own Throwables that don't
-   * need ctor execution since we only initialize the Throwable fields. This method
+   * need ctor execution since we only initializeSharednessPolicy the Throwable fields. This method
    * is here to avoid round trips in case of exceptions
    */
   int createException (ClassInfo ci, String details, int causeRef){
@@ -1734,10 +1770,8 @@ public class ThreadInfo extends InfoObject
       ci.registerClass(this);
     }
 
-    if (!ci.isInitialized()){
-      if (ci.initializeClass(this)) {
-        return getPC();
-      }
+    if (ci.initializeClass(this)) {
+      return getPC();
     }
 
     int objref = createException(ci,details, MJIEnv.NULL);
@@ -1778,6 +1812,14 @@ public class ThreadInfo extends InfoObject
   }
 
   /**
+   * can be used by instructions to break long transitions (preferably on 
+   * backjumps so that state matching could terminate the search)
+   */
+  public boolean maxTransitionLengthExceeded(){
+    return executedInstructions >= maxTransitionLength;
+  }
+  
+  /**
    * enter instructions until there is none left or somebody breaks
    * the transition (e.g. by registering a CG)
    * 
@@ -1804,22 +1846,23 @@ public class ThreadInfo extends InfoObject
       nextPc = executeInstruction();
       
       if (ss.breakTransition()) {
-        break;
-        
-      } else {
-        if (executedInstructions >= maxTransitionLength){ // try to preempt the current thread
-          if (pc.isBackJump() && (pc != nextPc) && (top != null && !top.isNative())) {
-            log.info("max transition length exceeded, breaking transition on ", nextPc);
-            reschedule("maxTransitionLength");
-            break;
+        if (executedInstructions == 0){ // a CG from a re-executed insn
+          if (isEmptyTransitionEnabled()){ // treat as a new state if empty transitions are enabled
+            ss.setForced(true);
           }
         }
+        break;
         
+      } else {        
         pc = nextPc;
       }
     }
   }
 
+  protected void resetTransientAttributes(){
+    attributes &= ~(ATTR_SKIP_INSN_EXEC | ATTR_SKIP_INSN_LOG | ATTR_ENABLE_EMPTY_TRANSITION);
+  }
+  
   /**
    * Execute next instruction.
    */
@@ -1827,13 +1870,9 @@ public class ThreadInfo extends InfoObject
     Instruction pc = getPC();
     SystemState ss = vm.getSystemState();
 
-    // the default, might be changed by the insn depending on if it's the first
-    // time we exec the insn, and whether it does its magic in the top (before break)
-    // or bottom half (re-exec after break) of the exec
-    logInstruction = true;
-    skipInstruction = (pendingSUTExceptionRequest != null);
+    resetTransientAttributes();
     nextPc = null;
-
+    
     // note that we don't reset pendingSUTExceptionRequest since it could be set outside executeInstruction()
     
     if (log.isLoggable(Level.FINER)) {
@@ -1844,8 +1883,7 @@ public class ThreadInfo extends InfoObject
     // on-the-fly instrumentation or even replace the instruction alltogether
     vm.notifyExecuteInstruction(this, pc);
 
-    if (!skipInstruction) {
-        // enter the next bytecode
+    if ((pendingSUTExceptionRequest == null) && ((attributes & ATTR_SKIP_INSN_EXEC) == 0)){
         try {
           nextPc = pc.execute(this);
         } catch (ClassInfoException cie) {
@@ -1856,7 +1894,7 @@ public class ThreadInfo extends InfoObject
     // we also count the skipped ones
     executedInstructions++;
     
-    if (logInstruction) {
+    if ((attributes & ATTR_SKIP_INSN_LOG) == 0) {
       ss.recordExecutionStep(pc);
     }
 
@@ -1936,13 +1974,13 @@ public class ThreadInfo extends InfoObject
   public boolean willReExecuteInstruction() {
     return (getPC() == nextPc);
   }
-
+  
   /**
    * skip the next bytecode. To be used by listeners to on-the-fly replace
    * instructions
    */
   public void skipInstruction (Instruction nextInsn) {
-    skipInstruction = true;
+    attributes |= ATTR_SKIP_INSN_EXEC;
     
     //assert nextInsn != null;
     nextPc = nextInsn;
@@ -1959,11 +1997,11 @@ public class ThreadInfo extends InfoObject
   }
 
   public boolean isInstructionSkipped() {
-    return skipInstruction;
+    return (attributes & ATTR_SKIP_INSN_EXEC) != 0;
   }
 
   public void skipInstructionLogging () {
-    logInstruction = false;
+    attributes |= ATTR_SKIP_INSN_LOG;
   }
 
   /**
@@ -1976,9 +2014,9 @@ public class ThreadInfo extends InfoObject
    */
   public boolean setNextPC (Instruction insn) {
     if (nextPc == null){
-      // this is pre-execution, if we don't skip the next insn.execute() is going
+      // this is pre-execution, if we don't skip then the next insn.execute() is going
       // to override what we set here
-      skipInstruction = true;
+      attributes |= ATTR_SKIP_INSN_EXEC;
       nextPc = insn;
       return true;
       
@@ -2088,92 +2126,6 @@ public class ThreadInfo extends InfoObject
     Heap heap = vm.getHeap();
     return heap.get(objRef);
   }
-
-  
-  //--- interface towards SharednessPolicy object
-  
-  protected void initializeSharedness (DynamicElementInfo ei){
-    vm.getSharednessPolicy().initializeSharedness(this, ei);
-  }
-
-  protected void initializeSharedness (StaticElementInfo ei){
-    vm.getSharednessPolicy().initializeSharedness(this, ei);
-  }
-
-  public ElementInfo updateSharedness (ElementInfo ei){
-    return vm.getSharednessPolicy().updateSharedness(this, ei);
-  }
-  
-  public boolean isInstanceSharednessRelevant (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
-    return vm.getSharednessPolicy().isInstanceSharednessRelevant(this, insn, eiFieldOwner, fi);
-  }
-
-  public boolean isStaticSharednessRelevant (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
-    return vm.getSharednessPolicy().isStaticSharednessRelevant(this, insn, eiFieldOwner, fi);
-  }
-
-  public boolean isArraySharednessRelevant (Instruction insn, ElementInfo eiArray){
-    return vm.getSharednessPolicy().isArraySharednessRelevant(this, insn, eiArray);
-  }
-  
-  public ElementInfo checkSharedInstanceFieldAccess (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
-    return vm.getSharednessPolicy().checkSharedInstanceFieldAccess(this, insn, eiFieldOwner, fi);
-  }
-
-  public ElementInfo checkSharedStaticFieldAccess (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
-    return vm.getSharednessPolicy().checkSharedStaticFieldAccess(this, insn, eiFieldOwner, fi);
-  }
-
-  public ElementInfo checkSharedArrayAccess (Instruction insn, ElementInfo eiArray, int idx){
-    return vm.getSharednessPolicy().checkSharedArrayAccess(this, insn, eiArray, idx);
-  }
-  
-  public void checkInstanceFieldObjectExposure (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue){
-    vm.getSharednessPolicy().checkInstanceFieldObjectExposure(this, insn, eiFieldOwner, fi, refValue);
-  }
-
-  public void checkStaticFieldObjectExposure (Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue){
-    vm.getSharednessPolicy().checkStaticFieldObjectExposure(this, insn, eiFieldOwner, fi, refValue);
-  }
-
-  public void checkArrayObjectExposure (Instruction insn, ElementInfo eiArray, int idx, int refValue){
-    vm.getSharednessPolicy().checkArrayObjectExposure(this, insn, eiArray, idx, refValue);
-  }
-  
-  public ElementInfo getElementInfoWithUpdatedSharedness (int objRef){
-    Heap heap = vm.getHeap();
-    ElementInfo ei = heap.get(objRef);
-    return vm.getSharednessPolicy().updateSharedness(this, ei);
-  }
-  
-  // keeping track of exposure - this is a execution state of the current thread
-  // that is used to determine if semantic actions of put instruction have already
-  // been executed
-
-  private static class Exposure implements SystemAttribute {
-    static final Exposure singleton = new Exposure();
-  }
-  
-  /**
-   * NOTE - frame has to be modifiable 
-   */
-  public void markExposure (StackFrame frame){
-    frame.addFrameAttr(Exposure.singleton);
-  }
-  
-  /**
-   * NOTE - frame has to be modifiable 
-   */
-  public boolean checkAndResetExposureMark (StackFrame frame){
-    Object mark = frame.getFrameAttr(Exposure.class);
-    if (mark != null){
-      frame.removeFrameAttr(mark);
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   
   public ElementInfo getModifiableElementInfo (int ref) {
     Heap heap = vm.getHeap();
@@ -2202,11 +2154,21 @@ public class ThreadInfo extends InfoObject
     return ei;
   }
 
+  //--- convenience methods for call sites that don't have direct access to the VM
+  
+  public boolean setNextChoiceGenerator (ChoiceGenerator<?> cg){
+    return vm.setNextChoiceGenerator(cg);
+  }
   
   public boolean hasNextChoiceGenerator(){
     return vm.hasNextChoiceGenerator();
   }
 
+  public void checkNextChoiceGeneratorSet (String msg){
+    if (!vm.hasNextChoiceGenerator()){
+      throw new JPFException(msg);
+    }
+  }
   
   //--- call processing
   
@@ -2271,10 +2233,12 @@ public class ThreadInfo extends InfoObject
    */
   public boolean exit(){
     int objref = getThreadObjectRef();
-    ElementInfo ei = getModifiableElementInfo(objref);
+    ElementInfo ei = getModifiableElementInfo(objref); // we are going to modify it no matter what
     SystemState ss = vm.getSystemState();
-    ThreadList tl = vm.getThreadList();
+    Scheduler scheduler = getScheduler();
 
+    enableEmptyTransition();
+    
     // if this is the last non-daemon and there are only daemons left (which
     // would be killed by our termination) we have to give them a chance to
     // run BEFORE we terminate, to catch errors in those daemons we might have
@@ -2292,17 +2256,17 @@ public class ThreadInfo extends InfoObject
     // beware - this notifies all waiters for this thread (e.g. in a join())
     // hence it has to be able to acquire the lock
     if (!ei.canLock(this)) {
+      // if we can't acquire the lock, it means there needs to be another live thread,
+      // but it might not be runnable (deadlock) and we don't want to mask that error
+      
       // block first, so that we don't get this thread in the list of CGs
       ei.block(this);
-
-      // if we can't acquire the lock, it means there needs to be another thread alive,
-      // but it might not be runnable (deadlock) and we don't want to mask that error
-      ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createMonitorEnterCG(ei, this);
-      ss.setMandatoryNextChoiceGenerator(cg, "blocking thread termination without CG: ");
-
+      if (!scheduler.setsBlockedThreadCG(this, ei)){
+        throw new JPFException("blocking thread termination without transition break");            
+      }    
       return false; // come back once we can obtain the lock to notify our waiters
     }
-    
+      
     // we have to be able to acquire the group lock since we are going to remove
     // the thread from the group
     int grpRef = getThreadGroupRef();
@@ -2310,9 +2274,10 @@ public class ThreadInfo extends InfoObject
     if (eiGrp != null){
       if (!eiGrp.canLock(this)){
         eiGrp.block(this);
-        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createMonitorEnterCG(eiGrp, this);
-        ss.setMandatoryNextChoiceGenerator(cg, "blocking thread termination without CG: ");
-        return false; // come back once we can obtain the lock to notify our waiters
+        if (!scheduler.setsBlockedThreadCG(this, eiGrp)){
+          throw new JPFException("blocking thread termination on group without transition break");            
+        }    
+        return false; // come back once we can obtain the lock to update the group
       }
     }
 
@@ -2349,11 +2314,12 @@ public class ThreadInfo extends InfoObject
 
     // give the thread tracking policy a chance to remove this thread from
     // object/class thread sets
-    vm.getSharednessPolicy().cleanupThreadTermination(this);
+    scheduler.cleanupThreadTermination(this);
 
     if (vm.getThreadList().hasAnyMatchingOtherThan(this, getRunnableNonDaemonPredicate())) {
-      ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createThreadTerminateCG(this);
-      ss.setMandatoryNextChoiceGenerator(cg, "thread terminated without CG: ");
+      if (!scheduler.setsTerminationCG(this)){
+        throw new JPFException("thread termination without transition break");
+      }
     }
 
     popFrame(); // we need to do this *after* setting the CG (so that we still have a CG insn)
@@ -2437,7 +2403,7 @@ public class ThreadInfo extends InfoObject
    * VM is that we can't override in order to have specialized ThreadInfos, but there is no factory for them anyways
    */
   protected void createMainThreadObject (SystemClassLoaderInfo sysCl){
-    //--- now create & initialize all the related JPF objects
+    //--- now create & initializeSharednessPolicy all the related JPF objects
     Heap heap = getHeap();
 
     ClassInfo ciThread = sysCl.threadClassInfo;
@@ -2746,7 +2712,7 @@ public class ThreadInfo extends InfoObject
     }
   }
 
-  boolean haltOnThrow (String exceptionClassName){
+  protected boolean haltOnThrow (String exceptionClassName){
     if ((haltOnThrow != null) && (haltOnThrow.matchesAny(exceptionClassName))){
       return true;
     }
@@ -2754,13 +2720,13 @@ public class ThreadInfo extends InfoObject
     return false;
   }
 
-  Instruction throwStopException (){
-
+  protected Instruction throwStopException (){
     // <2do> maybe we should do a little sanity check first
     ElementInfo ei = getModifiableThreadObject();
 
     int xRef = ei.getReferenceField("stopException");
     ei.setReferenceField("stopException", MJIEnv.NULL);
+    attributes &= ~ATTR_SET_STOPPED;  // otherwise we would throw again if thread gets still executed
 
     Instruction insn = getPC();
     if (insn instanceof EXECUTENATIVE){
@@ -3166,10 +3132,8 @@ public class ThreadInfo extends InfoObject
    * of scheduling choices though
    * 
    */
-  public void reschedule (String reason){
-    SystemState ss = vm.getSystemState();
-    ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createBreakTransitionCG( reason, this);
-    ss.setMandatoryNextChoiceGenerator(cg, "rescheduling request without CG: ");
+  public boolean reschedule (String reason){
+    return getScheduler().setsRescheduleCG(this, reason);
   }
   
   /**
@@ -3177,17 +3141,17 @@ public class ThreadInfo extends InfoObject
    * without really adding choices. It only goes on with the same thread
    * (to avoid state explosion). Since we require a break, and there is no
    * choice (current thread is supposed to continue), there is no point 
-   * going through the SchedulerFactory
+   * going through the SyncPolicy
    *
    * if the current transition is already marked as ignored, this method does nothing
    */
-  public void breakTransition(String reason) {
+  public boolean breakTransition(String reason) {
     SystemState ss = vm.getSystemState();
 
     // no need to set a CG if this transition is already marked as ignored
     // (which will also break executeTransition)
     BreakGenerator cg = new BreakGenerator(reason, this, false);
-    ss.setNextChoiceGenerator(cg); // this breaks the transition
+    return ss.setNextChoiceGenerator(cg); // this breaks the transition
   }
 
   /**
@@ -3212,13 +3176,15 @@ public class ThreadInfo extends InfoObject
    * this only takes effect if the current transition is not already marked
    * as ignored
    */
-  public void breakTransition(boolean isTerminator) {
+  public boolean breakTransition(boolean isTerminator) {
     SystemState ss = vm.getSystemState();
 
     if (!ss.isIgnored()){
       BreakGenerator cg = new BreakGenerator( "breakTransition", this, isTerminator);
-      ss.setNextChoiceGenerator(cg); // this breaks the transition
+      return ss.setNextChoiceGenerator(cg); // this breaks the transition
     }
+    
+    return false;
   }
 
   public boolean hasOtherRunnables () {

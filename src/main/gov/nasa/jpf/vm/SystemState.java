@@ -20,13 +20,9 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.util.HashData;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 
 /**
@@ -223,9 +219,6 @@ public class SystemState {
   int atomicLevel;
   int entryAtomicLevel;
 
-  /** the policy object used to create scheduling related ChoiceGenerators */
-  SchedulerFactory schedulerFactory;
-
   /** do we want executed insns to be recorded */
   boolean recordSteps;
 
@@ -237,10 +230,6 @@ public class SystemState {
     id = StateSet.UNKNOWN_ID;
 
     Class<?>[] argTypes = { Config.class, VM.class, SystemState.class };
-    Object[] args = { config, vm, this };
-    schedulerFactory = config.getEssentialInstance("vm.scheduler_factory.class",
-                                                    SchedulerFactory.class,
-                                                    argTypes, args);
 
     // we can't yet initialize the trail until we have the start thread
     
@@ -306,10 +295,6 @@ public class SystemState {
     return trail;
   }
 
-  public SchedulerFactory getSchedulerFactory () {
-    return schedulerFactory;
-  }
-
   public KernelState getKernelState() {
     return ks;
   }
@@ -348,6 +333,16 @@ public class SystemState {
     }
   }
 
+  public ChoiceGenerator<?> getLastChoiceGeneratorInThread (ThreadInfo ti){
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
+      if (cg.getThreadInfo() == ti){
+        return cg;
+      }
+    }
+    
+    return null;
+  }
+  
   public <T extends ChoiceGenerator<?>> T[] getChoiceGeneratorsOfType (Class<T> cgType) {
     if (curCg != null){
       return curCg.getAllOfType(cgType);

@@ -62,12 +62,11 @@ public class NEW extends NewInstruction implements JVMInstruction  {
       ci.registerClass(ti);
     }
 
-    // since this is a NEW, we also have to pushClinit
-    if (!ci.isInitialized()) {
+    // we might have to execute clinits
       if (ci.initializeClass(ti)) {
-        return ti.getPC();  // reexecute this instruction once we return from the clinits
+        // continue with the topframe and re-exec this insn once the clinits are done
+        return ti.getPC();
       }
-    }
 
     if (heap.isOutOfMemory()) { // simulate OutOfMemoryError
       return ti.createAndThrowException("java.lang.OutOfMemoryError",

@@ -77,7 +77,7 @@ public abstract class ObjectList {
   // there are no instances, this class is only a static API
   private ObjectList(){}
   
-  private static class Node {
+  private static class Node implements Cloneable {
     Object data;
     Node next;
 
@@ -99,6 +99,42 @@ public abstract class ObjectList {
       } else {
         return false;
       }
+    }
+    
+    protected Node clone(){
+      try {
+        return (Node)super.clone();
+      } catch (CloneNotSupportedException cnsx){
+        throw new RuntimeException("Node clone failed");
+      }
+    }
+    
+    // recursively clone up to the node with the specified data
+    public Node cloneWithReplacedData (Object oldData, Object newData){
+      Node newThis = clone();
+      
+      if (data.equals(oldData)){
+        newThis.data = newData;
+        
+      } else if (next != null) {
+        newThis.next = next.cloneWithReplacedData(oldData, newData);
+      }
+      
+      return newThis;
+    }
+    
+    public Node cloneWithRemovedData (Object oldData){
+      Node newThis = clone();
+      
+      if (next != null){
+        if (next.data.equals(oldData)){
+          newThis.next = next.next;
+        } else {
+          newThis.next = next.cloneWithRemovedData( oldData);
+        }
+      }
+      
+      return newThis;      
     }
   }
 
@@ -305,24 +341,18 @@ public abstract class ObjectList {
   }
   
   public static Object replace (Object head, Object oldData, Object newData){
-    
     if (oldData == null){
       return head;
     }
     if (newData == null){
-      return remove(head, oldData);
+      return remove(head, oldData); // no null data, remove oldData
     }
     
     if (head instanceof Node){
-      for (Node n = (Node)head; n != null; n = n.next){
-        if (oldData.equals(n.data)){
-          n.data = newData;
-        }
-      }
+      // <2do> perhaps we should first check if it is there
+      return ((Node)head).cloneWithReplacedData(oldData, newData);
       
-      return head;
-      
-    } else {
+    } else { // single object
       if (oldData.equals(head)){
         return newData;
       } else {
@@ -331,50 +361,32 @@ public abstract class ObjectList {
     }
   }
   
-  public static Object remove(Object head, Object data){
-    if (head == null){
-      return null;
+  public static Object remove (Object head, Object data){
+    if (head == null || data == null){
+      return head;  
+    }
+
+    if (head instanceof Node) {
+      Node nh = (Node) head;
       
-    } else if (data == null){
-      return head;
-      
-    } else {
-      if (head instanceof Node){
-        Node nh = (Node)head;
-        
-        if (data.equals(nh.data)){
-          nh = nh.next;
-          
-        } else {
-          Node n = nh;
-          while (true) {
-            Node nn = n.next;
-            if (nn != null){
-              if (nn.data == data){
-                n.next = nn.next;
-                break;
-              } else {
-                n = nn;
-              }
-              
-            } else { // end reached
-              break;
-            }
-          }
-        }
-        
-        if (nh.next == null){ // reduce list
+      Node nhn = nh.next;
+      if (nhn != null && nhn.next == null) { // 2 node case - reduce if found
+        if (nh.data.equals(data)) {
+          return nhn.data;
+        } else if (nhn.data.equals(data)) {
           return nh.data;
-        } else {
-          return nh;
-        }
-        
-      } else { // head not a node -> single value
-        if (data.equals(head)){
-          return null;
-        } else {
+        } else { // not there
           return head;
         }
+      }
+      
+      return nh.cloneWithRemovedData(data);
+      
+    } else { // single object
+      if (head.equals(data)){
+        return null;
+      } else {
+        return head;
       }
     }
   }
@@ -610,7 +622,7 @@ public abstract class ObjectList {
       return new Node( cloneData(n.data), cloneNode(n.next));
     }
   }
-  
+    
   public static Object clone (Object head) throws CloneNotSupportedException {
     if (head instanceof Node){
       return cloneNode( (Node)head);

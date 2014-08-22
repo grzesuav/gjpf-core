@@ -223,6 +223,8 @@ public class WaitTest extends TestJPF
           System.out.println("notified");
           throw new RuntimeException("notified, not interrupted");
         } catch (InterruptedException ix) {
+          System.out.println("interrupted");
+          //System.out.println(cond);
           if (!cond) {
             throw new RuntimeException("'cond' not set, premature wait return");
           }

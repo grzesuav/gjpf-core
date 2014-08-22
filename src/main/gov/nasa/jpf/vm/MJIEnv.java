@@ -916,20 +916,6 @@ public class MJIEnv {
 
     return a;    
   }
-  
-  /**
-   * NOTE - this call might change the corresponding ElementInfo instance,
-   * don't use after obtaining the ElementInfo in the caller !
-   */
-  public boolean isSchedulingRelevantObject(int objref){
-    if (objref != NULL){
-      ElementInfo ei = heap.get(objref);
-      ei = ti.updateSharedness(ei);
-      return ei.isShared();
-    }
-
-    return false;
-  }
 
   public boolean canLock (int objref) {
     ElementInfo ei = getElementInfo(objref);
@@ -1289,10 +1275,6 @@ public class MJIEnv {
 
   public void setMandatoryNextChoiceGenerator(ChoiceGenerator<?> cg, String failMsg){
     vm.getSystemState().setMandatoryNextChoiceGenerator(cg, failMsg);
-  }
-
-  public SchedulerFactory getSchedulerFactory(){
-    return vm.getSchedulerFactory();
   }
 
   public ChoiceGenerator<?> getChoiceGenerator () {

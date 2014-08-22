@@ -53,7 +53,7 @@ public class MissedPathTest extends TestJPF {
       
       X x = new X();
       Verify.println("M: new " + x);
-      mp.myX = x;        // (0) x not shared until this GOT executed
+      mp.myX = x;        // (0) exposure - x cannot become shared until this GOT executed
      
       //Thread.yield();  // this would expose the error
       Verify.println("M: x.pass=true");

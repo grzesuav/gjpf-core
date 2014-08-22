@@ -24,6 +24,8 @@ import gov.nasa.jpf.jvm.bytecode.EXECUTENATIVE;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.Scheduler;
+import gov.nasa.jpf.vm.SyncPolicy;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.SystemState;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -113,9 +115,9 @@ public class CGNotificationTest extends TestJPF {
 
     if (!isJPFRun()){
       String[] expected = {
-        "registered <root>",
-        "set <root>",
-        "advance <root> ThreadInfo [name=main,id=0,state=RUNNING]",
+        "registered " + Scheduler.ROOT,
+        "set " + Scheduler.ROOT,
+        "advance " + Scheduler.ROOT + " ThreadInfo [name=main,id=0,state=RUNNING]",
         "registered verifyGetBoolean",
         "set verifyGetBoolean",
         "advance verifyGetBoolean false",
@@ -147,7 +149,7 @@ public class CGNotificationTest extends TestJPF {
         "processed listenerCG",
         "processed verifyGetInt(II)",
         "processed verifyGetBoolean",
-        "processed <root>"
+        "processed " + Scheduler.ROOT
       };
 
       assert Sequencer.sequence.size() == expected.length;

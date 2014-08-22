@@ -85,55 +85,54 @@ public class JPF_java_lang_Object extends NativePeer {
     return (objref ^ 0xABCD);
   }
 
-  static void wait0(MJIEnv env, int objref, long timeout) {
-    // IllegalMonitorStateExceptions are checked in the MJIEnv methods
+  protected void wait0 (MJIEnv env, int objref, long timeout) {
     ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
     ElementInfo ei = env.getModifiableElementInfo(objref);
-
-    if (ti.isFirstStepInsn()) { // we already have a CG
-      switch (ti.getState()) {
-
-        // we can get here by direct call from ...Unsafe.park__ZJ__V()
-        // which aquires the park lock and waits natively
-        case RUNNING:
-
-        // note that we can't get here if we are in NOTIFIED or INTERRUPTED state,
-        // since we still have to reacquire the lock
-        case UNBLOCKED:
-        case TIMEDOUT: // nobody else acquired the lock
-          // thread status set by explicit notify() call
-          env.lockNotified(objref);
-
-          if (ti.isInterrupted(true)) {
-            env.throwException("java.lang.InterruptedException");
-          }
-          break;
-
-        default:
-          throw new JPFException("invalid thread state of: " + ti.getName() + " is " + ti.getStateName() +
-                  " while waiting on " + ei);
+    
+    if (!ti.isFirstStepInsn()) {
+      if (!ei.isLockedBy(ti)) {
+        env.throwException("java.lang.IllegalMonitorStateException", "wait() without holding lock");
+        return;
       }
-    } else { // first time, break the transition (if we don't have a pending interrupt)
 
-      // no need for a CG if we got interrupted - don't give up locks, throw InterruptedException
       if (ti.isInterrupted(true)) {
         env.throwException("java.lang.InterruptedException");
-
       } else {
-        if (!ei.isLockedBy(ti)){
-          env.throwException("java.lang.IllegalMonitorStateException",
-                             "un-synchronized wait");
-          return;
-        }
-        // releases the lock and sets BLOCKED threads to UNBLOCKED
-        ei.wait(ti, timeout);
-
-        // note we pass in the timeout value, since this might determine the type of CG that is created
-        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createWaitCG(ei, ti, timeout);
-        ss.setMandatoryNextChoiceGenerator(cg, "wait without CG");
-        env.repeatInvocation(); // so that we can still see the wait on the callstack
+        ei.wait(ti, timeout); // block
       }
+    }
+    
+    // scheduling point
+    if (ti.getScheduler().setsWaitCG(ti, timeout)) {
+      env.repeatInvocation();
+      return;
+    }
+    
+    // bottom half, unblock
+    switch (ti.getState()) {
+      case WAITING:
+      case TIMEOUT_WAITING:
+        throw new JPFException("blocking wait() without transition break");      
+      
+      // we can get here by direct call from ...Unsafe.park__ZJ__V()
+      // which aquires the park lock and waits natively
+      case RUNNING:
+
+      // note that we can't get here if we are in NOTIFIED or INTERRUPTED state,
+      // since we still have to reacquire the lock
+      case UNBLOCKED:
+      case TIMEDOUT: // nobody else acquired the lock
+        // thread status set by explicit notify() call
+        env.lockNotified(objref);
+
+        if (ti.isInterrupted(true)) {
+          env.throwException("java.lang.InterruptedException");
+        }
+        break;
+
+      default:
+        throw new JPFException("invalid thread state of: " + ti.getName() + " is " + ti.getStateName()
+                + " while waiting on " + ei);
     }
   }
   
@@ -157,47 +156,41 @@ public class JPF_java_lang_Object extends NativePeer {
   
   @MJI
   public void notify____V (MJIEnv env, int objref) {
-    // IllegalMonitorStateExceptions are checked in the MJIEnv methods
-
     ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
-    ElementInfo ei = env.getModifiableElementInfo(objref);    
     
-    if (!ti.isFirstStepInsn()) { // first time around
-      
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createNotifyCG(ei, ti);
-      if (ss.setNextChoiceGenerator(cg)){
-        ti.skipInstructionLogging();
-        env.repeatInvocation();
+    if (!ti.isFirstStepInsn()) {
+      ElementInfo ei = env.getModifiableElementInfo(objref);
+      if (!ei.isLockedBy(ti)) {
+        env.throwException("java.lang.IllegalMonitorStateException", "notify() without holding lock");
         return;
       }
+      
+      env.notify(ei);
     }
-        
-    // this is a bit cluttered throughout the whole system, with the actual thread
-    // notification (status change) taking place in the ElementInfo
-    env.notify(ei);
+    
+    if (ti.getScheduler().setsNotifyCG(ti)){
+      env.repeatInvocation();
+      return;
+    }
   }
 
   @MJI
   public void notifyAll____V (MJIEnv env, int objref) {
-    // IllegalMonitorStateExceptions are checked in the MJIEnv methods
-
-    // usually, there is no non-determinism involved here, but
-    // we might have a SchedulerFactory policy that does want to
-    // break, so we have to give it a chance to interfere
     ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
     
-    if (!ti.isFirstStepInsn()) { // first time around
+    if (!ti.isFirstStepInsn()) {
       ElementInfo ei = env.getModifiableElementInfo(objref);
-      env.notifyAll(ei); // do that before we create a CG
-      
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createNotifyAllCG(ei, ti);
-      if (ss.setNextChoiceGenerator(cg)){
-        ti.skipInstructionLogging();
-        env.repeatInvocation();
+      if (!ei.isLockedBy(ti)) {
+        env.throwException("java.lang.IllegalMonitorStateException", "notifyAll() without holding lock");
         return;
       }
+      
+      env.notifyAll(ei);
+    }
+    
+    if (ti.getScheduler().setsNotifyCG(ti)){
+      env.repeatInvocation();
+      return;
     }
   }
 

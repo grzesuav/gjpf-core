@@ -22,6 +22,7 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.SharednessPolicy;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -47,61 +48,57 @@ public class GETFIELD extends JVMInstanceFieldInstruction implements ReadInstruc
   @Override
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
-    ElementInfo eiFieldOwner;
     int objRef = frame.peek(); // don't pop yet, we might re-enter
     lastThis = objRef;
 
-    if (!ti.isFirstStepInsn()){
-      if (objRef == MJIEnv.NULL) {
-        return ti.createAndThrowException("java.lang.NullPointerException",
-                "referencing field '" + fname + "' on null object");
-      }
-
-      eiFieldOwner = ti.getElementInfo(objRef);
-      FieldInfo fi = getFieldInfo();
-      if (fi == null) {
-        return ti.createAndThrowException("java.lang.NoSuchFieldError",
-                "referencing field '" + fname + "' in " + eiFieldOwner);
-      }
-
-      if (ti.isInstanceSharednessRelevant(this, eiFieldOwner, fi)) {
-        // check for non-lock protected shared object access, breaking before the field is written
-        eiFieldOwner = ti.checkSharedInstanceFieldAccess(this, eiFieldOwner, fi);
-        if (ti.getVM().hasNextChoiceGenerator()) {
-          return this;
-        }
-      }
-      
-    } else {
-      eiFieldOwner = ti.getElementInfo(objRef);      
+    //--- check for obvious exceptions
+    if (objRef == MJIEnv.NULL) {
+      return ti.createAndThrowException("java.lang.NullPointerException",
+              "referencing field '" + fname + "' on null object");
     }
 
-    frame.pop(); // Ok, now we can remove the object ref from the stack
-    Object attr = eiFieldOwner.getFieldAttr(fi);
+    ElementInfo eiFieldOwner = ti.getElementInfo(objRef);
+    FieldInfo fieldInfo = getFieldInfo();
+    if (fieldInfo == null) {
+      return ti.createAndThrowException("java.lang.NoSuchFieldError",
+              "referencing field '" + fname + "' in " + eiFieldOwner);
+    }
 
-    // We could encapsulate the push in ElementInfo, but not the GET, so we keep it at a similiar level
-    if (fi.getStorageSize() == 1) { // 1 slotter
-      int ival = eiFieldOwner.get1SlotField(fi);
+    //--- check for potential transition breaks (be aware everything above gets re-executed)
+    Scheduler scheduler = ti.getScheduler();
+    if (scheduler.canHaveSharedObjectCG( ti, this, eiFieldOwner, fieldInfo)){
+      eiFieldOwner = scheduler.updateObjectSharedness( ti, eiFieldOwner, fieldInfo);
+      if (scheduler.setsSharedObjectCG( ti, this, eiFieldOwner, fieldInfo)){
+        return this; // re-execute
+      }
+    }
+    
+    frame.pop(); // Ok, now we can remove the object ref from the stack
+    Object fieldAttr = eiFieldOwner.getFieldAttr(fieldInfo);
+
+    // We could encapsulate the push in ElementInfo, but not the GET, so we keep it at the same level
+    if (fieldInfo.getStorageSize() == 1) { // 1 slotter
+      int ival = eiFieldOwner.get1SlotField(fieldInfo);
       lastValue = ival;
       
-      if (fi.isReference()){
+      if (fieldInfo.isReference()){
         frame.pushRef(ival);
         
       } else {
         frame.push(ival);
       }
       
-      if (attr != null) {
-        frame.setOperandAttr(attr);
+      if (fieldAttr != null) {
+        frame.setOperandAttr(fieldAttr);
       }
 
     } else {  // 2 slotter
-      long lval = eiFieldOwner.get2SlotField(fi);
+      long lval = eiFieldOwner.get2SlotField(fieldInfo);
       lastValue = lval;
 
       frame.pushLong( lval);
-      if (attr != null) {
-        frame.setLongOperandAttr(attr);
+      if (fieldAttr != null) {
+        frame.setLongOperandAttr(fieldAttr);
       }
     }
 

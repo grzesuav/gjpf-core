@@ -71,13 +71,19 @@ public class GlobalSharednessPolicy extends GenericSharednessPolicy {
   }
   
   @Override
-  public void initializeSharedness (ThreadInfo allocThread, DynamicElementInfo ei) {
+  protected boolean checkOtherRunnables (ThreadInfo ti){
+    // this is a search global policy we don't care if other threads are runnable or already terminated
+    return true;
+  }
+  
+  @Override
+  public void initializeObjectSharedness (ThreadInfo allocThread, DynamicElementInfo ei) {
     ThreadInfoSet tis = getRegisteredThreadInfoSet(ei.getObjectRef(), allocThread);
     ei.setReferencingThreads( tis);
   }
 
   @Override
-  public void initializeSharedness (ThreadInfo allocThread, StaticElementInfo ei) {
+  public void initializeClassSharedness (ThreadInfo allocThread, StaticElementInfo ei) {
     ThreadInfoSet tis;
     int ref = ei.getClassObjectRef();
     if (ref == MJIEnv.NULL) { // startup class, we don't have a class object yet

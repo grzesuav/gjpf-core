@@ -23,6 +23,7 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
+import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.SharednessPolicy;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -41,46 +42,38 @@ public class GETSTATIC extends JVMStaticFieldInstruction  implements ReadInstruc
 
   @Override
   public Instruction execute (ThreadInfo ti) {
-    ClassInfo ciField;
     FieldInfo fieldInfo;
-    ElementInfo eiFieldOwner;
-        
-    if (!ti.isFirstStepInsn()){
-      try {
-        fieldInfo = getFieldInfo();
-      } catch (LoadOnJPFRequired lre) {
-        return ti.getPC();
-      }
-      
-      if (fieldInfo == null) {
-        return ti.createAndThrowException("java.lang.NoSuchFieldError",
-                (className + '.' + fname));
-      }
 
-      // this can be actually different (can be a base)
-      ciField = fieldInfo.getClassInfo();
-
-      if (!mi.isClinit(ciField) && ciField.pushRequiredClinits(ti)) {
-        // note - this returns the next insn in the topmost clinit that just got pushed
-        return ti.getPC();
-      }
-
-      eiFieldOwner = ciField.getStaticElementInfo();
-
-      if (ti.isStaticSharednessRelevant(this, eiFieldOwner, fi)) {
-        // check for non-lock protected shared object access, breaking before the field is written
-        eiFieldOwner = ti.checkSharedStaticFieldAccess(this, eiFieldOwner, fi);
-        if (ti.hasNextChoiceGenerator()) {
-          return this;
-        }
-      }
-      
-    } else {
+    //--- check if this causes a class load by a user defined classloader
+    try {
       fieldInfo = getFieldInfo();
-      eiFieldOwner = fieldInfo.getClassInfo().getStaticElementInfo();      
+    } catch (LoadOnJPFRequired lre) {
+      return ti.getPC();
     }
     
-    Object attr = eiFieldOwner.getFieldAttr(fieldInfo);
+    if (fieldInfo == null) {
+      return ti.createAndThrowException("java.lang.NoSuchFieldError",
+              (className + '.' + fname));
+    }
+
+    //--- check if this has to trigger class initialization
+    ClassInfo ciField = fieldInfo.getClassInfo();
+    if (!mi.isClinit(ciField) && ciField.pushRequiredClinits(ti)) {
+      // note - this returns the next insn in the topmost clinit that just got pushed
+      return ti.getPC();
+    }
+    ElementInfo eiFieldOwner = ciField.getStaticElementInfo();
+
+    //--- check if this breaks the transition
+    Scheduler scheduler = ti.getScheduler();
+    if (scheduler.canHaveSharedClassCG( ti, this, eiFieldOwner, fieldInfo)){
+      eiFieldOwner = scheduler.updateClassSharedness(ti, eiFieldOwner, fieldInfo);
+      if (scheduler.setsSharedClassCG( ti, this, eiFieldOwner, fieldInfo)){
+        return this; // re-execute
+      }
+    }
+        
+    Object fieldAttr = eiFieldOwner.getFieldAttr(fieldInfo);
     StackFrame frame = ti.getModifiableTopFrame();
 
     if (size == 1) {
@@ -93,8 +86,8 @@ public class GETSTATIC extends JVMStaticFieldInstruction  implements ReadInstruc
         frame.push(ival);
       }
       
-      if (attr != null) {
-        frame.setOperandAttr(attr);
+      if (fieldAttr != null) {
+        frame.setOperandAttr(fieldAttr);
       }
 
     } else {
@@ -103,8 +96,8 @@ public class GETSTATIC extends JVMStaticFieldInstruction  implements ReadInstruc
       
       frame.pushLong(lval);
       
-      if (attr != null) {
-        frame.setLongOperandAttr(attr);
+      if (fieldAttr != null) {
+        frame.setLongOperandAttr(fieldAttr);
       }
     }
         

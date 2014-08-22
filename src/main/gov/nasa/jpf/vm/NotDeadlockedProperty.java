@@ -62,8 +62,9 @@ public class NotDeadlockedProperty extends GenericProperty {
   @Override
   public boolean check (Search search, VM vm) {
     if (vm.isDeadlocked()){
-      if (vm.isAtomic()){
-        tiAtomic = vm.getCurrentThread();
+      ThreadInfo ti = vm.getCurrentThread();
+      if (ti.isAtomic()){
+        tiAtomic = ti;
       }
       return false;
     } else {

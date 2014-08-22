@@ -2307,7 +2307,7 @@ public class Config extends Properties {
       }
 
     } else {
-      throw new JPFConfigException("no project path for " + key);
+      //throw new JPFConfigException("no project path for " + key);
     }
   }
 

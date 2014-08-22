@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.vm.choice.BreakGenerator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -198,15 +199,19 @@ public class FinalizerThreadInfo extends ThreadInfo {
   
   public boolean scheduleFinalizer() {
     if(hasQueuedFinalizers() && !isRunnable()) {
-      replacedCG = vm.getNextChoiceGenerator();
-      vm.getSystemState().removeNextChoiceGenerator();
+      SystemState ss = vm.getSystemState();
+      replacedCG = ss.getNextChoiceGenerator();
       
       // NOTE - before we get here we have already made sure that nextCg is not Cascaded. 
       // we have to set nextCg to null before setting the nextCG, otherwise, the new CG is 
       // mistakenly considered as "Cascaded"
-      vm.getSystemState().nextCg = null;
-      ChoiceGenerator<ThreadInfo> cg = vm.getSystemState().getSchedulerFactory().createPreFinalizeCG(this);
-      vm.getSystemState().setMandatoryNextChoiceGenerator(cg, "Need to start FinalizerThread to process objects finalizers");
+      ss.nextCg = null;
+      
+      // this doesn't have any choice (we need to run the finalizer), and since we don't have
+      // anything to re-execute (this is called from VM.forward()), we need to be in control of 
+      // type and registration of the CG, hence this doesn't go through the Scheduler/SyncPolicy
+      ss.setNextChoiceGenerator(new BreakGenerator("finalize", this, false));
+      checkNextChoiceGeneratorSet("no transition break prior to finalize");
       
       // stop waiting and process finalizers
       notifyOnSemaphore();

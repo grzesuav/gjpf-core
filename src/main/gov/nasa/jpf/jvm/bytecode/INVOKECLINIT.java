@@ -18,11 +18,9 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -46,37 +44,32 @@ public class INVOKECLINIT extends INVOKESTATIC {
     super(ci.getSignature(), "<clinit>", "()V");
   }
 
+  @Override
   public Instruction execute (ThreadInfo ti) {    
     MethodInfo callee = getInvokedMethod(ti);
-    ClassInfo ci = callee.getClassInfo();
-    ElementInfo ei = ci.getModifiableClassObject();
+    ClassInfo ciClsObj = callee.getClassInfo();
+    ElementInfo ei = ciClsObj.getClassObject();
 
-    if (!ti.isFirstStepInsn()) {
-      // if we can't acquire the lock, it means somebody else is initializing concurrently
-      if (!ei.canLock(ti)) {
-        //ei = ei.getInstanceWithUpdatedSharedness(ti);
-        ei.block(ti);
-        
-        VM vm = ti.getVM();
-        ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
-        if (vm.setNextChoiceGenerator(cg)){ 
-          return this;   // repeat exec, keep insn on stack
-        }        
+    if (ciClsObj.isInitialized()) { // somebody might have already done it if this is re-executed
+      if (ei.isRegisteredLockContender(ti)){
+        ei = ei.getModifiableInstance();
+        ei.unregisterLockContender(ti);
       }
-      
-    } else { // re-execution after being blocked
-      // if we got here, we can enter, and have the lock but there still might have been
-      // another thread that passed us with the clinit
-      if (!ci.needsInitialization()) {
-        return getNext();
-      }
+      return getNext();
+    }
+
+    // not much use to update sharedness, clinits are automatically synchronized
+    if (reschedulesLockAcquisition(ti, ei)){     // this blocks or registers as lock contender
+      return this;
     }
     
-    setupCallee( ti, callee); // this creates, initializes and pushes the callee StackFrame
+    // if we get here we still have to execute the clinit method
+    setupCallee( ti, callee); // this creates, initializes & pushes the callee StackFrame, then acquires the lock
 
     return ti.getPC(); // we can't just return the first callee insn if a listener throws an exception
   }
 
+  @Override
   public boolean isExtendedInstruction() {
     return true;
   }

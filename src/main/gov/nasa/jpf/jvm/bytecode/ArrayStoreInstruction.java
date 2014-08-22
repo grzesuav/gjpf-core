@@ -23,6 +23,7 @@ import gov.nasa.jpf.vm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -48,9 +49,10 @@ public abstract class ArrayStoreInstruction extends JVMArrayElementInstruction i
       }
     
       //--- shared access CG
-      if (ti.isArraySharednessRelevant(this, eiArray)){
-        eiArray = ti.checkSharedArrayAccess(this, eiArray, idx);
-        if (ti.hasNextChoiceGenerator()) {
+      Scheduler scheduler = ti.getScheduler();
+      if (scheduler.canHaveSharedArrayCG(ti, this, eiArray, idx)){
+        eiArray = scheduler.updateArraySharedness(ti, eiArray, index);
+        if (scheduler.setsSharedArrayCG(ti, this, eiArray, idx)){
           return this;
         }
       }

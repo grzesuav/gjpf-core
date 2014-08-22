@@ -63,12 +63,12 @@ public class PathSharednessPolicy extends GenericSharednessPolicy {
   }
   
   @Override
-  public void initializeSharedness (ThreadInfo allocThread, DynamicElementInfo ei) {
+  public void initializeObjectSharedness (ThreadInfo allocThread, DynamicElementInfo ei) {
     ei.setReferencingThreads( new PersistentTidSet(allocThread));
   }
 
   @Override
-  public void initializeSharedness (ThreadInfo allocThread, StaticElementInfo ei) {
+  public void initializeClassSharedness (ThreadInfo allocThread, StaticElementInfo ei) {
     ei.setReferencingThreads( new PersistentTidSet(allocThread));
     ei.setExposed(); // static fields are per se exposed
   }
@@ -84,5 +84,12 @@ public class PathSharednessPolicy extends GenericSharednessPolicy {
       default: 
         return new PersistentLockSetThresholdFli(ti, lockRefs, lockThreshold);
     }
+  }
+  
+  @Override
+  protected boolean checkOtherRunnables (ThreadInfo ti){
+    // since we only consider properties along this path, we can
+    // ignore states that don't have other runnables
+    return ti.hasOtherRunnables();
   }
 }

@@ -117,7 +117,7 @@ public class SingleProcessVM extends VM {
   public boolean initialize(){
     try {
       // this has to happen before we load the startup classes during initializeMainThread
-      sharednessPolicy.initialize(this, appCtx);
+      scheduler.initialize(this, appCtx);
       
       ThreadInfo tiMain = initializeMainThread(appCtx, 0);
       initializeFinalizerThread(appCtx, 1);
@@ -141,11 +141,6 @@ public class SingleProcessVM extends VM {
     // all other exceptions are JPF errors that should cause stack traces
   }
 
-  @Override
-  protected ChoiceGenerator<?> getInitialCG () {
-    ThreadInfo[] runnables = getThreadList().getAllMatching(vm.getTimedoutRunnablePredicate());
-    return new ThreadChoiceFromSet("<root>", runnables, true);
-  }
   
   @Override
   public int getNumberOfApplications(){

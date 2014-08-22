@@ -18,11 +18,10 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.VM;
+import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -33,45 +32,37 @@ import gov.nasa.jpf.vm.ThreadInfo;
 public class MONITOREXIT extends LockInstruction {
 
   public Instruction execute (ThreadInfo ti) {
-    StackFrame frame = ti.getModifiableTopFrame();
+    StackFrame frame = ti.getTopFrame();
+    Scheduler scheduler = ti.getScheduler();
     
     int objref = frame.peek();
     if (objref == MJIEnv.NULL) {
-      return ti.createAndThrowException("java.lang.NullPointerException",
-                                        "attempt to release lock for null object");
+      return ti.createAndThrowException("java.lang.NullPointerException", "attempt to release lock for null object");
     }
 
     lastLockRef = objref;
-
+    ElementInfo ei = ti.getElementInfo(objref);
+    ei = scheduler.updateObjectSharedness(ti, ei, null); // locks most likely belong to shared objects
+    
     if (!ti.isFirstStepInsn()){
-      ElementInfo ei = ti.getModifiableElementInfo(objref);
-      
-      // we only do this in the bottom half, but before potentially creating
-      // a CG so that other threads that might become runnable are included
-      ei.unlock(ti); // might still be recursive
-
-      if (ei.getLockCount() == 0){ // this gave up the lock, check for CG
-        // this thread obviously has referenced the object before, but other
-        // referencers might have terminated so we want to update anyways
-        ei = ti.updateSharedness(ei); 
-        if (ei.isShared()) {
-          VM vm  = ti.getVM();
-          ChoiceGenerator<?> cg = vm.getSchedulerFactory().createMonitorExitCG(ei, ti);
-          if (cg != null) {
-            if (vm.setNextChoiceGenerator(cg)) {
-              return this;
-            }
-          }
-        }
+      ei = ei.getModifiableInstance();
+      // we only do this in the top half of the first execution, but before potentially creating
+      // a CG so that blocked threads are runnable again
+      ei.unlock(ti);
+    }
+    
+    if (ei.getLockCount() == 0) { // might still be recursively locked, which wouldn't be a release
+      if (scheduler.setsLockReleaseCG(ti, ei)){ // scheduling point
+        return this;
       }
     }
 
-    frame = ti.getModifiableTopFrame(); // now we need to modify it
+    // bottom half or monitorexit proceeded
+    frame = ti.getModifiableTopFrame();
     frame.pop();
 
     return getNext(ti);
   }
-
 
   public int getByteCode () {
     return 0xC3;

@@ -38,7 +38,16 @@ public class GOTO extends Instruction implements JVMInstruction {
     this.targetPosition = targetPosition;
   }
 
-  public Instruction execute (ThreadInfo th) {
+  public Instruction execute (ThreadInfo ti) {
+    if (isBackJump() && ti.maxTransitionLengthExceeded()){
+      // this is a rather simplistic attempt to terminate the search in
+      // endless loops that do not change program state.
+      // <2do> this does not handle nested loops yet
+      if (ti.breakTransition("MAX_TRANSITION_LENGTH")){
+        return this; // re-execute after giving state matching a chance to prune the search
+      }
+    }
+    
     return getTarget();
   }
 

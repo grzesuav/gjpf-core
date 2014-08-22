@@ -159,7 +159,7 @@ public class MultiProcessVM extends VM {
         ApplicationContext appCtx = appCtxs[i];
     
         // this has to happen before we load the startup classes during initializeMainThread
-        sharednessPolicy.initialize(this, appCtx);
+        scheduler.initialize(this, appCtx);
     
         ThreadInfo tiMain = initializeMainThread(appCtx, i);
         initializeFinalizerThread(appCtx, appCtxs.length+i);
@@ -192,13 +192,7 @@ public class MultiProcessVM extends VM {
   public int getNumberOfApplications(){
     return appCtxs.length;
   }
-  
-  @Override
-  protected ChoiceGenerator<?> getInitialCG () {
-    ThreadInfo[] runnables = getThreadList().getAllMatching(vm.getTimedoutRunnablePredicate());
-    return new MultiProcessThreadChoice("<root>", runnables, true);
-  }
-  
+    
   @Override
   public ApplicationContext getApplicationContext(int objRef) {
     VM vm = VM.getVM();

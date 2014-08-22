@@ -71,7 +71,7 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     }
 
     MethodInfo callee = getInvokedMethod(ti, objRef);
-    ElementInfo ei = ti.getElementInfoWithUpdatedSharedness(objRef);
+    ElementInfo ei = ti.getElementInfo(objRef);
     
     if (callee == null) {
       String clsName = ti.getClassInfo(objRef).getName();
@@ -83,7 +83,8 @@ public abstract class VirtualInvocation extends InstanceInvocation {
     }
 
     if (callee.isSynchronized()) {
-      if (checkSyncCG(ei, ti)){
+      ei = ti.getScheduler().updateObjectSharedness(ti, ei, null); // locks most likely belong to shared objects
+      if (reschedulesLockAcquisition(ti, ei)){
         return this;
       }
     }

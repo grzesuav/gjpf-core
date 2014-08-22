@@ -22,7 +22,7 @@ package gov.nasa.jpf.vm.multiProcess;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.util.test.TestMultiProcessJPF;
 import gov.nasa.jpf.vm.ChoiceGenerator;
-import gov.nasa.jpf.vm.SchedulerFactory;
+import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 
@@ -90,9 +90,8 @@ public class ThreadTest extends TestMultiProcessJPF {
     public void choiceGeneratorProcessed (VM vm, ChoiceGenerator<?> newCG) {
       String id = newCG.getId();
 
-      if(!id.equals("<root>") && !id.equals(SchedulerFactory.THREAD_TERMINATE)) {
-        fail("Threads from two different processes should only interleave at the " +
-          "thread termination point!");
+      if(!id.equals(Scheduler.ROOT) && !id.equals(Scheduler.TERMINATE)) {
+        fail("Threads from two different processes should only interleave at the thread termination point!");
       }
 
       numOfCG++;

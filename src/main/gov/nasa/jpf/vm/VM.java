@@ -127,7 +127,9 @@ public abstract class VM {
   /** how we model execution time */
   protected TimeModel timeModel;
   
-  protected SharednessPolicy sharednessPolicy;
+  /** ThreadChoiceGenerator management related to data races and shared objects */
+  protected Scheduler scheduler;
+  
   
   protected Config config; // that's for the options we use only once
 
@@ -230,7 +232,7 @@ public abstract class VM {
     backtracker = config.getEssentialInstance("vm.backtracker.class", Backtracker.class);
     backtracker.attach(this);
 
-    sharednessPolicy = config.getEssentialInstance("vm.sharedness_policy.class", SharednessPolicy.class);
+    scheduler = config.getEssentialInstance("vm.scheduler.class", Scheduler.class);
     
     newStateId = -1;
   }
@@ -606,15 +608,16 @@ public abstract class VM {
     });
   }
   
-  protected abstract ChoiceGenerator<?> getInitialCG();
+
+  /**
+   * override this if the concrete VM needs a special root CG
+   */
+  protected void setRootCG(){
+    scheduler.setRootCG();
+  }
   
   protected void initSystemState (ThreadInfo mainThread){
     ss.setStartThread(mainThread);
-
-    // the first transition probably doesn't have much choice (unless there were
-    // threads started in the static init), but we want to keep it uniformly anyways
-    ChoiceGenerator<?> cg = getInitialCG();
-    ss.setMandatoryNextChoiceGenerator(cg, "no root CG");
 
     ss.recordSteps(hasToRecordSteps());
 
@@ -622,6 +625,11 @@ public abstract class VM {
       pathOutput = hasToRecordPathOutput();
     }
 
+    setRootCG(); // this has to be guaranteed to register a CG
+    if (!hasNextChoiceGenerator()){
+      throw new JPFException("scheduler failed to set ROOT choice generator: " + scheduler);
+    }
+    
     transitionOccurred = true;
   }
   
@@ -1270,10 +1278,6 @@ public abstract class VM {
     return config;
   }
 
-  public SchedulerFactory getSchedulerFactory(){
-    return ss.getSchedulerFactory();
-  }
-
   public Backtracker getBacktracker() {
     return backtracker;
   }
@@ -1316,8 +1320,8 @@ public abstract class VM {
     return stateSet;
   }
 
-  public SharednessPolicy getSharednessPolicy(){
-    return sharednessPolicy;
+  public Scheduler getScheduler(){
+    return scheduler;
   }
   
   /**
@@ -1370,6 +1374,10 @@ public abstract class VM {
     return ss.getLastChoiceGeneratorOfType(cgType);
   }
 
+  public ChoiceGenerator<?> getLastChoiceGeneratorInThread (ThreadInfo ti){
+    return ss.getLastChoiceGeneratorInThread(ti);
+  }
+  
   public void print (String s) {
     if (treeOutput) {
       System.out.print(s);
@@ -1855,7 +1863,7 @@ public abstract class VM {
   }
 
   public abstract boolean isDeadlocked ();
-
+  
   public Exception getException () {
     return ss.getUncaughtException();
   }
@@ -1940,10 +1948,6 @@ public abstract class VM {
   public int registerThread (ThreadInfo ti){
     getKernelState().changed();
     return getThreadList().add(ti);    
-  }
-
-  public boolean isAtomic() {
-    return ss.isAtomic();
   }
 
   /**

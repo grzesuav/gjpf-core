@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.util.Predicate;
 
@@ -79,22 +80,24 @@ public class JPF_gov_nasa_jpf_FinalizerThread extends NativePeer {
   @MJI
   public void manageState____V (MJIEnv env, int objref){
     ApplicationContext appCtx = env.getVM().getApplicationContext(objref);
-    FinalizerThreadInfo finalizerTi = appCtx.getFinalizerThread();
+    FinalizerThreadInfo tiFinalizer = appCtx.getFinalizerThread();
     VM vm = env.getVM();
     
     // check for termination - Note that the finalizer thread has to be the last alive thread
     // of the process
-    if(!vm.getThreadList().hasAnyMatching(getAppAliveUserPredicate(finalizerTi))) {
+    if(!vm.getThreadList().hasAnyMatching(getAppAliveUserPredicate(tiFinalizer))) {
       shutdown(env, objref);
     }
     // make the thread wait until more objects are added to finalizerQueue
     else {
-      finalizerTi.waitOnSemaphore();
+      tiFinalizer.waitOnSemaphore();
       
-      assert finalizerTi.isWaiting();
+      assert tiFinalizer.isWaiting();
       
-      ChoiceGenerator<ThreadInfo> cg = env.getSystemState().getSchedulerFactory().createPostFinalizeCG(finalizerTi);
-      env.getSystemState().setMandatoryNextChoiceGenerator(cg, "finalizeQueue processe without CG: ");
+      // this one has to consult the syncPolicy since there might be scheduling choices
+      if (!tiFinalizer.getScheduler().setsPostFinalizeCG(tiFinalizer)){
+        throw new JPFException("no transition break after finalization");
+      }
     }
   }
   

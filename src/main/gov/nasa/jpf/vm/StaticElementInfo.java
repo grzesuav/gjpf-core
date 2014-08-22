@@ -48,7 +48,7 @@ public final class StaticElementInfo extends ElementInfo {
       classObjectRef = eiClsObj.getObjectRef();
     }
 
-    ti.initializeSharedness(this);
+    ti.getScheduler().initializeClassSharedness(ti, this);
   }
   
   @Override

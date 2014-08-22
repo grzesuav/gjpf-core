@@ -114,7 +114,7 @@ public class RaceTest extends TestJPF {
   @Test
   public void testSymmetricStaticRace(){
     if (verifyUnhandledExceptionDetails("java.lang.RuntimeException", "got race",
-                                        "+vm.sharedness_policy.class=.vm.GlobalSharednessPolicy")) {
+                                        "+vm.scheduler.sharedness.class=.vm.GlobalSharednessPolicy")) {
       StaticRacer t1 = new StaticRacer();
       StaticRacer t2 = new StaticRacer();
       t1.start();

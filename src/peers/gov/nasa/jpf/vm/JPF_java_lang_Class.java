@@ -745,11 +745,9 @@ public class JPF_java_lang_Class extends NativePeer {
       ThreadInfo ti = env.getThreadInfo();
       ciEncl.registerClass(ti);
       
-      if (!ciEncl.isInitialized()){
-        if (ciEncl.pushRequiredClinits(ti)){
-          env.repeatInvocation();
-          return 0;
-        }
+      if (ciEncl.initializeClass(ti)){
+        env.repeatInvocation();
+        return 0;
       }
     }
     

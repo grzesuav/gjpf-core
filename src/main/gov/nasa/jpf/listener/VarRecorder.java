@@ -20,7 +20,7 @@ package gov.nasa.jpf.listener;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
-import gov.nasa.jpf.jvm.bytecode.ArrayInstruction;
+import gov.nasa.jpf.jvm.bytecode.JVMArrayElementInstruction;
 import gov.nasa.jpf.jvm.bytecode.ArrayLoadInstruction;
 import gov.nasa.jpf.jvm.bytecode.JVMFieldInstruction;
 import gov.nasa.jpf.jvm.bytecode.JVMLocalVariableInstruction;
@@ -149,7 +149,7 @@ public class VarRecorder extends ListenerAdapter {
       return(false);
 
     if (!(inst instanceof LocalVariableInstruction))
-      if (!(inst instanceof ArrayInstruction))
+      if (!(inst instanceof JVMArrayElementInstruction))
         return(false);
 
     mi   = inst.getMethodInfo();
@@ -234,7 +234,7 @@ public class VarRecorder extends ListenerAdapter {
       }
     }
 
-    if ((recordArrays) && (inst instanceof ArrayInstruction)) {
+    if ((recordArrays) && (inst instanceof JVMArrayElementInstruction)) {
       return (getTypeFromInstruction(inst));
     }
 
@@ -246,13 +246,13 @@ public class VarRecorder extends ListenerAdapter {
   }
 
   private final static byte getTypeFromInstruction(Instruction inst) {
-    if (inst instanceof ArrayInstruction)
-      return(getTypeFromInstruction((ArrayInstruction) inst));
+    if (inst instanceof JVMArrayElementInstruction)
+      return(getTypeFromInstruction((JVMArrayElementInstruction) inst));
 
     return(Types.T_VOID);
   }
 
-  private final static byte getTypeFromInstruction(ArrayInstruction inst) {
+  private final static byte getTypeFromInstruction(JVMArrayElementInstruction inst) {
     String name;
 
     name = inst.getClass().getName();
@@ -311,7 +311,7 @@ public class VarRecorder extends ListenerAdapter {
       return(name);
     }
 
-    if ((recordArrays) && (inst instanceof ArrayInstruction)) {
+    if ((recordArrays) && (inst instanceof JVMArrayElementInstruction)) {
       store  = inst instanceof StoreInstruction;
       name   = getArrayName(ti, type, store);
       index  = getArrayIndex(ti, type, store);
@@ -339,7 +339,7 @@ public class VarRecorder extends ListenerAdapter {
        return(decodeValue(type, lo, hi));
     }
 
-    if ((recordArrays) && (inst instanceof ArrayInstruction))
+    if ((recordArrays) && (inst instanceof JVMArrayElementInstruction))
       return(getArrayValue(ti, type));
 
     return(null);

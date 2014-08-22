@@ -102,53 +102,33 @@ public interface SharednessPolicy {
   /**
    * per application / SystemClassLoaderInfo specific initialization of this policy 
    */
-  void initialize (VM vm, ApplicationContext appCtx);
+  void initializeSharednessPolicy (VM vm, ApplicationContext appCtx);
   
   /**
-   * initialize object specific sharedness data 
+   * initializeSharednessPolicy object specific sharedness data 
    */
-  void initializeSharedness (ThreadInfo allocThread, DynamicElementInfo ei);
+  void initializeObjectSharedness (ThreadInfo allocThread, DynamicElementInfo ei);
   
   /**
-   * initialize class specific sharedness data 
+   * initializeSharednessPolicy class specific sharedness data 
    */  
-  void initializeSharedness (ThreadInfo allocThread, StaticElementInfo ei);
-  
-  /**
-   * static attribute filters that determine if the check..Access() and check..Exposure() methods should be called.
-   * This is only called once per instruction execution since it filters all cases that would set a CG.
-   * Filter conditions have to apply to both field access and object exposure.
-   */
-  boolean isInstanceSharednessRelevant (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
-  boolean isStaticSharednessRelevant (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
-  boolean isArraySharednessRelevant (ThreadInfo ti, Instruction insn, ElementInfo eiArray);
+  void initializeClassSharedness (ThreadInfo allocThread, StaticElementInfo ei);
   
   
-  /**
-   * update sharedness status of the related object and break if shared access is detected. Note this
-   * has to use return values in case the ElementInfo had to be cloned
-   */
-  ElementInfo checkSharedInstanceFieldAccess (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
-  ElementInfo checkSharedStaticFieldAccess (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
-  ElementInfo checkSharedArrayAccess (ThreadInfo ti, Instruction insn, ElementInfo eiArray, int index);
+  boolean canHaveSharedObjectCG (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
+  ElementInfo updateObjectSharedness (ThreadInfo ti, ElementInfo ei, FieldInfo fi);
+  boolean setsSharedObjectCG  (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
   
-  /**
-   * this can be used from locations which might update sharedness status but not break, i.e. it is called
-   * from outside of field or array access operations (e.g. invokestatic)
-   */
-  ElementInfo updateSharedness (ThreadInfo ti, ElementInfo ei);
+  boolean canHaveSharedClassCG (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
+  ElementInfo updateClassSharedness (ThreadInfo ti, ElementInfo ei, FieldInfo fi);
+  boolean setsSharedClassCG  (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi);
   
-  /**
-   * check if a un-shared object reference is stored in a shared object/class, i.e. the exposed object
-   * could become shared in the future. Break if exposure CGs are configured.
-   * 
-   * NOTE - exposure CGs are conservative and have to be minimized in order to avoid state explosion
-   * 
-   * <2do> explain why not transitive
-   */
-  void checkInstanceFieldObjectExposure (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue);
-  void checkStaticFieldObjectExposure (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, int refValue);
-  void checkArrayObjectExposure (ThreadInfo ti, Instruction insn, ElementInfo eiArray, int idx, int refValue);
+  boolean canHaveSharedArrayCG (ThreadInfo ti, Instruction insn, ElementInfo eiArray, int idx);
+  ElementInfo updateArraySharedness (ThreadInfo ti, ElementInfo eiArray, int idx);
+  boolean setsSharedArrayCG  (ThreadInfo ti, Instruction insn, ElementInfo eiArray, int idx);
+  
+  boolean setsSharedObjectExposureCG (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, ElementInfo eiExposed);
+  boolean setsSharedClassExposureCG (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, ElementInfo eiExposed);
   
   
   /**

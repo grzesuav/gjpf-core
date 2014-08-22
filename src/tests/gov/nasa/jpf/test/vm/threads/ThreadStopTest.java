@@ -274,20 +274,20 @@ public class ThreadStopTest extends TestJPF {
         }
       };
 
-       Verify.println("# main now starting t");
+      Verify.println("# main now starting t");
       t.start();
 
       while (t.getState() != Thread.State.WAITING) {
         Thread.yield();
       }
 
-       Verify.println("# main now stopping t");
+      Verify.println("# main now stopping t");
       t.stop();
 
       Thread.yield();
       assertTrue("t dead despite main not notifying", t.isAlive());
 
-       Verify.println("# main now notifying");
+      Verify.println("# main now notifying");
       synchronized (lock) {
         lock.notifyAll();
       }

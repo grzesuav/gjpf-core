@@ -121,24 +121,16 @@ public class JPF_java_lang_Thread extends NativePeer {
 
   @MJI
   public void interrupt____V (MJIEnv env, int objref) {
-    ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
+    ThreadInfo tiCurrent = env.getThreadInfo();
+    ThreadInfo tiInterrupted = env.getThreadInfoForObjRef(objref);
 
-    ThreadInfo interruptedThread = env.getThreadInfoForObjRef(objref);
-
-    if (!ti.isFirstStepInsn()) {
-      interruptedThread.interrupt();
-      
-      // the interrupted thread can re-acquire the lock and therefore is runnable again
-      // hence we should give it a chance to do so (Thread.interrupt() does not require
-      // holding a lock)
-      if (interruptedThread.isUnblocked()){
-        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createInterruptCG(interruptedThread);
-        if (ss.setNextChoiceGenerator(cg)) {
-          env.repeatInvocation();
-        }        
-      }
-
+    if (!tiCurrent.isFirstStepInsn()) {
+      tiInterrupted.interrupt();
+    }
+    
+    if (tiCurrent.getScheduler().setsInterruptCG(tiCurrent, tiInterrupted)) {
+      env.repeatInvocation();
+      return;
     }
   }
 
@@ -159,44 +151,31 @@ public class JPF_java_lang_Thread extends NativePeer {
   @MJI
   public void start____V (MJIEnv env, int objref) {
     ThreadInfo tiCurrent = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
+    ThreadInfo tiStarted = env.getThreadInfoForObjRef(objref);
     VM vm = tiCurrent.getVM();
-    
-    ThreadInfo tiStartee = env.getThreadInfoForObjRef(objref);
 
-    if (!tiCurrent.isFirstStepInsn()) { // first time we see this (may be the only time)
-      if (tiStartee.isStopped()) {
+    //--- actions that are only performed upon first execution
+    if (!tiCurrent.isFirstStepInsn()){
+      if (tiStarted.isStopped()) {
         // don't do anything but set it terminated - it hasn't acquired any resources yet.
-        // note that apparently host VMs don't schedule this thread, so it never
-        // gets a handler in its miRun() invoked
-        tiStartee.setTerminated();
+        // note that apparently host VMs don't schedule this thread, so there is no handler invocation
+        tiStarted.setTerminated();
         return;
       }
-      
-      // check if this thread was already started. If it is still running, this
-      // is a IllegalThreadStateException. If it already terminated, it just gets
-      // silently ignored in Java 1.4, but the 1.5 spec explicitly marks this
-      // as illegal, so we adopt this by throwing an IllegalThreadState, too
-      if (! tiStartee.isNew()) {
+
+      if (!tiStarted.isNew()) {
+        // alredy running, throw a IllegalThreadStateException. If it already terminated, it just gets
+        // silently ignored in Java 1.4, but the 1.5 spec explicitly marks this
+        // as illegal, so we adopt this by throwing an IllegalThreadState, too
         env.throwException("java.lang.IllegalThreadStateException");
         return;
       }
 
-      int runnableRef = tiStartee.getRunnableRef();
-
+      int runnableRef = tiStarted.getRunnableRef();
       if (runnableRef == MJIEnv.NULL) {
-        // note that we don't set the 'target' field, since java.lang.Thread doesn't
+        // note that we don't set the 'tiSuspended' field, since java.lang.Thread doesn't
         runnableRef = objref;
       }
-            
-
-      //vm.registerThread(tiStartee);
-      
-      // we don't do this during thread creation because the thread isn't in
-      // the GC root set before it actually starts to enter. Until then,
-      // it's just an ordinary object
-
-      vm.notifyThreadStarted(tiStartee);
 
       ElementInfo eiTarget = env.getElementInfo(runnableRef);
       ClassInfo   ci = eiTarget.getClassInfo();
@@ -205,183 +184,150 @@ public class JPF_java_lang_Thread extends NativePeer {
       // we do direct call run() invocation so that we have a well defined
       // exit point (DIRECTCALLRETURN) in case the thread is stopped or there is
       // a fail-safe UncaughtExceptionHandler set
-      DirectCallStackFrame runFrame = miRun.createRunStartStackFrame(tiStartee);
+      DirectCallStackFrame runFrame = miRun.createRunStartStackFrame(tiStarted);
       runFrame.setReferenceArgument(0, runnableRef, null);
             
-      tiStartee.pushFrame(runFrame);
-      tiStartee.setState(ThreadInfo.State.RUNNING);
+      tiStarted.pushFrame(runFrame);
+      tiStarted.setState(ThreadInfo.State.RUNNING);
       
-      // now we have a new thread, create a CG for scheduling it
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStartCG(tiStartee);
-      if (ss.setNextChoiceGenerator(cg)) {
-        env.repeatInvocation();
-      } else {
-        Instruction insn = tiCurrent.getPC();
-        log.info(tiStartee.getName(), " start not a scheduling point in ", insn.getMethodInfo().getFullName());
-      }
-      
-    } else {
-      // nothing to do in the bottom half
+      vm.notifyThreadStarted(tiStarted);
     }
+    
+    //--- scheduling point
+    if (tiCurrent.getScheduler().setsStartCG(tiCurrent, tiStarted)){
+      env.repeatInvocation();
+    }
+    // everything that would follow would be re-executed
   }
 
   @MJI
   public void yield____V (MJIEnv env, int clsObjRef) {
     ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
-
-    if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadYieldCG( ti);
-      if (ss.setNextChoiceGenerator(cg)) {
-        env.repeatInvocation();
-      }
-    } else {
-      // nothing to do, this was just a forced reschedule
+    if (ti.getScheduler().setsYieldCG(ti)){
+      env.repeatInvocation();
     }
   }
 
   @MJI
   public void sleep__JI__V (MJIEnv env, int clsObjRef, long millis, int nanos) {
     ThreadInfo ti = env.getThreadInfo();
-    SystemState ss = env.getSystemState();
 
-    if (!ti.isFirstStepInsn()) { // first time we see this (may be the only time)
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSleepCG( ti, millis, nanos);
-      if (ss.setNextChoiceGenerator(cg)) {
-        env.repeatInvocation();
-        ti.setSleeping();
-      }
-    } else {
-      // this seems asymmetric (since we only set it to sleeping when we register
-      // a CG) but it isn't. This is only the firstStepInsn if we had a CG
+    // check scheduling point
+    if (ti.getScheduler().setsSleepCG(ti, millis, nanos)){
+      ti.setSleeping();
+      env.repeatInvocation();
+      return;
+    }
+    
+    if (ti.isSleeping()){
       ti.setRunning();
     }
   }
 
   @MJI
-  public void suspend____ (MJIEnv env, int threadObjRef) {
-    ThreadInfo currentThread = env.getThreadInfo();
-    ThreadInfo target = env.getThreadInfoForObjRef(threadObjRef);
-    SystemState ss = env.getSystemState();
+  public void suspend____V (MJIEnv env, int threadObjRef) {
+    ThreadInfo tiCurrent = env.getThreadInfo();
+    ThreadInfo tiSuspended = env.getThreadInfoForObjRef(threadObjRef);
 
-    if (target.isTerminated()) {
-      return;
+    if (tiSuspended.isTerminated()) {
+      return;  // nothing to do, it's already gone
     }
-
-    if (!currentThread.isFirstStepInsn()) {
-      if (target.suspend()){
-        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadSuspendCG(currentThread);
-        if (ss.setNextChoiceGenerator(cg)) {
-          env.repeatInvocation();
-          return;
-        }
-      }
+    
+    if (!tiCurrent.isFirstStepInsn()){ // do this just once
+      tiSuspended.suspend();
+    }
+    
+    // scheduling point
+    if (tiCurrent.getScheduler().setsSuspendCG(tiCurrent, tiSuspended)){
+      env.repeatInvocation();      
     }
   }
 
   @MJI
-  public void resume____ (MJIEnv env, int threadObjRef) {
-    ThreadInfo currentThread = env.getThreadInfo();
-    ThreadInfo target = env.getThreadInfoForObjRef(threadObjRef);
-    SystemState ss = env.getSystemState();
+  public void resume____V (MJIEnv env, int threadObjRef) {
+    ThreadInfo tiCurrent = env.getThreadInfo();
+    ThreadInfo tiResumed = env.getThreadInfoForObjRef(threadObjRef);
 
-    if (currentThread == target){
-      // no self resume prior to suspension
-      return;
+    if (tiCurrent == tiResumed){
+      return;  // no self resume prior to suspension
     }
 
-    if (target.isTerminated()) {
-      return;
+    if (tiResumed.isTerminated()) {
+      return;  // nothing to resume
     }
 
-    if (!currentThread.isFirstStepInsn()) {
-      if (target.resume()){
-        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadResumeCG(currentThread);
-        if (ss.setNextChoiceGenerator(cg)) {
-          env.repeatInvocation();
-          return;
-        }
-      }
+    if (!tiCurrent.isFirstStepInsn()) { // do this just once
+      tiResumed.resume();
+    }
+    
+    // check scheduling point
+    if (tiCurrent.getScheduler().setsResumeCG(tiCurrent, tiResumed)){
+      env.repeatInvocation();
+      return;
     }
   }
 
-  /**
-   * this is here so that we don't have to break the transition on a synchronized call
+  /*
+   * the join() workhorse. We use lockfree waits instead of a simple wait from a synchronized block
+   * to save states
    */
-  static void join0 (MJIEnv env, int joineeRef, long timeout){
-    ThreadInfo tiJoiner = env.getThreadInfo(); // this is the CURRENT thread (joiner)
-    
+  protected void join0 (MJIEnv env, int joineeRef, long timeout){
+    ThreadInfo tiCurrent = env.getThreadInfo();
     ThreadInfo tiJoinee = env.getThreadInfoForObjRef(joineeRef);
-    boolean isAlive = tiJoinee.isAlive();
+    ElementInfo eiJoinee = env.getModifiableElementInfo(joineeRef); // the thread object to wait on
 
-    SystemState ss = env.getSystemState();
-    ElementInfo ei = env.getModifiableElementInfo(joineeRef); // the thread object to wait on
-
-    if (tiJoiner.isInterrupted(true)){ // interrupt status is set, throw and bail
+    if (timeout < 0) {
+      env.throwException("java.lang.IllegalArgumentException", "timeout value is negative");
+      return;
+    }
       
-      // since we use lock-free joins, we need to remove ourselves from the
-      // lock contender list
-      ei.setMonitorWithoutLocked(tiJoiner);
+    if (tiCurrent.isInterrupted(true)){ // interrupt status is set, throw and bail      
+      // since we use lock-free waits, we need to remove ourselves from the lock contender list
+      eiJoinee.setMonitorWithoutLocked(tiCurrent);
       
       // note that we have to throw even if the thread to join to is not alive anymore
       env.throwInterrupt();
       return;
     }
-
-    //--- the join
-    if (tiJoiner.isFirstStepInsn()) { // re-execution, we already have a CG
-
-      switch (tiJoiner.getState()){
-        case UNBLOCKED:
-          // Thread was owning the lock when it joined - we have to wait until
-          // we can reacquire it
-          ei.lockNotified(tiJoiner);
-          break;
-
-        case TIMEDOUT:
-          ei.resumeNonlockedWaiter(tiJoiner);
-          break;
-
-        case RUNNING:
-          if (isAlive) { // we still need to wait
-            ei.wait(tiJoiner, timeout, false); // no need for a new CG
-            env.repeatInvocation();
-          }
-          break;
-      }
-
-    } else { // first time exec, create a CG if the thread is still alive
-
-      if (timeout < 0){
-        env.throwException("java.lang.IllegalArgumentException", "timeout value is negative");
-        return;
-      }
-
-      if (isAlive) {
-
-        ei.wait(tiJoiner, timeout, false);
-        ChoiceGenerator<ThreadInfo> cg = ss.getSchedulerFactory().createWaitCG(ei, tiJoiner, timeout);
-
-        env.setMandatoryNextChoiceGenerator(cg, "no CG for blocking join()");
-        env.repeatInvocation();
-
+  
+    if (!tiCurrent.isFirstStepInsn()){ // to be executed only once    
+      if (tiJoinee.isAlive()) {
+        // block in first top half so that following transitions see this thread as not runnable
+        eiJoinee.wait( tiCurrent, timeout, false);
       } else {
-        // nothing to do, thread is already terminated
+        return; // nothing to do
       }
+    }    
+
+    if (tiCurrent.getScheduler().setsJoinCG(tiCurrent, tiJoinee, timeout)) {
+      env.repeatInvocation();
+      return;
+    }
+    
+    // unblock in bottom half
+    switch (tiCurrent.getState()) {
+      case WAITING:
+      case TIMEOUT_WAITING:
+        throw new JPFException("blocking join without transition break");        
+      
+      case UNBLOCKED:
+        // Thread was owning the lock when it joined - we have to wait until
+        // we can reacquire it
+        eiJoinee.lockNotified(tiCurrent);
+        break;
+
+      case TIMEDOUT:
+        eiJoinee.resumeNonlockedWaiter(tiCurrent);
+        break;
+
+      case RUNNING:
+        if (tiJoinee.isAlive()) { // we still need to wait
+          eiJoinee.wait(tiCurrent, timeout, false); // no need for a new CG
+          env.repeatInvocation();
+        }
+        break;
     }
   }
-
-  // the old generic version that was based on a synchronized method, which
-  // is bad because it leads to superfluous transitions
-  /*
-  public static void join__ (MJIEnv env, int objref) {
-    ThreadInfo tiStop = getThreadInfo(env,objref);
-
-    if (tiStop.isAlive()) {
-      env.wait(objref);
-    }
-  }
-   */
 
   @MJI
   public void join____V (MJIEnv env, int objref){
@@ -444,27 +390,20 @@ public class JPF_java_lang_Thread extends NativePeer {
   }
 
   @MJI
-  public void stop__Ljava_lang_Throwable_2__V(MJIEnv env, int threadRef, int throwableRef) {
-    ThreadInfo tiStop = env.getThreadInfoForObjRef(threadRef);  // the thread to stop
-    ThreadInfo tiCurrent = env.getThreadInfo(); // the currently executing thread
+  public void stop__Ljava_lang_Throwable_2__V (MJIEnv env, int threadRef, int throwableRef) {
+    ThreadInfo tiCurrent = env.getThreadInfo();
+    ThreadInfo tiStopped = env.getThreadInfoForObjRef(threadRef);
 
-    if (tiStop.isTerminated() || tiStop.isStopped()) {
-      // no need to kill it twice
+    if (tiStopped.isTerminated() || tiStopped.isStopped()) {
+      return; // silently ignored
+    }
+
+    if (tiCurrent.getScheduler().setsStopCG(tiCurrent, tiStopped)){
+      env.repeatInvocation();
       return;
     }
 
-    if (!tiCurrent.isFirstStepInsn()) {
-      // since this is usually not caught (it shouldn't, at least not without
-      // rethrowing), we might turn this into a right mover since it terminates tiStop
-
-      SystemState ss = env.getSystemState();
-      ChoiceGenerator<?> cg = ss.getSchedulerFactory().createThreadStopCG(tiCurrent);
-      if (ss.setNextChoiceGenerator(cg)) {
-        env.repeatInvocation();
-        return;
-      }
-    }
-
-    tiStop.setStopped(throwableRef);
+    // stop thread in bottom half
+    tiStopped.setStopped(throwableRef);
   }
 }

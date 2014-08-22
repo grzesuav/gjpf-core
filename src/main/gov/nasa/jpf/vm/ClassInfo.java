@@ -496,13 +496,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     finalizer = getFinalizer0();
 
+    resolveClass(); // takes care of super classes and interfaces
+
     // Used to enter native methods (in the host VM).
     // This needs to be initialized AFTER we get our  MethodInfos, since it does a reverse lookup to determine which
     // ones are handled by the peer (by means of setting MethodInfo attributes)
     nativePeer = loadNativePeer();
     checkUnresolvedNativeMethods();
 
-    resolveClass(); // takes care of super classes and interfaces
     linkFields(); // computes field offsets
     
     setAssertionStatus();
@@ -1808,10 +1809,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     ci.registerClass(ti); // this is safe to call on already loaded classes
 
-    if (!ci.isInitialized()) {
-      if (ci.initializeClass(ti)) {
-        throw new ClinitRequired(ci);
-      }
+    if (ci.initializeClass(ti)) {
+      throw new ClinitRequired(ci);
     }
 
     return ci;
@@ -1957,9 +1956,19 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return ((sei != null) && (sei.getStatus() >= 0));
   }
 
+  /**
+   * note - this works recursively upwards since there might
+   * be a superclass with a clinit that is still executing
+   */
   public boolean isInitialized () {
-    StaticElementInfo sei = getStaticElementInfo();
-    return ((sei != null) && (sei.getStatus() == INITIALIZED));
+    for (ClassInfo ci = this; ci != null; ci = ci.superClass){
+      StaticElementInfo sei = ci.getStaticElementInfo();
+      if (sei == null || sei.getStatus() != INITIALIZED){
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   public boolean isResolved () {
@@ -1988,15 +1997,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     if (sei == null) {
       sei = registerClass(ti);
     }
-    
-    if (sei.getStatus() == UNINITIALIZED){
-      if (initializeClass(ti)) {
-        // there are new <clinit> frames on the stack
-        return true;
-      }
-    }
 
-    return false;
+    return initializeClass(ti); // indicates if we pushed clinits
   }
     
   public void setInitialized() {
@@ -2037,13 +2039,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       }
     }
 
-    if (pushedFrames > 0){
-      // caller needs to reexecute the insn that caused the initialization
-      return true;
-
-    } else {
-      return false;
-    }
+    return (pushedFrames > 0);
   }
 
   /**

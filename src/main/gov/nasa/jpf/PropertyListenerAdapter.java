@@ -99,7 +99,7 @@ public abstract class PropertyListenerAdapter extends GenericProperty implements
   @Override
   public void objectNotifyAll (VM vm, ThreadInfo currentThread, ElementInfo notifyingObject) {}
   @Override
-  public void objectExposed (VM vm, ThreadInfo currentThread, ElementInfo sharedObject, ElementInfo exposedObject) {}
+  public void objectExposed (VM vm, ThreadInfo currentThread, ElementInfo fieldOwnerObject, ElementInfo exposedObject) {}
   @Override
   public void objectShared (VM vm, ThreadInfo currentThread, ElementInfo sharedObject) {}
   @Override

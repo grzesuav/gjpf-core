@@ -466,10 +466,8 @@ public class ClassLoaderInfo
 
     ci.registerClass(ti); // this is safe to call on already loaded classes
 
-    if (!ci.isInitialized()) {
-      if (ci.initializeClass(ti)) {
-        throw new ClinitRequired(ci);
-      }
+    if (ci.initializeClass(ti)) {
+      throw new ClinitRequired(ci);
     }
 
     return ci;

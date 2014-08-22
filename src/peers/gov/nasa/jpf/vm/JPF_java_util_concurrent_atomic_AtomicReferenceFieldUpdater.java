@@ -20,10 +20,6 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.annotation.MJI;
-import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ElementInfo;
-import gov.nasa.jpf.vm.FieldInfo;
-import gov.nasa.jpf.vm.MJIEnv;
 
 
 /**
@@ -55,15 +51,21 @@ public class JPF_java_util_concurrent_atomic_AtomicReferenceFieldUpdater extends
 
   @MJI
   public boolean compareAndSet__Ljava_lang_Object_2Ljava_lang_Object_2Ljava_lang_Object_2__Z
-  (MJIEnv env, int objRef, int tRef, int fExpect, int fUpdate){
+                                  (MJIEnv env, int objRef, int tRef, int fExpect, int fUpdate){
 
-    if (isNewPorFieldBoundary(env, objRef, tRef) && createAndSetFieldCG(env, tRef)) {
-      return false;  // re-executed anyways
+    if (tRef == MJIEnv.NULL){
+      env.throwException("java.lang.NullPointerException", "AtomicFieldUpdater called on null object");
+      return false;
     }
+    
+    ThreadInfo ti = env.getThreadInfo();
+    ElementInfo ei = ti.getModifiableElementInfo(tRef);
+    FieldInfo fi = getFieldInfo( ti.getElementInfo(objRef), ei);
 
-    int fidx = env.getIntField(objRef, "fieldId");
-    ElementInfo ei = env.getModifiableElementInfo(tRef);
-    FieldInfo fi = env.getClassInfo(tRef).getInstanceField(fidx);
+    if (reschedulesAccess(ti, ei, fi)){
+      env.repeatInvocation();
+      return false;
+    }
 
     int v = ei.getReferenceField(fi);
     if (v == fExpect) {
@@ -81,54 +83,66 @@ public class JPF_java_util_concurrent_atomic_AtomicReferenceFieldUpdater extends
   }
 
   @MJI
-  public void set__Ljava_lang_Object_2Ljava_lang_Object_2__
-  (MJIEnv env, int objRef, int tRef, int fNewValue){
+  public void set__Ljava_lang_Object_2Ljava_lang_Object_2__V (MJIEnv env, int objRef, int tRef, int fNewValue){
 
-    if (isNewPorFieldBoundary(env, objRef, tRef) && createAndSetFieldCG(env, tRef)) {
-      return;  // re-executed anyways
+    if (tRef == MJIEnv.NULL){
+      env.throwException("java.lang.NullPointerException", "AtomicFieldUpdater called on null object");
+      return;
     }
+    
+    ThreadInfo ti = env.getThreadInfo();
+    ElementInfo ei = ti.getModifiableElementInfo(tRef);
+    FieldInfo fi = getFieldInfo( ti.getElementInfo(objRef), ei);
 
-    int fidx = env.getIntField(objRef, "fieldId");
-    ElementInfo ei = env.getModifiableElementInfo(tRef);
-    FieldInfo fi = env.getClassInfo(tRef).getInstanceField(fidx);
+    if (reschedulesAccess(ti, ei, fi)){
+      env.repeatInvocation();
+      return;
+    }
 
     ei.setReferenceField(fi, fNewValue);
   }
 
   @MJI
-  public void lazySet__Ljava_lang_Object_2Ljava_lang_Object_2__
-  (MJIEnv env, int objRef, int tRef, int fNewValue){
-     set__Ljava_lang_Object_2Ljava_lang_Object_2__(env, objRef, tRef, fNewValue);
+  public void lazySet__Ljava_lang_Object_2Ljava_lang_Object_2__V (MJIEnv env, int objRef, int tRef, int fNewValue){
+     set__Ljava_lang_Object_2Ljava_lang_Object_2__V(env, objRef, tRef, fNewValue);
   }
 
   @MJI
-  public int get__Ljava_lang_Object_2__Ljava_lang_Object_2
-  (MJIEnv env, int objRef, int tRef){
-
-    if (isNewPorFieldBoundary(env, objRef, tRef) && createAndSetFieldCG(env, tRef)) {
-      return 0;  // re-executed anyways
+  public int get__Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int objRef, int tRef){
+    if (tRef == MJIEnv.NULL){
+      env.throwException("java.lang.NullPointerException", "AtomicFieldUpdater called on null object");
+      return MJIEnv.NULL;
     }
+    
+    ThreadInfo ti = env.getThreadInfo();
+    ElementInfo ei = ti.getElementInfo(tRef);
+    FieldInfo fi = getFieldInfo( ti.getElementInfo(objRef), ei);
 
-    int fidx = env.getIntField(objRef, "fieldId");
-    ElementInfo ei = env.getElementInfo(tRef);
-    FieldInfo fi = env.getClassInfo(tRef).getInstanceField(fidx);
+    if (reschedulesAccess(ti, ei, fi)){
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
 
     return ei.getReferenceField(fi);
   }
 
   @MJI
-  public int getAndSet__Ljava_lang_Object_2Ljava_lang_Object_2__Ljava_lang_Object_2
-  (MJIEnv env, int objRef, int tRef, int fNewValue){
-
-    if (isNewPorFieldBoundary(env, objRef, tRef) && createAndSetFieldCG(env, tRef)) {
-      return 0;  // re-executed anyways
+  public int getAndSet__Ljava_lang_Object_2Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int objRef, int tRef, int fNewValue){
+    if (tRef == MJIEnv.NULL){
+      env.throwException("java.lang.NullPointerException", "AtomicFieldUpdater called on null object");
+      return MJIEnv.NULL;
     }
+    
+    ThreadInfo ti = env.getThreadInfo();
+    ElementInfo ei = ti.getElementInfo(tRef);
+    FieldInfo fi = getFieldInfo( ti.getElementInfo(objRef), ei);
 
-    int fidx = env.getIntField(objRef, "fieldId");
-    ElementInfo ei = env.getModifiableElementInfo(tRef);
-    FieldInfo fi = env.getClassInfo(tRef).getInstanceField(fidx);
+    if (reschedulesAccess(ti, ei, fi)){
+      env.repeatInvocation();
+      return MJIEnv.NULL;
+    }
+    
     int result = ei.getReferenceField(fi);
-
     ei.setReferenceField(fi, fNewValue);
 
     return result;

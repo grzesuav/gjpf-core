@@ -296,6 +296,62 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
       }
     }
   }
+  
+  public boolean hasProcessTimeoutRunnables (ApplicationContext appCtx){
+    for (int i = 0; i < threads.length; i++) {
+      ThreadInfo ti = threads[i];
+      if (ti.isTimeoutRunnable() && ti.getApplicationContext() == appCtx) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  public ThreadInfo[] getProcessTimeoutRunnables (ApplicationContext appCtx){
+    ArrayList<ThreadInfo> list = new ArrayList<ThreadInfo>();
+    
+    for (int i = 0; i < threads.length; i++) {
+      ThreadInfo ti = threads[i];
+      if (ti.isTimeoutRunnable() && ti.getApplicationContext() == appCtx) {
+        list.add(ti);
+      }
+    }
+    
+    return list.toArray( new ThreadInfo[list.size()]);
+  }
+  
+  public boolean hasLiveThreads(){
+    for (int i = 0; i < threads.length; i++) {
+      if (threads[i].isAlive()) {
+        return true;
+      }
+    }
+    return false;    
+  }
+  
+  public boolean hasTimeoutRunnables (){
+    for (int i = 0; i < threads.length; i++) {
+      if (threads[i].isRunnable()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public ThreadInfo[] getTimeoutRunnables (){
+    ArrayList<ThreadInfo> list = new ArrayList<ThreadInfo>();
+    
+    for (int i = 0; i < threads.length; i++) {
+      ThreadInfo ti = threads[i];
+      if (ti.isTimeoutRunnable()) {
+        list.add(ti);
+      }
+    }
+    
+    return list.toArray( new ThreadInfo[list.size()]);
+  }
+
+  
 
   public boolean hasAnyMatching(Predicate<ThreadInfo> predicate) {
     for (int i = 0, l = threads.length; i < l; i++) {

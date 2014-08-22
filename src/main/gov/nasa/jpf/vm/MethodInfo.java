@@ -259,6 +259,8 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
     if (name.equals("<init>")) {
       attributes |= IS_INIT;
     } else if (name.equals("<clinit>")) {
+      // for some reason clinits don't have the synchronized modifier, but they are synchronized
+      // we keep it consistent so that we don't have to implement special lock acquisition/release for clinits
       this.modifiers |= Modifier.SYNCHRONIZED;
       attributes |= IS_CLINIT | FIREWALL;
     }

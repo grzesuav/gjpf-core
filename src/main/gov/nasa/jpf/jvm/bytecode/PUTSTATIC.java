@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.util.InstructionState;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
@@ -25,6 +26,7 @@ import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
 import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.SharednessPolicy;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
@@ -53,63 +55,53 @@ public class PUTSTATIC extends JVMStaticFieldInstruction implements WriteInstruc
   @Override
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
+    FieldInfo fieldInfo;
     
-    if (!ti.isFirstStepInsn()) { // top half
-      FieldInfo fieldInfo;
-    
-      // handle class loading
-      try {
-        fieldInfo = getFieldInfo();
-      } catch(LoadOnJPFRequired lre) {
-        return ti.getPC();
-      }
-      
-      if (fieldInfo == null) {
-        return ti.createAndThrowException("java.lang.NoSuchFieldError", (className + '.' + fname));
-      }
-      
-      // handle static class initialization
-      ClassInfo ciField = fi.getClassInfo();
-      if (!mi.isClinit(ciField) && ciField.pushRequiredClinits(ti)) {
-        // note - this returns the next insn in the topmost clinit that just got pushed
-        return ti.getPC();
-      }
-            
-      ElementInfo eiFieldOwner = ciField.getModifiableStaticElementInfo();
-      
-      if (ti.isStaticSharednessRelevant(this, eiFieldOwner, fieldInfo)) {
-        // check for non-lock protected shared object access, breaking before the field is written
-        eiFieldOwner = ti.checkSharedStaticFieldAccess(this, eiFieldOwner, fieldInfo);
-        if (ti.hasNextChoiceGenerator()) {
-          return this;
-        }
-
-        // handle object exposure (see PUTFIELD)
-        if (isReferenceField()) {
-          int refValue = frame.peek();
-          ti.checkStaticFieldObjectExposure(this, eiFieldOwner, fieldInfo, refValue);
-          if (ti.hasNextChoiceGenerator()) {
-            lastValue = PutHelper.setReferenceField(ti, frame, eiFieldOwner, fieldInfo);
-            ti.markExposure(frame); // make sure we don't overwrite external changes in bottom half
-            return this;
-          }
-        }
-      }
-        
-      // regular case - non shared or lock protected field
-      lastValue = PutHelper.setField( ti, frame, eiFieldOwner, fieldInfo);
-      
-    } else { // bottom-half - re-execution
-      // check if the value was already set in the top half
-      // NOTE - we can also get here because of a non-exposure CG (thread termination, interrupt etc.)
-      if (!ti.checkAndResetExposureMark(frame)){
-        ClassInfo ciField = fi.getClassInfo();
-        ElementInfo eiFieldOwner = ciField.getModifiableStaticElementInfo();
-        lastValue = PutHelper.setField(ti, frame, eiFieldOwner, fi);
-      }  
+    //--- check if this causes a class load by a user defined classloader
+    try {
+      fieldInfo = getFieldInfo();
+    } catch (LoadOnJPFRequired lre) {
+      return ti.getPC();
     }
     
-    popOperands(frame);
+    if (fieldInfo == null) {
+      return ti.createAndThrowException("java.lang.NoSuchFieldError", (className + '.' + fname));
+    }
+
+    //--- check if this has to trigger class initialization
+    ClassInfo ciField = fieldInfo.getClassInfo();
+    if (!mi.isClinit(ciField) && ciField.pushRequiredClinits(ti)) {
+      return ti.getPC(); // this returns the next insn in the topmost clinit that just got pushed
+    }
+    ElementInfo eiFieldOwner = ciField.getModifiableStaticElementInfo();
+
+    //--- check scheduling point due to shared class access
+    Scheduler scheduler = ti.getScheduler();
+    if (scheduler.canHaveSharedClassCG( ti, this, eiFieldOwner, fieldInfo)){
+      eiFieldOwner = scheduler.updateClassSharedness(ti, eiFieldOwner, fi);
+      if (scheduler.setsSharedClassCG( ti, this, eiFieldOwner, fieldInfo)){
+        return this; // re-execute
+      }
+    }
+    
+    // check if this gets re-executed from a exposure CG (which already did the assignment
+    if (frame.getAndResetFrameAttr(InstructionState.class) == null){
+      lastValue = PutHelper.setField(ti, frame, eiFieldOwner, fieldInfo);
+    }
+      
+    //--- check scheduling point due to exposure through shared class
+    if (isReferenceField()){
+      int refValue = frame.peek();
+      if (refValue != MJIEnv.NULL){
+        ElementInfo eiExposed = ti.getElementInfo(refValue);
+        if (scheduler.setsSharedClassExposureCG(ti,this,eiFieldOwner,fieldInfo,eiExposed)){
+          frame.addFrameAttr( InstructionState.getProcessedState());
+          return this; // re-execute AFTER assignment
+        }
+      }        
+    }
+    
+    popOperands(frame);      
     return getNext();
   }
   

@@ -38,7 +38,8 @@ public abstract class InfoObject implements Cloneable {
 
   /** 
    * user defined attribute objects.
-   * Note - this is not automatically state restored upon backtracking
+   * Note - this is NOT automatically state restored upon backtracking,
+   * subclasses have to do this on their own if required
    */
   protected Object attr;
   

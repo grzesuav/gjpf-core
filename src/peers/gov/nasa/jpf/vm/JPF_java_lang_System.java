@@ -80,11 +80,9 @@ public class JPF_java_lang_System extends NativePeer {
       ci.registerClass(ti);
     }
 
-    if (!ci.isInitialized()) {
-      if (ci.initializeClass(ti)) {
-        env.repeatInvocation();
-        return MJIEnv.NULL;
-      }
+    if (ci.initializeClass(ti)) {
+      env.repeatInvocation();
+      return MJIEnv.NULL;
     }
 
     return env.newObject(ci);

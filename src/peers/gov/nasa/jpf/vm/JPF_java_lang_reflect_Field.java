@@ -174,28 +174,24 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     return true;
   }
   
-  protected boolean createAndSetSharedFieldAccessCG ( ElementInfo eiFieldOwner, ThreadInfo ti) {
-    VM vm = ti.getVM();
-    ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSharedFieldAccessCG(eiFieldOwner, ti);
-    if (cg != null) {
-      if (vm.setNextChoiceGenerator(cg)){
-        ti.skipInstructionLogging(); // <2do> Hmm, might be more confusing not to see it
-        return true;
-      }
-    }
-
-    return false;
-  }
-  
   protected ElementInfo checkSharedFieldAccess (ThreadInfo ti, ElementInfo ei, FieldInfo fi){    
     Instruction insn = ti.getPC();
-    SharednessPolicy sp = ti.getSharednessPolicy();
+    Scheduler scheduler = ti.getScheduler();
     
-    if (fi.isStatic()){
-      return sp.checkSharedStaticFieldAccess(ti, insn, ei, fi);
+    if (fi.isStatic()){      
+      if (scheduler.canHaveSharedClassCG(ti, insn, ei, fi)){
+        ei = scheduler.updateClassSharedness(ti, ei, fi);
+        scheduler.setsSharedClassCG(ti, insn, ei, fi);
+      }
+      
     } else {
-      return sp.checkSharedInstanceFieldAccess(ti, insn, ei, fi);      
+      if (scheduler.canHaveSharedObjectCG(ti, insn, ei, fi)){
+        ei = scheduler.updateObjectSharedness(ti, ei, fi);
+        scheduler.setsSharedObjectCG(ti, insn, ei, fi);
+      }
     }
+    
+    return ei;
   }
   
   @MJI
@@ -205,13 +201,12 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
       if (checkFieldType(env, fi, BooleanFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return false;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return false;
         }
+        
         return ei.getBooleanField(fi);
       }
     }
@@ -225,12 +220,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null) {
       if (checkFieldType(env, fi, BooleanFieldInfo.class)) {
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return 0;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return 0;
         }
         return ei.getByteField(fi);
       }
@@ -245,12 +238,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
       if (checkFieldType(env, fi, CharFieldInfo.class)) {
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return 0;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return 0;
         }
         return ei.getCharField(fi);
       }
@@ -265,12 +256,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
       if (checkFieldType(env, fi, ShortFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return 0;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return 0;
         }
         return ei.getShortField(fi);
       }
@@ -285,12 +274,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
       if (checkFieldType(env, fi, IntegerFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return 0;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return 0;
         }
         return ei.getIntField(fi);
       }
@@ -305,12 +292,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
       if (checkFieldType(env, fi, LongFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return 0;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return 0;
         }
         return ei.getLongField(fi);
       }
@@ -325,12 +310,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
       if (checkFieldType(env, fi, FloatFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return 0;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return 0;
         }
         return ei.getFloatField(fi);
       }
@@ -345,12 +328,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, false);
     if (ei != null){
       if (checkFieldType(env, fi, DoubleFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return 0;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return 0;
         }
         return ei.getDoubleField(fi);
       }
@@ -402,12 +383,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
       if (checkFieldType(env, fi, BooleanFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.getVM().hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return;
         }
         ei.setBooleanField(fi, val);
       }
@@ -425,12 +404,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
       if (checkFieldType(env, fi, ByteFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.getVM().hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return;
         }
         ei.setByteField(fi, val);
       }
@@ -448,12 +425,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
       if (checkFieldType(env, fi, CharFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.getVM().hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return;
         }
         ei.setCharField(fi, val);
       }
@@ -471,12 +446,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
       if (checkFieldType(env, fi, ShortFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.getVM().hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return;
         }
         ei.setShortField(fi, val);
       }
@@ -494,14 +467,11 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
       if (checkFieldType(env, fi, IntegerFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.getVM().hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return;
         }
-
         ei.setIntField(fi, val);
       }
     }
@@ -518,12 +488,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
       if (checkFieldType(env, fi, LongFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.getVM().hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return;
         }
         ei.setLongField(fi, val);
       }
@@ -541,12 +509,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
       if (checkFieldType(env, fi, FloatFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.getVM().hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return;
         }
         ei.setFloatField(fi, val);
       }
@@ -564,12 +530,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
       if (checkFieldType(env, fi, DoubleFieldInfo.class)){
-        if (!ti.isFirstStepInsn()) {
-          ei = checkSharedFieldAccess(ti, ei, fi);
-          if (ti.getVM().hasNextChoiceGenerator()) {
-            env.repeatInvocation();
-            return;
-          }
+        ei = checkSharedFieldAccess(ti, ei, fi);
+        if (ti.getVM().hasNextChoiceGenerator()) {
+          env.repeatInvocation();
+          return;
         }
         ei.setDoubleField(fi, val);
       }
@@ -587,12 +551,10 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
       return 0;
     }
      
-    if (!ti.isFirstStepInsn()) {
-      ei = checkSharedFieldAccess(ti, ei, fi);
-      if (ti.getVM().hasNextChoiceGenerator()) {
-        env.repeatInvocation();
-        return 0;
-      }
+    ei = checkSharedFieldAccess(ti, ei, fi);
+    if (ti.getVM().hasNextChoiceGenerator()) {
+      env.repeatInvocation();
+      return 0;
     }
     
     if (!(fi instanceof ReferenceFieldInfo)) { // primitive type, we need to box it
@@ -721,13 +683,11 @@ public class JPF_java_lang_reflect_Field extends NativePeer {
     
     ElementInfo ei = getCheckedElementInfo(env, fi, objRef, ownerRef, true);
     if (ei != null){
-      if (!ti.isFirstStepInsn()) {
-        // <2do> what about exposure?
-        ei = checkSharedFieldAccess(ti, ei, fi);
-        if (ti.getVM().hasNextChoiceGenerator()) {
-          env.repeatInvocation();
-          return;
-        }
+      // <2do> what about exposure?
+      ei = checkSharedFieldAccess(ti, ei, fi);
+      if (ti.getVM().hasNextChoiceGenerator()) {
+        env.repeatInvocation();
+        return;
       }
 
       if (!setValue(env, fi, ownerRef, val, attr)) {

@@ -300,7 +300,7 @@ public class NativePeer implements Cloneable {
    * corresponding model class MethodInfo attributes
    * <2do> pcm - this is too long, break it down
    */
-  private void loadMethods (boolean cacheMethods) {
+  protected void loadMethods (boolean cacheMethods) {
     // since we allow native peer class hierarchies, we have to look at all methods
     //Method[] m = peerClass.getDeclaredMethods();
     Method[] m = peerClass.getMethods();
@@ -362,25 +362,47 @@ public class NativePeer implements Cloneable {
           miNative.replace(mi);
 
         } else {
-          if (!ignoreOrphan(mth)){          
-            // we have an orphan method, i.e. a peer method that does not map into any model method
-            // (this is usually a signature typo or an out-of-sync peer)
-            String message = "orphan NativePeer method: " + ci.getName() + '.' + mname;
-
-            if (noOrphanMethods) {
-              throw new JPFException(message);
-            }
-
-            // issue a warning if we have a NativePeer native method w/o a corresponding
-            // method in the model class (this might happen due to compiler optimizations
-            // silently skipping empty methods)
-            logger.warning(message);
-          }
+          checkOrphan(mth, mname);
         }
       }
     }
   }
 
+  protected void checkOrphan (Method mth, String mname){
+    if (!ignoreOrphan(mth)) {
+      // we have an orphan method, i.e. a peer method that does not map into any model method
+      // This is usually a signature typo or an out-of-sync peer, but could also be a
+      // MJI method in a peer superclass which is bound to a MethodInfo in a model superclass
+
+      Class<?> implCls = mth.getDeclaringClass();
+      if (implCls != peerClass) {
+        ClassInfo ciSuper = ci.getSuperClass();
+        if (ciSuper != null){
+          MethodInfo mi = ciSuper.getMethod(mname, true);
+          if (mi != null){
+            if (mi instanceof NativeMethodInfo){
+              NativeMethodInfo nmi = (NativeMethodInfo)mi;
+              if (nmi.getMethod().equals(mth)){
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      String message = "orphan NativePeer method: " + ci.getName() + '.' + mname;
+
+      if (noOrphanMethods) {
+        throw new JPFException(message);
+      } else {
+        // issue a warning if we have a NativePeer native method w/o a corresponding
+        // method in the model class (this might happen due to compiler optimizations
+        // silently skipping empty methods)
+        logger.warning(message);
+      }
+    }
+  }
+  
   protected boolean ignoreOrphan (Method m){
     MJI annotation = m.getAnnotation(MJI.class);
     return annotation.noOrphanWarning();

@@ -18,11 +18,13 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.util.InstructionState;
 import gov.nasa.jpf.vm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -58,58 +60,59 @@ public class AASTORE extends ArrayStoreInstruction {
     int refValue = frame.peek();
     int idx = frame.peek(1);
     int aref = frame.peek(2);
-    ElementInfo eiArray = ti.getElementInfo(aref);
+    
+    value = aref;
+    index = idx;
+    
+    if (aref == MJIEnv.NULL) {
+      return ti.createAndThrowException("java.lang.NullPointerException");
+    }
+    
+    ElementInfo eiArray = ti.getModifiableElementInfo(aref);
         
-    if (!ti.isFirstStepInsn()){ // first execution, top half
-      //--- runtime exceptions
-      if (aref == MJIEnv.NULL) {
-        return ti.createAndThrowException("java.lang.NullPointerException");
-      }
+    if (!ti.isFirstStepInsn()){ // we only need to check this once
       Instruction xInsn = checkArrayStoreException(ti, frame, eiArray);
       if (xInsn != null){
         return xInsn;
       }
+    }
     
-      //--- shared access CG
-      boolean skipExposure = false;
-      if (ti.isArraySharednessRelevant(this, eiArray)){
-        eiArray = ti.checkSharedArrayAccess(this, eiArray, idx);
-        if (ti.hasNextChoiceGenerator()) {
-          return this;
-        }
-      } else {
-        skipExposure = true;
+    boolean checkExposure = false;
+    Scheduler scheduler = ti.getScheduler();
+    if (scheduler.canHaveSharedArrayCG(ti, this, eiArray, idx)){
+      checkExposure = true;
+      eiArray = scheduler.updateArraySharedness(ti, eiArray, index);
+      if (scheduler.setsSharedArrayCG(ti, this, eiArray, idx)){
+        return this;
       }
-           
+    }
+
+    // check if this gets re-executed from an exposure CG
+    if (frame.getAndResetFrameAttr(InstructionState.class) == null){
       try {
-        setArrayElement( ti, frame, eiArray); // this pops operands
+        Object attr = frame.getOperandAttr();
+        eiArray.checkArrayBounds(idx);
+        eiArray.setReferenceElement(idx, refValue);
+        eiArray.setElementAttrNoClone(idx, attr);
+        
       } catch (ArrayIndexOutOfBoundsExecutiveException ex) { // at this point, the AIOBX is already processed
         return ex.getInstruction();
       }
-      
-      //--- exposure
-      if (!skipExposure){
-        ti.checkArrayObjectExposure(this, eiArray, idx, refValue);
-        if (ti.hasNextChoiceGenerator()) {
-          ti.markExposure(frame);
-          return this;
+
+      if (checkExposure) {
+        if (refValue != MJIEnv.NULL) {
+          ElementInfo eiExposed = ti.getElementInfo(refValue);
+          if (scheduler.setsSharedObjectExposureCG(ti, this, eiArray, null, eiArray)) {
+            frame.addFrameAttr( InstructionState.getProcessedState());
+            return this;
+          }
         }
       }
-
-      return getNext(ti);
-      
-    } else { // re-execution, bottom half (was either shared array or object exposure)
-      if (!ti.checkAndResetExposureMark(frame)){
-        // if this wasn't an exposure we still have to set the array element
-        try {
-          setArrayElement( ti, frame, eiArray); // this pops operands
-        } catch (ArrayIndexOutOfBoundsExecutiveException ex) { // at this point, the AIOBX is already processed
-          return ex.getInstruction();
-        }        
-      }
-      // otherwise the element has already been set
-      return getNext(ti);      
     }
+    
+    frame.pop(3);
+    
+    return getNext(ti);      
   }
 
   protected Instruction checkArrayStoreException(ThreadInfo ti, StackFrame frame, ElementInfo ei){

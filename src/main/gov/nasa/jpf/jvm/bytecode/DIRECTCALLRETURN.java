@@ -59,10 +59,8 @@ public class DIRECTCALLRETURN extends ReturnInstruction implements JVMInstructio
 
   @Override
   public Instruction execute (ThreadInfo ti) {
-    // pop the current frame but do not advance the new top frame, and do
-    // not touch its operand stack
-    
-    if (ti.getStackDepth() == 1){ // thread exit point (might be re-executed)
+    if (ti.getStackDepth() == 1){ // thread exit point
+      // this can execute several times because of the different locks involved
     
       if (!ti.exit()){
         return this; // repeat, we couldn't get the lock
@@ -71,6 +69,9 @@ public class DIRECTCALLRETURN extends ReturnInstruction implements JVMInstructio
       }      
       
     } else {
+      // pop the current frame but do not advance the new top frame, and do
+      // not touch its operand stack
+    
       StackFrame frame = ti.popDirectCallFrame();
       return frame.getPC();
     }

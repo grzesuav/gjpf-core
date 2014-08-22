@@ -22,7 +22,7 @@ import gov.nasa.jpf.vm.ArrayIndexOutOfBoundsExecutiveException;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
-import gov.nasa.jpf.vm.SharednessPolicy;
+import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 
@@ -38,40 +38,37 @@ public abstract class ArrayLoadInstruction extends JVMArrayElementInstruction im
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
 
-    // we need to get the object first, to check if it is shared
-    int aref = frame.peek(1); // ..,arrayRef,idx
-    if (aref == MJIEnv.NULL) {
+    index = frame.peek();
+    arrayRef = frame.peek(1); // ..,arrayRef,idx
+    if (arrayRef == MJIEnv.NULL) {
       return ti.createAndThrowException("java.lang.NullPointerException");
-    }
+    }    
+    ElementInfo eiArray = ti.getElementInfo(arrayRef);
     
-    ElementInfo eiArray = ti.getElementInfo(aref);
-    
-    if (ti.isArraySharednessRelevant(this, eiArray)){
-      eiArray = ti.checkSharedArrayAccess( this, eiArray, frame.peek());
-      if (ti.hasNextChoiceGenerator()) {
+    Scheduler scheduler = ti.getScheduler();
+    if (scheduler.canHaveSharedArrayCG( ti, this, eiArray, index)){ // don't modify the frame before this
+      eiArray = scheduler.updateArraySharedness(ti, eiArray, index);
+      if (scheduler.setsSharedArrayCG( ti, this, eiArray, index)){
         return this;
       }
     }
     
-    index = frame.pop();
-
-    // we should not set 'arrayRef' before the CG check
-    // (this would kill the CG loop optimization)
-    arrayRef = frame.pop();
+    frame.pop(2); // now we can pop index and array reference
     
     try {
       push(frame, eiArray, index);
 
-      Object attr = eiArray.getElementAttr(index);
-      if (attr != null) {
+      Object elementAttr = eiArray.getElementAttr(index);
+      if (elementAttr != null) {
         if (getElementSize() == 1) {
-          frame.setOperandAttr(attr);
+          frame.setOperandAttr(elementAttr);
         } else {
-          frame.setLongOperandAttr(attr);
+          frame.setLongOperandAttr(elementAttr);
         }
       }
       
       return getNext(ti);
+      
     } catch (ArrayIndexOutOfBoundsExecutiveException ex) {
       return ex.getInstruction();
     }

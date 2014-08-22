@@ -232,7 +232,6 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
     ss.getTrail().setAnnotation(cmt);
   }
 
-  /** deprectated, just use assert */
   @MJI
   public static void assertTrue__Z__V (MJIEnv env, int clsObjRef, boolean b) {
     if (!b) {
@@ -240,18 +239,17 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
     }
   }
 
-  // those are evil - use with extreme care
+  // those are evil - use with extreme care. If something blocks inside of
+  // an atomic section we have to raise an exception
+  
   @MJI
   public static void beginAtomic____V (MJIEnv env, int clsObjRef) {
     if (enableAtomic){
       ThreadInfo tiAtomic = env.getThreadInfo();
-      if (!tiAtomic.isFirstStepInsn()){
-        SystemState ss = env.getSystemState();
-        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createBeginAtomicCG(tiAtomic);
-        if (ss.setNextChoiceGenerator(cg)) {
-          env.repeatInvocation();
-          return;
-        }
+      
+      if (tiAtomic.getScheduler().setsBeginAtomicCG(tiAtomic)){
+        env.repeatInvocation();
+        return;
       }
 
       env.getSystemState().incAtomic();
@@ -265,12 +263,11 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
 
       if (!tiAtomic.isFirstStepInsn()){
         env.getSystemState().decAtomic();
-
-        SystemState ss = env.getSystemState();
-        ChoiceGenerator<?> cg = ss.getSchedulerFactory().createEndAtomicCG(tiAtomic);
-        if (ss.setNextChoiceGenerator(cg)) {
-          env.repeatInvocation();
-        }
+      }
+      
+      if (tiAtomic.getScheduler().setsEndAtomicCG(tiAtomic)){
+        env.repeatInvocation();
+        return;
       }
     }
   }

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
@@ -26,6 +27,7 @@ import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
@@ -255,41 +257,37 @@ public abstract class JVMInvokeInstruction extends InvokeInstruction implements 
     return null;
   }
 
-
-  protected boolean checkSyncCG (ElementInfo ei, ThreadInfo ti){
-    if (!ti.isFirstStepInsn()) {
-      if (ei.getLockingThread() != ti) {  // maybe its a recursive lock
-        VM vm = ti.getVM();
-
-        if (ei.canLock(ti)) { // we can lock the object, check if we need a CG
-          if (ei.isShared()) {
-            ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
-            if (cg != null) {
-              if (vm.setNextChoiceGenerator(cg)) {
-                ei = ei.getModifiableInstance();
-                ei.registerLockContender(ti);  // Record that this thread would lock the object upon next execution
-                return true;
-              }
-            }
-          }
-
-        } else { // already locked by another thread, we have to block and therefore need a CG
-          ei = ei.getModifiableInstance();
-          // the top half already did set the object shared
-          ei.block(ti); // do this before we obtain the CG so that this thread is not in its choice set
-
-          ChoiceGenerator<?> cg = vm.getSchedulerFactory().createSyncMethodEnterCG(ei, ti);
-          vm.setMandatoryNextChoiceGenerator(cg, "blocking sync without CG");
+  /**
+   * this does the lock registration/acquisition and respective transition break 
+   * return true if the caller has to re-execute
+   */
+  protected boolean reschedulesLockAcquisition (ThreadInfo ti, ElementInfo ei){
+    Scheduler scheduler = ti.getScheduler();
+    ei = ei.getModifiableInstance();
+    
+    if (!ti.isLockOwner(ei)){ // we only need to register, block and/or reschedule if this is not a recursive lock
+      if (ei.canLock(ti)) {
+        // record that this thread would lock the object upon next execution if we break the transition
+        // (note this doesn't re-add if already registered)
+        ei.registerLockContender(ti);
+        if (scheduler.setsLockAcquisitionCG(ti, ei)) { // optional scheduling point
           return true;
         }
+        
+      } else { // we need to block
+        ei.block(ti); // this means we only re-execute once we can acquire the lock
+        if (scheduler.setsBlockedThreadCG(ti, ei)){ // mandatory scheduling point
+          return true;
+        }
+        throw new JPFException("blocking synchronized call without transition break");            
       }
     }
-
+    
+    // locking will be done by ti.enter()
     return false;
   }
-
-
   
+    
   public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

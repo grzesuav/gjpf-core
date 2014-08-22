@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.annotation.MJI;
 import gov.nasa.jpf.vm.ArrayFields;
 import gov.nasa.jpf.vm.ChoiceGenerator;
@@ -100,7 +101,7 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
   }
 
 
-  // this is a specialized, native wait that does not require a lock, and that can
+  // this is a specialized, native wait() for the current thread that does not require a lock, and that can
   // be turned off by a preceding unpark() call (which is not accumulative)
   // park can be interrupted, but it doesn't throw an InterruptedException, and it doesn't clear the status
   // it can only be called from the current (parking) thread
@@ -111,62 +112,59 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
     int permitRef = env.getReferenceField( objRef, "permit");
     ElementInfo ei = env.getModifiableElementInfo(permitRef);
 
-    if (ti.isFirstStepInsn()){ // re-executed
+    if (ti.isInterrupted(false)) {
+      // there is no lock, so we go directly back to running and therefore
+      // have to remove ourself from the contender list
+      ei.setMonitorWithoutLocked(ti);
 
-      //assert ti.getLockObject() == null : "private 'permit' object locked";
-
-      // notified | timedout | interrupted -> running
-      switch (ti.getState()) {
-        case NOTIFIED:
-        case TIMEDOUT:
-        case INTERRUPTED:
-          ti.resetLockRef();
-          ti.setRunning();
-          break;
-        default:
-          // nothing
-      }
-
-    } else { // first time
-
-      if (ti.isInterrupted(false)) {
-        // there is no lock, so we go directly back to running and therefore
-        // have to remove ourself from the contender list
-        ei.setMonitorWithoutLocked(ti);
-        
-        // note that park() does not throw an InterruptedException
-        return;
-      }
-
+      // note that park() does not throw an InterruptedException
+      return;
+    }
+    
+    if (!ti.isFirstStepInsn()){
       if (ei.getBooleanField("blockPark")) { // we have to wait, but don't need a lock
-
         // running -> waiting | timeout_waiting
         ei.wait(ti, timeout, false);
-
-        assert ti.isWaiting();
-
-        // note we pass in the timeout value, since this might determine the type of CG that is created
-        ChoiceGenerator<?> cg = env.getSchedulerFactory().createParkCG(ei, ti, isAbsoluteTime, timeout);
-        env.setMandatoryNextChoiceGenerator(cg, "no CG on blocking park()");
-        env.repeatInvocation();
-  
+        
       } else {
-        ei.setBooleanField("blockPark", true); // next time
+        ei.setBooleanField("blockPark", true); // re-arm for next park
+        return;
       }
     }
+    
+    // scheduling point
+    if (ti.getScheduler().setsParkCG( ti, isAbsoluteTime, timeout)) {
+      env.repeatInvocation();
+      return;
+    }
+    
+    switch (ti.getState()) {
+      case WAITING:
+      case TIMEOUT_WAITING:
+        throw new JPFException("blocking park() without transition break");   
+      
+      case NOTIFIED:
+      case TIMEDOUT:
+      case INTERRUPTED:
+        ti.resetLockRef();
+        ti.setRunning();
+        break;
+        
+      default:
+        // nothing
+    } 
   }
 
   @MJI
   public void unpark__Ljava_lang_Object_2__V (MJIEnv env, int unsafeRef, int objRef) {
-    ThreadInfo ti = env.getThreadInfo();
+    ThreadInfo tiCurrent = env.getThreadInfo();
+    ThreadInfo tiParked = env.getThreadInfoForObjRef(objRef);
+      
+    if (tiParked.isTerminated()){
+      return; // nothing to do
+    }
     
-    if (!ti.isFirstStepInsn()){
-      
-      ThreadInfo tiParked = env.getThreadInfoForObjRef(objRef);    
-      if (tiParked == null || tiParked.isTerminated()){
-        return;
-      }      
-      
+    if (!tiCurrent.isFirstStepInsn()){
       SystemState ss = env.getSystemState();
       int permitRef = env.getReferenceField( objRef, "permit");
       ElementInfo eiPermit = env.getModifiableElementInfo(permitRef);
@@ -176,20 +174,20 @@ public class JPF_sun_misc_Unsafe extends NativePeer {
         // one waiter, which immediately becomes runnable again because it doesn't hold a lock
         // (park is a lockfree wait). unpark() therefore has to be a right mover
         // and we have to register a ThreadCG here
-        eiPermit.notifies(ss, ti, false);
-        
-        ChoiceGenerator<?> cg = env.getSchedulerFactory().createUnparkCG(tiParked);
-        if (cg != null){
-          ss.setNextChoiceGenerator(cg);
-          env.repeatInvocation();
-        }
+        eiPermit.notifies(ss, tiCurrent, false);
         
       } else {
         eiPermit.setBooleanField("blockPark", false);
-      }      
+        return;
+      }
+    }
+    
+    if (tiCurrent.getScheduler().setsUnparkCG(tiCurrent, tiParked)){
+      env.repeatInvocation();
+      return;
     }
   }
-
+  
   @MJI
   public void ensureClassInitialized__Ljava_lang_Class_2__V (MJIEnv env, int unsafeRef, int clsObjRef) {
     // <2do> not sure if we have to do anyting here - if we have a class object, the class should already

@@ -1516,6 +1516,15 @@ public abstract class ElementInfo implements Cloneable {
   }
 
   /**
+   * return all threads that are trying to acquire this lock
+   * (blocked, waiting, interrupted)
+   * NOTE - this is not a copy, don't modify the array
+   */
+  public ThreadInfo[] getLockedThreads() {
+    return monitor.getLockedThreads();
+  }
+  
+  /**
    * get a cloned list of the waiters for this object
    */
   public ThreadInfo[] getWaitingThreads() {
@@ -1684,6 +1693,10 @@ public abstract class ElementInfo implements Cloneable {
     //ti.setLockRef(objRef);
   }
 
+  public boolean isRegisteredLockContender (ThreadInfo ti){
+    return monitor.isLocking(ti);
+  }
+  
   /**
    * somebody made up his mind and decided not to enter a synchronized section
    * of code it had registered before (e.g. INVOKECLINIT)
@@ -1729,7 +1742,7 @@ public abstract class ElementInfo implements Cloneable {
       throw new JPFException("thread " + ti.getName() + " tries to lock object: "
               + this + " which is locked by: " + monitor.getLockingThread().getName());
     }
-
+    
     // the thread might be still in the lockedThreads list if this is the
     // first step of a transition
     setMonitorWithoutLocked(ti);
@@ -1757,8 +1770,11 @@ public abstract class ElementInfo implements Cloneable {
   /**
    * from a MONITOR_EXIT or sync method RETURN
    * release a possibly recursive lock if lockCount goes to zero
+   * 
+   * return true if this unblocked any waiters
    */
-  public void unlock (ThreadInfo ti) {
+  public boolean unlock (ThreadInfo ti) {
+    boolean didUnblock = false;
 
     checkIsModifiable();
     
@@ -1788,6 +1804,7 @@ public abstract class ElementInfo implements Cloneable {
           // Ok, this thread becomes runnable again
           lti.resetLockRef();
           lti.setState(ThreadInfo.State.UNBLOCKED);
+          didUnblock = true;
           break;
 
         case WAITING:
@@ -1809,6 +1826,8 @@ public abstract class ElementInfo implements Cloneable {
     } else { // recursive unlock
       monitor.decLockCount();
     }
+    
+    return didUnblock;
   }
 
   /**

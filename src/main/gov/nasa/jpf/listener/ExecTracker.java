@@ -255,11 +255,18 @@ public class ExecTracker extends ListenerAdapter {
   }
   
   @Override
-  public void objectExposed (VM vm, ThreadInfo currentThread, ElementInfo sharedObject, ElementInfo exposedObject) {
+  public void objectExposed (VM vm, ThreadInfo currentThread, ElementInfo fieldOwnerObject, ElementInfo exposedObject) {
     if (showShared){
       String msg = "\t\t # exposed " + exposedObject;
-      if (sharedObject != null){
-        msg += " through shared " + sharedObject;
+      if (fieldOwnerObject != null){
+        String ownerStatus = "";
+        if (fieldOwnerObject.isShared()){
+          ownerStatus = "shared ";
+        } else if (fieldOwnerObject.isExposed()){
+          ownerStatus = "exposed ";
+        }
+        
+        msg += " through " + ownerStatus + fieldOwnerObject;
       }
       out.println(msg);
     }

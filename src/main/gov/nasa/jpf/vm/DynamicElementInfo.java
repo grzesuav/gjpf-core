@@ -34,7 +34,7 @@ public class DynamicElementInfo extends ElementInfo {
 
     attributes = ci.getElementInfoAttrs();
 
-    ti.initializeSharedness(this);
+    ti.getScheduler().initializeObjectSharedness(ti, this);
   }
 
   @Override

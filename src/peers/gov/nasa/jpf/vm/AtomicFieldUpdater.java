@@ -24,29 +24,25 @@ package gov.nasa.jpf.vm;
  */
 public class AtomicFieldUpdater extends NativePeer {
   
-  protected boolean isNewPorFieldBoundary(MJIEnv env, int updaterRef, int tRef) {
-    ThreadInfo ti = env.getThreadInfo();
-    
-    // >2do> do we also have to check if the updater is shared?
-    if (!ti.isFirstStepInsn() && ti.hasOtherRunnables()){
-      return env.isSchedulingRelevantObject(tRef);
-    }
-    
-    return false;
+  
+  protected FieldInfo getFieldInfo (ElementInfo eiUpdater, ElementInfo eiTarget){
+    int fidx = eiUpdater.getIntField("fieldId");
+    return eiTarget.getClassInfo().getInstanceField(fidx);
   }
-
-  protected boolean createAndSetFieldCG(MJIEnv env, int tRef) {
-    ThreadInfo ti = env.getThreadInfo();
-    ElementInfo ei = env.getElementInfo(tRef);
-    SystemState ss = env.getSystemState();
-
-    ChoiceGenerator<?> cg = ss.getSchedulerFactory().createSharedFieldAccessCG(ei, ti);
-    if (cg != null) {
-      ss.setNextChoiceGenerator(cg);
-      env.repeatInvocation();
-      return true;
+  
+  /**
+   * note - we are not interested in sharedness/interleaving of the AtomicUpdater object 
+   * but in the object that is accessed by the updater
+   */
+  protected boolean reschedulesAccess (ThreadInfo ti, ElementInfo ei, FieldInfo fi){
+    Scheduler scheduler = ti.getScheduler();
+    Instruction insn = ti.getPC();
+    
+    if (scheduler.canHaveSharedObjectCG( ti, insn, ei, fi)){
+      ei = scheduler.updateObjectSharedness( ti, ei, fi);
+      return scheduler.setsSharedObjectCG( ti, insn, ei, fi);
     }
-
+    
     return false;
   }
 

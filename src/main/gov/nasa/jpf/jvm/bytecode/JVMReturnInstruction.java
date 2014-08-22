@@ -135,26 +135,18 @@ public abstract class JVMReturnInstruction extends ReturnInstruction implements 
   // -- end attribute accessors --
   
   public Instruction execute (ThreadInfo ti) {
-
+    
     if (!ti.isFirstStepInsn()) {
       ti.leave();  // takes care of unlocking before potentially creating a CG
+    }
+    
+    if (mi.isSynchronized()) {
+      int objref = mi.isStatic() ? mi.getClassInfo().getClassObjectRef() : ti.getThis();
+      ElementInfo ei = ti.getElementInfo(objref);
 
-      if (mi.isSynchronized()) {
-        int objref = mi.isStatic() ? mi.getClassInfo().getClassObjectRef() : ti.getThis();
-        ElementInfo ei = ti.getElementInfo(objref);
-
-        if (ei.getLockCount() == 0){
-          ei = ti.updateSharedness(ei); 
-          if (ei.isShared()) {
-            VM vm = ti.getVM();
-            ChoiceGenerator<ThreadInfo> cg = vm.getSchedulerFactory().createSyncMethodExitCG(ei, ti);
-            if (cg != null) {
-              if (vm.setNextChoiceGenerator(cg)) {
-                ti.skipInstructionLogging();
-                return this; // re-enter
-              }
-            }
-          }
+      if (ei.getLockCount() == 0) {
+        if (ti.getScheduler().setsLockReleaseCG(ti, ei)){
+          return this;
         }
       }
     }

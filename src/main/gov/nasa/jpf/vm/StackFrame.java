@@ -428,6 +428,15 @@ public abstract class StackFrame implements Cloneable {
   public <T> T getFrameAttr (Class<T> attrType) {
     return ObjectList.getFirst(frameAttr, attrType);
   }
+  
+  public <T> T getAndResetFrameAttr (Class<T> attrType) {
+    T attr = ObjectList.getFirst(frameAttr, attrType);
+    if (attr != null){
+      frameAttr = ObjectList.remove(frameAttr, attr);
+    }
+    return attr;
+  }
+  
 
   public <T> T getNextFrameAttr (Class<T> attrType, Object prev) {
     return ObjectList.getNext(frameAttr, attrType, prev);
@@ -440,8 +449,6 @@ public abstract class StackFrame implements Cloneable {
   public <T> ObjectList.TypedIterator<T> frameAttrIterator(Class<T> attrType){
     return ObjectList.typedIterator(frameAttr, attrType);
   }
-
-  
   
   //--- the top single-slot operand attrs
 
