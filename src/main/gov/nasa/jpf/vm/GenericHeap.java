@@ -20,18 +20,17 @@
 package gov.nasa.jpf.vm;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.ArrayObjectQueue;
-import gov.nasa.jpf.util.HashData;
 import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.IntVector;
-import gov.nasa.jpf.util.ObjVector;
 import gov.nasa.jpf.util.ObjectQueue;
 import gov.nasa.jpf.util.Processor;
-import gov.nasa.jpf.util.Transformer;
 
 /**
  * this is an abstract root for Heap implementations, providing a standard
@@ -47,12 +46,12 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
     // those can be simply copied
     int attributes;
     IntVector pinDownList;
-    IntTable<String> internStrings;
+    Map<Integer,IntTable<String>> internStringsMap;
     
     protected GenericHeapMemento (GenericHeap heap){
       // these are copy-on-first-write, so we don't have to clone
       pinDownList = heap.pinDownList;
-      internStrings = heap.internStrings;
+      internStringsMap = heap.internStringsMap;
       attributes = heap.attributes & ATTR_STORE_MASK;
       
       heap.setStored();
@@ -62,7 +61,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
     public Heap restore (Heap inSitu) {
       GenericHeap heap = (GenericHeap) inSitu;
       heap.pinDownList = pinDownList;
-      heap.internStrings = internStrings;
+      heap.internStringsMap = internStringsMap;
       heap.attributes = attributes;
       heap.liveBitValue = false; // always start with false after a restore
       return inSitu;
@@ -83,9 +82,9 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   protected IntVector pinDownList;
 
   // interned Strings
-  // this is copy-on-first-write
-  protected IntTable<String> internStrings;
-
+  // this is copy-on-first-write, it is created on demand upon adding the first interned string,
+  // and it includes IntTable per process.
+  protected Map<Integer,IntTable<String>> internStringsMap;
 
   // the usual drill - the lower 2 bytes are sticky, the upper two ones 
   // hold change status and transient (transition local) flags
@@ -128,9 +127,6 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
 
     pinDownList = new IntVector(256);
     attributes |= ATTR_PINDOWN_CHANGED; // no need to clone on next add
-
-    internStrings = new IntTable<String>(8);
-    attributes |= ATTR_INTERN_CHANGED; // no need to clone on next add
 
     if (config.getBoolean("vm.finalize", true)){
       attributes |= ATTR_RUN_FINALIZER;
@@ -351,7 +347,6 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   }
   
   protected ElementInfo newString (ClassInfo ciString, ClassInfo ciChars, String str, ThreadInfo ti, AllocationContext ctx) {
-    SystemClassLoaderInfo sysCl = ti.getSystemClassLoaderInfo();
     
     //--- the string object itself
     int sRef = getNewElementInfoIndex( ctx);
@@ -398,7 +393,13 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
 
   @Override
   public ElementInfo newInternString (String str, ThreadInfo ti) {
-    IntTable.Entry<String> e = internStrings.get(str);
+    if(internStringsMap==null) {
+      internStringsMap = vm.getInitialInternStringsMap();
+    }
+    
+    int prcId = ti.getApplicationContext().getId();
+    IntTable.Entry<String> e = internStringsMap.get(prcId).get(str);
+    
     if (e == null){
       if (str != null) {
         ElementInfo ei = newString( str, ti);
@@ -407,7 +408,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
         // new interned Strings are always pinned down
         ei.incPinDown();
         addToPinDownList(index);
-        addToInternStrings(str, index);
+        addToInternStrings(str, index, prcId);
 
         return ei;
       
@@ -420,12 +421,18 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
     }
   }
 
-  protected void addToInternStrings (String str, int objref) {
+  protected void addToInternStrings (String str, int objref, int prcId) {
     if ((attributes & ATTR_INTERN_CHANGED) == 0){
-      internStrings = internStrings.clone();
+      // shallow copy all interned strings tables
+      internStringsMap = new HashMap<Integer,IntTable<String>>(internStringsMap);
+      
+      // only clone the interned strings table of the current process
+      internStringsMap.put(prcId, internStringsMap.get(prcId).clone());
+      
+      // just cloned, no need to clone on the next add
       attributes |= ATTR_INTERN_CHANGED;
     }
-    internStrings.add(str, objref);
+    internStringsMap.get(prcId).add(str, objref);
   }
   
   

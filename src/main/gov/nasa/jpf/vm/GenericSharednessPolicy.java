@@ -29,8 +29,8 @@ import gov.nasa.jpf.util.TypeSpecMatcher;
 import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 
 /**
- * an abstract SharednessPolicy implementation that is independent of any
- * SyncPolicy and makes use of both shared field access CGs and exposure CGs.
+ * an abstract SharednessPolicy implementation that makes use of both
+ * shared field access CGs and exposure CGs.
  * 
  * This class is highly configurable, both in terms of using exposure CGs and filters.
  * The *never_break filters should be used with care to avoid missing defects, especially
@@ -226,7 +226,9 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
   //--- FieldLockInfo management
   
   /**
-   * factory method called during object creation 
+   * static attribute filters that determine if the check..Access() and check..Exposure() methods should be called.
+   * This is only called once per instruction execution since it filters all cases that would set a CG.
+   * Filter conditions have to apply to both field access and object exposure.
    */
   protected abstract FieldLockInfo createFieldLockInfo (ThreadInfo ti, ElementInfo ei, FieldInfo fi);
 
@@ -284,7 +286,7 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
   }
   
   
-  //--- sharedness and exposure
+  //--- internal policy methods that can be overridden by subclasses
   
   protected ElementInfo updateSharedness (ThreadInfo ti, ElementInfo ei, FieldInfo fi){
     ThreadInfoSet tis = ei.getReferencingThreads();
@@ -320,7 +322,7 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
         }
       }
     }
-    
+
     return false;
   }
 
@@ -330,8 +332,8 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
          return (eiFieldOwner.isExposedOrShared());
       }
     }
-    
-    return false;  
+        
+    return false;
   }
 
   
@@ -400,7 +402,7 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
     if (skipFinals && fi.isFinal()){
       return false;
     }
-            
+        
     //--- mixed (dynamic) attributes
     if (skipConstructedFinals && fi.isFinal() && eiFieldOwner.isConstructed()){
       return false;
@@ -452,8 +454,10 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
   
   
   /**
-   * those are the public interfaces towards the FieldInstructions, which have to be aware of
-   * that the field owning ElementInfo (instance or static) will change if it becomes shared
+   * <2do> explain why not transitive
+   * 
+   * these are the public interfaces towards FieldInstructions. Callers have to be aware this will 
+   * change the /referenced/ ElementInfo in case the respective object becomes exposed
    */
   @Override
   public boolean setsSharedObjectCG (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
@@ -464,7 +468,7 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
     
     return false;
   }
-  
+
   @Override
   public boolean setsSharedClassCG (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
     if (eiFieldOwner.isShared() && !eiFieldOwner.isLockProtected(fi)) {
@@ -485,7 +489,7 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
     
     return false;
   }
-  
+
   
   //--- internal policy methods that can be overridden by subclasses
     

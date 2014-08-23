@@ -572,6 +572,11 @@ public class MJIEnv {
     ClassInfo ci = getClassInfo(objref);
     return ci.isInstanceOf(clsName);
   }
+  
+  public boolean isInstanceOf (int objref, ClassInfo cls) {
+    ClassInfo ci = getClassInfo(objref);
+    return ci.isInstanceOf(cls);
+  }
 
   //--- the static field accessors
   // NOTE - it is the callers responsibility to ensure the class is
@@ -1100,6 +1105,8 @@ public class MJIEnv {
         String clsName = getClassName(ref);
         if (clsName.equals("java.lang.String")) {
           arg[i] = getStringObject(ref);
+        } else if (clsName.equals("java.lang.Boolean")){
+          arg[i] = getBooleanObject(ref);
         } else if (clsName.equals("java.lang.Byte")) {
           arg[i] = getByteObject(ref);
         } else if (clsName.equals("java.lang.Char")) {

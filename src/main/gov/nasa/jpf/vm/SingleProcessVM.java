@@ -18,9 +18,13 @@
 //
 package gov.nasa.jpf.vm;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
+import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
@@ -49,6 +53,10 @@ public class SingleProcessVM extends VM {
     
     appCtx = createApplicationContext();
     
+    initializePredicates();
+  }
+    
+  void initializePredicates() {
     // set predicates used to query from threadlist
     runnablePredicate = new Predicate<ThreadInfo>(){
       public boolean isTrue (ThreadInfo ti){
@@ -231,6 +239,7 @@ public class SingleProcessVM extends VM {
 
     ThreadInfo[] threads = getThreadList().getThreads();
 
+    boolean hasUserThreads = false;
     for (int i = 0; i < threads.length; i++) {
       ThreadInfo ti = threads[i];
       
@@ -241,13 +250,25 @@ public class SingleProcessVM extends VM {
         if (ti.isTimeoutRunnable()) { // willBeRunnable() ?
           return false;
         }
+        
+        if(!ti.isSystemThread()) {
+          hasUserThreads = true;
+        }
 
         // means it is not NEW or TERMINATED, i.e. live & blocked
         hasBlockedThreads = true;
       }
     }
 
-    return (hasNonDaemons && hasBlockedThreads);
+    boolean isDeadlock = hasNonDaemons && hasBlockedThreads;
+    
+    if(processFinalizers && isDeadlock && !hasUserThreads) {
+      // all threads are blocked, system threads. If the finalizer thread  
+      // is in-use, then this is a deadlocked state.
+      return (!getFinalizerThread().isIdle());
+    }
+    
+    return isDeadlock;
   }
   
   @Override
@@ -276,6 +297,11 @@ public class SingleProcessVM extends VM {
     }
   }
   
+  public Map<Integer,IntTable<String>> getInitialInternStringsMap() {
+    Map<Integer,IntTable<String>> interns = new HashMap<Integer,IntTable<String>>();
+    interns.put(0, appCtx.getInternStrings());
+    return interns;
+  }
   
   //---------- Predicates used to query threads from ThreadList ---------- //
   

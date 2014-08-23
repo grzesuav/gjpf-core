@@ -22,12 +22,15 @@ package gov.nasa.jpf.vm;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFConfigException;
+import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import gov.nasa.jpf.vm.choice.MultiProcessThreadChoice;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A VM implementation that simulates running multiple applications within the same
@@ -51,13 +54,17 @@ public class MultiProcessVM extends VM {
   MultiProcessPredicate appTimedoutRunnablePredicate;
   MultiProcessPredicate appDaemonRunnablePredicate;
   MultiProcessPredicate appPredicate;
-  Predicate<ThreadInfo> systemRunnablePredicate;
+  protected Predicate<ThreadInfo> systemInUsePredicate;
   
   public MultiProcessVM (JPF jpf, Config conf) {
     super(jpf, conf);
     
     appCtxs = createApplicationContexts();
     
+    initializePredicates();
+  }
+  
+  void initializePredicates() {
     runnablePredicate = new MultiProcessPredicate() {
       public boolean isTrue (ThreadInfo t){
         return (t.isRunnable() && this.appCtx == t.appCtx);
@@ -82,9 +89,21 @@ public class MultiProcessVM extends VM {
       }
     };
     
-    systemRunnablePredicate = new Predicate<ThreadInfo> () {
+    
+    // this predicates collects those finalizers which are either runnable or
+    // have some queued objects to process.
+    systemInUsePredicate = new Predicate<ThreadInfo> () {
       public boolean isTrue (ThreadInfo t){
-        return (t.isSystemThread() && t.isRunnable());
+        boolean isTrue = false;
+        if(t.isSystemThread()) {
+          if(t.isRunnable()) {
+            isTrue = true;
+          } else {
+            FinalizerThreadInfo finalizer = (FinalizerThreadInfo) t;
+            isTrue = !finalizer.isIdle();
+          }
+        }
+        return isTrue;
       }
     };
   }
@@ -288,7 +307,7 @@ public class MultiProcessVM extends VM {
     
     if(processFinalizers) {
       if(isEndState) {
-        int n = getThreadList().getMatchingCount(systemRunnablePredicate);
+        int n = getThreadList().getMatchingCount(systemInUsePredicate);
         if(n>0) {
           return false;
         }
@@ -312,6 +331,7 @@ public class MultiProcessVM extends VM {
     ThreadInfo[] threads = getThreadList().getThreads();
     int len = threads.length;
 
+    boolean hasUserThreads = false;
     for (int i=0; i<len; i++){
       ThreadInfo ti = threads[i];
       
@@ -322,13 +342,25 @@ public class MultiProcessVM extends VM {
         if (ti.isTimeoutRunnable()) { // willBeRunnable() ?
           return false;
         }
+        
+        if(!ti.isSystemThread()) {
+          hasUserThreads = true;
+        }
 
         // means it is not NEW or TERMINATED, i.e. live & blocked
         hasBlockedThreads = true;
       }
     }
 
-    return (hasNonDaemons && hasBlockedThreads);
+    boolean isDeadlock = hasNonDaemons && hasBlockedThreads;
+    
+    if(processFinalizers && isDeadlock && !hasUserThreads) {
+      // all threads are blocked, system threads. If at least one of them 
+      // is in-use, then this is a deadlocked state.
+      return (getThreadList().getMatchingCount(systemInUsePredicate)>0);
+    }
+    
+    return isDeadlock;
   }
   
   @Override
@@ -370,6 +402,15 @@ public class MultiProcessVM extends VM {
     }
   }
   
+  public Map<Integer,IntTable<String>> getInitialInternStringsMap() {
+    Map<Integer,IntTable<String>> interns = new HashMap<Integer,IntTable<String>>();
+     
+    for(ApplicationContext appCtx:getApplicationContexts()) {
+      interns.put(appCtx.getId(), appCtx.getInternStrings());
+    }
+    
+    return interns;
+  }
   
   //---------- Predicates used to query threads from ThreadList ----------//
   

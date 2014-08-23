@@ -139,8 +139,8 @@ public abstract class FeatureSpec {
     }
 
     // check interfaces (regardless of 'override' - interfaces make no sense otherwise
-    for (String ifcName : ci.getAllInterfaces()) {
-      if (clsSpec.matches(ifcName)) {
+    for (ClassInfo ifc : ci.getAllInterfaces()) {
+      if (clsSpec.matches(ifc.getName())) {
         return true;
       }
     }
