@@ -96,7 +96,16 @@ public class JPF_java_lang_Thread extends NativePeer {
   public void setPriority0__I__V (MJIEnv env, int objref, int prio) {
     // again, we have to cache this in ThreadData for performance reasons
     ThreadInfo ti = env.getThreadInfoForObjRef(objref);
-    ti.setPriority(prio);
+    
+    if (prio != ti.getPriority()){
+      ti.setPriority(prio);
+    
+      // this could cause a context switch in a priority based scheduler
+      if (ti.getScheduler().setsPriorityCG(ti)){
+        env.repeatInvocation();
+        return;
+      }
+    }
   }
 
   @MJI

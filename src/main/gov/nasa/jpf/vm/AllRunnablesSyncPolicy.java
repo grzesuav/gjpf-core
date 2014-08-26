@@ -209,6 +209,11 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
   }
   
   @Override
+  public boolean setsPriorityCG (ThreadInfo ti){
+    return setNonBlockingCG( PRIORITY, ti);    
+  }
+  
+  @Override
   public boolean setsSleepCG (ThreadInfo ti, long millis, int nanos){
     return setNonBlockingCG( SLEEP, ti);
   }

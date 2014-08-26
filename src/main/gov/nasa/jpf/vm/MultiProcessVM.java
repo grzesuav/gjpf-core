@@ -26,8 +26,8 @@ import gov.nasa.jpf.util.IntTable;
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
-import gov.nasa.jpf.vm.choice.MultiProcessThreadChoice;
 
+import gov.nasa.jpf.vm.choice.ThreadChoiceFromSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -388,7 +388,9 @@ public class MultiProcessVM extends VM {
     ChoiceGenerator<ThreadInfo> cg;
     if (tl.hasAnyMatching(getAlivePredicate())) {
       ThreadInfo[] runnables = getThreadList().getAllMatching(getTimedoutRunnablePredicate());
-      cg = new MultiProcessThreadChoice( "PROCESS_TERMINATE", runnables, true);
+      cg = new ThreadChoiceFromSet( "PROCESS_TERMINATE", runnables, true);
+      GlobalSchedulingPoint.setGlobal(cg);
+      
     } else {
       cg = new BreakGenerator("exit", ti, true);
     }

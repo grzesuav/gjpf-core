@@ -28,9 +28,9 @@ import gov.nasa.jpf.jvm.bytecode.JVMInvokeInstruction;
 import gov.nasa.jpf.jvm.bytecode.LockInstruction;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.GlobalSchedulingPoint;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.MultiProcessChoiceGenerator;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 
@@ -120,7 +120,7 @@ public class DistributedSimpleDot extends SimpleDot {
   }
   
   protected void printMultiProcessState(String stateId){
-    if(vm.getNextChoiceGenerator() instanceof MultiProcessChoiceGenerator) {
+    if(GlobalSchedulingPoint.isGlobal(vm.getNextChoiceGenerator())) {
       pw.print(stateId);
 
       pw.print(" [");

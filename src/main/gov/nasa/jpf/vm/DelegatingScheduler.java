@@ -107,6 +107,12 @@ public class DelegatingScheduler implements Scheduler {
   }
 
   @Override
+  public boolean setsPriorityCG (ThreadInfo ti) {
+    return syncPolicy.setsPriorityCG(ti);
+  }
+
+  
+  @Override
   public boolean setsSleepCG (ThreadInfo ti, long millis, int nanos) {
     return syncPolicy.setsSleepCG(ti, millis, nanos);
   }

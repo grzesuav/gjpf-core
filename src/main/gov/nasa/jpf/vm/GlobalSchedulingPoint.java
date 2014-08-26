@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2013 United States Government as represented by the
+// Copyright (C) 2014 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -19,12 +19,24 @@
 
 package gov.nasa.jpf.vm;
 
-/**
- * This type is used to identify global choices from local ones
- * 
- * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
- */
-public interface MultiProcessChoiceGenerator {
+import gov.nasa.jpf.SystemAttribute;
 
-  boolean isGlobal();
+/**
+ * a SystemAttribute to mark global scheduling points.
+ * 
+ * While we can identify process context switches through the ThreadInfo/AooCtx
+ * of respective CG instances, we could not identify process global scheduling
+ * choices that include threads of the current process
+ */
+public class GlobalSchedulingPoint implements SystemAttribute {
+  
+  static final GlobalSchedulingPoint singleton = new GlobalSchedulingPoint();
+  
+  public static void setGlobal (ChoiceGenerator<?> cg){
+    cg.addAttr(singleton);
+  }
+  
+  public static boolean isGlobal (ChoiceGenerator<?> cg){
+    return (cg != null) && cg.hasAttr(GlobalSchedulingPoint.class);
+  }
 }

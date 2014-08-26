@@ -57,6 +57,7 @@ public interface SyncPolicy {
   public static String NOTIFYALL = "NOTIFYALL";
   public static String SLEEP = "SLEEP";
   public static String YIELD = "YIELD";
+  public static String PRIORITY = "PRIORITY";
   public static String INTERRUPT = "INTERRUPT";
   public static String SUSPEND = "SUSPEND";
   public static String RESUME = "RESUME";
@@ -100,6 +101,7 @@ public interface SyncPolicy {
   //--- the java.lang.Thread APIs
   boolean setsStartCG (ThreadInfo tiCurrent, ThreadInfo tiStarted);
   boolean setsYieldCG (ThreadInfo ti);
+  boolean setsPriorityCG (ThreadInfo ti);
   boolean setsSleepCG (ThreadInfo ti, long millis, int nanos);
   boolean setsSuspendCG (ThreadInfo tiCurrent, ThreadInfo tiSuspended);
   boolean setsResumeCG (ThreadInfo tiCurrent, ThreadInfo tiResumed);
