@@ -595,5 +595,4 @@ public class JVMClassInfo extends ClassInfo {
     return new JVMDirectCallStackFrame( miDirect, miRun);
   }
   
-  
 }

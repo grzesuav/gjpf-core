@@ -271,43 +271,43 @@
             </view>
             <subprojects/>
         </general-data>
-        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
+        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/4">
             <compilation-unit>
                 <package-root>src/main</package-root>
                 <classpath mode="compile">build/annotations</classpath>
                 <built-to>build/main</built-to>
-                <source-level>1.5</source-level>
+                <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/peers</package-root>
                 <classpath mode="compile">build/main:build/annotations</classpath>
                 <built-to>build/peers</built-to>
-                <source-level>1.5</source-level>
+                <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/classes</package-root>
                 <classpath mode="compile">build/annotations:build/main</classpath>
                 <built-to>build/classes</built-to>
-                <source-level>1.5</source-level>
+                <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/examples</package-root>
                 <unit-tests/>
                 <classpath mode="compile">build/main</classpath>
                 <built-to>build/examples</built-to>
-                <source-level>1.5</source-level>
+                <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/annotations</package-root>
                 <built-to>build/annotations</built-to>
-                <source-level>1.5</source-level>
+                <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/tests</package-root>
                 <unit-tests/>
                 <classpath mode="compile">build/main:build/annotations:build/peers:build/classes</classpath>
                 <built-to>build/tests</built-to>
-                <source-level>1.5</source-level>
+                <source-level>1.8</source-level>
             </compilation-unit>
         </java-data>
         <preferences xmlns="http://www.netbeans.org/ns/auxiliary-configuration-preferences/1">

@@ -18,6 +18,7 @@
 //
 package gov.nasa.jpf.jvm.bytecode;
 
+import gov.nasa.jpf.vm.ClassChangeException;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
@@ -64,13 +65,19 @@ public abstract class VirtualInvocation extends InstanceInvocation {
   
   public Instruction execute (ThreadInfo ti) {
     int objRef = ti.getCalleeThis(getArgSize());
+    MethodInfo callee;
 
     if (objRef == MJIEnv.NULL) {
       lastObj = MJIEnv.NULL;
       return ti.createAndThrowException("java.lang.NullPointerException", "Calling '" + mname + "' on null object");
     }
 
-    MethodInfo callee = getInvokedMethod(ti, objRef);
+    try {
+      callee = getInvokedMethod(ti, objRef);
+    } catch (ClassChangeException ccx){
+      return ti.createAndThrowException("java.lang.IncompatibleClassChangeError", ccx.getMessage());
+    }
+    
     ElementInfo ei = ti.getElementInfo(objRef);
     
     if (callee == null) {
@@ -134,10 +141,13 @@ public abstract class VirtualInvocation extends InstanceInvocation {
         lastCalleeCi = cci;
         invokedMethod = cci.getMethod(mname, true);
 
-        // here we could catch the NoSuchMethodError
         if (invokedMethod == null) {
-          lastObj = MJIEnv.NULL;
-          lastCalleeCi = null;
+          invokedMethod = cci.getDefaultMethod(mname);
+                    
+          if (invokedMethod == null){
+            lastObj = MJIEnv.NULL;
+            lastCalleeCi = null;
+          }
         }
       }
 

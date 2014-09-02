@@ -798,6 +798,12 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
     pc+=5;
   }
 
+  @Override
+  public void invokedynamic (int cpInvokeDynamicIndex){
+    // not yet
+    pc += 5;
+  }
+  
   @Override public void invokespecial(int cpMethodRefIndex) {
     String clsName = cf.methodClassNameAt(cpMethodRefIndex);
     String methodName = cf.methodNameAt(cpMethodRefIndex);

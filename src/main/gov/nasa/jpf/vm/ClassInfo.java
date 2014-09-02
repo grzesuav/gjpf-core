@@ -993,6 +993,28 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return mi;
   }
 
+  
+  public MethodInfo getDefaultMethod (String uniqueName) {
+    MethodInfo mi = null;
+    
+    for (ClassInfo ci = this; ci != null; ci = ci.superClass){
+      for (ClassInfo ciIfc : ci.interfaces){
+        MethodInfo miIfc = ciIfc.getMethod(uniqueName, true);
+        if (miIfc != null && !miIfc.isAbstract()){
+          if (mi != null){
+            // this has to throw a IncompatibleClassChangeError in the client since Java prohibits ambiguous default methods
+            String msg = "Conflicting default methods: " + mi.getFullName() + ", " + miIfc.getFullName();
+            throw new ClassChangeException(msg);
+          } else {
+            mi = miIfc;
+          }
+        }
+      }
+    }
+    
+    return mi;
+  }
+  
 
   /**
    * almost the same as above, except of that Class.getMethod() doesn't specify

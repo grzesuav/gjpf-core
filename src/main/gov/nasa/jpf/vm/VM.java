@@ -442,6 +442,7 @@ public abstract class VM {
         ci.registerStartupClass( tiMain, list); // takes care of superclasses and interfaces
       }
     } catch (ClassInfoException e){
+      e.printStackTrace();
       throw new JPFConfigException("cannot load system class " + e.getFailedClass());
     } 
     

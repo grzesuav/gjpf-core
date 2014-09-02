@@ -163,6 +163,7 @@ public class JVMByteCodeReaderAdapter implements JVMByteCodeReader {
   public void ineg() {}
   public void instanceof_(int cpClassIndex) {}
   public void invokeinterface (int cpInterfaceMethodRefIndex, int count, int zero) {}
+  public void invokedynamic (int cpInvokeDynamicIndex) {}
   public void invokespecial (int cpMethodRefIndex) {}
   public void invokestatic (int cpMethodRefIndex) {}
   public void invokevirtual (int cpMethodRefIndex) {}
