@@ -256,37 +256,6 @@ public abstract class JVMInvokeInstruction extends InvokeInstruction implements 
 
     return null;
   }
-
-  /**
-   * this does the lock registration/acquisition and respective transition break 
-   * return true if the caller has to re-execute
-   */
-  protected boolean reschedulesLockAcquisition (ThreadInfo ti, ElementInfo ei){
-    Scheduler scheduler = ti.getScheduler();
-    ei = ei.getModifiableInstance();
-    
-    if (!ti.isLockOwner(ei)){ // we only need to register, block and/or reschedule if this is not a recursive lock
-      if (ei.canLock(ti)) {
-        // record that this thread would lock the object upon next execution if we break the transition
-        // (note this doesn't re-add if already registered)
-        ei.registerLockContender(ti);
-        if (scheduler.setsLockAcquisitionCG(ti, ei)) { // optional scheduling point
-          return true;
-        }
-        
-      } else { // we need to block
-        ei.block(ti); // this means we only re-execute once we can acquire the lock
-        if (scheduler.setsBlockedThreadCG(ti, ei)){ // mandatory scheduling point
-          return true;
-        }
-        throw new JPFException("blocking synchronized call without transition break");            
-      }
-    }
-    
-    // locking will be done by ti.enter()
-    return false;
-  }
-  
     
   public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);

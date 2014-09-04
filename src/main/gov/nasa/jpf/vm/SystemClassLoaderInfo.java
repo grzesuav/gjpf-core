@@ -78,7 +78,7 @@ public abstract class SystemClassLoaderInfo extends ClassLoaderInfo {
   
   public SystemClassLoaderInfo (VM vm, int appId){
      super(vm);
-     
+
      lastInstance = this;
 
     // this is a hack - for user ClassLoaderInfos, we compute the id from the corresponding
