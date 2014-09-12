@@ -103,6 +103,13 @@ public class JPF_java_lang_String extends NativePeer {
     obj.getChars(srcBegin, srcEnd, dst, dstBegin);
   }
 
+  @MJI
+  public void getChars___3CI__V(MJIEnv env, int objRef, int dstRef, int dstBegin) {
+    String obj = env.getStringObject(objRef);
+    char[] dst = env.getCharArrayObject(dstRef);
+    obj.getChars(0, obj.length(), dst, dstBegin);
+  }
+  
   @SuppressWarnings("deprecation")
   @MJI
   public void getBytes__II_3BI__V (MJIEnv env, int objRef, int srcBegin, int srcEnd, int dstRef, int dstBegin) {

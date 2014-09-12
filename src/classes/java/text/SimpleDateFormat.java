@@ -84,4 +84,6 @@ public class SimpleDateFormat extends DateFormat {
     }
   }
 
+  native public void applyPattern(String pattern);
+  
 }

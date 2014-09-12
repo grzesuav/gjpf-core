@@ -70,6 +70,10 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 		this.value = Arrays.copyOf(value, value.length);
 	}
 
+	public String(char value[], boolean share) {
+		this.value = Arrays.copyOf(value, value.length);
+	}
+	
 	public String(char value[], int offset, int count) {
 		String proxy=init(value,offset,count);
 		this.value=proxy.value;
@@ -185,6 +189,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	native public int codePointCount(int beginIndex, int endIndex);
 	native public int offsetByCodePoints(int index, int codePointOffset);
 	native public void getChars(int srcBegin, int srcEnd, char dst[], int dstBegin);
+	native void getChars(char dst[], int dstBegin);
 
 	@Deprecated
 	native public void getBytes(int srcBegin, int srcEnd, byte dst[], int dstBegin);

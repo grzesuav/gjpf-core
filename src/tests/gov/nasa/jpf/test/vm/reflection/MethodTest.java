@@ -155,7 +155,7 @@ public class MethodTest extends TestJPF {
   @Test
   public void getPrivateMethod() throws NoSuchMethodException {
     if (verifyUnhandledException(NoSuchMethodException.class.getName())) {
-      Integer.class.getMethod("toUnsignedString", int.class, int.class);   // Doesn't matter which class we use.  It just needs to be a different class and a private method.
+      Integer.class.getMethod("toUnsignedString0", int.class, int.class);   // Doesn't matter which class we use.  It just needs to be a different class and a private method.
     }
   }
 
@@ -176,7 +176,7 @@ public class MethodTest extends TestJPF {
   @Test
   public void invokePrivateOtherClass() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     if (verifyUnhandledException(IllegalAccessException.class.getName())) {
-      Method m = Integer.class.getDeclaredMethod("toUnsignedString", int.class, int.class);
+      Method m = Integer.class.getDeclaredMethod("toUnsignedString0", int.class, int.class);
 
       m.invoke(null, 5, 3);
     }
