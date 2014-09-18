@@ -564,6 +564,16 @@ public class MJIEnv {
     return (short) getIntField(objref, fname);
   }
 
+  /**
+   * NOTE - this doesn't support element type checks or overlapping in-array copy 
+   */
+  public void arrayCopy (int srcRef, int srcPos, int dstRef, int dstPos, int len){
+    ElementInfo eiSrc = heap.get(srcRef);
+    ElementInfo eiDst = heap.get(dstRef);
+    
+    eiDst.arrayCopy(eiSrc, srcPos, dstPos, len);
+  }
+  
   public String getTypeName (int objref) {
     return heap.get(objref).getType();
   }

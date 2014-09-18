@@ -39,6 +39,12 @@ public class ByteArrayFields extends ArrayFields {
   public byte[] asByteArray() {
     return values;
   }
+
+  @Override
+  public void copyElements (ArrayFields src, int srcPos, int dstPos, int len){
+    ByteArrayFields a = (ByteArrayFields) src;
+    System.arraycopy(a.values, srcPos, values, dstPos, len);
+  }
   
   protected void printValue(PrintStream ps, int idx){
     ps.print(values[idx]);

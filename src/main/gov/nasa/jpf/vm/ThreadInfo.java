@@ -170,7 +170,6 @@ public class ThreadInfo extends InfoObject
   protected ClassInfo ci; // the classinfo associated with the thread object
   protected int targetRef; // the associated java.lang.Runnable
   
-
   // which attributes are stored/restored
   static final int   ATTR_STORE_MASK = 0x0000ffff;
 
@@ -403,7 +402,7 @@ public class ThreadInfo extends InfoObject
     
     vm.getScheduler().initializeThreadSync(parent, this);
     
-    // note the thread is not yet in the ThreadList, we have to register from the caller    
+    // note the thread is not yet in the ThreadList, we have to register from the caller
   }
   
   protected void init(VM vm){
@@ -2346,9 +2345,9 @@ public class ThreadInfo extends InfoObject
     int grpRef = ei.getReferenceField("group");
     cleanupThreadGroup(grpRef, ei.getObjectRef());
 
-    ei.setReferenceField("group", MJIEnv.NULL);
+    ei.setReferenceField("group", MJIEnv.NULL);    
     ei.setReferenceField("threadLocals", MJIEnv.NULL);
-    ei.setReferenceField("inheritableThreadLocals", MJIEnv.NULL);
+    
     ei.setReferenceField("uncaughtExceptionHandler", MJIEnv.NULL);
   }
 

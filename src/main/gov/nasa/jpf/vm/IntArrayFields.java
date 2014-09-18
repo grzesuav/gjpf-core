@@ -40,6 +40,12 @@ public class IntArrayFields extends ArrayFields {
     return values;
   }
 
+  @Override
+  public void copyElements (ArrayFields src, int srcPos, int dstPos, int len){
+    IntArrayFields a = (IntArrayFields) src;
+    System.arraycopy(a.values, srcPos, values, dstPos, len);
+  }
+  
   protected void printValue(PrintStream ps, int idx){
     ps.print(values[idx]);
   }

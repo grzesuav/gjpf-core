@@ -43,6 +43,12 @@ public class CharArrayFields extends ArrayFields {
   }
 
   @Override
+  public void copyElements (ArrayFields src, int srcPos, int dstPos, int len){
+    CharArrayFields a = (CharArrayFields) src;
+    System.arraycopy(a.values, srcPos, values, dstPos, len);
+  }
+  
+  @Override
   protected void printValue(PrintStream ps, int idx){
     PrintUtils.printCharLiteral(ps, values[idx]);
   }

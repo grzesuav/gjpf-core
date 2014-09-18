@@ -1311,6 +1311,19 @@ public abstract class ElementInfo implements Cloneable {
     fields.setReferenceValue(idx, value);
   }
 
+  /**
+   * NOTE - this doesn't support element type checks or overlapping in-array copy 
+   */
+  public void arrayCopy (ElementInfo src, int srcPos, int dstPos, int len){
+    checkArray(dstPos+len-1);
+    src.checkArray(srcPos+len-1);
+    checkIsModifiable();
+    
+    ArrayFields da = (ArrayFields)fields;
+    ArrayFields sa = (ArrayFields)src.fields;
+    
+    da.copyElements(sa, srcPos, dstPos, len);
+  }
 
   public boolean getBooleanElement(int idx) {
     checkArray(idx);
