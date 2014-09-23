@@ -2024,7 +2024,8 @@ public abstract class ElementInfo implements Cloneable {
    * if it is reachable from live objects or not.
    * @return true if the new counter is 1, i.e. the object just became pinned down
    *
-   * NOTE - this is not a public method, pinning down an object is now
+   * NOTE - this is *not* a public method and you probably want to use
+   * Heap.register/unregisterPinDown(). Pinning down an object is now
    * done through the Heap API, which updates the counter here, but might also
    * have to update internal caches
    */
@@ -2039,7 +2040,7 @@ public abstract class ElementInfo implements Cloneable {
       a |= pdCount;
       a |= ATTR_ATTRIBUTE_CHANGED;
       attributes = a;
-
+      
       return (pdCount == 1);
     }
   }
@@ -2061,6 +2062,7 @@ public abstract class ElementInfo implements Cloneable {
       attributes = a;
 
       return (pdCount == 0);
+      
     } else {
       return false;
     }

@@ -68,7 +68,7 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
       return null;
     }
     
-    if ((choices.length == 1) && (choices[0] == tiCurrent)){ // no context switch
+    if ((choices.length == 1) && (choices[0] == tiCurrent) && !tiCurrent.isTimeoutWaiting()){ // no context switch
       if (!breakSingleChoice){
         return null;
       }

@@ -1034,17 +1034,21 @@ public class MJIEnv {
     return heap.newArray(elementClsName, size, ti).getObjectRef();
   }
   
+  public ElementInfo newElementInfo (ClassInfo ci){
+    if (ci.pushRequiredClinits(ti)){
+      throw new ClinitRequired(ci);
+    }
+    
+    return heap.newObject(ci, ti);
+  }
+  
   /**
    * check if the ClassInfo is properly initialized
    * if yes, create a new instance of it but don't call any ctor
    * if no, throw a ClinitRequired exception
    */
   public int newObject (ClassInfo ci) {
-    if (ci.pushRequiredClinits(ti)){
-      throw new ClinitRequired(ci);
-    }
-    
-    ElementInfo ei = heap.newObject(ci, ti);
+    ElementInfo ei = newElementInfo(ci);
     return ei.getObjectRef();
   }
 
@@ -1058,10 +1062,19 @@ public class MJIEnv {
     return ei.getObjectRef();    
   }
   
-  public int newObject (String clsName) {
+  public ElementInfo newElementInfo (String clsName) {
     ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(clsName);
     if (ci != null){
-      return newObject(ci);
+      return newElementInfo(ci);
+    } else {
+      return null;
+    }
+  }
+  
+  public int newObject (String clsName) {
+    ElementInfo ei = newElementInfo(clsName);
+    if (ei != null){
+      return ei.getObjectRef();
     } else {
       return NULL;
     }
@@ -1103,7 +1116,7 @@ public class MJIEnv {
 
     return newString(s);
   }
-
+  
   public String format (int fmtRef, int argRef){
     String format = getStringObject(fmtRef);
     int len = getArrayLength(argRef);
@@ -1257,11 +1270,17 @@ public class MJIEnv {
   }
   
   public void registerPinDown(int objref){
-    vm.getHeap().registerPinDown(objref);
+    heap.registerPinDown(objref);
   }
-
+  public void registerPinDown (ElementInfo ei){
+    registerPinDown(ei.getObjectRef());
+  }
+  
   public void releasePinDown(int objref){
-    vm.getHeap().releasePinDown(objref);
+    heap.releasePinDown(objref);
+  }
+  public void releasePinDown (ElementInfo ei){
+    releasePinDown(ei.getObjectRef());
   }
   
   /**

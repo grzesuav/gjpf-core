@@ -95,7 +95,7 @@ public class PUTSTATIC extends JVMStaticFieldInstruction implements WriteInstruc
       if (refValue != MJIEnv.NULL){
         ElementInfo eiExposed = ti.getElementInfo(refValue);
         if (scheduler.setsSharedClassExposureCG(ti,this,eiFieldOwner,fieldInfo,eiExposed)){
-          frame.addFrameAttr( InstructionState.getProcessedState());
+          frame.addFrameAttr( InstructionState.processed);
           return this; // re-execute AFTER assignment
         }
       }        

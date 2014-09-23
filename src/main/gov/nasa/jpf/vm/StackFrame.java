@@ -1619,7 +1619,23 @@ public abstract class StackFrame implements Cloneable {
     top++;
   }
 
-
+  /**
+   * to be used to check if a StackFrame got cloned due to its execution
+   * changing attributes and/or slots, but otherwise represents the same
+   * execution
+   */
+  public boolean originatesFrom (StackFrame other){
+    if (other == this){
+      return true;
+    } else {
+      return ((mi == other.mi) &&
+              (prev == other.prev) &&
+              (top == other.top) &&
+              (getClass() == other.getClass()));
+    }
+  }
+  
+  
   // <2do> pcm - I assume this compares snapshots, not types. Otherwise it
   // would be pointless to equals stack/local values
   public boolean equals (Object o) {

@@ -17,17 +17,32 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.util;
-
-import gov.nasa.jpf.SystemAttribute;
+package java.util.concurrent;
 
 /**
- * a abstract SystemAttribute that can be used to store instruction
- * execution state between top and bottom halves of respective instruction.execute() methods
+ * model class for java.util.concurrent.Exchanger
+ * We model because the original class goes to great lengths implementing
+ * memory based synchronization, using execution time and spins
+ * 
+ * Exchangers are also per se shared objects, so we want to minimize field
+ * access from bytecode
  */
-public abstract class InstructionState implements SystemAttribute {
-  static class Processed extends InstructionState {}
-  public static final Processed processed = new Processed(); // no need to burn lots of objects if we don't have state
+public class Exchanger<V> {
   
+  // created on native side and pinned down until transaction is complete
+  static class Exchange<T> {
+    Thread waiterThread;
+    boolean waiterTimedOut;
+    
+    T waiterData;
+    T responderData;
+  }
   
+  //-- only accessed from native methods
+  private Exchange<V> exchange;
+  
+  public native V exchange(V x) throws InterruptedException;
+
+  public native V exchange(V x, long timeout, TimeUnit unit)
+                               throws InterruptedException, TimeoutException;
 }
