@@ -62,44 +62,39 @@ public class JPF_java_util_concurrent_Exchanger extends NativePeer {
     env.repeatInvocation();
     return MJIEnv.NULL;
   }
-
-  private long computeTimeout (MJIEnv env, int timeUnitRef, long to){
-    if (timeUnitRef == MJIEnv.NULL){
-      return 0;
-    } else {
-      // <2do> this has to do proper conversion of timeunits to millis
-      return to;
-    }
-  }
   
   //--- native methods
   
   @MJI
   public int exchange__Ljava_lang_Object_2__Ljava_lang_Object_2 (MJIEnv env, int objRef, int dataRef){
-    return exchange__Ljava_lang_Object_2JLjava_util_concurrent_TimeUnit_2__Ljava_lang_Object_2(
-              env, objRef, dataRef, 0L, MJIEnv.NULL);
+    return exchange0__Ljava_lang_Object_2J__Ljava_lang_Object_2(env, objRef, dataRef, -1L);
   }
     
   @MJI
-  public int exchange__Ljava_lang_Object_2JLjava_util_concurrent_TimeUnit_2__Ljava_lang_Object_2 
-              (MJIEnv env, int objRef, int dataRef, long timeout, int timeUnitRef){
+  public int exchange0__Ljava_lang_Object_2J__Ljava_lang_Object_2 (MJIEnv env, int objRef, int dataRef, long timeoutMillis) {
     ThreadInfo ti = env.getThreadInfo();
     StackFrame frame = ti.getModifiableTopFrame();
     ExchangeState state = frame.getFrameAttr(ExchangeState.class);
+    long to = (timeoutMillis <0) ? 0 : timeoutMillis;
     
     if (state == null){ // first time for waiter or responder
       int eRef = env.getReferenceField(objRef, "exchange");
       
-      if (eRef == MJIEnv.NULL){ // first waiter, this has to block
+      if (eRef == MJIEnv.NULL){ // first waiter, this has to block unless there is a timeout value of 0
         ElementInfo ei = createExchangeObject(env, dataRef);
         eRef = ei.getObjectRef();
         env.setReferenceField(objRef, "exchange", eRef);
         
-        timeout = computeTimeout(env, timeUnitRef, timeout);
+        // timeout semantics differ - Object.wait(0) waits indefinitely, whereas here it
+        // should throw immediately. We use -1 as non-timeout value
+        if (timeoutMillis == 0){
+          env.throwException("java.util.concurrent.TimeoutException");
+          return MJIEnv.NULL;
+        }
         
-        ei.wait(ti, timeout, false);
+        ei.wait(ti, to, false);
         
-        if (ti.getScheduler().setsWaitCG(ti, timeout)) {
+        if (ti.getScheduler().setsWaitCG(ti, to)) {
           return repeatInvocation(env, frame, ei, ExchangeState.createWaiterState(env, eRef));
         } else {
           throw new JPFException("blocked exchange() waiter without transition break");
@@ -112,9 +107,9 @@ public class JPF_java_util_concurrent_Exchanger extends NativePeer {
         
         if (ei.getBooleanField("waiterTimedOut")){
           // depending on own timeout, this might deadlock because the waiter already timed out 
-          ei.wait(ti, timeout, false);
+          ei.wait(ti, to, false);
 
-          if (ti.getScheduler().setsWaitCG(ti, timeout)) {
+          if (ti.getScheduler().setsWaitCG(ti, to)) {
             return repeatInvocation(env, frame, ei, state);
           } else {
             throw new JPFException("blocked exchange() responder without transition break");
@@ -123,10 +118,10 @@ public class JPF_java_util_concurrent_Exchanger extends NativePeer {
 
         // if we get here, the waiter is still waiting and we return right away
                 
-        ei.notifies(env.getSystemState(), ti, false); // this changes the tiWaiter status
+        boolean didNotify = ei.notifies(env.getSystemState(), ti, false); // this changes the tiWaiter status
         env.setReferenceField(objRef, "exchange", MJIEnv.NULL); // re-arm Exchange object
                 
-        if (ti.getScheduler().setsNotifyCG(ti)){
+        if (ti.getScheduler().setsNotifyCG(ti, didNotify)){
           return repeatInvocation(env, frame, ei, state);
         }
         

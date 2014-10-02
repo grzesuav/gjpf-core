@@ -32,6 +32,7 @@ import gov.nasa.jpf.vm.ThreadInfo;
 public class MONITOREXIT extends LockInstruction {
 
   public Instruction execute (ThreadInfo ti) {
+    boolean didUnblock = false;
     StackFrame frame = ti.getTopFrame();
     Scheduler scheduler = ti.getScheduler();
     
@@ -48,11 +49,11 @@ public class MONITOREXIT extends LockInstruction {
       ei = ei.getModifiableInstance();
       // we only do this in the top half of the first execution, but before potentially creating
       // a CG so that blocked threads are runnable again
-      ei.unlock(ti);
+      didUnblock = ei.unlock(ti);
     }
     
     if (ei.getLockCount() == 0) { // might still be recursively locked, which wouldn't be a release
-      if (scheduler.setsLockReleaseCG(ti, ei)){ // scheduling point
+      if (scheduler.setsLockReleaseCG(ti, ei, didUnblock)){ // scheduling point
         return this;
       }
     }

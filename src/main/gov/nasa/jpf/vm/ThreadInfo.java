@@ -2193,8 +2193,11 @@ public class ThreadInfo extends InfoObject
 
   /**
    * note - this assumes the stackframe is still on top (not yet popped)
+   * 
+   * return true if any threads became unblocked due to a return from a sync method
    */
-  public void leave(){
+  public boolean leave(){
+    boolean didUnblock = false;
     MethodInfo mi = top.getMethodInfo();
     
     // <2do> - that's not really enough, we might have suspicious bytecode that fails
@@ -2209,7 +2212,7 @@ public class ThreadInfo extends InfoObject
       ElementInfo ei = getElementInfo( oref);
       if (ei.isLocked()){
         ei = ei.getModifiableInstance();
-        ei.unlock(this);
+        didUnblock = ei.unlock(this);
       }
       
       if (mi.isClinit()) {
@@ -2222,6 +2225,7 @@ public class ThreadInfo extends InfoObject
     }
 
     vm.notifyMethodExited(this, mi);
+    return didUnblock;
   }
 
   

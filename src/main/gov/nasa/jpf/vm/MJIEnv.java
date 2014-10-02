@@ -1237,36 +1237,36 @@ public class MJIEnv {
   }
 
 
-  public void notify (int objref) {
+  public boolean notify (int objref) {
     // objref can't be NULL since the corresponding INVOKE would have failed
     ElementInfo ei = getModifiableElementInfo(objref);
-    notify(ei);
+    return notify(ei);
   }
 
-  public void notify (ElementInfo ei) {
+  public boolean notify (ElementInfo ei) {
     if (!ei.isLockedBy(ti)){
       throwException("java.lang.IllegalMonitorStateException",
                                  "un-synchronized notify");
-      return;
+      return false;
     }
 
-    ei.notifies(getSystemState(), ti); 
+    return ei.notifies(getSystemState(), ti); 
   }
   
-  public void notifyAll (int objref) {
+  public boolean notifyAll (int objref) {
     // objref can't be NULL since the corresponding INVOKE would have failed
     ElementInfo ei = getElementInfo(objref);
-    notifyAll(ei);
+    return notifyAll(ei);
   }
 
-  public void notifyAll (ElementInfo ei) {
+  public boolean notifyAll (ElementInfo ei) {
     if (!ei.isLockedBy(ti)){
       throwException("java.lang.IllegalMonitorStateException",
                                  "un-synchronized notifyAll");
-      return;
+      return false;
     }
 
-    ei.notifiesAll();    
+    return ei.notifiesAll();    
   }
   
   public void registerPinDown(int objref){

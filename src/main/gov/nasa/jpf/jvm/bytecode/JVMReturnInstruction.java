@@ -135,9 +135,10 @@ public abstract class JVMReturnInstruction extends ReturnInstruction implements 
   // -- end attribute accessors --
   
   public Instruction execute (ThreadInfo ti) {
+    boolean didUnblock = false;
     
     if (!ti.isFirstStepInsn()) {
-      ti.leave();  // takes care of unlocking before potentially creating a CG
+      didUnblock = ti.leave();  // takes care of unlocking before potentially creating a CG
     }
     
     if (mi.isSynchronized()) {
@@ -145,7 +146,7 @@ public abstract class JVMReturnInstruction extends ReturnInstruction implements 
       ElementInfo ei = ti.getElementInfo(objref);
 
       if (ei.getLockCount() == 0) {
-        if (ti.getScheduler().setsLockReleaseCG(ti, ei)){
+        if (ti.getScheduler().setsLockReleaseCG(ti, ei, didUnblock)){
           return this;
         }
       }

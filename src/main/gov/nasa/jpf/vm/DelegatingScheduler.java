@@ -72,8 +72,8 @@ public class DelegatingScheduler implements Scheduler {
   }
 
   @Override
-  public boolean setsLockReleaseCG (ThreadInfo ti, ElementInfo ei) {
-    return syncPolicy.setsLockReleaseCG(ti, ei);
+  public boolean setsLockReleaseCG (ThreadInfo ti, ElementInfo ei, boolean didUnblock) {
+    return syncPolicy.setsLockReleaseCG(ti, ei, didUnblock);
   }
 
   @Override
@@ -87,13 +87,13 @@ public class DelegatingScheduler implements Scheduler {
   }
 
   @Override
-  public boolean setsNotifyCG (ThreadInfo ti) {
-    return syncPolicy.setsNotifyCG(ti);
+  public boolean setsNotifyCG (ThreadInfo ti, boolean didNotify) {
+    return syncPolicy.setsNotifyCG(ti, didNotify);
   }
 
   @Override
-  public boolean setsNotifyAllCG (ThreadInfo ti) {
-    return syncPolicy.setsNotifyAllCG(ti);
+  public boolean setsNotifyAllCG (ThreadInfo ti, boolean didNotify) {
+    return syncPolicy.setsNotifyAllCG(ti, didNotify);
   }
 
   @Override

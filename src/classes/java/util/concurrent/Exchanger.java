@@ -41,8 +41,14 @@ public class Exchanger<V> {
   //-- only accessed from native methods
   private Exchange<V> exchange;
   
-  public native V exchange(V x) throws InterruptedException;
+  
+  public native V exchange(V value) throws InterruptedException;
 
-  public native V exchange(V x, long timeout, TimeUnit unit)
-                               throws InterruptedException, TimeoutException;
+  private native V exchange0 (V value, long timeoutMillis) throws InterruptedException, TimeoutException;
+  
+  // unfortunately we can't directly go native here without duplicating the TimeUnit conversion in the peer
+  public V exchange(V value, long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+    long to = unit.convert(timeout,TimeUnit.MILLISECONDS);
+    return exchange0( value, to);
+  }
 }
