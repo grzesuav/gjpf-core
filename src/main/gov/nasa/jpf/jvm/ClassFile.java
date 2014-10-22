@@ -310,6 +310,16 @@ public class ClassFile extends BinaryClassSource {
     return utf8At( u2( cpPos[ u2(cpPos[ifcMethodRefInfoIdx]+3)]+3));
   }
   
+  public int bootstrapMethodIndex (int cpInvokeDynamicIndex){
+    return u2(cpPos[cpInvokeDynamicIndex]+1);
+  }
+  public String samMethodNameAt(int cpInvokeDynamicIndex) {
+    return utf8At( u2( cpPos[ u2(cpPos[cpInvokeDynamicIndex]+3)]+1)); 
+  }
+  public String callSiteDescriptor(int cpInvokeDynamicIndex) {
+    return utf8At( u2( cpPos[ u2(cpPos[cpInvokeDynamicIndex]+3)]+3)); 
+  }
+  
   public String getRefTypeName (int refCode){
     switch (refCode){
       case REF_GETFIELD:      return "getfield";
@@ -1389,7 +1399,10 @@ public class ClassFile extends BinaryClassSource {
         bmArgs[j] = readU2();
       }
       
+      // kind of this method handle
       int refKind = mhRefTypeAt(cpMhIdx);
+      
+      // CONSTANT_Methodref_info structure
       int mrefIdx = mhMethodRefIndexAt(cpMhIdx);
       
       String clsName = methodClassNameAt(mrefIdx);

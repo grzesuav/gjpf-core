@@ -714,6 +714,10 @@ public class InstructionFactory extends JVMInstructionFactory {
     return new INVOKEVIRTUAL(clsName, methodName, methodSignature);
   }
 
+  @Override
+  public Instruction invokedynamic(int bootstrapIndex, String samMethodName, String functionType){
+    return new INVOKEDYNAMIC(bootstrapIndex, samMethodName, functionType);
+  }
 
   @Override
   public Instruction ior() {

@@ -19,7 +19,6 @@
 
 package gov.nasa.jpf.jvm;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.Invocation;
 import gov.nasa.jpf.vm.ClassInfo;
@@ -797,11 +796,18 @@ public class JVMCodeBuilder implements JVMByteCodeReader {
     add( insnFactory.invokeinterface(clsName, methodName, methodSignature));
     pc+=5;
   }
+  public void invokeinterface(String clsName, String methodName, String methodSignature){
+    add( insnFactory.invokeinterface(clsName, methodName, methodSignature));
+    pc+=5;
+  }
 
   @Override
   public void invokedynamic (int cpInvokeDynamicIndex){
-    // not yet
-    pc += 5;
+    int bootstrapMethodIndex = cf.bootstrapMethodIndex(cpInvokeDynamicIndex);
+    String samMethodName = cf.samMethodNameAt(cpInvokeDynamicIndex);
+    String callSiteDescriptor = cf.callSiteDescriptor(cpInvokeDynamicIndex);
+    add( insnFactory.invokedynamic(bootstrapMethodIndex, samMethodName, callSiteDescriptor));
+    pc+=5;
   }
   
   @Override public void invokespecial(int cpMethodRefIndex) {

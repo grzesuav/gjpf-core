@@ -21,6 +21,7 @@ package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.Misc;
 import gov.nasa.jpf.vm.AnnotationInfo;
+import gov.nasa.jpf.vm.BootstrapMethodInfo;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ClassParseException;
@@ -35,6 +36,8 @@ import gov.nasa.jpf.vm.NativeMethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 /**
@@ -81,6 +84,34 @@ public class JVMClassInfo extends ClassInfo {
 
       } else if (name == ClassFile.ENCLOSING_METHOD_ATTR) {
         cf.parseEnclosingMethodAttr(this, JVMClassInfo.this);
+        
+      } else if (name == ClassFile.BOOTSTRAP_METHOD_ATTR) {
+        cf.parseBootstrapMethodAttr(this, JVMClassInfo.this);
+        
+      }
+    }
+    
+    @Override
+    public void setBootstrapMethodCount (ClassFile cf, Object tag, int count) {
+      bootstrapMethods = new BootstrapMethodInfo[count];
+    }
+    
+    @Override
+    public void setBootstrapMethod (ClassFile cf, Object tag, int idx, int refKind, String cls, String mth, String descriptor, int[] cpArgs) {    
+   
+      int lambdaRefKind = cf.mhRefTypeAt(cpArgs[1]);
+      
+      int mrefIdx = cf.mhMethodRefIndexAt(cpArgs[1]);
+      String clsName = cf.methodClassNameAt(mrefIdx);
+      String mthName = cf.methodNameAt(mrefIdx);
+      String signature = cf.methodDescriptorAt(mrefIdx);
+      
+      MethodInfo lambdaBody = JVMClassInfo.this.getMethod(mthName + signature, false);
+      
+      String samDescriptor = cf.methodTypeDescriptorAt(cpArgs[2]);
+            
+      if(lambdaBody!=null) {
+        bootstrapMethods[idx] = new BootstrapMethodInfo(lambdaRefKind, JVMClassInfo.this, lambdaBody, samDescriptor);
       }
     }
     
@@ -479,6 +510,42 @@ public class JVMClassInfo extends ClassInfo {
     super( ciAnnotation, proxyName, cli, url);
   }
 
+  /**
+   * This is called on the functional interface type. It creates a synthetic type which 
+   * implements the functional interface and contains a method capturing the behavior 
+   * of the lambda expression.
+   */
+  @Override
+  protected ClassInfo createFuncObjClassInfo (BootstrapMethodInfo bootstrapMethod, String name, String samUniqueName, String[] fieldTypesName) {
+    return new JVMClassInfo(this, bootstrapMethod, name, samUniqueName, fieldTypesName);
+  }
+  
+  protected JVMClassInfo (ClassInfo funcInterface, BootstrapMethodInfo bootstrapMethod, String name, String samUniqueName, String[] fieldTypesName) {
+    super(funcInterface, bootstrapMethod, name, fieldTypesName);
+    
+    // creating a method corresponding to the single abstract method of the functional interface
+    methods = new HashMap<String, MethodInfo>();
+    
+    MethodInfo fiMethod = funcInterface.getInterfaceAbstractMethod(samUniqueName);
+    int modifiers = fiMethod.getModifiers() & (~Modifier.ABSTRACT);
+    int nLocals = fiMethod.getArgumentsSize();
+    int nOperands = this.nInstanceFields + nLocals;
+
+    MethodInfo mi = new MethodInfo(fiMethod.getName(), fiMethod.getSignature(), modifiers, nLocals, nOperands);
+    mi.linkToClass(this);
+    
+    methods.put(mi.getUniqueName(), mi);
+    
+    setLambdaDirectCallCode(mi, bootstrapMethod);
+    
+    try {
+      resolveAndLink();
+    } catch (ClassParseException e) {
+      // we do not even get here - this a synthetic class, and at this point
+      // the interfaces are already loaded.
+    }
+  }
+  
   //--- call processing
   
   protected JVMCodeBuilder getSystemCodeBuilder (ClassFile cf, MethodInfo mi){
@@ -556,7 +623,91 @@ public class JVMClassInfo extends ClassInfo {
     cb.installCode();    
   }
   
+  /**
+   * This method creates the body of the function object method that captures the 
+   * lambda behavior.
+   */
+  @Override
+  protected void setLambdaDirectCallCode (MethodInfo miDirectCall, BootstrapMethodInfo bootstrapMethod) {
+    
+    MethodInfo miCallee = bootstrapMethod.getLambdaBody();
+    String samSignature = bootstrapMethod.getSamDescriptor();
+    JVMCodeBuilder cb = getSystemCodeBuilder(null, miDirectCall);
+    
+    String calleeName = miCallee.getName();
+    String calleeSig = miCallee.getSignature();
+    
+    ClassInfo callerCi = miDirectCall.getClassInfo();
+    
+    // loading free variables, which are used in the body of the lambda 
+    // expression and captured by the lexical scope. These variables  
+    // are stored by the fields of the synthetic function object class
+    int n = callerCi.getNumberOfInstanceFields();
+    for(int i=0; i<n; i++) {
+      cb.aload(0);
+      FieldInfo fi = callerCi.getInstanceField(i);
+      
+      cb.getfield(fi.getName(), callerCi.getName(), Types.getTypeSignature(fi.getSignature(), false));
+    }
 
+    // adding bytecode instructions to load input parameters of the lambda expression
+    n = miDirectCall.getArgumentsSize();
+    for(int i=1; i<n; i++) {
+      cb.aload(i);
+    }
+    
+    String calleeClass = miCallee.getClassName(); 
+    
+    // adding the bytecode instruction to invoke lambda method
+    switch (bootstrapMethod.getLambdaRefKind()) {
+    case ClassFile.REF_INVOKESTATIC:
+      cb.invokestatic(calleeClass, calleeName, calleeSig);
+      break;
+    case ClassFile.REF_INVOKEINTERFACE:
+      cb.invokeinterface(calleeClass, calleeName, calleeSig);
+      break;
+    case ClassFile.REF_INVOKEVIRTUAL:
+      cb.invokevirtual(calleeClass, calleeName, calleeSig);
+      break;
+    case ClassFile.REF_INVOKESPECIAL:
+      cb.invokespecial(calleeClass, calleeName, calleeSig);
+      break;
+    }
+    
+    String returnType = Types.getReturnTypeSignature(samSignature);
+    int  len = returnType.length();
+    char c = returnType.charAt(0);
+
+    // adding a return statement for function object method
+    if (len == 1) {
+      switch (c) {
+      case 'B':
+      case 'I':
+      case 'C':
+      case 'Z':
+      case 'S':
+        cb.ireturn();
+        break;
+      case 'D':
+        cb.dreturn();
+        break;
+      case 'J':
+        cb.lreturn();
+        break;
+      case 'F':
+        cb.freturn();
+        break;
+      case 'V':
+        cb.return_();
+        break;
+      }
+    } else {
+      cb.areturn();
+    }
+    
+    cb.installCode();
+  }
+  
   // create a stack frame that has properly initialized arguments
   @Override
   public StackFrame createStackFrame (ThreadInfo ti, MethodInfo callee){

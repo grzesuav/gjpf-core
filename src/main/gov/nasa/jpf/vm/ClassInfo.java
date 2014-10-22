@@ -197,6 +197,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected String enclosingMethodName;
 
   protected String[] innerClassNames = EMPTY_STRING_ARRAY;
+  protected BootstrapMethodInfo[] bootstrapMethods;
     
   /** direct ifcs implemented by this class */
   protected String[] interfaceNames;
@@ -579,6 +580,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     // to be overridden by VM specific class
   }
   
+  protected void setLambdaDirectCallCode (MethodInfo miDirectCall, BootstrapMethodInfo bootstrapMethod){
+    // to be overridden by VM specific class
+  }
+  
   protected void setNativeCallCode (NativeMethodInfo miNative){
     // to be overridden by VM specific class
   }
@@ -639,6 +644,47 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     classFileUrl = url;
     linkFields();
   }
+  
+  
+  //used to create synthetic classes that implement functional interfaces
+  protected ClassInfo createFuncObjClassInfo (BootstrapMethodInfo bootstrapMethod, String name, String samUniqueName, String[] fieldTypesName) {
+   return null;
+ }
+ 
+ protected ClassInfo (ClassInfo funcInterface, BootstrapMethodInfo bootstrapMethod, String name, String[] fieldTypesName) {
+   ClassInfo enclosingClass = bootstrapMethod.enclosingClass;
+   this.classLoader = enclosingClass.classLoader;
+
+   this.name = name;
+   isClass = true;
+
+   superClassName = "java.lang.Object";
+
+   interfaceNames = new String[]{ funcInterface.name };    
+   packageName = enclosingClass.getPackageName();
+
+   // creating fields used to capture free variables
+   int n = fieldTypesName.length;
+   
+   iFields = new FieldInfo[n];
+   nInstanceFields = n;
+   
+   sFields = new FieldInfo[0];
+   staticDataSize = 0;
+   
+   int idx = 0;
+   int off = 0;  // no super class
+   
+   int i = 0;
+   for(String type: fieldTypesName) {
+     FieldInfo fi = FieldInfo.create("arg" + i++, type, 0);
+     fi.linkToClass(this, idx, off);
+     iFields[idx++] = fi;
+     off += fi.getStorageSize();
+   }
+   
+   linkFields();
+ }
   
   // since id and hence uniqueId are not set before this class is registered, we can't use them
   
@@ -1015,6 +1061,24 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return mi;
   }
   
+  public MethodInfo getInterfaceAbstractMethod (String uniqueName) {
+    MethodInfo mi = this.getMethod(uniqueName, true);
+    
+    if(mi != null) {
+      return mi;
+    }
+    
+    for (ClassInfo ci = this; ci != null && mi == null; ci = ci.superClass){
+      for (ClassInfo ciIfc : ci.interfaces){
+        mi = ciIfc.getMethod(uniqueName, true);
+        if (mi != null && mi.isAbstract()){
+          return mi;
+        }
+      }
+    }
+    
+    return null;
+  }
 
   /**
    * almost the same as above, except of that Class.getMethod() doesn't specify
@@ -1727,6 +1791,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return innerClassInfos;
   }
   
+  public BootstrapMethodInfo getBootstrapMethodInfo(int index) {
+    return bootstrapMethods[index];
+  }
 
   public ClassInfo getComponentClassInfo () {
     if (isArray()) {

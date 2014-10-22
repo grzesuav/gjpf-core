@@ -887,12 +887,18 @@ public abstract class StackFrame implements Cloneable {
     
     InvokeInstruction call = (InvokeInstruction) pc;    
     MethodInfo callee = call.getInvokedMethod();
-    int n = callee.getNumberOfArguments();
+
+    byte[] argTypes = callee.getArgumentTypes();
+
+    return getArgumentsValues(ti, argTypes);
+  }
+
+  public Object[] getArgumentsValues (ThreadInfo ti, byte[] argTypes){
+    int n = argTypes.length;
     Object[] args = new Object[n];
-    byte[] at = callee.getArgumentTypes();
 
     for (int i=n-1, off=0; i>=0; i--) {
-      switch (at[i]) {
+      switch (argTypes[i]) {
       case Types.T_ARRAY:
       //case Types.T_OBJECT:
       case Types.T_REFERENCE:
@@ -942,10 +948,8 @@ public abstract class StackFrame implements Cloneable {
         // error, unknown argument type
       }
     }
-    
     return args;
   }
-
   
   /**
    * return an array of all argument attrs, which in turn can be lists. If
