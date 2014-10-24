@@ -39,9 +39,100 @@ public class BinaryClassSource {
   protected int[] posStack;
   protected int top;
   
+  protected ByteReader byteReader;
+  
+  //--------------------------------------------------------- variable endian support 
+  
+  public interface ByteReader {
+    int readI2();
+    int readU2();
+    int readI4();
+    long readU4();
+    void makeLittleEndian (short[] data);
+  }
+
+  public class LittleEndianReader implements ByteReader {
+    
+    public final int readI2 () {
+      int idx = pos;
+      pos += 2;
+      return (data[idx++] & 0xff) | (data[idx] << 8);
+    }
+
+    public final int readU2 () {
+      int idx = pos;
+      pos += 2;
+      return (data[idx++] & 0xff) | ((data[idx] & 0xff)<< 8);
+    }
+    
+    public final int readI4 () {
+      int idx = pos;
+      pos += 4;
+      byte[] data = BinaryClassSource.this.data;
+
+      return (data[idx++] & 0xff) | ((data[idx++] & 0xff) << 8) | ((data[idx++] & 0xff) << 16) | (data[idx] << 24);
+    }
+
+    public final long readU4 () {
+      int idx = pos;
+      pos += 4;
+      byte[] data = BinaryClassSource.this.data;
+
+      return (data[idx++] & 0xff) | ((data[idx++] & 0xff) << 8) | ((data[idx++] & 0xff) << 16) | ((data[idx] & 0xff) << 24);
+    }
+    
+    public final void makeLittleEndian (short[] data){
+      // nothing - we already are
+    }
+  }
+
+  
+  public class BigEndianReader implements ByteReader {
+    public final int readI2 () {
+      int idx = pos;
+      pos += 2;
+      return (data[idx++] << 8) | (data[idx] & 0xff);
+    }
+
+    public final int readU2 () {
+      int idx = pos;
+      pos += 2;
+      return ((data[idx++] & 0xff) << 8) | (data[idx] & 0xff);
+    }
+    
+    public final int readI4 () {
+      int idx = pos;
+      pos += 4;
+      byte[] data = BinaryClassSource.this.data;
+
+      return (data[idx++] << 24) | ((data[idx++] & 0xff) << 16) | ((data[idx++] & 0xff) << 8) | (data[idx] & 0xff);
+    }
+
+    public final long readU4 () {
+      int idx = pos;
+      pos += 4;
+      byte[] data = BinaryClassSource.this.data;
+
+      return ((data[idx++] & 0xff) << 24) | ((data[idx++] & 0xff) << 16) | ((data[idx++] & 0xff) << 8) | (data[idx] & 0xff);
+    }
+    
+    public final void makeLittleEndian (short[] data){
+      for (int i=0; i<data.length; i++){
+        short s = data[i];
+        s = (short) (((s & 0xFF00) >> 8) | (s << 8));
+        data[i] = s;
+      }
+    }
+  }
+  
+  //----------------------------------- BinaryClassSource methods
+
+  
   protected BinaryClassSource (byte[] data, int pos){
    this.data = data;
    this.pos = pos;
+   
+   this.byteReader = initializeByteReader();
   }
   
   protected BinaryClassSource (File file) throws ClassParseException {
@@ -54,7 +145,7 @@ public class BinaryClassSource {
       }
       data = new byte[(int)len];
       readData(is);
-
+      
     } catch (FileNotFoundException fnfx) {
       error("classfile not found: " + file.getPath());
 
@@ -67,8 +158,14 @@ public class BinaryClassSource {
         }
       }
     }
+    
+    this.byteReader = initializeByteReader();
   }
   
+  protected ByteReader initializeByteReader(){
+    // Java classfiles are big endian
+    return new BigEndianReader();
+  }
   
   protected void readData (InputStream is) throws ClassParseException {
     try {

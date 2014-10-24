@@ -19,12 +19,10 @@
 
 package gov.nasa.jpf.vm.bytecode;
 
-import gov.nasa.jpf.SystemAttribute;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.Types;
 
 /**
