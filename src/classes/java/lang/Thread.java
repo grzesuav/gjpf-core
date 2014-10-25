@@ -402,14 +402,10 @@ public class Thread implements Runnable {
   // <2do> not implemented yet
   native void blockedOn (Interruptible b);
 
+  
   // we probably will remove these fields once we modeled java.util.concurrent.ThreadLocalRandom 
   // to make it deterministic
-  @sun.misc.Contended("tlr")
   long threadLocalRandomSeed;
-  
-  @sun.misc.Contended("tlr")
   int threadLocalRandomProbe;
-
-  @sun.misc.Contended("tlr")
   int threadLocalRandomSecondarySeed;
 }

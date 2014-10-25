@@ -41,6 +41,10 @@ public class MethodTest extends TestJPF {
   static class Faz {
 
     static int d = 4200;
+    
+    static private int foo (int a){
+      return a + 42;
+    }
   }
 
   static class SupC {
@@ -176,19 +180,21 @@ public class MethodTest extends TestJPF {
   @Test
   public void invokePrivateOtherClass() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     if (verifyUnhandledException(IllegalAccessException.class.getName())) {
-      Method m = Integer.class.getDeclaredMethod("toUnsignedString0", int.class, int.class);
+      Method m = Faz.class.getDeclaredMethod("foo", int.class);
 
-      m.invoke(null, 5, 3);
+      int res = (Integer)m.invoke(null, 5);
+      fail("should never get here");
     }
   }
 
   @Test
   public void invokePrivateOtherClassAccessible() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     if (verifyNoPropertyViolation()) {
-      Method m = Integer.class.getDeclaredMethod("toUnsignedString", int.class, int.class);
+      Method m = Faz.class.getDeclaredMethod("foo", int.class);
 
       m.setAccessible(true);
-      m.invoke(null, 5, 3);
+      int res = (Integer)m.invoke(null, 5);
+      assertTrue( res == 47);
     }
   }
 
