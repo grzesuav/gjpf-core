@@ -91,7 +91,7 @@ public class SingleProcessVM extends VM {
       }
     } else {
       // since there was a 'target', 'target.args' override command line
-      args = config.getStringArray("target.args");
+      args = config.getCompactStringArray("target.args");
       if (args == null){
         if (freeArgs != null){
           args = freeArgs;

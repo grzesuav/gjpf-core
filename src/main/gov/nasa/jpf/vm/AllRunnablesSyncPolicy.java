@@ -32,10 +32,18 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
   protected VM vm;
   protected boolean breakSingleChoice;
   protected boolean breakLockRelease;
+  protected boolean breakNotify;
+  protected boolean breakSleep;
+  protected boolean breakYield;
+  protected boolean breakPriority;
   
   public AllRunnablesSyncPolicy (Config config){
     breakSingleChoice = config.getBoolean("cg.break_single_choice", false);    
     breakLockRelease = config.getBoolean("cg.break_lock_release", true);
+    breakNotify = config.getBoolean("cg.break_notify", true);
+    breakSleep = config.getBoolean("cg.break_sleep", true);
+    breakYield = config.getBoolean("cg.break_yield", true);
+    breakPriority = config.getBoolean("cg.break_priority", true);
   }
   
   
@@ -68,7 +76,7 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
       return null;
     }
     
-    if ((choices.length == 1) && (choices[0] == tiCurrent)){ // no context switch
+    if ((choices.length == 1) && (choices[0] == tiCurrent) && !tiCurrent.isTimeoutWaiting()){ // no context switch
       if (!breakSingleChoice){
         return null;
       }
@@ -165,13 +173,14 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
   }
   
   @Override
-  public boolean setsLockReleaseCG (ThreadInfo ti, ElementInfo ei){
+  public boolean setsLockReleaseCG (ThreadInfo ti, ElementInfo ei, boolean didUnblock){
     if (breakLockRelease){
-      // <2do> we could check if there are any waiters
-      return setNonBlockingCG( RELEASE, ti);
-    } else {
-      return false;
+      if (didUnblock){
+        return setNonBlockingCG( RELEASE, ti);
+      }
     }
+    
+    return false;
   }
   
   //--- thread termination
@@ -187,13 +196,25 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
   }
   
   @Override
-  public boolean setsNotifyCG (ThreadInfo ti){
-    return setNonBlockingCG( NOTIFY, ti);
+  public boolean setsNotifyCG (ThreadInfo ti, boolean didNotify){
+    if (breakNotify){
+      if (didNotify){
+        return setNonBlockingCG( NOTIFY, ti);
+      }
+    }
+    
+    return false;
   }
   
   @Override
-  public boolean setsNotifyAllCG (ThreadInfo ti){
-    return setNonBlockingCG( NOTIFYALL, ti);
+  public boolean setsNotifyAllCG (ThreadInfo ti, boolean didNotify){
+    if (breakNotify){
+      if (didNotify){
+        return setNonBlockingCG( NOTIFYALL, ti);
+      }
+    }
+    
+    return false;
   }
   
     
@@ -205,17 +226,29 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
   
   @Override
   public boolean setsYieldCG (ThreadInfo ti){
-    return setNonBlockingCG( YIELD, ti);
+    if (breakYield){
+      return setNonBlockingCG( YIELD, ti);
+    } else {
+      return false;
+    }
   }
   
   @Override
   public boolean setsPriorityCG (ThreadInfo ti){
-    return setNonBlockingCG( PRIORITY, ti);    
+    if (breakPriority){
+      return setNonBlockingCG( PRIORITY, ti);    
+    } else {
+      return false;
+    }
   }
   
   @Override
   public boolean setsSleepCG (ThreadInfo ti, long millis, int nanos){
-    return setNonBlockingCG( SLEEP, ti);
+    if (breakSleep){
+      return setNonBlockingCG( SLEEP, ti);
+    } else {
+      return false;
+    }
   }
   
   @Override
@@ -240,7 +273,11 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
   
   @Override
   public boolean setsInterruptCG (ThreadInfo tiCurrent, ThreadInfo tiInterrupted){
-    return setNonBlockingCG( INTERRUPT, tiCurrent);
+    if (tiInterrupted.isWaiting()){
+      return setNonBlockingCG( INTERRUPT, tiCurrent);
+    } else {
+      return false;
+    }
   }
   
   
@@ -252,7 +289,12 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
   
   @Override
   public boolean setsUnparkCG (ThreadInfo tiCurrent, ThreadInfo tiUnparked){
-    return setNonBlockingCG( UNPARK, tiCurrent);
+    // if the unparked thread is not blocked there is no point
+    if (tiUnparked.isBlocked()){
+      return setNonBlockingCG( UNPARK, tiCurrent);
+    } else {
+      return false;
+    }
   }
 
   

@@ -170,7 +170,6 @@ public class ThreadInfo extends InfoObject
   protected ClassInfo ci; // the classinfo associated with the thread object
   protected int targetRef; // the associated java.lang.Runnable
   
-
   // which attributes are stored/restored
   static final int   ATTR_STORE_MASK = 0x0000ffff;
 
@@ -403,7 +402,7 @@ public class ThreadInfo extends InfoObject
     
     vm.getScheduler().initializeThreadSync(parent, this);
     
-    // note the thread is not yet in the ThreadList, we have to register from the caller    
+    // note the thread is not yet in the ThreadList, we have to register from the caller
   }
   
   protected void init(VM vm){
@@ -2194,8 +2193,11 @@ public class ThreadInfo extends InfoObject
 
   /**
    * note - this assumes the stackframe is still on top (not yet popped)
+   * 
+   * return true if any threads became unblocked due to a return from a sync method
    */
-  public void leave(){
+  public boolean leave(){
+    boolean didUnblock = false;
     MethodInfo mi = top.getMethodInfo();
     
     // <2do> - that's not really enough, we might have suspicious bytecode that fails
@@ -2210,7 +2212,7 @@ public class ThreadInfo extends InfoObject
       ElementInfo ei = getElementInfo( oref);
       if (ei.isLocked()){
         ei = ei.getModifiableInstance();
-        ei.unlock(this);
+        didUnblock = ei.unlock(this);
       }
       
       if (mi.isClinit()) {
@@ -2223,6 +2225,7 @@ public class ThreadInfo extends InfoObject
     }
 
     vm.notifyMethodExited(this, mi);
+    return didUnblock;
   }
 
   
@@ -2346,9 +2349,9 @@ public class ThreadInfo extends InfoObject
     int grpRef = ei.getReferenceField("group");
     cleanupThreadGroup(grpRef, ei.getObjectRef());
 
-    ei.setReferenceField("group", MJIEnv.NULL);
+    ei.setReferenceField("group", MJIEnv.NULL);    
     ei.setReferenceField("threadLocals", MJIEnv.NULL);
-    ei.setReferenceField("inheritableThreadLocals", MJIEnv.NULL);
+    
     ei.setReferenceField("uncaughtExceptionHandler", MJIEnv.NULL);
   }
 

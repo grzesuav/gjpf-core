@@ -88,15 +88,15 @@ public interface SyncPolicy {
   //--- locks
   boolean setsBlockedThreadCG (ThreadInfo ti, ElementInfo ei);
   boolean setsLockAcquisitionCG (ThreadInfo ti, ElementInfo ei);
-  boolean setsLockReleaseCG (ThreadInfo ti, ElementInfo ei);
+  boolean setsLockReleaseCG (ThreadInfo ti, ElementInfo ei, boolean didUnblock);
 
   //--- thread termination
   boolean setsTerminationCG (ThreadInfo ti);
   
   //--- java.lang.Object APIs
   boolean setsWaitCG (ThreadInfo ti, long timeout);
-  boolean setsNotifyCG (ThreadInfo ti);
-  boolean setsNotifyAllCG (ThreadInfo ti);
+  boolean setsNotifyCG (ThreadInfo ti, boolean didNotify);
+  boolean setsNotifyAllCG (ThreadInfo ti, boolean didNotify);
     
   //--- the java.lang.Thread APIs
   boolean setsStartCG (ThreadInfo tiCurrent, ThreadInfo tiStarted);

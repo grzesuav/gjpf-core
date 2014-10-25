@@ -62,6 +62,10 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
   
   //--- options used for concurrent field access detection
   
+  protected TypeSpecMatcher neverBreakOnTypes;
+  
+  protected TypeSpecMatcher alwaysBreakOnTypes;
+  
   /**
    * never break or expose if a matching method is on the stack
    */
@@ -114,6 +118,10 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
   
   protected GenericSharednessPolicy (Config config){
     neverBreakInMethods = MethodSpecMatcher.create( config.getStringArray("vm.shared.never_break_methods"));
+    
+    neverBreakOnTypes = TypeSpecMatcher.create(config.getStringArray("vm.shared.never_break_types"));
+    alwaysBreakOnTypes = TypeSpecMatcher.create(config.getStringArray("vm.shared.always_break_types"));
+    
     neverBreakOnFields = FieldSpecMatcher.create( config.getStringArray("vm.shared.never_break_fields"));
     alwaysBreakOnFields = FieldSpecMatcher.create( config.getStringArray("vm.shared.always_break_fields"));
     
@@ -132,13 +140,19 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
   
   
   //--- attribute management
-  
-  protected void setTypeAttribute (TypeSpecMatcher matcher, ClassInfo ci, Object attr){
-    if (matcher != null){
-      if (matcher.matches(ci)){
-        ci.addAttr(attr);
+
+  protected void setTypeAttributes (TypeSpecMatcher neverMatcher, TypeSpecMatcher alwaysMatcher, ClassInfo ciLoaded){
+    // we flatten this for performance reasons
+    for (ClassInfo ci = ciLoaded; ci!= null; ci = ci.getSuperClass()){
+      if (alwaysMatcher != null && alwaysMatcher.matches(ci)){
+        ciLoaded.addAttr(AlwaysBreakOn.singleton);
+        return;
       }
-    }    
+      if (neverMatcher != null && neverMatcher.matches(ci)){
+        ciLoaded.addAttr( NeverBreakOn.singleton);
+        return;
+      }
+    }
   }
   
   protected void setFieldAttributes (FieldSpecMatcher neverMatcher, FieldSpecMatcher alwaysMatcher, ClassInfo ci){
@@ -185,6 +199,17 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
     }
   }
   
+  protected boolean isInNeverBreakMethod (ThreadInfo ti){
+    for (StackFrame frame = ti.getTopFrame(); frame != null; frame=frame.getPrevious()){
+      MethodInfo mi = frame.getMethodInfo();
+      if (mi.hasAttr( NeverBreakIn.class)){
+        return true;
+      }
+    }
+
+    return false;
+  }
+  
   protected abstract boolean checkOtherRunnables (ThreadInfo ti);
   
   // this needs a three-way return value, hence Boolean
@@ -202,12 +227,18 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
       return Boolean.FALSE;
     }
     
-    //--- call site (method)
-    for (StackFrame frame = ti.getTopFrame(); frame != null; frame=frame.getPrevious()){
-      MethodInfo mi = frame.getMethodInfo();
-      if (mi.hasAttr( NeverBreakIn.class)){
-        return Boolean.FALSE;
-      }
+    //--- method
+    if (isInNeverBreakMethod(ti)){
+      return false;
+    }
+    
+    //--- type
+    ClassInfo ciFieldOwner = eiFieldOwner.getClassInfo();
+    if (ciFieldOwner.hasAttr(NeverBreakOn.class)){
+      return Boolean.FALSE;
+    }
+    if (ciFieldOwner.hasAttr(AlwaysBreakOn.class)){
+      return Boolean.TRUE;
     }
     
     //--- field
@@ -312,14 +343,30 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
 
   protected boolean setsExposureCG (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi, ElementInfo eiExposed){
     if (breakOnExposure){
-      if (eiFieldOwner.isExposedOrShared()){
+      ClassInfo ciExposed = eiExposed.getClassInfo();
+      
+      //--- exposed type
+      if (ciExposed.hasAttr(NeverBreakOn.class)){
+        return false;
+      }      
+      if (ciExposed.hasAttr(AlwaysBreakOn.class)){
+        logger.info("type exposure CG setting field ", fi, " to ", eiExposed);
+        return setNextChoiceGenerator(getRunnableCG("EXPOSE", ti));
+      }        
+        
+      // we can't filter on immutability since the race subject could be a reference
+      // that is exposed through the exposed object
+      
+      if (isInNeverBreakMethod(ti)){
+        return false;
+      }
+      
+      if (eiFieldOwner.isExposedOrShared() && isFirstExposure(eiFieldOwner, eiExposed)){        
         // don't check against the 'old' field value because this might get called after the field was already updated
         // we should solely depend on different object sharedness
-        if (isFirstExposure(eiFieldOwner, eiExposed)) {
-          eiExposed = eiExposed.getExposedInstance(ti, eiFieldOwner);
-          logger.info("exposure CG setting field ", fi, " to ", eiExposed);
-          return setNextChoiceGenerator(getRunnableCG("EXPOSE", ti));
-        }
+        eiExposed = eiExposed.getExposedInstance(ti, eiFieldOwner);
+        logger.info("exposure CG setting field ", fi, " to ", eiExposed);
+        return setNextChoiceGenerator(getRunnableCG("EXPOSE", ti));
       }
     }
 
@@ -352,7 +399,9 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
   
   
   @Override
-  public void setAttributes (ClassInfo ci){    
+  public void setAttributes (ClassInfo ci){
+    setTypeAttributes( neverBreakOnTypes, alwaysBreakOnTypes, ci);
+    
     setFieldAttributes( neverBreakOnFields, alwaysBreakOnFields, ci);
     
     // this one is more expensive to iterate over and should be avoided
@@ -461,7 +510,8 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
    */
   @Override
   public boolean setsSharedObjectCG (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
-    if (eiFieldOwner.isShared() && !eiFieldOwner.isLockProtected(fi)) {
+    if (eiFieldOwner.getClassInfo().hasAttr(AlwaysBreakOn.class) ||
+            (eiFieldOwner.isShared() && !eiFieldOwner.isLockProtected(fi))) {
       logger.info("CG accessing shared instance field ", fi);
       return setNextChoiceGenerator( getRunnableCG("SHARED_OBJECT", ti));
     }
@@ -471,7 +521,8 @@ public abstract class GenericSharednessPolicy implements SharednessPolicy, Attri
 
   @Override
   public boolean setsSharedClassCG (ThreadInfo ti, Instruction insn, ElementInfo eiFieldOwner, FieldInfo fi){
-    if (eiFieldOwner.isShared() && !eiFieldOwner.isLockProtected(fi)) {
+    if (eiFieldOwner.getClassInfo().hasAttr(AlwaysBreakOn.class) ||
+            (eiFieldOwner.isShared() && !eiFieldOwner.isLockProtected(fi))) {
       logger.info("CG accessing shared static field ", fi);
       return setNextChoiceGenerator( getRunnableCG("SHARED_CLASS", ti));
     }

@@ -81,4 +81,11 @@ public class JPF_java_text_SimpleDateFormat extends NativePeer {
     String s = f.format(date);
     return env.newString(s);
   }
+  
+  @MJI
+  public void applyPattern__Ljava_lang_String_2__V (MJIEnv env, int objRef, int patternRef) {
+    SimpleDateFormat format = getInstance (env, objRef);
+    String pattern = env.getStringObject(patternRef);
+    format.applyPattern(pattern);
+  }
 }

@@ -30,46 +30,50 @@ import gov.nasa.jpf.vm.ThreadInfo;
  */
 public class IINC extends Instruction implements JVMInstruction {
 
-	protected int index;
-	protected int increment;
+  protected int index;
+  protected int increment;
 
-	public IINC(int localVarIndex, int increment){
-		this.index = localVarIndex;
-		this.increment = increment;
-	}
+  public IINC(int localVarIndex, int increment) {
+    this.index = localVarIndex;
+    this.increment = increment;
+  }
 
-	@Override
-	public Instruction execute (ThreadInfo ti) {
-	  StackFrame frame = ti.getModifiableTopFrame();
-	  
-	  int v = frame.getLocalVariable(index);
-	  v += increment;
-	  
-	  frame.setLocalVariable(index, v, false);
+  @Override
+  public Instruction execute(ThreadInfo ti) {
+    StackFrame frame = ti.getModifiableTopFrame();
 
-		return getNext(ti);
-	}
+    int v = frame.getLocalVariable(index);
+    v += increment;
 
-	public int getLength() {
-		return 3; // opcode, index, const
-	}
+    frame.setLocalVariable(index, v, false);
 
-	@Override
-	public int getByteCode () {
-		return 0x84; // ?? wide
-	}
+    return getNext(ti);
+  }
 
-	@Override
-	public void accept(JVMInstructionVisitor insVisitor) {
-		insVisitor.visit(this);
-	}
+  public int getLength() {
+    return 3; // opcode, index, const
+  }
 
-	public int getIndex() {
-		return index;
-	}
+  @Override
+  public int getByteCode() {
+    return 0x84; // ?? wide
+  }
 
-	public int getIncrement() {
-		return increment;
-	}
+  @Override
+  public void accept(JVMInstructionVisitor insVisitor) {
+    insVisitor.visit(this);
+  }
 
+  public int getIndex() {
+    return index;
+  }
+
+  public int getIncrement() {
+    return increment;
+  }
+
+  @Override
+  public String toPostExecString() {
+    return "iinc " + index + ' ' + increment;
+  }
 }

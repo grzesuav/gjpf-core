@@ -160,6 +160,7 @@ public interface JVMByteCodeReader {
   void ineg();
   void instanceof_(int cpClassIndex);
   void invokeinterface (int cpInterfaceMethodRefIndex, int count, int zero);
+  void invokedynamic (int cpInvokeDynamicIndex);
   void invokespecial (int cpMethodRefIndex);
   void invokestatic (int cpMethodRefIndex);
   void invokevirtual (int cpMethodRefIndex);

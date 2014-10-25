@@ -319,6 +319,8 @@ public abstract class JVMInstructionFactory implements Cloneable {
   abstract public Instruction invokestatic (String clsName, String methodName, String methodSignature);
 
   abstract public Instruction invokevirtual (String clsName, String methodName, String methodSignature);
+  
+  abstract public Instruction invokedynamic (int bootstrapIndex, String samMethodName, String functionType);
 
   abstract public Instruction ior ();
 

@@ -103,7 +103,7 @@ public class AASTORE extends ArrayStoreInstruction {
         if (refValue != MJIEnv.NULL) {
           ElementInfo eiExposed = ti.getElementInfo(refValue);
           if (scheduler.setsSharedObjectExposureCG(ti, this, eiArray, null, eiArray)) {
-            frame.addFrameAttr( InstructionState.getProcessedState());
+            frame.addFrameAttr( InstructionState.processed);
             return this;
           }
         }

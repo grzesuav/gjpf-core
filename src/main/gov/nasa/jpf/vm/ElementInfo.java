@@ -1311,6 +1311,19 @@ public abstract class ElementInfo implements Cloneable {
     fields.setReferenceValue(idx, value);
   }
 
+  /**
+   * NOTE - this doesn't support element type checks or overlapping in-array copy 
+   */
+  public void arrayCopy (ElementInfo src, int srcPos, int dstPos, int len){
+    checkArray(dstPos+len-1);
+    src.checkArray(srcPos+len-1);
+    checkIsModifiable();
+    
+    ArrayFields da = (ArrayFields)fields;
+    ArrayFields sa = (ArrayFields)src.fields;
+    
+    da.copyElements(sa, srcPos, dstPos, len);
+  }
 
   public boolean getBooleanElement(int idx) {
     checkArray(idx);
@@ -1836,8 +1849,8 @@ public abstract class ElementInfo implements Cloneable {
    * Note that even if we notify a thread here, it still remains in the lockedThreads
    * list until the lock is released (notified threads cannot run right away)
    */
-  public void notifies(SystemState ss, ThreadInfo ti){
-    notifies(ss, ti, true);
+  public boolean notifies(SystemState ss, ThreadInfo ti){
+    return notifies(ss, ti, true);
   }
   
   
@@ -1856,7 +1869,9 @@ public abstract class ElementInfo implements Cloneable {
     }
   }
 
-  public void notifies (SystemState ss, ThreadInfo ti, boolean hasToHoldLock){
+  
+  /** return true if this did notify any waiters */
+  public boolean notifies (SystemState ss, ThreadInfo ti, boolean hasToHoldLock){
     if (hasToHoldLock){
       assert monitor.getLockingThread() != null : "notify on unlocked object: " + this;
     }
@@ -1887,6 +1902,7 @@ public abstract class ElementInfo implements Cloneable {
     }
 
     ti.getVM().notifyObjectNotifies(ti, this);
+    return (nWaiters > 0);
   }
 
   /**
@@ -1894,7 +1910,7 @@ public abstract class ElementInfo implements Cloneable {
    * all waiters remain in the locked list, since they still have to be unblocked,
    * which happens in the unlock (monitor_exit or sync return) following the notifyAll()
    */
-  public void notifiesAll() {
+  public boolean notifiesAll() {
     assert monitor.getLockingThread() != null : "notifyAll on unlocked object: " + this;
 
     ThreadInfo[] locked = monitor.getLockedThreads();
@@ -1905,6 +1921,7 @@ public abstract class ElementInfo implements Cloneable {
     }
 
     VM.getVM().notifyObjectNotifiesAll(ThreadInfo.currentThread, this);
+    return (locked.length > 0);
   }
 
 
@@ -2011,7 +2028,8 @@ public abstract class ElementInfo implements Cloneable {
    * if it is reachable from live objects or not.
    * @return true if the new counter is 1, i.e. the object just became pinned down
    *
-   * NOTE - this is not a public method, pinning down an object is now
+   * NOTE - this is *not* a public method and you probably want to use
+   * Heap.register/unregisterPinDown(). Pinning down an object is now
    * done through the Heap API, which updates the counter here, but might also
    * have to update internal caches
    */
@@ -2026,7 +2044,7 @@ public abstract class ElementInfo implements Cloneable {
       a |= pdCount;
       a |= ATTR_ATTRIBUTE_CHANGED;
       attributes = a;
-
+      
       return (pdCount == 1);
     }
   }
@@ -2048,6 +2066,7 @@ public abstract class ElementInfo implements Cloneable {
       attributes = a;
 
       return (pdCount == 0);
+      
     } else {
       return false;
     }

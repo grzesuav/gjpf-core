@@ -48,7 +48,19 @@ public class ClassFile extends BinaryClassSource {
   public static final int METHOD_REF = 10;
   public static final int INTERFACE_METHOD_REF = 11;
   public static final int NAME_AND_TYPE = 12;
+  public static final int METHOD_HANDLE = 15;
+  public static final int METHOD_TYPE = 16;
+  public static final int INVOKE_DYNAMIC = 18;
 
+  public static final int REF_GETFIELD = 1;
+  public static final int REF_GETSTATIC = 2;
+  public static final int REF_PUTFIELD = 3;
+  public static final int REF_PUTSTATIC = 4;
+  public static final int REF_INVOKEVIRTUAL = 5;
+  public static final int REF_INVOKESTATIC = 6;
+  public static final int REF_INVOKESPECIAL = 7;
+  public static final int REF_NEW_INVOKESPECIAL = 8;
+  public static final int REF_INVOKEINTERFACE = 9;
 
   // used to store types in cpValue[]
   public static enum CpInfo {
@@ -64,7 +76,13 @@ public class ClassFile extends BinaryClassSource {
     FieldRef,                 // 9
     MethodRef,                // 10
     InterfaceMethodRef,       // 11
-    NameAndType;              // 12
+    NameAndType,              // 12
+    Unused_13,
+    Unused_14,
+    MethodHandle,             // 15
+    MethodType,               // 16
+    Unused_17,
+    InvokeDynamic             // 18
   }
 
   // <2do> this is going away
@@ -174,10 +192,12 @@ public class ClassFile extends BinaryClassSource {
   public static final String  SOURCE_FILE_ATTR = "SourceFile";
   public static final String  INNER_CLASSES_ATTR = "InnerClasses";
   public static final String  ENCLOSING_METHOD_ATTR = "EnclosingMethod";
-
+  public static final String  BOOTSTRAP_METHOD_ATTR = "BootstrapMethods";
+  
   protected final static String[] stdClassAttrs = {
     SOURCE_FILE_ATTR, DEPRECATED_ATTR, INNER_CLASSES_ATTR, DEPRECATED_ATTR, SIGNATURE_ATTR,
-    RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR, ENCLOSING_METHOD_ATTR };
+    RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR, ENCLOSING_METHOD_ATTR,
+    BOOTSTRAP_METHOD_ATTR };
 
 
   protected String internStdAttrName(int cpIdx, String name, String[] stdNames){
@@ -247,6 +267,13 @@ public class ClassFile extends BinaryClassSource {
     return utf8At( u2( cpPos[ u2(cpPos[cpIdx]+3)]+3));
   }
 
+  public int mhRefTypeAt (int methodHandleInfoIdx){
+    return u1(cpPos[methodHandleInfoIdx]+1);
+  }
+  public int mhMethodRefIndexAt  (int methodHandleInfoIdx){
+    return u2(cpPos[methodHandleInfoIdx]+2);
+  }
+  
   // those could check ref types
   public String fieldClassNameAt(int fieldRefInfoIdx){
     //assert data[cpPos[fieldRefInfoIdx]] == 9 : "not a Fieldref_info tag";
@@ -269,6 +296,10 @@ public class ClassFile extends BinaryClassSource {
     return utf8At( u2( cpPos[ u2(cpPos[methodRefInfoIdx]+3)]+3));
   }
 
+  public String methodTypeDescriptorAt (int methodTypeInfoIdx){
+    return utf8At( u2(cpPos[methodTypeInfoIdx]+1));
+  }
+  
   public String interfaceMethodClassNameAt(int ifcMethodRefInfoIdx){
     return (String) cpValue[ u2(cpPos[ifcMethodRefInfoIdx]+1)];
   }
@@ -278,7 +309,33 @@ public class ClassFile extends BinaryClassSource {
   public String interfaceMethodDescriptorAt(int ifcMethodRefInfoIdx){
     return utf8At( u2( cpPos[ u2(cpPos[ifcMethodRefInfoIdx]+3)]+3));
   }
-
+  
+  public int bootstrapMethodIndex (int cpInvokeDynamicIndex){
+    return u2(cpPos[cpInvokeDynamicIndex]+1);
+  }
+  public String samMethodNameAt(int cpInvokeDynamicIndex) {
+    return utf8At( u2( cpPos[ u2(cpPos[cpInvokeDynamicIndex]+3)]+1)); 
+  }
+  public String callSiteDescriptor(int cpInvokeDynamicIndex) {
+    return utf8At( u2( cpPos[ u2(cpPos[cpInvokeDynamicIndex]+3)]+3)); 
+  }
+  
+  public String getRefTypeName (int refCode){
+    switch (refCode){
+      case REF_GETFIELD:      return "getfield";
+      case REF_GETSTATIC:     return "getstatic";
+      case REF_PUTFIELD:      return "putfield";
+      case REF_PUTSTATIC:     return "putstatic";
+      case REF_INVOKEVIRTUAL: return "invokevirtual";
+      case REF_INVOKESTATIC:  return "invokestatic";
+      case REF_INVOKESPECIAL: return "invokespecial";
+      case REF_NEW_INVOKESPECIAL: return "new-invokespecial";
+      case REF_INVOKEINTERFACE: return "invokeinterface";
+      default:
+        return "<unknown>";
+    }
+  }
+  
   public String getTypeName (int typeCode){
     switch(typeCode){
       case 4: return "boolean";
@@ -592,6 +649,24 @@ public class ClassFile extends BinaryClassSource {
     reader.setSourceFile( this, tag, pathName);
     pos = p;
   }
+  
+  private void setBootstrapMethodCount (ClassFileReader reader, Object tag, int bootstrapMethodCount){
+    int p = pos;
+    reader.setBootstrapMethodCount( this, tag, bootstrapMethodCount);
+    pos = p;    
+  }
+  private void setBootstrapMethod (ClassFileReader reader, Object tag, int idx, 
+                                   int refKind, String cls, String mth, String descriptor, int[] cpArgs){
+    int p = pos;
+    reader.setBootstrapMethod( this, tag, idx, refKind, cls, mth, descriptor, cpArgs);
+    pos = p;    
+  }
+  private void setBootstrapMethodsDone (ClassFileReader reader, Object tag){
+    int p = pos;
+    reader.setBootstrapMethodsDone( this, tag);
+    pos = p;    
+  }
+  
   private void setInnerClassCount(ClassFileReader reader, Object tag, int innerClsCount){
     int p = pos;
     reader.setInnerClassCount( this, tag, innerClsCount);
@@ -940,8 +1015,28 @@ public class ClassFile extends BinaryClassSource {
           j += 5;
           break;
 
+        //--- the Java 8 ones
+          
+        case METHOD_HANDLE: // MethodHandle_info { u1 tag; u1 reference_kind; u2 reference_index<mthref>; }
+          dataIdx[i] = j;
+          values[i] = CpInfo.MethodHandle;
+          j += 4;
+          break;
+          
+        case METHOD_TYPE:  // MethodType_info { u1 tag;  u2 descriptor_index<utf8>; }
+          dataIdx[i] = j;
+          values[i] = CpInfo.MethodType;
+          j += 3;
+          break;
+
+        case INVOKE_DYNAMIC: //  InvokeDynamic_info { u1 tag; u2 bootstrap_method_attr_index; u2 name_and_type_index; }
+          dataIdx[i] = j;
+          values[i] = CpInfo.InvokeDynamic;
+          j += 5;
+          break;
+          
         default:
-          error("illegal constpool tag");
+          error("illegal constpool tag: " + data[j]);
       }
     }
 
@@ -1219,12 +1314,17 @@ public class ClassFile extends BinaryClassSource {
   /**
    * (optionally) called by ClassFileReader from within setClassAttribute() notification
    *
-   * InnerClass { u2 nameIdx<utf8>; u4 length;
-   *                u2 classCount;
-   *                { u2 innerCls<cls>; u2 outerCls<cls>;
-   *                  u2 innerName<utf8>; u2 innerAccessFlags;
-   *                } classes[classCount] }
-   *
+   * InnerClass { 
+   *    u2 nameIdx<utf8>; 
+   *    u4 length;
+   *    u2 classCount;
+   *    { u2 innerCls<cls>;
+   *      u2 outerCls<cls>;
+   *      u2 innerName<utf8>; 
+   *      u2 innerAccessFlags;
+   *    } classes[classCount] }
+   * }
+   * 
    * pos is at classCount
    */
   public void parseInnerClassesAttr(ClassFileReader reader, Object tag){
@@ -1273,9 +1373,51 @@ public class ClassFile extends BinaryClassSource {
     setEnclosingMethod(reader, tag, enclosingClass, enclosedMethod, descriptor);
   }
   
-  String nameAt (int nameTypeInfoIdx){	
-	  return utf8At( u2( cpPos[nameTypeInfoIdx]+1));
-	}
+  /**
+   * BootstrapMethods_attribute {
+   *     u2 attribute_name_index;
+   *     u4 attribute_length;
+   *     u2 num_bootstrap_methods;
+   *     {   u2 bootstrap_method_ref; -> MethodHandle
+   *         u2 num_bootstrap_arguments;
+   *         u2 bootstrap_arguments[num_bootstrap_arguments];
+   *     } bootstrap_methods[num_bootstrap_methods];
+   * }
+   * 
+   * pos is at num_bootstrap_methods
+  */
+  public void parseBootstrapMethodAttr (ClassFileReader reader, Object tag){
+    int nBootstrapMethods = readU2();
+    
+    setBootstrapMethodCount(reader, tag, nBootstrapMethods);
+    
+    for (int i=0; i<nBootstrapMethods; i++){
+      int cpMhIdx = readU2();
+      int nArgs = readU2();
+      int[] bmArgs = new int[nArgs];
+      for (int j=0; j<nArgs; j++){
+        bmArgs[j] = readU2();
+      }
+      
+      // kind of this method handle
+      int refKind = mhRefTypeAt(cpMhIdx);
+      
+      // CONSTANT_Methodref_info structure
+      int mrefIdx = mhMethodRefIndexAt(cpMhIdx);
+      
+      String clsName = methodClassNameAt(mrefIdx);
+      String mthName = methodNameAt(mrefIdx);
+      String descriptor = methodDescriptorAt(mrefIdx);
+      
+      setBootstrapMethod(reader, tag, i, refKind, clsName, mthName, descriptor, bmArgs);
+    }
+    
+    setBootstrapMethodsDone( reader, tag);
+  }
+  
+  String nameAt(int nameTypeInfoIdx) {
+    return utf8At(u2(cpPos[nameTypeInfoIdx] + 1));
+  }
   
   String descriptorAt (int nameTypeInfoIdx){
     return utf8At( u2( cpPos[nameTypeInfoIdx]+3));
@@ -2148,8 +2290,11 @@ public class ClassFile extends BinaryClassSource {
           int zero = readUByte(); // must be 0
           reader.invokeinterface(cpIdx, count, zero);
           break;
-        case 186: // reserved for historical reasons
-          reader.unknown(opcode);
+        case 186: // invokedynamic
+          cpIdx = readU2(); // CP index of bootstrap method
+          readUByte();  // 0
+          readUByte(); //  0
+          reader.invokedynamic(cpIdx);
           break;
         case 187: // new
           cpIdx = readU2();
@@ -2212,6 +2357,8 @@ public class ClassFile extends BinaryClassSource {
           offset = readI4();
           reader.jsr_w(offset);
           break;
+          
+          
         default:
           reader.unknown(opcode);
       }

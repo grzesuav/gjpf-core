@@ -37,6 +37,12 @@ public class BooleanArrayFields extends ArrayFields {
     values = new boolean[length];
   }
 
+  @Override
+  public void copyElements (ArrayFields src, int srcPos, int dstPos, int len){
+    BooleanArrayFields a = (BooleanArrayFields) src;
+    System.arraycopy(a.values, srcPos, values, dstPos, len);
+  }
+  
   protected void printValue(PrintStream ps, int idx){
     ps.print(values[idx] ? 't' : 'f');
   }

@@ -43,4 +43,69 @@ public class JPF_java_util_concurrent_atomic_AtomicInteger extends NativePeer {
       return false;
     }
   }
+  
+  @MJI
+  public int getAndAdd__I__I (MJIEnv env, int objRef, int delta) {
+    int value = env.getIntField(objRef, "value");
+    env.setIntField(objRef, "value", value + delta);
+    return value;
+  }
+  
+  @MJI
+  public int getAndIncrement____I (MJIEnv env, int objRef) {
+    int value = env.getIntField(objRef, "value");
+    env.setIntField(objRef, "value", value + 1);
+    return value;
+  }
+  
+  @MJI
+  public int getAndDecrement____I (MJIEnv env, int objRef) {
+    int value = env.getIntField(objRef, "value");
+    env.setIntField(objRef, "value", value - 1);
+    return value;
+  }
+  
+  @MJI
+  public void lazySet__I__V (MJIEnv env, int objRef, int newValue) {
+    env.setIntField(objRef, "value", newValue);
+  }
+
+  @MJI
+  public int getAndSet__I__I (MJIEnv env, int objRef, int newValue) {
+    int value = env.getIntField(objRef, "value");
+    env.setIntField(objRef, "value", newValue);
+    return value;
+  }
+
+  @MJI
+  public boolean weakCompareAndSet__II__Z (MJIEnv env, int objRef, int expect, int update) {
+    int value = env.getIntField(objRef, "value");
+    if (value == expect){
+      env.setIntField(objRef, "value", update);
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  @MJI
+  public int incrementAndGet____I (MJIEnv env, int objRef) {
+    int value = env.getIntField(objRef, "value");
+    env.setIntField(objRef, "value", value + 1);
+    return value+1;
+  }
+  
+  @MJI
+  public int decrementAndGet____I (MJIEnv env, int objRef) {
+    int value = env.getIntField(objRef, "value");
+    env.setIntField(objRef, "value", value - 1);
+    return value-1;
+  }
+  
+  @MJI
+  public int addAndGet__I__I (MJIEnv env, int objRef, int delta) {
+    int value = env.getIntField(objRef, "value");
+    env.setIntField(objRef, "value", value + delta);
+    return value + delta;
+  }
 }

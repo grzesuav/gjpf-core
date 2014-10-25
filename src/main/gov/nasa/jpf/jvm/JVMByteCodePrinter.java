@@ -588,6 +588,10 @@ public class JVMByteCodePrinter implements JVMByteCodeReader {
             cf.methodDescriptorAt(cpMethodRefIndex));
   }
 
+  public void invokedynamic (int cpInvokeDynamicIndex){
+    pw.printf("%s%3d: %s @%d\n", prefix, cf.getPc(), "invokedynamic", cpInvokeDynamicIndex);
+  }
+  
   public void ior() {
     pw.printf("%s%3d: %s\n", prefix, cf.getPc(), "ior");
   }

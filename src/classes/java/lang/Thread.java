@@ -18,6 +18,8 @@
 //
 package java.lang;
 
+import gov.nasa.jpf.annotation.NeverBreak;
+import java.lang.ref.WeakReference;
 import sun.nio.ch.Interruptible;
 
 /**
@@ -53,13 +55,11 @@ public class Thread implements Runnable {
   // only if the thread is not blocked. If it is, we only change the status.
   // this gets cleared by calling interrupted()
   boolean             interrupted;
-
-  // <2do> those two seem to be the only interfaces to the ThreadLocal
-  // implementation. Replace once we have our own
-  // ThreadLocal / InhertitableThreadLocal classes
-  ThreadLocal.ThreadLocalMap threadLocals;
-  ThreadLocal.ThreadLocalMap inheritableThreadLocals;
-
+  
+  // those are only accessed from peers since thread obects are per se shared
+  @NeverBreak
+  ThreadLocal.Entry<?>[] threadLocals;
+  
   // this is what we use for sun.misc.Unsafe.park()/unpark()
   // this is accessed from the native peer, VM.createMainThread() and sun.misc.Unsafe
   static class Permit {
@@ -144,11 +144,42 @@ public class Thread implements Runnable {
 
     // do our associated native init
     init0(this.group, target, this.name, stackSize);
+    
+    initThreadLocals(cur);
   }
-
 
   // this takes care of ThreadInfo initialization
   native void init0 (ThreadGroup group, Runnable target, String name, long stackSize);
+  
+  // this is here since InheritableThreadLocals would require childValue(parentVal) roundtrips.
+  // Unfortunately we can't defer this until the ThreadLocal is actually accessed since
+  // we have to capture the value at the point of child creation
+  // Note this executes in the parent thread
+  private void initThreadLocals (Thread parent){
+    ThreadLocal.Entry<?>[] tl = parent.threadLocals;
+    if (tl != null){
+      int len = tl.length;
+      ThreadLocal.Entry<?>[] inherited = null;
+      int j=0;
+      
+      for (int i=0; i<len; i++){
+        ThreadLocal.Entry<?> e = tl[i];
+        ThreadLocal.Entry<?> ec = e.getChildEntry();
+        if (ec != null){
+          if (inherited == null){
+            inherited = new ThreadLocal.Entry<?>[len];
+          }
+          inherited[j++] = ec;
+        }
+      }
+      
+      if (inherited != null){
+        ThreadLocal.Entry<?>[] a = new ThreadLocal.Entry<?>[j];
+        System.arraycopy(inherited,0,a,0,j);
+        threadLocals = a;
+      }
+    }
+  }
   
   public static int activeCount () {
     return 0;
@@ -362,8 +393,7 @@ public class Thread implements Runnable {
       group = null;
     }
     
-    threadLocals = null;
-    inheritableThreadLocals = null;
+    threadLocals = null;    
     parkBlocker = null;
     uncaughtExceptionHandler = null;
   }
@@ -372,4 +402,10 @@ public class Thread implements Runnable {
   // <2do> not implemented yet
   native void blockedOn (Interruptible b);
 
+  
+  // we probably will remove these fields once we modeled java.util.concurrent.ThreadLocalRandom 
+  // to make it deterministic
+  long threadLocalRandomSeed;
+  int threadLocalRandomProbe;
+  int threadLocalRandomSecondarySeed;
 }

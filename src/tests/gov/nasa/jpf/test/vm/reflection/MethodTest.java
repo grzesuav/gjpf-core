@@ -41,6 +41,10 @@ public class MethodTest extends TestJPF {
   static class Faz {
 
     static int d = 4200;
+    
+    static private int foo (int a){
+      return a + 42;
+    }
   }
 
   static class SupC {
@@ -155,7 +159,7 @@ public class MethodTest extends TestJPF {
   @Test
   public void getPrivateMethod() throws NoSuchMethodException {
     if (verifyUnhandledException(NoSuchMethodException.class.getName())) {
-      Integer.class.getMethod("toUnsignedString", int.class, int.class);   // Doesn't matter which class we use.  It just needs to be a different class and a private method.
+      Integer.class.getMethod("toUnsignedString0", int.class, int.class);   // Doesn't matter which class we use.  It just needs to be a different class and a private method.
     }
   }
 
@@ -176,19 +180,21 @@ public class MethodTest extends TestJPF {
   @Test
   public void invokePrivateOtherClass() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     if (verifyUnhandledException(IllegalAccessException.class.getName())) {
-      Method m = Integer.class.getDeclaredMethod("toUnsignedString", int.class, int.class);
+      Method m = Faz.class.getDeclaredMethod("foo", int.class);
 
-      m.invoke(null, 5, 3);
+      int res = (Integer)m.invoke(null, 5);
+      fail("should never get here");
     }
   }
 
   @Test
   public void invokePrivateOtherClassAccessible() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     if (verifyNoPropertyViolation()) {
-      Method m = Integer.class.getDeclaredMethod("toUnsignedString", int.class, int.class);
+      Method m = Faz.class.getDeclaredMethod("foo", int.class);
 
       m.setAccessible(true);
-      m.invoke(null, 5, 3);
+      int res = (Integer)m.invoke(null, 5);
+      assertTrue( res == 47);
     }
   }
 

@@ -47,6 +47,8 @@ public abstract class ArrayFields extends Fields {
     return 0;
   } 
   
+  public abstract void copyElements (ArrayFields src, int srcPos, int dstPos, int len);
+  
   public void printElements( PrintStream ps, int max){
     int len = arrayLength();
     if (max < 0) max = len;

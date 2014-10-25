@@ -35,6 +35,7 @@ import gov.nasa.jpf.SystemAttribute;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.SparseIntVector;
 import gov.nasa.jpf.util.StringSetMatcher;
+
 import java.util.List;
 
 /**
@@ -444,6 +445,23 @@ public class ClassLoaderInfo
     return ci;
   }
 
+  /**
+   * This method returns a type which implements the given functional interface 
+   * and contains a method that captures the behavior of the lambda expression.
+   */
+  public ClassInfo getResolvedFuncObjType (ClassInfo fiClassInfo, String samUniqueName, BootstrapMethodInfo bmi, String[] freeVariableTypeNames) {
+    String typeName = bmi.enclosingClass.getName() + "$$" + bmi.lambdaBody.getName();
+    
+    ClassInfo funcObjType = resolvedClasses.get( typeName);
+    
+    if (funcObjType == null) {
+      funcObjType = fiClassInfo.createFuncObjClassInfo(bmi, typeName, samUniqueName, freeVariableTypeNames);
+      resolvedClasses.put( typeName, funcObjType);
+    }
+    
+    return funcObjType;
+  }
+  
   protected ClassInfo getAlreadyResolvedClassInfo(String cname) {
     return resolvedClasses.get(cname);
   }

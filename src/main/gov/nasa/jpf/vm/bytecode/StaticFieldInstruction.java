@@ -44,14 +44,18 @@ public abstract class StaticFieldInstruction extends FieldInstruction {
     ClassInfo ciRef = mi.getClassInfo().resolveReferencedClass(className);
     
     FieldInfo f = ciRef.getStaticField(fname);
-    ClassInfo ciField = f.getClassInfo();
-    if (!ciField.isRegistered()){
-      // classLoaded listeners might change/remove this field
-      ciField.registerClass(ThreadInfo.getCurrentThread());
-      f = ciField.getStaticField(fname);
+    if (f != null){
+      ClassInfo ciField = f.getClassInfo();
+      if (!ciField.isRegistered()){
+        // classLoaded listeners might change/remove this field
+        ciField.registerClass(ThreadInfo.getCurrentThread());
+        f = ciField.getStaticField(fname);
+      }
+
+      fi = f;
     }
-    
-    fi = f;
+    // otherwise the referenced class has changed since compilation, which
+    // should throw a NoSuchFieldError in the caller
   }
 
   /**

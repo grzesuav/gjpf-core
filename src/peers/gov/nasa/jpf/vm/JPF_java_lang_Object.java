@@ -156,6 +156,7 @@ public class JPF_java_lang_Object extends NativePeer {
   
   @MJI
   public void notify____V (MJIEnv env, int objref) {
+    boolean didNotify = false;
     ThreadInfo ti = env.getThreadInfo();
     
     if (!ti.isFirstStepInsn()) {
@@ -165,10 +166,10 @@ public class JPF_java_lang_Object extends NativePeer {
         return;
       }
       
-      env.notify(ei);
+      didNotify = env.notify(ei);
     }
     
-    if (ti.getScheduler().setsNotifyCG(ti)){
+    if (ti.getScheduler().setsNotifyCG(ti, didNotify)){
       env.repeatInvocation();
       return;
     }
@@ -176,6 +177,7 @@ public class JPF_java_lang_Object extends NativePeer {
 
   @MJI
   public void notifyAll____V (MJIEnv env, int objref) {
+    boolean didNotify = false;
     ThreadInfo ti = env.getThreadInfo();
     
     if (!ti.isFirstStepInsn()) {
@@ -185,10 +187,10 @@ public class JPF_java_lang_Object extends NativePeer {
         return;
       }
       
-      env.notifyAll(ei);
+      didNotify = env.notifyAll(ei);
     }
     
-    if (ti.getScheduler().setsNotifyCG(ti)){
+    if (ti.getScheduler().setsNotifyCG(ti, didNotify)){
       env.repeatInvocation();
       return;
     }

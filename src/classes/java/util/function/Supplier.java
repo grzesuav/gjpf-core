@@ -16,18 +16,11 @@
 // THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
-
-package gov.nasa.jpf.util;
-
-import gov.nasa.jpf.SystemAttribute;
+package java.util.function;
 
 /**
- * a abstract SystemAttribute that can be used to store instruction
- * execution state between top and bottom halves of respective instruction.execute() methods
+ * Java7 doesn't have it, but we need it to model ThreadLocal
  */
-public abstract class InstructionState implements SystemAttribute {
-  static class Processed extends InstructionState {}
-  public static final Processed processed = new Processed(); // no need to burn lots of objects if we don't have state
-  
-  
+public interface Supplier<T> {
+  T get();
 }

@@ -32,8 +32,9 @@ public class MethodTest extends TestJPF {
       for (Method m : MethodTest.class.getDeclaredMethods()){
         if (m.getName().equals("testIsVarArg1s"))
           assertTrue(m.isVarArgs());
-        else if (m.getName().equals("testIsVarArg1s"))
+        else if (m.getName().equals("testIsVarArg1s")) {
           assertFalse(m.isVarArgs());
+        }
       }
     }
   }

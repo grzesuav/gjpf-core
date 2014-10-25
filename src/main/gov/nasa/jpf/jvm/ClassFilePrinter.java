@@ -285,6 +285,9 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
 
     } else if (name == ClassFile.ENCLOSING_METHOD_ATTR){
       cf.parseEnclosingMethodAttr(this, null);
+
+    } else if (name == ClassFile.BOOTSTRAP_METHOD_ATTR){
+      cf.parseBootstrapMethodAttr(this, null);
       
     } else {
       pw.printf(" ,length=%d,data=[", attrLength );
@@ -310,7 +313,7 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
   }
 
   public void setInnerClassCount(ClassFile cf, Object tag, int innerClsCount) {
-    pw.printf( "%sinner class count=%d\n", indent, innerClsCount);
+    pw.printf( ", inner class count=%d\n", innerClsCount);
     incIndent();
   }
   public void setInnerClass(ClassFile cf, Object tag, int innerClsIndex,
@@ -322,7 +325,69 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     decIndent();
   }
 
-
+  @Override
+  public void setBootstrapMethodCount (ClassFile cf, Object tag, int count) {
+    pw.printf( ", bootstrap method count=%d\n", count);
+    incIndent();
+  }
+  
+  @Override
+  public void setBootstrapMethod (ClassFile cf, Object tag, int idx, 
+                                  int refKind, String cls, String mth, String descriptor, int[] cpArgs){
+    String refTypeName = cf.getRefTypeName(refKind);
+    pw.printf("%s[%d]: %s %s.%s%s\n", indent, idx, refTypeName, cls, mth, descriptor);
+    incIndent();
+    pw.printf("%smethod arg count: %d\n", indent, cpArgs.length);
+    incIndent();
+    for (int i=0; i<cpArgs.length; i++){
+      int cpIdx = cpArgs[i];
+      String arg = getBootstrapMethodArgAsString(cf, cpIdx);
+      pw.printf("%s[%d]: %s\n", indent, i, arg);
+    }
+    decIndent();
+    decIndent();
+  }
+  
+  String getBootstrapMethodArgAsString (ClassFile cf, int cpIdx){
+    StringBuilder sb = new StringBuilder();
+    Object cpValue = cf.getCpValue(cpIdx);
+    sb.append('@');
+    sb.append(cpIdx);
+    sb.append(" (");
+    sb.append( cpValue);
+    sb.append("): ");
+    
+    if (cpValue instanceof ClassFile.CpInfo){
+      switch ((ClassFile.CpInfo)cpValue){
+        case MethodType:
+          sb.append( cf.methodTypeDescriptorAt(cpIdx));
+          break;
+        case MethodHandle:
+          int methodRefIdx = cf.mhMethodRefIndexAt(cpIdx);
+          
+          sb.append( cf.getRefTypeName(cf.mhRefTypeAt(cpIdx)));
+          sb.append(' ');
+          sb.append( cf.methodClassNameAt(methodRefIdx));
+          sb.append('.');
+          sb.append( cf.methodNameAt(methodRefIdx));
+          sb.append( cf.methodDescriptorAt(methodRefIdx));
+          break;
+        default:
+          sb.append( cpValue.toString());
+      }
+    } else {
+      sb.append( cpValue.toString());
+    }
+    
+    return sb.toString();
+  }
+  
+  @Override
+  public void setBootstrapMethodsDone (ClassFile cf, Object tag) {
+    decIndent();
+  }
+  
+  
   public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){
     pw.printf( " count=%d\n", annotationCount);
     incIndent();
@@ -514,6 +579,26 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
           pw.print(cf.utf8At(cf.u2(j+3)));
           pw.println("\")}");
           break;
+          
+        case ClassFile.METHOD_HANDLE:
+          pw.print("method_handle {");
+          pw.print("(\"");
+          pw.println("\")}");
+          break;
+          
+        case ClassFile.METHOD_TYPE:
+          pw.print("method_type {");
+          pw.print("(\"");
+          pw.println("\")}");
+          break;
+          
+        case ClassFile.INVOKE_DYNAMIC:
+          pw.print("invoke_dynamic {bootstrap=#");
+          pw.print(cf.u2(j+1));
+          pw.print("(\"");
+          pw.println("\")}");
+          break;
+          
         default:
           pw.print("ERROR: illegal tag" + cf.u1(j));
       }

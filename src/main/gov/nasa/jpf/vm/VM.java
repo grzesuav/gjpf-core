@@ -80,6 +80,8 @@ public abstract class VM {
   }
 
   protected SystemState ss;
+  
+  protected FunctionObjectFactory funcObjFactory = new FunctionObjectFactory();
 
   // <2do> - if you are confused about the various pieces of state and its
   // storage/backtrack structures, I'm with you. It's mainly an attempt to
@@ -442,6 +444,7 @@ public abstract class VM {
         ci.registerStartupClass( tiMain, list); // takes care of superclasses and interfaces
       }
     } catch (ClassInfoException e){
+      e.printStackTrace();
       throw new JPFConfigException("cannot load system class " + e.getFailedClass());
     } 
     
@@ -1324,6 +1327,10 @@ public abstract class VM {
 
   public Scheduler getScheduler(){
     return scheduler;
+  }
+  
+  public FunctionObjectFactory getFunctionObjectFacotry() {
+    return funcObjFactory;
   }
   
   /**

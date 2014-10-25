@@ -47,6 +47,12 @@ public class ReferenceArrayFields extends ArrayFields {
   public int[] asReferenceArray() {
     return values;
   }
+  
+  @Override
+  public void copyElements (ArrayFields src, int srcPos, int dstPos, int len){
+    ReferenceArrayFields a = (ReferenceArrayFields) src;
+    System.arraycopy(a.values, srcPos, values, dstPos, len);
+  }
 
   @Override
   protected void printValue(PrintStream ps, int idx){

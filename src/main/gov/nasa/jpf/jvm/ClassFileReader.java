@@ -132,11 +132,13 @@ public interface ClassFileReader {
   void setSourceFile(ClassFile cf, Object tag, String pathName);
 
   void setInnerClassCount(ClassFile cf, Object tag, int innerClsCount);
-
   void setInnerClass(ClassFile cf, Object tag, int innerClsIndex, String outerName, String innerName, String innerSimpleName, int accessFlags);
-
   void setInnerClassesDone (ClassFile cf, Object tag);
 
+  void setBootstrapMethodCount (ClassFile cf, Object tag, int count);
+  void setBootstrapMethod (ClassFile cf, Object tag, int idx, int refKind, String cls, String mth, String descriptor, int[] cpArgs);
+  void setBootstrapMethodsDone (ClassFile cf, Object tag);
+  
   void setEnclosingMethod(ClassFile cf, Object tag, String enclosingClass, String enclosingMethod, String descriptor);
   
   //--- annotations

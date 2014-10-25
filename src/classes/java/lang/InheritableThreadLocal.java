@@ -17,17 +17,22 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package gov.nasa.jpf.util;
-
-import gov.nasa.jpf.SystemAttribute;
+package java.lang;
 
 /**
- * a abstract SystemAttribute that can be used to store instruction
- * execution state between top and bottom halves of respective instruction.execute() methods
+ * model of java.lang.InheritableThreadLocal
+ * 
+ * since we model ThreadLocal, we also need to model this one
  */
-public abstract class InstructionState implements SystemAttribute {
-  static class Processed extends InstructionState {}
-  public static final Processed processed = new Processed(); // no need to burn lots of objects if we don't have state
+public class InheritableThreadLocal<T> extends ThreadLocal<T> {
   
+  public InheritableThreadLocal (){
+    // nothing here
+  }
   
+  // watch out - this can be overridden
+  protected T childValue (T parentVal){
+    return parentVal;
+  }
+
 }

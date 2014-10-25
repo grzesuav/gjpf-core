@@ -564,6 +564,16 @@ public class MJIEnv {
     return (short) getIntField(objref, fname);
   }
 
+  /**
+   * NOTE - this doesn't support element type checks or overlapping in-array copy 
+   */
+  public void arrayCopy (int srcRef, int srcPos, int dstRef, int dstPos, int len){
+    ElementInfo eiSrc = heap.get(srcRef);
+    ElementInfo eiDst = heap.get(dstRef);
+    
+    eiDst.arrayCopy(eiSrc, srcPos, dstPos, len);
+  }
+  
   public String getTypeName (int objref) {
     return heap.get(objref).getType();
   }
@@ -1024,17 +1034,21 @@ public class MJIEnv {
     return heap.newArray(elementClsName, size, ti).getObjectRef();
   }
   
+  public ElementInfo newElementInfo (ClassInfo ci){
+    if (ci.pushRequiredClinits(ti)){
+      throw new ClinitRequired(ci);
+    }
+    
+    return heap.newObject(ci, ti);
+  }
+  
   /**
    * check if the ClassInfo is properly initialized
    * if yes, create a new instance of it but don't call any ctor
    * if no, throw a ClinitRequired exception
    */
   public int newObject (ClassInfo ci) {
-    if (ci.pushRequiredClinits(ti)){
-      throw new ClinitRequired(ci);
-    }
-    
-    ElementInfo ei = heap.newObject(ci, ti);
+    ElementInfo ei = newElementInfo(ci);
     return ei.getObjectRef();
   }
 
@@ -1048,10 +1062,19 @@ public class MJIEnv {
     return ei.getObjectRef();    
   }
   
-  public int newObject (String clsName) {
+  public ElementInfo newElementInfo (String clsName) {
     ClassInfo ci = ClassLoaderInfo.getCurrentResolvedClassInfo(clsName);
     if (ci != null){
-      return newObject(ci);
+      return newElementInfo(ci);
+    } else {
+      return null;
+    }
+  }
+  
+  public int newObject (String clsName) {
+    ElementInfo ei = newElementInfo(clsName);
+    if (ei != null){
+      return ei.getObjectRef();
     } else {
       return NULL;
     }
@@ -1093,7 +1116,7 @@ public class MJIEnv {
 
     return newString(s);
   }
-
+  
   public String format (int fmtRef, int argRef){
     String format = getStringObject(fmtRef);
     int len = getArrayLength(argRef);
@@ -1214,44 +1237,50 @@ public class MJIEnv {
   }
 
 
-  public void notify (int objref) {
+  public boolean notify (int objref) {
     // objref can't be NULL since the corresponding INVOKE would have failed
     ElementInfo ei = getModifiableElementInfo(objref);
-    notify(ei);
+    return notify(ei);
   }
 
-  public void notify (ElementInfo ei) {
+  public boolean notify (ElementInfo ei) {
     if (!ei.isLockedBy(ti)){
       throwException("java.lang.IllegalMonitorStateException",
                                  "un-synchronized notify");
-      return;
+      return false;
     }
 
-    ei.notifies(getSystemState(), ti); 
+    return ei.notifies(getSystemState(), ti); 
   }
   
-  public void notifyAll (int objref) {
+  public boolean notifyAll (int objref) {
     // objref can't be NULL since the corresponding INVOKE would have failed
     ElementInfo ei = getElementInfo(objref);
-    notifyAll(ei);
+    return notifyAll(ei);
   }
 
-  public void notifyAll (ElementInfo ei) {
+  public boolean notifyAll (ElementInfo ei) {
     if (!ei.isLockedBy(ti)){
       throwException("java.lang.IllegalMonitorStateException",
                                  "un-synchronized notifyAll");
-      return;
+      return false;
     }
 
-    ei.notifiesAll();    
+    return ei.notifiesAll();    
   }
   
   public void registerPinDown(int objref){
-    vm.getHeap().registerPinDown(objref);
+    heap.registerPinDown(objref);
   }
-
+  public void registerPinDown (ElementInfo ei){
+    registerPinDown(ei.getObjectRef());
+  }
+  
   public void releasePinDown(int objref){
-    vm.getHeap().releasePinDown(objref);
+    heap.releasePinDown(objref);
+  }
+  public void releasePinDown (ElementInfo ei){
+    releasePinDown(ei.getObjectRef());
   }
   
   /**

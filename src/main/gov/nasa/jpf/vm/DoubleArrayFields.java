@@ -39,6 +39,12 @@ public class DoubleArrayFields extends ArrayFields {
     return values;
   }
 
+  @Override
+  public void copyElements (ArrayFields src, int srcPos, int dstPos, int len){
+    DoubleArrayFields a = (DoubleArrayFields) src;
+    System.arraycopy(a.values, srcPos, values, dstPos, len);
+  }
+
   protected void printValue(PrintStream ps, int idx){
     ps.print(values[idx]);
   }

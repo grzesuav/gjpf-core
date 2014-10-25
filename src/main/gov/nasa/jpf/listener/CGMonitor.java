@@ -22,17 +22,30 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
-import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
-import gov.nasa.jpf.vm.ThreadInfo;
+import java.io.PrintStream;
 
+/**
+ * listener to report out what CGs and choices are processed during the search.
+ * This is a simple tool to find out about the SUT state space
+ */
 public class CGMonitor extends ListenerAdapter {
-  int depth;
-  boolean isFirstInsn = true;
-  boolean showInsn = false;
+  
+  protected PrintStream out;
+  
+  protected int depth;
+  
+  // display options
+  protected boolean showInsn = false;   // show the insn that caused the CG
+  protected boolean showChoice = false; // show the choice value (-> show each CG.advance())
+  protected boolean showDepth = true;   // show search depth at point of CG set/advance
   
   public CGMonitor (Config conf) {
-    showInsn = conf.getBoolean("cg.show_insn");
+    showInsn = conf.getBoolean("cgm.show_insn", showInsn);
+    showChoice = conf.getBoolean("cgm.show_choice", showChoice);
+    showDepth = conf.getBoolean("cgm.show_depth", showDepth);
+    
+    out = System.out;
   }
   
   @Override
@@ -56,36 +69,39 @@ public class CGMonitor extends ListenerAdapter {
     }
   }
   
+  void printCG (ChoiceGenerator<?> cg, boolean printChoice){
+    if (showDepth){
+      printPrefix('.');
+    }
+    
+    out.print(cg);
+
+    if (printChoice){
+      out.print(", ");
+      out.print(cg.getNextChoice());
+    }
+
+    if (showInsn){
+      out.print(", \"");
+      out.print(cg.getInsn());
+      out.print('\"');
+    }
+
+    out.println();    
+  }
+  
+  @Override
+  public void choiceGeneratorSet (VM vm, ChoiceGenerator<?> currentCG) {
+    if (!showChoice){
+      printCG( vm.getChoiceGenerator(), false);
+    }
+  }
+  
   @Override
   public void choiceGeneratorAdvanced (VM vm, ChoiceGenerator<?> currentCG) {
-    ChoiceGenerator<?> cg = vm.getChoiceGenerator();
-    
-    printPrefix('.');
-    System.out.print(cg.getNextChoice());
-    
-    if (!showInsn) {
-      System.out.println();
+    if (showChoice){
+      printCG( vm.getChoiceGenerator(), true);      
     }
-    isFirstInsn = true;
   }
 
-  @Override
-  public void instructionExecuted (VM vm, ThreadInfo ti, Instruction nextInsn, Instruction executedInsn) {
-    if (showInsn && isFirstInsn) {
-      
-      //printPrefix(' ');
-      
-      System.out.print(" : [");
-      System.out.print(ti.getId());
-      System.out.print("] ");
-      System.out.print(executedInsn);
-      System.out.print(" (in ");
-      System.out.print(executedInsn.getMethodInfo().getFullName());
-      System.out.print(":");
-      System.out.print(executedInsn.getInstructionIndex());
-      System.out.println(')');
-      
-      isFirstInsn = false;
-    }
-  }
 }

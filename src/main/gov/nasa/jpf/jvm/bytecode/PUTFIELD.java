@@ -103,7 +103,7 @@ public class PUTFIELD extends JVMInstanceFieldInstruction implements WriteInstru
       if (refValue != MJIEnv.NULL){
         ElementInfo eiExposed = ti.getElementInfo(refValue);
         if (scheduler.setsSharedObjectExposureCG(ti, this, eiFieldOwner, fi, eiExposed)){
-          frame.addFrameAttr( InstructionState.getProcessedState());
+          frame.addFrameAttr( InstructionState.processed);
           return this; // re-execute AFTER assignment
         }
       }

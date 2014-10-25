@@ -337,6 +337,15 @@ public class ThreadList implements Cloneable, Iterable<ThreadInfo>, Restorable<T
     }
     return false;
   }
+  
+  public boolean hasUnblockedThreads(){
+    for (int i = 0; i < threads.length; i++) {
+      if (threads[i].isUnblocked()) {
+        return true;
+      }
+    }
+    return false;    
+  }
 
   public ThreadInfo[] getTimeoutRunnables (){
     ArrayList<ThreadInfo> list = new ArrayList<ThreadInfo>();

@@ -129,21 +129,23 @@ public class NativeMethodInfo extends MethodInfo {
       }
 
       StackFrame top = ti.getTopFrame();
-      if (top == nativeFrame){ // no roundtrips, straight return
+//      if (top == nativeFrame){ // no roundtrips, straight return
+      if (top.originatesFrom(nativeFrame)){ // could have changed attributes
+        NativeStackFrame ntop = (NativeStackFrame)top;
 
         if (env.isInvocationRepeated()){
           // don't advance
-          return nativeFrame.getPC();
+          return ntop.getPC();
 
         } else {
           // we don't have to do a ti.topClone() because the last insn left
           // is NATIVERETURN. Even if a listener creates a CG on it, it won't
           // modify its StackFrame, which is then popped anyways
 
-          nativeFrame.setReturnValue(ret);
-          nativeFrame.setReturnAttr(env.getReturnAttribute());
+          ntop.setReturnValue(ret);
+          ntop.setReturnAttr(env.getReturnAttribute());
 
-          return nativeFrame.getPC().getNext(); // that should be the NATIVERETURN
+          return ntop.getPC().getNext(); // that should be the NATIVERETURN
         }
 
       } else {
