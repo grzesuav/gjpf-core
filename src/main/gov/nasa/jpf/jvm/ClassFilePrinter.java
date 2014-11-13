@@ -276,6 +276,9 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
 
     } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR){
       cf.parseAnnotationsAttr(this, null);
+      
+    } else if (name == ClassFile.RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR){
+      cf.parseTypeAnnotationsAttr(this, null);
 
     } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR){
       cf.parseAnnotationsAttr(this, null);
@@ -387,19 +390,31 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     decIndent();
   }
   
-  
+  @Override
   public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){
     pw.printf( " count=%d\n", annotationCount);
     incIndent();
   }
+  @Override
+  public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){
+    pw.printf("%s[%d]: %s", indent, annotationIndex, annotationType);
+  }
+  @Override
   public void setAnnotationsDone(ClassFile cf, Object tag){
     decIndent();
   }
 
-  public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){
-    pw.printf("%s[%d]: %s", indent, annotationIndex, annotationType);
+  @Override
+  public void setTypeAnnotationCount(ClassFile cf, Object tag, int annotationCount){
   }
-
+  @Override
+  public void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){
+  }
+  @Override
+  public void setTypeAnnotationsDone(ClassFile cf, Object tag) {
+  }
+  
+  
   public void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int nValuePairs){
     pw.printf(" valueCount=%d\n", nValuePairs);
     incIndent();

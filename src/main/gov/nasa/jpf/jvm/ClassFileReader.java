@@ -143,11 +143,13 @@ public interface ClassFileReader {
   
   //--- annotations
   void setAnnotationCount(ClassFile cf, Object tag, int annotationCount);
-
+  void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType);
   void setAnnotationsDone(ClassFile cf, Object tag);
 
-
-  void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType);
+  // Java 8 type annotations
+  void setTypeAnnotationCount(ClassFile cf, Object tag, int annotationCount);
+  void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType);
+  void setTypeAnnotationsDone(ClassFile cf, Object tag);
 
   void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int nValuePairs);
 

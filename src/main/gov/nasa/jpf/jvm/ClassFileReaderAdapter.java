@@ -169,12 +169,17 @@ public class ClassFileReaderAdapter implements ClassFileReader {
 
   @Override
   public void setAnnotationCount(ClassFile cf, Object tag, int annotationCount){}
-
+  @Override
+  public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){}
   @Override
   public void setAnnotationsDone(ClassFile cf, Object tag) {}
 
   @Override
-  public void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){}
+  public void setTypeAnnotationCount(ClassFile cf, Object tag, int annotationCount){}
+  @Override
+  public void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){}
+  @Override
+  public void setTypeAnnotationsDone(ClassFile cf, Object tag) {}
 
   @Override
   public void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int annotationCount) {}
