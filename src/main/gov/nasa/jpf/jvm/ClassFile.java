@@ -163,7 +163,7 @@ public class ClassFile extends BinaryClassSource {
 
   protected final static String[] stdFieldAttrs = {
     CONST_VALUE_ATTR, SYNTHETIC_ATTR, DEPRECATED_ATTR, SIGNATURE_ATTR,
-    RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR };
+    RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR };
 
 
   //--- standard method attributes
@@ -178,6 +178,7 @@ public class ClassFile extends BinaryClassSource {
     RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR,
     RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR,
     RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS_ATTR,
+    RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR,
     ANNOTATIONDEFAULT_ATTR
   };
 
@@ -186,7 +187,7 @@ public class ClassFile extends BinaryClassSource {
   public static final String LINE_NUMBER_TABLE_ATTR = "LineNumberTable";
   public static final String LOCAL_VAR_TABLE_ATTR = "LocalVariableTable";
 
-  protected final static String[] stdCodeAttrs = { LINE_NUMBER_TABLE_ATTR, LOCAL_VAR_TABLE_ATTR };
+  protected final static String[] stdCodeAttrs = { LINE_NUMBER_TABLE_ATTR, LOCAL_VAR_TABLE_ATTR, RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR };
 
 
   //--- standard class attributes
@@ -197,8 +198,8 @@ public class ClassFile extends BinaryClassSource {
   
   protected final static String[] stdClassAttrs = {
     SOURCE_FILE_ATTR, DEPRECATED_ATTR, INNER_CLASSES_ATTR, DEPRECATED_ATTR, SIGNATURE_ATTR,
-    RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR, ENCLOSING_METHOD_ATTR,
-    BOOTSTRAP_METHOD_ATTR };
+    RUNTIME_INVISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_ANNOTATIONS_ATTR, RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR,
+    ENCLOSING_METHOD_ATTR, BOOTSTRAP_METHOD_ATTR };
 
 
   protected String internStdAttrName(int cpIdx, String name, String[] stdNames){
@@ -709,11 +710,6 @@ public class ClassFile extends BinaryClassSource {
   private void setTypeAnnotationCount(ClassFileReader reader, Object tag, int annotationCount){
     int p = pos;
     reader.setTypeAnnotationCount( this, tag, annotationCount);
-    pos = p;
-  }
-  private void setTypeAnnotation(ClassFileReader reader, Object tag, int annotationIndex, String annotationType){
-    int p = pos;
-    reader.setTypeAnnotation( this, tag, annotationIndex, annotationType);
     pos = p;
   }
   private void setTypeAnnotationsDone(ClassFileReader reader, Object tag){
@@ -1557,18 +1553,22 @@ public class ClassFile extends BinaryClassSource {
       setAnnotation(reader, tag, annotationIndex, annotationType);
     }
 
+    parseAnnotationValues(reader, tag, annotationIndex);
+  }
+
+  void parseAnnotationValues (ClassFileReader reader, Object tag, int annotationIndex){
     int nValuePairs = readU2();
     setAnnotationValueCount(reader, tag, annotationIndex, nValuePairs);
 
     for (int i=0; i<nValuePairs; i++){
-      cpIdx = readU2();
+      int cpIdx = readU2();
       String elementName = (String)cpValue[cpIdx];
       parseAnnotationValue(reader, tag, annotationIndex, i, elementName, -1);
     }
 
     setAnnotationValuesDone(reader, tag, annotationIndex);
   }
-
+  
   /*
    * class, field, method annotation attributes (only one per target)
    *
@@ -1590,6 +1590,7 @@ public class ClassFile extends BinaryClassSource {
     setAnnotationsDone(reader, tag);
   }
 
+  
   // JSR 308 type annotation target types
   public static final int CLASS_TYPE_PARAMETER                 = 0x00;
   public static final int METHOD_TYPE_PARAMETER                = 0x01;
@@ -1613,13 +1614,80 @@ public class ClassFile extends BinaryClassSource {
   public static final int METHOD_INVOCATION_TYPE_ARGUMENT      = 0x49;
   public static final int CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT  = 0x4a;
   public static final int METHOD_REFERENCE_TYPE_ARGUMENT       = 0x4b;  
-          
+  
+  public static String getTargetTypeName (int targetType){
+    switch (targetType){
+      case CLASS_TYPE_PARAMETER: return "class type parameter";
+      case METHOD_TYPE_PARAMETER: return "method type parameter";
+      case CLASS_EXTENDS: return "super class";
+      case CLASS_TYPE_PARAMETER_BOUND: return "class type parameter bound";
+      case METHOD_TYPE_PARAMETER_BOUND: return "method type parameter bound";
+      case FIELD: return "field";
+      case METHOD_RETURN: return "method return";
+      case METHOD_RECEIVER: return "method receiver";
+      case METHOD_FORMAL_PARAMETER: return "method formal parameter";
+      case THROWS: return "throws";
+      case LOCAL_VARIABLE: return "local variable";
+      case RESOURCE_VARIABLE: return "resource variable";
+      case EXCEPTION_PARAMETER: return "exception parameter";
+      case INSTANCEOF: return "instanceof";
+      case NEW: return "new";
+      case CONSTRUCTOR_REFERENCE: return "ctor reference";
+      case METHOD_REFERENCE: return "method reference";
+      case CAST: return "case";
+      case METHOD_INVOCATION_TYPE_ARGUMENT: return "method invocation type argument";
+      case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT: return "ctor reference type argument";
+      case METHOD_REFERENCE_TYPE_ARGUMENT: return "method reference type argument";
+      default:
+        return "<unknown target type 0x" + Integer.toHexString(targetType);
+    }
+  }
+  
+  public static String getTypePathEncoding (short[] typePath){
+    if (typePath == null){
+      return "()";
+    }
+    
+    StringBuffer sb = new StringBuffer();
+    for (int i=0; i<typePath.length;i++){
+      int e = typePath[i];
+      sb.append('(');
+      sb.append( Integer.toString((e>>8) & 0xff));
+      sb.append( Integer.toString(e & 0xff));
+      sb.append(')');
+    }
+    
+    return sb.toString();
+  }
+  
+  public static String getScopeEncoding (long[] scopeEntries){
+    StringBuffer sb = new StringBuffer();
+    for (int i=0; i<scopeEntries.length;i++){
+      long e = scopeEntries[i];
+      int slotIndex = (int)(e & 0xffff);
+      int length = (int)((e >> 16) & 0xffff);
+      int startPc = (int)((e >> 32) & 0xffff);
+      
+      if (i>0){
+        sb.append(',');
+      }
+      
+      sb.append('[');
+      sb.append( Integer.toString(startPc));
+      sb.append("..");
+      sb.append( Integer.toString(startPc + length-1));
+      sb.append("]#");
+      sb.append(slotIndex);
+    }
+    
+    return sb.toString();
+  }
   
   // JSR 308 type annotation, which adds 3 fields to the old annotation structure
   //
   //  type_annotation {
   //      u1 target_type;        // targeted program element (sec 3.2)
-  //      union {
+  //      union {                // ?? this is probably packed - variable size unions make no sense
   //          type_parameter_target;
   //          supertype_target;
   //          type_parameter_bound_target;
@@ -1635,7 +1703,7 @@ public class ClassFile extends BinaryClassSource {
   //      type_path target_path; // encoding of annotation position in compound type (array, generic, etc., sec 3.4)
   //
   //                             // standard annotation fields
-  //      u2 type_index;
+  //      u2 type_index;         // the annotation type
   //      u2 num_element_value_pairs;
   //      {
   //          u2 element_name_index;
@@ -1658,10 +1726,48 @@ public class ClassFile extends BinaryClassSource {
   //        // 0, if type_path_kind == 0,1,2
   //        // 0-based index of type arg in parameterized type if type_path_kind i== 3
   //  }
+  
+  int getTargetInfoSize (int targetType){
+    int len = 3; // max static length are xx_TYPE_ARGUMENTs
+    if (targetType == LOCAL_VARIABLE || targetType == RESOURCE_VARIABLE){
+      len = Math.max( len, u2(pos) * 6); // three u2 values per entry
+    }
+    
+    return len;
+  }
 
+  int getTypePathSize (short[] typePath){
+    int typePathSize = 1;
+    if (typePath != null) {
+      typePathSize += typePath.length * 2;
+    }
+    return typePathSize;
+  }
   
   
-  void parseTypeAnnotation (ClassFileReader reader, Object tag, int annotationIndex, boolean isParameterAnnotation){
+  short[] readTypePath (){
+    short[] typePath = null;
+    
+    int pathLength = readUByte();
+    if (pathLength > 0){
+      typePath = new short[pathLength];
+      for (int i=0; i<pathLength; i++){
+        int pathKind = (short)readUByte();
+        int argIdx = (short)readUByte();
+        typePath[i]= (short)((pathKind << 8) | argIdx);
+      }
+    }
+    
+    return typePath;
+  }
+
+  String readAnnotationType (){
+    int cpIdx = readU2();
+    String annotationType = (String)cpValue[cpIdx];
+    return annotationType;
+  }
+
+  void setTypeAnnotation (ClassFileReader reader, Object tag, int annotationIndex) throws ClassParseException {
     int targetType = readUByte();
     
     switch (targetType){
@@ -1669,11 +1775,13 @@ public class ClassFile extends BinaryClassSource {
       case METHOD_TYPE_PARAMETER: {
         // type_parameter_target { u1 type_parameter_index; }
         int typeParamIdx = readUByte();
+        reader.setTypeParameterAnnotation( this, tag, annotationIndex, targetType, typeParamIdx, readTypePath(), readAnnotationType());
         break;
       } 
       case CLASS_EXTENDS: {
         // supertype_target { u2 supertype_index; }
-        int supertypeIdx = readU2();
+        int superTypeIdx = readU2();
+        reader.setSuperTypeAnnotation( this, tag, annotationIndex, targetType, superTypeIdx, readTypePath(), readAnnotationType());
         break;
       }
       case CLASS_TYPE_PARAMETER_BOUND:
@@ -1681,27 +1789,31 @@ public class ClassFile extends BinaryClassSource {
         // type_parameter_bound_target { u1 type_parameter_index; u1 bound_index; }
         int typeParamIdx = readUByte();
         int boundIdx = readUByte();
+        reader.setTypeParameterBoundAnnotation(this, tag, annotationIndex, targetType, typeParamIdx, boundIdx, readTypePath(), readAnnotationType());
         break;
       }
       case METHOD_RETURN:
       case METHOD_RECEIVER:
       case FIELD:
         // empty_target {}
+        reader.setTypeAnnotation( this, tag, annotationIndex, targetType, readTypePath(), readAnnotationType());
         break;
         
       case METHOD_FORMAL_PARAMETER: {
         // method_formal_parameter_target { u1 method_formal_parameter_index; }
         int formalParamIdx = readUByte();
+        reader.setFormalParameterAnnotation( this, tag, annotationIndex, targetType, formalParamIdx, readTypePath(), readAnnotationType());
         break;
       }
       case THROWS: {
         // throws_target { u2 throws_type_index; }
         int throwsTypeIdx = readU2();
+        reader.setThrowsAnnotation( this, tag, annotationIndex, targetType, throwsTypeIdx, readTypePath(), readAnnotationType());        
         break;
       } 
       case LOCAL_VARIABLE:
       case RESOURCE_VARIABLE: {
-        // why does this not just refer to a LocalVariable attr index?
+        // this can't just refer to a LocalVarInfo since those depend on debug compile options
         //
         //  localvar_target {
         //      u2 table_length;  // number of entries, not bytes
@@ -1712,16 +1824,20 @@ public class ClassFile extends BinaryClassSource {
         //      } table[table_length];
         //  }
         int tableLength = readU2();
+        long[] scopeEntries = new long[tableLength];
         for (int i=0; i<tableLength; i++){
           int startPc = readU2();
           int length = readU2();
           int slotIdx = readU2();
+          scopeEntries[i] = ((long)startPc << 32) | ((long)length << 16) | slotIdx;
         }
+        reader.setVariableAnnotation( this, tag, annotationIndex, targetType, scopeEntries, readTypePath(), readAnnotationType());
         break;
       }
       case EXCEPTION_PARAMETER: {
         // catch_target { u2 exception_table_index; }
         int exceptionIdx = readU2();
+        reader.setExceptionParameterAnnotation( this, tag, annotationIndex, targetType, exceptionIdx, readTypePath(), readAnnotationType());        
         break;
       }
       case INSTANCEOF:
@@ -1730,6 +1846,7 @@ public class ClassFile extends BinaryClassSource {
       case NEW: {
         // offset_target { u2 offset; }   // insn offset within bytecode
         int offset = readU2();
+        reader.setBytecodeAnnotation(this, tag, annotationIndex, targetType, offset, readTypePath(), readAnnotationType());
         break;
       }
       case CAST:
@@ -1743,11 +1860,24 @@ public class ClassFile extends BinaryClassSource {
         //  }
         int offset = readU2();
         int typeArgIdx = readUByte();
+        reader.setBytecodeTypeArgAnnotation(this, tag, annotationIndex, targetType, offset, typeArgIdx, readTypePath(), readAnnotationType());
         break;
       }
+      
+      default:
+        throw new ClassParseException("unknown type annotation target: 0x" + Integer.toHexString(targetType));
     }
+  }
+
+  
+  void parseTypeAnnotation (ClassFileReader reader, Object tag, int annotationIndex) throws ClassParseException {
+   
+    // this does the respective setXTypeAnnotation() reader callback
+    //dumpData(pos, 16);
+    setTypeAnnotation(reader, tag, annotationIndex);
     
-    
+    // now set the annotation value pairs
+    parseAnnotationValues( reader, tag, annotationIndex);
   }
   
   /*
@@ -1758,12 +1888,12 @@ public class ClassFile extends BinaryClassSource {
    *    type_annotation annotations[num_annotations];
    * }
    */
-  public void parseTypeAnnotationsAttr (ClassFileReader reader, Object tag){
+  public void parseTypeAnnotationsAttr (ClassFileReader reader, Object tag) throws ClassParseException {
     int numAnnotations = readU2();
     setTypeAnnotationCount(reader, tag, numAnnotations);
 
     for (int i=0; i<numAnnotations; i++){
-      parseTypeAnnotation(reader, tag, i, false);
+      parseTypeAnnotation(reader, tag, i);
     }
 
     setTypeAnnotationsDone(reader, tag);

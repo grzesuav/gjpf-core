@@ -174,10 +174,29 @@ public class ClassFileReaderAdapter implements ClassFileReader {
   @Override
   public void setAnnotationsDone(ClassFile cf, Object tag) {}
 
+  //--- Java 8 type annotations
   @Override
   public void setTypeAnnotationCount(ClassFile cf, Object tag, int annotationCount){}
   @Override
-  public void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){}
+  public void setTypeParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int typeIndex, short[] typePath, String annotationType){}
+  @Override
+  public void setSuperTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int superTypeIdx, short[] typePath, String annotationType){}
+  @Override
+  public void setTypeParameterBoundAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int typeParamIdx, int boundIdx, short[] typePath, String annotationType){}
+  @Override
+  public void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, short[] typePath, String annotationType){}
+  @Override
+  public void setFormalParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int formalParamIdx, short[] typePath, String annotationType){}
+  @Override
+  public void setThrowsAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int throwsTypeIdx, short[] typePath, String annotationType){}
+  @Override
+  public void setVariableAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, long[] scopeEntries, short[] typePath, String annotationType){}
+  @Override
+  public void setExceptionParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int exceptionIndex, short[] typePath, String annotationType){}
+  @Override
+  public void setBytecodeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int offset, short[] typePath, String annotationType){}
+  @Override
+  public void setBytecodeTypeArgAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int offset, int typeArgIdx, short[] typePath, String annotationType){}
   @Override
   public void setTypeAnnotationsDone(ClassFile cf, Object tag) {}
 

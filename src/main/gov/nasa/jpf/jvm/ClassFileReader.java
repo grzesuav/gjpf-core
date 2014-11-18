@@ -146,11 +146,25 @@ public interface ClassFileReader {
   void setAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType);
   void setAnnotationsDone(ClassFile cf, Object tag);
 
+  
   // Java 8 type annotations
   void setTypeAnnotationCount(ClassFile cf, Object tag, int annotationCount);
-  void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType);
+  
+  void setTypeParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int typeIndex, short[] typePath, String annotationType);
+  void setSuperTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int superTypeIdx, short[] typePath, String annotationType);
+  void setTypeParameterBoundAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int typeParamIdx, int boundIdx, short[] typePath, String annotationType);
+  void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, short[] typePath, String annotationType);
+  void setFormalParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int formalParamIndex, short[] typePath, String annotationType);
+  void setThrowsAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int throwsTypeIndex, short[] typePath, String annotationType);
+  void setVariableAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, long[] scopeEntries, short[] typePath, String annotationType);
+  void setExceptionParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int exceptionIndex, short[] typePath, String annotationType);
+  void setBytecodeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int offset, short[] typePath, String annotationType);
+  void setBytecodeTypeArgAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int offset, int typeArgIdx, short[] typePath, String annotationType);
+  
   void setTypeAnnotationsDone(ClassFile cf, Object tag);
 
+  
+  
   void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int nValuePairs);
 
   void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex, String elementName, int arrayIndex, Object val);

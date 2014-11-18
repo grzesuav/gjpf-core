@@ -48,6 +48,17 @@ public abstract class InfoObject implements Cloneable {
     this.annotations = annotations;
   }
   
+  public void addAnnotations (AnnotationInfo[] annotations){
+    if (annotations == null){
+      this.annotations = annotations;
+    } else {
+      AnnotationInfo[] newAi = new AnnotationInfo[this.annotations.length + annotations.length];
+      System.arraycopy(this.annotations,0,newAi, 0, this.annotations.length);
+      System.arraycopy(annotations, 0, newAi, this.annotations.length, annotations.length);
+      this.annotations = newAi;
+    }
+  }
+  
   public void addAnnotation (AnnotationInfo newAnnotation){
     AnnotationInfo[] ai = annotations;
     if (ai == null){

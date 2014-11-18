@@ -133,7 +133,7 @@ public class AnnotationInfo implements Cloneable {
   protected String name;
   protected Entry[] entries;
   protected boolean isInherited = false;
-  
+    
   /**
    * this records if the associated class file has been loaded. If it isn't resolved yet,
    * we don't know about default values, hence we need to check before retrieving field values

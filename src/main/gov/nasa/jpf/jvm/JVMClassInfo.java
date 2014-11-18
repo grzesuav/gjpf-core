@@ -376,15 +376,25 @@ public class JVMClassInfo extends ClassInfo {
     protected AnnotationInfo[][] parameterAnnotations;
     protected Object[] values;
 
+    //--- old annotations
+    
     @Override
     public void setAnnotationCount (ClassFile cf, Object tag, int annotationCount) {
       annotations = new AnnotationInfo[annotationCount];
     }
 
     @Override
+    public void setAnnotation (ClassFile cf, Object tag, int annotationIndex, String annotationType) {
+      if (tag instanceof InfoObject) {
+        curAi = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+        annotations[annotationIndex] = curAi;
+      }
+    }
+    
+    @Override
     public void setAnnotationsDone (ClassFile cf, Object tag) {
       if (tag instanceof InfoObject) {
-        ((InfoObject) tag).setAnnotations(annotations);
+        ((InfoObject) tag).addAnnotations(annotations);
       }
     }
 
@@ -409,23 +419,71 @@ public class JVMClassInfo extends ClassInfo {
     public void setParametersDone (ClassFile cf, Object tag) {
       curMi.setParameterAnnotations(parameterAnnotations);
     }
+    
+    //--- Java 8 type annotations
+    @Override
+    public void setTypeAnnotationCount(ClassFile cf, Object tag, int annotationCount){
+      annotations = new AnnotationInfo[annotationCount];
+    }
 
     @Override
-    public void setAnnotation (ClassFile cf, Object tag, int annotationIndex, String annotationType) {
+    public void setTypeParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                           int typeIndex, short[] typePath, String annotationType){
+    }
+    @Override
+    public void setSuperTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                       int superTypeIdx, short[] typePath, String annotationType){
+    }
+    @Override
+    public void setTypeParameterBoundAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType,
+                                       int typeParamIdx, int boundIdx, short[] typePath, String annotationType){
+    }
+    @Override
+    public void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType,
+                                  short[] typePath, String annotationType){
+    }
+    @Override
+    public void setFormalParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                             int formalParamIdx, short[] typePath, String annotationType){
+    }
+    @Override
+    public void setThrowsAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                    int throwsTypeIdx, short[] typePath, String annotationType){
+    }
+    @Override
+    public void setVariableAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                      long[] scopeEntries, short[] typePath, String annotationType){
+    }
+    @Override
+    public void setExceptionParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                                int exceptionIndex, short[] typePath, String annotationType){
+    }
+    @Override
+    public void setBytecodeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                      int offset, short[] typePath, String annotationType){
+    }
+    @Override
+    public void setBytecodeTypeArgAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                             int offset, int typeArgIdx, short[] typePath, String annotationType){
+    }
+
+    @Override
+    public void setTypeAnnotationsDone(ClassFile cf, Object tag) {
       if (tag instanceof InfoObject) {
-        curAi = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
-        annotations[annotationIndex] = curAi;
+        ((InfoObject) tag).addAnnotations(annotations);
       }
     }
 
-    //--- AnnotationInfo entries
+    
+
+    //--- AnnotationInfo values entries
     @Override
     public void setAnnotationValueCount (ClassFile cf, Object tag, int annotationIndex, int nValuePairs) {
       // if we have values, we need to clone the defined annotation so that we can overwrite entries
       curAi = curAi.cloneForOverriddenValues();
       annotations[annotationIndex] = curAi;
     }
-
+    
     @Override
     public void setPrimitiveAnnotationValue (ClassFile cf, Object tag, int annotationIndex, int valueIndex,
             String elementName, int arrayIndex, Object val) {

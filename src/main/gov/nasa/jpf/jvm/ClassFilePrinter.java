@@ -87,22 +87,29 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
   public void setFieldAttribute(ClassFile cf, int fieldIndex, int attrIndex, String name, int attrLength) {
     pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
-    if (name == ClassFile.CONST_VALUE_ATTR) {
-      cf.parseConstValueAttr(this, null);
+    try {
+      if (name == ClassFile.CONST_VALUE_ATTR) {
+        cf.parseConstValueAttr(this, null);
 
-    } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR){
-      cf.parseAnnotationsAttr(this, null);
+      } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR){
+        cf.parseAnnotationsAttr(this, null);
 
-    } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR){
-      cf.parseAnnotationsAttr(this, null);
+      } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR){
+        cf.parseAnnotationsAttr(this, null);
 
-    } else if (name == ClassFile.SIGNATURE_ATTR){
-      cf.parseSignatureAttr(this, null);
+      } else if (name == ClassFile.RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR){
+          cf.parseTypeAnnotationsAttr(this, null);
 
-    } else {
-      pw.printf(" ,length=%d,data=[",attrLength );
-      printRawData(pw, cf, attrLength, 10);
-      pw.println(']');
+      } else if (name == ClassFile.SIGNATURE_ATTR){
+        cf.parseSignatureAttr(this, null);
+
+      } else {
+        pw.printf(" ,length=%d,data=[",attrLength );
+        printRawData(pw, cf, attrLength, 10);
+        pw.println(']');
+      }
+    } catch (ClassParseException cpx){
+      cpx.printStackTrace();
     }
   }
 
@@ -139,6 +146,7 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
   public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
     pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
+    try {
     if (name == ClassFile.CODE_ATTR) {
       cf.parseCodeAttr(this, null);
 
@@ -154,6 +162,9 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     } else if (name == ClassFile.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS_ATTR){
       cf.parseParameterAnnotationsAttr(this, null);
 
+    } else if (name == ClassFile.RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR){
+      cf.parseTypeAnnotationsAttr(this, null);
+      
     } else if (name == ClassFile.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR){
       cf.parseParameterAnnotationsAttr(this, null);
 
@@ -164,6 +175,9 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
       pw.printf(" ,length=%d,data=[", attrLength );
       printRawData(pw, cf, attrLength, 10);
       pw.println(']');
+    }
+    } catch (ClassParseException cpx){
+      cpx.printStackTrace();
     }
   }
 
@@ -217,16 +231,23 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
   public void setCodeAttribute(ClassFile cf, Object tag, int attrIndex, String name, int attrLength) {
     pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
-    if (name == ClassFile.LINE_NUMBER_TABLE_ATTR) {
-      cf.parseLineNumberTableAttr(this, tag);
+    try {
+      if (name == ClassFile.LINE_NUMBER_TABLE_ATTR) {
+        cf.parseLineNumberTableAttr(this, tag);
 
-    } else if (name == ClassFile.LOCAL_VAR_TABLE_ATTR) {
-      cf.parseLocalVarTableAttr(this, tag);
+      } else if (name == ClassFile.LOCAL_VAR_TABLE_ATTR) {
+        cf.parseLocalVarTableAttr(this, tag);
 
-    } else {  // generic
-      pw.printf(" ,length=%d,data=[", attrLength );
-      printRawData(pw, cf, attrLength, 10);
-      pw.println(']');
+      } else if (name == ClassFile.RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR){
+          cf.parseTypeAnnotationsAttr(this, tag);
+
+      } else {  // generic
+        pw.printf(" ,length=%d,data=[", attrLength );
+        printRawData(pw, cf, attrLength, 10);
+        pw.println(']');
+      }
+    } catch (ClassParseException cpx){
+      cpx.printStackTrace();
     }
   }
   public void setCodeAttributesDone(ClassFile cf, Object tag){
@@ -266,36 +287,40 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
   public void setClassAttribute(ClassFile cf, int attrIndex, String name, int attrLength) {
     pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
-    if (name == ClassFile.SOURCE_FILE_ATTR) {
-      cf.parseSourceFileAttr(this, null);
+    try {
+      if (name == ClassFile.SOURCE_FILE_ATTR) {
+        cf.parseSourceFileAttr(this, null);
 
-    } else if (name == ClassFile.DEPRECATED_ATTR) {
+      } else if (name == ClassFile.DEPRECATED_ATTR) {
 
-    } else if (name == ClassFile.INNER_CLASSES_ATTR) {
-      cf.parseInnerClassesAttr(this, null);
+      } else if (name == ClassFile.INNER_CLASSES_ATTR) {
+        cf.parseInnerClassesAttr(this, null);
 
-    } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR){
-      cf.parseAnnotationsAttr(this, null);
-      
-    } else if (name == ClassFile.RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR){
-      cf.parseTypeAnnotationsAttr(this, null);
+      } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR){
+        cf.parseAnnotationsAttr(this, null);
 
-    } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR){
-      cf.parseAnnotationsAttr(this, null);
+      } else if (name == ClassFile.RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR){
+        cf.parseTypeAnnotationsAttr(this, null);
 
-    } else if (name == ClassFile.SIGNATURE_ATTR){
-      cf.parseSignatureAttr(this, null);
+      } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR){
+        cf.parseAnnotationsAttr(this, null);
 
-    } else if (name == ClassFile.ENCLOSING_METHOD_ATTR){
-      cf.parseEnclosingMethodAttr(this, null);
+      } else if (name == ClassFile.SIGNATURE_ATTR){
+        cf.parseSignatureAttr(this, null);
 
-    } else if (name == ClassFile.BOOTSTRAP_METHOD_ATTR){
-      cf.parseBootstrapMethodAttr(this, null);
-      
-    } else {
-      pw.printf(" ,length=%d,data=[", attrLength );
-      printRawData(pw, cf, attrLength, 10);
-      pw.println(']');
+      } else if (name == ClassFile.ENCLOSING_METHOD_ATTR){
+        cf.parseEnclosingMethodAttr(this, null);
+
+      } else if (name == ClassFile.BOOTSTRAP_METHOD_ATTR){
+        cf.parseBootstrapMethodAttr(this, null);
+
+      } else {
+        pw.printf(" ,length=%d,data=[", attrLength );
+        printRawData(pw, cf, attrLength, 10);
+        pw.println(']');
+      }
+    } catch (ClassParseException cpx){
+      cpx.printStackTrace();
     }
   }
   public void setClassAttributesDone(ClassFile cf){
@@ -403,18 +428,82 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
   public void setAnnotationsDone(ClassFile cf, Object tag){
     decIndent();
   }
+  
+  // Java 8 type annotations
 
   @Override
   public void setTypeAnnotationCount(ClassFile cf, Object tag, int annotationCount){
+    pw.printf( " count=%d\n", annotationCount);
+    incIndent();
+  }
+
+  @Override
+  public void setTypeParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                         int typeIndex, short[] typePath, String annotationType){
+    pw.printf("%s[%d]: %s (%s, type path=%s, type index=%d)", indent, annotationIndex, annotationType, 
+            cf.getTargetTypeName(targetType), cf.getTypePathEncoding(typePath), typeIndex);
   }
   @Override
-  public void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){
+  public void setSuperTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                     int superTypeIdx, short[] typePath, String annotationType){
+    pw.printf("%s[%d]: %s (%s, type path=%s, super type index=%d)", indent, annotationIndex, annotationType, 
+            cf.getTargetTypeName(targetType),  cf.getTypePathEncoding(typePath), superTypeIdx);
   }
+  @Override
+  public void setTypeParameterBoundAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType,
+                                     int typeParamIdx, int boundIdx, short[] typePath, String annotationType){
+    pw.printf("%s[%d]: %s (%s, type path=%s, type index=%d, bound=%d)", indent, annotationIndex, annotationType,
+            cf.getTargetTypeName(targetType),  cf.getTypePathEncoding(typePath), typeParamIdx, boundIdx);
+  }
+  @Override
+  public void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType,
+                                short[] typePath, String annotationType){
+    pw.printf("%s[%d]: %s (%s, type path=%s)", indent, annotationIndex, annotationType,
+            cf.getTargetTypeName(targetType), cf.getTypePathEncoding(typePath));
+  }
+  @Override
+  public void setFormalParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                           int formalParamIdx, short[] typePath, String annotationType){
+    pw.printf("%s[%d]: %s (%s, type path=%s, formal param index=%d)", indent, annotationIndex, annotationType,
+            cf.getTargetTypeName(targetType),  cf.getTypePathEncoding(typePath), formalParamIdx);
+  }
+  @Override
+  public void setThrowsAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                  int throwsTypeIdx, short[] typePath, String annotationType){
+    pw.printf("%s[%d]: %s (%s, type path=%s, throws index=%d)", indent, annotationIndex, annotationType, 
+            cf.getTargetTypeName(targetType),  cf.getTypePathEncoding(typePath), throwsTypeIdx);
+  }
+  @Override
+  public void setVariableAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                    long[] scopeEntries, short[] typePath, String annotationType){
+    pw.printf("%s[%d]: %s (%s, type path=%s, scope=%s)", indent, annotationIndex, annotationType, 
+            cf.getTargetTypeName(targetType), cf.getTypePathEncoding(typePath), cf.getScopeEncoding(scopeEntries));
+    // 2do
+  }
+  @Override
+  public void setExceptionParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                              int exceptionIndex, short[] typePath, String annotationType){
+    pw.printf("%s[%d]: %s (%s, type path=%s, catch type index=%d)", indent, annotationIndex, annotationType, 
+            cf.getTargetTypeName(targetType),  cf.getTypePathEncoding(typePath), exceptionIndex);
+  }
+  @Override
+  public void setBytecodeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                    int offset, short[] typePath, String annotationType){
+    pw.printf("%s[%d]: %s (%s, type path=%s, bytecode offset=%d)", indent, annotationIndex, annotationType, 
+            cf.getTargetTypeName(targetType), cf.getTypePathEncoding(typePath), offset);
+  }
+  @Override
+  public void setBytecodeTypeArgAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+                                           int offset, int typeArgIdx, short[] typePath, String annotationType){
+    pw.printf("%s[%d]: %s (%s, type path=%s, bytecode offset=%d, type arg=%d)", indent, annotationIndex, annotationType, 
+            cf.getTargetTypeName(targetType), cf.getTypePathEncoding(typePath), offset, typeArgIdx);
+  }
+  
   @Override
   public void setTypeAnnotationsDone(ClassFile cf, Object tag) {
+    decIndent();
   }
-  
-  
+    
   public void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int nValuePairs){
     pw.printf(" valueCount=%d\n", nValuePairs);
     incIndent();
