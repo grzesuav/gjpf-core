@@ -19,21 +19,19 @@
 
 package java8;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.jvm.ClassFile;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.AbstractTypeAnnotationInfo;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.TypeAnnotationInfo;
 import gov.nasa.jpf.vm.VM;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.List;
 import org.junit.Test;
 
 
@@ -45,40 +43,19 @@ public class TypeAnnotationTest extends TestJPF {
   //--- test type annotations
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.TYPE_USE)
-  @interface BaseFoo {}
-
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.TYPE_USE)
-  @interface IfcFoo {}
-
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.TYPE_USE)
-  @interface FieldFoo {}
-
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.TYPE_USE)
-  @interface MethodFoo {}
-
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.TYPE_USE)
-  @interface ArgFoo {}
-
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.TYPE_USE)
-  @interface LocalFoo {}
-
+  @interface MyTA {}
 
   //--- test class hierarchy
   
   interface Ifc {}
   static class Base {}
   
-  public class Anno8 extends @BaseFoo Base implements @IfcFoo Ifc {
+  public class Anno8 extends @MyTA Base implements @MyTA Ifc {
 
-    @FieldFoo int data;
+    @MyTA int data;
 
-    @MethodFoo int baz (@ArgFoo int a, int b){
-      @LocalFoo int x = a + b;
+    @MyTA int baz (@MyTA int a, int b){
+      @MyTA int x = a + b;
       return x;
     }
   }
@@ -86,33 +63,59 @@ public class TypeAnnotationTest extends TestJPF {
   //--- listener to check annotations are set
   public static class Listener extends ListenerAdapter {
     
+    protected int numberOfTargetTypes (AbstractTypeAnnotationInfo[] annos, int targetType){
+      int n = 0;
+      for (AbstractTypeAnnotationInfo tai : annos){
+        if (tai.getTargetType() == targetType){
+          n++;
+        }
+      }
+      return n;
+    }
+    
     @Override
     public void classLoaded(VM vm, ClassInfo loadedClass) {
       if (loadedClass.getName().equals("java8.TypeAnnotationTest$Anno8")){
         System.out.println("checking loaded class " + loadedClass.getName() + " for type annotations..");
         
+        // <2do> - needs more tests..
+        
         System.out.println("--- super types");
-        for (AbstractTypeAnnotationInfo tai : loadedClass.getTypeAnnotations()){
+        AbstractTypeAnnotationInfo[] tais = loadedClass.getTypeAnnotations();
+        for (AbstractTypeAnnotationInfo tai : tais){
           System.out.println("  " + tai);
         }
+        assertTrue(tais.length == 2);
+        assertTrue( numberOfTargetTypes(tais, ClassFile.CLASS_EXTENDS) == 2); // base and interface
         
         System.out.println("--- fields");
         FieldInfo fi = loadedClass.getDeclaredInstanceField("data");
-        for (AbstractTypeAnnotationInfo tai : fi.getTypeAnnotations()){
+        tais = fi.getTypeAnnotations();
+        for (AbstractTypeAnnotationInfo tai : tais){
           System.out.println("  " + tai);
         }
+        assertTrue(tais.length == 1);
+        assertTrue( numberOfTargetTypes(tais, ClassFile.FIELD) == 1);
         
         System.out.println("--- methods");
         MethodInfo mi = loadedClass.getMethod("baz(II)I", false);
-        for (AbstractTypeAnnotationInfo tai : mi.getTypeAnnotations()){
+        tais = mi.getTypeAnnotations();
+        for (AbstractTypeAnnotationInfo tai : tais){
           System.out.println("  " + tai);
         }
+        assertTrue(tais.length == 3);
+        assertTrue( numberOfTargetTypes(tais, ClassFile.METHOD_RETURN) == 1);
+        assertTrue( numberOfTargetTypes(tais, ClassFile.METHOD_FORMAL_PARAMETER) == 1);
+        assertTrue( numberOfTargetTypes(tais, ClassFile.LOCAL_VARIABLE) == 1);
         
         LocalVarInfo lv = mi.getLocalVar("x", 4);
         System.out.println("--- local var " + lv);
-        for (AbstractTypeAnnotationInfo tai : lv.getTypeAnnotations()){
+        tais = lv.getTypeAnnotations();
+        for (AbstractTypeAnnotationInfo tai : tais){
           System.out.println("  " + tai);
         }
+        assertTrue(tais.length == 1);
+        assertTrue( numberOfTargetTypes(tais, ClassFile.LOCAL_VARIABLE) == 1);
         
       }
     }

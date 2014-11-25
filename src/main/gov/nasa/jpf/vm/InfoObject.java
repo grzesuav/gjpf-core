@@ -133,6 +133,19 @@ public abstract class InfoObject implements Cloneable {
     this.typeAnnotations = typeAnnotations;
   }
 
+  public void addTypeAnnotations (AbstractTypeAnnotationInfo[] tas){
+    if (typeAnnotations == NO_TYPE_ANNOTATIONS){
+      typeAnnotations = tas;
+      
+    } else {
+      int oldLen = typeAnnotations.length;
+      AbstractTypeAnnotationInfo[] newTA = new AbstractTypeAnnotationInfo[oldLen + tas.length];
+      System.arraycopy(typeAnnotations, 0, newTA, 0, oldLen);
+      System.arraycopy(tas, 0, newTA, oldLen, tas.length);
+      typeAnnotations = newTA;
+    }
+  }
+  
   public void addTypeAnnotation (AbstractTypeAnnotationInfo newAnnotation){
     AbstractTypeAnnotationInfo[] ai = typeAnnotations;
     if (ai == null){

@@ -539,7 +539,8 @@ public class JVMClassInfo extends ClassInfo {
           tais[i] = (AbstractTypeAnnotationInfo)annotations[i];
         }
         
-        ((InfoObject) tag).setTypeAnnotations( tais);
+        // we can get them in batches (e.g. VariableTypeAnnos from code attrs and ReturnTypeAnnos from method attrs
+        ((InfoObject) tag).addTypeAnnotations( tais);
       }
     }
 
