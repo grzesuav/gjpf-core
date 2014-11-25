@@ -18,15 +18,16 @@
 //
 package gov.nasa.jpf.vm;
 
-import gov.nasa.jpf.vm.bytecode.ReturnInstruction;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
-
+import gov.nasa.jpf.vm.bytecode.ReturnInstruction;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 
 /**
@@ -1177,6 +1178,75 @@ public class MethodInfo extends InfoObject implements GenericSignatureHolder  {
 
   public void setLocalVarTable (LocalVarInfo[] locals){
     localVars = locals;
+  }
+  
+  public void setLocalVarAnnotations (){
+    if (localVars != null){
+      for (VariableAnnotationInfo ai : getTargetTypeAnnotations(VariableAnnotationInfo.class)){
+        for (int i = 0; i < ai.getNumberOfScopeEntries(); i++) {
+          for (LocalVarInfo lv : localVars) {
+            if (lv.getStartPC() == ai.getStartPC(i) && lv.getSlotIndex() == ai.getSlotIndex(i)) {
+              lv.addTypeAnnotation(ai);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  public boolean hasTypeAnnotatedLocalVars (){
+    if (localVars != null){
+      for (LocalVarInfo lv : localVars){
+        if (lv.hasTypeAnnotations()){
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  public List<LocalVarInfo> getTypeAnnotatedLocalVars (){
+    List<LocalVarInfo> list = null;
+    
+    if (localVars != null){
+      for (LocalVarInfo lv : localVars){
+        if (lv.hasTypeAnnotations()){
+          if (list == null){
+            list = new ArrayList<>();
+          }
+          list.add(lv);
+        }
+      }
+    }
+    
+    if (list == null){
+      list = Collections.emptyList();
+    }
+    
+    return list;
+  }
+  
+  public List<LocalVarInfo> getTypeAnnotatedLocalVars (String annotationClsName){
+    List<LocalVarInfo> list = null;
+    
+    if (localVars != null){
+      for (LocalVarInfo lv : localVars){
+        AbstractTypeAnnotationInfo tai = lv.getTypeAnnotation(annotationClsName);
+        if (tai != null){
+          if (list == null){
+            list = new ArrayList<>();
+          }
+          list.add(lv);
+        }
+      }
+    }
+    
+    if (list == null){
+      list = Collections.emptyList();
+    }
+    
+    return list;
   }
   
   

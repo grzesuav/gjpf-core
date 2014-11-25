@@ -62,10 +62,10 @@ public abstract class JVMClassFileContainer extends ClassFileContainer {
     
     @Override
     public AnnotationInfo createAnnotationInfo (ClassLoaderInfo loader) throws ClassParseException {
-    ClassFile cf = new ClassFile(data);
-    JVMAnnotationParser parser = new JVMAnnotationParser(cf);
+      ClassFile cf = new ClassFile(data);
+      JVMAnnotationParser parser = new JVMAnnotationParser(cf);
 
-    return new AnnotationInfo(typeName, loader, parser);
+      return new AnnotationInfo(typeName, loader, parser);
     }
   }
   

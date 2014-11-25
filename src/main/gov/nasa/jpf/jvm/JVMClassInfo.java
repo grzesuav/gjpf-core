@@ -20,22 +20,33 @@
 package gov.nasa.jpf.jvm;
 
 import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.vm.AbstractTypeAnnotationInfo;
 import gov.nasa.jpf.vm.AnnotationInfo;
 import gov.nasa.jpf.vm.BootstrapMethodInfo;
+import gov.nasa.jpf.vm.BytecodeAnnotationInfo;
+import gov.nasa.jpf.vm.BytecodeTypeParameterAnnotationInfo;
 import gov.nasa.jpf.vm.ClassInfo;
 import gov.nasa.jpf.vm.ClassLoaderInfo;
 import gov.nasa.jpf.vm.ClassParseException;
 import gov.nasa.jpf.vm.DirectCallStackFrame;
 import gov.nasa.jpf.vm.ExceptionHandler;
+import gov.nasa.jpf.vm.ExceptionParameterAnnotationInfo;
 import gov.nasa.jpf.vm.FieldInfo;
+import gov.nasa.jpf.vm.FormalParameterAnnotationInfo;
 import gov.nasa.jpf.vm.GenericSignatureHolder;
 import gov.nasa.jpf.vm.InfoObject;
 import gov.nasa.jpf.vm.LocalVarInfo;
 import gov.nasa.jpf.vm.MethodInfo;
 import gov.nasa.jpf.vm.NativeMethodInfo;
 import gov.nasa.jpf.vm.StackFrame;
+import gov.nasa.jpf.vm.SuperTypeAnnotationInfo;
 import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.ThrowsAnnotationInfo;
+import gov.nasa.jpf.vm.TypeAnnotationInfo;
+import gov.nasa.jpf.vm.TypeParameterAnnotationInfo;
+import gov.nasa.jpf.vm.TypeParameterBoundAnnotationInfo;
 import gov.nasa.jpf.vm.Types;
+import gov.nasa.jpf.vm.VariableAnnotationInfo;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -79,6 +90,10 @@ public class JVMClassInfo extends ClassInfo {
 
       } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR) {
         //cf.parseAnnotationsAttr(this, ClassInfo.this);
+        
+      } else if (name == ClassFile.RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR) {
+        cf.parseTypeAnnotationsAttr(this, JVMClassInfo.this);
+        
       } else if (name == ClassFile.INNER_CLASSES_ATTR) {
         cf.parseInnerClassesAttr(this, JVMClassInfo.this);
 
@@ -214,6 +229,9 @@ public class JVMClassInfo extends ClassInfo {
       } else if (name == ClassFile.RUNTIME_VISIBLE_ANNOTATIONS_ATTR) {
         cf.parseAnnotationsAttr(this, curFi);
 
+      } else if (name == ClassFile.RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR) {
+        cf.parseTypeAnnotationsAttr(this, curFi);
+        
       } else if (name == ClassFile.RUNTIME_INVISIBLE_ANNOTATIONS_ATTR) {
         //cf.parseAnnotationsAttr(this, curFi);
       }
@@ -243,7 +261,13 @@ public class JVMClassInfo extends ClassInfo {
       curMi = mi;
 
       mi.linkToClass(JVMClassInfo.this);
+      
       methods.put(mi.getUniqueName(), mi);
+    }
+    
+    @Override
+    public void setMethodDone (ClassFile cf, int methodIndex){
+      curMi.setLocalVarAnnotations();
     }
 
     @Override
@@ -267,7 +291,11 @@ public class JVMClassInfo extends ClassInfo {
 
       } else if (name == ClassFile.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS_ATTR) {
         //cf.parseParameterAnnotationsAttr(this, curMi);
-      }
+        
+      } else if (name == ClassFile.RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR) {
+        cf.parseTypeAnnotationsAttr(this, curMi);
+      }      
+      
     }
 
     //--- current methods throws list
@@ -327,6 +355,9 @@ public class JVMClassInfo extends ClassInfo {
 
       } else if (name == ClassFile.LOCAL_VAR_TABLE_ATTR) {
         cf.parseLocalVarTableAttr(this, tag);
+        
+      } else if (name == ClassFile.RUNTIME_VISIBLE_TYPE_ANNOTATIONS_ATTR){
+        cf.parseTypeAnnotationsAttr(this, tag);
       }
     }
 
@@ -376,7 +407,7 @@ public class JVMClassInfo extends ClassInfo {
     protected AnnotationInfo[][] parameterAnnotations;
     protected Object[] values;
 
-    //--- old annotations
+    //--- declaration annotations
     
     @Override
     public void setAnnotationCount (ClassFile cf, Object tag, int annotationCount) {
@@ -420,7 +451,8 @@ public class JVMClassInfo extends ClassInfo {
       curMi.setParameterAnnotations(parameterAnnotations);
     }
     
-    //--- Java 8 type annotations
+    //--- Java 8 type annotations    
+    
     @Override
     public void setTypeAnnotationCount(ClassFile cf, Object tag, int annotationCount){
       annotations = new AnnotationInfo[annotationCount];
@@ -429,52 +461,87 @@ public class JVMClassInfo extends ClassInfo {
     @Override
     public void setTypeParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                            int typeIndex, short[] typePath, String annotationType){
+      AnnotationInfo base = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+      curAi = new TypeParameterAnnotationInfo(base, targetType, typePath, typeIndex);
+      annotations[annotationIndex] = curAi;
     }
     @Override
     public void setSuperTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                        int superTypeIdx, short[] typePath, String annotationType){
+      AnnotationInfo base = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+      curAi = new SuperTypeAnnotationInfo(base, targetType, typePath, superTypeIdx);
+      annotations[annotationIndex] = curAi;
     }
     @Override
     public void setTypeParameterBoundAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType,
-                                       int typeParamIdx, int boundIdx, short[] typePath, String annotationType){
+                                       int typeIndex, int boundIndex, short[] typePath, String annotationType){
+      AnnotationInfo base = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+      curAi = new TypeParameterBoundAnnotationInfo(base, targetType, typePath, typeIndex, boundIndex);
+      annotations[annotationIndex] = curAi;
     }
     @Override
     public void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType,
                                   short[] typePath, String annotationType){
+      AnnotationInfo base = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+      curAi = new TypeAnnotationInfo(base, targetType, typePath);
+      annotations[annotationIndex] = curAi;
     }
     @Override
     public void setFormalParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
-                                             int formalParamIdx, short[] typePath, String annotationType){
+                                             int paramIndex, short[] typePath, String annotationType){
+      AnnotationInfo base = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+      curAi = new FormalParameterAnnotationInfo(base, targetType, typePath, paramIndex);
+      annotations[annotationIndex] = curAi;
     }
     @Override
     public void setThrowsAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                     int throwsTypeIdx, short[] typePath, String annotationType){
+      AnnotationInfo base = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+      curAi = new ThrowsAnnotationInfo(base, targetType, typePath, throwsTypeIdx);
+      annotations[annotationIndex] = curAi;
     }
     @Override
     public void setVariableAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                       long[] scopeEntries, short[] typePath, String annotationType){
+      AnnotationInfo base = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+      VariableAnnotationInfo vai = new VariableAnnotationInfo(base, targetType, typePath, scopeEntries);
+      curAi = vai;
+      annotations[annotationIndex] = curAi;
     }
     @Override
     public void setExceptionParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                                 int exceptionIndex, short[] typePath, String annotationType){
+      AnnotationInfo base = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+      curAi= new ExceptionParameterAnnotationInfo(base, targetType, typePath, exceptionIndex);
+      annotations[annotationIndex] = curAi;
     }
     @Override
     public void setBytecodeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                       int offset, short[] typePath, String annotationType){
+      AnnotationInfo base = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+      curAi = new BytecodeAnnotationInfo(base, targetType, typePath, offset);
+      annotations[annotationIndex] = curAi;
     }
     @Override
-    public void setBytecodeTypeArgAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
+    public void setBytecodeTypeParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                              int offset, int typeArgIdx, short[] typePath, String annotationType){
+      AnnotationInfo base = getResolvedAnnotationInfo(Types.getClassNameFromTypeName(annotationType));
+      curAi = new BytecodeTypeParameterAnnotationInfo(base, targetType, typePath, offset, typeArgIdx);
+      annotations[annotationIndex] = curAi;
     }
 
     @Override
     public void setTypeAnnotationsDone(ClassFile cf, Object tag) {
       if (tag instanceof InfoObject) {
-        ((InfoObject) tag).addAnnotations(annotations);
+        int len = annotations.length;
+        AbstractTypeAnnotationInfo[] tais = new AbstractTypeAnnotationInfo[annotations.length];
+        for (int i=0; i<len; i++){
+          tais[i] = (AbstractTypeAnnotationInfo)annotations[i];
+        }
+        
+        ((InfoObject) tag).setTypeAnnotations( tais);
       }
     }
-
-    
 
     //--- AnnotationInfo values entries
     @Override

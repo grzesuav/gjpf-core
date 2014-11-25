@@ -1767,7 +1767,7 @@ public class ClassFile extends BinaryClassSource {
     return annotationType;
   }
 
-  void setTypeAnnotation (ClassFileReader reader, Object tag, int annotationIndex) throws ClassParseException {
+  void setTypeAnnotation (ClassFileReader reader, Object tag, int annotationIndex) {
     int targetType = readUByte();
     
     switch (targetType){
@@ -1860,17 +1860,18 @@ public class ClassFile extends BinaryClassSource {
         //  }
         int offset = readU2();
         int typeArgIdx = readUByte();
-        reader.setBytecodeTypeArgAnnotation(this, tag, annotationIndex, targetType, offset, typeArgIdx, readTypePath(), readAnnotationType());
+        reader.setBytecodeTypeParameterAnnotation(this, tag, annotationIndex, targetType, offset, typeArgIdx, readTypePath(), readAnnotationType());
         break;
       }
       
       default:
-        throw new ClassParseException("unknown type annotation target: 0x" + Integer.toHexString(targetType));
+        // <2do - report this to the reader
+        throw new RuntimeException("unknown type annotation target: 0x" + Integer.toHexString(targetType));
     }
   }
 
   
-  void parseTypeAnnotation (ClassFileReader reader, Object tag, int annotationIndex) throws ClassParseException {
+  void parseTypeAnnotation (ClassFileReader reader, Object tag, int annotationIndex) {
    
     // this does the respective setXTypeAnnotation() reader callback
     //dumpData(pos, 16);
@@ -1888,7 +1889,7 @@ public class ClassFile extends BinaryClassSource {
    *    type_annotation annotations[num_annotations];
    * }
    */
-  public void parseTypeAnnotationsAttr (ClassFileReader reader, Object tag) throws ClassParseException {
+  public void parseTypeAnnotationsAttr (ClassFileReader reader, Object tag) {
     int numAnnotations = readU2();
     setTypeAnnotationCount(reader, tag, numAnnotations);
 

@@ -20,6 +20,9 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.util.ObjectList;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 
 /**
@@ -27,15 +30,33 @@ import gov.nasa.jpf.util.ObjectList;
  * 
  * so far, it's used to factorize the annotation support, but we can also
  * move the attributes up here
+ * 
+ * Note this is used for both declaration- and type- annotations since there is
+ * a cross-over (type annotations of classes/interfaces are visible through the
+ * reflection API that is otherwise just reserved for declaration annotations)
+ * 
+ * 2do - there are 3 annotation positions that are valid for both type and declaration
+ * annotations: class/interface, field and formal method parameters. Of these,
+ * only class/interface type annotations can be queried at runtime, i.e. are
+ * treated similarly to declaration annotations. It is not clear if this is a
+ * Java 8 implementation artifact or intentional
+ * 
+ * Other than annotating classes/interfaces, type and declaration annotations
+ * are kept separate and only the latter ones can be queried from Java, hence
+ * we provide a query API that is only accessible from instructions,
+ * native peers and listeners. Type annotations are used
  */
 public abstract class InfoObject implements Cloneable {
 
   static AnnotationInfo[] NO_ANNOTATIONS = new AnnotationInfo[0];
+  static AbstractTypeAnnotationInfo[] NO_TYPE_ANNOTATIONS = new AbstractTypeAnnotationInfo[0];
   
-  // he number of annotations per class/method/field is usually
+  // the number of annotations per class/method/field is usually
   // small enough so that simple arrays are more efficient than HashMaps
   protected AnnotationInfo[] annotations = NO_ANNOTATIONS;
 
+  protected AbstractTypeAnnotationInfo[] typeAnnotations = NO_TYPE_ANNOTATIONS;
+  
   /** 
    * user defined attribute objects.
    * Note - this is NOT automatically state restored upon backtracking,
@@ -84,11 +105,11 @@ public abstract class InfoObject implements Cloneable {
   public AnnotationInfo[] getAnnotations() {
     return annotations;
   }
-    
+      
   // to be overridden by ClassInfo because of superclass inhertited annotations
   public AnnotationInfo getAnnotation (String name){    
     AnnotationInfo[] ai = annotations;
-    if (ai != null){
+    if (ai != NO_ANNOTATIONS){
       for (int i=0; i<ai.length; i++){
         if (ai[i].getName().equals(name)){
           return ai[i];
@@ -106,6 +127,74 @@ public abstract class InfoObject implements Cloneable {
     return annotations;
   }
 
+  //--- type annotations
+  
+  public void setTypeAnnotations (AbstractTypeAnnotationInfo[] typeAnnotations){
+    this.typeAnnotations = typeAnnotations;
+  }
+
+  public void addTypeAnnotation (AbstractTypeAnnotationInfo newAnnotation){
+    AbstractTypeAnnotationInfo[] ai = typeAnnotations;
+    if (ai == null){
+      ai = new AbstractTypeAnnotationInfo[1];
+      ai[0] = newAnnotation;
+
+    } else {
+      int len = annotations.length;
+      ai = new AbstractTypeAnnotationInfo[len+1];
+      System.arraycopy(annotations, 0, ai, 0, len);
+      ai[len] = newAnnotation;
+    }
+
+    typeAnnotations = ai;
+  }
+
+  
+  public AbstractTypeAnnotationInfo[] getTypeAnnotations() {
+    return typeAnnotations;
+  }
+  
+  public boolean hasTypeAnnotations(){
+    return (typeAnnotations != NO_TYPE_ANNOTATIONS);    
+  }
+  
+  public boolean hasTypeAnnotation (String name){
+    return getTypeAnnotation(name) != null;    
+  }
+  
+  public AbstractTypeAnnotationInfo getTypeAnnotation (String annoClsName){    
+    AbstractTypeAnnotationInfo[] ai = typeAnnotations;
+    if (ai != NO_TYPE_ANNOTATIONS){
+      for (int i=0; i<ai.length; i++){
+        if (ai[i].getName().equals(annoClsName)){
+          return ai[i];
+        }
+      }
+    }
+    return null;
+  }
+
+  public <T extends AbstractTypeAnnotationInfo> List<T> getTargetTypeAnnotations (Class<T> targetType){
+    List<T> list = null;
+    
+    AbstractTypeAnnotationInfo[] ais = typeAnnotations;
+    if (ais != NO_TYPE_ANNOTATIONS){
+      for (AbstractTypeAnnotationInfo ai : ais){
+        if (targetType.isAssignableFrom(ai.getClass())){
+          if (list == null){
+            list = new ArrayList<>();
+          }
+          list.add((T)ai);
+        }
+      }
+    }
+    
+    if (list != null){
+      return list;
+    } else {
+      return Collections.emptyList();
+    }
+  }
   
   //--- the generic attribute API
 

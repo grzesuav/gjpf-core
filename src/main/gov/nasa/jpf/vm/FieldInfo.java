@@ -282,7 +282,9 @@ public abstract class FieldInfo extends InfoObject implements GenericSignatureHo
     //sb.append(Types.getTypeName(type));
     sb.append(getType());
     sb.append(' ');
-    sb.append(ci.getName());
+    if (ci != null){ // maybe the fieldinfo isn't linked yet
+      sb.append(ci.getName());
+    }
     sb.append('.');
     sb.append(name);
 

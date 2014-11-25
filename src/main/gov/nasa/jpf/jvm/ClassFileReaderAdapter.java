@@ -196,7 +196,7 @@ public class ClassFileReaderAdapter implements ClassFileReader {
   @Override
   public void setBytecodeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int offset, short[] typePath, String annotationType){}
   @Override
-  public void setBytecodeTypeArgAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int offset, int typeArgIdx, short[] typePath, String annotationType){}
+  public void setBytecodeTypeParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int offset, int typeArgIdx, short[] typePath, String annotationType){}
   @Override
   public void setTypeAnnotationsDone(ClassFile cf, Object tag) {}
 

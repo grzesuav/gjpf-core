@@ -18,7 +18,7 @@
 //
 package gov.nasa.jpf.vm;
 
-public class LocalVarInfo {
+public class LocalVarInfo  extends InfoObject {
   private final String name;
   private String type;       // lazy initialized FQN according to JLS 6.7 (e.g. "int", "x.Y[]")
   private final String signature;  // e.g. "I", "[Lx/Y;"
@@ -27,7 +27,7 @@ public class LocalVarInfo {
   private final int    endPC;
   private final int slotIndex;
     
-  public LocalVarInfo(String name, String signature, String genericSignature, int startPC, int endPC, int slotIndex) {
+  public LocalVarInfo(String name, String signature, String genericSignature, int startPC, int endPC, int slotIndex){
    
     this.name             = name;
     this.signature        = signature;

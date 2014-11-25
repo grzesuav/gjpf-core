@@ -159,7 +159,7 @@ public interface ClassFileReader {
   void setVariableAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, long[] scopeEntries, short[] typePath, String annotationType);
   void setExceptionParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int exceptionIndex, short[] typePath, String annotationType);
   void setBytecodeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int offset, short[] typePath, String annotationType);
-  void setBytecodeTypeArgAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int offset, int typeArgIdx, short[] typePath, String annotationType);
+  void setBytecodeTypeParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, int offset, int typeArgIdx, short[] typePath, String annotationType);
   
   void setTypeAnnotationsDone(ClassFile cf, Object tag);
 

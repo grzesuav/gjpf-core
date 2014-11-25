@@ -35,8 +35,14 @@ import java.util.HashMap;
  * calls within the SUT, but that seems less important than having them available during ClassInfo construction.
  * This mostly matters because of default values and inherited class annotations.
  * 
+ * AnnotationInfo serves as the concrete type of declaration annotations, and as the base for
+ * type annotations, holding all the info that comes from the annotation class file. In the first
+ * case, AnnotationInfo instances can be shared if there are no explicit values. Sharing does not
+ * make sense for type annotations which need to store site specific target info (from the classfile).
+ * 
  * Note - AnnotationInfos loaded by the same ClassLoader that do not have explicitly set values are shared
  * between annotated objects
+ * 
  */
 public class AnnotationInfo implements Cloneable {
 
@@ -149,6 +155,17 @@ public class AnnotationInfo implements Cloneable {
     this.classLoader = classLoader;
     
     parser.parse(this);
+  }
+  
+  /**
+   * this is the base ctor for AbstractTypeAnnotationInfos, which add additional
+   * target information from the classfile
+   */
+  protected AnnotationInfo (AnnotationInfo exemplar){
+    this.name = exemplar.name;
+    this.classLoader = exemplar.classLoader;
+    this.entries = exemplar.entries;
+    this.isInherited = exemplar.isInherited;
   }
   
   //--- the init API used by AnnotationParsers
