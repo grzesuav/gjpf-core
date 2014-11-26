@@ -33,12 +33,11 @@ import gov.nasa.jpf.JPFException;
  * Instances of this class do not allocate any additional memory, we keep all
  * data in builtin type fields
  */
-public class BitSet1024 implements FixedBitSet, Cloneable {
+public class BitSet1024 extends AbstractFixedBitSet {
 
   public static final int INDEX_MASK = 0xfffffc00;
 
   long l0, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12, l13, l14, l15;
-  int cardinality;
 
   public BitSet1024 (){
     // nothing in here
@@ -51,40 +50,6 @@ public class BitSet1024 implements FixedBitSet, Cloneable {
   public BitSet1024 (int... idx){
     for (int i : idx){
       set(i);
-    }
-  }
-
-  public int longSize(){
-    return  4;
-  }
-  public long getLong(int i){
-    switch (i){
-      case 0: return l0;
-      case 1: return l1;
-      case 2: return l2;
-      case 3: return l3;
-      case 4: return l4;
-      case 5: return l5;
-      case 6: return l6;
-      case 7: return l7;
-      case 8: return l8;
-      case 9: return l9;
-      case 10: return l10;
-      case 11: return l11;
-      case 12: return l12;
-      case 13: return l13;
-      case 14: return l14;
-      case 15: return l15;
-      default:
-        throw new IndexOutOfBoundsException("BitSet1022 has no long index " + i);
-    }
-  }
-
-  public BitSet1024 clone() {
-    try {
-      return (BitSet1024) super.clone();
-    } catch (CloneNotSupportedException ex) {
-      throw new JPFException("BitSet1024 clone failed");
     }
   }
 
@@ -321,14 +286,6 @@ public class BitSet1024 implements FixedBitSet, Cloneable {
     }
   }
 
-  public void set (int i, boolean val){
-    if (val) {
-      set(i);
-    } else {
-      clear(i);
-    }
-  }
-
   public boolean get (int i){
     if ((i & INDEX_MASK) == 0) {
       long bitPattern = (1L << i);
@@ -372,14 +329,9 @@ public class BitSet1024 implements FixedBitSet, Cloneable {
     throw new IndexOutOfBoundsException("BitSet1024 index out of range: " + i);
   }
 
-  public int cardinality() {
-    return cardinality;
-  }
-  
   public int size() {
-    return cardinality;
+    return 1024;
   }
-
 
   /**
    * number of bits we can store
@@ -427,10 +379,6 @@ public class BitSet1024 implements FixedBitSet, Cloneable {
    } else {
       return 0;
    }
-  }
-
-  public boolean isEmpty() {
-    return (cardinality == 0);
   }
 
   public void clear() {
@@ -894,10 +842,6 @@ public class BitSet1024 implements FixedBitSet, Cloneable {
     }
   }
 
-  public void hash(HashData hd){
-    hd.add(hashCode());
-  }
-
   /**
    * answer the same hashCodes as java.util.BitSet
    */
@@ -921,22 +865,24 @@ public class BitSet1024 implements FixedBitSet, Cloneable {
     return (int) ((hc >>32) ^ hc);
   }
 
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append('{');
 
-    boolean first = true;
-    for (int i=nextSetBit(0); i>= 0; i = nextSetBit(i+1)){
-      if (!first){
-        sb.append(',');
-      } else {
-        first = false;
-      }
-      sb.append(i);
-    }
-
-    sb.append('}');
-
-    return sb.toString();
-  }
+  @Override
+  public void hash (HashData hd){
+    hd.add(l0);
+    hd.add(l1);
+    hd.add(l2);
+    hd.add(l3);
+    hd.add(l4);
+    hd.add(l5);
+    hd.add(l6);
+    hd.add(l7);
+    hd.add(l8);
+    hd.add(l9);
+    hd.add(l10);
+    hd.add(l11);
+    hd.add(l12);
+    hd.add(l13);
+    hd.add(l14);
+    hd.add(l15);
+  }  
 }

@@ -26,12 +26,11 @@ import gov.nasa.jpf.JPFException;
 /**
  *
  */
-public class BitSet64 implements FixedBitSet, Cloneable, IntSet {
+public class BitSet64 extends AbstractFixedBitSet implements Cloneable {
 
   static final int INDEX_MASK = 0xffffffc0; // ( i>=0 && i<64)
 
   long l0;
-  int cardinality;
 
   public BitSet64 (){
     // nothing in here
@@ -47,24 +46,11 @@ public class BitSet64 implements FixedBitSet, Cloneable, IntSet {
     }
   }
 
-  public int longSize(){
-    return  1;
-  }
-  public long getLong(int i){
-    if (i==0) {
-      return l0;
-    } else {
-      throw new IndexOutOfBoundsException("BitSet64 has no long index " + i);
-    }
+  @Override
+  public void hash (HashData hd){
+    hd.add(l0);
   }
 
-  public BitSet64 clone() {
-    try {
-      return (BitSet64) super.clone();
-    } catch (CloneNotSupportedException ex) {
-      throw new JPFException("BitSet64 clone failed");
-    }
-  }
 
   private final int computeCardinality (){
     return Long.bitCount(l0);
@@ -96,13 +82,6 @@ public class BitSet64 implements FixedBitSet, Cloneable, IntSet {
     }
   }
 
-  public void set (int i, boolean val){
-    if (val) {
-      set(i);
-    } else {
-      clear(i);
-    }
-  }
 
   public boolean get (int i){
     if ((i & INDEX_MASK) == 0){
@@ -113,10 +92,6 @@ public class BitSet64 implements FixedBitSet, Cloneable, IntSet {
     }
   }
 
-  public int cardinality() {
-    return cardinality;
-  }
-
   public int capacity(){
     return 64;
   }
@@ -125,7 +100,7 @@ public class BitSet64 implements FixedBitSet, Cloneable, IntSet {
    * number of bits we can store
    */
   public int size() {
-    return cardinality;
+    return 64;
   }
 
   /**
@@ -135,9 +110,6 @@ public class BitSet64 implements FixedBitSet, Cloneable, IntSet {
     return 64 - Long.numberOfLeadingZeros(l0);
   }
 
-  public boolean isEmpty() {
-    return (cardinality == 0);
-  }
 
   public void clear() {
     l0 = 0L;
@@ -203,9 +175,6 @@ public class BitSet64 implements FixedBitSet, Cloneable, IntSet {
     }
   }
 
-  public void hash(HashData hd){
-    hd.add(hashCode());
-  }
 
   /**
    * answer the same hashCodes as java.util.BitSet
@@ -216,86 +185,4 @@ public class BitSet64 implements FixedBitSet, Cloneable, IntSet {
     return (int) ((hc >>32) ^ hc);
   }
 
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append('{');
-
-    boolean first = true;
-    for (int i=nextSetBit(0); i>= 0; i = nextSetBit(i+1)){
-      if (!first){
-        sb.append(',');
-      } else {
-        first = false;
-      }
-      sb.append(i);
-    }
-
-    sb.append('}');
-
-    return sb.toString();
-  }
-
-  //--- IntSet interface
-  
-  class SetBitIterator implements IntIterator {
-    int cur = 0;
-    int nBits;
-    
-    @Override
-    public void remove() {
-      if (cur >0){
-        clear(cur-1);
-      }
-    }
-
-    @Override
-    public boolean hasNext() {
-      return nBits < cardinality;
-    }
-
-    @Override
-    public int next() {
-      if (nBits < cardinality){
-        int idx = nextSetBit(cur);
-        if (idx >= 0){
-          nBits++;
-          cur = idx+1;
-        }
-        return idx;
-        
-      } else {
-        throw new NoSuchElementException();
-      }
-    }
-  }
-  
-  @Override
-  public boolean add(int i) {
-    if (get(i)) {
-      return false;
-    } else {
-      set(i);
-      return true;
-    }
-  }
-
-  @Override
-  public boolean remove(int i) {
-    if (get(i)) {
-      clear(i);
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  @Override
-  public boolean contains(int i) {
-    return get(i);
-  }
-
-  @Override
-  public IntIterator intIterator() {
-    return new SetBitIterator();
-  }
 }

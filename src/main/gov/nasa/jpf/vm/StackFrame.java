@@ -19,6 +19,7 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.BitSetN;
 import gov.nasa.jpf.util.BitSet1024;
 import gov.nasa.jpf.util.BitSet256;
 import gov.nasa.jpf.util.BitSet64;
@@ -163,10 +164,9 @@ public abstract class StackFrame implements Cloneable {
     } else if (nSlots <= 256){
       return new BitSet256();  
     } else if (nSlots <= 1024) {
-    	return new BitSet1024();
-    }
-    else {
-      throw new JPFException("too many slots in " + mi.getFullName() + " : " + nSlots);
+      return new BitSet1024();
+    } else {
+      return new BitSetN(nSlots);
     }
   }
 
@@ -1717,10 +1717,7 @@ public abstract class StackFrame implements Cloneable {
       hd.add(slots[i]);
     }
 
-    int ls = isRef.longSize();
-    for (int i=0; i<ls; i++){
-      hd.add(isRef.getLong(i));
-    }
+    isRef.hash(hd);
 
     // it's debatable if we add the attributes to the state, but whatever it
     // is, it should be kept consistent with the Fields.hash()

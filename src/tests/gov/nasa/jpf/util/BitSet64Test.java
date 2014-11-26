@@ -148,7 +148,7 @@ public class BitSet64Test extends TestJPF {
     s.add(0);
     s.add(63);
     
-    assertTrue(s.size() == 3);
+    assertTrue(s.size() == 64);
     assertTrue( s.contains(42));
     
     for (IntIterator it = s.intIterator(); it.hasNext();){

@@ -33,12 +33,11 @@ import gov.nasa.jpf.JPFException;
  * Instances of this class do not allocate any additional memory, we keep all
  * data in builtin type fields
  */
-public class BitSet256 implements FixedBitSet, Cloneable {
+public class BitSet256 extends AbstractFixedBitSet {
 
   public static final int INDEX_MASK = 0xffffff00;
 
   long l0, l1, l2, l3;
-  int cardinality;
 
   public BitSet256 (){
     // nothing in here
@@ -51,28 +50,6 @@ public class BitSet256 implements FixedBitSet, Cloneable {
   public BitSet256 (int... idx){
     for (int i : idx){
       set(i);
-    }
-  }
-
-  public int longSize(){
-    return  4;
-  }
-  public long getLong(int i){
-    switch (i){
-      case 0: return l0;
-      case 1: return l1;
-      case 2: return l2;
-      case 3: return l3;
-      default:
-        throw new IndexOutOfBoundsException("BitSet64 has no long index " + i);
-    }
-  }
-
-  public BitSet256 clone() {
-    try {
-      return (BitSet256) super.clone();
-    } catch (CloneNotSupportedException ex) {
-      throw new JPFException("BitSet256 clone failed");
     }
   }
 
@@ -154,14 +131,6 @@ public class BitSet256 implements FixedBitSet, Cloneable {
     }
   }
 
-  public void set (int i, boolean val){
-    if (val) {
-      set(i);
-    } else {
-      clear(i);
-    }
-  }
-
   public boolean get (int i){
     if ((i & INDEX_MASK) == 0) {
       long bitPattern = (1L << i);
@@ -181,12 +150,8 @@ public class BitSet256 implements FixedBitSet, Cloneable {
     throw new IndexOutOfBoundsException("BitSet256 index out of range: " + i);
   }
 
-  public int cardinality() {
-    return cardinality;
-  }
-
   public int size() {
-    return cardinality;
+    return 256;
   }
 
   
@@ -212,10 +177,6 @@ public class BitSet256 implements FixedBitSet, Cloneable {
     } else {
       return 0;
     }
-  }
-
-  public boolean isEmpty() {
-    return (cardinality == 0);
   }
 
   public void clear() {
@@ -329,13 +290,10 @@ public class BitSet256 implements FixedBitSet, Cloneable {
     }
   }
 
-  public void hash(HashData hd){
-    hd.add(hashCode());
-  }
-
   /**
    * answer the same hashCodes as java.util.BitSet
    */
+  @Override
   public int hashCode() {
     long hc = 1234;
     hc ^= l0;
@@ -345,6 +303,14 @@ public class BitSet256 implements FixedBitSet, Cloneable {
     return (int) ((hc >>32) ^ hc);
   }
 
+  @Override
+  public void hash (HashData hd){
+    hd.add(l0);
+    hd.add(l1);
+    hd.add(l2);
+    hd.add(l3);
+  }
+  
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append('{');

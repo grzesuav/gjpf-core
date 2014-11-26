@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2010 United States Government as represented by the
+// Copyright (C) 2014 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
 // (NASA).  All Rights Reserved.
 //
@@ -19,46 +19,22 @@
 
 package gov.nasa.jpf.util;
 
-import gov.nasa.jpf.JPFException;
+import java.util.BitSet;
 import java.util.NoSuchElementException;
 
 /**
- * BitSet like interface for fixed size bit sets
- * 
- * We keep this as an interface so that we can have java.util.BitSet
- * subclasses as implementations
+ * a FixedBitSet implementation that is based on java.util.BitSet
  */
-public interface FixedBitSet extends Cloneable, IntSet {
-
-  void set (int i);
-  void set (int i, boolean val);
-  boolean get (int i);
-  void clear (int i);
-  
-  int nextClearBit (int fromIndex);
-  int nextSetBit (int fromIndex);
-
-  boolean isEmpty();
-  int size();
-  int cardinality();
-  int length();
-  int capacity();
-  
-  void clear();
-  
-  void hash (HashData hd);
-  
-  FixedBitSet clone();
-}
-
-/**
- * this is the base class for our non java.util.BitSet based FixedBitSet implementations
- */
-abstract class AbstractFixedBitSet implements FixedBitSet {
+public class BitSetN extends BitSet implements FixedBitSet {
   
   class SetBitIterator implements IntIterator {
     int cur = 0;
     int nBits;
+    int cardinality;  // <2do> this should be lifted since it makes the iterator brittle
+    
+    SetBitIterator (){
+      cardinality = cardinality();
+    }
     
     @Override
     public void remove() {
@@ -87,56 +63,33 @@ abstract class AbstractFixedBitSet implements FixedBitSet {
       }
     }
   }
-
   
-  protected int cardinality;
   
-  public AbstractFixedBitSet clone(){
-    try {
-      return (AbstractFixedBitSet) super.clone();
-    } catch (CloneNotSupportedException ex) {
-      throw new JPFException("BitSet64 clone failed");
-    }  
+  public BitSetN (int nBits){
+    super(nBits);
   }
   
-  public void set (int i, boolean val){
-    if (val) {
-      set(i);
-    } else {
-      clear(i);
+  @Override
+  public FixedBitSet clone() {
+    return (FixedBitSet) super.clone();
+  }
+
+  @Override
+  public int capacity() {
+    return size();
+  }
+
+
+  @Override
+  public void hash (HashData hd){
+    long[] data = toLongArray();
+    for (int i=0; i<data.length; i++){
+      hd.add(data[i]);
     }
   }
 
-  public int cardinality() {
-    return cardinality;
-  }
-
-  public boolean isEmpty() {
-    return (cardinality == 0);
-  }
-
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append('{');
-
-    boolean first = true;
-    for (int i=nextSetBit(0); i>= 0; i = nextSetBit(i+1)){
-      if (!first){
-        sb.append(',');
-      } else {
-        first = false;
-      }
-      sb.append(i);
-    }
-
-    sb.append('}');
-
-    return sb.toString();
-  }
-
+  
   //--- IntSet interface
-  
-    
   @Override
   public boolean add(int i) {
     if (get(i)) {
@@ -161,10 +114,10 @@ abstract class AbstractFixedBitSet implements FixedBitSet {
   public boolean contains(int i) {
     return get(i);
   }
-
+  
   @Override
   public IntIterator intIterator() {
     return new SetBitIterator();
   }
-
+  
 }
