@@ -1633,7 +1633,7 @@ public class ThreadInfo extends InfoObject
           clsName = mi.getClassName();
           mthName = mi.getName();
 
-          fileName = mi.getStackTraceSource();
+          fileName = mi.getStackTraceSource();          
           if (pcOffset < 0){
             // See ThreadStopTest.threadDeathWhileRunstart
             // <2do> remove when RUNSTART is gone
@@ -1668,7 +1668,10 @@ public class ThreadInfo extends InfoObject
 
         ei.setReferenceField("clsName", heap.newString(clsName, ThreadInfo.this).getObjectRef());
         ei.setReferenceField("mthName", heap.newString(mthName, ThreadInfo.this).getObjectRef());
-        ei.setReferenceField("fileName", heap.newString(fileName, ThreadInfo.this).getObjectRef());
+
+        String fname = fileName != null ? fileName : "Unknown Source";
+        ei.setReferenceField("fileName", heap.newString(fname, ThreadInfo.this).getObjectRef());
+                
         ei.setIntField("line", line);
 
         return ei.getObjectRef();

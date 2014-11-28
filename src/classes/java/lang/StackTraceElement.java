@@ -24,6 +24,7 @@ import java.io.File;
  * MJI model class for java.lang.StackTraceElement
  */
 public class StackTraceElement {
+  
   String clsName;
   String fileName;
   String mthName;

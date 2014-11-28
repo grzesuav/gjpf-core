@@ -91,21 +91,24 @@ public class JPF_java_util_concurrent_atomic_AtomicInteger extends NativePeer {
   @MJI
   public int incrementAndGet____I (MJIEnv env, int objRef) {
     int value = env.getIntField(objRef, "value");
-    env.setIntField(objRef, "value", value + 1);
-    return value+1;
+    value++;
+    env.setIntField(objRef, "value", value);
+    return value;
   }
   
   @MJI
   public int decrementAndGet____I (MJIEnv env, int objRef) {
     int value = env.getIntField(objRef, "value");
-    env.setIntField(objRef, "value", value - 1);
-    return value-1;
+    value--;
+    env.setIntField(objRef, "value", value);
+    return value;
   }
   
   @MJI
   public int addAndGet__I__I (MJIEnv env, int objRef, int delta) {
     int value = env.getIntField(objRef, "value");
-    env.setIntField(objRef, "value", value + delta);
-    return value + delta;
+    value += delta;
+    env.setIntField(objRef, "value", value);
+    return value;
   }
 }

@@ -42,4 +42,49 @@ public class JPF_java_util_concurrent_atomic_AtomicLong extends NativePeer {
       return false;
     }
   }
+  
+  @MJI
+  public long getAndIncrement____J (MJIEnv env, int objRef){
+    long value = env.getLongField(objRef, "value");
+    env.setLongField(objRef, "value", value + 1);
+    return value;
+  }
+  
+  @MJI
+  public long getAndDecrement____J (MJIEnv env, int objRef){
+    long value = env.getLongField(objRef, "value");
+    env.setLongField(objRef, "value", value - 1);
+    return value;
+  }
+
+  @MJI
+  public long getAndAdd__J__J (MJIEnv env, int objRef, long delta) {
+    long value = env.getIntField(objRef, "value");
+    env.setLongField(objRef, "value", value + delta);
+    return value;
+  }
+  
+  @MJI
+  public long incrementAndGet____J (MJIEnv env, int objRef) {
+    long value = env.getIntField(objRef, "value");
+    value++;
+    env.setLongField(objRef, "value", value);
+    return value;
+  }
+  
+  @MJI
+  public long decrementAndGet____J (MJIEnv env, int objRef) {
+    long value = env.getIntField(objRef, "value");
+    value--;
+    env.setLongField(objRef, "value", value);
+    return value;
+  }
+  
+  @MJI
+  public long addAndGet__J__J (MJIEnv env, int objRef, long delta) {
+    long value = env.getIntField(objRef, "value");
+    value += delta;
+    env.setLongField(objRef, "value", value);
+    return value;
+  }
 }
