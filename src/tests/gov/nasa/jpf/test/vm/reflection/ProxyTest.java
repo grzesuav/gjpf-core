@@ -20,6 +20,10 @@
 package gov.nasa.jpf.test.vm.reflection;
 
 import gov.nasa.jpf.util.test.TestJPF;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -62,6 +66,33 @@ public class ProxyTest extends TestJPF {
       int res = proxy.foo(1);
       System.out.println(res);
       assertTrue( res == 43);
+    }
+  }
+  
+  //--------------- proxy for annotation
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface AnnoIfc {
+    int baz();
+  }
+  
+  class AnnoHandler implements InvocationHandler {
+    public Object invoke (Object proxy, Method mth, Object[] args){
+      System.out.println("proxy invoke of " + mth);
+      return Integer.valueOf(42);
+    }
+  }
+  
+  @Test
+  public void annoProxyTest (){
+    if (verifyNoPropertyViolation()){
+      InvocationHandler handler = new AnnoHandler();
+      AnnoIfc proxy = (AnnoIfc)Proxy.newProxyInstance( AnnoIfc.class.getClassLoader(),
+                                               new Class[] { AnnoIfc.class },
+                                               handler);
+
+      int res = proxy.baz();
+      System.out.println(res);
+      assertTrue( res == 42);
     }
   }
 }

@@ -302,6 +302,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     packageName = (i > 0) ? name.substring(0, i) : "";
 
     modifiers = flags;
+    
+    // annotations are interfaces too (not exposed by Modifier)
     isClass = ((flags & Modifier.INTERFACE) == 0);
 
     superClassName = superClsName;
@@ -597,7 +599,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   protected ClassInfo (ClassInfo annotationCls, String name, ClassLoaderInfo classLoader, String url) {
     this.classLoader = classLoader;
-
+    
     this.name = name;
     isClass = true;
 
@@ -1081,22 +1083,38 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   /**
-   * almost the same as above, except of that Class.getMethod() doesn't specify
-   * the return type. Not sure if that is a bug in the Java specs waiting to be
-   * fixed, or if covariant return types are not allowed in reflection lookup.
-   * Until then, it's awfully inefficient
+   * method lookup for use by reflection methods (java.lang.Class.getXMethod)
+   * 
+   * note this doesn't specify the return type, which means covariant return 
+   * types are not allowed in reflection lookup.
+   * 
+   * note also this includes interface methods, but only after the inheritance
+   * hierarchy has been searched
    */
   public MethodInfo getReflectionMethod (String fullName, boolean isRecursiveLookup) {
-    for (Map.Entry<String, MethodInfo>e : methods.entrySet()) {
-      String name = e.getKey();
-      if (name.startsWith(fullName)) {
-        return e.getValue();
+        
+    // first look for methods within the class hierarchy
+    for (ClassInfo ci = this; ci != null; ci = ci.superClass){
+      for (Map.Entry<String, MethodInfo>e : ci.methods.entrySet()) {
+        String name = e.getKey();
+        if (name.startsWith(fullName)) {
+          return e.getValue();
+        }
+      }
+      if (!isRecursiveLookup){
+        return null;
       }
     }
 
-    if (isRecursiveLookup && (superClass != null)) {
-      return superClass.getReflectionMethod(fullName, true);
-    }
+    // this is the recursive case - if none found, look for interface methods
+    for (ClassInfo ci : getAllInterfaces() ){
+      for (Map.Entry<String, MethodInfo>e : ci.methods.entrySet()) {
+        String name = e.getKey();
+        if (name.startsWith(fullName)) {
+          return e.getValue();
+        }
+      }      
+    }    
 
     return null;
   }
