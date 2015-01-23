@@ -19,6 +19,7 @@
 package gov.nasa.jpf.util.event;
 
 import gov.nasa.jpf.vm.ChoiceGeneratorBase;
+import java.util.Iterator;
 
 /**
  * ChoiceGenerator for Events.
@@ -30,15 +31,23 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
   protected Event cur;
   protected int nProcessed;
   
+  protected ContextEventExpander ctx; // optional, can turn events into iterators based on execution context
+  protected Iterator<Event> curIt;
+  protected Event curItE;
+  
   public EventChoiceGenerator (String id, Event base){
+    this(id, base, null);
+  }
+  
+  public EventChoiceGenerator (String id, Event base, ContextEventExpander ctx) {
     super(id);
-    
     this.base = base;
+    this.ctx = ctx;
   }
   
   public EventChoiceGenerator getSuccessor (String id){
     if (cur == null){
-      return new EventChoiceGenerator(id, base.getNext());
+      return new EventChoiceGenerator(id, base.getNext(), ctx);
       
     } else {
       Event next = cur.getNext();
@@ -50,7 +59,7 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
       }
       
       if (next != null){
-        return new EventChoiceGenerator( id, next);
+        return new EventChoiceGenerator( id, next, ctx);
       } else {
         return null; // done
       }
@@ -59,16 +68,22 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
   
   @Override
   public Event getNextChoice () {
+    if (curItE != null){
+      return curItE;
+    }
+    
     return cur;
   }
 
-  @Override
-  public Class<Event> getChoiceType () {
-    return Event.class;
-  }
 
   @Override
   public boolean hasMoreChoices () {
+    if (curIt != null){
+      if (curIt.hasNext()){
+        return true;
+      }
+    }
+    
     if (cur == null){
       return (nProcessed == 0);
     } else {
@@ -78,14 +93,35 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
 
   @Override
   public void advance () {
-    if (cur == null){
-      if (nProcessed == 0){
-        cur = base;
-        nProcessed = 1;
+    while (true){
+      if (curIt != null){  // do we have a context iterator
+        if (curIt.hasNext()){
+          curItE = curIt.next();
+          nProcessed++;
+          return;
+        } else {  // iterator was processed
+          curIt = null;
+          curItE = null;
+        }
       }
-    } else {
-      cur = cur.getAlt();
-      nProcessed++;
+
+      if (cur == null){
+        if (nProcessed == 0){
+          cur = base;
+          nProcessed = 1;
+        }
+      } else {
+        cur = cur.getAlt();
+        nProcessed++;
+      }
+
+      if (ctx != null && cur != null){
+        curIt = ctx.getEventIterator(cur);
+        if (curIt != null){
+          continue;
+        }
+      }
+      break;
     }
   }
 
@@ -129,5 +165,10 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
     sb.append("}]");
     
     return sb.toString();
+  }
+
+  @Override
+  public Class<Event> getChoiceType() {
+    return Event.class;
   }
 }

@@ -308,6 +308,12 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
     return n;
   }
   
+  @Override
+  public void setCurrent(){
+    // nothing, can be overridden by subclasses to do context specific initialization
+    // the first time this CG becomes the current one
+  }
+  
   // we can't put the advanceForCurrentInsn() here because it has to do
   // notifications, which are the SystemState responsibility
   /**

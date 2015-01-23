@@ -1836,6 +1836,49 @@ public class ThreadInfo extends InfoObject
    * this is the inner interpreter loop of JPF
    */
   protected void executeTransition (SystemState ss) throws JPFException {
+    Instruction pc;
+    outer:
+    while ((pc = getPC()) != null){
+      Instruction nextPc = null;
+
+      currentThread = this;
+      executedInstructions = 0;
+      pendingException = null;
+
+      if (isStopped()){
+        pc = throwStopException();
+        setPC(pc);
+      }
+
+      // this constitutes the main transition loop. It gobbles up
+      // insns until someone registered a ChoiceGenerator, there are no insns left,
+      // the transition was explicitly marked as ignored, or we have reached a
+      // max insn count and preempt the thread upon the next available backjump
+      while (pc != null) {
+        nextPc = executeInstruction();
+
+        if (ss.breakTransition()) {
+          if (ss.extendTransition()){
+            continue outer;
+            
+          } else {
+            if (executedInstructions == 0){ // a CG from a re-executed insn
+              if (isEmptyTransitionEnabled()){ // treat as a new state if empty transitions are enabled
+                ss.setForced(true);
+              }
+            }
+            return;
+          }
+
+        } else {        
+          pc = nextPc;
+        }
+      }
+    }
+  }
+
+  
+  protected void _executeTransition (SystemState ss) throws JPFException {
     Instruction pc = getPC();
     Instruction nextPc = null;
 

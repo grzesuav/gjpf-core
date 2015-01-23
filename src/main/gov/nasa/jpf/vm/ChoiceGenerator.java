@@ -35,6 +35,13 @@ public interface ChoiceGenerator<T> extends Cloneable {
   boolean hasMoreChoices();
 
   /**
+   * to be called before the first advance(). Can be used in implementors to
+   * initialize choices from context (similar to what listeners can do from
+   * choiceGeneratorSet() notifications)
+   */
+  void setCurrent();
+  
+  /**
    * advance to the next choice. This is the only method that really
    * advances our enumeration
    */

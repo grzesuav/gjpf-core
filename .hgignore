@@ -9,5 +9,6 @@ tmp/*
 trace
 activity*.png
 *.class
+*.orig
 *~
 *.DS_Store

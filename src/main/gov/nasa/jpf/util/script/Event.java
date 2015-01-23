@@ -19,6 +19,7 @@
 package gov.nasa.jpf.util.script;
 
 
+import gov.nasa.jpf.util.StringExpander;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -103,7 +104,6 @@ public class Event extends ScriptElement {
    * this is an interesting little exercise since we have to cover all
    * combinations of parameter values, which would normally be a simple set
    * of nested loops, only that the number of parameters is a variable itself
-   * (I'm notoriously bad at this)
    */
   public List<Event> expand () {
     StringExpander ex = new StringExpander(id);
@@ -190,7 +190,7 @@ public class Event extends ScriptElement {
     if (c == '"' || c == '\'') { // String literal
       return s.substring(1,s.length()-1);
 
-    } else if (Character.isDigit(c)) { // ints and doubbles
+    } else if (Character.isDigit(c) || c == '-' || c == '+') { // ints and doubles
       if (s.indexOf('.') >=0) {
         return Double.parseDouble(s);
       } else {

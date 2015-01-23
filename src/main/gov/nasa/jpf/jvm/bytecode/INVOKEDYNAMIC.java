@@ -19,6 +19,7 @@ package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.vm.BootstrapMethodInfo;
 import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FunctionObjectFactory;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.LoadOnJPFRequired;
@@ -52,6 +53,8 @@ public class INVOKEDYNAMIC extends Instruction {
   String samMethodName;
   
   int funcObjRef = MJIEnv.NULL;
+  
+  ElementInfo lastFuncObj = null;
   
   public INVOKEDYNAMIC () {}
 
@@ -90,7 +93,9 @@ public class INVOKEDYNAMIC extends Instruction {
   public Instruction execute (ThreadInfo ti) {
     StackFrame frame = ti.getModifiableTopFrame();
     
-    if(funcObjRef == MJIEnv.NULL) {
+    ElementInfo ei = ti.getHeap().get(funcObjRef);
+    
+    if(ei==null || ei!=lastFuncObj) {
       ClassInfo fiClassInfo;
 
       // First, resolve the functional interface
@@ -119,6 +124,7 @@ public class INVOKEDYNAMIC extends Instruction {
       Object[] freeVariableValues = frame.getArgumentsValues(ti, freeVariableTypes);
       
       funcObjRef = funcObjFactory.getFunctionObject(ti, fiClassInfo, samUniqueName, bmi, freeVariableTypeNames, freeVariableValues);
+      lastFuncObj = ti.getHeap().get(funcObjRef);
     }
     
     frame.pop(freeVariableTypes.length);

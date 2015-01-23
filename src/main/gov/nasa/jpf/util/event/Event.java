@@ -25,21 +25,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * class that represents an external stimulus to the SUT, which is produced by EnvironmentModel instances
+ * class that represents an external stimulus to the SUT, which is produced by EventTree instances
+ * (our environment models)
  * 
- * Note that albeit concrete EnvironmentModels can provide their own, specialized Event types, this class
+ * Note that albeit concrete EventTree can provide their own, specialized Event types, this class
  * is generic enough that we don't declare it as abstract
  */
 public class Event implements Cloneable {
 
   static final Object[] NO_ARGUMENTS = new Object[0];
   
-
   //--- linkage
   protected Event next;
   protected Event prev;
   protected Event alt;
 
+  //--- payload
   protected String name;
   protected Object[] arguments;
   

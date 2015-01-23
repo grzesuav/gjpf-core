@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014, United States Government, as represented by the
+ * Copyright (C) 2015, United States Government, as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All rights reserved.
  *
@@ -18,19 +18,12 @@
 
 package gov.nasa.jpf.util.event;
 
+import java.util.Iterator;
+
 /**
- * a null event, which is usually ignored by EventProducers
+ * interface that is used to expand events from execution context 
  */
-public class NoEvent extends Event {
+public interface ContextEventExpander {
   
-  public static NoEvent NO_EVENT = new NoEvent();
-  
-  public NoEvent (){
-    super("<NONE>");
-  } 
-  
-  @Override
-  public boolean isNoEvent(){
-    return true;
-  }
+  Iterator<Event> getEventIterator(Event e);
 }

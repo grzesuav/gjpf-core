@@ -19,10 +19,15 @@
 package gov.nasa.jpf.test.mc.data;
 
 import gov.nasa.jpf.EventProducer;
+import gov.nasa.jpf.util.event.ContextEventExpander;
 import gov.nasa.jpf.util.event.Event;
+import gov.nasa.jpf.util.event.NoEvent;
 import gov.nasa.jpf.util.event.TestEventTree;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.Verify;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import org.junit.Test;
 
 /**
@@ -97,7 +102,7 @@ public class EventGeneratorTest extends TestJPF {
       printPaths();
     }
     
-     @Override
+    @Override
     public Event createEventTree() {
        Event[] options = { event("A"), event("B"), event("C") };
 
@@ -116,5 +121,69 @@ public class EventGeneratorTest extends TestJPF {
       }
     }
   }
+  
+  
+  //------------------------------------------------------------------------------------
+  public static class ExpandTree extends TestEventTree {
+    public ExpandTree (){
+      printTree();
+    }
+    
+    @Override
+    public Event createEventTree(){
+      return
+              sequence(
+                event("a"),
+                event("*"),
+                event("<opt>"),
+                event("b"));
+    }    
+  }
+
+  public static class MyEventExpander implements ContextEventExpander {
+    @Override
+    public Iterator<Event> getEventIterator (Event e){
+        String eventName = e.getName();
+      
+        if (eventName.equals("*")){
+          System.out.println("  expanding " + eventName + " to [X,Y]");
+          List<Event> list = new ArrayList<Event>();
+          list.add( new Event("X"));
+          list.add( new Event("Y"));
+          return list.iterator();
+          
+        } else if (eventName.equals("<opt>")){ // that's effectively event removal
+          System.out.println("  expanding " + eventName + " to [NoEvent]");
+          List<Event> list = new ArrayList<Event>();
+          list.add(new NoEvent());
+          return list.iterator();          
+        }
+
+        return null;
+    }
+  }
+
+  //@Test
+  public void testEventExpansion (){
+    if (verifyNoPropertyViolation("+event.class=.test.mc.data.EventGeneratorTest$ExpandTree",
+                                  "+event.expander=.test.mc.data.EventGeneratorTest$MyEventExpander",
+                                  "+log.info=event")){
+      EventProducer producer = new EventProducer();
+      StringBuilder sb = new StringBuilder();
+      
+      while (producer.processNextEvent()){
+        String eventName = producer.getEventName();
+        if (eventName != null){
+          sb.append(eventName);
+        }
+      }
+      
+      String trace = sb.toString();
+      System.out.print("--- got trace: ");
+      System.out.println(trace);
+    }
+  }
+  
+
   
 }

@@ -262,6 +262,11 @@ public class Verify {
 
   public static void breakTransition (String reason) {}
 
+ /** for testing and debugging purposes */
+  public static int breakTransition (String reason, int min, int max) {
+    return -1;
+  }
+
   /**
    * simple debugging aids to imperatively print the current path output of the SUT
    * (to be used with vm.path_output)

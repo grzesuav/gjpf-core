@@ -297,6 +297,27 @@ public class JPF_gov_nasa_jpf_vm_Verify extends NativePeer {
     ti.breakTransition(reason);
   }
 
+  /**
+   * mostly for debugging purposes - this does not optimize away single choice CGs 
+   */
+  @MJI
+  public int breakTransition__Ljava_lang_String_2II__I (MJIEnv env, int clsObjRef, int reasonRef, int min, int max) {
+    ThreadInfo ti = env.getThreadInfo();
+    SystemState ss = env.getSystemState();
+    String reason = env.getStringObject(reasonRef);
+    
+    if (!ti.isFirstStepInsn()) { // first time around
+      IntChoiceGenerator cg = new IntIntervalGenerator( reason, min,max);
+      if (ss.setNextChoiceGenerator(cg)){
+        env.repeatInvocation();
+      }
+      return -1;
+      
+    } else {
+      return getNextChoice(ss, reason, IntChoiceGenerator.class, Integer.class);
+    } 
+  }
+
   @MJI
   public static boolean isCalledFromClass__Ljava_lang_String_2__Z (MJIEnv env, int clsObjRef,
                                            int clsNameRef) {

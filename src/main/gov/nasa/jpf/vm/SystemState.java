@@ -19,6 +19,7 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.vm.choice.BreakGenerator;
 
 import java.io.PrintWriter;
 import java.util.LinkedHashMap;
@@ -223,6 +224,9 @@ public class SystemState {
   /** do we want executed insns to be recorded */
   boolean recordSteps;
 
+  /** do we want to extend transitions with non-rescheduling single choices */
+  boolean extendTransitions;
+  
   /**
    * Creates a new system state.
    */
@@ -239,6 +243,7 @@ public class SystemState {
       maxAllocGC = Integer.MAX_VALUE;
     }
 
+    extendTransitions = config.getBoolean("vm.extend_transitions", false);
     // recordSteps is set later by VM, first we need a reporter (which requires the VM)
   }
 
@@ -344,6 +349,7 @@ public class SystemState {
     return null;
   }
   
+  
   public <T extends ChoiceGenerator<?>> T[] getChoiceGeneratorsOfType (Class<T> cgType) {
     if (curCg != null){
       return curCg.getAllOfType(cgType);
@@ -363,6 +369,17 @@ public class SystemState {
     return null;
   }
 
+  public <T> ChoiceGenerator<T> getLastChoiceGeneratorOfChoiceType (String id, Class<T> choiceType){
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
+      if ((id == null || id.equals(cg.getId())) && choiceType.isAssignableFrom(cg.getChoiceType())) {
+        return (ChoiceGenerator<T>)cg;
+      }
+    }
+
+    return null;    
+  }
+
+  
   public <T extends ChoiceGenerator<?>> T getCurrentChoiceGeneratorOfType (Class<T> cgType) {
     for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
       if (cgType.isAssignableFrom(cg.getClass())){
@@ -381,6 +398,16 @@ public class SystemState {
     }
 
     return null;
+  }
+  
+  public <T> ChoiceGenerator<T> getCurrentChoiceGeneratorForChoiceType (String id, Class<T> choiceType){
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
+      if ((id == null || id.equals(cg.getId())) && choiceType.isAssignableFrom(cg.getChoiceType())){
+        return (ChoiceGenerator<T>)cg;
+      }
+    }
+
+    return null;    
   }
 
 
@@ -703,9 +730,8 @@ public class SystemState {
       curCg = nextCg;
       nextCg = null;
 
-      // Hmm, that's a bit late (could be in setNextCG), but we keep it here
-      // for the sake of locality, and it's more consistent if it just refers
-      // to curCg, i.e. the CG that is actually going to be used
+      // these are hooks that can be used to do context specific CG initialization
+      curCg.setCurrent();
       notifyChoiceGeneratorSet(vm, curCg);
     }
 
@@ -734,6 +760,40 @@ public class SystemState {
     execThread.executeTransition(this);    
   }
 
+  /**
+   * check if we can extend the current transition without state storing/matching
+   * This is useful for non-cascaded single choice CGs that do not cause
+   * rescheduling. Such CGs are never backtracked to anyways (they are processed
+   * on their first advance).
+   * 
+   * NOTE: this is on top of CG type specific optimizations that are controlled
+   * by cg.break_single_choice (unset by default). If the respective CG creator
+   * is single choice aware it might not create / register a CG in the first
+   * place and we never get here. This is only called if somebody did create
+   * and register a CG
+   * 
+   * note also that we don't eliminate BreakGenerators since their only purpose
+   * in life is to explicitly cause transition breaks. We don't want to override
+   * the override here.
+   */
+  protected boolean extendTransition (){
+    if (extendTransitions){
+      ChoiceGenerator<?> ncg = nextCg;
+      if (ncg != null && ncg.getTotalNumberOfChoices() == 1 && !ncg.isCascaded()){
+        if (ncg instanceof ThreadChoiceGenerator){
+          if ((ncg instanceof BreakGenerator) || !((ThreadChoiceGenerator)ncg).contains(execThread)){
+            return false;
+          }
+        }
+
+        initializeNextTransition(execThread.getVM());
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
   protected void setExecThread( VM vm){
     ThreadChoiceGenerator tcg = getCurrentSchedulingPoint();
     if (tcg != null){
@@ -757,11 +817,17 @@ public class SystemState {
     while (true) {
       if (cg.hasMoreChoices()){
         cg.advance();
-
         isIgnored = false;
         vm.notifyChoiceGeneratorAdvanced(cg);
+        
         if (!isIgnored){
-          nAdvancedCGs++;
+          // this seems redundant, but the CG or the listener might actually skip choices,
+          // in which case we can't execute the next transition.
+          // NOTE - this causes backtracking
+          // <2do> it's debatable if we should treat this as a processed CG
+          if (cg.getNextChoice() != null){
+            nAdvancedCGs++;
+          }
           break;
         }
         
