@@ -19,6 +19,7 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.TypeSpecMatcher;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 
 import java.io.PrintWriter;
@@ -224,8 +225,8 @@ public class SystemState {
   /** do we want executed insns to be recorded */
   boolean recordSteps;
 
-  /** do we want to extend transitions with non-rescheduling single choices */
-  boolean extendTransitions;
+  /** CG types for which we extend transitions if the CG has only non-rescheduling single choices */
+  TypeSpecMatcher extendTransitions;
   
   /**
    * Creates a new system state.
@@ -243,7 +244,7 @@ public class SystemState {
       maxAllocGC = Integer.MAX_VALUE;
     }
 
-    extendTransitions = config.getBoolean("vm.extend_transitions", false);
+    extendTransitions = TypeSpecMatcher.create(config.getStringArray("vm.extend_transitions"));
     // recordSteps is set later by VM, first we need a reporter (which requires the VM)
   }
 
@@ -777,17 +778,20 @@ public class SystemState {
    * the override here.
    */
   protected boolean extendTransition (){
-    if (extendTransitions){
-      ChoiceGenerator<?> ncg = nextCg;
-      if (ncg != null && ncg.getTotalNumberOfChoices() == 1 && !ncg.isCascaded()){
-        if (ncg instanceof ThreadChoiceGenerator){
-          if ((ncg instanceof BreakGenerator) || !((ThreadChoiceGenerator)ncg).contains(execThread)){
-            return false;
+    ChoiceGenerator<?> ncg = nextCg;
+    if (ncg != null){
+      if (CheckExtendTransition.isMarked(ncg) ||
+              ((extendTransitions != null) && extendTransitions.matches(ncg.getClass()))){
+        if (ncg.getTotalNumberOfChoices() == 1 && !ncg.isCascaded()){
+          if (ncg instanceof ThreadChoiceGenerator){
+            if ((ncg instanceof BreakGenerator) || !((ThreadChoiceGenerator) ncg).contains(execThread)){
+              return false;
+            }
           }
-        }
 
-        initializeNextTransition(execThread.getVM());
-        return true;
+          initializeNextTransition(execThread.getVM());
+          return true;
+        }
       }
     }
     

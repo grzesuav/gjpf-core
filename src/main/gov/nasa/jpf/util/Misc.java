@@ -77,6 +77,18 @@ public class Misc {
     }
   };
 
+  @SuppressWarnings("unchecked")
+  public static <B, E extends B> Iterable<B> asBaseIterable (Collection<E> col){
+    Collection<B> base = (Collection)col;
+    return base;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <B, E extends B> Iterator<B> getBaseIterator (Collection<E> col){
+    Collection<B> base = (Collection)col;
+    return base.iterator();
+  }
+  
   public static <E> void addAll(Collection<E> target, Iterable<? extends E> src) {
     for (E e : src) target.add(e);
   }

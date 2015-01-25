@@ -110,7 +110,65 @@ public class Event implements Cloneable {
       e.setPrev(prev);
     }
   }
+  
+  public void setLinksFrom (Event other){
+    prev = other.prev;
+    next = other.next;
+    alt = other.alt;
+  }
 
+  public Event replaceWithSequenceFrom (List<Event> list){
+    Event eLast = null;
+    
+    for (Event e: list){
+      if (eLast == null){
+        e.prev = prev;
+        e.alt = alt;
+      } else {
+        e.prev = eLast;
+        eLast.next = e;
+      }
+      
+      eLast = e;
+    }
+    
+    if (eLast != null){
+      eLast.next = next;
+      return list.get(0);
+    } else {
+      return null;
+    }
+  }
+  
+  public Event replaceWithAlternativesFrom (List<Event> list){
+    Event eLast = null;
+    for (Event e: list){
+      e.prev = prev;
+      e.next = next;
+      
+      if (eLast != null){
+        eLast.alt = e;
+      }
+      
+      eLast = e;
+    }
+    
+    if (eLast != null){
+      eLast.alt = alt;
+      return list.get(0);
+    } else {
+      return null;
+    }
+  }
+
+  public Event replaceWith (Event e){
+    e.prev = prev;
+    e.next = next;
+    e.alt = alt;
+    
+    return e;
+  }
+  
   protected void setSource (Object source){
     this.source = source;
   }
@@ -546,5 +604,15 @@ public class Event implements Cloneable {
   
   public boolean isNoEvent(){
     return false;
+  }
+    
+  //--- generic processing interface
+  
+  public void process(){
+    // can be overridden by subclass if instance has sufficient context info
+  }
+  
+  public void setProcessed(){
+    // can be overridden by subclass, e.g. to maintain event caches
   }
 }

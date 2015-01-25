@@ -43,6 +43,17 @@ public class TypeSpecMatcher {
     }
   }
   
+  public boolean matches (Class<?> cls){
+    for (int i=0; i<mypeSpecs.length; i++){
+      if (mypeSpecs[i].matches(cls)){
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  
   public boolean matches (ClassInfo ci){
     for (int i=0; i<mypeSpecs.length; i++){
       if (mypeSpecs[i].matches(ci)){

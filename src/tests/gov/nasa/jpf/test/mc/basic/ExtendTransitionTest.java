@@ -19,6 +19,7 @@
 package gov.nasa.jpf.test.mc.basic;
 
 import gov.nasa.jpf.ListenerAdapter;
+import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.util.test.TestJPF;
 import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.Instruction;
@@ -52,11 +53,16 @@ public class ExtendTransitionTest extends TestJPF {
     public void choiceGeneratorProcessed (VM vm, ChoiceGenerator<?> processedCG) {
       System.out.println("CG processed: " + processedCG);
     }  
+    
+    @Override
+    public void stateAdvanced (Search search){
+      System.out.println("!!! state advanced - this should not happen");
+    }
   }
   
   @Test
   public void testExtendedStateTransitions(){
-    if (verifyNoPropertyViolation("+vm.extend_transitions=true", "+cg.break_single_choice=false", 
+    if (verifyNoPropertyViolation("+vm.extend_transitions=*", "+cg.break_single_choice=false", 
             "+listener=" + getClass().getName() + "$CGListener")){
       Verify.print("-- start\n");
       for (int i=0; i<5; i++){
@@ -70,6 +76,7 @@ public class ExtendTransitionTest extends TestJPF {
     if (!isJPFRun()){
       int nStates = VM.getVM().getStateCount();
       System.out.println("nStates=" + nStates);
+      assertTrue(nStates == 0);
     }
   }
 }

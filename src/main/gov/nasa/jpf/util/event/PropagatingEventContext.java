@@ -18,12 +18,10 @@
 
 package gov.nasa.jpf.util.event;
 
-import java.util.Iterator;
-
 /**
- * interface that is used to expand events from execution context 
+ * an EventContext that is invariant and hence can be automatically
+ * propagated along the path
  */
-public interface ContextEventExpander {
-  
-  Iterator<Event> getEventIterator(Event e);
+public interface PropagatingEventContext extends EventContext {
+  // no additional methods, just a type
 }

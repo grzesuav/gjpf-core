@@ -19,7 +19,7 @@
 package gov.nasa.jpf.test.mc.data;
 
 import gov.nasa.jpf.EventProducer;
-import gov.nasa.jpf.util.event.ContextEventExpander;
+import gov.nasa.jpf.util.event.EventContext;
 import gov.nasa.jpf.util.event.Event;
 import gov.nasa.jpf.util.event.NoEvent;
 import gov.nasa.jpf.util.event.TestEventTree;
@@ -67,7 +67,7 @@ public class EventGeneratorTest extends TestJPF {
       Verify.resetCounter(0);
     }
     
-    if (verifyNoPropertyViolation("+event.class=.test.mc.data.EventGeneratorTest$SimpleTree", "+log.info=event")){
+    if (verifyNoPropertyViolation("+event.tree.class=.test.mc.data.EventGeneratorTest$SimpleTree", "+log.info=event")){
       EventProducer producer = new EventProducer();
       StringBuilder sb = new StringBuilder();
       
@@ -110,9 +110,9 @@ public class EventGeneratorTest extends TestJPF {
      }
   }
   
-  //@Test
+  @Test
   public void testAnyCombination (){
-    if (verifyNoPropertyViolation("+event.class=.test.mc.data.EventGeneratorTest$CombinationTree", "+log.info=event")){
+    if (verifyNoPropertyViolation("+event.tree.class=.test.mc.data.EventGeneratorTest$CombinationTree", "+log.info=event")){
       EventProducer producer = new EventProducer();
       StringBuilder sb = new StringBuilder();
       
@@ -140,9 +140,9 @@ public class EventGeneratorTest extends TestJPF {
     }    
   }
 
-  public static class MyEventExpander implements ContextEventExpander {
+  public static class MyEventContext implements EventContext {
     @Override
-    public Iterator<Event> getEventIterator (Event e){
+    public Event map (Event e){
         String eventName = e.getName();
       
         if (eventName.equals("*")){
@@ -150,23 +150,22 @@ public class EventGeneratorTest extends TestJPF {
           List<Event> list = new ArrayList<Event>();
           list.add( new Event("X"));
           list.add( new Event("Y"));
-          return list.iterator();
+          return e.replaceWithAlternativesFrom(list);
           
-        } else if (eventName.equals("<opt>")){ // that's effectively event removal
-          System.out.println("  expanding " + eventName + " to [NoEvent]");
-          List<Event> list = new ArrayList<Event>();
-          list.add(new NoEvent());
-          return list.iterator();          
+        } else if (eventName.equals("<opt>")){
+          System.out.println("  skipping " + eventName);
+          // that's effectively event removal without changing the structure of the tree
+          return e.replaceWith(new NoEvent()); 
         }
 
-        return null;
+        return e;
     }
   }
 
-  //@Test
+  @Test
   public void testEventExpansion (){
-    if (verifyNoPropertyViolation("+event.class=.test.mc.data.EventGeneratorTest$ExpandTree",
-                                  "+event.expander=.test.mc.data.EventGeneratorTest$MyEventExpander",
+    if (verifyNoPropertyViolation("+event.tree.class=.test.mc.data.EventGeneratorTest$ExpandTree",
+                                  "+event.context.class=.test.mc.data.EventGeneratorTest$MyEventContext",
                                   "+log.info=event")){
       EventProducer producer = new EventProducer();
       StringBuilder sb = new StringBuilder();

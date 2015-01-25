@@ -123,6 +123,28 @@ public abstract class FeatureSpec {
     return matchSuperTypes;
   }
 
+  public boolean isMatchingType (Class cls){
+    if (clsSpec.matches(cls.getName())){
+      return true;
+    }
+    
+    if (matchSuperTypes){
+      for (Class c = cls.getSuperclass(); c != null; c = c.getSuperclass()){
+        if (clsSpec.matches(c.getName())){
+          return true;
+        }
+      }
+    }
+    
+    for (Class ifc : cls.getInterfaces()){
+      if (clsSpec.matches(ifc.getName())) {
+        return true;
+      }      
+    }
+    
+    return false;
+  }
+  
   public boolean isMatchingType(ClassInfo ci){
     if (clsSpec.matches(ci.getName())){  // also takes care of '*'
       return true;

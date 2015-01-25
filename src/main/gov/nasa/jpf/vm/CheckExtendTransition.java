@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014, United States Government, as represented by the
+ * Copyright (C) 2015, United States Government, as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All rights reserved.
  *
@@ -15,23 +15,22 @@
  * See the License for the specific language governing permissions and 
  * limitations under the License.
  */
+package gov.nasa.jpf.vm;
 
-package gov.nasa.jpf.util.event;
+import gov.nasa.jpf.SystemAttribute;
 
 /**
- * a null event, which is usually ignored by EventProducers
+ * system attribute to dynamically mark ChoiceGenerators for transition extension checks
  */
-public class NoEvent extends Event {
+public class CheckExtendTransition implements SystemAttribute {
   
-  // we don't have a singleton since we couldn't detect at compile time if
-  // links are going to be modified
+  static final CheckExtendTransition singleton = new CheckExtendTransition();
   
-  public NoEvent (){
-    super("<NONE>");
-  } 
+  public static void mark (ChoiceGenerator<?> cg){
+    cg.addAttr(singleton);
+  }
   
-  @Override
-  public boolean isNoEvent(){
-    return true;
+  public static boolean isMarked (ChoiceGenerator<?> cg){
+    return (cg != null) && cg.hasAttr(CheckExtendTransition.class);
   }
 }

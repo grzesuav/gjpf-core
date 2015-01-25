@@ -55,9 +55,15 @@ public class TypeSpec extends FeatureSpec {
   public boolean matches (Object o){
     if (o instanceof ClassInfo){
       return matches( (ClassInfo) o);
+    } else if (o instanceof Class){
+      return matches( (Class)o);
     } else {
       return false;
     }
+  }
+  
+  public boolean matches (Class<?> cls){
+    return isMatchingType(cls);
   }
   
   public boolean matches (ClassInfo ci){

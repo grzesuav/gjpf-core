@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014, United States Government, as represented by the
+ * Copyright (C) 2015, United States Government, as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All rights reserved.
  *
@@ -19,19 +19,8 @@
 package gov.nasa.jpf.util.event;
 
 /**
- * a null event, which is usually ignored by EventProducers
+ * functional interface that is used to expand events from execution context 
  */
-public class NoEvent extends Event {
-  
-  // we don't have a singleton since we couldn't detect at compile time if
-  // links are going to be modified
-  
-  public NoEvent (){
-    super("<NONE>");
-  } 
-  
-  @Override
-  public boolean isNoEvent(){
-    return true;
-  }
+public interface EventContext {
+  Event map (Event original);
 }

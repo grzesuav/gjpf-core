@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class EventTree extends EventConstructor {
   
-  public static final String CONFIG_KEY = "event.class";
+  public static final String CONFIG_KEY = "event.tree.class";
   
   protected Event root;
 

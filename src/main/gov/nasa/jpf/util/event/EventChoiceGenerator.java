@@ -18,8 +18,10 @@
 
 package gov.nasa.jpf.util.event;
 
+import gov.nasa.jpf.util.Predicate;
 import gov.nasa.jpf.vm.ChoiceGeneratorBase;
-import java.util.Iterator;
+import gov.nasa.jpf.vm.SystemState;
+
 
 /**
  * ChoiceGenerator for Events.
@@ -31,21 +33,59 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
   protected Event cur;
   protected int nProcessed;
   
-  protected ContextEventExpander ctx; // optional, can turn events into iterators based on execution context
-  protected Iterator<Event> curIt;
-  protected Event curItE;
+  protected EventContext ctx; // optional, can replace/expand events during execution
+  
+  /**
+   * convenience method to get successors from current CG chain 
+   */
+  public static EventChoiceGenerator getNext (SystemState ss, String id, Event base, EventContext ctx){
+    EventChoiceGenerator cgPrev = ss.getLastChoiceGeneratorOfType(EventChoiceGenerator.class);
+    if (cgPrev == null){
+      return new EventChoiceGenerator( id, base, ctx);
+    } else {
+      return cgPrev.getSuccessor(id, ctx);
+    }
+  }
   
   public EventChoiceGenerator (String id, Event base){
     this(id, base, null);
   }
   
-  public EventChoiceGenerator (String id, Event base, ContextEventExpander ctx) {
+  public EventChoiceGenerator (String id, Event base, EventContext ctx) {
     super(id);
     this.base = base;
     this.ctx = ctx;
   }
   
+  public void setContextExpander (EventContext ctx){
+    this.ctx = ctx;
+  }
+  
+  public boolean containsMatchingChoice (Predicate<Event> predicate){
+    for (Event e = base; e != null; e = e.getAlt()){
+      if (predicate.isTrue(e)){
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  public void addChoice (Event newEvent){
+    for (Event e = base; e != null;){
+      Event eAlt = e.getAlt();
+      if (eAlt == null){
+        e.setAlt(newEvent);
+        return;
+      }
+      e = eAlt;
+    }
+  }
+  
   public EventChoiceGenerator getSuccessor (String id){
+    return getSuccessor(id, null);
+  }
+  
+  public EventChoiceGenerator getSuccessor (String id, EventContext ctx){
     if (cur == null){
       return new EventChoiceGenerator(id, base.getNext(), ctx);
       
@@ -68,22 +108,12 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
   
   @Override
   public Event getNextChoice () {
-    if (curItE != null){
-      return curItE;
-    }
-    
     return cur;
   }
 
 
   @Override
   public boolean hasMoreChoices () {
-    if (curIt != null){
-      if (curIt.hasNext()){
-        return true;
-      }
-    }
-    
     if (cur == null){
       return (nProcessed == 0);
     } else {
@@ -93,35 +123,21 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
 
   @Override
   public void advance () {
-    while (true){
-      if (curIt != null){  // do we have a context iterator
-        if (curIt.hasNext()){
-          curItE = curIt.next();
-          nProcessed++;
-          return;
-        } else {  // iterator was processed
-          curIt = null;
-          curItE = null;
-        }
+    if (cur == null){
+      if (nProcessed == 0){
+        cur = base;
+        nProcessed = 1;
       }
-
-      if (cur == null){
-        if (nProcessed == 0){
-          cur = base;
-          nProcessed = 1;
-        }
-      } else {
-        cur = cur.getAlt();
-        nProcessed++;
+    } else {
+      cur = cur.getAlt();
+      nProcessed++;
+    }
+    
+    if (ctx != null){
+      Event newCur = ctx.map(cur);
+      if (newCur != cur){
+        cur = newCur;
       }
-
-      if (ctx != null && cur != null){
-        curIt = ctx.getEventIterator(cur);
-        if (curIt != null){
-          continue;
-        }
-      }
-      break;
     }
   }
 
@@ -145,14 +161,14 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder(getClass().getName());
-    sb.append("[id=\"");
+    sb.append("{id:\"");
     sb.append(id);
     sb.append('"');
 
-    sb.append(",isCascaded:");
-    sb.append(Boolean.toString(isCascaded));
+    //sb.append(",isCascaded:");
+    //sb.append(Boolean.toString(isCascaded));
 
-    sb.append(",{");
+    sb.append(",[");
     for (Event e=base; e!= null; e = e.getAlt()){
       if (e != base){
         sb.append(',');
@@ -162,7 +178,9 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
       }
       sb.append(e.toString());
     }
-    sb.append("}]");
+    sb.append("],cur:");
+    sb.append(cur);
+    sb.append("}");
     
     return sb.toString();
   }
