@@ -59,6 +59,16 @@ public class ThreadChoiceFromSet extends ChoiceGeneratorBase<ThreadInfo> impleme
   }
   
   @Override
+  public ThreadInfo getChoice (int idx){
+    if (idx >= 0 && idx < values.length){
+      return values[idx];
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
+
+  
+  @Override
   public void reset () {
     count = -1;
 

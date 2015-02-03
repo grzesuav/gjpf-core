@@ -72,6 +72,21 @@ public class RandomIntIntervalGenerator extends ChoiceGeneratorBase<Integer> imp
     random = new Random(seed);
   }
 
+  @Override
+  public Integer getChoice (int idx){
+    if (idx >= 0 && idx < nChoices){
+      // Ok, this is really not efficient - use only for non-performance critical operations
+      Random r = new Random(seed);
+      int v=0;
+      for (int i=0; i<idx; i++){
+        v = r.nextInt(range);
+      }
+      return v + min;
+      
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
 
   @Override
   public void reset () {

@@ -57,6 +57,24 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
     this.ctx = ctx;
   }
   
+  @Override
+  public Event getChoice (int idx){
+    if (idx >= 0){
+      Event e = base;
+      for (int i=0; i<idx; i++){
+        e = e.alt;
+        if (e == null){
+          break;
+        } else {
+          return e;
+        }
+      }
+      
+    }
+    throw new IllegalArgumentException("choice index out of range: " + idx);
+  }
+
+  
   public void setContextExpander (EventContext ctx){
     this.ctx = ctx;
   }

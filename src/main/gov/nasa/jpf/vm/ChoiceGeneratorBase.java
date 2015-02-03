@@ -335,6 +335,67 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
     setDone();
   }
 
+  // override this to support explicit CG enumeration from listeners etc.
+  
+  /**
+   * explicit choice enumeration. Override if supported
+   * @return choice value or null if not supported
+   */
+  @Override
+  public T getChoice (int idx){
+    return null;
+  }
+  
+  //--- generic choice set getter implementation
+  // Note - this requires an overloaded getChoice() and can be very slow (depending on CG implementation)
+  
+  @Override
+  public T[] getAllChoices(){
+    int n = getTotalNumberOfChoices();
+    T[] a = (T[]) new Object[n];
+    for (int i=0; i<n; i++){
+      T c = getChoice(i);
+      if (c == null){
+        return null; // CG doesn't support choice enumeration
+      } else {
+        a[i] = c;
+      }
+    }
+    return a;
+  }
+  
+  @Override
+  public T[] getProcessedChoices(){
+    int n = getProcessedNumberOfChoices();
+    T[] a = (T[]) new Object[n];
+    for (int i=0; i<n; i++){
+      T c = getChoice(i);
+      if (c == null){
+        return null; // CG doesn't support choice enumeration
+      } else {
+        a[i] = c;
+      }
+    }
+    return a;    
+  }
+  
+  @Override
+  public T[] getUnprocessedChoices(){
+    int n = getTotalNumberOfChoices();
+    int m = getProcessedNumberOfChoices();
+    T[] a = (T[]) new Object[n];
+    for (int i=m-1; i<n; i++){
+      T c = getChoice(i);
+      if (c == null){
+        return null; // CG doesn't support choice enumeration
+      } else {
+        a[i] = c;
+      }
+    }
+    return a;    
+  }
+  
+  
   @Override
   public boolean isDone() {
     return isDone;
