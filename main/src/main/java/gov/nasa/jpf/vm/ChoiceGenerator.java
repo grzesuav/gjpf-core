@@ -67,6 +67,15 @@ public interface ChoiceGenerator<T> extends Cloneable {
 
   int getProcessedNumberOfChoices();
 
+  
+  // choice getters. Note that not all CGs need to support them since
+  // there is no requirement that CGs compute finite choice sets upon creation
+  
+  T getChoice(int i);
+  T[] getAllChoices();
+  T[] getProcessedChoices();
+  T[] getUnprocessedChoices();
+  
   ChoiceGenerator<?> getPreviousChoiceGenerator();
 
   int getNumberOfParents();

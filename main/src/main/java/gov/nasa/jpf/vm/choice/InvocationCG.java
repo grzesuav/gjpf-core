@@ -44,6 +44,15 @@ public class InvocationCG extends ChoiceGeneratorBase<Invocation> {
   }
   
   @Override
+  public Invocation getChoice (int idx){
+    if (idx >=0 && idx < invokes.size()){
+      return invokes.get(idx);
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
+  
+  @Override
   public void advance () {
     cur = it.next();
   }

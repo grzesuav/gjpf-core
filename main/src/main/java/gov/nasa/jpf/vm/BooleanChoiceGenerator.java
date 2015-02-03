@@ -74,6 +74,17 @@ public class BooleanChoiceGenerator extends ChoiceGeneratorBase<Boolean> {
       next = !next;
     }
   }
+  
+  @Override
+  public Boolean getChoice (int idx){
+    if (idx == 0){
+      return falseFirst ? Boolean.FALSE : Boolean.TRUE;
+    } else if (idx == 1){
+      return falseFirst ? Boolean.TRUE : Boolean.FALSE;      
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
 
   @Override
   public void reset () {

@@ -40,6 +40,15 @@ public class DoubleThresholdGenerator extends ChoiceGeneratorBase<Double> implem
   }
 
   @Override
+  public Double getChoice (int idx){
+    if (idx >= 0 && idx < 3){
+      return values[idx];
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
+  
+  @Override
   public void reset () {
     count = -1;
 

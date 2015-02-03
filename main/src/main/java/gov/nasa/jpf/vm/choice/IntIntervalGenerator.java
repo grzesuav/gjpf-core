@@ -95,6 +95,16 @@ public class IntIntervalGenerator extends ChoiceGeneratorBase<Integer> implement
   }
 
   @Override
+  public Integer getChoice (int idx){
+    int nChoices = getTotalNumberOfChoices();
+    if (idx >= 0 && idx < nChoices){
+      return min + idx*delta;
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
+  
+  @Override
   public Integer getNextChoice () {
     return new Integer(next);
   }

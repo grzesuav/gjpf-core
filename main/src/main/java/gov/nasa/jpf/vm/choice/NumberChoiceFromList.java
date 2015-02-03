@@ -76,6 +76,14 @@ public abstract class NumberChoiceFromList<T extends Number> extends ChoiceGener
     }
   }
   
+  @Override
+  public T getChoice (int idx){
+    if (idx >=0 && idx < values.length){
+      return values[idx];
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
 
   @Override
   public void reset () {

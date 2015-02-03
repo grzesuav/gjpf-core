@@ -47,6 +47,15 @@ public class RandomOrderIntCG extends ChoiceGeneratorBase<Integer> implements In
   }
 
   @Override
+  public Integer getChoice (int idx){
+    if (idx >= 0 && idx < choices.length){
+      return choices[idx];
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
+  
+  @Override
   public Integer getNextChoice() {
     return new Integer(choices[nextIdx]);
   }

@@ -73,6 +73,16 @@ public class TypedObjectChoice extends ChoiceGeneratorBase<Integer> implements R
   }
   
   @Override
+  public Integer getChoice (int idx){
+    if (idx >= 0 && idx < values.length){
+      return values[idx];
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
+
+  
+  @Override
   public void advance () {
     count++;
   }

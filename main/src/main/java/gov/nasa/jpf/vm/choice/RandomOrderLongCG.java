@@ -45,6 +45,16 @@ public class RandomOrderLongCG extends ChoiceGeneratorBase<Long> implements Long
     }
     nextIdx = -1;
   }
+  
+  @Override
+  public Long getChoice (int idx){
+    if (idx >= 0 && idx < choices.length){
+      return choices[idx];
+    } else {
+      throw new IllegalArgumentException("choice index out of range: " + idx);
+    }
+  }
+
 
   @Override
   public Long getNextChoice() {
