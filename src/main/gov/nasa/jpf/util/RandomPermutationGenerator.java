@@ -34,7 +34,7 @@ public class RandomPermutationGenerator extends PermutationGenerator {
   protected Random rand;
   
   protected int[] orig;
-  
+    
   public RandomPermutationGenerator (int nElements, int nPermutations, int seed){
     super(nElements);
     this.nPermutations = nPermutations;

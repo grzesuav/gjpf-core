@@ -88,5 +88,11 @@ public abstract class PermutationGenerator {
     return (nGenerated < nPermutations);
   }
   
+  /**
+   * return the next permutation or throw a NoSuchElementException if there is none.
+   * 
+   * NOTE - this does not guarantee to return a different object on each call,
+   * i.e. the caller has to clone if the result is stored directly
+   */
   public abstract int[] next(); // the work horse, throws NoSuchElementException
 }
