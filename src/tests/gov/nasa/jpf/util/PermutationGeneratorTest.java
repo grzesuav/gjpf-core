@@ -58,10 +58,61 @@ public class PermutationGeneratorTest extends TestJPF {
     long nPerm = pg.getNumberOfPermutations();
     assertTrue( nPerm == nPermutations);
     
+    System.out.println("this CAN have duplicates");
     while (pg.hasNext()){
       int[] perms = pg.next();
       assertTrue(perms != null);
       pg.printOn(System.out);
     }    
+  }
+  
+  boolean isEqual (int[] a, int[] b){
+    if (a.length == b.length){
+      for (int i=0; i<a.length; i++){
+        if (a[i] != b[i]){
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+  
+  @Test
+  public void testUniqueRandomPermutation(){
+    int nPermutations = 14;
+    PermutationGenerator pg = new UniqueRandomPermGenerator(4, nPermutations, 42);
+    long nPerm = pg.getNumberOfPermutations();
+    assertTrue( nPerm == nPermutations);
+    
+    int[][] seen = new int[nPermutations][];
+    int n = 0;
+    
+    System.out.println("this should NOT have duplicates");
+    
+    while (pg.hasNext()){
+      int[] perms = pg.next();
+      assertTrue(perms != null);
+      pg.printOn(System.out);
+      
+      for (int i=0; i<n; i++){
+        assertFalse(isEqual(seen[i], perms));
+      }
+      seen[n++] = perms.clone();
+    }    
+  }
+
+  @Test
+  public void testMaxUniqueRandomPermutation(){
+    int nPermutations = 14; // too high, this only has 3! different permutations
+    PermutationGenerator pg = new UniqueRandomPermGenerator(3, nPermutations, 42);
+    long nPerm = pg.getNumberOfPermutations();
+    assertTrue( nPerm == 6);
+
+    while (pg.hasNext()){
+      int[] perms = pg.next();
+      assertTrue(perms != null);
+      pg.printOn(System.out);
+    }
   }
 }
