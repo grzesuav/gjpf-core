@@ -33,10 +33,13 @@ public class RandomPermutationGenerator extends PermutationGenerator {
   protected int seed;
   protected Random rand;
   
+  protected int[] orig;
+  
   public RandomPermutationGenerator (int nElements, int nPermutations, int seed){
     super(nElements);
     this.nPermutations = nPermutations;
     rand = new Random(seed);
+    orig = permutation.clone();
   }
   
   @Override
@@ -58,13 +61,12 @@ public class RandomPermutationGenerator extends PermutationGenerator {
       return permutation;
       
     } else if (nGenerated < nPermutations){
-      int[] perm = permutation.clone();
+      permutation = orig.clone();
       for (int i=0; i<nElements; i++){
         int r = i + rand.nextInt( nElements-i);  // i <= r < nElements-1
-        swap(perm, r, i);
+        swap(permutation, r, i);
       }        
       nGenerated++;
-      permutation = perm;
       return permutation;
         
     } else {
