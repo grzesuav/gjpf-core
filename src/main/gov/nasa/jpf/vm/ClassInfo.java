@@ -362,6 +362,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         } else {
           instanceFields[iInstance++] = fi;
         }
+        
+        processJPFAttrAnnotation(fi);
       }
 
       iFields = instanceFields;
@@ -371,18 +373,47 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
-  public void setMethods (MethodInfo[] methods) {
-    if (methods != null && methods.length > 0) {
-      HashMap<String, MethodInfo> map = new LinkedHashMap<String, MethodInfo>();
+  protected void setMethod (MethodInfo mi){
+    mi.linkToClass(this);
+    methods.put( mi.getUniqueName(), mi);
+    processJPFAttrAnnotation(mi);
+  }
+  
+  public void setMethods (MethodInfo[] newMethods) {
+    if (newMethods != null && newMethods.length > 0) {
+      methods = new LinkedHashMap<String, MethodInfo>();
 
-      for (int i = 0; i < methods.length; i++) {
-        MethodInfo mi = methods[i];
-        mi.linkToClass(this);
-        map.put(mi.getUniqueName(), mi);
+      for (int i = 0; i < newMethods.length; i++) {
+        setMethod( newMethods[i]);
       }
-      
-      this.methods = map;
     }
+  }
+ 
+  protected void processJPFAttrAnnotation(InfoObject infoObj){
+    AnnotationInfo ai = infoObj.getAnnotation("gov.nasa.jpf.annotation.JPFAttribute");
+    if (ai != null){
+      String[] attrTypes = ai.getValueAsStringArray();
+      if (attrTypes != null){
+        ClassLoader loader = config.getClassLoader();
+
+        for (String clsName : attrTypes){
+          try {
+            Class<?> attrCls = loader.loadClass(clsName);
+            Object attr = attrCls.newInstance(); // needs to have a default ctor
+            infoObj.addAttr(attr);
+            
+          } catch (ClassNotFoundException cnfx){
+            logger.warning("attribute class not found: " + clsName);
+            
+          } catch (IllegalAccessException iax){
+            logger.warning("attribute class has no public default ctor: " + clsName);            
+            
+          } catch (InstantiationException ix){
+            logger.warning("attribute class has no default ctor: " + clsName);            
+          }
+        }
+      }
+    }    
   }
 
   public AnnotationInfo getResolvedAnnotationInfo (String typeName){
@@ -511,6 +542,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     
     setAssertionStatus();
     processJPFConfigAnnotation();
+    processJPFAttrAnnotation(this);
     loadAnnotationListeners();    
   }
   
