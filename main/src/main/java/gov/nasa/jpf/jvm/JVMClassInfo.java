@@ -258,15 +258,13 @@ public class JVMClassInfo extends ClassInfo {
     public void setMethod (ClassFile cf, int methodIndex, int accessFlags, String name, String signature) {
       MethodInfo mi = MethodInfo.create(name, signature, accessFlags);
       curMi = mi;
-
-      mi.linkToClass(JVMClassInfo.this);
-      
-      methods.put(mi.getUniqueName(), mi);
     }
     
     @Override
     public void setMethodDone (ClassFile cf, int methodIndex){
       curMi.setLocalVarAnnotations();
+
+      JVMClassInfo.this.setMethod(curMi);
     }
 
     @Override
