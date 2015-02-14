@@ -182,6 +182,20 @@ public class Event implements Cloneable {
     return n;
   }
 
+  public boolean hasAlternatives(){
+    return (alt != null);
+  }
+  
+  public List<Event> getAlternatives(){
+    List<Event> list = new ArrayList<Event>();
+    list.add(this);
+    for (Event e = alt; e != null; e = e.alt) {
+      list.add(e);
+    }
+    return list;
+  }
+  
+  
   public Event unlinkedClone(){
     try {
       Event e = (Event)super.clone();

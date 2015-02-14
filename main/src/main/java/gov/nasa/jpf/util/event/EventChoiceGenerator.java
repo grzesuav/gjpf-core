@@ -207,4 +207,44 @@ public class EventChoiceGenerator extends ChoiceGeneratorBase<Event> {
   public Class<Event> getChoiceType() {
     return Event.class;
   }
+  
+  protected Event[] getFirstNChoices(int n){
+    Event[] a = new Event[n];
+    
+    Event e = base;
+    for (int i=0; i<n; i++){
+      a[i] = e;
+      e = e.getAlt();
+    }
+    
+    return a;
+  }
+
+  @Override
+  public Event[] getAllChoices(){
+    return getFirstNChoices( getTotalNumberOfChoices());
+  }
+
+  @Override
+  public Event[] getProcessedChoices(){
+    return getFirstNChoices( getProcessedNumberOfChoices());
+  }
+  
+  @Override
+  public Event[] getUnprocessedChoices(){
+    int n=0;
+    for (Event e=cur; e != null; e = e.getAlt()){
+      n++;
+    }
+    
+    Event[] a = new Event[n];
+    
+    Event e = cur;
+    for (int i=0; i<n; i++){
+      a[i] = e;
+      e = e.getAlt();
+    }
+    
+    return a;    
+  }
 }
