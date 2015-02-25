@@ -69,7 +69,8 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
 
     
   protected ChoiceGenerator<ThreadInfo> getRunnableCG (String id, ThreadInfo tiCurrent){
-    ThreadInfo[] choices = getTimeoutRunnables(tiCurrent.getApplicationContext());
+    ApplicationContext appCtx = tiCurrent.getApplicationContext();
+    ThreadInfo[] choices = getTimeoutRunnables(appCtx);
     
     if (choices.length == 0){
       return null;
@@ -81,7 +82,13 @@ public class AllRunnablesSyncPolicy implements SyncPolicy {
       }
     }
     
-    return new ThreadChoiceFromSet( id, choices, true);
+    ChoiceGenerator<ThreadInfo> cg = new ThreadChoiceFromSet( id, choices, true);
+    
+    if(!vm.getThreadList().hasProcessTimeoutRunnables(appCtx)) {
+      GlobalSchedulingPoint.setGlobal(cg);
+    }
+    
+    return cg;
   }
   
   protected boolean setNextChoiceGenerator (ChoiceGenerator<ThreadInfo> cg){
