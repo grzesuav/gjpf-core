@@ -31,7 +31,7 @@ public class PairPermutationGenerator extends PermutationGenerator {
 
   protected int i, j;
 
-  PairPermutationGenerator (int nElements){
+  public PairPermutationGenerator (int nElements){
     super(nElements);
   }
 
