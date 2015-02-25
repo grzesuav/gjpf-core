@@ -35,6 +35,11 @@ public class PermutationCG extends ChoiceGeneratorBase<int[]>{
   public PermutationCG (PermutationGenerator pg){
     this.pg = pg;
   }
+
+  public PermutationCG (String id, PermutationGenerator pg){
+    super(id);
+    this.pg = pg;
+  }
   
   @Override
   public int[] getNextChoice() {
