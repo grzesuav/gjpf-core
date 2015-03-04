@@ -365,7 +365,7 @@
     <zip destfile="build/${ant.project.name}${hg.tip.rev}.zip" update="false" excludes="*">
       <zipfileset file="jpf.properties"  prefix="${ant.project.name}"/>
       <zipfileset file="build.properties"  prefix="${ant.project.name}"/>
-      <zipfileset dir="lib"  prefix="${ant.project.name}/lib"/>
+      <zipfileset dir="testlib"  prefix="${ant.project.name}/lib"/>
       <zipfileset dir="bin"  prefix="${ant.project.name}/bin" filemode="754"/>
       <zipfileset dir="build" includes="*.jar" prefix="${ant.project.name}/build"/>
     </zip>
@@ -387,7 +387,7 @@
     	<zipfileset file="NOSA-1.3-JPF"  prefix="${ant.project.name}"/>
       <zipfileset file="README"  prefix="${ant.project.name}"/>
       <zipfileset dir="src" prefix="${ant.project.name}/src"/>
-      <zipfileset dir="lib"  prefix="${ant.project.name}/lib" erroronmissingdir="false"/>
+      <zipfileset dir="testlib"  prefix="${ant.project.name}/lib" erroronmissingdir="false"/>
       <zipfileset dir="bin"  prefix="${ant.project.name}/bin" filemode="754"/>
       <zipfileset dir="tools" prefix="${ant.project.name}/tools" erroronmissingdir="false"/>
 
@@ -408,7 +408,7 @@
           description="run core regression tests" if="have_tests">
           
     <!-- note this can be directly set in local.properties, which overrides this setting -->
-    <property name="junit.home" value="${env.JUNIT_HOME}"/>
+    <property name="junit.home" value="testlib/junit-4.12.jar"/>
     
     <condition property="junit.usefile">
       <!-- don't set if this is running from within an IDE that collects output -->
