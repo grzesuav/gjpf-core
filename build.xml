@@ -385,7 +385,7 @@
       <zipfileset file="build.properties"  prefix="${ant.project.name}"/>
       <zipfileset file="build.xml"  prefix="${ant.project.name}"/>
     	<zipfileset file="LICENSE-2.0.txt"  prefix="${ant.project.name}"/>
-      <zipfileset file="README"  prefix="${ant.project.name}"/>
+      <zipfileset file="README.md"  prefix="${ant.project.name}"/>
       <zipfileset dir="src" prefix="${ant.project.name}/src"/>
       <zipfileset dir="lib"  prefix="${ant.project.name}/lib" erroronmissingdir="false"/>
       <zipfileset dir="bin"  prefix="${ant.project.name}/bin" filemode="754"/>
@@ -408,7 +408,7 @@
           description="run core regression tests" if="have_tests">
           
     <!-- note this can be directly set in local.properties, which overrides this setting -->
-    <property name="junit.home" value="${env.JUNIT_HOME}"/>
+    <property name="junit.home" value="/testlib"/>
     
     <condition property="junit.usefile">
       <!-- don't set if this is running from within an IDE that collects output -->
