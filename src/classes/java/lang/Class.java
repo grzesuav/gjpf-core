@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package java.lang;
 
 import java.io.ByteArrayInputStream;
@@ -29,7 +28,6 @@ import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,12 +76,15 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
 
   public native boolean isArray ();
 
+  @Override
   public native Annotation[] getAnnotations();
 
+  @Override
   public native <A extends Annotation> A getAnnotation( Class<A> annotationCls);
 
   // those are from Java 6
   public native boolean isAnnotation ();
+  @Override
   public native boolean isAnnotationPresent(Class<? extends Annotation> annotationClass);
 
   public native Class<?> getComponentType ();
@@ -244,6 +245,7 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
   public native T newInstance () throws InstantiationException,
                                       IllegalAccessException;
 
+  @Override
   public String toString () {
     return (isInterface() ? "interface " : "class ") + name;
   }
@@ -275,6 +277,7 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
 
   native AnnotationType getAnnotationType();
   
+  @Override
   public TypeVariable<Class<T>>[] getTypeParameters() {
     throw new UnsupportedOperationException();
   }
@@ -347,6 +350,7 @@ public final class Class<T> implements Serializable, GenericDeclaration, Type, A
     throw new UnsupportedOperationException();
   }
   
+  @Override
   public Annotation[] getDeclaredAnnotations() {
     throw new UnsupportedOperationException();
   }

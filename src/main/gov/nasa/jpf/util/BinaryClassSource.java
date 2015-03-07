@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2013 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.util;
 
@@ -44,28 +43,64 @@ public class BinaryClassSource {
   //--------------------------------------------------------- variable endian support 
   
   public interface ByteReader {
+    int peekI2();
+    int peekU2();
+    int peekI4();
+    long peekU4();
+    
     int readI2();
     int readU2();
     int readI4();
     long readU4();
+    
     void makeLittleEndian (short[] data);
   }
 
   public class LittleEndianReader implements ByteReader {
     
-    public final int readI2 () {
+    @Override
+	public final int peekI2 () {
+      int idx = pos;
+      return (data[idx++] & 0xff) | (data[idx] << 8);
+    }
+
+    @Override
+	public final int peekU2 () {
+      int idx = pos;
+      return (data[idx++] & 0xff) | ((data[idx] & 0xff)<< 8);
+    }
+    
+    @Override
+	public final int peekI4 () {
+      int idx = pos;
+      byte[] data = BinaryClassSource.this.data;
+      return (data[idx++] & 0xff) | ((data[idx++] & 0xff) << 8) | ((data[idx++] & 0xff) << 16) | (data[idx] << 24);
+    }
+
+    @Override
+	public final long peekU4 () {
+      int idx = pos;
+      byte[] data = BinaryClassSource.this.data;
+      return (data[idx++] & 0xff) | ((data[idx++] & 0xff) << 8) | ((data[idx++] & 0xff) << 16) | ((data[idx] & 0xff) << 24);
+    }
+    
+    
+    @Override
+	public final int readI2 () {
       int idx = pos;
       pos += 2;
       return (data[idx++] & 0xff) | (data[idx] << 8);
     }
 
-    public final int readU2 () {
+    @Override
+	public final int readU2 () {
       int idx = pos;
       pos += 2;
       return (data[idx++] & 0xff) | ((data[idx] & 0xff)<< 8);
     }
     
-    public final int readI4 () {
+    @Override
+	public final int readI4 () {
       int idx = pos;
       pos += 4;
       byte[] data = BinaryClassSource.this.data;
@@ -73,7 +108,8 @@ public class BinaryClassSource {
       return (data[idx++] & 0xff) | ((data[idx++] & 0xff) << 8) | ((data[idx++] & 0xff) << 16) | (data[idx] << 24);
     }
 
-    public final long readU4 () {
+    @Override
+	public final long readU4 () {
       int idx = pos;
       pos += 4;
       byte[] data = BinaryClassSource.this.data;
@@ -81,26 +117,60 @@ public class BinaryClassSource {
       return (data[idx++] & 0xff) | ((data[idx++] & 0xff) << 8) | ((data[idx++] & 0xff) << 16) | ((data[idx] & 0xff) << 24);
     }
     
-    public final void makeLittleEndian (short[] data){
+    @Override
+	public final void makeLittleEndian (short[] data){
       // nothing - we already are
     }
   }
 
   
   public class BigEndianReader implements ByteReader {
-    public final int readI2 () {
+    
+    @Override
+	public final int peekI2 () {
+      int idx = pos;
+      return (data[idx++] << 8) | (data[idx] & 0xff);
+    }
+
+    @Override
+	public final int peekU2 () {
+      int idx = pos;
+      return ((data[idx++] & 0xff) << 8) | (data[idx] & 0xff);
+    }
+    
+    @Override
+	public final int peekI4 () {
+      int idx = pos;
+      byte[] data = BinaryClassSource.this.data;
+
+      return (data[idx++] << 24) | ((data[idx++] & 0xff) << 16) | ((data[idx++] & 0xff) << 8) | (data[idx] & 0xff);
+    }
+
+    @Override
+	public final long peekU4 () {
+      int idx = pos;
+      byte[] data = BinaryClassSource.this.data;
+
+      return ((data[idx++] & 0xff) << 24) | ((data[idx++] & 0xff) << 16) | ((data[idx++] & 0xff) << 8) | (data[idx] & 0xff);
+    }
+
+    
+    @Override
+	public final int readI2 () {
       int idx = pos;
       pos += 2;
       return (data[idx++] << 8) | (data[idx] & 0xff);
     }
 
-    public final int readU2 () {
+    @Override
+	public final int readU2 () {
       int idx = pos;
       pos += 2;
       return ((data[idx++] & 0xff) << 8) | (data[idx] & 0xff);
     }
     
-    public final int readI4 () {
+    @Override
+	public final int readI4 () {
       int idx = pos;
       pos += 4;
       byte[] data = BinaryClassSource.this.data;
@@ -108,7 +178,8 @@ public class BinaryClassSource {
       return (data[idx++] << 24) | ((data[idx++] & 0xff) << 16) | ((data[idx++] & 0xff) << 8) | (data[idx] & 0xff);
     }
 
-    public final long readU4 () {
+    @Override
+	public final long readU4 () {
       int idx = pos;
       pos += 4;
       byte[] data = BinaryClassSource.this.data;
@@ -116,7 +187,8 @@ public class BinaryClassSource {
       return ((data[idx++] & 0xff) << 24) | ((data[idx++] & 0xff) << 16) | ((data[idx++] & 0xff) << 8) | (data[idx] & 0xff);
     }
     
-    public final void makeLittleEndian (short[] data){
+    @Override
+	public final void makeLittleEndian (short[] data){
       for (int i=0; i<data.length; i++){
         short s = data[i];
         s = (short) (((s & 0xFF00) >> 8) | (s << 8));
@@ -207,6 +279,10 @@ public class BinaryClassSource {
     return pos;
   }
   
+  public boolean hasMoreData(){
+    return pos < data.length;
+  }
+  
   // for selective parsing
   public void setPos (int newPos){
     pos = newPos;
@@ -286,6 +362,14 @@ public class BinaryClassSource {
     System.arraycopy(data,pos,b,0,n);
     pos += n;
     return b;
+  }
+  
+  public String readByteString(int nChars){
+    char[] buf = new char[nChars];
+    for (int i=0; i<nChars; i++){
+      buf[i] = (char)data[pos++];
+    }
+    return new String(buf);
   }
   
   //--- debugging

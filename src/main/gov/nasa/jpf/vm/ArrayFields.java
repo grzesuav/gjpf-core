@@ -1,27 +1,25 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.JPFException;
 
 import java.io.PrintStream;
-import java.io.PrintWriter;
 
 
 
@@ -36,8 +34,10 @@ public abstract class ArrayFields extends Fields {
 
   public abstract int arrayLength ();
 
+  @Override
   public abstract int getHeapSize ();
 
+  @Override
   public boolean isReferenceArray(){
     return false;
   }
@@ -68,75 +68,93 @@ public abstract class ArrayFields extends Fields {
   
   public abstract Object getValues();
 
+  @Override
   public boolean getBooleanValue (int pos) {
   // overridden by subclass
       throw new JPFException( "not a boolean[]");
   }
+  @Override
   public byte getByteValue (int pos) {
     // overridden by subclass
     throw new JPFException( "not a byte[]");
   }
+  @Override
   public char getCharValue (int pos) {
     // overridden by subclass
     throw new JPFException( "not a char[]");
   }
+  @Override
   public short getShortValue (int pos) {
     // overridden by subclass
     throw new JPFException( "not a short[]");
   }
+  @Override
   public int getIntValue (int pos) {
     // overridden by subclass
     throw new JPFException( "not an int[]");
   }
+  @Override
   public long getLongValue (int pos) {
     // overridden by subclass
     throw new JPFException( "not a long[]");
   }
+  @Override
   public float getFloatValue (int pos) {
     // overridden by subclass
     throw new JPFException( "not a float[]");
   }
+  @Override
   public double getDoubleValue (int pos) {
     // overridden by subclass
     throw new JPFException( "not a double[]");
   }
+  @Override
   public int getReferenceValue (int pos) {
     // overridden by subclass
     throw new JPFException( "not a reference array");
   }
 
+  @Override
   public void setBooleanValue (int pos, boolean newValue) {
     // overridden by subclass
     throw new JPFException( "not a boolean[]");
   }
+  @Override
   public void setByteValue (int pos, byte newValue) {
     // overridden by subclass
     throw new JPFException( "not a byte[]");
   }
+  @Override
   public void setCharValue (int pos, char newValue) {
     // overridden by subclass
     throw new JPFException( "not a char[]");
   }
+  @Override
   public void setShortValue (int pos, short newValue) {
     // overridden by subclass
     throw new JPFException( "not a short[]");
   }
+  @Override
   public void setIntValue (int pos, int newValue) {
     // overridden by subclass
     throw new JPFException( "not an int[]");
   }
+  @Override
   public void setFloatValue (int pos, float newValue){
     // overridden by subclass
     throw new JPFException( "not a float[]");
   }
+  @Override
   public void setLongValue (int pos, long newValue) {
     // overridden by subclass
     throw new JPFException( "not a long[]");
   }
+  @Override
   public void setDoubleValue (int pos, double newValue){
     // overridden by subclass
     throw new JPFException( "not a double[]");
   }
+  @Override
   public void setReferenceValue (int pos, int newValue){
     // overridden by subclass
     throw new JPFException( "not a reference array");
@@ -184,6 +202,7 @@ public abstract class ArrayFields extends Fields {
     throw new JPFException("not a double[]");
   }
 
+  @Override
   public int[] asFieldSlots() {
     throw new JPFException("array has no field slots");
   }

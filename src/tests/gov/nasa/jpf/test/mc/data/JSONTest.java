@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2011 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.test.mc.data;
 
@@ -346,7 +345,8 @@ public class JSONTest extends TestJPF {
     Bool(boolean b) {this.b = b;}
     boolean b;
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
       Bool bool = (Bool) o;
       return this.b == bool.b;
     }
@@ -393,7 +393,8 @@ public class JSONTest extends TestJPF {
 
     byte b; short s; int i; long l;
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
       ByteShortIntLong bs = (ByteShortIntLong) o;
 
       return bs.b == b && bs.s == s && bs.i == i && bs.l == l;
@@ -450,7 +451,8 @@ public class JSONTest extends TestJPF {
       inner.i = i;
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
       O outer = (O) o;
 
       return outer.inner.i == this.inner.i;
@@ -482,7 +484,8 @@ public class JSONTest extends TestJPF {
       for (int i = 0; i < ints.length; i++) {arr[i] = new I(); arr[i].i = ints[i];}
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
       ArrI other = (ArrI) o;
 
       if (other.arr.length != this.arr.length) {
@@ -550,7 +553,8 @@ public class JSONTest extends TestJPF {
       this.d = d;
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
       BoxedDouble bd = (BoxedDouble) o;
 
       return doublesEqual(bd.d, this.d);

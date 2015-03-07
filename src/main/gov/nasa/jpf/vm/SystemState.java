@@ -1,25 +1,26 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPFException;
+import gov.nasa.jpf.util.TypeSpecMatcher;
+import gov.nasa.jpf.vm.choice.BreakGenerator;
 
 import java.io.PrintWriter;
 import java.util.LinkedHashMap;
@@ -137,7 +138,8 @@ public class SystemState {
       curCg = cloneCG( curCg);
     }
     
-    void backtrack (SystemState ss){
+    @Override
+	void backtrack (SystemState ss){
       super.backtrack(ss);
       ss.curCg = cloneCG(curCg);
     }
@@ -146,7 +148,8 @@ public class SystemState {
      * this one is used if we restore and then advance, i.e. it might change the CG on
      * the next advance (if nextCg was set)
      */
-    void restore (SystemState ss) {      
+    @Override
+	void restore (SystemState ss) {      
       // if we don't clone them on restore, it means we can only restore this memento once
       ss.nextCg = cloneCG(nextCg);
       ss.curCg = cloneCG(curCg);
@@ -222,6 +225,9 @@ public class SystemState {
   /** do we want executed insns to be recorded */
   boolean recordSteps;
 
+  /** CG types for which we extend transitions if the CG has only non-rescheduling single choices */
+  TypeSpecMatcher extendTransitions;
+  
   /**
    * Creates a new system state.
    */
@@ -238,6 +244,7 @@ public class SystemState {
       maxAllocGC = Integer.MAX_VALUE;
     }
 
+    extendTransitions = TypeSpecMatcher.create(config.getStringArray("vm.extend_transitions"));
     // recordSteps is set later by VM, first we need a reporter (which requires the VM)
   }
 
@@ -343,6 +350,7 @@ public class SystemState {
     return null;
   }
   
+  
   public <T extends ChoiceGenerator<?>> T[] getChoiceGeneratorsOfType (Class<T> cgType) {
     if (curCg != null){
       return curCg.getAllOfType(cgType);
@@ -362,6 +370,17 @@ public class SystemState {
     return null;
   }
 
+  public <T> ChoiceGenerator<T> getLastChoiceGeneratorOfChoiceType (String id, Class<T> choiceType){
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getPreviousChoiceGenerator()){
+      if ((id == null || id.equals(cg.getId())) && choiceType.isAssignableFrom(cg.getChoiceType())) {
+        return (ChoiceGenerator<T>)cg;
+      }
+    }
+
+    return null;    
+  }
+
+  
   public <T extends ChoiceGenerator<?>> T getCurrentChoiceGeneratorOfType (Class<T> cgType) {
     for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
       if (cgType.isAssignableFrom(cg.getClass())){
@@ -380,6 +399,16 @@ public class SystemState {
     }
 
     return null;
+  }
+  
+  public <T> ChoiceGenerator<T> getCurrentChoiceGeneratorForChoiceType (String id, Class<T> choiceType){
+    for (ChoiceGenerator<?> cg = curCg; cg != null; cg = cg.getCascadedParent()){
+      if ((id == null || id.equals(cg.getId())) && choiceType.isAssignableFrom(cg.getChoiceType())){
+        return (ChoiceGenerator<T>)cg;
+      }
+    }
+
+    return null;    
   }
 
 
@@ -702,9 +731,8 @@ public class SystemState {
       curCg = nextCg;
       nextCg = null;
 
-      // Hmm, that's a bit late (could be in setNextCG), but we keep it here
-      // for the sake of locality, and it's more consistent if it just refers
-      // to curCg, i.e. the CG that is actually going to be used
+      // these are hooks that can be used to do context specific CG initialization
+      curCg.setCurrent();
       notifyChoiceGeneratorSet(vm, curCg);
     }
 
@@ -733,6 +761,43 @@ public class SystemState {
     execThread.executeTransition(this);    
   }
 
+  /**
+   * check if we can extend the current transition without state storing/matching
+   * This is useful for non-cascaded single choice CGs that do not cause
+   * rescheduling. Such CGs are never backtracked to anyways (they are processed
+   * on their first advance).
+   * 
+   * NOTE: this is on top of CG type specific optimizations that are controlled
+   * by cg.break_single_choice (unset by default). If the respective CG creator
+   * is single choice aware it might not create / register a CG in the first
+   * place and we never get here. This is only called if somebody did create
+   * and register a CG
+   * 
+   * note also that we don't eliminate BreakGenerators since their only purpose
+   * in life is to explicitly cause transition breaks. We don't want to override
+   * the override here.
+   */
+  protected boolean extendTransition (){
+    ChoiceGenerator<?> ncg = nextCg;
+    if (ncg != null){
+      if (CheckExtendTransition.isMarked(ncg) ||
+              ((extendTransitions != null) && extendTransitions.matches(ncg.getClass()))){
+        if (ncg.getTotalNumberOfChoices() == 1 && !ncg.isCascaded()){
+          if (ncg instanceof ThreadChoiceGenerator){
+            if ((ncg instanceof BreakGenerator) || !((ThreadChoiceGenerator) ncg).contains(execThread)){
+              return false;
+            }
+          }
+
+          initializeNextTransition(execThread.getVM());
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
   protected void setExecThread( VM vm){
     ThreadChoiceGenerator tcg = getCurrentSchedulingPoint();
     if (tcg != null){
@@ -756,11 +821,17 @@ public class SystemState {
     while (true) {
       if (cg.hasMoreChoices()){
         cg.advance();
-
         isIgnored = false;
         vm.notifyChoiceGeneratorAdvanced(cg);
+        
         if (!isIgnored){
-          nAdvancedCGs++;
+          // this seems redundant, but the CG or the listener might actually skip choices,
+          // in which case we can't execute the next transition.
+          // NOTE - this causes backtracking
+          // <2do> it's debatable if we should treat this as a processed CG
+          if (cg.getNextChoice() != null){
+            nAdvancedCGs++;
+          }
           break;
         }
         

@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2011 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.vm.serialize;
 
 import gov.nasa.jpf.Config;
@@ -158,6 +157,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
   
   
   // note that we don't add the reference value here
+  @Override
   public void processReference(int objref) {
     if (objref != MJIEnv.NULL) {
       ElementInfo ei = heap.get(objref);
@@ -217,6 +217,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
   }
 
   // non-ignored class
+  @Override
   protected void processArrayFields(ArrayFields fields) {
     buf.add(fields.arrayLength());
 
@@ -270,6 +271,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
   }
 
   // non-ignored class
+  @Override
   protected void processNamedFields(ClassInfo ci, Fields fields) {
     FinalBitSet filtered = getInstanceFilterMask(ci);
     int nFields = ci.getNumberOfInstanceFields();
@@ -288,6 +290,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
 
   // <2do> this should also allow abstraction of whole objects, so that
   // we can hash combinations/relations of field values
+  @Override
   public void process (ElementInfo ei) {
     Fields fields = ei.getFields();
     ClassInfo ci = ei.getClassInfo();
@@ -328,6 +331,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
     }
   }
 
+  @Override
   protected void serializeClass (StaticElementInfo sei) {
     ClassInfo ci = sei.getClassInfo();
     Fields fields = sei.getFields();
@@ -348,6 +352,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
     }
   }
 
+  @Override
   protected void serializeClassLoaders(){
     // we don't care about the number of classloaders
     
@@ -358,6 +363,7 @@ public class DynamicAbstractionSerializer extends FilteringSerializer {
     }
   }
 
+  @Override
   protected void serializeStatics(Statics statics){
     // we don't care about the number of statics entries
 

@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2011 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.util;
 
@@ -44,11 +43,13 @@ public class LinkedObjectQueue<E> implements ObjectQueue<E> {
   class FIFOIterator implements Iterator<E> {
     Entry e = first;
 
-    public boolean hasNext() {
+    @Override
+	public boolean hasNext() {
       return e != null;
     }
 
-    public E next() {
+    @Override
+	public E next() {
       if (e == null){
         throw new NoSuchElementException();
       } else {
@@ -58,7 +59,8 @@ public class LinkedObjectQueue<E> implements ObjectQueue<E> {
       }
     }
 
-    public void remove() {
+    @Override
+	public void remove() {
       throw new UnsupportedOperationException("arbitrary remove from queue not supported");
     }
   }
@@ -71,10 +73,12 @@ public class LinkedObjectQueue<E> implements ObjectQueue<E> {
     this.maxCache = maxCache;
   }
   
+  @Override
   public int size() {
     return size;
   }
   
+  @Override
   public boolean add(E obj) {
     Entry e;
 
@@ -102,14 +106,17 @@ public class LinkedObjectQueue<E> implements ObjectQueue<E> {
     return true;
   }
   
+  @Override
   public boolean offer( E obj){
     return add(obj);
   }
 
+  @Override
   public boolean isEmpty(){
     return size > 0;
   }
   
+  @Override
   public E peek (){
     if (size == 0){
       return null;
@@ -118,6 +125,7 @@ public class LinkedObjectQueue<E> implements ObjectQueue<E> {
     }
   }
   
+  @Override
   public E poll(){
     if (size == 0){
       return null;
@@ -140,6 +148,7 @@ public class LinkedObjectQueue<E> implements ObjectQueue<E> {
     }
   }
   
+  @Override
   public E remove() throws NoSuchElementException {
     if (size == 0){
       throw new NoSuchElementException();
@@ -148,10 +157,12 @@ public class LinkedObjectQueue<E> implements ObjectQueue<E> {
     }
   }
   
+  @Override
   public Iterator<E> iterator(){
     return new FIFOIterator();
   }
   
+  @Override
   public void process( Processor<E> proc) {
     for (Entry e = first; e != null; ) {
       proc.process( (E)e.obj);
@@ -172,6 +183,7 @@ public class LinkedObjectQueue<E> implements ObjectQueue<E> {
     clear();
   }
 
+  @Override
   public void clear () {
     first = null;
     last = null;

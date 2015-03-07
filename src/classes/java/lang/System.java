@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2007 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package java.lang;
 
 import java.io.InputStream;
@@ -68,32 +67,40 @@ public class System {
 
   static JavaLangAccess createJavaLangAccess () {
     return new JavaLangAccess(){
-      public ConstantPool getConstantPool(Class<?> cls) {
+      @Override
+	public ConstantPool getConstantPool(Class<?> cls) {
         throw new UnsupportedOperationException("JavaLangAccess.getConstantPool() not supported yet");
         //return cls.getConstantPool();
       }
-      public void setAnnotationType(Class<?> cls, AnnotationType type) {
+      @Override
+	public void setAnnotationType(Class<?> cls, AnnotationType type) {
         throw new UnsupportedOperationException("JavaLangAccess.setAnnotationType() not supported yet");
         //cls.setAnnotationType(type);
       }
-      public AnnotationType getAnnotationType(Class<?> cls) {
+      @Override
+	public AnnotationType getAnnotationType(Class<?> cls) {
         throw new UnsupportedOperationException("JavaLangAccess.getAnnotationType() not supported yet");
         //return cls.getAnnotationType();
       }
-      public <E extends Enum<E>> E[] getEnumConstantsShared(Class<E> cls) {
+      @Override
+	public <E extends Enum<E>> E[] getEnumConstantsShared(Class<E> cls) {
         return cls.getEnumConstantsShared();
       }
-      public void blockedOn(Thread t, Interruptible b) {
+      @Override
+	public void blockedOn(Thread t, Interruptible b) {
         throw new UnsupportedOperationException("JavaLangAccess.blockedOn() not supported yet");
         //t.blockedOn(b);
       }
-      public void registerShutdownHook(int slot, Runnable r) {
+      @Override
+	public void registerShutdownHook(int slot, Runnable r) {
         throw new UnsupportedOperationException("JavaLangAccess.registerShutdownHook() not supported yet");
       }
-      public int getStackTraceDepth(Throwable t) {
+      @Override
+	public int getStackTraceDepth(Throwable t) {
         return t.getStackTraceDepth();
       }
-      public StackTraceElement getStackTraceElement(Throwable t, int i) {
+      @Override
+	public StackTraceElement getStackTraceElement(Throwable t, int i) {
         StackTraceElement[] st = t.getStackTrace();
         return st[i];
       }

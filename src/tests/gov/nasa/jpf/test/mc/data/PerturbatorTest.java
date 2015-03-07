@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2009 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.test.mc.data;
 
@@ -25,7 +24,7 @@ import gov.nasa.jpf.vm.Verify;
 import org.junit.Test;
 
 /**
- *
+ * regression test for Perturbator listener
  */
 public class PerturbatorTest extends TestJPF {
 
@@ -77,7 +76,7 @@ public class PerturbatorTest extends TestJPF {
                                   "+perturb.fields=data",
                                   "+perturb.data.class=.perturb.IntOverUnder",
                                   "+perturb.data.field=gov.nasa.jpf.test.mc.data.PerturbatorTest.data",
-                                  "+perturb.data.location=PerturbatorTest.java:88",
+                                  "+perturb.data.location=PerturbatorTest.java:87",
                                   "+perturb.data.delta=1")){
       System.out.println("instance field location perturbation test");
 
@@ -120,7 +119,7 @@ public class PerturbatorTest extends TestJPF {
 
                                   "+perturb.foo.class=.perturb.IntOverUnder",
                                   "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foo(int)",
-                                  "+perturb.foo.location=PerturbatorTest.java:137",
+                                  "+perturb.foo.location=PerturbatorTest.java:136",
                                   "+perturb.foo.delta=1",
 
                                   "+perturb.bar.class=.perturb.IntOverUnder",
@@ -204,7 +203,7 @@ public class PerturbatorTest extends TestJPF {
                                   "+perturb.params=foo,zoo",
                                   "+perturb.foo.class=.perturb.GenericDataAbstractor",
                                   "+perturb.foo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.foobar(long,double)",
-                                  "+perturb.foo.location=PerturbatorTest.java:234",        // <<<<<<<<< update if file is changed!
+                                  "+perturb.foo.location=PerturbatorTest.java:233",        // <<<<<<<<< update if file is changed!
                                   "+perturb.zoo.class=.perturb.GenericDataAbstractor",
                                   "+perturb.zoo.method=gov.nasa.jpf.test.mc.data.PerturbatorTest.zoo(int,boolean)"
     )) {
@@ -231,7 +230,7 @@ public class PerturbatorTest extends TestJPF {
       	System.out.print("foobar = ");
       	System.out.println(d);
 
-      	d = foobar(42, 0.0); // yes perturbation
+      	d = foobar(42, 0.0); // <<<< yes perturbation, line 233
       	System.out.print("foobar = ");
       	System.out.println(d);
 

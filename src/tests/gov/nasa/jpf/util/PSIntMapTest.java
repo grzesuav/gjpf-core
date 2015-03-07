@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2013 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.util;
 
@@ -56,7 +55,8 @@ public class PSIntMapTest extends TestJPF {
   static class IntegerProcessor implements Processor<Integer>{
     int count=0;
     
-    public void process( Integer i){
+    @Override
+	public void process( Integer i){
       if (count++ > 0){
         System.out.print(',');
       }
@@ -223,7 +223,8 @@ public class PSIntMapTest extends TestJPF {
     dump("before removal:", m, "\n");
     
     Predicate<Integer> pred = new Predicate<Integer>(){
-      public boolean isTrue(Integer i){
+      @Override
+	public boolean isTrue(Integer i){
         return ((i & 1) != 0);
       }
     };
@@ -244,7 +245,8 @@ public class PSIntMapTest extends TestJPF {
 
     // completely remove first value node
     Predicate<Integer> pred = new Predicate<Integer>(){
-      public boolean isTrue (Integer n){
+      @Override
+	public boolean isTrue (Integer n){
         return (n <= 31);
       }
     };
@@ -259,7 +261,8 @@ public class PSIntMapTest extends TestJPF {
     
     // remove all but one value from the second node
     pred = new Predicate<Integer>(){
-      public boolean isTrue (Integer n){
+      @Override
+	public boolean isTrue (Integer n){
         return (n >32 && n <= 63);
       }
     };
@@ -274,13 +277,15 @@ public class PSIntMapTest extends TestJPF {
     
     // remove all but one from bitmap node
     pred = new Predicate<Integer>(){
-      public boolean isTrue (Integer n){
+      @Override
+	public boolean isTrue (Integer n){
         return (n == 64);
       }
     };
     m = m.removeAllSatisfying(pred);
     pred = new Predicate<Integer>(){
-      public boolean isTrue (Integer n){
+      @Override
+	public boolean isTrue (Integer n){
         return (n >= 64 && n < 95);
       }
     };
@@ -297,7 +302,8 @@ public class PSIntMapTest extends TestJPF {
     final BitSet removed = new BitSet();
     
     Predicate<Integer> pred = new Predicate<Integer>(){
-      public boolean isTrue (Integer n){
+      @Override
+	public boolean isTrue (Integer n){
         return removed.get(n.intValue());
       }
     };
@@ -346,7 +352,8 @@ public class PSIntMapTest extends TestJPF {
 
     //--- PersistentIntMap
     Predicate<Integer> pred = new Predicate<Integer>() {
-      public boolean isTrue (Integer o) {
+      @Override
+	public boolean isTrue (Integer o) {
         int i = o.intValue();
         return (i < NGC);
       }

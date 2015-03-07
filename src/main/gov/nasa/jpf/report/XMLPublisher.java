@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
+
 package gov.nasa.jpf.report;
 
 import gov.nasa.jpf.Config;
@@ -26,10 +44,12 @@ public class XMLPublisher extends Publisher {
     super(conf, reporter);
   }
 
+  @Override
   public String getName() {
     return "xml";
   }
   
+  @Override
   protected void openChannel(){
     if (out == null) {
       String fname = getReportFileName("report.xml.file") + ".xml";
@@ -41,6 +61,7 @@ public class XMLPublisher extends Publisher {
     }
   }
 
+  @Override
   protected void closeChannel() {
     if (out != null){
       out.close();
@@ -49,27 +70,33 @@ public class XMLPublisher extends Publisher {
   }
   
   
+  @Override
   protected void publishProlog() {
     out.println("<?xml version=\"1.0\" ?>");
     out.println("<jpfreport>");
   }
   
+  @Override
   public void publishTopicStart(String topic) {
     out.println("  <" + topic + ">");
   }
   
+  @Override
   public void publishTopicEnd(String topic) {
     out.println("  </" + topic + ">");
   }  
   
+  @Override
   protected void publishEpilog() {
     out.println("</jpfreport>");
   }
   
+  @Override
   protected void publishJPF() {
     out.println("  <jpf-version>" + JPF.VERSION + "</jpf-version>");
   }
 
+  @Override
   protected void publishJPFConfig() {
     TreeMap<Object,Object> map = conf.asOrderedMap();
     Set<Map.Entry<Object,Object>> eSet = map.entrySet();
@@ -87,6 +114,7 @@ public class XMLPublisher extends Publisher {
     
   }
 
+  @Override
   protected void publishPlatform() {
     out.println("  <platform>");
     out.println("    <hostname>" + reporter.getHostName() + "</hostname>");
@@ -96,14 +124,17 @@ public class XMLPublisher extends Publisher {
     out.println("  </platform>");
   }
 
+  @Override
   protected void publishUser() {
     out.println("  <user>" + reporter.getUser() + "</user>");
   }
 
+  @Override
   protected void publishDTG() {
     out.println("  <started>" + reporter.getStartDate() + "</started>");
   }
   
+  @Override
   protected void publishSuT() {
     out.println("  <sut>");
     String mainCls = reporter.getSuT();
@@ -126,6 +157,7 @@ public class XMLPublisher extends Publisher {
     out.println("  </sut>");
   }
 
+  @Override
   protected void publishResult() {
     List<Error> errors = reporter.getErrors();
     
@@ -152,6 +184,7 @@ public class XMLPublisher extends Publisher {
   }
 
   // not sure how much effort we want to put into readability here
+  @Override
   protected void publishTrace() {
     Path path = reporter.getPath();
     int i=0;
@@ -181,6 +214,7 @@ public class XMLPublisher extends Publisher {
     out.println("  </trace>");
   }
 
+  @Override
   protected void publishOutput() {
     Path path = reporter.getPath();
 
@@ -200,6 +234,7 @@ public class XMLPublisher extends Publisher {
     }
   }
   
+  @Override
   protected void publishSnapshot() {
     VM vm = reporter.getVM();
     
@@ -227,6 +262,7 @@ public class XMLPublisher extends Publisher {
     out.println("  </live-threads>");
   }
 
+  @Override
   protected void publishStatistics() {
     Statistics stat = reporter.getStatistics();
     out.println("  <statistics>");

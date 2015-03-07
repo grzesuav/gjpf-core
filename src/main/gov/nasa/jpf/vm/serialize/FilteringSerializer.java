@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.vm.serialize;
 
 
@@ -38,6 +37,7 @@ import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.NativeStateHolder;
 import gov.nasa.jpf.vm.ReferenceProcessor;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.StaticElementInfo;
@@ -189,6 +189,7 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
   //--- those are the methods that can be overridden by subclasses to implement abstractions
 
   // needs to be public because of ReferenceProcessor interface
+  @Override
   public void processReference(int objref) {
     if (objref != MJIEnv.NULL) {
       ElementInfo ei = heap.get(objref);
@@ -242,6 +243,7 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
   // <2do> we don't strictly need the lockCount since this has to show in the
   // stack frames. However, we should probably add monitor serialization to
   // better support specialized subclasses
+  @Override
   public void process (ElementInfo ei) {
     Fields fields = ei.getFields();
     ClassInfo ci = ei.getClassInfo();
@@ -432,6 +434,16 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
     }
   }
   
+  protected void serializeNativeStateHolders(){
+    for (NativeStateHolder nsh : nativeStateHolders){
+      serializeNativeStateHolder(nsh);
+    }
+  }
+  
+  protected void serializeNativeStateHolder (NativeStateHolder nsh){
+    buf.add(nsh.getHash());
+  }
+  
   //--- our main purpose in life
 
   @Override
@@ -452,6 +464,9 @@ public class FilteringSerializer extends AbstractSerializer implements Reference
     // values (if they are encountered before their first explicit heap reference)
     serializeThreadStates();
 
+    //--- last is serialization of native state holders
+    serializeNativeStateHolders();
+    
     return buf.toArray();
   }
 

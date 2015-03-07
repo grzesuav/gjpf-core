@@ -1,35 +1,31 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.jvm.bytecode;
 
 import gov.nasa.jpf.util.InstructionState;
-import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.FieldInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.Scheduler;
-import gov.nasa.jpf.vm.SharednessPolicy;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.bytecode.WriteInstruction;
-import gov.nasa.jpf.vm.choice.ExposureCG;
 
 /**
  * Set field in object
@@ -50,6 +46,7 @@ public class PUTFIELD extends JVMInstanceFieldInstruction implements WriteInstru
    * where do we get the value from?
    * NOTE: only makes sense in a executeInstruction() context 
    */
+  @Override
   public int getValueSlot (StackFrame frame){
     return frame.getTopPos();
   }
@@ -59,6 +56,7 @@ public class PUTFIELD extends JVMInstanceFieldInstruction implements WriteInstru
    * where do we write to?
    * NOTE: this should only be used from a executeInstruction()/instructionExecuted() context
    */
+  @Override
   public ElementInfo getElementInfo(ThreadInfo ti){
     if (isCompleted(ti)){
       return ti.getElementInfo(lastThis);
@@ -121,6 +119,7 @@ public class PUTFIELD extends JVMInstanceFieldInstruction implements WriteInstru
     }
   }
     
+  @Override
   public ElementInfo peekElementInfo (ThreadInfo ti) {
     FieldInfo fi = getFieldInfo();
     int storageSize = fi.getStorageSize();
@@ -131,18 +130,22 @@ public class PUTFIELD extends JVMInstanceFieldInstruction implements WriteInstru
   }
 
 
+  @Override
   public int getLength() {
     return 3; // opcode, index1, index2
   }
 
+  @Override
   public int getByteCode () {
     return 0xB5;
   }
 
+  @Override
   public boolean isRead() {
     return false;
   }
 
+  @Override
   public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

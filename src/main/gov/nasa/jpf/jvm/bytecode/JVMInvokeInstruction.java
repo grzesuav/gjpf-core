@@ -1,33 +1,26 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.vm.ChoiceGenerator;
 import gov.nasa.jpf.vm.ClassInfo;
-import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.LocalVarInfo;
-import gov.nasa.jpf.vm.MJIEnv;
 import gov.nasa.jpf.vm.MethodInfo;
-import gov.nasa.jpf.vm.Scheduler;
 import gov.nasa.jpf.vm.StackFrame;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.Types;
@@ -38,7 +31,7 @@ import gov.nasa.jpf.vm.bytecode.InvokeInstruction;
  * abstraction for all invoke instructions
  */
 public abstract class JVMInvokeInstruction extends InvokeInstruction implements JVMInstruction {
-  /* Those are all from the BCEL class, i.e. straight from the class file.
+  /* Those are all straight from the class file.
    * Note that we can't directly resolve to MethodInfo objects because
    * the corresponding class might not be loaded yet (has to be done
    * on execution)
@@ -68,6 +61,7 @@ public abstract class JVMInvokeInstruction extends InvokeInstruction implements 
 
   protected JVMInvokeInstruction () {}
 
+  @Override
   public int getLength() {
     return 3; // opcode, index1, index2
   }
@@ -91,20 +85,24 @@ public abstract class JVMInvokeInstruction extends InvokeInstruction implements 
    * denotes the target type info we have at the static point of the call, i.e.
    * before dynamic dispatching
    */
+  @Override
   public String getInvokedMethodClassName() {
     return cname;
   }
 
+  @Override
   public String getInvokedMethodSignature() {
     return signature;
   }
 
+  @Override
   public String getInvokedMethodName () {
     return mname;
   }
 
   public abstract MethodInfo getInvokedMethod (ThreadInfo ti);
 
+  @Override
   public MethodInfo getInvokedMethod () {
     if (invokedMethod == null){
       invokedMethod = getInvokedMethod(ThreadInfo.getCurrentThread());
@@ -113,6 +111,7 @@ public abstract class JVMInvokeInstruction extends InvokeInstruction implements 
     return invokedMethod;
   }
 
+  @Override
   public boolean isCompleted(ThreadInfo ti) {
     Instruction nextPc = ti.getNextPC();
 
@@ -257,6 +256,7 @@ public abstract class JVMInvokeInstruction extends InvokeInstruction implements 
     return null;
   }
     
+  @Override
   public void accept(JVMInstructionVisitor insVisitor) {
 	  insVisitor.visit(this);
   }

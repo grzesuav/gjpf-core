@@ -1,25 +1,25 @@
-//
-// Copyright  (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-//  (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-//  (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.util.script;
 
 
+import gov.nasa.jpf.util.StringExpander;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,10 +52,12 @@ public class Event extends ScriptElement {
     return id;
   }
 
+  @Override
   public int getLine() {
     return line;
   }
 
+  @Override
   public String toString() {
     if (arguments == null) {
       return id;
@@ -83,6 +85,7 @@ public class Event extends ScriptElement {
     arguments = args;
   }
 
+  @Override
   public void process (ElementProcessor p) {
     p.process(this);
   }
@@ -101,7 +104,6 @@ public class Event extends ScriptElement {
    * this is an interesting little exercise since we have to cover all
    * combinations of parameter values, which would normally be a simple set
    * of nested loops, only that the number of parameters is a variable itself
-   * (I'm notoriously bad at this)
    */
   public List<Event> expand () {
     StringExpander ex = new StringExpander(id);
@@ -188,7 +190,7 @@ public class Event extends ScriptElement {
     if (c == '"' || c == '\'') { // String literal
       return s.substring(1,s.length()-1);
 
-    } else if (Character.isDigit(c)) { // ints and doubbles
+    } else if (Character.isDigit(c) || c == '-' || c == '+') { // ints and doubles
       if (s.indexOf('.') >=0) {
         return Double.parseDouble(s);
       } else {

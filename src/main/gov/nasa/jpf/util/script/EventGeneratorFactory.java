@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
+
 package gov.nasa.jpf.util.script;
 
 import gov.nasa.jpf.Config;
@@ -64,33 +82,41 @@ public abstract class EventGeneratorFactory extends ListenerAdapter
     }
 
     //--- those are all dummies - this isn't really a choice
-    public void advance() {}
+    @Override
+	public void advance() {}
 
-    public Class getChoiceType() {
+    @Override
+	public Class getChoiceType() {
       return null;
     }
 
-    public Object getNextChoice() {
+    @Override
+	public Object getNextChoice() {
       return null;
     }
 
-    public int getProcessedNumberOfChoices() {
+    @Override
+	public int getProcessedNumberOfChoices() {
       return 0;
     }
 
-    public int getTotalNumberOfChoices() {
+    @Override
+	public int getTotalNumberOfChoices() {
       return 0;
     }
 
-    public boolean hasMoreChoices() {
+    @Override
+	public boolean hasMoreChoices() {
       return false;
     }
 
-    public ChoiceGenerator randomize() {
+    @Override
+	public ChoiceGenerator randomize() {
       return null;
     }
 
-    public void reset() {}
+    @Override
+	public void reset() {}
 
   }
 
@@ -132,6 +158,7 @@ public abstract class EventGeneratorFactory extends ListenerAdapter
     script.process(this);
   }
 
+  @Override
   public Iterator<EventGenerator> iterator() {
     return queue.iterator();
   }

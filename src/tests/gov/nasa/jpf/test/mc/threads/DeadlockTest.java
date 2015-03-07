@@ -1,21 +1,20 @@
-//
-// Administrator of the National Aeronautics and Space Administration
-// Copyright (C) 2006 United States Government as represented by the
-// (NASA).  All Rights Reserved.
-// 
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-// 
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.test.mc.threads;
 
 import gov.nasa.jpf.util.test.TestJPF;
@@ -40,7 +39,8 @@ public class DeadlockTest extends TestJPF {
 
     public abstract void doSomethingElse();
 
-    public abstract void run();
+    @Override
+	public abstract void run();
   }
 
   /**
@@ -77,7 +77,8 @@ public class DeadlockTest extends TestJPF {
       event2 = e2;
     }
 
-    public void run() {
+    @Override
+	public void run() {
       count = event1.count;
 
       while (true) {
@@ -105,7 +106,8 @@ public class DeadlockTest extends TestJPF {
       event2 = e2;
     }
 
-    public void run() {
+    @Override
+	public void run() {
       count = event2.count;
 
       while (true) {
@@ -122,18 +124,21 @@ public class DeadlockTest extends TestJPF {
 
   class SyncBlockRunnable extends SyncRunnable {
 
-    public void doSomething() {
+    @Override
+	public void doSomething() {
       synchronized (this) {
         other.doSomethingElse();
       }
     }
 
-    public void doSomethingElse() {
+    @Override
+	public void doSomethingElse() {
       synchronized (this) {
       }
     }
 
-    public void run() {
+    @Override
+	public void run() {
       //while (true) {
         synchronized (this) {
           other.doSomething();
@@ -144,14 +149,17 @@ public class DeadlockTest extends TestJPF {
 
   class SyncMthRunnable extends SyncRunnable {
 
-    public synchronized void doSomething() {
+    @Override
+	public synchronized void doSomething() {
       other.doSomethingElse();
     }
 
-    public synchronized void doSomethingElse() {
+    @Override
+	public synchronized void doSomethingElse() {
     }
 
-    public synchronized void run() {
+    @Override
+	public synchronized void run() {
       //while (true) {
         other.doSomething();
       //}
@@ -169,7 +177,8 @@ public class DeadlockTest extends TestJPF {
     if (verifyDeadlock()) {
       Thread t1 = new Thread(new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           synchronized (lock1) {
             synchronized (lock2) {
               counter++;
@@ -181,7 +190,8 @@ public class DeadlockTest extends TestJPF {
 
       Thread t2 = new Thread(new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           synchronized (lock2) {
             synchronized (lock1) {
               counter--;
@@ -206,7 +216,8 @@ public class DeadlockTest extends TestJPF {
     if (verifyDeadlock()) {
       Thread t1 = new Thread(new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           for (int i = 0; i < 3; i++) {
             synchronized (lock) {
               synchronized (sig) {
@@ -223,7 +234,8 @@ public class DeadlockTest extends TestJPF {
 
       Thread t2 = new Thread(new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           for (int i = 0; i < 2; i++) {
             synchronized (sig) {
               synchronized (lock) {
@@ -246,7 +258,8 @@ public class DeadlockTest extends TestJPF {
 
       Thread t1 = new Thread(new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           synchronized (sig) {
             try {
               sig.wait();
@@ -259,7 +272,8 @@ public class DeadlockTest extends TestJPF {
 
       Thread t2 = new Thread(new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           synchronized (sig) {
             sig.notify();
           }
@@ -361,7 +375,8 @@ public class DeadlockTest extends TestJPF {
   public void testTerminationDeadlock() {
     if (verifyDeadlock()){
       Thread t = new Thread(){
-        public void run(){
+        @Override
+		public void run(){
           System.out.println("# t running");
           synchronized(this){
             System.out.println("# t waiting (forever)..");

@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2011 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.test.java.lang;
 
 import java.lang.reflect.InvocationTargetException;
@@ -104,14 +103,14 @@ public class BoxObjectCacheTest extends TestJPF {
   @Test
   public void testLongCache(){
    if (verifyNoPropertyViolation(JPF_ARGS)){
-     Long l1 = Long.valueOf((long)1);        // should be cached
+     Long l1 = Long.valueOf(1);        // should be cached
      assertTrue( l1.longValue() == 1);
      
      Long l2 = Long.parseLong("1");
      assertTrue( l1 == l2);
       
-     l1 = Long.valueOf((long)110); // should be too large for cache
-     assertTrue( l1.longValue() == (long)110);
+     l1 = Long.valueOf(110); // should be too large for cache
+     assertTrue( l1.longValue() == 110);
       
      l2 = Long.parseLong("110");
      assertTrue(l1 != l2);
@@ -184,10 +183,10 @@ public class BoxObjectCacheTest extends TestJPF {
   @Test
   public void testLongCacheBoxObject() throws SecurityException, NoSuchMethodException, IllegalAccessException, InvocationTargetException{
     if (verifyNoPropertyViolation(JPF_ARGS)){
-      Long l1 = Long.valueOf((long)1);        // should be cached
+      Long l1 = Long.valueOf(1);        // should be cached
       assertTrue( l1.longValue() == 1);
       
-      Long l2 = new Long((long)1);
+      Long l2 = new Long(1);
       Method m = Long.class.getMethod("longValue", new Class[0]);
       Long l3 = (Long) m.invoke(l2, new Object[0]);
       assertTrue( l1 == l3);

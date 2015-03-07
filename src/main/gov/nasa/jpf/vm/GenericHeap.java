@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2012 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.vm;
 
@@ -70,7 +69,8 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   
   
   protected class ElementInfoMarker implements Processor<ElementInfo>{
-    public void process (ElementInfo ei) {
+    @Override
+	public void process (ElementInfo ei) {
       ei.markRecursive( GenericHeap.this); // this might in turn call queueMark
     }
   }
@@ -194,6 +194,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   
   //--- weak reference handling
   
+  @Override
   public void registerWeakReference (ElementInfo ei) {
     if (weakRefs == null) {
       weakRefs = new ArrayList<ElementInfo>();
@@ -436,6 +437,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   }
   
   
+  @Override
   public ElementInfo newSystemThrowable (ClassInfo ciThrowable, String details, int[] stackSnapshot, int causeRef,
                                  ThreadInfo ti, int anchor) {
     SystemClassLoaderInfo sysCl = ti.getSystemClassLoaderInfo(); 
@@ -508,6 +510,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   /**
    * return Iterator for all non-null ElementInfo entries
    */
+  @Override
   public abstract Iterator<ElementInfo> iterator();
   
   @Override
@@ -531,6 +534,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
     }
   }
   
+  @Override
   public void unmarkAll(){
     for (ElementInfo ei : liveObjects()){
       ei.setUnmarked();
@@ -543,6 +547,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
    * called from ElementInfo.markRecursive(). We don't want to expose the
    * markQueue since a copying collector might not have it
    */
+  @Override
   public void queueMark (int objref){
     if (objref == MJIEnv.NULL) {
       return;
@@ -560,6 +565,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
    * from static fields
    * @aspects: gc
    */
+  @Override
   public void markStaticRoot (int objref) {
     if (objref != MJIEnv.NULL) {
       queueMark(objref);
@@ -571,6 +577,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
    * from Thread roots
    * @aspects: gc
    */
+  @Override
   public void markThreadRoot (int objref, int tid) {
     if (objref != MJIEnv.NULL) {
       queueMark(objref);
@@ -663,6 +670,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
    * 
    * <2do> full heap enumeration is BAD - check if this can be moved into the sweep loop
    */
+  @Override
   public void cleanUpDanglingReferences() {
     ThreadInfo ti = ThreadInfo.getCurrentThread();
     int tid = ti.getId();
@@ -681,6 +689,7 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
    * implementation uses bit-toggle to avoid iteration over all live
    * objects at the end of GC
    */
+  @Override
   public boolean isAlive (ElementInfo ei){
     return (ei == null || ei.isMarkedOrAlive(liveBitValue));
   }
@@ -696,10 +705,12 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   @Override
   public abstract void restoreVolatiles();
   
+  @Override
   public boolean hasChanged() {
     return (attributes & ATTR_ANY_CHANGED) != 0;
   }
   
+  @Override
   public void markChanged(int objref) {
     attributes |= ATTR_ELEMENTS_CHANGED;
   }
@@ -717,10 +728,12 @@ public abstract class GenericHeap implements Heap, Iterable<ElementInfo> {
   
   //--- out of memory simulation
   
+  @Override
   public boolean isOutOfMemory() {
     return (attributes & ATTR_OUT_OF_MEMORY) != 0;
   }
 
+  @Override
   public void setOutOfMemory(boolean isOutOfMemory) {
     if (isOutOfMemory != isOutOfMemory()) {
       if (isOutOfMemory) {

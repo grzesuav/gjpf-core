@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2010 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.JPFException;
@@ -86,7 +85,8 @@ public abstract class ObjectList {
       this.next = next;
     }
     
-    public boolean equals(Object o){
+    @Override
+	public boolean equals(Object o){
       if (o instanceof Node){        
         Node n = this;
         Node no = (Node)o;
@@ -101,7 +101,8 @@ public abstract class ObjectList {
       }
     }
     
-    protected Node clone(){
+    @Override
+	protected Node clone(){
       try {
         return (Node)super.clone();
       } catch (CloneNotSupportedException cnsx){
@@ -145,11 +146,13 @@ public abstract class ObjectList {
       cur = head;
     }
     
-    public boolean hasNext() {
+    @Override
+	public boolean hasNext() {
       return cur != null;      
     }
 
-    public Object next() {
+    @Override
+	public Object next() {
       if (cur != null){
         if (cur instanceof Node){
           Node n = (Node)cur;
@@ -166,12 +169,14 @@ public abstract class ObjectList {
       }
     }
 
-    public void remove() {
+    @Override
+	public void remove() {
       // we can't remove since that would have to change the head field in the client
       throw new UnsupportedOperationException();
     }
     
-    public java.util.Iterator<Object> iterator(){
+    @Override
+	public java.util.Iterator<Object> iterator(){
       return this;
     }
   }
@@ -208,11 +213,13 @@ public abstract class ObjectList {
       }
     }
     
-    public boolean hasNext() {
+    @Override
+	public boolean hasNext() {
       return cur != null;      
     }
 
-    public A next() {
+    @Override
+	public A next() {
       
       if (cur != null){
         if (cur instanceof Node){
@@ -240,12 +247,14 @@ public abstract class ObjectList {
       }
     }
 
-    public void remove() {
+    @Override
+	public void remove() {
       // we can't remove since that would have to change the head field in the client
       throw new UnsupportedOperationException();
     }
     
-    public java.util.Iterator<A> iterator(){
+    @Override
+	public java.util.Iterator<A> iterator(){
       return this;
     }
   }

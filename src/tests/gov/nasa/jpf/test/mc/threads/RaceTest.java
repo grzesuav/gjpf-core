@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 /**
  * this is a raw test class for detection of thread-shared fields, i.e.
  * it executes the garbage collection based reachability analysis
@@ -47,7 +46,8 @@ public class RaceTest extends TestJPF {
 
       Runnable r1 = new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           staticField = 1;
           if (staticField != 1) {
             throw new RuntimeException("r1 detected race!");
@@ -57,7 +57,8 @@ public class RaceTest extends TestJPF {
 
       Runnable r2 = new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           staticField = 0;
           if (staticField != 0) {
             throw new RuntimeException("r2 detected race!");
@@ -78,14 +79,16 @@ public class RaceTest extends TestJPF {
     if (verifyPropertyViolation(PROPERTY, LISTENER)) {
       Runnable r1 = new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           staticField = 1;
         }
       };
 
       Runnable r2 = new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           staticField = 0;
         }
       };
@@ -106,7 +109,8 @@ public class RaceTest extends TestJPF {
   }
   
   static class StaticRacer extends Thread {
-    public void run(){
+    @Override
+	public void run(){
       Container.data++;
     }
   }
@@ -144,7 +148,8 @@ public class RaceTest extends TestJPF {
 
         SharedObject d = o;
 
-        public void run() {
+        @Override
+		public void run() {
           d.instanceField = 1;
           if (d.instanceField != 1) {
             throw new RuntimeException("r1 detected race!");
@@ -156,7 +161,8 @@ public class RaceTest extends TestJPF {
 
         SharedObject d = o;
 
-        public void run() {
+        @Override
+		public void run() {
           d.instanceField = 0;
           if (d.instanceField != 0) {
             throw new RuntimeException("r2 detected race!");
@@ -181,7 +187,8 @@ public class RaceTest extends TestJPF {
 
         SharedObject d = o;
 
-        public void run() {
+        @Override
+		public void run() {
           d.instanceField = 1;
         }
       };
@@ -190,7 +197,8 @@ public class RaceTest extends TestJPF {
 
         SharedObject d = o;
 
-        public void run() {
+        @Override
+		public void run() {
           d.instanceField = 0;
         }
       };
@@ -232,14 +240,16 @@ public class RaceTest extends TestJPF {
 
       Runnable r1 = new Runnable(){
         int[] a = shared;
-        public void run() {
+        @Override
+		public void run() {
           a[0] = 0;
         }
       };
 
       Runnable r2 = new Runnable(){
         int[] a = shared;
-        public void run() {
+        @Override
+		public void run() {
           a[0] = 1;
         }
       };
@@ -265,7 +275,8 @@ public class RaceTest extends TestJPF {
       this.idx = idx;
     }
     
-    public void run (){
+    @Override
+	public void run (){
       //assertTrue( a[idx] == 0);
       a[idx] = 1;
     }
@@ -302,14 +313,16 @@ public class RaceTest extends TestJPF {
 
       Runnable r1 = new Runnable(){
         int[] a = shared;
-        public void run() {
+        @Override
+		public void run() {
           a[0] = 0;
         }
       };
 
       Runnable r2 = new Runnable(){
         int[] a = shared;
-        public void run() {
+        @Override
+		public void run() {
           a[1] = 1;
         }
       };
@@ -328,7 +341,8 @@ public class RaceTest extends TestJPF {
   static class SameInsnRunnable implements Runnable {
     SharedObject o = new SharedObject();
 
-    public void run () {
+    @Override
+	public void run () {
       o.instanceField = 42;  // same insn, different 'o', no race
     }
   }
@@ -353,7 +367,8 @@ public class RaceTest extends TestJPF {
 
       Runnable r = new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           o.instanceField = 42;
         }
       };
@@ -381,7 +396,8 @@ public class RaceTest extends TestJPF {
       final AnotherSharedObject o = new AnotherSharedObject();
       Runnable r = new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           o.x++;
           if (o.x == 0) {
             throw new RuntimeException("testNoSync race");
@@ -403,7 +419,8 @@ public class RaceTest extends TestJPF {
       final AnotherSharedObject o = new AnotherSharedObject();
       Runnable r = new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           synchronized (o.lock1) {
             o.x++;
             if (o.x == 0) {
@@ -427,7 +444,8 @@ public class RaceTest extends TestJPF {
       final AnotherSharedObject o = new AnotherSharedObject();
       Runnable r = new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           // not synchronized
           o.x++;
           if (o.x == 0) {
@@ -450,7 +468,8 @@ public class RaceTest extends TestJPF {
       final AnotherSharedObject o = new AnotherSharedObject();
       Runnable r = new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           synchronized (o.lock1) {
             o.x++;
             if (o.x == 0) {
@@ -476,7 +495,8 @@ public class RaceTest extends TestJPF {
 
       Runnable r = new Runnable() {
 
-        public void run() {
+        @Override
+		public void run() {
           synchronized (o.lock1) {
             o.x++;
             if (o.x == 0) {

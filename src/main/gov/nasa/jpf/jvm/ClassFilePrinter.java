@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2010 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.jvm;
 
@@ -44,6 +43,7 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     }
   }
 
+  @Override
   public void setClass(ClassFile cf, String clsName, String superClsName, int flags, int cpCount) {
     printSectionHeader( "constpool");
     printCp(pw,cf);
@@ -56,34 +56,41 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
   }
 
   //--- interfaces
+  @Override
   public void setInterfaceCount(ClassFile cf, int ifcCount) {
     pw.printf("%sinterface count=%d\n", indent, ifcCount);
     incIndent();
   }
 
+  @Override
   public void setInterface(ClassFile cf, int ifcIndex, String ifcName) {
     pw.printf("%s[%d]: %s\n", indent, ifcIndex, ifcName);
   }
 
+  @Override
   public void setInterfacesDone(ClassFile cf){
     decIndent();
   }
 
   //--- fields
+  @Override
   public void setFieldCount(ClassFile cf, int fieldCount) {
     printSectionHeader( "fields");
     pw.printf( "%sfield count=%d\n", indent, fieldCount);
   }
 
+  @Override
   public void setField(ClassFile cf, int fieldIndex, int accessFlags, String name, String descriptor) {
     pw.printf("%s[%d]: %s, type=%s,flags=0x%X", indent, fieldIndex, name, descriptor, accessFlags);
   }
 
+  @Override
   public void setFieldAttributeCount(ClassFile cf, int fieldIndex, int attrCount) {
     pw.printf(", attr count=%d\n", attrCount);
     incIndent();
   }
 
+  @Override
   public void setFieldAttribute(ClassFile cf, int fieldIndex, int attrIndex, String name, int attrLength) {
     pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
@@ -109,36 +116,44 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     }
   }
 
+  @Override
   public void setFieldAttributesDone(ClassFile cf, int fieldIndex){
     decIndent();
   }
 
+  @Override
   public void setFieldDone(ClassFile cf, int fieldIndex){
     pw.println();
   }
 
+  @Override
   public void setFieldsDone(ClassFile cf){
   }
 
+  @Override
   public void setConstantValue(ClassFile cf, Object tag, Object value) {
     pw.printf(" value=%s\n", value);
   }
 
   //--- methods
+  @Override
   public void setMethodCount(ClassFile cf, int methodCount) {
     printSectionHeader( "methods");
     pw.printf( "%smethod count=%d\n", indent, methodCount);
   }
 
+  @Override
   public void setMethod(ClassFile cf, int methodIndex, int accessFlags, String name, String descriptor) {
     pw.printf("%s[%d]: %s%s, flags=0x%X", indent, methodIndex, name, descriptor, accessFlags);
   }
 
+  @Override
   public void setMethodAttributeCount(ClassFile cf, int methodIndex, int attrCount) {
     pw.printf(", attr count=%d\n", attrCount);
     incIndent();
   }
 
+  @Override
   public void setMethodAttribute(ClassFile cf, int methodIndex, int attrIndex, String name, int attrLength) {
     pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
@@ -173,29 +188,36 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     }
   }
 
+  @Override
   public void setMethodAttributesDone(ClassFile cf, int methodIndex){
     decIndent();
   }
 
+  @Override
   public void setMethodDone(ClassFile cf, int methodIndex){
     pw.println();
   }
 
+  @Override
   public void setMethodsDone(ClassFile cf){
   }
 
+  @Override
   public void setExceptionCount(ClassFile cf, Object tag, int exceptionCount){
     pw.printf(", count=%d\n", exceptionCount);
     incIndent();
   }
+  @Override
   public void setException(ClassFile cf, Object tag, int exceptionIndex, String exceptionType){
     pw.printf("%s[%d]: %s\n", indent, exceptionIndex, exceptionType);
   }
+  @Override
   public void setExceptionsDone(ClassFile cf, Object tag){
     decIndent();
   }
 
 
+  @Override
   public void setCode(ClassFile cf, Object tag, int maxStack, int maxLocals, int codeLength) {
     pw.printf(", maxStack=%d,maxLocals=%d,length=%d\n", maxStack, maxLocals,codeLength);
     incIndent();
@@ -204,22 +226,27 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     decIndent();
   }
 
+  @Override
   public void setExceptionHandlerTableCount(ClassFile cf, Object tag, int exceptionTableCount) {
     pw.printf("%sexception table count=%d\n", indent, exceptionTableCount);
     incIndent();
   }
+  @Override
   public void setExceptionHandler(ClassFile cf, Object tag, int exceptionIndex,
           int startPc, int endPc, int handlerPc, String catchType) {
     pw.printf("%s[%d]: type=%s, range=[%d..%d], handler=%d\n", indent, exceptionIndex, catchType, startPc, endPc, handlerPc);
   }
+  @Override
   public void setExceptionHandlerTableDone(ClassFile cf, Object tag){
     decIndent();
   }
 
+  @Override
   public void setCodeAttributeCount(ClassFile cf, Object tag, int attrCount) {
     pw.printf("%scode attribute count=%d\n", indent, attrCount);
     incIndent();
   }
+  @Override
   public void setCodeAttribute(ClassFile cf, Object tag, int attrIndex, String name, int attrLength) {
     pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
@@ -238,40 +265,49 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
       pw.println(']');
     }
   }
+  @Override
   public void setCodeAttributesDone(ClassFile cf, Object tag){
     decIndent();
   }
 
+  @Override
   public void setLineNumberTableCount(ClassFile cf, Object tag, int lineNumberCount) {
     pw.printf(", linenumber count=%d\n", lineNumberCount);
     incIndent();
   }
+  @Override
   public void setLineNumber(ClassFile cf, Object tag, int lineIndex, int lineNumber, int startPc) {
     pw.printf("%s[%d]: line=%d, pc=%d\n", indent, lineIndex, lineNumber, startPc);
   }
+  @Override
   public void setLineNumberTableDone(ClassFile cf, Object tag){
     decIndent();
   }
 
+  @Override
   public void setLocalVarTableCount(ClassFile cf, Object tag, int localVarCount) {
     pw.printf(", localVar count=%d\n", localVarCount);
     incIndent();
   }
+  @Override
   public void setLocalVar(ClassFile cf, Object tag, int localVarIndex,
           String varName, String descriptor, int scopeStartPc, int scopeEndPc, int slotIndex) {
     pw.printf("%s[%d]: %s, type=%s, scope=[%d..%d], slot=%d\n", indent, localVarIndex, varName, descriptor,
             scopeStartPc, scopeEndPc, slotIndex);
   }
+  @Override
   public void setLocalVarTableDone(ClassFile cf, Object tag){
     decIndent();
   }
 
   //--- class attributes
+  @Override
   public void setClassAttributeCount(ClassFile cf, int attrCount) {
     printSectionHeader( "class attributes");
     pw.printf("%sclass attribute count=%d\n", indent, attrCount);
     incIndent();
   }
+  @Override
   public void setClassAttribute(ClassFile cf, int attrIndex, String name, int attrLength) {
     pw.printf("%s[%d]: %s", indent, attrIndex, name);
 
@@ -307,10 +343,12 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
       pw.println(']');
     }
   }
+  @Override
   public void setClassAttributesDone(ClassFile cf){
     decIndent();
   }
 
+  @Override
   public void setEnclosingMethod(ClassFile cf, Object tag, String enclosingClass, String enclosingMethod, String descriptor) {
     if (enclosingMethod != null){
       pw.printf(", enclosingClass=%s, method=%s%s\n", enclosingClass, enclosingMethod, descriptor);
@@ -320,19 +358,23 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
   }
 
   
+  @Override
   public void setSourceFile(ClassFile cf, Object tag, String pathName){
     pw.printf(", path=%s\n", pathName);
   }
 
+  @Override
   public void setInnerClassCount(ClassFile cf, Object tag, int innerClsCount) {
     pw.printf( ", inner class count=%d\n", innerClsCount);
     incIndent();
   }
+  @Override
   public void setInnerClass(ClassFile cf, Object tag, int innerClsIndex,
           String outerName, String innerName, String innerSimpleName, int accessFlags) {
     pw.printf("%s[%d]: %s, fullName=%s, outerClass=%s, flags=0x%X\n", indent, innerClsIndex,
             innerSimpleName, innerName, outerName, accessFlags);
   }
+  @Override
   public void setInnerClassesDone(ClassFile cf, Object tag){
     decIndent();
   }
@@ -425,62 +467,62 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
   public void setTypeParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                          int typeIndex, short[] typePath, String annotationType){
     pw.printf("%s[%d]: %s (%s, type path=%s, type index=%d)", indent, annotationIndex, annotationType, 
-            cf.getTargetTypeName(targetType), cf.getTypePathEncoding(typePath), typeIndex);
+            ClassFile.getTargetTypeName(targetType), ClassFile.getTypePathEncoding(typePath), typeIndex);
   }
   @Override
   public void setSuperTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                      int superTypeIdx, short[] typePath, String annotationType){
     pw.printf("%s[%d]: %s (%s, type path=%s, super type index=%d)", indent, annotationIndex, annotationType, 
-            cf.getTargetTypeName(targetType),  cf.getTypePathEncoding(typePath), superTypeIdx);
+            ClassFile.getTargetTypeName(targetType),  ClassFile.getTypePathEncoding(typePath), superTypeIdx);
   }
   @Override
   public void setTypeParameterBoundAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType,
                                      int typeParamIdx, int boundIdx, short[] typePath, String annotationType){
     pw.printf("%s[%d]: %s (%s, type path=%s, type index=%d, bound=%d)", indent, annotationIndex, annotationType,
-            cf.getTargetTypeName(targetType),  cf.getTypePathEncoding(typePath), typeParamIdx, boundIdx);
+            ClassFile.getTargetTypeName(targetType),  ClassFile.getTypePathEncoding(typePath), typeParamIdx, boundIdx);
   }
   @Override
   public void setTypeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType,
                                 short[] typePath, String annotationType){
     pw.printf("%s[%d]: %s (%s, type path=%s)", indent, annotationIndex, annotationType,
-            cf.getTargetTypeName(targetType), cf.getTypePathEncoding(typePath));
+            ClassFile.getTargetTypeName(targetType), ClassFile.getTypePathEncoding(typePath));
   }
   @Override
   public void setFormalParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                            int formalParamIdx, short[] typePath, String annotationType){
     pw.printf("%s[%d]: %s (%s, type path=%s, formal param index=%d)", indent, annotationIndex, annotationType,
-            cf.getTargetTypeName(targetType),  cf.getTypePathEncoding(typePath), formalParamIdx);
+            ClassFile.getTargetTypeName(targetType),  ClassFile.getTypePathEncoding(typePath), formalParamIdx);
   }
   @Override
   public void setThrowsAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                   int throwsTypeIdx, short[] typePath, String annotationType){
     pw.printf("%s[%d]: %s (%s, type path=%s, throws index=%d)", indent, annotationIndex, annotationType, 
-            cf.getTargetTypeName(targetType),  cf.getTypePathEncoding(typePath), throwsTypeIdx);
+            ClassFile.getTargetTypeName(targetType),  ClassFile.getTypePathEncoding(typePath), throwsTypeIdx);
   }
   @Override
   public void setVariableAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                     long[] scopeEntries, short[] typePath, String annotationType){
     pw.printf("%s[%d]: %s (%s, type path=%s, scope=%s)", indent, annotationIndex, annotationType, 
-            cf.getTargetTypeName(targetType), cf.getTypePathEncoding(typePath), cf.getScopeEncoding(scopeEntries));
+            ClassFile.getTargetTypeName(targetType), ClassFile.getTypePathEncoding(typePath), ClassFile.getScopeEncoding(scopeEntries));
     // 2do
   }
   @Override
   public void setExceptionParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                               int exceptionIndex, short[] typePath, String annotationType){
     pw.printf("%s[%d]: %s (%s, type path=%s, catch type index=%d)", indent, annotationIndex, annotationType, 
-            cf.getTargetTypeName(targetType),  cf.getTypePathEncoding(typePath), exceptionIndex);
+            ClassFile.getTargetTypeName(targetType),  ClassFile.getTypePathEncoding(typePath), exceptionIndex);
   }
   @Override
   public void setBytecodeAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                     int offset, short[] typePath, String annotationType){
     pw.printf("%s[%d]: %s (%s, type path=%s, bytecode offset=%d)", indent, annotationIndex, annotationType, 
-            cf.getTargetTypeName(targetType), cf.getTypePathEncoding(typePath), offset);
+            ClassFile.getTargetTypeName(targetType), ClassFile.getTypePathEncoding(typePath), offset);
   }
   @Override
   public void setBytecodeTypeParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, int targetType, 
                                            int offset, int typeArgIdx, short[] typePath, String annotationType){
     pw.printf("%s[%d]: %s (%s, type path=%s, bytecode offset=%d, type arg=%d)", indent, annotationIndex, annotationType, 
-            cf.getTargetTypeName(targetType), cf.getTypePathEncoding(typePath), offset, typeArgIdx);
+            ClassFile.getTargetTypeName(targetType), ClassFile.getTypePathEncoding(typePath), offset, typeArgIdx);
   }
   
   @Override
@@ -488,11 +530,13 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     decIndent();
   }
     
+  @Override
   public void setAnnotationValueCount(ClassFile cf, Object tag, int annotationIndex, int nValuePairs){
     pw.printf(" valueCount=%d\n", nValuePairs);
     incIndent();
   }
 
+  @Override
   public void setPrimitiveAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, Object val){
     if (arrayIndex < 0){
@@ -507,6 +551,7 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     }
   }
 
+  @Override
   public void setStringAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String s){
     if (arrayIndex < 0){
@@ -521,6 +566,7 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     }
   }
 
+  @Override
   public void setClassAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String typeName){
     if (arrayIndex < 0){
@@ -535,6 +581,7 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
     }
   }
 
+  @Override
   public void setEnumAnnotationValue(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName, int arrayIndex, String enumType, String enumValue){
     if (arrayIndex < 0){
@@ -550,41 +597,50 @@ public class ClassFilePrinter extends StructuredPrinter implements ClassFileRead
   }
 
 
+  @Override
   public void setAnnotationValueElementCount(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName, int elementCount){
   }
+  @Override
   public void setAnnotationValueElementsDone(ClassFile cf, Object tag, int annotationIndex, int valueIndex,
           String elementName){
     pw.println("}");
   }
 
+  @Override
   public void setAnnotationValuesDone(ClassFile cf, Object tag, int annotationIndex){
     decIndent();
   }
 
+  @Override
   public void setParameterCount(ClassFile cf, Object tag, int parameterCount){
     pw.printf(" parameterCount=%d\n", parameterCount);
     incIndent();
   }
 
+  @Override
   public void setParameterAnnotationCount(ClassFile cf, Object tag, int paramIndex, int annotationCount){
     pw.printf("%s[%d] count: %d\n", indent, paramIndex, annotationCount);
     incIndent();
   }
 
+  @Override
   public void setParameterAnnotation(ClassFile cf, Object tag, int annotationIndex, String annotationType){
     pw.printf("%s[%d]: %s", indent, annotationIndex, annotationType);
   }
 
+  @Override
   public void setParameterAnnotationsDone(ClassFile cf, Object tag, int paramIndex){
     decIndent();
   }
 
+  @Override
   public void setParametersDone(ClassFile cf, Object tag){
     decIndent();
   }
 
 
+  @Override
   public void setSignature(ClassFile cf, Object tag, String signature){
     pw.printf(" %s\n", signature);
   }

@@ -1,27 +1,22 @@
-//
-// Copyright (C) 2010 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.util;
-
-import java.util.NoSuchElementException;
-
-import gov.nasa.jpf.JPFException;
 
 /**
  *
@@ -58,6 +53,7 @@ public class BitSet64 extends AbstractFixedBitSet implements Cloneable {
 
   //--- public interface (much like java.util.BitSet)
 
+  @Override
   public void set (int i){
     if ((i & INDEX_MASK) == 0){
       long bitPattern = (1L << i);
@@ -70,6 +66,7 @@ public class BitSet64 extends AbstractFixedBitSet implements Cloneable {
     }
   }
 
+  @Override
   public void clear (int i){
     if ((i & INDEX_MASK) == 0){
       long bitPattern = (1L << i);
@@ -83,6 +80,7 @@ public class BitSet64 extends AbstractFixedBitSet implements Cloneable {
   }
 
 
+  @Override
   public boolean get (int i){
     if ((i & INDEX_MASK) == 0){
       long bitPattern = (1L << i);
@@ -92,6 +90,7 @@ public class BitSet64 extends AbstractFixedBitSet implements Cloneable {
     }
   }
 
+  @Override
   public int capacity(){
     return 64;
   }
@@ -99,6 +98,7 @@ public class BitSet64 extends AbstractFixedBitSet implements Cloneable {
   /**
    * number of bits we can store
    */
+  @Override
   public int size() {
     return 64;
   }
@@ -106,16 +106,19 @@ public class BitSet64 extends AbstractFixedBitSet implements Cloneable {
   /**
    * index of highest set bit + 1
    */
+  @Override
   public int length() {
     return 64 - Long.numberOfLeadingZeros(l0);
   }
 
 
+  @Override
   public void clear() {
     l0 = 0L;
     cardinality = 0;
   }
 
+  @Override
   public int nextSetBit (int fromIdx){
     if ((fromIdx & INDEX_MASK) == 0){
       //int n = Long.numberOfTrailingZeros(l0 & (0xffffffffffffffffL << fromIdx));
@@ -131,6 +134,7 @@ public class BitSet64 extends AbstractFixedBitSet implements Cloneable {
     }
   }
 
+  @Override
   public int nextClearBit (int fromIdx){
     if ((fromIdx & INDEX_MASK) == 0){
       //int n = Long.numberOfTrailingZeros(~l0 & (0xffffffffffffffffL << fromIdx));
@@ -164,6 +168,7 @@ public class BitSet64 extends AbstractFixedBitSet implements Cloneable {
     cardinality = computeCardinality();
   }
 
+  @Override
   public boolean equals (Object o){
     if (o instanceof BitSet64){
       BitSet64 other = (BitSet64)o;
@@ -179,6 +184,7 @@ public class BitSet64 extends AbstractFixedBitSet implements Cloneable {
   /**
    * answer the same hashCodes as java.util.BitSet
    */
+  @Override
   public int hashCode() {
     long hc = 1234;
     hc ^= l0;

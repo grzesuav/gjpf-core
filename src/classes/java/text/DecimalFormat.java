@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-// 
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-// 
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package java.text;
 
@@ -57,35 +56,43 @@ public class DecimalFormat extends NumberFormat implements Cloneable{
   }
   // intercepted by native peer
   
+  @Override
   public StringBuffer format (Object obj, StringBuffer toAppendTo, FieldPosition pos) {
     // works for use case where pos = new FieldPosition(0)
     toAppendTo.append(obj.toString());
     return toAppendTo;
   }
 
+  @Override
   public Number parse(String source, ParsePosition pos){
     // interceptted by native peer
     return null;
   }
 
+  @Override
   public void setMaximumFractionDigits (int newValue){
     // intercepted by native peer
   }
+  @Override
   public void setMaximumIntegerDigits (int newValue){
     // intercepted by native peer
   }
+  @Override
   public void setMinimumFractionDigits(int newValue){
     // intercepted by native peer
   }
+  @Override
   public void setMinimumIntegerDigits(int newValue){
     // intercepted by native peer
   }
   
+  @Override
   public String format (long number) {
     // intercepted by native peer
     return null;
   }
   
+  @Override
   public String format (double number) {
     // intercepted by native peer
     return null;
@@ -111,18 +118,22 @@ public class DecimalFormat extends NumberFormat implements Cloneable{
       return "";
   }
 
+  @Override
   public boolean isGroupingUsed() {
       return false;
   }
 
+  @Override
   public void setGroupingUsed(boolean newValue) {
     // intercepted by native peer
   }
 
+  @Override
   public boolean isParseIntegerOnly() {
       return false;
   }
 
+  @Override
   public void setParseIntegerOnly(boolean value) {
       // intercepted by native peer
   }

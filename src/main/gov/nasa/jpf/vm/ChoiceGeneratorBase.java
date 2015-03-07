@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.Config;
@@ -107,10 +106,12 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
     this.id = id;
   }
 
+  @Override
   public ChoiceGeneratorBase<?> clone() throws CloneNotSupportedException {
     return (ChoiceGeneratorBase<?>)super.clone();
   }
 
+  @Override
   public ChoiceGenerator<?> deepClone() throws CloneNotSupportedException {
     ChoiceGenerator<?> clone = (ChoiceGenerator<?>) super.clone();
     // we need to deep copy the parent CG
@@ -120,52 +121,64 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
     return clone;
   }
   
+  @Override
   public String getId() {
     return id;
   }
 
+  @Override
   public int getIdRef() {
     return idRef;
   }
 
+  @Override
   public void setIdRef(int idRef) {
     this.idRef = idRef;
   }
 
+  @Override
   public void setId(String id) {
     this.id = id;
   }
 
+  @Override
   public boolean isSchedulingPoint() {
     return false;
   }
 
   //--- the getters and setters for the CG creation info
+  @Override
   public void setThreadInfo(ThreadInfo ti) {
     this.ti = ti;
   }
 
+  @Override
   public ThreadInfo getThreadInfo() {
     return ti;
   }
 
+  @Override
   public void setInsn(Instruction insn) {
     this.insn = insn;
   }
 
+  @Override
   public Instruction getInsn() {
     return insn;
   }
 
+  @Override
   public void setContext(ThreadInfo tiCreator) {
     ti = tiCreator;
     insn = tiCreator.getPC();
   }
 
+  @Override
   public String getSourceLocation() {
     return insn.getSourceLocation();
   }
 
+  @Override
   public boolean supportsReordering(){
     return false;
   }
@@ -178,22 +191,27 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
    * Note: this should only be called before the first advance, since it
    * can reset the CG enumeration status
    */
+  @Override
   public ChoiceGenerator<T> reorder (Comparator<T> comparator){
     return null;
   }
   
+  @Override
   public void setPreviousChoiceGenerator(ChoiceGenerator<?> cg) {
     prev = cg;
   }
 
+  @Override
   public void setCascaded() {
     isCascaded = true;
   }
 
+  @Override
   public boolean isCascaded() {
     return isCascaded;
   }
 
+  @Override
   public <C extends ChoiceGenerator<?>> C getPreviousChoiceGeneratorOfType(Class<C> cls) {
     ChoiceGenerator<?> cg = prev;
 
@@ -209,6 +227,7 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
   /**
    * returns the prev CG if it was registered for the same insn
    */
+  @Override
   public ChoiceGenerator<?> getCascadedParent() {
     if (prev != null) {
       if (prev.isCascaded()) {
@@ -222,6 +241,7 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
   /**
    * return array with all cascaded parents and this CG, in registration order
    */
+  @Override
   public ChoiceGenerator<?>[] getCascade() {
     int n = 0;
     for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.getCascadedParent()) {
@@ -240,6 +260,7 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
   /**
    * return array with all parents and this CG, in registration order
    */
+  @Override
   public ChoiceGenerator<?>[] getAll() {
     int n = 0;
     for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.getPreviousChoiceGenerator()) {
@@ -258,6 +279,7 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
   /**
    * return array with all CGs (including this one) of given 'cgType', in registration order
    */
+  @Override
   public <C extends ChoiceGenerator<?>> C[] getAllOfType(Class<C> cgType) {
     int n = 0;
     for (ChoiceGenerator<?> cg = this; cg != null; cg = cg.getPreviousChoiceGenerator()) {
@@ -277,12 +299,19 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
     return a;
   }
 
+  @Override
   public int getNumberOfParents(){
     int n=0;
     for (ChoiceGenerator cg = prev; cg != null; cg = cg.getPreviousChoiceGenerator()){
       n++;
     }
     return n;
+  }
+  
+  @Override
+  public void setCurrent(){
+    // nothing, can be overridden by subclasses to do context specific initialization
+    // the first time this CG becomes the current one
   }
   
   // we can't put the advanceForCurrentInsn() here because it has to do
@@ -292,6 +321,7 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
    * pretty braindead generic solution, but if more speed is needed, we can easily override
    * in the concrete CGs (it's used for path replay)
    */
+  @Override
   public void advance(int nChoices) {
     while (nChoices-- > 0) {
       advance();
@@ -305,23 +335,28 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
     setDone();
   }
 
+  @Override
   public boolean isDone() {
     return isDone;
   }
 
+  @Override
   public void setDone() {
     isDone = true;
   }
 
+  @Override
   public boolean isProcessed() {
     return isDone || !hasMoreChoices();
   }
 
   //--- the generic attribute API
+  @Override
   public boolean hasAttr() {
     return (attr != null);
   }
 
+  @Override
   public boolean hasAttr(Class<?> attrType) {
     return ObjectList.containsType(attr, attrType);
   }
@@ -334,6 +369,7 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
    * this returns all of them - use either if you know there will be only
    * one attribute at a time, or check/process result with ObjectList
    */
+  @Override
   public Object getAttr() {
     return attr;
   }
@@ -344,18 +380,22 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
    *  - you obtained the value you set by a previous getXAttr()
    *  - you constructed a multi value list with ObjectList.createList()
    */
+  @Override
   public void setAttr(Object a) {
     attr = a;
   }
 
+  @Override
   public void addAttr(Object a) {
     attr = ObjectList.add(attr, a);
   }
 
+  @Override
   public void removeAttr(Object a) {
     attr = ObjectList.remove(attr, a);
   }
 
+  @Override
   public void replaceAttr(Object oldAttr, Object newAttr) {
     attr = ObjectList.replace(attr, oldAttr, newAttr);
   }
@@ -364,23 +404,28 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
    * this only returns the first attr of this type, there can be more
    * if you don't use client private types or the provided type is too general
    */
+  @Override
   public <T> T getAttr(Class<T> attrType) {
     return ObjectList.getFirst(attr, attrType);
   }
 
+  @Override
   public <T> T getNextAttr(Class<T> attrType, Object prev) {
     return ObjectList.getNext(attr, attrType, prev);
   }
 
+  @Override
   public ObjectList.Iterator attrIterator() {
     return ObjectList.iterator(attr);
   }
 
+  @Override
   public <T> ObjectList.TypedIterator<T> attrIterator(Class<T> attrType) {
     return ObjectList.typedIterator(attr, attrType);
   }
 
   // -- end attrs --
+  @Override
   public String toString() {
     StringBuilder b = new StringBuilder(getClass().getName());
     b.append(" {id:\"");
@@ -409,11 +454,13 @@ public abstract class ChoiceGeneratorBase<T> implements ChoiceGenerator<T> {
     return b.toString();
   }
 
+  @Override
   public ChoiceGenerator<?> getPreviousChoiceGenerator() {
     return prev;
   }
 
   // override if there is special choice randomization support
+  @Override
   public ChoiceGenerator<T> randomize(){
     return this;
   }

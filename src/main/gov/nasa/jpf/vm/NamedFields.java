@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2010 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.vm;
 
@@ -36,6 +35,7 @@ public class NamedFields extends Fields {
     values = new int[dataSize];
   }
 
+  @Override
   public int[] asFieldSlots() {
     return values;
   }
@@ -45,11 +45,13 @@ public class NamedFields extends Fields {
    * aligned, hence the number of values*4 should be good. Note that this is
    * overridden by ArrayFields (arrays would be packed)
    */
+  @Override
   public int getHeapSize () {
     return values.length*4;
   }
 
   // our low level getters and setters
+  @Override
   public int getIntValue (int index) {
     return values[index];
   }
@@ -78,26 +80,32 @@ public class NamedFields extends Fields {
   }
 
   // same as above, just here to make intentions clear
+  @Override
   public int getReferenceValue (int index) {
     return values[index];
   }
 
+  @Override
   public long getLongValue (int index) {
     return Types.intsToLong(values[index + 1], values[index]);
   }
 
+  @Override
   public boolean getBooleanValue (int index) {
     return Types.intToBoolean(values[index]);
   }
 
+  @Override
   public byte getByteValue (int index) {
     return (byte) values[index];
   }
 
+  @Override
   public char getCharValue (int index) {
     return (char) values[index];
   }
 
+  @Override
   public short getShortValue (int index) {
     return (short) values[index];
   }
@@ -109,49 +117,60 @@ public class NamedFields extends Fields {
 
   //--- the field modifier methods (both instance and static)
 
+  @Override
   public void setReferenceValue (int index, int newValue) {
     values[index] = newValue;
   }
 
+  @Override
   public void setBooleanValue (int index, boolean newValue) {
     values[index] = newValue ? 1 : 0;
   }
 
+  @Override
   public void setByteValue (int index, byte newValue) {
     values[index] = newValue;
   }
 
+  @Override
   public void setCharValue (int index, char newValue) {
-    values[index] = (int)newValue;
+    values[index] = newValue;
   }
 
+  @Override
   public void setShortValue (int index, short newValue) {
     values[index] = newValue;
   }
 
+  @Override
   public void setFloatValue (int index, float newValue) {
     values[index] = Types.floatToInt(newValue);
   }
 
+  @Override
   public void setIntValue (int index, int newValue) {
     values[index] = newValue;
   }
 
+  @Override
   public void setLongValue (int index, long newValue) {
 		values[index++] = Types.hiLong(newValue);
     values[index] = Types.loLong(newValue);
   }
 
+  @Override
   public void setDoubleValue (int index, double newValue) {
     values[index++] = Types.hiDouble(newValue);
     values[index] = Types.loDouble(newValue);
   }
 
 
+  @Override
   public float getFloatValue (int index) {
     return Types.intToFloat(values[index]);
   }
 
+  @Override
   public double getDoubleValue (int index) {
     return Types.intsToDouble( values[index+1], values[index]);
   }
@@ -159,6 +178,7 @@ public class NamedFields extends Fields {
   /**
    * Creates a clone.
    */
+  @Override
   public NamedFields clone () {
     NamedFields f = (NamedFields) cloneFields();
     f.values = values.clone();
@@ -168,6 +188,7 @@ public class NamedFields extends Fields {
   /**
    * Checks for equality.
    */
+  @Override
   public boolean equals (Object o) {
     if (o instanceof NamedFields) {
       NamedFields other = (NamedFields) o;
@@ -193,6 +214,7 @@ public class NamedFields extends Fields {
   }
 
   // serialization interface
+  @Override
   public void appendTo(IntVector v) {
     v.append(values);
   }
@@ -201,6 +223,7 @@ public class NamedFields extends Fields {
   /**
    * Adds some data to the computation of an hashcode.
    */
+  @Override
   public void hash (HashData hd) {
     int[] v = values;
     for (int i=0, l=v.length; i < l; i++) {
@@ -215,6 +238,7 @@ public class NamedFields extends Fields {
     return values.length;
   }
 
+  @Override
   public String toString () {
     StringBuilder sb = new StringBuilder("NamedFields[");
 

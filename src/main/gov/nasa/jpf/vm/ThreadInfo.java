@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.vm.bytecode.ReturnInstruction;
@@ -89,11 +88,13 @@ public class ThreadInfo extends InfoObject
   protected class StackIterator implements Iterator<StackFrame> {
     StackFrame frame = top;
 
-    public boolean hasNext() {
+    @Override
+	public boolean hasNext() {
       return frame != null;
     }
 
-    public StackFrame next() {
+    @Override
+	public StackFrame next() {
       if (frame != null){
         StackFrame ret = frame;
         frame = frame.getPrevious();
@@ -104,7 +105,8 @@ public class ThreadInfo extends InfoObject
       }
     }
 
-    public void remove() {
+    @Override
+	public void remove() {
       throw new UnsupportedOperationException("can't remove StackFrames");
     }
   }
@@ -114,7 +116,8 @@ public class ThreadInfo extends InfoObject
       frame = getLastInvokedStackFrame();
     }
 
-    public StackFrame next() {
+    @Override
+	public StackFrame next() {
       if (frame != null){
         StackFrame ret = frame;
         frame = null;
@@ -268,7 +271,8 @@ public class ThreadInfo extends InfoObject
       ti.markUnchanged();
     }
 
-    public ThreadInfo restore(ThreadInfo ignored) {
+    @Override
+	public ThreadInfo restore(ThreadInfo ignored) {
       ti.resetVolatiles();
 
       ti.threadData = threadData;
@@ -432,6 +436,7 @@ public class ThreadInfo extends InfoObject
     env = new MJIEnv(this);
   }
   
+  @Override
   public Memento<ThreadInfo> getMemento(MementoFactory factory) {
     return factory.getMemento(this);
   }
@@ -867,13 +872,15 @@ public class ThreadInfo extends InfoObject
     return threadData.getState().name();
   }
 
+  @Override
   public Iterator<StackFrame> iterator () {
     return new StackIterator();
   }
 
   public Iterable<StackFrame> invokedStackFrames () {
     return new Iterable<StackFrame>() {
-      public Iterator<StackFrame> iterator() {
+      @Override
+	public Iterator<StackFrame> iterator() {
         return new InvokedStackIterator();
       }
     };
@@ -1475,6 +1482,7 @@ public class ThreadInfo extends InfoObject
   }
 
 
+  @Override
   public Object clone() {
     try {
       // threadData and top StackFrame are copy-on-write, so we should not have to clone them
@@ -1828,6 +1836,49 @@ public class ThreadInfo extends InfoObject
    * this is the inner interpreter loop of JPF
    */
   protected void executeTransition (SystemState ss) throws JPFException {
+    Instruction pc;
+    outer:
+    while ((pc = getPC()) != null){
+      Instruction nextPc = null;
+
+      currentThread = this;
+      executedInstructions = 0;
+      pendingException = null;
+
+      if (isStopped()){
+        pc = throwStopException();
+        setPC(pc);
+      }
+
+      // this constitutes the main transition loop. It gobbles up
+      // insns until someone registered a ChoiceGenerator, there are no insns left,
+      // the transition was explicitly marked as ignored, or we have reached a
+      // max insn count and preempt the thread upon the next available backjump
+      while (pc != null) {
+        nextPc = executeInstruction();
+
+        if (ss.breakTransition()) {
+          if (ss.extendTransition()){
+            continue outer;
+            
+          } else {
+            if (executedInstructions == 0){ // a CG from a re-executed insn
+              if (isEmptyTransitionEnabled()){ // treat as a new state if empty transitions are enabled
+                ss.setForced(true);
+              }
+            }
+            return;
+          }
+
+        } else {        
+          pc = nextPc;
+        }
+      }
+    }
+  }
+
+  
+  protected void _executeTransition (SystemState ss) throws JPFException {
     Instruction pc = getPC();
     Instruction nextPc = null;
 
@@ -2335,7 +2386,8 @@ public class ThreadInfo extends InfoObject
 
   Predicate<ThreadInfo> getRunnableNonDaemonPredicate() {
     return new Predicate<ThreadInfo>() {
-      public boolean isTrue (ThreadInfo ti) {
+      @Override
+	public boolean isTrue (ThreadInfo ti) {
         return (ti.isRunnable() && !ti.isDaemon());
       }
     };
@@ -3321,6 +3373,7 @@ public class ThreadInfo extends InfoObject
     return null;
   }
 
+  @Override
   public String toString() {
     return "ThreadInfo [name=" + getName() +
             ",id=" + id +
@@ -3367,6 +3420,7 @@ public class ThreadInfo extends InfoObject
   /**
    * Comparison for sorting based on index.
    */
+  @Override
   public int compareTo (ThreadInfo that) {
     return this.id - that.id;
   }

@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-// 
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the fileName NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-// 
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.util.ObjectList;
@@ -37,9 +36,8 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
   // property/mode specific attributes
   protected Object attr;
   
-  abstract public int getByteCode();
-
   // this is for changing from InstructionInterface types to Instruction types
+  @Override
   public Instruction asInstruction(){
     return this;
   }
@@ -52,6 +50,7 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
   /**
    * is this the first instruction in a method
    */
+  @Override
   public boolean isFirstInstruction() {
     return (insnIndex == 0);
   }
@@ -60,6 +59,7 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
   /**
    * answer if this is a potential loop closing jump
    */
+  @Override
   public boolean isBackJump() {
     return false;
   }
@@ -74,11 +74,13 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
   /**
    * is this one of our own, artificial insns?
    */
+  @Override
   public boolean isExtendedInstruction() {
     return false;
   }
 
 
+  @Override
   public MethodInfo getMethodInfo() {
     return mi;
   }
@@ -95,14 +97,17 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
    * this returns the instruction at the following code insnIndex within the same
    * method, which might or might not be the next one to enter (branches, overlay calls etc.).
    */
+  @Override
   public Instruction getNext() {
     return mi.getInstruction(insnIndex + 1);
   }
 
+  @Override
   public int getInstructionIndex() {
     return insnIndex;
   }
 
+  @Override
   public int getPosition() {
     return position;
   }
@@ -116,10 +121,12 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
    * return the length in bytes of this instruction.
    * override if this is not 1
    */
+  @Override
   public int getLength() {
     return 1;
   }
 
+  @Override
   public Instruction getPrev() {
     if (insnIndex > 0) {
       return mi.getInstruction(insnIndex - 1);
@@ -140,6 +147,7 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
    * same insn (that is what automatic <clinit> calls and the like do - we call
    * it overlays)
    */
+  @Override
   public boolean isCompleted(ThreadInfo ti) {
     Instruction nextPc = ti.getNextPC();
 
@@ -180,8 +188,10 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
    * enter() in the listener. It would be better if we factor this
    * 'prepareExecution' out of enter()
    */
+  @Override
   public abstract Instruction execute(ThreadInfo ti);
 
+  @Override
   public String toString() {
     return getMnemonic();
   }
@@ -189,19 +199,23 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
   /**
    * this can contain additional info that was gathered/cached during execution 
    */
+  @Override
   public String toPostExecString(){
     return toString();
   }
   
+  @Override
   public String getMnemonic() {
     String s = getClass().getSimpleName();
     return s.toLowerCase();
   }
 
+  @Override
   public int getLineNumber() {
     return mi.getLineNumber(this);
   }
 
+  @Override
   public String getSourceLine() {
     ClassInfo ci = mi.getClassInfo();
     if (ci != null) {
@@ -249,6 +263,7 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
   /**
    * this returns a "pathname:line" string
    */
+  @Override
   public String getFileLocation() {
     ClassInfo ci = mi.getClassInfo();
     if (ci != null) {
@@ -263,6 +278,7 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
   /**
    * this returns a "filename:line" string
    */
+  @Override
   public String getFilePos() {
     String file = null;
     int line = -1;
@@ -293,6 +309,7 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
   /**
    * this returns a "class.method(line)" string
    */
+  @Override
   public String getSourceLocation() {
     ClassInfo ci = mi.getClassInfo();
 
@@ -333,6 +350,7 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
    * note: the System.exit() problem should be gone, now that it is implemented
    * as ThreadInfo state (TERMINATED), rather than purged stacks
    */
+  @Override
   public Instruction getNext (ThreadInfo ti) {
     return ti.getPC().getNext();
   }
@@ -340,10 +358,12 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
   
   //--- the generic attribute API
 
+  @Override
   public boolean hasAttr () {
     return (attr != null);
   }
 
+  @Override
   public boolean hasAttr (Class<?> attrType){
     return ObjectList.containsType(attr, attrType);
   }
@@ -352,6 +372,7 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
    * this returns all of them - use either if you know there will be only
    * one attribute at a time, or check/process result with ObjectList
    */
+  @Override
   public Object getAttr(){
     return attr;
   }
@@ -362,18 +383,22 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
    *  - you obtained the value you set by a previous getXAttr()
    *  - you constructed a multi value list with ObjectList.createList()
    */
+  @Override
   public void setAttr (Object a){
     attr = ObjectList.set(attr, a);    
   }
 
+  @Override
   public void addAttr (Object a){
     attr = ObjectList.add(attr, a);
   }
 
+  @Override
   public void removeAttr (Object a){
     attr = ObjectList.remove(attr, a);
   }
 
+  @Override
   public void replaceAttr (Object oldAttr, Object newAttr){
     attr = ObjectList.replace(attr, oldAttr, newAttr);
   }
@@ -382,18 +407,22 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
    * this only returns the first attr of this type, there can be more
    * if you don't use client private types or the provided type is too general
    */
+  @Override
   public <T> T getAttr (Class<T> attrType) {
     return ObjectList.getFirst(attr, attrType);
   }
 
+  @Override
   public <T> T getNextAttr (Class<T> attrType, Object prev) {
     return ObjectList.getNext(attr, attrType, prev);
   }
 
+  @Override
   public ObjectList.Iterator attrIterator(){
     return ObjectList.iterator(attr);
   }
   
+  @Override
   public <T> ObjectList.TypedIterator<T> attrIterator(Class<T> attrType){
     return ObjectList.typedIterator(attr, attrType);
   }

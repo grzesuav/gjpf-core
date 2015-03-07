@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2010 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package gov.nasa.jpf.util;
 
@@ -46,138 +45,171 @@ public class JPFLogger extends Logger {
     this.logger = logger;
   }
 
+  @Override
   public ResourceBundle getResourceBundle() {
     return logger.getResourceBundle();
   }
 
+  @Override
   public String getResourceBundleName() {
     return logger.getResourceBundleName();
   }
 
+  @Override
   public void setFilter(Filter newFilter) throws SecurityException {
     logger.setFilter(newFilter);
   }
   
+  @Override
   public Filter getFilter() {
     return logger.getFilter();
   }
    
+  @Override
   public void log(LogRecord record) {
     logger.log(record);
   }
   
+  @Override
   public void log(Level level, String msg) {
     logger.log(level, msg);
   }
   
+  @Override
   public void log(Level level, String msg, Object param1) {
     logger.log(level, msg, param1);
   }
   
+  @Override
   public void log(Level level, String msg, Object params[]) {
     logger.log(level, msg, params);
   }
   
+  @Override
   public void log(Level level, String msg, Throwable thrown) {
     logger.log(level, msg, thrown);
   }
   
+  @Override
   public void logp(Level level, String sourceClass, String sourceMethod, String msg) {
     logger.logp(level, sourceClass, sourceMethod, msg);
   }
   
+  @Override
   public void logp(Level level, String sourceClass, String sourceMethod, String msg, Object param1) {
     logger.logp(level, sourceClass, sourceMethod, msg, param1);
   }
   
+  @Override
   public void logp(Level level, String sourceClass, String sourceMethod, String msg, Object params[]) {
     logger.logp(level, sourceClass, sourceMethod, msg, params);
   }
   
+  @Override
   public void logp(Level level, String sourceClass, String sourceMethod, String msg, Throwable thrown) {
     logger.logp(level, sourceClass, sourceMethod, msg, thrown);
   }
   
-  @Deprecated
+  @Override
+@Deprecated
   public void logrb(Level level, String sourceClass, String sourceMethod, String bundleName, String msg) {
     logger.logrb(level, sourceClass, sourceMethod, bundleName, msg);
   }
   
-  @Deprecated
+  @Override
+@Deprecated
   public void logrb(Level level, String sourceClass, String sourceMethod, String bundleName, String msg, Object param1) {
     logger.logrb(level, sourceClass, sourceMethod, bundleName, msg, param1);
   }
   
-  @Deprecated
+  @Override
+@Deprecated
   public void logrb(Level level, String sourceClass, String sourceMethod, String bundleName, String msg, Object params[]) {
     logger.logrb(level, sourceClass, sourceMethod, bundleName, msg, params);
   }
   
-  @Deprecated
+  @Override
+@Deprecated
   public void logrb(Level level, String sourceClass, String sourceMethod, String bundleName, String msg, Throwable thrown) {
     logger.logrb(level, sourceClass, sourceMethod, bundleName, msg, thrown);
   }
   
+  @Override
   public void entering(String sourceClass, String sourceMethod) {
     logger.entering(sourceClass, sourceMethod);
   }
 
+  @Override
   public void entering(String sourceClass, String sourceMethod, Object param1) {
     logger.entering(sourceClass, sourceMethod, param1);
   }
   
+  @Override
   public void entering(String sourceClass, String sourceMethod, Object params[]) {
     logger.entering(sourceClass, sourceMethod, params);
   }
   
+  @Override
   public void exiting(String sourceClass, String sourceMethod) {
     logger.exiting(sourceClass, sourceMethod);
   }
   
+  @Override
   public void exiting(String sourceClass, String sourceMethod, Object result) {
     logger.exiting(sourceClass, sourceMethod, result);
   }
   
+  @Override
   public void throwing(String sourceClass, String sourceMethod, Throwable thrown) {
     logger.throwing(sourceClass, sourceMethod, thrown);
   }
   
+  @Override
   public void severe(String msg) {
     logger.severe(msg);
   }
   
+  @Override
   public void warning(String msg) {
     logger.warning(msg);
   }
   
+  @Override
   public void info(String msg) {
     logger.info(msg);
   }
   
+  @Override
   public void config(String msg) {
     logger.config(msg);
   }
   
+  @Override
   public void fine(String msg) {
     logger.fine(msg);
   }
   
+  @Override
   public void finer(String msg) {
     logger.finer(msg);
   }
   
+  @Override
   public void finest(String msg) {
     logger.finest(msg);
   }
   
+  @Override
   public void setLevel(Level newLevel) throws SecurityException {
     logger.setLevel(newLevel);
   }
   
+  @Override
   public Level getLevel() {
     return logger.getLevel();
   }
   
+  @Override
   public boolean isLoggable(Level level) {
     return logger.isLoggable(level);
   }
@@ -194,34 +226,42 @@ public class JPFLogger extends Logger {
     return isLoggable(Level.FINER);
   }
   
+  @Override
   public String getName() {
     return logger.getName();
   }
   
+  @Override
   public void addHandler(Handler handler) throws SecurityException {
     logger.addHandler(handler);
   }
   
+  @Override
   public void removeHandler(Handler handler) throws SecurityException {
     logger.removeHandler(handler);
   }
   
+  @Override
   public Handler[] getHandlers() {
     return logger.getHandlers();
   }
   
+  @Override
   public void setUseParentHandlers(boolean useParentHandlers) {
     logger.setUseParentHandlers(useParentHandlers);
   }
   
+  @Override
   public boolean getUseParentHandlers() {
     return logger.getUseParentHandlers();
   }
   
+  @Override
   public Logger getParent() {
     return logger.getParent();
   }
   
+  @Override
   public void setParent(Logger parent) {
     logger.setParent(parent);
   }

@@ -1,21 +1,20 @@
-//
-// Copyright (C) 2012 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-//
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-//
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 
 package java.lang;
 
@@ -171,12 +170,14 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	String(int offset, int count, char[] value) {
 		this(value, offset, count);
 	}
+	@Override
 	public int length() {
 		return value.length;
 	}
 	public boolean isEmpty() {
 		return value.length == 0;
 	}
+	@Override
 	public char charAt(int index) {
 		if ((index < 0) || (index >= value.length)) {
 			throw new StringIndexOutOfBoundsException(index);
@@ -205,6 +206,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	}
 
 	native public byte[] getBytes();
+	@Override
 	native public boolean equals(Object anObject);
 	public boolean contentEquals(StringBuffer stringBuffer){
 		// No StringBuffer model.
@@ -245,6 +247,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	}
 
 	native public boolean equalsIgnoreCase(String anotherString);
+	@Override
 	native public int compareTo(String anotherString);
 
 	public static final Comparator<String> CASE_INSENSITIVE_ORDER = new CaseInsensitiveComparator();
@@ -252,6 +255,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 		// use serialVersionUID from JDK 1.2.2 for interoperability
 		private static final long serialVersionUID = 8575799808933029326L;
 
+		@Override
 		public int compare(String s1, String s2) {
 			return MJIcompare(s1,s2);
 		}
@@ -273,6 +277,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 		return startsWith(suffix, value.length - suffix.value.length);
 	}
 
+	@Override
 	native public int hashCode();
 	public int indexOf(int ch) {
 		return indexOf(ch, 0);
@@ -289,6 +294,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	native public int lastIndexOf(String str, int fromIndex);
 	native public String substring(int beginIndex);
 	native public String substring(int beginIndex, int endIndex);
+	@Override
 	public CharSequence subSequence(int beginIndex, int endIndex) {
 		return this.substring(beginIndex, endIndex);
 	}
@@ -314,6 +320,7 @@ implements java.io.Serializable, Comparable<String>, CharSequence {
 	native public String toUpperCase(Locale locale);
 	native public String toUpperCase();
 	native public String trim();
+	@Override
 	public String toString() {
 		return this;
 	}

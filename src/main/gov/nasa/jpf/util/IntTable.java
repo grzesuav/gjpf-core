@@ -1,26 +1,24 @@
-//
-// Copyright (C) 2006 United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration
-// (NASA).  All Rights Reserved.
-// 
-// This software is distributed under the NASA Open Source Agreement
-// (NOSA), version 1.3.  The NOSA has been approved by the Open Source
-// Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
-// directory tree for the complete NOSA document.
-// 
-// THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
-// KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
-// LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
-// SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
-// A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
-// THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
-// DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
-//
+/*
+ * Copyright (C) 2014, United States Government, as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All rights reserved.
+ *
+ * The Java Pathfinder core (jpf-core) platform is licensed under the
+ * Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * 
+ *        http://www.apache.org/licenses/LICENSE-2.0. 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package gov.nasa.jpf.util;
 
 import gov.nasa.jpf.JPFException;
 
-import java.util.Arrays;
 import java.util.Iterator;
 
 /**
@@ -58,7 +56,8 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
       next = n; 
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+	@SuppressWarnings("unchecked")
     public Entry<E> clone() {
       try {
         return (Entry<E>)super.clone();
@@ -67,7 +66,8 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
       }
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
       return key.toString() + " => " + val;
     }
     
@@ -75,11 +75,13 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
     // but beware - val can be modified since we expose it (never modify
     // key objects of HashMaps)
 
-    public int hashCode (){
+    @Override
+	public int hashCode (){
       return OATHash.hash(key.hashCode(), val);
     }
     
-    public boolean equals (Object o){
+    @Override
+	public boolean equals (Object o){
       if (o instanceof Entry){
         @SuppressWarnings("unchecked")
         Entry<E> other = (Entry<E>)o;
@@ -182,7 +184,7 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
   
   @SuppressWarnings("unchecked")
   public void restore (Snapshot<E> snapshot){
-    Entry<E>[] tbl = (Entry<E>[]) new Entry[snapshot.tblSize];
+    Entry<E>[] tbl = new Entry[snapshot.tblSize];
     
     int[] indices = snapshot.indices;
     E[] keys = snapshot.keys;
@@ -204,11 +206,12 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
   }
 
   // this is a deep copy (needs to be because entries are reused when growing the table)
+  @Override
   public IntTable<E> clone() {
     try {
       @SuppressWarnings("unchecked")
       IntTable<E> t = (IntTable<E>)super.clone();
-      Entry<E>[] tbl = (Entry<E>[])table.clone();
+      Entry<E>[] tbl = table.clone();
       t.table = tbl;
 
       // clone entries
@@ -237,7 +240,7 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
   @SuppressWarnings("unchecked")
   protected void newTable(int pow) {
     tblPow = pow;
-    table = (Entry<E>[]) new Entry[1 << tblPow];
+    table = new Entry[1 << tblPow];
     mask = table.length - 1;
     nextRehash = (int) Math.ceil(MAX_LOAD * table.length);
   }
@@ -437,7 +440,7 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
   
   /** empties the table, leaving it capacity the same. */
   public void clear() {
-    table = (Entry<E>[]) new Entry[table.length];
+    table = new Entry[table.length];
     nullEntry = null;
     size = 0;
     lastSnapshot = null;
@@ -491,6 +494,7 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
    * returns an iterator over the entries.  unpredictable behavior could result if
    * using iterator after table is altered.
    */
+  @Override
   public Iterator<Entry<E>> iterator () {
     return new TblIterator();
   }
@@ -517,17 +521,20 @@ public final class IntTable<E> implements Iterable<IntTable.Entry<E>>, Cloneable
       }
     }
     
-    public boolean hasNext () {
+    @Override
+	public boolean hasNext () {
       return idx < table.length;
     }
 
-    public Entry<E> next () {
+    @Override
+	public Entry<E> next () {
       Entry<E> e = cur;
       advance();
       return e;
     }
 
-    public void remove () { 
+    @Override
+	public void remove () { 
       throw new UnsupportedOperationException();
     }
   }
