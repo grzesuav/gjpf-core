@@ -1,0 +1,44 @@
+import sun.misc.ExtensionDependency
+
+apply plugin: 'java'
+
+compileJava {
+    sourceCompatibility = 1.7
+}
+
+compileTestJava {
+    sourceCompatibility = 1.8
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/annotations'
+            srcDir 'src/main'
+            srcDir 'src/peers'
+            srcDir 'src/classes'
+        }
+    }
+    test {
+        java {
+            srcDir 'src/tests'
+        }
+    }
+}
+//test.outputs.upToDateWhen { false }
+test {
+    useJUnit {
+        scanForTestClasses = false
+        include '**/*Test'
+        reports.html.enabled = true
+    }
+//    outputs.upToDateWhen{}
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile 'junit:junit:4.12'
+}
