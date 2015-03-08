@@ -1,0 +1,9 @@
+rootProject.name = 'gjpf-core'
+
+include 'annotations'
+
+include 'classes'
+
+include 'main'
+
+include 'peers'
