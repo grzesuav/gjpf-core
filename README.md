@@ -15,5 +15,6 @@ Main reasons/motivation:
 Currently:
 * setup of Travis CI build was configured
 * develop branch was created
+* coverity-scan branch was created and coverity static analysis scan was attached (see branch coverity-scan to see results)
 
 [![Join the chat at https://gitter.im/grzesuav/gjpf-core](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/grzesuav/gjpf-core?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
