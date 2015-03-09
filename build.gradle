@@ -4,10 +4,12 @@ apply plugin: 'java'
 
 compileJava {
     sourceCompatibility = 1.7
+    targetCompatibility = 1.7
 }
 
 compileTestJava {
     sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 }
 
 sourceSets {
@@ -25,7 +27,7 @@ sourceSets {
         }
     }
 }
-//test.outputs.upToDateWhen { false }
+test.outputs.upToDateWhen { false }
 test {
     useJUnit {
         scanForTestClasses = false

@@ -8,7 +8,13 @@
       <sourceFolder url="file://$MODULE_DIR$/annotations" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/peers" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../bin" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../doc" type="java-resource" />
+      <excludeFolder url="file://$MODULE_DIR$/../.gradle" />
+      <excludeFolder url="file://$MODULE_DIR$/../.idea" />
       <excludeFolder url="file://$MODULE_DIR$/../build" />
+      <excludeFolder url="file://$MODULE_DIR$/../eclipse" />
+      <excludeFolder url="file://$MODULE_DIR$/../nbproject" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
