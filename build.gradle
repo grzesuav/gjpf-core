@@ -15,27 +15,28 @@ compileTestJava {
 sourceSets {
     main {
         java {
-            srcDir 'src/annotations'
-            srcDir 'src/main'
-            srcDir 'src/peers'
-            srcDir 'src/classes'
+            srcDirs = ['src/annotations',
+                       'src/main',
+                       'src/peers',
+                       'src/classes']
         }
     }
     test {
         java {
-            srcDir 'src/tests'
+            srcDirs = ['src/tests']
         }
+
     }
 }
-test.outputs.upToDateWhen { false }
+
+//test.outputs.upToDateWhen { false }
 test {
-    useJUnit {
-        scanForTestClasses = false
-        include '**/*Test'
-        reports.html.enabled = true
-    }
-//    outputs.upToDateWhen{}
+    useJUnit()
+    scanForTestClasses = false
+    include '**/*Test.class'
+    reports.html.enabled = true
 }
+
 
 repositories {
     mavenCentral()
