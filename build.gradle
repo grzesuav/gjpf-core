@@ -1,45 +1,178 @@
-import sun.misc.ExtensionDependency
-
 apply plugin: 'java'
 
-compileJava {
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
-}
-
-compileTestJava {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-}
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
 
 sourceSets {
-    main {
+    annotations {
         java {
-            srcDirs = ['src/annotations',
-                       'src/main',
-                       'src/peers',
-                       'src/classes']
+            srcDirs = ['src/annotations']
+            output.classesDir = 'build/annotations'
         }
     }
+
+    classes {
+        compileClasspath += annotations.output
+        compileClasspath += main.output
+        java {
+            srcDirs = ['src/classes']
+            output.classesDir = 'build/classes'
+        }
+    }
+
+    examples {
+        compileClasspath += main.output
+        java {
+            srcDirs = ['src/examples']
+            output.classesDir = 'build/examples'
+        }
+    }
+
+    main {
+        compileClasspath += annotations.output
+        java {
+            srcDirs = ['src/main']
+            output.classesDir = 'build/main'
+        }
+    }
+
+    peers {
+        compileClasspath += main.output
+        compileClasspath += annotations.output
+        java {
+            srcDirs = ['src/peers']
+            output.classesDir = 'build/peers'
+        }
+    }
+
     test {
+        compileClasspath += sourceSets.annotations.output
+        compileClasspath += sourceSets.classes.output
+        compileClasspath += sourceSets.examples.output
+        compileClasspath += sourceSets.main.output
+        compileClasspath += sourceSets.peers.output
+        runtimeClasspath += sourceSets.annotations.output
+        runtimeClasspath += sourceSets.classes.output
+        runtimeClasspath += sourceSets.examples.output
+        runtimeClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.peers.output
         java {
             srcDirs = ['src/tests']
+            output.classesDir = 'build/tests'
         }
-
     }
 }
 
-//test.outputs.upToDateWhen { false }
 test {
-    useJUnit()
+    outputs.upToDateWhen { false }
     scanForTestClasses = false
-    include '**/*Test.class'
-    reports.html.enabled = true
+    include '**/*Test.*'
+    exclude '**/JPF_*.class'
+    exclude '**/SplitInputStreamTest.class'
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    //ignoreFailures = true
+    reports {
+        html.enabled = true
+    }
 }
 
+tasks.withType(Jar) {
+    destinationDir = project.buildDir
+}
+
+task jpf_annotations(type: Jar) {
+    from sourceSets.annotations.output
+    baseName = 'jpf-annotations'
+    with jar
+    destinationDir = project.buildDir
+}
+
+task jpf_classes(type: Jar) {
+    from(
+            sourceSets.annotations.output,
+            sourceSets.classes.output
+    )
+    baseName = 'jpf-classes'
+    with jar
+}
+
+task jpf(type: Jar) {
+    from(
+            sourceSets.annotations.output,
+            sourceSets.main.output,
+            sourceSets.peers.output)
+    baseName = 'jpf'
+    with jar
+}
+
+task runJPF(type: Jar) {
+    baseName = 'RunJPF'
+    from sourceSets.main.output
+    include 'gov/nasa/jpf/tool/Run.class'
+    include 'gov/nasa/jpf/tool/RunJPF.class'
+    include 'gov/nasa/jpf/Config.class'
+    include 'gov/nasa/jpf/ConfigChangeListener.class'
+    include 'gov/nasa/jpf/Config$MissingRequiredKeyException.class'
+    include 'gov/nasa/jpf/JPFClassLoader.class'
+    include 'gov/nasa/jpf/JPFShell.class'
+    include 'gov/nasa/jpf/JPFException.class'
+    include 'gov/nasa/jpf/JPFConfigException.class'
+    include 'gov/nasa/jpf/JPFTargetException.class'
+    include 'gov/nasa/jpf/util/JPFSiteUtils.class'
+    include 'gov/nasa/jpf/util/FileUtils.class'
+    include 'gov/nasa/jpf/util/StringMatcher.class'
+    include 'gov/nasa/jpf/util/Pair.class'
+    manifest {
+        attributes(
+                'Implementation-Title': 'Java Pathfinder core launch system',
+                'Implementation-Vendor': 'NASA Ames Research Center',
+                'Main-Class': 'gov.nasa.jpf.tool.RunJPF'
+        )
+    }
+}
+
+task classloader_specific_tests(type: Jar) {
+    baseName = 'classloader_specific_tests'
+    from sourceSets.test.output
+    include '**/classloader_specific_tests/*.class'
+    exclude 'java8'
+    exclude 'gov'
+}
+
+task runTest(type: Jar) {
+    baseName = 'RunTest'
+    from sourceSets.main.output
+    include 'gov/nasa/jpf/tool/Run.class'
+    include 'gov/nasa/jpf/tool/RunTest.class'
+    include 'gov/nasa/jpf/tool/RunTest$Failed.class'
+    include 'gov/nasa/jpf/Config.class'
+    include 'gov/nasa/jpf/ConfigChangeListener.class'
+    include 'gov/nasa/jpf/Config$MissingRequiredKeyException.class'
+    include 'gov/nasa/jpf/JPFClassLoader.class'
+    include 'gov/nasa/jpf/JPFException.class'
+    include 'gov/nasa/jpf/JPFConfigException.class'
+    include 'gov/nasa/jpf/util/JPFSiteUtils.class'
+    include 'gov/nasa/jpf/util/FileUtils.class'
+    include 'gov/nasa/jpf/util/StringMatcher.class'
+    include 'gov/nasa/jpf/util/DevNullPrintStream.class'
+    manifest {
+        attributes(
+                'Implementation-Title': 'Java Pathfinder test launch system',
+                'Implementation-Vendor': 'NASA Ames Research Center',
+                'Main-Class': 'gov.nasa.jpf.tool.RunTest'
+        )
+    }
+}
+
+
+artifacts {
+    archives jpf, jpf_classes, jpf_annotations, classloader_specific_tests, runJPF, runTest
+}
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
