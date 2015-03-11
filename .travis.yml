@@ -1,4 +1,4 @@
 language: java
 jdk:
   - oraclejdk8
-script: gradle clean assemble test
+script: gradle -i clean assemble test
