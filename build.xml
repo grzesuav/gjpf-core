@@ -385,7 +385,7 @@
       <zipfileset file="build.properties"  prefix="${ant.project.name}"/>
       <zipfileset file="build.xml"  prefix="${ant.project.name}"/>
     	<zipfileset file="LICENSE-2.0.txt"  prefix="${ant.project.name}"/>
-      <zipfileset file="README.md"  prefix="${ant.project.name}"/>
+      <zipfileset file="README"  prefix="${ant.project.name}"/>
       <zipfileset dir="src" prefix="${ant.project.name}/src"/>
       <zipfileset dir="lib"  prefix="${ant.project.name}/lib" erroronmissingdir="false"/>
       <zipfileset dir="bin"  prefix="${ant.project.name}/bin" filemode="754"/>
@@ -408,7 +408,7 @@
           description="run core regression tests" if="have_tests">
           
     <!-- note this can be directly set in local.properties, which overrides this setting -->
-    <property name="junit.home" value="testlib/"/>
+    <property name="junit.home" value="${env.JUNIT_HOME}"/>
     
     <condition property="junit.usefile">
       <!-- don't set if this is running from within an IDE that collects output -->
@@ -417,10 +417,10 @@
       </not>
     </condition>
     
-    <junit printsummary="on" showoutput="off" 
+    <junit printsummary="yes" showoutput="off"
            haltonfailure="no" logfailedtests="true" failureproperty="test.failed" 
            dir="${basedir}" fork="yes" forkmode="perTest" maxmemory="1024m" outputtoformatters="true">
-      <formatter type="plain" usefile="${junit.usefile}"/>
+      <formatter type="xml" usefile="${junit.usefile}"/>
 
       <assertions>
         <enable/>
@@ -447,7 +447,12 @@
       </batchtest>
 
     </junit>
-
+      <junitreport>
+          <fileset dir="build/tests">
+              <include name="TEST-*.xml" />
+          </fileset>
+          <report format="frames"  todir="build/tests/html" />
+      </junitreport>
     <fail if="test.failed" />
    
   </target>

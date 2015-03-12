@@ -1,67 +1,78 @@
-apply plugin: 'java'
+allprojects {
 
-sourceCompatibility = JavaVersion.VERSION_1_7
-targetCompatibility = JavaVersion.VERSION_1_7
+    apply plugin: 'java'
+
+    sourceCompatibility = JavaVersion.VERSION_1_7
+    targetCompatibility = JavaVersion.VERSION_1_7
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+
+    dependencies {
+        testCompile 'junit:junit:4.12'
+    }
+}
+
+configurations {
+    examplesClasspath.extendsFrom compile
+    testClasspath.extendsFrom compile, testCompile
+
+    jpf_annotations {
+        transitive = false
+    }
+
+    jpf_classes {
+        extendsFrom(jpf_annotations)
+        jpf_classes.transitive = false
+    }
+
+    jpf {
+        extendsFrom(jpf_annotations)
+        jpf.transitive = false
+    }
+    runnable {
+        transitive = false
+    }
+
+}
+
+dependencies {
+    compile project(':annotations')
+    compile project(':classes')
+    compile project(':main')
+    testCompile project(':peers')
+    testRuntime project(':peers')
+    testRuntime project(':main')
+    testRuntime project(':annotations')
+    testRuntime project(':classes')
+    testRuntime files('build/RunJPF.jar', 'build/RunTest.jar', 'bin')
+    jpf_annotations project(':annotations')
+    jpf_classes project(':classes')
+    jpf project(':peers')
+    jpf project(':main')
+    runnable project(':main')
+}
 
 sourceSets {
-    annotations {
-        java {
-            srcDirs = ['src/annotations']
-            output.classesDir = 'build/annotations'
-        }
-    }
-
-    classes {
-        compileClasspath += annotations.output
-        compileClasspath += main.output
-        java {
-            srcDirs = ['src/classes']
-            output.classesDir = 'build/classes'
-        }
-    }
-
     examples {
-        compileClasspath += main.output
         java {
+            compileClasspath = configurations.examplesClasspath
             srcDirs = ['src/examples']
             output.classesDir = 'build/examples'
         }
     }
 
-    main {
-        compileClasspath += annotations.output
-        java {
-            srcDirs = ['src/main']
-            output.classesDir = 'build/main'
-        }
-    }
-
-    peers {
-        compileClasspath += main.output
-        compileClasspath += annotations.output
-        java {
-            srcDirs = ['src/peers']
-            output.classesDir = 'build/peers'
-        }
-    }
-
     test {
-        compileClasspath += sourceSets.annotations.output
-        compileClasspath += sourceSets.classes.output
-        compileClasspath += sourceSets.examples.output
-        compileClasspath += sourceSets.main.output
-        compileClasspath += sourceSets.peers.output
-        runtimeClasspath += sourceSets.annotations.output
-        runtimeClasspath += sourceSets.classes.output
-        runtimeClasspath += sourceSets.examples.output
-        runtimeClasspath += sourceSets.main.output
-        runtimeClasspath += sourceSets.peers.output
         java {
+            compileClasspath += sourceSets.examples.output
+            runtimeClasspath += jar.outputs.files
             srcDirs = ['src/tests']
             output.classesDir = 'build/tests'
         }
     }
 }
+
 
 test {
     outputs.upToDateWhen { false }
@@ -81,48 +92,66 @@ tasks.withType(Jar) {
     destinationDir = project.buildDir
 }
 
-task jpf_annotations(type: Jar) {
-    from sourceSets.annotations.output
+task jpf_annotations(type: Jar, dependsOn: project(':annotations').assemble) {
+    from zipTree(configurations.jpf_annotations.singleFile)
     baseName = 'jpf-annotations'
     with jar
-    destinationDir = project.buildDir
 }
 
 task jpf_classes(type: Jar) {
-    from(
-            sourceSets.annotations.output,
-            sourceSets.classes.output
-    )
+    from {
+        configurations.jpf_classes.collect({ zipTree(it) })
+    }
+    from zipTree(configurations.runnable.singleFile).matching {
+        //we need this one in case a SUT uses the Verify API
+        include 'gov/nasa/jpf/vm/Verify.class',
+                //these are required if we run TestJPF derived test classes
+                'gov/nasa/jpf/JPFShell.class',
+                'gov/nasa/jpf/util/TypeRef.class',
+                'gov/nasa/jpf/util/test/TestJPF.class',
+                'gov/nasa/jpf/util/test/TestMultiProcessJPF.class',
+                'gov/nasa/jpf/util/test/TestJPFHelper.class'
+    }
     baseName = 'jpf-classes'
     with jar
 }
 
 task jpf(type: Jar) {
-    from(
-            sourceSets.annotations.output,
-            sourceSets.main.output,
-            sourceSets.peers.output)
+    from {
+        configurations.jpf.collect({ zipTree(it) })
+    }
+    from {
+        configurations.jpf_classes.collect({
+            zipTree(it).matching {
+                include 'org/junit/*.class'
+            }
+        })
+    }
     baseName = 'jpf'
     with jar
 }
 
 task runJPF(type: Jar) {
     baseName = 'RunJPF'
-    from sourceSets.main.output
-    include 'gov/nasa/jpf/tool/Run.class'
-    include 'gov/nasa/jpf/tool/RunJPF.class'
-    include 'gov/nasa/jpf/Config.class'
-    include 'gov/nasa/jpf/ConfigChangeListener.class'
-    include 'gov/nasa/jpf/Config$MissingRequiredKeyException.class'
-    include 'gov/nasa/jpf/JPFClassLoader.class'
-    include 'gov/nasa/jpf/JPFShell.class'
-    include 'gov/nasa/jpf/JPFException.class'
-    include 'gov/nasa/jpf/JPFConfigException.class'
-    include 'gov/nasa/jpf/JPFTargetException.class'
-    include 'gov/nasa/jpf/util/JPFSiteUtils.class'
-    include 'gov/nasa/jpf/util/FileUtils.class'
-    include 'gov/nasa/jpf/util/StringMatcher.class'
-    include 'gov/nasa/jpf/util/Pair.class'
+    from {
+        zipTree(configurations.runnable.singleFile).matching {
+            include 'gov/nasa/jpf/tool/Run.class',
+                    'gov/nasa/jpf/tool/RunJPF.class',
+                    'gov/nasa/jpf/Config.class',
+                    'gov/nasa/jpf/ConfigChangeListener.class',
+                    'gov/nasa/jpf/Config$MissingRequiredKeyException.class',
+                    'gov/nasa/jpf/JPFClassLoader.class',
+                    'gov/nasa/jpf/JPFShell.class',
+                    'gov/nasa/jpf/JPFException.class',
+                    'gov/nasa/jpf/JPFConfigException.class',
+                    'gov/nasa/jpf/JPFTargetException.class',
+                    'gov/nasa/jpf/util/JPFSiteUtils.class',
+                    'gov/nasa/jpf/util/FileUtils.class',
+                    'gov/nasa/jpf/util/StringMatcher.class',
+                    'gov/nasa/jpf/util/Pair.class'
+
+        }
+    }
     manifest {
         attributes(
                 'Implementation-Title': 'Java Pathfinder core launch system',
@@ -140,22 +169,26 @@ task classloader_specific_tests(type: Jar) {
     exclude 'gov'
 }
 
-task runTest(type: Jar) {
+task runTestJar(type: Jar) {
     baseName = 'RunTest'
-    from sourceSets.main.output
-    include 'gov/nasa/jpf/tool/Run.class'
-    include 'gov/nasa/jpf/tool/RunTest.class'
-    include 'gov/nasa/jpf/tool/RunTest$Failed.class'
-    include 'gov/nasa/jpf/Config.class'
-    include 'gov/nasa/jpf/ConfigChangeListener.class'
-    include 'gov/nasa/jpf/Config$MissingRequiredKeyException.class'
-    include 'gov/nasa/jpf/JPFClassLoader.class'
-    include 'gov/nasa/jpf/JPFException.class'
-    include 'gov/nasa/jpf/JPFConfigException.class'
-    include 'gov/nasa/jpf/util/JPFSiteUtils.class'
-    include 'gov/nasa/jpf/util/FileUtils.class'
-    include 'gov/nasa/jpf/util/StringMatcher.class'
-    include 'gov/nasa/jpf/util/DevNullPrintStream.class'
+    from {
+        zipTree(configurations.runnable.singleFile).matching {
+            include 'gov/nasa/jpf/tool/Run.class',
+                    'gov/nasa/jpf/tool/RunTest.class',
+                    'gov/nasa/jpf/tool/RunTest$Failed.class',
+                    'gov/nasa/jpf/Config.class',
+                    'gov/nasa/jpf/ConfigChangeListener.class',
+                    'gov/nasa/jpf/Config$MissingRequiredKeyException.class',
+                    'gov/nasa/jpf/JPFClassLoader.class',
+                    'gov/nasa/jpf/JPFException.class',
+                    'gov/nasa/jpf/JPFConfigException.class',
+                    'gov/nasa/jpf/util/JPFSiteUtils.class',
+                    'gov/nasa/jpf/util/FileUtils.class',
+                    'gov/nasa/jpf/util/StringMatcher.class',
+                    'gov/nasa/jpf/util/DevNullPrintStream.class'
+
+        }
+    }
     manifest {
         attributes(
                 'Implementation-Title': 'Java Pathfinder test launch system',
@@ -167,14 +200,9 @@ task runTest(type: Jar) {
 
 
 artifacts {
-    archives jpf, jpf_classes, jpf_annotations, classloader_specific_tests, runJPF, runTest
+    archives jpf_annotations, jpf_classes, classloader_specific_tests, jpf, runJPF, runTestJar
 }
 
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
 
-dependencies {
-    testCompile 'junit:junit:4.12'
-}
+
+
