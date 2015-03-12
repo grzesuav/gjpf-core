@@ -2,6 +2,7 @@ allprojects {
 
     apply plugin: 'java'
 
+
     sourceCompatibility = JavaVersion.VERSION_1_7
     targetCompatibility = JavaVersion.VERSION_1_7
     repositories {
@@ -12,7 +13,18 @@ allprojects {
     dependencies {
         testCompile 'junit:junit:4.12'
     }
+
+
+    group = 'gov.nasa.jpf.jpf-core'
+
+    version = '0.1'
 }
+
+subprojects {
+    apply plugin: 'maven'
+}
+
+
 
 configurations {
     examplesClasspath.extendsFrom compile
@@ -35,7 +47,11 @@ configurations {
         transitive = false
     }
 
+    distArchives
+
 }
+
+
 
 dependencies {
     compile project(':annotations')
@@ -73,30 +89,34 @@ sourceSets {
     }
 }
 
-
-test {
-    outputs.upToDateWhen { false }
-    scanForTestClasses = false
-    include '**/*Test.*'
-    exclude '**/JPF_*.class'
-    exclude '**/SplitInputStreamTest.class'
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-    //ignoreFailures = true
-    reports {
-        html.enabled = true
-    }
-}
-
 tasks.withType(Jar) {
     destinationDir = project.buildDir
 }
 
-task jpf_annotations(type: Jar, dependsOn: project(':annotations').assemble) {
-    from zipTree(configurations.jpf_annotations.singleFile)
-    baseName = 'jpf-annotations'
+task jpf(type: Jar) {
+    from {
+        configurations.jpf.collect({ zipTree(it) })
+    }
+    from {
+        configurations.jpf_classes.collect({
+            zipTree(it).matching {
+                include 'org/junit/*.class'
+            }
+        })
+    }
+    archiveName = 'jpf.jar'
     with jar
 }
+
+task jpf_annotations(type: Jar, dependsOn: project(':annotations').assemble) {
+    from zipTree(configurations.jpf_annotations.singleFile)
+    archiveName = 'jpf-annotations.jar'
+    with jar
+}
+
+
+
+
 
 task jpf_classes(type: Jar) {
     from {
@@ -112,27 +132,14 @@ task jpf_classes(type: Jar) {
                 'gov/nasa/jpf/util/test/TestMultiProcessJPF.class',
                 'gov/nasa/jpf/util/test/TestJPFHelper.class'
     }
-    baseName = 'jpf-classes'
+    archiveName = 'jpf-classes.jar'
     with jar
 }
 
-task jpf(type: Jar) {
-    from {
-        configurations.jpf.collect({ zipTree(it) })
-    }
-    from {
-        configurations.jpf_classes.collect({
-            zipTree(it).matching {
-                include 'org/junit/*.class'
-            }
-        })
-    }
-    baseName = 'jpf'
-    with jar
-}
+
 
 task runJPF(type: Jar) {
-    baseName = 'RunJPF'
+    archiveName = 'RunJPF.jar'
     from {
         zipTree(configurations.runnable.singleFile).matching {
             include 'gov/nasa/jpf/tool/Run.class',
@@ -162,7 +169,7 @@ task runJPF(type: Jar) {
 }
 
 task classloader_specific_tests(type: Jar) {
-    baseName = 'classloader_specific_tests'
+    archiveName = 'classloader_specific_tests.jar'
     from sourceSets.test.output
     include '**/classloader_specific_tests/*.class'
     exclude 'java8'
@@ -170,7 +177,7 @@ task classloader_specific_tests(type: Jar) {
 }
 
 task runTestJar(type: Jar) {
-    baseName = 'RunTest'
+    archiveName = 'RunTest.jar'
     from {
         zipTree(configurations.runnable.singleFile).matching {
             include 'gov/nasa/jpf/tool/Run.class',
@@ -198,11 +205,45 @@ task runTestJar(type: Jar) {
     }
 }
 
+task distAssemble(dependsOn: [subprojects.assemble, tasks.withType(Jar)]) {
 
-artifacts {
-    archives jpf_annotations, jpf_classes, classloader_specific_tests, jpf, runJPF, runTestJar
+}
+
+
+
+test {
+    outputs.upToDateWhen { false }
+    scanForTestClasses = false
+    include '**/*Test.*'
+    exclude '**/JPF_*.class'
+    exclude '**/SplitInputStreamTest.class'
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    // uncomment this to don't fail build on error
+    //ignoreFailures = true
+    reports {
+        html.enabled = true
+    }
+    test.dependsOn(distAssemble)
+    test.shouldRunAfter distAssemble
 }
 
 
 
 
+
+assemble {
+    onlyIf {
+        false
+    }
+}
+
+jar {
+    onlyIf {
+        false
+    }
+}
+
+artifacts {
+
+}
