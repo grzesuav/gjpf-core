@@ -56,8 +56,8 @@ import java.util.regex.PatternSyntaxException;
  */
 public class PathOutputMonitor extends PropertyListenerAdapter {
  
-  static final String SEPARATOR = "~~~~~";
-  static final String ELLIPSIS = ". . .";
+  static final String SEPARATOR = "~~~";
+  static final String ELLIPSIS = "...";
   
   static Logger log = JPF.getLogger("gov.nasa.jpf.listener.PathOutputMonitor");
 
@@ -65,6 +65,53 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
     boolean add (String spec);
     boolean matches (String[] output);
     void printOn (PrintWriter pw);
+    boolean isEmpty();
+  }
+  
+  static class VerbatimOutputSpec implements PathOutputSpec {
+    ArrayList<String> patterns = new ArrayList<String>();
+
+    @Override
+	  public boolean add (String spec) {
+      patterns.add(spec);
+      return true;
+    }
+    
+    @Override
+	  public boolean matches (String[] output) {
+      if ((output != null) && (output.length > 0)) {
+        Iterator<String> it = patterns.iterator();
+        for (String line : output) {
+          if (it.hasNext()) {
+            String p = it.next();
+            if (!p.equals(line)){
+              return false;
+            }
+          } else {
+            return false;
+          }
+        }
+        
+        return !it.hasNext();
+        
+      } else {
+        return patterns.isEmpty();        
+      }
+    }
+    
+    // sometimes, duck typing would be nice..
+    
+    @Override
+	  public void printOn (PrintWriter pw) {
+      for (String p : patterns) {
+        pw.println(p.toString());
+      }
+    }
+    
+    @Override
+    public boolean isEmpty(){
+      return patterns.isEmpty();
+    }
   }
   
   // simple regular expression matchers (could be a more sophisticated parser)
@@ -72,7 +119,7 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
     ArrayList<Pattern> patterns = new ArrayList<Pattern>();
     
     @Override
-	public boolean add (String spec) {
+	  public boolean add (String spec) {
       try {
         Pattern p = Pattern.compile(spec);
         patterns.add(p);
@@ -84,7 +131,7 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
     }
     
     @Override
-	public boolean matches (String[] output) {
+	  public boolean matches (String[] output) {
       
       if ((output != null) && (output.length > 0)) {
         Iterator<Pattern> it = patterns.iterator();
@@ -113,10 +160,15 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
     }
     
     @Override
-	public void printOn (PrintWriter pw) {
+	  public void printOn (PrintWriter pw) {
       for (Pattern p : patterns) {
         pw.println(p.toString());
       }
+    }
+    
+    @Override
+    public boolean isEmpty(){
+      return patterns.isEmpty();
     }
   }
 
@@ -163,13 +215,22 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
 
   
   List<PathOutputSpec> loadSpecs(Config conf, String key) {
-    String fname = conf.getString(key);
-    if (fname != null) {
-      File file = new File(fname);
-      if (file.exists()) {
-        return readPathPatterns(file);
-      } else {
-        log.warning("pattern file not found: " + fname);
+    String spec = conf.getString(key);
+    if (spec != null) {
+      if (spec.startsWith("\"")){ // spec is in-situ content (convenience method for test classes)
+        spec = spec.substring(1, spec.length()-1);
+        BufferedReader br = new BufferedReader( new StringReader(spec));
+        return readPathPatterns(br);
+        
+      } else { // spec is pathname of output sepc file
+        File file = new File(spec);
+        try {
+          BufferedReader br = new BufferedReader( new FileReader(file));
+          return readPathPatterns(br);
+          
+        } catch (FileNotFoundException fnfx){
+          log.warning("pattern file not found: " + spec);
+        }        
       }
     }
     
@@ -185,22 +246,23 @@ public class PathOutputMonitor extends PropertyListenerAdapter {
     }
   }
   
-  List<PathOutputSpec> readPathPatterns (File f){  
+  
+  
+  List<PathOutputSpec> readPathPatterns (BufferedReader br){  
     ArrayList<PathOutputSpec> results = new ArrayList<PathOutputSpec>();
     
     // prefix pattern goes into file
     
     try {
-      FileReader fr = new FileReader(f);
-      BufferedReader br = new BufferedReader(fr);
-
       PathOutputSpec ps = createPathOutputSpec();
       
+      int lineno = 0;
       for (String line=br.readLine(); true; line = br.readLine()) {
         if (line == null) {
           results.add(ps);
           break;
         }
+        lineno++;
         
         if (line.startsWith(SEPARATOR)) {
           results.add(ps);
